@@ -110,10 +110,37 @@ change, no version bump.
 
 ### Phase 3 — page targets for the Virto storefront (needs a reachable stand)
 
-- A targets file of key storefront routes (home, catalog, PDP, cart, checkout steps, account) with
-  `hide`/`mask` for carousels and recommendations, and the xAPI GraphQL endpoint as `--har-url`.
-- Measure on a stand: noise on the targets across two passes, then one seeded regression — the same
-  two measurements as Phase 1, on real pages. Admin SPA blades the same way.
+- [x] Storefront targets: [`vcst-storefront.json`](../../../.claude/knowledge/automation/visual-targets/vcst-storefront.json)
+  — home, catalog, PDP, cart (vcst runs one-page checkout: `/checkout` redirects to `/cart`, which holds
+  the shipping and payment steps), account dashboard / orders / profile; signed in as `USER`
+  (`scripts/auth/save-storage-state.ts`), replayed with `--har-url "**/graphql"`. Masked: the hero slider,
+  PDP *Customers bought together*, cart *Recently browsed*, the footer build string (it differs on every
+  deploy and would flag every page of a base-vs-head pair).
+- [x] Admin SPA targets: [`vcst-admin.json`](../../../.claude/knowledge/automation/visual-targets/vcst-admin.json)
+  — dashboard + the first blade of catalog, orders, customers, stores, pricing, marketing; replayed with
+  `--har-url "**/api/**"` (the Admin SPA talks REST, not GraphQL). Only the first blade of a module has a
+  URL; a detail blade opens by click and is not a page target.
+- [ ] A repo command for an Admin storage state. `save-storage-state.ts` signs into the storefront only;
+  the Admin run used a one-off script that fills the real login form from `resolveRole("ADMIN")` in-process.
+
+**Measured on vcst, 2026-10-27** (Chromium 156, headless, same machine). The planted regression has no
+second build to come from, so head is the stand behind a local proxy that injects one CSS rule into every
+HTML response, and base is the same proxy without it — the rule is the only difference:
+
+| Check | Storefront (7 targets × 1280x800, 375x812) | Admin SPA (7 targets × 1280x800) |
+|---|---|---|
+| HAR recorded once on base | 167 GraphQL answers | 87 REST answers |
+| Stand vs stand, replayed, pass 1 | 14 / 14 `same` (twice) | 6 `same`, 1 `changed` (marketing: the second blade lands at a different x) |
+| Proxy vs proxy, pass 1 | 13 `same`, 1 `changed` (catalog 1280: two `SearchProducts` answers race — card order and count differ) | — |
+| Pass 2 (`--repeat 3`) on those | `same` | `same` |
+| Replay misses / `unrendered` | 0 / 0 | 0 / 0 |
+| Planted rule | `.vc-widget{border-radius:2px}` | `.blade-header__title{margin-left:2px}` |
+| Planted, pass 1 → pass 2 | 11 flagged → **10 `changed` + 1 `unstable`** (catalog 1280); smallest real diff 3 px | 6 flagged → **4 `changed` + 2 `unstable`** (pricing, marketing: two-blade pages) |
+| Not flagged, and right not to be | home ×2, catalog 375: their only `.vc-widget`s have no border, background or shadow, so the radius draws nothing | dashboard: no blade header |
+
+Missed: 0. As on Storybook, the noise is **bistable layouts**, not drift — the replay holds the data still,
+and `--repeat` clears the rest. An `unstable` row is a real change on a page that also moves by itself:
+read its diff by eye (skill §5).
 
 ### Phase 4 — `DESIGN` from the `design-review` skill (with its author)
 
@@ -139,9 +166,35 @@ change, no version bump.
   a file name, a version, a dotted SKU, code under `pre`, a price that fits), in Chromium and Firefox; a scope that
   matches nothing is BLOCKED; across all 750 vc-frontend stories, 0 raw keys / GUIDs / placeholders /
   mid-wraps, and the only 3 broken images are external photos the run itself blocked.
-- [ ] `048c` rows using it, and the stress matrix: locales (`pt`, `de`), ×2 text, many currencies,
+- [x] `048c` rows using it, and the stress matrix: locales (`pt`, `de`), ×2 text, many currencies,
   320/375/768/1280, themes. **Needs a reachable stand**: a case is promoted only after it ran there (and, per
-  `cases-that-catch-bugs.md`, after it failed once on the bug it targets).
+  `cases-that-catch-bugs.md`, after it failed once on the bug it targets). Done 2026-10-27 on vcst — below.
+
+**Phase 5b, 2026-10-27.** 15 rows in `048c`: `LAYOUT-CNT-001..008` (`[PROBE:CONTENT]` → `[CONTENT]`) and
+`LAYOUT-STR-001..007` (the matrix, `[OVERFLOW]` plus one dark-theme `[CONTENT]`), pairwise over en / de / pt ×
+USD / EUR / PTS / CZK × 320 / 375 / 768 / 1280 × light / dark × ×1 / ×2 text, signed out and as `USER`.
+
+- **Runner.** `[STRESS:TEXT] x<N> [<scope>]` repeats every visible text to N× its length — the long-translation
+  stress the runner could not express. `[AUTH]` now passes the one-time-code form the sign-in page opens on
+  (`SWITCH_TO_PASSWORD_SELECTORS` from `save-storage-state.ts`); on `main` every `[AUTH]` row of `048c` (5) was
+  BLOCKED at the password field, and with the fix they pass.
+- **How the stand switches the axes.** Locale by URL segment (`/de/`, `/pt/`); currency by the header selector
+  at desktop width (it is hidden on mobile) and kept across navigation; theme by `dark-mode-toggle`. Only USD,
+  EUR and PTS have price lists on vcst — AUD / CNY / CZK / GBP / GHS / XPT render an empty catalog, the
+  documented behaviour for an uncovered currency (ECL-12.1), so CZK gets the empty-state row. A product's slug
+  is per language (`/de/` + the English slug is a 404), so PDP rows reach the page by clicking a catalog card.
+  Signed-in rows stay on USD: a currency switch is saved on the shared account.
+- **Guards against a hollow PASS.** Each currency switch waits for the header label to show the new code; price
+  rows wait for a rendered price; order and cart rows for their table or place-order button. Two rows passed
+  vacuously before the guards — a 404 PDP has no price to wrap and no width to overflow.
+- **Proof (§6).** Every row ran on vcst, then through a local proxy that injects one mutant into every HTML page:
+  a three-segment i18n key or a GUID in the main content, price CSS that breaks inside the number, a missing
+  image, `white-space: nowrap` on text. Through the proxy without the mutant every row matched the stand; with
+  it, each row FAILed on its own metric. 14 rows promoted with `tc:promote` from the final stand run.
+- **Found.** `LAYOUT-STR-001` FAILs on the stand: the catalog's results count is `nowrap` with no ellipsis, so
+  ×2 text widens a 320 px page to 353 (de), 341 (pt), 375 (ru); today's translations fit. Filed locally as
+  `reports/bugs/open/low/BUG-catalog-results-count-nowrap-overflows-on-long-text-VCST-6534.md`, kb KB-06A3A50F;
+  the row stays `Draft` until it is fixed.
 
 ### Phase 6 — vc-frontend CI — not doing (decided 2026-10-26)
 

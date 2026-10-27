@@ -66,6 +66,9 @@
  *   [CLICK]    <selector>
  *   [FILL]     <selector> = <value>
  *   [SNAP]     before = <selector>                            (rect snapshot, named)
+ *   [STRESS:TEXT] x2 [<scope selector>]                       (every visible text in scope repeated to N× its
+ *                                                             length — the long-translation stress; run it after
+ *                                                             the page settled and before the probes)
  *   [PROBE:CLS]
  *   [PROBE:SPACING]  <selector>
  *   [PROBE:ALIGN]    <selector>
@@ -126,6 +129,7 @@ import {
   type RectSnapshot,
 } from "../lib/measure-layout.js";
 import { TestDataResolver } from "../lib/test-data-resolver.js";
+import { SWITCH_TO_PASSWORD_SELECTORS } from "../auth/save-storage-state.js";
 import { roleByKey, resolveRole } from "../lib/user-roles.mjs";
 
 // Layered, TEST_ENV-aware env load — scripts/lib/load-env.mjs, the one order graphql-runner.ts and seed-common.mjs
@@ -308,6 +312,10 @@ async function storageStateForRole(browser: Browser, roleKey: string, frontUrl: 
   const page = await ctx.newPage();
   try {
     await page.goto(`${frontUrl}/sign-in`, { waitUntil: "domcontentloaded" });
+    // A build that opens on the one-time-code form keeps the password form behind a link (save-storage-state.ts).
+    const toPassword = SWITCH_TO_PASSWORD_SELECTORS.join(", ");
+    await page.waitForSelector(`${toPassword}, [data-test-id="password-input"], input[type="password"]`, { timeout: 30_000 });
+    if (await page.locator(toPassword).first().isVisible()) await page.click(toPassword);
     // Stable data-test-ids per storefront-selectors.md. NB the email field is
     // type="text" (not type="email") on this storefront, so a type selector misses it.
     await page.fill('[data-test-id="email-input"], input[name="email"]', resolved.email);
@@ -379,6 +387,31 @@ function splitAssignment(arg: string, tag: string): [string, string] {
   const i = arg.indexOf(" = ");
   if (i < 0) throw new Error(`[${tag}] expects "<lhs> = <rhs>" with spaces around "=", got: ${arg}`);
   return [arg.slice(0, i).trim(), arg.slice(i + 3).trim()];
+}
+
+/**
+ * [STRESS:TEXT] — every visible text node in `scope` repeated to `factor`× its length, joined by a space so it
+ * still wraps the way a long translation does. Code, form fields and hidden nodes are left alone. A string, like
+ * the measure-layout.ts snippets, so tsx's `__name` wrapper never reaches the page. Returns the nodes changed.
+ */
+function textStressSnippet(factor: number, scope: string): string {
+  return `(() => {
+    let changed = 0;
+    for (const root of document.querySelectorAll(${JSON.stringify(scope)})) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      for (const node of nodes) {
+        const text = node.nodeValue.trim();
+        const el = node.parentElement;
+        if (!text || !el || el.closest("script,style,noscript,textarea,pre,code,svg")) continue;
+        if (!el.getClientRects().length || getComputedStyle(el).visibility === "hidden") continue;
+        node.nodeValue = Array(${factor}).fill(text).join(" ");
+        changed++;
+      }
+    }
+    return changed;
+  })()`;
 }
 
 async function runSteps(
@@ -460,8 +493,16 @@ async function runSteps(
         st.snaps[name] = (await page.evaluate(rectSnapshotSnippet(sel))) as RectSnapshot;
         break;
       }
+      case "STRESS:TEXT": {
+        const [, factor, scope] = /^x(\d+)\s*(.*)$/.exec(arg) ?? [];
+        if (!factor || Number(factor) < 2) throw new Error(`[STRESS:TEXT] expects "x<N>" with N >= 2, got "${arg}"`);
+        const expanded = (await page.evaluate(textStressSnippet(Number(factor), scope || "body"))) as number;
+        if (!expanded) throw new Error(`[STRESS:TEXT] scope "${scope || "body"}" holds no visible text`);
+        await page.waitForTimeout(300);
+        break;
+      }
       case "PROBE:CLS":
-        st.cls = (await page.evaluate(LAYOUT_SNIPPETS.readCls)) as ClsResult;
+        st.cls =(await page.evaluate(LAYOUT_SNIPPETS.readCls)) as ClsResult;
         break;
       case "PROBE:SPACING":
         st.spacing = (await page.evaluate(spacingAuditSnippet(arg))) as SpacingAuditResult;
