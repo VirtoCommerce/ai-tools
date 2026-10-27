@@ -25,7 +25,7 @@ import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { argOf, currentEnv, outputRoot, workDir } from "./paths.mjs";
 import { loadProfile, testBlock } from "./profile.mjs";
-import { loadRegistry } from "./strategy-artifacts.mjs";
+import { instanceOf, loadRegistry } from "./strategy-artifacts.mjs";
 
 const posix = (p) => p.split("\\").join("/");
 const sha1 = (file) => createHash("sha1").update(readFileSync(file)).digest("hex");
@@ -53,7 +53,8 @@ function globRe(glob, ci) {
   return new RegExp(`^${re}$`, ci ? "i" : "");
 }
 
-/** The zones of what ran: `ran` is the entry ids that were dispatched (`scenario:S-n` is an instance of the scenario template). */
+/** The zones of what ran: `ran` is the entry ids that were dispatched (`scenario:S-n` and `bug:PB-n` are instances of a
+ *  per-row template; the template's `S-n` / `PB-n` in `writes` becomes the instance's own id). */
 export function zonesFor({ registry, ran, runDir, store = null, root = outputRoot(), platform = process.platform }) {
   const ci = platform === "win32";
   const rel = (p) => posix(relative(root, isAbsolute(p) ? p : resolve(root, p))).replace(/\/+$/, "");
@@ -62,7 +63,7 @@ export function zonesFor({ registry, ran, runDir, store = null, root = outputRoo
   const zones = [];
   const add = (owner, globs, instance) => {
     for (const g of globs) {
-      const s = instance ? g.replaceAll("S-n", instance) : g;
+      const s = instance ? g.replaceAll(instance.replace(/\d+$/, "n"), instance) : g;
       let path;
       if (s.startsWith("<run>/")) path = `${runRel}/${s.slice(6)}`;
       else if (s.startsWith("<store>/")) { if (storeRel === null || storeRel.startsWith("..")) continue; path = `${storeRel}/${s.slice(8)}`; }
@@ -71,9 +72,9 @@ export function zonesFor({ registry, ran, runDir, store = null, root = outputRoo
     }
   };
   for (const id of ran) {
-    const m = /^scenario:(S-\d+)$/.exec(id);
-    const entry = m ? registry.artifacts.find((e) => e.per === "scenario") : registry.artifacts.find((e) => e.id === id && !e.per);
-    if (entry) add(id, entry.writes ?? [], m?.[1]);
+    const inst = instanceOf(registry, id);
+    const entry = inst ? inst.template : registry.artifacts.find((e) => e.id === id && !e.per);
+    if (entry) add(id, entry.writes ?? [], inst?.name);
   }
   add("orchestrator", registry.orchestrator?.writes ?? []);
   zones.push({ owner: "working-state", re: globRe(".vc-fix/**", ci) });

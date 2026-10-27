@@ -39,6 +39,15 @@ export function githubConnector({ run = bridgeRun } = {}) {
       return out.slice(0, cap + 1);
     },
     diff: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return run("gh", ["api", "-H", "Accept: application/vnd.github.diff", `repos/${o}/${r}/pulls/${n}`], { as: "text" }); },
+    /** `from...to` (prepare --since): the compare's status — ahead · identical · behind · diverged — then, when the
+     *  first sha is an ancestor (ahead or identical), the range's unified diff; otherwise `diff` is "" and not read. */
+    compareDiff: async (o, r, from, to) => {
+      checkRepo(o, r); checkSha(from); checkSha(to);
+      const path = `repos/${o}/${r}/compare/${from}...${to}`;
+      const { status } = await api(path);
+      if (status !== "ahead" && status !== "identical") return { status: String(status ?? "unknown"), diff: "" };
+      return { status, diff: await run("gh", ["api", "-H", "Accept: application/vnd.github.diff", path], { as: "text" }) };
+    },
     reviewComments: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return api(`repos/${o}/${r}/pulls/${n}/comments?per_page=100`); },
     unresolvedThreads: async (o, r, n) => {
       checkRepo(o, r); checkNumber(n);
