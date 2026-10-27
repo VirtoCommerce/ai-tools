@@ -33,7 +33,9 @@ export function hexKeys(text) {
 }
 const overlap = (a, b) => { let n = 0; for (const k of a) if (b.has(k)) n++; return n; };
 const norm = (s) => String(s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
-const verdictWord = (s) => /^(PASS WITH NOTES|PASS|FAIL|BLOCKED)\b/i.exec(String(s ?? "").trim().replace(/[_]+/g, " "))?.[1].toUpperCase() ?? null;
+// A verdict word ends at a non-word, non-hyphen character: "Passing", "Failed", "Fail-safe" and "PASSWORD" are not verdicts.
+const END = "(?![\\p{L}\\p{N}_-])";
+const verdictWord = (s) => new RegExp(`^(PASS WITH NOTES|PASS|FAIL|BLOCKED)${END}`, "iu").exec(String(s ?? "").trim().replace(/[_]+/g, " "))?.[1].toUpperCase() ?? null;
 
 // ── test-strategy.md: one entry per `## Round N` section ─────────────────────────────────────────────────────────
 const reconBlock = (sec) => /^### Reconciliation.*\n([\s\S]*?)(?=\n### |(?![\s\S]))/m.exec(sec)?.[1] ?? "";
@@ -120,7 +122,7 @@ function failuresOf(g) {
   return { items, sources };
 }
 
-const VERDICT_COMMENT = /^(QA Complete|PASS WITH NOTES|PASS|FAIL)/i;
+const VERDICT_COMMENT = new RegExp(`^(QA Complete|PASS WITH NOTES|PASS|FAIL)${END}`, "iu");
 
 export function countRounds({ strategies = [], records = [], summaries = [], signals = [] } = {}) {
   // sections: the same section seen in two folders (the file moves with the newest round) counts once
@@ -144,7 +146,7 @@ export function countRounds({ strategies = [], records = [], summaries = [], sig
     .map((x) => {
       const [, id, created] = /^comment:([^@]+)@?(.*)$/.exec(x.source);
       const text = String(x.text).replace(/^[#*_>\s]+/, "");
-      return { id, day: day(created), keys: hexKeys(x.text), word: verdictWord(/^QA Complete/i.test(text) ? text.replace(/^QA Complete[\s—–:-]*/i, "") : text) };
+      return { id, day: day(created), keys: hexKeys(x.text), word: verdictWord(/^QA Complete/i.test(text) ? text.replace(/^QA Complete[\s*_—–:-]*/i, "") : text) };
     }).sort((a, b) => String(a.day).localeCompare(String(b.day)));
   for (const v of verdicts) {
     const own = v.keys.size ? closed.map((g) => [g, overlap(v.keys, new Set([...g.keys, ...g.summaries.flatMap((s) => [...s.keys])]))]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])[0]?.[0] : null;
