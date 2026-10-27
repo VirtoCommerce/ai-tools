@@ -388,7 +388,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 69,
+      "testCount": 70,
       "estimatedMinutes": 34,
       "agent": "qa-frontend-expert",
       "tags": [
