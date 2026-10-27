@@ -31,15 +31,15 @@
  *   2  tool error: bad URL, unresolved repo, GitHub auth/rate-limit failure
  *
  * Auth: reads GIT_TOKEN (fallback GITHUB_TOKEN / GITHUB_PERSONAL_ACCESS_TOKEN)
- * from .env.local / .env.defaults / process.env. Runs unauthenticated if absent,
+ * from process.env, else .env.local / .env.${TEST_ENV} / .env.defaults (scripts/lib/github-token.ts). Runs unauthenticated if absent,
  * but the GitHub API then caps at 60 req/h and the run will likely rate-limit.
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { parse as parseDotenv } from 'dotenv';
+import { loadGithubToken } from '../lib/github-token.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -72,18 +72,8 @@ interface VersionTrace { version: string; date: string | null; releaseUrl: strin
 interface SemVer { major: number; minor: number; patch: number; }
 
 // ── env / token ───────────────────────────────────────────────────────────────
-function loadToken(): string | undefined {
-  // Layered, lightweight — we intentionally do NOT import config.js (it runs the
-  // full required-var validator and exits if a test var is missing).
-  for (const f of ['.env.defaults', '.env.local']) {
-    const p = resolve(REPO_ROOT, f);
-    if (existsSync(p)) {
-      const vars = parseDotenv(readFileSync(p));
-      for (const [k, v] of Object.entries(vars)) if (!process.env[k]) process.env[k] = v;
-    }
-  }
-  return process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
-}
+// We intentionally do NOT import config.js (it runs the full required-var validator and exits if a test var is missing).
+const loadToken = (): string | undefined => loadGithubToken(REPO_ROOT);
 
 // ── version parsing ─────────────────────────────────────────────────────────
 function parseSemVer(v: string): SemVer | null {

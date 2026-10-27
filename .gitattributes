@@ -16,3 +16,7 @@ plugins/vc-secrets/** text eol=lf
 regression/suites/**/*.csv text eol=crlf
 tests/**/*.csv text eol=crlf
 test-data/**/*.csv text eol=crlf
+
+# Release regression folders are shared state edited on Windows and macOS alike; pin them to LF so a
+# checkout never shows line-ending-only changes in a ledger.csv or state.json someone else owns.
+regression/releases/** text eol=lf
