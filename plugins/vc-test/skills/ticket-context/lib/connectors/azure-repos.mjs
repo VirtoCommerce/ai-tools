@@ -9,7 +9,7 @@ import { dirname, join } from "node:path";
 import { HostGoverned, bridgeRun } from "../bridge.mjs";
 import { CAPS } from "../fetch.mjs";
 import { GapError, gap } from "../gap.mjs";
-import { checkNumber, checkRepo } from "../github.mjs";
+import { checkNumber, checkRepo, checkSha } from "../github.mjs";
 import { cacheDir, outputRoot } from "../paths.mjs";
 
 const PR_URL_RE = /^https:\/\/(?:dev\.azure\.com\/[^/]+|[^./]+\.visualstudio\.com)\/([^/?#]+)\/_git\/([^/?#]+)\/pullrequest\/(\d+)/i;
@@ -79,10 +79,13 @@ export function azureReposConnector({ key, run = bridgeRun, git = spawnSync, roo
       const { changes } = await state(r, n);
       return changes.slice(0, cap + 1).map((c) => ({ filename: strip(c.item?.path), status: status(c.changeType), additions: null, deletions: null }));
     },
-    diff: async (o, r, n) => {
+    /** `from` (prepare --since): the base side is read at that commit instead of the merge base, so the diff is what
+     *  changed since it; a file missing there (404) is read as not yet there. */
+    diff: async (o, r, n, { from = null } = {}) => {
       checkRepo(o, r); checkNumber(n);
+      if (from !== null) checkSha(from);
       const { iteration, changes } = await state(r, n);
-      const base = iteration.commonRefCommit?.commitId;
+      const base = from ?? iteration.commonRefCommit?.commitId;
       const head = iteration.sourceRefCommit?.commitId;
       const dir = join(cacheDir(key, root), `az-diff-${process.pid}-${Date.now()}`);
       const noPatch = [];
@@ -93,7 +96,8 @@ export function azureReposConnector({ key, run = bridgeRun, git = spawnSync, roo
       const files = changes.slice(0, CAPS.prFiles).map((c) => ({ path: strip(c.item?.path), old: strip(c.originalPath ?? c.item?.path), st: status(c.changeType) }));
       // Both sides of a file are one launch each; null = this file not read. A refusal stops the whole diff.
       const read = ({ path, old, st }) => Promise.all([
-        st === "added" ? "" : run("ado", ["get-file", "--repo", r, "--path", old, "--commit", base], { as: "text" }),
+        st === "added" && !from ? "" : run("ado", ["get-file", "--repo", r, "--path", old, "--commit", base], { as: "text" })
+          .catch((e) => { if (from && e?.reason === "deleted") return ""; throw e; }), // not there at `from`: added since
         st === "removed" ? "" : run("ado", ["get-file", "--repo", r, "--path", path, "--commit", head], { as: "text" }),
       ]).catch((e) => { if (e instanceof HostGoverned || FATAL.has(e?.reason)) throw e; return null; });
       try {
@@ -116,7 +120,7 @@ export function azureReposConnector({ key, run = bridgeRun, git = spawnSync, roo
             if (d.status === 0) continue; // identical content: nothing to show
             if (d.status !== 1) { noPatch.push(path); continue; }
             let text = d.stdout;
-            if (st === "added") text = text.replace(`--- ${aRel}`, "--- /dev/null");
+            if (st === "added" && a === "") text = text.replace(`--- ${aRel}`, "--- /dev/null");
             if (st === "removed") text = text.replace(`+++ ${bRel}`, "+++ /dev/null");
             out.push(text);
             bytes += Buffer.byteLength(text);
