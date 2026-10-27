@@ -1,8 +1,8 @@
 // plugins/vc-test/lib/scenario-rows.mjs — merges the per-scenario row files into testing-checklist.md (B20). A scenario
 // agent writes only <RUN_DIR>/scenarios/S-n.rows.md, so no two agents ever write one file; after each wave the
 // orchestrator runs this, alone, and the rows land under `## Scenario results`, which ends the checklist.
-// CLI: node plugins/vc-test/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids S-1,S-3[,visual][,pixel]
-//   S-n takes only its own `| SC-<n>.<m> |` rows; `visual` (the Visual lane's visual.rows.md) only `| VIS-<m> |` rows;
+// CLI: node plugins/vc-test/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids S-1,S-3[,PB-1][,visual][,pixel]
+//   S-n takes only its own `| SC-<n>.<m> |` rows; PB-n (a prior bug's re-run, briefs/bug-rerun.md) only its `| PB-<n> |` row; `visual` (the Visual lane's visual.rows.md) only `| VIS-<m> |` rows;
 //   `pixel` (the orchestrator's PIXEL items, pixel.rows.md) only `| PIX-<m> |` rows — two files, so the lane and the
 //   orchestrator never write one file in the same wave. A row whose id the checklist already holds is skipped, so
 //   merging an id again after a later wave never duplicates it.
@@ -16,7 +16,9 @@ import { pathToFileURL } from "node:url";
 import { argOf } from "./paths.mjs";
 
 const OWN_PREFIX = { visual: "VIS", pixel: "PIX" };
-const rowRe = (id) => (OWN_PREFIX[id] ? new RegExp(`^\\|\\s*${OWN_PREFIX[id]}-\\d+\\s*\\|`) : new RegExp(`^\\|\\s*SC-${/^S-(\d+)$/.exec(id)[1]}\\.\\d+\\s*\\|`));
+const rowRe = (id) => (OWN_PREFIX[id] ? new RegExp(`^\\|\\s*${OWN_PREFIX[id]}-\\d+\\s*\\|`)
+  : /^PB-\d+$/.test(id) ? new RegExp(`^\\|\\s*${id}\\s*\\|`)
+  : new RegExp(`^\\|\\s*SC-${/^S-(\d+)$/.exec(id)[1]}\\.\\d+\\s*\\|`));
 const rowId = (line) => /^\|\s*([^|]+?)\s*\|/.exec(line)?.[1];
 
 export function mergeRows({ runDir, ids }) {
@@ -43,8 +45,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const [cmd] = process.argv.slice(2);
   const runDir = argOf(process.argv, "run-dir");
   const ids = (argOf(process.argv, "ids") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  if (cmd !== "merge" || !runDir || !ids.length || ids.some((id) => !OWN_PREFIX[id] && !/^S-\d+$/.test(id))) {
-    console.error("usage: scenario-rows.mjs merge --run-dir <RUN_DIR> --ids S-1,S-3[,visual][,pixel]");
+  if (cmd !== "merge" || !runDir || !ids.length || ids.some((id) => !OWN_PREFIX[id] && !/^(?:S|PB)-\d+$/.test(id))) {
+    console.error("usage: scenario-rows.mjs merge --run-dir <RUN_DIR> --ids S-1,S-3[,PB-1][,visual][,pixel]");
     process.exit(1);
   }
   const r = mergeRows({ runDir, ids });

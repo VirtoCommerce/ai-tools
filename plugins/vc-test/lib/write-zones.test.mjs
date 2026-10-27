@@ -38,6 +38,14 @@ test("a scenario instance owns its own S-n files and no other instance's", (t) =
   assert.deepEqual(outsideOf(root, ["checklist", "scenario:S-2"], before), [`${RUN}/scenarios/S-3.rows.md`]);
 });
 
+test("a prior-bug instance owns its own PB-n rows file and no other instance's", (t) => {
+  const root = repo(t);
+  const before = snapshot({ root, runDir: join(root, RUN) });
+  put(root, `${RUN}/scenarios/PB-1.rows.md`);
+  put(root, `${RUN}/scenarios/PB-2.rows.md`);
+  assert.deepEqual(outsideOf(root, ["checklist", "bug:PB-1"], before), [`${RUN}/scenarios/PB-2.rows.md`]);
+});
+
 test("a file written by an artifact that did not run is outside", (t) => {
   const root = repo(t);
   const before = snapshot({ root, runDir: join(root, RUN) });

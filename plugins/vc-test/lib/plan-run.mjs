@@ -4,45 +4,54 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { argOf, workDir } from "./paths.mjs";
-import { loadRegistry, readStrategy } from "./strategy-artifacts.mjs";
+import { INSTANCE_PREFIX, loadRegistry, readStrategy } from "./strategy-artifacts.mjs";
 
 const APPROVED = new Set(["APPROVED", "CHANGED", "AUTO"]);
 const MAX_BROWSER_LANES = 3;
+// Where each per-row template's instances come from. A prior bug needs nothing (`needs: []`), so it runs in the first
+// wave, drawing its browser lane from the same pool — and the same ≤ 3 per wave — as the scenarios.
+const INSTANCES = {
+  scenario: { noun: "scenarios", key: "scenario", list: (st) => (st.scenarios ?? []).map((sc) => ({ name: sc.s, proof: sc.proof, item: sc })) },
+  "prior-bug": { noun: "prior bugs", key: "bug", list: (st) => (st.priorBugs ?? []).map((b) => ({ name: b.pb, proof: b.proof, item: b })) },
+};
 
 export function planRun({ strategy, registry, capabilities }) {
   if (!APPROVED.has(strategy.status)) return { ok: false, errors: [`round ${strategy.round}: strategy is not approved (Status: ${strategy.status ?? "missing"})`] };
-  // The scenario template (`per: "scenario"`) is instantiated from the strategy's `### Scenarios` table, never from an Artifacts row.
-  const tpl = registry.artifacts.find((e) => e.per === "scenario");
+  // A per-row template (`per`) is instantiated from its own table of the round — `### Scenarios` as `scenario:S-n`,
+  // `### Prior bugs` as `bug:PB-n` — never from its Artifacts row, whose RUN/SKIP only has to agree with that table.
+  const templates = registry.artifacts.filter((e) => e.per && INSTANCES[e.per]);
   const byRow = new Map(registry.artifacts.filter((e) => e.row && !e.per).map((e) => [e.row, e]));
-  const isScenarioRow = (r) => tpl && r.row === tpl.row;
-  const unread = strategy.rows.filter((r) => r.decision === null && !(r.row in registry.rows_not_run) && !isScenarioRow(r));
+  const isTemplateRow = (r) => templates.some((t) => r.row === t.row);
+  const unread = strategy.rows.filter((r) => r.decision === null && !(r.row in registry.rows_not_run) && !isTemplateRow(r));
   if (unread.length) return { ok: false, errors: unread.map((r) => `${r.row}: decision "${r.cell ?? ""}" is neither RUN nor SKIP — the cell must start with one of them`) };
   const selected = new Map();
   const notRun = [];
-  for (const r of strategy.rows.filter((x) => x.decision === "RUN" && !isScenarioRow(x))) {
+  for (const r of strategy.rows.filter((x) => x.decision === "RUN" && !isTemplateRow(x))) {
     const entry = byRow.get(r.row);
     if (entry) selected.set(entry.id, { entry, order: r.order });
     else notRun.push({ row: r.row, reason: registry.rows_not_run[r.row] ?? "not in the vc-test registry" });
   }
   const errors = [];
-  if (tpl) {
-    if (strategy.rows.some((r) => r.row === tpl.row && r.decision === "SKIP") && (strategy.scenarios ?? []).length) errors.push(`${tpl.row} row is SKIP but the table lists scenarios (U62)`);
-    for (const sc of strategy.scenarios ?? []) {
-      const proof = tpl.proofs?.[sc.proof];
-      const id = `scenario:${sc.s}`;
-      if (!proof) errors.push(`${sc.s}: Proof "${sc.proof}" is not one of ${Object.keys(tpl.proofs ?? {}).join(", ")}`);
-      else if (selected.has(id)) errors.push(`${sc.s}: listed twice in the Scenarios table`);
+  for (const tpl of templates) {
+    const { list, noun, key } = INSTANCES[tpl.per];
+    const items = list(strategy);
+    if (strategy.rows.some((r) => r.row === tpl.row && r.decision === "SKIP") && items.length) errors.push(`${tpl.row} row is SKIP but the table lists ${noun} (U62)`);
+    for (const it of items) {
+      const proof = tpl.proofs?.[it.proof];
+      const id = `${INSTANCE_PREFIX[tpl.per]}:${it.name}`;
+      if (!proof) errors.push(`${it.name}: Proof "${it.proof}" is not one of ${Object.keys(tpl.proofs ?? {}).join(", ")}`);
+      else if (selected.has(id)) errors.push(`${it.name}: listed twice in the ${tpl.row} table`);
       else {
         // A browser proof draws its lane from the pool at wave placement; a lane without its MCP server is not in it.
         const pool = proof.lanes?.filter((l) => capabilities[`mcp:${l.slice("browser:".length)}`]);
         if (pool && !pool.length) errors.push(`${id}: needs one of ${proof.lanes.map((l) => `mcp:${l.slice("browser:".length)}`).join(", ")}, which this install does not have`);
         const { proofs, per, ...rest } = tpl;
-        selected.set(id, { entry: { ...rest, id, row: null, lane: null, requires: proof.requires }, order: null, scenario: sc, ...(pool ? { pool } : {}) });
+        selected.set(id, { entry: { ...rest, id, row: null, lane: null, requires: proof.requires }, order: null, instanceOf: tpl.row, [key]: it.item, ...(pool ? { pool } : {}) });
       }
     }
   }
   // A derived artifact follows an artifact id or a row name ("Scenarios" = at least one scenario instantiated).
-  const active = (d) => selected.has(d) || (tpl?.row === d && [...selected.values()].some((s) => s.scenario));
+  const active = (d) => selected.has(d) || [...selected.values()].some((s) => s.instanceOf === d);
   for (const e of registry.artifacts) if (e.derivedFrom && active(e.derivedFrom)) selected.set(e.id, { entry: e, order: null });
 
   if (registry.artifacts.some((e) => e.id === "checklist") && !selected.has("checklist")) errors.push("Checklist is not RUN — nothing would decide the ACs");
@@ -64,8 +73,9 @@ export function planRun({ strategy, registry, capabilities }) {
     return base.get(id);
   };
   const byId = (a, b) => a.localeCompare(b, "en", { numeric: true });
-  // A fixed-lane entry is placed before a scenario of the same base wave, so a scenario takes a lane the others left free.
-  const ordered = [...selected.keys()].sort((a, b) => baseWave(a) - baseWave(b) || !!selected.get(a).scenario - !!selected.get(b).scenario || byId(a, b));
+  // A fixed-lane entry is placed before an instance (a scenario, a prior bug) of the same base wave, so an instance takes
+  // a lane the others left free.
+  const ordered = [...selected.keys()].sort((a, b) => baseWave(a) - baseWave(b) || !!selected.get(a).instanceOf - !!selected.get(b).instanceOf || byId(a, b));
   const wave = new Map();
   const browserCount = [];
   const lanesIn = []; // wave -> lanes taken: two browser entries never share one (one browser session per agent)

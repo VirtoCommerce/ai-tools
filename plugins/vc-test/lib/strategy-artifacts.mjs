@@ -30,6 +30,27 @@ function writesOf(cell) {
   });
 }
 
+// The `### Prior bugs` table rounds.mjs append writes in a round ≥ 2: | PB | Bug | Severity | Found | Reproduction | R |.
+// Bug is `<tracker key or B-n> — <title>`; Reproduction `spec <path>`, `package <path>` or `none`. A `.spec` runs through
+// the runner (proof `spec`); anything else — a package or no reproduction at all — goes to a browser lane, where a
+// `none` row is still dispatched and comes back BLOCKED (never silently dropped).
+function priorBugsOf(sec) {
+  return rows(block(sec, "Prior bugs")).filter((c) => /^PB-\d+$/.test(c[0] ?? "")).map((c) => {
+    const reproduction = c[4] ?? "";
+    return { pb: c[0], key: (c[1] ?? "").split(/\s+—\s+/)[0].trim(), severity: c[2] ?? "", reproduction, r: (c[5] ?? "").trim(), proof: /^spec\s+\S/i.test(reproduction) ? "spec" : "browser" };
+  });
+}
+
+/** The per-row templates of the registry and the plan-entry prefix of their instances (`scenario:S-n`, `bug:PB-n`). */
+export const INSTANCE_PREFIX = { scenario: "scenario", "prior-bug": "bug" };
+/** The registry template an instance id (`scenario:S-2`, `bug:PB-1`) belongs to, and its row id; null for any other id. */
+export function instanceOf(registry, id) {
+  const m = /^([a-z-]+):([A-Z]+-\d+)$/.exec(id);
+  const per = m && Object.keys(INSTANCE_PREFIX).find((p) => INSTANCE_PREFIX[p] === m[1]);
+  const template = per && registry.artifacts.find((e) => e.per === per);
+  return template ? { template, name: m[2] } : null;
+}
+
 export function readStrategy(md) {
   const sec = lastRound(String(md).replace(/\r\n?/g, "\n"));
   const head = /^## Round (\d+)/.exec(sec);
@@ -37,7 +58,7 @@ export function readStrategy(md) {
   const table = rows(block(sec, "Artifacts")).map(([row, cell]) => ({ row, ...decisionOf(cell ?? ""), cell: cell ?? "" }));
   const scenarios = rows(block(sec, "Scenarios")).filter((c) => /^S-\d+$/.test(c[0] ?? ""))
     .map((c) => ({ s: c[0], cls: Number(c[1]), proof: (c[6] ?? "").toLowerCase(), exploratory: /^exploratory/i.test(c[4] ?? ""), writes: writesOf(c[7]) }));
-  return { round: head ? Number(head[1]) : 0, status, rows: table, scenarios };
+  return { round: head ? Number(head[1]) : 0, status, rows: table, scenarios, priorBugs: priorBugsOf(sec) };
 }
 
 export function loadRegistry(path = join(LIB, "artifacts.json")) {
