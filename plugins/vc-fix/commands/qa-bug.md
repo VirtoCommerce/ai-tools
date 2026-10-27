@@ -98,7 +98,7 @@ origin labels are read from this line (`knowledge/execution/tracker-ops.md` §La
 
 Validate the failing scenario across all four layers. Record per-layer PASS / FAIL / N/A in the bug report. Stop early if a lower layer (REST) already fails — higher layers will inherit. Use the browsers/tools listed below and capture evidence at each layer that reproduces.
 
-> **Screenshots:** a bare relative filename, then the mandatory reconcile —
+> **Screenshots:** RELATIVE filenames only, then the mandatory reconcile —
 > [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md) §How a browser screenshot reaches its permanent path.
 
 ### Layer 1 — Storefront Frontend (vc-frontend)
