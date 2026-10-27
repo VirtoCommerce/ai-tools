@@ -32,7 +32,7 @@ Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3, U60–
 
 1. `npm run run:use -- <TICKET> [<env>]` → note `RUN_DIR` and the start time (`date -u +%FT%TZ`).
 2. `node <plugin>/lib/route.mjs --key <TICKET>` → `{job, reason, next}`: `verify-fix` / `hotfix-check` ⇒ STOP naming `next`; exit 4 (`unresolved`) ⇒ ask
-   which job, quoting `reason` (not a third point: the run has not started), then verify-fix / hotfix-check ⇒ STOP naming `next`, test ⇒ go on; exit 3 ⇒ route after step 1 with
+   which job, quoting `reason` (not a third point: no run yet), then verify-fix / hotfix-check ⇒ STOP naming `next`, test ⇒ go on; exit 3 ⇒ route after step 1 with
    `--bundle <BUNDLE>` (round ≥ 2: after 0b.1, `--bundle <DELTA_PREPARE>`); exit 2 ⇒ STOP "run /project-init". A not-fixed Bug's `reason` is `MISSION` (step 3).
 3. `node <plugin>/lib/rounds.mjs count --key <TICKET> --run-dir <RUN_DIR>` → `ROUND`, `MODE`. Exit 2 ⇒ STOP: print its
    `escalation` (`<plugin>/skills/qa-test-strategy/rounds.md` §At most three). `refresh`, or
@@ -146,7 +146,7 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 2. `node <plugin>/lib/write-zones.mjs check --key <TICKET> --run-dir <RUN_DIR> --run-plan <WORK>/run-plan.json >
    <WORK>/write-zones.json` → `WRITE_ZONES`. Exit 2 ⇒ BLOCKED, the verdict names each file; 3 ⇒ "not checked"; any other exit ⇒ write
    `{"outside":[],"gitScope":false,"reason":"<its registryErrors, or its first stderr line>"}` there instead.
-3. `node <plugin>/lib/run-cost.mjs --since <start> --budget qa --key <TICKET>` → keep its Markdown table.
+3. `node <plugin>/lib/run-cost.mjs --since <start> --budget qa --key <TICKET>` → keep its output, `budget:` line too.
 4. Dispatch `verdict` (`vc-test:verdict-writer`) with its paths, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
    and, round ≥ 2, `PRIOR_BUGS` = `DELTA`.
 

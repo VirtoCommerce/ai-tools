@@ -3,6 +3,7 @@
 // vc-init's profile-set.mjs. A missing profile is a STOP, never a default (U19); a profile written by a newer
 // vc-init is a STOP too, rather than a guess at its shape.
 // CLI: node plugins/vc-test/lib/profile.mjs --check   → exit 0 readable, 2 missing, 3 unreadable or newer
+//      node plugins/vc-test/lib/profile.mjs --budget-defaults   → prints the default test.budget as JSON (exit 0)
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -110,8 +111,12 @@ export function testBlock(profile) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  if (process.argv[2] === "--budget-defaults") {
+    console.log(JSON.stringify(defaultBudget()));
+    process.exit(0);
+  }
   if (process.argv[2] !== "--check") {
-    console.error("usage: profile.mjs --check");
+    console.error("usage: profile.mjs --check | --budget-defaults");
     process.exit(1);
   }
   try {
