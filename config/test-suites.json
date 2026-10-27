@@ -2127,7 +2127,7 @@
     },
     {
       "id": "059b",
-      "name": "Page Builder — Page Builder > Permalink validation",
+      "name": "Page Builder — Permalink validation",
       "file": "regression/suites/Backend/page-builder/059b-page-builder-permalink-validation.csv",
       "domain": "content-cms",
       "layer": "backend",
