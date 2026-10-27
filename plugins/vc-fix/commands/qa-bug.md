@@ -37,7 +37,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 /qa-bug "<defect>" --evidence <dir> --link VCST-6042 --confirmed   # From a /qa-investigate package, pre-approved by the caller
 ```
 
-- `--evidence <dir>` — a `/qa-investigate` evidence package (`evidence-index.md`, `root-cause.md`, screenshots). Steps 1–3 read it instead of reproducing again (Step 1).
+- `--evidence <dir>` — a `vc-fix:qa-investigate` package; the report is written from it and nothing is re-checked: [`knowledge/execution/bug-from-package.md`](../knowledge/execution/bug-from-package.md).
 - `--link <KEY>[:<type>]` — repeatable; the ticket this bug relates to (Relates by default). Jira: [`knowledge/execution/jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) §2.
 - `--confirmed` — the calling command asked the operator via `AskUserQuestion` in this session and got a yes for filing this bug; Step 5 does not ask again. It covers the create only — never a duplicate comment (`jira-bug-fields.md` §5) or an Azure question.
 
@@ -50,14 +50,14 @@ Create a structured bug report from a description, screenshot, or observed issue
    - **`modules-endpoint`** (client) — `GET {BACK_URL}/api/platform/modules` with an admin token; the deployment reports its own module/Platform versions. (Theme/storefront version comes from the storefront or the ticket.)
    - **`ticket`** (frontend-only client bug) — take the storefront version from the ticket's system info; do NOT call the admin modules endpoint.
    - Record platform version, theme version, and modules relevant to the bug area — include in the bug report (Step 3)
-2. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design.
+   - **With `--evidence`:** also `bug-from-package.md` §Build.
+2. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design. **Skipped with `--evidence`** (root-cause §5 ruled out by-design).
 3. **Duplicate check** — scan `reports/bugs/open/**` (recursively — it is foldered by severity), `reports/bugs/fixed/` and, for a ticket's bug, the `bugs/` of every run folder of the ticket (`node "$pluginRoot/scripts/env/run-folder.mjs" dir --ticket <key> --prior`) for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
 
 ## Step 1 — Gather Bug Details
 
-**If `--evidence <dir>` is given:** Steps 1–3 READ the `/qa-investigate` package (STR, layers, screenshots, root cause
-and code anchor from `evidence-index.md` / `root-cause.md`) instead of reproducing again. Reproduce only when it was
-made on another build than Step 0 found, or lacks a repro or a UI screenshot; say which.
+**With `--evidence`:** Steps 1–3 are `bug-from-package.md` §Complete, §Layers, §Routing — no reproduction, no probe,
+no search.
 
 > **Skills:** Use `/qa-investigate` for structured 5-phase investigation (reproduce → isolate layer → gather evidence → root cause → hand off). Use `/qa-evidence` for capture rules and naming conventions.
 
@@ -92,26 +92,14 @@ origin labels are read from this line (`knowledge/execution/tracker-ops.md` §La
 
 ## Step 2 — 4-Layer Validation (Layer Isolation)
 
+**With `--evidence`: skip — `bug-from-package.md` §Layers.**
+
 > **Purpose:** Pinpoint which layer owns the bug. Same request flow, four observation points. If the bug appears only at the UI layer but APIs return correct data, it's a presentation bug. If the REST API is wrong, the whole stack inherits it. This isolation is load-bearing for the Root Cause Analysis in the bug report.
 
 Validate the failing scenario across all four layers. Record per-layer PASS / FAIL / N/A in the bug report. Stop early if a lower layer (REST) already fails — higher layers will inherit. Use the browsers/tools listed below and capture evidence at each layer that reproduces.
 
-> ### Screenshots — RELATIVE filenames only, never a path
->
-> Call `browser_take_screenshot` with a bare **filename** — `filename: "layer1-menu-empty.png"` —
-> **never** a path and **never** an absolute path. playwright-mcp documents *"Prefer relative file
-> names to stay within the output directory"*; absolute paths are undocumented, so nothing may be
-> built on them. `/project-init` pins each Playwright server's `--output-dir` to an **absolute**
-> path inside this project — `reports/bugs/screenshots/_incoming/<browser>/`. On the pinned
-> `@playwright/mcp@0.0.83`, a bare filename is **not guaranteed** to land there: it may resolve
-> it against the MCP server's own cwd — which can be the project root (VCST-5582 C). So a capture
-> may appear at the project root, and Step 4 MUST reconcile it (locate → move) rather than assume it
-> is already under `--output-dir`.
->
-> Do **not** try to place a screenshot at its final location during capture, and do not guess where
-> it went. `_incoming/` is a landing zone; Step 4 performs ONE deterministic move (including the
-> reconcile from the server cwd when the server misplaced it). Mechanism + the mandatory reconcile step:
-> [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md).
+> **Screenshots:** a bare relative filename, then the mandatory reconcile —
+> [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md) §How a browser screenshot reaches its permanent path.
 
 ### Layer 1 — Storefront Frontend (vc-frontend)
 - **Where:** `FRONT_URL` (storefront UI)
@@ -180,6 +168,8 @@ sync, never invent a different one.
 ---
 
 ## Step 3 — Research Source Code & Logs + Resolve the Exact Repo
+
+**With `--evidence`: skip — `bug-from-package.md` §Routing.**
 
 > **Tools:** GitHub MCP (`search_code`, `get_file_contents`), Azure MCP (`applicationinsights`), `/qa-investigate` isolation phase.
 
@@ -252,6 +242,7 @@ mv reports/bugs/screenshots/_incoming/*/<kept>.png <bugs>/screenshots/<slug>/
   never an `_incoming/` path and never a bare filename.
 - If a capture is not where you expect, **list `reports/bugs/screenshots/_incoming/`** — do not
   guess a path. A guessed path was one of the two `Read` failures on a client deployment run.
+- With `--evidence`, copy from the package's `screenshots/` instead (`bug-from-package.md` §Report).
 
 Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (when the caller names a ticket run's folder — `/qa-test`, `/qa-test-fast`, `/qa-triage-results` — in `<run folder>/bugs/<bucket>/` instead: `knowledge/execution/run-env.md` §The run folder), chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-<ticket-key>.md` (if a JIRA ticket is known)
@@ -485,11 +476,11 @@ already resolved this run, else resolve via `claude plugin list --json` (see
 ## Rules
 - Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
-- Always reproduce the bug before filing — never file unverified bugs (an `--evidence` package reproduced on the same build counts)
+- Always reproduce the bug before filing — never file unverified bugs — with `--evidence`, the package did it (`bug-from-package.md`)
 - Always include evidence (screenshot + console + network)
-- Always complete the 4-layer validation (Step 2) before writing the report — the owning layer drives triage routing and root-cause scope. Mark layers N/A only when the scenario genuinely doesn't exercise that layer (e.g., a pure CSS bug → REST layer N/A).
+- Always complete the 4-layer validation (Step 2) before writing the report — the owning layer drives triage routing and root-cause scope. Mark layers N/A only when the scenario genuinely doesn't exercise that layer (e.g., a pure CSS bug → REST layer N/A) — with `--evidence`, the package did it (`bug-from-package.md`)
 - Use the qa-testing-expert agent for reproduction: `playwright-firefox` (fallback: `playwright-edge`)
-- Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior
+- Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior — with `--evidence`, the package did it (`bug-from-package.md`)
 - Ask before creating tracker tickets (explicit permission required; `--confirmed` = the caller already asked) — via **`AskUserQuestion`**, never
   prose, and emit `complete --skill` only **after** that decision (see Step 5 + Signal completion)
 - If a new regression is found during investigation, escalate via `/qa-bug` (separate report)
