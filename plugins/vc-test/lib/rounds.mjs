@@ -2,7 +2,10 @@
 // gathered (spec §3 Rounds, D6; method: skills/qa-test-strategy/rounds.md). A round is one QA verdict on one build, and it
 // is seen by up to four sources that must not be counted twice: a `## Round N` section of test-strategy.md, a round
 // record (`rounds/round-<N>.json`), a `summary.json` (every git version of it, and the ones /qa-test-fast wrote), and a
-// verdict comment in the ticket-context bundle's signals[].
+// verdict comment in the ticket-context bundle's signals[]. A verdict comment whose sha matches no closed round is a new
+// round (a distinct build); a sha-less one is the comment of the newest closed round dated at or before it, and a round
+// of its own only when no closed round precedes it (vc-test posts no tracker comment: a summary posted after `close`
+// describes the newest tested build).
 // CLI: node plugins/vc-test/lib/rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]
 //   reads test-strategy.md, rounds/round-*.json and summary.json (+ its git versions) of every run folder of the ticket
 //   (`priorRunDirs`: every env, wherever QA_OUTPUT_DIR puts them) and of --run-dir; prints
@@ -19,7 +22,8 @@
 //   round N's refresh over `ticket-context prepare --since`'s output: which PRs changed, which analysts to dispatch
 //   (TICKET on new comments or a changed AC, CHANGE per changed or new PR), the prior bugs of every round (in scope only,
 //   one PB per bug), the out-of-scope bugs with their status, the carried risks, and the round recounted with the kept
-//   comments as signals. Writes <WORK>/delta.json (WORK = paths.mjs workDir) and prints it. exit 0; 2: the same build
+//   comments as signals, by the rule above (a new comment naming an untested sha is a round; a sha-less one is the
+//   newest round's). Writes <WORK>/delta.json (WORK = paths.mjs workDir) and prints it. exit 0; 2: the same build
 //   (P3: no PR changed or new — round N−1 already tested it) or mode cap (`escalation` as `count`); 1: usage or an
 //   unreadable input.
 // CLI: node plugins/vc-test/lib/rounds.mjs append --run-dir <RUN_DIR> --delta <WORK>/delta.json [--change-map <path>]
@@ -160,9 +164,9 @@ export function countRounds({ strategies = [], records = [], summaries = [], sig
   }
 
   let closed = groups.filter(isClosed);
-  const newestDate = () => closed.map(dateOf).filter(Boolean).sort().at(-1) ?? null;
 
-  // verdict comments: a round when posted after the newest local round closed; else that round's own comment
+  // verdict comments (Ruling G — rounds count distinct builds): one naming a sha joins the closed round that shares it,
+  // else it is a new round; a sha-less one joins the newest closed round dated at or before it, else it is its own round
   const verdicts = signals.filter((x) => String(x.source ?? "").startsWith("comment:") && VERDICT_COMMENT.test(String(x.text ?? "").replace(/^[#*_>\s]+/, "")))
     .map((x) => {
       const [, id, created] = /^comment:([^@]+)@?(.*)$/.exec(x.source);
@@ -170,16 +174,16 @@ export function countRounds({ strategies = [], records = [], summaries = [], sig
       return { id, day: day(created), keys: hexKeys(x.text), word: verdictWord(/^QA Complete/i.test(text) ? text.replace(/^QA Complete[\s*_—–:-]*/i, "") : text) };
     }).sort((a, b) => String(a.day).localeCompare(String(b.day)));
   for (const v of verdicts) {
-    const own = v.keys.size ? closed.map((g) => [g, overlap(v.keys, new Set([...g.keys, ...g.summaries.flatMap((s) => [...s.keys])]))]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])[0]?.[0] : null;
-    const newest = newestDate();
-    if (own) { (own.comments ??= []).push(v); continue; }
-    if (v.day && (!newest || v.day > newest)) {
-      const g = { strategy: null, record: null, summaries: [], keys: new Set(v.keys), text: null, comments: [v], signalDate: v.day };
-      groups.push(g); closed.push(g);
-    } else {
-      const last = [...closed].sort((a, b) => String(dateOf(a)).localeCompare(String(dateOf(b)))).at(-1);
-      if (last) (last.comments ??= []).push(v);
+    let own = null;
+    if (v.keys.size) own = closed.map((g) => [g, overlap(v.keys, new Set([...g.keys, ...g.summaries.flatMap((s) => [...s.keys])]))]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    else {
+      // sha-less: the newest closed round dated at or before it (an undated comment: the newest closed round)
+      const before = closed.filter((g) => !v.day || (dateOf(g) && dateOf(g) <= v.day));
+      own = before.sort((a, b) => String(dateOf(a)).localeCompare(String(dateOf(b)))).at(-1) ?? null;
     }
+    if (own) { (own.comments ??= []).push(v); continue; }
+    const g = { strategy: null, record: null, summaries: [], keys: new Set(v.keys), text: null, comments: [v], signalDate: v.day };
+    groups.push(g); closed.push(g);
   }
 
   closed = closed.sort((a, b) => String(dateOf(a)).localeCompare(String(dateOf(b))) || (a.strategy?.n ?? 99) - (b.strategy?.n ?? 99));
@@ -442,7 +446,9 @@ export function appendRound({ strategyMd, delta, env, date, changeMapPath = null
     `Project risks: ${TBD}`, "",
     "### Strategy mix", TBD, "",
     "### Approach per risk", APPROACH_HEAD, ...approach, "",
-    "### Scenarios", SCENARIOS_HEAD, "",
+    // No scorer runs in round N: every scenario is `S-n added`, so the runner derives its steps from the row instead of
+    // round 1's scenarios.json entry with the same S-n (briefs/scenario-run.md).
+    "### Scenarios", SCENARIOS_HEAD, "", `Shared store: ${TBD}`, `Changed rows: ${TBD}`, "",
     "### Prior bugs", PRIOR_HEAD, ...prior, "",
     "### Artifacts", "| Artifact | Decision |", "|---|---|", ...artifacts, "",
     "### Data", TBD, "",

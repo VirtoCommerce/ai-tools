@@ -83,8 +83,13 @@ complete it; you never start a new one.
   bugs with its status — listed, never re-run (B2).
 - **Append, never edit.** Add a risk (next free `R`) for each thing the delta names — a new PR, a changed AC, a new
   area — with its approach row and its scenarios; add one class-fitting scenario per prior bug, scoped to the fix's
-  diff, `Why likely <what the fix touched> · R<the bug's risk>`. Never edit a row `append` wrote, a `### Prior bugs`
-  row, or any line of round N−1.
+  diff, `Why likely <what the fix touched> · R<the bug's risk>`. In a row `append` wrote, a `TBD — strategy agent`
+  cell is yours to fill and every other cell is not; never edit a `### Prior bugs` row or any line of round N−1.
+- **Every round-N scenario is an added row.** No scorer runs in round N, and round 1's `scenarios.json` is still in
+  `<WORK>`: a scenario not marked added would run round 1's steps of the same `S-n`. So each row is built as an
+  **Add** in step 5 above (Score `—`, Proof `api` or `browser`), and you fill the two TBD lines `append` left under
+  the table as step 2 writes them: `Changed rows:` lists every round-N row as `S-n added`; `Shared store:` is `none`
+  unless the user names one.
 - **Round 3** says in its mission that it is the last; its Out of scope is the ticket's residual risk (rounds.md §At
   most three).
 - **Gate:** step 3 above — `check-strategy.mjs` with `--change-map` and `--capabilities`, clauses 1–14, until it exits 0
