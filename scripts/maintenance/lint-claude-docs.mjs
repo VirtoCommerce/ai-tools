@@ -27,6 +27,11 @@
  *               behaviour belongs in the kb, team rules in a tracked file (CLAUDE.md)             (ratchet)
  *   DOC-008     a relative Markdown link (`[text](../x.md)`) whose target does not exist, resolved from
  *               the citing file's own folder — the link a reader actually follows               (ratchet)
+ *   DOC-009     a plugins/vc-test/ file that READS a `.claude/` path — a Markdown link resolving there
+ *               or a backticked `.claude/…` token. The plugin must run on a project with no such tree  (ratchet)
+ *   DOC-010     a plugins/vc-test/ file whose first line is `<!-- copy of .claude/<path>[ §<section>] … -->`
+ *               and whose body has drifted from that source (the named section(s) only). Outbound references
+ *               rewritten for the plugin do not count. The repository copy is canonical       (informational)
  *
  * SCOPE. CLAUDE.md, every .claude/**\/*.md and every plugins/**\/*.md; BUDGET-004 measures each plugin's
  * commands/, agents/ and skills/*\/SKILL.md beside .claude/'s. A plugin file's repo-root path also
@@ -90,7 +95,9 @@ export const PROMPT_BASELINE_PATH = 'scripts/maintenance/.prompt-size-baseline.j
 // 0 is the only baseline that catches the next one — never raise it.
 // DOC-008 and the plugins/ scope were added 2026-10-26: 15 broken relative links, 3 stale § citations and 23
 // stale paths surfaced and were fixed in the same change, so it starts where the others are.
-export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 0, 'DOC-008': 0 };
+// DOC-009 was added 2026-10-27 (vc-test P2-5a) at the number below: the visual-axis reads deferred to P2-5c
+// (three links) plus two backticked non-read mentions. It may only go down; P2-5c takes it to the mentions.
+export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 0, 'DOC-008': 0, 'DOC-009': 5 };
 
 /**
  * DOC-007 — a pointer into the per-user memory directory. The slug families are the ones the harness
@@ -105,7 +112,7 @@ export function memoryRefs(line) {
 }
 
 /** Codes reported for information but never ratcheted — see DOC-003E on `isEphemeralPath`. */
-export const INFORMATIONAL = new Set(['DOC-003E']);
+export const INFORMATIONAL = new Set(['DOC-003E', 'DOC-010']);
 
 export const GENERIC_SCRIPTS = new Set(['build', 'dev', 'lint', 'test', 'start', 'typecheck', 'storybook', 'preview', 'format', 'install', 'serve', 'watch']);
 export const PLACEHOLDER_RE = /XX|YYYY|NNN|<[^>]*>|\*|\{|Sprint-current|\.\.\.|…/;
@@ -429,6 +436,206 @@ export function checkPromptBudget(files, baseline, read = (f) => fs.readFileSync
   return { over: over.sort((a, b) => b.chars - a.chars), breaches: breaches.sort((a, b) => a.file.localeCompare(b.file)) };
 }
 
+/**
+ * DOC-009 — what a `plugins/vc-test/` file READS from `.claude/`.
+ *
+ * vc-test is installed into a project that has no `.claude/` tree of ours, so a prompt that links
+ * `../../.claude/rules/x.md` sends the agent to a file that is not there. COUNTED: a Markdown link whose
+ * target resolves into `.claude/`, and a backticked token that starts `.claude/` (or `../…/.claude/`).
+ * NOT counted: the copy-source header (`<!-- copy of .claude/… -->`), text inside `(in this repository: …)`
+ * (a mark for a reader of THIS repository, not a read — unless it holds a Markdown link, which still counts), anything under a `docs/` folder (human rationale),
+ * and a code comment outside `harness/` (history, not a read). A link whose label is a backticked path counts
+ * once. In `harness/*.mjs` only comment text is scanned, and a bare `.claude/…` token counts there (and in a
+ * `.json` value) because a comment or a data value is rarely backticked.
+ * Not caught (the same limit as DOC-008): reference-style links, autolinks, titled links and angle-bracket targets.
+ * Nor a repository-only document named WITHOUT its `.claude/` prefix (`test-design-techniques.md` §1a was one), an
+ * `npm run` script only this repository has, or a path string in `lib/*.mjs` code: a clean DOC-009 is not proof
+ * that the plugin reads nothing outside itself.
+ */
+const DOC009_ROOT = 'plugins/vc-test';
+const THIS_REPO_MARK_RE = /\(in this repository:[^)]*\)/g;
+const COPY_HEADER_RE = /<!--\s*copy of \.claude\//;
+const BACKTICK_CLAUDE_RE = /`((?:\.\.\/)*\.claude\/[^`]*)`/g;
+const BARE_CLAUDE_RE = /(?:^|[\s"'(])((?:\.\.\/)*\.claude\/[\w.\/<>*-]*)/g;
+const LINK_ANY_RE = /\[[^\]]*\]\(([^)\s]*)\)/g;
+
+/** The `.claude/` reads on one line of `file` (repo-relative, posix). `mode`: 'md' | 'json' | 'comment'. */
+export function claudeReadsOnLine(file, line, mode = 'md') {
+  if (COPY_HEADER_RE.test(line)) return [];
+  // A mark that holds a Markdown link (`](`) is not exempt: a real link inside it is still a read.
+  let rest = line.replace(THIS_REPO_MARK_RE, (m) => (m.includes('](') ? m : ''));
+  const out = [];
+  if (mode === 'md') {
+    // Link SYNTAX quoted in a code span is an example, not a link a reader follows.
+    // Whole code spans, paired left to right: only a span that CONTAINS link syntax is dropped, so a real link
+    // between two spans survives and a backticked label (`[`x`](t)`) is not a span with `](` inside.
+    rest = rest.replace(/`[^`]*`/g, (s) => (s.includes('](') ? '' : s));
+    for (const m of rest.matchAll(LINK_ANY_RE)) {
+      const t = m[1].split('#')[0];
+      if (!t || EXTERNAL_RE.test(t) || t.startsWith('/')) continue;
+      const abs = posix(path.normalize(path.join(path.dirname(file), t)));
+      if (abs.startsWith('.claude/') || t.startsWith('.claude/')) out.push(t);
+    }
+    rest = rest.replace(LINK_ANY_RE, '');   // the label of a link already counted must not count again
+  }
+  for (const m of rest.matchAll(BACKTICK_CLAUDE_RE)) out.push(m[1]);
+  if (mode !== 'md') for (const m of rest.replace(BACKTICK_CLAUDE_RE, '').matchAll(BARE_CLAUDE_RE)) out.push(m[1]);
+  return out;
+}
+
+/** The comment text of one `.mjs` line, or null when the line carries none. */
+function commentOf(line) {
+  const t = line.trim();
+  if (/^(\/\/|\/\*|\*)/.test(t)) return line;
+  const i = line.search(/\s\/\/\s/);
+  return i >= 0 ? line.slice(i) : null;
+}
+
+function walkVcTest(dir, out = []) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) { if (!SKIP_DIRS.has(e.name) && e.name !== 'docs') walkVcTest(p, out); }
+    else out.push(posix(p));
+  }
+  return out;
+}
+
+/** Every DOC-009 finding under `<root>/plugins/vc-test`. Findings are `{ code, file, line, detail }`, `file` relative to `root`. */
+export function vcTestClaudeReads(root = '.') {
+  const base = path.join(root, DOC009_ROOT);
+  if (!fs.existsSync(base)) return [];
+  const findings = [];
+  for (const abs of walkVcTest(base)) {
+    const file = posix(path.relative(root, abs));
+    const mode = file.endsWith('.md') ? 'md' : file.endsWith('.json') ? 'json'
+      : (/^plugins\/vc-test\/harness\/[^/]+\.mjs$/.test(file) ? 'comment' : null);
+    if (!mode) continue;
+    fs.readFileSync(abs, 'utf8').split(/\r?\n/).forEach((l, i) => {
+      const text = mode === 'comment' ? commentOf(l) : l;
+      if (text == null) return;
+      for (const t of claudeReadsOnLine(file, text, mode)) findings.push({ code: 'DOC-009', file, line: i + 1, detail: `a vc-test file reads a .claude/ path: ${t} — copy it into the plugin, point at a plugin mechanism, or mark it "(in this repository: …)"` });
+    });
+  }
+  return findings;
+}
+
+/**
+ * DOC-010 — copy drift. A `plugins/vc-test/` file opening with `<!-- copy of .claude/<path>[ §<section>] — keep in step … -->`
+ * is a copy the plugin carries for a client with no `.claude/` tree; the repository file stays canonical until
+ * someone re-syncs it. Nothing else notices when the two part, so this compares them.
+ *
+ * COMPARED: the copy's body (header line dropped) against the whole source, or — when the header names `§N` / `§N, §M`
+ * (optionally `(Parent heading)` to say which numbered family) — against those sections only, each running to the next
+ * heading of its own or a higher level. A source H1 the copy also carries is kept in the comparison. The bracketed name
+ * is matched as a PREFIX of a heading's text and the numbered section is then looked for from that heading on, so a
+ * section's own title works too (`§5 (Live-Verification Policy)`); a title the heading does not start with is `§N not found`.
+ * NOT a difference: CRLF vs LF, blank lines, a lone `---` line, and an outbound reference rewritten for the plugin. A
+ * reference is a Markdown link (compared as its text), a backticked path-like token (it holds a `/` or ends in a file
+ * extension) or a backticked "`name` skill" — each is dropped from both sides, together with the "this repository's" /
+ * "(in this repository: …)" scaffolding and the "the" / "of" / "," left dangling around it. So a path edited INSIDE such a
+ * token is not seen: the check is for drifted prose, not for drifted citations.
+ * A changed hunk reports once per paired line (copy side); a line only the copy has, or only the source has, reports once.
+ */
+const DOC010_ROOT = 'plugins/vc-test';
+const COPY_OF_RE = /^<!--\s*copy of (\.claude\/\S+?)(?:\s+(§.*?))?\s+—\s*keep in step/;
+
+/** One line, normalised for comparison. */
+const REF_PATH_RE = /(?:\bthe\s+)?`(?:[^`\s]*\/[^`\s]*|[^`\s]*\.(?:md|mjs|ts|js|json|csv|ya?ml|cs))`(?:\s+skill\b)?/gi;
+const REF_SKILL_RE = /(?:\bthe\s+)?`[^`]+`\s+skill\b/gi;
+export function normaliseCopyLine(l) {
+  return l.replace(/\r/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\(in this repository:\s*([^)]*)\)/gi, '$1')
+    .replace(/\bthis repository's\s+/gi, '')
+    .replace(REF_PATH_RE, '').replace(REF_SKILL_RE, '')
+    .replace(/\(\s*(?:(?:of|and|,)\s*)*\)/g, '')
+    .replace(/,\s*\)/g, ')').replace(/\(\s*,\s*/g, '(')
+    .replace(/\s+(?:of|and)(?=\s*[).,;:]|\s*$)/g, '')
+    .replace(/\s+([).,;:])/g, '$1')
+    .replace(/\s+/g, ' ').trim();
+}
+
+/** The lines of the `§N` section of `lines`, or null. `scope` names a parent heading the number lives under. */
+export function sectionLines(lines, num, scope) {
+  const level = (l) => /^(#{1,6})\s/.exec(l)?.[1].length ?? 0;
+  let fence = false;
+  const heads = [];   // { i, level, text }
+  lines.forEach((l, i) => {
+    if (/^\s*```/.test(l)) { fence = !fence; return; }
+    if (!fence && level(l)) heads.push({ i, level: level(l), text: norm(l.replace(/^#+\s+/, '')) });
+  });
+  const endOf = (h) => { const n = heads.find((x) => x.i > h.i && x.level <= h.level); return n ? n.i : lines.length; };
+  let lo = 0, hi = lines.length;
+  if (scope) {
+    const parent = heads.find((h) => h.text.startsWith(norm(scope)));
+    if (!parent) return null;
+    lo = parent.i; hi = endOf(parent);
+  }
+  const numRe = new RegExp(`^${String(num).toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\.|\\s|$)`);
+  const h = heads.find((x) => x.i >= lo && x.i < hi && numRe.test(x.text));
+  return h ? lines.slice(h.i, endOf(h)) : null;
+}
+
+/** Diff two normalised line arrays; returns hunks `{ a: [idx…], b: [idx…], at }` (`at` = index in b where an a-only hunk sits). */
+export function lineHunks(a, b) {
+  const n = a.length, m = b.length;
+  const L = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const hunks = []; let i = 0, j = 0, cur = null;
+  const flush = () => { if (cur) { hunks.push(cur); cur = null; } };
+  while (i < n || j < m) {
+    if (i < n && j < m && a[i] === b[j]) { flush(); i++; j++; continue; }
+    cur ??= { a: [], b: [], at: j };
+    if (j < m && (i >= n || L[i][j + 1] >= L[i + 1][j])) cur.b.push(j++); else cur.a.push(i++);
+  }
+  flush();
+  return hunks;
+}
+
+/** Every DOC-010 finding under `<root>/plugins/vc-test`, `file` = the copy, relative to `root`. */
+export function vcTestCopyDrift(root = '.') {
+  const base = path.join(root, DOC010_ROOT);
+  if (!fs.existsSync(base)) return [];
+  const findings = [];
+  for (const abs of walkVcTest(base)) {
+    const file = posix(path.relative(root, abs));
+    if (!file.endsWith('.md')) continue;
+    const raw = fs.readFileSync(abs, 'utf8').replace(/\r\n/g, '\n').split('\n');
+    const hm = COPY_OF_RE.exec(raw[0] || '');
+    if (!hm) continue;
+    const src = hm[1], spec = hm[2] || '';
+    const srcAbs = path.join(root, src);
+    const at = (line, detail) => findings.push({ code: 'DOC-010', file, line, detail: `differs from ${src}${spec ? ' ' + spec : ''} — ${detail}` });
+    if (!fs.existsSync(srcAbs)) { at(1, 'the source file does not exist'); continue; }
+    const srcLines = fs.readFileSync(srcAbs, 'utf8').replace(/\r\n/g, '\n').split('\n');
+    let want = srcLines;
+    if (spec) {
+      const scope = /\(([^)]+)\)/.exec(spec)?.[1];
+      const nums = [...spec.matchAll(/§\s*(\d+[a-z]?)/g)].map((x) => x[1]);
+      const parts = [];
+      for (const k of nums) {
+        const sec = sectionLines(srcLines, k, scope);
+        if (!sec) { at(1, `§${k} not found as a heading in the source`); continue; }
+        parts.push(...sec);
+      }
+      const h1 = srcLines[0]?.startsWith('# ') ? srcLines[0] : null;
+      const firstBody = raw.slice(1).find((l) => l.trim());
+      want = h1 && firstBody && normaliseCopyLine(firstBody) === normaliseCopyLine(h1) ? [h1, ...parts] : parts;
+    }
+    const keep = (l) => l !== '' && l !== '---';
+    const A = [], B = [], bLine = [];
+    want.forEach((l) => { const t = normaliseCopyLine(l); if (keep(t)) A.push(t); });
+    raw.forEach((l, i) => { if (i === 0) return; const t = normaliseCopyLine(l); if (keep(t)) { B.push(t); bLine.push(i + 1); } });
+    for (const h of lineHunks(A, B)) {
+      const pairs = Math.min(h.a.length, h.b.length);
+      for (let k = 0; k < pairs; k++) at(bLine[h.b[k]], `source: "${A[h.a[k]].slice(0, 70)}"`);
+      for (const j of h.b.slice(pairs)) at(bLine[j], 'a line the source does not have');
+      for (const i of h.a.slice(pairs)) at(bLine[Math.min(h.at, bLine.length - 1)] ?? 1, `the copy lacks the source line "${A[i].slice(0, 70)}"`);
+    }
+  }
+  return findings;
+}
+
 export function lint(root = '.') {
   const cwd = process.cwd(); process.chdir(root);
   try {
@@ -505,11 +712,14 @@ export function lint(root = '.') {
         }
       });
     }
+    findings.push(...vcTestClaudeReads('.'));
+    findings.push(...vcTestCopyDrift('.'));
     const budget = measureBudget(alwaysLoadedFiles('.'));
     const skillsOver = walkMd('.claude/skills').filter((p) => path.basename(p) === 'SKILL.md')
       .map((p) => ({ file: p, chars: charCount(fs.readFileSync(p, 'utf8')) })).filter((r) => r.chars > BUDGET.skillBodyWarnChars).sort((a, b) => b.chars - a.chars);
     const counts = {}; for (const x of findings) counts[x.code] = (counts[x.code] || 0) + 1;
     for (const k of Object.keys(BASELINE)) counts[k] = counts[k] || 0;
+    counts['DOC-010'] = counts['DOC-010'] || 0;   // informational, but always printed: 0 is the answer a maintainer wants
     // DOC-003E is reported, never ratcheted: report artifacts are ephemeral BY POLICY, so its count
     // moves with what has been pruned rather than with anything an author did wrong.
     const ratcheted = Object.fromEntries(Object.entries(counts).filter(([k]) => !INFORMATIONAL.has(k)));
@@ -550,6 +760,11 @@ if (isMain) {
     }
     for (const b of budgetBreach) console.error(`   ** ${b} **`);
     for (const k of Object.keys(r.counts).sort()) {
+      if (k === 'DOC-010') {
+        console.log(`   [Informational] DOC-010: ${r.counts[k]} — vc-test knowledge copies that differ from their .claude/ source (the repository copy is canonical)`);
+        for (const x of r.findings.filter((y) => y.code === k)) console.log(`      ${x.file}:${x.line}  ${x.detail}`);
+        continue;
+      }
       if (INFORMATIONAL.has(k)) { console.log(`   [Informational] ${k}: ${r.counts[k]} — ephemeral report artifacts cited as provenance (pruned by policy, not broken references)`); continue; }
       console.log(`   ${k}: ${r.counts[k]} (baseline ${BASELINE[k] ?? 0})${r.counts[k] > (BASELINE[k] ?? 0) ? '  ** OVER BASELINE **' : ''}`);
     }

@@ -49,7 +49,7 @@ Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3, U60–
 ## 0b — Round N ≥ 2: refresh (U15, `rounds.md` §Round N in vc-test)
 
 No `/vc-test:ticket-context`, no change map, no scenarios agent, no human point 1. `<ctx>` is
-`<plugin>/skills/ticket-context`. `[--change-map <WORK>/change-map.json]` below is passed only when that file exists. **Rebuild**: `node <plugin>/lib/rounds.mjs bundle --key <TICKET> --base <BASE> --delta
+`<plugin>/skills/ticket-context`. `[--change-map <WORK>/change-map.json]` below is passed only if it exists. **Rebuild**: `node <plugin>/lib/rounds.mjs bundle --key <TICKET> --base <BASE> --delta
 <DELTA> --prepare <DELTA_PREPARE>` → prints `BUNDLE`, round N's text, ACs and PRs (the TICKET and CHANGE outputs and
 `deploy.json` beside `DELTA_PREPARE`, when they exist), for the strategy and every later step (5, 7, 8). With no
 analyst output it reuses a `<WORK>/bundle.json` stamped for round N.
@@ -66,7 +66,7 @@ analyst output it reuses a `<WORK>/bundle.json` stamped for round N.
    ⇒ BLOCKED on deploy, as step 1.
 3. `node <plugin>/lib/rounds.mjs append --run-dir <RUN_DIR> --delta <DELTA> [--change-map <WORK>/change-map.json]`; dispatch
    `strategy` (`opus`) with `DELTA`, the analysts' outputs as `TICKET` / `CHANGE`, `DEPLOY` = `deploy.json` beside
-   `DELTA_PREPARE`, `BUNDLE`, `CHANGE_MAP` = round 1's (none when it does not exist), `CAPABILITIES`, `RUN_DIR` (`briefs/strategy.md` §Round N ≥ 2). Gate fails twice ⇒ STOP. `abort` the prepare, then
+   `DELTA_PREPARE`, `BUNDLE`, `CHANGE_MAP` = round 1's (none if absent), `CAPABILITIES`, `RUN_DIR` (`briefs/strategy.md` §Round N ≥ 2). Gate fails twice ⇒ STOP. `abort` the prepare, then
    step 4.
 
 ## 1 — Context
