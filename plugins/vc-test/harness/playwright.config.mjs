@@ -3,7 +3,7 @@
 // and the project root as the cwd, with each spec as an anchored file filter. So `testDir` is the cwd — the
 // project — and never this file's own folder, which is the plugin install. A plain object, not defineConfig():
 // this file must load whichever @playwright/test runs it (the project's own, else vc-test's).
-// Evidence on failure only (spec U28; .claude/rules/reports.md §5.1a): the runner captures it, no spec does.
+// Evidence on failure only (spec U28; vc-test's knowledge/reports.md §5.1a): the runner captures it, no spec does.
 import { join } from "node:path";
 
 const project = process.cwd();

@@ -33,7 +33,7 @@ description: `[vc-test:scenario:S-n] <KEY>` (U66: the run's cost is counted per 
   keep-alive, no shared client or cookie jar), past the limit by at least the instances you suspect, each
   response's instance marker recorded (a header, a cookie, a server id). Evidence states how many instances you
   saw; one instance seen ⇒ `BLOCKED — one instance seen; the cross-instance case is untested (U59)`.
-- **Data** follows `.claude/rules/test-data.md`: created in the case with the `AGENT-TEST-` prefix, live-discovered,
+- **Data** follows `<plugin>/knowledge/test-data.md`: created in the case with the `AGENT-TEST-` prefix, live-discovered,
   or `@td()`; no literal account or URL — env names only (`BACK_URL`, `FRONT_URL`). Create or change anything only
   when `stand.writable` is `true`, else `BLOCKED — stand not declared writable`. Every entity and every setting
   change goes into the ledger at once, as `ledger.md` says, with `--by scenario:S-n`.

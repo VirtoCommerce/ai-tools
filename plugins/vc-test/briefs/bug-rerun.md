@@ -41,7 +41,7 @@ buyer path is Medium or worse).
 
 - **Browser** only when `LANE` names one, and only that server's tools — one session, yours alone. Sign in through
   the lane's secrets by bare key name, never a password value. No `LANE` ⇒ no browser.
-- **Data** follows `.claude/rules/test-data.md`: created with the `AGENT-TEST-` prefix, live-discovered, or `@td()`;
+- **Data** follows `<plugin>/knowledge/test-data.md`: created with the `AGENT-TEST-` prefix, live-discovered, or `@td()`;
   no literal account or URL — env names only (`BACK_URL`, `FRONT_URL`). Create or change anything only when
   `stand.writable` is `true`, else `BLOCKED — stand not declared writable`. Every entity and every setting change
   goes into the ledger at once, as `ledger.md` says, with `--by bug:PB-n`. **You write no global setting and no

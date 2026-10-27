@@ -23,26 +23,25 @@ Why this shape (HTSM, ISTQB, ISO/IEC/IEEE 29119-3, agent research):
 
 The orchestrator that gathered the context writes the strategy. **Never dispatch it to a subagent:**
 choosing needs the whole bundle at once, and a brief carries only a summary of it (the measured loss —
-a fact relayed to a subagent and silently dropped — is in
-[`regression-suites.md`](../../../../.claude/knowledge/execution/regression-suites.md)
-§Working concurrently on suites). Independence belongs at the **check**, not the choice: the user
-approves, a verifier re-derives the gate when a risk is Critical, and other agents execute.
+a fact relayed to a subagent and silently dropped — is recorded
+(in this repository: `.claude/knowledge/execution/regression-suites.md` §Working concurrently on suites)).
+Independence belongs at the **check**, not the choice: the user approves, a verifier re-derives the gate when a risk is Critical, and other agents execute.
 
-**From [`/qa-test-fast`](../../../../.claude/commands/qa-test-fast.md):** it counts the round at its Step 0 (step 1's local-evidence
+**From `/qa-test-fast` (in this repository: `.claude/commands/qa-test-fast.md`):** it counts the round at its Step 0 (step 1's local-evidence
 half) and calls this skill after its Stage-1 join with the bundle it already has. Here, run step 1's **second** count
 (the bundle's `signals[]` verdict comments — a fourth round ⇒ the same STOP), then steps 2 onward — never a second
 `/preflight` or `/vc-test:ticket-context`. A same-build re-run picks up the approved round instead of rewriting it (D7). The approved file's path is what it passes to
 `/qa-test-model --strategy`.
 
 **Standalone:** `npm run run:use -- <KEY>` binds the env and the run folder
-([`run-output.md`](../../../../.claude/knowledge/execution/run-output.md)), then procedure step 1 (Round) **first**, from local evidence only —
+([`run-dir.mjs`](../../scripts/lib/run-dir.mjs)), then procedure step 1 (Round) **first**, from local evidence only —
 the run folders it lists and `git log --all`, never its own tracker fetch; a fourth round ⇒ STOP with the
 escalation and nothing else runs (D6: no context, no strategy, no browser). The QA verdict comments are counted
 once the bundle exists, from its `signals[]`; a fourth round found there ⇒ the same STOP. Then `/preflight ticket --ticket <KEY>`
 (no `--expect`: deployment is the bundle's) for the sprint, env health and kb hits →
 `/vc-test:ticket-context <KEY> --domain <slug> --kb-hits <ids>` → steps 2 onward → approval → STOP. A `/vc-test:ticket-context` STOP is this skill's STOP, quoted verbatim.
 `--domain` absent ⇒ resolve it **before** `/vc-test:ticket-context`, as
-[`/qa-test-fast`](../../../../.claude/commands/qa-test-fast.md) Step 0 item 4 does: it is fixed when that runs (its
+`/qa-test-fast` (in this repository) Step 0 item 4 does: it is fixed when that runs (its
 cache key; `known` reads it from `prepare.json`). None resolves ⇒ run without one; F2 and F5 then fire on
 doubt, which is correct. A later run on the same build reuses the approved file.
 
@@ -72,7 +71,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 3. **Ask the base for any coordinate pre-flight did not** — for each page path / GraphQL operation /
    endpoint in the bundle: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`).
    Record hit ids; close each list by its handle (`mcp__kb__kb_show`/`mcp__kb__kb_none`); a miss is not a blocker.
-   Rule: [`CLAUDE.md`](../../../../CLAUDE.md) §Essential Rules → *Product context*.
+   Rule: [`known-ground.md`](../ticket-context/known-ground.md) §The `kb` half.
 4. **Mission** — one sentence: what this round must find out, and for whom. Round 3 says it is the last.
 5. **The three inputs** (HTSM). *Project environment*: stand, build, whether each PR is deployed there,
    roles and accounts, free browser lanes, time. *Product elements*: the change surface by layer and the
@@ -80,7 +79,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 6. **Risk register.** Each product risk is **what a customer would see** if the code is wrong, never
    "verify X works". Every risk names its source: an `AC-n`, a diff hotspot `file:line`, a `VC-*`
    entry, a prior bug, a `BL-*`/`ECL-*` rule. Score and level by
-   [`risk-prioritization-framework.md`](../../../../.claude/skills/qa-risk/risk-prioritization-framework.md). Layer and
+   [`risk-prioritization-framework.md`](../../knowledge/risk-prioritization-framework.md). Layer and
    domain counts **raise a risk's L×I** — they never fire a floor on their own (D8). **Project risks**
    (stand not on the PR's build, fixture gap, missing role, no free lane, stale cases) each get a
    mitigation or an explicit `accepted`. F2 fired ⇒ a purpose risk, F10 ⇒ an org-context risk, F11 ⇒ a
@@ -97,16 +96,15 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
 8. **Approach per risk.** For each `R-n`:
    - **Technique** from the closed vocabulary
-     ([`test-design-techniques.md`](../../../../.claude/skills/qa-test-design/test-design-techniques.md) §0,
+     ([`test-design-techniques.md`](../../knowledge/test-design-techniques.md) §0,
      chosen by its §1 guide; **FLOW first** for anything that changes state), or `EXPLORE`, `VISUAL:<instrument>[,…]`,
      `CONTRACT`, `REGRESSION`, `SCALE` ([`floors.md`](floors.md) §Clause 11), `MODEL` (the risk is expanded by `/qa-test-model`). An `EXPLORE` risk names the `{HYPOTHESIS}` oracle or model `GAP` cell it rests
      on — that is how it reaches `/qa-exploratory ticket`'s charter.
    - **Oracle with its authority**: `{SPEC}` / `{BL}` / `{DOC}` / `{OBSERVED}` / `{HYPOTHESIS}`
-     ([`shared-instructions.md`](../../../../.claude/knowledge/agents/qa/shared-instructions.md)
-     §5). A `{HYPOTHESIS}` oracle never decides PASS/FAIL: the risk goes to the charter, or the row names
-     what would ground it. A High/Critical risk on a `{HYPOTHESIS}` oracle takes `MODEL`.
-   - **Layer and tool, lane and agent** — lanes per [`agents.md`](../../../../.claude/rules/agents.md)
-     §Parallel Execution.
+     ([`oracle-authority.md`](../../knowledge/oracle-authority.md)). A `{HYPOTHESIS}` oracle never decides
+     PASS/FAIL: the risk goes to the charter, or the row names what would ground it. A High/Critical risk on a `{HYPOTHESIS}` oracle takes `MODEL`.
+   - **Layer and tool, lane and agent** — lanes per [`plan-run.mjs`](../../lib/plan-run.mjs): ≤ 3 browser
+     lanes a wave, never two agents on one lane.
    - **Effort** — `low` / `medium` / `high`, from the risk level (D12). Never the words of the depth label.
 9. **Artifacts** — every row plain `RUN` (the gate reads the cell's first word) or `SKIP — <observable reason>`, starting from the floors
    ([`floors.md`](floors.md)): the strategy may add to a floor, never go under it.
@@ -116,7 +114,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    | Test model | **if and only if** a risk has technique `MODEL` (M9); it expands only those risks. Otherwise `SKIP — no MODEL risk`: the checklist and the exploratory charter read this strategy for every risk the model does not expand. Round ≥ 2: **amend**, never rebuild |
    | Mind map | the model runs **and** the domain map is `PRESENT` |
    | Checklist | always — every item names its `R-n` |
-   | Exploratory | the mix is reactive. **First** when a High/Critical risk rests on a `{HYPOTHESIS}` oracle or the feature is new; otherwise **alongside** the checklist (D3). Box per [`exploratory-lane.md`](../../../../.claude/skills/qa-test/exploratory-lane.md) §5 |
+   | Exploratory | the mix is reactive. **First** when a High/Critical risk rests on a `{HYPOTHESIS}` oracle or the feature is new; otherwise **alongside** the checklist (D3). Box per [`exploratory-box.md`](../../knowledge/exploratory-box.md) |
    | Visual lane | F3 or F8 |
    | Contract refresh | the diff names a GraphQL operation or changes a REST contract |
    | Coverage triage + regression | F5 or F7, after the staleness check in [`floors.md`](floors.md) (D11) |
@@ -125,7 +123,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
 10. **Data** — per risk: an existing `@td()` alias, `live-discover`, created in the case, or a seeder a
    Data cell names. Name the values that must **differ** for the risk to be decidable
-   ([`test-data.md`](../../../../.claude/rules/test-data.md) SECOND RULE); a state the environment can take
+   ([`test-data.md`](../../knowledge/test-data.md) SECOND RULE); a state the environment can take
    away is created in the case (FIFTH RULE). Name any record that must be created **before** a redeploy.
 11. **Out of scope** — what is not tested, why, and the residual risk. In round 3 this list is the
     ticket's residual risk.
@@ -173,7 +171,7 @@ no risk on it below Medium, F7's F5 on, F8's token audit, that `floor:F10`'s ris
 7. Every project risk has a mitigation or `accepted`.
 8. Concurrent browser lanes ≤ 3 (method rules); an API, script or `none` lane takes no slot.
 9. Exit criteria are observable.
-10. The section is within the cap ([`reports.md`](../../../../.claude/rules/reports.md) §2).
+10. The section is within the cap ([`reports.md`](../../knowledge/reports.md) §2).
 11. Every strategy: a project risk names no product behaviour (**11a**) and never lowers an AC/doc value to "record what was seen" (**11b**).
 12. With a change map, a hotspot that holds state is cited by a `SCALE` risk or a "single instance" Out-of-scope line.
 13. With a change map: a `### Scenarios` table, each scenario citing a registered risk with Class 1–6, each `MODEL` risk with a scenario ([`floors.md`](floors.md) §13).
@@ -207,9 +205,9 @@ reconciliation:
 - A planned risk that did not run and has no reason ⇒ back to execution, or listed under *Not tested, and
   why*. It is never dropped; in round 3 it goes to the escalation.
 - A High or Critical risk without a result **caps the verdict**: not `PASS`
-  ([close-out](../../../../.claude/skills/qa-test/close-out.md) §5-verdict.2).
-- Copy the counts, the round, the depth label and the candidate cases into `summary.json.strategy` (keys
-  from [`qa-test-summary.schema.json`](../../../../.claude/templates/qa-test-summary.schema.json)).
+  ([verdict-rules](verdict-rules.md) §Decide the verdict).
+- Copy the counts, the round, the depth label and the candidate cases into `summary.json.strategy`
+  (in this repository: keys from `.claude/templates/qa-test-summary.schema.json`).
 
 ## Rationalization table
 

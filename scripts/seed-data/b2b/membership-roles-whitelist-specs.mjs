@@ -44,6 +44,7 @@
  */
 
 import { GRANTING_ROLES, PERM_ACCESS } from '../sales-rep/sales-rep-docs-specs.mjs';
+import { VIEW_PERMISSION as ORG_RETURNS_VIEW, SUBMIT_PERMISSION as ORG_RETURNS_SUBMIT } from '../orders/org-returns-specs.mjs';
 
 /* ────────────────────────────────────────────────────────────────────────────────────────────────
  * 1. IDENTITY — the setting, the tenant, the alias
@@ -79,7 +80,7 @@ export const ALIAS = 'B2B_STORE_MEMBERSHIP_ROLES';
  * Every runtime field is EMPTY in the committed base and is supplied per env by `aliases.<env>.json`.
  */
 export const ALIAS_RUNTIME_FIELDS = Object.freeze([
-  'seeded_values', 'seeded_values_json', 'sales_rep_roles', 'narrowed_values', 'pre_state', 'captured_at',
+  'seeded_values', 'seeded_values_json', 'sales_rep_roles', 'returns_roles', 'narrowed_values', 'pre_state', 'captured_at',
 ]);
 export const ALIAS_STATIC_FIELDS = Object.freeze(['setting', 'tenant_type', 'org_roles', 'narrowed_omitted_role']);
 
@@ -127,6 +128,17 @@ export const SALES_REP_GRANT_PERMISSION = PERM_ACCESS; // 'sales-rep:access'
  * live set.
  */
 export const DECLARED_GRANTING_ROLES = Object.freeze([...GRANTING_ROLES]);
+
+/**
+ * "All organization-returns roles" — LIVE-RESOLVED by permission, like the sales-rep half. A role
+ * qualifies when it carries either storefront org-returns permission (`org-returns-specs.mjs`), i.e.
+ * the membership roles that open the organization's returns. The back-office `return:*` roles
+ * (`Return manager`, `B2B Order Manager`, …) are Admin roles and are deliberately NOT matched.
+ * Measured on vcst 2026-10-27: AGENT-TEST-Org-Returns-Viewer, AGENT-TEST-Org-Returns-View-Submit
+ * (seeded by `npm run seed:returns:org`). Unlike the sales-rep half an empty set does not abort:
+ * it means the org-returns fixture is not on this env yet, and is reported.
+ */
+export const ORG_RETURNS_GRANT_PERMISSIONS = Object.freeze([ORG_RETURNS_VIEW, ORG_RETURNS_SUBMIT]);
 
 /**
  * The Admin SPA roles picker fetches a FIXED page of 20 and filters it client-side:
@@ -246,14 +258,23 @@ export function selectSalesRepRoles(roles, permission = SALES_REP_GRANT_PERMISSI
   );
 }
 
+/** Live roles carrying ANY of the org-returns permissions. */
+export function selectOrgReturnsRoles(roles, permissions = ORG_RETURNS_GRANT_PERMISSIONS) {
+  const want = toSet(permissions);
+  return (Array.isArray(roles) ? roles : []).filter(
+    (r) => (r?.permissions || []).some((p) => want.has(norm(typeof p === 'string' ? p : p?.name))),
+  );
+}
+
 /**
- * Compose the whitelist: the three org roles, then the live sales-rep roles.
+ * Compose the whitelist: the three org roles, then the live sales-rep roles, then the live
+ * org-returns roles.
  * Deduplicated case-insensitively while PRESERVING the first spelling seen — the stored value is a
  * display name and the picker shows it verbatim, so a case fold here would leak into the UI.
  */
-export function buildWhitelist(orgRoleNames = ORG_ROLE_NAMES, salesRepRoleNames = []) {
+export function buildWhitelist(orgRoleNames = ORG_ROLE_NAMES, salesRepRoleNames = [], returnsRoleNames = []) {
   const out = []; const seen = new Set();
-  for (const v of [...orgRoleNames, ...salesRepRoleNames]) {
+  for (const v of [...orgRoleNames, ...salesRepRoleNames, ...returnsRoleNames]) {
     const n = norm(v);
     if (!n || seen.has(n)) continue;
     seen.add(n);
