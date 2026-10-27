@@ -32,18 +32,17 @@ Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3, U60–
 
 1. `npm run run:use -- <TICKET> [<env>]` → note `RUN_DIR` and the start time (`date -u +%FT%TZ`).
 2. `node <plugin>/lib/route.mjs --key <TICKET>` → `{job, reason, next}`: `verify-fix` / `hotfix-check` ⇒ STOP naming `next`; exit 4 (`unresolved`) ⇒ ask
-   which job, quoting `reason` (not a third human point: the run has not started), then verify-fix / hotfix-check ⇒ STOP naming `next`, test ⇒ go on; exit 3 ⇒ route after step 1 with
+   which job, quoting `reason` (not a third point: the run has not started), then verify-fix / hotfix-check ⇒ STOP naming `next`, test ⇒ go on; exit 3 ⇒ route after step 1 with
    `--bundle <BUNDLE>` (round ≥ 2: after 0b.1, `--bundle <DELTA_PREPARE>`); exit 2 ⇒ STOP "run /project-init". A not-fixed Bug's `reason` is `MISSION` (step 3).
 3. `node <plugin>/lib/rounds.mjs count --key <TICKET> --run-dir <RUN_DIR>` → `ROUND`, `MODE`. Exit 2 ⇒ STOP: print its
    `escalation` (`<plugin>/skills/qa-test-strategy/rounds.md` §At most three). `refresh`, or
-   `resume` with ROUND ≥ 2: its `recordRound` must be ROUND − 1, else STOP naming the remedy (rounds.md §Round N in
-   vc-test, "starts from round N−1's record"); `BASE` is its `bundle`. `refresh` ⇒ 0b instead of steps 1–3.
+   `resume` with ROUND ≥ 2: its `recordRound` must be ROUND − 1, else STOP naming the remedy (rounds.md §Round N in vc-test); `BASE` is its `bundle`. `refresh` ⇒ 0b instead of steps 1–3.
    `resume` ⇒ the steps of that round, its approved section reused: round ≥ 2 runs 0b, and its analyst and strategy
    dispatches only when the section fails the gate (0b.2). Round 1 only, after step 1: `count` again with
    `--bundle <BUNDLE>`; exit 2 ⇒ the same STOP; `refresh` (a verdict comment is an earlier round) ⇒ STOP as a refresh
    whose `recordRound` is not ROUND − 1.
 4. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
-   `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
+   `-firefox`, `-edge`, `chrome-devtools` you have.
 5. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>` or
    listed in `capabilities.json` `knowledgeStore.domainMaps`; none checks out ⇒ no slug (F2 fires on doubt).
 
@@ -56,8 +55,7 @@ No `/vc-test:ticket-context`, no change map, no scenarios agent, no human point 
 `deploy.json` beside `DELTA_PREPARE`, when they exist), for the strategy and every later step (5, 7, 8). With no
 analyst output it reuses a `<WORK>/bundle.json` stamped for round N.
 
-1. `node <ctx>/lib/cli.mjs prepare <TICKET> --since <record>` (its Step 0 statuses and STOPs, host-governed passes
-   included) → its `prepare_path` is `DELTA_PREPARE`; then `node <plugin>/lib/rounds.mjs delta --key <TICKET> --run-dir <RUN_DIR>
+1. `node <ctx>/lib/cli.mjs prepare <TICKET> --since <record>` (its Step 0 statuses, STOPs and host-governed passes) → its `prepare_path` is `DELTA_PREPARE`; then `node <plugin>/lib/rounds.mjs delta --key <TICKET> --run-dir <RUN_DIR>
    --prepare <DELTA_PREPARE>` → `DELTA` (`<WORK>/delta.json`). Exit 2 ⇒ `abort` the prepare, then STOP: `sameBuild`
    "Round <N−1> already tested this build" (P3), `cap` its `escalation`. Route exited 3 at step 0 ⇒ now
    `node <plugin>/lib/route.mjs --bundle <DELTA_PREPARE>`, handled as step 0.2; a STOP it causes `abort`s the prepare first.
@@ -93,7 +91,7 @@ STOPs are this run's; on a host-governed project it reads through the host's ser
 `MISSION` (a not-fixed Bug), `SCENARIOS_TABLE = <WORK>/scenarios.md`, `SCENARIOS = <WORK>/scenarios.json`, `RUN_DIR`. It returns the approval summary once gate and verifier pass; its round must still say `Status: DRAFT`, else back once, then STOP.
 
 Ask (AskUserQuestion) with that summary: the scenarios, the windows to announce in the team channel
-(U68), a `Shared store:` to name. **Approving it approves those posts.** *Change* (add, strike,
+(U68), a `Shared store:` to name, and `node <plugin>/lib/run-cost.mjs --since <start> --budget qa | grep ^budget:` (spent so far). **Approving it approves those posts.** *Change* (add, strike,
 reorder, a store) ⇒ SendMessage the agent the user's words, ask again on the new summary.
 *Approve* ⇒ you set `Status:` (`APPROVED (<who>, <date>)`, or `AUTO (--yes)`) — one Edit, no re-read.
 
@@ -126,12 +124,10 @@ wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <it
 **Each risk whose technique names `PIXEL` is your own item, with the first wave, whatever the Visual lane row
 says** — scripts, not a browser slot. The engine is the vc-frontend plugin's `visual/` (`capabilities.json`
 `pixel.engine`), run as its `skills/merge-upstream/visual.md`, every command with the **front checkout** as the
-working directory (the `pixel.checkouts` entry whose `git remote get-url origin` is the PR's repo; never cloned by
-this run): §Once per machine — setup (`setup.mjs`; `--with-browser` only on the user's yes), §Base and head (base =
+working directory (the `pixel.checkouts` entry whose `git remote get-url origin` is the PR's repo; never cloned): §Once per machine — setup (`setup.mjs`; `--with-browser` only on the user's yes), §Base and head (base =
 the PR's base ref, head = its `head_sha`, each a temporary `git worktree` with its install and Storybook build),
 §Scope, then §Shoot, compare, confirm. Each risk gets a `PIX-<m>` row naming its `R-n` in `scenarios/pixel.rows.md`, never `visual.rows.md`:
-`FAIL <severity>` per confirmed regression, else `PASS`; no engine, no checkout of that repo, a setup or a build that
-fails ⇒ `BLOCKED — <which>`; a Lane reading `SKIP — not available in this install` ⇒ `SKIP — <capability>`. Never
+`FAIL <severity>` per confirmed regression, else `PASS`; no engine, no checkout of that repo, a failed setup or build ⇒ `BLOCKED — <which>`; a Lane reading `SKIP — not available in this install` ⇒ `SKIP — <capability>`. Never
 absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts · PIXEL`.
 
 ## 6 — Triage, then Medium-only investigation
@@ -145,12 +141,12 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 
 1. `node <plugin>/lib/trace.mjs reconcile --strategy <RUN_DIR>/test-strategy.md --checklist
    <RUN_DIR>/testing-checklist.md --run-plan <WORK>/run-plan.json [--bundle <BUNDLE>] --write > <WORK>/trace.json` →
-   `TRACE`; `--bundle` in round 1 only (P5: round N proves only the ACs its risks cite). Exit 1 ⇒ write `{"error":"<its first stderr line>"}` to that file. Exit 2: `unresulted` ⇒ back to their agents once (as step 6's), `scenario-rows.mjs merge` again, reconcile again; `unknownRefs`,
+   `TRACE`; `--bundle` in round 1 only (P5: round N proves only the ACs its risks cite). Exit 1 ⇒ write `{"error":"<its first stderr line>"}` to that file. Exit 2: `unresulted` ⇒ back to their agents once (as step 6's), merge again, reconcile again; `unknownRefs`,
    `acsWithoutRow` ⇒ the verdict names them (not a send-back).
 2. `node <plugin>/lib/write-zones.mjs check --key <TICKET> --run-dir <RUN_DIR> --run-plan <WORK>/run-plan.json >
    <WORK>/write-zones.json` → `WRITE_ZONES`. Exit 2 ⇒ BLOCKED, the verdict names each file; 3 ⇒ "not checked"; any other exit ⇒ write
    `{"outside":[],"gitScope":false,"reason":"<its registryErrors, or its first stderr line>"}` there instead.
-3. `node <plugin>/lib/run-cost.mjs --since <start> --key <TICKET>` → keep its Markdown table.
+3. `node <plugin>/lib/run-cost.mjs --since <start> --budget qa --key <TICKET>` → keep its Markdown table.
 4. Dispatch `verdict` (`vc-test:verdict-writer`) with its paths, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
    and, round ≥ 2, `PRIOR_BUGS` = `DELTA`.
 

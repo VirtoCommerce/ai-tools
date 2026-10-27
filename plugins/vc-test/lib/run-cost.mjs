@@ -6,17 +6,21 @@
 // with its sessionId), else the `isSidechain` lines inside the session file. `subagentSource` names the one found;
 // "none" is said under the table, never silent, as are sidechain lines left uncounted beside subagent files
 // (`sidechainNotCounted`). Without `--since` the session's first record is the start.
-// CLI: node plugins/vc-test/lib/run-cost.mjs [--since <iso>] [--session-file <path>|--session <id>|latest (default: this session)] [--key <KEY>] [--out <file>]
-// Exit 0 table printed (JSON written with --out/--key); 1 usage error or no such session log.
+// `--budget qa|dev` adds one line under the table: the spend against the profile's `test.budget` (U73) — input-equivalent
+// tokens, and WALL minutes (activeMin is summed over parallel agents, so it is not a clock); the window share too when
+// `windowTokens` is set. No profile or no `test.budget` ⇒ the defaults, named as such. It is reported, never a gate.
+// CLI: node plugins/vc-test/lib/run-cost.mjs [--since <iso>] [--session-file <path>|--session <id>|latest (default: this session)] [--key <KEY>] [--out <file>] [--budget qa|dev]
+// Exit 0 table printed (JSON written with --out/--key); 1 usage error, a malformed test.budget, or no such session log.
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { argOf, workDir } from "./paths.mjs";
+import { BUDGET_COMMANDS, ProfileError, loadProfile, testBlock } from "./profile.mjs";
 
 const ACTIVE_GAP_S = 120;
 const FIELDS = ["input", "cacheCreation", "cacheRead", "output", "inputTotal"];
-const USAGE = "usage: run-cost.mjs [--since <iso>] [--session-file <path>|--session <id>|latest (default: this session)] [--key <KEY>] [--out <file>]";
+const USAGE = "usage: run-cost.mjs [--since <iso>] [--session-file <path>|--session <id>|latest (default: this session)] [--key <KEY>] [--out <file>] [--budget qa|dev]";
 
 export const projectDirName = (cwd) => String(cwd).replace(/[^A-Za-z0-9]/g, "-");
 const stepOf = (description) => /^\[vc-test:([A-Za-z0-9:._-]+)\]/.exec(description ?? "")?.[1] ?? "other";
@@ -87,6 +91,14 @@ export function toMarkdown({ steps, total, subagentSource, sidechainNotCounted =
   return ["| Step | Input-equivalent | Share | Output | Active min |", "|---|---|---|---|---|", ...rows,
     `| **total** | ${m(total.inputTotal)} | 100% | ${m(total.output)} | ${total.activeMin} (wall ${total.wallMin}) |`, "", source,
     ...(sidechainNotCounted > 0 ? [`${sidechainNotCounted} sidechain lines not counted (subagents read from \`${subagentSource}\`).`] : [])].join("\n");
+}
+
+/** The budget line: what the run spent (input-equivalent tokens, wall minutes) against one command's budget. */
+export function budgetLine({ total, budget, windowTokens }) {
+  const m = (n) => `${(n / 1e6).toFixed(2)}M`;
+  const pct = (n, of) => `${((n / of) * 100).toFixed(1)}%`;
+  return `budget: ${m(total.inputTotal)} of ${m(budget.tokens)} (${pct(total.inputTotal, budget.tokens)}) · ${total.wallMin} of ${budget.minutes} min wall (${budget.source})`
+    + (windowTokens ? ` · ${pct(total.inputTotal, windowTokens)} of the ${m(windowTokens)} window` : "");
 }
 
 // An older layout has no .meta.json: a subagent is matched to its Task/Agent dispatch by its first prompt.
@@ -162,13 +174,24 @@ function sessionFile(sessionArg) {
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const since = argOf(process.argv, "since");
   if (since != null && !Number.isFinite(Date.parse(since))) { console.error(USAGE); process.exit(1); }
+  const budgetArg = argOf(process.argv, "budget");
+  if (process.argv.includes("--budget") && !BUDGET_COMMANDS.includes(budgetArg)) { console.error(USAGE); process.exit(1); }
+  let block;
+  if (budgetArg) {
+    try { block = testBlock(loadProfile()); }
+    catch (e) { if (!(e instanceof ProfileError && e.code === 2)) { console.error(e.message); process.exit(1); } block = testBlock({}); } // no profile ⇒ the defaults
+    if (block.budgetError) { console.error(block.budgetError); process.exit(1); }
+  }
   let session;
   try { session = readSession(argOf(process.argv, "session-file") ?? sessionFile(argOf(process.argv, "session"))); }
   catch (e) { console.error(e.message); process.exit(1); }
   const measured = cost({ ...session, since });
-  const result = { session: session.id, since: since ?? measured.start, ...measured };
+  const line = budgetArg ? budgetLine({ total: measured.total, budget: block.budget[budgetArg], windowTokens: block.budget.windowTokens }) : null;
+  const result = { session: session.id, since: since ?? measured.start, ...measured, ...(line ? { budget: { command: budgetArg, ...block.budget[budgetArg], windowTokens: block.budget.windowTokens ?? null, line } } : {}) };
   const key = argOf(process.argv, "key");
   const out = argOf(process.argv, "out") ?? (key ? join(workDir(key), "run-cost.json") : null);
   if (out) writeFileSync(out, JSON.stringify(result, null, 2) + "\n");
-  console.log(toMarkdown(result));
+  console.log(toMarkdown(result) + (line ? `
+
+${line}` : ""));
 }
