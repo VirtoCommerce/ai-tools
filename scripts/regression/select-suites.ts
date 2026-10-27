@@ -33,7 +33,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
 import { classifyLane } from "../../ci/lib/lane-classifier.js";
-import { firefoxClickOk, loadManifest } from "../../ci/lib/suite-manifest.js";
+import { firefoxClickOk, loadManifest, type Manifest } from "../../ci/lib/suite-manifest.js";
 import { resolveSuiteSource } from "../test-cases/suite-source-map.js";
 import {
   formatSelection,
@@ -43,7 +43,8 @@ import {
   type SelectableSuite,
 } from "../lib/suite-selection.js";
 
-const CONCURRENCY = { browser: 3, fastpath: 4, deterministic: 2 } as const;
+/** Lane concurrency the selector prices a selection at. Exported: `release:diff` maps suites through this selector. */
+export const CONCURRENCY = { browser: 3, fastpath: 4, deterministic: 2 } as const;
 const HISTORY_PATH = "reports/regression/history.json";
 
 interface Args {
@@ -128,22 +129,9 @@ function loadHistory(): { signals: HistorySignal[]; note: string } {
   }
 }
 
-function main(): number {
-  const parsed = parseArgs(process.argv.slice(2));
-  if ("error" in parsed) {
-    console.error(`[select-suites] ${parsed.error}`);
-    return 1;
-  }
-
-  let manifest;
-  try {
-    manifest = loadManifest();
-  } catch (e) {
-    console.error(`[select-suites] ${(e as Error).message}`);
-    return 2;
-  }
-
-  const suites: SelectableSuite[] = manifest.suites.map((s) => {
+/** The selector's input, built from the manifest. Exported so every caller of `selectSuites` builds it the same way. */
+export function selectableSuites(manifest: Manifest): SelectableSuite[] {
+  return manifest.suites.map((s) => {
     const raw = s as unknown as Record<string, unknown>;
     return {
       id: s.id,
@@ -165,12 +153,35 @@ function main(): number {
       lane: classifyLane({ file: s.file, runner: raw.runner as string | undefined }),
     };
   });
+}
 
+/** Which repos each suite's source lives in, for matching changed paths. */
+export function suiteReposOf(manifest: Manifest): Map<string, readonly string[]> {
   const suiteRepos = new Map<string, readonly string[]>();
   for (const s of manifest.suites) {
     const raw = s as unknown as Record<string, unknown>;
     suiteRepos.set(s.id, resolveSuiteSource(s.id, (raw.requiresModules as string[] | undefined) ?? []).repos);
   }
+  return suiteRepos;
+}
+
+function main(): number {
+  const parsed = parseArgs(process.argv.slice(2));
+  if ("error" in parsed) {
+    console.error(`[select-suites] ${parsed.error}`);
+    return 1;
+  }
+
+  let manifest;
+  try {
+    manifest = loadManifest();
+  } catch (e) {
+    console.error(`[select-suites] ${(e as Error).message}`);
+    return 2;
+  }
+
+  const suites = selectableSuites(manifest);
+  const suiteRepos = suiteReposOf(manifest);
 
   let paths: string[];
   try {
