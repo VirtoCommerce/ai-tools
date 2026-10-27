@@ -1,10 +1,16 @@
 // plugins/vc-test/lib/check-change-map.mjs — layer 0's gate: the change map matches its schema and covers every AC
 // and every hotspot the /ticket-context bundle holds (spec U37).
 // CLI: node plugins/vc-test/lib/check-change-map.mjs --map <change-map.json> --bundle <bundle.json>   (exit 2 on errors)
-import { readFileSync } from "node:fs";
+//      node plugins/vc-test/lib/check-change-map.mjs --agent <id> --out <change-map.json> --bundle <bundle.json>
+// The `change-map` agent has no Write tool (spec U37): its reply is the map. --agent reads the transcript of exactly that
+// agent id, takes its JSON object as the analysts' output is taken (agent-output.mjs), writes it to --out, then runs the
+// same checks. Exit 0 ok · 2 checks failed, or the reply is not one JSON object (no file is written for the latter) ·
+// 1 usage, or no transcript for that id.
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { validate } from "../skills/ticket-context/lib/schema.mjs";
+import { extractAgentOutput, findAgentTranscript, readTranscript } from "../skills/ticket-context/lib/agent-output.mjs";
 import { argOf } from "./paths.mjs";
 
 const SCHEMA = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "change-map.schema.json"), "utf8"));
@@ -30,9 +36,23 @@ export function checkChangeMap(map, bundle) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
-  const [mapPath, bundlePath] = [argOf(process.argv, "map"), argOf(process.argv, "bundle")];
-  if (!mapPath || !bundlePath) { console.error("usage: check-change-map.mjs --map <file> --bundle <file>"); process.exit(1); }
+  const [agentId, outPath, bundlePath] = [argOf(process.argv, "agent"), argOf(process.argv, "out"), argOf(process.argv, "bundle")];
+  let mapPath = argOf(process.argv, "map");
+  const usage = (m) => { console.error(m); process.exit(1); };
   const read = (p) => JSON.parse(readFileSync(p, "utf8"));
+  if (agentId !== undefined) {
+    if (!outPath || !bundlePath) usage("usage: check-change-map.mjs --agent <id> --out <file> --bundle <file>");
+    let transcript;
+    try { transcript = findAgentTranscript(agentId); } catch (e) { usage(e.message); }
+    if (!transcript) usage(`no transcript for agent "${agentId}"`);
+    const text = extractAgentOutput(readTranscript(transcript));
+    if (text === null) {
+      console.log(JSON.stringify({ ok: false, errors: ["the agent's last message is not one JSON object (no prose, no second object) — reply with the change map only"] }));
+      process.exit(2);
+    }
+    writeFileSync(outPath, `${text}\n`);
+    mapPath = outPath;
+  } else if (!mapPath || !bundlePath) usage("usage: check-change-map.mjs --map <file> --bundle <file> | --agent <id> --out <file> --bundle <file>");
   const errors = checkChangeMap(read(mapPath), read(bundlePath));
   console.log(JSON.stringify({ ok: errors.length === 0, errors }));
   process.exit(errors.length ? 2 : 0);

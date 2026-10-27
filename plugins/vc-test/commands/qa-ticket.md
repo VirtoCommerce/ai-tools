@@ -81,9 +81,10 @@ STOPs are this run's; on a host-governed project it reads through the host's ser
 
 ## 2 — Change map, then scenarios
 
-1. Dispatch `change-map` (`sonnet`) with `BUNDLE`, `MIND_MAP` / `DATA_MODEL` of the slug if they exist, `OUT =
-   <WORK>/change-map.json`. Then `node <plugin>/lib/check-change-map.mjs --map <OUT> --bundle <BUNDLE>`; exit 2 ⇒
-   errors back once, then STOP. **Show the suspicions**: one line each, file and line (U41).
+1. Dispatch `vc-test:change-map` (description `[vc-test:change-map] <TICKET>`) with `BUNDLE`, `MIND_MAP` / `DATA_MODEL`
+   of the slug if they exist. It has no write tool: its reply is the map. Then `node <plugin>/lib/check-change-map.mjs
+   --agent <its agent id> --out <WORK>/change-map.json --bundle <BUNDLE>`; exit 2 ⇒ SendMessage it the printed
+   errors once, run the command again, then STOP. **Show the suspicions**: one line each, file and line (U41).
 2. Dispatch `scenarios` (`opus`) with `BUNDLE`, `PREPARE`, `CHANGE_MAP`, `MIND_MAP`, `DATA_MODEL`, `OUT =
    <WORK>/candidates.json`, `KEY`. No `<WORK>/scenarios.json` ⇒ back once, then STOP. Delete `<WORK>/prepare/`.
 
