@@ -363,3 +363,26 @@ and never descends into `plugins/`, so `DOC-003`/`DOC-004` are blind to every ci
 
 Not fixed inline with VCST-5675: that branch's own citations were reworded to resolve plugin-side, which
 removes the new exposure without touching the pre-existing one.
+
+## `/qa-report` `comment-test` template: empty Findings table, unescaped `[...]` in wiki, no image slot
+
+Found 2026-10-27 while posting the VCST-6443 Round-3 comment (vcptcore-qa) with
+`npm run report:render -- --kind test --dialect wiki` (`plugins/vc-fix/skills/qa-report/`).
+
+1. **An empty Findings table is always printed.** With no filed bug, `templates/comment-test.md` renders
+   `||What is wrong||Severity||Ticket||` plus one `|Nothing filed| | |` row. A table that says nothing pads the
+   comment and reads as an unfinished section; the operator asked for it to be removed by hand. **Fix:** wrap
+   the `### Findings` heading and table in `{{#BUGS}}…{{/BUGS}}` (or an `{{?BUGS}}` guard) so they appear only
+   when a bug was filed; "Nothing filed" can fold into the `Not filed` line.
+2. **The wiki dialect does not escape `[` / `]`.** The `Not filed` bullet `- [{{severity}}] {{title}}` becomes
+   `* [Low] …`, which Jira wiki parses as a link and renders as `<span class="error">[Low]</span>`. The
+   `tracker:comment` renderedBody check counted it (`<span class="error"> : 1`), but nothing stops the post.
+   **Fix:** escape `[`/`]` (and `|`, `{`, `}` inside table cells) in the Markdown→wiki conversion in
+   `lib/template.mjs`; also fail the render when an interpolated value contains an unescaped `|` inside a table
+   row — a literal `|` in a cell splits it into an extra column (seen on the same ticket in a hand-typed table).
+3. **The `test` kind has no image slot and a 1500-char budget.** A UI claim then posts with no inline screenshot
+   (`.claude/rules/reports.md` §5.0), and ten descriptive `areas` rows already collapse six of them into
+   `AREAS_MORE`. **Fix:** add a `{{#SHOTS}}` block for the wiki dialect and review the budget for `test`.
+
+Not fixed inline with VCST-6443: the posted comment was corrected by hand (brackets escaped, the empty table
+removed) and the template was left as it is.

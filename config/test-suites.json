@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-10-27",
-    "totalSuites": 166,
+    "totalSuites": 167,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2109,7 +2109,32 @@
       "concern": "admin",
       "priority": "P1",
       "testCount": 51,
-      "estimatedMinutes": 42,
+      "estimatedMinutes": 25,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "cms",
+        "pages",
+        "management",
+        "admin",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.PageBuilderModule"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "059b",
+      "name": "Page Builder — Permalink validation",
+      "file": "regression/suites/Backend/page-builder/059b-page-builder-permalink-validation.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 35,
+      "estimatedMinutes": 17,
       "agent": "qa-backend-expert",
       "tags": [
         "cms",
