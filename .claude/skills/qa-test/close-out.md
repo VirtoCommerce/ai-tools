@@ -112,7 +112,7 @@ confirmed bug through `vc-fix:qa-investigate` (its Phase 4). So the chain is alw
 `qa-bug`*, and 5-file is its last link:
 - **C1 bug** — already drafted by the `--fix` pass. Pass its draft as the basis.
 - **Checklist / exploratory / visual bug** — returned by the `ticket` pass with its package. Call `/vc-fix:qa-bug`
-  with that package, per [`routing-and-fix.md`](../qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief.
+  with that package, per [`routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief.
 
 Neither one is re-investigated. A bug that triage left `needs-review` is not filed. A test-defect still routes to
 `/qa-review-tests <suite> --fix`, never to the tracker.

@@ -1,5 +1,5 @@
 ---
-description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed. Triage and investigation still need an ai-tools checkout (P2)."
+description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed."
 argument-hint: "<TICKET> [<env>] [--yes] [--dry-run]"
 disable-model-invocation: true
 ---
@@ -132,7 +132,7 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 
 ## 6 — Triage, then Medium-only investigation
 
-1. The `qa-triage-results` skill, `ticket <TICKET> --min-severity P2` — only Medium+ is reproduced live (U29).
+1. `vc-test:qa-triage-results`, `ticket <TICKET> --min-severity P2` — only Medium+ is reproduced live (U29).
    `unresulted[]` rows ⇒ back to their agent once, triage again; still some ⇒ STOP, list them.
 2. **Medium+** listed `needs-review` ⇒ an `investigate` dispatch (`sonnet`) each,
    invoking `vc-fix:qa-investigate`, ≤ 3 at a time — never for a `PB-n` row: a NOT FIXED prior bug is already filed (P6).

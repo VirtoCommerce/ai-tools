@@ -1,12 +1,7 @@
----
-name: qa-triage-results
-description: "[QA Methodology] Triage a completed regression run's non-passing cases (FAIL / BLOCKED / SKIPPED) — or, with `ticket <KEY>`, the non-passing rows of a /qa-test or /qa-test-fast testing-checklist.md (checklist, exploratory and visual findings): collect each + its evidence (trace, screenshots, console, network) + the failing CSV or checklist row, dedup + flag flaky, classify each into real-product-bug vs test-defect (bad steps / bad assertion / stale test data / stale test) vs flaky/env/known, investigate the real ones live with vc-fix:qa-investigate, then route test-defects to /qa-review-tests --fix and draft bug reports (ticket mode returns them to the caller instead). Detect-classify-verify-report only — never files a tracker ticket, never triggers /qa-fix. Used by /qa-test 5-triage, /qa-test-fast Stage 3, and when asked to triage a finished run."
-argument-hint: "[RUN_ID | latest | ticket <KEY>] [--fix] [--verify] [--min-severity P0|P1|P2|P3]"
----
 
-# /qa-triage-results — Regression-Results Triage & Analysis
+# /qa-triage-results — Methodology
 
-Methodology behind the [`/qa-triage-results` command](../../commands/qa-triage-results.md). **Invoked as a skill (e.g. by `/qa-test` 5-triage), read that command in full and run its Phases 0–6 with the arguments given** — its `--fix` gate, write list and `## Rules` apply unchanged; this file is the methodology those phases cite, not a shortcut around them. **Owned by `qa-lead-orchestrator`** (orchestrate-only — it delegates classification to `regression-triage-agent`, live verification to `qa-frontend/backend-expert` running `vc-fix:qa-investigate`, test-defect fixes to `/qa-review-tests`, and bug drafts to `/qa-bug`; it never executes, edits a CSV, opens a browser, files a ticket, or calls `/qa-fix`). A regression run answers *which* tests failed; this flow answers *why*, and hands each failure to the right follow-up. It is the missing consumer between `/qa-regression` and `/qa-bug`→`/qa-fix`, built on the proven `/qa-monitoring` skeleton: **collect → dedup → triage → live-verify → report → STOP.**
+A supporting file of [`SKILL.md`](SKILL.md): its Phases 0–6, `--fix` gate, write list and `## Rules` apply unchanged; this file is the methodology those phases cite, not a shortcut around them. **Owned by the session that invokes it (in this repository: `qa-lead-orchestrator`)** (orchestrate-only — it delegates classification to the triage classifier brief (`<plugin>/briefs/triage-classifier.md`), live verification to the project's own `qa-frontend-expert` / `qa-backend-expert` when it defines one, else `vc-fix:qa-frontend-expert` / `vc-fix:qa-backend-expert`, running `vc-fix:qa-investigate`, test-defect fixes to `/qa-review-tests`, and bug drafts to `/qa-bug`; it never executes, edits a CSV, opens a browser, files a ticket, or calls `/qa-fix`). A regression run answers *which* tests failed; this flow answers *why*, and hands each failure to the right follow-up. It is the missing consumer between `/qa-regression` and `/qa-bug`→`/qa-fix`, built on the proven `/qa-monitoring` skeleton: **collect → dedup → triage → live-verify → report → STOP.**
 
 ## The problem it solves
 
@@ -42,7 +37,7 @@ reports/regression/{RUN_ID}/            ← a completed /qa-regression run
   batches[] grouped by (suiteId, status), each { issues: IssueInput[] }
     IssueInput { fingerprint, status(FAIL|BLOCKED|SKIPPED), trace, screenshots[], harPath, csvRow, flaky, priorRuns }
         │
-        ▼  ci/agents/regression-triage-agent.md   (one call PER BATCH — judgment, oracle-grounded, READS screenshots)
+        ▼  <plugin>/briefs/triage-classifier.md   (one call PER BATCH — judgment, oracle-grounded, READS screenshots)
   per-case: CLASS + severity/route/confidence + root cause + suggested fix
         │
         ▼  Phase 4: qa-frontend/backend-expert     (live repro of REAL_BUG candidates)
@@ -54,18 +49,23 @@ reports/regression/{RUN_ID}/            ← a completed /qa-regression run
 
 The repo convention (see `scripts/regression/compute-metrics.ts`, `scripts/test-cases/lint-test-cases.ts`): **mechanics in a script, judgment in the prompt.**
 
-| Deterministic — `scripts/lib/regression-triage.ts` | Judgment — `ci/agents/regression-triage-agent.md` + QA experts |
+| Deterministic — `scripts/lib/regression-triage.ts` (ticket mode: `<plugin>/lib/triage-collect.mjs`) | Judgment — `<plugin>/briefs/triage-classifier.md` + QA experts |
 |---|---|
 | Parse results, join each FAIL to its trace + CSV row | Classify each FAIL into the taxonomy |
 | Collect screenshot/HAR **paths** (file-name matching) | **Read** the screenshot pixels; interpret the HAR |
 | Fingerprint + cross-run flaky oscillation | Decide REAL_BUG vs test-defect |
 | `appendSuiteHistory` → feed `scripts/regression/compute-metrics.ts` | Route + recommend the fix |
 
+**Why the classifier runs on Sonnet.** It picks one CLASS from a closed list per case, over evidence the packet already
+carries; that does not need Opus, and triage is the largest model spend of a regression after the run itself. The
+judgement that does need more stays where it is: every `REAL_BUG` candidate still goes to Phase 4's live repro by the
+layer's QA expert, and the `CONFIDENCE: LOW` bias is unchanged.
+
 ## Evidence policy
 
 - **Console + network** — from the trace's `consoleErrors[]` (parsed stack frames) and `networkFailures[]` (4xx/5xx + GraphQL `errors[]`). Primary signal; a real app-code exception or a genuine 5xx on a valid op ⇒ REAL_BUG lean; a benign warning / expected 401 ⇒ noise the test wrongly asserts against.
 - **Screenshots** — the classifier **opens** them for any visual/element/layout assertion. A control that renders under a new name/place ⇒ STALE_TEST, not a broken product.
-- **HAR** — per-browser-lane, huge — **reference by path, never inline** (`.claude/rules/reports.md`). The trace's `networkFailures[]` is the isolated per-failure slice; consult the HAR only when the trace is thin.
+- **HAR** — per-browser-lane, huge — **reference by path, never inline** ([`reports.md`](../../knowledge/reports.md)). The trace's `networkFailures[]` is the isolated per-failure slice; consult the HAR only when the trace is thin.
 
 ## Fingerprint & flaky model
 
@@ -73,7 +73,7 @@ The repo convention (see `scripts/regression/compute-metrics.ts`, `scripts/test-
 
 ## Guardrails
 
-The command's `## Rules` are the single source — read them before Phase 5. In one line: never
+[`SKILL.md`](SKILL.md)'s `## Rules` are the single source — read them before Phase 5. In one line: never
 file a ticket, call `/qa-fix` or edit a CSV directly; ambiguous stays `REAL_BUG` / `LOW`.
 
 ## Live (incremental) triage — DESIGN, not yet implemented
@@ -89,7 +89,7 @@ Consumed by `scripts/regression/generate-regression-html-report.ts` to label and
 
 **It is not a mute button.** An entry never deletes or hides a row: the report still renders it,
 still counts it, and prints an explicit `N excluded as non-actionable` disclosure. Every entry MUST
-carry `reason` **and** `source` — a ticket, a doc, or a tracked `.claude/knowledge/**` file (a memory slug
+carry `reason` **and** `source` — a ticket, a doc, or a tracked knowledge file (in this repository: `.claude/knowledge/**`) (a memory slug
 only as trailing provenance: it resolves on one laptop, `CLAUDE.md` §What reaches a teammate) — entries missing either
 are dropped at load, so the registry cannot weaken a report by omission. The correct long-term fix is
 to repair or retire the case via `/qa-review-tests --fix`; treat the file as a ledger of known debt

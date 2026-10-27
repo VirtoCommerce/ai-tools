@@ -26,7 +26,7 @@ The product genuinely misbehaves. **Must be confirmable by a live repro** (Phase
 ## Test-side (product is fine — the test is wrong)
 
 ### `TEST_STEPS_DEFECT`
-The script is wrong: vague/compound step, or a missing `[WAIT]` after a state-changing `[ACT]` so the assertion reads before the async settle (the classic false FAIL — `addItem` returns before the cart projection settles, `.claude/knowledge/oracles/vc-bug-catalog.md`).
+The script is wrong: vague/compound step, or a missing `[WAIT]` after a state-changing `[ACT]` so the assertion reads before the async settle (the classic false FAIL — `addItem` returns before the cart projection settles, [`vc-bug-catalog.md`](../../knowledge/vc-bug-catalog.md)).
 
 *Example:* `SRCH-004` does `[ACT] type query` immediately followed by `[ASSERT] results contain X` with no `[WAIT]`. Trace: no network error, all 200; screenshot shows results *did* load a moment later. → `TEST_STEPS_DEFECT`; fix = insert `[WAIT] for results list`.
 
@@ -36,7 +36,7 @@ The assertion is wrong or too strict — most often an exact-value assert on env
 *Example:* `CAT-012` asserts `[DOM] category shows "26 products"`. Catalog was reseeded; it now shows 24. The count *renders correctly* — the test hardcoded 26. → `ASSERTION_DEFECT`; fix = assert count is a non-negative integer / matches the live listing count, not a literal.
 
 ### `TEST_DATA_DEFECT`
-A referenced entity is stale/missing — a drifted `@td()` GUID, an unseeded env (`@td` resolves to `""`), a deleted SKU/coupon/org. The product works; the fixture is gone (`.claude/rules/test-data.md`).
+A referenced entity is stale/missing — a drifted `@td()` GUID, an unseeded env (`@td` resolves to `""`), a deleted SKU/coupon/org. The product works; the fixture is gone ([`test-data.md`](../../knowledge/test-data.md)).
 
 *Example:* `PROMO-007` applies `@td(COUPON_SUMMER.code)`; the coupon was never seeded on this env, so the field is empty and "apply" no-ops. → `TEST_DATA_DEFECT`; fix = `/qa-seed-data promotions` + `npm run td:validate`, or update the alias.
 
@@ -57,14 +57,14 @@ The feature **legitimately changed** — control renamed/moved/removed, flow re-
 Oscillates PASS↔FAIL across runs with no code change (`flaky:true` from the store or `scripts/regression/compute-metrics.ts` trends), or a transient race/timeout with no product fault. → recommend re-run/quarantine; no bug, no CSV edit.
 
 ### `ENV`
-Infra/environment failure: env unreachable, deploy window, search index still rebuilding, auth/session setup failed. Not product, not test. → recommend re-run once the env is healthy. (A flow that redirects, e.g. Datatrans checkout, is *not* an ENV/BLOCKED reason — execute through it, `.claude/knowledge/execution/test-runner-tags.md`.)
+Infra/environment failure: env unreachable, deploy window, search index still rebuilding, auth/session setup failed. Not product, not test. → recommend re-run once the env is healthy. (A flow that redirects, e.g. Datatrans checkout, is *not* an ENV/BLOCKED reason — execute through it (in this repository: `.claude/knowledge/execution/test-runner-tags.md`).)
 
 ### `KNOWN_ISSUE`
-Matches a `vc-bug-catalog` entry, an already-filed tracker ticket in `References`, or documented by-design / config-gated behavior (e.g. multi-step checkout gated by `checkout_multistep_enabled`, `.claude/knowledge/automation/storefront-config-flags.md`; token revocation needs `EnablePersistentStorageTokenValidation`). → dismiss with the link.
+Matches a `vc-bug-catalog` entry, an already-filed tracker ticket in `References`, or documented by-design / config-gated behavior (e.g. multi-step checkout gated by `checkout_multistep_enabled`, [`storefront-config-flags.md`](../../knowledge/storefront-config-flags.md); token revocation needs `EnablePersistentStorageTokenValidation`). → dismiss with the link.
 
 ---
 
-## Marker contract (emitted by `ci/agents/regression-triage-agent.md`)
+## Marker contract (emitted by [`triage-classifier.md`](../../briefs/triage-classifier.md))
 
 ```
 CLASS: <one of the 8>

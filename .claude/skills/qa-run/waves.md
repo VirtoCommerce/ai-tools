@@ -124,7 +124,7 @@ the user stops it.
 
 ## Step 5 — Triage
 
-1. Run [`/qa-triage-results`](../../commands/qa-triage-results.md) on the wave's run id(s). **Put Step 2's ledger output in the
+1. Invoke the Skill tool with `skill: "vc-test:qa-triage-results"` (shim: [`/qa-triage-results`](../../commands/qa-triage-results.md)), args the wave's run id(s). **Put Step 2's ledger output in the
    classifier brief as known ground:** a finding that matches a row whose `reopen_when` has not happened is cited
    with that row's verdict and `follow_up`, not re-investigated.
 2. **Ask the base before comparing** — for each real-bug candidate's endpoint / GraphQL operation / page path:
