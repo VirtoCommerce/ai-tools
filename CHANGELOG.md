@@ -8,6 +8,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Triage runs from the plugin — `vc-test` `0.11.0` — 2026-10-27
+
+P2-5b of the `vc-test` plan (`docs/superpowers/plans/2026-10-27-vc-test-p2-5b-triage.md`).
+
+**Moved — the triage skill.** `skills/qa-triage-results/` holds the whole skill, both modes: `SKILL.md` is the old
+command's Phases 0–6 behind a mode gate, with `methodology.md`, `triage-taxonomy.md`, `routing-and-fix.md` and
+`live-triage-design.md`. Its meaning is unchanged. Ticket mode runs in any project; regression mode only where the
+project's `package.json` has `triage:collect` and `triage:history`. This repository's `/qa-triage-results` is now a
+shim that runs `vc-test:qa-triage-results` (needs vc-test ≥ 0.11.0).
+
+**Added — the ticket-mode collector.** `lib/triage-collect.mjs` is the plugin's own `--ticket` collector, with the same
+packet as `npm run triage:collect -- --ticket`; `scripts/lib/regression-triage.ts` keeps only the regression half.
+
+**Moved — the classifier brief.** `ci/agents/regression-triage-agent.md` → `briefs/triage-classifier.md`.
+
+**Added — `knowledge/`.** Four copies, repository copy canonical: `vc-bug-catalog.md`, `debugging-signals.md`,
+`platform-patterns.md`, `storefront-config-flags.md`.
+
+**Changed — manifest.** The "triage and investigation still need an `ai-tools` checkout" caveat is gone from
+`plugin.json`, the marketplace entry, the README and `/vc-test:qa-ticket`'s description; investigation is
+`vc-fix:qa-investigate`. `/vc-test:qa-ticket` shrank by that sentence.
+
+---
+
 ## The verdict rules and the strategy's reads are in the plugin — `vc-test` `0.10.0` — 2026-10-27
 
 P2-5a of the `vc-test` plan (`docs/superpowers/plans/2026-10-27-vc-test-p2-5a-verdict-and-reads.md`).
