@@ -1,13 +1,14 @@
 // plugins/vc-test/lib/init-plan.mjs — the deterministic half of /vc-test:init (spec U21): from the operator's answers,
 // the `test` block vc-init's profile-set.mjs writes, and the accounts each test env still lacks. It never reads,
 // asks for or writes a password: an account gap is answered with `/project-init --add-user`, which is vc-init's.
-// CLI: node plugins/vc-test/lib/init-plan.mjs --list <add-user --list JSON file> --writable <env,…|none> [--store qa-knowledge/] [--routing <json>]
+// CLI: node plugins/vc-test/lib/init-plan.mjs --list <add-user --list JSON file> --writable <env,…|none> [--store qa-knowledge/] [--routing <json>] [--budget <json>]
 //   → writes <outputRoot>/.vc-fix/vc-test/test-block.json (for `profile-set.mjs --merge test=@<that file>`) and
 //     prints { file, test, warnings, gaps }
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { argOf, outputRoot } from "./paths.mjs";
+import { normaliseBudget } from "./profile.mjs";
 import { ownEnv, readEnvFile } from "../scripts/lib/env-layers.mjs";
 import { DEFAULT_TEMPLATE } from "../scripts/lib/run-dir.mjs";
 
@@ -58,7 +59,7 @@ export function outputTemplate(root, env = process.env) {
   return env.QA_OUTPUT_DIR?.trim() || readEnvFile(join(root, ".env.local"))?.QA_OUTPUT_DIR?.trim() || DEFAULT_TEMPLATE;
 }
 
-export function planTestBlock({ envs, writable = [], knowledgeStore, backUrlOf, template, hasCorpus, routing, root = outputRoot() }) {
+export function planTestBlock({ envs, writable = [], knowledgeStore, backUrlOf, template, hasCorpus, routing, budget, root = outputRoot() }) {
   const unknown = writable.filter((e) => !envs.includes(e));
   if (unknown.length) throw new Error(`not an environment of this project: ${unknown.join(", ")} (known: ${envs.join(", ") || "none"})`);
   const environments = {};
@@ -74,7 +75,7 @@ export function planTestBlock({ envs, writable = [], knowledgeStore, backUrlOf, 
   const inProject = runRoot && !isAbsolute(runRoot) && !relative(root, resolve(root, runRoot)).startsWith("..");
   if (runRoot && !inProject) warnings.push(`QA_OUTPUT_DIR (${template}) is outside the project: the runner cannot run a kept .spec there, so it is not a script root`);
   const scriptRoots = [...(inProject ? [runRoot] : []), ...(hasCorpus ? ["regression"] : [])];
-  return { test: { environments, scriptRoots, knowledgeStore, ...(routing ? { routing: normaliseRouting(routing) } : {}) }, warnings };
+  return { test: { environments, scriptRoots, knowledgeStore, ...(routing ? { routing: normaliseRouting(routing) } : {}), ...(budget ? { budget: normaliseBudget(budget) } : {}) }, warnings };
 }
 
 /** Each test env needs one account per role with a login; what is missing, with the vc-init command that adds it. */
@@ -94,7 +95,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const listFile = argOf(process.argv, "list");
   const writableArg = argOf(process.argv, "writable");
   if (!listFile || writableArg === undefined) {
-    console.error("usage: init-plan.mjs --list <add-user --list JSON> --writable <env,…|none> [--store qa-knowledge/] [--routing <json>]");
+    console.error("usage: init-plan.mjs --list <add-user --list JSON> --writable <env,…|none> [--store qa-knowledge/] [--routing <json>] [--budget <json>]");
     process.exit(1);
   }
   const root = outputRoot();
@@ -104,7 +105,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   let plan;
   try {
     const routingArg = argOf(process.argv, "routing");
-    plan = planTestBlock({ routing: routingArg ? JSON.parse(routingArg) : undefined, envs, writable, knowledgeStore: argOf(process.argv, "store") ?? "qa-knowledge/",
+    const budgetArg = argOf(process.argv, "budget");
+    plan = planTestBlock({ routing: routingArg ? JSON.parse(routingArg) : undefined, budget: budgetArg ? JSON.parse(budgetArg) : undefined, envs, writable, knowledgeStore: argOf(process.argv, "store") ?? "qa-knowledge/",
       backUrlOf: (env) => ownEnv(env, { root }).vars.BACK_URL || null, template: outputTemplate(root), hasCorpus: existsSync(join(root, "regression")), root });
   } catch (e) {
     console.error(e.message);

@@ -13,7 +13,7 @@
     {
       "id": "checklist",
       "row": "Checklist",
-      "run": { "agent": "test-management-specialist", "brief": "briefs/checklist.md", "model": "sonnet" },
+      "run": { "agent": "vc-test:checklist-writer" },
       "needs": [],
       "lane": null,
       "requires": [],
