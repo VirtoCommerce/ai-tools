@@ -505,14 +505,12 @@ function harPathForBrowser(browser: string): string | null {
   const lane = b.includes("firefox") ? "firefox" : b.includes("edge") ? "edge" : b.includes("chrom") ? "chrome" : "";
   if (!lane) return null;
   const dir = join("test-results", lane, "har");
-  if (existsSync(dir) && statSync(dir).isDirectory()) {
-    const hars = readdirSync(dir)
-      .filter((f) => /\.har$/i.test(f))
-      .map((f) => ({ f, m: statSync(join(dir, f)).mtimeMs }))
-      .sort((a, b2) => b2.m - a.m);
-    if (hars.length) return join(dir, hars[0].f); // newest lane archive
-  }
-  return dir;
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) return null;
+  const hars = readdirSync(dir)
+    .filter((f) => /\.har$/i.test(f))
+    .map((f) => ({ f, m: statSync(join(dir, f)).mtimeMs }))
+    .sort((a, b2) => b2.m - a.m);
+  return hars.length ? join(dir, hars[0].f) : dir; // newest lane archive
 }
 
 function loadTrace(runDir: string, tracePath: string | null): TraceJson | null {

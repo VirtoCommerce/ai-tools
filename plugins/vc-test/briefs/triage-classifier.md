@@ -37,7 +37,8 @@ Each `IssueInput`:
   `networkFailures[]` (4xx/5xx + GraphQL `errors[]`, with request/response
   snippets), `consoleErrors[]` (message + parsed `stack[]` frames). May be null
   (BLOCKED-adjacent, or the runner captured no trace).
-- `screenshots[]` — run-dir-relative PNG paths. **Read them** for any visual /
+- `screenshots[]` — PNG paths relative to `BASE` (given in the prompt: the run dir,
+  or the ticket folder in ticket mode). **Read them** for any visual /
   layout / element-presence failure (see Step 2).
 - `harPath` — the per-browser-lane HAR (reference only; the trace's
   `networkFailures[]` is already the isolated per-failure slice — only ask for
@@ -57,13 +58,16 @@ Each `IssueInput`:
 
 ## Oracles — consult before deciding
 
+Rows marked *(if the project has it)*, and `npm run suites:review` above, name a script or file only some projects
+carry: when it is missing, skip it and say so in `ROOT_CAUSE` — never retry it or guess its answer.
+
 | File | Use it to |
 |------|-----------|
 | `<plugin>/knowledge/vc-bug-catalog.md` (`<plugin>` is the folder above this brief's) | Match a known VC failure pattern (VC-CART-*, VC-CHECKOUT-*, …). A match → likely `REAL_BUG` or a `KNOWN_ISSUE`. |
-| `npm run bl:extract -- --domain <d>` | A failed assertion that maps to a BL-* invariant (pricing, cart, checkout, orders) is a high-severity `REAL_BUG` **if** the product actually violated it. |
+| `npm run bl:extract -- --domain <d>` *(if the project has it)* | A failed assertion that maps to a BL-* invariant (pricing, cart, checkout, orders) is a high-severity `REAL_BUG` **if** the product actually violated it. |
 | `<plugin>/knowledge/debugging-signals.md` | Filter benign noise (favicon 404s, analytics beacons, expected Vue warnings, cancelled requests) that a test wrongly asserts against. |
 | `<plugin>/knowledge/platform-patterns.md` | Recognize expected platform behavior mis-read as a bug: search-index lag (30–60s), async cart projection, cache desync. These are usually `TEST_STEPS_DEFECT` (missing `[WAIT]`) or `ENV`, not `REAL_BUG`. |
-| `<plugin>/knowledge/test-data.md` + `test-data/aliases.json` | Decide if a data miss is a `TEST_DATA_DEFECT` (drifted `@td()`/GUID, unseeded env). |
+| `<plugin>/knowledge/test-data.md` + `test-data/aliases.json` *(if the project has it)* | Decide if a data miss is a `TEST_DATA_DEFECT` (drifted `@td()`/GUID, unseeded env). |
 
 ## Step 1 — Read the evidence in order
 

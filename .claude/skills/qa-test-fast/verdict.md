@@ -10,7 +10,7 @@ hand.
    saw one defect make one row with two pieces of evidence.
 2. **Invoke the skill `skill: "vc-test:qa-triage-results"` with `ticket <TICKET> --verify`**
    ([`../../../plugins/vc-test/skills/qa-triage-results/SKILL.md`](../../../plugins/vc-test/skills/qa-triage-results/SKILL.md) §Usage, its *Ticket mode* paragraph). It collects
-   the FAIL / BLOCKED / NOT-RUN rows (`node plugins/vc-test/lib/triage-collect.mjs --ticket <TICKET>`) and classifies them with
+   the FAIL / BLOCKED / NOT-RUN rows (the installed plugin's `lib/triage-collect.mjs --ticket <TICKET>`, not this checkout's copy) and classifies them with
    the regression classifier. Phase 4 then sends **every** real-bug candidate to the layer's QA expert, whose
    brief makes it invoke `vc-fix:qa-investigate` ahead of `qa-bug`. Each one returns `REPRODUCED` /
    `NOT_REPRODUCED` plus an evidence package.

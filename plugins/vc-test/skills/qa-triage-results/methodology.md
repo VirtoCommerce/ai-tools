@@ -56,6 +56,11 @@ The repo convention (see `scripts/regression/compute-metrics.ts`, `scripts/test-
 | Fingerprint + cross-run flaky oscillation | Decide REAL_BUG vs test-defect |
 | `appendSuiteHistory` → feed `scripts/regression/compute-metrics.ts` | Route + recommend the fix |
 
+**Why the classifier runs on Sonnet.** It picks one CLASS from a closed list per case, over evidence the packet already
+carries; that does not need Opus, and triage is the largest model spend of a regression after the run itself. The
+judgement that does need more stays where it is: every `REAL_BUG` candidate still goes to Phase 4's live repro by the
+layer's QA expert, and the `CONFIDENCE: LOW` bias is unchanged.
+
 ## Evidence policy
 
 - **Console + network** — from the trace's `consoleErrors[]` (parsed stack frames) and `networkFailures[]` (4xx/5xx + GraphQL `errors[]`). Primary signal; a real app-code exception or a genuine 5xx on a valid op ⇒ REAL_BUG lean; a benign warning / expected 401 ⇒ noise the test wrongly asserts against.

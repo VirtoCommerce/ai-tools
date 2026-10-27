@@ -8,6 +8,9 @@
 // the classifier's (skills/qa-triage-results). No fingerprint store, no history: a checklist item is not a regression
 // case and has no cross-run outcome series.
 //
+// normalizeSignature, fingerprintFailure, harPathForBrowser, groupIssues and DEFAULT_MAX_BATCH are copies of
+// scripts/lib/regression-triage.ts — keep in step, or regression and ticket packets fingerprint and batch differently.
+//
 // CLI: node plugins/vc-test/lib/triage-collect.mjs --ticket <KEY|ticket-dir> [--max-batch N]
 //   prints the packet { source: "checklist", ticketDir, environment, issueCount, byStatus: { FAIL, BLOCKED, SKIPPED },
 //   advisoryCount, unresulted, batchCount, maxPerBatch, batches }.
@@ -90,7 +93,8 @@ export function fingerprintFailure(env, suiteId, caseId, signature) {
 }
 
 /**
- * The newest HAR archive of a browser lane (reference only — never inlined), else the lane's har folder, else null.
+ * The newest HAR archive of a browser lane (reference only — never inlined), else the lane's har folder when it
+ * exists, else null — a path to nothing would send the classifier after a HAR that is not there.
  * @param {string} browser
  * @returns {string|null}
  */
@@ -99,14 +103,12 @@ function harPathForBrowser(browser) {
   const lane = b.includes("firefox") ? "firefox" : b.includes("edge") ? "edge" : b.includes("chrom") ? "chrome" : "";
   if (!lane) return null;
   const dir = join("test-results", lane, "har");
-  if (existsSync(dir) && statSync(dir).isDirectory()) {
-    const hars = readdirSync(dir)
-      .filter((f) => /\.har$/i.test(f))
-      .map((f) => ({ f, m: statSync(join(dir, f)).mtimeMs }))
-      .sort((a, b2) => b2.m - a.m);
-    if (hars.length) return join(dir, hars[0].f); // newest lane archive
-  }
-  return dir;
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) return null;
+  const hars = readdirSync(dir)
+    .filter((f) => /\.har$/i.test(f))
+    .map((f) => ({ f, m: statSync(join(dir, f)).mtimeMs }))
+    .sort((a, b2) => b2.m - a.m);
+  return hars.length ? join(dir, hars[0].f) : dir; // newest lane archive
 }
 
 // ---------------------------------------------------------------------------
