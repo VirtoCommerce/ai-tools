@@ -220,8 +220,6 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
       const rowed = new Set(ledger.filter((r) => r.wave === folder && (r.status === "FAIL" || r.status === "BLOCKED")).map((r) => `${r.suite}|${r.case_id}`));
       const floor = t.fail + t.blocked - rowed.size;
       if (RAN.has(s.status) && isCount(s.untriaged) && s.untriaged! < floor) problems.push(`${where}: untriaged = ${s.untriaged}, but ${t.fail + t.blocked} cases are FAIL or BLOCKED and the ledger rows only ${rowed.size} of them — untriaged is at least ${floor}`);
-      const notRun = (s.notRun ?? []).reduce((a, n) => a + (isCount(n.cases) ? n.cases : 0), 0);
-      if (t.executed + notRun > t.planned) problems.push(`${where}: executed ${t.executed} + notRun ${notRun} exceeds planned ${t.planned}`);
     }
     for (const n of s.notRun ?? []) {
       if (!Array.isArray(n.suites) || !n.suites.length || !n.reason || !isCount(n.cases)) problems.push(`${where}: each notRun entry needs suites[], cases and a reason`);

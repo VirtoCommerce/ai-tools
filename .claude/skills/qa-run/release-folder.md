@@ -104,8 +104,9 @@ commit list, the bundle's `release_notes.md` and `breaking_changes.md`.
   "evidence": "where the raw run output lives", "updatedAt": "2026-10-16" }
 ```
 
-- `totals`: whole numbers; `pass + fail + blocked + skipped + ambiguous = executed`, and
-  `executed + Σ notRun.cases ≤ planned`. `ambiguous` holds what the run could not decide either way.
+- `totals`: whole numbers; `pass + fail + blocked + skipped + ambiguous = executed`, and `executed ≤ planned`.
+  `ambiguous` holds what the run could not decide either way. `notRun` may also list cases the run recorded BLOCKED
+  without executing them, so `executed + Σ notRun.cases` can exceed `planned`.
 - `untriaged`: FAIL or BLOCKED cases that have no ledger row yet. Required once the wave has run; `TRIAGED` and `DONE` need 0.
   `release:check` derives its floor — `fail + blocked` minus the distinct FAIL/BLOCKED cases the wave's ledger rows — so a
   wave cannot reach `TRIAGED` by under-counting. A BLOCKED case needs its own row like a FAIL (one cause shared by many
