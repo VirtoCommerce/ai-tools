@@ -167,6 +167,16 @@ export function assertSafeTarget() {
 
 // --- Auth ---
 let TOKEN = null;
+/**
+ * Reuse an admin bearer token minted elsewhere instead of a password grant. For a window in which the
+ * admin password grant itself answers `two_factor_required` (global MFA on, VCST-5904): the code is
+ * readable only from the notification journal, which needs an admin token, so a token minted BEFORE
+ * the window is the only way in. Never logged, never written to disk.
+ */
+export function useToken(token) {
+  if (!token) throw new Error('useToken: empty token');
+  TOKEN = token;
+}
 export async function auth() {
   const res = await fetch(`${BACK_URL}/connect/token`, {
     method: 'POST',

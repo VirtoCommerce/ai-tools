@@ -62,8 +62,16 @@ jobs:
         run: npm run kb:stands
       - name: suites:lint — manifest ↔ CSV sync, global case IDs, XREF-001
         run: npm run suites:lint
+      # On a PR a stale PROGRESS.md fails only the releases the PR touches: two wave PRs that merged past each
+      # other leave main's overview stale, and that must not turn every unrelated PR red. Push to main is strict.
       - name: release:check — release regression plans, wave states and triage ledgers
-        run: npm run release:check -- --all
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags --depth=50 origin "${{ github.base_ref }}"
+            npm run release:check -- --all --base "origin/${{ github.base_ref }}"
+          else
+            npm run release:check -- --all
+          fi
       - name: td:validate — every @td() resolves, no hardcoded GUIDs
         run: npm run td:validate
       # The 22 per-domain fixture drift guards. Until 2026-09-15 these ran in NO workflow — only the

@@ -1,5 +1,5 @@
 {
-  "$comment": "The only list of artifacts (spec §5.1). `row` is the strategy's Artifacts row as skills/qa-test-strategy/template.md names it; `derivedFrom` marks an artifact selected whenever that artifact or row is (\"Scenarios\" = at least one scenario in the strategy's `### Scenarios` table). `per: \"scenario\"` is a template the planner instantiates once per approved scenario as `scenario:S-n`; `proofs` gives its capabilities by the scenario's Proof, and for a browser proof the pool of lanes (tried in order, each needing its own `mcp:<name>`; no two browser entries in a wave share a lane — one browser session per agent). `needs` waits only for selected artifacts. `writes` is relative to the run folder <run>; a scenario never writes testing-checklist.md — the orchestrator merges its S-n.rows.md there after each wave (scenario-rows.mjs).",
+  "$comment": "The only list of artifacts (spec §5.1). `row` is the strategy's Artifacts row as skills/qa-test-strategy/template.md names it; `derivedFrom` marks an artifact selected whenever that artifact or row is (\"Scenarios\" = at least one scenario in the strategy's `### Scenarios` table). `per: \"scenario\"` is a template the planner instantiates once per approved scenario as `scenario:S-n`; `proofs` gives its capabilities by the scenario's Proof, and for a browser proof the pool of lanes (tried in order, each needing its own `mcp:<name>`; no two browser entries in a wave share a lane — one browser session per agent). `needs` waits only for selected artifacts. `writes` is relative to the run folder <run> (or the knowledge store <store>) and never spells a literal reports/tickets/ path (write-zones.mjs checks it); a scenario never writes testing-checklist.md — the orchestrator merges its S-n.rows.md there after each wave (scenario-rows.mjs).",
   "artifacts": [
     {
       "id": "contract-refresh",
@@ -8,7 +8,7 @@
       "needs": [],
       "lane": null,
       "requires": ["back-url"],
-      "writes": ["<run>/knowledge/api/graphql-schema.md", "<run>/.graphql-schema.cache.json"]
+      "writes": ["<run>/knowledge/api/graphql-schema.md", "<run>/.graphql-schema.cache.json", "<run>/graphql-fixtures-validation.md"]
     },
     {
       "id": "checklist",
@@ -48,9 +48,15 @@
       "needs": [],
       "lane": "browser:chrome-devtools",
       "requires": ["front-url", "mcp:chrome-devtools"],
-      "writes": ["<run>/design-report.md", "<run>/screenshots/**"]
+      "writes": ["<run>/design-report.md", "<run>/scenarios/visual.rows.md", "<run>/screenshots/**"]
     }
   ],
+  "orchestrator": {
+    "writes": [
+      "<run>/test-strategy.md", "<run>/testing-checklist.md", "<run>/verdict.md", "<run>/summary.json", "<run>/triage-report.md",
+      "<run>/scenarios/pixel.rows.md", "<run>/evidence-*/**", "<run>/investigations/**", "<run>/bugs/**", "<store>/**"
+    ]
+  },
   "rows_not_run": {
     "Test model": "U63 — no separate test model",
     "Exploratory": "U65 — the free class-3 scenario in the Scenarios list",

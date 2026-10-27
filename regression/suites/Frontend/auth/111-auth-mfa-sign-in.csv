@@ -1,0 +1,498 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+MFASF-001,"[JOURNEY] MFA by email — storefront password sign-in, code from email, signed in",Auth > MFA > Storefront sign-in,Critical,BL-AUTH-015,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}} (operator window W2), global OFF; the account is a confirmed-email customer of {{STORE_ID}} with lockout enabled (kind customer-confirmed), created in the case.
+Build under test: deployed theme 2.61.0-pr-2570 with VirtoCommerce.MFA and vc-platform#3133. The code step missing after the password is the defect this journey exists to catch, not a reason to skip.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}'}, kind: 'customer-confirmed'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as rowsBefore
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Sign in (password) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+--- SCREEN: Enter the sign-in code ---
+[ASSERT] The heading reads ""Enter the sign-in code"", the text reads ""We sent a code to"" followed by a MASKED address (not the full account.email), six empty code cells and a resend control that counts down (""Resend code in N s"")
+[ASSERT] The email and password fields are gone, the one-time-code switch link (data-test-id=""otp-email-switch-to-otp-link"") is not shown, and the header shows no signed-in customer
+[CAPTURE] code = readLatestMfaCode({email: account.email, after: T0, excludeIds: the journal rows already read}).code - the 6-digit value in the journal row body
+[CAPTURE] rowsAfter = the number of rows of the SAME journal search as rowsBefore (POST {{BACK_URL}}/api/notifications/journal with the admin Bearer, keyword account.email): poll every 5s for up to 90s until rowsAfter is greater than rowsBefore, then wait 5s and read once more and keep that last value (this read happens before the code is typed, so no later sign-in or resend can add a row)
+[ACT] Type the 6 digits of code into 'Code' (sign-in auto-submits on the 6th digit)
+[CAPTURE] from the network log: the POST {{BACK_URL}}/connect/token (grant_type=mfa) request and response as mfaReq, mfaRes; decode the access_token payload and record its amr claim
+[WAIT] the page leaves /sign-in
+--- SCREEN: Signed in ---
+[ASSERT] The account menu shows the signed-in customer of account.email and /sign-in is no longer the current page
+[ACT] Reload the page
+[ASSERT] The account menu still shows the same signed-in customer (the session is real, not a one-render state)
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and JSON body {""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}","[DOM] After the correct password the page shows the heading ""Enter the sign-in code"" and a masked address under ""We sent a code to"", never the account page and never the full address {SPEC} (vc-frontend#2570: locales/en.json mfa_verify_form: header ""Enter the sign-in code"", subtitle ""We sent a code to {destination}."")
+[DOM] While the code step is open the password form and the one-time-code switch link (data-test-id=""otp-email-switch-to-otp-link"") are hidden {SPEC} (vc-frontend#2570: login-form-section: hides the switch to OTP while the password sign-in asks for the second factor)
+[STATE] The correct code signs the customer in: the page leaves /sign-in and the account menu identifies account.email, also after a reload {BL} (BL-AUTH-015: a buyer with no organization signs in with no organization context) {SPEC} (vc-module-mfa#1: Token endpoint)
+[BODY] The access_token of mfaRes carries amr containing mfa and no organization_id claim {SPEC} (vc-module-mfa#1: Token endpoint: tokens issued by the mfa grant carry the amr claim mfa)
+[COUNT] The sign-in log search returns for the account two rows: a Password row with failureReason RequiresTwoFactor and an MFA row with provider Email and succeeded=true {SPEC} (VCST-5904 comment 111947)
+[COUNT] The journal gained exactly one MfaSignInEmailNotification row for the sign-in (rowsAfter minus rowsBefore equals 1) {SPEC} (vc-module-mfa#1: Delivery)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] POST /connect/token grant_type=password -> 400 two_factor_required; grant_type=mfa -> 200 with access_token
+[ADMIN] Security > Sign-in log has both rows for the account
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token or /graphql","MID-JOURNEY: the account page opens straight after the password (the store requirement is not read), the code step opens but no email arrives, the right code is refused, the page returns to the password form after the right code, or the customer is signed in without amr=mfa; two emails for one sign-in; spinner >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:SILENT · Technique:FLOW · Behavior:auth.signin.mfa | Promoted: REG-2026-10-26-1652 (2026-10-26) · Capture made explicit: PR #547 review (2026-10-26),Automated
+MFASF-002,MFA code step — wrong code keeps the code step and clears the input,Auth > MFA > Storefront sign-in,High,,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-email customer of {{STORE_ID}} created in the case.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}'}, kind: 'customer-confirmed'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Sign in (password) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+--- SCREEN: Enter the sign-in code ---
+[CAPTURE] code = readLatestMfaCode({email: account.email, after: T0, excludeIds: the journal rows already read}).code - the 6-digit value in the journal row body
+[CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
+[ACT] Type the 6 digits of wrongCode into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the error appears under the code field
+[ASSERT] Count the visible error alerts, read their text, read the code cells and the focused element, read the heading
+[ACT] Type the 6 digits of code into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in","[DOM] After one wrong code the heading is still ""Enter the sign-in code"": the customer is NOT thrown back to the password form {SPEC} (vc-frontend#2570: mfa-verify-form / useMfaSignIn: only errors another code cannot fix return to the password form)
+[DOM] Exactly one inline error is shown and its text is ""That code didn't work."" - no toast, no second alert, no raw translation key {SPEC} (vc-frontend#2570: locales/en.json: invalid_code ""That code didn't work."")
+[STATE] The six code cells are empty and the first cell is focused: the field accepts a new entry {SPEC} (vc-frontend#2570: sign-in-code-input: a rejected code is cleared)
+[STATE] The real code afterwards signs the customer in and the page leaves /sign-in {SPEC} (vc-module-mfa#1: QA step 2: the correct code signs in)
+[BODY] The wrong code is answered by POST /connect/token (grant_type=mfa) with code invalid_code {SPEC} (vc-module-mfa#1: Accepted code: a refused code answers invalid_code)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] grant_type=mfa -> 400 invalid_code for the wrong code, 200 for the real one
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token",the wrong code returns the customer to the password form (every code except invalid_code treated as final); no message after a wrong code; a raw translation key; the input keeps the wrong digits or is locked; two alerts with different copy; spinner >5s,"Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:LIFECYCLE · Technique:ST · Behavior:auth.signin.mfa.verify-code | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+MFASF-003,"MFA code step — Resend is held for the cooldown, then sends a new code",Auth > MFA > Storefront sign-in,High,,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-email customer of {{STORE_ID}} created in the case. CodeResendInterval is the module default 30 s: the case measures the countdown and the journal across it, so it waits for real time.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}'}, kind: 'customer-confirmed'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Sign in (password) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as rows0
+--- SCREEN: Enter the sign-in code, inside the interval ---
+[ASSERT] Read the resend control: its text (""Resend code in N s"") and whether it can be clicked; capture N as n0
+[WAIT] 10 seconds
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as rows10
+[ASSERT] Read the resend control again; capture its N as n10
+--- SCREEN: Enter the sign-in code, after the interval ---
+[WAIT] the resend control becomes an active ""Resend code"" (up to 40s from the password step)
+[ACT] Click ""Resend code""
+[WAIT] the live message ""New code sent."" appears
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as rows30
+[ASSERT] Read the resend control again; capture its N as n30
+[CAPTURE] code2 = readLatestMfaCode({email: account.email, after: T0}).code - the newest journal code
+[ACT] Type the 6 digits of code2 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in","[DOM] Inside the interval the resend control reads ""Resend code in N s"" with N at most 30 and cannot be clicked {SPEC} (vc-frontend#2570: locales/en.json sign_in_code_form: resend_countdown ""Resend code in {seconds} s"") {SPEC} (vc-module-mfa#1: Resend limit: CodeResendInterval, 30 seconds by default)
+[COUNT] n10 is smaller than n0 and rows10 equals rows0: the countdown runs and nothing was sent while it ran {SPEC} (vc-module-mfa#1: Resend limit: a code is sent to a user at most once per CodeResendInterval)
+[DOM] After the interval the control is an active ""Resend code""; clicking it shows ""New code sent."" {SPEC} (vc-frontend#2570: locales/en.json sign_in_code_form: resend_button, live_resent ""New code sent."")
+[COUNT] rows30 equals rows0 plus 1: exactly one new email for the click {SPEC} (vc-module-mfa#1: Resend limit)
+[DOM] After the resend the countdown ""Resend code in N s"" is visible again (n30 at most 30 and greater than 0) {SPEC} (vc-frontend#2570: mfa-verify-form: The resend link counts down resendSecondsRemaining from the backend)
+[STATE] The newest code signs in {SPEC} (vc-module-mfa#1: Accepted code: only the last code sent is valid)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] POST /api/mfa/resend answers 200 with a new two-factor token after the interval; before it, resend_too_soon with resendSecondsRemaining
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 405 on /api/mfa/resend (a 405 is the missing ingress route the PR names)","the customer can mail-bomb themselves (a click inside the interval sends a new email); Resend never becomes available; the countdown restarts at 30 although nothing was sent; 405 on /api/mfa/resend after the click; ""Something went wrong"" instead of a message; spinner >5s","Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:BOUNDARY · Technique:BVA · Behavior:auth.signin.mfa.resend | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+MFASF-004,MFA code step — after Resend the first emailed code no longer signs in,Auth > MFA > Storefront sign-in,High,,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-email customer of {{STORE_ID}} created in the case. A resend invalidates the code sent before it (the user code stamp rotates on every send).","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}'}, kind: 'customer-confirmed'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Sign in (password) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+[CAPTURE] code1 = readLatestMfaCode({email: account.email, after: T0, excludeIds: the journal rows already read}).code - the 6-digit value in the journal row body
+--- SCREEN: Enter the sign-in code, resend ---
+[WAIT] the resend control becomes an active ""Resend code"" (up to 40s)
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click ""Resend code""
+[WAIT] the live message ""New code sent."" appears
+[CAPTURE] code2 = readLatestMfaCode({email: account.email, after: T0, excludeIds: the row of code1}).code
+--- SCREEN: Enter the sign-in code, the FIRST code ---
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the error appears under the code field
+[ASSERT] Read the error text, the heading and the code cells
+--- SCREEN: Enter the sign-in code, the NEW code ---
+[ACT] Type the 6 digits of code2 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in","[DOM] The first emailed code is refused after a resend: the error reads ""That code didn't work."" and the heading stays ""Enter the sign-in code"" {SPEC} (vc-module-mfa#1: Accepted code: a resend invalidates the code sent before) {SPEC} (vc-frontend#2570: locales/en.json: invalid_code)
+[COUNT] code2 differs from code1 (a new code was really sent) {SPEC} (vc-module-mfa#1: Resend limit)
+[STATE] The new code signs the customer in {SPEC} (vc-module-mfa#1: QA step 3: After a resend, the code of the first email: invalid_code; the new code signs in)
+[BODY] The refused first code is answered with code invalid_code by POST /connect/token (grant_type=mfa) {SPEC} (vc-module-mfa#1: QA step 3)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] grant_type=mfa -> 400 invalid_code for code1 (sent with the NEW two-factor token returned by the resend), 200 for code2
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /api/mfa/resend or /connect/token","an older, possibly leaked, code still signs in after the customer asked for a new one; the new code is refused; the resend does not return a usable two-factor token (the form submits the old one); a raw translation key; spinner >5s","Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:REPLAY · Technique:ST · Behavior:auth.signin.mfa.resend | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+MFASF-005,"MFA + org fallback — last-used organization locked, sign-in lands in another accessible org",Auth > MFA > Storefront sign-in,Critical,"BL-AUTH-015, BL-AUTH-016",,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a buyer in TWO disposable organizations (kind b2b-two-org, bound to {{STORE_ID}}) who last used Org A (stored choice AND server CurrentOrganizationId both A); Org A is then LOCKED for the buyer, Org B stays active.
+Build under test: VirtoCommerce.Customer with the organization fallback on the mfa grant (VCST-6132, released in 3.1030.0, deployed). On a Customer build without it record BLOCKED for the build, never FAIL, never re-base to the old behaviour.
+The storefront resends the last-used organization on the mfa grant (vc-frontend stores it per user name), so the choice is made through the real organization switcher first.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}', b2bStoreId: '{{STORE_ID}}'}, kind: 'b2b-two-org'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[CAPTURE] orgAId, orgBId = account.orgs[0].id, account.orgs[1].id; orgAName, orgBName = their names; mA = account.memberships[0].id; contactId = account.contactId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Sign in by code (0), make Org A the last-used organization ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+[CAPTURE] code0 = readLatestMfaCode({email: account.email, after: T0, excludeIds: the journal rows already read}).code - the 6-digit value in the journal row body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<account.email> = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming Org A a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) - lock the last-used organization ---
+[SETUP] lockMembership(mA, null) of mfa-fixtures.mjs, read back isLocked=true (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+[CAPTURE] code1 = readLatestMfaCode({email: account.email, after: T0, excludeIds: the journal rows already read}).code - the 6-digit value in the journal row body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears under the code field
+[CAPTURE] from the network log: the POST {{BACK_URL}}/connect/token (grant_type=mfa) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in ---
+[ASSERT] The account menu shows the signed-in customer; /sign-in is no longer the current page; no error alert was shown on the code step
+[ASSERT] The organization name in the header reads ""<orgBName>""
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentAfterFallback
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and JSON body {""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}","[STATE] req1 carries organization_id = orgAId - the stored last-used choice the storefront resends (premise of the case, not the verdict) {SPEC} (vc-module-mfa#1: QA reference 112031: storefront mfaSignIn sends the last-used organization_id)
+[STATUS] res1 is HTTP 200 and carries an access_token: the code sign-in is not refused because the last-used organization is locked {SPEC} (VCST-5904 comment 112031: Password + MFA code sign-in should succeed in another accessible org)
+[BODY] claim1 equals orgBId and is NOT orgAId {BL} (BL-AUTH-016: a refusal-avoiding fallback lands in an accessible organization) {BL} (BL-AUTH-015: the chain is constrained to accessible organizations)
+[DOM] No inline error is shown under the code field, no text starting ""shared.account"" (raw translation key) is visible, and the organization name in the header reads ""<orgBName>"" {SPEC} (VCST-5904 comment 112031)
+[STATE] currentAfterFallback equals orgBId: the substituted organization is persisted as the contact's current organization {BL} (BL-AUTH-015: resolution is not read-only)
+[COUNT] The sign-in log search returns MFA rows that are all succeeded=true for this account (a fallback is a successful sign-in, never a failure) {SPEC} (VCST-5904 comment 112031)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[ADMIN] Security > Sign-in log: the fallback sign-in is logged as a success
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","MID-JOURNEY: the code step shows an organization error instead of signing the buyer in (the fallback does not apply on the mfa grant: the buyer burns the code and is sent back to the password form); the buyer lands with the locked Org A label, or with no organization although Org B is active; the substituted organization is not persisted; the global /locked flag reads true after an organization lock; spinner >5s","Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:SCOPE · Technique:DT · Behavior:auth.org.resolve.mfa-leg | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+MFASF-006,"MFA — unconfirmed email gets a clear refusal after the password, no code is sent",Auth > MFA > Storefront sign-in,High,BL-AUTH-002,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; the account is a customer of {{STORE_ID}} whose email is NOT confirmed (kind customer-unconfirmed). The code uses the Identity Email provider, which needs a confirmed email; the store settings ""Email verification"" do not change that.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}'}, kind: 'customer-unconfirmed'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as rowsBefore
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Sign in (password) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] a message appears on the sign-in form (up to 15s)
+--- SCREEN: Sign in, after the password ---
+[ASSERT] Read the heading, the visible error alerts (data-test-id=""sign-in-error-alert"") and their text; read whether the code step is shown and whether the email and password fields are still there
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as rowsAfter
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and JSON body {""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}","[DOM] The sign-in form stays on the password step and shows one error alert with the text ""We can't send a sign-in code to this account. Please contact your administrator."" - the heading ""Enter the sign-in code"" is NOT shown {SPEC} (vc-frontend#2570: locales/en.json: mfa_provider_not_available) {SPEC} (VCST-5904 comment 112285: unconfirmed email -> mfa_provider_not_available after the password)
+[DOM] The alert is the localized sentence, never a raw key and never ""Something went wrong"" {SPEC} (vc-frontend#2570: locales/en.json)
+[COUNT] rowsAfter equals rowsBefore: no email is sent to an unconfirmed address {SPEC} (VCST-5904 comment 112285)
+[BODY] The sign-in log carries an MFA or Password row for the attempt that is a failure with a reason naming the provider problem (ProviderNotAvailable); the storefront logs the real reason {SPEC} (VCST-5904 comment 111947: item 2: storefront logs the real reason)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] POST /connect/token grant_type=password -> 400 mfa_provider_not_available
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token",a raw translation key or a generic failure instead of the sentence; the customer is sent to a code step that can never receive a code; an email is sent to the unconfirmed address; the refusal reads as a wrong password; spinner >5s,"Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:FALLBACK · Technique:EP · Behavior:auth.signin.mfa.provider-unavailable | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+MFASF-007,MFA — OTP code sign-in on an MFA store signs in with the emailed code alone,Auth > MFA > Storefront sign-in,High,,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}} AND OtpSignIn.Enabled on {{STORE_ID}} (both set by the operator for window W2; the OTP setting is the state suite 104 documents; read both from the store, not on = BLOCKED, never FAIL); the account is a confirmed-email customer of {{STORE_ID}}. The OTP grant is a factor on its own: it must not ask for a second code, while the PASSWORD sign-in of the same account on the same store does (the pair is the point).
+Dependency: suite 104 owns the OtpSignIn.Enabled store setting (exclusiveGroup store-setting:OtpSignIn.Enabled). A suite carries one exclusiveGroup and this one is in platform-setting:MultiFactorAuthentication, so it cannot join that group: do not run it beside suite 104, whose OTP setting case switches OTP off.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}'}, kind: 'customer-confirmed'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Sign in by one-time code ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill 'Email': account.email
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[CAPTURE] code = the 6-digit value of the newest OtpSignInEmailNotification journal row for account.email after T0 (POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and {""notificationType"":""OtpSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":5}; poll up to 90s)
+[ACT] Type the 6 digits of code into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or the heading ""Enter the sign-in code"" appears
+[CAPTURE] from the network log: the POST {{BACK_URL}}/connect/token requests of this sign-in (grant_type values) as grants
+--- SCREEN: Signed in ---
+[ASSERT] The account menu shows the signed-in customer of account.email
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as mfaRows
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and JSON body {""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}","[STATE] The one-time code alone signs the customer in: the page leaves /sign-in, the heading ""Enter the sign-in code"" never appears and the account menu identifies account.email {SPEC} (vc-module-mfa#1: Not affected: OTP sign-in (the otp_email grant opts out of the platform second factor step))
+[BODY] grants contains grant_type=otp_email and does NOT contain grant_type=mfa {SPEC} (vc-module-mfa#1: Not affected: OTP sign-in)
+[COUNT] mfaRows is 0: no MfaSignInEmailNotification was sent for the OTP sign-in {SPEC} (vc-module-mfa#1: Not affected: OTP sign-in)
+[BODY] The sign-in log rows for the account are Type OTP only, no MFA row and no Password row with RequiresTwoFactor {SPEC} (vc-module-mfa#1: Sign-in log) {SPEC} (vc-module-otp#3: Skip the second factor for the OTP grant)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] POST /connect/token grant_type=otp_email -> 200 with access_token and no two_factor_required
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /api/otp/request or /connect/token","OTP customers are asked for a second code (the opt-out is missing), or the OTP sign-in is refused with two_factor_unavailable; an MFA email for an OTP sign-in; the opt-out leaks into the PASSWORD path (a password sign-in on the same store is not challenged - check with MFASF-001); spinner >5s","Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:CONFIG · Technique:DT · Behavior:auth.signin.mfa.otp-skips | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+MFASF-008,"MFA + impersonation — operator enters own code, impersonation starts, Stop restores operator",Auth > MFA > Storefront sign-in,High,"BL-AUTH-010, BL-AUTH-011",,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; the operator is an organization maintainer who holds the login-on-behalf permission (kind impersonation-operator, bound to {{STORE_ID}}) and the target is a member of the same organization (created with it).
+Build under test: vc-frontend head eecfe333 (the code step inside the impersonation dialog). The deployed theme 2.61.0-pr-2570-2fc9 has NO operator code step: record the case BLOCKED for the build, never FAIL, and never re-base it to the deployed behaviour.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, kind: 'impersonation-operator'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[CAPTURE] operatorEmail = account.email; targetEmail, targetUserId = account.target.email, account.target.userId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Impersonation, password verification ---
+[PRE:SIGNOUT]
+[NAV] Navigate to {{FRONT_URL}}/account/impersonate/{targetUserId}
+[WAIT] the impersonation form renders
+[ACT] Fill the email input with operatorEmail
+[ACT] Fill the password input with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click 'Verify and continue'
+[WAIT] the code step appears inside the impersonation dialog (up to 15s)
+--- SCREEN: Impersonation, the code step ---
+[ASSERT] A code input is shown inside the dialog; no impersonation banner (data-test-id=""operator-name-label"") is visible and the header shows no signed-in customer
+[CAPTURE] code = readLatestMfaCode({email: operatorEmail, after: T0}).code
+[ACT] Type the 6 digits of code into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the success message appears and the page reloads (up to 10s)
+--- SCREEN: Impersonated storefront ---
+[ASSERT] The banner is visible: operator-name-label shows the operator and the account button (data-test-id=""account-button"") shows the target
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the row (data-test-id=""back-to-operator-row"") 'Back to <operator name>'
+[WAIT] the page reloads
+[ASSERT] The account menu shows the operator again and the URL is not the sign-in route
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and JSON body {""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}","[DOM] After the operator's password the dialog shows a code step and NO impersonation has started: no banner and no customer in the header {SPEC} (vc-frontend#2570 head eecfe333: useImpersonate twoFactorChallenge: the code step inside the impersonation dialog) {SPEC} (vc-module-mfa#1: Description: covers any other password sign-in)
+[STATE] The operator's own code starts the impersonation: the banner is visible, operator-name-label names the operator and the account button names the target {BL} (BL-AUTH-010: the banner shows operator and target)
+[STATE] ""Back to <operator>"" restores the operator without a sign-in round-trip: the URL is not the sign-in route and no grant_type=password call is made {BL} (BL-AUTH-011: Stop Impersonation must restore the operator session without a sign-in round-trip)
+[BODY] The code was the OPERATOR's: the journal row used belongs to operatorEmail and none was sent to targetEmail {SPEC} (vc-frontend#2570 head eecfe333: the operator is asked for the second factor, not the customer)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] POST /connect/token grant_type=password -> 400 two_factor_required for the operator; grant_type=mfa -> 200; the impersonate grant follows
+[ADMIN] Security > Sign-in log has the operator MFA row and the impersonation row
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token",MID-JOURNEY: the impersonation starts after the password with no code (the operator step is skipped); the dialog shows an error instead of a code step; the operator cannot impersonate at all with MFA on; a code is sent to the target; the operator is not restored after Back to operator; spinner >5s,"Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu (stop any impersonation first) if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:LIFECYCLE · Technique:FLOW · Behavior:auth.impersonate.mfa-code | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+MFASF-009,MFA + impersonation — wrong code in the dialog does not start impersonation,Auth > MFA > Storefront sign-in,High,,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; the operator and target of MFASF-008 (kind impersonation-operator).
+Build under test: vc-frontend head eecfe333 (the failed code step in the impersonation dialog). The deployed theme 2.61.0-pr-2570-2fc9 has NO operator code step: record BLOCKED for the build, never FAIL, never re-base.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, kind: 'impersonation-operator'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[CAPTURE] operatorEmail = account.email; targetUserId = account.target.userId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Impersonation, password verification ---
+[PRE:SIGNOUT]
+[NAV] Navigate to {{FRONT_URL}}/account/impersonate/{targetUserId}
+[WAIT] the impersonation form renders
+[ACT] Fill the email input with operatorEmail
+[ACT] Fill the password input with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click 'Verify and continue'
+[WAIT] the code step appears inside the impersonation dialog (up to 15s)
+--- SCREEN: Impersonation, a wrong code ---
+[CAPTURE] code = readLatestMfaCode({email: operatorEmail, after: T0}).code
+[CAPTURE] wrongCode = a 6-digit string that differs from code
+[ACT] Type the 6 digits of wrongCode into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] an error appears in the dialog
+[ASSERT] Read the error text, whether the dialog is still open, whether the banner (data-test-id=""operator-name-label"") is visible and who the header shows","[DOM] After a wrong code the dialog shows an error and NO impersonation starts: no banner, no customer in the header, the storefront is still the operator's or anonymous {SPEC} (vc-frontend#2570 head eecfe333: useImpersonate failTwoFactor/revokeTokens: a failed code step does not impersonate)
+[DOM] The error is the localized ""That code didn't work."" (or the localized attempts message), never a raw key and never the generic ""Something went wrong. Please try again."" {SPEC} (vc-frontend#2570: locales/en.json impersonate_form errors: invalid_two_factor_token, code_attempts_exceeded map to the sign-in form texts)
+[STATE] The dialog is not left half signed in: no access token of the operator is kept in storage after the failed code {SPEC} (vc-frontend#2570 head eecfe333: revokeTokens on a failed code step)
+[BODY] The wrong code is answered with code invalid_code by POST /connect/token (grant_type=mfa) and no impersonate grant is requested {SPEC} (vc-module-mfa#1: Accepted code: a refused code answers invalid_code)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] grant_type=mfa -> 400 invalid_code; no grant_type=impersonate request follows
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token","the impersonation proceeds after a wrong code; the dialog stays open half signed in (tokens kept); the generic ""Something went wrong"" is shown; a raw translation key; spinner >5s","Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:SCOPE · Technique:EG · Behavior:auth.impersonate.mfa-code | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+MFASF-010,MFA switched off on the store — next storefront sign-in is one step again,Auth > MFA > Storefront sign-in,High,,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: the operator holds window W2 (StoreMode=Enabled) for the first half, names the pre-window StoreMode value as modeBefore (absent = unset) when opening it, and CLOSES the window at a pause in the middle of the case by switching StoreMode back to modeBefore (the case itself writes nothing to {{STORE_ID}}); a confirmed-email customer of {{STORE_ID}} created in the case. The store settings are cached by the platform: the first sign-in after the write must already be one step.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}'}, kind: 'customer-confirmed'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- LAYER: Window open: the code step appears ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+[ASSERT] The heading ""Enter the sign-in code"" is shown
+[NAV] Navigate to {{FRONT_URL}}/ in an anonymous browser session (abandon the challenge)
+--- LAYER: Window closed ---
+[WAIT] PAUSE for the operator: the operator closes window W2 in Admin (Stores > {{STORE_ID}} > Settings > Security) by setting StoreMode back to modeBefore and confirms; the case never writes the store; if the operator has not confirmed within the agreed time the case is BLOCKED (needs the operator to close window W2 mid-case), never FAIL
+[HTTP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer and require StoreMode equal to modeBefore (the window is closed); if it is still Enabled the case is BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as rowsBefore
+--- LAYER: Sign in again, the FIRST attempt after the write ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the page leaves /sign-in, or the heading ""Enter the sign-in code"" appears (up to 15s)
+[ASSERT] Read the URL and the account menu
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as rowsAfter
+[HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; capture the StoreMode entry as modeNow","[DOM] While the window is open the password sign-in shows the heading ""Enter the sign-in code"" (the non-vacuity half of this case) {SPEC} (VCST-5904 comment 112278: Enabled requires a code)
+[STATE] The first password sign-in after the StoreMode write is one step: the page leaves /sign-in and the account menu shows the customer, never the code step {SPEC} (VCST-5904 comment 112278: follows the store mode)
+[COUNT] rowsAfter equals rowsBefore: no code email after the store is back to its previous mode {SPEC} (vc-module-mfa#1: Settings)
+[STATE] modeNow equals modeBefore {SPEC} (vc-module-mfa#1: Settings: Use global setting / Enabled / Disabled)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] POST /connect/token grant_type=password -> 200 with access_token and no two_factor_required after the restore
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token","customers keep being asked for codes after the admin turned the store mode off (a stale cached setting); the window never opened (BLOCKED, not PASS); a code email after the restore; the store left in the Enabled mode","Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:STALE · Technique:ST · Behavior:auth.signin.mfa.off | Promoted: REG-2026-10-26-1726 (2026-10-26),Automated
+MFASF-011,MFA code step — a second password step inside 30 s sends no email; the step must not promise one,Auth > MFA > Storefront sign-in,Medium,,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-email customer of {{STORE_ID}} created in the case. A second password step INSIDE the 30 s resend interval issues a ticket but sends NO new email (the code sent shortly before is valid); the code step must not promise more than that. Time matters: the second sign-in starts about 15 s after the first.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}'}, kind: 'customer-confirmed'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: First password step ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+[CAPTURE] code1 = readLatestMfaCode({email: account.email, after: T0, excludeIds: the journal rows already read}).code - the 6-digit value in the journal row body
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as rows1
+[CAPTURE] firstAt = current UTC time when the code step appeared
+[WAIT] 15 seconds, then abandon the challenge: navigate to {{FRONT_URL}}/sign-in again (the code step is not persisted across a reload)
+--- SCREEN: Second password step, inside the interval ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and JSON body {""notificationType"":""MfaSignInEmailNotification"",""keyword"":account.email,""sort"":""createdDate:desc"",""take"":20}; capture the number of rows as rows2
+[ASSERT] Read the text under the heading and the resend control (""Resend code in N s""); capture N as n; capture the seconds since firstAt as elapsed
+--- SCREEN: Enter the sign-in code, the FIRST email's code ---
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an error appears","[COUNT] rows2 equals rows1: the second password step inside the interval sent no new email {SPEC} (vc-module-mfa#1: Resend limit: A resend that comes too soon sends nothing ... the password grant still issues a two-factor token, since the code sent shortly before is valid)
+[DOM] The resend countdown ""Resend code in N s"" on the second code step is visible and counts down from the time left in the interval, not from a fresh 30 s: n is at most 30 minus elapsed plus 2 {SPEC} (vc-frontend#2570: mfa-verify-form: The resend link counts down resendSecondsRemaining from the backend; resend_too_soon only restarts the countdown)
+[DOM] While rows2 equals rows1 the text under the heading does not state that a NEW code was sent just now (it is hidden, or worded as the earlier send) {HYPOTHESIS} (the owner of the form confirms the wording; the count and countdown assertions around it are the SPEC half)
+[STATE] The code from the FIRST email signs in on the second challenge: the page leaves /sign-in {SPEC} (vc-module-mfa#1: Resend limit: the code sent shortly before is valid)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] the second POST /connect/token grant_type=password -> 400 two_factor_required with a ticket and resendSecondsRemaining
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token",the form says a code was sent while no email exists for the second attempt and the countdown restarts at 30 (the customer waits for mail that is not coming); the first email's code is refused on the second ticket; a second email inside the interval (mail-bomb); a raw translation key,"Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:FALLBACK · Technique:BVA · Behavior:auth.signin.mfa.resend,Draft
+MFASF-012,"MFA code step — the third wrong code and the refusal after it show code-specific messages, not Something went wrong",Auth > MFA > Storefront sign-in,High,,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-email customer of {{STORE_ID}} created in the case. MaxCodeAttempts is the module default 3; wrong codes #1-#3 are checked and answered, the next submit is refused with code_attempts_exceeded. The case reads the TEXT the customer sees for each answer.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}'}, kind: 'customer-confirmed'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Sign in (password) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+[CAPTURE] code = readLatestMfaCode({email: account.email, after: T0, excludeIds: the journal rows already read}).code - the 6-digit value in the journal row body
+[CAPTURE] wrongCode = a 6-digit string that differs from code
+--- SCREEN: Enter the sign-in code, three wrong codes ---
+[ACT] Type the 6 digits of wrongCode into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the error appears under the code field
+[CAPTURE] from the network log: the code of the response of the last POST /connect/token (grant_type=mfa) as r1; read the visible error text as t1 and the heading as h1
+[ACT] Type the 6 digits of wrongCode into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the error appears under the code field
+[CAPTURE] r2, t2, h2 the same way
+[ACT] Type the 6 digits of wrongCode into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the screen reacts (an error, or a return to the password form)
+[CAPTURE] r3, t3, h3 the same way
+--- SCREEN: after the cap, the right code ---
+[ASSERT] Record whether the code step is still shown
+[ACT] Type the 6 digits of code into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the screen reacts
+[CAPTURE] r4, t4, h4 the same way (the answer to the RIGHT code after three wrong ones)","[DOM] For every answer the visible text is the localized sentence of the code in the response: invalid_code shows ""That code didn't work.""; code_attempts_exceeded shows ""Too many incorrect codes. Wait a few minutes and sign in again."" - for t1, t2, t3 and t4 against r1, r2, r3 and r4 {SPEC} (vc-frontend#2570: locales/en.json: invalid_code, code_attempts_exceeded)
+[DOM] None of t1..t4 is the generic ""Something went wrong"" (or any text of common.messages.something_went_wrong) and none is a raw translation key {SPEC} (vc-frontend#2570: locales/en.json: every code the mfa grant can answer has its own text)
+[STATUS] r4 returns HTTP 400 with code code_attempts_exceeded and the right code does NOT sign the customer in {SPEC} (vc-module-mfa#1: QA step 3: three wrong codes ... the right code is refused with code_attempts_exceeded)
+[DOM] After code_attempts_exceeded the form is visible again on the 'password' step with that message (an error another code cannot fix returns to the password form) {SPEC} (vc-frontend#2570: mfa-verify-form: too many wrong codes ... return to the password form with the error)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] grant_type=mfa -> 400 invalid_code (the first wrong codes), 400 code_attempts_exceeded (after the cap)
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token","the third wrong code (or the refusal after it) shows the generic ""Something went wrong"" instead of the code-specific message; a raw translation key; the customer is told ""That code didn't work"" after the cap (a retry that can never work); the right code signs in after three wrong ones","Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:RENDER · Technique:EG · Behavior:auth.signin.mfa.wrong-code-limit | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+MFASF-013,"MFA code input - digits only, a spaced paste is cleaned, the sixth digit submits once",Auth > MFA > Storefront sign-in,Medium,,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
+OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
+[PRE:CLEAR_SESSION]
+State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-email customer of {{STORE_ID}} created in the case. Wrong codes count toward the cap of 3: the case submits at most two wrong ones before the real code.","front={{FRONT_URL}}, back={{BACK_URL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, password={{DEFAULT_TEST_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token (no MFA setting has been touched yet; keep the token for the whole case)
+[SETUP] import scripts/seed-data/auth/mfa-fixtures.mjs: init(); runId = a fresh 3-16 char [a-z0-9] string (it lands in emails, store ids and names)
+[SETUP] account = createMfaAccount({runId, store: {id: '{{STORE_ID}}'}, kind: 'customer-confirmed'}) - an @example.com account with password {{DEFAULT_TEST_PASSWORD}} whose flags the creator verified; capture account.email, account.userId
+[SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
+--- SCREEN: Sign in (password) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] Fill [data-test-id=""email-input""] with account.email
+[ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
+[ACT] Click [data-test-id=""login-button""]
+[WAIT] the code step is shown: the heading ""Enter the sign-in code"" (up to 15s)
+[CAPTURE] code = readLatestMfaCode({email: account.email, after: T0, excludeIds: the journal rows already read}).code - the 6-digit value in the journal row body
+--- SCREEN: Enter the sign-in code, paste a spaced value ---
+[ACT] Paste the text 111 222 into 'Code' (clipboard paste, not key-by-key typing)
+[WAIT] the screen reacts (an error, or no change)
+[ASSERT] Read the digits kept in the six cells and count the POST {{BACK_URL}}/connect/token (grant_type=mfa) requests in the network log as spacedRequests, with the code parameter of each
+[ACT] Clear 'Code'
+--- SCREEN: Enter the sign-in code, paste a value with a letter ---
+[ACT] Paste the text 12a456 into 'Code' (clipboard paste)
+[ASSERT] Read the digits kept in the six cells and the number of new grant_type=mfa requests as letterRequests
+[ACT] Clear 'Code'
+--- SCREEN: Enter the sign-in code, paste seven digits ---
+[ACT] Paste the text 1234567 into 'Code' (clipboard paste)
+[WAIT] the screen reacts (an error, or no change)
+[ASSERT] Read the digits kept in the six cells and the code parameter of the new grant_type=mfa request as sevenRequest
+[ACT] Clear 'Code'
+--- SCREEN: Enter the sign-in code, type the real code ---
+[ACT] Type the first five digits of code into 'Code', one key at a time
+[ASSERT] Count the new grant_type=mfa requests as fiveRequests
+[ACT] Type the sixth digit of code into 'Code'
+[WAIT] the page leaves /sign-in
+[CAPTURE] from the network log: the number of grant_type=mfa requests carrying code as sixthRequests","[DOM] After the spaced paste 'Code' holds exactly the six digits 111222 and exactly one grant_type=mfa request carrying code=111222 was sent (spacedRequests equals 1) {SPEC} (vc-frontend#2570: sign-in-code-input shared form: Enter or paste the code; the spaces are dropped, the six digits are submitted once)
+[DOM] After the paste with a letter 'Code' drops the letter and keeps only digits (12456); letterRequests equals 0: five digits are never submitted {SPEC} (vc-frontend#2570: sign-in-code-input: inputmode numeric, pattern [0-9]*, six digits to submit)
+[DOM] After the seven-digit paste 'Code' holds only the first six digits 123456 and the request carries code=123456, never seven digits {SPEC} (vc-frontend#2570: sign-in-code-input: six cells)
+[COUNT] fiveRequests equals 0 and sixthRequests equals 1: the sixth digit submits exactly once - no double submit {SPEC} (vc-frontend#2570: sign-in-code-input: auto-submit on the sixth digit; useMfaSignIn does not send while a verification is loading)
+[STATE] The real code signs the customer in: the page leaves /sign-in and the account menu identifies account.email {SPEC} (vc-module-mfa#1: Token endpoint)","[API] the fixture creator (mfa-fixtures.mjs) reports no fixtureGap and no errors[] entry for the account kind and the store this case relies on
+[API] grant_type=mfa -> 400 invalid_code for each wrong submit, 200 for the real code, never a second request for one entry
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token",a letter or a space reaches the server as part of the code; five digits are submitted; the sixth digit submits twice and the second request burns a wrong-code attempt or refuses the right code; more than six digits are kept; spinner >5s,"Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:BOUNDARY · Technique:EP · Behavior:auth.signin.mfa.verify-code | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated

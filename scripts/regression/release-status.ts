@@ -5,7 +5,8 @@
  *   npm run release:status -- stable-16                 # who has which wave, totals, open decisions
  *   npm run release:status -- stable-16 --write         # regenerate PROGRESS.md from the wave files
  *   npm run release:check  -- stable-16                 # validate release.json, every state.json, ledger.csv, PROGRESS.md
- *   npm run release:check  -- --all                     # every release folder (the CI gate)
+ *   npm run release:check  -- --all                     # every release folder (push to main)
+ *   npm run release:check  -- --all --base origin/main  # a PR: a stale PROGRESS.md fails only the releases it touches
  *   npm run release:status -- stable-16 --ledger --suites 017,018 [--with-baseline]   # earlier verdicts, as JSON
  *
  * WHY IT EXISTS. A release regression outlives one person's session and one person's limits. Its
@@ -27,6 +28,7 @@
  * printed leave that file out) · 2 the release folder is missing.
  */
 import "../lib/sync-stdio.mjs";
+import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parse } from "csv-parse/sync";
@@ -63,7 +65,7 @@ type LedgerRow = Record<(typeof LEDGER_COLUMNS)[number], string> & { wave: strin
 
 function usage(msg?: string): never {
   if (msg) console.error(`release-status: ${msg}`);
-  console.error("usage: release:status -- <release> [--check] [--write] [--json] [--ledger [--suites a,b] [--with-baseline]] | --check --all");
+  console.error("usage: release:status -- <release> [--check] [--write] [--json] [--ledger [--suites a,b] [--with-baseline]] | --check --all [--base <ref>]");
   process.exit(1);
 }
 
@@ -146,7 +148,7 @@ function dependsOnWave(waves: Wave[], id: string, target: string, seen = new Set
 
 const isCount = (v: unknown) => Number.isInteger(v) && (v as number) >= 0;
 
-function check(release: string, dir: string, plan: Release | null, states: Map<string, State>, ledger: LedgerRow[], problems: string[]): string[] {
+function check(release: string, dir: string, plan: Release | null, states: Map<string, State>, ledger: LedgerRow[], problems: string[], strictProgress = true): string[] {
   if (!plan) return problems;
   if (plan.release !== release) problems.push(`release.json: release '${plan.release}' does not match its folder '${release}'`);
   if (!Array.isArray(plan.waves) || plan.waves.length === 0) {
@@ -182,6 +184,13 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
         if (!RAN.has(states.get(o.id)?.status ?? "NOT_STARTED")) problems.push(`release.json: exclusive suite ${x} (wave ${w.id}) is also in wave ${o.id}, which has not run — take it out of ${o.id}`);
       }
     }
+    // The exclusive wave runs ALONE, so it waits for every other wave — an untiered one too, which the
+    // tier rule above never orders.
+    if (w.exclusive?.length && !cycle) {
+      for (const o of plan.waves) {
+        if (o.id !== w.id && !o.exclusive?.length && !dependsOnWave(plan.waves, w.id, o.id)) problems.push(`release.json: exclusive wave ${w.id} must depend on wave ${o.id} — it runs alone, after every other wave`);
+      }
+    }
   }
   for (const [folder, s] of states) {
     const where = `waves/${folder}/state.json`;
@@ -206,6 +215,11 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
       if (sum !== t.executed) problems.push(`${where}: pass+fail+blocked+skipped+ambiguous = ${sum}, executed = ${t.executed}`);
       if (t.executed > t.planned) problems.push(`${where}: executed exceeds planned`);
       if (isCount(s.untriaged) && s.untriaged! > t.fail + t.blocked) problems.push(`${where}: untriaged exceeds the FAIL + BLOCKED count`);
+      // `untriaged` is declared, but its floor is derivable: every FAIL or BLOCKED case the ledger has no
+      // row for is untriaged, whatever the state file says. A wave cannot reach TRIAGED by under-counting.
+      const rowed = new Set(ledger.filter((r) => r.wave === folder && (r.status === "FAIL" || r.status === "BLOCKED")).map((r) => `${r.suite}|${r.case_id}`));
+      const floor = t.fail + t.blocked - rowed.size;
+      if (RAN.has(s.status) && isCount(s.untriaged) && s.untriaged! < floor) problems.push(`${where}: untriaged = ${s.untriaged}, but ${t.fail + t.blocked} cases are FAIL or BLOCKED and the ledger rows only ${rowed.size} of them — untriaged is at least ${floor}`);
     }
     for (const n of s.notRun ?? []) {
       if (!Array.isArray(n.suites) || !n.suites.length || !n.reason || !isCount(n.cases)) problems.push(`${where}: each notRun entry needs suites[], cases and a reason`);
@@ -239,7 +253,10 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
     const progress = join(dir, "PROGRESS.md");
     const want = render(plan, summarise(plan, states, ledger));
     if (!existsSync(progress) || readFileSync(progress, "utf-8").replace(/\r\n/g, "\n") !== want) {
-      problems.push(`PROGRESS.md is stale — run: npm run release:status -- ${release} --write`);
+      // A PR that does not touch this release cannot have made its overview stale (two wave PRs that merged
+      // past each other did) — it is told, not failed. The push to main stays strict, so main still goes red.
+      if (strictProgress) problems.push(`PROGRESS.md is stale — run: npm run release:status -- ${release} --write`);
+      else console.warn(`  note: ${release}/PROGRESS.md is stale on the base — not this PR's doing; a wave PR fixes it with release:status -- ${release} --write`);
     }
   }
   return problems;
@@ -300,9 +317,9 @@ function render(plan: Release, s: ReturnType<typeof summarise>): string {
   return L.join("\n");
 }
 
-function checkOne(release: string): boolean {
+function checkOne(release: string, strictProgress = true): boolean {
   const { dir, plan, states, ledger, problems } = load(release)!;
-  const found = check(release, dir, plan, states, ledger, problems);
+  const found = check(release, dir, plan, states, ledger, problems, strictProgress);
   if (found.length) {
     console.error(`release:check ${release}: ${found.length} problem(s)`);
     for (const p of found) console.error(`  - ${p}`);
@@ -317,15 +334,28 @@ function checkOne(release: string): boolean {
   return true;
 }
 
-const KNOWN_FLAGS = new Set(["--check", "--all", "--write", "--json", "--ledger", "--suites", "--with-baseline"]);
+const KNOWN_FLAGS = new Set(["--check", "--all", "--write", "--json", "--ledger", "--suites", "--with-baseline", "--base"]);
+
+/** Release folders a PR changes, from `git diff <base> HEAD` — null when git cannot tell, which keeps every release strict. */
+function touchedReleases(base: string): Set<string> | null {
+  try {
+    const out = execFileSync("git", ["diff", "--name-only", base, "HEAD", "--", "regression/releases"], { cwd: REPO_ROOT, encoding: "utf-8" });
+    return new Set(out.split(/\r?\n/).map((p) => p.split("/")[2]).filter(Boolean));
+  } catch (e) {
+    console.warn(`release:check: cannot diff against ${base} (${(e as Error).message.split("\n")[0]}) — every release is checked strictly`);
+    return null;
+  }
+}
 
 function main(): number {
   const argv = process.argv.slice(2);
   const positional: string[] = [];
   let suitesArg: string | null = null;
+  let baseArg: string | null = null;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--suites") { suitesArg = argv[++i] ?? usage("--suites needs a comma-separated list"); continue; }
+    if (a === "--base") { baseArg = argv[++i] ?? usage("--base needs a git ref"); continue; }
     if (a.startsWith("--")) { if (!KNOWN_FLAGS.has(a)) usage(`unknown flag ${a}`); continue; }
     positional.push(a);
   }
@@ -335,7 +365,8 @@ function main(): number {
     if (!flag("--check")) usage("--all is only valid with --check");
     const releases = existsSync(ROOT) ? readdirSync(ROOT).filter((d) => existsSync(join(ROOT, d, "release.json"))) : [];
     if (!releases.length) console.log("release:check: no release folders under regression/releases/");
-    return releases.map(checkOne).every(Boolean) ? 0 : 1;
+    const touched = baseArg ? touchedReleases(baseArg) : null;
+    return releases.map((r) => checkOne(r, !touched || touched.has(r))).every(Boolean) ? 0 : 1;
   }
   if (positional.length !== 1 || !/^[a-z0-9][a-z0-9.-]*$/.test(positional[0])) usage("give exactly one release folder name, e.g. stable-16");
   const release = positional[0];
