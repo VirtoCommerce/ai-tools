@@ -440,7 +440,7 @@ export function checkPromptBudget(files, baseline, read = (f) => fs.readFileSync
  * `../../.claude/rules/x.md` sends the agent to a file that is not there. COUNTED: a Markdown link whose
  * target resolves into `.claude/`, and a backticked token that starts `.claude/` (or `../…/.claude/`).
  * NOT counted: the copy-source header (`<!-- copy of .claude/… -->`), text inside `(in this repository: …)`
- * (a mark for a reader of THIS repository, not a read), anything under a `docs/` folder (human rationale),
+ * (a mark for a reader of THIS repository, not a read — unless it holds a Markdown link, which still counts), anything under a `docs/` folder (human rationale),
  * and a code comment outside `harness/` (history, not a read). A link whose label is a backticked path counts
  * once. In `harness/*.mjs` only comment text is scanned, and a bare `.claude/…` token counts there (and in a
  * `.json` value) because a comment or a data value is rarely backticked.
@@ -456,7 +456,8 @@ const LINK_ANY_RE = /\[[^\]]*\]\(([^)\s]*)\)/g;
 /** The `.claude/` reads on one line of `file` (repo-relative, posix). `mode`: 'md' | 'json' | 'comment'. */
 export function claudeReadsOnLine(file, line, mode = 'md') {
   if (COPY_HEADER_RE.test(line)) return [];
-  let rest = line.replace(THIS_REPO_MARK_RE, '');
+  // A mark that holds a Markdown link (`](`) is not exempt: a real link inside it is still a read.
+  let rest = line.replace(THIS_REPO_MARK_RE, (m) => (m.includes('](') ? m : ''));
   const out = [];
   if (mode === 'md') {
     // Link SYNTAX quoted in a code span is an example, not a link a reader follows.

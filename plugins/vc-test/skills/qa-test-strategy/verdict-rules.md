@@ -2,7 +2,10 @@
 
 The rules that turn a run's results into its verdict. They moved here from this repository's `/qa-test` close-out
 (§5-verdict.1 and §5-verdict.2) and from the `/qa-test-fast` verdict step (the `verdict.md` shape), with the meaning
-of today (spec B6): only the links changed.
+of today (spec B6): only outbound references changed.
+
+Labels kept verbatim from this repository's `/qa-test`: `5-verdict.1` = §Reconcile, `5-verdict.2` = §Decide the verdict,
+`5-triage` = the run's triage, `C1` = the ticket's regression (Artifact C1), `Step 4` = the run's execution step.
 
 ## Reconcile — AC & DoD vs implementation
 

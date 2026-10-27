@@ -98,7 +98,7 @@ reorder, a store) ⇒ SendMessage the agent the user's words, ask again on the n
 ## 4 — Plan
 
 `node <plugin>/lib/plan-run.mjs --strategy <RUN_DIR>/test-strategy.md --key <TICKET>` → `run-plan.json`. Exit 2 ⇒
-report its errors, STOP. **`--dry-run` stops here**: print the waves and `notRun`, write nothing.
+report its errors, STOP. **`--dry-run` stops here**: print the waves and `notRun`, write nothing else.
 
 ## 5 — Waves
 

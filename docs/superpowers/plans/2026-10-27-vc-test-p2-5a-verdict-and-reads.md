@@ -52,9 +52,9 @@ The owner's answers, binding on P2-5b–e:
 | A6 | `.claude/knowledge/agents/qa/shared-instructions.md` §5 / the authority tags (`SKILL.md:105`) | **Copy the section the citation names** to `knowledge/oracle-authority.md` |
 | A7 | `.claude/skills/qa-test-design/test-design-techniques.md` §0, §1 (`SKILL.md:100`) | **Copy §0 (the token vocabulary) and §1 (the selection guide)** to `knowledge/test-design-techniques.md`. §1a and later stay with `/qa-test-design` |
 | A8 | `.claude/skills/qa-test/exploratory-lane.md` §5 (`SKILL.md:119`) | **Copy §5 (the box)** to `knowledge/exploratory-box.md` |
-| A9 | `.claude/skills/qa-test/ui-kit-class.md` (`floors.md:25`) | **Copy whole** to `knowledge/ui-kit-class.md` (F3's signal) |
+| A9 | `.claude/skills/qa-test/ui-kit-class.md` (`floors.md:25`) | **Copy whole** to `knowledge/ui-kit-class.md` (F8's signal) |
 | A10 | `.claude/knowledge/domain/domain-map.md` (`floors.md:19`, the map's shape) | **Copy whole** to `knowledge/domain-map.md` |
-| A11 | `.claude/skills/qa-risk/risk-prioritization-framework.md` (`SKILL.md:83`) | **Cite vc-fix's skill by name** (`vc-fix:qa-risk`, `risk-prioritization-framework.md`, byte-identical). vc-test depends on vc-fix, and an agent loads it with the Skill tool. No copy |
+| A11 | `.claude/skills/qa-risk/risk-prioritization-framework.md` (`SKILL.md:83`) | **Cite vc-fix's skill by name** (`vc-fix:qa-risk`, `risk-prioritization-framework.md`, byte-identical). vc-test depends on vc-fix, and an agent loads it with the Skill tool. No copy (amended at execution by Ruling D: copied into `knowledge/`, because `vc-fix:qa-risk` has `disable-model-invocation: true`) |
 | A12 | `.claude/knowledge/execution/ticket-routing.md` (`floors.md:7,98`) | **Replace** with the plugin's own `lib/route.mjs` + `test.routing` (P2-1) |
 | A13 | `.claude/knowledge/execution/run-output.md` (`SKILL.md:38`) | **Replace** with the plugin's own `scripts/lib/run-dir.mjs` |
 | A14 | `.claude/rules/agents.md` (`SKILL.md:108`, lanes and the cap) | **Replace** with `lib/plan-run.mjs` (≤ 3 browser lanes) and one sentence |

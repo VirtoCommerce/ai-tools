@@ -29,7 +29,7 @@ step they are in actually needs rather than 680 lines of everything:
 | File | Owns | Read it when |
 |---|---|---|
 | [`triage.md`](triage.md) | **5-triage** — correlate, validate evidence, classify, provenance, severity, dedup | turning raw results into findings |
-| **this file** | **5-verdict · 5-file** — reconcile, verdict, filing | deciding what the run concluded |
+| **this file** | **5-verdict** (a pointer: the rules live in the vc-test plugin's `verdict-rules.md`) · **5-file** — filing | deciding what the run concluded |
 | [`reporting.md`](reporting.md) | **5-report · 5-status · 5-docs · 5-docs-map** — release gate, comment, `summary.json`, checklist, transition, docs, the domain-map write-back | delivering it |
 
 ---
