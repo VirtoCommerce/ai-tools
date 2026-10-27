@@ -406,6 +406,107 @@ export function imageIntrinsicDimsSnippet(selector: string = "img"): string {
 // ---------------------------------------------------------------------------
 // Static snippets — pass these strings verbatim to `browser_evaluate`
 // ---------------------------------------------------------------------------
+// CONTENT — the rendered text is wrong, not the layout (visual-axis.md §2a `CONTENT`)
+// ---------------------------------------------------------------------------
+
+/** One offender of a [PROBE:CONTENT] class: the text (or attribute) that matched, and where. */
+export interface ContentOffender { text: string; where: string }
+
+export interface ContentAuditResult {
+  scope: string;
+  /** False when the scope selector matched nothing: every list is then empty, which is not a pass. */
+  scopeMatched: boolean;
+  /** Visible text nodes + accessible-name attributes read. */
+  evaluated: number;
+  /** An untranslated i18n key shown to the user: `common.labels.close`, `sales_rep.navigation.link`. */
+  rawKeys: ContentOffender[];
+  /** A GUID in visible text: an internal id rendered instead of a name. */
+  guids: ContentOffender[];
+  /** A rendered `<img>` that loaded nothing (`complete` with `naturalWidth` 0): a 404 icon, a broken src. */
+  brokenImages: ContentOffender[];
+  /** A template or JS value leaked into the page, alone or inside a longer text: `$NaN`, `Welcome, undefined`,
+   *  `null`, `[object Object]`, `{{ … }}`. */
+  placeholders: ContentOffender[];
+  /** One value with no breaking space in it (a price, a date, an id) drawn on two lines: "$33.0" / "0". A
+   *  non-breaking space is part of the value, so `1.234,50 €` and `R$ 1.234,50` are one value each. */
+  midWrap: ContentOffender[];
+}
+
+/**
+ * [PROBE:CONTENT] — five content defects the layout probes cannot see, each one a class measured in the bug
+ * history (≈10 of ≈45 visual reports, 2026-10-23: raw i18n keys under fr/es and on a mobile close control, a raw
+ * organization GUID, a value wrapped mid-number, app-switcher icons 404). Read from visible text nodes and from
+ * the attributes that are a control's accessible name (aria-label, title, placeholder, alt).
+ *
+ * The i18n-key shape is three or more dotted segments of two or more characters, the first lowercase and every
+ * one starting with a letter (snake_case, camelCase and kebab-case segments all count). A version (`v3.10.1`), a
+ * dotted SKU (`ab.100.200`), an e-mail, a URL, a host name and a file name never count: a digit-led segment fails
+ * the shape, and the token is skipped when it sits after `@` or `//` or ends in a known TLD / extension. That list
+ * is best-effort; a host or file whose ending is not in it is a false offender, so extend it rather than relax
+ * the assertion. Text under `code` / `pre` is never read.
+ *
+ * A scope that matches nothing returns `scopeMatched: false`; the runner reports the case BLOCKED.
+ */
+export function contentAuditSnippet(scope: string = "body"): string {
+  return `
+(() => {
+  const root = document.querySelector(${JSON.stringify(scope)});
+  const out = { scope: ${JSON.stringify(scope)}, scopeMatched: !!root, evaluated: 0, rawKeys: [], guids: [], brokenImages: [], placeholders: [], midWrap: [] };
+  if (!root) return out;
+  const KEY = /(^|[^\\w@/.-])([a-z][\\w-]+(?:\\.[a-zA-Z][\\w-]+){2,})(?![\\w-]|\\.\\w|[\\w.-]*[/@])/g;
+  const NOT_KEY = /\\.(com|net|org|io|co|ai|ru|de|fr|nl|es|it|pl|eu|uk|us|ca|au|in|me|tv|biz|info|dev|app|shop|store|cloud|online|site|xyz|html?|js|css|json|xml|txt|md|png|jpe?g|gif|ico|svg|webp|mp4|pdf|csv|xlsx?|docx?|zip|gz|tar)$/i;
+  const GUID = /\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b/i;
+  const PLACEHOLDER = /\\[object Object\\]|\\bNaN\\b|\\bundefined\\b|\\bnull\\b|\\{\\{[^}]*\\}\\}/;
+  const VALUE = /[^ \\t\\n\\r\\f]+/g;
+  const visible = (el) => {
+    if (!el || !el.getClientRects().length) return false;
+    const cs = getComputedStyle(el);
+    return cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0;
+  };
+  const where = (el) => (el.tagName || '').toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\\s+/)[0] : '');
+  const push = (list, text, el) => { if (list.length < 25) list.push({ text: String(text).slice(0, 120), where: where(el) }); };
+  const keysIn = (text, el) => {
+    for (const m of text.matchAll(KEY)) if (!NOT_KEY.test(m[2])) push(out.rawKeys, m[2], el);
+  };
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const text = n.nodeValue.trim();
+    const el = n.parentElement;
+    if (!text || !el || el.closest('script,style,noscript,template,code,pre') || !visible(el)) continue;
+    out.evaluated++;
+    keysIn(text, el);
+    const g = GUID.exec(text); if (g) push(out.guids, g[0], el);
+    if (PLACEHOLDER.test(text)) push(out.placeholders, text, el);
+    for (const m of n.nodeValue.matchAll(VALUE)) {
+      if (m[0].length < 2 || !/\\d/.test(m[0])) continue;
+      const range = document.createRange();
+      range.setStart(n, m.index); range.setEnd(n, m.index + m[0].length);
+      const tops = new Set(Array.from(range.getClientRects()).filter((r) => r.width > 0).map((r) => Math.round(r.top)));
+      if (tops.size > 1) push(out.midWrap, m[0], el);
+    }
+  }
+  for (const el of root.querySelectorAll('[aria-label],[title],[placeholder],img[alt]')) {
+    if (!visible(el)) continue;
+    for (const a of ['aria-label', 'title', 'placeholder', 'alt']) {
+      const v = el.getAttribute(a);
+      if (!v) continue;
+      out.evaluated++;
+      keysIn(v.trim(), el);
+      if (PLACEHOLDER.test(v.trim())) push(out.placeholders, a + '=' + v, el);
+    }
+  }
+  for (const img of root.querySelectorAll('img')) {
+    if (visible(img) && img.complete && img.naturalWidth === 0 && (img.currentSrc || img.getAttribute('src'))) {
+      push(out.brokenImages, (img.currentSrc || img.getAttribute('src')).slice(0, 160), img);
+    }
+  }
+  return out;
+})()
+`.trim();
+}
+
+// ---------------------------------------------------------------------------
 
 export const LAYOUT_SNIPPETS = {
   /**

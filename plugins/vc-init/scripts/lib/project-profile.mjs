@@ -11,6 +11,7 @@
  *                  fixes are PR'd / platform bugs are filed as issues
  *   - repos:       the discovered client/platform repo map
  *   - perf:        vc-perf's block (written through profile-set.mjs by /perf-init)
+ *   - test:        vc-test's block (written through profile-set.mjs by /vc-test:init)
  *
  * vc-init is the ONLY writer (VCST-6402): `/project-init` (gen-profile.mjs, reconcile-profile.mjs)
  * and profile-set.mjs, which /qa-bug and /perf-init call instead of editing the file. vc-fix and
@@ -33,7 +34,8 @@
  *   through the $VC_RUN bridge; a session value (`gh-cli`, `az-login`, `oauth`) ⇒ the tool's own
  *   login. "" ⇒ the axis does not apply to this deployment (e.g. `ado` on Jira + GitHub).
  * @property {Record<string, any>} perf  vc-perf's block — an open map, kept wholesale by reconcile
- * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean}}} governance
+ * @property {Record<string, any>} test  vc-test's block — an open map, kept wholesale by reconcile
+ * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean}, websiteAuth:""|"host-secrets"|"manual-operator", envs:Record<string,string>, codeAccess:""|"none"|"read"|"write"}} governance
  *   a host-governed project (schema 3): see the PROFILE_DEFAULTS comment
  * @property {"platform"|"client"} projectType
  * @property {"virto-engineer"|"client"|"ask"} operator
@@ -99,8 +101,8 @@
  * @property {string} backendUrlForDev  APP_BACKEND_URL for local dev — the STOREFRONT host (resolves the store AND proxies the API), NOT the admin host
  * @property {string} [storeId]
  * @property {string} [storeDomain]
- * @property {string} [userEnv]  env var with the storefront login (default USER_EMAIL)
- * @property {string} [passEnv]  env var with the storefront password (default USER_PASSWORD)
+ * @property {string} [userEnv]  env var with the storefront login (absent ⇒ USER_EMAIL; "" ⇒ host-governed: a `<SLOT>_LOGIN` user, no default)
+ * @property {string} [passEnv]  env var with the storefront password (absent ⇒ USER_PASSWORD; "" ⇒ typed by the host slot NAME)
  */
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
@@ -274,18 +276,31 @@ export const PROFILE_DEFAULTS = {
   // prunes it, and `/perf-init` writes it through profile-set.mjs `--merge perf=<json>`.
   perf: {},
 
+  // test — vc-test's block: `environments` (env → { writable }), `scriptRoots` (project-relative
+  // folders the $VC_RUN runner may execute files from) and `knowledgeStore`. An OPEN MAP, like
+  // `perf`: `/vc-test:init` writes it through profile-set.mjs `--merge test=<json>`.
+  test: {},
+
   // governance — a HOST-GOVERNED project (VCST-6402 step 8): the client runs its own governance
   // plugin (rules, approved MCP servers, its own secret wrapper) and our plugins are a guest.
-  //   host:    the host plugin's registry key (vc-init lib/governance.mjs HOSTS) | null (= not governed)
+  //   host:    the host plugin's id, `<plugin>@<marketplace>` (found by vc-init lib/governance.mjs) | null (= not governed)
   //   secrets: "host" — no token path of ours runs at all (bridge refuses, no vc-secrets, no PAT, no
   //            az login) | "vc-secrets" — the normal VCST-6402 flow
   //   servers: the host's MCP server key per role — operator-confirmed, never inferred
   //   stand.writable: false on a governed project (no seeding/mutation of the client's stands)
+  //   websiteAuth: how test users sign in to the client's site — "host-secrets" (passwords in the host's
+  //            wrapper, typed by NAME) | "manual-operator" (the operator signs in by hand) | ""
+  //   envs:    open map, `.env.<env>` name → the host's website environment (its password slots' prefix)
+  //   codeAccess: what the person may do with the client's code through servers.codeHost —
+  //            "none" | "read" (read for root cause, never a PR) | "write" (a PR for review) | ""
   governance: {
     host: null,
     secrets: "vc-secrets",
     servers: { tracker: "", codeHost: "", github: "", telemetry: "", testManagement: "", browsers: [] },
     stand: { writable: true },
+    websiteAuth: "",
+    envs: {},
+    codeAccess: "",
   },
 };
 

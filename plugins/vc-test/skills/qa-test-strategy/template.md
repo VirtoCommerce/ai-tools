@@ -1,0 +1,90 @@
+# Test strategy — <TICKET>
+
+<!-- Shape for /vc-test:qa-test-strategy; lib/check-strategy.mjs reads it. Write a Decision cell as plain `RUN` (not bold) and a risk
+     Level as Critical | High | Medium | Low, in full words. More than 3 lanes ⇒ add a `Lanes sequenced:` line.
+     ONE file per ticket (D7), one "## Round N" section per round, newest last.
+     Each round section's size cap: the reports policy §2 (D9). Method, floors, rounds:
+     the vc-test plugin's skills/qa-test-strategy/. Delete every comment line. -->
+
+## Round <N> of 3 — <YYYY-MM-DD>
+
+Status: DRAFT | APPROVED (<who>, <date>) | CHANGED (<n> edits) | AUTO (--yes) · Depth label: <light | standard | deep> (computed)
+Blocked: <F6 — quote the NOT DEPLOYED line | no>
+Build: <<repo>#<n> @ <sha> per PR | none> · Stand: <env> · Deployed: <yes | NO → F6 | UNKNOWN → unverified> · Previous: <Round N−1 verdict, build | none>
+Floors fired: <F1 (signal) · F3 (signal) · …> · not fired: <F2, F4, …>[ · skipped: <F5 (not available in this install: <capability>)>]
+Change map: <the --change-map path | none>
+
+**Mission.** <one sentence: the question this round answers, and for whom. Round 3: say it is the last.>
+
+### Inputs
+| Input | What we have | Gap → project risk |
+|---|---|---|
+| Project environment | <stand, build, PRs deployed?, roles/accounts, free lanes, time box · setting values (F11)> | <P-n or —> |
+| Product elements | <change surface by layer, from the diff (round ≥ 2: since the last tested commit)> | |
+| Quality criteria | <AC-1…n · BL-/ECL- ids · docs · kb ids · design link> | |
+
+### Risks
+| R | What a customer would see if this is wrong | Source | L×I | Level |
+|---|---|---|---|---|
+| R1 | <…> | <AC-n · file:line · VC-n · bug key · carried from Round N−1 R-n · floor:F2 / floor:F10 / floor:F11 when this is that floor's MODEL risk — one floor per risk> | <n> | <Critical/High/Medium/Low> |
+
+Project risks: P1 <risk> → <mitigation | accepted>.
+
+### Strategy mix
+Analytical ✔ · Methodical ✔ · Consultative ✔ · Model-based <✔/—: why> · Reactive <✔/—: why> ·
+Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
+
+### Approach per risk
+| R | Technique / approach | Oracle {authority} | Layer · tool | Lane · agent | Effort |
+|---|---|---|---|---|---|
+| R1 | FLOW, DT | AC-2 {SPEC} | storefront · Playwright | chrome · qa-frontend-expert | high |
+<!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL:<PIXEL|DESIGN|PROBE|CONTENT>, several comma-separated as VISUAL:DESIGN,PIXEL (floors.md §VISUAL) · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
+
+<!-- VC-TEST ONLY — delete outside vc-test: a /qa-test or /qa-test-fast strategy drops this whole block (the heading,
+     the table and this comment). Under vc-test it is required (clause 13, floors.md §13); the list is generated before
+     the risks, so add the R-n to Why likely. -->
+### Scenarios
+| S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes |
+|---|---|---|---|---|---|---|---|
+| S-1 | <1–6> | <the action on the stand> | <the bug it hunts> | <why a bug is likely here> · R1 | <n> | <what proves it> | <none / what it writes> |
+
+<!-- ROUND ≥ 2 ONLY, VC-TEST ONLY — delete in round 1 and outside vc-test (the heading, the table and this comment).
+     `rounds.mjs append` writes it with the round: one row per in-scope bug of every earlier round, each re-run as its R
+     (Level not below the Severity — clause 14). Reproduction: `spec <path>` | `package <path>` | `none`. rounds.md §Round N in vc-test. -->
+### Prior bugs
+| PB | Bug | Severity | Found | Reproduction | R |
+|---|---|---|---|---|---|
+| PB-1 | <key — title> | <Critical/High/Medium> | Round <n> | <spec <path> / package <path> / none> | R<n> |
+
+### Artifacts
+| Artifact | Decision |
+|---|---|
+| Test model | RUN (new \| amend <path>) — iff a risk has technique MODEL \| SKIP — no MODEL risk \| SKIP — scenarios cover the MODEL risks (vc-test) |
+| Mind map | RUN \| SKIP — <reason> |
+| Checklist | RUN (always) |
+| Exploratory | RUN <box> min, FIRST \| ALONGSIDE — charter: <R-ids> \| SKIP — <reason> |
+| Visual lane | RUN (F3/F8) — instruments: <DESIGN, PROBE, CONTENT as the VISUAL risks name them; PIXEL runs as its own item, whatever this row says> \| SKIP — <reason> |
+| Contract refresh | RUN \| SKIP — <reason> |
+| Coverage triage + regression | RUN — <n> cases; stale → lifecycle: <ids + reason> \| SKIP — <reason> |
+| Verifier | RUN (Critical R-n) \| SKIP — no Critical risk |
+| Case authoring | never in the run (D2) — candidate cases are listed at close-out |
+
+### Data
+<per risk or global: existing @td() alias · live-discover · create in the case (FIFTH RULE) · seeder named by a Data cell>
+Must differ: <which values must differ for R-n to be decidable> · Before redeploy: <records to create on the old build, or none>
+
+### Out of scope
+- <what> — <why> — residual risk <level>
+
+### Criteria
+Entry: <build carries the PRs · env:check green · data reachable> · Suspend (BLOCKED): <condition>
+Exit: every in-scope R has a result or a named deviation · exploratory box spent · <other>
+
+### Amendments
+<!-- appended during the run: a risk discovered, an approach changed — one line each, with its reason -->
+
+### Reconciliation (filled at close-out)
+| R | Planned | Ran (item ids · charter · lane · case ids) | Result | Deviation — reason |
+|---|---|---|---|---|
+
+Candidate cases (→ /qa-test-lifecycle): <ids or none> · Carried to Round N+1 / escalation: <R-ids or none>

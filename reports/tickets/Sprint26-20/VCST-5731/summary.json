@@ -67,7 +67,7 @@
   "regression": {
     "c1": {
       "ran": false,
-      "skipped_reason": "covered by the VCST-5337 run (suites 110 (ran as 109) / 050m3, REG-2026-10-20-1332)"
+      "skipped_reason": "covered by the VCST-5337 run (suites 112 (ran as 109) / 050m3, REG-2026-10-20-1332)"
     },
     "feature_release_gate": "not-assessed"
   },

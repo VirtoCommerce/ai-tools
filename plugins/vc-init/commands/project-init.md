@@ -6,14 +6,14 @@ argument-hint: "(no args — interactive) | --add-env (add another environment t
 
 # /project-init — deploy & wire the QA plugins for a customer
 
-Bring the Virto Commerce plugins (vc-fix, vc-perf, …) up on a new machine / for a new customer and
+Bring the Virto Commerce plugins up on a new machine / for a new customer and
 produce the **deployment profile** (`project-profile.json`) that every installed plugin reads — the
 tracker (Jira or Azure Boards), the code host and its repositories (client module / theme / storefront
 fork **or** native VirtoCommerce platform), the stands.
 
 Methodology + helper scripts: the [`/project-init` skill](../skills/project-init/SKILL.md). This
-plugin (vc-init) is the ONLY writer of the profile; vc-fix and vc-perf stop with "run /project-init"
-when it is absent.
+plugin (vc-init) is the ONLY writer of the profile; every plugin that reads it stops with
+"run /project-init" when it is absent.
 
 **Tokens never pass through chat or a file.** The operator stores each PAT with
 `node "<VC_SECRETS>" set <name>` in their own terminal and approves the declarations with
@@ -57,7 +57,7 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
    a vc-secrets secret is declared (PAT) or a login is run (session). **Do NOT ask about upstream
    `feedback.mode`** (PR #172 item 4) — it stays at its `ask` default.
 3. Scaffold + hand off: `scaffold-env.mjs` → `.env.<env>` (per-env URLs) + the tracker / code-host connection
-   into `.env.local` (once, same for every env); `scaffold-secrets.mjs` → the test-user passwords in `.env.local`; `write-secrets-decl.mjs` → `.claude/vc-secrets.local.json` (one
+   into `.env.local` (once, same for every env); `scaffold-secrets.mjs` → the test-user passwords in `.env.local`; `write-secrets-decl.mjs` → `.claude/vc-secrets.local.json` (one <!-- doclint:may-not-exist -->
    secret per PAT axis + the bridge tasks). Show the operator what to fill, the `trust` command when
    the declarations changed, and the token block from `check-secrets.mjs --steps` (what / where / the
    `set <name>` command per token) — then **pause** with the waiting banner, no tool calls after it.

@@ -14,8 +14,9 @@
  *
  * HOST PINNING: every request goes to the profile's `tracker.baseUrl` (written by /project-init) and
  * to nothing else — there is no flag and no env var that changes the host, because the process holds
- * a token and the command line is the caller's. Paths must be `/rest/…`; `request` refuses a full URL
- * and refuses DELETE (deleting tracker data is a human decision).
+ * a token and the command line is the caller's. Paths must be `/rest/…` (`safePath`); the one exception is
+ * `confluence-page`, a GET of `/wiki/api/v2/pages/<digits>` (`safeWikiPath`) that follows no redirect.
+ * `request` refuses a full URL and refuses DELETE (deleting tracker data is a human decision).
  *
  * Auth: Basic `JIRA_EMAIL:JIRA_API_TOKEN` (JIRA_EMAIL is an identifier, read from .env.local).
  * Prints JSON on stdout; exits non-zero on an HTTP error. NEVER prints the token.
@@ -32,6 +33,14 @@
  *   transitions    --key ABC-1
  *   transition     --key ABC-1 --to "In Review"              # by name or id
  *   request        --method GET|POST|PUT --path /rest/api/3/… [--body-file b.json]
+ *   comments       --key ABC-1 [--rendered] [--max 500] [--newest]   # every page, one launch → { total, comments, truncated }
+ *   download       --attachment 10050 --out .vc-fix/… [--max-bytes 26214400]   # → { path, bytes, contentType }
+ *   dev-prs        --key ABC-1                               # the development panel's PR URLs → { issueId, urls }
+ *   confluence-page --id 123456                              # a Confluence page on the same host, storage body
+ *
+ * The reads (comments, download, dev-prs, confluence-page) print Jira's own objects unshaped — a caller (vc-test's
+ * connector) builds its raw files from them. `download` writes only inside <outputRoot>/.vc-fix/ and stops
+ * at --max-bytes (raw-out.mjs): this process holds a token and its command line is the caller's.
  *
  * Without --wiki a body file that parses as JSON is sent as an ADF document; anything else is sent as
  * plain text, one paragraph per blank-line-separated block. Markdown is NOT converted — use the
@@ -42,6 +51,7 @@ import { basename, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
+import { DOWNLOAD_TIMEOUT_MS, FETCH_TIMEOUT_MS, rawOutPath, timedFetch, writeCapped } from "./raw-out.mjs";
 
 function fail(msg, code = 1) {
   console.error(`[jira] ${msg}`);
@@ -113,6 +123,15 @@ export function safePath(path) {
   return p.startsWith("/rest/") && !p.includes("://") && !p.includes("\\") && !/(^|\/)\.\.(\/|$)/.test(p) && !/[\r\n]/.test(p);
 }
 
+/** A Confluence page id: digits only, at most 20. */
+export const PAGE_ID = /^\d{1,20}$/;
+
+/** The one Confluence path this CLI may send: a page by numeric id, storage body. Pure. */
+export function safeWikiPath(path) {
+  const m = /^\/wiki\/api\/v2\/pages\/([^/?]*)(\?body-format=storage)?$/.exec(String(path || ""));
+  return !!m && PAGE_ID.test(m[1]);
+}
+
 /** Plain text → a minimal ADF document (one paragraph per blank-line-separated block). Pure. */
 export function textToAdf(text) {
   const blocks = String(text).replace(/\r\n/g, "\n").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
@@ -121,6 +140,58 @@ export function textToAdf(text) {
     version: 1,
     content: blocks.map((b) => ({ type: "paragraph", content: b.split("\n").flatMap((line, i) => (i ? [{ type: "hardBreak" }] : []).concat(line ? [{ type: "text", text: line }] : [])) })),
   };
+}
+
+/**
+ * Every comment page up to `max`, in one process (a bridge launch per page would cost a vc-secrets start
+ * each). An empty page ends the loop whatever `total` says; an id seen twice (a comment posted mid-read
+ * shifts the window) is kept once. Pure: `fetchPage(startAt, maxResults)` does the I/O.
+ * @returns {Promise<{ total: number, comments: object[], truncated: boolean }>}
+ */
+export async function pageComments(fetchPage, { max = 500, pageSize = 100 } = {}) {
+  const comments = [];
+  const seen = new Set();
+  let total = null;
+  let startAt = 0;
+  while (comments.length < max) {
+    const want = Math.min(pageSize, max - comments.length);
+    const page = await fetchPage(startAt, want);
+    const items = Array.isArray(page?.comments) ? page.comments : [];
+    if (Number.isInteger(page?.total)) total = page.total;
+    if (!items.length) break;
+    let added = 0;
+    for (const c of items) {
+      const id = c?.id ?? JSON.stringify(c);
+      if (seen.has(id) || comments.length >= max) continue;
+      seen.add(id);
+      comments.push(c);
+      added++;
+    }
+    if (!added) break; // a page with nothing new: a server repeating itself ends the loop, never spins it
+    startAt += items.length;
+    // With a known total, a short page is a server cap, not the end; without one, it is the end.
+    if (total !== null ? startAt >= total : items.length < want) break;
+  }
+  const known = total ?? comments.length;
+  return { total: known, comments, truncated: comments.length < known };
+}
+
+/**
+ * The PR URLs Jira's development panel holds for an issue (a copy of /ticket-context's `devPrUrls` — vc-fix is self-contained, so a fix to one is made to both): `detail`
+ * answers only for the applicationType the integration is registered under — a wrong one is an empty 200 —
+ * so the types come from `summary`, plus "GitHub". Pure: `getJson(path)` does the I/O.
+ * @returns {Promise<string[]>}
+ */
+export async function devPrUrls(getJson, issueId) {
+  const id = encodeURIComponent(issueId);
+  const sum = await getJson(`/rest/dev-status/latest/issue/summary?issueId=${id}`);
+  const types = new Set([...Object.keys(sum?.summary?.pullrequest?.byInstanceType ?? {}), "GitHub"]);
+  const urls = new Set();
+  for (const t of types) {
+    const j = await getJson(`/rest/dev-status/latest/issue/detail?issueId=${id}&applicationType=${encodeURIComponent(t)}&dataType=pullrequest`);
+    for (const d of j?.detail ?? []) for (const p of d.pullRequests ?? []) if (p.url) urls.add(p.url);
+  }
+  return [...urls];
 }
 
 function readBody(args) {
@@ -156,16 +227,23 @@ function main() {
   if (!email) fail("no JIRA_EMAIL — set it in .env.local (an identifier, not a secret — the same for every env)");
   const auth = `Basic ${Buffer.from(`${email}:${token}`).toString("base64")}`;
 
-  const call = async (method, path, { body, headers = {}, raw = false, redirect = "follow" } = {}) => {
-    if (!safePath(path)) fail(`refusing path ${JSON.stringify(path)} — only /rest/… on ${pin.origin}`);
-    const res = await fetch(`${pin.origin}${path}`, {
+  const call = async (method, path, { body, headers = {}, raw = false, redirect = "follow", timeout = FETCH_TIMEOUT_MS, wiki = false } = {}) => {
+    if (wiki ? method !== "GET" || !safeWikiPath(path) : !safePath(path)) {
+      fail(`refusing ${method} ${JSON.stringify(path)} — only ${wiki ? "GET /wiki/api/v2/pages/<digits>" : "/rest/…"} on ${pin.origin}`);
+    }
+    const res = await timedFetch(`${pin.origin}${path}`, {
       method,
-      redirect,
+      // A page GET has no reason to redirect; following one would hand the host pin to the runtime's fetch.
+      redirect: wiki ? "manual" : redirect,
       headers: { Authorization: auth, Accept: "application/json", ...(body !== undefined && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}), ...headers },
       body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
-    });
+    }, timeout, `${method} ${path}`, { buffer: !raw });
     if (raw) return res;
     const text = await res.text();
+    if (wiki && res.status >= 300 && res.status < 400) fail(`HTTP ${res.status} for ${method} ${path} — a redirect, not followed`);
+    if (wiki && (res.status === 401 || res.status === 403)) {
+      fail(`HTTP ${res.status} for ${method} ${path} — Confluence refused this account. Check that it has Confluence access and the token can read Confluence; Jira reads are a separate check (jira myself)`);
+    }
     if (res.status === 401 || res.status === 403) {
       fail(`HTTP ${res.status} for ${method} ${path} — the Jira token was rejected. Store a fresh one: node "<VC_SECRETS>" set jira-token`);
     }
@@ -183,6 +261,11 @@ function main() {
   const key = () => {
     if (!args.key || !/^[A-Z][A-Z0-9_]*-\d+$/.test(String(args.key))) fail("--key ABC-123 required");
     return args.key;
+  };
+  const intArg = (name, dflt) => {
+    if (args[name] === undefined) return dflt;
+    if (!/^\d+$/.test(String(args[name])) || Number(args[name]) < 1) fail(`--${name} must be a positive integer`);
+    return Number(args[name]);
   };
   const commands = {
     myself: () => call("GET", "/rest/api/3/myself").then((m) => ({ accountId: m.accountId, displayName: m.displayName, emailAddress: m.emailAddress })),
@@ -209,7 +292,7 @@ function main() {
       if (!args.file.length) fail("--file <path> required (repeatable)");
       const form = new FormData();
       for (const f of args.file) form.append("file", new Blob([readInput("file", f, { raw: true })]), basename(f));
-      const out = await call("POST", `/rest/api/3/issue/${key()}/attachments`, { body: form, headers: { "X-Atlassian-Token": "no-check" } });
+      const out = await call("POST", `/rest/api/3/issue/${key()}/attachments`, { body: form, headers: { "X-Atlassian-Token": "no-check" }, timeout: DOWNLOAD_TIMEOUT_MS });
       return (Array.isArray(out) ? out : []).map((a) => ({ id: a.id, filename: a.filename }));
     },
     "media-id": async () => {
@@ -234,6 +317,45 @@ function main() {
       if (!t) fail(`no transition "${args.to}" — available: ${list.map((x) => x.name).join(", ")}`);
       await call("POST", `/rest/api/3/issue/${key()}/transitions`, { body: { transition: { id: t.id } } });
       return { ok: true, transition: t.name, to: t.to?.name };
+    },
+    comments: () => {
+      const max = intArg("max", 500);
+      const order = args.newest ? "-created" : "created";
+      const expand = args.rendered ? "&expand=renderedBody" : "";
+      return pageComments((startAt, maxResults) => call("GET", `/rest/api/3/issue/${key()}/comment?startAt=${startAt}&maxResults=${maxResults}&orderBy=${order}${expand}`), { max });
+    },
+    download: async () => {
+      if (!args.attachment || !/^\d+$/.test(String(args.attachment))) fail("--attachment <id> required");
+      let out;
+      try {
+        out = rawOutPath(String(args.out ?? ""));
+      } catch (e) {
+        fail(e.message);
+      }
+      let res = await call("GET", `/rest/api/3/attachment/content/${args.attachment}`, { raw: true, redirect: "manual", headers: { Accept: "*/*" }, timeout: DOWNLOAD_TIMEOUT_MS });
+      // Jira answers with a redirect to its media host. Follow it ourselves, https only and WITHOUT the token,
+      // instead of trusting the runtime's fetch to drop Authorization on the cross-origin hop.
+      if (res.status >= 300 && res.status < 400) {
+        const loc = res.headers.get("location");
+        const next = loc ? new URL(loc, pin.origin) : null;
+        if (!next || next.protocol !== "https:") fail(`HTTP ${res.status} for the attachment ${args.attachment} with no https Location`);
+        res = await timedFetch(next.href, { headers: { Accept: "*/*" } }, DOWNLOAD_TIMEOUT_MS, "the attachment download");
+      }
+      if (!res.ok) fail(`HTTP ${res.status} for the attachment ${args.attachment}`);
+      try {
+        return { path: out, ...(await writeCapped(res, out, intArg("max-bytes", 25 * 2 ** 20))) };
+      } catch (e) {
+        fail(e.message);
+      }
+    },
+    "dev-prs": async () => {
+      const issue = await call("GET", `/rest/api/3/issue/${key()}?fields=id`);
+      return { issueId: String(issue.id), urls: await devPrUrls((path) => call("GET", path), issue.id) };
+    },
+    "confluence-page": () => {
+      const id = String(args.id ?? "");
+      if (!PAGE_ID.test(id)) fail(`refusing --id ${JSON.stringify(id)} — a Confluence page id is digits only`);
+      return call("GET", `/wiki/api/v2/pages/${id}?body-format=storage`, { wiki: true });
     },
     request: () => {
       const method = String(args.method || "GET").toUpperCase();

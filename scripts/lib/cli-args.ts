@@ -22,14 +22,15 @@ export function flagValue(argv: readonly string[], flag: string): string | undef
   return i >= 0 ? argv[i + 1] : undefined;
 }
 
-/** Non-negative integer flag. Exits non-zero on a value that is not one. */
-export function intFlag(argv: readonly string[], flag: string, fallback: number): number {
+/** Non-negative integer flag. Exits non-zero on a value that is not one (`exitCode`, default 1, for a
+ *  script whose exit 1 already means something else). */
+export function intFlag(argv: readonly string[], flag: string, fallback: number, exitCode = 1): number {
   const raw = flagValue(argv, flag);
   if (raw === undefined) return fallback;
   const n = Number(raw);
   if (!Number.isFinite(n) || n < 0) {
     console.error(`✗ ${flag} expects a non-negative number, got "${raw}"`);
-    process.exit(1);
+    process.exit(exitCode);
   }
   return n;
 }
@@ -57,12 +58,13 @@ export function enumFlag<T extends string>(
  * argument (so its value is not itself mistaken for an unknown flag). Matching
  * `promote-cases.ts`, an unknown flag is a usage error, not something to ignore:
  * a typo that silently changes the scope of a corpus-wide read is the worst kind
- * of quiet.
+ * of quiet. `exitCode` as in `intFlag`.
  */
 export function rejectUnknownFlags(
   argv: readonly string[],
   known: readonly string[],
   valued: readonly string[] = [],
+  exitCode = 1,
 ): void {
   const knownSet = new Set(known);
   const valuedSet = new Set(valued);
@@ -71,7 +73,7 @@ export function rejectUnknownFlags(
     if (!a.startsWith("--")) continue;
     if (!knownSet.has(a)) {
       console.error(`✗ unknown flag "${a}". Known: ${[...known].sort().join(" ")}`);
-      process.exit(1);
+      process.exit(exitCode);
     }
     if (valuedSet.has(a)) i++; // skip its value
   }

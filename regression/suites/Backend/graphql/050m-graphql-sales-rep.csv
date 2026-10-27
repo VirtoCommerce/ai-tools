@@ -897,7 +897,7 @@ query {
 [GQL-EXEC crossOrg]","[ERRORS label=perOrg] errors[] empty {DOC}
 [ERRORS label=crossOrg] errors[] empty {DOC}
 [COUNT label=perOrg] data.perOrg.length >= 1 {DOC}
-[COUNT label=crossOrg] data.crossOrg.length >= 1 {SPEC}",none,omitting organizationId errors instead of aggregating cross-customer; the cross-customer rollup is empty despite the per-customer scope having sales,none (read-only),"Generated: VCST-5368 gap-fill (TLC-2026-07-23-1943 restore), 2026-07-28 | Behavior:sr.stats.top-sellers | VCST-5337 r2 2026-10-20: split into two single-field operations. The original two-alias operation tripped a REAL intermittent xAPI ARGUMENT race (4/14 runs on one stand, 2/15 on another; pre-existing, suspected CopyArgumentsToUserContext sharing one UserContext between sibling fields) - that is now asserted, unhidden, by SR-GQL-157; this case keeps the scoping check (BL-SR-002/008) independent of the race",Draft
+[COUNT label=crossOrg] data.crossOrg.length >= 1 {SPEC}",none,omitting organizationId errors instead of aggregating cross-customer; the cross-customer rollup is empty despite the per-customer scope having sales,none (read-only),"Generated: VCST-5368 gap-fill (TLC-2026-07-23-1943 restore), 2026-07-28 | Behavior:sr.stats.top-sellers | VCST-5337 r2 2026-10-20: split into two single-field operations. The original two-alias operation tripped a REAL intermittent xAPI ARGUMENT race (4/14 runs on one stand, 2/15 on another; pre-existing, suspected CopyArgumentsToUserContext sharing one UserContext between sibling fields) - that is now asserted, unhidden, by SR-GQL-158; this case keeps the scoping check (BL-SR-002/008) independent of the race",Draft
 SR-GQL-080,salesRepTopSellers — Anonymous Returns Authorization Error,GraphQL > Sales Rep > Query > salesRepTopSellers,Critical,BL-SR-002,ECL-14.1,Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires the Sales Rep module deployed on the environment. No auth token set.,store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
 [GQL-OP anon]
 query { salesRepTopSellers(storeId: ""{{store}}"") { productId } }
@@ -1708,7 +1708,54 @@ query { salesRepDocuments(first: 1) { totalCount } }
 [GQL-EXEC read2]","[ERRORS label=read1] errors[] empty {OBSERVED}
 [ERRORS label=read2] errors[] empty {OBSERVED}
 [DATA label=read2] data.salesRepDocuments.totalCount >= data.read1.salesRepDocuments.totalCount {OBSERVED}",none,"totalCount decreases between read1 and read2 with no delete having occurred, errors[] is non-empty on either read",none (read-only),"VCST-5730; LIVE-CONFIRMED 2026-08-20 vcptcore-qa (totalCount observed 5 then 7 across the same probing session, shared env) | Behavior:sr.documents.live-mutable",Automated
-SR-GQL-157,"salesRepTopSellers — Two Aliased Fields in ONE Operation Both Return Data (Intermittent ARGUMENT Race, Expected to Fail Intermittently Until Fixed)",GraphQL > Sales Rep > Query > salesRepTopSellers,High,BL-SR-002; BL-SR-008,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires the Sales Rep module deployed on the environment. Caller is SALES_REP (= SR_REP_PRIMARY, serves @td(ORG_ACME.platform_id)). Catches (no tracker key yet): an intermittent xAPI ARGUMENT race, PRE-EXISTING in the product - two sibling fields of one operation that take different arguments intermittently see each other's (or no) arguments, so one alias fails with an ARGUMENT error or returns nothing. Observed in REG-2026-10-19-2032 (SR-GQL-079): 4 of 14 runs on one stand and 2 of 15 on another; suspected CopyArgumentsToUserContext writing both fields' arguments into one shared UserContext. The CORRECT behaviour asserted here is that BOTH aliases return data with an empty errors[]; this case is DELIBERATELY the failing form and is expected to FAIL INTERMITTENTLY until the race is fixed - do not weaken it, do not retry-until-green and do not read one green run as a fix (run it several times). Companion of SR-GQL-079, which carries the same scoping check as two single-field operations.",org=@td(ORG_ACME.platform_id); store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
+SR-GQL-157,salesRepCustomerOrders / salesRepOrders — an OR clause in filter or keyword never widens the list beyond the served organizations,Sales Rep > Customer Orders > Data Isolation,Critical,"BL-AUTH-006, BL-SR-002",,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires the Sales Rep module. Caller is SALES_REP (= SR_REP_PRIMARY), serving @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and @td(ORG_ACMEWEST.id) (the same served set as SR-GQL-032; if the rep gains a fifth served organization the sum-of-served-orgs assertions must be extended); other organizations on the environment hold orders, which is the leak surface. Unfiltered totals are captured at run time, never written into the row. Fix under test: vc-module-x-order PR #57. A filter starting with OR is expected to return the rep's whole served scope, so this case never asserts that the status term narrows the result. Each list is its own request (several heavy searches in one request intermittently fail a field with INVALID_OPERATION on the shared stand).",storeId={{STORE_ID}}; org_a=@td(ORG_ACME.platform_id); org_b=@td(ORG_TECHFLOW.platform_id); org_c=@td(ORG_BUILDRIGHT.platform_id); org_d=@td(ORG_ACMEWEST.platform_id),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP all]
+query Q($storeId: String) { salesRepCustomerOrders(storeId: $storeId, first: 50) { totalCount } }
+[GQL-VARS all] {""storeId"":""{{storeId}}""}
+[GQL-EXEC all]
+[GQL-CAPTURE all.data.salesRepCustomerOrders.totalCount → ALL_TOTAL]
+[GQL-OP or_only]
+query Q($storeId: String, $f: String) { salesRepCustomerOrders(storeId: $storeId, first: 50, filter: $f) { totalCount items { number organizationId } } }
+[GQL-VARS or_only] {""storeId"":""{{storeId}}"",""f"":""OR""}
+[GQL-EXEC or_only]
+[GQL-OP or_status]
+query Q($storeId: String, $f: String) { salesRepCustomerOrders(storeId: $storeId, first: 50, filter: $f) { totalCount items { number organizationId } } }
+[GQL-VARS or_status] {""storeId"":""{{storeId}}"",""f"":""OR status:\""Processing\""""}
+[GQL-EXEC or_status]
+[GQL-OP rep_all]
+query Q($storeId: String) { salesRepOrders(storeId: $storeId, first: 50) { totalCount } }
+[GQL-VARS rep_all] {""storeId"":""{{storeId}}""}
+[GQL-EXEC rep_all]
+[GQL-CAPTURE rep_all.data.salesRepOrders.totalCount → REP_ALL_TOTAL]
+[GQL-OP rep_filter]
+query Q($storeId: String, $f: String) { salesRepOrders(storeId: $storeId, first: 50, filter: $f) { totalCount items { number organizationId } } }
+[GQL-VARS rep_filter] {""storeId"":""{{storeId}}"",""f"":""OR status:\""Processing\""""}
+[GQL-EXEC rep_filter]
+[GQL-OP rep_or_only]
+query Q($storeId: String, $f: String) { salesRepOrders(storeId: $storeId, first: 50, filter: $f) { totalCount items { number organizationId } } }
+[GQL-VARS rep_or_only] {""storeId"":""{{storeId}}"",""f"":""OR""}
+[GQL-EXEC rep_or_only]
+[GQL-OP rep_keyword]
+query Q($storeId: String, $k: String) { salesRepOrders(storeId: $storeId, first: 50, keyword: $k) { totalCount items { number organizationId } } }
+[GQL-VARS rep_keyword] {""storeId"":""{{storeId}}"",""k"":""OR status:\""Processing\""""}
+[GQL-EXEC rep_keyword]","[ERRORS label=all] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=all] data.salesRepCustomerOrders.totalCount > 0 {OBSERVED}
+[ERRORS label=or_only] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=or_only] data.salesRepCustomerOrders.totalCount <= {{ALL_TOTAL}} {BL} (BL-AUTH-006)
+[DATA label=or_only] data.salesRepCustomerOrders.items[*?organizationId={{org_a}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_b}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_c}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_d}}].length = data.salesRepCustomerOrders.items.length {BL} (BL-AUTH-006)
+[ERRORS label=or_status] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=or_status] data.salesRepCustomerOrders.totalCount <= {{ALL_TOTAL}} {BL} (BL-AUTH-006)
+[DATA label=or_status] data.salesRepCustomerOrders.items[*?organizationId={{org_a}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_b}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_c}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_d}}].length = data.salesRepCustomerOrders.items.length {BL} (BL-AUTH-006)
+[ERRORS label=rep_all] errors[] empty {SPEC} (VCST-6536)
+[ERRORS label=rep_filter] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=rep_filter] data.salesRepOrders.totalCount <= {{REP_ALL_TOTAL}} {BL} (BL-AUTH-006)
+[ERRORS label=rep_or_only] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=rep_or_only] data.salesRepOrders.totalCount <= {{REP_ALL_TOTAL}} {BL} (BL-AUTH-006)
+[ERRORS label=rep_keyword] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=rep_keyword] data.salesRepOrders.totalCount <= {{REP_ALL_TOTAL}} {BL} (BL-AUTH-006)","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql",none,VCST-6536 · Archetype:SCOPE · Technique:EG · Purpose:FUNC · Catches:VCST-6536 | Promoted: REG-2026-10-27-0036 (2026-10-26),Automated
+SR-GQL-158,"salesRepTopSellers — Two Aliased Fields in ONE Operation Both Return Data (Intermittent ARGUMENT Race, Expected to Fail Intermittently Until Fixed)",GraphQL > Sales Rep > Query > salesRepTopSellers,High,BL-SR-002; BL-SR-008,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires the Sales Rep module deployed on the environment. Caller is SALES_REP (= SR_REP_PRIMARY, serves @td(ORG_ACME.platform_id)). Catches (no tracker key yet): an intermittent xAPI ARGUMENT race, PRE-EXISTING in the product - two sibling fields of one operation that take different arguments intermittently see each other's (or no) arguments, so one alias fails with an ARGUMENT error or returns nothing. Observed in REG-2026-10-19-2032 (SR-GQL-079): 4 of 14 runs on one stand and 2 of 15 on another; suspected CopyArgumentsToUserContext writing both fields' arguments into one shared UserContext. The CORRECT behaviour asserted here is that BOTH aliases return data with an empty errors[]; this case is DELIBERATELY the failing form and is expected to FAIL INTERMITTENTLY until the race is fixed - do not weaken it, do not retry-until-green and do not read one green run as a fix (run it several times). Companion of SR-GQL-079, which carries the same scoping check as two single-field operations.",org=@td(ORG_ACME.platform_id); store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
 [AUTH role=SALES_REP]
 [GQL-OP main]
 query {

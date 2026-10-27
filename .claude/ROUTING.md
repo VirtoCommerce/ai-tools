@@ -23,6 +23,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Run smoke tests** | `/qa-smoke [storefront\|admin]` | Command |
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|frontend\|backend\|IDs] [--cases <tier>] [--also-ids <ids>] [--no-plan]` | Command |
 | **Triage a finished regression run's failures** | `/qa-triage-results [RUN_ID\|latest] [--fix] [--verify]` | Command |
+| **Plan any regression — a sprint or a stable bundle** | `/qa-test-plan <sprint> \| stable <N> [--ref <branch>] [--ticket <KEY>]` | Command |
+| **Run any regression, then triage and publish it** (one-off, sprint, or one wave of a stable bundle) | `/qa-run <selection> \| sprint[:XX-YY] \| stable:<N> <wave> [--claim\|--continue\|--handover]` · `stable:<N> status` | Command |
 | **Test a ticket / feature / PR** | `/qa-test <ticket-key> \| feature \| PR #N \| --epic <KEY> [--iterate]` | Command |
 | **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory ‖ visual → triage → investigate → bugs → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--no-visual] [--dry-run]` | Command |
 | **Run an exploratory session** | `/qa-exploratory [sprint\|sprint:XX-YY\|checkout\|catalog\|B2B\|mobile\|new]` | Command |
@@ -48,6 +50,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Refresh the storefront sitemap knowledge file** | `/qa-sitemap [--check] [--no-browser]` | Command |
 | **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
 | **Review a PR in `vc-platform` or a `vc-module-*` repo** (backward compatibility of the NuGet surface first) | `/review-pr-virto` — asks for repo, PR number and local clone | Skill |
+| **Review a PR that changes GitHub Actions** (`VirtoCommerce/.github` workflows, actions, module templates, or a repo's own `.github/workflows/` — untrusted input vs secrets first, then the contract for consumers; GitHub only, not Azure DevOps) | `/review-pr-gh-workflow <repo> <pr> [<clone>]` | Skill |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
 | **Review / heal / improve a skill, command or agent prompt** | `/prompt-review <name \| path \| changed \| all> [--fix] [--improve] [--dry-run]` | Skill |
 | **Check the stand is fit before testing or analysing against it** (env health, declared vs deployed build, MCP availability) | `/preflight <ticket \| ticket-fast \| exploratory \| lifecycle \| domain-map \| ba> [--ticket KEY] [--components A,B] [--expect Module.Id@version]` (CLI: `npm run preflight`) | Skill |
@@ -60,7 +63,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Report on the knowledge base itself** (what was asked, what it could not answer) | `/kb-report` | Skill |
 | **Settle a disputed knowledge-base entry** (live investigation, verdict as a reviewed PR on the base) | `/kb-judge <KB-id> \| cluster <KB-id> \| next` | Skill |
 | **Build a ticket's test model (fault model) on its own** | `/qa-test-model <ticket-key> [--context <file>]` | Skill |
-| **Choose a ticket's test strategy before running anything** (risks, mix, technique + oracle per risk, artifacts, criteria; one approval) | `/qa-test-strategy <ticket-key> [--domain <slug>] [--yes]` | Skill |
+| **Choose a ticket's test strategy before running anything** (risks, mix, technique + oracle per risk, artifacts, criteria; one approval) | `/vc-test:qa-test-strategy <ticket-key> [--domain <slug>] [--yes]` | Skill (vc-test) |
 | **Model how a domain behaves (behaviour graph, stable ids, evidence)** | `/qa-test-mind-map build \| update \| audit <domain-slug>` | Skill |
 | **Declare the data state each behaviour needs / seed one profile** | `/qa-test-data-model build \| update \| audit <domain-slug>` · `/qa-seed-data --profile <id>` | Skill |
 | **Design the test-data combinations a feature needs** | `/qa-generate-data <feature \| flow \| VCST-XXXX>` | Skill |
@@ -79,6 +82,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-test` — Test a ticket, feature or PR. Step `1a` routes on **two axes**: the FLOW by ticket type × status (fix-ready Bug → `/qa-verify-fix` inline; hotfix-status Bug → `/qa-hotfix-check`; Sub-task → inherit parent; a refactor/migration/dependency bump → the fixed-shape `technical-change` flow; else `feature-test`), then a **FAST** (checklist-only) or **FULL** (Test Model + authoring + verifiers + promotion) path. The command is the orchestration shell; the `/qa-test` **skill** holds the methodology
 - `/qa-regression` — Run suites in parallel. `sprint` resolves the most recent sprint plan → `suitesActivated[]`; `--cases critical` narrows to a priority tier within each suite
 - `/qa-triage-results` — Classify a completed run's FAIL/BLOCKED/SKIPPED into real bug vs test defect vs flaky/env; live-verify, route test fixes, draft bugs. Never files a ticket, never triggers `/qa-fix`
+- `/qa-run` — Runs any regression, triages the failures automatically after the run and ALWAYS asks to put the result in GitHub after triage; the successor of `/qa-regression`, built to move into a plugin (skill `qa-run`). With `/qa-test-plan stable <N>`: a stable-bundle regression in waves (priority tier × domain) that several QA run in parallel on one env: the plan, per-wave state and the triage ledger (every verdict, filed or not) live in git under `regression/releases/stable-<N>/`. Contract: `.claude/skills/qa-run/release-folder.md`
 - `/qa-exploratory` — Scenario-discovery session. `sprint` runs the plan's §5.3 charters (≤5, in series). Lane: any free browser slot (all 3 click since 2026-09-08)
 - `/qa-bug` — Reproduce, document, optionally file
 - `/qa-fix` — Autonomous fix of an already-filed bug: G0 triage → G1 single-repo route → reproduce-as-test → minimal fix → review → PR → **STOP for human review** (never auto-merges)
@@ -92,7 +96,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 
 ### Plan & Manage Test Cases (Commands + Skills)
 - `/qa-test-lifecycle` — Unified pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve → **promote** (Phase 6P is the **full** promoter — handoff / re-promotion / non-`/qa-test` sources / the `Draft` cases a `/qa-test` run left; `--run-id` reaches `Automated`. A direct `/qa-regression` flips already-grounded cases at its Step 6.5)
-- `/qa-test-plan` — Sprint plan from tracker Done + merged vc-frontend PRs; risk-scores domains, maps to suites, derives §5.2 gaps and §5.3 exploratory charters
+- `/qa-test-plan` — Plans any regression. `sprint`: tracker Done + merged vc-frontend PRs → risk-scored domains → suites (§5.1/§5.2) and §5.3 exploratory charters. `stable <N>`: bundle diff → classified scope → waves by priority tier × domain for several QA in parallel (`regression/releases/stable-<N>/`)
 - `/qa-coverage-gap` — autonomous coverage gap analysis + generation, 4-cycle pipeline (single-agent; the orchestrated `/qa-coverage-generation` twin was removed 2026-09-08 with zero recorded runs)
 - `/qa-plan` — Test plans from the E2E scenario catalog
 - `/qa-checklist` — Oracle-grounded test-writing checklists (storefront + backend/admin + GraphQL domains)
@@ -121,7 +125,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-review-oracles` — Two-axis oracle review: `bl` syncs `bl/<slug>.yaml` from human sources (AC, docs, Jira) and re-checks `SUSPECT` rules; `ecl` triangulates `e-commerce-edge-cases-library.md` against docs + live + source and auto-applies confirmed changes. **Value gates GROWTH only**, never a correction
 
 ### Specialized Testing (Skills — domain expertise)
-- `/qa-storybook` — Visual regression, responsive breakpoints, state variations
+- `/qa-storybook` — Responsive breakpoints, state variations, in-story a11y
+- `/qa-visual-regression` — Pixel regression (`PIXEL`) for any web front: Storybook stories or app pages (API replayed from one HAR), base build vs head build, then triage intended / regression / noise. Which visual instrument a risk takes: `skills/qa-test/visual-axis.md` §2a
 - `/qa-accessibility` — WCAG 2.2 AA audits (POUR + the 2.2 additions, axe-core, Lighthouse, keyboard walk)
 - `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project's local files via `npm run design:extract`; reports `SKIPPED`, never PASS, when no copy is on disk)
 - `/qa-api` — REST + GraphQL xAPI: reference lookup, execution, case generation
@@ -169,7 +174,13 @@ Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](kn
 - `ui-ux-expert` — Storybook, WCAG 2.2 AA, design system, the `vs. DESIGN` axis
 - `regression-orchestrator` — Parallel regression, retries, consolidated reports
 - `test-runner-agent` — Parameterized suite runner (spawned by regression-orchestrator)
-- `ticket-context-analyst` — Read-only, no-browser ticket reader for `/ticket-context` (TICKET / MATERIALS / CHANGE modes); never writes to a tracker, a PR or the `kb`
+- `vc-test:ticket-context-analyst` (the vc-test plugin's) — Read-only, no-browser ticket reader for `/vc-test:ticket-context` (TICKET / MATERIALS / CHANGE modes); never writes to a tracker, a PR or the `kb`
+- `vc-test:fetch` (the vc-test plugin's) — Host-governed reads for `/vc-test:ticket-context`: answers one `needs-fetch` pass through the host's MCP servers (read tools only), writes only answer files in the raw folder and returns a count line, never content.
+- `vc-test:strategy-verifier` (the vc-test plugin's) — Read-only, independent gate check `/vc-test:qa-test-strategy` dispatches on a Critical risk before approval: re-derives §Gate from the bundle and the strategy, `APPROVE`/`REJECT`, never edits.
+- `vc-test:change-map` (the vc-test plugin's) — Layer 0 of `/vc-test:qa-ticket`: Read/Grep/Glob only, returns the change map as JSON, which `check-change-map.mjs --agent` saves from its transcript and gates.
+- `vc-test:checklist-writer` (the vc-test plugin's) — Writes the thin AC checklist (`testing-checklist.md`) of a `/vc-test:qa-ticket` run; no shell, no network, no browser.
+- `vc-test:verdict-writer` (the vc-test plugin's) — Writes `verdict.md` and `verdict.json` of a `/vc-test:qa-ticket` run from its result files; Read/Write only.
+- `pr-review-reader` — Read-only helper of `/review-pr-gh-workflow` (Read only, by the paths its brief lists — no search, no shell, no writes, no network); reads what the lead saved and returns requests for anything else
 
 **BA Team (+ shared-instructions):**
 - `ba-system-analyzer` — Repo structure, module inventory, user flows, pain points; **gathers the evidence for both shared oracles** (BL from human sources only; never edits a CSV)
@@ -211,6 +222,7 @@ post-edit typecheck).
 - **`vc-init`** (`plugins/vc-init/`) — onboarding: `/project-init`, the only writer of `project-profile.json` (`profile-set.mjs` for the other plugins), and the `$VC_RUN` bridge that hands a `vc-secrets`-stored GitHub / Azure DevOps / Jira token to `gh`, `git` and the plugin scripts — no token in any project file. Depends on `vc-secrets`; `vc-fix` and `vc-perf` depend on it. Docs: [`plugins/vc-init/README.md`](../plugins/vc-init/README.md)
 - **`vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice shipped to teammates/customers via the `ai-tools` marketplace: `/qa-env-check`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`, plus the Developers team and its `[Development]` skills (§Development above). Its own agents beyond that team: `monitor-triage-agent` (classifies one deduplicated App Insights signature for `/qa-monitoring`; read-only), `self-check-diagnostician` (reads one session's telemetry and returns the finding struct for `/vc-self-check`) and `self-check-deliverer` (files that struct as a GitHub Issue after the operator's one yes). Self-contained; the canonical copy of the self-diagnostics subsystem. Docs: [`plugins/vc-fix/README.md`](../plugins/vc-fix/README.md)
 - **`vc-perf`** (`plugins/vc-perf/`) — the three-layer performance loop (`/perf-init`, `/perf-benchmark`, `/perf-loop`, `/perf-fix`, `/perf-verify`). Reach for a layer directly when you know which question you are asking: `/perf-benchmark` (L1, BenchmarkDotNet — did this change regress allocations or time), `/perf-loadtest` (L2, k6 against the live backend — throughput, p95, GC pressure under load), `/perf-trace` (L3, dotnet-trace + perftools — WHO is responsible for what L2 observed). `perf-analyst` ranks optimization candidates from those artifacts for `/perf-fix`; read-only. Depends on `vc-init` and `vc-fix`; advisory only, never a CI gate
+- **`vc-test`** (`plugins/vc-test/`, preview) — one testing flow per ticket: `/vc-test:qa-ticket <KEY>` (context → change map → scored scenarios approved at one human point → one agent per scenario + a background AC run → verdict, costed), and `/vc-test:init` for its own profile block (which envs a run may write to, the knowledge store). `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` are the plugin's own (P1d-1); triage, investigation and some context scripts still need an ai-tools checkout until P1d-3. Depends on `vc-init` and `vc-fix`. Docs: [`plugins/vc-test/README.md`](../plugins/vc-test/README.md)
 - **`vc-secrets`** (`plugins/vc-secrets/`) — a launcher that resolves an MCP server's secrets per launch from the OS credential store or Azure Key Vault, so no client config holds a token (`/vc-secrets:install` puts the shim at a stable path, `/vc-secrets:migrate` moves old flat-prefix keys once — both human-invoked only — and `/vc-secrets:doctor` diagnoses a wrapped server that shows failed). Depends on none of the others (`vc-init` depends on it); enabled in this repo's `.claude/settings.json`. Normative description: [`plugins/vc-secrets/README.md`](../plugins/vc-secrets/README.md)
 - **`vc-frontend`** (`plugins/vc-frontend/`) — for storefront theme forks (vc-frontend-next, customer themes), and for backend modules that ship a storefront plugin: `/merge-upstream` brings upstream vc-frontend into the fork, keeping the fork's look and upstream's behavior; `/port-upstream-to-fork` finds upstream changes the merge did not deliver because the fork renders its own component there; `/mf-new-plugin` makes a backend module ship a storefront plugin (scaffold, module wiring, `check:plugin-module`). Independent of the others; normative description: `plugins/vc-frontend/README.md`.
 
@@ -237,6 +249,7 @@ post-edit typecheck).
 | `/qa-exploratory` | `/qa-sbtm` | Command runs sessions; skill provides the methodology + the sprint charter-selection rule |
 | `/qa-smoke` | `/qa-plan` | Smoke uses the E2E scenario catalog for P0 selection |
 | `/qa-regression` | `/qa-triage-results`, `/qa-metrics` | Run → triage the failures → results feed the quality gates |
+| `/qa-test-plan` | `/qa-regression`, `/qa-exploratory`, `/qa-triage-results` | One planner for every regression: `sprint` → `/qa-run sprint` (or `/qa-regression sprint`) + `/qa-exploratory sprint`; `stable <N>` → each owner claims a wave with `/qa-run stable:<N> <wave> --claim`, triages it seeded with the ledger, publishes it as a PR |
 | `/qa-regression` | `/qa-coverage-gap` | Gap analysis validates suite completeness before a run |
 | `/qa-bug` | `/qa-investigate`, `/qa-defect` | Bug command uses the investigation flow + defect templates |
 | `/qa-fix` | `/qa-bug` (upstream), `/qa-verify-fix` (downstream) | `/qa-bug` files the ticket → `/qa-fix` triages, fixes, opens a PR (STOP for human review) → after merge `/qa-verify-fix` closes the loop. Gate ladder: `.claude/knowledge/execution/quality-gates.md` |

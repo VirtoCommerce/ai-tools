@@ -303,7 +303,7 @@ would be writing both sides).
 ## Trusting a repository's declarations
 
 The client approved `node "$VC_SECRETS" run gh` once, usually at user scope. What `gh` *runs* is decided by
-whichever `.claude/vc-secrets.json` or `.claude/vc-secrets.local.json` the launcher finds walking up from
+whichever `.claude/vc-secrets.json` or `.claude/vc-secrets.local.json` the launcher finds walking up from <!-- doclint:may-not-exist -->
 the working directory — so without a gate, any repository you open could make an entry you approved run
 its own command, with no prompt, and a declaration that names no secret is never checked by `authorized`
 at all. Codex's "Open restricted" mode for untrusted folders does not close this: it still starts the

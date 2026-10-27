@@ -62,6 +62,16 @@
  *   node ado.mjs edit-comment   --id 967 --comment-id 4711 --text-file body.txt   # the amend path
  *   node ado.mjs patch-fields   --id 967 --field "System.Description=" --fields-file fields.json
  *   node ado.mjs wiql           --query "SELECT [System.Id] FROM WorkItems WHERE …" [--fields System.Title] [--top 50]
+ *   node ado.mjs get-file       --repo frontend --path client-app/x.vue --commit <sha>   # a file at a commit
+ *
+ * Reads for vc-test's connectors — Azure's own objects, unshaped (the bundle step shapes them):
+ *   node ado.mjs comments            --id 967 [--max 500]          # every page → { total, comments, truncated }
+ *   node ado.mjs download-attachment --guid <GUID> --out .vc-fix/… [--max-bytes 26214400]   # → { path, bytes, contentType }
+ *     the GUID of an AttachedFile relation, never a URL; the file goes only inside <outputRoot>/.vc-fix/ (raw-out.mjs)
+ *   node ado.mjs get-pr              --pr 1200                     # project-scoped: no repo needed
+ *   node ado.mjs pr-iterations       --repo <name|id> --pr 1200
+ *   node ado.mjs pr-changes          --repo <name|id> --pr 1200 --iteration 3 [--compare-to 0] [--max 2000]
+ *   node ado.mjs pr-threads          --repo <name|id> --pr 1200
  *
  * Token-holding calls run through the vc-init bridge (VCST-6402): `node "$VC_RUN" ado <command> …`
  * gives this process ADO_PAT from vc-secrets for a PAT axis, or runs it as is for an `az login` axis.
@@ -87,6 +97,7 @@ import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../../scripts/lib
 // and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
 // re-exported below for the unit test that imports them from this file.
 import { ensureAzureHtml, mdToHtml, buildBugFields, countImages } from "./ado-html.mjs";
+import { DOWNLOAD_TIMEOUT_MS, FETCH_TIMEOUT_MS, rawOutPath, timedFetch, writeCapped } from "./raw-out.mjs";
 // Pure date-range validation for a team iteration, SHARED with discover-tracker.mjs so the runtime
 // "which sprint is current" resolve and the onboarding "which team owns the current sprint" scan can
 // never disagree. `$timeframe=current` alone is untrustworthy (Azure keeps the flag on a dormant
@@ -283,13 +294,21 @@ const RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
 const THROTTLE_ONLY = new Set([429]);
 const IDEMPOTENT_METHODS = new Set(["GET", "HEAD", "PUT", "PATCH", "DELETE"]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function fetchRetry(url, opts, { attempts = 3, baseMs = 250 } = {}) {
+async function fetchRetry(url, opts, { attempts = 3, baseMs = 250, timeoutMs = FETCH_TIMEOUT_MS, buffer = false } = {}) {
   const method = String(opts?.method || "GET").toUpperCase();
   const retryStatus = IDEMPOTENT_METHODS.has(method) ? RETRY_STATUS : THROTTLE_ONLY;
   let lastErr;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      const res = await fetch(url, opts);
+      // Never a hang (timedFetch). A timed-out non-idempotent call may have landed server-side, so it is
+      // not retried — the same reason a create POST is not retried on a 5xx.
+      let res;
+      try {
+        res = await timedFetch(url, opts, timeoutMs, `${method} ${url.split("?")[0]}`, { buffer });
+      } catch (e) {
+        if (/timed out/.test(e.message) && !IDEMPOTENT_METHODS.has(method)) attempt = attempts;
+        throw e;
+      }
       if (retryStatus.has(res.status) && attempt < attempts) {
         await sleep(baseMs * 2 ** (attempt - 1)); // 250ms, 500ms
         continue;
@@ -312,7 +331,7 @@ async function call(method, url, { body, contentType } = {}) {
     headers,
     body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
     redirect: "manual",
-  });
+  }, { buffer: true });
   if (res.status >= 300 && res.status < 400) {
     fail(`HTTP ${res.status} redirect to sign-in for ${method} ${url}\n      => ADO auth not accepted. Run through the bridge (\`node "$VC_RUN" ado …\`) so the stored PAT is used; if it was, the PAT is expired or lacks scope — store a new one with \`node "<VC_SECRETS>" set ado-pat\`.`);
   }
@@ -346,7 +365,7 @@ async function callSoft(method, url, { body, contentType } = {}) {
       method, headers,
       body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
       redirect: "manual",
-    });
+    }, { buffer: true });
     const text = await res.text();
     let data = {};
     try { data = text ? JSON.parse(text) : {}; } catch { data = { _raw: text }; }
@@ -537,6 +556,93 @@ async function resolveCurrentIteration(args) {
       `\n      Pass an explicit --iteration <path>, or fix the active sprint's dates in Azure Boards.`,
   };
 }
+
+// ---- paging (pure: the fetcher does the I/O) ------------------------------------------
+/**
+ * Follow `continuationToken` pages up to `max`. A token seen before ends the loop (never forever); the
+ * result says `truncated` when it stopped with more to read.
+ * @param {(token: string|null) => Promise<{ items: object[], token: string|null, total?: number }>} fetchPage
+ */
+export async function pageByToken(fetchPage, { max = 500 } = {}) {
+  const items = [];
+  const seen = new Set();
+  let token = null;
+  let total = null;
+  let truncated = false;
+  for (;;) {
+    const page = await fetchPage(token);
+    const got = Array.isArray(page?.items) ? page.items : [];
+    if (Number.isInteger(page?.total)) total = page.total;
+    const room = max - items.length;
+    items.push(...got.slice(0, room));
+    const next = page?.token || null;
+    if (!got.length) {
+      truncated = !!next || (total !== null && total > items.length); // an empty page ends it, whatever token it carries
+      break;
+    }
+    if (got.length > room || (items.length >= max && (next || (total !== null && total > items.length)))) {
+      truncated = true;
+      break;
+    }
+    if (!next) break;
+    if (seen.has(next)) {
+      truncated = true;
+      break;
+    }
+    seen.add(next);
+    token = next;
+  }
+  return { total: total ?? items.length, items, truncated };
+}
+
+/**
+ * Read `$top`/`$skip` pages up to `max`; a short or empty page is the end. Reaching `max` on a full page
+ * is reported as `truncated` (there may be more).
+ * @param {(skip: number, top: number) => Promise<object[]>} fetchPage
+ */
+export async function pageBySkip(fetchPage, { max = 2000, top = 500 } = {}) {
+  const items = [];
+  let skip = 0;
+  for (;;) {
+    const want = Math.min(top, max - items.length);
+    const page = await fetchPage(skip, want);
+    // Azure's own word on the end is `nextSkip` ("zero if there are no more"); a short page is the end only
+    // when the response does not say — a server may cap a page below $top.
+    const got = Array.isArray(page) ? page : Array.isArray(page?.items) ? page.items : [];
+    const next = Array.isArray(page) ? undefined : page?.nextSkip;
+    items.push(...got.slice(0, want));
+    if (!got.length) return { items, truncated: false };
+    if (Number.isInteger(next)) {
+      if (next <= 0) return { items, truncated: got.length > want };
+      if (items.length >= max || next <= skip) return { items, truncated: true };
+      skip = next;
+      continue;
+    }
+    if (got.length < want) return { items, truncated: false };
+    if (items.length >= max) return { items, truncated: true };
+    skip += got.length;
+  }
+}
+
+/** The query of one Azure work-item comments page: oldest first unless `newest`, the token encoded. */
+export function adoCommentsQuery({ token = null, newest = false } = {}) {
+  const t = token ? `&continuationToken=${enc(token)}` : "";
+  return `?$top=200&order=${newest ? "desc" : "asc"}${t}&api-version=7.1-preview.4`;
+}
+
+const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const posInt = (args, name, { required = false, dflt } = {}) => {
+  if (args[name] === undefined || args[name] === true) {
+    if (required) fail(`--${name} <number> required`);
+    return dflt;
+  }
+  if (!/^\d+$/.test(String(args[name]))) fail(`--${name} must be a non-negative integer`);
+  return Number(args[name]);
+};
+const prArgs = (args, { repo = true } = {}) => {
+  if (repo && (!args.repo || args.repo === true)) fail("--repo <name|id> required");
+  return { repo: repo ? enc(args.repo) : null, pr: posInt(args, "pr", { required: true }) };
+};
 
 // ---- commands -----------------------------------------------------------------------
 const COMMANDS = {
@@ -1099,7 +1205,7 @@ const COMMANDS = {
   // Upload a file (screenshot, HAR, GQL log) to ADO and return its attachment URL. Embed the
   // URL inline in a Description/comment (`<img src=...>`) and/or pass it to create-workitem's
   // `--attachments` to also link it in the Attachments tab. Binary body — direct fetch (the
-  // shared `call` helper JSON-encodes non-string bodies), like get-file.
+  // shared `call` helper JSON-encodes non-string bodies), never retried (a POST).
   async "upload-attachment"(args) {
     const file = args.file;
     if (typeof file !== "string" || !file) fail("--file <path> required");
@@ -1112,7 +1218,7 @@ const COMMANDS = {
       Accept: "application/json",
       "Content-Type": "application/octet-stream",
     };
-    const res = await fetch(url, { method: "POST", headers, body: buf, redirect: "manual" });
+    const res = await timedFetch(url, { method: "POST", headers, body: buf, redirect: "manual" }, DOWNLOAD_TIMEOUT_MS, "upload-attachment", { buffer: true });
     if (res.status >= 300 && res.status < 400) {
       fail(`HTTP ${res.status} sign-in redirect on upload-attachment — ADO_PAT not accepted.`);
     }
@@ -1125,6 +1231,73 @@ const COMMANDS = {
     }
     if (!res.ok) fail(`HTTP ${res.status} on upload-attachment: ${data?.message || text.slice(0, 200)}`);
     return { id: data.id, url: data.url, name };
+  },
+
+  // ---- reads for vc-test's connectors (raw objects; the bundle step shapes them) ----------------
+  async comments(args) {
+    const id = posInt(args, "id", { required: true });
+    const max = posInt(args, "max", { dflt: 500 });
+    const r = await pageByToken(async (token) => {
+      const d = await call("GET", `${base(args, "tracker")}/_apis/wit/workItems/${id}/comments${adoCommentsQuery({ token, newest: !!args.newest })}`);
+      return { items: d.comments || [], token: d.continuationToken || null, total: d.totalCount };
+    }, { max });
+    return { total: r.total, comments: r.items, truncated: r.truncated };
+  },
+
+  async "download-attachment"(args) {
+    if (!GUID_RE.test(String(args.guid ?? ""))) fail("--guid <attachment GUID> required (from an AttachedFile relation; never a URL)");
+    let out;
+    try {
+      out = rawOutPath(String(args.out ?? ""));
+    } catch (e) {
+      fail(e.message);
+    }
+    const url = `${base(args, "tracker")}/_apis/wit/attachments/${args.guid}?download=true&${V}`;
+    let res = await fetchRetry(url, { headers: { Authorization: await authHeader(), Accept: "*/*" }, redirect: "manual" }, { timeoutMs: DOWNLOAD_TIMEOUT_MS });
+    if (res.status >= 300 && res.status < 400) {
+      // A sign-in redirect (no Location, or one to the sign-in/AAD hosts) is an auth failure; any other https
+      // redirect is the blob store, followed WITHOUT the credential.
+      const loc = res.headers.get("location");
+      const next = loc ? new URL(loc, url) : null;
+      if (!next || next.protocol !== "https:" || /(^|\.)vssps\.visualstudio\.com$|(^|\.)login\.microsoftonline\.com$/i.test(next.hostname) || /\/_signin\b/i.test(next.pathname)) {
+        fail(`HTTP ${res.status} sign-in redirect on download-attachment — ADO auth not accepted.`);
+      }
+      res = await timedFetch(next.href, { headers: { Accept: "*/*" } }, DOWNLOAD_TIMEOUT_MS, "download-attachment");
+    }
+    if (!res.ok) fail(`HTTP ${res.status} on download-attachment ${args.guid}`);
+    try {
+      return { path: out, ...(await writeCapped(res, out, posInt(args, "max-bytes", { dflt: 25 * 2 ** 20 }))) };
+    } catch (e) {
+      fail(e.message);
+    }
+  },
+
+  async "get-pr"(args) {
+    const { pr } = prArgs(args, { repo: false });
+    return call("GET", `${base(args, "vcs")}/_apis/git/pullrequests/${pr}?${V}`);
+  },
+
+  async "pr-iterations"(args) {
+    const { repo, pr } = prArgs(args);
+    return call("GET", `${base(args, "vcs")}/_apis/git/repositories/${repo}/pullRequests/${pr}/iterations?${V}`);
+  },
+
+  async "pr-changes"(args) {
+    const { repo, pr } = prArgs(args);
+    const iteration = posInt(args, "iteration", { required: true });
+    const compare = posInt(args, "compare-to");
+    const max = posInt(args, "max", { dflt: 2000 });
+    const cmp = compare === undefined ? "" : `&$compareTo=${compare}`;
+    const r = await pageBySkip(async (skip, top) => {
+      const d = await call("GET", `${base(args, "vcs")}/_apis/git/repositories/${repo}/pullRequests/${pr}/iterations/${iteration}/changes?$top=${top}&$skip=${skip}${cmp}&${V}`);
+      return { items: d.changeEntries || [], nextSkip: d.nextSkip };
+    }, { max, top: 500 });
+    return { changeEntries: r.items, truncated: r.truncated };
+  },
+
+  async "pr-threads"(args) {
+    const { repo, pr } = prArgs(args);
+    return call("GET", `${base(args, "vcs")}/_apis/git/repositories/${repo}/pullRequests/${pr}/threads?${V}`);
   },
 
   async "list-refs"(args) {
@@ -1148,14 +1321,19 @@ const COMMANDS = {
         "      or drop the leading slash (`--path client-app/x.vue`)."
       );
     }
+    if (args.branch && args.commit) fail("--branch and --commit are exclusive — a file is read at one version");
     const b = args.branch || "";
-    const q = b
-      ? `&versionDescriptor.version=${enc(b)}&versionDescriptor.versionType=branch`
-      : "";
+    const c = args.commit && args.commit !== true ? String(args.commit) : "";
+    if (args.commit && !/^[0-9a-f]{7,40}$/i.test(c)) fail("--commit <sha> must be a commit hash");
+    const q = c
+      ? `&versionDescriptor.version=${enc(c)}&versionDescriptor.versionType=commit`
+      : b
+        ? `&versionDescriptor.version=${enc(b)}&versionDescriptor.versionType=branch`
+        : "";
     const url = `${base(args, "vcs")}/_apis/git/repositories/${enc(args.repo)}/items?path=${enc(args.path)}${q}&${V}&$format=text&includeContent=true`;
     // items endpoint returns raw text with $format=text
     const headers = { Authorization: await authHeader() };
-    const res = await fetch(url, { headers, redirect: "manual" });
+    const res = await fetchRetry(url, { headers, redirect: "manual" }, { buffer: true });
     if (res.status >= 300 && res.status < 400) fail(`HTTP ${res.status} sign-in redirect — ADO_PAT not accepted.`);
     const text = await res.text();
     if (!res.ok) fail(`HTTP ${res.status} for get-file: ${text.slice(0, 200)}`);

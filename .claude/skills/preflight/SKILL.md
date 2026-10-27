@@ -22,7 +22,9 @@ npm run preflight -- --for <for> [--ticket KEY] [--components A,B] [--domain slu
 - `--storefront` — the scope touches the storefront (adds the anonymous `InitializeApplication` probe).
 - `--env` — check that env instead of the one this session resolves. A run never needs it: its Step 0 bound
   the env for the session (`npm run env:use`, [`run-env.md`](../../knowledge/execution/run-env.md)), and this
-  CLI reads that binding.
+  CLI reads that binding. A ticket's own stand is an env too (`--ticket` fills `QA_ENV_PATH`'s `<ticket>`). On a
+  local stand (`BACK_URL` on this machine) `declared` reads `local stand`: there is no vc-deploy-dev manifest, and
+  `deployed` plus `--expect` read the build off the stand.
 - `--ci` — this skill's own flag (the caller is non-interactive, step 4); never pass it to the CLI, which rejects an unknown flag with exit `1`.
 - Exit `0` READY (warnings allowed) · `2` NOT READY · `1` usage error — fix the flags · `3` the script could not run: report its message and STOP, never improvise the facts by hand.
 - The verdict counts BLOCKs only: `UNKNOWN` rows are listed and counted but do not by themselves make a run NOT READY. The exception is `ticket` / `ticket-fast`: an `--expect` whose deployed state is `UNKNOWN` is a BLOCK.
@@ -40,6 +42,31 @@ could not run (also `1`: an `--accept` id that is not `drift:*`). `--run-id` mak
 types a password nobody has — report them BLOCKED (`SECRET_UNDECLARED`), never FAIL. A `secret:*` WARN names
 the cases of suites that still run: they are BLOCKED without a sign-in attempt (typing an unregistered name
 sends the literal string and can lock a shared account). For step 4, run the same command without `--json`.
+
+**What the selected cases need from the stand** (build-scoped only, `scripts/regression/requirements.ts`) comes in the
+same `checks[]`, read-only:
+- `persona:<ALIAS>` / `lane-account:slot<N>` — derived from the CSVs' `[PRE:SIGNIN_AS|SWITCH_ORG|VERIFY_AUTH]` and from
+  `agent-user-pool.csv`: credentials resolvable, account exists, not locked out, password not expired — through the
+  admin API, **never by signing in**. A persona listed under `personas` in `config/suite-requirements.json` (e.g.
+  `SR_*` → `VirtoCommerce.SalesRep`) is checked for its module first: absent, the row says the cases cannot run on
+  this stand, rather than sending someone to seed an account the platform cannot hold. The same map applies to
+  `@td()` fixture aliases (`ORG_REP_ONLY`, `SR_*`). Such cases are **not deployed**: the JSON's `notDeployed` map
+  (suite → case → module) takes them **out of the plan** — `suites:lanes` plans nothing for them, so they are not
+  run, not counted and not triaged, the case-level twin of a suite gated by `requiresModules`. A `not-deployed` row
+  states the count; `--run-blocked` does not bring them back.
+- `fixture:<ALIAS>` — every `@td()` the cases use, through the runners' resolver; `unseeded` names the seed to run.
+- `req:<kind>:<name>` — what `config/suite-requirements.json` declares: store and platform settings, payment
+  methods, vc-deploy-dev `infra/environments.yml` keys (headers, FileUpload scopes, KnownAssetHosts), and the values a
+  platform setting's dictionary must offer (`allowedIncludes` — a seeder that writes `Quotes.Status = Declined` fails
+  when the stand's dictionary has no `Declined`).
+
+Each row names its cases. They are WARN unless a requirement says `"level": "block"` — the run goes, and the owner
+knows which cases will BLOCK and why before spending a run on them. **Those cases are then not run:** the JSON's
+`skip` map (suite → case → the most upstream row's reason) is read by `suites:lanes` from the run folder's
+`preflight.json`, which plans them in the `preflight` lane; `suites:merge` records them BLOCKED with that reason, and
+triage receives them as `preClassified`, not as classifier input. A `skip` row states the count. `regression:plan
+--run-blocked` runs them anyway. A triage verdict `ENV_CONFIG` that no `req:` row
+predicted is a missing entry in `config/suite-requirements.json`: add it with the cases it hit.
 
 ## Step 2 — MCP level 3: what is callable in THIS session
 
@@ -80,15 +107,32 @@ level-3 MCP rows and step 3's misses. Do not reword a row, do not re-grade it, a
 `UNKNOWN` as OK. Form and rules: `docs/superpowers/specs/2026-10-08-preflight-skill-design.md` §8a.
 
 - `READY` with no rows ⇒ one line, proceed.
-- `READY` with warnings ⇒ name each in one line, proceed. A WARN never asks.
+- `READY` with warnings ⇒ name each in one line. If any has a fix you can make (list 1 of step 5), ask step 5's one question first; otherwise proceed. A WARN never asks anything else.
 - `READY` with `UNKNOWN` rows only (no BLOCK, no WARN) ⇒ list each `UNKNOWN` row with its `Who`/`Do`, never as OK, and do not ask.
-- `NOT READY` ⇒ go to step 5. **At most one question, and only for a BLOCK.**
+- `NOT READY` ⇒ go to step 5. **At most one question per run** — step 5's, whether a BLOCK or a fixable WARN raised it.
 - A level-3 BLOCK from step 2 alone also makes the run `NOT READY` and routes to step 5; the verdict returned in step 6 is the combined one (CLI verdict, downgraded by any level-3 BLOCK).
-- A non-interactive caller (`--ci` passed to this skill, or this skill running inside a subagent) asks no question: it returns `NOT READY` with the rows to its caller (step 6) and performs no remediation.
+- A non-interactive caller (`--ci` passed to this skill, or this skill running inside a subagent) asks no question — not for a BLOCK, not for a fixable WARN: it returns the verdict with the rows to its caller (step 6) and performs no remediation.
 
 ## Step 5 — remediation: diagnose → fix → re-check
 
-Offer, in one line per row, what you can do and what only the user can — the `Who` column decides:
+**Do as much as you can yourself; ask once before you do it.** After every pre-flight with rows to act on, show two
+lists in the user's language, grouped (one line per fix, not per row — fixtures by the seed that writes them, settings
+by store), each with the cases it unblocks:
+
+1. **I will do** (`me`, `me, with OK`) — seeding, store and platform settings, provisioning a missing account, and every
+   `req:deployConfig` / `req:uploadScope` row as **one** vc-deploy-dev PR: `npm run deploy:env-config -- --env <env>`
+   (dry run shows the exact lines and the reference env each value comes from; `--apply` opens the PR). Each line names
+   the concrete write — the setting and its new value on which store, the seed command, the PR's target branch.
+2. **Needs you** (`you`) — only what you may not do: a secret or a credential (a password, an API key such as Google
+   Maps, a payment-provider sandbox), merging the vc-deploy-dev PR (merging deploys the env), and a product decision.
+   Say exactly where the value goes and where it comes from.
+
+One question covers list 1 ("Do all of list 1?" — or name the items to skip). On a yes, do them all, re-run step 1, and
+report what changed; list 2 stays with the user. **Two kinds of write are never in that batch** and get their own
+question each: resetting or unlocking an existing shared account (someone may be signed in as it), and `--apply` of the
+vc-deploy-dev PR (it is outward-facing in another repository). Otherwise never ask per item.
+
+The `Who` column decides which list a row goes to:
 
 | `Who` | You may |
 |---|---|

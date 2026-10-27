@@ -63,7 +63,7 @@
  *   --message=<text>            Commit / PR title (default "VCST-XXXX: <ticket title>", else
  *                               "VCST-XXXX: deploy N artifacts to <env>" when no summary resolved).
  *                               --apply REFUSES with neither a ticket key nor --message.
- *   --password=<pw>             Admin password for the /api/platform/modules verify (else env / Password1).
+ *   --password=<pw>             Admin password for the /api/platform/modules verify (else the env's secrets; none => no sign-in).
  *   --json                      Machine-readable output.
  *
  * Exit codes:
@@ -78,14 +78,15 @@
 
 import { existsSync } from 'node:fs';
 import { basename } from 'node:path';
-import { OWNER, envFilePath, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
-import { resolveTestEnv } from '../../lib/resolve-test-env.js';
+import { OWNER, REPO_ROOT, envFilePath, isLocalUrl, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
+import { lookedIn } from '../../lib/env-layers.mjs';
+import { selectTestEnv } from '../../lib/load-env.mjs';
 import { fetchFile, getToken, ghJson, setToken } from '../lib/github.ts';
 import { DeliverError, deliverPr } from '../lib/deliver.ts';
 import type { DeliverResult } from '../lib/deliver.ts';
 import { THEME_URL_RE, countChangedLines, editPackagesText, editThemeText, pinnedModule, tagOf } from '../lib/manifest.ts';
 import type { Target } from '../lib/manifest.ts';
-import { getAdminToken, liveModules, platformHealthy } from '../lib/live.ts';
+import { getAdminToken, liveModules, platformHealthy, type AdminAuth } from '../lib/live.ts';
 import { Exit, fail } from '../lib/exit.ts';
 import { STORYBOOK_WORKFLOW, buildStorybook, editStorybookText, existingStorybookTag, storybookNeed } from './storybook.ts';
 import type { StorybookNeed } from './storybook.ts';
@@ -259,18 +260,26 @@ export async function runPr(args: string[]): Promise<void> {
   const envArgs = [...new Set([flag('env'), envAt !== -1 ? args[envAt + 1] : undefined, ...positionals.filter((a) => /^[a-z0-9_]+$/.test(a))].filter((a): a is string => !!a))];
   if (envArgs.length > 1) fail(`two envs named: ${envArgs.join(', ')} — name one.`);
   const named = envArgs[0];
-  if (named !== undefined && !existsSync(envFilePath(named))) fail(`unknown env "${named}": there is no ${basename(envFilePath(named))}.`);
+  // The ticket key fills QA_ENV_PATH's <ticket> folders, so the ticket's own stand is an env here too.
+  const ticketArg = positionals.find((a) => /^[A-Za-z][A-Za-z0-9]*-\d+$/.test(a))?.toUpperCase();
+  if (named !== undefined && !existsSync(envFilePath(named, ticketArg))) {
+    fail(`unknown env "${named}": there is no ${basename(envFilePath(named, ticketArg))} in ${lookedIn(named, { root: REPO_ROOT, ticket: ticketArg })}.`);
+  }
   const key = positionals.find((a) => a !== named)?.toUpperCase();
 
   // The session env as every entry point resolves it (TEST_ENV, else this session's binding, else
   // .env.test-env, else vcst): reading TEST_ENV alone sent a checkout whose env is set only in
-  // .env.test-env to vcst / vcst-qa.
-  const sessionEnv = resolveTestEnv('vcst');
+  // .env.test-env to vcst / vcst-qa. selectTestEnv, not resolveTestEnv: the latter puts .env.playwright.<env> in
+  // process.env first, and loadEnvFiles' ambientWins would then let those pins beat what the environment passed.
+  const sessionEnv = selectTestEnv('vcst');
   loadEnvFiles(sessionEnv);
   const env = named || sessionEnv;
+  const c = resolveEnvCoords(env, flag('password'), ticketArg);
+  // A local stand runs the ticket's own build on this machine: no vc-deploy-dev branch, nothing to deploy. Say so
+  // before any tracker or GitHub call.
+  if (isLocalUrl(c.backUrl)) fail(`${env} is a local stand (BACK_URL ${c.backUrl}): there is nothing to deploy — it runs the ticket's own build. Name a cloud stand's env.`);
   setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
   if (!getToken()) fail('No GIT_TOKEN — a PAT with product-repo read + push on your vc-deploy-dev fork (read .env.local).');
-  const c = resolveEnvCoords(env, flag('password'));
 
   // ── 1. resolve the artifact set ──
   const targets: Target[] = [];
@@ -404,7 +413,7 @@ export async function runPr(args: string[]): Promise<void> {
 
   // ── VERIFY (read-only live/branch state) ──
   if (verify) {
-    let token: string | null = null, live: Record<string, string> | null = null;
+    let token: AdminAuth | null = null, live: Record<string, string> | null = null;
     if (c.backUrl) { token = await getAdminToken(c); if (token) live = await liveModules(c, token); }
     const vrows: { label: string; pinned: string; liveVer: string; verdict: string }[] = [];
     let anyMissing = false;
