@@ -48,6 +48,8 @@ Anything outside this set (13 px, 27 px, 41 px, etc.) is a violation, regardless
 ```js
 // Print the snippet: node <plugin>/lib/design/snippet.mjs spacingAuditSnippet '".product-card, .product-card *"'
 // (in this repository the TypeScript at scripts/lib/measure-layout.ts is canonical; the plugin file is generated from it)
+// Client form (layout classifiers are exports of measure-layout.mjs, the design ones — classifyDesignToken, classifyIconParity … — of verify-design-spec.mjs):
+// node --input-type=module -e "import { classifySpacing } from '<plugin>/lib/design/measure-layout.mjs'; console.log(JSON.stringify(classifySpacing(<the snippet's result JSON>)))"
 import { spacingAuditSnippet, classifySpacing } from '<plugin>/lib/design/measure-layout.mjs';
 
 // Step 1 — agent runs:

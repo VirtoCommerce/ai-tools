@@ -20,7 +20,8 @@
  * output) reaches `designTokenAuditSnippet` and its siblings. Args are positional, in the function's own order; leave
  * trailing ones out to take its defaults.
  *
- * Exit: 0 printed; 2 unknown or missing name (the valid names go to stderr); 1 the snippet could not be built.
+ * Exit: 0 printed; 2 unknown or missing name, or fewer arguments than the snippet needs (stderr says which); 1 the
+ * snippet could not be built.
  * Generated from the repository's TypeScript: this file is hand-written, the two modules it imports are not.
  */
 import { readFileSync } from "node:fs";
@@ -62,6 +63,12 @@ function main(argv) {
   const entry = name ? entries.get(name) : undefined;
   if (!entry) {
     console.error(`snippet: ${name ? `unknown snippet "${name}"` : "no snippet named"} — the names are:\n  ${names.join("\n  ")}`);
+    return 2;
+  }
+  // `fn.length` counts the parameters before the first default: the ones the snippet cannot do without. A missing one
+  // would print `querySelectorAll(undefined)`, and the classifier would then pass on 0 elements.
+  if (entry.call && rest.length < entry.call.length) {
+    console.error(`snippet: ${name} needs ${entry.call.length} argument${entry.call.length === 1 ? "" : "s"}, got ${rest.length}`);
     return 2;
   }
   let text;

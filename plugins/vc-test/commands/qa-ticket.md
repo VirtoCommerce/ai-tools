@@ -112,7 +112,7 @@ Ref `PB-n · R<k>`, the `R` of its `### Prior bugs` row.
 | `contract-refresh` | both commands of its `run.commands` |
 | `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` (a brief entry: on `run.model`, brief `<plugin>/<run.brief>`); checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE`, `EXPLORATORY` (its `lane`, `exploratory`) |
 | `bug:PB-n` (round ≥ 2) | the same, + `PB`, `CAPABILITIES`, `LANE` (its `lane`, if any) |
-| `visual` | its `run.agent` on the lane `plan-run` assigned (`LANE`, its `lane`), + the account role it signs in as; the agent loads Skill `vc-test:qa-design` first (`<plugin>/skills/qa-design/visual-axis.md` §2, §4, §5) |
+| `visual` | its `run.agent` on the lane `plan-run` assigned (`LANE`, its `lane`), + the account role it signs in as: the role the approved scenarios on that surface sign in as, else the project's default storefront user (`USER_LOGIN` / `USER_PASSWORD`), else anonymous for a public route; the agent loads Skill `vc-test:qa-design` first (`<plugin>/skills/qa-design/visual-axis.md` §2, §4, §5, §6) |
 
 **A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
 `BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's

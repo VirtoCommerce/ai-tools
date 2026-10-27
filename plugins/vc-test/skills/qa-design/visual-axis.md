@@ -112,7 +112,7 @@ below.
    `DesignSync`**: its own description restricts it to the user-started `/design-sync` skill, and on
    VCST-5957 (2026-10-01) that left the axis to an eyeballed screenshot comparison. A run's own extract
    makes `unresolved` machine-counted; relayed by hand it is *unknown*, never zero. Ladder and the
-   artifact-chrome trap: [`claude-design-verification.md`](claude-design-verification.md) §1.
+   artifact-chrome trap: [`claude-design-verification.md`](claude-design-verification.md) §1. **In a vc-test run no step before the agent runs the extract** (`/vc-test:qa-ticket` does not): `vc-test:ui-ux-expert` resolves the source and runs it itself before its first measurement, else the axis is `SKIPPED` as above.
 2. **The lane and the account role — never a credential.** The visual lane is a Playwright lane: in a
    vc-test run the one `plan-run` drew from the pool (§4), in this repository's `/qa-test` and
    `/qa-test-fast` the one its wave leaves free (§4). It signs in the way every Playwright lane does — the login
@@ -207,7 +207,7 @@ than as a PASS:
 ## 4. Browser budget
 
 `vc-test:ui-ux-expert` runs on **a Playwright lane from the pool**. In a vc-test run `plan-run` draws it from
-the `visual` entry's `lanes` (`lib/artifacts.json`): edge first, the lane a run's scenarios reach last, then
+the `visual` entry's `lanes` (`lib/artifacts.json`): edge first, because a run's scenarios start at chrome, then
 chrome, then firefox — only lanes this install has (`mcp:playwright-*`), and none at all is an error that
 names the three. On an install with only `playwright-chrome` the visual lane and the scenarios share that
 lane across waves, never within one. In this repository's `/qa-test` and `/qa-test-fast` the brief names
@@ -300,7 +300,7 @@ already permits a ticket-scoped `/qa-design` run; 30–60 lines, cap 120. Note t
 `summary.json` and the checklist.
 
 In this repository's `/qa-test`, its machine half lands in `summary.json.visual`. A `null` `visual` block means the step never ran — a gap,
-not a clean result. **A vc-test run** writes `{RUN_DIR}/design-report.md` and its rows to `scenarios/visual.rows.md` (`VIS-<m>`, Proof `visual`) instead — `/vc-test:qa-ticket`; it has no `summary.json`.
+not a clean result. **A vc-test run** writes `{RUN_DIR}/design-report.md` and its rows to `scenarios/visual.rows.md` (`VIS-<m>`, Proof `visual`) instead — `/vc-test:qa-ticket`; it has no `summary.json`. Each row's Ref is the `R<n>` of the strategy risk it covers (`R3`, or `R3 · R5` for two) — the id `lib/trace.mjs` resolves: a Ref naming a risk the round lacks is reported as unknown, and a risk with no row stays unresulted.
 
 **Scope note.** `critical-ui-scope.md`'s matrix is not only `GAP`-filled, it is **stale**: suite `048c`
 exists with 30 `LAYOUT-*` cases (in this repository: registered runner-native in `config/test-suites.json`) whose cells the
