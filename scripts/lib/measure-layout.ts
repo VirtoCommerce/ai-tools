@@ -406,7 +406,7 @@ export function imageIntrinsicDimsSnippet(selector: string = "img"): string {
 // ---------------------------------------------------------------------------
 // Static snippets — pass these strings verbatim to `browser_evaluate`
 // ---------------------------------------------------------------------------
-// CONTENT — the rendered text is wrong, not the layout (visual-axis.md §2a `CONTENT`)
+// CONTENT — the rendered text is wrong, not the layout (plugins/vc-test/skills/qa-design/visual-axis.md §2a `CONTENT`)
 // ---------------------------------------------------------------------------
 
 /** One offender of a [PROBE:CONTENT] class: the text (or attribute) that matched, and where. */

@@ -2,19 +2,19 @@
 
 Methodology for verifying the implemented UI against a **Claude Design** project
 (`claude.ai/design`) instead of a Figma frame. Read by `ui-ux-expert` and `qa-testing-expert`;
-the deterministic half lives in [`scripts/lib/verify-design-spec.ts`](../../../scripts/lib/verify-design-spec.ts).
+the deterministic half lives in [`<plugin>/lib/design/verify-design-spec.mjs`](../../lib/design/verify-design-spec.mjs), its snippets printed by `node <plugin>/lib/design/snippet.mjs <name> …` (`<plugin>` is the vc-test plugin root, as [`SKILL.md`](SKILL.md) defines it; in this repository the TypeScript at `scripts/lib/verify-design-spec.ts` is canonical; the plugin file is generated from it).
 
 ## Why this exists
 
 `ui-ux-expert`'s Judge has four axes. Three are deterministic — `vs. RULES` (BL-UI invariants),
 `vs. WCAG` (axe / Lighthouse), `vs. SYSTEM` (live-token audit), all wrapped by
-[`measure-layout.ts`](../../../scripts/lib/measure-layout.ts). The fourth, `vs. DESIGN`, was
+[`measure-layout.mjs`](../../lib/design/measure-layout.mjs). The fourth, `vs. DESIGN`, was
 dead: `figma-remote-mcp` exposes only `authenticate` / `complete_authentication`, and Figma's
 Starter plan caps MCP at ~6 calls/month. So the one class of defect where **every invariant
 passes but the implementation no longer matches the design** had no executor.
 
 A Claude Design project's files, put on disk, are parsed by our own deterministic tooling —
-**`npm run design:extract`** ([`scripts/layout/design-spec-extract.ts`](../../../scripts/layout/design-spec-extract.ts))
+**`node <plugin>/lib/design/design-spec-extract.mjs`** (in this repository: `npm run design:extract`, `scripts/layout/design-spec-extract.ts`)
 → `extractDesignSpec()` — so the axis runs as a real gate rather than an eyeball comparison.
 
 ## 1. Resolve the design source
@@ -255,7 +255,7 @@ BL-UI invariant   >   design spec   >   UX heuristic
   never rescues an invariant failure — if the design itself specifies a 13 px gap or a 2.5:1
   icon contrast, the design is wrong.
 - A design spec that **conflicts** with a BL-UI invariant or a WCAG criterion is `AMBIGUOUS` →
-  escalate to `qa-lead-orchestrator`. Do not silently obey it and do not silently file it as a
+  escalate to the dispatcher (in this repository: `qa-lead-orchestrator`). Do not silently obey it and do not silently file it as a
   product bug.
 - Design drift on a surface the spec covers but no invariant does is a genuine `Design Spec
   Drift` finding — that is the whole point of adding the axis.
@@ -305,10 +305,10 @@ Two failure modes this catches that a screenshot review does not:
 
 ## Cross-references
 
-- [`SKILL.md`](SKILL.md) §Design spec comparison — where this axis sits in the `/qa-design` run
+- [`methodology.md`](methodology.md) §Design spec comparison — where this axis sits in the `/qa-design` run
 - [`design-system-consistency.md`](design-system-consistency.md) — the live-token audit this diff sits beside
-- [`scripts/layout/design-spec-extract.ts`](../../../scripts/layout/design-spec-extract.ts) — `npm run design:extract`: files → spec JSON, sha256 per input, cross-file conflicts
-- [`scripts/lib/verify-design-spec.ts`](../../../scripts/lib/verify-design-spec.ts) — extractor, snippets, classifiers
-- [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts) — BL-UI invariants, non-text contrast, sized-control audit
-- [`knowledge/oracles/critical-ui-scope.md`](../../knowledge/oracles/critical-ui-scope.md) — which components/pages to audit first
-- `.claude/rules/reports.md` — a design-drift bug is filed per the existing Findings → Filings tree (rollup at 5+ components)
+- [`design-spec-extract.mjs`](../../lib/design/design-spec-extract.mjs) — `node <plugin>/lib/design/design-spec-extract.mjs` (in this repository: `npm run design:extract`, `scripts/layout/design-spec-extract.ts`): files → spec JSON, sha256 per input, cross-file conflicts
+- [`verify-design-spec.mjs`](../../lib/design/verify-design-spec.mjs) — extractor, snippets (printed by `snippet.mjs`), classifiers (in this repository: `scripts/lib/verify-design-spec.ts`)
+- [`measure-layout.mjs`](../../lib/design/measure-layout.mjs) — BL-UI invariants, non-text contrast, sized-control audit
+- [`critical-ui-scope.md`](../../knowledge/critical-ui-scope.md) — which components/pages to audit first
+- [`reports.md`](../../knowledge/reports.md) — a design-drift bug is filed per the existing Findings → Filings tree (rollup at 5+ components)

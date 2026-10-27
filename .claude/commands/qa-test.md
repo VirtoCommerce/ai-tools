@@ -384,7 +384,7 @@ left, and asking before knowing what those are fetches the same docs twice.
 
 | Always | `bl:extract -- --domain <d>` `BL-*` · `e-commerce-edge-cases-library.md` `ECL-*` · the domain checklists via `/qa-checklist` · `.claude/skills/qa-plan/e2e-scenario-catalog.md` `E2E-*` (the suite-traceability backbone for the regression corpus) · `.claude/knowledge/oracles/vc-bug-catalog.md` `VC-*` — each entry's `Detection probe` is a ready-made scenario |
 |---|---|
-| **`visual_surface`** | `BL-UI-*` **and `BL-A11Y-001..004`** · `.claude/skills/qa-design/SKILL.md` (§State-Stress) · `.claude/knowledge/oracles/critical-ui-scope.md` · the generated selectors **and** design tokens · `.claude/skills/qa-sbtm/modern-web-attack-surface.md` §`UIP-*` |
+| **`visual_surface`** | `BL-UI-*` **and `BL-A11Y-001..004`** · `plugins/vc-test/skills/qa-design/methodology.md` §State-Stress · `.claude/knowledge/oracles/critical-ui-scope.md` · the generated selectors **and** design tokens · `.claude/skills/qa-sbtm/modern-web-attack-surface.md` §`UIP-*` |
 | **`contract_surface`** | the **refreshed** `graphql-schema.md` (the run's `{RUN_DIR}/knowledge/api/` copy) · `.claude/knowledge/api/graphql-test-cases-runner.md` · the `test-data/graphql/index.json` fixture inventory — read it **before** proposing a new fixture (each op lists its `usedBy[]`) |
 
 **2-topup** — then VirtoOZ via `/vc-docs`, **skipped when `1c` delegated to `ba-system-analyzer`**; top up
@@ -554,7 +554,7 @@ running**.
 | | Track | Released by | Notes |
 |---|---|---|---|
 | **4a** | **Checklist** — the applicable specialist agent(s), **in a single message**, running **Artifact B and nothing else** | `3-exec` | **FAST = one agent.** Prompt contract: [`SKILL.md`](../skills/qa-test/SKILL.md) §Agent dispatch. **Record `timing.time_to_first_test_minutes` at this dispatch** — it is the number this structure exists to move |
-| **4v** | **Visual lane** — `ui-ux-expert` on Chrome DevTools MCP, in the **same message** as 4a | `3-exec` | FULL when `visual_surface: true`; FAST only under `--visual`/`--axes`. **Dispatch the agent; it invokes skill `qa-design` first.** Axes, targets, the two things the brief must carry, verdicts, the SKIPPED rule: [`visual-axis.md`](../skills/qa-test/visual-axis.md). Writes `design-report.md` + `summary.json.visual` |
+| **4v** | **Visual lane** — `ui-ux-expert` on Chrome DevTools MCP, in the **same message** as 4a | `3-exec` | FULL when `visual_surface: true`; FAST only under `--visual`/`--axes`. **Dispatch the agent; it invokes skill `qa-design` first.** Axes, targets, what the brief must carry, verdicts, the SKIPPED rule: `plugins/vc-test/skills/qa-design/visual-axis.md`. Writes `design-report.md` + `summary.json.visual` |
 | **4c** | **C1** — `/qa-regression <suite ids> --ids <new Draft ids + every REPAIR id + every RE-BASE id> --no-promote` | `3-cases` — **or A's `2a` phase when it authored nothing** (§C1) | Its own run; capture `RUN_ID` + wall-clock. **`--no-promote` is mandatory** — it suppresses `/qa-regression` Step 6.5, which would otherwise promote minutes-old cases from inside the run that authored them, re-creating the placement `5g`'s removal fixed. **Skip C1 saying so when the exact set is empty** — an omitted C1 must not read as a passing one |
 
 **The specialist agent no longer runs the Artifact-A rows** — why:

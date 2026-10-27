@@ -42,7 +42,7 @@ Load these references during generation:
 - **For any Storefront/UI case — these were previously invisible to this skill and are what make a UI assertion strong:**
   - **`bl:extract -- --domain ui` (`BL-UI-*`)** — the measurable UI invariants (CLS, spacing grid, state-induced shift, content boundary, alignment, touch target, keyboard operability), each with its own `Verify` recipe. Assert them with the measurable tags, never in prose.
   - **oracles/critical-ui-scope.md** — 36 components × applicable `BL-UI-*`, each with a per-component audit protocol and **real selectors**. Use it as the scope list: which components this change touches, and which invariants apply to each.
-  - **skills/qa-design/SKILL.md §State-Stress Pass** — the seven states every UI surface must survive (loading · empty · error/disabled · overflow · validation-error · anonymous · dark theme). This is a ready-made case matrix; sweep it rather than inventing states.
+  - **qa-design/methodology.md §State-Stress Pass** — the seven states every UI surface must survive (loading · empty · error/disabled · overflow · validation-error · anonymous · dark theme). This is a ready-made case matrix; sweep it rather than inventing states.
   - **automation/storefront-selectors.md** + `scripts/lib/storefront-selectors.generated.ts` — real `data-test-id` values. Prefer a test id over a label (a label is an i18n key, so a label-based locator is locale-dependent — and the language selector is itself under test).
   - **skills/qa-sbtm/modern-web-attack-surface.md** — the `UIP-*` probe catalog (§Unexpected-action sweep below).
 

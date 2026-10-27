@@ -16,7 +16,7 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 |---|---|---|
 | F1 | any **High/Critical** risk in the register, or the ticket is **P0/P1** (D8). Layer and domain counts do **not** fire it — they raise a risk's L×I | exploratory; a High/Critical risk on a `{HYPOTHESIS}` oracle takes technique `MODEL` (M1) |
 | F2 | a Story whose surface purpose is `UNDECLARED` in the domain map §1 ([`domain-map.md`](../../knowledge/domain-map.md)) | a purpose risk with technique `MODEL` whose Source carries `floor:F2`, + exploratory, whatever else holds |
-| F3 | a rendering file in the diff ([`visual-axis.md`](../../../../.claude/skills/qa-test/visual-axis.md) §1 source 1) — a lower bound, see below | visual lane |
+| F3 | a rendering file in the diff ([`visual-axis.md`](../qa-design/visual-axis.md) §1 source 1) — a lower bound, see below | visual lane |
 | F4 | a revenue-critical flow is touched (cart, checkout, payment, pricing, orders) | no risk on it below Medium |
 | F5 | the bundle's `known.cases_at_risk` is non-empty (`/vc-test:ticket-context` block 4 ran `regression:select` over the changed files; the strategy adds `npm run tc:scope -- --domain <slug> --observable <each observable the diff or an AC moves>` where path tokens miss (in this repository: `/qa-test-fast`'s `.claude/knowledge/execution/regression-selection.md`)) | coverage triage + a regression run over those cases, **after the staleness check below**. Under vc-test (`--change-map`) the requirement is the list, not the run: every suite at risk, their residual risk and `/qa-regression <suites>` in Out of scope, the row `SKIP` (gate 6h, vc-test U7); fired on doubt, Out of scope names the failed lookup instead of the suites |
 | F6 | a `NOT DEPLOYED:` line in the bundle's `blockers[]` — a counted PR whose build the stand does not carry. A `DEPLOYMENT UNKNOWN:` line (no live source for that layer, or not checked) does **not** fire it | **BLOCKED** before any browser opens. `UNKNOWN` is not blocked: the run proceeds and the verdict says "deployment unverified", quoting the line |
@@ -96,7 +96,7 @@ not have — a change that declares no visual effect or moves shared UI), `DESIG
 - **F1's P0/P1 names** come from `project-profile.json` `tracker.p0p1Priorities`; without it, Highest/High/P0/P1/Blocker/Critical.
 - **F8 fails closed:** an unread diff never fires it — it needs an affirmative ui-kit path in what was read ([`lib/floors.mjs`](lib/floors.mjs) `UI_KIT`).
 - **F3 is a lower bound.** It fires on a rendering file in the diff
-  ([`visual-axis.md`](../../../../.claude/skills/qa-test/visual-axis.md) §1 source 1) and never on a bare storefront/admin-spa
+  ([`visual-axis.md`](../qa-design/visual-axis.md) §1 source 1) and never on a bare storefront/admin-spa
   layer, because eligibility-as-trigger pinned that axis to true (visual-axis.md §1). The strategy adds the visual
   lane itself when it identifies a changed rendered value.
 - **F4 reads names, never prose:** paths, operations, endpoints, settings, components and domains — not claims

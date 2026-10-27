@@ -112,7 +112,7 @@ Ref `PB-n · R<k>`, the `R` of its `### Prior bugs` row.
 | `contract-refresh` | both commands of its `run.commands` |
 | `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` (a brief entry: on `run.model`, brief `<plugin>/<run.brief>`); checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE`, `EXPLORATORY` (its `lane`, `exploratory`) |
 | `bug:PB-n` (round ≥ 2) | the same, + `PB`, `CAPABILITIES`, `LANE` (its `lane`, if any) |
-| `visual` | `ui-ux-expert` on Chrome DevTools MCP, brief opening with Skill `qa-design` (`.claude/skills/qa-test/visual-axis.md` §2, §4, §5) |
+| `visual` | `ui-ux-expert` on Chrome DevTools MCP, brief opening with Skill `qa-design` (`<plugin>/skills/qa-design/visual-axis.md` §2, §4, §5) |
 
 **A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
 `BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's

@@ -13,7 +13,7 @@ const P01_DEFAULT = ["p0", "p1", "highest", "high", "blocker", "critical"];
 // The project root a repo-relative path resolves against: VC_FIX_HOME, else the cwd (plugins/CLAUDE.md outputRoot) — never
 // a path derived from this file, which sits in the plugin install.
 const projectRoot = () => resolve(process.env.VC_FIX_HOME || process.cwd());
-// qa-test/visual-axis.md §1 source 1 — a rendering file.
+// qa-design/visual-axis.md §1 source 1 — a rendering file.
 const VISUAL = /\.(vue|scss|css|html)$|\/Scripts\/.*\.html$|\/icons?\/|design-tokens?|_tokens?\.scss$/i; // not a bare "token": TokenService.cs is not a rendering file
 // ticket-routing.md §5c — the change IS the design system.
 const UI_KIT = /client-app\/ui-kit\/|_ui-kit-tokens\.scss$|\/_colors\.scss$|\/_dark\.scss$|\/preflight\.scss$|client-app\/assets\/presets\/[^/]+\.json$|\.storybook\/|storybook-styles\/|\.stories\./i;

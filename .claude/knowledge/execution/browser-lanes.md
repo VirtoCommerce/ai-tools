@@ -156,7 +156,7 @@ depends on the model. The orchestrator instead runs `npm run design:extract` ove
 of the ticket's project (`.design-source/<uuid>/`) and hands the agent the **spec JSON path**:
 `unresolved` is machine-counted, every input carries a sha256, and nothing about the lane or the
 session decides whether the axis runs. Source ladder:
-[`skills/qa-design/claude-design-verification.md`](../../skills/qa-design/claude-design-verification.md) §1.
+[`plugins/vc-test/skills/qa-design/claude-design-verification.md`](../../../plugins/vc-test/skills/qa-design/claude-design-verification.md) §1.
 
 ## Storybook Visual Regression
 

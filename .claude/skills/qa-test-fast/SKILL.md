@@ -65,8 +65,8 @@ risks. The checklist needs the strategy, the model when one ran, and the mind ma
 | "FAST allows one agent, so ask whether to go FULL." | This command *is* the answer to that question. Do not re-route. |
 | "This morning's run already has results — reuse them." | On the same build, show that verdict and ask (Step 0.3). Never silently reuse another run's results, and never silently overwrite them. |
 | "Sweep leftovers with `seed:*:teardown`." | Persistent fixtures share the `AGENT-TEST-` prefix, and a sweep deletes them. Teardown is by ledger id only. |
-| "The checklist runner already looked at the page — skip the visual lane." | A functional runner cannot see a contrast failure, a token collision or design drift. `visual_surface: true` ⇒ the lane runs, or `--no-visual` is recorded ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §5). |
-| "I'll invoke `/qa-design` myself, inline." | The command is not model-invocable, and the skill is ~30K chars. The `ui-ux-expert` brief makes the **agent** invoke the `qa-design` skill ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2). |
+| "The checklist runner already looked at the page — skip the visual lane." | A functional runner cannot see a contrast failure, a token collision or design drift. `visual_surface: true` ⇒ the lane runs, or `--no-visual` is recorded ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §5). |
+| "I'll invoke `/qa-design` myself, inline." | The command is not model-invocable, and the skill is ~30K chars. The `ui-ux-expert` brief makes the **agent** invoke the `qa-design` skill ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2). |
 | "25 minutes is enough exploring." | The exploratory box floor is 30 minutes ([`../qa-test/exploratory-lane.md`](../qa-test/exploratory-lane.md) §5). |
 
 ## Red flags — stop and re-read the six rules

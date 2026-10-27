@@ -4,7 +4,7 @@
 [`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5c owns the *routing* decision — when the
 class applies, what it skips, which axes it defaults ON — and **cites this file** for how to actually run one.
 `commands/qa-test.md` cites both and restates neither, the same discipline
-[`visual-axis.md`](visual-axis.md) holds for the visual axis.
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) holds for the visual axis.
 
 **The class is a third classifier, orthogonal to FLOW and EFFORT.** It never moves a ticket between paths.
 What it changes is the *deliverable* — Artifact A, the `3-cases` gate and `4c`/C1 are skipped, so the
@@ -109,7 +109,7 @@ fixture and it does not clean itself up.
 
 ## 6. Dual target: Storybook AND the storefront
 
-[`visual-axis.md`](visual-axis.md) §2 already routes a storefront *component* to both surfaces because they
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2 already routes a storefront *component* to both surfaces because they
 catch different bug classes. On this class the reason is sharper: **Storybook has a documented history of
 lying about exactly this.** PR #2468's own diff fixed a `storybook-styles/preflight.scss` that had been
 *silently deleting the focus rule* — so a clean Storybook result on a focus change was, for some period,
@@ -121,7 +121,7 @@ Treat neither surface as the other's proxy. And remember the hosted Storybook is
 which of the two owns a finding — reproduces in a story ⇒ Storybook; only once composed into a page ⇒
 accessibility.
 
-**This class also takes `PIXEL`** ([`visual-axis.md`](visual-axis.md) §2a). A token or a shared component
+**This class also takes `PIXEL`** ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2a). A token or a shared component
 moves components the ticket never names. In the 2026-10-23 spike, two 2 px edits changed stories in 14
 components. The carrier matrix above checks what the change intends; `/qa-visual-regression` finds
 what else it moved.
@@ -172,8 +172,8 @@ a product finding.
 
 | Needs | Lane | Why the other cannot |
 |---|---|---|
-| computed colour, `getBoundingClientRect`, token reads, axe injection | **Chrome DevTools MCP** (`ui-ux-expert`) | the **REAL-USER RULE** is hook-enforced on the Playwright lanes (`hooks/enforce-real-user.mjs`): `browser_evaluate` is *blocked*, so a measurement simply cannot be taken there |
-| a real keyboard `Tab` journey, `--reduced-motion=reduce`, a genuine click path | **a Playwright lane** | Chrome DevTools MCP's `emulate` carries no reduced-motion axis (B-36) |
+| computed colour, `getBoundingClientRect`, token reads, axe injection | **the visual lane** (`ui-ux-expert`, on the Playwright lane the run assigns), through `browser_evaluate` | the **REAL-USER RULE** (`hooks/enforce-real-user.mjs`) lets `browser_evaluate` through only for a read-only measurement — its allowlist passes `getComputedStyle`, `getBoundingClientRect`, `axe.run`, `window.axe` and their kin — so a measurement is a printed snippet (vc-test's `lib/design/snippet.mjs`), never a script that clicks, types or navigates |
+| a real keyboard `Tab` journey, `--reduced-motion=reduce`, a genuine click path | **a Playwright lane, driven through its real tools** (`browser_press_key`, `browser_click`, `browser_emulate_media`) | the same hook refuses a `browser_evaluate` that drives the UI, so a journey is never a script |
 
 **Measured twice, on the same case.** Suite `097`'s `SR-CO-016` went `BLOCKED` on a Playwright lane because
 `[TOUCH]`, `[SPACING]` and axe all needed injection the rule forbids — *"BLOCKING, and the reason is tooling
@@ -191,14 +191,14 @@ measurement is never a clean one.
 
 **A value that matches the design spec exactly and still fails WCAG makes the TOKEN the defect**, not the
 component that used it. Route it to the design-system owner as `AMBIGUOUS` and escalate; per
-[`visual-axis.md`](visual-axis.md) §3 a spec never outranks an invariant. The precedent is VCST-5346's
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §3 a spec never outranks an invariant. The precedent is VCST-5346's
 1.63:1 focus ring — *"matches the design token exactly … so the token contract is the defect"* — and a ≤40%
 alpha ring cannot reach 3:1 on white for any mid-luminance hue, so no component fix was ever available.
 
 Accessibility findings on a functional / feature / E2E ticket **file separately at their real severity and
 never block it** ([`triage.md`](triage.md) §7a). The carve-out is a ticket that is itself *about*
 accessibility — decided by the ticket's own ACs, never by the finding's severity. Filing rules for the
-design-system class: [`design-system-consistency.md`](../qa-design/design-system-consistency.md) §Findings.
+design-system class: [`design-system-consistency.md`](../../../plugins/vc-test/skills/qa-design/design-system-consistency.md) §Findings.
 
 ---
 
@@ -211,7 +211,7 @@ selectors, no regression suites. A vc-shell UI task is not a `ui-kit` shape clas
 [`plugins/vc-fix/skills/vc-shell-fix/SKILL.md`](../../../plugins/vc-fix/skills/vc-shell-fix/SKILL.md) and the VC-SHELL section of `vc-bug-catalog.md`.
 
 **It does not own the visual axis, the BL-UI invariants, or the design-system methodology.** Those keep
-their owners — [`visual-axis.md`](visual-axis.md), [`qa-design/SKILL.md`](../qa-design/SKILL.md) and
+their owners — [`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md), [`qa-design/SKILL.md`](../../../plugins/vc-test/skills/qa-design/SKILL.md) and
 [`qa-accessibility/SKILL.md`](../qa-accessibility/SKILL.md). This file adds only what is specific to the
 change being the kit itself.
 

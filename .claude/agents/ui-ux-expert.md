@@ -154,7 +154,7 @@ Static screenshots miss most layout bugs. Measure, don't eyeball. The shared "mi
 
 **Canonical scope:** [`knowledge/oracles/critical-ui-scope.md`](../knowledge/oracles/critical-ui-scope.md) — the **scope selector** of 7 components (NOT regression-enforced: its covering suite `048b` was removed 2026-07-25 and every matrix cell is `GAP` — see line 157) (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar) and 8 pages (`/`, `/catalog`, PDP, `/cart`, `/account/orders`, `/account/lists`, `/company/members`, `/company/info`). Two machine-readable coverage matrices map every applicable (component × invariant) and (page × invariant) cell to a covering test ID. Use this file to decide what to audit before any free-form UI work. `npm run scope:validate` enforces that every cell points at a real test ID.
 
-**Canonical regression suite: NONE.** Suite `048b-layout-stability.csv` (selection group `layout-stability`) was **removed on 2026-07-25**, and no suite replaced it — BL-UI-001..006 have no automated regression coverage. Until a replacement is authored, run these audits **on demand** via [`/qa-design`](../skills/qa-design/SKILL.md), driving them from the per-component audit protocols and coverage matrix in [`critical-ui-scope.md`](../knowledge/oracles/critical-ui-scope.md) (every matrix cell is currently marked `GAP`). If you are asked to restore coverage, that matrix is the specification to build against.
+**Canonical regression suite: NONE.** Suite `048b-layout-stability.csv` (selection group `layout-stability`) was **removed on 2026-07-25**, and no suite replaced it — BL-UI-001..006 have no automated regression coverage. Until a replacement is authored, run these audits **on demand** via [`/qa-design`](../commands/qa-design.md), driving them from the per-component audit protocols and coverage matrix in [`critical-ui-scope.md`](../knowledge/oracles/critical-ui-scope.md) (every matrix cell is currently marked `GAP`). If you are asked to restore coverage, that matrix is the specification to build against.
 
 **Detection checklist per story (run for every interactive state, not just default):**
 
@@ -183,7 +183,7 @@ Static screenshots miss most layout bugs. Measure, don't eyeball. The shared "mi
 
 ### Claude Design Verification Protocol (the `vs. DESIGN` axis)
 
-> **Canonical methodology:** [`skills/qa-design/claude-design-verification.md`](../skills/qa-design/claude-design-verification.md).
+> **Canonical methodology:** `plugins/vc-test/skills/qa-design/claude-design-verification.md`.
 > **Canonical helper:** [`scripts/lib/verify-design-spec.ts`](../../scripts/lib/verify-design-spec.ts) — extractor, snippets, classifiers. **Always use these — do not hand-roll a design diff**, same rule as `measure-layout.ts`.
 
 Figma MCP is effectively unusable here; a **Claude Design** project's files, parsed by our own **`npm run design:extract`**, make this a real gate (why: methodology §Why this exists). **Never call `DesignSync`** — its own description restricts it to the user-started `/design-sync` skill.

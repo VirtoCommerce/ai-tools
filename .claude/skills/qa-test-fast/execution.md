@@ -2,7 +2,7 @@
 
 One message, at most three browser lanes ([`../../rules/agents.md`](../../rules/agents.md) §Parallel
 Execution); the visual lane joins it or follows as soon as one lane returns
-([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §4). Each lane is its own agent with its own browser session and its own pool user.
+([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §4). Each lane is its own agent with its own browser session and its own pool user.
 
 | Lane | Agent | Browser | Pool user | Runs |
 |---|---|---|---|---|
@@ -62,10 +62,10 @@ the Skill tool with `skill: "qa-design"` before any browser call**, and open the
 `qa-design skill: loaded`. Everything else the brief carries (target, the design project from the
 ticket's Prototype link + the `design:extract` spec path, the invariant text, the auth path, no
 credential names), the lane-count rule and the verdict vocabulary are
-[`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2–§4 — cited, not restated here.
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2–§4 — cited, not restated here.
 - **Writes** `{RUN_DIR}/design-report.md`; you write `summary.json.visual`.
 - **Read-only.** It creates no data; a role-gated target uses the pre-signed profile, never a minted
-  account ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2).
+  account ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2).
 - **Skipped** (`visual_surface: false` or `--no-visual`) ⇒ `visual.ran: false` + the reason.
 
 ## Data — made during the run

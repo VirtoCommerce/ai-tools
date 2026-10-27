@@ -5,7 +5,7 @@ Single source of truth for the derived tokens `1b` resolves: **`layer` (2b) · `
 contract they share and the ways they genuinely differ. **Cite it; never restate it.**
 
 Each axis's own *behaviour* stays in its own file, which this one does not duplicate:
-[`visual-axis.md`](visual-axis.md) (the three sub-axes, verdict vocabulary, browser budget) ·
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) (the three sub-axes, verdict vocabulary, browser budget) ·
 [`contract-refresh.md`](contract-refresh.md) (two artifacts, two commands, `UNKNOWN`, drift as a `1e` input) ·
 [`coverage-triage.md`](coverage-triage.md) (`runFate`, the four dispositions, the `REPAIR`/`RE-BASE` split) ·
 [`authoring.md`](authoring.md) §Step 3a (what `test-data-engineer` owns once `data_surface` is `true`).

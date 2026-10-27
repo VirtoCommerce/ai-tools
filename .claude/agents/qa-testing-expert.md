@@ -43,7 +43,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ### Design Spec Verification
 
-> Primary source is a **Claude Design** project's local files, parsed by `npm run design:extract` (never call `DesignSync`) — protocol in [`skills/qa-design/claude-design-verification.md`](../skills/qa-design/claude-design-verification.md), differ in [`scripts/lib/verify-design-spec.ts`](../../scripts/lib/verify-design-spec.ts). Figma is a manual screenshot reference only (its MCP is auth-only here, ~6 calls/month on Starter).
+> Primary source is a **Claude Design** project's local files, parsed by `npm run design:extract` (never call `DesignSync`) — protocol in `plugins/vc-test/skills/qa-design/claude-design-verification.md`, differ in [`scripts/lib/verify-design-spec.ts`](../../scripts/lib/verify-design-spec.ts). Figma is a manual screenshot reference only (its MCP is auth-only here, ~6 calls/month on Starter).
 
 **Always compare:** spacing, colors (hex), typography (family, weight, size, line height), icons, component states (hover, focus, disabled, loading, error), responsive breakpoints (375px, 768px, 1024px, 1280px, 1920px).
 
