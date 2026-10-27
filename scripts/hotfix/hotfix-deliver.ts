@@ -57,8 +57,8 @@
  *   2  tool error: task/repo unresolved, missing env coords, GitHub auth/rate-limit
  *
  * Auth: GIT_TOKEN with contents:write + actions:read on vc-deploy-dev, and repo read on the product
- * repo (a PAT with `repo`/`workflow`). Read from .env.local / .env.defaults — same as the other
- * hotfix scripts. The /api/platform/modules check needs the env's admin credentials.
+ * repo (a PAT with `repo`/`workflow`). Read from the process env, then .env.local, then .env.defaults
+ * (first found wins). The /api/platform/modules check needs the env's admin credentials.
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()

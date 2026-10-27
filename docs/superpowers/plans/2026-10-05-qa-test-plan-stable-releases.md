@@ -166,12 +166,11 @@ Expected: FAIL, `Cannot find module '../lib/release-trace.ts'`
  * `release:scope` (scripts/release/release-scope.ts: what a stable bundle carries). Extracted from
  * bundle-version-check.ts on 2026-10-05 so the two can never trace a version differently.
  *
- * Auth: GIT_TOKEN (fallback GITHUB_TOKEN / GITHUB_PERSONAL_ACCESS_TOKEN) from .env.defaults / .env.local /
- * process.env. Unauthenticated works but GitHub caps it at 60 req/h.
+ * Auth: GIT_TOKEN (fallback GITHUB_TOKEN / GITHUB_PERSONAL_ACCESS_TOKEN) through scripts/lib/github-token.ts:
+ * process env, then .env.local, then .env.${TEST_ENV}, then .env.defaults. Unauthenticated works but GitHub caps
+ * it at 60 req/h.
  */
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { parse as parseDotenv } from 'dotenv';
+import { loadGithubToken } from './github-token.js';
 
 export const OWNER = 'VirtoCommerce';
 // PROJECT-NUMBER (VCST-4932, VP-9195): key 2–10 upper-alnum starting with a letter, so .NET identifiers don't match.
@@ -195,13 +194,9 @@ export interface GhReader {
 }
 
 export function loadGitToken(repoRoot: string): string | undefined {
-  // Layered and light on purpose: config.js runs the full required-var validator and exits when a test var is missing.
-  for (const f of ['.env.defaults', '.env.local']) {
-    const p = resolve(repoRoot, f);
-    if (!existsSync(p)) continue;
-    for (const [k, v] of Object.entries(parseDotenv(readFileSync(p)))) if (!process.env[k]) process.env[k] = v;
-  }
-  return process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+  // The shared loader, not a copy of its loop: a first-wins loop over ['.env.defaults', '.env.local'] let a default
+  // beat a local value (fixed in bundle:check and release:diff by #467, in the hotfix scripts by #541).
+  return loadGithubToken(repoRoot);
 }
 
 const api = (p: string) => (p.startsWith('http') ? p : `https://api.github.com${p}`);

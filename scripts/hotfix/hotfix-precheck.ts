@@ -37,8 +37,8 @@
  *   1  at least one gate is blocked (PR open / not released / no support branch / not in bundle)
  *   2  tool error: task/repo unresolved, GitHub auth/rate-limit failure
  *
- * Auth: reads GIT_TOKEN (fallback GITHUB_TOKEN / GITHUB_PERSONAL_ACCESS_TOKEN) from
- * .env.local / .env.defaults / process.env — same as scripts/bundle-version-check.ts.
+ * Auth: reads GIT_TOKEN (fallback GITHUB_TOKEN / GITHUB_PERSONAL_ACCESS_TOKEN) from the process env, then
+ * .env.local, then .env.defaults (first found wins).
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
