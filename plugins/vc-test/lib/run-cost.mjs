@@ -4,7 +4,8 @@
 // Any session can be read (`--session-file`, any project folder), and its subagents in the layout it actually has:
 // `<session>/subagents/*.jsonl` (today), else `agent-*.jsonl` tied to it (in `<session>/`, or beside the session file
 // with its sessionId), else the `isSidechain` lines inside the session file. `subagentSource` names the one found;
-// "none" is said under the table, never silent. Without `--since` the session's first record is the start.
+// "none" is said under the table, never silent, as are sidechain lines left uncounted beside subagent files
+// (`sidechainNotCounted`). Without `--since` the session's first record is the start.
 // CLI: node plugins/vc-test/lib/run-cost.mjs [--since <iso>] [--session-file <path>|--session <id>|latest (default: this session)] [--key <KEY>] [--out <file>]
 // Exit 0 table printed (JSON written with --out/--key); 1 usage error or no such session log.
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -30,8 +31,12 @@ export function cost({ mainLines, subagents, since, subagentSource }) {
     try { const r = JSON.parse(l); const t = Date.parse(r.timestamp); return Number.isFinite(t) && t >= t0 ? [{ ...r, t }] : []; }
     catch { skipped++; return []; }
   });
-  // A sidechain line in the session file is a subagent's, never the orchestrator's (readSession hands it over).
-  const groups = [{ step: "orchestrator", records: parse(mainLines).filter((r) => !r.isSidechain) },
+  // A sidechain line in the session file is a subagent's, never the orchestrator's. readSession hands those lines
+  // over only when no subagent files exist; otherwise they are not counted, and how many is said, never merged.
+  const mainRecords = parse(mainLines);
+  const source = subagents.length ? (subagentSource ?? "subagents") : "none";
+  const sidechainNotCounted = source === "sidechain" ? 0 : mainRecords.filter((r) => r.isSidechain).length;
+  const groups = [{ step: "orchestrator", records: mainRecords.filter((r) => !r.isSidechain) },
     ...subagents.map((s) => ({ step: stepOf(s.description), records: parse(s.lines) }))];
 
   // One API message is written as several records (one per content block). Each is counted once, under the step
@@ -67,12 +72,12 @@ export function cost({ mainLines, subagents, since, subagentSource }) {
   total.wallMin = Number.isFinite(first) ? min((last - first) / 1000) : 0;
   return {
     start: Number.isFinite(first) ? new Date(first).toISOString() : null,
-    subagentSource: subagents.length ? (subagentSource ?? "subagents") : "none",
+    subagentSource: source, sidechainNotCounted,
     steps: list.sort((a, b) => b.inputTotal - a.inputTotal), total, skipped,
   };
 }
 
-export function toMarkdown({ steps, total, subagentSource }) {
+export function toMarkdown({ steps, total, subagentSource, sidechainNotCounted = 0 }) {
   const pct = (n) => (total.inputTotal ? `${((n / total.inputTotal) * 100).toFixed(1)}%` : "—");
   const m = (n) => `${(n / 1e6).toFixed(2)}M`;
   const rows = steps.map((s) => `| ${s.step} | ${m(s.inputTotal)} | ${pct(s.inputTotal)} | ${m(s.output)} | ${s.activeMin} |`);
@@ -80,7 +85,8 @@ export function toMarkdown({ steps, total, subagentSource }) {
     ? "Subagents: none found — the total is the main session only."
     : `Subagents: read from \`${subagentSource}\`.`;
   return ["| Step | Input-equivalent | Share | Output | Active min |", "|---|---|---|---|---|", ...rows,
-    `| **total** | ${m(total.inputTotal)} | 100% | ${m(total.output)} | ${total.activeMin} (wall ${total.wallMin}) |`, "", source].join("\n");
+    `| **total** | ${m(total.inputTotal)} | 100% | ${m(total.output)} | ${total.activeMin} (wall ${total.wallMin}) |`, "", source,
+    ...(sidechainNotCounted > 0 ? [`${sidechainNotCounted} sidechain lines not counted (subagents read from \`${subagentSource}\`).`] : [])].join("\n");
 }
 
 // An older layout has no .meta.json: a subagent is matched to its Task/Agent dispatch by its first prompt.
