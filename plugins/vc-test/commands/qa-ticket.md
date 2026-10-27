@@ -32,11 +32,12 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 1. `npm run run:use -- <TICKET> [<env>]` → note `RUN_DIR` and the start time (`date -u +%FT%TZ`).
 2. `node <plugin>/lib/route.mjs --key <TICKET>` → `{job, reason, next}`: `verify-fix` / `hotfix-check` ⇒ STOP naming `next`; exit 4 (`unresolved`) ⇒ ask
    which job, quoting `reason` (not a third human point: the run has not started), then verify-fix / hotfix-check ⇒ STOP naming `next`, test ⇒ go on; exit 3 ⇒ route after step 1 with
-   `--bundle <BUNDLE>`; exit 2 ⇒ STOP "run /project-init". A not-fixed Bug's `reason` is `MISSION` (step 3).
+   `--bundle <BUNDLE>` (round ≥ 2: after 0b.1, `--bundle <DELTA_PREPARE>`); exit 2 ⇒ STOP "run /project-init". A not-fixed Bug's `reason` is `MISSION` (step 3).
 3. `node <plugin>/lib/rounds.mjs count --key <TICKET> --run-dir <RUN_DIR>` → `ROUND`, `MODE`. Exit 2 ⇒ STOP: print its
    `escalation` (`<plugin>/skills/qa-test-strategy/rounds.md` §At most three) — nothing else runs. `refresh` ⇒ 0b
    instead of steps 1–3 (no `record` ⇒ STOP: round <ROUND−1> left no round record). `resume` ⇒ the steps of that
-   round, its approved section reused. Round 1 only, after step 1: `count` again with `--bundle <BUNDLE>`; exit 2 ⇒ the
+   round, its approved section reused: round ≥ 2 runs 0b without its analyst and strategy dispatches (`append` leaves
+   a last section numbered N alone). Round 1 only, after step 1: `count` again with `--bundle <BUNDLE>`; exit 2 ⇒ the
    same STOP.
 4. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
    `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
@@ -51,13 +52,14 @@ No `/vc-test:ticket-context`, no change map, no scenarios agent, no human point 
 1. `node <ctx>/lib/cli.mjs prepare <TICKET> --since <record>` (its Step 0 statuses and STOPs, host-governed passes
    included) → its `prepare_path` is `DELTA_PREPARE`; then `node <plugin>/lib/rounds.mjs delta --key <TICKET> --run-dir <RUN_DIR>
    --prepare <DELTA_PREPARE>` → `DELTA` (`<WORK>/delta.json`). Exit 2 ⇒ `abort` the prepare, then STOP: `sameBuild`
-   "Round <N−1> already tested this build" (P3), `cap` its `escalation`.
+   "Round <N−1> already tested this build" (P3), `cap` its `escalation`. Route exited 3 at step 0 ⇒ now
+   `node <plugin>/lib/route.mjs --bundle <DELTA_PREPARE>`, handled as step 0.2; a STOP it causes `abort`s the prepare first.
 2. Dispatch `vc-test:ticket-context-analyst` per `DELTA.dispatch` (TICKET; CHANGE per PR, `PRS: <ref>`) with `PREPARE =
    DELTA_PREPARE`, then `save` / `merge-change` and `deploy --prepare` as that skill's Steps 2 and 4. `NOT DEPLOYED`
    ⇒ BLOCKED on deploy, as step 1.
 3. `node <plugin>/lib/rounds.mjs append --run-dir <RUN_DIR> --delta <DELTA> --change-map <WORK>/change-map.json`; dispatch
-   `strategy` (`opus`) with `DELTA`, the analysts' outputs as `TICKET` / `CHANGE`, `BUNDLE`, `CHANGE_MAP` = round 1's,
-   `CAPABILITIES`, `RUN_DIR` (`briefs/strategy.md` §Round N ≥ 2). Gate fails twice ⇒ STOP. `abort` the prepare, then
+   `strategy` (`opus`) with `DELTA`, the analysts' outputs as `TICKET` / `CHANGE`, `DEPLOY` = `deploy.json` beside
+   `DELTA_PREPARE`, `BUNDLE`, `CHANGE_MAP` = round 1's, `CAPABILITIES`, `RUN_DIR` (`briefs/strategy.md` §Round N ≥ 2). Gate fails twice ⇒ STOP. `abort` the prepare, then
    step 4.
 
 ## 1 — Context
