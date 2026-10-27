@@ -1,5 +1,5 @@
 {
-  "$comment": "The only list of artifacts (spec §5.1). `row` is the strategy's Artifacts row as .claude/templates/test-strategy.md names it; `derivedFrom` marks an artifact selected whenever that artifact or row is (\"Scenarios\" = at least one scenario in the strategy's `### Scenarios` table). `per: \"scenario\"` is a template the planner instantiates once per approved scenario as `scenario:S-n`; `proofs` gives its capabilities by the scenario's Proof, and for a browser proof the pool of lanes (tried in order, each needing its own `mcp:<name>`; no two browser entries in a wave share a lane — one browser session per agent). `needs` waits only for selected artifacts. `writes` is relative to the run folder <run>; a scenario never writes testing-checklist.md — the orchestrator merges its S-n.rows.md there after each wave (scenario-rows.mjs).",
+  "$comment": "The only list of artifacts (spec §5.1). `row` is the strategy's Artifacts row as skills/qa-test-strategy/template.md names it; `derivedFrom` marks an artifact selected whenever that artifact or row is (\"Scenarios\" = at least one scenario in the strategy's `### Scenarios` table). `per: \"scenario\"` is a template the planner instantiates once per approved scenario as `scenario:S-n`; `proofs` gives its capabilities by the scenario's Proof, and for a browser proof the pool of lanes (tried in order, each needing its own `mcp:<name>`; no two browser entries in a wave share a lane — one browser session per agent). `needs` waits only for selected artifacts. `writes` is relative to the run folder <run> (or the knowledge store <store>) and never spells a literal reports/tickets/ path (write-zones.mjs checks it); `per: \"prior-bug\"` is instantiated the same way, once per `### Prior bugs` row of a round ≥ 2, as `bug:PB-n` (proof `spec` for a .spec, `browser` for a package, `none` — no lane, no capability, its row comes back BLOCKED — for no reproduction; its row goes to `PB-n.rows.md`); a scenario never writes testing-checklist.md — the orchestrator merges its S-n.rows.md there after each wave (scenario-rows.mjs).",
   "artifacts": [
     {
       "id": "contract-refresh",
@@ -8,12 +8,12 @@
       "needs": [],
       "lane": null,
       "requires": ["back-url"],
-      "writes": ["<run>/knowledge/api/graphql-schema.md", "<run>/.graphql-schema.cache.json"]
+      "writes": ["<run>/knowledge/api/graphql-schema.md", "<run>/.graphql-schema.cache.json", "<run>/graphql-fixtures-validation.md"]
     },
     {
       "id": "checklist",
       "row": "Checklist",
-      "run": { "agent": "test-management-specialist", "brief": "briefs/checklist.md", "model": "sonnet" },
+      "run": { "agent": "vc-test:checklist-writer" },
       "needs": [],
       "lane": null,
       "requires": [],
@@ -42,21 +42,40 @@
       "writes": ["<run>/scenarios/S-n.rows.md", "<run>/scenarios/S-n.window.*", "<run>/screenshots/**"]
     },
     {
+      "id": "prior-bug",
+      "row": "Prior bugs",
+      "per": "prior-bug",
+      "run": { "brief": "briefs/bug-rerun.md", "agent": "general-purpose", "model": "sonnet" },
+      "needs": [],
+      "proofs": {
+        "spec": { "lane": null, "requires": ["back-url"] },
+        "none": { "lane": null, "requires": [] },
+        "browser": { "lanes": ["browser:playwright-chrome", "browser:playwright-edge", "browser:playwright-firefox"], "requires": ["front-url"] }
+      },
+      "writes": ["<run>/scenarios/PB-n.rows.md", "<run>/screenshots/**"]
+    },
+    {
       "id": "visual",
       "row": "Visual lane",
       "run": { "skill": "qa-design", "agent": "ui-ux-expert", "model": "sonnet" },
       "needs": [],
       "lane": "browser:chrome-devtools",
       "requires": ["front-url", "mcp:chrome-devtools"],
-      "writes": ["<run>/design-report.md", "<run>/screenshots/**"]
+      "writes": ["<run>/design-report.md", "<run>/scenarios/visual.rows.md", "<run>/screenshots/**"]
     }
   ],
+  "orchestrator": {
+    "writes": [
+      "<run>/test-strategy.md", "<run>/testing-checklist.md", "<run>/verdict.md", "<run>/verdict.json", "<run>/rounds/**", "<run>/summary.json", "<run>/triage-report.md",
+      "<run>/scenarios/pixel.rows.md", "<run>/evidence-*/**", "<run>/investigations/**", "<run>/bugs/**", "<store>/**"
+    ]
+  },
   "rows_not_run": {
     "Test model": "U63 — no separate test model",
     "Exploratory": "U65 — the free class-3 scenario in the Scenarios list",
     "Mind map": "U43 — read only in a run",
     "Coverage triage + regression": "U7 — no regression in vc-test",
-    "Verifier": "run by /qa-test-strategy before approval",
+    "Verifier": "run by /vc-test:qa-test-strategy before approval",
     "Case authoring": "U18 — kept .spec is out of the prototype"
   }
 }

@@ -1,0 +1,173 @@
+{
+  "ticket": "VCST-5904",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": {
+    "comment_id": "112373",
+    "amended": false
+  },
+  "path": "FULL",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-10-26",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1090.0-pr-3133-8b4a",
+    "theme": "2.61.0-pr-2570-8619",
+    "relevant_modules": {
+      "VirtoCommerce.MFA": "3.1000.0-pr-1-e8c7",
+      "VirtoCommerce.Otp": "3.1001.0-pr-3-d978",
+      "VirtoCommerce.Customer": "3.1030.0"
+    },
+    "deployed": {
+      "platform": "3.1090.0-pr-3133-8b4a",
+      "relevant_modules": {
+        "VirtoCommerce.MFA": "3.1000.0-pr-1-e8c7 (round 2; dd9b README-only head delivered after via vc-deploy-dev #6990)"
+      }
+    }
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Testing",
+      "to": null,
+      "transition": null,
+      "confirmed": false,
+      "actor": "qa-lead",
+      "skipped": "ticket already in Testing at run start"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test",
+      "confirmed": true,
+      "actor": "qa-lead",
+      "at_utc": "2026-10-26T13:41:42.358Z"
+    }
+  ],
+  "total_cases": 33,
+  "passed": 22,
+  "failed": 5,
+  "blocked": 1,
+  "iterations": {
+    "enabled": false,
+    "rounds": 2,
+    "max_rounds": 2,
+    "outcome": "passed",
+    "per_round": []
+  },
+  "new_cases_authored": 45,
+  "regression": {
+    "c1": {
+      "suites": [
+        "110"
+      ],
+      "ids": [
+        "MFA-006",
+        "MFA-007",
+        "MFA-008",
+        "MFA-009",
+        "MFA-010",
+        "MFA-015",
+        "MFA-017",
+        "MFA-018",
+        "MFA-019",
+        "MFA-021",
+        "MFA-022",
+        "MFA-024",
+        "MFA-027",
+        "MFA-028",
+        "MFA-029",
+        "MFA-032"
+      ],
+      "run_id": "REG-2026-10-23-1902",
+      "pass_rate": 56.3,
+      "skipped_reason": "own-store subset by operator choice; MFA-006/008/019/029 repaired as test defects after the run, re-run pending; suite 111 covered by the checklist"
+    }
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6527",
+      "severity": "High",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-5904"
+    },
+    {
+      "key": "VCST-6528",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-5904"
+    },
+    {
+      "key": "VCST-6530",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-5904"
+    },
+    {
+      "key": "VCST-6525",
+      "severity": "Low",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-5904"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "C8: second password step within 30 s sends no email but the UI says a code was sent",
+      "report": "reports/tickets/Sprint26-21/VCST-5904/vcst-2026-10-23/testing-checklist.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "F2 partial: Backoffice code input has no aria-invalid / aria-describedby (error itself is role=alert)",
+      "report": "reports/tickets/Sprint26-21/VCST-5904/vcst-2026-10-23/design-report.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "F4: Backoffice card re-centres, code input moves 29 px when the error appears",
+      "report": "reports/tickets/Sprint26-21/VCST-5904/vcst-2026-10-23/design-report.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Backoffice: \"Code sent again.\" is not announced to assistive tech",
+      "report": "reports/tickets/Sprint26-21/VCST-5904/vcst-2026-10-23/testing-checklist.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Backoffice code field accepts letters",
+      "report": "reports/tickets/Sprint26-21/VCST-5904/vcst-2026-10-23/testing-checklist.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Follow-up story VCST-6533: VC-Shell apps have no code step when Backoffice MFA is on (Q1 impersonation open by decision)",
+      "report": "reports/tickets/Sprint26-21/VCST-5904/vcst-2026-10-23/testing-checklist.md"
+    }
+  ],
+  "screenshots": "reports/tickets/Sprint26-21/VCST-5904/vcst-2026-10-23/screenshots/",
+  "report": {
+    "page_url": null,
+    "verdict_md": null,
+    "checklist": "reports/tickets/Sprint26-21/VCST-5904/vcst-2026-10-23/testing-checklist.md",
+    "kb": {
+      "read": [],
+      "confirmed": [
+        "KB-5874C9A4",
+        "KB-4BB8E42E",
+        "KB-C3108B49"
+      ],
+      "disputed": [],
+      "captured": [
+        "KB-C09224C4",
+        "KB-3DCCDC7A"
+      ]
+    }
+  }
+}

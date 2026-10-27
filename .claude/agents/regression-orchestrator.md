@@ -58,7 +58,7 @@ Suite selection: a manifest `selections` name (`smoke`, `critical`, `sprint` —
 Run **one command** and follow its output:
 
 ```bash
-npm run regression:plan -- <selection> --preflight --json --run-id {RUN_ID} --preflight-out reports/regression/{RUN_ID}/preflight.json [--accept drift:<id>,… when the user chose "proceed as is" at `/qa-regression` Step 0]
+npm run regression:plan -- <selection> --preflight --json --run-id {RUN_ID} --preflight-out reports/regression/{RUN_ID}/preflight.json [--run-blocked] [--accept drift:<id>,… on "proceed as is" at `/qa-regression` Step 0]
 ```
 
 It returns, per lane, the suites to run in **dispatch order**, each with its case count, estimate,

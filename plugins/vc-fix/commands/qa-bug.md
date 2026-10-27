@@ -1,6 +1,6 @@
 ---
 description: "Reproduce a bug, capture evidence, write a structured report, and optionally create a tracker ticket."
-argument-hint: "bug description | ticket <key> | screenshot path"
+argument-hint: "bug description | ticket <key> | screenshot path [--evidence <dir>] [--link <KEY>] [--confirmed]"
 
 ---
 
@@ -34,7 +34,12 @@ Create a structured bug report from a description, screenshot, or observed issue
 /qa-bug VCST-1234                                   # Bug from a JIRA ticket (adds QA evidence)
 /qa-bug screenshot path/to/screenshot.png           # Bug from a screenshot
 /qa-bug "<defect>" found-by:agent-testing VCST-1234 # Filed by an agent flow (also agent-regression <RUN_ID>)
+/qa-bug "<defect>" --evidence <dir> --link VCST-6042 --confirmed   # From a /qa-investigate package, pre-approved by the caller
 ```
+
+- `--evidence <dir>` — a `vc-fix:qa-investigate` package; the report is written from it and nothing is re-checked: [`knowledge/execution/bug-from-package.md`](../knowledge/execution/bug-from-package.md).
+- `--link <KEY>[:<type>]` — repeatable; the ticket this bug relates to (Relates by default). Jira: [`knowledge/execution/jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) §2.
+- `--confirmed` — the calling command asked the operator via `AskUserQuestion` in this session and got a yes for filing this bug; Step 5 does not ask again. It covers the create only — never a duplicate comment (`jira-bug-fields.md` §5) or an Azure question.
 
 ---
 
@@ -45,10 +50,14 @@ Create a structured bug report from a description, screenshot, or observed issue
    - **`modules-endpoint`** (client) — `GET {BACK_URL}/api/platform/modules` with an admin token; the deployment reports its own module/Platform versions. (Theme/storefront version comes from the storefront or the ticket.)
    - **`ticket`** (frontend-only client bug) — take the storefront version from the ticket's system info; do NOT call the admin modules endpoint.
    - Record platform version, theme version, and modules relevant to the bug area — include in the bug report (Step 3)
-2. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design.
+   - **With `--evidence`:** also `bug-from-package.md` §Build.
+2. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design. **Skipped with `--evidence`** (root-cause §5 ruled out by-design).
 3. **Duplicate check** — scan `reports/bugs/open/**` (recursively — it is foldered by severity), `reports/bugs/fixed/` and, for a ticket's bug, the `bugs/` of every run folder of the ticket (`node "$pluginRoot/scripts/env/run-folder.mjs" dir --ticket <key> --prior`) for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
 
 ## Step 1 — Gather Bug Details
+
+**With `--evidence`:** Steps 1–3 are `bug-from-package.md` §Complete, §Layers, §Routing — no reproduction, no probe,
+no search.
 
 > **Skills:** Use `/qa-investigate` for structured 5-phase investigation (reproduce → isolate layer → gather evidence → root cause → hand off). Use `/qa-evidence` for capture rules and naming conventions.
 
@@ -83,26 +92,14 @@ origin labels are read from this line (`knowledge/execution/tracker-ops.md` §La
 
 ## Step 2 — 4-Layer Validation (Layer Isolation)
 
+**With `--evidence`: skip — `bug-from-package.md` §Layers.**
+
 > **Purpose:** Pinpoint which layer owns the bug. Same request flow, four observation points. If the bug appears only at the UI layer but APIs return correct data, it's a presentation bug. If the REST API is wrong, the whole stack inherits it. This isolation is load-bearing for the Root Cause Analysis in the bug report.
 
 Validate the failing scenario across all four layers. Record per-layer PASS / FAIL / N/A in the bug report. Stop early if a lower layer (REST) already fails — higher layers will inherit. Use the browsers/tools listed below and capture evidence at each layer that reproduces.
 
-> ### Screenshots — RELATIVE filenames only, never a path
->
-> Call `browser_take_screenshot` with a bare **filename** — `filename: "layer1-menu-empty.png"` —
-> **never** a path and **never** an absolute path. playwright-mcp documents *"Prefer relative file
-> names to stay within the output directory"*; absolute paths are undocumented, so nothing may be
-> built on them. `/project-init` pins each Playwright server's `--output-dir` to an **absolute**
-> path inside this project — `reports/bugs/screenshots/_incoming/<browser>/`. On the pinned
-> `@playwright/mcp@0.0.83`, a bare filename is **not guaranteed** to land there: it may resolve
-> it against the MCP server's own cwd — which can be the project root (VCST-5582 C). So a capture
-> may appear at the project root, and Step 4 MUST reconcile it (locate → move) rather than assume it
-> is already under `--output-dir`.
->
-> Do **not** try to place a screenshot at its final location during capture, and do not guess where
-> it went. `_incoming/` is a landing zone; Step 4 performs ONE deterministic move (including the
-> reconcile from the server cwd when the server misplaced it). Mechanism + the mandatory reconcile step:
-> [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md).
+> **Screenshots:** RELATIVE filenames only, then the mandatory reconcile —
+> [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md) §How a browser screenshot reaches its permanent path.
 
 ### Layer 1 — Storefront Frontend (vc-frontend)
 - **Where:** `FRONT_URL` (storefront UI)
@@ -124,7 +121,7 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 
 ### Layer 4 — Platform REST API
 - **Where:** `{BACK_URL}/api/...` — see `knowledge/api/api-auth.md` for OAuth2 token flow
-- **Tool:** qa-backend-expert via direct HTTP call (`/qa-postman` — full `vc-qa` plugin only, not shipped here)
+- **Tool:** qa-backend-expert via direct HTTP call
 - **Verify:** call the underlying Platform REST endpoint (e.g., `/api/catalog/products/{id}`, `/api/order/customerOrders/{id}`, `/api/pricing/prices/search`). Compare response to GraphQL/Admin/UI.
 - **Signal:** REST wrong = module/DB/seeding issue (lowest layer). REST right + GraphQL wrong = xAPI bug. REST + GraphQL right + UI wrong = frontend bug.
 
@@ -171,6 +168,8 @@ sync, never invent a different one.
 ---
 
 ## Step 3 — Research Source Code & Logs + Resolve the Exact Repo
+
+**With `--evidence`: skip — `bug-from-package.md` §Routing.**
 
 > **Tools:** GitHub MCP (`search_code`, `get_file_contents`), Azure MCP (`applicationinsights`), `/qa-investigate` isolation phase.
 
@@ -237,14 +236,15 @@ mkdir -p <bugs>/screenshots/<slug>
 mv reports/bugs/screenshots/_incoming/*/<kept>.png <bugs>/screenshots/<slug>/
 ```
 
-- Move **only** the 1–5 captures the report actually references (`.claude/rules/reports.md` §5);
+- Move **only** the captures the report references: 1–3, max 5 (`.claude/rules/reports.md` §5);
   leave the rest in `_incoming/` — it is gitignored and disposable.
 - The report then references the **final** path (`<bugs>/screenshots/<slug>/<file>.png`) —
   never an `_incoming/` path and never a bare filename.
 - If a capture is not where you expect, **list `reports/bugs/screenshots/_incoming/`** — do not
   guess a path. A guessed path was one of the two `Read` failures on a client deployment run.
+- With `--evidence`, copy from the package's `screenshots/` (`bug-from-package.md` §Report).
 
-Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (when the caller names a ticket run's folder — `/qa-test`, `/qa-test-fast`, `/qa-triage-results` — in `<run folder>/bugs/<bucket>/` instead: `knowledge/execution/run-env.md` §The run folder), chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
+Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (in `<run folder>/bugs/<bucket>/` when the caller names a ticket run's folder: `knowledge/execution/run-env.md` §The run folder; with `--evidence`: `bug-from-package.md` §Report), chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-<ticket-key>.md` (if a JIRA ticket is known)
 
 ### Bug Report Folder Structure
@@ -321,6 +321,12 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 > **Skills:** Use `/qa-defect triage <ticket-key>` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
+**Duplicate search in the tracker, before asking** — Jira: [`jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) §5
+(scope, JQL, cap); Azure: WIQL on the title. A real duplicate ⇒ stop and ask (§5); related ⇒ file and link.
+
+**With `--confirmed`, skip the question below** — the caller already holds the operator's yes for this bug —
+and go straight to the create. Otherwise:
+
 **Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
 **"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:
 a prose question ENDS THE TURN, which lets an end-of-turn hook (the self-diagnostics tail-trigger)
@@ -329,18 +335,8 @@ resume the agent and push the question out of view — exactly what happened on 
 mechanism the parent-link question below already uses.
 
 If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), Type = Bug:
-- **Jira** (`tracker.kind = jira`) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`; customer sets their own). Body = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
-  - **Screenshots — attach AND embed inline.** A filename in the body is not evidence anyone opens. Unlike the Azure path below (whose HTML description takes an `<img src>` directly), Jira needs a 4-step dance, and **step 2 is the trap**. Every step runs through the bridge (`node "$VC_RUN" jira …`, host = the profile's `tracker.baseUrl`; the token stays in vc-secrets):
-    1. **Upload** — the Atlassian MCP has **no attachment tool**; `node "$VC_RUN" jira attach --key <KEY> --file a.png [--file b.png]` (a multipart `POST …/issue/{key}/attachments` with the mandatory `X-Atlassian-Token: no-check` header) → `[{id, filename}]`.
-    2. **Resolve the Media Services ID.** ADF `media.attrs.id` is a **Media Services UUID**, **NOT the numeric Jira attachment id** — passing the attachment id fails the whole request with `400 ATTACHMENT_VALIDATION_ERROR`. The UUID is absent from the attachment metadata; it lives in the content endpoint's `303` redirect (`Location: https://api.media.atlassian.com/file/<UUID>/binary?token=…`) — `node "$VC_RUN" jira media-id --attachment <attachmentId>` → `{ uuid }` reads it for you.
-    3. **PUT the description as ADF.** `width`/`height` are **required** or the image won't display — read them from the PNG IHDR (`buf.readUInt32BE(16)` / `(20)`), never guess. `collection` is the empty string (verified against a Jira-authored node). Safest pattern: `node "$VC_RUN" jira get --key <KEY> --fields description` (already ADF), push the nodes onto `description.content`, write `{"description": …}` to a file and `node "$VC_RUN" jira update --key <KEY> --fields-file fields.json` (a `PUT …/issue/{key}` with `{fields}`) — that preserves the MD-converted body instead of hand-authoring the whole doc.
-       ```js
-       { type: 'mediaSingle', attrs: { width, widthType: 'pixel', layout: 'align-start' },
-         content: [{ type: 'media', attrs: { type: 'file', id: '<UUID>', alt: '<filename>',
-                                             collection: '', width, height } }] }
-       ```
-    4. **Verify it renders** — persisted ≠ rendered. Read back `node "$VC_RUN" jira get --key <KEY> --fields description --expand renderedFields` and assert the HTML contains `<img src="…/rest/api/3/attachment/content/{attachmentId}" …>`. No `<img>` ⇒ the node is wrong; don't claim success.
-    **Do not bother trying** (each fails): markdown `![alt](file.png)` → silently dropped (MD→ADF can't resolve a filename to an attachment); wiki `!file.png!` → renders literally (VCST-5212 class); `attrs.id` = attachment id → `400`. Embed the 1–3 images that show the defect (`.claude/rules/reports.md` §5); attach-only is fine for supporting shots.
+- **Jira** (`tracker.kind = jira`) → **follow [`knowledge/execution/jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) in its order:** field metadata → create (MCP `createJiraIssue`; the bridge POST only without it) → `jira update` the rich-text fields as ADF lists → attach and embed screenshots → verify; **Need hotfixes** §4. Create in project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`; customer sets their own). Description = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
+  - **Screenshots — attach AND embed inline**, inside the Actual / Expected / Steps field (else the description). The upload → Media-Services UUID → ADF `mediaSingle` → render-check recipe, and what fails, is [`jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) §3.
 - **Azure Boards** (`tracker.kind = azure`) → the work item is the **lean, replayable** version of the bug, not a copy of the markdown report. Its field set is **DISCOVERED, never hardcoded** (VCST-5582 E): `project-profile.json` `tracker.fields.Bug[]` carries THIS organization's contract — `{ ref, name, required, type, allowedValues?, defaultValue? }` — scanned by `/project-init`. Body format follows [`knowledge/execution/azure-html-format.md`](../knowledge/execution/azure-html-format.md) (the single source of truth for the SHAPE); whether a field is HTML is **derived from its contract `type`** (`html` ⇒ HTML, `plainText` ⇒ text), not assumed.
   - **The `body` slot = abstract Summary → Preconditions → Steps → Actual → Expected**, and nothing else competes with them. The concrete field the `body` slot lands in is **resolved per work-item TYPE from the scanned form layout** (`tracker.formLayout.<Type>`), never assumed: on the Agile process a Bug's body is `Microsoft.VSTS.TCM.ReproSteps` while a User Story / Task use `System.Description` — and a field can exist in the contract yet be off the form, where the body would be invisible (VCST-5702 ITEM 0). The Summary is 1–3 sentences with **no user-specific data** (no emails, IDs, order numbers, GUIDs, names) — reproducible by anyone who meets the Preconditions. The VC extras (4-Layer Validation, Module Versions, Root Cause Analysis, Fix Routing) go into **one collapsed `🔧 Technical Details` block below**, trimmed to the essentials — never as top-level sections. Pass `--repro-file` only when the type has a **distinct form-visible** `repro` field; when the body target is the only html control on the form, a `--repro` is folded into the body automatically (create resolves this from the layout — never assume which field is hidden).
   - **Metadata → dedicated fields, never a description section.** Do **NOT** hardcode `Custom.Environment` / `Custom.Reportedby` / `Custom.Typeofbug` — those exist in ONE organization's process and are rejected or silently blank anywhere else. Instead read `tracker.fields.Bug[]` and fill the fields it lists, via the semantic slots in [`skills/qa-fix-routing/bug-contract.mjs`](../skills/qa-fix-routing/bug-contract.mjs) (`environment`, `bugType`, `reportedBy`, `systemInfo`, `foundIn`, `severity`, `priority`, …). Resolution order: an explicit `tracker.fieldMap` override → auto-match on name/ref + type → **ask once** (below). `tracker.fieldDefaults` supplies per-deployment constants (e.g. `Custom.Environment = QA`) — a stored default, never a per-bug guess. The build/theme/browser/repro-rate go to the `systemInfo` slot via `--system-info-file <sysinfo.html>`.
@@ -395,7 +391,7 @@ If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), 
 
 Fields either way:
 - Summary: from bug title
-- Description: the full structured report — **Jira** = markdown; **Azure** = HTML (`azure-html-format.md`)
+- Description: **Jira** = markdown, the context plus a section per slot the project has no field for (`jira-bug-fields.md` §1); **Azure** = HTML (`azure-html-format.md`)
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low — Jira; Azure uses the numeric `Priority` field)
 - **Origin labels (VC's own Jira only — never on a client project's tracker).** Say who found the bug: `found-by-agent` + `found-in-testing` (a `/qa-test` run) or `found-in-regression` (a regression run or its triage) when the report's `**Found by:**` line says `agent — testing …` or `agent — regression …` (Step 1); `reported-by-human` when a person found it and asked for it to be filed, and whenever the origin is unclear. Rule: `knowledge/execution/tracker-ops.md` §2a.
 - **Labels / Tags — apply `vc-fix` AND `qa-autofix` when `/qa-fix` could fix this bug.** These two labels ARE the auto-fix queue: the hourly `/qa-fix` routine selects tickets by them, so an eligible bug missing them is never picked up. Jira → the `labels` field; Azure Boards → `--tags` (`System.Tags`). Apply **both, or neither** — never one.
@@ -421,6 +417,9 @@ Fields either way:
    image dance and the Azure `<img src>` both persist ≠ render — say which you confirmed).
 6. whether the auto-fix labels (`vc-fix` + `qa-autofix`) were applied — and, when they were
    withheld, the Gate-0 bail reason in one line, so the operator can add them by hand if they disagree.
+7. Jira: which Bug fields were filled and which stayed in the description (no such field), the links
+   added, and **Need hotfixes** — set (bundles + versions), not set (already fixed on the line, or in
+   neither bundle), or undetermined (no code anchor).
 
 Then transition and move on. Only after this decision is complete does the run signal completion
 (see §Signal completion — the ordering rule).
@@ -477,12 +476,12 @@ already resolved this run, else resolve via `claude plugin list --json` (see
 ## Rules
 - Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
-- Always reproduce the bug before filing — never file unverified bugs
+- Always reproduce the bug before filing — never file unverified bugs — with `--evidence`, the package did it (`bug-from-package.md`)
 - Always include evidence (screenshot + console + network)
-- Always complete the 4-layer validation (Step 2) before writing the report — the owning layer drives triage routing and root-cause scope. Mark layers N/A only when the scenario genuinely doesn't exercise that layer (e.g., a pure CSS bug → REST layer N/A).
-- Use the qa-testing-expert agent for reproduction: `playwright-firefox` (fallback: `playwright-edge`)
-- Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior
-- Ask before creating tracker tickets (explicit permission required) — via **`AskUserQuestion`**, never
+- Always complete the 4-layer validation (Step 2) before writing the report — the owning layer drives triage routing and root-cause scope. Mark layers N/A only when the scenario genuinely doesn't exercise that layer (e.g., a pure CSS bug → REST layer N/A) — with `--evidence`, the package did it (`bug-from-package.md`)
+- Use the qa-testing-expert agent for reproduction: `playwright-firefox` (fallback: `playwright-edge`) — with `--evidence`, the package did it (`bug-from-package.md`)
+- Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior — with `--evidence`, the package did it (`bug-from-package.md`)
+- Ask before creating tracker tickets (explicit permission required; `--confirmed` = the caller already asked) — via **`AskUserQuestion`**, never
   prose, and emit `complete --skill` only **after** that decision (see Step 5 + Signal completion)
 - If a new regression is found during investigation, escalate via `/qa-bug` (separate report)
 - **File every confirmed bug** `/qa-bug` reports all defects and routes each one; auto-fix

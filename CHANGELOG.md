@@ -8,6 +8,337 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `/vc-fix:qa-bug` writes from the investigation; `qa-checklist` Mode 5 with risk ids — `vc-fix` `0.17.0` — 2026-10-27
+
+**Changed — `/vc-fix:qa-bug --evidence` writes from the `/qa-investigate` package, with no second investigation
+(`knowledge/execution/bug-from-package.md`).** It reproduces nothing and calls no browser, probe, `search_code` /
+`get_file_contents`, App Insights or Context7 query; it reads the package, the deployed versions, the duplicate check
+and `fix-repos.json` to spell the repo name. A package made on another build than the one deployed now stops that bug
+with `STALE_PACKAGE: <name> <package ver> ≠ <deployed ver>` (the owning repo's package, or every listed version when the
+package names no repo); a package missing a mandatory slot stops it with `INCOMPLETE_PACKAGE: <slots>` (the HAR counts when the index names
+one or states that the lane records none, so a missing HAR alone never stops it); `qa-bug` never captures the missing
+artifact itself. The package format names what `qa-bug` checks: `evidence-index.md`'s shape (the `TRACE_ID` /
+`BUILD_VERSIONS` / `REPRO_RATE` slots and a mandatory `## Steps to reproduce`, Part A row 15) is now in
+`qa-investigate/evidence-and-root-cause.md` §0, and an env with no `traceparent` or no App Insights is stated in the
+package rather than stopping it. A version with no deployed counterpart is not compared and is named in the report's Env. A frontend-only package needs no trace id: layers 2-4 read
+`N/A — not probed by the investigation`. LOW routing confidence is filed with no repo and status `REPRODUCED`.
+Where the report goes: a folder the caller names, else `<package>/../bugs/<bucket>/` when the package sits in a ticket
+run folder (the bound run folder, or the run folder of the ticket `found-by:` / `--link` names), else `reports/bugs/open/<bucket>/`; screenshots are copied to `<bugs>/screenshots/<slug>/` and the package
+stays whole for `/qa-fix`. The Medium-or-worse filter stays with the caller, and the "Create a bug-tracker ticket?"
+question stays with `qa-bug` (`--evidence` does not imply `--confirmed`).
+
+**Added — `qa-checklist` Mode 5 in the plugin.** `/vc-fix:qa-checklist --from-strategy <file>` writes the checklist
+with the approved strategy as authority, reading the test model only when the strategy's `Test model` row says `RUN`;
+the risk id leads every item's Ref as the strategy's table writes it — `R3 · S#4 · <node-id>`, `AC-2 · R7` — so
+`trace.mjs` can attribute it. `--from-model --strategy <file>` keeps working as the old spelling. A strategy that
+skips the checklist prints `SKIP — <the row's reason>`. Items come from the model section headed with this strategy round,
+plus the rows it declares still valid; an earlier round's row whose risk id is not in this round's `### Risks` is an
+omission line. `RUN (amend <path>)` reads `test-model.md` beside the strategy when it holds this round's section, else
+`<path>`. With no model, a `MODEL` risk is an omission line naming the `### Scenarios` row that covers it. The skill no longer carries `disable-model-invocation`, so an
+agent that lists `vc-fix:qa-checklist` can load it.
+
+**Changed — the self-diagnostics oracle** (`skill-expectations.md`, both copies) accepts an `--evidence` run: S1 takes
+an `--evidence` STOP as a valid outcome, S2 no longer expects Step 2's four-layer validation there (a `browser_*` or
+`search_code` call in such a run is the S2 instead) and excepts Step 0's `vc-deploy-dev` read.
+
+**Moved.** The "Screenshots — RELATIVE filenames" box in `commands/qa-bug.md` Step 2 is now a short pointer to
+`skills/qa-evidence/output-paths.md`, so the command ends below its BUDGET-004 baseline.
+
+vc-test switches to `--from-strategy` and requires `vc-fix >=0.17.0` in P2-5.
+
+
+## A component is compared with its reference — `vc-frontend` `0.3.0` — 2026-10-26
+
+**Added — `visual/design.mjs`** (ai-tools: `npm run visual:design`). It compares the same component in two places at
+once: the reference (Storybook, or a design-system build) and the one under review (prod, QA, a fork's preview). Per
+component it judges anatomy, box, spacing, typography, colour (CIEDE2000), borders, shadows and the element's own
+pixels against the `design-review` acceptance catalog's tolerances. It sorts each difference into P2 / P3 / `theme`.
+A colour, font or radius difference that the same theme token names on both sides is `theme`, not a defect, and
+the differing tokens are listed for confirmation. A run where a page did not load, or one side matched nothing,
+is `INCONCLUSIVE` with exit 2 (VCST-6534).
+
+## Host-governed projects — `vc-test` `0.6.0` — 2026-10-26
+
+`/vc-test:ticket-context` now builds its bundle on a host-governed project, whose tracker and code host are reachable
+only through the host plugin's MCP servers (vc-test spec U22, U23, B9; plan P1d-3b).
+
+**Added — `prepare --raw` and the pass loop.** A governed profile without `--raw` prints `host-governed` with the
+raw folder and the mapped servers (exit 4). With `--raw`, every read is answered from that folder, one file per
+request, holding what the bridge command would have printed. A pass with unanswered reads writes `requests.json`
+and ends `needs-fetch` (exit 5); eight passes at most. The connectors, the inventory and the bundle do not know
+which route ran; a finished `prepare.json` says `fetched_via: "host"`.
+
+**Added — the `fetch` agent.** It answers one pass through the role's server (`governance.servers.tracker`,
+`codeHost`, `github`), read tools only, writes only answer files, and returns one count line, so the orchestrator
+never reads ticket or PR content. A read a server has no tool for is answered `missing` and becomes a gap with the
+bridge's reason. `fetch-catalog.json` tells it the shape each bridge command prints.
+
+**Changed — a host route that cannot list Jira's fields goes on.** The Atlassian MCP has no site-wide field list; on
+a host route that is gap `ac_fields` / `connector-unavailable` (ACs come from the description and comments) and
+the issue read decides whether the tracker can be read.
+
+**Fixed — a JQL search keeps at most `maxResults` issues** whatever the transport returns (a host's server may page
+through everything; Jira itself already caps).
+
+**Contained.** One run, one raw folder: `prepare` without `--raw` empties it and every end of the run removes it,
+so a later run never reuses old answers or an old pass count. It lies in the ticket's cache only when git ignores
+that, else in tmp. A missing answer is a closed reason (`no-tool`, `not-found`, `denied`, `binary`, `error`)
+with a detail of at most 120 characters; the agent's words are never parsed. `prepare` prints each role's tool-name
+prefixes, so a server the host plugin ships (`mcp__plugin_<plugin>_<server>__`) is found too.
+
+**Known limit.** `fetch` cannot name an unknown server's tools, so it inherits Read, Write and every connected MCP
+server's tools, write tools included; every shell, messaging, publishing and scheduling tool is disallowed.
+Read-only, the mapped servers only and the raw folder only rest on its brief. Accepted for the preview; a hook that
+enforces them is P5's.
+
+## A merge into a theme fork is checked pixel by pixel — `vc-frontend` `0.2.0` — 2026-10-26
+
+**Added — the visual check in `/vc-frontend:merge-upstream` (step 7).** The fork owns how it looks, so the skill
+now compares the fork before the merge (`M^1`) with the merge (`M`): the fork's Storybook, and its pages with the
+API answers replayed from one recording so both sides render the same data. A fork component, its theme or a
+ui-kit component the fork restyles that moved without the brief accepting it is a regression, fixed before the
+push. The procedure is `skills/merge-upstream/visual.md` (VCST-6534).
+
+**Added — the PIXEL engine ships in the plugin** (`visual/`). `setup.mjs` installs its three packages (Playwright,
+pixelmatch, pngjs) once into the fork's `node_modules/.cache/vc-frontend-visual`, never into its `package.json`;
+`--with-browser` also downloads Chromium. ai-tools' `npm run visual:*` now runs these same files, and the
+TypeScript copies under `scripts/visual/` are gone.
+
+**Fixed (review) — packages resolve from the project.** `lib.mjs` resolved a package from its own folder, which in an
+install is the plugin cache, so a fork that already had them still exited 2. It now resolves from the cache
+`setup.mjs` fills (the pins, so Playwright matches the Chromium it downloaded), then the project root (git toplevel,
+else the working directory), then its own folder, and imports the path as a file URL.
+`setup.mjs` writes the pins as the cache folder's own `dependencies`: a second run no longer prunes what the first
+installed, and an installed version other than its pin is reinstalled.
+
+## A visual risk names the instrument that decides it — `vc-test` `0.5.0` — 2026-10-26
+
+**Changed — the strategy gate (clause 4).** A risk with technique `VISUAL` now names its instrument:
+`VISUAL:PIXEL`, `VISUAL:DESIGN`, `VISUAL:PROBE` or `VISUAL:CONTENT`, chosen by `.claude/skills/qa-test/visual-axis.md`
+§2a (VCST-6534); several are one token, comma-separated: `VISUAL:DESIGN,PIXEL` (`floors.md` §VISUAL). A bare
+`VISUAL`, beside a named one too, fails the gate: it was a "look at it" row that decided nothing. Clauses 4 and 6 read
+the technique cell's leading token list the same way, case-insensitively, so prose ("FLOW (not VISUAL)") is no token.
+A strategy written before this release that uses a bare `VISUAL` fails a re-check until its technique names an
+instrument.
+
+**Changed — F8 takes `PIXEL` on an existing surface (clause 6).** When the change modifies a ui-kit file, a risk
+whose technique names `PIXEL` is required. Such a change moves components the ticket never names: in the
+2026-10-23 spike, two 2 px CSS edits changed stories in 14 components. A ui-kit file the PR only adds is a new
+surface with no base build, so F8 asks the rest but not `PIXEL`; the bundle's PR entries now carry `added` (from the
+files API) for that.
+
+**Added — `PIXEL` in `/vc-test:qa-ticket`, as its own item.** The orchestrator runs each `PIXEL` risk itself, whatever
+the Visual lane row says, with the vc-frontend plugin's `visual/` engine on a front checkout (the project root or a
+`.fix-workspace/` clone whose origin is the PR's repo) against the PR's base ref, running the engine's setup and the
+base/head builds from that checkout. Every risk gets a `PIX-<m>` row in its own `scenarios/pixel.rows.md` (the Visual
+lane keeps `visual.rows.md`, so the two never write one file in one wave): `FAIL`, `PASS`, or `BLOCKED — <which>`
+when the engine, the checkout, setup or a build fails. `scenario-rows.mjs merge` takes `pixel` and skips a row whose
+id the checklist already holds, so merging after a later wave never duplicates it.
+
+**Fixed (review) — the gate.** A Lane reading `SKIP — not available in this install` takes no browser slot (clause
+8); a backticked `` `VISUAL` `` is still a bare VISUAL, and `VISUAL:DESIGN PIXEL` (no comma) fails clause 4 instead
+of dropping `PIXEL`; the 6s message tells an unprobed `pixel` from an install that can run it.
+
+**Added — `PIXEL` in the capabilities.** `capabilities.json` `pixel` names the engine and the front checkouts found.
+With `--capabilities`, an install without one keeps F8's `PIXEL` risk with its Lane reading
+`SKIP — not available in this install: <capability>`, and Out of scope names `PIXEL` (clause 6s).
+
+## The #540 review fixes — `vc-test` `0.4.1` — 2026-10-26
+
+Fixes from an independent review of 0.4.0 (#540).
+
+**Fixed — the verifier's oracle agreed with the gate.** `strategy-verifier` takes `qa-test-strategy` §Gate as its only
+criteria, and clause 6 still said "nothing a fired floor requires is `SKIP`" and 6b "exploratory runs", so it would
+reject the `SKIP — not available in this install: <capability>` row the script accepts. §Gate now lists clause **6s**
+and names it as the one exception in 6 and 6b.
+
+**Fixed — 6b names its SKIP too.** With F1 not fired but a High/Critical risk in the register, an
+`Exploratory | SKIP — not available…` row passed with Out of scope silent. It now needs Out of scope to name it (6s),
+reported once whichever clause reaches the row first.
+
+**Fixed — unprobed is not unavailable.** A capability counts as missing only when `capabilities.json` says so: a lane
+when the file lists the MCP servers it was given (`mcp`, written only when `capabilities.mjs` got `--mcp`) and none is
+a browser lane (a name containing `playwright`) or Chrome DevTools; a script when `scripts.<name>` is `false`. A file
+of `{}`, or a run without `--mcp`, no longer lets F1/F2/F3/F8/F12's rows read SKIP, and a Playwright server named
+outside the four known lanes counts. A capabilities file that is `null`, a list, or has a malformed `mcp`/`scripts`
+exits 2 from `floors.mjs` and `check-strategy.mjs`, like any malformed input.
+
+**Fixed — F5 is not skipped on a domain doubt `tc:scope` could have settled.** A `known.domain` or dropped-observable
+gap skipped F5 whenever `regression-select` was missing; it now stays doubt unless `tc:scope` is missing as well.
+
+**Fixed — `deployed.json` is read only when it belongs to this check.** `redeploy` accepted a file written after the
+cached bundle's fetch, i.e. an earlier round's; it now reads only a file written after the redeploy began. And with
+no counted PR (`chain_deployed` NONE), a `deployed.json` line no longer blocks the run.
+
+**Corrected — F6 without `deploy:pr`.** 0.4.0 said that, without `deploy:pr`, the deployment blockers come from
+`deployed.json` written by `deployed.mjs --expect`. No step writes that file: the expect list (the versions each PR
+builds) has no source without `deploy:pr`. So on such a project every counted PR is `DEPLOYMENT UNKNOWN`, F6 does
+not fire, and the run proceeds as "deployment unverified". The reader stays; its producer is deferred to P2.
+
+Without `--capabilities`, `floors.mjs` and `check-strategy.mjs` still give 0.3.1's output (checked on the seven saved
+bundles and two saved strategies).
+
+## Unavailable is not doubt — the floors read what the install can run — `vc-test` `0.4.0` — 2026-10-26
+
+P1d-3a of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d3a-capabilities.md`, spec §5.2, §5.3).
+
+**Added — capabilities.** `capabilities.json` names the repository scripts `/vc-test:ticket-context` and the floors
+lean on (`scripts`: deploy-pr, preflight, domain-check, bl-extract, regression-select, tc-scope, schema-refresh).
+
+**Changed — the floors and the gate, with `--capabilities`.** F5 that would fire only on doubt because the project
+declares no regression corpus is `skipped`, and named on the Floors line and in Out of scope. A fired floor whose row
+the install cannot run (Exploratory without a browser lane, the Visual lane without Chrome DevTools) stays fired; that
+row may read `SKIP — not available in this install: <capability>` when Out of scope names it (clause 6s). A lookup that
+ran and failed is still doubt. Without the flag, floors and gate are 0.3.1's; `/vc-test:qa-ticket` passes it.
+
+**Changed — the sources of F2 and F6.** `/vc-test:ticket-context` reads a domain map from the project knowledge store
+(`<store>/domain/<slug>.md`) before it asks `domain:check`. Without `deploy:pr`, the deployment blockers come from
+this ticket's `deployed.json` (written by `deployed.mjs --expect` after this run's prepare; an older file is ignored): NOT DEPLOYED stays NOT DEPLOYED, UNKNOWN stays UNKNOWN.
+
+## `/vc-fix:qa-bug` fills the Jira Bug's own fields, links it, and decides Need hotfixes by code — `vc-fix` `0.16.0` — 2026-10-26
+
+**Added — the Jira Bug's fields (`knowledge/execution/jira-bug-fields.md`).** Step 5 discovers the Bug type's fields from
+the issue-type metadata (no field id in the plugin) and fills Steps to reproduce, Expected result, Actual result,
+Environment, Error message and the components fields when the project has them; the Description keeps the context
+only. Assignee, Sprint, QA engineer, Fix versions and Parent are left alone. Each screenshot goes inside the field it
+proves (Actual / Expected / Steps), and every rich-text field is sent as lists with bold labels and `code` values,
+verified from `renderedFields`. Checked on VCST-6500: three images render inside Actual result.
+
+**Added — Need hotfixes, by code.** On VirtoCommerce's own tracker — `tracker-ops.md` §2a now defines it as a Jira
+profile with `operator: "virto-engineer"` and `projectType: "platform"`, the same test as the origin labels — the flag
+is set when the defect's code is in either of the two latest stable bundles (the two highest `vN` in
+`vc-modules/bundles`, compared as numbers), whatever the priority, and never from a stand.
+
+**Changed — the Bug is created with the Atlassian MCP.** The origin-label hook checks only the MCP create, so the bridge
+`jira request` POST is used only without the MCP, carries the labels itself, and the labels are read back after the create. The option is set by id (VC's value reads `" true"`), and one Environment line names the bundles and the anchor.
+
+**Added — three arguments.** `--evidence <dir>` reads a `/qa-investigate` package instead of reproducing again;
+`--link <KEY>[:type]` relates the bug to a ticket; `--confirmed` carries a caller's yes so Step 5 does not ask per
+bug. Step 5 also searches the tracker for duplicates before asking (§5): a real duplicate stops and asks before
+anything is written to that ticket, and `--confirmed` never covers it. `/qa-run` step 6 passes all three once #469
+lands.
+
+**Moved.** The Jira screenshot recipe (upload → Media-Services UUID → ADF `mediaSingle` → render check) moved from
+`commands/qa-bug.md` Step 5 to `jira-bug-fields.md` §3, so the command stays under its BUDGET-004 baseline.
+
+## An Azure Boards ticket reaches the gated bundle — `vc-test` `0.3.1` — 2026-10-26
+
+**Fixed — the Azure Boards tracker address.** `/vc-test:ticket-context` read the tracker address only from
+`tracker.baseUrl`, which `/project-init` writes for Jira alone, so every Azure Boards prepare stopped with
+`no-tracker`. On an Azure Boards tracker it now reads `tracker.azure.apiBase`, else
+`https://dev.azure.com/<tracker.azure.organization>/<tracker.azure.project>`.
+
+**Fixed — numeric ticket keys in the bundle and change map.** `bundle.schema.json` (`ticket`, `benchmark.hide[]`)
+and `change-map.schema.json` (`ticket`) accepted only `ABC-123`, so `check` and `finish` failed on every Azure
+Boards work item id. They now accept a work item id too.
+
+**Fixed — what an Azure Boards work item carries.** The description is the type's rich-text form fields in form
+order (`tracker.formLayout`; without one, Description, Repro Steps and System Info), so a Bug keeps its Repro
+Steps. An image pasted into a field or comment is read as an attachment (it is stored as one but is not an
+`AttachedFile` link), dated by its comment for the blind cut. A Task's parent story is read as a linked issue, as a
+Jira sub-task's is. A linked issue's parent title is no longer fetched.
+
+**Fixed — the Azure Repos diff.** Files are read until the diff passes `CAPS.diffBytes` (what the bundle keeps);
+the rest is an `over-cap` gap. A refused token stops the diff at once instead of failing each file in turn; a file
+whose path the disk cannot hold is one `no patch` file, not the whole diff; no `git` on `PATH` is `tool-missing`.
+
+**Changed — GitHub search on an Azure Boards tracker.** The cross-link token (`AB#967`) is searched only in the
+client's own GitHub org, never the upstream's; on Azure Repos nothing is searched (plan Task 7). GitHub PRs a ticket
+names are still read.
+
+**Fixed — smaller.** `check` and `finish` load the env `prepare` resolved, so the secret scan uses the same secrets.
+A refusal on the first tracker read is a `no-tracker` JSON status, not a stack line. `governance.secrets: "host"`
+is host-governed (exit 4) before any read, as the bridge already treated it. A gap's detail keeps a failed request's
+status and path, never the tracker's response body. On Linux and macOS a timed-out launch kills the bridge's process
+group, so the token-holding tool stops too (on Windows it already did). A killed run's bridge temp files and Azure
+diff dirs are swept after 24 h like its run dir. A bug report counts as prior art for an Azure Boards id only in a
+work-item form (`AB#967`, `#967`, "work item 967", a `_workitems/edit/967` URL), not any `967` in its text.
+
+## `/vc-test:ticket-context` reads Jira, GitHub, Azure Boards and Azure Repos through `$VC_RUN` — `vc-test` `0.3.0` — 2026-10-26
+
+P1d-2 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d2-connectors.md`). Needs `vc-fix` ≥ 0.15.0.
+
+**Changed — no token in `/vc-test:ticket-context`'s process (spec U20).** Every tracker and code-host read is one
+`node "$VC_RUN" jira|gh|ado …` launch; the in-process Jira and GitHub clients and the credential helpers are gone.
+Jira and GitHub behave as before: VCST-5097 and a blind VCST-5904 prepare give the same `prepare.json` and per-PR
+files as 0.2.2 at the same moment. The cost is the launches: VCST-5097 makes 40 and takes 26 s instead of 15 s.
+
+**Added — Azure.** `project-profile.json` picks the connector (`tracker.kind`, `vcs.clientHost`). An Azure Boards
+work item is read into the issue shape the bundle step already reads (fields, the AC field, comments, attachments,
+parent, children, links, hyperlinks); "done" comes only from the profile's role states. On Azure Repos the client's
+PRs are the work item's own pull-request links, or Azure PR URLs a ticket names; each is read with its changes,
+review threads and a diff built locally (`git diff --no-index` of each file at the merge base and the source
+commit). PR statuses are not read yet. Checked against recorded responses; live Azure comes with P5.
+
+**Changed — stops.** No profile, or one naming no `upstream.org` ⇒ `no-profile` (exit 3): the `VirtoCommerce` and
+`vcst` defaults are gone (U19; with no env bound, the profile's one declared test env is used, then still `vcst`).
+`VC_RUN` unset ⇒ `no-tracker` (exit 3). A host-governed project ⇒ `host-governed` (exit 4) before any read, until
+P1d-3. On an Azure Boards tracker GitHub is searched for the profile's cross-link token + id (`AB#967`).
+
+## One plugin installed in several scopes is not a duplicate — `vc-init` `0.5.1` — 2026-10-26
+
+**Fixed: a false `Plugin installs` WARN.** `claude plugin list` prints one row per install on the machine: the
+user's, and one per folder that has a project or local install (a project's `.claude/settings.json` enables
+the plugin, and every checkout or worktree is its own folder). verify-access counted those rows, so one
+plugin installed for the user and for two folders read as enabled three times. It now counts only the rows
+that load in this folder (enabled, and machine-wide or recorded for this folder) and distinct ids among them
+(`duplicateInstalls`): an old `@vc-tools` copy installed for another folder no longer warns here. "This
+folder" is the one Claude Code runs in (`CLAUDE_PROJECT_DIR`, else the cwd), not `VC_FIX_HOME`.
+
+**Fixed: the uninstall hint names every copy and its scope.** `claude plugin uninstall` without `--scope`
+removes only the user's install; the hint now lists each copy of the old id as a command to paste
+(`--scope user|project|local`) and, for a project or local copy, the folder to run it in.
+
+## The benchmark tooling is gone — `vc-test` `0.2.2` — 2026-10-26
+
+**Removed.** P0 closed without its benchmark run (spec U69), and nothing else needs the tooling:
+`lib/benchmark.mjs`, `lib/bench-aside.mjs`, `briefs/blind.md`, `benchmarks/VCST-5904.json` and
+`/vc-test:qa-ticket --benchmark`, with the `CUTOFF` and `BENCHMARK` rules in the briefs and the verdict's
+`## Benchmark` section. `keep-prepare`, which every run uses, moved to `lib/keep-prepare.mjs` unchanged (step 1 of
+`qa-ticket` now calls it there). `/vc-test:ticket-context --before`/`--hide` stays: it still reads a ticket as it was
+at an instant.
+
+## `jira confluence-page` — the Confluence read the vc-test connector makes — `vc-fix` `0.15.0` — 2026-10-26
+
+**Added.** `node "$VC_RUN" jira confluence-page --id <digits>` prints the raw page object of
+`GET /wiki/api/v2/pages/<id>?body-format=storage`. `/vc-test:ticket-context` reads a page the ticket links, and
+P1d-2 moves that read behind the bridge (the P1d-2 connectors plan, Task 1, on branch `claude/vc-test-p1d2-plan`).
+`request` still admits only `/rest/…`. The new path rule is `safeWikiPath`: a page by numeric id, GET only, on the
+same pinned `tracker.baseUrl` origin, and a redirect is refused rather than followed. A non-numeric `--id` is
+refused before any request. A 401/403 from Confluence says Confluence refused the account, not that the Jira token
+is bad.
+
+## A blind `/vc-test:ticket-context` hides PR review comments after the cutoff — `vc-test` `0.2.1` — 2026-10-26
+
+**Fixed.** `--before` already hid ticket comments, linked issues and PRs created after the cutoff. A PR it kept
+still had its review comments read as they are today, so a benchmark run could see reviewers discussing the bugs
+it is meant to find. `collectPr` now keeps only the comments posted by the cutoff, records how many it hid in
+`reviews.json` as `hidden_after_cutoff`, and does not read thread resolution, which only exists as today's state
+(`unresolved_threads: null`). The PR body, diff and CI are still read as they are now, and the bundle still lists
+them as not blinded.
+
+## /ticket-context and /qa-test-strategy are vc-test's — `vc-test` `0.2.0`, catalog `0.15.0` — 2026-10-26
+
+P1d-1 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d1-move.md`). Behaviour is unchanged: the
+deterministic `prepare` on VCST-5097 and the strategy gate on a saved strategy give the same output before and
+after the move. The one difference is the cache key's skill fingerprint, which changes when the skill's own files
+change, as designed.
+
+**Moved:** `/ticket-context` and `ticket-context-analyst`, and `/qa-test-strategy` with its template, now live in
+`plugins/vc-test/`. Git keeps their history. Nothing of them remains under `.claude/`.
+
+**Still repository-bound, as before the move:** `/vc-test:qa-test-strategy` links to this repository's technique
+vocabulary, risk framework, data rules and qa-test files (P2 moves them), and `/vc-test:ticket-context` calls repository
+scripts (P1d-3). Outside an `ai-tools` checkout they are not usable yet.
+
+**Added: `vc-test:strategy-verifier`.** A read-only agent that `/vc-test:qa-test-strategy` dispatches on a Critical
+risk. It is cut from `qa-lead-orchestrator`'s Verifier Mode, which keeps `/qa-test`'s own per-step gates until P4.
+
+**Changed:**
+- `/qa-test-fast` calls `/vc-test:ticket-context` and `/vc-test:qa-test-strategy`, and stops with an install hint when vc-test is missing.
+- vc-test is enabled in the tracked `.claude/settings.json`, and the onboarding prerequisites name it.
+- `ticket-context` loads the plugin's own copy of the env loader.
+
 ## `vc-init` `0.5.0`, `vc-fix` `0.14.1`: a host is found by its shape, and guest mode reads what its own setup left — 2026-10-26
 
 **Fixed: detection no longer turns other projects into guests.** `detectHost` counted any install record of a

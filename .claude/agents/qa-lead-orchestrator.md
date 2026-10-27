@@ -296,7 +296,7 @@ CONFIDENCE: HIGH|MEDIUM|LOW
 | Promotion flip | **`/qa-test-lifecycle` 6P** | **yes** | `verify:gate --gate 5g --suite <csv>` (lint + the promotion diff vs HEAD) + the execution evidence behind a sample of `{OBSERVED}` upgrades. **Not a `/qa-test` gate** — that command stopped promoting 2026-09-10. `/qa-regression` **6.5** needs no dispatch: it rewrites no assertion, and its only write is `tc:promote:apply`'s field-compared flip |
 
 Steps 1, 2, 4, 5-verdict, 5-file, 5-status, 5-docs and all of FAST self-check inline. On `--iterate`, **5-report** fires once, at loop exit.
-**Outside `/qa-test`:** on a Critical risk `/qa-test-strategy` sends `node .claude/skills/qa-test-strategy/lib/check-strategy.mjs --strategy <path> --bundle <path>` (no `verify:gate`); a hard STOP before the user is asked.
+**Outside `/qa-test`:** the strategy gate on a Critical risk is no longer yours — `/vc-test:qa-test-strategy` dispatches its own `vc-test:strategy-verifier` (vc-test spec U56).
 
 `verify:gate` passes `--run-id` through to `compute-metrics` and **refuses to run gate 5-verdict/5-report without
 one**: unscoped, it returns the whole-history pass rate, not this run's claim.

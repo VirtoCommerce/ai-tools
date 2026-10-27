@@ -94,16 +94,18 @@ test('THIS checkout: always-loaded set within budget, no line over the cap, no r
 // ratchet rather than an exemption list (graduated entries, stale entries) — without those, the
 // baseline decays into a permanent licence.
 
-test('promptFiles = commands + agents + SKILL.md, and NOT supporting files / knowledge / rules', () => {
+test('promptFiles = commands + agents + SKILL.md, in .claude/ AND every plugin, and NOT supporting files / knowledge / rules', () => {
   const files = promptFiles(ROOT);
   assert.ok(files.length > 0);
   for (const f of files) {
-    assert.ok(/^\.claude\/(commands|agents|skills)\//.test(f), `out of scope: ${f}`);
-    if (f.startsWith('.claude/skills/')) assert.ok(f.endsWith('/SKILL.md'), `supporting files are progressive disclosure, not a prompt body: ${f}`);
+    assert.ok(/^(\.claude|plugins\/[^/]+)\/(commands|agents|skills)\//.test(f), `out of scope: ${f}`);
+    if (/\/skills\//.test(f)) assert.ok(f.endsWith('/SKILL.md'), `supporting files are progressive disclosure, not a prompt body: ${f}`);
   }
-  assert.ok(!files.some((f) => f.startsWith('.claude/knowledge/')), 'knowledge is reference data read by lookup, never a prompt body');
+  assert.ok(!files.some((f) => /^(\.claude|plugins\/[^/]+)\/knowledge\//.test(f)), 'knowledge is reference data read by lookup, never a prompt body');
   assert.ok(!files.some((f) => f.startsWith('.claude/rules/')), 'rules are BUDGET-001/002 — measuring them twice would double-count');
   assert.ok(files.includes('.claude/commands/qa-test.md') && files.some((f) => f.startsWith('.claude/agents/')), 'commands and agents must both be in scope');
+  // A plugin's prompts are loaded whole exactly as the repo's are — the moved vc-test skills went unmeasured before.
+  assert.ok(files.some((f) => /^plugins\/[^/]+\/commands\//.test(f)) && files.some((f) => /^plugins\/[^/]+\/agents\//.test(f)) && files.some((f) => /^plugins\/[^/]+\/skills\/.+\/SKILL\.md$/.test(f)), 'plugin commands, agents and SKILL.md must be in scope');
 });
 
 test('checkPromptBudget: the four verdicts', () => {

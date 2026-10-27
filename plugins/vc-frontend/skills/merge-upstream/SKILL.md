@@ -219,6 +219,9 @@ and the port brief is answered (or the report found nothing).
   param, a setting, a signed-in user — the user signs in; no credentials go into the log or the PR). Note
   what the backend could not reach — it goes to QA.
 - Stop the preview you started, and only that one.
+- **Then the visual check** ([visual.md](visual.md)): the fork's Storybook and its pages, `M^1` against `M`,
+  with the engine this plugin ships. Anything that moved and that the brief did not accept is a regression
+  and goes back to step 4. Its result goes in the log, and its intended changes go in step 8's checklist.
 
 ## 8. QA checklist
 

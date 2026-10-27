@@ -272,27 +272,64 @@ export function findSettingsSecrets(settingsJsonText) {
 /** This marketplace's ids: `ai-tools`, and `vc-tools` — its name before the 2026-09-30 rename. */
 const OUR_MARKETPLACES = ["ai-tools", "vc-tools"];
 
+/** Two folder paths name the same folder (case-insensitive on Windows). */
+function samePath(a, b) {
+  const norm = (p) => resolve(p).replace(/[\\/]+$/, "");
+  return process.platform === "win32" ? norm(a).toLowerCase() === norm(b).toLowerCase() : norm(a) === norm(b);
+}
+
 /**
- * One install per plugin. A plugin of this marketplace enabled under BOTH its ids (`@ai-tools`, and
- * `@vc-tools` from before the 2026-09-30 rename) runs every hook twice — two telemetry collectors on one
- * file. Only a WARN, and only when the `claude` CLI answers; a plugin that is absent is not a fault. Runs
- * on every project, a host-governed one included (the hooks are ours either way).
+ * The plugins that load in `projectDir` under more than one of our ids: for each, `{ ids, rows }` — its
+ * distinct ids and EVERY loading install row. `claude plugin list` prints one row per install on the
+ * MACHINE — machine-wide ones (`user`, and any other scope with no folder) and a `project` / `local` one for
+ * every folder that has one — so a row loads here only when it is enabled and has no folder or this one.
+ * One id in several rows (user + this project) is one plugin, and an old id installed for another folder
+ * does not load here: neither is a duplicate. All rows are kept, so the hint can name every copy. Pure.
  */
-function checkPluginInstalls(add) {
-  let list = null;
-  try {
-    list = JSON.parse(execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString());
-  } catch {
-    /* claude CLI unavailable — nothing to check */
-  }
+export function duplicateInstalls(list, projectDir) {
   const byName = {};
   for (const p of Array.isArray(list) ? list : []) {
     const [name, market] = String(p.id || "").split("@");
-    if (p.enabled && OUR_MARKETPLACES.includes(market)) (byName[name] ||= []).push(p.id);
+    if (!p.enabled || !OUR_MARKETPLACES.includes(market)) continue;
+    if (p.projectPath && !samePath(p.projectPath, projectDir)) continue;
+    (byName[name] ||= []).push(p);
   }
-  for (const ids of Object.values(byName).filter((ids) => ids.length > 1)) {
+  return Object.values(byName)
+    .map((rows) => ({ ids: [...new Set(rows.map((r) => r.id))], rows }))
+    .filter((d) => d.ids.length > 1);
+}
+
+/** How to remove one install row — a command to paste, and where to run it when that matters. */
+function uninstallHint(r) {
+  const cmd = `claude plugin uninstall ${r.id} --scope ${r.scope}`;
+  if (r.scope === "user") return `\`${cmd}\``;
+  if (r.scope === "project" || r.scope === "local") return `\`${cmd}\` in ${r.projectPath}`;
+  return `${r.id} (installed as \`${r.scope}\`) where it was installed`;
+}
+
+/**
+ * One install per plugin. A plugin of this marketplace that loads under BOTH its ids (`@ai-tools`, and
+ * `@vc-tools` from before the 2026-09-30 rename) runs every hook twice — two telemetry collectors on one
+ * file. Only a WARN, and only when the `claude` CLI answers; a plugin that is absent is not a fault. Runs
+ * on every project, a host-governed one included (the hooks are ours either way). The hint names every
+ * copy of the old id with its scope: `uninstall` without one removes only the user's install.
+ *
+ * "Here" is the folder Claude Code runs in (CLAUDE_PROJECT_DIR, else the cwd) — the folder a project
+ * install is recorded for — never outputRoot(), which VC_FIX_HOME may point elsewhere.
+ */
+function checkPluginInstalls(add) {
+  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  let list = null;
+  try {
+    list = JSON.parse(execSync("claude plugin list --json", { cwd: projectDir, stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString());
+  } catch {
+    /* claude CLI unavailable — nothing to check */
+  }
+  for (const { ids, rows } of duplicateInstalls(list, projectDir)) {
+    const old = rows.filter((r) => !r.id.endsWith("@ai-tools"));
     add("Plugin installs", "WARN",
-      `${ids.join(" and ")} are both enabled — each one's hooks run, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.filter((id) => !id.endsWith("@ai-tools")).join(", ")}) and restart Claude Code`);
+      `${ids.join(" and ")} both load here — each one's hooks run, so spans duplicate and state writes race. ` +
+      `Uninstall every copy of the old one — ${old.map(uninstallHint).join("; ")} — and restart Claude Code`);
   }
 }
 

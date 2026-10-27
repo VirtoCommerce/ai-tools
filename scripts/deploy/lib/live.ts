@@ -3,28 +3,65 @@
 
 import type { EnvCoords } from './env.ts';
 
-export type ProbeStatus = number | 'network' | 'no-back-url';
+/** `api-key`: a key in hand, not yet tried; `api-key-rejected`: the stand refused it and there is no password. */
+export type ProbeStatus = number | 'network' | 'no-back-url' | 'no-password' | 'api-key' | 'api-key-rejected';
 /** `isInstalled` absent ⇒ treated as installed (older platforms omit it); `loadErrors` ← `validationErrors`. */
 export interface LiveModule { id: string; version: string; projectUrl?: string; isInstalled?: boolean; loadErrors: string[] }
+/** What the live readers need of an env (scripts/hotfix has its own coords shape). */
+export type LiveCoords = Pick<EnvCoords, 'backUrl' | 'admin' | 'password' | 'apiKey' | 'apiKeyFor'>;
+/** A credential as the headers it travels in, so an API key never goes out as a Bearer token. */
+export interface AdminAuth { via: 'api-key' | 'password'; headers: Record<string, string> }
 
 // ── live verify (/api/platform/modules) ─────────────────────────────────────────
-/** Admin token plus WHY it failed — pre-flight's diagnosis needs 401 vs 5xx vs no BACK_URL. */
-export async function probeAdminToken(c: EnvCoords, signal?: AbortSignal): Promise<{ token: string | null; status: ProbeStatus }> {
+/** Admin credential plus WHY it failed — pre-flight's diagnosis needs 401 vs 5xx vs no BACK_URL. */
+export async function probeAdminToken(c: LiveCoords, signal?: AbortSignal): Promise<{ token: AdminAuth | null; status: ProbeStatus }> {
   if (!c.backUrl) return { token: null, status: 'no-back-url' };
+  // A service-account API key is the credential itself: no sign-in, so no lockout and no second factor. It is
+  // not checked here (that is a read of its own): probeLiveModules falls back to the password if it is refused.
+  const key = c.apiKey && c.apiKeyFor === c.backUrl ? c.apiKey : null;
+  if (key) return { token: { via: 'api-key', headers: { api_key: key } }, status: 'api-key' };
+  return passwordGrant(c, signal);
+}
+// One sign-in per process and credential. Several readers in one run (env facts, the case pre-flight, a deploy
+// verify) each asked for their own token, so a stale password failed two or three times per run against a shared
+// admin's lockout. A refusal (4xx) is never re-sent; a granted token is reused for TOKEN_REUSE_MS; a network error
+// or a 5xx is not remembered, so a retry stays possible. Keyed by the password too, so a corrected one is tried.
+const TOKEN_REUSE_MS = 10 * 60_000;
+const grants = new Map<string, { at: number; result: { token: AdminAuth | null; status: ProbeStatus } }>();
+async function passwordGrant(c: LiveCoords, signal?: AbortSignal): Promise<{ token: AdminAuth | null; status: ProbeStatus }> {
+  // No password, no attempt: a guessed one is a failed sign-in that counts toward the shared admin's lockout.
+  if (!c.password) return { token: null, status: 'no-password' };
+  const key = `${c.backUrl}\n${c.admin}\n${c.password}`;
+  const seen = grants.get(key);
+  if (seen && (!seen.result.token || Date.now() - seen.at < TOKEN_REUSE_MS)) return seen.result;
   try {
     const r = await fetch(`${c.backUrl}/connect/token`, { signal, method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'password', username: c.admin, password: c.password }) });
-    if (r.status !== 200) return { token: null, status: r.status };
-    return { token: (await r.json())?.access_token ?? null, status: 200 };
+    if (r.status !== 200) {
+      const refused = { token: null, status: r.status };
+      if (r.status >= 400 && r.status < 500) grants.set(key, { at: Date.now(), result: refused });
+      return refused;
+    }
+    const token = (await r.json())?.access_token;
+    const result = { token: token ? { via: 'password' as const, headers: { Authorization: `Bearer ${token}` } } : null, status: 200 as ProbeStatus };
+    if (result.token) grants.set(key, { at: Date.now(), result });
+    return result;
   } catch { return { token: null, status: 'network' }; }
 }
-export async function getAdminToken(c: EnvCoords): Promise<string | null> {
+export async function getAdminToken(c: LiveCoords): Promise<AdminAuth | null> {
   return (await probeAdminToken(c)).token;
 }
 /** Installed modules with their original id case and ProjectUrl (the authoritative id → repo link). */
-export async function probeLiveModules(c: EnvCoords, token: string, signal?: AbortSignal): Promise<{ ok: true; modules: LiveModule[] } | { ok: false; status: ProbeStatus }> {
+export async function probeLiveModules(c: LiveCoords, token: AdminAuth, signal?: AbortSignal): Promise<{ ok: true; modules: LiveModule[] } | { ok: false; status: ProbeStatus }> {
   if (!c.backUrl) return { ok: false, status: 'no-back-url' };
   try {
-    const r = await fetch(`${c.backUrl}/api/platform/modules`, { signal, headers: { Authorization: `Bearer ${token}` } });
+    let r = await fetch(`${c.backUrl}/api/platform/modules`, { signal, headers: token.headers });
+    // A refused key (rotated, revoked) falls back to the password: the key spares the admin sign-in, it never
+    // takes away a read the password would serve.
+    if ((r.status === 401 || r.status === 403) && token.via === 'api-key') {
+      const pw = await passwordGrant(c, signal);
+      if (!pw.token) return { ok: false, status: pw.status === 'no-password' ? 'api-key-rejected' : pw.status };
+      r = await fetch(`${c.backUrl}/api/platform/modules`, { signal, headers: pw.token.headers });
+    }
     if (r.status !== 200) return { ok: false, status: r.status };
     const mods = await r.json();
     const modules: LiveModule[] = [];
@@ -40,7 +77,7 @@ export async function probeLiveModules(c: EnvCoords, token: string, signal?: Abo
     return { ok: true, modules };
   } catch { return { ok: false, status: 'network' }; }
 }
-export async function liveModules(c: EnvCoords, token: string): Promise<Record<string, string> | null> {
+export async function liveModules(c: LiveCoords, token: AdminAuth): Promise<Record<string, string> | null> {
   const r = await probeLiveModules(c, token);
   if (!r.ok) return null;
   const out: Record<string, string> = {};

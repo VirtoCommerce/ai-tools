@@ -156,6 +156,7 @@ if (!authorship.length) {
   }
   ok(`AUTHORSHIP isolated: ${cells.repPlaced.order_key} and ${cells.buyerPlaced.order_key} share org ${cells.repPlaced.org} and match on ${AUTHORSHIP_CONTROLLED_COLUMNS.join('/')}, differing ONLY in the customer`);
   ok(`ORG SCOPE isolated: ${cells.notServed.order_key} is rep-authored like ${cells.repPlaced.order_key} but sits in ${cells.notServed.org}, which is NOT in the rep's served set (${served.join(';')}) and whose status is Active (so a null result has exactly one cause)`);
+  ok(`UNSERVED BUYER cell: ${cells.notServedBuyer.order_key} sits in ${cells.notServedBuyer.org} like ${cells.notServed.order_key} (not served, Active) and differs ONLY in the customer — buyer ${customerRoleFor(cells.notServedBuyer).userKey}, a seeded member of that org and not a rep in sales-reps.csv (097 SR-CO-012, BL-SR-002)`);
   ok(`product slots ${Object.values(AUTHORSHIP_MATRIX).map((m) => m.productSlot).join('/')} are distinct and clear of the ${requiredProductSlots()} slot(s) sales-rep-stats-specs reserves for its BL-SR-008 ranking assertions`);
 }
 
@@ -197,6 +198,23 @@ if (notServedCid && repPlacedCid && notServedCid !== repPlacedCid) {
   fail(`${AUTHORSHIP_MATRIX.notServed.alias} was seeded with customerId ${notServedCid} but ${AUTHORSHIP_MATRIX.repPlaced.alias} with ${repPlacedCid} — the org-scope arm must share the rep-authored customer, or a null result is explainable by authorship as well as by org scope`);
 } else if (notServedCid && repPlacedCid) {
   ok(`${AUTHORSHIP_MATRIX.notServed.alias} shares the rep-authored customerId (${notServedCid}) — a null result there isolates ORG SCOPE`);
+}
+
+// 5d. The UNSERVED-BUYER cell (097 SR-CO-012): the SEEDED customerId must be a buyer, never a rep.
+//     A rep customer turns "the rep is refused on /account/orders/:id" into "a customer opens their
+//     own order" — the case could then only pass by a bug. Checked against EVERY rep's recorded
+//     user_id, not only SR_REP_PRIMARY's, because any rep-authored order is the wrong shape here.
+{
+  const nsbAlias = AUTHORSHIP_MATRIX.notServedBuyer.alias;
+  console.log(`\n[5d] aliases.${env}.json: ${nsbAlias} was seeded with a NON-rep customer`);
+  const nsbCid = seededCustomer(nsbAlias);
+  const repUserIds = new Map(readCsv('test-data/sales-rep/sales-reps.csv')
+    .map((r) => [String(overlay[r.rep_key]?.user_id || '').trim(), r.rep_key]).filter(([id]) => id));
+  if (!nsbCid) warn(`no seeded customerId for ${nsbAlias} on ${env} — run \`TEST_ENV=${env} npm run seed:b2b -- --only CON-030\` then \`TEST_ENV=${env} npm run seed:sales-rep\``);
+  else if (repUserIds.has(nsbCid)) fail(`${nsbAlias} was SEEDED with customerId ${nsbCid}, which is ${repUserIds.get(nsbCid)}'s user_id — a rep is this order's customer, so SR-CO-012's refusal cannot be attributed to org scope (a customer may open their own order)`);
+  else if (nsbCid === repPlacedCid || nsbCid === notServedCid) fail(`${nsbAlias} shares customerId ${nsbCid} with a rep-authored matrix order — the buyer did not resolve`);
+  else if (!repUserIds.size) warn(`${nsbAlias} customerId ${nsbCid}: no SR_REP_* user_id recorded on ${env}, so "not a rep" is unproven here`);
+  else ok(`${nsbAlias} customerId ${nsbCid} matches none of the ${repUserIds.size} recorded SR_REP_* user_id(s)`);
 }
 
 console.log('\n=== sales-rep orders drift/vacuity check ===');
