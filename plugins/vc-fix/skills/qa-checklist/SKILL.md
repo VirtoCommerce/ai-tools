@@ -1,8 +1,7 @@
 ---
 name: qa-checklist
 description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses 63 built-in domain checklists (33 storefront + 29 backend/admin + 1 GraphQL) + custom creation."
-argument-hint: "domain name | feature | <ticket-key> | new <domain> | admin <module>"
-disable-model-invocation: true
+argument-hint: "domain name | feature | <ticket-key> [--from-model] [--from-strategy <test-strategy.md>] | new <domain> | admin <module>"
 
 ---
 
@@ -18,6 +17,8 @@ Generate or retrieve domain-specific checklists that ensure complete test case c
 /qa-checklist admin catalog            # Retrieve Catalog Admin checklist (backend file)
 /qa-checklist admin pricing            # Retrieve Pricing Admin checklist
 /qa-checklist VCST-1234                # Generate checklist for JIRA ticket scope
+/qa-checklist VCST-1234 --from-model   # Mode 5: from test model + mind map
+/qa-checklist VCST-1234 --from-strategy <file>  # Mode 5, strategy-led
 /qa-checklist new "push messages"      # Create new checklist for unlisted domain
 /qa-checklist all                      # List all 63 domain checklists with item counts
 ```
@@ -28,6 +29,7 @@ Generate or retrieve domain-specific checklists that ensure complete test case c
 - **backend-admin-checklists.md** — 27 Admin module checklists + 2 API checklists with 255 items, aligned with Bundle v14.0.8 (53 modules). Source of truth for Admin SPA and Platform API/xAPI domains.
 - **graphql-checklist.md** — GraphQL xAPI checklist with 34 items covering all xAPI modules (xCatalog, xCart, xOrder, xProfile, xCMS, xFrontend, xQuote) + per-change verification template.
 - **checklist-creation-guide.md** — Methodology for creating new checklists: structure rules, quality criteria, VC-specific patterns, cross-layer verification, and examples.
+- **from-model.md** — Mode 5: items traced to the test model + mind map (+ the strategy's risks).
 
 ## Cross-Skill References (consult when items derive test cases)
 
@@ -214,6 +216,10 @@ Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishl
    - Add boundary value items
 6. Structure with markdown checkboxes, 6-15 items per domain
 7. **Propose adding** the new checklist to `domain-checklists.md` (UI domains) or as a separate file (API/backend domains) — ask user for confirmation
+
+### Mode 5: From the test model (`VCST-XXXX --from-model`)
+
+Mode 2 + the test model + the mind map; every in-scope row or node becomes an item or a declared omission. `--from-strategy`: every risk too, and no model unless the strategy's Test model row is RUN. Procedure: [`from-model.md`](from-model.md).
 
 ### Mode 4: List All (`all` keyword)
 

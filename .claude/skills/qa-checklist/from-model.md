@@ -1,6 +1,6 @@
 # Mode 5 — a ticket checklist built FROM its test model and the domain's mind map
 
-`/qa-checklist <TICKET> --from-model [--mind-map <slug>]` · `/qa-checklist <TICKET> --from-model --strategy <test-strategy.md> [--mind-map <slug>]`
+`/qa-checklist <TICKET> --from-model [--mind-map <slug>]` · `/qa-checklist <TICKET> --from-strategy <test-strategy.md> [--mind-map <slug>]` (`--from-model --strategy <file>` is the same thing)
 
 Mode 2 builds a ticket checklist from the ACs, the domain checklists and the oracles. That is
 everything the *ticket* and the *corpus* say. It is not everything the *fault model* says: a test model's
@@ -12,8 +12,8 @@ Every item traces to its source, and every in-scope source row is either an item
 
 | Input | Where | Missing ⇒ |
 |---|---|---|
-| Test model | `{RUN_DIR}/test-model.md` with all of its rounds ([`run-output.md`](../../knowledge/execution/run-output.md)); a ticket modelled before run folders has `reports/ba/test-models/<TICKET>-*.md`, and where two dated files exist for it (a legacy fork), use the newest, plus the rows it declares still valid from the older file | **STOP** — run `/qa-test-model <TICKET>` first. Mode 5 without a model is Mode 2. **Except with `--strategy`** whose `Test model` row is `SKIP — no MODEL risk`: then no model is read and none is required |
-| Strategy (`--strategy`) | the last `## Round N` of `{RUN_DIR}/test-strategy.md`, approved (`Status:` not `DRAFT`) | not given ⇒ Mode 5 as before. Given but `DRAFT` ⇒ **STOP** — the strategy is a contract only once approved |
+| Test model | `{RUN_DIR}/test-model.md` with all of its rounds ([`run-output.md`](../../knowledge/execution/run-output.md)); a ticket modelled before run folders has `reports/ba/test-models/<TICKET>-*.md`, and where two dated files exist for it (a legacy fork), use the newest, plus the rows it declares still valid from the older file | **STOP** — run `/qa-test-model <TICKET>` first. Mode 5 without a model is Mode 2. **With a strategy** the model is the one its `Test model` row names (next row), never this lookup |
+| Strategy (`--from-strategy`, or `--strategy` beside `--from-model`) | the last `## Round N` of the file, `Status:` not `DRAFT` (DRAFT ⇒ **STOP**: the strategy is a contract only once approved). Its `Test model` Artifacts row decides the model: `RUN (amend <path>)` ⇒ that file; `RUN (new)` ⇒ `test-model.md` beside the strategy; either missing ⇒ **STOP** naming the row. `SKIP — …` ⇒ no model is read | not given ⇒ Mode 5 as before |
 | Mind map | `<name>.mind-map.json` for the slug (`--mind-map`, else the model's `Mind map:` header): the run's copy in `{RUN_DIR}/knowledge/domain/` first, else `.claude/knowledge/domain/` | proceed; write `Mind map: ABSENT` in the header. A missing map is recorded, never a blocker |
 
 ## Procedure
@@ -69,7 +69,7 @@ Every item traces to its source, and every in-scope source row is either an item
    mutable state — a store setting, a shared fixture — has one writing lane only, and that lane
    restores it (the header's Rules block).
 
-## With a strategy (`--strategy <path>`)
+## With a strategy (`--from-strategy <path>`)
 
 The strategy is the authority for **what** is tested; the model only details its `MODEL` risks
 (test-model redesign M9). So, on top of the procedure above:
@@ -78,14 +78,15 @@ The strategy is the authority for **what** is tested; the model only details its
   items straight from the strategy: its *what a customer would see* is the Condition, its Approach row's
   oracle and authority the Oracle, its layer the lane (step 6), its Data cell the data strategy (step 5).
   The technique shapes the items — `DT` one per rule, `BVA` the boundaries, `ST` the transitions.
-- **A `MODEL` risk is reached through the model's scenario rows** (step 2), which carry its `R-n`. With no
+- **A `MODEL` risk is reached through the model's scenario rows** (step 2), which carry its `R<n>`. With no
   model (the row says `SKIP`), there is no `MODEL` risk, so nothing is lost.
 - **An `EXPLORE` risk, and a `{HYPOTHESIS}` oracle, is never an item** — `EXPLORE → charter` as an omission
   line; it is exploratory work, not pass/fail.
 - **Out of scope** stays out: the strategy's list is copied into *Not covered, deliberately*, with its
   residual risk.
-- **Ref** leads with the `R-n` (`R3 · S#4 · <node-id>`), so reconciliation at close-out can map every
-  result back to its risk. An item that reaches no risk is either a Mode-2 item the strategy put out of
+- **Ref** leads with the risk id exactly as the strategy's `### Risks` table spells it — `R3`, never `R-3`;
+  `trace.mjs` attributes a row by `R<n>`: `R3 · S#4 · <node-id>`. An AC item names the risk whose Source cites
+  that AC (`AC-2 · R7`); an item no risk reaches is either a Mode-2 item the strategy put out of
   scope (drop it) or a risk the strategy missed — append it to the round's `### Amendments`, never keep it
   silently.
 
@@ -93,7 +94,7 @@ The strategy is the authority for **what** is tested; the model only details its
 
 ```markdown
 # Testing checklist — <TICKET> (<summary>)
-**Strategy:** <path · Round N | none> · **Model:** <path | SKIP — no MODEL risk> · **Mind map:** <path | ABSENT> · **Domain map:** <state>
+**Strategy:** <path · Round N | none> · **Model:** <path | SKIP — <the row's reason>> · **Mind map:** <path | ABSENT> · **Domain map:** <state>
 **Data:** <the aliases / seeders / create-on-fly entities the items use>
 **Rules for every executor:** <shared-state owner + restore, env quirks from the model>
 
