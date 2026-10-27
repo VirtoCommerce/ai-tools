@@ -83,8 +83,8 @@ name-substitution or secret-redaction option at all — verified against `npx ch
 --help` on 2026-09-02. Typing a variable NAME into a password field on that lane submits **the literal
 string**, the sign-in is refused, and an auth-gated route bounces to `/sign-in?returnUrl=…`.
 
-This bit a real run: `/qa-test` VCST-5733’s visual axis was dispatched to `ui-ux-expert` (whose lane IS
-Chrome DevTools, per `.claude/rules/agents.md`) with a brief telling it to type `TEST_USER_PASSWORD`.
+This bit a real run: `/qa-test` VCST-5733’s visual axis was dispatched to `ui-ux-expert` (whose lane WAS
+Chrome DevTools then; since P2-5c `vc-test:ui-ux-expert` runs on a Playwright lane) with a brief telling it to type `TEST_USER_PASSWORD`.
 All three axes came back `INCONCLUSIVE`/`SKIPPED` — correctly reported as blocked rather than clean,
 but a whole agent turn was lost. The agent then tried to print the credential and to route it via the
 clipboard; **both were denied by the permission classifier, and stopping there was the right call.**
@@ -160,4 +160,4 @@ session decides whether the axis runs. Source ladder:
 
 ## Storybook Visual Regression
 
-Visual regression baselines are captured on-demand by the `/qa-storybook` skill (delegated to `ui-ux-expert` agent). No persistent `storybook/` directory is needed — baselines are stored in test evidence directories per ticket. Naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`). See `skills/qa-storybook/` for methodology and guides.
+Visual regression baselines are captured on-demand by the `/qa-storybook` skill (delegated to the `vc-test:ui-ux-expert` agent). No persistent `storybook/` directory is needed — baselines are stored in test evidence directories per ticket. Naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`). See `skills/qa-storybook/` for methodology and guides.

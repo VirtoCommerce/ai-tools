@@ -115,7 +115,7 @@ below.
    artifact-chrome trap: [`claude-design-verification.md`](claude-design-verification.md) §1.
 2. **The lane and the account role — never a credential.** The visual lane is a Playwright lane: in a
    vc-test run the one `plan-run` drew from the pool (§4), in this repository's `/qa-test` and
-   `/qa-test-fast` `playwright-edge` by default. It signs in the way every Playwright lane does — the login
+   `/qa-test-fast` the one its wave leaves free (§4). It signs in the way every Playwright lane does — the login
    as plain text from the env (`USER_LOGIN`, …), the password's bare NAME (`USER_PASSWORD`, …) typed into
    the password field, the lane supplying the value — the project's `vc-browser.md` §Signing in, which
    `vc-init` writes (in this repository: `.claude/rules/vc-browser.md`). So the brief names the **lane** and
@@ -211,7 +211,9 @@ the `visual` entry's `lanes` (`lib/artifacts.json`): edge first, the lane a run'
 chrome, then firefox — only lanes this install has (`mcp:playwright-*`), and none at all is an error that
 names the three. On an install with only `playwright-chrome` the visual lane and the scenarios share that
 lane across waves, never within one. In this repository's `/qa-test` and `/qa-test-fast` the brief names
-`playwright-edge` by default. The **max-3-concurrent** cap still binds across every lane.
+the Playwright lane its wave leaves free — the checklist dispatches (`/qa-test` 4a) hold theirs — and the
+visual lane waits for the next wave when none is free: the rule `plan-run` applies, never a fixed default
+and never two agents on one lane. The **max-3-concurrent** cap still binds across every lane.
 
 When the checklist agents + regression lanes + this lane exceed 3, run in this order and **state the order
 chosen**: checklist track → visual lane → regression. The ticket verdict is the priority, and the visual

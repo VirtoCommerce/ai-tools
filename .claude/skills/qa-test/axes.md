@@ -59,7 +59,7 @@ block, and it was the one the shared *"same discipline"* phrasing concealed.
 |---|---|---|---|---|---|---|
 | **Unresolved ⇒** | **`null` + `UNRESOLVED`** | `true` | `true` | `true` | **`false`** | **`unresolved` + recommend** |
 | Shape | 6 values + `cross-layer` | boolean | boolean | boolean | boolean | **4 states** (`PRESENT`/`STALE`/`ABSENT`/`unresolved`) |
-| Dispatches an agent? | no | **yes** (`ui-ux-expert`) | no | no | **yes** (`test-data-engineer`) | **FULL only**, and only on `ABSENT` + all-layer (`ba-system-analyzer`, `1c-map`) |
+| Dispatches an agent? | no | **yes** (`vc-test:ui-ux-expert`) | no | no | **yes** (`test-data-engineer`) | **FULL only**, and only on `ABSENT` + all-layer (`ba-system-analyzer`, `1c-map`) |
 | Costs I/O in `1b`? | no | no | **yes** (~8.6 s) | yes (~1 s, wave B) | yes (~1 s, wave B) | **no** (one local frontmatter read) |
 | Has a conflict rule? | **yes** (`layers_conflict`) | no | no | no | no | no |
 | **Adds** a step, or **gates** one? | gates 5-status/5-docs | adds the visual lane | adds two refreshers | adds Artifact A's `2a` phase | **gates Step 3a** | **adds `1c-map` on FULL; RECOMMENDS on FAST. Gates nothing, ever** |

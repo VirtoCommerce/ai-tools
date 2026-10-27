@@ -198,7 +198,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 ## Rules
 
 - **Read live tokens, never hardcode** — Coffee is multi-preset (6 light + 3 dark variants); a token's resolved value varies per preset. Hardcoded hex values in this skill or in audits will be wrong half the time.
-- **Cite the BL / WCAG / ECL ID** for every finding where one applies. Findings without citations decay into vague design debate. For proposed-but-not-promoted invariants (BL-UI-007..010), cite as `PROPOSED-BL-UI-NNN`; their audit logic lives in `scripts/lib/measure-layout.ts` until promoted into the BL oracle (`ui`).
+- **Cite the BL / WCAG / ECL ID** for every finding where one applies. Findings without citations decay into vague design debate. For proposed-but-not-promoted invariants (BL-UI-007..010), cite as `PROPOSED-BL-UI-NNN`; their audit logic lives in `<plugin>/lib/design/measure-layout.mjs` (in this repository: `scripts/lib/measure-layout.ts`, the canonical TypeScript it is generated from) until promoted into the BL oracle (`ui`).
 - **Audit at multiple viewports** — 375 / 768 / 1280 minimum; some tokens override at breakpoint boundaries.
 - **Audit at multiple states** — run the State-Stress Pass; default-only audits miss state-specific defects (F-CART-006 was missed precisely because the default state had no disabled product visible).
 - **Always run the Visual-Review Screenshot Pass** before exiting — invariant snippets are necessary but not sufficient.

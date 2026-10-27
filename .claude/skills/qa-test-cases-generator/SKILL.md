@@ -39,10 +39,10 @@ Load these references during generation:
 - **e-commerce-edge-cases-library.md** — `ECL-*` IDs to populate `Edge_Case_Refs` column
 - **catalog.md**, **store-settings.md** — Product types, store config for realistic test data
 - **platform-patterns.md** — Common platform behaviors to inform assertions
-- **For any Storefront/UI case — these were previously invisible to this skill and are what make a UI assertion strong:**
+- **For any Storefront/UI case — these are what make a UI assertion strong:**
   - **`bl:extract -- --domain ui` (`BL-UI-*`)** — the measurable UI invariants (CLS, spacing grid, state-induced shift, content boundary, alignment, touch target, keyboard operability), each with its own `Verify` recipe. Assert them with the measurable tags, never in prose.
-  - **oracles/critical-ui-scope.md** — 36 components × applicable `BL-UI-*`, each with a per-component audit protocol and **real selectors**. Use it as the scope list: which components this change touches, and which invariants apply to each.
-  - **qa-design/methodology.md §State-Stress Pass** — the seven states every UI surface must survive (loading · empty · error/disabled · overflow · validation-error · anonymous · dark theme). This is a ready-made case matrix; sweep it rather than inventing states.
+  - **oracles/critical-ui-scope.md** — 36 components × applicable `BL-UI-*`, each with a per-component audit protocol and **real selectors**. Use it as the scope list: the components this change touches and the invariants each takes.
+  - **`plugins/vc-test/skills/qa-design/methodology.md` §State-Stress Pass** — the seven states every UI surface must survive (loading · empty · error/disabled · overflow · validation-error · anonymous · dark theme). A ready-made case matrix; sweep it rather than inventing states.
   - **automation/storefront-selectors.md** + `scripts/lib/storefront-selectors.generated.ts` — real `data-test-id` values. Prefer a test id over a label (a label is an i18n key, so a label-based locator is locale-dependent — and the language selector is itself under test).
   - **skills/qa-sbtm/modern-web-attack-surface.md** — the `UIP-*` probe catalog (§Unexpected-action sweep below).
 
@@ -230,9 +230,9 @@ What it emits:
 - A **`.design.md` sidecar** — the per-row KEEP answers, i.e. the record of *why each case exists*.
 
 **Sweeps expand mechanically**, with their bug hypothesis already written by the document that owns them
-(read at run time, never transcribed): `state-stress` (qa-design §State-Stress Pass) · `uip`
+(read at run time, never transcribed): `state-stress` (vc-test:qa-design §State-Stress Pass) · `uip`
 (modern-web-attack-surface §`UIP-*`) · `toggle` and `date-range` (§3.5 above). Declare them in the plan's
-`sweeps[]` with the surface being swept; waiving an item needs a reason, because a silent omission is
+`sweeps[]` with the swept surface; waiving an item needs a reason, because a silent omission is
 what makes a sweep unreportable. This is the cheapest coverage in the pipeline and it is where the corpus
 is measurably thinnest — count it per probe there, never quote a figure.
 
@@ -384,7 +384,7 @@ Generated test cases route to the correct executing agent by layer:
 | Admin UI | `qa-backend-expert` | `playwright-edge` or Chrome DevTools | `Backend/<module>/*.csv` (by module) |
 | Storefront UI | `qa-frontend-expert` | `playwright-chrome` | `Frontend/<area>/*.csv` (by area) |
 | E2E Cross-Layer | `qa-frontend-expert` + `qa-backend-expert` | coordinated | Suite 00 or feature suite |
-| Storybook/A11y | `ui-ux-expert` | Chrome DevTools | Separate |
+| Storybook/A11y | `vc-test:ui-ux-expert` | a Playwright lane (the run assigns it) | Separate |
 
 ## Integration with Other Skills
 

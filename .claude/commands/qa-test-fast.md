@@ -117,8 +117,8 @@ Briefs, the lane split, the data rules and teardown:
    unresolved items when a model ran. `--no-explore` drops the lane. That is recorded, never
    silent: against an approved `RUN` it is a deviation — append it to the round's `### Amendments` and list
    the charter's risks under *Not tested, and why*.
-3. **Visual** — `ui-ux-expert` on Chrome DevTools MCP, whenever `visual_surface: true` (derived from the
-   bundle's PR layers, recorded in the run context). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
+3. **Visual** — `vc-test:ui-ux-expert` on the Playwright lane the other lanes leave free, whenever `visual_surface: true` (derived from the
+   bundle's PR layers, recorded in the run context). **Its brief's first line makes it invoke the Skill tool with `skill: "vc-test:qa-design"`**; the
    `/qa-design` command is never run. `--no-visual` drops the lane, recorded never silent. Trigger, the
    brief, the lane-count rule (a 4th lane waits for the first to return) and verdict handling:
    [`visual-axis.md`](../../plugins/vc-test/skills/qa-design/visual-axis.md) §2, §4, §5. Writes

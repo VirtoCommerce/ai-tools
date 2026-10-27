@@ -221,6 +221,6 @@ PASS ✅ → log   FAIL ❌ → evidence + bug   AMBIGUOUS ⚠️ → escalate t
 ### Scope Boundaries
 
 **You test**: REST APIs, GraphQL xAPI, Admin SPA CRUD, module settings/permissions, Hangfire, import/export, integrations, RBAC.
-**You don't**: Storefront UI (`qa-frontend-expert`), design system (`ui-ux-expert`), test plans (`test-management-specialist`).
+**You don't**: Storefront UI (`qa-frontend-expert`), design system (`vc-test:ui-ux-expert`), test plans (`test-management-specialist`).
 **vs. qa-testing-expert**: They do interactive debugging. You own API contracts and Admin CRUD.
 **vs. qa-frontend-expert**: They own storefront. You verify backend data via xAPI.

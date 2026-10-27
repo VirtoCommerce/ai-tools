@@ -22,7 +22,7 @@ Stage 1 Wave 1  /vc-test:ticket-context (ticket · materials · PRs · deploy) �
         Wave 2  /qa-test-model --strategy (only if a risk is MODEL) ‖ /qa-test-mind-map (update|build, no stamps; only if the model runs)
         Wave 3  /qa-checklist --from-model --strategy  ──  stage gate   [--dry-run stops here]
 Stage 2         runner(chrome) ‖ runner(edge) ‖ exploratory(firefox), data on the fly ── settings restored
-                + visual(devtools, ui-ux-expert → Skill qa-design) when visual_surface; ≤3 at once
+                + visual(free lane, vc-test:ui-ux-expert → Skill vc-test:qa-design) when visual_surface; ≤3 at once
 Stage 3         qa-triage-results ticket --verify (→ vc-fix:qa-investigate per real bug) → /vc-fix:qa-bug per
                 confirmed bug, with its package ── teardown → verdict → files → HTML page + comment (qa-report) → kb
 ```
@@ -66,7 +66,7 @@ risks. The checklist needs the strategy, the model when one ran, and the mind ma
 | "This morning's run already has results — reuse them." | On the same build, show that verdict and ask (Step 0.3). Never silently reuse another run's results, and never silently overwrite them. |
 | "Sweep leftovers with `seed:*:teardown`." | Persistent fixtures share the `AGENT-TEST-` prefix, and a sweep deletes them. Teardown is by ledger id only. |
 | "The checklist runner already looked at the page — skip the visual lane." | A functional runner cannot see a contrast failure, a token collision or design drift. `visual_surface: true` ⇒ the lane runs, or `--no-visual` is recorded ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §5). |
-| "I'll invoke `/qa-design` myself, inline." | The command is not model-invocable, and the skill is ~30K chars. The `ui-ux-expert` brief makes the **agent** invoke the `qa-design` skill ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2). |
+| "I'll invoke `/qa-design` myself, inline." | The command is not model-invocable, and the skill is ~30K chars. The `vc-test:ui-ux-expert` brief makes the **agent** invoke the `vc-test:qa-design` skill ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2). |
 | "25 minutes is enough exploring." | The exploratory box floor is 30 minutes ([`../qa-test/exploratory-lane.md`](../qa-test/exploratory-lane.md) §5). |
 
 ## Red flags — stop and re-read the six rules

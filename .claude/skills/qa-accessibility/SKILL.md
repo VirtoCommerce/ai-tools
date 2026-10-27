@@ -1,6 +1,6 @@
 ---
 name: qa-accessibility
-description: "[Testing] WCAG 2.2 AA accessibility audit: POUR + 2.2 additions, axe-core injection, Lighthouse MCP, keyboard walk, ARIA."
+description: "[Testing] WCAG 2.2 AA accessibility audit: POUR + 2.2 additions, axe-core injection, keyboard walk, ARIA."
 argument-hint: "page URL | component name | full audit"
 ---
 
@@ -19,7 +19,7 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
 
 ## Supporting Files
 
-- **wcag-accessibility-checklist.md** — Complete WCAG 2.2 AA checklist organized by POUR, plus the six new 2.2 criteria, dynamic-state rescans, manual-only items, agent automation recipes (axe-core injection, Lighthouse, keyboard walk, contrast from computed style), and pitfalls.
+- **wcag-accessibility-checklist.md** — Complete WCAG 2.2 AA checklist organized by POUR, plus the six new 2.2 criteria, dynamic-state rescans, manual-only items, agent automation recipes (axe-core injection, keyboard walk, contrast from computed style), and pitfalls.
 
 ## Boundary with `/qa-storybook`
 - `/qa-storybook` — a11y addon **inside stories** (component-isolated; tune axe rules per component).
@@ -35,14 +35,14 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
 
 2. **Theme scope:** Run a11y assertions on the **Coffee** *and* **Red** presets — those are this project's two WCAG-gated themes. Red joined the set with the Red Theme 4 release (VCST-4226) once VCST-5555 cleared the UI-kit violations; verify it under `themePreset:red`. Capture the remaining presets for visual diff only, not a11y gating — `purple-pink` and `watermelon` still fail AA on the solid-accent token and would produce known-unsupported failures.
 
-3. **Delegate to ui-ux-expert** via Task tool (`subagent_type: ui-ux-expert`):
+3. **Delegate to `vc-test:ui-ux-expert`** via Task tool (`subagent_type: vc-test:ui-ux-expert`):
    - Pass scope, URL(s), and reference to `wcag-accessibility-checklist.md`
-   - Agent uses **Chrome DevTools MCP** for `lighthouse_audit`, `evaluate_script` (to inject axe-core and run it), `take_screenshot` (focus states), and the network/console capture
+   - Agent uses **a Playwright lane** (the brief names it, e.g. `playwright-edge`) for `browser_evaluate` (to inject axe-core and run it — the real-user hook's allowlist passes `axe.run`), `browser_take_screenshot` (focus states), and `browser_console_messages` / `browser_network_requests`
    - For multi-browser parity: re-run keyboard walk on `playwright-firefox` and `playwright-edge`
 
-4. **Run the four-layer scan per route:**
-   - **Layer A — axe-core (programmatic):** Use the canonical `axeRunSnippet()` from `scripts/lib/axe-runner.ts` — pass it verbatim to `evaluate_script` (it self-loads axe if absent, runs WCAG A/AA tags only, trims the result). **Await it** (returns a Promise), then `classifyAxeResults()` maps impact→severity and surfaces `incomplete` as WARN-for-manual-review (best-practice already excluded). **If `axeAvailable === false` (CSP blocked the load) the result is INCONCLUSIVE — never report it as clean.** Don't hand-roll the injection — the extracted snippet is the single source.
-   - **Layer B — Lighthouse a11y category:** Call `lighthouse_audit` MCP and read the accessibility category. Lighthouse runs a subset of axe (~50 rules) — use for trend score, **never** as the only signal.
+4. **Run the layered scan per route** (A, C, D — Layer B is retired):
+   - **Layer A — axe-core (programmatic):** Use the canonical `axeRunSnippet()` from `scripts/lib/axe-runner.ts` — pass it verbatim to `browser_evaluate` (it self-loads axe if absent, runs WCAG A/AA tags only, trims the result). **Await it** (returns a Promise), then `classifyAxeResults()` maps impact→severity and surfaces `incomplete` as WARN-for-manual-review (best-practice already excluded). **If `axeAvailable === false` (CSP blocked the load) the result is INCONCLUSIVE — never report it as clean.** Don't hand-roll the injection — the extracted snippet is the single source.
+   - **Layer B — Lighthouse a11y category: retired.** `lighthouse_audit` exists only in Chrome DevTools MCP, and every browser lane is a Playwright lane ([`wcag-accessibility-checklist.md`](wcag-accessibility-checklist.md) Recipe 2). Layer A is the automated signal; a missing score is never reported as a pass.
    - **Layer C — keyboard walk:** Press Tab through the page; after each press capture `document.activeElement` with `ACTIVE_ELEMENT_SNIPPET` (from `scripts/lib/axe-runner.ts`) into an ordered trail, then `classifyKeyboardTrail(trail)` flags traps (P0), off-screen focus (FAIL), and non-monotonic order (WARN). Verify Escape closes modals and focus returns to the trigger.
    - **Layer D — dynamic rescans:** Re-run Layer A after each significant state change (modal open, accordion expand, form error displayed, toast shown, mega-menu opened, async route load). Scanning only the initial DOM is the #1 cause of missed real bugs.
 

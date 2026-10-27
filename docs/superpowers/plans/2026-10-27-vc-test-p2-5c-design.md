@@ -83,8 +83,9 @@ and is summarized in the decisions below.
   and **no `model`**: `plan-run.mjs` `runBlockErrors` rejects `run.model` beside a `vc-test:` agent. It also has the
   C1 `lanes` pool, `"lane": null`, `"requires": ["front-url"]`, and the same `writes`.
 - **This repository's visual lane switches too.** `/qa-test` and `/qa-test-fast` dispatch the same agent, and
-  `vc-browser.md` binds here as well. Their briefs name a Playwright lane; `playwright-edge` is the default here,
-  with `visual-axis.md` §4's lane-budget arithmetic (≤ 3 browser lanes) unchanged.
+  `vc-browser.md` binds here as well. Their briefs name a Playwright lane: the one its wave leaves free (the 4a dispatches hold
+  theirs), waiting for the next wave when none is — no fixed default (Ruling G), with `visual-axis.md` §4's
+  lane-budget arithmetic (≤ 3 browser lanes) unchanged.
 - Commit only with `git commit --only <paths>`. Never stage the operator's own files: `.claude/rules/vc-browser.md`,
   `test-data/aliases.vcst.json`, `reports/**`.
 - Gates at every task's end: `npm run --silent context:check` (0 breaches), `npm run docs:index:check`, and
@@ -214,7 +215,7 @@ and is summarized in the decisions below.
 
 - [ ] **Step 1:** Repoint per C11. Keep the `/qa-test-fast` join check `qa-design skill: loaded` and the agent's
   return line identical (Review Focus 5). Wherever this repository names the visual lane's browser, name a
-  Playwright lane, `playwright-edge` by default (Global Constraints).
+  Playwright lane: the one its wave leaves free, else the next wave (Global Constraints).
 - [ ] **Step 2:** `grep -rn "subagent_type: ui-ux-expert\|skill: \"qa-design\"\|skills/qa-design/\|qa-test/visual-axis\|agents/ui-ux-expert" .claude ci scripts CLAUDE.md plugins --include=*.md --include=*.mjs --include=*.ts --include=*.json`
   finds no old-path hit. **Review Focus 3:** `grep -n "SKIPPED — no vc-frontend" plugins/vc-test/skills/qa-design/component-acceptance.md` hits.
 - [ ] **Step 3:** Set `DOC-009` to 2. `context:check` reports DOC-009 2 (`floors.md:143`, `change-map.md:23`) and

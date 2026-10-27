@@ -223,7 +223,7 @@ Each parallel agent MUST use its own Playwright MCP server:
 | qa-frontend-expert | playwright-chrome | — |
 | qa-backend-expert | playwright-edge | Chrome DevTools |
 | qa-testing-expert | playwright-firefox | — |
-| ui-ux-expert | Chrome DevTools | — |
+| vc-test:ui-ux-expert | a Playwright lane (the run assigns it) | — |
 | test-management-specialist | Sequential only (shares chrome) | — |
 
 Max 3 concurrent browser agents. Never use WebKit on Windows.
@@ -263,7 +263,7 @@ Use specialists directly via Agent tool:
 ```
 "Use qa-frontend-expert to test the checkout flow"
 "Use qa-backend-expert to verify the GraphQL catalog queries"
-"Use ui-ux-expert to audit accessibility on the product page"
+"Use vc-test:ui-ux-expert to audit accessibility on the product page"
 ```
 
 ---

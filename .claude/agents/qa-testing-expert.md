@@ -290,6 +290,6 @@ Store reports in `reports/regression/` or `reports/bugs/`. Use **compact format*
 ### Scope Boundaries
 
 **You test**: Both storefront and admin — interactive test execution, design spec verification, console/network debugging, exploratory testing, cross-browser, evidence collection.
-**You don't test**: Storybook in isolation (`ui-ux-expert`), WCAG audits (`ui-ux-expert`), test plan creation (`test-management-specialist`).
+**You don't test**: Storybook in isolation or WCAG audits (`vc-test:ui-ux-expert`), test plan creation (`test-management-specialist`).
 **vs. qa-frontend-expert**: They own storefront strategy and regression. You execute with emphasis on debugging and design spec verification.
 **vs. qa-backend-expert**: They own API contracts and Admin CRUD. You execute Admin tests with cross-layer investigation.

@@ -141,7 +141,7 @@ never-parallelise table is there.
 |---|---|---|
 | Storefront UI, checkout, cart, search, mobile | `qa-frontend-expert` | `playwright-chrome` |
 | Admin SPA, APIs, modules, GraphQL, backend | `qa-backend-expert` | `playwright-edge` |
-| Storybook components, accessibility, design system, the `vs. DESIGN` spec diff | `ui-ux-expert` | Chrome DevTools MCP |
+| Storybook components, accessibility, design system, the `vs. DESIGN` spec diff | `vc-test:ui-ux-expert` | the Playwright lane 4a leaves free (none free ⇒ the next wave) |
 | Cross-browser, debugging | `qa-testing-expert` | `playwright-firefox` |
 | **Step-3x discovery (FULL)** — **invoke `/qa-exploratory ticket <ticket-key> <env>`**, do not hand-roll a session | that command's own | any free browser lane (all 3 click since 2026-09-08) |
 
@@ -150,14 +150,14 @@ never counts against the max-3 cap that governs the rows above it.
 
 **Minimum dispatch — and it is capped at THREE, which the old wording could exceed.** backend-only →
 `qa-backend-expert`; frontend-only → `qa-frontend-expert`; both → both in parallel; **`visual_surface: true`
-→ add `ui-ux-expert`** (the visual lane); P0 or critical-revenue → **add a second execution pass, not a
+→ add `vc-test:ui-ux-expert`** (the visual lane); P0 or critical-revenue → **add a second execution pass, not a
 fourth agent** (see below). **FAST → one execution agent** (the single owning specialist) **plus the visual
 lane when `visual_surface: true`** — the one documented exception, reasoned in
 [`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §5.
 
 **Two hard corrections to what this table used to say:**
 
-- **The cap is 3 and it binds.** `both → both` (2) + `ui-ux-expert` (3) + `qa-testing-expert` (4) exceeded
+- **The cap is 3 and it binds.** `both → both` (2) + `vc-test:ui-ux-expert` (3) + `qa-testing-expert` (4) exceeded
   `.claude/rules/agents.md`'s *"max 3 concurrent browser agents total (QA + BA combined)"*. A P0
   cross-layer UI ticket hits exactly that combination, so it was not a corner case. **Resolution: the
   P0 extra pass is SEQUENCED, never a fourth concurrent lane** — and since 2026-09-10 the sequence is a
