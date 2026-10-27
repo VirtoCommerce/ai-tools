@@ -51,7 +51,7 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
      every AC row `BLOCKED — needs a look` or `BLOCKED — needs a global window` (U65, U68) — each with its residual risk.
   4. **Suspicions** — each layer-0 suspicion with `confirmed (<id>)`, `refuted (<id>)` or `not checked`, naming
      the `C-n` or `SC-<n>.<m>` row that decided it.
-  5. **`## Cost`** at the end — the `RUN_COST` table as given (its `budget:` line is the run's share of its budget: say it in the line under the heading too, as information, never as a pass or a fail), then **per scenario** one line — S-n · class ·
+  5. **`## Cost`** at the end — the `RUN_COST` table as given (its `budget:` line is the run's share of its budget: repeat it in item 1's line — the line under the `verdict.md` heading — after the bug count and the sentence, as information, never as a pass or a fail), then **per scenario** one line — S-n · class ·
      its worst Result · significant bugs it found · the tokens and minutes of its `scenario:S-n` row; then the
      counts proposed / selected / run (U66). Read selected from the strategy's last-round `### Scenarios` table (its
      rows, after every swap, add and strike at approval), not from `scenarios.json`; proposed is `scenarios.json`'s

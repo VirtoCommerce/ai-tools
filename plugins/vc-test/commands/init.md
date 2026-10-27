@@ -32,8 +32,8 @@ vc-init owns `project-profile.json`; this command only fills vc-test's own block
      answer; otherwise omit it, so a re-run keeps what is stored.
    - *What may one run spend?* (spec U73) Show the numbers in force: the profile's stored `test.budget`, else
      `node <plugin>/lib/profile.mjs --budget-defaults`; for `qa`
-     and `dev`, input-equivalent tokens and wall minutes (defaults: half of the measured VCST-6398 run for `qa`, 40% of
-     that for `dev`). Enter keeps them; else ask the four numbers and an optional `windowTokens` (a usage-window size,
+     and `dev`, input-equivalent tokens and wall minutes (defaults: half of the measured VCST-6398 run for `qa`; for `dev`,
+     40% of `qa`'s tokens and U51's 90 minutes). Enter keeps them; else ask the four numbers and an optional `windowTokens` (a usage-window size,
      shown as a share beside the tokens, never a gate). Pass `--budget '{"qa":{"tokens":N,"minutes":N},"dev":{…},"windowTokens":N}'`
      in step 5 only when the operator changed one; otherwise omit it. A run reports its spend against it, never enforces it.
 5. **Plan.** `node <plugin>/lib/init-plan.mjs --list .vc-fix/vc-test/accounts.json --writable <envs|none>

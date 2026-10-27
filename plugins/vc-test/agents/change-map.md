@@ -49,6 +49,7 @@ Schema: `<PLUGIN>/lib/change-map.schema.json` (`schema: "vc-test/change-map/1"`)
 ## Your reply
 
 **Your last message is the change-map JSON object and nothing else** — no prose before or after it, no summary,
-and exactly one object. The orchestrator saves it from your transcript and runs the checker; a reply it refuses
-(not one JSON object, or a check that fails) comes back to you once with the errors, and you answer again with the
-corrected object only.
+and exactly one object. The orchestrator saves it from your transcript and runs the checker. A reply it refuses (not one
+JSON object, or a check that fails) is not sent back to you: the orchestrator dispatches a new `change-map` agent once,
+with the errors in its prompt. If those errors are in your prompt, you are that agent — answer with the corrected
+object only.

@@ -51,13 +51,17 @@ const str = (v) => (typeof v === "string" && v.trim() ? v : null);
 // VCST-6398 (a large ticket), session d992339e-e30b-494f-a5cd-3c360d8b812b, measured 2026-10-27 by
 // `run-cost.mjs --session-file`: 772,398,137 input-equivalent tokens; 184.8 min wall, counted from the invocation.
 export const BUDGET_BASELINE = Object.freeze({ tokens: 772398137, wallMin: 184.8 });
+// The developer command's wall clock is not derived from qa: U38's 20 : 50 is a ratio of token (window) shares, not of
+// time. Spec U51 gives the developer command "at most 1–1.5 h of wall clock"; the default is its upper bound.
+export const DEV_WALL_MIN_U51 = 90;
 const round1 = (n) => Math.round(n * 10) / 10;
 export const BUDGET_COMMANDS = Object.freeze(["qa", "dev"]);
 
-/** The defaults: qa = half the baseline (U34's target, Q5), dev = 40% of qa (U38's 20 : 50); no window share. */
+/** The defaults: qa = half the baseline (U34's target, Q5), dev tokens = 40% of qa (U38's 20 : 50), dev minutes = U51's
+ *  1.5 h; minutes are wall minutes; no window share. */
 export function defaultBudget() {
   const qa = { tokens: Math.round(0.5 * BUDGET_BASELINE.tokens), minutes: round1(0.5 * BUDGET_BASELINE.wallMin) };
-  const dev = { tokens: Math.round(0.4 * qa.tokens), minutes: round1(0.4 * qa.minutes) };
+  const dev = { tokens: Math.round(0.4 * qa.tokens), minutes: DEV_WALL_MIN_U51 };
   return { qa, dev };
 }
 

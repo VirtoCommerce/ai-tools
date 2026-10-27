@@ -8,9 +8,11 @@
 // (`sidechainNotCounted`). Without `--since` the session's first record is the start.
 // `--budget qa|dev` adds one line under the table: the spend against the profile's `test.budget` (U73) — input-equivalent
 // tokens, and WALL minutes (activeMin is summed over parallel agents, so it is not a clock); the window share too when
-// `windowTokens` is set. No profile or no `test.budget` ⇒ the defaults, named as such. It is reported, never a gate.
+// `windowTokens` is set. No profile or no `test.budget` ⇒ the defaults, named as such. It is reported, never a gate:
+// a malformed `test.budget` (or an unreadable profile) keeps the table and says `budget: not computed — <error>`.
 // CLI: node plugins/vc-test/lib/run-cost.mjs [--since <iso>] [--session-file <path>|--session <id>|latest (default: this session)] [--key <KEY>] [--out <file>] [--budget qa|dev]
-// Exit 0 table printed (JSON written with --out/--key); 1 usage error, a malformed test.budget, or no such session log.
+// Exit 0 table printed (JSON written with --out/--key), a budget that could not be computed included; 1 usage error
+// (a bad --budget value among them) or no such session log.
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
@@ -176,18 +178,22 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   if (since != null && !Number.isFinite(Date.parse(since))) { console.error(USAGE); process.exit(1); }
   const budgetArg = argOf(process.argv, "budget");
   if (process.argv.includes("--budget") && !BUDGET_COMMANDS.includes(budgetArg)) { console.error(USAGE); process.exit(1); }
-  let block;
+  let block, budgetError = null;
   if (budgetArg) {
     try { block = testBlock(loadProfile()); }
-    catch (e) { if (!(e instanceof ProfileError && e.code === 2)) { console.error(e.message); process.exit(1); } block = testBlock({}); } // no profile ⇒ the defaults
-    if (block.budgetError) { console.error(block.budgetError); process.exit(1); }
+    catch (e) { if (e instanceof ProfileError && e.code === 2) block = testBlock({}); else budgetError = e.message; } // no profile ⇒ the defaults
+    budgetError ??= block?.budgetError ?? null;
   }
   let session;
   try { session = readSession(argOf(process.argv, "session-file") ?? sessionFile(argOf(process.argv, "session"))); }
   catch (e) { console.error(e.message); process.exit(1); }
   const measured = cost({ ...session, since });
-  const line = budgetArg ? budgetLine({ total: measured.total, budget: block.budget[budgetArg], windowTokens: block.budget.windowTokens }) : null;
-  const result = { session: session.id, since: since ?? measured.start, ...measured, ...(line ? { budget: { command: budgetArg, ...block.budget[budgetArg], windowTokens: block.budget.windowTokens ?? null, line } } : {}) };
+  // The budget is reported, never a gate: one it cannot compute is named under the table, which is still printed.
+  const line = !budgetArg ? null : budgetError ? `budget: not computed — ${budgetError}`
+    : budgetLine({ total: measured.total, budget: block.budget[budgetArg], windowTokens: block.budget.windowTokens });
+  const budget = !budgetArg ? null : budgetError ? { command: budgetArg, error: budgetError, line }
+    : { command: budgetArg, ...block.budget[budgetArg], windowTokens: block.budget.windowTokens ?? null, line };
+  const result = { session: session.id, since: since ?? measured.start, ...measured, ...(budget ? { budget } : {}) };
   const key = argOf(process.argv, "key");
   const out = argOf(process.argv, "out") ?? (key ? join(workDir(key), "run-cost.json") : null);
   if (out) writeFileSync(out, JSON.stringify(result, null, 2) + "\n");

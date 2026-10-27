@@ -42,15 +42,14 @@ Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3, U60–
    `--bundle <BUNDLE>`; exit 2 ⇒ the same STOP; `refresh` (a verdict comment is an earlier round) ⇒ STOP as a refresh
    whose `recordRound` is not ROUND − 1.
 4. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
-   `-firefox`, `-edge`, `chrome-devtools` you have.
+   `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
 5. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>` or
    listed in `capabilities.json` `knowledgeStore.domainMaps`; none checks out ⇒ no slug (F2 fires on doubt).
 
 ## 0b — Round N ≥ 2: refresh (U15, `rounds.md` §Round N in vc-test)
 
 No `/vc-test:ticket-context`, no change map, no scenarios agent, no human point 1. `<ctx>` is
-`<plugin>/skills/ticket-context`. `[--change-map <WORK>/change-map.json]` below is passed only when that file exists
-(another env's run has none). **Rebuild**: `node <plugin>/lib/rounds.mjs bundle --key <TICKET> --base <BASE> --delta
+`<plugin>/skills/ticket-context`. `[--change-map <WORK>/change-map.json]` below is passed only when that file exists. **Rebuild**: `node <plugin>/lib/rounds.mjs bundle --key <TICKET> --base <BASE> --delta
 <DELTA> --prepare <DELTA_PREPARE>` → prints `BUNDLE`, round N's text, ACs and PRs (the TICKET and CHANGE outputs and
 `deploy.json` beside `DELTA_PREPARE`, when they exist), for the strategy and every later step (5, 7, 8). With no
 analyst output it reuses a `<WORK>/bundle.json` stamped for round N.
@@ -79,9 +78,9 @@ STOPs are this run's; on a host-governed project it reads through the host's ser
 
 ## 2 — Change map, then scenarios
 
-1. Dispatch `change-map` (`vc-test:change-map`) with `BUNDLE`, `MIND_MAP` / `DATA_MODEL` of the slug if they exist. It has no write tool: its reply is the map. Then `node <plugin>/lib/check-change-map.mjs
-   --agent <its agent id> --out <WORK>/change-map.json --bundle <BUNDLE>`; exit 2 ⇒ SendMessage it the printed
-   errors once, rerun, then STOP. **Show the suspicions**: one line each, file and line (U41).
+1. Dispatch `change-map` (`vc-test:change-map`) with `BUNDLE`, `MIND_MAP` / `DATA_MODEL` of the slug, if any. Save its reply, the map: `node <plugin>/lib/check-change-map.mjs
+   --agent <its agent id> --out <WORK>/change-map.json --bundle <BUNDLE>`; exit 1 or 2 ⇒ dispatch it once more (a new
+   agent) with the printed errors, save from its id; fails again ⇒ STOP. **Show the suspicions**: one line each, file and line (U41).
 2. Dispatch `scenarios` (`opus`) with `BUNDLE`, `PREPARE`, `CHANGE_MAP`, `MIND_MAP`, `DATA_MODEL`, `OUT =
    <WORK>/candidates.json`, `KEY`. No `<WORK>/scenarios.json` ⇒ back once, then STOP. Delete `<WORK>/prepare/`.
 
@@ -134,7 +133,7 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 
 1. The `qa-triage-results` skill, `ticket <TICKET> --min-severity P2` — only Medium+ is reproduced live (U29).
    `unresulted[]` rows ⇒ back to their agent once, triage again; still some ⇒ STOP, list them.
-2. **Medium+** listed `needs-review` ⇒ a `[vc-test:investigate]` dispatch each,
+2. **Medium+** listed `needs-review` ⇒ an `investigate` dispatch (`sonnet`) each,
    invoking `vc-fix:qa-investigate`, ≤ 3 at a time — never for a `PB-n` row: a NOT FIXED prior bug is already filed (P6).
 
 ## 7 — Verdict
