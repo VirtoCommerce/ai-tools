@@ -46,7 +46,7 @@ the oracle grounding it calls mandatory. Write the thin form below instead of it
 - **An item on a limit, counter, cache, lockout or session state gets a second row with technique `SCALE`**:
   the same check with requests spread over fresh connections so they can reach more than one backend instance
   (spec U59).
-- Data follows `.claude/rules/test-data.md`: no literal values; a state the environment can take away is
+- Data follows `<PLUGIN>/knowledge/test-data.md`: no literal values; a state the environment can take away is
   created in the case.
 - Leave Result and Evidence empty.
 

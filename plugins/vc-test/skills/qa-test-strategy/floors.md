@@ -3,9 +3,9 @@
 **Floors are deterministic.** Each is computed by `lib/floors.mjs` from the `/vc-test:ticket-context` bundle; this table is what the
 script implements and what a reviewer checks it against. F1's register half (a High/Critical risk) is checked by
 `lib/check-strategy.mjs`, because the register is written after the floors run. When a floor fires it puts an
-artifact or a level into the strategy that the strategy may add to but never go under. They replace the
-EFFORT axis of [`ticket-routing.md`](../../../../.claude/knowledge/execution/ticket-routing.md)
-§5–§5d for this flow: depth comes from these signals and the risk register, never from the
+artifact or a level into the strategy that the strategy may add to but never go under. They replace a ticket
+router's EFFORT axis for this flow — vc-test routes by its own [`lib/route.mjs`](../../lib/route.mjs) and the profile's
+`test.routing`: depth comes from these signals and the risk register, never from the
 ticket type. Name every floor in the strategy as fired or not, with its signal.
 
 **No floor requires the test model itself.** It runs if and only if a risk has technique `MODEL`; the floors
@@ -16,13 +16,13 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 | # | Signal (from the bundle) | Floor |
 |---|---|---|
 | F1 | any **High/Critical** risk in the register, or the ticket is **P0/P1** (D8). Layer and domain counts do **not** fire it — they raise a risk's L×I | exploratory; a High/Critical risk on a `{HYPOTHESIS}` oracle takes technique `MODEL` (M1) |
-| F2 | a Story whose surface purpose is `UNDECLARED` in the domain map §1 ([`domain-map.md`](../../../../.claude/knowledge/domain/domain-map.md)) | a purpose risk with technique `MODEL` whose Source carries `floor:F2`, + exploratory, whatever else holds |
+| F2 | a Story whose surface purpose is `UNDECLARED` in the domain map §1 ([`domain-map.md`](../../knowledge/domain-map.md)) | a purpose risk with technique `MODEL` whose Source carries `floor:F2`, + exploratory, whatever else holds |
 | F3 | a rendering file in the diff ([`visual-axis.md`](../../../../.claude/skills/qa-test/visual-axis.md) §1 source 1) — a lower bound, see below | visual lane |
 | F4 | a revenue-critical flow is touched (cart, checkout, payment, pricing, orders) | no risk on it below Medium |
-| F5 | the bundle's `known.cases_at_risk` is non-empty (`/vc-test:ticket-context` block 4 ran `regression:select` over the changed files; the strategy adds `npm run tc:scope -- --domain <slug> --observable <each observable the diff or an AC moves>` where path tokens miss — [`regression-selection.md`](../../../../.claude/knowledge/execution/regression-selection.md)) | coverage triage + a regression run over those cases, **after the staleness check below**. Under vc-test (`--change-map`) the requirement is the list, not the run: every suite at risk, their residual risk and `/qa-regression <suites>` in Out of scope, the row `SKIP` (gate 6h, vc-test U7); fired on doubt, Out of scope names the failed lookup instead of the suites |
+| F5 | the bundle's `known.cases_at_risk` is non-empty (`/vc-test:ticket-context` block 4 ran `regression:select` over the changed files; the strategy adds `npm run tc:scope -- --domain <slug> --observable <each observable the diff or an AC moves>` where path tokens miss (in this repository: `/qa-test-fast`'s `.claude/knowledge/execution/regression-selection.md`)) | coverage triage + a regression run over those cases, **after the staleness check below**. Under vc-test (`--change-map`) the requirement is the list, not the run: every suite at risk, their residual risk and `/qa-regression <suites>` in Out of scope, the row `SKIP` (gate 6h, vc-test U7); fired on doubt, Out of scope names the failed lookup instead of the suites |
 | F6 | a `NOT DEPLOYED:` line in the bundle's `blockers[]` — a counted PR whose build the stand does not carry. A `DEPLOYMENT UNKNOWN:` line (no live source for that layer, or not checked) does **not** fire it | **BLOCKED** before any browser opens. `UNKNOWN` is not blocked: the run proceeds and the verdict says "deployment unverified", quoting the line |
 | F7 | `Review task` — no ACs | oracles from the diff only; F5 on by default (the strategy's job: the script fires F7 but does not touch F5) |
-| F8 | the change IS the design system or the token layer (`ui-kit`, [`ui-kit-class.md`](../../../../.claude/skills/qa-test/ui-kit-class.md)) | F3 + token audit + a risk whose technique names `PIXEL` when the change modifies an existing ui-kit file (§VISUAL); fails closed |
+| F8 | the change IS the design system or the token layer (`ui-kit`, [`ui-kit-class.md`](../../knowledge/ui-kit-class.md)) | F3 + token audit + a risk whose technique names `PIXEL` when the change modifies an existing ui-kit file (§VISUAL); fails closed |
 | F9 | any doubt about a floor's signal | the floor applies (every floor except F8, which fails closed; F4 and F6 read only what was read) |
 | F10 | the change surface names org context: an `organizationId`-style argument, `xapi:my_organization:*`, an org route or list, `/graphql/sales-rep` or a `sales-rep:*` permission, `loginOnBehalf` / `CanImpersonate` / `/account/impersonate` ([`2026-10-09-qa-test-model-redesign.md`](../../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md) §5) | an org-context risk with technique `MODEL` whose Source carries `floor:F10` |
 | F11 | the PR adds or changes a setting (a settings entry names its key — see below), a hidden-behaviour row answers `yes` for `feature-flags` / `default-values`, or the diff reads one (`ModuleConstants.Settings`, `settingsManager`, `store.settings`, `$cfg.`) (§5a) | a configuration risk with technique `MODEL` whose Source carries `floor:F11`, + the stand's values in Inputs (`npm run store:caps -- --settings` / `--store` for public settings, the admin REST API for the rest — SKILL.md step 2) |
@@ -95,7 +95,7 @@ not have — a change that declares no visual effect or moves shared UI), `DESIG
 - **A PR closed without merge is not change surface** — no floor reads it, and the gate asks for none of its
   hotspots (check-bundle counts it out the same way).
 - **F1's P0/P1 names** come from `project-profile.json` `tracker.p0p1Priorities`; without it, Highest/High/P0/P1/Blocker/Critical.
-- **F8 fails closed:** an unread diff never fires it — it needs an affirmative ui-kit path in what was read ([`ticket-routing.md`](../../../../.claude/knowledge/execution/ticket-routing.md) §5c).
+- **F8 fails closed:** an unread diff never fires it — it needs an affirmative ui-kit path in what was read ([`lib/floors.mjs`](lib/floors.mjs) `UI_KIT`).
 - **F3 is a lower bound.** It fires on a rendering file in the diff
   ([`visual-axis.md`](../../../../.claude/skills/qa-test/visual-axis.md) §1 source 1) and never on a bare storefront/admin-spa
   layer, because eligibility-as-trigger pinned that axis to true (visual-axis.md §1). The strategy adds the visual
@@ -114,7 +114,7 @@ known broken before VCST-5884's round 3. So the selected cases are checked first
 
 1. `npm run tc:scope` over the change — rows it disposes `REPAIR` are stale. A `RE-BASE` row is **not**:
    its old assertion is exactly what the change must be run against, so it stays in the run and its
-   result is settled at triage ([`coverage-triage.md`](../../../../.claude/skills/qa-test/coverage-triage.md) §3a).
+   result is settled at triage (in this repository: `/qa-test-fast`'s `.claude/skills/qa-test/coverage-triage.md` §3a).
 2. `npm run suites:executability:check` — rows it marks non-executable.
 3. A field, operation, route or selector the diff **renames or removes**, grepped in the selected rows.
 4. From round 2 on: the previous round's triage `test-defect` ids.

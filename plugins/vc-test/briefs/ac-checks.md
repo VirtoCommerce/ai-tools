@@ -21,7 +21,7 @@ Dispatch description: `[vc-test:ac-checks] <KEY>`.
 ## How
 
 - Calls go through the repository's own means: GraphQL through the runner and fixtures
-  `.claude/knowledge/execution/live-discovery.md` describes, REST through `BACK_URL` with the platform's API.
+  `<plugin>/knowledge/live-discovery.md` describes, REST through `BACK_URL` with the platform's API.
   URLs and accounts come from the env by name (`process.env` after importing `config.js`); never a literal, and
   never a password in a file, a brief or your output.
 - **Evidence** for a row is the command you ran and a short excerpt of the response that decides it (status,
