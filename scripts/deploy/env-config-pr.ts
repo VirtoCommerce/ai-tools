@@ -199,7 +199,8 @@ async function main(): Promise<number> {
     if (ch.kind === "set") {
       const leaf = ch.req.name.split(".").pop()!;
       // The last occurrence: with a duplicated key the parser (uniqueKeys: false) and the deploy tooling read the last one.
-      const i = lines.slice(sec.start, sec.end).findLastIndex((l) => indentOf(l) === sec.childIndent && l.trim().startsWith(`${leaf}:`));
+      let i = -1;
+      for (let k = sec.end - 1; k >= sec.start && i < 0; k--) if (indentOf(lines[k]) === sec.childIndent && lines[k].trim().startsWith(`${leaf}:`)) i = k - sec.start;
       if (i >= 0) { edits.push({ at: sec.start + i, remove: 1, add: [`${" ".repeat(indentOf(lines[sec.start + i]))}${ch.lines[0]}`] }); continue; }
     }
     // Next to its siblings where they exist (scopes after the last scope), else at the end of the section.
