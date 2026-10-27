@@ -25,7 +25,9 @@ Dispatch description: `[vc-test:checklist] <KEY>`.
 ## How
 
 Load the `qa-checklist` skill and use its Mode 5 (`--from-model --strategy <STRATEGY>`; this run has no model)
-for the Ref, Data and oracle rules — for AC rows only. Write the thin form below instead of its full table:
+for the Ref, Data and oracle rules — for AC rows only. You have no shell: where the skill runs a script
+(`bl:extract`, `bl:lint`, `ecl:lint`), read the oracle files it would read with Grep and Read instead, and never skip
+the oracle grounding it calls mandatory. Write the thin form below instead of its full table:
 
 | # | Ref | Item | Proof | Data | Result | Evidence |
 |---|---|---|---|---|---|---|

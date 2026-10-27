@@ -19,7 +19,9 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
 - `STRATEGY` — `test-strategy.md`; `CHECKLIST` — `testing-checklist.md` with its results (the `C-n` AC rows, the
   scenarios' `SC-<n>.<m>` rows and, when `ROUND ≥ 2`, each prior bug's `PB-n` row); `CHANGE_MAP` — `change-map.json`; `SCENARIOS` — `<WORK>/scenarios.json`
   (`selected`, `notSelected`, `rejected`); `RUN_PLAN` — `run-plan.json` (its `notRun`); `TRIAGE` —
-  `triage-report.md` and the `evidence-*/` investigation packages; `design-report.md` when the visual lane ran;
+  `triage-report.md`; `PACKAGES` — `<WORK>/packages.md`, one line per investigated row, `<row #> · <package path> ·
+  <REPRODUCED|NOT_REPRODUCED>` (you cannot list folders: a package not on it has no path, and its bug's `package` is
+  `null`, never a guess); `design-report.md` when the visual lane ran;
   `RUN_COST` — the Markdown table `run-cost.mjs` printed; `TRACE` — `<WORK>/trace.json`,
   `trace.mjs`'s output (`unresulted`, `capped`, `unknownRefs`, `acsWithoutRow`); `WRITE_ZONES` —
   `<WORK>/write-zones.json` (`outside`, `gitScope`, `reason`); `ROUND` — the round number
@@ -63,7 +65,7 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
 - **`{RUN_DIR}/verdict.json`**, beside `verdict.md`, shaped by `<PLUGIN>/lib/verdict.schema.json` and read by
   `rounds.mjs close` — prose is never parsed. One entry per **Medium-or-worse** bug of `## Bugs` (a Low is a `## Noticed`
   line, never an entry): `id` `B-<n>`, `severity`, `scope` (`in` or `out`, from the in-scope / outside count of the line
-  under the heading, spec B16), `title`, the `rows` that showed it, `package` (its investigation package, POSIX path
+  under the heading, spec B16), `title`, the `rows` that showed it, `package` (the `PACKAGES` path of a row that showed it, as a POSIX path
   relative to the output root) and `spec` (the `.spec` that failed, when the row has one), else `null`. `verdict` is the
   verdict word `verdict.md` carries; `round` is `ROUND`. Write a new `verdict.json` every time, never edit one you find:
   `close` refuses a file whose `round` is not the round it closes.

@@ -79,8 +79,9 @@ STOPs are this run's; on a host-governed project it reads through the host's ser
 ## 2 — Change map, then scenarios
 
 1. Dispatch `change-map` (`vc-test:change-map`) with `BUNDLE`, `MIND_MAP` / `DATA_MODEL` of the slug, if any. Save its reply, the map: `node <plugin>/lib/check-change-map.mjs
-   --agent <its agent id> --out <WORK>/change-map.json --bundle <BUNDLE>`; exit 1 or 2 ⇒ dispatch it once more (a new
-   agent) with the printed errors, save from its id; fails again ⇒ STOP. **Show the suspicions**: one line each, file and line (U41).
+   --agent <its agent id> --out <WORK>/change-map.json --bundle <BUNDLE>`; exit 2 ⇒ dispatch it once more (a new
+   agent) with the printed errors, save from its id; fails again ⇒ STOP. Exit 1 is the call, not the map (an id with
+   no transcript, an unreadable bundle): fix the call once, else STOP — never a new agent. **Show the suspicions**: one line each, file and line (U41).
 2. Dispatch `scenarios` (`opus`) with `BUNDLE`, `PREPARE`, `CHANGE_MAP`, `MIND_MAP`, `DATA_MODEL`, `OUT =
    <WORK>/candidates.json`, `KEY`. No `<WORK>/scenarios.json` ⇒ back once, then STOP. Delete `<WORK>/prepare/`.
 
@@ -135,6 +136,9 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
    `unresulted[]` rows ⇒ back to their agent once, triage again; still some ⇒ STOP, list them.
 2. **Medium+** listed `needs-review` ⇒ an `investigate` dispatch (`sonnet`) each,
    invoking `vc-fix:qa-investigate`, ≤ 3 at a time — never for a `PB-n` row: a NOT FIXED prior bug is already filed (P6).
+   Each runs ahead of `/vc-fix:qa-bug` and returns its package path: append `<row #> · <package path> ·
+   <REPRODUCED|NOT_REPRODUCED>` to `PACKAGES` = `<WORK>/packages.md`, which you create empty before this step even
+   when nothing is investigated.
 
 ## 7 — Verdict
 
@@ -146,7 +150,7 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
    <WORK>/write-zones.json` → `WRITE_ZONES`. Exit 2 ⇒ BLOCKED, the verdict names each file; 3 ⇒ "not checked"; any other exit ⇒ write
    `{"outside":[],"gitScope":false,"reason":"<its registryErrors, or its first stderr line>"}` there instead.
 3. `node <plugin>/lib/run-cost.mjs --since <start> --budget qa --key <TICKET>` → keep its output, `budget:` line too.
-4. Dispatch `verdict` (`vc-test:verdict-writer`) with its paths, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
+4. Dispatch `verdict` (`vc-test:verdict-writer`) with its paths, `PACKAGES`, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
    and, round ≥ 2, `PRIOR_BUGS` = `DELTA`.
 
 ## 8 — Human point 2

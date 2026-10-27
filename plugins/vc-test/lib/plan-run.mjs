@@ -18,12 +18,13 @@ const INSTANCES = {
 };
 
 // A `run` block names a plugin agent (`vc-test:<name>`, whose prompt and model live in agents/<name>.md) OR a brief a
-// general agent reads — never both, and a brief must exist (a stale checkout can carry an old registry entry). A plugin
-// agent's model is its frontmatter's: a `run.model` beside it would be a second place to declare it (spec §8).
+// general agent reads — never both, and a brief or a plugin agent must exist (a stale checkout can carry an old registry
+// entry). A plugin agent's model is its frontmatter's: a `run.model` beside it would be a second place to declare it (spec §8).
 function runBlockErrors(entry, root) {
   const { agent, brief, model } = entry.run ?? {};
   if (agent && PLUGIN_AGENT.test(agent) && brief) return [`${entry.id}: run names the plugin agent ${agent} and a brief (${brief}) — an agent carries its own prompt`];
   if (agent && PLUGIN_AGENT.test(agent) && model !== undefined) return [`${entry.id}: run names the plugin agent ${agent} and run.model ${model} — the model is in the agent's frontmatter`];
+  if (agent && PLUGIN_AGENT.test(agent) && !existsSync(join(root, "agents", `${agent.replace(PLUGIN_AGENT, "")}.md`))) return [`${entry.id}: run names the plugin agent ${agent}, but agents/${agent.replace(PLUGIN_AGENT, "")}.md does not exist under ${root}`];
   if (brief && !existsSync(join(root, brief))) return [`${entry.id}: run.brief ${brief} does not exist under ${root}`];
   return [];
 }
