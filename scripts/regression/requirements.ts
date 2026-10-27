@@ -65,7 +65,9 @@ export interface RequirementsFile {
 }
 export interface SuiteFile { id: string; file: string }
 
-const PERSONA = /\[PRE:(?:SIGNIN_AS|SWITCH_ORG|VERIFY_AUTH):([A-Z][A-Z0-9_]+)\]/g;
+// SWITCH_ORG is not here: its alias names an ORGANISATION (`@td(<alias>.name)`, test-execution-preflight.md §SWITCH_ORG),
+// and checking it as an account reports a false "unknown persona" that skips the cases.
+const PERSONA = /\[PRE:(?:SIGNIN_AS|VERIFY_AUTH):([A-Z][A-Z0-9_]+)\]/g;
 const TD_REF = /@td\(([A-Z][A-Z0-9_]+(?:\.\w+)+)\)/g;
 const VAR = /^\{\{([A-Z0-9_]+)\}\}$/;
 
@@ -162,7 +164,11 @@ export function fixtureChecks(root: string, env: string, refs: Map<string, Set<s
 
 interface AliasEntry { email_env?: string; password_env?: string; [k: string]: unknown }
 
-/** The platform account behind an email: by user name first, then by search (storefront user names often differ from the email). */
+/**
+ * The platform account behind an email: by user name first, then by search. The search matches the user NAME only
+ * (vc-platform UserSearchService: SearchPhrase is Keyword, filtered on UserName), so an account whose user name is not
+ * its email is not found either way — the callers grade that miss UNKNOWN, never "no such account".
+ */
 async function lookupAccount(c: EnvCoords, token: AdminAuth, email: string): Promise<{ user: any | null; status: number }> {
   const h = { ...token.headers, "Content-Type": "application/json" };
   try {
@@ -237,6 +243,9 @@ export async function personaChecks(root: string, env: string, c: EnvCoords, tok
     }
     if (!token || !c.backUrl) { out.push({ id: `persona:${alias}`, status: "UNKNOWN", found: `${email}: account state not checked (no admin token) — ${where}`, who: "you", do: `fix the admin credentials for ${env}`, diagnose: [] }); continue; }
     const { user: u, status } = await lookupAccount(c, token, email);
+    // Not found by user name or by the user-name search: the account may still exist under another user name. UNKNOWN —
+    // a WARN here would skip every case of the persona on a guess.
+    if (!u && status === 200) { out.push({ id: `persona:${alias}`, status: "UNKNOWN", found: `${email}: no account with this user name — its user name may differ from the email; not checked further — ${where}`, who: "you", do: `check in Admin › Security › Users that ${email} exists on ${env}; if it does not, provision it (/qa-seed-data users) or point ${alias} at an account the env has`, diagnose: [] }); continue; }
     // A failed read (401/5xx/network) says nothing about the account: UNKNOWN, so no case is skipped on it.
     if (!u && status !== 200) { out.push({ id: `persona:${alias}`, status: "UNKNOWN", found: `${email}: account lookup failed (HTTP ${status}) — ${where}`, who: "me", do: `re-run the pre-flight; if it repeats, check the admin credentials for ${env}`, diagnose: [] }); continue; }
     const problems = accountProblems(u, status);
@@ -260,6 +269,7 @@ export async function laneAccountChecks(root: string, env: string, c: EnvCoords,
   const rows = parseCsv(readFileSync(p, "utf-8").replace(/^﻿/, ""), { columns: true, skip_empty_lines: true, relax_column_count: true }) as Record<string, string>[];
   const out: Check[] = [];
   let usable = 0, checked = 0;
+  const unsure: string[] = [];
   for (const r of rows.filter((x) => /^[0-9]+$/.test(x.slot) && Number(x.slot) <= slots)) {
     const bad: string[] = [];
     for (const [kind, email] of [["personal", r.personal_email], ["b2b", r.b2b_email]] as const) {
@@ -267,6 +277,7 @@ export async function laneAccountChecks(root: string, env: string, c: EnvCoords,
       if (!token || !c.backUrl) return [{ id: "lanes:accounts", status: "UNKNOWN", found: "lane accounts not checked (no admin token)", who: "you", do: `fix the admin credentials for ${env}`, diagnose: [] }];
       const { user, status } = await lookupAccount(c, token, email);
       if (!user && status !== 200) return [{ id: "lanes:accounts", status: "UNKNOWN", found: `lane accounts not checked: lookup of ${email} failed (HTTP ${status})`, who: "me", do: `re-run the pre-flight; if it repeats, check the admin credentials for ${env}`, diagnose: [] }];
+      if (!user) { unsure.push(`${kind} ${email}`); continue; }
       const pr = accountProblems(user, status);
       if (pr.length) bad.push(`${kind} ${email}: ${pr.join("; ")}`);
     }
@@ -276,13 +287,14 @@ export async function laneAccountChecks(root: string, env: string, c: EnvCoords,
     else usable++;
   }
   if (checked && !usable) out.push({ id: "lane-accounts", status: "WARN", found: `no lane slot account is usable on ${env}: every lane falls back to the config.js personas, so parallel lanes share accounts`, who: "me, with OK", do: `seed the slot accounts on ${env} (npm run seed:company-users) before running more than one lane`, diagnose: [] });
-  if (checked && usable === checked) out.push({ id: "lane-accounts", status: "OK", found: `${checked} lane slot(s) usable on ${env}`, who: null, do: null, diagnose: [] });
+  if (unsure.length) out.push({ id: "lane-accounts:unresolved", status: "UNKNOWN", found: `not found by user name on ${env}: ${unsure.join(", ")} — the user name may differ from the email`, who: "you", do: `check those accounts in Admin › Security › Users on ${env}`, diagnose: [] });
+  if (checked && usable === checked && !unsure.length) out.push({ id: "lane-accounts", status: "OK", found: `${checked} lane slot(s) usable on ${env}`, who: null, do: null, diagnose: [] });
   return out;
 }
 
 /** The env's block of vc-deploy-dev `infra/environments.yml`, flattened to dotted keys. */
 async function readDeployYml(c: EnvCoords): Promise<Map<string, string> | { unknown: string }> {
-  setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN);
+  setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
   const j = await ghJson(`https://api.github.com/repos/${c.deployOwner}/${c.deployRepo}/contents/infra/environments.yml?ref=${encodeURIComponent(c.branch)}`).catch(() => null);
   if (!j?.content) return { unknown: `infra/environments.yml not readable at ${c.deployRepo}@${c.branch}` };
   let doc: unknown;
@@ -355,9 +367,7 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
     } else if (r.kind === "paymentMethod") {
       if (!payments) unknown = `payment methods of ${storeId} not readable`;
       else { const m = (payments.results ?? []).find((x: any) => x.code === r.name); present = !!m; value = m ? m.isActive : undefined; where = `store ${storeId} payment methods (isActive)`; }
-    } else if (yml && "unknown" in yml) {
-      unknown = yml.unknown;
-    } else if (yml) {
+    } else if (yml instanceof Map) {
       where = `vc-deploy-dev ${c.branch} infra/environments.yml`;
       if (r.kind === "uploadScope") {
         const scopes = [...yml].filter(([k]) => /^platform\.config\.FileUpload__Scopes__\d+__Scope$/.test(k)).map(([, v]) => v);
@@ -366,9 +376,12 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
         const hits = [...yml].filter(([k]) => k.startsWith(r.name)).map(([, v]) => v);
         present = hits.length > 0; value = hits.join(", ");
       } else { present = yml.has(r.name); value = yml.get(r.name); }
+    } else if (yml) {
+      unknown = yml.unknown;
     }
     const cases = g.cases.size ? ` — ${count(g.cases)}: ${bySuite(g.cases)}` : ` — suites ${[...g.suites].join(", ")}`;
-    const id = `req:${r.kind}:${r.name}`;
+    const dup = [...groups.values()].filter((x) => x.r.kind === r.kind && x.r.name === r.name).length > 1;
+    const id = `req:${r.kind}:${r.name}${dup ? `:${want(r)}` : ""}`;
     if (unknown) { out.push({ id, status: "UNKNOWN", found: `${r.name}: not checked (${unknown})${cases}`, who: "you", do: "make it readable (admin credentials / GIT_TOKEN) and re-run", diagnose: [] }); continue; }
     const ok = r.kind === "uploadScope" ? present : meets(r, value, present);
     const shown = r.kind === "uploadScope" ? `scopes: ${value}` : present ? `${r.name} = ${JSON.stringify(value)}` : `${r.name} not set`;
@@ -395,7 +408,8 @@ async function adminAuth(c: EnvCoords): Promise<AdminAuth | null> {
     const p = await probeAdminToken(c);
     if (p.token?.via === "api-key") {
       const r = await fetch(`${c.backUrl}/api/platform/modules`, { headers: p.token.headers }).catch(() => null);
-      if (r && r.status !== 401 && r.status !== 403) return p.token;
+      // No answer is not a refusal: keep the key (its reads then come back UNKNOWN) rather than spend a password sign-in.
+      if (!r || (r.status !== 401 && r.status !== 403)) return p.token;
       return (await probeAdminToken({ ...c, apiKey: undefined })).token;
     }
     if (p.token) return p.token;

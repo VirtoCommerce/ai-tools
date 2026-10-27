@@ -56,10 +56,7 @@
     "050n": [
       { "kind": "deployConfig", "name": "platform.config.VirtoCommerce__StoreAssets__KnownAssetHosts__", "prefix": true, "cases": ["SAU-GQL-007"], "why": "asset URLs already on a known host are not rewritten (VCST-5089)" }
     ],
-    "072": [
-      { "kind": "deployConfig", "name": "storefront.headers.Cross-Origin-Embedder-Policy", "notEquals": "require-corp", "cases": ["CFG-MOB-001"], "why": "require-corp blocks configurator option images from another origin" }
-    ],
-    "078": [
+    "078d": [
       { "kind": "storeSetting", "name": "Sitemap.ExportToAssets.EnableExportToAssetsJob", "equals": true, "cases": ["BSM-058"], "why": "/sitemap.xml is produced by the export-to-assets job" }
     ],
     "088": [

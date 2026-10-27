@@ -85,8 +85,8 @@ function section(lines: string[], b: Block, path: string[]): { header: number; s
   return { header, start: from, end: to, childIndent: child ? indentOf(child) : parentIndent + 2 };
 }
 
-async function readYml(branch: string): Promise<{ text: string; sha: string } | null> {
-  const j = await ghJson(`https://api.github.com/repos/VirtoCommerce/vc-deploy-dev/contents/${FILE}?ref=${encodeURIComponent(branch)}`).catch(() => null);
+async function readYml(c: { deployOwner: string; deployRepo: string }, branch: string): Promise<{ text: string; sha: string } | null> {
+  const j = await ghJson(`https://api.github.com/repos/${c.deployOwner}/${c.deployRepo}/contents/${FILE}?ref=${encodeURIComponent(branch)}`).catch(() => null);
   return j?.content ? { text: Buffer.from(j.content, "base64").toString("utf8"), sha: j.sha } : null;
 }
 /** Flattened `key → value` of one env block (dotted paths, as the pre-flight reads them). */
@@ -108,12 +108,12 @@ interface Change { req: Requirement; suites: string[]; cases: string[]; kind: "a
 async function main(): Promise<number> {
   const a = args();
   loadEnvFiles(a.env);
-  setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN);
+  setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
   const c = resolveEnvCoords(a.env);
-  const target = await readYml(c.branch);
-  if (!target) { console.error(`env-config-pr: ${FILE} not readable at vc-deploy-dev@${c.branch}`); return 2; }
+  const target = await readYml(c, c.branch);
+  if (!target) { console.error(`env-config-pr: ${FILE} not readable at ${c.deployRepo}@${c.branch}`); return 2; }
   const refs: { name: string; text: string; flat: Map<string, string> }[] = [];
-  for (const r of a.reference) { const y = await readYml(r); if (y) refs.push({ name: r, text: y.text, flat: flat(y.text, r) }); }
+  for (const r of a.reference) { const y = await readYml(c, r); if (y) refs.push({ name: r, text: y.text, flat: flat(y.text, r) }); }
 
   // Unmet deploy requirements of the selected suites, grouped so one change serves every suite that needs it.
   const file = loadRequirements(REPO_ROOT);
@@ -168,7 +168,8 @@ async function main(): Promise<number> {
     const [root, ...rest] = r.name.split(".");
     if (r.prefix) {
       const own = tFlat.get("platform.config.Assets__FileSystem__PublicUrl");
-      const host = own ? new URL(own).host : null;
+      let host: string | null = null;
+      try { host = own ? new URL(own).host : null; } catch { host = null; }
       if (!host) { missing.push(`${r.name}…: the target has no Assets__FileSystem__PublicUrl to take its own host from`); continue; }
       const key = `${rest.slice(1).join(".")}0`;
       changes.push({ ...base, kind: "add", note: `${key} = the env's own asset host (${host}), as the reference envs list theirs`, lines: [`${key}: ${host}`] });
@@ -197,7 +198,8 @@ async function main(): Promise<number> {
     const pad = " ".repeat(sec.childIndent);
     if (ch.kind === "set") {
       const leaf = ch.req.name.split(".").pop()!;
-      const i = lines.slice(sec.start, sec.end).findIndex((l) => l.trim().startsWith(`${leaf}:`));
+      // The last occurrence: with a duplicated key the parser (uniqueKeys: false) and the deploy tooling read the last one.
+      const i = lines.slice(sec.start, sec.end).findLastIndex((l) => indentOf(l) === sec.childIndent && l.trim().startsWith(`${leaf}:`));
       if (i >= 0) { edits.push({ at: sec.start + i, remove: 1, add: [`${" ".repeat(indentOf(lines[sec.start + i]))}${ch.lines[0]}`] }); continue; }
     }
     // Next to its siblings where they exist (scopes after the last scope), else at the end of the section.
@@ -232,14 +234,18 @@ async function main(): Promise<number> {
 
   // Branch from the env branch, commit the file, open the PR.
   if (!getToken()) { console.error("env-config-pr: GIT_TOKEN is not set — cannot open the PR"); return 2; }
-  const api = (p: string, init: RequestInit = {}) => fetch(`https://api.github.com/repos/VirtoCommerce/vc-deploy-dev${p}`, {
+  const api = (p: string, init: RequestInit = {}) => fetch(`https://api.github.com/repos/${c.deployOwner}/${c.deployRepo}${p}`, {
     ...init, headers: { Authorization: `Bearer ${getToken()}`, Accept: "application/vnd.github+json", "Content-Type": "application/json", ...(init.headers ?? {}) },
   });
-  const baseRef = await (await api(`/git/ref/heads/${encodeURIComponent(c.branch)}`)).json();
+  const baseRes = await api(`/git/ref/heads/${encodeURIComponent(c.branch)}`);
+  const baseRef = baseRes.status === 200 ? await baseRes.json().catch(() => null) : null;
+  if (!baseRef?.object?.sha) { console.error(`env-config-pr: branch ${c.branch} not readable in ${c.deployRepo} (HTTP ${baseRes.status}) — nothing sent`); return 2; }
   const head = `claude/env-config/${c.branch}-${new Date().toISOString().slice(0, 10)}`;
   const mk = await api(`/git/refs`, { method: "POST", body: JSON.stringify({ ref: `refs/heads/${head}`, sha: baseRef.object.sha }) });
-  if (mk.status !== 201 && mk.status !== 422) { console.error(`env-config-pr: could not create ${head} (HTTP ${mk.status})`); return 2; }
-  const cur = await readYml(head);
+  // 422 is also a malformed request: reuse the branch only when GitHub says it already exists.
+  const exists = mk.status === 422 && /already exists/i.test(await mk.text().catch(() => ""));
+  if (mk.status !== 201 && !exists) { console.error(`env-config-pr: could not create ${head} (HTTP ${mk.status})`); return 2; }
+  const cur = await readYml(c, head);
   const gitConfig = (k: string) => { try { return execFileSync("git", ["config", k], { encoding: "utf8" }).trim(); } catch { return ""; } };
   const author = { name: process.env.GIT_AUTHOR_NAME || gitConfig("user.name"), email: process.env.GIT_AUTHOR_EMAIL || gitConfig("user.email") };
   if (!author.name || !author.email) { console.error("env-config-pr: no commit identity — set git config user.name / user.email (or GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL)"); return 2; }
@@ -255,7 +261,7 @@ async function main(): Promise<number> {
     "", "🤖 Generated with [Claude Code](https://claude.com/claude-code)",
   ].join("\n");
   // A same-day re-run reuses the day's branch, whose PR already exists: update that one instead of failing.
-  const open = await (await api(`/pulls?state=open&head=VirtoCommerce:${encodeURIComponent(head)}&base=${encodeURIComponent(c.branch)}`)).json().catch(() => []);
+  const open = await (await api(`/pulls?state=open&head=${c.deployOwner}:${encodeURIComponent(head)}&base=${encodeURIComponent(c.branch)}`)).json().catch(() => []);
   if (Array.isArray(open) && open[0]) {
     await api(`/pulls/${open[0].number}`, { method: "PATCH", body: JSON.stringify({ title: msg, body }) });
     console.log(`\nPR updated: ${open[0].html_url} — review and merge it yourself; merging deploys ${c.branch}.`);

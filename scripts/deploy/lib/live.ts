@@ -22,14 +22,29 @@ export async function probeAdminToken(c: LiveCoords, signal?: AbortSignal): Prom
   if (key) return { token: { via: 'api-key', headers: { api_key: key } }, status: 'api-key' };
   return passwordGrant(c, signal);
 }
+// One sign-in per process and credential. Several readers in one run (env facts, the case pre-flight, a deploy
+// verify) each asked for their own token, so a stale password failed two or three times per run against a shared
+// admin's lockout. A refusal (4xx) is never re-sent; a granted token is reused for TOKEN_REUSE_MS; a network error
+// or a 5xx is not remembered, so a retry stays possible. Keyed by the password too, so a corrected one is tried.
+const TOKEN_REUSE_MS = 10 * 60_000;
+const grants = new Map<string, { at: number; result: { token: AdminAuth | null; status: ProbeStatus } }>();
 async function passwordGrant(c: LiveCoords, signal?: AbortSignal): Promise<{ token: AdminAuth | null; status: ProbeStatus }> {
   // No password, no attempt: a guessed one is a failed sign-in that counts toward the shared admin's lockout.
   if (!c.password) return { token: null, status: 'no-password' };
+  const key = `${c.backUrl}\n${c.admin}\n${c.password}`;
+  const seen = grants.get(key);
+  if (seen && (!seen.result.token || Date.now() - seen.at < TOKEN_REUSE_MS)) return seen.result;
   try {
     const r = await fetch(`${c.backUrl}/connect/token`, { signal, method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'password', username: c.admin, password: c.password }) });
-    if (r.status !== 200) return { token: null, status: r.status };
+    if (r.status !== 200) {
+      const refused = { token: null, status: r.status };
+      if (r.status >= 400 && r.status < 500) grants.set(key, { at: Date.now(), result: refused });
+      return refused;
+    }
     const token = (await r.json())?.access_token;
-    return { token: token ? { via: 'password', headers: { Authorization: `Bearer ${token}` } } : null, status: 200 };
+    const result = { token: token ? { via: 'password' as const, headers: { Authorization: `Bearer ${token}` } } : null, status: 200 as ProbeStatus };
+    if (result.token) grants.set(key, { at: Date.now(), result });
+    return result;
   } catch { return { token: null, status: 'network' }; }
 }
 export async function getAdminToken(c: LiveCoords): Promise<AdminAuth | null> {

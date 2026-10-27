@@ -119,15 +119,18 @@ level-3 MCP rows and step 3's misses. Do not reword a row, do not re-grade it, a
 lists in the user's language, grouped (one line per fix, not per row — fixtures by the seed that writes them, settings
 by store), each with the cases it unblocks:
 
-1. **I will do** (`me`, `me, with OK`) — seeding, store and platform settings, account provisioning or reset, and every
+1. **I will do** (`me`, `me, with OK`) — seeding, store and platform settings, provisioning a missing account, and every
    `req:deployConfig` / `req:uploadScope` row as **one** vc-deploy-dev PR: `npm run deploy:env-config -- --env <env>`
-   (dry run shows the exact lines and the reference env each value comes from; `--apply` opens the PR).
+   (dry run shows the exact lines and the reference env each value comes from; `--apply` opens the PR). Each line names
+   the concrete write — the setting and its new value on which store, the seed command, the PR's target branch.
 2. **Needs you** (`you`) — only what you may not do: a secret or a credential (a password, an API key such as Google
    Maps, a payment-provider sandbox), merging the vc-deploy-dev PR (merging deploys the env), and a product decision.
    Say exactly where the value goes and where it comes from.
 
 One question covers list 1 ("Do all of list 1?" — or name the items to skip). On a yes, do them all, re-run step 1, and
-report what changed; list 2 stays with the user. Never ask per item.
+report what changed; list 2 stays with the user. **Two kinds of write are never in that batch** and get their own
+question each: resetting or unlocking an existing shared account (someone may be signed in as it), and `--apply` of the
+vc-deploy-dev PR (it is outward-facing in another repository). Otherwise never ask per item.
 
 The `Who` column decides which list a row goes to:
 
