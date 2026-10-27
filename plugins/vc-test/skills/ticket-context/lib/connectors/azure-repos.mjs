@@ -53,7 +53,7 @@ export function azureReposConnector({ key, run = bridgeRun, git = spawnSync, roo
       const iteration = its.reduce((m, it) => (it.id > (m?.id ?? -1) ? it : m), null);
       if (!iteration) throw new GapError("not-found", `pull request ${n} has no iteration`);
       const page = await run("ado", ["pr-changes", "--repo", repo, "--pr", String(n), "--iteration", String(iteration.id), "--max", String(CAPS.prFiles + 1)]);
-      prState.set(k, { iteration, changes: page.changeEntries ?? [] });
+      prState.set(k, { iteration, iterations: its, changes: page.changeEntries ?? [] });
     }
     return prState.get(k);
   };
@@ -79,8 +79,17 @@ export function azureReposConnector({ key, run = bridgeRun, git = spawnSync, roo
       const { changes } = await state(r, n);
       return changes.slice(0, cap + 1).map((c) => ({ filename: strip(c.item?.path), status: status(c.changeType), additions: null, deletions: null }));
     },
-    /** `from` (prepare --since): the base side is read at that commit instead of the merge base, so the diff is what
-     *  changed since it; a file missing there (404) is read as not yet there. */
+    /** prepare --since: the recorded sha (full or abbreviated) as the full source commit of one of this PR's
+     *  iterations, or null when none starts with it — a force-push took it off the PR, so no delta is read from it. */
+    deltaBase: async (o, r, n, from) => {
+      checkRepo(o, r); checkNumber(n); checkSha(from);
+      const sha = from.toLowerCase();
+      const { iterations } = await state(r, n);
+      const hit = iterations.map((it) => String(it.sourceRefCommit?.commitId ?? "").toLowerCase()).find((id) => id && id.startsWith(sha));
+      return hit ?? null;
+    },
+    /** `from` (a full commit id deltaBase resolved): the base side is read at that commit instead of the merge base,
+     *  so the diff is what changed since it; a file missing there (404) is read as not yet there. */
     diff: async (o, r, n, { from = null } = {}) => {
       checkRepo(o, r); checkNumber(n);
       if (from !== null) checkSha(from);

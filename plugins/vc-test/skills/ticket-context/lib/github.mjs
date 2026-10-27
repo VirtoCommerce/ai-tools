@@ -233,19 +233,28 @@ export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [], befo
   };
   // prepare --since: the diff from the last tested sha. GitHub says whether that sha is still an ancestor of the head
   // (compare); a force-push (diverged, behind) or an unreadable compare is the whole PR diff with `from: null`, never a
-  // delta read from a commit the head no longer contains. Azure Repos reads the base side at `from` instead.
+  // delta read from a commit the head no longer contains. Azure Repos has no compare: `from` must be the source commit
+  // of one of the PR's iterations (deltaBase, which also expands it to the full id), and the base side is read there.
   let delta = null;
+  let azureFrom = null;
   if (from) {
     entry.from = null;
+    const fallback = (why) => entry.gaps.push(gap(`pr:${p.ref}:delta`, "unreadable", `${why}: the whole PR diff is read`));
     if (gh.compareDiff) {
       try {
         const c = await gh.compareDiff(owner, repo, from, entry.head_sha);
         if (compareFrom(c.status, from)) { entry.from = from; delta = String(c.diff); }
-        else entry.gaps.push(gap(`pr:${p.ref}:delta`, "unreadable", `${from} is not an ancestor of the head (compare: ${c.status}): the whole PR diff is read`));
-      } catch (e) { const g = asGap(`pr:${p.ref}:delta`, e); entry.gaps.push(gap(g.where, g.reason, `compare from ${from} not read (${g.detail ?? g.reason}): the whole PR diff is read`)); }
-    } else entry.from = from;
+        else fallback(`${from} is not an ancestor of the head (compare: ${c.status})`);
+      } catch (e) { const g = asGap(`pr:${p.ref}:delta`, e); fallback(`compare from ${from} not read (${g.detail ?? g.reason})`); }
+    } else if (gh.deltaBase) {
+      try {
+        azureFrom = await gh.deltaBase(owner, repo, number, from);
+        if (azureFrom) entry.from = azureFrom;
+        else fallback(`${from} is the source commit of none of the PR's iterations (a force-push?)`);
+      } catch (e) { const g = asGap(`pr:${p.ref}:delta`, e); fallback(`iterations not read to place ${from} (${g.detail ?? g.reason})`); }
+    } else fallback("this code host cannot diff from a commit");
   }
-  try { writeDiff(delta ?? String(await gh.diff(owner, repo, number, entry.from ? { from } : undefined))); } catch (e) {
+  try { writeDiff(delta ?? String(await gh.diff(owner, repo, number, azureFrom ? { from: azureFrom } : undefined))); } catch (e) {
     // 406 = GitHub will not render the whole diff (too many lines or files). The same hunks come per file from the
     // files API read above; the PR's diff is a gap only when that read failed too.
     if (e?.status === 406 && files) {
