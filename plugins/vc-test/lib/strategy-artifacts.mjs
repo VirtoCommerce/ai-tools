@@ -61,7 +61,9 @@ export function readStrategy(md) {
   const table = rows(block(sec, "Artifacts")).map(([row, cell]) => ({ row, ...decisionOf(cell ?? ""), cell: cell ?? "" }));
   const scenarios = rows(block(sec, "Scenarios")).filter((c) => /^S-\d+$/.test(c[0] ?? ""))
     .map((c) => ({ s: c[0], cls: Number(c[1]), proof: (c[6] ?? "").toLowerCase(), exploratory: /^exploratory/i.test(c[4] ?? ""), writes: writesOf(c[7]) }));
-  return { round: head ? Number(head[1]) : 0, status, rows: table, scenarios, priorBugs: priorBugsOf(sec) };
+  // the lines `rounds.mjs append` left for the strategy agent: any left means the round's section is not complete
+  const tbd = sec.split("\n").filter((l) => l.includes("TBD — strategy agent")).length;
+  return { round: head ? Number(head[1]) : 0, status, rows: table, scenarios, priorBugs: priorBugsOf(sec), tbd };
 }
 
 export function loadRegistry(path = join(LIB, "artifacts.json")) {

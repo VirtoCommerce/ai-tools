@@ -25,7 +25,8 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 7. A Low or cosmetic finding gets one line under "Noticed" — no investigation, no screenshot, no bug (U25).
 8. **Every turn re-reads your context**: read no supporting file or script source unless a step fails; keep a
    script's exit code and summary (`| tail -n 20`).
-9. **A STOP once step 5 has begun tears down first** (step 8); any STOP removes `<WORK>/prepare/`.
+9. **A STOP once step 5 has begun tears down first** (step 8); any STOP removes `<WORK>/prepare/`. `rounds.mjs
+   append` or `close` exit 1 ⇒ report its stderr, STOP.
 
 ## 0 — Probe
 
@@ -34,11 +35,12 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
    which job, quoting `reason` (not a third human point: the run has not started), then verify-fix / hotfix-check ⇒ STOP naming `next`, test ⇒ go on; exit 3 ⇒ route after step 1 with
    `--bundle <BUNDLE>` (round ≥ 2: after 0b.1, `--bundle <DELTA_PREPARE>`); exit 2 ⇒ STOP "run /project-init". A not-fixed Bug's `reason` is `MISSION` (step 3).
 3. `node <plugin>/lib/rounds.mjs count --key <TICKET> --run-dir <RUN_DIR>` → `ROUND`, `MODE`. Exit 2 ⇒ STOP: print its
-   `escalation` (`<plugin>/skills/qa-test-strategy/rounds.md` §At most three) — nothing else runs. `refresh` ⇒ 0b
-   instead of steps 1–3 (no `record` ⇒ STOP: round <ROUND−1> left no round record). `resume` ⇒ the steps of that
-   round, its approved section reused: round ≥ 2 runs 0b without its analyst and strategy dispatches (`append` leaves
-   a last section numbered N alone). Round 1 only, after step 1: `count` again with `--bundle <BUNDLE>`; exit 2 ⇒ the
-   same STOP.
+   `escalation` (`<plugin>/skills/qa-test-strategy/rounds.md` §At most three) — nothing else runs. `refresh`, or
+   `resume` with ROUND ≥ 2: its `recordRound` must be ROUND − 1, else STOP naming the remedy (rounds.md §Round N in
+   vc-test, "starts from round N−1's record"); `BUNDLE` is its `bundle`. `refresh` ⇒ 0b instead of steps 1–3.
+   `resume` ⇒ the steps of that round, its approved section reused: round ≥ 2 runs 0b, and its analyst and strategy
+   dispatches only when the section fails the gate (0b.2). Round 1 only, after step 1: `count` again with
+   `--bundle <BUNDLE>`; exit 2 ⇒ the same STOP.
 4. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
    `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
 5. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>` or
@@ -47,14 +49,17 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 ## 0b — Round N ≥ 2: refresh (U15, `rounds.md` §Round N in vc-test)
 
 No `/vc-test:ticket-context`, no change map, no scenarios agent, no human point 1. `<ctx>` is
-`<plugin>/skills/ticket-context`; `BUNDLE` is the record's `bundle`.
+`<plugin>/skills/ticket-context`; `BUNDLE` is `count`'s `bundle`.
 
 1. `node <ctx>/lib/cli.mjs prepare <TICKET> --since <record>` (its Step 0 statuses and STOPs, host-governed passes
    included) → its `prepare_path` is `DELTA_PREPARE`; then `node <plugin>/lib/rounds.mjs delta --key <TICKET> --run-dir <RUN_DIR>
    --prepare <DELTA_PREPARE>` → `DELTA` (`<WORK>/delta.json`). Exit 2 ⇒ `abort` the prepare, then STOP: `sameBuild`
    "Round <N−1> already tested this build" (P3), `cap` its `escalation`. Route exited 3 at step 0 ⇒ now
    `node <plugin>/lib/route.mjs --bundle <DELTA_PREPARE>`, handled as step 0.2; a STOP it causes `abort`s the prepare first.
-2. Dispatch `vc-test:ticket-context-analyst` per `DELTA.dispatch` (TICKET; CHANGE per PR, `PRS: <ref>`) with `PREPARE =
+2. A `resume` first gates the section: `node <plugin>/skills/qa-test-strategy/lib/check-strategy.mjs --strategy
+   <RUN_DIR>/test-strategy.md --bundle <BUNDLE> --change-map <WORK>/change-map.json --capabilities
+   <WORK>/capabilities.json`; exit 0 ⇒ only `deploy --prepare` below, then `abort` the prepare and step 4; else as a
+   refresh. Dispatch `vc-test:ticket-context-analyst` per `DELTA.dispatch` (TICKET; CHANGE per PR, `PRS: <ref>`) with `PREPARE =
    DELTA_PREPARE`, then `save` / `merge-change` and `deploy --prepare` as that skill's Steps 2 and 4. `NOT DEPLOYED`
    ⇒ BLOCKED on deploy, as step 1.
 3. `node <plugin>/lib/rounds.mjs append --run-dir <RUN_DIR> --delta <DELTA> --change-map <WORK>/change-map.json`; dispatch
@@ -96,7 +101,8 @@ report its errors, STOP. **`--dry-run` stops here**: print the waves and `notRun
 
 First `node <plugin>/lib/write-zones.mjs snapshot --key <TICKET> --run-dir <RUN_DIR>` (exit 1 or 3 ⇒ note its line, go on: step 7 reports "not checked"). One message per wave of
 `run-plan.json`; each brief gets `RUN_DIR`, `STRATEGY`, `KEY`, its own paths below, and `<plugin>/briefs/ledger.md` if it may write. An entry with `missing` is not dispatched; its `BLOCKED — needs <missing>`
-row goes in `testing-checklist.md` under `## Scenario results`, never `scenarios/S-n.rows.md`.
+row goes in `testing-checklist.md` under `## Scenario results`, never `scenarios/S-n.rows.md` — a `bug:PB-n`'s with
+Ref `PB-n · R<k>`, the `R` of its `### Prior bugs` row.
 
 | id | How |
 |---|---|
@@ -148,7 +154,7 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 
 Each confirmed Medium+ bug: `/vc-fix:qa-bug` with its investigation package (U50), one at a time; its own
 question decides filing. A `verdict.json` bug with `priorBug` is skipped: it is already filed (P6). Then
-`node <plugin>/lib/rounds.mjs close --key <TICKET> --run-dir <RUN_DIR> --bundle <BUNDLE> --filed <id=KEY,…>` (the
-bugs filed just now). Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and
+`node <plugin>/lib/rounds.mjs close --key <TICKET> --run-dir <RUN_DIR> --bundle <BUNDLE> [--delta <DELTA>] --filed
+<id=KEY,…>` (`--delta` in round ≥ 2; the bugs filed just now). Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and
 its `manual`, `unknown`, `foreign` lists; 3 ⇒ the stand is not writable: all manual. Print `verdict.md`'s first two
 lines and path.

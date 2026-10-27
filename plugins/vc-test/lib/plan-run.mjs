@@ -17,6 +17,9 @@ const INSTANCES = {
 
 export function planRun({ strategy, registry, capabilities }) {
   if (!APPROVED.has(strategy.status)) return { ok: false, errors: [`round ${strategy.round}: strategy is not approved (Status: ${strategy.status ?? "missing"})`] };
+  // `append` writes `Status: AUTO` before the strategy agent completes the section: a run stopped in between must not
+  // plan an ungated section, whatever order the command runs its steps in.
+  if (strategy.tbd) return { ok: false, errors: [`round ${strategy.round}: ${strategy.tbd} line(s) still read 'TBD — strategy agent' — the strategy agent has not completed the section (gate it with check-strategy.mjs first)`] };
   // A per-row template (`per`) is instantiated from its own table of the round — `### Scenarios` as `scenario:S-n`,
   // `### Prior bugs` as `bug:PB-n` — never from its Artifacts row, whose RUN/SKIP only has to agree with that table.
   const templates = registry.artifacts.filter((e) => e.per && INSTANCES[e.per]);

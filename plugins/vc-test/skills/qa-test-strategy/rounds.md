@@ -56,15 +56,20 @@ Under vc-test each step above is a script over machine records; prose is never p
 - **The record.** `rounds.mjs close` ends a round: `<RUN_DIR>/rounds/round-<N>.json` (build per PR, verdict, the
   bugs of `verdict.json`, the unresulted risks) and a copy of the round's bundle beside it, which round N+1 diffs the
   acceptance text against (the bundle itself is swept after 24 h; round ≥ 2's `close --delta` lays the delta read's
-  description and acceptance over the copy, so the diff is against round N's text, never round 1's). Every path in it is relative to the output root.
-  It also archives the round into `<RUN_DIR>/rounds/round-<N>/`: the row files and `testing-checklist.md` move there,
+  description and acceptance over the copy, so the diff is against round N's text, never round 1's). Every path in
+  it is relative to the output root. It also archives the round into `<RUN_DIR>/rounds/round-<N>/`: the row files and `testing-checklist.md` move there,
   `verdict.md` and `verdict.json` are copied, so round N+1 in the same folder starts from none of round N's rows.
+- **Round N starts from round N−1's record.** A refresh, and a resume of round ≥ 2, need `rounds.mjs count`'s
+  `recordRound` to be ROUND − 1 (its `bundle` is then the round's bundle copy, already resolved). Otherwise STOP and
+  name the remedy: round N−1's `verdict.json` is in its run folder ⇒ close that round first (`rounds.mjs close --key
+  <KEY> --run-dir <that folder> --bundle <its bundle>`), then run again; it is not ⇒ round N cannot refresh — the
+  earlier rounds ran before vc-test 0.8.0 and left no record to diff from.
 - **The delta.** `ticket-context prepare <KEY> --since <round record>` reads only what changed: each PR `unchanged`,
   `changed` (diffed from the recorded sha; a force-push reads the whole PR diff) or `new`, the comments posted after
   the round closed, whether the description or AC text changed, and the status of the round's out-of-scope bugs.
   `rounds.mjs delta` turns it into `delta.json`: the PRs, which analysts run (TICKET on a new comment or a changed AC,
   CHANGE per changed or new PR), the round recounted with the new comments as signals (a fourth round still STOPs).
-- **The same build STOPs (P3).** No PR changed and none is new ⇒ round N−1 already tested this build; nothing runs.
+- **The same build STOPs (P3).** Product PRs, none changed and none new ⇒ round N−1 already tested this build; nothing runs.
   Amending a closed round stays manual (D7).
 - **Prior bugs come from every round.** Each in-scope bug of every earlier record that has a tracker key — filed in
   its round, or carried as a prior bug — once (by that key: a bug still failing is carried by the next record with its
@@ -75,4 +80,6 @@ Under vc-test each step above is a script over machine records; prose is never p
 - **The section is appended without asking (U15).** `rounds.mjs append` writes `## Round N` — the carried risks, the
   prior-bug risks and rows, round N−1's Artifacts — and leaves one `TBD — strategy agent` line per part the strategy
   agent writes (mission, inputs, data, out of scope, criteria, the floors). Round N−1's text is never touched; the gate's
-  clause 14 fails while a `TBD` remains or a prior bug's risk sits below its severity.
+  clause 14 fails while a `TBD` remains or a prior bug's risk sits below its severity. A run stopped between `append`
+  and the strategy agent resumes into that agent: the command gates the section with `check-strategy.mjs` first, and
+  `plan-run.mjs` refuses a last section with a `TBD` left, whatever order it is called in.
