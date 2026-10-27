@@ -35,14 +35,18 @@ release, and splits the work into **waves** that are independent enough to run s
 
 **One author per file.** Every hand-written file has exactly one author. `PROGRESS.md` is the one file
 every wave PR touches, and it is generated: `release:check` fails when it is not what `--write` would
-produce, and CI checks a PR's merge commit — so a wave PR that raced another one is told to rebase and
-re-run `--write`, and a stale overview never reaches `main`. This is the suite rule
+produce. CI checks a PR's merge commit **as it was when CI ran** — GitHub does not re-run it when `main`
+moves — so a wave PR is brought up to date with `main` (rebase, `--write`) before it merges. Two wave PRs
+that merge past each other leave `main`'s overview stale: the push to `main` goes red, and the next wave
+PR's `--write` repairs it. Until then CI only **notes** that staleness on PRs that do not touch the
+release, so it never blocks unrelated work. This is the suite rule
 ([`regression-suites.md`](../../knowledge/execution/regression-suites.md) §Working concurrently on suites) applied to the release
 folder.
 
-`npm run release:check -- <release>` validates all of it (shapes, vocabularies, required fields). A
-wave PR does not go up while it fails, and CI runs `release:check -- --all` on every PR
-(`.github/workflows/gates.yml`), so a broken ledger cannot reach `main`.
+`npm run release:check -- <release>` validates all of it (shapes, vocabularies, required fields, and the
+derived floor of `untriaged` — §5). A wave PR does not go up while it fails, and CI runs
+`release:check -- --all --base <PR base>` on every PR (`.github/workflows/gates.yml`), so a broken ledger
+cannot reach `main`.
 
 ## 3. `release.json`
 
@@ -100,9 +104,12 @@ commit list, the bundle's `release_notes.md` and `breaking_changes.md`.
   "evidence": "where the raw run output lives", "updatedAt": "2026-10-16" }
 ```
 
-- `totals`: whole numbers; `pass + fail + blocked + skipped + ambiguous = executed`, and `executed ≤ planned`.
-  `ambiguous` holds what the run could not decide either way.
+- `totals`: whole numbers; `pass + fail + blocked + skipped + ambiguous = executed`, and
+  `executed + Σ notRun.cases ≤ planned`. `ambiguous` holds what the run could not decide either way.
 - `untriaged`: FAIL or BLOCKED cases that have no ledger row yet. Required once the wave has run; `TRIAGED` and `DONE` need 0.
+  `release:check` derives its floor — `fail + blocked` minus the distinct FAIL/BLOCKED cases the wave's ledger rows — so a
+  wave cannot reach `TRIAGED` by under-counting. A BLOCKED case needs its own row like a FAIL (one cause shared by many
+  cases: one row each, the summary naming the shared cause).
 - `personas`: which accounts the owner signs in as (§7.1). Required from `CLAIMED` on, so a parallel owner
   knows which accounts to avoid.
 - `notRun`: suite ids from this wave, a case count and the reason. A `BLOCKED` wave must have it.
@@ -193,8 +200,10 @@ A case that changes what every other session reads is **exclusive**: store or pl
 (and never a partial `PUT /api/stores` — it replaces the whole store), recurring-job schedules, a
 full reindex or rebuild, a backup restore, a platform restart, re-seeding a fixture set other waves
 use. The planner lists them in `release.json` `exclusive` and gathers them into a final exclusive
-wave that depends on all the others. Inside a parallel wave such a case is skipped and recorded in
-`notRun`, never run "quickly".
+wave that depends on all the others (`release:check` fails an exclusive wave that does not, directly
+or transitively). Inside a parallel wave such a case is skipped and recorded in `notRun`, never run
+"quickly". `exclusive` names suites, not cases: a suite with only some env-wide cases is listed whole,
+and the parallel waves leave it out — splitting it by case is the planner's call, made in `PLAN.md`.
 
 ### 7.3 Seed once, before the parallel waves
 
@@ -222,8 +231,15 @@ the machine lanes first, or in CI, is the cheapest way to stretch a usage limit.
   what is pending a decision, then look at the wave sub-tasks for what is held and running right now.
 - **The release ticket's progress comment** (`release.json` `jiraProgressComment`) has one author, the
   planner, who amends it from `PROGRESS.md` ([`../../rules/reports.md`](../../rules/reports.md) §0).
+- **Claiming is check, assign, re-read.** Jira keeps the last assignment, so after assigning, the claimant
+  re-reads the sub-task and backs off if it is not theirs; the claim branch is pushed straight away, so a
+  second claimant meets it before running anything.
 - **Handing over** a half-done wave: leave it `RUN_DONE` with `notRun` and a "Before the next owner
-  continues" section in `report.md`, open the PR, and unassign the sub-task.
+  continues" section in `report.md`, open the PR, and unassign the sub-task. Taking it over (`--continue`)
+  is a claim like any other.
+- **Stale claims.** A sub-task assigned to someone who has gone quiet is still theirs. Ask them on the
+  sub-task; if they cannot be reached, the planner decides. The new owner records who agreed in the
+  `handovers` note — never take a wave because it looks abandoned.
 - **Bugs** are filed per [`../../rules/reports.md`](../../rules/reports.md) and
   [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) (labels, one comment per ticket per run, screenshots inline),
   linked to the release ticket, after triage — never straight from a run.

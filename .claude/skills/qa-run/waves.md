@@ -26,10 +26,15 @@ is asked, whenever the wave reaches them, whatever flag brought it there.
 | Wave status / flag | Starts at |
 |---|---|
 | `NOT_STARTED` + `--claim` | Step 1 |
-| `CLAIMED`, or `RUN_DONE` with `notRun` + `--continue` | Step 2 (then runs only what is not run yet) |
+| `CLAIMED` or `RUN_DONE` held by someone else + `--continue` | **Step 1** (a takeover is a claim), then Step 2 — runs only what is not run yet |
+| `CLAIMED`, or `RUN_DONE` with `notRun`, held by the user + `--continue` | Step 2 (then runs only what is not run yet) |
 | `RUN_DONE` with `untriaged > 0` (FAIL or BLOCKED cases without a ledger row) — with no flag, `--triage`, `--publish` or `--handover` | **Step 4** (triage runs first) |
 | `RUN_DONE` with `untriaged = 0`, or `TRIAGED` | Step 6 |
 | `--handover` on `CLAIMED` (nothing ran) | Step 8 |
+
+**Only the owner writes a wave.** Every entry except `status`, `--claim` and `--continue` starts by checking that
+`state.json` `owner` is the user **and** the wave sub-task is assigned to them. Otherwise STOP and show who holds it —
+taking a wave over is `--continue`, which goes through Step 1.
 
 ## `status` — read-only
 
@@ -49,19 +54,30 @@ sub-tasks are assigned and in progress right now. Change nothing.
 4. Run the [`/preflight`](../../skills/preflight/SKILL.md) skill for `env.testEnv`. The deployed build must still match
    `release.json` `env` — a hotfix deployed mid-release is recorded in `report.md`, not ignored.
 
-## Step 1 — Claim (`--claim`)
+## Step 1 — Claim (`--claim`, or `--continue` on a wave someone else holds)
 
 1. **The tracker sub-task is the claim** (contract §8): git only learns about a claim when the wave PR merges,
    so the sub-task is the one place a second QA can see it in time. If the release has no wave sub-tasks and
    more than one person is working on it, STOP and ask the planner to create them.
-2. **Is it free?** The wave's sub-task is unassigned and `state.json` is `NOT_STARTED`. Otherwise STOP and show who
-   holds it.
-3. **Ask once:** assign the sub-task to the user (outward-facing — only on a yes).
-4. **Personas:** confirm the persona variables in the user's `.env.local` point at accounts no other owner uses this
+2. **Is it free?**
+   - `--claim`: the wave's sub-task is unassigned and `state.json` is `NOT_STARTED`.
+   - `--continue`: the sub-task is unassigned (the previous owner handed it over, §8) and `report.md` has a
+     "Before the next owner continues" section.
+   - Otherwise STOP and show who holds it. **A claim that looks abandoned is still a claim:** ask its holder
+     (a comment on the sub-task), or the planner when the holder cannot be reached, and take over only on that
+     person's answer — recorded in the `handovers` note (contract §8, stale claims).
+3. **Ask once:** assign the sub-task to the user, comment "claimed by <user> at <time>" on it, and push the
+   claim branch (outward-facing — all three on one yes).
+4. **Verify the claim held.** Re-read the sub-task after assigning. Jira keeps the last assignment, so two people
+   can both "assign" in the same minute: if the assignee is not the user, or another claim comment came in first,
+   the other person has the wave — STOP, undo nothing of theirs, and pick another wave.
+5. **Personas:** confirm the persona variables in the user's `.env.local` point at accounts no other owner uses this
    release (contract §7.1); compare with the `personas` of every other wave's `state.json`. If unsure, ask the user;
    never borrow another owner's accounts.
-5. Write `state.json`: `owner`, `status: CLAIMED`, `personas`, `updatedAt`. On `--continue`, append the previous
-   owner to `handovers` instead and take `owner`.
+6. Write `state.json`: `owner`, `status: CLAIMED` (on `--continue` the status stays), `personas`, `updatedAt`. On
+   `--continue`, append the previous owner to `handovers` first. Commit it to
+   `claude/qa-release/stable-<N>-<wave>` and push now — a second claimant then hits the existing branch before
+   the run, not after it.
 
 ## Step 2 — Known ground before running
 
@@ -141,18 +157,22 @@ without the user's yes for that bug.
 2. Commit on the wave branch: `waves/<W>/` (state, ledger, report) and `PROGRESS.md`; the case / fixture repairs from
    Step 5.7 in their own commit, so they can be reviewed apart from the record. Commit author per the user's git identity.
 3. Push and open **one PR to `main`** — body in English: wave, run ids, totals, new-in-release bugs, decisions pending,
-   what is left. **Never merge.** If CI reports `PROGRESS.md is stale` (another wave merged first), rebase on `main`,
-   re-run `--write`, push again.
+   what is left. **Never merge, never force-push.** A push the remote rejects as non-fast-forward means someone else
+   pushed this wave's branch: STOP and show whose commits are there — never overwrite another owner's state, ledger or
+   report. Before the PR merges it must be up to date with `main`: if another wave merged first, rebase on `main`,
+   re-run `--write`, push again (CI checks the PR as it was when it ran, not after `main` moved).
 4. **`DONE`** is set in the wave's own PR once nothing is open in it: `untriaged` 0, every repair merged or on this PR,
-   every `DRAFT` filed or explicitly deferred by the user. Otherwise the wave stays `TRIAGED`, and the PR that closes
-   the last open item sets `DONE`.
+   every `DRAFT` filed or explicitly deferred by the user. Otherwise the wave stays `TRIAGED`, and its owner sets `DONE`
+   in a follow-up wave PR once the last open item closes — a repair PR by someone else never writes the wave's files.
 
 ## Step 8 — Handover (`--handover`, or when stopping early)
 
 Triage (Step 4) runs first if the wave has FAIL or BLOCKED cases without a ledger row. Then leave the wave `RUN_DONE` (or `CLAIMED`
 if nothing ran) with `notRun` filled in and a "Before the next owner continues" section in `report.md` — including
-where any unpushed repair lives — and go to Step 7 so it reaches git. Offer to unassign the sub-task. The next owner
-runs `/qa-run stable:<N> <wave> --continue`, which records the handover in `handovers`; the wave id stays.
+where any repair lives, which must be a pushed branch — and go to Step 7 so it reaches git. Unassign the sub-task
+(on the user's yes): an assigned sub-task is a live claim, and `--continue` will not take it. The next owner runs
+`/qa-run stable:<N> <wave> --continue`, which claims through Step 1 and records the handover in `handovers`; the wave id
+stays.
 
 ## Rules
 
