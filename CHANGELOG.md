@@ -34,6 +34,29 @@ non-read mentions).
 **Changed — `commands/qa-ticket.md`** is back at 14,071 characters (it had grown to 14,098 after P2-3): three phrases
 tightened, no rule removed.
 
+---
+
+## Screenshots only for a reason, never committed — `vc-fix` `0.18.0`, `vc-init` `0.5.2`, `vc-frontend` `0.3.1` — 2026-10-27
+
+VCST-6394. Run artifacts were 677 MB of this repo's 777 MB git history (PNG alone).
+
+**Changed — `vc-fix`: an agent takes a screenshot only for five purposes** (`.claude/rules/reports.md` §5.1): a FAIL, a
+bug report, documentation, visual regression, and a tracker comment that makes a UI claim. A passing check or flow gets
+none; its evidence is the snapshot, the network and the HAR. The pass budget drops from 0–1 (max 2) to 0 (max 1). The
+QA shared instructions and the dispatch template say the same.
+
+**Changed — `vc-fix`: no screenshot, GIF, video, HAR or trace is committed**, `reports/bugs/screenshots/<slug>/` and run
+folders included. The tracker attachment is the durable copy (§5.0); the local file is working state.
+
+**Changed — `vc-init`: `/project-init` adds `reports/**/*.png` and the other evidence extensions to the project's
+`.gitignore`** (`EVIDENCE_IGNORES`), scoped to `reports/` so the project's own images elsewhere are untouched. A project
+already set up gets the new lines on its next `/project-init`.
+
+**Changed — `vc-frontend`: `merge-upstream`'s visual check deletes the first-pass base and head capture sets** once the
+result is logged, keeping the diffs and the confirmation-pass sets.
+
+---
+
 ## `/vc-fix:qa-bug` writes from the investigation; `qa-checklist` Mode 5 with risk ids — `vc-fix` `0.17.0` — 2026-10-27
 
 **Changed — `/vc-fix:qa-bug --evidence` writes from the `/qa-investigate` package, with no second investigation

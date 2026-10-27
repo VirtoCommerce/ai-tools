@@ -46,9 +46,23 @@ export const SECRET_IGNORES = [
   ".vc-fix/",
 ];
 
-/** Where the Playwright MCP servers land raw captures. Not secret — a landing zone, not evidence
- *  of record — but equally not something to commit. */
-export const EVIDENCE_IGNORES = ["test-results/", "reports/bugs/screenshots/_incoming/"];
+/** Where the Playwright MCP servers land raw captures, and every image, video, HAR and trace a run
+ *  keeps under reports/. Not secret, but never committed: the tracker attachment is the durable copy
+ *  of a screenshot a reader needs (vc-fix reports.md §5, VCST-6394). Scoped to reports/ so the
+ *  project's own images elsewhere stay the project's business. */
+export const EVIDENCE_IGNORES = [
+  "test-results/",
+  "reports/bugs/screenshots/_incoming/",
+  "reports/**/*.png",
+  "reports/**/*.jpg",
+  "reports/**/*.jpeg",
+  "reports/**/*.gif",
+  "reports/**/*.webp",
+  "reports/**/*.mp4",
+  "reports/**/*.webm",
+  "reports/**/*.har",
+  "reports/**/*.zip",
+];
 
 /** A generated destination as a project-relative ignore entry, or null when it lands OUTSIDE the
  *  project — where no .gitignore of ours can cover it, so the caller must say so out loud rather
@@ -102,7 +116,8 @@ export function ensureGitignoreEntries(root, entries, opts = {}) {
     title = "vc-init (/project-init) — browser evidence landing zone",
     notes = [
       "The Playwright MCP servers write raw captures here; /qa-bug moves the ones it keeps",
-      "into reports/bugs/screenshots/<bug-slug>/. Nothing here is evidence of record.",
+      "into reports/bugs/screenshots/<bug-slug>/. No screenshot, video or HAR is committed:",
+      "the tracker attachment is the durable copy.",
     ],
   } = opts;
   const path = join(root, ".gitignore");

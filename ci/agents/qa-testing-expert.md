@@ -180,7 +180,7 @@ Use `browser_evaluate` for API calls, `browser_navigate` for storefront/admin na
 
 ## Evidence Collection
 
-- **Screenshots**: failures + critical checkpoints
+- **Screenshots**: failures only
 - **Console**: `browser_console_messages` — JS errors, Vue/Angular warnings
 - **Network**: `browser_network_requests` — 4xx/5xx, slow responses, failed GraphQL
 - **Performance**: `browser_evaluate` with `performance.timing` for load metrics
