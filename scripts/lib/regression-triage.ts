@@ -821,6 +821,10 @@ function main(): void {
     console.error("Usage:\n  regression-triage.ts collect <RUN_ID|latest> [--record]\n  regression-triage.ts history <RUN_ID|latest> [--env <env>]");
     process.exit(2);
   }
+  if (runArg === "--ticket") {
+    console.error("Ticket mode moved to: node plugins/vc-test/lib/triage-collect.mjs --ticket <KEY> (the vc-test:qa-triage-results skill).");
+    process.exit(2);
+  }
   const maxIdx = rest.indexOf("--max-batch");
   const maxPerBatch = maxIdx !== -1 ? Math.max(1, Number(rest[maxIdx + 1]) || DEFAULT_MAX_BATCH) : DEFAULT_MAX_BATCH;
 

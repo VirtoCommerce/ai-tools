@@ -1,5 +1,5 @@
-// plugins/vc-test/lib/triage-collect.mjs — the ticket-mode collector of /qa-triage-results: a port of
-// scripts/lib/regression-triage.ts (ticket mode); this repository's regression half stays there.
+// plugins/vc-test/lib/triage-collect.mjs — the ticket-mode collector of /qa-triage-results: ported from the
+// former ticket mode of scripts/lib/regression-triage.ts; this repository's regression half stays there.
 //
 // A /qa-test or /qa-test-fast run's checklist, exploratory and visual findings have no RUN_ID: they live as rows of the
 // ticket's testing-checklist.md (the run's single durable record — every lane's condition is a row with a verdict).

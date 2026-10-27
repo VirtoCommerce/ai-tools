@@ -17,6 +17,7 @@ command's Phases 0–6 behind a mode gate, with `methodology.md`, `triage-taxono
 `live-triage-design.md`. Its meaning is unchanged. Ticket mode runs in any project; regression mode only where the
 project's `package.json` has `triage:collect` and `triage:history`. This repository's `/qa-triage-results` is now a
 shim that runs `vc-test:qa-triage-results` (needs vc-test ≥ 0.11.0).
+Teammates: run `/plugin marketplace update ai-tools` (vc-test ≥ 0.11.0) before `/qa-test` or `/qa-test-fast`; both now invoke `vc-test:qa-triage-results`.
 
 **Added — the ticket-mode collector.** `lib/triage-collect.mjs` is the plugin's own `--ticket` collector, with the same
 packet as `npm run triage:collect -- --ticket`; `scripts/lib/regression-triage.ts` keeps only the regression half.

@@ -29,7 +29,7 @@ the automatic triage and the GitHub question around a pipeline that already work
 ## 3. After the run — triage, then one question, for EVERY scope
 
 1. **Triage runs automatically** as soon as the run has FAIL or BLOCKED cases — no question:
-   [`/qa-triage-results`](../../commands/qa-triage-results.md) on the run id. A wave also feeds it the ledger
+   the Skill tool with `skill: "vc-test:qa-triage-results"` (shim: [`/qa-triage-results`](../../commands/qa-triage-results.md)), args the run id. A wave also feeds it the ledger
    (`waves.md` Step 5).
 2. **"Put it in GitHub?"** — always asked after triage, and after a clean run (nothing to triage) too. What goes in
    depends on the scope:

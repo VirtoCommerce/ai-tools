@@ -20,6 +20,8 @@ This is the missing consumer between `/qa-regression` (produces the run) and `/q
 /qa-triage-results ticket VCST-1234 --verify    # Ticket mode: a /qa-test or /qa-test-fast run's testing-checklist.md
 ```
 
+From the plugin the command is `/vc-test:qa-triage-results` (in this repository `/qa-triage-results` is a shim to it).
+
 **Ticket mode (`ticket <KEY>`).** Checklist, exploratory and visual findings have no `RUN_ID`. They are rows of the
 ticket's `testing-checklist.md`, which is why the calling flow records every lane's finding there as a row with a
 verdict before it calls this. Phases 1, 3, 4 and 6 run as below on that file. **Phase 2 is skipped**, because a
@@ -89,11 +91,11 @@ layer's QA expert, and the `CONFIDENCE: LOW` bias below is unchanged.
 alias — the same `DATA` verdict `/qa-run` records), every other row (`req:`, `secret:`, a persona's password) is `ENV`.
 A case whose module is not on the stand is not here: it left the plan as `notDeployed`.
 
-First run the deterministic linter on each affected suite so the classifier has static signal:
+Regression mode: first run the deterministic linter on each affected suite so the classifier has static signal:
 ```
 npm run suites:review -- <suite-csv> --json
 ```
-Then delegate **each `batch`** from Phase 1 to the classifier. `<plugin>/briefs/triage-classifier.md` is a **brief, not an agent type**: dispatch a `general-purpose` subagent **with `model: "sonnet"`** whose prompt is that file plus the batch (it needs `Read` for the screenshots) — pass the batch's `issues` (incl. `status` + screenshot paths — the classifier READS them for visual/element failures, and triages BLOCKED/SKIPPED per its Step 1a) + that suite's lint output + the **observed-behaviour instruction**: for each failing case's page path / GraphQL operation / endpoint, ask the base itself (`mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`)) before choosing a CLASS — an entry that already records the observed "actual" argues `KNOWN_ISSUE` / `STALE_TEST`, one that records the expected behaviour on the same deployment argues `REAL_BUG`. Cite the entry ids in `ROOT_CAUSE`. Because a batch is one suite + one status, its cases usually share a cause, so the classifier reasons over them in one shared context (one set of oracle reads) but **emits one verdict per case** (`CASE:` + `CLASS` markers). Dispatch batches largest first, at most 3 at a time; don't fan out one agent per case. Per case it emits:
+Then delegate **each `batch`** from Phase 1 to the classifier. `<plugin>/briefs/triage-classifier.md` is a **brief, not an agent type**: dispatch a `general-purpose` subagent **with `model: "sonnet"`** whose prompt is "Read and follow `<plugin>/briefs/triage-classifier.md`" plus `PLUGIN` = `<plugin>` and the batch (it needs `Read` for the screenshots) — pass the batch's `issues` (incl. `status` + screenshot paths — the classifier READS them for visual/element failures, and triages BLOCKED/SKIPPED per its Step 1a) + that suite's lint output + the **observed-behaviour instruction**: for each failing case's page path / GraphQL operation / endpoint, ask the base itself (`mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`)) before choosing a CLASS — an entry that already records the observed "actual" argues `KNOWN_ISSUE` / `STALE_TEST`, one that records the expected behaviour on the same deployment argues `REAL_BUG`. Cite the entry ids in `ROOT_CAUSE`. Because a batch is one suite + one status, its cases usually share a cause, so the classifier reasons over them in one shared context (one set of oracle reads) but **emits one verdict per case** (`CASE:` + `CLASS` markers). Dispatch batches largest first, at most 3 at a time; don't fan out one agent per case. Per case it emits:
 `CLASS` ∈ {`REAL_BUG`, `TEST_STEPS_DEFECT`, `ASSERTION_DEFECT`, `TEST_DATA_DEFECT`, `STALE_TEST`, `FLAKY`, `ENV`, `KNOWN_ISSUE`} + (for REAL_BUG) `SEVERITY`/`ROUTE_REPO`/`REPRO_LAYER` + `CONFIDENCE` + `ROOT_CAUSE` + `SUGGESTED_FIX`.
 
 Bias: when a case can't be confidently attributed to product-or-test, it stays `REAL_BUG` with `CONFIDENCE: LOW` (→ live repro / human review) — never downgraded to a test-defect to make it disappear. See the taxonomy + worked examples in the `/qa-triage-results` skill ([`triage-taxonomy.md`](triage-taxonomy.md)).
@@ -104,7 +106,7 @@ Bias: when a case can't be confidently attributed to product-or-test, it stays `
 For each `REAL_BUG` candidate that is `CONFIDENCE: HIGH` (or **all** of them under `--verify`), and at or above `--min-severity` when one is given: delegate a **live reproduction** to the layer's QA expert against the current env. **The brief's first instruction: invoke the Skill tool with `skill: "vc-fix:qa-investigate"`, running ahead of `/vc-fix:qa-bug`.** That makes it stop at its gate and return an evidence package (`evidence-index.md` + `root-cause.md`) instead of writing a report (its Step 8). The package goes under the packet's `ticketDir` in ticket mode, and under `reports/regression/{RUN_ID}/evidence/` otherwise. The brief carries the `Observed behaviour` line ([`known-ground.md`](../ticket-context/known-ground.md) §The `kb` half), so the repro BANKS what it establishes. One candidate per dispatch, at most 3 at a time, each on its own lane. **`vc-fix` not installed** ⇒ no investigation and no draft: the candidate is listed as `needs-review` with the install line.
 - **Reproduced live** → `confirmed real bug`, with its package path.
 - **Did not reproduce** → downgrade to `needs-review` (could be already-fixed-since-run, flaky, or env). Do not draft a bug.
-`STALE_TEST` candidates are confirmed cheaply via `/qa-review-tests suite <ID> --verify` (Dimension 8 env-check: is the control renamed/moved/removed?) rather than a full repro.
+Regression mode: `STALE_TEST` candidates are confirmed cheaply via `/qa-review-tests suite <ID> --verify` (Dimension 8 env-check: is the control renamed/moved/removed?) rather than a full repro.
 
 ## Phase 5 — Route + act (only writes under `--fix`)
 > **Owner:** the session that invokes it (in this repository: `qa-lead-orchestrator`) → delegates

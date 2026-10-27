@@ -17,8 +17,8 @@ this same taxonomy after the verdict is recorded.
 ### 0. Triage the C1 run through `/qa-triage-results`, not from scratch
 
 The change-scoped run already has a `RUN_ID` with evidence bundles (`traces/*-FAIL-trace.json`, screenshots,
-HAR). Invoke **`/qa-triage-results <RUN_ID> --fix`** instead of re-deriving the taxonomy ad hoc. That
-command owns: deterministic collection (`triage:collect`), per-batch classification via
+HAR). Invoke the Skill tool with **`skill: "vc-test:qa-triage-results"`, args `<RUN_ID> --fix`** instead of re-deriving the taxonomy ad hoc. That
+skill owns: deterministic collection (`triage:collect`), per-batch classification via
 `plugins/vc-test/briefs/triage-classifier.md`, live verification of HIGH-confidence `REAL_BUG`s, auto-application
 of confirmed test-case fixes via `/qa-review-tests --fix` for the *existing* Artifact-C suites (Step 3's own
 `--fix` pass only covers the newly-authored rows), and drafting confirmed bugs into the run folder's `bugs/` ([`routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief).
@@ -66,7 +66,7 @@ gets **no separate `BUG-AI-*` draft** — 5-file's `/vc-fix:qa-bug` owns it.
 ### 3. Findings that have no RUN_ID — the same command, in `ticket` mode
 
 Item 0 already classified the regression run's own FAILs. The rest — the checklist track (4a), the visual lane
-(4v), the discovery lane (3x) — go through **`/qa-triage-results ticket <ticket-key> --verify`**, not an inline
+(4v), the discovery lane (3x) — go through the Skill tool with **`skill: "vc-test:qa-triage-results"`, args `ticket <ticket-key> --verify`**, not an inline
 pass. **First, every one of those findings must be a row with a verdict in `testing-checklist.md`** (visual-axis §6
 already requires this for 4v). Ticket mode reads only that file, and a finding that is not in it is never
 triaged. `--verify` sends **every** `REAL_BUG` candidate through `vc-fix:qa-investigate`, not just the
