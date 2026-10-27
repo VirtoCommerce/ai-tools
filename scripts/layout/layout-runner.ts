@@ -129,7 +129,7 @@ import {
   type RectSnapshot,
 } from "../lib/measure-layout.js";
 import { TestDataResolver } from "../lib/test-data-resolver.js";
-import { SWITCH_TO_PASSWORD_SELECTORS } from "../auth/save-storage-state.js";
+import { SWITCH_TO_PASSWORD_SELECTORS } from "../lib/sign-in-selectors.js";
 import { roleByKey, resolveRole } from "../lib/user-roles.mjs";
 
 // Layered, TEST_ENV-aware env load — scripts/lib/load-env.mjs, the one order graphql-runner.ts and seed-common.mjs
@@ -312,7 +312,7 @@ async function storageStateForRole(browser: Browser, roleKey: string, frontUrl: 
   const page = await ctx.newPage();
   try {
     await page.goto(`${frontUrl}/sign-in`, { waitUntil: "domcontentloaded" });
-    // A build that opens on the one-time-code form keeps the password form behind a link (save-storage-state.ts).
+    // A build that opens on the one-time-code form keeps the password form behind a link (sign-in-selectors.ts).
     const toPassword = SWITCH_TO_PASSWORD_SELECTORS.join(", ");
     await page.waitForSelector(`${toPassword}, [data-test-id="password-input"], input[type="password"]`, { timeout: 30_000 });
     if (await page.locator(toPassword).first().isVisible()) await page.click(toPassword);
@@ -402,11 +402,13 @@ function textStressSnippet(factor: number, scope: string): string {
       const nodes = [];
       while (walker.nextNode()) nodes.push(walker.currentNode);
       for (const node of nodes) {
-        const text = node.nodeValue.trim();
+        // The node's own leading/trailing whitespace is kept: it is what separates it from the inline element
+        // next to it, and dropping it would glue "Hello " + <b>world</b> into one unbreakable token.
+        const [, lead, text, trail] = /^(\\s*)([\\s\\S]*?)(\\s*)$/.exec(node.nodeValue);
         const el = node.parentElement;
         if (!text || !el || el.closest("script,style,noscript,textarea,pre,code,svg")) continue;
         if (!el.getClientRects().length || getComputedStyle(el).visibility === "hidden") continue;
-        node.nodeValue = Array(${factor}).fill(text).join(" ");
+        node.nodeValue = lead + Array(${factor}).fill(text).join(" ") + trail;
         changed++;
       }
     }

@@ -196,7 +196,7 @@ Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL o
 [CONTENT] placeholders == 0
 [CONTENT] midWrap == 0","auto-captured","An untranslated dotted key in a filter, sort control, card label or empty state","none: currency and theme live in the case's own fresh browser context","Archetype:FALLBACK · Technique:EP · Purpose:VISUAL
 Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL on a planted mutant, a three-segment i18n key (shared.catalog.products_count_label) appended to the page's main content, served through a local proxy that injects it into every HTML page, PASS through the same proxy without it. | Promoted: P5B-FINAL-LAYOUT-CNT (2026-10-27)",Automated
-"LAYOUT-CNT-004","PDP price in EUR with German formatting is never broken across two lines (de, EUR, 320)","Content > Currency","P2",,"ECL-12.1","EUR has a price list on vcst (USD, EUR and PTS do; AUD, CNY, CZK, GBP, GHS and XPT render an empty catalog, ECL-12.1). de formats 78,00 € with a non-breaking space, so a correct price never wraps. 320 is the narrowest supported width. The currency is switched at desktop width, where the header shows its selector. The PDP is reached by clicking the first catalog card, never by a composed URL: a product's slug is per language, and /de/ or /pt/ in front of the English slug is a 404 (seen 2026-10-27). The price guard ends the case BLOCKED when no priced PDP renders.","{{FRONT_URL}}; the first catalog card while EUR is active","[VIEWPORT] 1280x900
+"LAYOUT-CNT-004","PDP price in EUR with German formatting is never broken across two lines (de, EUR, 320)","Content > Currency","P2",,"ECL-12.1","EUR has a price list on vcst (USD, EUR and PTS do; AUD, CNY, CZK, GBP, GHS and XPT render an empty catalog, ECL-12.1). de formats 78,00 € with a non-breaking space, so a correct price never wraps. 320 is the narrowest supported width. The currency is switched at desktop width, where the header shows its selector. The PDP is reached by clicking the first catalog card, never by a composed URL: a product's slug is per language, and /de/ or /pt/ in front of the English slug is a 404 (seen 2026-10-27). The price guard waits for a PDP price in euros, so the case ends BLOCKED when no priced PDP renders or EUR did not carry over the navigation (a USD price would otherwise pass for the wrong currency).","{{FRONT_URL}}; the first catalog card while EUR is active","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/
 [WAIT] networkidle
 [CLICK] [data-test-id=currency-selector-button]
@@ -208,11 +208,11 @@ Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL o
 [WAIT] networkidle
 [CLICK] #main-content .vc-product-card a[href]
 [WAIT] networkidle
-[WAIT] #main-content [class*=price__actual]
+[WAIT] #main-content [class*=price__actual]:has-text(""€"")
 [PROBE:CONTENT] #main-content","[CONTENT] midWrap == 0
 [CONTENT] placeholders == 0","auto-captured","The price drawn as 189, / 00 € on two lines; NaN € or undefined in the price block","none: currency and theme live in the case's own fresh browser context","Archetype:MONEY · Technique:PW · Purpose:VISUAL
 Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL on a planted mutant, price CSS that lets a price break inside the number (word-break: break-all on a 1ch price box), served through a local proxy that injects it into every HTML page, PASS through the same proxy without it. | Promoted: P5B-FINAL-LAYOUT-CNT (2026-10-27)",Automated
-"LAYOUT-CNT-005","Catalog in a points currency keeps each price on one line and shows no placeholder (pt, PTS, 375)","Content > Currency","P2",,"ECL-12.1","PTS is a points currency with a price list on vcst; its prices render as 12 PTS (a suffix code, no symbol).","{{FRONT_URL}}","[VIEWPORT] 1280x900
+"LAYOUT-CNT-005","Catalog in a points currency keeps each price on one line and shows no placeholder (pt, PTS, 375)","Content > Currency","P2",,"ECL-12.1","PTS is a points currency with a price list on vcst; its prices render as 12 PTS (a suffix code, no symbol). The price guard waits for a PTS price, so the case ends BLOCKED when PTS did not carry over the navigation.","{{FRONT_URL}}","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/
 [WAIT] networkidle
 [CLICK] [data-test-id=currency-selector-button]
@@ -222,7 +222,7 @@ Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL o
 [VIEWPORT] 375x812
 [NAV] {{FRONT_URL}}/pt/catalog
 [WAIT] networkidle
-[WAIT] #main-content [class*=price__actual]
+[WAIT] #main-content [class*=price__actual]:has-text(""PTS"")
 [PROBE:CONTENT] #main-content","[CONTENT] midWrap == 0
 [CONTENT] placeholders == 0
 [CONTENT] rawKeys == 0","auto-captured","A points price split across lines; NaN PTS; a raw key where the currency label belongs","none: currency and theme live in the case's own fresh browser context","Archetype:MONEY · Technique:PW · Purpose:VISUAL
@@ -247,7 +247,7 @@ Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL o
 [CONTENT] guids == 0
 [CONTENT] placeholders == 0","auto-captured","A status shown as a dotted key; an order or customer GUID in a cell or filter chip","none: currency and theme live in the case's own fresh browser context","Archetype:FALLBACK · Technique:EG · Purpose:VISUAL
 Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL on a planted mutant, a GUID appended to the page's main content, served through a local proxy that injects it into every HTML page, PASS through the same proxy without it. | Promoted: P5B-FINAL-LAYOUT-CNT (2026-10-27)",Automated
-"LAYOUT-CNT-008","Catalog empty state in a currency with no price list shows translated copy only (de, CZK, 320)","Content > Currency","P3",,"ECL-12.1","CZK is offered in the header but has no product price list on vcst, so the catalog is empty: the documented behaviour for an uncovered currency (ECL-12.1). This row checks the empty state's copy, not that it is empty.","{{FRONT_URL}}","[VIEWPORT] 1280x900
+"LAYOUT-CNT-008","Catalog empty state in a currency with no price list shows translated copy only (de, CZK, 320)","Content > Currency","P3",,"ECL-12.1","CZK is offered in the header but has no product price list on vcst, so the catalog is empty: the documented behaviour for an uncovered currency (ECL-12.1). This row checks the empty state's copy, not that it is empty, so it waits for the catalog's empty view first: the case ends BLOCKED when the catalog is populated (CZK gained a price list, or the currency did not carry over the navigation) instead of passing on a page that has no empty state.","{{FRONT_URL}}","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/
 [WAIT] networkidle
 [CLICK] [data-test-id=currency-selector-button]
@@ -257,6 +257,7 @@ Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL o
 [VIEWPORT] 320x700
 [NAV] {{FRONT_URL}}/de/catalog
 [WAIT] networkidle
+[WAIT] #main-content .category-products .vc-empty-view
 [PROBE:CONTENT] #main-content","[CONTENT] rawKeys == 0
 [CONTENT] guids == 0
 [CONTENT] brokenImages == 0
@@ -292,27 +293,29 @@ Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL o
 [STRESS:TEXT] x2 body
 [PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","A label, button or title that does not wrap and pushes the page wider than the viewport","none: currency and theme live in the case's own fresh browser context","Archetype:RENDER · Technique:PW · Purpose:VISUAL
 Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL on a planted mutant, headings, links, buttons, labels and text set to white-space: nowrap, served through a local proxy that injects it into every HTML page, PASS through the same proxy without it. | Promoted: P5B-FINAL-LAYOUT-STR (2026-10-27)",Automated
-"LAYOUT-STR-005","Home in dark theme has no broken image, raw key or horizontal page scroll (de, dark, 375)","Overflow > Stress matrix","P2","BL-UI-004","ECL-1.6","The theme is switched with the header's dark-mode toggle at desktop width, then the page is re-opened at 375. A theme that swaps images (logo, icons) must swap to images that exist.","{{FRONT_URL}}","[VIEWPORT] 1280x900
+"LAYOUT-STR-005","Home in dark theme has no broken image, raw key or horizontal page scroll (de, dark, 375)","Overflow > Stress matrix","P2","BL-UI-004","ECL-1.6","The theme is switched with the header's dark-mode toggle at desktop width, then the page is re-opened at 375. A theme that swaps images (logo, icons) must swap to images that exist. The toggle cycles auto → dark → light (one click from auto is dark on a light-scheme browser) and dark mode sets the html.dark class; the case waits for that class after the click and again after the re-open, so it ends BLOCKED when dark mode did not apply or did not carry over instead of passing in the light theme.","{{FRONT_URL}}","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/
 [WAIT] networkidle
 [CLICK] [data-test-id=dark-mode-toggle]
-[WAIT] 500ms
+[WAIT] html.dark
 [VIEWPORT] 375x812
 [NAV] {{FRONT_URL}}/de/
 [WAIT] networkidle
+[WAIT] html.dark
 [PROBE:CONTENT] body
 [PROBE:OVERFLOW]","[CONTENT] brokenImages == 0
 [CONTENT] rawKeys == 0
 [OVERFLOW] documentScrolls == false","auto-captured","A dark-theme logo or icon that fails to load; a raw key in the de header; a page wider than 375","none: currency and theme live in the case's own fresh browser context","Archetype:RENDER · Technique:PW · Purpose:VISUAL
 Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL on a planted mutant, an image whose source is missing, served through a local proxy that injects it into every HTML page, PASS through the same proxy without it. | Promoted: P5B-FINAL-LAYOUT-STR (2026-10-27)",Automated
-"LAYOUT-STR-006","Catalog in dark theme with ×2 Portuguese text has no horizontal page scroll (pt, dark, ×2, 768)","Overflow > Stress matrix","P2","BL-UI-004","ECL-1.6; ECL-12.1","[STRESS:TEXT] x2 repeats every visible text to twice its length after the page settles: a translation twice as long as English, the way de and pt run long. BL-UI-004: long content wraps, truncates with an ellipsis or scrolls inside its own container; the document never scrolls sideways (a data table that scrolls by itself is allowed).","{{FRONT_URL}}","[VIEWPORT] 1280x900
+"LAYOUT-STR-006","Catalog in dark theme with ×2 Portuguese text has no horizontal page scroll (pt, dark, ×2, 768)","Overflow > Stress matrix","P2","BL-UI-004","ECL-1.6; ECL-12.1","[STRESS:TEXT] x2 repeats every visible text to twice its length after the page settles: a translation twice as long as English, the way de and pt run long. BL-UI-004: long content wraps, truncates with an ellipsis or scrolls inside its own container; the document never scrolls sideways (a data table that scrolls by itself is allowed). Dark mode sets the html.dark class; the case waits for it after the toggle and again after the re-open, so it ends BLOCKED when dark mode did not apply or did not carry over.","{{FRONT_URL}}","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/
 [WAIT] networkidle
 [CLICK] [data-test-id=dark-mode-toggle]
-[WAIT] 500ms
+[WAIT] html.dark
 [VIEWPORT] 768x1024
 [NAV] {{FRONT_URL}}/pt/catalog
 [WAIT] networkidle
+[WAIT] html.dark
 [STRESS:TEXT] x2 body
 [PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","A label, button or title that does not wrap and pushes the page wider than the viewport","none: currency and theme live in the case's own fresh browser context","Archetype:RENDER · Technique:PW · Purpose:VISUAL
 Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL on a planted mutant, headings, links, buttons, labels and text set to white-space: nowrap, served through a local proxy that injects it into every HTML page, PASS through the same proxy without it. | Promoted: P5B-FINAL-LAYOUT-STR (2026-10-27)",Automated
