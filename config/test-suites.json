@@ -1301,7 +1301,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P1",
-      "testCount": 34,
+      "testCount": 49,
       "estimatedMinutes": 3,
       "agent": "none",
       "runner": "layout-runner",

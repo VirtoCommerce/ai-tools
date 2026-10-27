@@ -11,7 +11,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { env } from "./data.js";
 import { acquireToken, resolveRole } from "../../scripts/lib/graphql-auth.js";
-import { EMAIL_SELECTORS, PWD_SELECTORS } from "../../scripts/auth/save-storage-state.js";
+import { EMAIL_SELECTORS, PWD_SELECTORS } from "../../scripts/lib/sign-in-selectors.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const STATE_DIR = join(ROOT, "test-results", "auth");
