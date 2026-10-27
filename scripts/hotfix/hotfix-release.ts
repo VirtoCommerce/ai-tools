@@ -46,7 +46,9 @@ const POLL_INTERVAL_MS = 15_000;
 const POLL_TIMEOUT_MS = 25 * 60_000; // hotfix build+test+publish can take ~10-20 min
 
 function loadToken(): string | undefined {
-  for (const f of ['.env.defaults', '.env.local']) {
+  // A variable already set is never overwritten, so the file read FIRST wins: .env.local before .env.defaults gives
+  // the documented order (process env, then .env.local, then .env.defaults). The reverse let a default beat a local value.
+  for (const f of ['.env.local', '.env.defaults']) {
     const p = resolve(REPO_ROOT, f);
     if (existsSync(p)) { const vars = parseDotenv(readFileSync(p)); for (const [k, v] of Object.entries(vars)) if (!process.env[k]) process.env[k] = v; }
   }
