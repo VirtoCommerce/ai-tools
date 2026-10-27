@@ -106,7 +106,7 @@
   "regression": {
     "c1": {
       "run_id": null,
-      "skipped_reason": "the change-scoped cases (059 CMS-220..242 and the Round-2 rows) were run as this round's checklist on vcptcore"
+      "skipped_reason": "the change-scoped cases (059 CMS-259..281 and the Round-2 rows) were run as this round's checklist on vcptcore"
     }
   },
   "release": {

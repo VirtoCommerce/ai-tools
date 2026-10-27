@@ -152,14 +152,14 @@
   "regression": {
     "c1": {
       "run_id": "REG-2026-10-22-1819",
-      "ids": "059 CMS-220..242 + 060b CMS-089",
+      "ids": "059 CMS-259..281 + 060b CMS-089",
       "pass": 22,
       "fail": 2,
       "blocked": 0,
       "pass_rate": 0.917,
       "failures": [
-        "CMS-231 (%20 permalink 404 at natural URL)",
-        "CMS-242 (legacy blade trims edge whitespace)"
+        "CMS-270 (%20 permalink 404 at natural URL)",
+        "CMS-281 (legacy blade trims edge whitespace)"
       ],
       "report": "reports/regression/REG-2026-10-22-1819/regression-2026-10-22.md",
       "triage": "reports/regression/REG-2026-10-22-1819/triage-report.md"
@@ -182,7 +182,7 @@
     }
   ],
   "ac_analysis": {
-    "verdict_basis": "AC-11 not met for edge whitespace: the legacy AngularJS page blade silently trims a leading/trailing space or tab instead of rejecting it (CMS-242, IN-SCOPE Medium) — contradicts the decision 'validate (reject), do not normalize'. Every other AC met live.",
+    "verdict_basis": "AC-11 not met for edge whitespace: the legacy AngularJS page blade silently trims a leading/trailing space or tab instead of rejecting it (CMS-281, IN-SCOPE Medium) — contradicts the decision 'validate (reject), do not normalize'. Every other AC met live.",
     "checklist": {
       "file": "testing-checklist.md",
       "rows": 28,
@@ -313,7 +313,7 @@
     "checklist": "testing-checklist.md",
     "cases_authored": {
       "suite": "regression/suites/Backend/page-builder/059-page-builder.csv",
-      "ids": "CMS-220..CMS-242",
+      "ids": "CMS-259..CMS-281",
       "count": 23,
       "status": "Draft"
     }
