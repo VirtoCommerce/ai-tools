@@ -37,7 +37,7 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
 
 3. **Delegate to `vc-test:ui-ux-expert`** via Task tool (`subagent_type: vc-test:ui-ux-expert`):
    - Pass scope, URL(s), and reference to `wcag-accessibility-checklist.md`
-   - Agent uses **a Playwright lane** (the brief names it, e.g. `playwright-edge`) for `browser_evaluate` (to inject axe-core and run it — the real-user hook's allowlist passes `axe.run`), `browser_take_screenshot` (focus states), and `browser_console_messages` / `browser_network_requests`
+   - Agent uses **a Playwright lane** (the one the brief names — a lane the run leaves free) for `browser_evaluate` (to inject axe-core and run it — the real-user hook's allowlist passes `axe.run`), `browser_take_screenshot` (focus states), and `browser_console_messages` / `browser_network_requests`
    - For multi-browser parity: re-run keyboard walk on `playwright-firefox` and `playwright-edge`
 
 4. **Run the layered scan per route** (A, C, D — Layer B is retired):

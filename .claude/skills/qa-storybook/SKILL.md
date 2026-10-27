@@ -36,7 +36,7 @@ Test Storybook components for responsive behavior, state completeness and in-sto
 
 3. **Delegate to `vc-test:ui-ux-expert`** via Task tool (`subagent_type: vc-test:ui-ux-expert`):
    - Pass component name(s), Storybook URL
-   - Agent uses the Playwright lane the brief names (e.g. `playwright-edge`) for screenshot capture
+   - Agent uses the Playwright lane the brief names (a lane the run leaves free) for screenshot capture
    - Agent reads supporting files from this skill folder for methodology
 
 4. **For each component, test:**
