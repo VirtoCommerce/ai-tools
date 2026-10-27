@@ -14,18 +14,23 @@
 //   resolved against outputRoot() (a refresh or a round ≥ 2 resume needs recordRound = round − 1, rounds.md §Round N).
 //   exit 0: a round to run; 2: mode cap (a fourth round is refused, `escalation` says to whom the ticket goes back);
 //   1: usage or an unreadable input.
-// CLI: node plugins/vc-test/lib/rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--delta <WORK>/delta.json]
-//        [--filed B-1=VCST-7001,…]
+// CLI: node plugins/vc-test/lib/rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--filed B-1=VCST-7001,…]
 //   closes the round the last `## Round N` section of <RUN_DIR>/test-strategy.md opened: reads <RUN_DIR>/verdict.json
-//   (validated against verdict.schema.json), writes <RUN_DIR>/rounds/round-<N>.json and copies --bundle (a relative path
-//   resolves against outputRoot()) beside it as round-<N>.bundle.json (the bundle is swept after 24 h and round N+1
-//   needs it; skipped when --bundle is that file). Round ≥ 2 passes --delta: the copy then carries the delta read's
-//   description and acceptance, so round N+1 diffs the AC text against round N's, not round 1's.
+//   (validated against verdict.schema.json), writes <RUN_DIR>/rounds/round-<N>.json and copies --bundle as given (a
+//   relative path resolves against outputRoot()) beside it as round-<N>.bundle.json (the bundle is swept after 24 h and
+//   round N+1 needs it; skipped when --bundle is that file). Round ≥ 2's --bundle is `bundle`'s rebuild, so round N+1
+//   diffs the AC text against round N's, not round 1's. A `Build: none` line (no product PR) records `build: []`.
 //   Then it archives the round into <RUN_DIR>/rounds/round-<N>/: MOVES scenarios/*.rows.md and testing-checklist.md (so
 //   round N+1 in the same folder merges none of them) and COPIES verdict.md and verdict.json (the originals stay).
 //   Every path the record stores is POSIX-relative to outputRoot(). exit 0; 1: usage, a missing or invalid verdict.json,
-//   no `## Round`, a Build line with no `<repo>#<n> @ <sha>`, a --delta of another round, or a --filed id that is no bug
+//   no `## Round`, a Build line that is neither `none` nor names a `<repo>#<n> @ <sha>`, or a --filed id that is no bug
 //   of the verdict.
+// CLI: node plugins/vc-test/lib/rounds.mjs bundle --key <KEY> --base <bundle copy> --delta <WORK>/delta.json
+//        [--ticket-out <ticket.out.json>]
+//   round N's bundle: --base (count's `bundle`, round N−1's copy; a relative path resolves against outputRoot()) with
+//   delta.json's `fields` (description, acceptance) and, with --ticket-out (the TICKET analyst ran this round), `acs[]`
+//   replaced by that output's `acs`. Writes <WORK>/bundle.json and prints its path. exit 0; 1: usage, an unreadable
+//   input, a delta of another ticket or with no `fields`, or a TICKET output with no `acs`.
 // CLI: node plugins/vc-test/lib/rounds.mjs delta --key <KEY> --run-dir <RUN_DIR> --prepare <delta prepare.json>
 //   round N's refresh over `ticket-context prepare --since`'s output: which PRs changed, which analysts to dispatch
 //   (TICKET on new comments or a changed AC, CHANGE per changed or new PR), the prior bugs of every round (in scope and
@@ -287,8 +292,10 @@ export function closeRound({ round, strategyMd, verdict, filed = {}, env, closed
   if (!section) throw new Error(round == null ? "test-strategy.md has no `## Round N` section" : `test-strategy.md has no \`## Round ${round}\` section`);
   const ids = new Set(verdict.bugs.map((b) => b.id));
   for (const id of Object.keys(filed)) if (!ids.has(id)) throw new Error(`--filed ${id}: the verdict has no such bug`);
+  // `Build: none` is a round with no product PR (a supported state): build []. Any other line that parses to nothing is
+  // refused — a record with no sha and no `none` could not be told apart from a typo, and would count the round twice.
   const build = parseBuild(section.build);
-  if (!build.length) throw new Error(`Round ${section.n}'s Build line "${section.build}" names no \`<repo>#<n> @ <sha>\` — fix the line, then close again`);
+  if (!build.length && !/^none$/i.test(section.build)) throw new Error(`Round ${section.n}'s Build line "${section.build}" names no \`<repo>#<n> @ <sha>\` and is not \`none\` — fix the line, then close again`);
   return {
     round: section.n, env, closedAt, verdict: verdict.verdict,
     build,
@@ -296,6 +303,20 @@ export function closeRound({ round, strategyMd, verdict, filed = {}, env, closed
     unresulted: unresultedOf(strategyMd, section.n),
     bundle: bundlePath,
   };
+}
+
+/**
+ * Round N's bundle (Ruling P): round N−1's bundle copy with the delta read's description and acceptance and, when the
+ * TICKET analyst ran this round, its `acs` — so every round-N agent and gate reads round N's ACs from one consistent file.
+ */
+export function rebuildBundle({ base, delta, ticketOut = null }) {
+  if (!base || typeof base !== "object") throw new Error("the base bundle is not a JSON object");
+  if (!delta?.fields || typeof delta.fields !== "object") throw new Error("the delta has no `fields` (description, acceptance)");
+  if (ticketOut && !Array.isArray(ticketOut.acs)) throw new Error("the TICKET output has no `acs` list");
+  const out = structuredClone(base);
+  out.fields = { ...(out.fields ?? {}), description: String(delta.fields.description ?? ""), acceptance: String(delta.fields.acceptance ?? "") };
+  if (ticketOut) out.acs = structuredClone(ticketOut.acs);
+  return out;
 }
 
 /** Archive a closed round into <runDir>/rounds/round-<n>/: move its row files and checklist, copy its verdict. */
@@ -390,7 +411,7 @@ export function deltaOf({ records = [], strategies = [], summaries = [], prepare
     round: recount.round, mode: recount.mode, ...(recount.escalation ? { escalation: recount.escalation } : {}),
     // no product PR is no build to call the same (`every` holds on an empty list)
     since: prepare.delta.since ?? null, sameBuild: prs.length > 0 && prs.every((p) => p.delta === "unchanged"), prs, comments, acceptanceChanged,
-    // the delta read's text, which `close --delta` lays over the bundle copy so round N+1 diffs against round N's
+    // the delta read's text, which `bundle` lays over round N−1's bundle copy: round N's BUNDLE, copied by `close`
     fields: { description: String(prepare.fields?.description ?? ""), acceptance: String(prepare.fields?.acceptance ?? "") },
     priorBugs: priorBugsOf(recs), outOfScope: (prepare.delta.bug_status ?? []).map((b) => ({ key: b.key, status: b.status ?? null })),
     carried: newest ? (newest.unresulted ?? []).map((r) => ({ r, round: newest.round })) : [],
@@ -544,8 +565,9 @@ function readInputs({ key, runDir, root }) {
 }
 
 function usage(msg) {
-  console.error(`${msg}\nusage: rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]\n       rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--delta <WORK>/delta.json] [--filed B-1=VCST-7001,B-2=…]
+  console.error(`${msg}\nusage: rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]\n       rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--filed B-1=VCST-7001,B-2=…]
        rounds.mjs delta --key <KEY> --run-dir <RUN_DIR> --prepare <delta prepare.json>
+       rounds.mjs bundle --key <KEY> --base <round N−1's bundle copy> --delta <WORK>/delta.json [--ticket-out <ticket.out.json>]
        rounds.mjs append --run-dir <RUN_DIR> --delta <WORK>/delta.json [--change-map <path>]`);
   process.exit(1);
 }
@@ -588,20 +610,13 @@ function close(argv) {
   const root = outputRoot();
   const bundleFile = resolve(root, bundle); // a record's `bundle` is stored relative to the output root
   if (!existsSync(bundleFile)) fail(`${bundleFile}: not found`);
-  const deltaPath = argOf(argv, "delta");
-  const delta = deltaPath ? readJsonFile(deltaPath) : null;
-  if (delta && Number(delta.round) !== n) fail(`${deltaPath} is for Round ${delta.round}; test-strategy.md's last section is Round ${n}`);
   const rdir = join(runDir, "rounds");
   const copy = join(rdir, `round-${n}.bundle.json`);
   let record;
   try { record = closeRound({ round: n, strategyMd, verdict, filed, env: currentEnv(), bundlePath: posix(copy, root) }); } catch (e) { fail(e.message); }
   mkdirSync(rdir, { recursive: true });
-  if (delta) {
-    // round ≥ 2: the copy carries this round's description and acceptance, so round N+1 diffs against them
-    const b = readJsonFile(bundleFile);
-    b.fields = { ...(b.fields ?? {}), description: String(delta.fields?.description ?? ""), acceptance: String(delta.fields?.acceptance ?? "") };
-    writeFileSync(copy, `${JSON.stringify(b, null, 2)}\n`);
-  } else if (resolve(bundleFile) !== resolve(copy)) copyFileSync(bundleFile, copy);
+  // copied as given: round ≥ 2's BUNDLE is already `rounds.mjs bundle`'s rebuild (round N's text and ACs)
+  if (resolve(bundleFile) !== resolve(copy)) copyFileSync(bundleFile, copy);
   writeFileSync(join(rdir, `round-${n}.json`), `${JSON.stringify(record, null, 2)}\n`);
   let arc;
   try { arc = archiveRound({ runDir, n }); } catch (e) { fail(`archiving round ${n}: ${e.message}`); }
@@ -630,6 +645,25 @@ function deltaCmd(argv, key) {
   const { fields, ...shown } = d; // the ticket's text stays in the file (B3: none reaches the orchestrator)
   console.log(JSON.stringify(shown, null, 2));
   process.exit(d.sameBuild || d.mode === "cap" ? 2 : 0);
+}
+
+function bundleCmd(argv, key) {
+  const basePath = argOf(argv, "base");
+  const deltaPath = argOf(argv, "delta");
+  const ticketPath = argOf(argv, "ticket-out");
+  if (!basePath) usage("--base is required (count's `bundle`: round N−1's bundle copy)");
+  if (!deltaPath) usage("--delta is required (<WORK>/delta.json)");
+  const root = outputRoot();
+  const delta = readJsonFile(deltaPath);
+  if (delta.key != null && delta.key !== key) fail(`${deltaPath} is ${delta.key}'s delta, not ${key}'s`);
+  let bundle;
+  try {
+    bundle = rebuildBundle({ base: readJsonFile(resolve(root, basePath)), delta, ticketOut: ticketPath ? readJsonFile(ticketPath) : null });
+  } catch (e) { fail(e.message); }
+  const file = join(workDir(key), "bundle.json");
+  writeFileSync(file, `${JSON.stringify(bundle, null, 2)}\n`);
+  console.log(file);
+  process.exit(0);
 }
 
 function appendCmd(argv) {
@@ -661,11 +695,11 @@ function appendCmd(argv) {
 
 function main() {
   const argv = process.argv.slice(2);
-  if (!["count", "close", "delta", "append"].includes(argv[0])) usage(`unknown command "${argv[0] ?? ""}"`);
+  if (!["count", "close", "delta", "append", "bundle"].includes(argv[0])) usage(`unknown command "${argv[0] ?? ""}"`);
   if (argv[0] === "append") return appendCmd(argv);
   const key = argOf(argv, "key");
   if (!key || !KEY_RE.test(key)) usage(`--key must be a ticket key, got "${key ?? ""}"`);
-  if (argv[0] === "close") close(argv); else if (argv[0] === "delta") deltaCmd(argv, key); else count(argv, key);
+  if (argv[0] === "close") close(argv); else if (argv[0] === "delta") deltaCmd(argv, key); else if (argv[0] === "bundle") bundleCmd(argv, key); else count(argv, key);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) main();

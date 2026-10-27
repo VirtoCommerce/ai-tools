@@ -77,7 +77,8 @@ complete it; you never start a new one.
   `acceptanceChanged`, the prior bugs, the out-of-scope bugs with their status, the carried risks); `TICKET` and
   `CHANGE` — the outputs of the analysts the delta dispatched (`dispatch.ticket`, `dispatch.change`), absent when it
   dispatched none; `DEPLOY` — the delta read's `deploy.json` (`chain_deployed`, per PR `deployed` `YES` / `NO` /
-  `UNKNOWN`, its `blockers`), which `Deployed:` reports; `CHANGE_MAP`, `CAPABILITIES`, `RUN_DIR` as in round 1. There is no new bundle and no scorer table.
+  `UNKNOWN`, its `blockers`), which `Deployed:` reports; `CHANGE_MAP`, `CAPABILITIES`, `RUN_DIR` as in round 1; `BUNDLE` is round N's rebuild (`rounds.mjs bundle`: round
+  N−1's bundle with this read's text and, when TICKET ran, its `acs`). There is no scorer table.
 - **Fill only the `TBD — strategy agent` lines** — the mission, Inputs (the change surface since the last tested
   commit), the Floors and Blocked lines, `Deployed:`, Strategy mix, Data, Out of scope, Criteria, and any Artifacts
   decision left `TBD` (one that named a round N−1 scenario). Out of scope also lists each of `DELTA`'s out-of-scope

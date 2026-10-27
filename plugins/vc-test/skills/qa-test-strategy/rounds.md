@@ -55,9 +55,12 @@ Under vc-test each step above is a script over machine records; prose is never p
 
 - **The record.** `rounds.mjs close` ends a round: `<RUN_DIR>/rounds/round-<N>.json` (build per PR, verdict, the
   bugs of `verdict.json`, the unresulted risks) and a copy of the round's bundle beside it, which round N+1 diffs the
-  acceptance text against (the bundle itself is swept after 24 h; round ≥ 2's `close --delta` lays the delta read's
-  description and acceptance over the copy, so the diff is against round N's text, never round 1's). Every path in
-  it is relative to the output root. It also archives the round into `<RUN_DIR>/rounds/round-<N>/`: the row files and `testing-checklist.md` move there,
+  acceptance text against (the bundle itself is swept after 24 h). A round with no product PR has `Build: none` and
+  closes with `build: []`; any other Build line naming no `<repo>#<n> @ <sha>` is refused. Every path in
+  it is relative to the output root.
+- **Round N works from a rebuilt bundle.** `rounds.mjs bundle` lays the delta read's description and acceptance, and
+  the TICKET analyst's `acs` when it ran, over round N−1's copy; every round-N agent and gate reads it, and `close`
+  copies it as given, so round N+1 diffs against round N's text, never round 1's. It also archives the round into `<RUN_DIR>/rounds/round-<N>/`: the row files and `testing-checklist.md` move there,
   `verdict.md` and `verdict.json` are copied, so round N+1 in the same folder starts from none of round N's rows.
 - **Round N starts from round N−1's record.** A refresh, and a resume of round ≥ 2, need `rounds.mjs count`'s
   `recordRound` to be ROUND − 1 (its `bundle` is then the round's bundle copy, already resolved). Otherwise STOP and
