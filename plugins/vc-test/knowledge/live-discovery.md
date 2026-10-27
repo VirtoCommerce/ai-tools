@@ -8,7 +8,7 @@ applicability_rationale: "Decision tree + xAPI discovery patterns + AGENT-TEST- 
 
 QA agents have four ways to get data into a test. Picking the right one per data role is what keeps a suite from rotting when the catalog/seed drifts.
 
-This file is the single source of truth for that decision and for the discovery recipes. Companion code lives in this repository's `scripts/lib/live-discover.ts` and `scripts/lib/random-data.ts`.
+This file is the single source of truth for that decision and for the discovery recipes. Companion code lives in this repository's `scripts/lib/live-discover.ts` and this repository's `scripts/lib/random-data.ts`.
 
 ---
 
@@ -301,8 +301,8 @@ When a test fails on discovered data, the diff between "what we asked for" and "
 
 ## Reused primitives
 
-- `scripts/lib/graphql-auth.ts` — `TokenCache` (called by `tokenForRole`)
-- `scripts/lib/graphql-executor.ts` — `executeOperation` (called by every `discover*`)
-- `scripts/lib/graphql-case-parser.ts` — `[GQL-CAPTURE label.path → VAR]` grammar (used by CSV recipes)
+- this repository's `scripts/lib/graphql-auth.ts` — `TokenCache` (called by `tokenForRole`)
+- this repository's `scripts/lib/graphql-executor.ts` — `executeOperation` (called by every `discover*`)
+- this repository's `scripts/lib/graphql-case-parser.ts` — `[GQL-CAPTURE label.path → VAR]` grammar (used by CSV recipes)
 - this repository's `knowledge/api/graphql-schema.md` — schema reference; consult before writing new discovery queries
-- `test-data/aliases.json` — registry for `@td()` references (the other half of the data layer)
+- this repository's `test-data/aliases.json` — registry for `@td()` references (the other half of the data layer)

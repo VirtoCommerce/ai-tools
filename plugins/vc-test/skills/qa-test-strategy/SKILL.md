@@ -79,7 +79,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 6. **Risk register.** Each product risk is **what a customer would see** if the code is wrong, never
    "verify X works". Every risk names its source: an `AC-n`, a diff hotspot `file:line`, a `VC-*`
    entry, a prior bug, a `BL-*`/`ECL-*` rule. Score and level by
-   the `vc-fix:qa-risk` skill's `risk-prioritization-framework.md`. Layer and
+   [`risk-prioritization-framework.md`](../../knowledge/risk-prioritization-framework.md). Layer and
    domain counts **raise a risk's L×I** — they never fire a floor on their own (D8). **Project risks**
    (stand not on the PR's build, fixture gap, missing role, no free lane, stale cases) each get a
    mitigation or an explicit `accepted`. F2 fired ⇒ a purpose risk, F10 ⇒ an org-context risk, F11 ⇒ a

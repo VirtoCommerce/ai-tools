@@ -3,10 +3,9 @@
 **Floors are deterministic.** Each is computed by `lib/floors.mjs` from the `/vc-test:ticket-context` bundle; this table is what the
 script implements and what a reviewer checks it against. F1's register half (a High/Critical risk) is checked by
 `lib/check-strategy.mjs`, because the register is written after the floors run. When a floor fires it puts an
-artifact or a level into the strategy that the strategy may add to but never go under. They replace a ticket
-router's EFFORT axis for this flow — vc-test routes by its own [`lib/route.mjs`](../../lib/route.mjs) and the profile's
-`test.routing`: depth comes from these signals and the risk register, never from the
-ticket type. Name every floor in the strategy as fired or not, with its signal.
+artifact or a level into the strategy that the strategy may add to but never go under. They are this flow's
+only depth axis: [`lib/route.mjs`](../../lib/route.mjs) and the profile's `test.routing` pick only the job (test,
+verify-fix, hotfix-check); depth comes from these signals and the risk register, never from the ticket type. Name every floor in the strategy as fired or not, with its signal.
 
 **No floor requires the test model itself.** It runs if and only if a risk has technique `MODEL`; the floors
 that need modelling require a `MODEL` risk instead, and F2, F10 and F11 each require **their own** — its
