@@ -72,4 +72,7 @@ node "<plugin>/visual/affected.mjs" --repo . --base "$M^1" \
 A regression goes back into step 4 (the resolution that caused it) before the push. Record the result in
 the log under **Visual**: the counts, every regression with its diff image path, and every target that was
 not measured. Add one QA-checklist block per intended change. The images stay in the temp folder; they
-are evidence, not commits. Remove both worktrees when done: `git worktree remove "$B"`, same for `"$H"`.
+are evidence, not commits. Once the result is in the log, delete the first-pass base and head sets: keep the
+diff images, `visual-diff.json` and the confirmation-pass sets, which hold every flagged story. A full
+Storybook pass is thousands of PNGs, and the shots of unchanged stories prove nothing. Remove both worktrees
+when done: `git worktree remove "$B"`, same for `"$H"`.

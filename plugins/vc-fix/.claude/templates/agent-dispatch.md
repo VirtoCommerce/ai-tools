@@ -23,7 +23,7 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 **Output:** {OUTPUT_PATH}
 
 **Evidence policy:** Follow `skills/qa-evidence/evidence-capture-policy.md`
-- Screenshots: failures + final state of critical flows only
+- Screenshots: failures only (plus what a bug report, a guide, a visual check or a UI-claim tracker comment needs) — never a passing step
 - Console: capture errors, skip noise
 - Network: capture 4xx/5xx and slow requests (>2s)
 - HAR: always capture

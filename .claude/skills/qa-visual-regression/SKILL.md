@@ -107,6 +107,12 @@ the header, not a copy of it here.
    - A tracker comment that claims a visual regression carries the diff and the head shot **inline**
      ([`../../rules/reports.md`](../../rules/reports.md) §5.0).
 
+8. **Clean up once the verdict is recorded.** Delete pass 1's `base/` and `head/` capture sets. Keep the
+   diff PNGs, `visual-diff.json`, `flagged-ids.txt` and pass 2's sets, which hold every flagged target.
+   - Pass 1 shoots every target in scope; a Storybook run is thousands of PNGs (VCST-6231: 2,834 shots,
+     46 MB, against 56 diffs). The shots of `same` targets prove nothing a reader looks at.
+   - None of it is committed in any case: images are gitignored repo-wide (`reports-policy.md` §1).
+
 ## Where it pays most
 
 - **A shared component, a token or a theme** — the change moves components the ticket never names.

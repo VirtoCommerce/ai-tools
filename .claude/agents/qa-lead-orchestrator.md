@@ -258,7 +258,7 @@ the doer's output artifact and where it lives.
   `reports/bugs/` ledger — for those, and only those.
 - If `verify:gate` cannot produce a fact (a missing `RUN_ID`, `git show` unavailable), it says so
   rather than omitting the row; derive that one by hand and say you did.
-- **Re-open the evidence** — screenshots / traces for a claimed PASS; reject any PASS with no artifact.
+- **Re-open the evidence** — snapshot / HAR of a PASS (no screenshot, §5.1); reject a PASS with none.
 - **Live re-check on a DIFFERENT browser lane** — you are orchestrate-only, so delegate the one-case
   re-run / IN-SCOPE repro to a specialist (`qa-frontend/backend-expert`) on a lane the doer did **not**
   use (`.claude/rules/agents.md` browser assignments). Never re-use the doer's browser/session/state.

@@ -29,6 +29,10 @@
   `test-results/<lane>/`. **Never write documentation into `test-results/`** — it is pruned and
   untracked, so the artifact silently disappears — **and never write raw browser dumps into
   `reports/`**, which is how a 1.4 MB HAR ends up in git.
+- **No screenshot, GIF, video, HAR or trace is committed — anywhere** (VCST-6394). `.gitignore`
+  ignores those extensions repo-wide; the one exception is seeder input under `test-data/`. The
+  durable copy of an image a reader needs is the **tracker attachment** (§5.0); the file in the run
+  folder is local working state. Never `git add -f` one: they were 677 MB of the repo's history.
 - **Never create `reports/<TICKET>/` at the repo root.** A ticket's folder is its run folder
   (`npm run run:dir -- --ticket <KEY>` prints it): `QA_OUTPUT_DIR`'s template, by default
   `reports/tickets/<Sprint>/<TICKET>/<env>/`; a script with no sprint to resolve falls back to the
@@ -71,7 +75,7 @@ Four rules, each of which was a live fork:
 | Artifact | What it is | Rules |
 |---|---|---|
 | `verification-summary.json` | Small structured verdict record (ticket, verdict, build, deployment, evidence paths) — the `/qa-verify-fix` analogue of `/qa-test`'s `summary.json` | Structured only, no narrative prose. It does not replace the `verification-report.md` narrative (category 6) — write both |
-| `evidence.html` | The RED→GREEN evidence page linked from the tracker comment | Rendered by `qa-report` (`--images ref`); **Reference the sibling screenshots (`<img src="screenshots/NAME.png">`) — never inline them as `data:` base64 in the committed copy.** A single inlined PNG cost 124 KB on one 124 000-char line, duplicating a PNG already tracked in the same folder byte-for-byte and making the diff unreviewable. Keep the committed page **under ~40 KB**. Base64 self-containment is required only for the *published* Artifact variant, which is never committed |
+| `evidence.html` | The RED→GREEN evidence page linked from the tracker comment | Rendered by `qa-report` (`--images ref`); **Reference the sibling screenshots (`<img src="screenshots/NAME.png">`) — never inline them as `data:` base64 in the committed copy.** A single inlined PNG cost 124 KB on one 124 000-char line, duplicating a PNG already tracked in the same folder byte-for-byte and making the diff unreviewable. Keep the committed page **under ~40 KB**. The sibling screenshots are not committed (§1), so the committed page shows its images only where the run ran; the tracker comment's attachments are the copy everyone else sees. Base64 self-containment is required only for the *published* Artifact variant, which is never committed |
 
 Line caps in §2 apply to **narrative** files. A generated evidence page is exempt from the line cap but bound by the size + no-inlined-image rules above.
 
@@ -88,7 +92,7 @@ Line caps in §2 apply to **narrative** files. A generated evidence page is exem
 - **The Step 1e Test Model** is a category-3 artifact, written as `test-model.md` in the ticket's run folder (`run-output.md`; a model at the older `reports/ba/test-models/<TICKET>-<date>.md` is still read as the prior model). "Nothing downstream reads it" stopped holding once the model became reusable across tickets and a required deliverable for every large feature and all but the narrowest Story (`ticket-routing.md` §5b). (It is *intended* to be lintable; `npm run model:lint` is not implemented yet, so do not cite it as a live gate.) <!-- doclint:may-not-exist -->
 - **The Artifact B `testing-checklist.md`** is a category-6 per-ticket file. "Consumed by the Step 4 agent prompts in the same turn" was true when a run also produced a Test Model and new suite rows. It is not true on the **FAST path**, which authors no cases and writes no model: the checklist is then the *entire* record of what the run checked, and terminal-only makes a FAST run unauditable the moment the session ends. It is written at Step 3 and **updated in place at 5-report with each item's verdict**, so what is committed is the checklist that ran, not the one that was planned.
 
-`ac-analysis.md` and `test-execution-report.md` stay terminal-only and still have no reader beyond their own run — the AC table is built at Step 1d and reconciled from the orchestrator's own working context at Step 5b, **not** re-read from a file. They are carried in-context and folded into **one** final Step 5 chat report. So what persists to `reports/tickets/{SPRINT}/VCST-XXXX/` is: **`summary.json`** (small/structured — this is what the Step 1b "same ticket tested in the last 2 hours" duplicate-check scans **across all sprints**, so it has to survive the run; it is also the only durable record of the C1 ticket-regression result, and it carries the `timing` block that makes the 40-minute regression window checkable; schema at `.claude/templates/qa-test-summary.schema.json`), **`testing-checklist.md`**, **`design-report.md`** (only when the Step-4 visual lane ran — its narrative half; the machine half is `summary.json.visual`), and **evidence screenshots**. **New test cases are NOT a `/qa-test` narrative artifact and do not land in the ticket folder** — Step 3 appends them straight into `regression/suites/<layer>/<module>/*.csv` as `Automation_Status = Draft` (category 2, Test cases) and they stay `Draft`; a later `/qa-test-lifecycle` pass flips the promotable ones in place and reverts the rest; no run-scoped `reports/tickets/**/test-cases.csv` is written. A ticket-scoped run of a *different* skill against the same ticket (`/qa-design`, `/qa-storybook`, `/qa-verify-fix`) still writes its own category-6 report into the same folder.
+`ac-analysis.md` and `test-execution-report.md` stay terminal-only and still have no reader beyond their own run — the AC table is built at Step 1d and reconciled from the orchestrator's own working context at Step 5b, **not** re-read from a file. They are carried in-context and folded into **one** final Step 5 chat report. So what persists to `reports/tickets/{SPRINT}/VCST-XXXX/` is: **`summary.json`** (small/structured — this is what the Step 1b "same ticket tested in the last 2 hours" duplicate-check scans **across all sprints**, so it has to survive the run; it is also the only durable record of the C1 ticket-regression result, and it carries the `timing` block that makes the 40-minute regression window checkable; schema at `.claude/templates/qa-test-summary.schema.json`), **`testing-checklist.md`**, **`design-report.md`** (only when the Step-4 visual lane ran — its narrative half; the machine half is `summary.json.visual`), and **evidence screenshots** (on disk only — never committed, §1). **New test cases are NOT a `/qa-test` narrative artifact and do not land in the ticket folder** — Step 3 appends them straight into `regression/suites/<layer>/<module>/*.csv` as `Automation_Status = Draft` (category 2, Test cases) and they stay `Draft`; a later `/qa-test-lifecycle` pass flips the promotable ones in place and reverts the rest; no run-scoped `reports/tickets/**/test-cases.csv` is written. A ticket-scoped run of a *different* skill against the same ticket (`/qa-design`, `/qa-storybook`, `/qa-verify-fix`) still writes its own category-6 report into the same folder.
 
 **`/qa-checklist` is already terminal-only** — it has never written to `reports/checklists/`; it outputs the unified checklist directly in chat. `reports/checklists/` is a reserved path (documented for a future durable checklist artifact) but has no active writer today.
 
@@ -214,9 +218,15 @@ verification step rather than a note.
 
 ### 5.1 What to capture
 
-**Always capture:** test FAILs, confirmed bugs (annotated), visual regressions (before/after), final state of critical flows (checkout confirmation, order created), Figma deviations, error states (console error, 500 toast).
+**Capture ONLY for these five purposes — nothing else gets a screenshot** (VCST-6394):
 
-**Skip:** every navigation step in a passing test, loading spinners, login page (unless testing auth), successful form fills mid-flow, same page across browsers when all pass, redundant confirmations of the same bug.
+1. **A FAIL** — the failing check's state (on the MCP lanes the agent's capture is the only failure image, §5.1a), error states included (console error, 500 toast).
+2. **A bug report** — the confirmed bug, annotated.
+3. **Documentation** — a guide whose reader needs to see the screen (`ba-doc-writer`, `/qa-test` 5-docs).
+4. **Visual regression** — `vs. DESIGN`, visual-axis and before/after evidence, where the image IS the check.
+5. **A tracker comment that makes a UI claim** (§5.0) — a PASS gets a capture only when that comment will show it.
+
+**Skip everything else:** a passing check or step, the final state of a passing flow, navigation, loading spinners, login (unless testing auth), mid-flow form fills, the same page across browsers when all pass, progress shots, redundant confirmations of the same bug. A PASS is evidenced by the snapshot, the network and the HAR, not by an image.
 
 **Capture the PROBLEM PLACE, not only the page.** A 1920×1080 viewport shrunk to `|width=700!` in a
 tracker comment renders body text at roughly 7 px — the reader cannot read the error you are pointing at,
@@ -238,10 +248,10 @@ full-page shot replaces the viewport shot, never the element shot, and still cou
 
 | Scope | Target | Max |
 |-------|--------|-----|
-| Test case (pass) | 0–1 (final state if critical) | 2 |
+| Test case (pass) | 0 (1 only when a tracker comment or guide shows it) | 1 |
 | Test case (fail) | 1–3 | 4 |
 | Bug report | 1–3 | 5 |
-| Regression suite (20+ tests) | failures + 1 summary per area | 15–20 |
+| Regression suite (20+ tests) | failures only | 15–20 |
 | Exploratory session | anomalies only | 10 |
 
 **On a `/qa-test --iterate` run every round stamps `-r{N}`, round 1 included.** Round N+1 re-runs the
@@ -252,7 +262,7 @@ round rather than only round ≥2 avoids the "did round 1 stamp or not" ambiguit
 an evidence ref. This is the append-only checklist rule applied one layer down, and for the same
 reason: the RED→GREEN transition is what the loop is for, so the RED must survive it.
 
-**Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/`, `reports/tickets/VCST-XXXX/screenshots/`) stay tracked.
+**Retention:** every screenshot is local working state and is **never committed** — bug evidence (`reports/bugs/screenshots/`), per-ticket evidence (the run folder's `screenshots/`), guide screenshots (`reports/ba/**`) and run-scoped evidence alike (§1). The tracker attachment is the durable copy; `reports:prune` ages the local files out with their run folder (§9).
 
 
 ### 5.1a Never hand-capture what the runner already captured
@@ -383,7 +393,7 @@ Reports:
 
 Terminal-only, no file: `/qa-test-lifecycle` (labeled TLC-YYYY-MM-DD-HHMM in chat) and `/qa-test`'s
 ac-analysis + test-execution-report (both fold into one chat report). Persisting from `/qa-test`:
-summary.json + testing-checklist.md + screenshots (+ design-report.md when the visual lane ran) to
+summary.json + testing-checklist.md + screenshots (local only, never committed) (+ design-report.md when the visual lane ran) to
 the ticket's run folder (test-strategy.md beside them is `/vc-test:qa-test-strategy`'s); the Test Model as test-model.md and
 the 3x discovery report under exploratory/ in that same folder; new test cases to regression/suites/ as category 2,
 not the run folder.
@@ -395,7 +405,7 @@ not the run folder.
 |----------|----------|---------|
 | HAR files | `test-results/{browser}/har/` | "HAR: `checkout-2026-05-21.har`" |
 | Failure trace (real FAIL) | `reports/regression/{RUN_ID}/traces/{TC-ID}-FAIL-trace.json` | Link from the case row; don't inline the JSON |
-| Full screenshot set | `reports/bugs/screenshots/` | Link 1–2 inline; reference the folder |
+| Full screenshot set | `reports/bugs/screenshots/` (local, not committed) | Attach 1–2 to the tracker comment (§5.0); a repo path is not a reference anyone else can open |
 | Test data | `test-data/aliases.json` | `@td(ALIAS.field)` — don't paste rows |
 | BL/ECL invariants | `npm run bl:extract -- --id <ID>` · `knowledge/oracles/e-commerce-edge-cases-library.md` | Cite the ID (`BL-AUTH-005`), not the body |
 | Prior runs | `reports/regression/REG-*` | Link by run ID, don't recap |
@@ -406,14 +416,15 @@ not the run folder.
 Report categories don't accumulate forever — each has a lifecycle:
 
 - **Ephemeral run folders** (`reports/regression/{REG-*,SMOKE-*}`, `reports/test-lifecycle/TLC-*`,
-  `reports/coverage/COV-*`, `reports/monitoring/MONITOR-*`) are **already gitignored** (`.gitignore:111`
-  + the evidence-extension rules) — they only ever exist as local disk usage on whoever ran them, never
+  `reports/coverage/COV-*`, `reports/monitoring/MONITOR-*`) are **already gitignored** (`.gitignore`
+  `reports/regression/*` + the repo-wide evidence-extension rules) — they only ever exist as local disk usage on whoever ran them, never
   in git history. They age out locally via `npm run reports:prune -- --apply` (default 30 days; the run
   date is parsed from the `RUN-YYYY-MM-DD-HHMM` folder name).
 - **Git-tracked report folders** (`reports/tickets/<Sprint>/<TICKET>/`) age out the same way via
   `npm run reports:prune -- --target=tracked --apply` — `git rm` + one commit, gated by the last commit
   date on that path (not filesystem mtime). The current sprint is always skipped regardless of age. A run folder that `QA_OUTPUT_DIR` puts outside the repo is never
-  pruned: it is the operator's.
+  pruned: it is the operator's. Only the folder's markdown/JSON is tracked; its screenshots never were
+  committed (§1), so `--apply` on a tracked folder also deletes them from the operator's disk.
 - **`vc/shared/archive/sprints/`** (VC-internal, not one of the eleven categories above, but the single
   largest tracked report-like tree in the repo) is pruned by the same `--target=tracked` run.
 - **Durable categories never prune**: `reports/bugs/`, `reports/ba/` (**including `release-notes/`** —
