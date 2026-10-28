@@ -4163,6 +4163,7 @@
     "organization_id": "@td(ORG_TECHFLOW.platform_id)"
   },
   "SR_REP_PRIMARY": {
+    "password_env": "SR_REP_PASSWORD",
     "file": "sales-rep/sales-reps",
     "filter": {
       "rep_key": "SR_REP_PRIMARY"
@@ -4312,6 +4313,7 @@
     "_notes": "THIRD active ACME rep on B2B-store, added 2026-07-29 by the 050m data-sufficiency audit. customerSalesReps paging (050m SR-GQL-004) needs >=3 active unlocked same-store reps serving ORG_ACME so that first:2 yields hasNextPage=true; only SR_REP_PRIMARY and SR_REP_ACME2 qualified (SECOND_STORE is Electronics-scoped, BLOCKED is account-blocked, LOCKED is per-org locked — all three correctly excluded), so the case could not pass on data grounds. Runtime GUIDs live in aliases.<env>.json (npm run seed:sales-rep)."
   },
   "SR_REP_NOCUSTOMERS": {
+    "password_env": "SR_REP_PASSWORD",
     "file": "sales-rep/sales-reps",
     "filter": {
       "rep_key": "SR_REP_NOCUSTOMERS"
@@ -4327,6 +4329,7 @@
     }
   },
   "SR_REP_PAGING": {
+    "password_env": "SR_REP_PASSWORD",
     "file": "sales-rep/sales-reps",
     "filter": {
       "rep_key": "SR_REP_PAGING"
@@ -4561,6 +4564,7 @@
     "_notes": "VCST-5733 case #21 — the ACCOUNT-STATE gate rep, UNLOCKED AT REST. PR #14 wires EnsureAuthenticatedAsync -> CheckCurrentUserState into SalesRepQueryBuilder.BeforeMediatorSend, so every sales-rep query re-checks the account state at QUERY time, not at token time. That gate is only reachable by locking an account AFTER its token was issued: SR_REP_BLOCKED is already locked, so /connect/token refuses it (400 invalid_grant) and the GraphQL layer is never entered. Procedure: (1) POST /connect/token as this rep, (2) TEST_ENV=<env> npm run sr:lock, (3) re-issue the sales-rep query on the STILL-VALID token and assert the account-state refusal, (4) TEST_ENV=<env> npm run sr:unlock. Note the PR-84 memoization of CheckUserState caches the verdict per REQUEST, so the lock is observed on the NEXT request, not mid-request. USE THIS REP, NEVER SR_REP_PRIMARY (~40 cases in 050m/089/091/093 depend on primary being unlocked) — scripts/seed-data/sales-rep/set-rep-account-lock.mjs enforces that with a hard allowlist. Teardown needs no extra step: is_locked=false => repFixtureStatus Approved => clearRepStaleLockout clears any lockout on every reseed, so a run that dies mid-lock self-heals. Serves ORG-002 so a post-unlock query returns real data. Runtime GUIDs live in aliases.<env>.json (npm run seed:sales-rep)."
   },
   "SR_REP_LAYOUT": {
+    "password_env": "SR_REP_PASSWORD",
     "file": "sales-rep/sales-reps",
     "filter": {
       "rep_key": "SR_REP_LAYOUT"
@@ -9781,6 +9785,152 @@
       "missingParamBodies": "missingParamBodies"
     },
     "notes": "VCST-5748 env-independent OTP request inputs (test-data/auth/otp-inputs.json). Scalars are reachable by dotted path too: invalid.tooLong255, boundary.maxLength254, codes.spacedPaste, missingParamBodies.grant_no_code, ... unknownEmail is a GENERATOR directive (random-data uniqueEmail), not an address. Guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs."
+  },
+  "PK_ORG_MAIN": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 passkey fixture organization ORG-MAIN. Home org of PK_BUYER, PK_LOCKOUT, PK_PASSKEY_ONLY and org B of PK_BUYER_MULTI. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "name": "AGENT-TEST-PK-Org-Main",
+    "id": ""
+  },
+  "PK_ORG_LOCKABLE": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 passkey fixture organization ORG-LOCKABLE. Only PK_BUYER_MULTI is a member — a case locks that membership (org A) to test org fallback, so locking it touches nobody else. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "name": "AGENT-TEST-PK-Org-Lockable",
+    "id": ""
+  },
+  "PK_BUYER": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 — B2B buyer, one org — register / rename / delete keys, passkey sign-in journey, impersonation target. Customer, contact-backed, org-scoped \"Purchasing agent\" membership in ORG-MAIN; storeId {{STORE_ID}}; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "email": "agent-test-pk-buyer@test-agent.com",
+    "userName": "agent-test-pk-buyer@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "STORE_ID",
+    "userType": "Customer",
+    "isAdministrator": false,
+    "userId": "",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_BUYER_MULTI": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 — buyer in two orgs — a case locks the ORG-LOCKABLE membership to test org fallback on passkey sign-in. Customer, contact-backed, org-scoped \"Purchasing agent\" membership in ORG-LOCKABLE + ORG-MAIN; storeId {{STORE_ID}}; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "email": "agent-test-pk-buyer-multi@test-agent.com",
+    "userName": "agent-test-pk-buyer-multi@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "STORE_ID",
+    "userType": "Customer",
+    "isAdministrator": false,
+    "userId": "",
+    "memberId": "",
+    "storeId": "",
+    "org_id": "",
+    "org_a_id": "",
+    "org_b_id": "",
+    "membership_a_id": "",
+    "membership_b_id": ""
+  },
+  "PK_B2C": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 — personal customer without organization — passkey sign-in lands with no org claim. Customer, contact-backed, no organization; storeId {{STORE_ID}}; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "email": "agent-test-pk-b2c@test-agent.com",
+    "userName": "agent-test-pk-b2c@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "STORE_ID",
+    "userType": "Customer",
+    "isAdministrator": false,
+    "userId": "",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_LOCKOUT": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 — DESTRUCTIVE — a lockout case locks it; passkey sign-in of a locked account must be refused. Customer, contact-backed, org-scoped \"Purchasing agent\" membership in ORG-MAIN; storeId {{STORE_ID}}; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "email": "agent-test-pk-lockout@test-agent.com",
+    "userName": "agent-test-pk-lockout@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "STORE_ID",
+    "userType": "Customer",
+    "isAdministrator": false,
+    "userId": "",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_PASSKEY_ONLY": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 — DESTRUCTIVE — a case deletes its password (passkey-only account). Customer, contact-backed, org-scoped \"Purchasing agent\" membership in ORG-MAIN; storeId {{STORE_ID}}; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "email": "agent-test-pk-passkey-only@test-agent.com",
+    "userName": "agent-test-pk-passkey-only@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "STORE_ID",
+    "userType": "Customer",
+    "isAdministrator": false,
+    "userId": "",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_BO_MANAGER": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 — back-office Manager — Admin Shell key management + back-office passkey sign-in. Manager (not Customer, not Administrator), no contact, global role \"Store access\" (existing least-privilege role, resolved by name; its permissions are read live by --verify); storeId none; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "email": "agent-test-pk-bo-manager@test-agent.com",
+    "userName": "agent-test-pk-bo-manager@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "",
+    "userType": "Manager",
+    "isAdministrator": false,
+    "userId": "",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_BO_MANAGER_2": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 — back-office Manager — AngularJS key management + back-office passkey sign-in (key set independent of PK_BO_MANAGER). Manager (not Customer, not Administrator), no contact, global role \"Store access\" (existing least-privilege role, resolved by name; its permissions are read live by --verify); storeId none; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "email": "agent-test-pk-bo-manager-2@test-agent.com",
+    "userName": "agent-test-pk-bo-manager-2@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "",
+    "userType": "Manager",
+    "isAdministrator": false,
+    "userId": "",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_OPERATOR": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 — impersonation operator (loginOnBehalf) — impersonates PK_BUYER; key management must be refused in that session. Manager (not Customer, not Administrator), no contact, global role \"AGENT-TEST-PK-Impersonator\" (ours: platform:security:loginOnBehalf only); storeId {{STORE_ID}}; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "email": "agent-test-pk-operator@test-agent.com",
+    "userName": "agent-test-pk-operator@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "STORE_ID",
+    "userType": "Manager",
+    "isAdministrator": false,
+    "userId": "",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
   },
   "PUSH_AUDIENCE_PARENT_ORG": {
     "_inline": true,

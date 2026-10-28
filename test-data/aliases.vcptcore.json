@@ -1290,5 +1290,65 @@
     "email": "agent-test-6443-nocreate@test.virtocommerce.com",
     "role": "AGENT-TEST-6443 no-create",
     "password_var": "DEFAULT_TEST_PASSWORD"
+  },
+  "PK_ORG_MAIN": {
+    "name": "AGENT-TEST-PK-Org-Main",
+    "id": "cfa5c62c-30fc-4380-8aba-da94e6246c85"
+  },
+  "PK_ORG_LOCKABLE": {
+    "name": "AGENT-TEST-PK-Org-Lockable",
+    "id": "88318d9c-0a72-4ad7-8036-3b18ec1ff0be"
+  },
+  "PK_BUYER": {
+    "userId": "6c6e0486-39d9-4f99-9033-8957e981940c",
+    "memberId": "63ad43a0-b5bf-44dd-a79e-272dbf30a027",
+    "storeId": "B2B-store",
+    "org_id": "cfa5c62c-30fc-4380-8aba-da94e6246c85"
+  },
+  "PK_BUYER_MULTI": {
+    "userId": "0bf4ec46-c7be-4ff9-8617-51aa24ad846e",
+    "memberId": "3a745c12-5392-4aca-b40e-90f4e1a09bab",
+    "storeId": "B2B-store",
+    "org_id": "cfa5c62c-30fc-4380-8aba-da94e6246c85",
+    "org_a_id": "88318d9c-0a72-4ad7-8036-3b18ec1ff0be",
+    "org_b_id": "cfa5c62c-30fc-4380-8aba-da94e6246c85",
+    "membership_a_id": "388d062f-445c-4e20-ac2f-2803d5d1c98a",
+    "membership_b_id": "31d22d07-2bf6-41e9-9125-afb45444668b"
+  },
+  "PK_B2C": {
+    "userId": "cae61063-54dd-4104-a853-2f3d774d31d6",
+    "memberId": "9a821130-97f2-45d1-980d-9ce23e879586",
+    "storeId": "B2B-store",
+    "org_id": ""
+  },
+  "PK_LOCKOUT": {
+    "userId": "78432b34-daf1-4b88-9e23-9a5b8b90b6c3",
+    "memberId": "5e4c1edb-81a2-4510-828e-064e730186af",
+    "storeId": "B2B-store",
+    "org_id": "cfa5c62c-30fc-4380-8aba-da94e6246c85"
+  },
+  "PK_PASSKEY_ONLY": {
+    "userId": "5e576bfb-cb91-4b7c-a2c6-3972f3a0d9fa",
+    "memberId": "1c8966ec-d624-45b9-bc39-615656b09230",
+    "storeId": "B2B-store",
+    "org_id": "cfa5c62c-30fc-4380-8aba-da94e6246c85"
+  },
+  "PK_BO_MANAGER": {
+    "userId": "10909e3f-7f3f-4333-a191-05c2514f969c",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_BO_MANAGER_2": {
+    "userId": "80acb664-55cb-460a-b545-dd99c6edae53",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_OPERATOR": {
+    "userId": "cc77c45b-2ebd-4b1a-a351-30bc9f05253b",
+    "memberId": "",
+    "storeId": "B2B-store",
+    "org_id": ""
   }
 }
