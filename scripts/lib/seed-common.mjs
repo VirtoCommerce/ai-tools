@@ -1599,10 +1599,18 @@ export async function verifyCreated(api, kind, id, { name } = {}) {
  * Confirm a teardown left zero residue. `searchFn` is a caller thunk that returns
  * the remaining matching entities (array) or a count. Returns the residual count;
  * 0 means a clean teardown. Reused by every `*:teardown` path.
+ * `strict: true` rethrows a failed search instead of reporting it as 0 — a residue query that did
+ * not run is "residue unknown", never "clean". (Default stays lenient for the existing callers.)
  * @returns {Promise<number>}
  */
-export async function verifyRemoved(searchFn) {
+export async function verifyRemoved(searchFn, { strict = false } = {}) {
   if (DRY_RUN) return 0;
+  if (strict) {
+    const r = await searchFn();
+    if (typeof r === 'number') return r;
+    if (Array.isArray(r)) return r.length;
+    return (r?.results || r?.items || []).length;
+  }
   try {
     const r = await searchFn();
     if (typeof r === 'number') return r;
