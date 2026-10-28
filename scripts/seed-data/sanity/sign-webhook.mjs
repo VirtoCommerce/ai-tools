@@ -42,7 +42,7 @@ export function signature(secret, body, t) {
 
 /** Pure request builder — exported for a temporary unit check; main() only runs when executed. */
 export function buildRequest(o, env) {
-  const project = o.project || env[ENV.projectId] || '';
+  const project = o.project || env[ENV.projectId] || undefined;
   const projection = { _id: o.id, _operation: o.op, _projectId: project, _dataset: o.dataset };
   let bodyObj = o.emptyBody ? {} : projection;
   if (o.store) bodyObj = { ...bodyObj, storeId: o.store };
@@ -50,9 +50,9 @@ export function buildRequest(o, env) {
   const signed = JSON.stringify(bodyObj);
   const headers = { 'Content-Type': 'application/json' };
   if (!o.noHeaders) {
-    // A header is sent only when it has a value: `--empty-body` without --id/--dataset must not send
-    // the literal string "undefined" (that would be a third, unintended negative).
-    const set = (name, v) => { if (v !== undefined && v !== null && v !== '') headers[name] = String(v); };
+    // A header is skipped only when it has NO value (`--empty-body` without --id/--dataset must not send
+    // the literal string "undefined"); an explicit "" override (--header-id "") is sent empty on purpose.
+    const set = (name, v) => { if (v !== undefined) headers[name] = String(v); };
     set('sanity-document-id', o.headerId ?? o.id);
     set('sanity-operation', o.headerOp ?? o.op);
     set('sanity-dataset', o.headerDataset ?? o.dataset);

@@ -26,14 +26,18 @@
  *      project), {{SANITY_QA_WRITE_TOKEN}} (seed/teardown) and {{SANITY_QA_READ_TOKEN}} (verify-only),
  *      both .env.local only, never printed. No BACK_URL / admin credentials: the platform is not touched.
  *
- * SAFETY: assertSafeRisk (ENV_RISK undeclared or production aborts). Teardown deletes ONLY the
- * declared ids (never a wildcard), and an asset only when no document outside this fixture (exact id
- * prefix) references it; then asserts zero residue in both datasets. A --dry-run teardown deletes
- * nothing and reports the residue as NOT verified. The project's own (non AGENT-TEST) documents are
- * never written, changed or deleted.
+ * SAFETY: assertSafeRisk for seed and teardown (ENV_RISK undeclared or production aborts);
+ * --verify-only writes nothing and skips it. Teardown deletes ONLY the declared ids (never a
+ * wildcard), and an asset only when no document outside this fixture (exact id prefix) references it;
+ * an asset kept that way keeps its overlay id/url. It then asserts zero residue in both datasets — a
+ * residue query that fails is a failure ("residue unknown"), never a pass. A --dry-run teardown
+ * deletes nothing and reports the residue as NOT verified. The project's own (non AGENT-TEST)
+ * documents are never written, changed or deleted.
  */
 import '../../lib/sync-stdio.mjs';
-import { assertSafeRisk, log, verbose, verifyRemoved, writeEnvAliasOverride, DRY_RUN, TEARDOWN } from '../../lib/seed-common.mjs';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { assertSafeRisk, log, verbose, verifyRemoved, writeEnvAliasOverride, DRY_RUN, TEARDOWN, ROOT } from '../../lib/seed-common.mjs';
 import {
   ENV, SANITY_API_VERSION, DATASETS, ASSET_SPECS, allDatasets, docsFor, docIdsFor, collectRefs,
   mutationBody, deleteBody, strongDanglingRefs, overlayAliases, RESIDUE_QUERY, OWN_ASSETS_QUERY, FOREIGN_REFERRERS_QUERY,
@@ -81,33 +85,69 @@ async function uploadAssets() {
   return out;
 }
 
-/** The fields a case depends on, as one comparable string per document. */
-const shape = (d) => JSON.stringify({
+/** The fields a case depends on, as one comparable object per document. */
+const shapeOf = (d) => ({
   type: d._type, title: d.title, permalink: d.permalink?.current ?? null, seoSlug: d.seo?.slug?.current ?? null,
   refs: collectRefs(d).map((r) => `${r._ref}${r._weak ? ' (weak)' : ''}`).sort(),
 });
+const MISSING_PREFIX = '<missing-asset:';
+const isAssetRef = (ref) => /^(image|file)-/.test(ref);
 
-/** Read everything back. Assets are found live by filename, so the expected asset refs are the real ids. */
-async function verify() {
-  const assets = await query(DATASETS.primary, OWN_ASSETS_QUERY);
-  const assetIds = {};
+/** This env's overlay entry for an asset alias (the --verify-only fallback), or null. */
+function overlayAsset(alias) {
+  const p = join(ROOT, `test-data/aliases.${TEST_ENV}.json`);
+  try { return existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8'))[alias] || null) : null; } catch { return null; }
+}
+
+/**
+ * The asset ids page-a must reference. After a seed: exactly the ids uploadAssets() returned — the
+ * same ones overlayAliases() writes (Sanity dedups by sha1, so that asset may carry ANOTHER
+ * originalFilename). --verify-only: the asset with our filename, else this env's overlay id.
+ * A missing asset is reported ONCE, here.
+ */
+async function resolveAssets(uploaded) {
+  const ids = {};
+  const byFilename = uploaded ? [] : await query(DATASETS.primary, OWN_ASSETS_QUERY);
   for (const a of ASSET_SPECS) {
-    const live = assets.find((x) => x.originalFilename === a.filename);
-    if (!live) { fail(`asset ${a.filename} missing`); continue; }
-    assetIds[a.key] = live._id;
-    const r = await fetch(live.url, { method: 'HEAD' });
-    if (r.status === 200) ok(`asset ${a.key} (${live._id}) url answers 200`); else fail(`asset ${a.key} url → ${r.status}`);
+    let id = uploaded?.[a.key]?._id || null;
+    let url = uploaded?.[a.key]?.url || null;
+    if (!uploaded) {
+      const live = byFilename.find((x) => x.originalFilename === a.filename) || null;
+      const ov = live ? null : overlayAsset(a.alias);
+      id = live?._id || ov?.id || null;
+      url = live?.url || ov?.url || null;
+    }
+    if (!id) { fail(`asset ${a.key} (${a.filename}) missing — refs to it are not compared below`); continue; }
+    ids[a.key] = id;
+    const r = await fetch(url, { method: 'HEAD' });
+    if (r.status === 200) ok(`asset ${a.key} (${id}) url answers 200`); else fail(`asset ${a.key} url → ${r.status}`);
   }
+  return ids;
+}
+
+/** Read every document back; compare type, title, permalink, seo.slug and refs, per dataset. */
+async function verify(uploaded = null) {
+  const assetIds = await resolveAssets(uploaded);
+  const missing = ASSET_SPECS.filter((a) => !assetIds[a.key]).map((a) => a.key);
+  const expectedAssets = { ...Object.fromEntries(missing.map((k) => [k, `${MISSING_PREFIX}${k}>`])), ...assetIds };
   for (const ds of allDatasets()) {
-    const expected = docsFor(ds, assetIds);
+    const expected = docsFor(ds, expectedAssets);
     const got = await query(ds, '*[_id in $ids]', { ids: expected.map((d) => d._id) });
     const byId = new Map(got.map((d) => [d._id, d]));
     let bad = 0;
     for (const d of expected) {
       const g = byId.get(d._id);
       if (!g) { fail(`${ds}: ${d._id} missing`); bad++; continue; }
-      const want = shape(d); const have = shape(g);
-      if (want !== have) { fail(`${ds}: ${d._id} drifted — want ${want} got ${have}`); bad++; }
+      const want = shapeOf(d); const have = shapeOf(g);
+      let note = '';
+      if (want.refs.some((r) => r.startsWith(MISSING_PREFIX))) {
+        // The missing asset was reported once above; compare everything else, not the ref to it.
+        want.refs = want.refs.filter((r) => !r.startsWith(MISSING_PREFIX));
+        have.refs = have.refs.filter((r) => want.refs.includes(r) || !isAssetRef(r));
+        note = ` (refs to missing asset ${missing.join(', ')} not compared)`;
+      }
+      if (JSON.stringify(want) !== JSON.stringify(have)) { fail(`${ds}: ${d._id} drifted${note} — want ${JSON.stringify(want)} got ${JSON.stringify(have)}`); bad++; }
+      else if (note) log(`  · ${ds}: ${d._id} matches${note}`);
     }
     if (!bad) ok(`${ds}: ${expected.length}/${expected.length} documents present; type, title, permalink, seo.slug and refs match`);
   }
@@ -128,16 +168,15 @@ async function seed() {
     ok(`${ds}: transaction ${r.transactionId} — ${body.mutations.length} doc(s)`);
   }
   if (DRY_RUN) return;
-  await verify();
+  await verify(uploaded);
   writeEnvAliasOverride(overlayAliases(uploaded));
   ok(`aliases.${TEST_ENV}.json ← ${ASSET_SPECS.map((a) => a.alias).join(', ')}`);
 }
 
-/** Fixture hits still in a dataset: exact-prefix ids + own assets + the declared ids by name. */
+/** Fixture hits still in a dataset: exact-prefix ids (every declared id has the prefix) + own assets. */
 async function residue(ds) {
   const r = await query(ds, RESIDUE_QUERY);
-  const byId = await query(ds, 'count(*[_id in $ids])', { ids: docIdsFor(ds) });
-  return r.docs + r.assets + byId;
+  return r.docs + r.assets;
 }
 
 async function teardown() {
@@ -149,26 +188,32 @@ async function teardown() {
     const r = await mutate(ds, deleteBody(ids));
     ok(`${ds}: deleted ${ids.length} declared id(s) (tx ${r.transactionId})`);
   }
+  const deleted = new Set();
   const assets = await query(DATASETS.primary, OWN_ASSETS_QUERY);
   for (const a of assets) {
     const foreign = await query(DATASETS.primary, FOREIGN_REFERRERS_QUERY, { id: a._id });
-    if (foreign > 0) { fail(`asset ${a._id} is referenced by ${foreign} non-fixture document(s) — left in place`); continue; }
+    if (foreign > 0) { fail(`asset ${a._id} is referenced by ${foreign} non-fixture document(s) — left in place, overlay kept`); continue; }
     if (DRY_RUN) { log(`  (dry) delete asset ${a._id} (no non-fixture referrer)`); continue; }
     await mutate(DATASETS.primary, deleteBody([a._id]));
+    deleted.add(a.originalFilename);
     ok(`asset ${a.originalFilename} deleted`);
   }
   for (const ds of allDatasets()) {
     if (DRY_RUN) { log(`  (dry) ${ds}: residue NOT verified — nothing was deleted; ${await residue(ds)} fixture hit(s) present now`); continue; }
-    const left = await verifyRemoved(() => residue(ds));
+    let left;
+    try { left = await verifyRemoved(() => residue(ds), { strict: true }); }
+    catch (e) { fail(`${ds}: residue UNKNOWN — the residue query failed (${String(e.message).slice(0, 200)})`); continue; }
     if (left === 0) ok(`${ds}: zero AGENT-TEST-6475 residue`); else fail(`${ds}: ${left} AGENT-TEST-6475 residue`);
   }
-  writeEnvAliasOverride(Object.fromEntries(ASSET_SPECS.map((a) => [a.alias, { id: '', url: '' }])));
+  // Clear an overlay entry only for an asset this run actually deleted.
+  writeEnvAliasOverride(Object.fromEntries(ASSET_SPECS.filter((a) => deleted.has(a.filename)).map((a) => [a.alias, { id: '', url: '' }])));
 }
 
 async function main() {
   console.log(`=== seed-sanity (VCST-6475)${TEARDOWN ? ' TEARDOWN' : ''}${DRY_RUN ? ' [dry-run]' : ''}${VERIFY_ONLY ? ' [verify-only]' : ''} ===`);
   if (!PROJECT) { log(`SKIP: {{${ENV.projectId}}} is not set for TEST_ENV=${TEST_ENV} — no QA Sanity project on this env.`); return; }
-  const risk = assertSafeRisk(`Sanity project {{${ENV.projectId}}}`);
+  // --verify-only writes nothing, so it needs no risk gate; seed and teardown do.
+  const risk = VERIFY_ONLY && !TEARDOWN ? `TEST_ENV=${TEST_ENV} | read-only` : assertSafeRisk(`Sanity project {{${ENV.projectId}}}`);
   if (!TOKEN) {
     const need = VERIFY_ONLY ? `{{${ENV.readToken}}} or {{${ENV.writeToken}}}` : `{{${ENV.writeToken}}}`;
     console.error(`ABORT: ${need} is not set (.env.local).`); process.exit(2);
