@@ -5,7 +5,7 @@ applicability_rationale: "Four-layer agent architecture template — universal p
 
 # Shared Agent Instructions — Virto Commerce QA
 
-This file contains shared framework, classification rules, and reference patterns used by all QA interactive agents (qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist, ui-ux-expert). Agents reference this file to avoid duplicating boilerplate.
+This file contains shared framework, classification rules, and reference patterns used by all QA interactive agents (qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist, vc-test:ui-ux-expert). Agents reference this file to avoid duplicating boilerplate.
 
 ## Four-Layer Architecture
 

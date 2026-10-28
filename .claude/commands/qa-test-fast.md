@@ -117,11 +117,11 @@ Briefs, the lane split, the data rules and teardown:
    unresolved items when a model ran. `--no-explore` drops the lane. That is recorded, never
    silent: against an approved `RUN` it is a deviation — append it to the round's `### Amendments` and list
    the charter's risks under *Not tested, and why*.
-3. **Visual** — `ui-ux-expert` on Chrome DevTools MCP, whenever `visual_surface: true` (derived from the
-   bundle's PR layers, recorded in the run context). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
+3. **Visual** — `vc-test:ui-ux-expert` on the Playwright lane the other lanes leave free, whenever `visual_surface: true` (derived from the
+   bundle's PR layers, recorded in the run context). **Its brief's first line makes it invoke the Skill tool with `skill: "vc-test:qa-design"`**; the
    `/qa-design` command is never run. `--no-visual` drops the lane, recorded never silent. Trigger, the
    brief, the lane-count rule (a 4th lane waits for the first to return) and verdict handling:
-   [`../skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md) §2, §4, §5. Writes
+   [`visual-axis.md`](../../plugins/vc-test/skills/qa-design/visual-axis.md) §2, §4, §5. Writes
    `design-report.md` + `summary.json.visual`.
 4. **Join.** Pass every bullet of [`execution.md`](../skills/qa-test-fast/execution.md) §Join gate —
    results, ledger, settings, the visual lane's `qa-design skill: loaded`, and every exploratory/visual
@@ -137,7 +137,7 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    `vc-fix:qa-investigate`, which returns an evidence package for each one. It returns the confirmed bugs, the
    checklist fixes (you apply them; you are the checklist's only writer) and the dismissed rows. A non-empty
    `unresulted[]` sends you back to the Stage 2 join. Visual findings block or advise per
-   [`visual-axis.md`](../skills/qa-test/visual-axis.md) §3.
+   [`visual-axis.md`](../../plugins/vc-test/skills/qa-design/visual-axis.md) §3.
 2. **Bugs.** Call `/vc-fix:qa-bug` **once per confirmed bug**, sequentially, passing its investigation package
    so that it reuses the package and does not reproduce the bug again. A `needs-review` candidate is listed in
    `verdict.md` and not filed. Its tracker-ticket step runs only after the user says yes. Then tear down

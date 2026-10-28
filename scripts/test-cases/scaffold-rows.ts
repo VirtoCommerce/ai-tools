@@ -27,7 +27,7 @@
  * SWEEPS. Four closed vocabularies expand mechanically into rows whose defect
  * hypothesis is ALREADY WRITTEN by the document that owns them, so they satisfy
  * the gate by construction and cost no judgment:
- *   `state-stress`  qa-design SKILL.md §State-Stress Pass          (7 states)
+ *   `state-stress`  qa-design methodology.md §State-Stress Pass          (7 states)
  *   `uip`           qa-sbtm modern-web-attack-surface.md §UIP-*    (the table)
  *   `toggle`        qa-test-cases-generator SKILL.md §3.5 flags
  *   `date-range`    qa-test-cases-generator SKILL.md §3.5 dates
@@ -384,7 +384,7 @@ const UIP_ARCHETYPES: Record<string, string> = {
 
 export const SWEEP_SOURCES: Record<SweepKind, SweepSource> = {
   "state-stress": {
-    file: "/.claude/skills/qa-design/SKILL.md",
+    file: "/plugins/vc-test/skills/qa-design/methodology.md",
     heading: "### State-Stress Pass",
     parse: parseStateStress,
     archetype: "RENDER",

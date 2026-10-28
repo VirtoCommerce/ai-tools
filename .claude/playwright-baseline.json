@@ -37,7 +37,7 @@
       "channel": null,
       "configFile": null,
       "status": "valid",
-      "agentAssignment": "ui-ux-expert"
+      "agentAssignment": null
     }
   ],
   "excluded": [
@@ -59,7 +59,7 @@
   "maxParallelBrowsers": 3,
   "notes": [
     "Max 3 parallel agents on Windows (chromium, firefox, edge)",
-    "ui-ux-expert should use Chrome DevTools MCP instead of WebKit",
+    "vc-test:ui-ux-expert runs on a Playwright lane (the run assigns it), never Chrome DevTools or WebKit",
     "For 4+ parallel agents, run in sequential batches"
   ]
 }

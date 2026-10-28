@@ -49,7 +49,7 @@ const CLASSIFICATIONS: Classification[] = [
     rationale: "Interactive testing methodology — exploratory, Figma comparison, console/network debug. Cross-surface, universal QA discipline." },
   { path: ".claude/agents/test-management-specialist.md", category: "agent-qa", applicability: "universal",
     rationale: "Test planning craft (BA → test conditions → cases). Universal QA discipline; examples are storefront but pattern is general." },
-  { path: ".claude/agents/ui-ux-expert.md", category: "agent-qa", applicability: "reference",
+  { path: "plugins/vc-test/agents/ui-ux-expert.md", category: "agent-qa", applicability: "reference",
     rationale: "Storybook (vc-frontend specific) + critical-ui-scope (vcst coverage matrix). Customer with a different storefront codebase clones for their Storybook." },
   { path: ".claude/agents/regression-orchestrator.md", category: "agent-qa", applicability: "universal",
     rationale: "Parallel execution + retry logic + browser fallback. Pure orchestration mechanism." },

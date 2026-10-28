@@ -116,7 +116,7 @@ still red. Match on the bug key, not on the symptom — it is this ticket’s ow
 
 ### 7. Visual-lane findings — three classes, and only one of them can fail the ticket
 
-When the Step-4 visual lane ran ([`visual-axis.md`](visual-axis.md)), its findings enter this same triage
+When the Step-4 visual lane ran ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md)), its findings enter this same triage
 with **no new class and no new severity ladder** — but they split by what produced them, and the split is
 what makes the axis safe to switch on:
 

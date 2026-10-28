@@ -1,5 +1,5 @@
 {
-  "$comment": "The only list of artifacts (spec §5.1). `row` is the strategy's Artifacts row as skills/qa-test-strategy/template.md names it; `derivedFrom` marks an artifact selected whenever that artifact or row is (\"Scenarios\" = at least one scenario in the strategy's `### Scenarios` table). `per: \"scenario\"` is a template the planner instantiates once per approved scenario as `scenario:S-n`; `proofs` gives its capabilities by the scenario's Proof, and for a browser proof the pool of lanes (tried in order, each needing its own `mcp:<name>`; no two browser entries in a wave share a lane — one browser session per agent). `needs` waits only for selected artifacts. `writes` is relative to the run folder <run> (or the knowledge store <store>) and never spells a literal reports/tickets/ path (write-zones.mjs checks it); `per: \"prior-bug\"` is instantiated the same way, once per `### Prior bugs` row of a round ≥ 2, as `bug:PB-n` (proof `spec` for a .spec, `browser` for a package, `none` — no lane, no capability, its row comes back BLOCKED — for no reproduction; its row goes to `PB-n.rows.md`); a scenario never writes testing-checklist.md — the orchestrator merges its S-n.rows.md there after each wave (scenario-rows.mjs).",
+  "$comment": "The only list of artifacts (spec §5.1). `row` is the strategy's Artifacts row as skills/qa-test-strategy/template.md names it; `derivedFrom` marks an artifact selected whenever that artifact or row is (\"Scenarios\" = at least one scenario in the strategy's `### Scenarios` table). `per: \"scenario\"` is a template the planner instantiates once per approved scenario as `scenario:S-n`; `proofs` gives its capabilities by the scenario's Proof, and for a browser proof the pool of lanes (tried in order, each needing its own `mcp:<name>`; no two browser entries in a wave share a lane — one browser session per agent). A row's own entry with `lanes` (its `lane` null) draws its lane from that pool the same way, as `visual` does: edge first, because a run's scenarios start at chrome. `needs` waits only for selected artifacts. `writes` is relative to the run folder <run> (or the knowledge store <store>) and never spells a literal reports/tickets/ path (write-zones.mjs checks it); `per: \"prior-bug\"` is instantiated the same way, once per `### Prior bugs` row of a round ≥ 2, as `bug:PB-n` (proof `spec` for a .spec, `browser` for a package, `none` — no lane, no capability, its row comes back BLOCKED — for no reproduction; its row goes to `PB-n.rows.md`); a scenario never writes testing-checklist.md — the orchestrator merges its S-n.rows.md there after each wave (scenario-rows.mjs).",
   "artifacts": [
     {
       "id": "contract-refresh",
@@ -57,10 +57,11 @@
     {
       "id": "visual",
       "row": "Visual lane",
-      "run": { "skill": "qa-design", "agent": "ui-ux-expert", "model": "sonnet" },
+      "run": { "skill": "vc-test:qa-design", "agent": "vc-test:ui-ux-expert" },
       "needs": [],
-      "lane": "browser:chrome-devtools",
-      "requires": ["front-url", "mcp:chrome-devtools"],
+      "lane": null,
+      "lanes": ["browser:playwright-edge", "browser:playwright-chrome", "browser:playwright-firefox"],
+      "requires": ["front-url"],
       "writes": ["<run>/design-report.md", "<run>/scenarios/visual.rows.md", "<run>/screenshots/**"]
     }
   ],

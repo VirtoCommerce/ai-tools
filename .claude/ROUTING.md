@@ -126,8 +126,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 
 ### Specialized Testing (Skills — domain expertise)
 - `/qa-storybook` — Responsive breakpoints, state variations, in-story a11y
-- `/qa-visual-regression` — Pixel regression (`PIXEL`) for any web front: Storybook stories or app pages (API replayed from one HAR), base build vs head build, then triage intended / regression / noise. Which visual instrument a risk takes: `skills/qa-test/visual-axis.md` §2a
-- `/qa-accessibility` — WCAG 2.2 AA audits (POUR + the 2.2 additions, axe-core, Lighthouse, keyboard walk)
+- `/qa-visual-regression` — Pixel regression (`PIXEL`) for any web front: Storybook stories or app pages (API replayed from one HAR), base build vs head build, then triage intended / regression / noise. Which visual instrument a risk takes: `plugins/vc-test/skills/qa-design/visual-axis.md` §2a
+- `/qa-accessibility` — WCAG 2.2 AA audits (POUR + the 2.2 additions, axe-core, keyboard walk)
 - `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project's local files via `npm run design:extract`; reports `SKIPPED`, never PASS, when no copy is on disk)
 - `/qa-api` — REST + GraphQL xAPI: reference lookup, execution, case generation
 - `/code-review-full` — 9 parallel review agents over a diff **of this repo** — not a QA flow against the VC platform
@@ -171,7 +171,7 @@ Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](kn
 - `qa-testing-expert` — Interactive testing, Claude Design spec comparison, debugging
 - `test-management-specialist` — Test planning, case writing, coverage
 - `test-data-engineer` — Owns test data end-to-end: designs combinations, **authors** the seeders / fixtures / `@td()` aliases / validators **and runs them live** (no browser)
-- `ui-ux-expert` — Storybook, WCAG 2.2 AA, design system, the `vs. DESIGN` axis
+- `vc-test:ui-ux-expert` — Storybook, WCAG 2.2 AA, design system, the `vs. DESIGN` axis (a Playwright lane)
 - `regression-orchestrator` — Parallel regression, retries, consolidated reports
 - `test-runner-agent` — Parameterized suite runner (spawned by regression-orchestrator)
 - `vc-test:ticket-context-analyst` (the vc-test plugin's) — Read-only, no-browser ticket reader for `/vc-test:ticket-context` (TICKET / MATERIALS / CHANGE modes); never writes to a tracker, a PR or the `kb`

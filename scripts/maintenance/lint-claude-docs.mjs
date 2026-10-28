@@ -96,8 +96,9 @@ export const PROMPT_BASELINE_PATH = 'scripts/maintenance/.prompt-size-baseline.j
 // DOC-008 and the plugins/ scope were added 2026-10-26: 15 broken relative links, 3 stale § citations and 23
 // stale paths surfaced and were fixed in the same change, so it starts where the others are.
 // DOC-009 was added 2026-10-27 (vc-test P2-5a) at the number below: the visual-axis reads deferred to P2-5c
-// (three links) plus two backticked non-read mentions. It may only go down; P2-5c takes it to the mentions.
-export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 0, 'DOC-008': 0, 'DOC-009': 5 };
+// (three links) plus two backticked non-read mentions. It may only go down; P2-5c took it to the two mentions
+// (floors.md:143, an exemption list, and change-map.md:23, a mind-map path the project may hold).
+export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 0, 'DOC-008': 0, 'DOC-009': 2 };
 
 /**
  * DOC-007 — a pointer into the per-user memory directory. The slug families are the ones the harness

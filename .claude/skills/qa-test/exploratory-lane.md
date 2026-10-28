@@ -174,10 +174,10 @@ there), which is why that command **no longer carries `disable-model-invocation:
 pipeline step with a caller, and a step nothing may call is a step that never runs — which is how the whole
 discovery capability came to sit at one session in the life of the repo.
 
-**This is deliberately NOT the visual lane's pattern.** That one dispatches `ui-ux-expert` and never runs
+**This is deliberately NOT the visual lane's pattern.** That one dispatches `vc-test:ui-ux-expert` and never runs
 the `/qa-design` **command**, because the command is only a shell that delegates to that same agent —
-running it would buy a level of indirection and nothing else; the agent invokes the `qa-design` **skill**
-itself ([`visual-axis.md`](visual-axis.md) §2). `/qa-exploratory` is the opposite: it is
+running it would buy a level of indirection and nothing else; the agent invokes the `vc-test:qa-design` **skill**
+itself ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2). `/qa-exploratory` is the opposite: it is
 where the substance lives. The subtract/supply oracle split (§5a), the `[THEORETICAL]`-first ECL rule, the
 surprise-seeking box, the persona and tour filters, the non-firefox lane rule with its 6× confirmation, the
 `Fate` capture-back contract, and the report shape `/qa-review-oracles` reads — all of it is there and
