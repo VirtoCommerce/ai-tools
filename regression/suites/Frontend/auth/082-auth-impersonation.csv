@@ -719,14 +719,14 @@ SUPPORT_AGENT has CanImpersonate. IMPERSONATE_TARGET has a security account. Ope
 [ACT] Click 'Login on behalf' in the dropdown
 [WAIT] Security Verification Informer / confirmation modal opens (PR #2280 members.vue)
 [ASSERT] Confirmation modal contains 'You are logging in on behalf of' text and target identifier
-[ASSERT] 'Continue' and 'Cancel' buttons are visible
+[ASSERT] 'OK' and 'Cancel' buttons are visible (KB-3DCCDC7A)
 [ACT] Click 'Cancel' button in the modal
 [WAIT] Modal closes","[DOM] Confirmation modal closes after clicking 'Cancel'
 [NAV] URL remains {{FRONT_URL}}/company/members — no navigation to /account/impersonate/{userId}
 [STATE] Operator session is preserved (header still shows @td(SUPPORT_AGENT.email) identity, not target's)
 [STATE] No impersonation banner is rendered
 [DOM] Company members table is still visible (user not redirected away)","[NETWORK] No POST /connect/token with grant_type=impersonate issued after Cancel (no impersonation attempt)
-[CONSOLE] No JS errors on modal open or Cancel click","Modal does not open after clicking 'Login on behalf'; 'Cancel' button absent from modal; Cancel navigates to /account/impersonate/{userId} (modal Cancel does not prevent navigation); impersonation banner appears after Cancel; console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-007, ECL-14.1; Generated VCST-4906 / PR #2280 (2026-05-14); confirmation modal Cancel path from members.vue +44/-6 | Promoted: REG-2026-09-07-1342 (2026-09-07)",Automated
+[CONSOLE] No JS errors on modal open or Cancel click","Modal does not open after clicking 'Login on behalf'; 'Cancel' button absent from modal; Cancel navigates to /account/impersonate/{userId} (modal Cancel does not prevent navigation); impersonation banner appears after Cancel; console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-007, ECL-14.1; Generated VCST-4906 / PR #2280 (2026-05-14); confirmation modal Cancel path from members.vue +44/-6 | Promoted: REG-2026-09-07-1342 (2026-09-07)","Automated"
 "IMP-042","Header — 'Back to {operator}' Item Visible During Impersonation (Desktop)","LoginOnBehalf > Exit > Revert UI Presence","High","BL-AUTH-006, BL-AUTH-007","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 Silent impersonation of IMPERSONATE_TARGET completed (banner visible). Viewport is desktop (≥1024px). PR #2280 account-menu popup (top-header.vue / main-menu.vue) adds a 'Back to {operator}' link/button in the header during active impersonation.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in

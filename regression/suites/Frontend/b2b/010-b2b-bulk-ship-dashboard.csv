@@ -1,18 +1,16 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"B2C-SHIP-001","Ship To - View Saved Addresses","B2C Features > Ship To","Critical","BL-B2B-001",,"[PRE:CLEAR_SESSION]
+"B2C-SHIP-001","Ship To - View Saved Addresses","B2C Features > Ship To","Critical","BL-B2B-001","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in, saved addresses exist on personal account (/account/addresses is personal-only; org users see address management via /company/info)","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/addresses
 2. [WAIT] Page loads — verify address list section visible
 3. [ASSERT] Verify address list displays saved addresses
 4. [ASSERT] Verify each address shows: Name, Street, City, State, ZIP, Phone
-5. [ASSERT] Verify default address is marked
-6. [ASSERT] Verify search/filter controls visible if page has search capability (backed by currentCustomerAddresses query)","[DOM] Address list displays all saved addresses
+5. [ASSERT] Verify search/filter controls visible if page has search capability (backed by currentCustomerAddresses query)","[DOM] Address list displays all saved addresses
 [DOM] Each address shows full details (Name, Street, City, State, ZIP, Phone)
-[DOM] Default address has 'Default' badge
 [DOM] Edit and Delete options visible per address
 [DOM] If search/keyword input present: input is accessible and functional
 [DOM] If facet filters present (Country/State/City): dropdowns are rendered and selectable","[API] currentCustomerAddresses query called on page load; errors[] is empty; totalCount matches visible item count
-[CONSOLE] no uncaught JS errors","Address list empty when addresses exist; default badge missing; address details incomplete; currentCustomerAddresses errors[] non-empty on page load","none","VCST-4575; Synced TLC-2026-04-23-1700 (currentCustomerAddresses backing + UI controls)","Automated"
+[CONSOLE] no uncaught JS errors","Address list empty when addresses exist; address details incomplete; currentCustomerAddresses errors[] non-empty on page load","none","VCST-4575; personal /account/addresses has no Default badge and no Set-as-default (KB-0986CF16); Synced TLC-2026-04-23-1700 (currentCustomerAddresses backing + UI controls)","Automated"
 "B2C-SHIP-002","Ship To - Add New Address","B2C Features > Ship To","Critical","BL-B2B-001","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in on personal account. Address form backed by updateMemberAddresses mutation. If checkDuplicateAddress is called before submit, a warning is shown for duplicate; unique address should save without warning.","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/addresses
 2. [ACT] Click 'Add New Address'
@@ -48,25 +46,23 @@ Non-default address exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{US
 [DOM] Confirmation prompt: 'Delete this address?'
 [DOM] Address removed from list after confirmation
 [DOM] Cannot delete default address (UI prevents it)","[CONSOLE] no uncaught JS errors","Delete available for default address; no confirmation prompt; address not removed after deletion","none","VCST-4575","Automated"
-"B2C-SHIP-005","Ship To - Set Default Address","B2C Features > Ship To","High","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"B2C-SHIP-005","Ship To - Set Default Address","B2C Features > Ship To","High","BL-B2B-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
 Multiple addresses exist","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
 2. [ACT] Click 'Set as Default' on a non-default address
 3. [ASSERT] Verify default badge moves to new address
 4. [ASSERT] Verify only one default address exists","[STATE] Only one address has 'Default' badge at any time
 [DOM] Previous default loses badge; new default gains badge
 [DOM] New default appears first in address list
-[DOM] Default pre-selected in checkout","[CONSOLE] no uncaught JS errors","Multiple addresses showing Default badge simultaneously; badge not updating; new default not used in checkout","none","VCST-4575","Automated"
-"B2C-SHIP-006","Ship To - Select Address in Checkout","B2C Features > Ship To","Critical","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[DOM] Default pre-selected in checkout","[CONSOLE] no uncaught JS errors","Multiple addresses showing Default badge simultaneously; badge not updating; new default not used in checkout","none","VCST-4575; Deprecated 2026-10-28: the asserted 'Set as default' action does not exist — personal /account/addresses row Actions offer only Edit and Delete and there is no Default badge (KB-0986CF16); retired from REG-2026-10-28-1013 triage","Deprecated"
+"B2C-SHIP-006","Ship To - Select Address in Checkout","B2C Features > Ship To","Critical","BL-B2B-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Multiple saved addresses, in checkout","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Proceed to checkout
-2. [ASSERT] Verify default address pre-selected
-3. [ACT] Click 'Change' or open address selector
-4. [ASSERT] Verify address list displays all saved addresses
-5. [ACT] Select a different address
-6. [ASSERT] Verify shipping address updates in checkout","[STATE] Default address pre-selected on checkout load
-[DOM] All saved addresses listed in selector
+2. [ACT] Click 'Change' or open address selector
+3. [ASSERT] Verify address list displays all saved addresses
+4. [ACT] Select a different address
+5. [ASSERT] Verify shipping address updates in checkout","[DOM] All saved addresses listed in selector
 [DOM] Selecting updates shipping address in order summary
-[FORMAT] Shipping costs may update based on selected address","[CONSOLE] no uncaught JS errors","Default address not pre-selected; address selector not showing all addresses; shipping cost not updating after address change","none","VCST-4575","Automated"
+[FORMAT] Shipping costs may update based on selected address","[CONSOLE] no uncaught JS errors","address selector not showing all addresses; shipping cost not updating after address change","none","VCST-4575; no default-address concept on personal addresses, so no default pre-selection is asserted (KB-0986CF16)","Automated"
 "B2C-SHIP-007","Ship To - Header Selector/Dropdown","B2C Features > Ship To","High","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in, multiple addresses","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Locate Ship To selector in header
 2. [ACT] Click Ship To selector
@@ -179,28 +175,26 @@ User logged in on personal account. User has at least one saved address. Note: p
 [API] currentCustomerAddresses re-fetched — totalCount equals N (pre-save value), not N+1
 [CONSOLE] no uncaught JS errors","totalCount = N+1 after save (duplicate actually inserted); two identical rows appear in address list; mutation returns error instead of silent skip","If a duplicate row was created, delete it","VCST-4710 PR #129 — MemberAggregateRootBase.UpdateAddresses silent-skip invariant; TLC-2026-04-23-1700","Draft"
 "B2C-BULK-001","Quick Order by SKU","B2C Features > Bulk Order","Critical","BL-B2B-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in, /bulk-order page accessible, at least one known product SKU","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order (Quick Order page)
-2. [ASSERT] Locate the SKU entry field
+User logged in, /bulk-order page accessible, at least one known product SKU","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order (Bulk order pad) and select the 'Manually' mode
+2. [ASSERT] Locate the SKU and Quantity entry fields of a row
 3. [ACT] Enter a known valid product SKU
-4. [KEY] Press Enter or click Add to confirm entry
-5. [ASSERT] Verify product info appears: name, image, unit price, available quantity","[DOM] Quick Order page loads at /bulk-order
+4. [ACT] Enter a quantity in the row's Quantity field
+5. [ASSERT] Verify the SKU and quantity are accepted and retained in the row, and the 'Add to cart' button is enabled","[DOM] Quick Order page loads at /bulk-order
 [DOM] SKU entry field present and auto-focused
-[DOM] Valid SKU entry loads product: name, price, availability in row
-[STATE] Quantity field becomes editable after product found","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","Page does not load at /bulk-order; SKU field missing; product info not appearing after valid SKU entry","none","Coverage Gap Analysis","Draft"
-"B2C-BULK-002","Add All to Cart","B2C Features > Bulk Order","Critical","BL-B2B-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[DOM] A valid SKU and quantity entered in a row are accepted and retained — the pad is a plain SKU + Quantity grid with no per-row product lookup (KB-5633282F)
+[STATE] 'Add to cart' is disabled until a quantity is entered and enabled once the row holds a SKU and a quantity","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Page does not load at /bulk-order; SKU field missing; SKU or quantity not retained in the row after entry; 'Add to cart' stays disabled with a valid SKU and quantity entered","none","Coverage Gap Analysis; /bulk-order pad shape observed in REG-2026-10-28-1013 (KB-5633282F)","Draft"
+"B2C-BULK-002","Add to Cart From Bulk Order Pad","B2C Features > Bulk Order","Critical","BL-B2B-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Quick Order page with 3+ valid SKUs entered and quantities set","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
 2. [ACT] Enter 3 different valid SKUs and set quantities: 2, 5, 1
-3. [ASSERT] Verify all 3 rows show correct product info
-4. [ACT] Click 'Add All to Cart'
-5. [WAIT] Wait for cart update confirmation
-6. [NAV] Navigate to cart
-7. [ASSERT] Verify all 3 products in cart with correct quantities","[STATE] 'Add All to Cart' button enabled when at least one valid product row populated
+3. [ACT] Click 'Add to cart'
+4. [WAIT] Wait for the redirect to /cart (no success toast is shown)
+5. [ASSERT] Verify all 3 products in cart with correct quantities","[STATE] 'Add to cart' button enabled when at least one row holds a SKU and a quantity
 [DOM] Cart contains all 3 products with specified quantities after add
 [DOM] Cart count updates to reflect all added items
-[DOM] Success notification: 'X items added to cart'","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","Add All to Cart fails silently; cart missing one or more products; incorrect quantities in cart after bulk add","remove item from cart","Coverage Gap Analysis","Draft"
+[DOM] After 'Add to cart' the storefront redirects to /cart (KB-5633282F)","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","'Add to cart' fails silently (no redirect to /cart); cart missing one or more products; incorrect quantities in cart after bulk add","remove item from cart","Coverage Gap Analysis; /bulk-order pad shape observed in REG-2026-10-28-1013 (KB-5633282F)","Draft"
 "B2C-BULK-003","Invalid SKU Handling","B2C Features > Bulk Order","High","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Quick Order page open","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to /bulk-order
 2. [ACT] Enter a valid SKU in row 1 and confirm
@@ -210,15 +204,15 @@ Quick Order page open","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PA
 [DOM] Row 1 with valid SKU remains displayed correctly
 [DOM] Error scoped to invalid row only (other rows unaffected)
 [STATE] 'Add All to Cart' skips or warns about invalid rows","[CONSOLE] no uncaught JS errors","Error not shown for invalid SKU; error spreading to valid rows; Add All to Cart silently skips invalid rows without warning","none","Coverage Gap Analysis","Draft"
-"B2C-BULK-004","Multi-row Entry","B2C Features > Bulk Order","High","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"B2C-BULK-004","Multi-row Entry","B2C Features > Bulk Order","High","BL-B2B-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
 Quick Order page open","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
 2. [ACT] Enter 5 different valid SKUs in separate rows
 3. [ACT] Set quantities: 1, 3, 2, 5, 10
-4. [ASSERT] Verify all 5 rows display product info correctly
-5. [ASSERT] Verify running total or summary calculated correctly","[DOM] All 5 rows display with product name, price, and set quantity
+4. [ASSERT] Verify all 5 rows retain the entered SKU and quantity
+5. [ACT] Click 'Add 5 more rows'
+6. [ASSERT] Verify the pad extends beyond 5 rows and the first 5 rows keep their SKU and quantity","[DOM] All 5 rows retain the entered SKU and quantity — the pad shows no per-row product name or price (KB-5633282F)
 [DOM] Page does not slow down or lose state with 5+ rows
-[MATH] Running total (if displayed) sums subtotals for all rows correctly
-[DOM] Can continue adding rows beyond 5","[CONSOLE] no uncaught JS errors","Page performance degradation with 5+ rows; row data lost when adding new rows; running total calculation incorrect","none","Coverage Gap Analysis","Draft"
+[DOM] 'Add 5 more rows' extends the pad beyond 5 rows and the earlier rows keep their SKU and quantity","[CONSOLE] no uncaught JS errors","Page performance degradation with 5+ rows; row data lost when adding new rows; 'Add 5 more rows' does not extend the pad","none","Coverage Gap Analysis; /bulk-order pad shape observed in REG-2026-10-28-1013 (KB-5633282F)","Draft"
 "B2C-BULK-005","Paste from Spreadsheet","B2C Features > Bulk Order","High","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Quick Order page open, clipboard contains tab-separated SKU and quantity data","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [ACT] In a text editor, create 3 rows with format: SKU[tab]Quantity
 2. [ACT] Copy the 3 rows to clipboard
@@ -502,7 +496,7 @@ User logged in; bulk order feature enabled","url={{FRONT_URL}},user={{USER_EMAIL
 4. [ASSERT] Verify /bulk-order page loads","[DOM] Bulk Order / Quick Order link visible in navigation
 [NAV] Link navigates to /bulk-order
 [DOM] Bulk order page loads with SKU input form","[CONSOLE] no uncaught JS errors","Bulk order link missing from navigation; link leads to 404; page does not load","none","Coverage Gap Analysis","Draft"
-"B2C-LIST-028","Bulk Order - CSV File Upload","B2C Features > Bulk Order","High","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"B2C-LIST-028","Bulk Order - CSV File Upload","B2C Features > Bulk Order","High","BL-B2B-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
 User on /bulk-order page; CSV file with valid SKUs and quantities prepared","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to /bulk-order
 2. [ASSERT] Verify file upload option is available (drag-and-drop or file picker)
 3. [ACT] Upload a CSV file with 3 rows of SKU and quantity pairs
@@ -511,8 +505,8 @@ User on /bulk-order page; CSV file with valid SKUs and quantities prepared","url
 6. [ASSERT] Verify quantities match CSV values","[DOM] File upload area or button visible on bulk order page
 [DOM] After upload: products populated in form rows
 [STATE] SKUs and quantities match CSV content
-[DOM] Product names resolved from uploaded SKUs","[CONSOLE] no uncaught JS errors","File upload option missing; CSV not processed; products not populating from file; quantities wrong after upload","none","Coverage Gap Analysis","Draft"
-"B2C-LIST-029","Quick Order - SKU Autocomplete Suggestions","B2C Features > Bulk Order","Medium","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[DOM] Product names resolved from uploaded SKUs","[CONSOLE] no uncaught JS errors","File upload option missing; CSV not processed; products not populating from file; quantities wrong after upload","none","Coverage Gap Analysis; Deprecated 2026-10-28: CSV file upload does not exist on /bulk-order — the pad is a plain SKU + Quantity grid with Copy&Paste and Manually modes only (KB-5633282F); retired from REG-2026-10-28-1013 triage","Deprecated"
+"B2C-LIST-029","Quick Order - SKU Autocomplete Suggestions","B2C Features > Bulk Order","Medium","BL-B2B-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
 User on /bulk-order page; valid product SKU prefix known","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
 2. [ACT] Start typing the first 3 characters of a known SKU
 3. [WAIT] Wait for autocomplete suggestions to appear
@@ -520,7 +514,7 @@ User on /bulk-order page; valid product SKU prefix known","url={{FRONT_URL}},use
 5. [ACT] Click on the suggested product
 6. [ASSERT] Verify SKU and product name populated in the row","[DOM] Autocomplete dropdown appears after typing 3+ characters
 [DOM] Suggestions show product name and SKU
-[STATE] Clicking suggestion populates the row with correct SKU and product info","[CONSOLE] no uncaught JS errors","No autocomplete suggestions; suggestions not matching typed text; clicking suggestion does not populate row","none","Coverage Gap Analysis","Draft"
+[STATE] Clicking suggestion populates the row with correct SKU and product info","[CONSOLE] no uncaught JS errors","No autocomplete suggestions; suggestions not matching typed text; clicking suggestion does not populate row","none","Coverage Gap Analysis; Deprecated 2026-10-28: SKU autocomplete does not exist on /bulk-order — the pad is a plain SKU + Quantity grid with Copy&Paste and Manually modes only (KB-5633282F); retired from REG-2026-10-28-1013 triage","Deprecated"
 "B2C-LIST-030","Quick Order - Non-Existent SKU Clear Error","B2C Features > Bulk Order","Medium","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 User on /bulk-order page","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to /bulk-order
 2. [ACT] Type INVALID_SKU_999 in SKU input
