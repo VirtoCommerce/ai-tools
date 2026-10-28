@@ -215,8 +215,33 @@ export const MAPPING_SPECS = [
       // prices exactly like the default punchout persona and differs from it ONLY by owning its carts.
       organizationFromPersonaVar: 'USER_EMAIL',
       orgRoleName: 'Purchasing agent',
+      // `--only requisition` scopes seed/teardown/cart-reset to this buyer.
+      scope: 'requisition',
+      // The requisition handler reads the `default` cart, so a reset leaves exactly one, empty.
+      mintDefaultCart: true,
+    } },
+  // VCST-5888 PNCO-050/052: a SECOND dedicated buyer on the same org/store/config as REQUISITION, owned
+  // by suite 113 alone. PunchoutOrderRequestProcessor finds a Returned session by (StoreId,
+  // ConfigurationId, UserId) and sessions have NO REST/UI surface (no list, no delete), so "never
+  // returned a requisition" can only be restored by a NEW user id: `--renew --only second` deletes
+  // and rebuilds this buyer (new userId, same externalId/email) — see seed-punchout.mjs.
+  { alias: 'PUNCHOUT_MAPPING_SECOND', externalId: 'AGENT-TEST-PO-400', owned: true, maxOrganizations: 1,
+    ownerNote: 'seed-punchout.mjs provisions the buyer AND the mapping (find-or-create); --renew --only second rebuilds it with a new user id; teardown deletes mapping, carts, membership, account, contact',
+    buyer: {
+      email: 'AGENT-TEST-punchout-buyer2@test.virtocommerce.com',
+      firstName: 'AGENT-TEST-Punchout', lastName: 'Second Buyer',
+      passwordToken: '{{B2B_USER_PASSWORD}}',
+      organizationFromPersonaVar: 'USER_EMAIL',
+      orgRoleName: 'Purchasing agent',
+      scope: 'second',
+      // No cart at all after a reset: the cases create the cart they need ("no pre-existing carts").
+      mintDefaultCart: false,
     } },
 ];
+
+/** Provisioned buyers inside an `--only` scope (all of them when the scope is not a buyer scope). */
+export const BUYER_SCOPES = ['requisition', 'second'];
+export const buyersInScope = (only, specs = MAPPING_SPECS) => specs.filter((m) => m.buyer && (!BUYER_SCOPES.includes(only) || m.buyer.scope === only));
 
 /** The mapping whose persona the seeder provisions itself (vs. an existing env persona). */
 export const isProvisionedBuyer = (spec) => Boolean(spec && spec.buyer);
@@ -341,6 +366,11 @@ export const VERIFY_PROBES = [
     config: 3, mapping: 'PUNCHOUT_MAPPING_REQUISITION', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '200', opensSession: true },
   { name: 'BADCODES (position 4) + mapped REQUISITION → 200 + StartPage (secret live; session only, no cart)',
     config: 4, mapping: 'PUNCHOUT_MAPPING_REQUISITION', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '200', opensSession: true },
+  { name: 'config2 + mapped SECOND → 500 (second buyer mapping is active and recognised)',
+    config: 2, mapping: 'PUNCHOUT_MAPPING_SECOND', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '500', provesMapping: true },
+  // An Active session only — never Returned — so it cannot give PNCO-052's buyer a requisition.
+  { name: 'config0 + mapped SECOND → 200 + StartPage (setup on config 0 starts a session; no cart, never returned)',
+    config: 0, mapping: 'PUNCHOUT_MAPPING_SECOND', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '200', opensSession: true },
 ];
 
 /** True when a cXML response carries a non-empty StartPage URL (pure; the URL holds a token — never log it). */

@@ -179,8 +179,12 @@ async function ensureCatalog(name) {
 }
 async function ensureCategory(catalogId, name, code) {
   const seo = categorySeoInfo(name, code);
-  const r = await api('POST', '/api/catalog/listentries', { catalog: catalogId, keyword: name, take: 20 }, { expectStatus: [200, 201, 400, 404] });
-  const found = (r?.listEntries || r?.results || []).find(c => c.name === name && c.type === 'category');
+  // `catalogId`, never `catalog` (silently ignored — see findProductByCode), AND the entry's own
+  // catalogId re-checked: measured on vcptcore_qa1 2026-10-29, the unscoped search returned the
+  // legacy SEED-20260518-Configurables "Configurable Parents" category, so a fresh catalog's products
+  // were placed in another catalog's category.
+  const r = await api('POST', '/api/catalog/listentries', { catalogId, keyword: name, take: 20 }, { expectStatus: [200, 201, 400, 404] });
+  const found = (r?.listEntries || r?.results || []).find(c => c.name === name && c.type === 'category' && (!c.catalogId || c.catalogId === catalogId));
   if (found) { await applyCategorySeo(found.id, seo); log(`↻ category: ${name} (${found.id})`); return { id: found.id, name }; }
   const cat = await api('POST', '/api/catalog/categories', {
     catalogId, name, code, isActive: true, priority: 1,

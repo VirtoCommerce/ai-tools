@@ -58,6 +58,7 @@ import { join } from 'node:path';
 import {
   CONFIG_SPECS, DEPLOYED_CONFIGS, configOverlayFields, retiredOverlayFields, MAPPING_SPECS, PROTECTED_EXTERNAL_IDS,
   mappingBody, teardownMappingTargets, personaEmailVarFor, personaOverlayFields, BACKOFFICE_SPECS, roleBody, accountBody, isProvisionedBuyer, buyerCartTargets,
+  BUYER_SCOPES, buyersInScope,
   VERIFY_PROBES, buildSetupRequest, cxmlStatusCode, cxmlHasStartPage, configPosition, SEED_PREFIX,
   PRODUCT_SPECS, PRODUCT_PLACEMENT, PRODUCT_MIN_STOCK, PRICELIST_SPECS, assignmentName, priceRows, productBody,
   STORE_FFC_SPEC, planStoreFfc, planStoreFfcRestore, diffStore, teardownProductTargets,
@@ -66,6 +67,8 @@ import {
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 const VERIFY_ONLY = process.argv.includes('--verify-only');
 const RESET_CARTS = process.argv.includes('--reset-buyer-carts');
+const RENEW = process.argv.includes('--renew');
+const BUYER_SCOPE = BUYER_SCOPES.includes(ONLY) ? ONLY : null;
 const MAPPINGS = '/api/punchout-user-mappings';
 const failures = [];
 const fail = (m) => { failures.push(m); log(`✗ ${m}`); };
@@ -187,14 +190,13 @@ const hasEmail = (m, email) => (m?.emails || []).some((e) => String(e).toLowerCa
  * whose account was just deleted was invisible to it), so the id this env's overlay recorded is tried
  * FIRST by direct GET — that is what keeps both find-or-create and the zero-residue check honest.
  */
-async function findContactByEmail(email, alias = buyerSpec()?.alias) {
+async function findContactByEmail(email, alias) {
   const p = join(ROOT, `test-data/aliases.${TEST_ENV}.json`);
   const known = alias && existsSync(p) ? JSON.parse(readFileSync(p, 'utf8'))[alias]?.memberId : '';
   if (known) { const m = await getMember(known); if (hasEmail(m, email)) return m; }
   const r = await api('POST', '/api/members/search', { memberType: 'Contact', keyword: email, take: 20 }, { expectStatus: [200] });
   return (r?.results || []).find((m) => hasEmail(m, email)) || null;
 }
-const buyerSpec = () => MAPPING_SPECS.find(isProvisionedBuyer);
 
 /**
  * Find-or-create the buyer's contact + Customer account + single org membership. The org is the ONE
@@ -215,7 +217,7 @@ async function ensureBuyer(spec) {
   const password = resolvePassword(b.passwordToken);
 
   let user = await findUserBySearch(b.email) || await getUser(b.email);
-  let contact = user?.memberId ? await getMember(user.memberId) : await findContactByEmail(b.email);
+  let contact = user?.memberId ? await getMember(user.memberId) : await findContactByEmail(b.email, spec.alias);
   if (!contact) {
     if (VERIFY_ONLY) { fail(`${spec.alias}: buyer contact ${b.email} missing — run the seed`); return null; }
     const name = `${b.firstName} ${b.lastName}`;
@@ -280,18 +282,30 @@ async function ensureBuyer(spec) {
 const searchCarts = async (userId) => (await api('POST', '/api/carts/search', { customerId: userId, take: 200 }, { expectStatus: [200] }))?.results || [];
 const deleteCarts = (ids) => api('DELETE', `/api/carts?${ids.map((i) => `ids=${encodeURIComponent(i)}`).join('&')}`, null, { expectStatus: [200, 204] });
 
-/** Empty the dedicated buyer: delete every cart it owns, assert none left, mint the empty default cart. */
+/**
+ * Empty the dedicated buyer(s) in scope (`--only requisition|second`; default: every provisioned
+ * buyer): delete every cart each owns, assert none left, then — only for a buyer with mintDefaultCart —
+ * mint the empty `default` cart through xAPI.
+ */
 async function resetBuyerCarts() {
-  const b = buyerSpec().buyer;
+  for (const spec of buyersInScope(ONLY)) await resetOneBuyer(spec.buyer);
+}
+async function resetOneBuyer(b) {
   if (!b.email.startsWith(SEED_PREFIX)) throw new Error('refusing to reset carts of a non-AGENT-TEST account');
   const user = await findUserBySearch(b.email) || await getUser(b.email);
-  if (!user) { console.error(`buyer ${b.email} not provisioned on ${TEST_ENV} — run npm run seed:punchout`); process.exit(1); }
+  if (!user) {
+    // Unscoped reset: a buyer this env never provisioned is skipped, so a suite that uses only one buyer
+    // is not broken by the other's absence. An explicit `--only <scope>` reset still fails loud.
+    if (!BUYER_SCOPE) { log(`! buyer ${b.email} not provisioned on ${TEST_ENV} — skipped`); return; }
+    console.error(`buyer ${b.email} not provisioned on ${TEST_ENV} — run npm run seed:punchout`); process.exit(1);
+  }
   const ids = buyerCartTargets(await searchCarts(user.id), user.id);
   if (ids.length && !DRY_RUN) await deleteCarts(ids);
   log(`✓ deleted ${ids.length} cart(s) of ${b.email}`);
   if (DRY_RUN) return;
   const left = buyerCartTargets(await searchCarts(user.id), user.id).length;
-  if (left) { console.error(`CART RESET RESIDUE: ${left} cart(s) remain`); process.exit(1); }
+  if (left) { console.error(`CART RESET RESIDUE: ${left} cart(s) remain for ${b.email}`); process.exit(1); }
+  if (!b.mintDefaultCart) { log(`Cart reset complete — ${b.email} holds no cart.`); return; }
   // Mint the empty `default` cart through xAPI as the buyer — the cart the requisition handler reads.
   const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200] });
   const g = await grant({ username: b.email, password: resolvePassword(b.passwordToken), storeId: STORE_ID });
@@ -311,13 +325,13 @@ async function resetBuyerCarts() {
   if (cart.itemsQuantity !== 0 || after.some((c) => (c.items || []).length) || after.some((c) => c.name !== 'default')) {
     console.error('buyer does NOT hold only an empty default cart after reset'); process.exit(1);
   }
-  log('Cart reset complete — buyer holds only an empty default cart.');
+  log(`Cart reset complete — ${b.email} holds only an empty default cart.`);
 }
 
-async function deleteBuyer(email) {
+async function deleteBuyer(email, alias) {
   if (!email.startsWith(SEED_PREFIX)) throw new Error(`refusing to delete non-AGENT-TEST buyer ${email}`);
   const user = await findUserBySearch(email) || await getUser(email);
-  const contactId = user?.memberId || (await findContactByEmail(email))?.id || null;
+  const contactId = user?.memberId || (await findContactByEmail(email, alias))?.id || null;
   if (user) {
     const carts = buyerCartTargets(await searchCarts(user.id), user.id);
     if (carts.length) await deleteCarts(carts);
@@ -390,8 +404,9 @@ async function verifyBoundary(spec) {
   if (search === spec.expect.search && write === spec.expect.write) ok(line); else fail(line);
 }
 
-async function verifyProbes(mappingIds) {
+async function verifyProbes(mappingIds, onlyMappings = null) {
   for (const p of VERIFY_PROBES) {
+    if (onlyMappings && !onlyMappings.has(p.mapping)) continue; // a scoped seed probes only its own buyers
     const cfg = CONFIG_SPECS.find((c) => configPosition(c) === p.config); // a POSITION, never a legacy alias index
     const secret = process.env[cfg.secretVar];
     if (!secret) { log(`! skip probe (no {{${cfg.secretVar}}} on ${TEST_ENV}): ${p.name}`); continue; }
@@ -616,7 +631,7 @@ const PRODUCT_Q = 'query($id:String!,$s:String!,$c:String!,$l:String!){product(i
 
 /** Read-only xAPI check as the dedicated buyer (no cart is created): price per currency, MeasureUnit, stock, per store. */
 async function verifyCatalog(products) {
-  const b = buyerSpec().buyer;
+  const b = buyersInScope('requisition')[0].buyer;
   const g = await grant({ username: b.email, password: resolvePassword(b.passwordToken), storeId: STORE_ID });
   if (!g.token) { fail(`catalog verify: buyer sign-in failed ${g.status} ${g.error}`); return; }
   const checks = [];
@@ -705,17 +720,17 @@ async function teardownCatalog() {
 // ── teardown ─────────────────────────────────────────────────────────────────────────────────
 
 async function teardown() {
-  // `--only requisition` scopes the teardown to the dedicated buyer + its mapping, so the buyer can be
-  // rebuilt without touching PO-200 or the back-office accounts other runs may be using.
+  // `--only requisition|second` scopes the teardown to that dedicated buyer + its mapping, so it can be
+  // rebuilt without touching PO-200, the other buyer or the back-office accounts other runs use.
   if (ONLY === 'catalog') {
     const residue = await teardownCatalog();
     if (residue || failures.length) { console.error(`TEARDOWN RESIDUE/PROBLEMS: ${residue} entity(ies) remain; ${failures.join(' | ')}`); process.exit(1); }
     log('Catalog teardown complete — zero residue.');
     return;
   }
-  const buyerOnly = ONLY === 'requisition';
+  const buyerOnly = !!BUYER_SCOPE;
   const catalogResidue = buyerOnly ? 0 : await teardownCatalog();
-  const owned = MAPPING_SPECS.filter((m) => m.owned && (!buyerOnly || isProvisionedBuyer(m)));
+  const owned = buyerOnly ? buyersInScope(BUYER_SCOPE) : MAPPING_SPECS.filter((m) => m.owned);
   const backoffice = buyerOnly ? [] : BACKOFFICE_SPECS;
   const found = (await searchMappings({ externalIds: owned.map((m) => m.externalId) }))?.results || [];
   const ids = teardownMappingTargets(found);
@@ -723,7 +738,7 @@ async function teardown() {
     await api('DELETE', `${MAPPINGS}?${ids.map((i) => `ids=${encodeURIComponent(i)}`).join('&')}`, null, { expectStatus: [200, 204] });
     log(`✓ deleted mapping(s) ${ids.join(', ')}`);
   } else log('  no owned mapping to delete');
-  for (const spec of owned.filter(isProvisionedBuyer)) await deleteBuyer(spec.buyer.email);
+  for (const spec of owned.filter(isProvisionedBuyer)) await deleteBuyer(spec.buyer.email, spec.alias);
   for (const spec of backoffice) {
     if (await getUser(spec.email) || await findUserBySearch(spec.email)) {
       await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(spec.email)}`, null, { expectStatus: [200, 204, 404] });
@@ -738,7 +753,7 @@ async function teardown() {
     let n = m.length;
     for (const spec of owned.filter(isProvisionedBuyer)) {
       if (await findUserBySearch(spec.buyer.email) || await getUser(spec.buyer.email)) n++;
-      if (await findContactByEmail(spec.buyer.email)) n++;
+      if (await findContactByEmail(spec.buyer.email, spec.alias)) n++;
     }
     for (const spec of backoffice) {
       if (await getUser(spec.email) || await findUserBySearch(spec.email)) n++;
@@ -759,6 +774,44 @@ async function teardown() {
   log('Teardown complete — zero residue.');
 }
 
+// ── one buyer scope (`--only requisition|second`, optionally `--renew`) ────────────────────────
+
+/**
+ * Seed ONLY the buyer(s) of one scope + their mappings, write their ids back, and run only the probes
+ * that name them — never touching the other buyer, PO-100/200, the back-office accounts or the catalog.
+ * `--renew` first deletes the buyer (mapping, carts, membership, account, contact) so it comes back with
+ * a NEW user id: the only way to get a buyer with no Returned punchout session, because sessions have no
+ * delete surface and the OrderRequest matches a Returned session by (store, configuration, USER id).
+ */
+async function seedBuyers(scope) {
+  const specs = buyersInScope(scope);
+  if (RENEW && !VERIFY_ONLY && !DRY_RUN) {
+    const found = (await searchMappings({ externalIds: specs.map((m) => m.externalId) }))?.results || [];
+    const ids = teardownMappingTargets(found);
+    if (ids.length) await api('DELETE', `${MAPPINGS}?${ids.map((i) => `ids=${encodeURIComponent(i)}`).join('&')}`, null, { expectStatus: [200, 204] });
+    for (const spec of specs) await deleteBuyer(spec.buyer.email, spec.alias);
+    log(`✓ renew: removed ${ids.length} mapping(s) and the buyer(s) of scope "${scope}"`);
+  }
+  const writeback = {};
+  const mappingIds = {};
+  for (const spec of specs) {
+    const w = await registerMapping(spec);
+    if (w) { Object.assign(writeback, w); mappingIds[spec.alias] = w[spec.alias].id; }
+  }
+  if (!VERIFY_ONLY) writeEnvAliasOverride(writeback);
+  if (!DRY_RUN) {
+    for (const spec of specs.filter((m) => !m.buyer.mintDefaultCart)) {
+      const u = await findUserBySearch(spec.buyer.email) || await getUser(spec.buyer.email);
+      const n = u ? buyerCartTargets(await searchCarts(u.id), u.id).length : 0;
+      if (n) fail(`${spec.alias}: holds ${n} cart(s) — run --reset-buyer-carts --only ${scope}`); else if (u) ok(`${spec.alias}: holds no cart`);
+    }
+    log('\n  [verify] cXML probes for this scope');
+    await verifyProbes(mappingIds, new Set(Object.keys(mappingIds)));
+  }
+  if (failures.length) { console.error(`\n${failures.length} problem(s):\n - ${failures.join('\n - ')}`); process.exit(1); }
+  log(DRY_RUN ? 'DRY RUN complete.' : `Buyer scope "${scope}" complete — all green.`);
+}
+
 // ── main ─────────────────────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -772,6 +825,7 @@ async function main() {
   }
   if (TEARDOWN) { await teardown(); return; }
   if (RESET_CARTS) { await resetBuyerCarts(); return; }
+  if (BUYER_SCOPE) { await seedBuyers(BUYER_SCOPE); return; }
 
   const writeback = {};
   if (ONLY === 'catalog') {
