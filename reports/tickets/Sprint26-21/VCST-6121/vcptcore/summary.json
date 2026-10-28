@@ -1,17 +1,8 @@
 {
   "ticket": "VCST-6121",
-  "title": "Passkey Sign-In (Face ID, Touch ID, Windows Hello, Security Keys)",
-  "env": "vcptcore",
-  "draft": true,
+  "ticket_type": "Story",
   "flow": "feature-test",
-  "type": "Story",
   "path": "FULL",
-  "shape_class": {
-    "value": null,
-    "surface_source": [
-      "vc-frontend#2601 diff: no ui-kit/stories/styles change (deploy:pr storybook rule)"
-    ]
-  },
   "path_route": {
     "decided_at": "1a",
     "provisional": false,
@@ -25,6 +16,37 @@
     },
     "escalated_reason": "Story default FULL; preflight breaking:vc-module-customer also forces FULL"
   },
+  "layer": "cross-layer",
+  "shape_class": null,
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-10-28",
+  "environment": "vcptcore",
+  "build": {
+    "platform": "3.1091.0-pr-3144-e637",
+    "theme": "2.61.0-pr-2601-8058-80583415",
+    "Passkeys": "3.1000.0-pr-1-a25f",
+    "Customer": "3.1032.0-pr-324-b30b",
+    "Store": "3.1012.0-pr-190-ded5",
+    "XFrontend": "3.1008.0-alpha.64-vcst-6121-passkeys",
+    "AdminShell": "3.1002.0-pr-4-1dd1",
+    "MFA": "3.1000.1",
+    "OTP": "3.1001.0",
+    "build_change": {
+      "what": "VirtoCommerce.Passkeys 3.1000.0-pr-1-5d36 -> 3.1000.0-pr-1-a25f (vc-deploy-dev vcptcore-qa commit 2026-10-28T11:19:30Z, PR head a25fea03)",
+      "diff": "5 commits: storefront plugin (usePasskeySignIn.ts +24/-2, passkey-provider.vue, index.ts), locales, manifest tags; no server C# change",
+      "effect": "1c ran on 5d36; 3x and 4a on a25f. Server-side findings unaffected; storefront baselines re-observed on a25f"
+    },
+    "deploy_prs": [
+      "vc-deploy-dev#7016 merged, live",
+      "vc-deploy-dev#7018 merged, live: MFA 3.1000.1 + OTP 3.1001.0 (verified via /api/platform/modules 2026-10-28)"
+    ],
+    "preflight": {
+      "verdict": "READY",
+      "warn": [
+        "breaking:vc-module-customer"
+      ]
+    }
+  },
   "status_transitions": [
     {
       "at": "1a",
@@ -33,155 +55,23 @@
       "transition": "On QA (id 4)",
       "by": "qa-lead (orchestrator inline)",
       "confirmed": false,
-      "when": "2026-10-28"
+      "when": "2026-10-28",
+      "hop": "opening"
     }
   ],
-  "attachments": [
-    {
-      "name": "2026-10-27 23-18-43.mp4",
-      "id": "86746",
-      "state": "GAP",
-      "reason": "downloaded; no frame-extraction tool available (no ffmpeg/python) and the browser-eval hook blocks in-page playback — not viewed"
-    }
-  ],
-  "design": {
-    "source": "Claude Design canvas linked as 'Idea for Designs' (7 screens), not a binding spec; VCDZ-907 design task In Progress"
-  },
-  "build": {
-    "deployed": {
-      "platform": "3.1091.0-pr-3144-e637",
-      "relevant_modules": {
-        "VirtoCommerce.Passkeys": "3.1000.0-pr-1-a25f",
-        "VirtoCommerce.Customer": "3.1032.0-pr-324-b30b",
-        "VirtoCommerce.Store": "3.1012.0-pr-190-ded5",
-        "VirtoCommerce.XFrontend": "3.1008.0-alpha.64-vcst-6121-passkeys",
-        "VirtoCommerce.AdminShell": "3.1002.0-pr-4-1dd1",
-        "VirtoCommerce.MFA": "3.1000.1",
-        "VirtoCommerce.OTP": "3.1001.0"
-      },
-      "theme": "2.61.0-pr-2601-8058-80583415"
-    },
-    "deploy_pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7016",
-    "mid_run_change": {
-      "what": "VirtoCommerce.Passkeys 3.1000.0-pr-1-5d36 -> 3.1000.0-pr-1-a25f (vc-deploy-dev vcptcore-qa commit 2026-10-28T11:19:30Z, PR head a25fea03)",
-      "diff": "5 commits: storefront plugin (usePasskeySignIn.ts +24/-2, passkey-provider.vue, index.ts), locales, manifest tags; no server C# change",
-      "effect": "1c ran on 5d36; 3x and 4a on a25f. Server-side findings unaffected; storefront baselines re-observed on a25f"
-    }
-  },
-  "preflight": {
-    "verdict": "READY",
-    "warn": [
-      "breaking:vc-module-customer"
-    ]
-  },
-  "axes": {
-    "layer": {
-      "value": "cross-layer",
-      "members": [
-        "platform",
-        "module",
-        "api",
-        "storefront",
-        "admin-spa"
-      ],
-      "surface_source": [
-        "PR repos: vc-platform, vc-module-passkeys, vc-module-customer, vc-module-store, vc-module-x-frontend, vc-frontend, vc-module-admin-shell"
-      ]
-    },
-    "visual_surface": {
-      "value": true,
-      "surface_source": [
-        "vc-frontend#2601 .vue",
-        "vc-module-admin-shell#4",
-        "vc-module-passkeys#1 admin blades"
-      ]
-    },
-    "contract_surface": {
-      "value": true,
-      "surface_source": [
-        "vc-module-x-frontend#13 GraphType files",
-        "live schema: signInMethods, passkeyCreationOptions, passkeyRequestOptions, createPasskey"
-      ],
-      "refreshed": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/knowledge/api/graphql-schema.md @ 2026-10-28",
-      "fixtures": "86/86 pass"
-    },
-    "coverage_surface": {
-      "value": true,
-      "surface_source": [
-        "domain auth",
-        "tc:scope 222 hits in 104,105,110,111,031,032,033,042,078,082"
-      ]
-    },
-    "data_surface": {
-      "value": true,
-      "surface_source": [
-        "ladder 3: per-run key state + passkey-only + lockout need disposable accounts",
-        "ladder 4: new entity state (AspNetUserPasskeys) only creatable in-case"
-      ]
-    },
-    "domain_map": {
-      "state": "PRESENT",
-      "slug": "auth",
-      "rev": 2,
-      "generated": "2026-10-21",
-      "mind_map": ".claude/knowledge/domain/auth.mind-map.json",
-      "note": "passkeys listed as not deployed — new chain link",
-      "all_layer_confirmed_at": "1e-confirmed"
-    }
-  },
   "timing": {
     "reachability_minutes": 2,
     "time_to_first_test_minutes": null,
     "first_test_at": "2026-10-28T13:33:49Z"
   },
-  "reachability": {
-    "verdict": "BLOCKED(lane-secrets)",
-    "note": "pages reachable; lane secrets file generated for vcst; not a stand or product blocker, run continues browserless until lanes carry vcptcore passwords",
-    "observed": [
-      "storefront sign-in: password form, Google, Sign in with Passkey (in that order); footer 2.61.0-pr-2601-8058-80583415",
-      "AngularJS login shows Passkey link",
-      "Admin Shell login /apps/admin-shell/#/login shows NO passkey button",
-      "AngularJS login: anonymous GET api/platform/settings/VirtoCommerce.Platform.UI.WidgetColorMarkers 401 plus unhandled rejection"
-    ]
-  },
-  "test_model": {
-    "path": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/test-model.md",
-    "state": "new",
-    "prior": "reports/ba/test-models/VCST-6132-2026-10-20.md (org links carried)",
-    "scenarios": 28,
-    "gate": "13/13 PASS (inline)"
-  },
-  "deploy_prs": [
-    "vc-deploy-dev#7016 merged, live",
-    "vc-deploy-dev#7018 merged, live: MFA 3.1000.1 + OTP 3.1001.0 (verified via /api/platform/modules 2026-10-28)"
-  ],
-  "tooling_changes": [
-    "enforce-real-user.mjs + plugins/vc-fix mirror: WebAuthn CDP allowance",
-    "enforce-secret-token.mjs + scripts/lib/browser-secrets.mjs: lane-aware secrets file"
-  ],
-  "test_data": {
-    "seeder": "npm run seed:passkey (re-arm) / seed:passkey:teardown / seed:passkey:verify",
-    "aliases": [
-      "PK_BUYER",
-      "PK_BUYER_MULTI",
-      "PK_B2C",
-      "PK_LOCKOUT",
-      "PK_PASSKEY_ONLY",
-      "PK_BO_MANAGER",
-      "PK_BO_MANAGER_2",
-      "PK_OPERATOR",
-      "PK_ORG_MAIN",
-      "PK_ORG_LOCKABLE"
-    ],
-    "password_var": "DEFAULT_TEST_PASSWORD",
-    "store_on": "B2B-store",
-    "store_off_probe": "Clothing",
-    "td_validate": "green",
-    "td_reconcile": "6 pre-existing role accounts fail sign-in on vcptcore (USER2, ORG_USER, MULTI_ORG_USER, EUR_USER, SALES_REP, SALES_REP_NOCUSTOMERS) - not this ticket",
-    "fixture_gaps": [
-      "IMPERSONATION_ADMIN unusable on vcptcore (login_failed, email empty) - replaced by PK_OPERATOR; one failed attempt recorded on that shared account",
-      "Customers get 403 on REST currentuser/sign-in-methods (xAPI serves them) - KB-4E40858D"
-    ]
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "auth",
+    "rev": 2,
+    "generated": "2026-10-21",
+    "mind_map": ".claude/knowledge/domain/auth.mind-map.json",
+    "note": "passkeys listed as not deployed — new chain link",
+    "all_layer_confirmed_at": "1e-confirmed"
   },
   "discovery": {
     "ran": true,
@@ -255,6 +145,74 @@
     ],
     "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/exploratory/SBTM-VCST-6121-2026-10-28.md"
   },
+  "visual": {
+    "surface": "true",
+    "ran": true,
+    "lane": "playwright-edge",
+    "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/design-report.md",
+    "axes": {
+      "a11y": {
+        "ran": true,
+        "verdict": "FAIL (non-blocking, functional ticket)",
+        "findings": 10
+      },
+      "design_system": {
+        "ran": true,
+        "verdict": "PARTIAL",
+        "skipped_reason": "BL-UI-002 on storefront Security only (0/231 off-grid); BL-UI-001/003 not measured"
+      },
+      "design_spec": {
+        "ran": false,
+        "known_divergence": 6,
+        "unresolved": 1,
+        "skipped_reason": "design:extract exit 2 - canvas declares nothing diffable (ideas, VCDZ-907 In Progress); manual comparison advisory"
+      }
+    },
+    "invariant_failures": [],
+    "a11y_high": [
+      "B1 Admin Shell login passkey/Google focus ~1.3:1",
+      "C2 AngularJS sign-in-methods icon links: no focus indicator, 2.45:1, unlabeled rename input",
+      "A1 storefront primary 2.11:1 (stand theme, pre-existing)"
+    ],
+    "a11y_other": [
+      "A2 identical Edit/Delete names",
+      "A3 focus lost to BODY after add/delete",
+      "A4 section title not a heading",
+      "B2 Admin Shell login 4.06:1 + 6x6 dots",
+      "B3 Admin Shell tab order",
+      "B4 Admin Shell focus after rename",
+      "C1 AngularJS login chrome (pre-existing)"
+    ],
+    "out_of_scope": [
+      "Admin Shell raw EF Core 409 concurrency toast on language change after adding a passkey"
+    ]
+  },
+  "test_data": {
+    "surface": true,
+    "dispatched": true,
+    "seeder": "npm run seed:passkey (re-arm) / seed:passkey:teardown / seed:passkey:verify",
+    "aliases": [
+      "PK_BUYER",
+      "PK_BUYER_MULTI",
+      "PK_B2C",
+      "PK_LOCKOUT",
+      "PK_PASSKEY_ONLY",
+      "PK_BO_MANAGER",
+      "PK_BO_MANAGER_2",
+      "PK_OPERATOR",
+      "PK_ORG_MAIN",
+      "PK_ORG_LOCKABLE"
+    ],
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "store_on": "B2B-store",
+    "store_off_probe": "Clothing",
+    "td_validate": "green",
+    "td_reconcile": "6 pre-existing role accounts fail sign-in on vcptcore (USER2, ORG_USER, MULTI_ORG_USER, EUR_USER, SALES_REP, SALES_REP_NOCUSTOMERS) - not this ticket",
+    "fixture_gaps": [
+      "IMPERSONATION_ADMIN unusable on vcptcore (login_failed, email empty) - replaced by PK_OPERATOR; one failed attempt recorded on that shared account",
+      "Customers get 403 on REST currentuser/sign-in-methods (xAPI serves them) - KB-4E40858D"
+    ]
+  },
   "coverage_triage": {
     "phase": "2a",
     "owner": "test-management-specialist (Artifact A)",
@@ -303,117 +261,24 @@
       "033 AUTH-030/032: User group now carries Security, covered by suite 114"
     ]
   },
-  "execution": {
-    "edge": {
-      "start": "2026-10-28T14:33:50+01:00",
-      "minutes": 29,
-      "items": {
-        "20": "PASS",
-        "21": "PASS",
-        "26": "PASS",
-        "27": "PASS",
-        "28": "PASS (recorded) - by design (developer + .NET 10 SignInManager.PasskeySignInAsync does not reset lockout); re-graded from FAIL",
-        "29": "PASS",
-        "30": "FAIL",
-        "31": "PASS (recorded)",
-        "33": "PASS (recorded)",
-        "34": "PASS",
-        "35": "FAIL",
-        "36": "PASS",
-        "37": "PASS (recorded)",
-        "38": "BLOCKED fixture gap"
-      }
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-28-1519",
+      "ids": 36,
+      "pass": 20,
+      "fail": 11,
+      "blocked": 5,
+      "scope": {
+        "105": "OTP-048",
+        "114": "PKS-001..011, PKS-014..019",
+        "115": "PKA-001..014",
+        "114a": "PKS-012",
+        "114b": "PKS-013",
+        "027": "CUST-099, CUST-112"
+      },
+      "note": "expected FAILs hold the SPEC on known defects"
     },
-    "chrome": {
-      "start": "2026-10-28T13:33:49Z",
-      "minutes": 40,
-      "items": {
-        "1": "PASS",
-        "2": "PASS",
-        "3": "PASS (recorded)",
-        "4": "PASS",
-        "5": "PASS",
-        "6": "PASS (recorded)",
-        "7": "PASS (recorded)",
-        "8": "PASS",
-        "9": "PASS",
-        "10": "NOT RUN - omitted, carried to wave 2",
-        "11": "PASS",
-        "12": "PASS",
-        "13": "PASS",
-        "14": "PASS (recorded) + Low finding",
-        "15": "PASS (recorded)",
-        "16": "PASS",
-        "17": "PASS",
-        "18": "PASS",
-        "19": "PASS (recorded) - 327 s challenge accepted",
-        "20": "PASS",
-        "22": "PASS + note (Clothing trusts B2B-store; tested on a non-trusting store)",
-        "23": "PASS",
-        "32": "FAIL",
-        "42": "PASS",
-        "43": "PASS (recorded)",
-        "44": "PASS (recorded)"
-      },
-      "findings": [
-        "14b stale credential shows Login attempt failed on page load",
-        "19 challenge 327 s accepted (no server expiry)",
-        "22 store refusal logged reason Unknown with user store",
-        "7 rename does not update modifiedDate",
-        "23 UV-failed registration shows no message",
-        "revoke/token without client_id returns 200 but refresh still works (incidental)"
-      ]
-    }
-  },
-  "c1_scope": {
-    "105": "OTP-048",
-    "114": "PKS-001..011, PKS-014..019",
-    "115": "PKA-001..014",
-    "114a": "PKS-012",
-    "114b": "PKS-013",
-    "027": "CUST-099, CUST-112"
-  },
-  "visual": {
-    "surface": "true",
-    "ran": true,
-    "lane": "playwright-edge",
-    "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/design-report.md",
-    "axes": {
-      "a11y": {
-        "ran": true,
-        "verdict": "FAIL (non-blocking, functional ticket)",
-        "findings": 10
-      },
-      "design_system": {
-        "ran": true,
-        "verdict": "PARTIAL",
-        "skipped_reason": "BL-UI-002 on storefront Security only (0/231 off-grid); BL-UI-001/003 not measured"
-      },
-      "design_spec": {
-        "ran": false,
-        "known_divergence": 6,
-        "unresolved": 1,
-        "skipped_reason": "design:extract exit 2 - canvas declares nothing diffable (ideas, VCDZ-907 In Progress); manual comparison advisory"
-      }
-    },
-    "invariant_failures": [],
-    "a11y_high": [
-      "B1 Admin Shell login passkey/Google focus ~1.3:1",
-      "C2 AngularJS sign-in-methods icon links: no focus indicator, 2.45:1, unlabeled rename input",
-      "A1 storefront primary 2.11:1 (stand theme, pre-existing)"
-    ],
-    "a11y_other": [
-      "A2 identical Edit/Delete names",
-      "A3 focus lost to BODY after add/delete",
-      "A4 section title not a heading",
-      "B2 Admin Shell login 4.06:1 + 6x6 dots",
-      "B3 Admin Shell tab order",
-      "B4 Admin Shell focus after rename",
-      "C1 AngularJS login chrome (pre-existing)"
-    ],
-    "out_of_scope": [
-      "Admin Shell raw EF Core 409 concurrency toast on language change after adding a passkey"
-    ]
+    "release_gate": "not-assessed"
   },
   "bugs_filed": [
     {
@@ -462,9 +327,310 @@
       "repo": "vc-module-x-frontend (DeleteSignInKeyCommandHandler)",
       "expected_pending": "author Q3",
       "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/medium/BUG-xAPI-DeleteSignInKey-Keeps-Other-Sessions-VCST-6594.md"
+    },
+    {
+      "key": "VCST-6598",
+      "item": "25 / S15 / N3",
+      "title": "Passkey sign-in ignores the store Passkey switch (already-open page still gets a token)",
+      "severity": "Medium",
+      "type": "Bug",
+      "link": "relates to VCST-6121",
+      "provenance": "IN-SCOPE",
+      "repo": "vc-module-passkeys (PasskeyGrantTypeHandler.ValidateGrantAsync)",
+      "expected_pending": "author Q2",
+      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/medium/BUG-Passkey-Grant-Ignores-Store-Passkey-Switch-VCST-6598.md"
+    },
+    {
+      "key": "VCST-6599",
+      "item": "A2",
+      "title": "Storefront Security page: passkey buttons named only Edit/Delete",
+      "severity": "Medium",
+      "type": "Bug (a11y, standalone)",
+      "link": "relates to VCST-6121, VCST-6595",
+      "provenance": "IN-SCOPE",
+      "repo": "vc-frontend (security.vue:44-62)",
+      "labels_note": "qa-bug added vc-fix + qa-autofix (single repo, HIGH routing)",
+      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/medium/BUG-Security-Page-Passkey-Buttons-Not-Named-Per-Key-VCST-6599.md"
+    },
+    {
+      "key": "VCST-6600",
+      "item": "A3",
+      "title": "Storefront Security page: focus drops to body after passkey add/delete",
+      "severity": "Medium",
+      "type": "Bug (a11y, standalone)",
+      "link": "relates to VCST-6121",
+      "provenance": "IN-SCOPE",
+      "repo": "vc-frontend (security.vue createKey / openDeleteModal)",
+      "labels_note": "qa-bug added vc-fix + qa-autofix",
+      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/medium/BUG-Storefront-Security-Focus-Lost-After-Passkey-Add-Delete-VCST-6600.md"
     }
   ],
-  "filing_notes": [
-    "parallel qa-bug runs shared scratchpad file names (fields.json/get.json); VCST-6594 and VCST-6595 summaries, descriptions, attachments, links and labels re-read by the orchestrator - each matches its own bug"
-  ]
+  "bugs_not_filed": [
+    {
+      "id": "L1",
+      "severity": "Low",
+      "title": "impersonated xAPI changePassword not refused + feeds target lockout counter (Low, pre-existing)"
+    },
+    {
+      "id": "L2",
+      "severity": "Low",
+      "title": "AngularJS last-key delete enabled, 400: Bad request (Low)"
+    },
+    {
+      "id": "L3",
+      "severity": "Low",
+      "title": "stale credential: Login attempt failed on /sign-in load (Low)"
+    },
+    {
+      "id": "L4",
+      "severity": "Low",
+      "title": "challenge older than 300 s accepted (Low, question)"
+    },
+    {
+      "id": "L5",
+      "severity": "Low",
+      "title": "passkey store refusal logged reason Unknown, user store (Low)"
+    },
+    {
+      "id": "L6",
+      "severity": "Low",
+      "title": "rename does not update modifiedDate (Low)"
+    },
+    {
+      "id": "L7",
+      "severity": "Low",
+      "title": "Admin Shell set password validateuserpassword 403 for Manager (Low)"
+    },
+    {
+      "id": "L8",
+      "severity": "Low",
+      "title": "sign-in log Type filter has no Passkey option; failed rows drop storeId (Low)"
+    }
+  ],
+  "report": {
+    "page_url": null,
+    "verdict_md": null,
+    "test_model": {
+      "path": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/test-model.md",
+      "state": "new",
+      "prior": "reports/ba/test-models/VCST-6132-2026-10-20.md (org links carried)",
+      "scenarios": 28,
+      "gate": "13/13 PASS (inline)"
+    },
+    "checklist": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/testing-checklist.md",
+    "triage": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/triage-report.md",
+    "design": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/design-report.md",
+    "exploratory": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/exploratory/SBTM-VCST-6121-2026-10-28.md",
+    "verdict_detail": {
+      "value": "PASS_WITH_NOTES",
+      "decided_by": "operator override 2026-10-28",
+      "derived": "FAIL (IN-SCOPE Medium: VCST-6594, VCST-6598)",
+      "reason": "operator: bugs are fixed separately; both IN-SCOPE bugs rest on open author questions Q2 (store switch API-enforced?) and Q3 (storefront key delete ends sessions?)",
+      "bugs_in_scope": [
+        "VCST-6594",
+        "VCST-6598"
+      ],
+      "bugs_related_a11y": [
+        "VCST-6593",
+        "VCST-6595",
+        "VCST-6599",
+        "VCST-6600"
+      ],
+      "cancelled": [
+        "VCST-6596 (by design; BL-AUTH-003 narrowed)"
+      ],
+      "bugs_not_filed": [
+        "impersonated xAPI changePassword not refused + feeds target lockout counter (Low, pre-existing)",
+        "AngularJS last-key delete enabled, 400: Bad request (Low)",
+        "stale credential: Login attempt failed on /sign-in load (Low)",
+        "challenge older than 300 s accepted (Low, question)",
+        "passkey store refusal logged reason Unknown, user store (Low)",
+        "rename does not update modifiedDate (Low)",
+        "Admin Shell set password validateuserpassword 403 for Manager (Low)",
+        "sign-in log Type filter has no Passkey option; failed rows drop storeId (Low)"
+      ],
+      "author_questions": [
+        "Q1 password deletion (passkey-only accounts) intended?",
+        "Q2 store Passkey switch API-enforced?",
+        "Q3 storefront key delete ends other sessions?",
+        "Q4 satisfies MFA = UV only or a claim?",
+        "Q5 username-first in scope?"
+      ],
+      "regression": {
+        "c1": "REG-2026-10-28-1519: 20 PASS / 11 FAIL / 5 BLOCKED (36)",
+        "release_gate": "not-assessed"
+      }
+    },
+    "reachability": {
+      "verdict": "BLOCKED(lane-secrets)",
+      "note": "pages reachable; lane secrets file generated for vcst; not a stand or product blocker, run continues browserless until lanes carry vcptcore passwords",
+      "observed": [
+        "storefront sign-in: password form, Google, Sign in with Passkey (in that order); footer 2.61.0-pr-2601-8058-80583415",
+        "AngularJS login shows Passkey link",
+        "Admin Shell login /apps/admin-shell/#/login shows NO passkey button",
+        "AngularJS login: anonymous GET api/platform/settings/VirtoCommerce.Platform.UI.WidgetColorMarkers 401 plus unhandled rejection"
+      ]
+    },
+    "attachments": [
+      {
+        "name": "2026-10-27 23-18-43.mp4",
+        "id": "86746",
+        "state": "GAP",
+        "reason": "downloaded; no frame-extraction tool available (no ffmpeg/python) and the browser-eval hook blocks in-page playback — not viewed"
+      }
+    ],
+    "design_source": {
+      "source": "Claude Design canvas linked as 'Idea for Designs' (7 screens), not a binding spec; VCDZ-907 design task In Progress"
+    },
+    "tooling_changes": [
+      "enforce-real-user.mjs + plugins/vc-fix mirror: WebAuthn CDP allowance",
+      "enforce-secret-token.mjs + scripts/lib/browser-secrets.mjs: lane-aware secrets file",
+      "vc-fix 0.18.1 plugin cache: dependencies installed by filing agents (install-deps.mjs, then npm install --no-save incl. dev deps; esbuild install script not run)"
+    ],
+    "filing_notes": [
+      "parallel qa-bug runs shared scratchpad file names (fields.json/get.json); VCST-6594 and VCST-6595 summaries, descriptions, attachments, links and labels re-read by the orchestrator - each matches its own bug"
+    ],
+    "execution": {
+      "edge": {
+        "start": "2026-10-28T14:33:50+01:00",
+        "minutes": 29,
+        "items": {
+          "20": "PASS",
+          "21": "PASS",
+          "26": "PASS",
+          "27": "PASS",
+          "28": "PASS (recorded) - by design (developer + .NET 10 SignInManager.PasskeySignInAsync does not reset lockout); re-graded from FAIL",
+          "29": "PASS",
+          "30": "FAIL",
+          "31": "PASS (recorded)",
+          "33": "PASS (recorded)",
+          "34": "PASS",
+          "35": "FAIL",
+          "36": "PASS",
+          "37": "PASS (recorded)",
+          "38": "BLOCKED fixture gap"
+        }
+      },
+      "chrome": {
+        "start": "2026-10-28T13:33:49Z",
+        "minutes": 40,
+        "items": {
+          "1": "PASS",
+          "2": "PASS",
+          "3": "PASS (recorded)",
+          "4": "PASS",
+          "5": "PASS",
+          "6": "PASS (recorded)",
+          "7": "PASS (recorded)",
+          "8": "PASS",
+          "9": "PASS",
+          "10": "NOT RUN - omitted, carried to wave 2",
+          "11": "PASS",
+          "12": "PASS",
+          "13": "PASS",
+          "14": "PASS (recorded) + Low finding",
+          "15": "PASS (recorded)",
+          "16": "PASS",
+          "17": "PASS",
+          "18": "PASS",
+          "19": "PASS (recorded) - 327 s challenge accepted",
+          "20": "PASS",
+          "22": "PASS + note (Clothing trusts B2B-store; tested on a non-trusting store)",
+          "23": "PASS",
+          "32": "FAIL",
+          "42": "PASS",
+          "43": "PASS (recorded)",
+          "44": "PASS (recorded)"
+        },
+        "findings": [
+          "14b stale credential shows Login attempt failed on page load",
+          "19 challenge 327 s accepted (no server expiry)",
+          "22 store refusal logged reason Unknown with user store",
+          "7 rename does not update modifiedDate",
+          "23 UV-failed registration shows no message",
+          "revoke/token without client_id returns 200 but refresh still works (incidental)"
+        ]
+      }
+    },
+    "axes": {
+      "layer": {
+        "value": "cross-layer",
+        "members": [
+          "platform",
+          "module",
+          "api",
+          "storefront",
+          "admin-spa"
+        ],
+        "surface_source": [
+          "PR repos: vc-platform, vc-module-passkeys, vc-module-customer, vc-module-store, vc-module-x-frontend, vc-frontend, vc-module-admin-shell"
+        ]
+      },
+      "visual_surface": {
+        "value": true,
+        "surface_source": [
+          "vc-frontend#2601 .vue",
+          "vc-module-admin-shell#4",
+          "vc-module-passkeys#1 admin blades"
+        ]
+      },
+      "contract_surface": {
+        "value": true,
+        "surface_source": [
+          "vc-module-x-frontend#13 GraphType files",
+          "live schema: signInMethods, passkeyCreationOptions, passkeyRequestOptions, createPasskey"
+        ],
+        "refreshed": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/knowledge/api/graphql-schema.md @ 2026-10-28",
+        "fixtures": "86/86 pass"
+      },
+      "coverage_surface": {
+        "value": true,
+        "surface_source": [
+          "domain auth",
+          "tc:scope 222 hits in 104,105,110,111,031,032,033,042,078,082"
+        ]
+      },
+      "data_surface": {
+        "value": true,
+        "surface_source": [
+          "ladder 3: per-run key state + passkey-only + lockout need disposable accounts",
+          "ladder 4: new entity state (AspNetUserPasskeys) only creatable in-case"
+        ]
+      },
+      "domain_map": {
+        "state": "PRESENT",
+        "slug": "auth",
+        "rev": 2,
+        "generated": "2026-10-21",
+        "mind_map": ".claude/knowledge/domain/auth.mind-map.json",
+        "note": "passkeys listed as not deployed — new chain link",
+        "all_layer_confirmed_at": "1e-confirmed"
+      }
+    },
+    "oracle_change": "BL-AUTH-003 narrowed (reports/knowledge/BL-AUDIT-2026-10-28.md)"
+  },
+  "ac_analysis": {
+    "conditions": 98,
+    "mapped": 92,
+    "na": 6,
+    "checklist_items": 44,
+    "pass": 39,
+    "fail": 4,
+    "blocked": 1,
+    "fail_note": "items 25 (store switch, VCST-6598), 32 (xAPI delete sessions, VCST-6594), 30 (impersonated changePassword, Low pre-existing), 35 (AngularJS last key, Low); 38 BLOCKED fixture gap; 28 re-graded by design"
+  },
+  "new_cases_authored": 33,
+  "contract": {
+    "value": true,
+    "surface_source": [
+      "vc-module-x-frontend#13 GraphType files",
+      "live schema: signInMethods, passkeyCreationOptions, passkeyRequestOptions, createPasskey"
+    ],
+    "refreshed": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/knowledge/api/graphql-schema.md @ 2026-10-28",
+    "fixtures": "86/86 pass"
+  },
+  "total_cases": 44,
+  "passed": 39,
+  "failed": 4,
+  "blocked": 1
 }

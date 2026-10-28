@@ -1,6 +1,6 @@
 # BUG: Passkey sign-in does not reset the failed sign-in counter, so one wrong password after it locks the account
 
-## Status: READY_TO_SUBMIT
+## Status: REJECTED
 **Found by:** agent — testing VCST-6121
 
 **Severity:** High · **Priority:** P1 · **Tracker:** [VCST-6596](https://virtocommerce.atlassian.net/browse/VCST-6596) (screenshot embedded in Actual result) · **Relates to:** VCST-6121
