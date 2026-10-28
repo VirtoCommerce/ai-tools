@@ -28,7 +28,7 @@ The blade keeps the pre-save Modified date; `GET /api/return/{id}` already carri
 | Refresh | 10:04:56 | 10:04:56.790Z |
 | Save #2 | **10:04:56 (stale)** | 10:05:51.273Z |
 
-![After Save: the blade still shows the old Modified date](../../screenshots/admin-return-details-modified-date-stale-after-save/02-blade-after-save-stale.png)
+![After Save: the blade still shows the old Modified date](../../../screenshots/admin-return-details-modified-date-stale-after-save/02-blade-after-save-stale.png)
 
 ## Layer Validation
 | Layer | Result | Evidence |

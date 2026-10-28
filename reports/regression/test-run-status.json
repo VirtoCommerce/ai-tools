@@ -1,81 +1,29 @@
 {
-  "runId": "REG-2026-10-28-1519",
+  "runId": "REG-2026-10-28-2059",
   "status": "completed",
-  "startedAt": "2026-10-28T14:20:14.7907584Z",
-  "windowStart": "2026-10-28T14:20:14.7907584Z",
-  "selection": "114,114a,114b,115,105,027",
-  "env": "vcptcore",
-  "scoped": true,
-  "cases": "ids",
-  "purpose": "/qa-test VCST-6121 step 4c - C1 exact set (33 new Draft + 3 RE-BASE), --no-promote",
-  "plan": "reports/regression/REG-2026-10-28-1519/preflight.json",
+  "startedAt": "2026-10-28T20:03:42.660Z",
+  "windowStart": "2026-10-28T20:03:42.660Z",
+  "selection": "042",
+  "env": "vcst",
+  "scoped": false,
+  "cases": "all",
+  "purpose": "/qa-run sprint:26-21 --frontend — P0 completion of stalled REG-2026-10-28-1013 (VCST-6417)",
+  "plan": "reports/regression/REG-2026-10-28-2059/preflight.json",
   "suites": {
-    "105": {
+    "042": {
       "status": "done",
-      "lane": "browser",
-      "browser": "none",
-      "startedAt": "2026-10-28T14:22:44Z",
-      "total": 1,
-      "pass": 0,
-      "fail": 0,
-      "blocked": 1,
-      "finishedAt": "2026-10-28T16:02:41Z"
-    },
-    "114": {
-      "status": "done",
-      "lane": "browser",
       "browser": "playwright-chrome",
-      "startedAt": "2026-10-28T14:22:44Z",
-      "total": 17,
-      "pass": 10,
-      "fail": 5,
+      "lane": "browser",
+      "startedAt": "2026-10-28T20:04:34.927Z",
+      "attempts": 5,
+      "tests": 34,
+      "pass": 27,
+      "fail": 0,
       "blocked": 2,
-      "finishedAt": "2026-10-28T15:05:49Z"
-    },
-    "115": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "startedAt": "2026-10-28T15:05:49Z",
-      "total": 14,
-      "pass": 8,
-      "fail": 5,
-      "blocked": 1,
-      "finishedAt": "2026-10-28T15:45:28Z"
-    },
-    "114a": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "startedAt": "2026-10-28T15:45:28Z",
-      "total": 1,
-      "pass": 1,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-10-28T15:52:38Z"
-    },
-    "114b": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "startedAt": "2026-10-28T15:52:38Z",
-      "total": 1,
-      "pass": 1,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-10-28T16:02:41Z"
-    },
-    "027": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "none",
-      "startedAt": "2026-10-28T14:22:44Z",
-      "total": 2,
-      "pass": 0,
-      "fail": 1,
-      "blocked": 1,
-      "finishedAt": "2026-10-28T16:02:41Z"
+      "skipped": 5,
+      "ambiguous": 0,
+      "finishedAt": "2026-10-28T20:39:35.453Z"
     }
   },
-  "finishedAt": "2026-10-28T16:04:37.645Z"
+  "finishedAt": "2026-10-28T20:27:09.690Z"
 }
