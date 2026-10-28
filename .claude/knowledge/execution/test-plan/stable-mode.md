@@ -51,8 +51,8 @@ line on what changed, ticket keys.
   Rules → *Product context*. A new module with no suite is a gap: `PLAN.md` §Gaps, with an exploratory charter.
 - **Suites:** start from the `module-diff.json` candidates (the path matcher is broad), narrow by domain, add the suites
   a cross-cutting change needs. A suite whose `requiresModules` the env does not run is BLOCKED by plan.
-- **Risk per domain**, per [`plan-sections.md`](plan-sections.md) §Risk assessment — it orders the domains inside each
-  priority tier and decides which domains get charters.
+- **Risk per domain**, per [`plan-sections.md`](plan-sections.md) §Risk assessment — it decides which domain waves are
+  offered first and which domains get charters.
 
 ## Step 3 — Waves
 

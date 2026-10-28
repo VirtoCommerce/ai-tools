@@ -12,7 +12,9 @@
  * What it writes, per wave whose suites are in the run (`--write`):
  *   - every suite of the wave finished → `RUN_DONE`, the run id appended, `totals` from its suites' results,
  *     `untriaged` = FAIL/BLOCKED cases without a row in the wave's ledger, `notRun` for suites the run did not reach;
- *   - otherwise → `RUNNING` and the run id; totals are written once the wave is complete.
+ *   - otherwise → `RUNNING` only; the run id and the totals go in together once the wave is complete.
+ * `--final` (after `regression:close`): the run is over, so a suite left with PENDING cases is finished too and those
+ * cases go to `notRun` — without it, a run cut short would keep its waves RUNNING for ever.
  * A wave that already has OTHER run ids (a `--continue` that ran only what was left) gets this run's totals ADDED;
  * a run id already recorded next to others is refused, so a second split cannot count a run twice.
  *
@@ -42,7 +44,8 @@ const argv = process.argv.slice(2);
 const release = argv.find((a) => !a.startsWith("--") && argv[argv.indexOf(a) - 1] !== "--run-id");
 const runId = argv[argv.indexOf("--run-id") + 1];
 const write = argv.includes("--write");
-if (!release || argv.indexOf("--run-id") < 0 || !runId) fail("usage: release:split -- <release> --run-id <RUN_ID> [--write]");
+const final = argv.includes("--final");
+if (!release || argv.indexOf("--run-id") < 0 || !runId) fail("usage: release:split -- <release> --run-id <RUN_ID> [--final] [--write]");
 
 const relDir = join(REPO_ROOT, "regression/releases", release);
 const runDir = join(REPO_ROOT, "reports/regression", runId);
@@ -94,32 +97,52 @@ let refused = false;
 for (const w of plan.waves) {
   const inRun = w.suites.filter((s) => suites.has(s));
   if (!inRun.length) continue;
-  const done = inRun.map((s) => suites.get(s)!).filter((s) => s.completedAt.trim() !== "" && s.pending === 0);
+  const runSuites = inRun.map((s) => suites.get(s)!);
+  // --final: the run is closed, so a suite with PENDING cases will not get them — it is finished, and those
+  // cases go to notRun. Without it, such a suite is still running.
+  const done = runSuites.filter((s) => final || (s.completedAt.trim() !== "" && s.pending === 0));
   const complete = done.length === inRun.length;
   const missing = w.suites.filter((s) => !suites.has(s));
-  const { t, failing } = count(inRun.map((s) => suites.get(s)!));
+  const unfinished = runSuites.filter((s) => s.cases.some((c) => c.status === "PENDING"));
+  const pendingCases = unfinished.reduce((n, s) => n + s.cases.filter((c) => c.status === "PENDING").length, 0);
+  const { t, failing } = count(runSuites);
   const known = ledgerCases(w.id);
   const untriaged = [...failing].filter((c) => !known.has(c)).length;
   rows.push(`  ${w.id.padEnd(4)} ${complete ? "complete " : `running ${done.length}/${inRun.length}`}  executed ${t.executed}/${t.planned} · PASS ${t.pass} · FAIL ${t.fail} · BLOCKED ${t.blocked}` +
-    ` · untriaged ${untriaged}${missing.length ? ` · not in this run: ${missing.join(",")}` : ""}`);
+    ` · untriaged ${untriaged}${missing.length ? ` · not in this run: ${missing.join(",")}` : ""}${final && pendingCases ? ` · ${pendingCases} case(s) never ran` : ""}`);
   if (!write) continue;
 
   const statePath = join(relDir, "waves", w.id, "state.json");
   const state = JSON.parse(readFileSync(statePath, "utf-8")) as State;
-  const others = (state.runIds ?? []).filter((r) => r !== runId);
-  if (others.length && (state.runIds ?? []).includes(runId) && complete) {
-    console.error(`release:split: ${w.id} already records ${runId} next to ${others.join(", ")} — its totals hold this run already; not added twice`);
-    refused = true;
-    continue;
-  }
-  if (!(state.runIds ?? []).includes(runId)) state.runIds = [...(state.runIds ?? []), runId];
-  if (complete) {
+  if (!complete) {
+    // The run id goes in only with the totals it stands for — appending it early would make the final split
+    // look like a second count of the same run and refuse it.
+    if (["CLAIMED", "NOT_STARTED"].includes(state.status)) state.status = "RUNNING";
+  } else {
+    const others = (state.runIds ?? []).filter((r) => r !== runId);
+    if (others.length && (state.runIds ?? []).includes(runId)) {
+      console.error(`release:split: ${w.id} already records ${runId} next to ${others.join(", ")} — its totals hold this run already; not added twice`);
+      refused = true;
+      continue;
+    }
     const base = others.length && state.totals ? state.totals : null;
+    state.runIds = [...others, runId];
     state.totals = base ? (Object.fromEntries(Object.keys(t).map((k) => [k, (base as any)[k] + (t as any)[k]])) as unknown as Totals) : t;
     state.untriaged = untriaged + (base ? Math.max(0, (state.untriaged ?? 0)) : 0);
-    if (missing.length) state.notRun = [...(state.notRun ?? []).filter((n) => !n.reason.includes(runId)), { suites: missing, cases: caseCount(missing), reason: `not in the shared run ${runId}` }];
+    // Entries an earlier split wrote stop being true once this run covers their suites.
+    const covered = new Set(inRun);
+    const prior = (state.notRun ?? [])
+      .map((n) => (/^not (in the shared run|finished in) /.test(n.reason) ? { ...n, suites: n.suites.filter((s) => !covered.has(s)) } : n))
+      .filter((n) => n.suites.length && !n.reason.includes(runId));
+    const fresh = [
+      ...(missing.length ? [{ suites: missing, cases: caseCount(missing), reason: `not in the shared run ${runId}` }] : []),
+      ...(final && pendingCases ? [{ suites: unfinished.map((s) => s.suiteId), cases: pendingCases, reason: `not finished in ${runId}` }] : []),
+    ];
+    // An entry whose suites were all covered is gone; recount the cases of a trimmed one from the manifest.
+    state.notRun = [...prior.map((n) => (/^not in the shared run /.test(n.reason) ? { ...n, cases: caseCount(n.suites) } : n)), ...fresh];
+    if (!state.notRun.length) delete state.notRun;
     if (["CLAIMED", "RUNNING", "NOT_STARTED"].includes(state.status)) state.status = "RUN_DONE";
-  } else if (["CLAIMED", "NOT_STARTED"].includes(state.status)) state.status = "RUNNING";
+  }
   state.updatedAt = today;
   writeFileSync(statePath, JSON.stringify(state, null, 2) + "\n");
 }

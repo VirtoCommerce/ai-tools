@@ -37,6 +37,7 @@ is asked, whenever the wave reaches them, whatever flag brought it there.
 | `RUN_DONE` with `untriaged > 0` (FAIL or BLOCKED cases without a ledger row) — with no flag, `--triage`, `--publish` or `--handover` | **Step 4** (triage runs first) |
 | `RUN_DONE` with `untriaged = 0`, or `TRIAGED` | Step 6 |
 | `--handover` on `CLAIMED` (nothing ran) | Step 8 |
+| `all`, `all --continue` | [§`all`](#all--one-owner-runs-every-free-wave) |
 
 **Only the owner writes a wave.** Every entry except `status`, `--claim` and `--continue` starts by checking that
 `state.json` `owner` is the user **and** the wave sub-task is assigned to them. Otherwise STOP and show who holds it —
@@ -116,11 +117,12 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
    `TEST_ENV=<env.testEnv>`. Its plan must write `reports/regression/<RUN_ID>/preflight.json` (`--preflight-out`): that
    file is what `suites:lanes` reads the `skip` map from. This second pre-flight is the one that counts: it re-derives
    the `skip` map after any Step 0 fix, so a gap fixed at Step 0 no longer skips its cases. Every rule of that pipeline applies unchanged (browser lanes, `--secrets`, the observed-behaviour steps of its runners).
-4. When it finishes — or is cut short (usage limit, env down) — append the run id to `runIds`, write `totals` from
-   the run's consolidated report (never counted by hand; `ambiguous` holds what is neither pass, fail, blocked nor
-   skipped), put anything not run into `notRun` (suite ids + case count + reason — including each suite's
-   `notDeployed` cases from its results file, reason `not deployed: <module>`), set `untriaged` to the FAIL + BLOCKED count,
-   `status: RUN_DONE`. **Then go to Step 4 — a cut-short run too.**
+4. When it finishes — or is cut short (usage limit, env down) — run
+   `npm run release:split -- <release> --run-id <RUN_ID> --final --write`. It appends the run id, writes `totals` (adding
+   a later run's to the wave's, so a `--continue` is summed, not overwritten; `ambiguous` holds what is neither pass, fail,
+   blocked nor skipped), `untriaged`, `notRun` for suites the run did not reach or finish, and `status: RUN_DONE` — never
+   counted or written by hand. Then add to `notRun` each suite's `notDeployed` cases from its results file, reason
+   `not deployed: <module>`. **Then go to Step 4 — a cut-short run too.**
 
 ## Step 4 — Triage starts on its own
 
@@ -237,7 +239,8 @@ For when one person runs the whole release. Same steps, same records, but asked 
    kept busy across waves finish sooner than the waves back to back. Every suite is in exactly one wave, so the run splits
    back by suite: `npm run release:split -- <release> --run-id <RUN_ID> --write` writes each wave's `runIds`, `totals`,
    `notRun` and `untriaged` (never counted by hand).
-4. **A wave closes the moment its last suite finishes** — run `release:split` then, triage the wave (Step 5) and push
+4. **A wave closes the moment its last suite finishes** — run `release:split` then (`--final` once the run itself is
+   closed, so a suite left with PENDING cases closes too and they go to `notRun`), triage the wave (Step 5) and push
    its record (Step 7 items 1 and 3, no PR yet), while the run goes on for the others. A session that dies mid-run
    loses nothing that closed.
 5. **WX alone, last.**
