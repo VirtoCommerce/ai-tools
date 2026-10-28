@@ -8,6 +8,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Parallel `/qa-bug` runs no longer share scratch files — `vc-fix` `0.18.2` — 2026-10-28
+
+### Fixed
+
+- `/qa-bug` gives every run its own work folder (`$WORK`, `knowledge/execution/jira-bug-fields.md` §0) and writes
+  every Jira/Azure payload (`fields.json`, `issue.json`, `link.json`, readbacks) there by absolute path. Before, the
+  recipe named bare `fields.json` / `issue.json`, so two runs filed in parallel from one session wrote the same files
+  in the shared temp dir — observed when VCST-6594 and VCST-6595 were filed at the same minute.
+- Before each write to an existing issue, `--key` must equal `$WORK/KEY` and the payload must be this bug's; a
+  mismatch stops the run instead of sending.
+
+## `qa-investigate` from a subagent: the caller writes `source/findings.md` — `vc-fix` `0.18.1` — 2026-10-28
+
+### Fixed — a subagent's evidence package could not be completed without bypassing a refusal
+
+Claude Code refuses a subagent's `Write` of a report-like file, and Part A row 13's `source/findings.md` is
+one. During VCST-6121 a subagent building packages hit that refusal and wrote the file through a shell
+heredoc instead — the package was complete, the rule was not. `evidence-and-root-cause.md` row 13 now says
+how it works from a subagent: the findings come back in the hand-back under a `## source/findings.md`
+heading and the calling session writes them verbatim to `<package>/source/findings.md` before
+`/qa-bug --evidence`. Inline runs are unchanged.
+
 ## The visual lane runs from the plugin — `vc-test` `0.12.0` — 2026-10-27
 
 P2-5c of the `vc-test` plan (`docs/superpowers/plans/2026-10-27-vc-test-p2-5c-design.md`).
