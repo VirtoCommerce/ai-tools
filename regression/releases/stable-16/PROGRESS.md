@@ -24,13 +24,13 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 |---|---|
 | REAL_BUG | 42 |
 | BY_DESIGN | 7 |
-| TEST_DEFECT | 69 |
+| TEST_DEFECT | 70 |
 | DATA | 95 |
-| ENV_CONFIG | 100 |
+| ENV_CONFIG | 101 |
 | NOT_TESTABLE | 23 |
-| DUPLICATE | 3 |
+| DUPLICATE | 4 |
 | FLAKY | 1 |
-| PENDING_DECISION | 5 |
+| PENDING_DECISION | 2 |
 
 ## Not run yet
 
@@ -62,8 +62,5 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 |---|---|---|---|
 | W1 | STORE-069 | Verification link still confirms the email after store email verification is turned off: intended? | product owner |
 | W2 | SRCH-009 | SRCH-009 and SRCH-010 assert behaviour this bundle deprecates: deprecate the cases or retarget them? | Elena Kutasina |
-| W3 | ORDA-068 | A full refund leaves the payment status Paid: is Refunded expected? | product owner |
-| W3 | BOPIS-081 | Precondition 'post-purchase registration option is available' is not met: the guest confirmation page for CO261014-00010 offers only 'Show … | triage by recorded reason · Elena Kutasina |
-| W3 | CFG-PDP-045-COND | Partial/env-index: REST POST /api/catalog/products/configurations ACCEPTED a circular dependsOnSectionId pair (SecA->SecB, SecB->SecA) on a… | triage by recorded reason · Elena Kutasina |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
