@@ -1290,5 +1290,13 @@
     "email": "agent-test-6443-nocreate@test.virtocommerce.com",
     "role": "AGENT-TEST-6443 no-create",
     "password_var": "DEFAULT_TEST_PASSWORD"
+  },
+  "SANITY_ASSET_IMAGE": {
+    "id": "image-3dce9c2d4b39489ad1752e692cb4950c68417479-4x3-png",
+    "url": "https://cdn.sanity.io/images/ryu3mu0u/production/3dce9c2d4b39489ad1752e692cb4950c68417479-4x3.png"
+  },
+  "SANITY_ASSET_FILE": {
+    "id": "file-033708323ba3b75b5b354f0d14c827798a6bc763-txt",
+    "url": "https://cdn.sanity.io/files/ryu3mu0u/production/033708323ba3b75b5b354f0d14c827798a6bc763.txt"
   }
 }
