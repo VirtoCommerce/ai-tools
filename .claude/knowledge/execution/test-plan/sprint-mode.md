@@ -20,6 +20,7 @@ You run this orchestration inline. Delegate the heavy "Write" step (Section 6: p
 | `--ticket <KEY>` | The sprint regression ticket. The wave sub-tasks go under it (Step 8), and bugs filed from the waves link to it. Required for waves: without it Step 8 offers to create one. |
 | `--env <TEST_ENV>` | The environment the sprint regression runs on (Step 8 `release.json` `env.testEnv`). Default: the session's env. |
 | `--update` | The sprint's scope or build moved after Step 8 (late Done items, a fix release or PR build deployed during the freeze): re-run Steps 2–8 and amend the plan, `-summary.json`, `release.json` and `PLAN.md`. A wave that already ran keeps its suites; a new suite goes to a wave that has not started. Never touches `waves/`. |
+| `--with-backend` | Step 8 builds the waves over the §5.1.2 Backend suites too. Default: Frontend only — the sprint regression is the storefront's. |
 | `--no-waves` | Skip Step 8: no release folder, the plan runs as one person's `/qa-run sprint:<XX-YY>`. Implied by `--no-suites`. |
 
 ---
@@ -208,7 +209,8 @@ Use the **exact structure** of `docs/Sprint plans/sprint-26-08-test-plan.md`, **
 }
 ```
 
-`release` is the Step 8 release folder name, or `null` with `--no-waves`.
+`release` is the Step 8 release folder name, or `null` with `--no-waves`. `suitesActivated[]` stays the whole §5.1 list; the waves
+hold its Frontend part unless `--with-backend`.
 
 ---
 
@@ -220,9 +222,10 @@ for bugs found in the regression are deployed during the freeze — as a new rel
 the fix PR's build, never as a hotfix. The wave that sees the new version records it in its `report.md`
 ([`waves.md`](../../../skills/qa-run/waves.md) Step 0), the cases the bug failed are re-run on it, and `--update` re-pins
 `env` and adds what the fix touches to waves not started. Over
-the Section 5.1 suites (`suitesActivated[]`) build the waves per [`plan-sections.md`](plan-sections.md) §Waves, with the
-Step 5 risk deciding which domain waves are offered first. **W0, the smoke gate, runs first and alone; every other wave
-depends on W0 only**, so once W0 has run all owners work at the same time. Then write `regression/releases/sprint-{XX-YY}/` per
+the Section 5.1.1 **Frontend** suites (`suitesActivated[]` whose CSV is under `regression/suites/Frontend/`; with
+`--with-backend`, all of `suitesActivated[]`) build the waves per [`plan-sections.md`](plan-sections.md) §Waves, with the
+Step 5 risk deciding which domain waves are offered first. **W0, the smoke gate — the manifest's `smoke` suites of the same
+layer — runs first and alone; every other wave depends on W0 only**, so once W0 has run all owners work at the same time. Then write `regression/releases/sprint-{XX-YY}/` per
 [`release-folder.md`](../../../skills/qa-run/release-folder.md):
 
 1. **`release.json`** — the sprint variant (contract §3): `release: "sprint-{XX-YY}"`, `ticket` from `--ticket`, `baseline`

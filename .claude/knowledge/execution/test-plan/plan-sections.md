@@ -125,7 +125,7 @@ that was considered and correctly ruled out.
 A regression that more than one person runs is split into **waves**, written to a release folder
 ([`release-folder.md`](../../../skills/qa-run/release-folder.md) — the contract) and run with `/qa-run <release> <wave>`
 ([`waves.md`](../../../skills/qa-run/waves.md)). Both modes build them the same way, over their own suite list: a stable
-plan over the suites its bundle diff scoped, a sprint plan over its §5.1 suites (`suitesActivated[]`). The shape is **W0 first, then independent waves, WX last**, so after the smoke gate every owner works at the same
+plan over the suites its bundle diff scoped, a sprint plan over its §5.1.1 Frontend suites (all of §5.1 with `--with-backend`). The shape is **W0 first, then independent waves, WX last**, so after the smoke gate every owner works at the same
 time and nobody waits for anybody:
 
 | Wave | Holds | Depends on | Runs |
@@ -144,7 +144,10 @@ time and nobody waits for anybody:
    re-grade a case in the plan.
 3. **One owner keeps one domain** across all its priorities, so its data stays in one pair of hands.
 4. **Env-wide cases** (settings, job schedules, reindex/rebuild, restore, restart, re-seed — contract §7.2) go into
-   `exclusive` and the WX wave, out of every domain wave.
+   `exclusive` and the WX wave, out of every domain wave — and so does a suite whose manifest `notes` say to run it
+   alone or in an operator window. A manifest `exclusiveGroup` is **not** by itself a WX reason: it keeps its members
+   from running beside EACH OTHER only (`config/test-suites.schema.json`), so the whole group goes into one domain wave,
+   whose owner runs its members one after another.
 5. **Size** each wave with `npm run regression:plan -- <suite ids>` (and `--cases <tier>` per tier); a wave fits one
    owner's day — a domain too big for that is split into two independent waves by suite, never by tier. Numbers only
    from that output.
