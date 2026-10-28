@@ -24,6 +24,9 @@
  *     published is observable.
  *   - FOOTER: strong refs to page-a/page-b/settings + one WEAK ref to a missing doc + a nested ref
  *     → link resolution of found / slug-less / missing targets is observable.
+ *   - PAGE_A.webhookDecoyTitle: a title the signed webhook body carries (sign-webhook --title) that
+ *     differs from the one in Sanity → "the payload is a notification, the content is fetched" is
+ *     observable (an indexer that trusted the body would store the decoy).
  *   - Any reference whose target is not in the same dataset of this fixture MUST be `_weak: true`:
  *     Sanity rejects a strong dangling reference with 409 (verified live 2026-10-28).
  */
@@ -55,6 +58,9 @@ export const DATASET_TYPES = Object.freeze({
 });
 
 /** Tiny solid-red RGB PNG (w×h). Same bytes every call, so Sanity dedups the upload (asset id = sha1). */
+/** The title SAN-001's signed webhook body carries — must never become the indexed title. */
+export const webhookDecoyTitle = (title) => `${title} (webhook-body decoy)`;
+
 export function tinyPng(w = 4, h = 3) {
   return makePng(w, h, [255, 0, 0]);
 }
@@ -88,7 +94,7 @@ export const DOC_SPECS = Object.freeze([
       attachment: { _type: 'file', asset: ref(a.file) },
       badAsset: { _type: 'image', asset: ref(BAD_ASSET_REF, true) },
     }),
-    aliasFields: (d) => ({ id: d._id, permalink: d.permalink.current, title: d.title, type: d._type, dataset: DATASETS.primary }),
+    aliasFields: (d) => ({ id: d._id, permalink: d.permalink.current, title: d.title, webhookDecoyTitle: webhookDecoyTitle(d.title), type: d._type, dataset: DATASETS.primary }),
   },
   {
     key: 'page-b', alias: 'SANITY_DOC_PAGE_B', dataset: DATASETS.primary,
@@ -197,7 +203,9 @@ export function strongDanglingRefs(dataset, assets = PLACEHOLDER_ASSETS) {
 
 /**
  * The static alias registry entries (test-data/aliases.json) derived from the documents. The
- * conflict alias merges its two datasets. Asset aliases carry empty id/url (runtime → overlay).
+ * conflict alias merges its two datasets. Asset aliases carry the repo's "" placeholder for id/url: the
+ * values are runtime (aliases.<env>.json). "" is NOT a value — the pre-flight and explainMiss treat it as a
+ * miss, teardown clears an overlay with null, and SAN-020 BLOCKs on an empty asset id/url.
  */
 export function baseAliases() {
   const out = {
@@ -235,6 +243,19 @@ export const RESIDUE_QUERY = `{"docs": count(*[${OWN_ID_PREDICATE}]), "assets": 
 export const OWN_ASSETS_QUERY = `*[${OWN_ASSET_PREDICATE}]{_id, originalFilename, url}`;
 /** GROQ: documents OUTSIDE this fixture that reference an asset (must be 0 before deleting it). */
 export const FOREIGN_REFERRERS_QUERY = `count(*[references($id) && !${OWN_ID_PREDICATE}])`;
+/**
+ * Per-env owner marker. Several envs can point at ONE Sanity project (.env.local sets the project for
+ * every env), and the fixture ids are env-invariant, so a teardown must not remove what another env
+ * still uses. Seed writes `AGENT-TEST-6475-seeded-by-<env>` into the primary dataset; teardown removes
+ * its own marker and deletes the fixture only when no other env's marker is left. The type is in no
+ * dataset type list, so the module never indexes a marker.
+ */
+export const MARKER_TYPE = 'qaSeedMarker';
+export const markerId = (env) => `${SEED_PREFIX}seeded-by-${env}`;
+export const markerDoc = (env) => ({ _id: markerId(env), _type: MARKER_TYPE, env });
+/** GROQ: every env's owner marker in the primary dataset. */
+export const MARKERS_QUERY = `*[_type == "${MARKER_TYPE}" && string::startsWith(_id, "${SEED_PREFIX}seeded-by-")]{_id, env}`;
+
 /** Runtime platform GUID shape — must never appear in the spec or the committed base aliases. */
 export const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 export const findGuidLeaks = (text) => [...new Set(String(text).match(GUID_RE) || [])];

@@ -26,7 +26,7 @@
  *            (totals 1 / 3 / 4 — pairwise distinct across p500),
  *            deep/…/l5/d5-a.png → 1 page. Every other asset → 0.
  */
-import zlib from 'node:zlib';
+import { makePng } from '../../lib/png.mjs';
 
 export const TICKET = 'VCST-5726';
 export const ROOT_NAME = 'AGENT-TEST-VCST5726';
@@ -167,23 +167,14 @@ export function buildScBody(n, storeId, urlOf) {
 }
 
 /* ── Tiny valid file bytes (pure) ── */
-const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
-const crc32 = (buf) => { let c = 0xffffffff; for (let i = 0; i < buf.length; i++) c = CRC[(c ^ buf[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
-function chunk(type, data) {
-  const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
-  const t = Buffer.from(type, 'ascii'); const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(Buffer.concat([t, data])), 0);
-  return Buffer.concat([len, t, data, crc]);
-}
 function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 
 /** 16x16 RGB PNG, colour keyed by the name — a few hundred bytes, real PNG, distinct per file. */
 export function tinyPng(name) {
   const W = 16, H = 16, h = hash(name);
   const rgb = [h & 0xff, (h >>> 8) & 0xff, (h >>> 16) & 0xff];
-  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4); ihdr[8] = 8; ihdr[9] = 2;
-  const raw = Buffer.alloc((W * 3 + 1) * H);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = y * (W * 3 + 1) + 1 + x * 3; const band = (x + y) % 8 < 2; raw[o] = band ? 255 - rgb[0] : rgb[0]; raw[o + 1] = band ? 255 - rgb[1] : rgb[1]; raw[o + 2] = band ? 255 - rgb[2] : rgb[2]; }
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+  const inv = rgb.map((c) => 255 - c);
+  return makePng(W, H, (x, y) => ((x + y) % 8 < 2 ? inv : rgb));
 }
 
 /** Minimal valid one-page PDF with a correct xref table. */

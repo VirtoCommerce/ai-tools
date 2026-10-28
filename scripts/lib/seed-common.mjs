@@ -77,6 +77,8 @@ async function warnIfPresetUnresolvable(name, where) {
 // inline override and auth fails with invalid_grant), the env's QA_ENV_PATH files, and on a PASSWORDS=master
 // stand the master password for every test account.
 const { testEnv: _TEST_ENV, promoted, master: _MASTER } = loadEnv();
+/** The env the layered loader resolved (TEST_ENV → session binding → .env.test-env → vcst). Read it, never re-derive it. */
+export const TEST_ENV = _TEST_ENV;
 /**
  * Base keys that actually got a per-env value this run (a pin, a dedicated file, the master password). Promotion
  * is a SILENT no-op when the suffixed key is absent or misnamed — the base value simply stays in place — so callers that
@@ -654,7 +656,7 @@ const PRIMARY_ENV = 'vcst';
  * overlay is committed; localhost's is gitignored (drifts each fresh-DB provision).
  */
 export function writeEnvAliasOverride(updates) {
-  const env = process.env.TEST_ENV || PRIMARY_ENV;
+  const env = _TEST_ENV || PRIMARY_ENV;
   if (DRY_RUN || !updates || Object.keys(updates).length === 0) return;
   const p = join(ROOT, `test-data/aliases.${env}.json`);
   let cur = {};
@@ -1599,24 +1601,16 @@ export async function verifyCreated(api, kind, id, { name } = {}) {
  * Confirm a teardown left zero residue. `searchFn` is a caller thunk that returns
  * the remaining matching entities (array) or a count. Returns the residual count;
  * 0 means a clean teardown. Reused by every `*:teardown` path.
- * `strict: true` rethrows a failed search instead of reporting it as 0 — a residue query that did
- * not run is "residue unknown", never "clean". (Default stays lenient for the existing callers.)
+ * A failed search is rethrown, never reported as 0: a residue query that did not run is "residue
+ * unknown", never "clean". A thunk that looks an entity up by id allows 404 itself (expectStatus).
  * @returns {Promise<number>}
  */
-export async function verifyRemoved(searchFn, { strict = false } = {}) {
+export async function verifyRemoved(searchFn) {
   if (DRY_RUN) return 0;
-  if (strict) {
-    const r = await searchFn();
-    if (typeof r === 'number') return r;
-    if (Array.isArray(r)) return r.length;
-    return (r?.results || r?.items || []).length;
-  }
-  try {
-    const r = await searchFn();
-    if (typeof r === 'number') return r;
-    if (Array.isArray(r)) return r.length;
-    return (r?.results || r?.items || []).length;
-  } catch { return 0; }
+  const r = await searchFn();
+  if (typeof r === 'number') return r;
+  if (Array.isArray(r)) return r.length;
+  return (r?.results || r?.items || []).length;
 }
 
 /* ── Product content enrichment (images + descriptions) ────────────────────────

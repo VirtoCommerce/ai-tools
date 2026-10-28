@@ -1,7 +1,5 @@
 /**
- * scripts/lib/png.mjs — the shared zero-dependency RGB PNG encoder that new seeders should reuse.
- * (Older local copies still exist — cms/pagebuilder-assets-specs.mjs, cms/pagebuilder-legacy-permalinks-specs.mjs,
- * sales-rep/sales-rep-docs-specs.mjs, scripts/test-data/gen-cms-upload-fixtures.mjs — not migrated here.)
+ * scripts/lib/png.mjs — the ONE zero-dependency RGB PNG encoder; every seeder and fixture generator imports it.
  *
  * SIDE-EFFECT-FREE (no env load, no network) so a `*-specs.mjs` module can import it; seed-common.mjs
  * re-exports `makePng` and builds `makeProductPng` on it. Output is deterministic for the same

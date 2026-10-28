@@ -15,21 +15,25 @@
  *      weak-missing targets; the cross-dataset ref is weak;
  *   6. ASSETS: PAGE_A references both assets; the PNG builder emits a real PNG;
  *   7. hygiene: AGENT-TEST-6475- prefix on every id, no GUID/project id in the spec, every alias of
- *      the contract registered in aliases.json with the DERIVED business fields, asset id/url empty
- *      in the base (runtime → aliases.<env>.json); informational: this env's overlay asset fields.
+ *      the contract registered in aliases.json with the DERIVED business fields, asset id/url the ""
+ *      placeholder in the base and never "" in an overlay (runtime → aliases.<env>.json; an overlay ""
+ *      would shadow nothing and read as "seeded here"); the owner-marker type in no dataset list; PAGE_A's
+ *      webhook decoy title differs from every title of page A; informational: this env's overlay.
  * Exit 1 on any violation.
  */
 import '../../lib/sync-stdio.mjs';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 import {
   SEED_PREFIX, DRAFT_PREFIX, DATASETS, DATASET_TYPES, DOC_SPECS, ASSET_SPECS, PLACEHOLDER_ASSETS, MISSING_DOC_ID,
-  docsFor, allDatasets, strongDanglingRefs, collectRefs, baseAliases, tinyPng, findGuidLeaks,
+  docsFor, allDatasets, strongDanglingRefs, collectRefs, baseAliases, tinyPng, findGuidLeaks, MARKER_TYPE, webhookDecoyTitle,
 } from './sanity-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const TEST_ENV = process.env.TEST_ENV || 'vcst';
+// The env the session is bound to (TEST_ENV → session binding → .env.test-env → vcst), as the loader picks it.
+const TEST_ENV = resolveTestEnv();
 const problems = [];
 const ok = (m) => console.log(`  ✓ ${m}`);
 const fail = (m) => { problems.push(m); console.log(`  ✗ ${m}`); };
@@ -67,6 +71,8 @@ check(new Set(published).size === published.length, `published slugs distinct pe
 // 4. DRAFT
 const dr = doc('SANITY_DOC_DRAFT_A', P);
 check(dr && dr._id === `${DRAFT_PREFIX}${a._id}` && dr.title !== a.title, `DRAFT_A: ${dr?._id}, title differs from published`, 'DRAFT_A: id or title divergence broken');
+const decoy = webhookDecoyTitle(a.title);
+check(decoy !== a.title && decoy !== dr?.title, 'PAGE_A: webhook decoy title differs from the published and the draft title', 'PAGE_A: webhook decoy title collapsed onto a real title');
 
 // 5. REFS
 for (const ds of allDatasets()) { const bad = strongDanglingRefs(ds); check(!bad.length, `${ds}: no strong dangling reference`, `${ds}: strong dangling ref(s) ${bad.join('; ')}`); }
@@ -84,6 +90,7 @@ check(tinyPng().subarray(1, 4).toString() === 'PNG', 'PNG builder emits a PNG he
 const ids = allDatasets().flatMap((ds) => docsFor(ds).map((d) => d._id));
 const unprefixed = ids.filter((x) => !x.replace(DRAFT_PREFIX, '').startsWith(SEED_PREFIX));
 check(!unprefixed.length, `all ${ids.length} document ids carry ${SEED_PREFIX}`, `unprefixed ids: ${unprefixed.join(', ')}`);
+check(!Object.values(DATASET_TYPES).some((t) => t.includes(MARKER_TYPE)), `owner marker type ${MARKER_TYPE} is in no dataset list (never indexed)`, `owner marker type ${MARKER_TYPE} entered a dataset list`);
 check(ASSET_SPECS.every((x) => x.filename.startsWith('AGENT-TEST-6475')), 'asset filenames carry the AGENT-TEST-6475 handle', 'asset filename without the teardown handle');
 const specSrc = readFileSync(join(ROOT, 'scripts/seed-data/sanity/sanity-specs.mjs'), 'utf8');
 check(!findGuidLeaks(specSrc).length && !/[a-z0-9]{8}\.api\.sanity\.io|cdn\.sanity\.io\/(images|files)\/[a-z0-9]+/.test(specSrc),
@@ -99,6 +106,10 @@ for (const [alias, fields] of Object.entries(want)) {
   if (findGuidLeaks(JSON.stringify(r)).length) { fail(`alias ${alias} carries a GUID`); regBad++; }
 }
 if (!regBad) ok(`all ${Object.keys(want).length} aliases registered, fields = spec, asset id/url empty in base`);
+for (const name of readdirSync(join(ROOT, 'test-data')).filter((n) => /^aliases\..+\.json$/.test(n))) {
+  let reg; try { reg = JSON.parse(readFileSync(join(ROOT, 'test-data', name), 'utf8')); } catch { continue; }
+  for (const x of ASSET_SPECS) for (const k of ['id', 'url']) if (reg[x.alias]?.[k] === '') fail(`${name}: ${x.alias}.${k} is "" — it resolves as a value; drop it or write null`);
+}
 
 const ovPath = join(ROOT, `test-data/aliases.${TEST_ENV}.json`);
 const ov = existsSync(ovPath) ? JSON.parse(readFileSync(ovPath, 'utf8')) : {};

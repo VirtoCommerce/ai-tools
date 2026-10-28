@@ -19,6 +19,7 @@
  *                             override one sanity-* header (body keeps the real value → contradiction)
  *     --no-headers            send no sanity-* headers (body projection only)
  *     --empty-body            body `{}` (headers only)
+ *     --title <t>             add a title to the signed body (SAN-001: a decoy the indexer must ignore)
  *     --store <id>            add storeId to the body
  *     --query <?k=v>          appended to the URL, e.g. ?cultureName=fr-FR
  *     --pad-bytes N           add a `pad` field of N bytes (oversized-body negative: > 10 MB default limit)
@@ -46,6 +47,7 @@ export function buildRequest(o, env) {
   const project = o.project ?? (String(env[ENV.projectId] ?? '').trim() || undefined);
   const projection = { _id: o.id, _operation: o.op, _projectId: project, _dataset: o.dataset };
   let bodyObj = o.emptyBody ? {} : projection;
+  if (o.title !== undefined) bodyObj = { ...bodyObj, title: o.title };
   if (o.store) bodyObj = { ...bodyObj, storeId: o.store };
   if (o.padBytes > 0) bodyObj = { ...bodyObj, pad: 'x'.repeat(o.padBytes) };
   const signed = JSON.stringify(bodyObj);
@@ -86,7 +88,7 @@ async function main() {
     id: opt('--id'), op: opt('--op', 'update'), dataset: opt('--dataset'), project: opt('--project'),
     secret: opt('--secret', '0'), tOffsetMs: Number(opt('--t-offset-ms', 0)), tSeconds: has('--t-seconds'),
     headerId: opt('--header-id'), headerOp: opt('--header-op'), headerDataset: opt('--header-dataset'), headerProject: opt('--header-project'),
-    noHeaders: has('--no-headers'), emptyBody: has('--empty-body'), store: opt('--store'), query: opt('--query', ''),
+    noHeaders: has('--no-headers'), emptyBody: has('--empty-body'), store: opt('--store'), title: opt('--title'), query: opt('--query', ''),
     padBytes: Number(opt('--pad-bytes', 0)), tamperBody: has('--tamper-body'), sigFormat: opt('--sig-format'), backUrl: BACK_URL,
   };
   if (!o.id && !o.emptyBody) die('--id is required (or --empty-body)');

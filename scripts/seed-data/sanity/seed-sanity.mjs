@@ -20,14 +20,19 @@
  *   TEST_ENV=<env> node scripts/seed-data/sanity/seed-sanity.mjs [--dry-run] [--verbose]
  *   TEST_ENV=<env> node scripts/seed-data/sanity/seed-sanity.mjs --verify-only
  *       reads only; uses {{SANITY_QA_READ_TOKEN}}, falling back to the write token
- *   TEST_ENV=<env> node scripts/seed-data/sanity/seed-sanity.mjs --teardown [--dry-run]
+ *   TEST_ENV=<env> node scripts/seed-data/sanity/seed-sanity.mjs --teardown [--dry-run] [--all-envs]
  *
  * ENV: {{SANITY_QA_PROJECT_ID}} (.env.<env>; absent ⇒ skip, exit 0 — this env has no QA Sanity
  *      project), {{SANITY_QA_WRITE_TOKEN}} (seed/teardown) and {{SANITY_QA_READ_TOKEN}} (verify-only),
  *      both .env.local only, never printed. No BACK_URL / admin credentials: the platform is not touched.
  *
+ * SHARED PROJECT: several envs may point at one Sanity project, and the fixture ids are the same on
+ * every env. Seed records an owner marker per env (sanity-specs MARKER_TYPE); teardown removes this
+ * env's marker and deletes the fixture only when no other env's marker remains — otherwise it keeps
+ * everything and says which env still uses it. --all-envs deletes regardless.
+ *
  * SAFETY: assertSafeRisk for seed and teardown (ENV_RISK undeclared or production aborts);
- * --verify-only writes nothing and skips it. Teardown deletes ONLY the declared ids (never a
+ * --verify-only writes nothing and skips it; --verify-only with --teardown is refused. Teardown deletes ONLY the declared ids (never a
  * wildcard), and an asset only when no document outside this fixture (exact id prefix) references it;
  * an asset kept that way keeps its overlay id/url. It then asserts zero residue in both datasets — a
  * residue query that fails is a failure ("residue unknown"), never a pass. A --dry-run teardown
@@ -37,14 +42,15 @@
 import '../../lib/sync-stdio.mjs';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { assertSafeRisk, log, verbose, verifyRemoved, writeEnvAliasOverride, DRY_RUN, TEARDOWN, ROOT } from '../../lib/seed-common.mjs';
+import { assertSafeRisk, log, verbose, verifyRemoved, writeEnvAliasOverride, DRY_RUN, TEARDOWN, ROOT, TEST_ENV } from '../../lib/seed-common.mjs';
 import {
   ENV, SANITY_API_VERSION, DATASETS, ASSET_SPECS, allDatasets, docsFor, docIdsFor, collectRefs,
   mutationBody, deleteBody, strongDanglingRefs, overlayAliases, RESIDUE_QUERY, OWN_ASSETS_QUERY, FOREIGN_REFERRERS_QUERY,
+  markerId, markerDoc, MARKERS_QUERY,
 } from './sanity-specs.mjs';
 
-const TEST_ENV = process.env.TEST_ENV || 'vcst';
 const VERIFY_ONLY = process.argv.includes('--verify-only');
+const ALL_ENVS = process.argv.includes('--all-envs');
 const PROJECT = (process.env[ENV.projectId] || '').trim();
 const WRITE_TOKEN = (process.env[ENV.writeToken] || '').trim();
 const READ_TOKEN = (process.env[ENV.readToken] || '').trim();
@@ -120,8 +126,10 @@ async function resolveAssets(uploaded) {
     if (!id) { fail(`asset ${a.key} (${a.filename}) missing — refs to it are not compared below`); continue; }
     ids[a.key] = id;
     if (!url) { fail(`asset ${a.key} (${id}) url missing`); continue; }
-    const r = await fetch(url, { method: 'HEAD' });
-    if (r.status === 200) ok(`asset ${a.key} (${id}) url answers 200`); else fail(`asset ${a.key} url → ${r.status}`);
+    // A network error is a failed check, not a crash: the run still reports every other result.
+    let status;
+    try { status = (await fetch(url, { method: 'HEAD' })).status; } catch (e) { status = `network error (${String(e.message).slice(0, 120)})`; }
+    if (status === 200) ok(`asset ${a.key} (${id}) url answers 200`); else fail(`asset ${a.key} url → ${status}`);
   }
   return ids;
 }
@@ -161,6 +169,12 @@ async function seed() {
   }
   if (VERIFY_ONLY) { await verify(); return; }
   const uploaded = await uploadAssets();
+  // Persist the asset ids/urls the moment Sanity returns them, so a later failure (a mutation, the
+  // CDN check) never leaves the overlay pointing at ids the documents no longer reference.
+  if (!DRY_RUN) {
+    writeEnvAliasOverride(overlayAliases(uploaded));
+    ok(`aliases.${TEST_ENV}.json ← ${ASSET_SPECS.map((a) => a.alias).join(', ')}`);
+  }
   const assetIds = Object.fromEntries(Object.entries(uploaded).map(([k, v]) => [k, v._id]));
   for (const ds of allDatasets()) {
     const body = mutationBody(ds, DRY_RUN ? undefined : assetIds);
@@ -168,10 +182,10 @@ async function seed() {
     const r = await mutate(ds, body);
     ok(`${ds}: transaction ${r.transactionId} — ${body.mutations.length} doc(s)`);
   }
-  if (DRY_RUN) return;
+  if (DRY_RUN) { log(`  (dry) owner marker ${markerId(TEST_ENV)}`); return; }
+  await mutate(DATASETS.primary, { mutations: [{ createOrReplace: markerDoc(TEST_ENV) }] });
+  ok(`owner marker ${markerId(TEST_ENV)}`);
   await verify(uploaded);
-  writeEnvAliasOverride(overlayAliases(uploaded));
-  ok(`aliases.${TEST_ENV}.json ← ${ASSET_SPECS.map((a) => a.alias).join(', ')}`);
 }
 
 /** Fixture hits still in a dataset: exact-prefix ids (every declared id has the prefix) + own assets. */
@@ -181,10 +195,19 @@ async function residue(ds) {
 }
 
 async function teardown() {
+  // Another env still using this project's fixture keeps it: remove only our marker.
+  const others = (await query(DATASETS.primary, MARKERS_QUERY)).filter((m) => m._id !== markerId(TEST_ENV));
+  if (others.length && !ALL_ENVS) {
+    const who = others.map((m) => m.env || m._id).join(', ');
+    if (DRY_RUN) { log(`  (dry) delete marker ${markerId(TEST_ENV)}; fixture KEPT — still seeded for ${who}`); return; }
+    await mutate(DATASETS.primary, deleteBody([markerId(TEST_ENV)]));
+    log(`  · fixture KEPT — the project is still seeded for ${who} (their suite 114 uses it). Removed only ${markerId(TEST_ENV)}; --all-envs deletes regardless.`);
+    return;
+  }
   // Documents first (secondary, then primary — the footer's strong refs go with their targets in
   // the same transaction), so no fixture document still references an asset when it is deleted.
   for (const ds of [DATASETS.secondary, DATASETS.primary]) {
-    const ids = docIdsFor(ds);
+    const ids = ds === DATASETS.primary ? [...docIdsFor(ds), ...(await query(ds, MARKERS_QUERY)).map((m) => m._id)] : docIdsFor(ds);
     if (DRY_RUN) { log(`  (dry) ${ds}: delete ${ids.length} declared id(s)`); continue; }
     const r = await mutate(ds, deleteBody(ids));
     ok(`${ds}: deleted ${ids.length} declared id(s) (tx ${r.transactionId})`);
@@ -202,7 +225,7 @@ async function teardown() {
   for (const ds of allDatasets()) {
     if (DRY_RUN) { log(`  (dry) ${ds}: residue NOT verified — nothing was deleted; ${await residue(ds)} fixture hit(s) present now`); continue; }
     let left;
-    try { left = await verifyRemoved(() => residue(ds), { strict: true }); }
+    try { left = await verifyRemoved(() => residue(ds)); }
     catch (e) { fail(`${ds}: residue UNKNOWN — the residue query failed (${String(e.message).slice(0, 200)})`); continue; }
     if (left === 0) ok(`${ds}: zero AGENT-TEST-6475 residue`); else fail(`${ds}: ${left} AGENT-TEST-6475 residue`);
   }
@@ -213,10 +236,11 @@ async function teardown() {
   const clear = {};
   for (const a of ASSET_SPECS) {
     const ovId = overlayAsset(a.alias)?.id || '';
-    if (deleted.has(a.filename)) { clear[a.alias] = { id: '', url: '' }; continue; }
+    // null, not "": td:validate:sanity rejects "" in an overlay (it would read as "seeded here"); the base "" placeholder stays a miss.
+    if (deleted.has(a.filename)) { clear[a.alias] = { id: null, url: null }; continue; }
     if (!ovId) continue;
     const exists = await query(DATASETS.primary, 'count(*[_id == $id])', { id: ovId });
-    if (exists === 0) { clear[a.alias] = { id: '', url: '' }; log(`  · ${a.alias}: overlay asset ${ovId} no longer exists — cleared`); }
+    if (exists === 0) { clear[a.alias] = { id: null, url: null }; log(`  · ${a.alias}: overlay asset ${ovId} no longer exists — cleared`); }
     else log(`  · ${a.alias}: overlay asset ${ovId} still exists — kept`);
   }
   writeEnvAliasOverride(clear);
@@ -224,10 +248,11 @@ async function teardown() {
 
 async function main() {
   console.log(`=== seed-sanity (VCST-6475)${TEARDOWN ? ' TEARDOWN' : ''}${DRY_RUN ? ' [dry-run]' : ''}${VERIFY_ONLY ? ' [verify-only]' : ''} ===`);
+  if (VERIFY_ONLY && TEARDOWN) { console.error('ABORT: --verify-only reads only; it cannot be combined with --teardown.'); process.exit(2); }
   if (!PROJECT) { log(`SKIP: {{${ENV.projectId}}} is not set for TEST_ENV=${TEST_ENV} — no QA Sanity project on this env.`); return; }
   // The risk gate is skipped only for --verify-only on the READ token; a fallback to the write token
   // (and every seed/teardown) goes through assertSafeRisk.
-  const readOnly = VERIFY_ONLY && !TEARDOWN && TOKEN_LABEL === ENV.readToken;
+  const readOnly = VERIFY_ONLY && TOKEN_LABEL === ENV.readToken;
   const risk = readOnly ? `TEST_ENV=${TEST_ENV} | read-only` : assertSafeRisk(`Sanity project {{${ENV.projectId}}}`);
   if (!TOKEN) {
     const need = VERIFY_ONLY ? `{{${ENV.readToken}}} or {{${ENV.writeToken}}}` : `{{${ENV.writeToken}}}`;

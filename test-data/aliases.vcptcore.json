@@ -1290,13 +1290,5 @@
     "email": "agent-test-6443-nocreate@test.virtocommerce.com",
     "role": "AGENT-TEST-6443 no-create",
     "password_var": "DEFAULT_TEST_PASSWORD"
-  },
-  "SANITY_ASSET_IMAGE": {
-    "id": "",
-    "url": ""
-  },
-  "SANITY_ASSET_FILE": {
-    "id": "",
-    "url": ""
   }
 }

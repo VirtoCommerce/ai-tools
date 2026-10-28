@@ -27,7 +27,7 @@
  * <>:"/\|?*, no "..", no control chars) — an uncategorised document cannot exist on this build.
  */
 
-import zlib from 'node:zlib';
+import { makePng } from '../../lib/png.mjs';
 
 /** The file-experience-api upload scope the module claims files from (ModuleConstants.DocumentsScope). */
 export const UPLOAD_SCOPE = 'sales-rep-documents';
@@ -238,33 +238,9 @@ export function xlsxBytes(text) {
   ]);
 }
 
-function pngChunk(type, data) {
-  const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
-  const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
-  const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(body), 0);
-  return Buffer.concat([len, body, crc]);
-}
-
 /** A valid RGB PNG (deterministic gradient) — the "previewable image" branch. */
 export function pngBytes(size = 64) {
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(size, 0); ihdr.writeUInt32BE(size, 4);
-  ihdr[8] = 8; ihdr[9] = 2; // 8-bit, truecolour
-  const rowLen = size * 3;
-  const raw = Buffer.alloc((rowLen + 1) * size);
-  for (let y = 0; y < size; y++) {
-    raw[y * (rowLen + 1)] = 0;
-    for (let x = 0; x < size; x++) {
-      const o = y * (rowLen + 1) + 1 + x * 3;
-      raw[o] = (x * 4) % 256; raw[o + 1] = (y * 4) % 256; raw[o + 2] = 160;
-    }
-  }
-  return Buffer.concat([
-    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-    pngChunk('IHDR', ihdr),
-    pngChunk('IDAT', zlib.deflateSync(raw, { level: 9 })),
-    pngChunk('IEND', Buffer.alloc(0)),
-  ]);
+  return makePng(size, size, (x, y) => [(x * 4) % 256, (y * 4) % 256, 160], { deflate: { level: 9 } });
 }
 
 /**
