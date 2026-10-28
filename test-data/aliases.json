@@ -11238,5 +11238,128 @@
     "user_type": "Manager",
     "password_var": "DEFAULT_TEST_PASSWORD",
     "_notes": "VCST-6443: back-office (Manager, isAdministrator=false) account WITHOUT builder:create but WITH builder:read + builder:update, so POST /api/page-builder-pages/create-group-page returns 403 for it on a VALID permalink (verified at provision) — the case decides whether an INVALID permalink is rejected 400 before or 403 at the permission gate. Password is the {{DEFAULT_TEST_PASSWORD}} secret from .env.local (localhost-safe fallback via user-provision.mjs resolvePassword), never committed. Runtime user id lives only in aliases.<env>.json. Teardown: DELETE /api/platform/security/users?names=agent-test-6443-nocreate + DELETE /api/platform/security/roles?ids=AGENT-TEST-6443%20no-create."
+  },
+  "SANITY_DS": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "primary": "production",
+    "secondary": "qa-secondary",
+    "primaryTypes": "virtoPage,footerNavigation",
+    "secondaryTypes": "landing,virtoPage",
+    "_notes": "Dataset names + the per-dataset documentTypes the suite configures in Sanity.Projects (primaryTypes/secondaryTypes, comma lists). VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_PAGE_A": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-page-a",
+    "permalink": "agent-test-6475-a",
+    "title": "AGENT-TEST 6475 page A",
+    "type": "virtoPage",
+    "dataset": "production",
+    "_notes": "VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_PAGE_B": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-page-b",
+    "seoSlug": "agent-test-6475-b-seo",
+    "title": "AGENT-TEST 6475 page B (seo slug only)",
+    "type": "virtoPage",
+    "dataset": "production",
+    "_notes": "VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_CONFLICT": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-conflict",
+    "titlePrimary": "CONFLICT from production",
+    "permalinkPrimary": "agent-test-6475-conflict-prod",
+    "titleSecondary": "CONFLICT from qa-secondary",
+    "permalinkSecondary": "agent-test-6475-conflict-sec",
+    "_notes": "Same id in BOTH datasets, different titles/permalinks - which one wins shows the priority rule. VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_SETTINGS": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-settings",
+    "type": "siteSettings",
+    "title": "AGENT-TEST 6475 site settings (no permalink)",
+    "dataset": "production",
+    "_notes": "VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_FOOTER": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-footer",
+    "type": "footerNavigation",
+    "title": "AGENT-TEST 6475 footer",
+    "dataset": "production",
+    "missingRef": "AGENT-TEST-6475-does-not-exist",
+    "_notes": "links: page-a, page-b, settings (no slug) + weak ref to missingRef (exists nowhere) + nested ref to page-a. VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_LANDING_IN_PROD": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-landing-in-prod",
+    "type": "landing",
+    "permalink": "agent-test-6475-landing-prod",
+    "dataset": "production",
+    "_notes": "type landing in production, where primaryTypes excludes it (secondaryTypes lists it). VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_UNLISTED": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-unlisted",
+    "type": "qaUnlisted",
+    "permalink": "agent-test-6475-unlisted",
+    "dataset": "production",
+    "_notes": "type qaUnlisted - in no dataset type list. VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_DRAFT_A": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "drafts.AGENT-TEST-6475-page-a",
+    "publishedId": "AGENT-TEST-6475-page-a",
+    "title": "AGENT-TEST 6475 page A — DRAFT edit",
+    "dataset": "production",
+    "_notes": "draft of PAGE_A with a different title. VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_LANDING": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-landing",
+    "type": "landing",
+    "permalink": "agent-test-6475-landing",
+    "title": "AGENT-TEST 6475 landing (qa-secondary)",
+    "dataset": "qa-secondary",
+    "_notes": "VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_SEC_PAGE": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-sec-page",
+    "type": "virtoPage",
+    "permalink": "agent-test-6475-sec",
+    "title": "AGENT-TEST 6475 page in qa-secondary",
+    "dataset": "qa-secondary",
+    "_notes": "VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_ASSET_IMAGE": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "",
+    "url": "",
+    "filename": "AGENT-TEST-6475.png",
+    "kind": "images",
+    "_notes": "runtime id/url (CDN url carries the project id) live only in aliases.<env>.json. VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_ASSET_FILE": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "",
+    "url": "",
+    "filename": "AGENT-TEST-6475.txt",
+    "kind": "files",
+    "_notes": "runtime id/url live only in aliases.<env>.json. VCST-6475 Sanity fixture (suite 114) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
   }
 }

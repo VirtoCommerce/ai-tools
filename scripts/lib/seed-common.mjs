@@ -24,7 +24,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
-import zlib from 'node:zlib';
+import { makePng } from './png.mjs';
 import {
   PRESET_SOURCES, requiredPresetNames, mergeAllowedValues, fileNameCollisions,
   buildDictionaryUpdateBody, classifyPresetName, presetNameToFileName,
@@ -129,15 +129,15 @@ const ENV_RISK_DECLARED = String(process.env.ENV_RISK || '').trim();
 export const ENV_RISK = (ENV_RISK_DECLARED || 'dev').toLowerCase();
 const VALID_ENV_RISK = ['dev', 'test', 'staging', 'production'];
 
-export function assertSafeTarget() {
-  if (!BACK_URL || !ADMIN || !ADMIN_PASSWORD) {
-    console.error('ABORT: BACK_URL / ADMIN / ADMIN_PASSWORD missing from env (run npm run env:check).');
-    process.exit(2);
-  }
-  const host = new URL(BACK_URL).host;
-
+/**
+ * The ENV_RISK half of the prod guard, for a seeder that writes somewhere OTHER than the platform
+ * (e.g. an external CMS project) and so needs no BACK_URL / admin credentials. Aborts when ENV_RISK is
+ * undeclared, misspelled, or production (unless --dry-run / --allow-admin-writes-on-prod).
+ * `where` names the target in the messages. assertSafeTarget() runs the same checks.
+ */
+export function assertSafeRisk(where = `TEST_ENV=${_TEST_ENV}`) {
   if (!ENV_RISK_DECLARED) {
-    console.error(`ABORT: ENV_RISK is not declared for TEST_ENV=${_TEST_ENV} (${host}).`);
+    console.error(`ABORT: ENV_RISK is not declared for TEST_ENV=${_TEST_ENV} (${where}).`);
     console.error(`  A seeder writes data, so it will not assume a risk class. Add one line to .env.${_TEST_ENV}:`);
     console.error(`    ENV_RISK=test          # dev | test | staging | production`);
     process.exit(2);
@@ -146,6 +146,20 @@ export function assertSafeTarget() {
     console.error(`ABORT: ENV_RISK="${ENV_RISK_DECLARED}" is not one of ${VALID_ENV_RISK.join(' | ')} — a typo would silently downgrade the gate.`);
     process.exit(2);
   }
+  if (ENV_RISK === 'production' && !ALLOW_PROD && !DRY_RUN) {
+    console.error(`ABORT: ENV_RISK=production for ${where} — refusing to seed a production-risk env. Re-run with --allow-admin-writes-on-prod to override.`);
+    process.exit(2);
+  }
+  return `TEST_ENV=${process.env.TEST_ENV || 'vcst'} | ENV_RISK=${ENV_RISK}${ENV_RISK === 'production' && ALLOW_PROD ? ' [PROD OVERRIDE]' : ''}`;
+}
+
+export function assertSafeTarget() {
+  if (!BACK_URL || !ADMIN || !ADMIN_PASSWORD) {
+    console.error('ABORT: BACK_URL / ADMIN / ADMIN_PASSWORD missing from env (run npm run env:check).');
+    process.exit(2);
+  }
+  const host = new URL(BACK_URL).host;
+  const risk = assertSafeRisk(host);
 
   // The per-env admin password did not resolve. Promotion is a silent no-op on a misnamed key
   // (`ADMIN_VIRTO_PASSWORD` vs `ADMIN_PASSWORD_VIRTOSTART`), so without this the run just
@@ -157,12 +171,7 @@ export function assertSafeTarget() {
     log(`  If that is not this env's admin password, auth will fail and the attempt counts against a shared account.`);
     log(`  The promotion rule matches _${_TEST_ENV.toUpperCase()} EXACTLY — a differently-shaped name is never picked up.`);
   }
-
-  if (ENV_RISK === 'production' && !ALLOW_PROD && !DRY_RUN) {
-    console.error(`ABORT: ENV_RISK=production for ${host} — refusing to seed a production-risk env. Re-run with --allow-admin-writes-on-prod to override.`);
-    process.exit(2);
-  }
-  log(`Target: ${host} | TEST_ENV=${process.env.TEST_ENV || 'vcst'} | ENV_RISK=${ENV_RISK}${ENV_RISK === 'production' && ALLOW_PROD ? ' [PROD OVERRIDE]' : ''}`);
+  log(`Target: ${host} | ${risk}`);
 }
 
 // --- Auth ---
@@ -1590,10 +1599,18 @@ export async function verifyCreated(api, kind, id, { name } = {}) {
  * Confirm a teardown left zero residue. `searchFn` is a caller thunk that returns
  * the remaining matching entities (array) or a count. Returns the residual count;
  * 0 means a clean teardown. Reused by every `*:teardown` path.
+ * `strict: true` rethrows a failed search instead of reporting it as 0 — a residue query that did
+ * not run is "residue unknown", never "clean". (Default stays lenient for the existing callers.)
  * @returns {Promise<number>}
  */
-export async function verifyRemoved(searchFn) {
+export async function verifyRemoved(searchFn, { strict = false } = {}) {
   if (DRY_RUN) return 0;
+  if (strict) {
+    const r = await searchFn();
+    if (typeof r === 'number') return r;
+    if (Array.isArray(r)) return r.length;
+    return (r?.results || r?.items || []).length;
+  }
   try {
     const r = await searchFn();
     if (typeof r === 'number') return r;
@@ -1613,19 +1630,9 @@ export async function verifyRemoved(searchFn) {
  * Called by the product seeders (seed-standard-products, seed-configurable) so
  * enrichment lives with product creation instead of in a separate script.
  */
+/** The zero-dep PNG encoder lives in the side-effect-free ./png.mjs (spec modules import it there). */
+export { makePng };
 const _PNG_MARKER = 'AGENT-TEST-IMG';
-const _CRC_TABLE = (() => {
-  const t = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; }
-  return t;
-})();
-function _crc32(buf) { let c = 0xffffffff; for (let i = 0; i < buf.length; i++) c = _CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
-function _pngChunk(type, data) {
-  const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
-  const t = Buffer.from(type, 'ascii');
-  const crc = Buffer.alloc(4); crc.writeUInt32BE(_crc32(Buffer.concat([t, data])), 0);
-  return Buffer.concat([len, t, data, crc]);
-}
 function _hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 function _hslToRgb(h, s, l) {
   s /= 100; l /= 100;
@@ -1641,20 +1648,7 @@ export function makeProductPng(code, variant = 0) {
   const hue = (_hash(String(code)) + variant * 47) % 360;
   const base = _hslToRgb(hue, 58, 52 - variant * 6);
   const band = _hslToRgb(hue, 42, 78);
-  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4); ihdr[8] = 8; ihdr[9] = 2;
-  const rowLen = W * 3;
-  const raw = Buffer.alloc((rowLen + 1) * H);
-  for (let y = 0; y < H; y++) {
-    raw[y * (rowLen + 1)] = 0;
-    for (let x = 0; x < W; x++) {
-      const [r, g, b] = (((x + y) % 220) < bandW) ? band : base;
-      const o = y * (rowLen + 1) + 1 + x * 3; raw[o] = r; raw[o + 1] = g; raw[o + 2] = b;
-    }
-  }
-  const idat = zlib.deflateSync(raw, { level: 9 });
-  return Buffer.concat([sig, _pngChunk('IHDR', ihdr), _pngChunk('IDAT', idat), _pngChunk('IEND', Buffer.alloc(0))]);
+  return makePng(W, H, (x, y) => ((((x + y) % 220) < bandW) ? band : base), { deflate: { level: 9 } });
 }
 
 /**
