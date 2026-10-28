@@ -538,9 +538,13 @@
     "sessionLifetime": "04:00:00",
     "tokenLifetimeMinutes": 15,
     "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14) + #7011 (positions 3 qa1-punchout-defaults, 4 qa1-punchout-badcodes, 2026-10-27)",
     "deployed": true,
-    "configurationId": "qa1-punchout-0"
+    "configurationId": "qa1-punchout-0",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_CONFIG_1": {
     "storeId": "New-super",
@@ -553,9 +557,13 @@
     "sessionLifetime": "00:10:00",
     "tokenLifetimeMinutes": 2,
     "sessionLifetimeMinutes": 10,
-    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14) + #7011 (positions 3 qa1-punchout-defaults, 4 qa1-punchout-badcodes, 2026-10-27)",
     "deployed": true,
-    "configurationId": "qa1-punchout-1"
+    "configurationId": "qa1-punchout-1",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_CONFIG_2": {
     "storeId": "AGENT-TEST-no-such-store",
@@ -568,9 +576,13 @@
     "sessionLifetime": "04:00:00",
     "tokenLifetimeMinutes": 15,
     "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14) + #7011 (positions 3 qa1-punchout-defaults, 4 qa1-punchout-badcodes, 2026-10-27)",
     "deployed": true,
-    "configurationId": "qa1-punchout-2"
+    "configurationId": "qa1-punchout-2",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_CONFIG_3": {
     "storeId": "",
@@ -583,11 +595,15 @@
     "sessionLifetime": "",
     "tokenLifetimeMinutes": null,
     "sessionLifetimeMinutes": null,
-    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14) + #7011 (positions 3 qa1-punchout-defaults, 4 qa1-punchout-badcodes, 2026-10-27)",
     "deployed": false,
     "retired": true,
     "retiredReason": "not deployable since Punchout PR #2 (build 3.1000.0-pr-2): PunchoutOptionsValidator runs at platform start and refuses a configuration without Id/StoreId, so vc-deploy-dev#6926 removed it from vcptcore-qa1 (2026-10-14). Its secret now matches no configuration (cXML 401). The \"no StoreId\" scenario is a startup failure, not a cXML answer — test it as a deployment check, not with this alias.",
-    "configurationId": ""
+    "configurationId": "",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_MAPPING_DEFAULT": {
     "id": "01d406dc-8568-4b08-9263-96ee8ec34416",
@@ -595,7 +611,10 @@
     "memberId": "28df4ed6-67ed-455a-8fbf-65d1958f69cc",
     "currentOrganizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
     "otherOrganizationId": "",
-    "organizationCount": 1
+    "organizationCount": 1,
+    "persona_email_var": "USER_EMAIL",
+    "persona_email": "{{USER_EMAIL}}",
+    "persona_password": "{{USER_PASSWORD}}"
   },
   "PUNCHOUT_MAPPING_MULTI_ORG": {
     "id": "4e47cebb-17fa-465d-9626-982803bb3618",
@@ -603,7 +622,10 @@
     "memberId": "e4a80a20-85a1-4fb3-aad7-e136ea30abd5",
     "currentOrganizationId": "a0a835c4-ec97-4467-914d-9fbfa7500349",
     "otherOrganizationId": "91b24624-6b94-4c29-8969-d87d64f7a45c",
-    "organizationCount": 2
+    "organizationCount": 2,
+    "persona_email_var": "MULTI_ORG_USER_EMAIL",
+    "persona_email": "{{MULTI_ORG_USER_EMAIL}}",
+    "persona_password": "{{MULTI_ORG_USER_PASSWORD}}"
   },
   "BACKOFFICE_PUNCHOUT_READ": {
     "user_id": "170e26ee-5854-4b8b-8a88-fab75a6dd1fa",
@@ -779,6 +801,44 @@
     "assignedFfcId": "142ba5568ae4454aad553ece41b9c3b5",
     "previousValue": "",
     "owned": true
+  },
+  "PUNCHOUT_CONFIG_DEFAULTS": {
+    "deployed": true,
+    "configurationId": "qa1-punchout-defaults",
+    "storeId": "B2B-store",
+    "storeExists": true,
+    "senderDomain": "NetworkId",
+    "senderDomainCheck": true,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "defaultShipmentMethodCode": "FixedRate",
+    "defaultPaymentMethodCode": "DefaultManualPaymentMethod",
+    "defaultMethodsDeclared": true,
+    "defaultMethodsActive": true,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14) + #7011 (positions 3 qa1-punchout-defaults, 4 qa1-punchout-badcodes, 2026-10-27)"
+  },
+  "PUNCHOUT_CONFIG_BADCODES": {
+    "deployed": true,
+    "configurationId": "qa1-punchout-badcodes",
+    "storeId": "B2B-store",
+    "storeExists": true,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "defaultShipmentMethodCode": "AGENT-TEST-NoSuchShipping",
+    "defaultPaymentMethodCode": "AGENT-TEST-NoSuchPayment",
+    "defaultMethodsDeclared": true,
+    "defaultMethodsActive": false,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14) + #7011 (positions 3 qa1-punchout-defaults, 4 qa1-punchout-badcodes, 2026-10-27)"
   },
   "SHELL_SEARCH_NOREAD": {
     "_inline": true,
