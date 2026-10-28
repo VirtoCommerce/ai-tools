@@ -1190,7 +1190,7 @@ function classifyTouchTargets(result) {
 function classifyOcclusion(result) {
   if (result.overlaps.length === 0) {
     return {
-      invariant: "BL-UI-007",
+      invariant: "PROPOSED-BL-UI-007",
       severity: "PASS",
       message: `No occlusion of ${result.alertsFound} critical alert(s)`,
       evidence: result
@@ -1199,7 +1199,7 @@ function classifyOcclusion(result) {
   const severeCount = result.overlaps.filter((o) => o.severe).length;
   const sample = result.overlaps[0];
   return {
-    invariant: "BL-UI-007",
+    invariant: "PROPOSED-BL-UI-007",
     severity: severeCount > 0 ? "P0" : "FAIL",
     message: `${result.overlaps.length} occlusion(s) of critical alerts${severeCount > 0 ? ` (${severeCount} severe, \u2265 25% coverage)` : ""}; first: ${sample.occluderTag} overlaps ${sample.alertTag} by ${sample.overlapWidth}\xD7${sample.overlapHeight} px`,
     evidence: result
@@ -1210,7 +1210,7 @@ function classifyContrast(result) {
   const skipNote = skipped > 0 ? ` (${skipped} skipped \u2014 undecodable colour, e.g. "${result.unparsed[0].value}"; coverage INCOMPLETE)` : "";
   if (result.violations.length === 0) {
     return {
-      invariant: "BL-UI-008",
+      invariant: "PROPOSED-BL-UI-008",
       severity: skipped > 0 ? "WARN" : "PASS",
       message: `${result.evaluated} text nodes evaluated, 0 WCAG 1.4.3 violations${skipNote}`,
       evidence: result
@@ -1218,7 +1218,7 @@ function classifyContrast(result) {
   }
   const worst = result.violations.reduce((a, b) => a.ratio < b.ratio ? a : b);
   return {
-    invariant: "BL-UI-008",
+    invariant: "PROPOSED-BL-UI-008",
     severity: "FAIL",
     message: `${result.violations.length} contrast violation(s); worst: ${worst.ratio}:1 (needs ${worst.requiredRatio}:1) on "${worst.text}"${skipNote}`,
     evidence: result
@@ -1229,14 +1229,14 @@ function classifyFocusIndicator(result) {
   const indetNote = indet > 0 ? ` (${indet} indeterminate \u2014 confirm via real keyboard Tab)` : "";
   if (result.missing.length === 0) {
     return {
-      invariant: "BL-UI-009",
+      invariant: "PROPOSED-BL-UI-009",
       severity: indet > 0 ? "WARN" : "PASS",
       message: `${result.evaluated} interactives audited: no confirmed missing focus ring${indetNote}`,
       evidence: result
     };
   }
   return {
-    invariant: "BL-UI-009",
+    invariant: "PROPOSED-BL-UI-009",
     severity: "FAIL",
     message: `${result.missing.length} interactive(s) with :focus-visible active but no ring (\u2265 ${FOCUS_INDICATOR_MIN_PX} px outline OR contrasting box-shadow)${indetNote}`,
     evidence: result
@@ -1247,7 +1247,7 @@ function classifyNonTextContrast(result) {
   const skipNote = skipped > 0 ? ` (${skipped} skipped \u2014 undecodable glyph colour, e.g. "${result.unparsed[0].value}"; coverage INCOMPLETE)` : "";
   if (result.violations.length === 0) {
     return {
-      invariant: "BL-UI-008-NONTEXT",
+      invariant: "PROPOSED-BL-UI-008-NONTEXT",
       severity: skipped > 0 ? "WARN" : "PASS",
       message: `All ${result.evaluated} enabled glyphs meet WCAG 1.4.11 (${NON_TEXT_CONTRAST_RATIO}:1); ${result.exempt} exempt (disabled)${skipNote}`,
       evidence: result
@@ -1255,7 +1255,7 @@ function classifyNonTextContrast(result) {
   }
   const worst = result.violations.reduce((a, b) => a.ratio < b.ratio ? a : b);
   return {
-    invariant: "BL-UI-008-NONTEXT",
+    invariant: "PROPOSED-BL-UI-008-NONTEXT",
     severity: "FAIL",
     message: `${result.violations.length} icon/graphic contrast violation(s) (WCAG 1.4.11); worst ${worst.ratio}:1 (needs ${worst.requiredRatio}:1)${worst.label ? ` on "${worst.label}"` : ""}`,
     evidence: result
@@ -1297,7 +1297,7 @@ function classifyAlertSemantics(result) {
 function classifyImageAspect(result) {
   if (result.violations.length === 0) {
     return {
-      invariant: "BL-UI-010",
+      invariant: "PROPOSED-BL-UI-010",
       severity: "PASS",
       message: `All ${result.evaluated} images preserve their intrinsic aspect ratio (\xB1${IMAGE_ASPECT_TOLERANCE * 100}%)`,
       evidence: result
@@ -1305,7 +1305,7 @@ function classifyImageAspect(result) {
   }
   const worst = result.violations.reduce((a, b) => a.drift > b.drift ? a : b);
   return {
-    invariant: "BL-UI-010",
+    invariant: "PROPOSED-BL-UI-010",
     severity: "FAIL",
     message: `${result.violations.length} distorted image(s); worst drift ${(worst.drift * 100).toFixed(1)}% on ${worst.src.split("/").pop()}`,
     evidence: result

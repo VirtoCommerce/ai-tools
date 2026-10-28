@@ -42,7 +42,7 @@ Classify the argument:
   - **Prefer a UUID over a name.** Name-matching a project listing once resolved `/qa-design VcIcon --design` to an unrelated marketing-site system.
 - `--design-dir <path>` — where the local copy of that project lives. Default `.design-source/<uuid>/` (gitignored).
 
-Resolve current sprint: check `reports/tickets/Sprint-current` → otherwise list `reports/tickets/` and pick the latest `SprintXX-XX`. This becomes `{SPRINT}` for the output path.
+Resolve current sprint: check `reports/tickets/Sprint-current` → otherwise list `reports/tickets/` and pick the latest `SprintXX-XX` → neither exists (a project that has never run a ticket here) ⇒ `{SPRINT}` = `standalone`; never ask, never stop on it. This becomes `{SPRINT}` for the output path. Every `reports/…` path in this skill is relative to the project root (`VC_FIX_HOME`, else the working directory), never the plugin install.
 
 ---
 

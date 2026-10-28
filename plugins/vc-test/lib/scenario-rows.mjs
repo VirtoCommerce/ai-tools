@@ -9,8 +9,10 @@
 //   so merging an id again after a later wave or a send-back never duplicates it.
 //   Blank lines are dropped — a blank line ends the table for triage. The checklist's trailing blank lines are cut so
 //   the first row follows the table directly.
-//   A row whose cell count differs from the `## Scenario results` header (an escaped `\|` is one cell's text) is
-//   `refused`: one cell short shifts its verdict into the next column, and triage then finds no verdict to read.
+//   A row whose cell count differs from the `## Scenario results` header is `refused`: one cell short shifts its
+//   verdict into the next column, and triage then finds no verdict to read. A `|` is a cell boundary unless an odd
+//   number of backslashes precede it (`\|` is text, `\\|` a backslash closing a cell), and a row without its closing
+//   `|` (legal GFM) is counted as if it had one.
 //   exit 0: all merged; 1: usage, or no checklist / no `## Scenario results`; 2: an id with no rows file or no row
 //   (`missing`), or a line that is not that id's row or not the table's width (`refused`, not merged) — every good
 //   row is merged all the same.
@@ -24,7 +26,11 @@ const rowRe = (id) => (OWN_PREFIX[id] ? new RegExp(`^\\|\\s*${OWN_PREFIX[id]}-\\
   : /^PB-\d+$/.test(id) ? new RegExp(`^\\|\\s*${id}\\s*\\|`)
   : new RegExp(`^\\|\\s*SC-${/^S-(\d+)$/.exec(id)[1]}\\.\\d+\\s*\\|`));
 const rowId = (line) => /^\|\s*([^|]+?)\s*\|/.exec(line)?.[1];
-const cellCount = (line) => line.trim().split(/(?<!\\)\|/).length - 2;
+const BOUNDARY = /(?<=(?:^|[^\\])(?:\\\\)*)\|/;
+const cellCount = (line) => {
+  const parts = line.trim().split(BOUNDARY);
+  return parts.length - (parts.at(-1).trim() === "" ? 2 : 1);
+};
 
 export function mergeRows({ runDir, ids }) {
   const file = join(runDir, "testing-checklist.md");

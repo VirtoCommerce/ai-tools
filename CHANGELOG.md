@@ -19,13 +19,15 @@ Teammates: run `/plugin marketplace update ai-tools` (vc-test ≥ 0.12.0) before
 
 **Changed — the lane.** The visual lane runs on a Playwright lane (`playwright-edge`, `-chrome`, `-firefox`) that the run's wave leaves free: in a `vc-test` run `plan-run` draws it from the pool beside the scenarios, and in this repository's `/qa-test` it takes the lane the wave's other dispatches do not hold, or the next wave when none is. Chrome DevTools MCP and Lighthouse are retired from the lane; the checks run through `browser_evaluate` with the plugin's snippets (`vc-browser.md`).
 
-**Added — `lib/design/`.** The measurement code (layout, design-spec verification, spec extraction) as a generated bundle with a snippet printer. `npm run vc-test:design` regenerates it and `vc-test:design:check` fails when it is stale; the check runs in `npm test` and in `gates.yml`. **BL-sync authors:** a BL YAML edit (`bl/ui.yaml`, `a11y.yaml`, `price`, `cat`, `chk`) changes the generated `knowledge/bl-ui.md` and makes `vc-test:design:check` fail until `npm run vc-test:design` is run.
+**Added — `lib/design/`.** The measurement code (layout, design-spec verification, spec extraction) as a generated bundle with a snippet printer. `npm run vc-test:design` regenerates it and `vc-test:design:check` fails when it is stale; the check runs as a `gates.yml` step. **BL-sync authors:** a BL YAML edit (`bl/ui.yaml`, `a11y.yaml`, `price`, `cat`, `chk`) changes the generated `knowledge/bl-ui.md` and makes `vc-test:design:check` fail until `npm run vc-test:design` is run.
 
 **Added — `knowledge/`.** Four copies, repository copy canonical: `bl-ui.md` (generated), `critical-ui-scope.md`, `storefront-selectors.md`, `wcag-accessibility-checklist.md`. `context:check` DOC-009 is now 2.
 
 **Changed — `vc-fix`, no version change.** `plugins/vc-fix/knowledge/oracles/business-logic.md` changed by one generated line (`bl:render` from `bl/ui.yaml`, whose intro named the moved skill); `vc-fix` is not bumped for it.
 
 **Changed — manifest.** The "visual-axis floors still live in a checkout of `ai-tools`" caveat is gone from the README; `plugin.json` and the marketplace entry name `/vc-test:qa-design` and the `ui-ux-expert` agent.
+
+**Fixed — review of this release.** The occlusion / contrast / focus-indicator / image-aspect classifiers emit `PROPOSED-BL-UI-007..010` (and `PROPOSED-BL-UI-008-NONTEXT`): the bare ids collided with the oracle's own `BL-UI-007`. The `Exploratory` and `Visual lane` floors need one of the lanes `plan-run` draws from (`lib/artifacts.json`), not any server named `playwright`. `scenario-rows.mjs` counts a `\\|` and a row without its closing `|` correctly. `snippet.mjs` JSON-parses only an argument that starts with `[`, `{` or `"`. `esbuild` is an exact devDependency, so the generated bundle is byte-stable.
 
 ---
 

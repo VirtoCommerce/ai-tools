@@ -90,7 +90,7 @@ such flag and **is** the methodology.
 So `/qa-test` Step 4v and `/qa-test-fast` Stage 2 dispatch `vc-test:ui-ux-expert` directly, exactly as they dispatch
 `qa-frontend-expert` / `qa-backend-expert`, and **the brief's first instruction is: *invoke the Skill tool
 with `skill: "vc-test:qa-design"` before any browser call*.** The agent loads it into **its own** context, never the
-orchestrator's — the skill is ~30K chars, and loaded inline it is re-paid by every later step of the run and
+orchestrator's — the skill and the files it reads are large, and loaded inline they are re-paid by every later step of the run and
 used by none of them. The agent then reads the per-axis files in §2's table as each axis needs them, and
 **its return opens with `qa-design skill: loaded`** — a return without that line did not apply the
 methodology and is re-dispatched once. `/qa-accessibility` (in this repository) carries no `disable-model-invocation` flag
@@ -117,7 +117,7 @@ below.
    vc-test run the one `plan-run` drew from the pool (§4), in this repository's `/qa-test` and
    `/qa-test-fast` the one its wave leaves free (§4). It signs in the way every Playwright lane does — the login
    as plain text from the env (`USER_LOGIN`, …), the password's bare NAME (`USER_PASSWORD`, …) typed into
-   the password field, the lane supplying the value — the project's `vc-browser.md` §Signing in, which
+   the password field, the lane supplying the value — the **Signing in.** paragraph of the project's `vc-browser.md`, which
    `vc-init` writes (in this repository: `.claude/rules/vc-browser.md`). So the brief names the **lane** and
    the **account role** the target needs. A role-gated or data-bearing target (sales-rep hub, orders, a B2B
    org, a loyalty tier) needs that role's account: any other renders its **empty state**, which **reads as

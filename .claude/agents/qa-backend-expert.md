@@ -111,7 +111,7 @@ a **visual render harness** (`plugins/vc-fix/skills/angular-admin/visual-render-
 `render.html` that loads the real blade `.tpl.html` against the real `platform.css`. Your job is the browser
 proof **before the PR opens**:
 - Serve the scratch dir (`npx --yes http-server .fix-workspace/_scratch/VCST-XXXX -p 8099 -c-1`) and open
-  `render.html` in `playwright-edge` (or Chrome DevTools MCP).
+  `render.html` in `playwright-edge`.
 - Screenshot **HEAD/broken (red)** vs **fixed (green)** at the relevant blade width(s)/state(s); confirm the
   defect (overlap/misalignment/clipping/spacing) is gone and the layout matches the canonical sibling blade.
 - Return **PASS/FAIL + both screenshots** to the `/qa-fix` orchestrator (iterate with the dev ≤2×). If the bug
@@ -176,7 +176,7 @@ proof **before the PR opens**:
 | Health / System Info | `${BACK_URL}/health`, `${BACK_URL}/#!/workspace/systeminfo` |
 
 **Browsers:** `playwright-edge` (primary for Admin), `playwright-chrome`, `playwright-firefox`. No WebKit on Windows.
-**MCP Servers:** Postman (API), Chrome DevTools (debugging), Atlassian (JIRA), GitHub (PRs, module repos), context7 (VC docs).
+**MCP Servers:** Postman (API), `playwright-edge` (browser, console and network — `.claude/rules/vc-browser.md`), Atlassian (JIRA), GitHub (PRs, module repos), context7 (VC docs).
 
 **Additional refs:** `skills/qa-api/test-cases-api-graphql.md`, `skills/qa-checklist/backend-admin-checklists.md` (29 domains), `skills/qa-checklist/graphql-checklist.md` (83 items). Backend suites: `regression/suites/Backend/**/*.csv` (module subdirectories: api, assets, catalog, channels, cms, configurable-products, contracts, customer, graphql, image-tools, import-export, inventory, loyalty, marketing, notifications, orders, platform, pricing, push-messages, returns, search, seo, shipping, store, whitelabeling, xmarketing).
 

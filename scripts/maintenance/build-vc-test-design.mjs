@@ -7,7 +7,11 @@
  * A plugin is self-contained (plugins/CLAUDE.md) and runs on a client with no `tsx` and no repository scripts, so it
  * carries its own copy as plain ESM: `plugins/vc-test/lib/design/*.mjs`. A hand-kept copy would be a transcribed
  * constant that goes stale at the next edit and fails silently — so the copy is GENERATED (esbuild, no minify) and
- * `--check` (wired into `npm test`) fails with the stale file named when the TypeScript moves.
+ * `--check` (a `gates.yml` step, not part of `npm test`, so a stale bundle never hides the unit results) fails with the
+ * stale file named when the TypeScript moves.
+ *
+ * The output is esbuild's printing, so it is byte-stable only for one esbuild version: `esbuild` is an EXACT
+ * devDependency in package.json. A bump of it is a regeneration — run this script in the same change.
  *
  * It also renders `plugins/vc-test/knowledge/bl-ui.md`: the rules the visual lane judges against (`BL-UI-*`,
  * `BL-A11Y-*` and the three cross-cutting ids its Layer 1 cites), sliced from the BL oracle with `extract-bl.ts`'s own
@@ -24,7 +28,7 @@
  * a Windows autocrlf checkout does not read as drift).
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { build } from "esbuild";
+import { build, version } from "esbuild";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -162,7 +166,7 @@ async function main() {
       else if (lf(readFileSync(abs, "utf8")) !== content) stale.push(path);
     }
     if (stale.length) {
-      console.error(`vc-test:design:check — stale, run \`${SCRIPT}\` and commit the result:`);
+      console.error(`vc-test:design:check — stale (esbuild ${version}), run \`${SCRIPT}\` and commit the result:`);
       for (const s of stale) console.error(`  ${s}`);
       process.exit(1);
     }

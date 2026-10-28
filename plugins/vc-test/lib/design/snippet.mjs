@@ -15,10 +15,11 @@
  *   - a string constant (`COLOR_MATH_JS`, `EFFECTIVE_BG_JS`, `FOUC_SNIPPET`, `focusIndicatorAudit`);
  *   - `LAYOUT_SNIPPETS.<key>` (`LAYOUT_SNIPPETS.overflowAudit`, …).
  *
- * An <arg> is JSON (`'".vc-button"'`, `'["a","b"]'`, `'{"surface":"cart"}'`); an arg that is not valid JSON is passed as
- * the plain string it is. `@<file>` reads JSON from a file — that is how a `DesignSpec` (`design-spec-extract.mjs`
- * output) reaches `designTokenAuditSnippet` and its siblings. Args are positional, in the function's own order; leave
- * trailing ones out to take its defaults.
+ * An <arg> that starts with `[`, `{` or `"` is JSON (`'["a","b"]'`, `'{"surface":"cart"}'`, `'".vc-button"'`); any other
+ * arg is the plain string it is — a `404` or a `null` stays a string, because every snippet parameter is a string, an
+ * array or an object, and a coerced number would be interpolated into a selector that matches nothing. `@<file>` reads
+ * JSON from a file — that is how a `DesignSpec` (`design-spec-extract.mjs` output) reaches `designTokenAuditSnippet`
+ * and its siblings. Args are positional, in the function's own order; leave trailing ones out to take its defaults.
  *
  * Exit: 0 printed; 2 unknown or missing name, or fewer arguments than the snippet needs (stderr says which); 1 the
  * snippet could not be built.
@@ -45,11 +46,7 @@ function catalog() {
 
 function parseArg(raw) {
   if (raw.startsWith("@")) return JSON.parse(readFileSync(raw.slice(1), "utf8"));
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return raw;
-  }
+  return /^\s*[[{"]/.test(raw) ? JSON.parse(raw) : raw;
 }
 
 function main(argv) {

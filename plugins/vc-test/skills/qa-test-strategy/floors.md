@@ -38,10 +38,12 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
   and fires it; a case at risk fires it.
 - **A row this install cannot run.** A fired floor stays fired, and every other requirement holds. `unavailable[]`
   lists each row it needs that the install lacks a tool for: `Exploratory` and `Visual lane` each need a browser lane
-  (`mcp:playwright-*`), `Coverage triage + regression` needs `regression-select`. That row may
+  from the pool `plan-run` draws it from (`lib/artifacts.json`: the scenario template's browser proof, the `visual`
+  entry's `lanes`), `Coverage triage + regression` needs `regression-select`. That row may
   read `SKIP — not available in this install: <capability>` instead of `RUN`. **Only a probe says a tool is
   missing:** a lane is missing when `capabilities.json` lists the MCP servers it was given (`mcp`) and none of them
-  is one (a browser lane: a name containing `playwright`); a script, when
+  is one (a browser lane: one of that pool's `mcp:<lane>` — any other Playwright server is not a lane `plan-run`
+  can place, so it does not count); a script, when
   `scripts.<name>` is `false`. A
   capability the file does not state — no `--mcp`, `{}` — is not missing. A file that is not an object exits 2. F8's `PIXEL` risk (§VISUAL) needs
   `capabilities.json` `pixel`: an engine and a front checkout; without them the risk stays, its Lane reads that

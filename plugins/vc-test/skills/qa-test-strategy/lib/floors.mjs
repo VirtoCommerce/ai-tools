@@ -6,6 +6,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadRegistry } from "../../../lib/strategy-artifacts.mjs";
 
 // The tracker's names for P0/P1 come from project-profile.json `tracker.p0p1Priorities` (an array of names); with no
 // profile entry, this default (Jira's Highest/High plus the P0/P1/Blocker/Critical spellings). A name not listed reads as P2+.
@@ -54,10 +55,19 @@ const probedMcp = (c) => {
   const named = Object.keys(c).filter((k) => k.startsWith("mcp:") && c[k] === true).map((k) => k.slice(4));
   return named.length ? named : null;
 };
-const lacks = (c, re, cap) => { const m = probedMcp(c); return m && !m.some((n) => re.test(n)) ? cap : null; };
+// A browser row needs one of the lanes plan-run draws it from (lib/artifacts.json): Exploratory is a scenario, so the
+// scenario template's browser pool; the visual lane its own. Matching any "playwright" name instead passed a server
+// plan-run then refuses (playwright-mobile, the Playwright plugin's own), so the gate required a row the run could not plan.
+const REGISTRY = loadRegistry();
+const SCENARIO_LANES = REGISTRY.artifacts.find((e) => e.id === "scenario").proofs.browser.lanes;
+const VISUAL_LANES = REGISTRY.artifacts.find((e) => e.id === "visual").lanes;
+const lacksLane = (c, lanes) => {
+  const keys = lanes.map((l) => `mcp:${l.slice("browser:".length)}`);
+  return probedMcp(c) && !keys.some((k) => c[k]) ? `one of ${keys.join(", ")}` : null;
+};
 export const ARTIFACT_NEEDS = {
-  Exploratory: (c) => lacks(c, /playwright/i, "a browser lane (mcp:playwright-*)"),
-  "Visual lane": (c) => lacks(c, /playwright/i, "a browser lane (mcp:playwright-*)"),
+  Exploratory: (c) => lacksLane(c, SCENARIO_LANES),
+  "Visual lane": (c) => lacksLane(c, VISUAL_LANES),
   "Coverage triage + regression": (c) => (c.scripts?.["regression-select"] === false ? "regression-select" : null),
   // Not an Artifacts row: F8's PIXEL risk (PIXEL_REQUIREMENT). Unprobed (no `pixel` key) is not unavailable.
   PIXEL: (c) => (!c.pixel ? null : !c.pixel.engine ? "pixel-engine (the vc-frontend plugin's visual/)"

@@ -98,7 +98,7 @@ Each agent MUST use its own separate browser session. Agents sharing a browser w
 | Agent | Playwright MCP Server | Alternative |
 |-------|----------------------|-------------|
 | **qa-frontend-expert** | `playwright-chrome` | |
-| **qa-backend-expert** | `playwright-edge` | or `Chrome DevTools MCP` for Admin SPA |
+| **qa-backend-expert** | `playwright-edge` | |
 | **qa-testing-expert** | `playwright-firefox` | click-capable again since 2026-09-08 — see the box above for the one prerequisite and the rollback |
 | **vc-test:ui-ux-expert** | a Playwright lane (the run assigns it) | (no webkit on Windows) |
 | **test-management-specialist** | `playwright-chrome` (sequential, not parallel with frontend) | |
