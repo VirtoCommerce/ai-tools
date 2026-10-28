@@ -50,10 +50,13 @@ export function buildRequest(o, env) {
   const signed = JSON.stringify(bodyObj);
   const headers = { 'Content-Type': 'application/json' };
   if (!o.noHeaders) {
-    headers['sanity-document-id'] = o.headerId ?? o.id;
-    headers['sanity-operation'] = o.headerOp ?? o.op;
-    headers['sanity-dataset'] = o.headerDataset ?? o.dataset;
-    headers['sanity-project-id'] = o.headerProject ?? project;
+    // A header is sent only when it has a value: `--empty-body` without --id/--dataset must not send
+    // the literal string "undefined" (that would be a third, unintended negative).
+    const set = (name, v) => { if (v !== undefined && v !== null && v !== '') headers[name] = String(v); };
+    set('sanity-document-id', o.headerId ?? o.id);
+    set('sanity-operation', o.headerOp ?? o.op);
+    set('sanity-dataset', o.headerDataset ?? o.dataset);
+    set('sanity-project-id', o.headerProject ?? project);
   }
   let secretLabel = 'none';
   if (o.secret !== 'none') {
@@ -101,7 +104,7 @@ async function main() {
   const res = await fetch(req.url, { method: 'POST', headers: req.headers, body: req.body });
   const text = await res.text();
   console.log(`HTTP ${res.status}`);
-  console.log(text);
+  console.log(text.length > 2000 ? `${text.slice(0, 2000)}… (${text.length} chars, truncated)` : text);
 }
 
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/').split('/').pop())) {

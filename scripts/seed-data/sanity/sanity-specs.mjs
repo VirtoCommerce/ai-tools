@@ -27,7 +27,7 @@
  *   - Any reference whose target is not in the same dataset of this fixture MUST be `_weak: true`:
  *     Sanity rejects a strong dangling reference with 409 (verified live 2026-10-28).
  */
-import zlib from 'node:zlib';
+import { makePng } from '../../lib/png.mjs';
 
 export const TICKET = 'VCST-6475';
 export const SEED_PREFIX = 'AGENT-TEST-6475-';
@@ -54,21 +54,9 @@ export const DATASET_TYPES = Object.freeze({
   [DATASETS.secondary]: Object.freeze(['landing', 'virtoPage']),
 });
 
-/** Tiny solid-red RGB PNG (w×h). Pure — same bytes every call, so Sanity dedups the upload. */
+/** Tiny solid-red RGB PNG (w×h). Same bytes every call, so Sanity dedups the upload (asset id = sha1). */
 export function tinyPng(w = 4, h = 3) {
-  const table = [];
-  for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; table[n] = c >>> 0; }
-  const crc = (b) => { let c = 0xffffffff; for (const x of b) c = table[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
-  const chunk = (t, d) => {
-    const l = Buffer.alloc(4); l.writeUInt32BE(d.length);
-    const td = Buffer.concat([Buffer.from(t), d]);
-    const c = Buffer.alloc(4); c.writeUInt32BE(crc(td));
-    return Buffer.concat([l, td, c]);
-  };
-  const ih = Buffer.alloc(13); ih.writeUInt32BE(w, 0); ih.writeUInt32BE(h, 4); ih[8] = 8; ih[9] = 2;
-  const raw = Buffer.alloc((w * 3 + 1) * h);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) raw[y * (w * 3 + 1) + 1 + x * 3] = 255;
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ih), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+  return makePng(w, h, [255, 0, 0]);
 }
 
 /** Assets, uploaded into the PRIMARY dataset. `filename` is the teardown handle (originalFilename). */
@@ -76,7 +64,6 @@ export const ASSET_SPECS = Object.freeze([
   { key: 'image', alias: 'SANITY_ASSET_IMAGE', kind: 'images', sanityType: 'sanity.imageAsset', filename: 'AGENT-TEST-6475.png', contentType: 'image/png', bytes: () => tinyPng(4, 3) },
   { key: 'file', alias: 'SANITY_ASSET_FILE', kind: 'files', sanityType: 'sanity.fileAsset', filename: 'AGENT-TEST-6475.txt', contentType: 'text/plain', bytes: () => Buffer.from('AGENT-TEST-6475 file asset') },
 ]);
-export const ASSET_FILENAME_PREFIX = 'AGENT-TEST-6475';
 
 const id = (k) => `${SEED_PREFIX}${k}`;
 const slug = (current) => ({ _type: 'slug', current });
@@ -235,13 +222,19 @@ export function overlayAliases(uploaded) {
   return out;
 }
 
-/** GROQ: residue of THIS fixture in a dataset (docs by id prefix + assets by filename). */
-export const RESIDUE_QUERY = `{"docs": count(*[_id match "*${SEED_PREFIX.slice(0, -1)}*"]), "assets": count(*[_type in ["sanity.imageAsset","sanity.fileAsset"] && originalFilename match "${ASSET_FILENAME_PREFIX}*"])}`;
-/** GROQ: our assets (by originalFilename) — the teardown set for assets. */
-export const OWN_ASSETS_QUERY = `*[_type in ["sanity.imageAsset","sanity.fileAsset"] && originalFilename match "${ASSET_FILENAME_PREFIX}*"]{_id, originalFilename, url}`;
+/**
+ * GROQ predicate: an id that belongs to THIS fixture — an exact prefix, never `match` (`match`
+ * tokenizes "AGENT-TEST-6475" into agent/test/6475 and also hits foreign ids carrying those words).
+ */
+export const OWN_ID_PREDICATE = `(string::startsWith(_id, "${SEED_PREFIX}") || string::startsWith(_id, "${DRAFT_PREFIX}${SEED_PREFIX}"))`;
+/** GROQ predicate: an asset uploaded by this fixture (exact originalFilename, not a token match). */
+export const OWN_ASSET_PREDICATE = `(_type in ["sanity.imageAsset","sanity.fileAsset"] && originalFilename in ${JSON.stringify(ASSET_SPECS.map((a) => a.filename))})`;
+/** GROQ: residue of THIS fixture in a dataset (docs by exact id prefix + assets by exact filename). */
+export const RESIDUE_QUERY = `{"docs": count(*[${OWN_ID_PREDICATE}]), "assets": count(*[${OWN_ASSET_PREDICATE}])}`;
+/** GROQ: our assets — the teardown set for assets. */
+export const OWN_ASSETS_QUERY = `*[${OWN_ASSET_PREDICATE}]{_id, originalFilename, url}`;
 /** GROQ: documents OUTSIDE this fixture that reference an asset (must be 0 before deleting it). */
-export const FOREIGN_REFERRERS_QUERY = `count(*[references($id) && !(_id match "*${SEED_PREFIX.slice(0, -1)}*")])`;
-
+export const FOREIGN_REFERRERS_QUERY = `count(*[references($id) && !${OWN_ID_PREDICATE}])`;
 /** Runtime platform GUID shape — must never appear in the spec or the committed base aliases. */
 export const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 export const findGuidLeaks = (text) => [...new Set(String(text).match(GUID_RE) || [])];
