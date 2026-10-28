@@ -14,14 +14,19 @@
  *  [5] config divergence per deployed env: config 0 vs 1 differ on store, both checks and both
  *                       lifetimes; 2 = nonexistent store; every ACTIVE config has a unique Id and a
  *                       StoreId (the platform refuses to start otherwise — vc-deploy-dev#6926); a
- *                       RETIRED config (3) is neither deployed nor probed; distinct secret vars
+ *                       RETIRED config (3) is neither deployed nor probed; distinct secret vars.
+ *                       Configurations are keyed by POSITION (configPosition), never by legacy alias
+ *                       index: every deployed position is claimed by exactly one active spec. The
+ *                       VCST-5888 default-methods TRIAD (config 0 / DEFAULTS / BADCODES) shares ONE store
+ *                       and diverges on the codes: none / active / nonexistent (AGENT-TEST- prefixed).
  *                       The dedicated REQUISITION buyer must stay a different account from every
  *                       other mapping's persona ([1] statically, [7] on the seeded overlay).
- *  [6] secret divergence the four secret VALUES of each env in .env.local are pairwise distinct (a
+ *  [6] secret divergence the secret VALUES of each env in .env.local are pairwise distinct (a
  *                       shared secret would make "each secret selects its own configuration" vacuous)
  *  [8] probe/permission predictions  every VERIFY_PROBE's expected cXML code is RE-DERIVED from the
  *                       deployed config + mapping specs (check order: StoreId present → sender domain →
- *                       return URL → mapping → store exists); every account's expected REST status is
+ *                       return URL → mapping → store exists); an `opensSession` probe (expected 200)
+ *                       must target the owned, provisioned REQUISITION buyer; every account's expected REST status is
  *                       re-derived from its permissions; the protected set is exactly the not-owned specs
  *  [7] overlay coherence for a seeded env, the overlay's config facts equal configOverlayFields(),
  *                       ids are GUIDs, and the multi-org persona has two DIFFERENT org ids
@@ -39,7 +44,7 @@ import { fileURLToPath } from 'node:url';
 import { parse as parseDotenv } from 'dotenv';
 import {
   CONFIG_SPECS, DEPLOYED_CONFIGS, configOverlayFields, retiredOverlayFields, MAPPING_SPECS, PROTECTED_EXTERNAL_IDS,
-  BACKOFFICE_SPECS, SEED_PREFIX, secretToken, VERIFY_PROBES, isProvisionedBuyer,
+  BACKOFFICE_SPECS, SEED_PREFIX, secretToken, VERIFY_PROBES, isProvisionedBuyer, configPosition, DEFAULT_METHODS_TRIAD,
   PRODUCT_SPECS, PRODUCT_PLACEMENT, PRODUCT_MIN_STOCK, FALLBACK_UOM, PRICELIST_SPECS, STORE_FFC_SPEC,
 } from './punchout-specs.mjs';
 
@@ -62,8 +67,13 @@ for (const c of CONFIG_SPECS) {
   if (!a._inline) fail(`${c.alias} must be _inline`);
   if (a.sharedSecret !== secretToken(c)) fail(`${c.alias}.sharedSecret must be ${secretToken(c)}`);
   if (a.sharedSecret_var !== c.secretVar) fail(`${c.alias}.sharedSecret_var must be ${c.secretVar}`);
-  if (a.index !== c.index) fail(`${c.alias}.index must be ${c.index}`);
-  for (const f of ['configurationId', 'storeId', 'senderDomain', 'allowedReturnUrl', 'tokenLifetime', 'sessionLifetime']) {
+  if ('index' in c) { if (a.index !== c.index) fail(`${c.alias}.index must be ${c.index}`); }
+  else if ('index' in a) fail(`${c.alias} must carry NO index — legacy alias numbers stop at 3 (retired); it is addressed by position`);
+  if (c.position != null && a.position !== c.position) fail(`${c.alias}.position must be ${c.position}`);
+  const envFields = ['configurationId', 'storeId', 'senderDomain', 'allowedReturnUrl', 'tokenLifetime', 'sessionLifetime',
+    // default-method facts: not on the retired alias, which is frozen as it was when retired
+    ...(c.retired ? [] : ['defaultShipmentMethodCode', 'defaultPaymentMethodCode', 'defaultMethodsDeclared', 'defaultMethodsActive'])];
+  for (const f of envFields) {
     if (a[f] !== '') fail(`${c.alias}.${f} must be "" in the base registry (env-specific; overlay supplies it)`);
   }
   if (c.retired) {
@@ -125,7 +135,10 @@ const envLocal = join(ROOT, '.env.local');
 const secretValues = [];
 if (existsSync(envLocal)) {
   const parsed = parseDotenv(readFileSync(envLocal));
-  for (const [k, v] of Object.entries(parsed)) if (/^PUNCHOUT_SHARED_SECRET_\d+(_|$)/.test(k) && v) secretValues.push({ k, v });
+  for (const [k, v] of Object.entries(parsed)) {
+    const spec = CONFIG_SPECS.find((c) => k === c.secretVar || k.startsWith(`${c.secretVar}_`));
+    if (spec && v) secretValues.push({ k, v, spec, suffix: k === spec.secretVar ? '(base)' : k.slice(spec.secretVar.length + 1) });
+  }
 }
 if (!secretValues.length) note('no PUNCHOUT_SHARED_SECRET_* in .env.local — literal-leak scan and [6] skipped');
 const scanFiles = [
@@ -170,7 +183,7 @@ b = problems.length; section(5, 'configuration divergence');
 if (new Set(CONFIG_SPECS.map((c) => c.secretVar)).size !== CONFIG_SPECS.length) fail('secret vars are not distinct');
 for (const [env, d] of Object.entries(DEPLOYED_CONFIGS)) {
   if (!d.source) fail(`${env}: deployment has no provenance (source)`);
-  const f = Object.fromEntries(CONFIG_SPECS.map((c) => [c.index, configOverlayFields(c, d.configs[c.index])]));
+  const f = Object.fromEntries(CONFIG_SPECS.filter((c) => !c.retired).map((c) => [configPosition(c), configOverlayFields(c, d.configs[configPosition(c)])]));
   if (!f[0] || !f[1]) { fail(`${env}: configs 0 and 1 must both be declared`); continue; }
   for (const k of ['storeId', 'senderDomainCheck', 'returnUrlCheck', 'tokenLifetime', 'sessionLifetime']) {
     if (f[0][k] === f[1][k]) fail(`${env}: config 0 and 1 share ${k}=${f[0][k]} — the per-config selection is undecidable on it`);
@@ -184,27 +197,47 @@ for (const [env, d] of Object.entries(DEPLOYED_CONFIGS)) {
   if (f[2] && !f[2].storeId.startsWith(SEED_PREFIX)) fail(`${env}: config 2's fake store id must carry ${SEED_PREFIX}`);
   // Punchout PR #2 validates the options at platform START (vc-deploy-dev#6926): a configuration
   // without an Id or a StoreId stops the platform, so a declaration carrying one is undeployable.
-  const ids = [];
+  const ids = []; const claimed = new Set();
   for (const c of CONFIG_SPECS) {
-    const dc = d.configs[c.index];
-    if (c.retired) { if (dc) fail(`${env}: ${c.alias} is retired but configuration ${c.index} is still declared deployed`); continue; }
-    if (!dc) { fail(`${env}: active ${c.alias} has no deployed declaration`); continue; }
-    if (!dc.id) fail(`${env}: configuration ${c.index} has no Id — the platform refuses to start without it`);
-    if (!dc.storeId) fail(`${env}: configuration ${c.index} has no StoreId — the platform refuses to start without it`);
+    if (c.retired) { if (c.position != null) fail(`${c.alias} is retired but declares a position`); continue; }
+    const pos = configPosition(c);
+    if (claimed.has(String(pos))) fail(`${env}: position ${pos} is claimed by two active specs`);
+    claimed.add(String(pos));
+    const dc = d.configs[pos];
+    if (!dc) { fail(`${env}: active ${c.alias} has no deployed declaration at position ${pos}`); continue; }
+    if (!dc.id) fail(`${env}: configuration at position ${pos} has no Id — the platform refuses to start without it`);
+    if (!dc.storeId) fail(`${env}: configuration at position ${pos} has no StoreId — the platform refuses to start without it`);
     ids.push(dc.id);
   }
+  for (const pos of Object.keys(d.configs)) if (!claimed.has(pos)) fail(`${env}: deployed position ${pos} is claimed by no active spec`);
   if (new Set(ids).size !== ids.length) fail(`${env}: configuration Ids are not unique [${ids}]`);
+  // VCST-5888 default-methods triad: ONE store, three diverging code states (SECOND RULE).
+  const byAlias = (al) => { const c = CONFIG_SPECS.find((x) => x.alias === al); return c && !c.retired ? f[configPosition(c)] : null; };
+  const [abs, val, inv] = [DEFAULT_METHODS_TRIAD.absent, DEFAULT_METHODS_TRIAD.valid, DEFAULT_METHODS_TRIAD.invalid].map(byAlias);
+  if (!abs || !val || !inv) fail(`${env}: default-methods triad incomplete (absent/valid/invalid must all be active, deployed specs)`);
+  else {
+    if (!(abs.storeId === val.storeId && val.storeId === inv.storeId)) fail(`${env}: triad stores differ [${abs.storeId}, ${val.storeId}, ${inv.storeId}] — only the default methods may vary`);
+    if (!abs.storeExists) fail(`${env}: triad store must exist`);
+    if (abs.defaultMethodsDeclared) fail(`${env}: ${DEFAULT_METHODS_TRIAD.absent} must declare NO default method code (T17a)`);
+    for (const [al, x] of [[DEFAULT_METHODS_TRIAD.valid, val], [DEFAULT_METHODS_TRIAD.invalid, inv]]) {
+      if (!x.defaultShipmentMethodCode || !x.defaultPaymentMethodCode) fail(`${env}: ${al} must set BOTH default method codes`);
+    }
+    if (val.defaultMethodsActive !== true) fail(`${env}: ${DEFAULT_METHODS_TRIAD.valid} must declare its codes active`);
+    if (inv.defaultMethodsActive !== false) fail(`${env}: ${DEFAULT_METHODS_TRIAD.invalid} must declare its codes nonexistent`);
+    for (const k of ['defaultShipmentMethodCode', 'defaultPaymentMethodCode']) {
+      if (val[k] === inv[k]) fail(`${env}: valid and invalid share ${k}=${val[k]} — T1 vs T17b undecidable`);
+      if (inv[k] && !inv[k].startsWith(SEED_PREFIX)) fail(`${env}: ${DEFAULT_METHODS_TRIAD.invalid}.${k} must carry ${SEED_PREFIX} so it can never name a real method`);
+    }
+    if (val.defaultShipmentMethodCode === val.defaultPaymentMethodCode) fail(`${env}: valid shipment and payment codes are equal`);
+  }
 }
-for (const c of CONFIG_SPECS) if (c.retired && VERIFY_PROBES.some((p) => p.config === c.index)) fail(`${c.alias} is retired but a verify probe still targets it`);
+for (const c of CONFIG_SPECS) if (c.retired && VERIFY_PROBES.some((p) => p.config === configPosition(c))) fail(`${c.alias} is retired but a verify probe still targets it`);
 done(b);
 
 // [6]
 b = problems.length; section(6, 'secret value divergence (.env.local, values never printed)');
 const bySuffix = {};
-for (const { k, v } of secretValues) {
-  const m = /^PUNCHOUT_SHARED_SECRET_(\d+)(?:_(.+))?$/.exec(k);
-  if (m) (bySuffix[m[2] || '(base)'] ||= []).push({ i: m[1], v });
-}
+for (const { v, spec, suffix } of secretValues) (bySuffix[suffix] ||= []).push({ i: spec.alias, v });
 for (const [suffix, list] of Object.entries(bySuffix)) {
   const seen = new Map();
   for (const { i, v } of list) { if (seen.has(v)) fail(`${suffix}: secrets ${seen.get(v)} and ${i} are IDENTICAL`); seen.set(v, i); }
@@ -219,7 +252,7 @@ for (const env of Object.keys(DEPLOYED_CONFIGS)) {
   const ov = existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : {};
   if (!CONFIG_SPECS.some((c) => ov[c.alias])) { note(`${env}: not seeded yet (npm run seed:punchout)`); continue; }
   for (const c of CONFIG_SPECS) {
-    const want = c.retired ? retiredOverlayFields(c) : configOverlayFields(c, DEPLOYED_CONFIGS[env].configs[c.index]);
+    const want = c.retired ? retiredOverlayFields(c) : configOverlayFields(c, DEPLOYED_CONFIGS[env].configs[configPosition(c)]);
     for (const [k, v] of Object.entries(want)) if (JSON.stringify(ov[c.alias]?.[k]) !== JSON.stringify(v)) fail(`${env} overlay ${c.alias}.${k}=${JSON.stringify(ov[c.alias]?.[k])} ≠ spec ${JSON.stringify(v)} — re-run the seed`);
     if (ov[c.alias]?.sharedSecret !== undefined) fail(`${env} overlay ${c.alias} must not carry sharedSecret`);
   }
@@ -263,8 +296,8 @@ const allowed = (url, pattern) => (pattern.endsWith('*')
   : url.toLowerCase() === pattern.toLowerCase());
 for (const [env, d] of Object.entries(DEPLOYED_CONFIGS)) {
   for (const p of VERIFY_PROBES) {
-    const c = d.configs[p.config];
-    if (!c) { fail(`${env}: probe "${p.name}" names undeclared config ${p.config}`); continue; }
+    const c = d.configs[p.config]; // p.config is a POSITION
+    if (!c) { fail(`${env}: probe "${p.name}" names undeclared position ${p.config}`); continue; }
     // Check order (source + KB-62D97984): StoreId present → sender domain → return URL → mapping → store exists.
     const predict = (mapped) => {
       if (!c.storeId) return '500';
@@ -277,6 +310,12 @@ for (const [env, d] of Object.entries(DEPLOYED_CONFIGS)) {
     const mapped = !!(p.mapping && MAPPING_SPECS.some((m) => m.alias === p.mapping));
     const code = predict(mapped);
     if (p.provesMapping && predict(false) === code) fail(`${env}: probe "${p.name}" claims to prove the mapping, but an unmapped identity would get the same ${code}`);
+    if (p.opensSession) {
+      const m = MAPPING_SPECS.find((x) => x.alias === p.mapping);
+      if (!m || !m.owned || !isProvisionedBuyer(m)) fail(`${env}: probe "${p.name}" opens a session for ${p.mapping || p.identity} — only the owned, provisioned buyer may get one`);
+      if (code !== '200' || p.expectCode !== '200') fail(`${env}: opensSession probe "${p.name}" expects ${p.expectCode}, declarations predict ${code} (must both be 200)`);
+      continue;
+    }
     if (code === '200') fail(`${env}: probe "${p.name}" would OPEN A SESSION — verify probes must be decided before the success path`);
     else if (code !== p.expectCode) fail(`${env}: probe "${p.name}" expects ${p.expectCode}, declarations predict ${code}`);
   }
