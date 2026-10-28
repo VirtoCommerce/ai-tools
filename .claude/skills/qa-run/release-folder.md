@@ -59,9 +59,9 @@ cannot reach `main`.
   "env": { "testEnv": "vcptcore_regression", "platform": "3.1076.1", "theme": "2.59.0" },
   "waves": [
     { "id": "W0", "title": "Smoke gate", "suites": ["042", "078"], "modules": ["Platform"] },
-    { "id": "C-platform", "title": "Platform — critical", "tier": "critical", "suites": ["095", "020"], "dependsOn": ["W0"] },
-    { "id": "H-platform", "title": "Platform — high", "tier": "high", "suites": ["095", "020"], "dependsOn": ["C-platform"] },
-    { "id": "WX", "title": "Exclusive window", "suites": ["096"], "dependsOn": ["H-platform"], "exclusive": ["096"] }
+    { "id": "W1", "title": "Platform", "suites": ["095", "020"], "dependsOn": ["W0"] },
+    { "id": "W2", "title": "Purchase flow", "suites": ["031", "032"], "dependsOn": ["W0"] },
+    { "id": "WX", "title": "Exclusive window", "suites": ["096"], "dependsOn": ["W1", "W2"], "exclusive": ["096"] }
   ]
 }
 ```
@@ -81,12 +81,13 @@ stand that still runs the previous build):
 
 - **W0 is always the smoke gate** and every other wave depends on it: a broken job engine or a
   failed login stops the release before anyone spends a wave on it.
-- **Waves are priority tier × domain group** ([`plan-sections.md`](../../knowledge/execution/test-plan/plan-sections.md) §Waves, for both plan modes): `tier` is `critical`, `high` or
-  `rest` (the cases neither tier selects), and the domain groups split each tier between owners. A wave's tier becomes
-  `--cases <tier>`; `rest` becomes `--cases medium,low`. A case whose `Priority` is unreadable is in no tier: every
-  tiered wave leaves it out, and it appears only in the run's Scope Exclusions. Tier order is a dependency: a wave
-  depends on every wave of every higher tier (directly or through another wave) — `release:check` fails otherwise. A wave without `tier` runs all of its
-  suites' cases (W0, the exclusive wave, and plans written before tiers existed, such as Stable 16).
+- **After W0, waves are independent domain groups** ([`plan-sections.md`](../../knowledge/execution/test-plan/plan-sections.md) §Waves, for both plan modes):
+  each depends on W0 only, so several QA run them at the same time. A wave holds every priority of its suites, and the
+  owner runs them in tier order inside the wave ([`waves.md`](waves.md) Step 3). A case whose `Priority` is unreadable
+  is in no tier and appears only in the run's Scope Exclusions.
+- **`tier` (legacy).** A plan may still declare tier waves (`tier`: `critical`, `high` or `rest`, run as
+  `--cases <tier>`, `rest` = `medium,low`). Such a wave must depend on every wave of every higher tier — `release:check`
+  fails otherwise — which is exactly the waiting the independent shape avoids; new plans do not use it.
 - A wave's `suites` is a plan, not a promise. The owner re-resolves it with `npm run regression:plan`
   when claiming, and records what actually ran in `state.json`.
 - `exclusive` names suites that change state the whole environment shares (§7.2). They live in one

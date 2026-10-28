@@ -156,6 +156,7 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
     return problems;
   }
   const waves = new Map(plan.waves.map((w) => [w.id, w]));
+  if (!waves.has("W0")) problems.push("release.json: no W0 wave — every release starts with the W0 smoke gate, which every other wave depends on");
   if (waves.size !== plan.waves.length) problems.push("release.json: a wave id is duplicated");
   const cycle = hasCycle(plan.waves);
   if (cycle) problems.push(`release.json: dependsOn has a cycle through ${cycle}`);

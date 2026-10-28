@@ -221,7 +221,8 @@ the fix PR's build, never as a hotfix. The wave that sees the new version record
 ([`waves.md`](../../../skills/qa-run/waves.md) Step 0), the cases the bug failed are re-run on it, and `--update` re-pins
 `env` and adds what the fix touches to waves not started. Over
 the Section 5.1 suites (`suitesActivated[]`) build the waves per [`plan-sections.md`](plan-sections.md) §Waves, with the
-Step 5 risk ordering the domains inside each tier. Then write `regression/releases/sprint-{XX-YY}/` per
+Step 5 risk deciding which domain waves are offered first. **W0, the smoke gate, runs first and alone; every other wave
+depends on W0 only**, so once W0 has run all owners work at the same time. Then write `regression/releases/sprint-{XX-YY}/` per
 [`release-folder.md`](../../../skills/qa-run/release-folder.md):
 
 1. **`release.json`** — the sprint variant (contract §3): `release: "sprint-{XX-YY}"`, `ticket` from `--ticket`, `baseline`

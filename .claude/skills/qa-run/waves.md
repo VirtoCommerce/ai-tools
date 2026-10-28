@@ -21,7 +21,7 @@ claim protocol (§8). This file is the procedure; that file is the contract.
 /qa-run stable:16 W4 --triage       # triage the wave's runs
 /qa-run stable:16 W4 --publish      # put the wave in GitHub
 /qa-run stable:16 W4 --handover     # stop here, leave it for someone else
-/qa-run sprint:26-20 C-purchase --claim   # the same for a wave of a sprint regression
+/qa-run sprint:26-20 W2 --claim     # the same for a wave of a sprint regression
 ```
 
 **Where each entry point starts.** A flag never skips a step: triage (Step 4) starts, and the GitHub question (Step 7)
@@ -103,7 +103,7 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
 
 ## Step 3 — Run
 
-1. **Resolve the run** with `npm run regression:plan -- <suite ids>`, plus `--cases <tier>` when the wave has a `tier` — `rest` is `--cases medium,low` ([`release-folder.md`](release-folder.md) §3: unreadable priorities only in Scope Exclusions). Remove every suite or case listed in
+1. **Resolve the run** with `npm run regression:plan -- <suite ids>` ([`release-folder.md`](release-folder.md) §3: unreadable priorities only in Scope Exclusions). **A wave runs in priority order:** `--cases critical`, then `--cases high`, then `--cases medium,low` — three runs, each appended to `runIds`, so a wave cut short has its most important cases done. (A legacy wave with a `tier` runs only `--cases <tier>`, `rest` = `medium,low`.) Remove every suite or case listed in
    **another** wave's `exclusive` (contract §7.2) — this wave's own `exclusive` list is what it exists to run.
    Machine-lane suites first: they cost no model tokens (contract §7).
 2. **Do not re-seed** a fixture set another wave uses while another wave is running — check the wave sub-tasks
@@ -223,8 +223,8 @@ stays.
 
 ## Rules
 
-- **Tier order is a dependency:** a `high` wave starts only when every `critical` wave has run, a `rest` wave only when
-  every `high` wave has — Step 0.3 checks `dependsOn`, which the plan fills that way.
+- **W0 first, then nobody waits:** every wave after W0 depends on W0 only, so owners run in parallel; priority is the
+  order of runs inside the wave (Step 3), not an order between waves. Only WX waits for the others.
 - **One wave, one owner.** Write only this wave's `waves/<W>/`, the generated `PROGRESS.md`, and the suites you are
   repairing; never another wave's files ([`release-folder.md`](release-folder.md) §2).
 - **Parallel-safe or not at all:** own personas, no env-wide changes, no re-seed under a running wave (§7).

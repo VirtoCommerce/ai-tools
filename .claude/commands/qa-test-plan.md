@@ -1,5 +1,5 @@
 ---
-description: "Plan any regression: a SPRINT test plan (Jira Done items + merged PRs → risk → suites → charters, written to docs/Sprint plans/, then split into waves in regression/releases/sprint-XX-YY/) or a STABLE-BUNDLE regression (bundles/v{N-1} → vN diff → classified scope → waves by priority tier × domain that several QA run in parallel, written to regression/releases/stable-N/). Both are split into waves that several QA claim and run in parallel. Plans only — the run is /qa-run sprint:XX-YY or stable:N, wave by wave."
+description: "Plan any regression: a SPRINT test plan (Jira Done items + merged PRs → risk → suites → charters, written to docs/Sprint plans/, then split into waves in regression/releases/sprint-XX-YY/) or a STABLE-BUNDLE regression (bundles/v{N-1} → vN diff → classified scope → W0 first, then independent domain waves that several QA run in parallel, written to regression/releases/stable-N/). Both are split into waves that several QA claim and run in parallel. Plans only — the run is /qa-run sprint:XX-YY or stable:N, wave by wave."
 argument-hint: "SprintXX-YY | XX-YY | current | last | stable <N> [--ref <branch>] [--env <TEST_ENV>] [--ticket <KEY>] [--update] [--no-waves]"
 disable-model-invocation: true
 ---

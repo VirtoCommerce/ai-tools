@@ -60,7 +60,7 @@ Per [`plan-sections.md`](plan-sections.md) §Waves, over the suites Step 2 scope
 
 ## Step 4 — Write the release folder
 
-In `regression/releases/stable-<N>/`: `release.json` (contract §3, every wave with `id`, `title`, `tier`, `suites`,
+In `regression/releases/stable-<N>/`: `release.json` (contract §3, every wave with `id`, `title`, `suites`,
 `modules`, `dependsOn`, `exclusive` where it applies), `scope.json`, `PLAN.md` (§Environment, §How the scope was decided,
 §Risk, §Waves with the estimates from `regression:plan`, §Prerequisites, §Gaps and charters per
 [`plan-sections.md`](plan-sections.md) §Exploratory charters, §Not in scope), and `waves/<W>/state.json` for every wave

@@ -15,10 +15,10 @@ then the file the argument needs, **whole**.
 /qa-run smoke                            # one-off: the smoke selection
 /qa-run 042,078 --cases critical         # one-off: these suites, Critical cases only
 /qa-run sprint:26-20 status              # who holds which wave of the sprint regression (/qa-test-plan 26-20 writes the plan)
-/qa-run sprint:26-20 C-catalog --claim   # claim one wave of it and run it
+/qa-run sprint:26-20 W2 --claim          # claim one wave of it and run it
 /qa-run stable:17 status                 # who holds which wave of Stable 17 (/qa-test-plan stable 17 writes the plan)
-/qa-run stable:17 C-purchase --claim     # claim one wave and run it
-/qa-run stable:17 C-purchase --continue  # pick up a wave someone handed over
+/qa-run stable:17 W3 --claim             # claim one wave and run it
+/qa-run stable:17 W3 --continue          # pick up a wave someone handed over
 /qa-run 036 --run-blocked                # also run the cases the pre-flight predicts will BLOCK
 ```
 
