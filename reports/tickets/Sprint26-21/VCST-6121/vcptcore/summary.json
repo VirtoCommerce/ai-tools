@@ -650,6 +650,30 @@
   "failed": 4,
   "blocked": 1,
   "tracker": {
-    "comment_id": "112495"
+    "comment_id": "112494",
+    "documentation_comment_id": "112495"
+  },
+  "documentation": {
+    "published": true,
+    "audiences": [
+      "customer",
+      "admin",
+      "developer"
+    ],
+    "files": [
+      "reports/ba/vcst-6121-passkey-sign-in-customer-guide.md",
+      "reports/ba/vcst-6121-passkey-sign-in-admin-guide.md",
+      "reports/ba/vcst-6121-passkey-sign-in-developer-guide.md"
+    ],
+    "amended": [],
+    "comment_posted": true,
+    "refusal": null,
+    "comment_id": "112495",
+    "walkthroughs": [
+      "shopper-add-passkey.gif",
+      "shopper-sign-in-with-passkey.gif",
+      "admin-shell-add-passkey-and-sign-in.gif",
+      "admin-store-passkey-switch.gif"
+    ]
   }
 }
