@@ -8,6 +8,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `qa-investigate` from a subagent: the caller writes `source/findings.md` — `vc-fix` `0.18.1` — 2026-10-28
+
+### Fixed — a subagent's evidence package could not be completed without bypassing a refusal
+
+Claude Code refuses a subagent's `Write` of a report-like file, and Part A row 13's `source/findings.md` is
+one. During VCST-6121 a subagent building packages hit that refusal and wrote the file through a shell
+heredoc instead — the package was complete, the rule was not. `evidence-and-root-cause.md` row 13 now says
+how it works from a subagent: the findings come back in the hand-back under a `## source/findings.md`
+heading and the calling session writes them verbatim to `<package>/source/findings.md` before
+`/qa-bug --evidence`. Inline runs are unchanged.
+
 ## The visual lane runs from the plugin — `vc-test` `0.12.0` — 2026-10-27
 
 P2-5c of the `vc-test` plan (`docs/superpowers/plans/2026-10-27-vc-test-p2-5c-design.md`).
