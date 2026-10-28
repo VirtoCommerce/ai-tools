@@ -4135,7 +4135,7 @@
       "concern": "api",
       "priority": "P1",
       "testCount": 21,
-      "estimatedMinutes": 90,
+      "estimatedMinutes": 35,
       "agent": "qa-backend-expert",
       "tags": [
         "sanity",
