@@ -67,8 +67,8 @@ rules:
     violation_signal: Order marked "Completed" while shipments are pending; partial shipment not reflected in order status; items missing from shipment tracking.
     status: ACTIVE
     verified:
-      date: 2026-10-15
-      by: REG-2026-10-15-1115
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-ORD-004
     title: Refund conditions
     rule: Refund is only possible on a payment that has been captured. Partial refund amount must be ≤ captured amount minus any previous refunds. Full refund sets payment status to "Refunded." A voided payment cannot be refunded. Refund does not automatically restore inventory — that follows BL-ORD-002 cancellation rules separately.
@@ -129,8 +129,8 @@ rules:
     violation_signal: Any illegal transition succeeds; Admin shows buttons for invalid states; API returns 200 on illegal transition.
     status: ACTIVE
     verified:
-      date: 2026-10-15
-      by: REG-2026-10-15-1115
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-ORD-007
     title: Shipment state machine (detailed)
     rule: |-
@@ -151,6 +151,9 @@ rules:
       ref: For each illegal transition, attempt via API → expect error. In Admin, verify available actions match current state. Tracking number required for `Send` transition.
     violation_signal: State skipped; shipment marked `Send` without tracking number; API allows illegal jump.
     status: ACTIVE
+    verified:
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-ORD-009
     title: Order status vocabulary
     rule: |-
@@ -199,6 +202,9 @@ rules:
       ref: "Place order → authorize → capture → ship → deliver. Open order change log in Admin → every transition recorded with correct actor and timestamps. Verify via API: `GET /api/order/customerOrders/{id}/changes` returns full history."
     violation_signal: Missing entries in change log; actor shows "system" for manual actions; timestamps out of order; change log entries editable.
     status: ACTIVE
+    verified:
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-ORD-010
     title: Order totals — one entry per distinct line currency, unique default-currency flag
     rule: "`CustomerOrder.OrderTotals[]` MUST contain exactly one entry per distinct currency present across `Items[].Currency`, `Shipments[].Currency`, and `InPayments[].Currency`. The entry whose `CurrencyCode == CustomerOrder.Currency` MUST have `isDefaultTotalCurrency = true`; no other entry may. Each entry's `total/subTotal/taxTotal/discountTotal` reflect only that currency's entities. A single-currency order → exactly 1 entry. The REST `WithOrderTotals` response group (bit 9 = 512) must be requested; without it `OrderTotals` is null (not empty)."

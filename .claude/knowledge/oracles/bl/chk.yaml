@@ -65,8 +65,8 @@ rules:
     violation_signal: 'State/Province required for a country that has no regions; the address form is identical regardless of country (no region-conditional State field); ZIP silently not enforced. (Note: the earlier expectation that "countries without postal codes must not require ZIP" does NOT match the form — ZIP is always required.)'
     status: ACTIVE
     verified:
-      date: 2026-10-15
-      by: REG-2026-10-15-1115
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-CHK-004
     title: Payment retry after decline
     rule: When a payment is declined by the gateway (insufficient funds, expired card, etc.), the user must be able to retry with a different card or correct the issue — without losing their cart or shipping selections. The checkout state (address, shipping method) must persist through payment retries. After 3 consecutive declines, the system may lock the checkout temporarily.
@@ -97,8 +97,8 @@ rules:
     violation_signal: Shipping methods don't update when address changes; unavailable method remains selected; rates don't change for different destinations.
     status: ACTIVE
     verified:
-      date: 2026-10-15
-      by: REG-2026-10-15-1624
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-CHK-006
     title: Order total formula
     rule: "The order total must always equal: `subTotal (sum of the list totals of items flagged selectedForCheckout) + shipping subtotal + tax total + payment subtotal + fee total − discount total (the aggregate of line-item, shipping, payment, and cart-level discounts)`. Every component is an explicit line — no hidden or unexplained differences. The total displayed at checkout must match the total on the order confirmation page and in the Admin order detail. (Source: vc-module-cart `DefaultShoppingCartTotalsCalculator.CalculateTotals` — `cart.Total = SubTotal + ShippingSubTotal + TaxTotal + PaymentSubTotal + FeeTotal − DiscountTotal`.)"

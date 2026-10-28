@@ -1,0 +1,56 @@
+{
+  "ticket": "VCST-5690",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-27",
+  "environment": "vcptcore-qa (TEST_ENV=vcptcore)",
+  "build": {
+    "platform": "3.1085.0",
+    "theme": "vc-theme-b2b-vue-2.61.0-pr-2597-372a-372a1bfd (deployed 2026-10-27 07:01Z, live 07:02:45Z)",
+    "relevant_modules": {
+      "VirtoCommerce.ProfileExperienceApiModule": "3.1022.0-pr-150-afd6",
+      "VirtoCommerce.Customer": "3.1029.0",
+      "VirtoCommerce.Xapi": "3.1027.0"
+    },
+    "pr_build": "vc-module-profile-experience-api#150 @ afd68e4 (open, not merged) = 3.1022.0-pr-150-afd6 ; storefront vc-frontend#2597 @ 372a1bf (open)"
+  },
+  "agent_used": "qa-backend-expert + qa-frontend-expert",
+  "str_result": "3/3 xAPI + 3/3 storefront",
+  "baseline_reproduction": "pinned-build (live A/B control on vcst-qa, ProfileExperienceApi 3.1021.0, 3/3 RED) + from-qa-bug (reports/bugs/open/medium/BUG-Storefront-Member-Contact-Writes-Fail-Validation.md, 2026-08-06)",
+  "checklist_total": 20,
+  "checklist_passed": 20,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    "UnsafeContent errorCode never triggered: javascript:alert(1) in address line1 accepted and saved (name fields reject it as InvalidCharacters first)",
+    "Contact.about is not validated (<b>x</b> saved) - likely outside PR scope",
+    "Pre-existing on both builds, not caused by the PR: contact { about } with null value returns INVALID_OPERATION and nulls the whole contact",
+    "Header Ship to > Add new dialog shows only the toast \"Some of the addresses are not valid\", no inline field error (error at addresses[1].firstName) - matches PR wording, owner to confirm",
+    "Cosmetic, PRE-EXISTING (not PR #2597): /account/profile Last name and Email inputs use common.placeholders.first_name (\"Enter your first name\") since vc-frontend PR #485 (b26d8faf, 2023-03-22); last_name/email keys exist in locales - filed as VCST-6543 (Low, relates to VCST-5690)"
+  ],
+  "bugs_filed": [
+    "VCST-6543"
+  ],
+  "business_rules_verified": [
+    "BL-PROFILE-001"
+  ],
+  "kb": {
+    "captured": [
+      "KB-CC283A85",
+      "KB-E0D6EA2B"
+    ],
+    "opened": [
+      "KB-9795DE39"
+    ]
+  },
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested",
+    "jira_transition": "Finish test (id 8)",
+    "comment_id": "112393",
+    "comment_amended": "2026-10-27 with storefront results + 3 inline screenshots"
+  },
+  "evidence": "reports/tickets/Sprint26-21/VCST-5690/vcptcore/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-21/VCST-5690/vcptcore/",
+  "frontend_report": "reports/tickets/Sprint26-21/VCST-5690/vcptcore/fe-verification-report.md"
+}

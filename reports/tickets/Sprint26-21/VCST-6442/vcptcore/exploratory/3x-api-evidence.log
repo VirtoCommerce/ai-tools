@@ -1,0 +1,191 @@
+### m1
+== M1a: {gold} published, then {vip,gold} over it
+create 1 {"userGroups":"gold"} 200 
+ publish 1 {gold} noflag 200 ""
+create 2 {"permalink":"/agent-test-vcst6442-x-1","userGroups":"vip,gold"} 200 
+ usages 2 {vip,gold} vs pub {gold} 200 AGENT-TEST-VCST6442-X-1|Published|Certain|canUn=true
+ publish 2 noflag 409 {"error":"Pages 'AGENT-TEST-VCST6442-X-1' are published with the same permalink for the same visitors. Unpublish them first, or publish with unpublishConflicting=true.","conflicts":[{"groupId":"3073e2fa-8ff6-46ed-afce-785779f4bac9","name":"AGENT-TEST-VCST6442-X-1","permalink":"/agent-test-vcst6442-x-1","cultureName":"en-US","status":"Published","co
+== M1b: {vip,gold} published, then {gold} over it
+create 3 {"userGroups":"vip,gold"} 200 
+ publish 3 {vip,gold} noflag 200 ""
+create 4 {"permalink":"/agent-test-vcst6442-x-3","userGroups":"gold"} 200 
+ usages 4 {gold} vs pub {vip,gold} 200 AGENT-TEST-VCST6442-X-3|Published|Possible|canUn=true
+ publish 4 noflag 200 ""
+== M1c: {vip} vs published {gold}
+create 5 {"permalink":"/agent-test-vcst6442-x-1","userGroups":"VIP"} 200 
+ usages 5 {VIP} vs pub x-1 groups 200 AGENT-TEST-VCST6442-X-2|Draft|None|canUn=false ; AGENT-TEST-VCST6442-X-1|Published|Possible|canUn=true
+### m2
+== #4a: published "/agent-test-vcst6442-x-6"; variants publish over it
+create 6 {} 200 stored="/agent-test-vcst6442-x-6"
+ publish 6 noflag 200 ""
+create 7 {"permalink":"Agent-Test-VCST6442-X-6"} 200 stored="Agent-Test-VCST6442-X-6"
+ usages 7 "Agent-Test-..-X-6" 200 AGENT-TEST-VCST6442-X-6|Published|Certain|canUn=true
+create 8 {"permalink":" //AGENT-TEST-VCST6442-X-6 "} 400 "Permalink must be at most 2048 characters and cannot contain whitespace, control or invisible formatting characters, the characters ? # & % \\ \" < > { } | ^ `, empty segments ('//') or '.' and '..' 
+ usages 8 " //AGENT..-X-6 " 500 {"message":"Object reference not set to an instance of an object.","stackTrace":null}
+ publish 8 " //AGENT" noflag 404 ""
+== #4b reverse: published " //AGENT-TEST-VCST6442-X-9 " first, then "/agent-test-vcst6442-x-9"
+create 9 {"permalink":" //AGENT-TEST-VCST6442-X-9 "} 400 "Permalink must be at most 2048 characters and cannot contain whitespace, control or invisible formatting characters, the characters ? # & % \\ \" < > { } | ^ `, empty segments ('//') or '.' and '..' 
+ publish 9 noflag 404 ""
+create 10 {"permalink":"/agent-test-vcst6442-x-9"} 200 stored="/agent-test-vcst6442-x-9"
+ usages 10 "/..x-9" vs pub " //AGENT..X-9 " 200 
+ publish 10 noflag 200 ""
+create 11 {"permalink":"AGENT-TEST-VCST6442-X-9"} 200 stored="AGENT-TEST-VCST6442-X-9"
+ usages 11 "AGENT..X-9" vs both 200 AGENT-TEST-VCST6442-X-10|Published|Certain|canUn=true
+== #12: published X-12 ends at 2026-10-30T14:38:00Z
+create 12 {"startDate":"2026-10-27T14:38:00Z","endDate":"2026-10-30T14:38:00Z"} 200 stored="/agent-test-vcst6442-x-12"
+ publish 12 noflag 200 ""
+create 13 {"permalink":"/agent-test-vcst6442-x-12","startDate":"2026-10-30T14:38:00Z"} 200 stored="/agent-test-vcst6442-x-12"
+ usages 13 starts == other end 200 AGENT-TEST-VCST6442-X-12|Published|Possible|canUn=true
+create 14 {"permalink":"/agent-test-vcst6442-x-12","startDate":"2026-10-30T14:38:01Z"} 200 stored="/agent-test-vcst6442-x-12"
+ usages 14 starts end+1s 200 AGENT-TEST-VCST6442-X-13|Draft|None|canUn=false ; AGENT-TEST-VCST6442-X-12|Published|None|canUn=true
+create 15 {"permalink":"/agent-test-vcst6442-x-12","startDate":"2026-10-25T14:38:11Z","endDate":"2026-10-26T14:38:11Z"} 200 stored="/agent-test-vcst6442-x-12"
+ usages 15 expired new page vs live 200 AGENT-TEST-VCST6442-X-14|Draft|None|canUn=false ; AGENT-TEST-VCST6442-X-13|Draft|None|canUn=false ; AGENT-TEST-VCST6442-X-12|Published|None|canUn=true
+### m3
+== G12: two Certain-equal drafts published concurrently
+create 16 {} 200 stored="/agent-test-vcst6442-x-16"
+create 17 {"permalink":"/agent-test-vcst6442-x-16"} 200 stored="/agent-test-vcst6442-x-16"
+ parallel publish 200 "" || 409 {"error":"Pages 'AGENT-TEST-VCST6442-X-16' are published with the same permalink for the same visitors. Unpublish them f
+ state AGENT-TEST-VCST6442-X-16 Published pages Published
+ state AGENT-TEST-VCST6442-X-17 Draft pages Draft
+== G12b: X-18 published, X-19 & X-20 Certain drafts both publish with flag concurrently
+create 18 {} 200 stored="/agent-test-vcst6442-x-18"
+ publish 18 noflag 200 ""
+create 19 {"permalink":"/agent-test-vcst6442-x-18"} 200 stored="/agent-test-vcst6442-x-18"
+create 20 {"permalink":"/agent-test-vcst6442-x-18"} 200 stored="/agent-test-vcst6442-x-18"
+ parallel flagged publish 200 "" || 200 ""
+ state AGENT-TEST-VCST6442-X-18 Draft pages Draft
+ state AGENT-TEST-VCST6442-X-19 Draft pages Draft
+ state AGENT-TEST-VCST6442-X-20 Published pages Published
+== G11a: POST /grouped with status Published over a published permalink
+ POST /grouped status=Published 200 {"storeId":"B2B-store","pages":[{"groupId":null,"storeId":"B2B-store","status":"Published","content":"{\"settings\":{},\"content\":[]}","createdDate":"2026-10-28T14:38:53.0619876Z","modifiedDate":"2026-10-28T14:38:53.0619876Z","createdBy":"admin","modifiedBy":"admin","id":"2b64bfd1-451b-4c91-97e4-e5
+ state X-21 Published Published/Draft
+== G11b: PUT /grouped on a Draft (X-17 or X-19) setting status Published
+ target AGENT-TEST-VCST6442-X-19 Draft
+ PUT status=Published 200 {"storeId":"B2B-store","pages":[{"groupId":"eb5cc4d3-1791-4b10-9758-eb8956501b07","storeId":"B2B-store","status":"Draft","content":null,"createdDate":"2026-10-28T14:38:46.8361631Z","modifiedDate":"2026-10-28T14:38:48.4029249Z","createdBy":"admin","modifiedBy":"admin","id":"f5fd4cd6-2473-4800-ad99-c2
+ state AGENT-TEST-VCST6442-X-19 Draft Draft
+### m4
+X-20 Published [["b580f9cb","Published",null]]
+X-21 Published [["2b64bfd1","Published",null],["bbe1d083","Draft",null]]
+usages X-21 200 AGENT-TEST-VCST6442-X-20|Published|Certain|canUn=true ; AGENT-TEST-VCST6442-X-19|Draft|None|canUn=false ; AGENT-TEST-VCST6442-X-18|Draft|None|canUn=false
+admin search permalink 200 AGENT-TEST-VCST6442-X-21:Published, AGENT-TEST-VCST6442-X-20:Published, AGENT-TEST-VCST6442-X-19:Draft, AGENT-TEST-VCST6442-X-18:Draft
+slugInfo anon 200 {"id":"2b64bfd1-451b-4c91-97e4-e57863ad022c","objectType":"Pages","semanticUrl":"/agent-test-vcst6442-x-18"}
+slugInfo anon 200 {"id":"2b64bfd1-451b-4c91-97e4-e57863ad022c","objectType":"Pages","semanticUrl":"/agent-test-vcst6442-x-18"}
+slugInfo anon 200 {"id":"2b64bfd1-451b-4c91-97e4-e57863ad022c","objectType":"Pages","semanticUrl":"/agent-test-vcst6442-x-18"}
+pageDocuments anon 200 {"pageDocuments":{"totalCount":2,"items":[{"id":"2b64bfd1-451b-4c91-97e4-e57863ad022c","title":"AGENT-TEST-VCST6442-X-21","permalink":"/agent-test-vcst6442-x-18"},{"id":"b580f9cb-4cc6-4df3-9ba8-1c8e9331203b","title":"AGENT-TEST-VCST6442-X-20","permalink":"/agent-test-vcst6442-x-18"}]}}
+== G12a x3 repeats
+create 22 {} 200 stored="/agent-test-vcst6442-x-22"
+create 23 {"permalink":"/agent-test-vcst6442-x-22"} 200 stored="/agent-test-vcst6442-x-22"
+ race 0 200,409
+create 24 {} 200 stored="/agent-test-vcst6442-x-24"
+create 25 {"permalink":"/agent-test-vcst6442-x-24"} 200 stored="/agent-test-vcst6442-x-24"
+ race 1 200,409
+create 26 {} 200 stored="/agent-test-vcst6442-x-26"
+create 27 {"permalink":"/agent-test-vcst6442-x-26"} 200 stored="/agent-test-vcst6442-x-26"
+ race 2 200,200
+### m5 race state: X-26 Published + X-27 Published, usages X-27 -> X-26 Certain, pageDocuments totalCount 2
+### m6
+== #20: any-language evergreen X-28 + en-US dated X-29 (Possible)
+create 28 {"cultureName":null} 200 stored="/agent-test-vcst6442-x-28"
+ publish 28 any noflag 200 ""
+create 29 {"permalink":"/agent-test-vcst6442-x-28","startDate":"2026-10-27T14:40:42Z","endDate":"2026-11-02T14:40:42Z"} 200 stored="/agent-test-vcst6442-x-28"
+ usages 29 en-US dated vs any 200 AGENT-TEST-VCST6442-X-28|Published|Possible|canUn=true
+ publish 29 noflag 200 ""
+== #20b: any-language X-30 + de-DE X-31
+create 30 {"cultureName":null} 200 stored="/agent-test-vcst6442-x-30"
+ publish 30 any noflag 200 ""
+create 31 {"permalink":"/agent-test-vcst6442-x-30","cultureName":"de-DE"} 200 stored="/agent-test-vcst6442-x-30"
+ usages 31 de-DE vs any 200 AGENT-TEST-VCST6442-X-30|Published|None|canUn=true
+ publish 31 noflag 200 ""
+== #4 storefront: X-7 "Agent-Test-VCST6442-X-6" (mixed, no slash) published with flag over X-6
+ publish 7 flag 200 ""
+== #25: org-A page X-32
+ ACME user 4590f5a9 org 105c2c4e | TF org 
+create 32 {"organizationId":"105c2c4e-23be-4258-8691-568a0ff190be"} 200 stored="/agent-test-vcst6442-x-32"
+ publish 32 orgA noflag 200 ""
+ slugInfo #20 en-US {"id":"9ff97928-e66e-4b54-a80f-7600b071b978","objectType":"Pages","semanticUrl":"/agent-test-vcst6442-x-28","languageCode":"en-US"} X-29 en-US
+ slugInfo #20 de-DE {"id":"9ff97928-e66e-4b54-a80f-7600b071b978","objectType":"Pages","semanticUrl":"/agent-test-vcst6442-x-28","languageCode":"en-US"} X-29 en-US
+ slugInfo #20 fr-FR {"id":"9ff97928-e66e-4b54-a80f-7600b071b978","objectType":"Pages","semanticUrl":"/agent-test-vcst6442-x-28","languageCode":"en-US"} X-29 en-US
+ slugInfo #20b en-US {"id":"e8aaa161-da78-45f5-a038-922c49edcb44","objectType":"Pages","semanticUrl":"/agent-test-vcst6442-x-30","languageCode":null} X-30 any
+ slugInfo #20b de-DE {"id":"263e283f-d146-4394-a6e4-e80968cf9818","objectType":"Pages","semanticUrl":"/agent-test-vcst6442-x-30","languageCode":"de-DE"} X-31 de
+ slugInfo #4 lower {"id":"7b6fd78b-4dc7-46b7-a004-d853e48cf2bc","objectType":"Pages","semanticUrl":"/Agent-Test-VCST6442-X-6","languageCode":"en-US"} 
+ slugInfo #4 mixed {"id":"7b6fd78b-4dc7-46b7-a004-d853e48cf2bc","objectType":"Pages","semanticUrl":"/Agent-Test-VCST6442-X-6","languageCode":"en-US"} 
+ ids X-28 3d8ccbd7 X-29 9ff97928 X-30 e8aaa161 X-31 263e283f X-32 1b3e4c5e
+ #25 anon slug= null pageDocument=  pageDocuments= 0
+ #25 anon userId=ACME slug= null pageDocument=  pageDocuments= 0
+ #25 TF slug= null pageDocument=  pageDocuments= 0
+ #25 TF userId=ACME slug= null pageDocument=  pageDocuments= 0
+ #25 ACME slug= "1b3e4c5e-fe11-4aa0-8366-ed0b8860fac8" pageDocument= {"id":"1b3e4c5e-fe11-4aa0-8366-ed0b8860fac8","title":"AGENT-TEST-VCST6442-X-32","permalink":"/agent-test-vcst6442-x-32"} pageDocuments= 1
+ #25 TF token organization_id=orgA 200 TOKEN ISSUED
+  -> pageDocument null me org 
+
+[exited with code 0]
+### m7
+== M6 restricted viewer via REST
+ usages X-1 as restricted 200 AGENT-TEST-VCST6442-X-5|Draft|None|canUn=false ; AGENT-TEST-VCST6442-X-2|Draft|None|canUn=false
+ publish as restricted 403 ""
+ search as restricted 403  
+ restricted storeId  perms builder:access,builder:read
+ other-store page B2B-loyalty /
+ usages other store as restricted 403 {}
+== G3 Pages index sources
+ kw whitelabling 3 {"builder.io":3} /whitelabling-1|builder.io ; /whitelabling-1|builder.io ; /whitelabling-1|builder.io
+ kw * 90 {"sanity":2,"page-builder":36,"builder.io":11,"contentful":1} /test222222|sanity ; /testnew11|sanity ; /|builder.io ; /new-page-for-testing-index|builder.io ; /reindex-test|builder.io
+ kw page 0 {} ""
+ kw builder 0 {} ""
+ kw landing 1 {"page-builder":1} ""
+== #25 org-B user (USR-008)
+ USR-008 org 
+ org-B pageDocument null pageDocuments 0 slug null
+ admin(no org) pageDocument null
+== #26 republish window: X-33
+create 33 {} 200 stored="/agent-test-vcst6442-x-33"
+ publish 33 noflag 200 ""
+ first slug id 5c2f46d9
+ put 200 content-json 428
+ after edit Published hasChanges false 5c2f46d9:Published
+ republish 400 "Draft page not found."
+  t+1277ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+2886ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+4439ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+6018ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+7646ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+9280ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+10998ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+12558ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+14097ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+15684ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+17251ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+18800ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+20494ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+22080ms slug 5c2f46d9 pageDocument(slug id) OK
+  t+23618ms slug 5c2f46d9 pageDocument(slug id) OK
+### m8
+get content 200 {"content":"{\"settings\":{},\"content\":[]}","eTag":"\"6F1060046E538ECB23D549D93B5B99887BE77E80EDC85057FFC611BF5A3F7897\""}
+content-json If-Match ""6F1060046E538ECB23D549D93B5B99887BE77E80EDC85057FFC611BF5A3F7897"" 400 "If-Match must contain the single strong ETag returned by the content GET."
+content-json If-Match "6F1060046E538ECB23D549D93B5B99887BE77E80EDC85057FFC611BF5A3F7897" 204 ""
+after edit Published hasChanges true 5c2f46d9:Published,64361dbb:Draft
+republish 200 old slug id 5c2f46d9
+  t+1878ms slug 64361dbb pageDocument OK
+== G3: PB draft on a builder.io permalink /reindex-test
+create 34 {"permalink":"/reindex-test"} 200 stored="/reindex-test"
+ usages 34 vs builder.io /reindex-test 200 
+ slugInfo /reindex-test {"id":"0089de4e756743bd89c5b7b97d37ec00","objectType":"Pages"}
+### m9
+usages body "" 500 {"message":"Object reference not set to an instance of an object.","stackTrace":null}
+usages body {} 200 []
+usages body {"storeId":"B2B-store"} 200 []
+usages body null 500 {"message":"Object reference not set to an instance of an object.","stackTrace":null}
+== double-click publish of one Certain draft with flag (X-35 pub, X-36 draft x2 concurrent)
+create 35 {} 200 stored="/agent-test-vcst6442-x-35"
+ publish 35 noflag 200 ""
+create 36 {"permalink":"/agent-test-vcst6442-x-35"} 200 stored="/agent-test-vcst6442-x-35"
+ 2x flagged 400 "Draft page not found." || 200 ""
+ state AGENT-TEST-VCST6442-X-35 Draft Draft
+ state AGENT-TEST-VCST6442-X-36 Published Published
+== Certain with other hasChanges + flag (X-37 pub then draft edit; X-38 over it)
+create 37 {} 200 stored="/agent-test-vcst6442-x-37"
+ publish 37 noflag 200 ""
+ edit 400
+create 38 {"permalink":"/agent-test-vcst6442-x-37"} 200 stored="/agent-test-vcst6442-x-37"
+ usages 38 200 AGENT-TEST-VCST6442-X-37|Published|Certain|canUn=true
+ publish 38 flag 200 ""

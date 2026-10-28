@@ -19,10 +19,11 @@ rules:
       kind: manual
       ref: Start checkout → wait for session expiry (or manually expire token) → re-sign in → verify cart intact, checkout resumable from last step.
     violation_signal: Cart emptied after session expiry; user redirected to homepage instead of checkout; items lost.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-15
       by: REG-2026-10-15-1115
+    suspect_reason: "[case] BSM-002, BSM-016, BSM-025, BSM-067 failed in REG-2026-10-27-SR-SWEEP"
   - id: BL-AUTH-002
     title: Email verification gate
     rule: When `emailVerificationRequired = true` in store settings, newly registered users cannot access protected features (checkout, order history, account management) until they verify their email via the confirmation link. They can still browse the catalog and add items to cart. The verification link must expire after a configurable period.
@@ -37,8 +38,10 @@ rules:
       kind: manual
       ref: Register with `emailVerificationRequired = true` → attempt checkout → blocked with "Please verify your email" message. Click verification link → features unlocked. Test expired link → shows "Link expired, request a new one."
     violation_signal: Unverified user completes checkout; no verification prompt; expired link still works; verified status not persisted after sign-out/sign-in.
-    status: SUSPECT
-    suspect_reason: "[code] vc-module-profile-experience-api@42213c4:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/RegisterRequestCommandHandler.cs#LockAccount - when email verification is required the account is locked until the email is confirmed, so the user cannot sign in at all; the rule describes a signed-in unverified user (browse, cart allowed, checkout blocked, 'Please verify' message) and expiring links - re-run the check"
+    status: ACTIVE
+    verified:
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-AUTH-003
     title: Account lockout after N failed attempts
     rule: "After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. Successful login resets the failure counter."
@@ -61,10 +64,11 @@ rules:
       kind: manual
       ref: Enter wrong password 5 times → 6th attempt (even with correct password) → "Account locked" message. Wait for lockout expiry → successful login. Verify 4 failures + 1 success → counter resets (next failure starts from 1).
     violation_signal: No lockout after many failures; lockout message reveals account existence ("Account locked" vs "No such user"); lockout doesn't expire; counter not reset after success.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-15
       by: REG-2026-10-15-1115
+    suspect_reason: "[case] BSM-068 failed in REG-2026-10-27-SR-SWEEP"
   - id: BL-AUTH-004
     title: Returning vs new customer defaults
     rule: Shipping-address pre-fill at checkout is **config-gated and off by default.** The store's shipping-address policy setting has exactly two values — a disabled value (the **default**) and a previous-order value. Only under the previous-order value does checkout pre-fill the shipping address, and it then copies the **shipping (or billing-and-shipping) address of the customer's most recent order** — not the customer's saved address book — and only when the cart's shipment has **no** delivery address yet. Under the disabled value a returning customer sees **no** pre-filled shipping address, exactly like a first-time customer, and must select one; that is by design, not a defect. A new customer (first order) always sees empty address forms and no saved payment methods. Saved payment methods are a separate per-customer store of tokenized cards, offered only by card processors that support saving, and are **not** governed by the shipping-address policy. In every configuration the system must not show addresses or payment methods belonging to another account, even if the email was reused across organizations.
@@ -83,8 +87,8 @@ rules:
     violation_signal: "Checkout pre-fills a shipping address while the policy is at its disabled value, or fails to pre-fill while it is at the previous-order value; pre-fill overwrites a delivery address already chosen on the shipment; pre-fill draws from the saved address book rather than the most recent order; a brand-new customer sees pre-filled data; addresses or saved cards from another account are displayed. NOTE: a returning customer seeing an empty address form under the **default** (disabled) policy is **expected** — do not file it."
     status: ACTIVE
     verified:
-      date: 2026-10-15
-      by: REG-2026-10-15-1115
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-AUTH-005
     title: RBAC 6-permission model
     rule: Every module in Virto Commerce follows the same permission-claim model built from a canonical base set — `access`, `read`, `create`, `update`, `delete` (the 5-permission module template in `ModuleConstants.cs`) — plus `export` on modules that support data export, and further module-specific extensions (e.g. Orders adds `read_prices` / `update_shipments`). The commonly-used "6-permission" shorthand = the base 5 + `export`. Permissions are assigned to roles, and roles are assigned to users. A user without `create` permission on a module must not see the "Create" button in Admin. API calls without the required permission must return 403 Forbidden.
@@ -103,8 +107,8 @@ rules:
     violation_signal: Buttons visible for unauthorized actions; API returns 200 instead of 403; user can create/delete without permission; `access` permission not required to enter module.
     status: ACTIVE
     verified:
-      date: 2026-10-15
-      by: REG-2026-10-15-1115
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-AUTH-006
     title: Role hierarchy
     rule: "Virto Commerce roles are independent permission-claim sets, **NOT** a built-in inheritance hierarchy — a role has exactly the permissions assigned to it and does not automatically inherit a lower role's permissions. The role entity carries no parent, base, extends, or child field of any kind. Three names are **reserved system roles** carried on the account rather than rows in the role list (administrator, manager, customer); every other role is **per-deployment data** — role names and their permission sets are created per deployment and must be read from the environment, never assumed to exist. Administrator power is a **short-circuit, not inheritance**: a principal in the reserved administrator system role passes every global permission check without holding the claim, while everyone else must hold the specific permission claim. Within that model: An Administrator can perform any action. Store Managers can manage their assigned store(s) but not platform settings. Customers can only access their own data — a storefront account is an account category, not a platform role, and typically holds no platform role at all (its rights arrive as organization-scoped claims). Anonymous users are limited to browsing (if `anonymousUsersAllowed = true`) — an unauthenticated state, not a role."
@@ -121,7 +125,8 @@ rules:
       kind: manual
       ref: Read the environment's role list first and pick roles that actually exist there rather than assuming a role by name. Assert no role exposes a parent/inheritance field, and that a role's effective permissions equal exactly what was assigned to it. Store Manager → can manage products, orders for assigned store → cannot access Platform Settings blade. Customer → can view own orders → cannot access Admin SPA. Anonymous → can browse catalog (if flag ON) → cannot access cart/checkout (if guest checkout OFF). Confirm an account in the reserved administrator system role passes a permission check for a permission no role grants it.
     violation_signal: Lower role accesses higher-role functions; Store Manager modifies platform settings; customer sees other customers' orders; anonymous user bypasses access restrictions; a role gains permissions it was never assigned (would imply inheritance); a non-administrator passes a permission check without holding the claim.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] SR-GQL-157 failed in REG-2026-10-27-SR-SWEEP"
   - id: BL-AUTH-007
     title: Storefront logout UX — popup-only
     rule: 'The storefront exposes logout **only** inside the account-menu popup in the top header. There is no `/sign-out` page, no `/logout` page, and no standalone logout icon in the header. Correct sequence: (1) click the account button `data-test-id="account-button"` in the top-right header — opens the account-menu popup (`data-test-id="account-menu"`); (2) click the logout button **inside that popup**, selector `data-test-id="sign-out-button"`. Note the storefront test attribute is `data-test-id` (hyphenated) with the **flat** value `sign-out-button` — `data-testid` is not used in vc-frontend and there is no dotted-path value. (vc-frontend source: `client-app/shared/layout/components/header/_internal/top-header.vue`; composable `useSignMeOut`; routes `client-app/router/routes/main.ts` + `constants.ts` confirm no `/sign-out` or `/logout` route — logout calls `signMeOut` which clears the session and reloads through the auth guard.)'
@@ -350,9 +355,8 @@ rules:
       - A `refresh_token` switch or an impersonation silently succeeding on an inaccessible org. The fallback is leaking into an explicit-switch path.
     status: ACTIVE
     verified:
-      date: 2026-10-20
-      version: Customer 3.1030.0-pr-321 (VCST-6132)
-      by: REG-2026-10-20-1329
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-AUTH-017
     title: A malformed REST request body yields 400, never 500
     rule: A REST endpoint that accepts a request body MUST validate required fields **before** touching any downstream store or lookup; a missing, null, or unparseable body MUST return **400 Bad Request**, never an unhandled **500**. A well-formed body carrying a merely *wrong* value (an empty-string or unknown username) is a different outcome and MUST still resolve gracefully — typically `200` with a failure flag. No response body may leak a stack trace.
