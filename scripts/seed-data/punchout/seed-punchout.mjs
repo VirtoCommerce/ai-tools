@@ -42,7 +42,10 @@
  * field if this seeder set it and nobody changed it since, then asserts zero residue. The reused
  * personas ({{USER_EMAIL}}, {{MULTI_ORG_USER_EMAIL}}) are never written. The ONLY store write is that
  * one guarded FFC field; no store setting or app setting is written. Verify probes are chosen so NO
- * PunchoutSession row is created.
+ * PunchoutSession row is created — except the two `opensSession` probes (VCST-5888: DEFAULTS and
+ * BADCODES secrets + the dedicated REQUISITION buyer → cXML 200 + StartPage), which each write one
+ * expiring session row for that owned buyer, touch no cart, and never follow the StartPage URL.
+ * Configurations are addressed by POSITION (configPosition), never by legacy alias index.
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
@@ -55,7 +58,7 @@ import { join } from 'node:path';
 import {
   CONFIG_SPECS, DEPLOYED_CONFIGS, configOverlayFields, retiredOverlayFields, MAPPING_SPECS, PROTECTED_EXTERNAL_IDS,
   mappingBody, teardownMappingTargets, personaEmailVarFor, personaOverlayFields, BACKOFFICE_SPECS, roleBody, accountBody, isProvisionedBuyer, buyerCartTargets,
-  VERIFY_PROBES, buildSetupRequest, cxmlStatusCode, SEED_PREFIX,
+  VERIFY_PROBES, buildSetupRequest, cxmlStatusCode, cxmlHasStartPage, configPosition, SEED_PREFIX,
   PRODUCT_SPECS, PRODUCT_PLACEMENT, PRODUCT_MIN_STOCK, PRICELIST_SPECS, assignmentName, priceRows, productBody,
   STORE_FFC_SPEC, planStoreFfc, planStoreFfcRestore, diffStore, teardownProductTargets,
 } from './punchout-specs.mjs';
@@ -389,7 +392,7 @@ async function verifyBoundary(spec) {
 
 async function verifyProbes(mappingIds) {
   for (const p of VERIFY_PROBES) {
-    const cfg = CONFIG_SPECS.find((c) => c.index === p.config);
+    const cfg = CONFIG_SPECS.find((c) => configPosition(c) === p.config); // a POSITION, never a legacy alias index
     const secret = process.env[cfg.secretVar];
     if (!secret) { log(`! skip probe (no {{${cfg.secretVar}}} on ${TEST_ENV}): ${p.name}`); continue; }
     const identity = p.identity || MAPPING_SPECS.find((m) => m.alias === p.mapping)?.externalId;
@@ -399,7 +402,14 @@ async function verifyProbes(mappingIds) {
       payloadId: `agent-test-seed-${Date.now()}@agent-test`, timestamp: new Date().toISOString(), supplierUrl: `${BACK_URL}/api/punchout/cxml`,
     });
     const res = await fetch(`${BACK_URL}/api/punchout/cxml`, { method: 'POST', headers: { 'Content-Type': 'text/xml' }, body: xml });
-    const code = cxmlStatusCode(await res.text());
+    const body = await res.text();
+    const code = cxmlStatusCode(body);
+    // opensSession probes: the StartPage URL carries a token — asserted present, never logged or followed.
+    if (p.opensSession) {
+      if (code === '200' && cxmlHasStartPage(body)) ok(`probe ${p.name} [cXML 200, StartPage present — not followed]`);
+      else fail(`probe ${p.name}: got HTTP ${res.status} cXML ${code}${code === '200' ? ' without a StartPage URL' : ''}`);
+      continue;
+    }
     if (code === '200') fail(`probe OPENED A SESSION (cXML 200) — spec says it cannot: ${p.name}`);
     else if (code === p.expectCode) ok(`probe ${p.name} [cXML ${code}]`);
     else fail(`probe ${p.name}: got HTTP ${res.status} cXML ${code}`);
@@ -417,7 +427,28 @@ async function verifyStores(deployed) {
     const url = st.secureUrl || st.url;
     if (enabled === true && url) ok(`config ${idx}: store ${d.storeId} Punchout.Enabled=true, url set`);
     else fail(`config ${idx}: store ${d.storeId} Punchout.Enabled=${enabled}, url=${url || '(none)'} — cases expecting a 200 setup will fail`);
+    await verifyDefaultMethods(idx, d);
   }
+}
+
+/**
+ * Default method codes (VCST-5888): declared active ⇒ BOTH codes are active methods of the config's
+ * store; declared inactive ⇒ NEITHER code is a method of that store at all (the search also returns
+ * registered-but-unsaved methods with storeId null, so the store is matched explicitly).
+ */
+async function verifyDefaultMethods(idx, d) {
+  const pairs = [['shipping', d.defaultShipmentMethodCode], ['payment', d.defaultPaymentMethodCode]].filter(([, code]) => code);
+  if (!pairs.length) return;
+  const states = [];
+  for (const [kind, code] of pairs) {
+    const r = await api('POST', `/api/${kind}/search`, { storeId: d.storeId, codes: [code], take: 20 }, { expectStatus: [200] });
+    const hit = (r?.results || []).find((m) => m.code === code && m.storeId === d.storeId);
+    states.push({ kind, code, present: Boolean(hit), active: hit?.isActive === true });
+  }
+  const line = states.map((s) => `${s.kind} ${s.code}: ${s.present ? (s.active ? 'active' : 'INACTIVE') : 'absent'}`).join(', ');
+  const okState = d.defaultMethodsActive ? states.every((s) => s.active) : states.every((s) => !s.present);
+  if (okState) ok(`config ${idx}: default methods on ${d.storeId} as declared (${d.defaultMethodsActive ? 'active' : 'nonexistent'}) — ${line}`);
+  else fail(`config ${idx}: default methods on ${d.storeId} declared ${d.defaultMethodsActive ? 'active' : 'nonexistent'}, live: ${line}`);
 }
 
 // ── catalog fixtures: UoM product pair, punchout price lists, config-1 store FFC (VCST-5887) ──
@@ -752,13 +783,16 @@ async function main() {
   }
   const deployed = DEPLOYED_CONFIGS[TEST_ENV];
   if (deployed) {
+    // Keyed by POSITION (yml index on the current deployment). The retired PUNCHOUT_CONFIG_3 has none:
+    // position 3 now belongs to PUNCHOUT_CONFIG_DEFAULTS (vc-deploy-dev#7011).
+    const claimed = new Set();
     for (const spec of CONFIG_SPECS) {
-      const d = deployed.configs[spec.index];
-      if (spec.retired) {
-        if (d) fail(`${spec.alias} is RETIRED but DEPLOYED_CONFIGS.${TEST_ENV} still declares configuration ${spec.index}`);
-        writeback[spec.alias] = { ...retiredOverlayFields(spec), source: deployed.source };
-      } else writeback[spec.alias] = { ...configOverlayFields(spec, d), source: deployed.source };
+      if (spec.retired) { writeback[spec.alias] = { ...retiredOverlayFields(spec), source: deployed.source }; continue; }
+      const pos = configPosition(spec);
+      claimed.add(String(pos));
+      writeback[spec.alias] = { ...configOverlayFields(spec, deployed.configs[pos]), source: deployed.source };
     }
+    for (const pos of Object.keys(deployed.configs)) if (!claimed.has(pos)) fail(`DEPLOYED_CONFIGS.${TEST_ENV} declares position ${pos} but no active CONFIG_SPECS entry claims it`);
     await verifyStores(deployed);
   } else log(`! no deployed Punchout configuration declared for ${TEST_ENV} — PUNCHOUT_CONFIG_* facts resolve to "" here`);
 
@@ -778,7 +812,7 @@ async function main() {
 
   if (!VERIFY_ONLY) writeEnvAliasOverride(writeback);
   if (!DRY_RUN) {
-    log('\n  [verify] permission boundary + session-free cXML probes');
+    log('\n  [verify] permission boundary + cXML probes (session-free, except opensSession)');
     for (const spec of BACKOFFICE_SPECS) await verifyBoundary(spec);
     await verifyProbes(mappingIds);
   }

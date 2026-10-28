@@ -10,7 +10,10 @@
  *     per env through vc-deploy-dev `infra/environments.yml` (qa1: vc-deploy-dev#6693, then #6926 —
  *     Punchout PR #2 validates the options at platform START and refuses a configuration without an
  *     `Id` or a `StoreId`, so #6926 added Ids qa1-punchout-0..2 and REMOVED configuration 3; its alias
- *     stays registered as RETIRED so a case still citing it resolves to "" + a reason). There is no
+ *     stays registered as RETIRED so a case still citing it resolves to "" + a reason). vc-deploy-dev#7011
+ *     (VCST-5888) then added two B2B-store configurations at yml positions 3 and 4 — DEFAULTS and
+ *     BADCODES, which differ from configuration 0 ONLY in their default shipment/payment method codes
+ *     (see "POSITION vs INDEX" below). There is no
  *     REST endpoint that reads them back, so the deployment is the source of truth and this module
  *     records what was deployed, keyed by TEST_ENV, with its provenance. The seeder writes these
  *     facts to aliases.<env>.json ONLY for an env listed here — every other env resolves them to ""
@@ -18,7 +21,17 @@
  *     are re-probed live by `seed-punchout.mjs --verify` (VERIFY_PROBES below).
  *     The SharedSecret VALUE is never here: the alias carries the `{{VAR}}` token
  *     (`{{PUNCHOUT_SHARED_SECRET_<n>}}`), promoted by config.js from `.env.local`
- *     `PUNCHOUT_SHARED_SECRET_<n>_<TEST_ENV>`.
+ *     `PUNCHOUT_SHARED_SECRET_<n>_<TEST_ENV>` (<n> = 0..3, DEFAULTS, BADCODES).
+ *
+ *     POSITION vs INDEX — two different numbers, kept apart on purpose:
+ *       - `index` is the LEGACY alias number (PUNCHOUT_CONFIG_<index>, 0..3), frozen. The retired
+ *         PUNCHOUT_CONFIG_3 keeps index 3 = its yml position under #6693, a configuration that no longer
+ *         exists; its secret {{PUNCHOUT_SHARED_SECRET_3}} still matches nothing (cXML 401).
+ *       - `position` (configPosition()) is the yml positional index on the CURRENT deployment — the key
+ *         of DEPLOYED_CONFIGS[env].configs and of every VERIFY_PROBES `config`. 0..2 equal their index;
+ *         DEFAULTS is at position 3 and BADCODES at 4 (#7011). They carry NO index, so "configuration 3"
+ *         of a deployment and "PUNCHOUT_CONFIG_3" in a case never mean the same thing. A retired spec
+ *         has no position.
  *
  *  2. MAPPINGS — punchout user mappings (`/api/punchout-user-mappings`).
  *     - REQUISITION `AGENT-TEST-PO-300` → a DEDICATED buyer this seeder provisions (contact + Customer
@@ -67,7 +80,22 @@ export const CONFIG_SPECS = [
   { alias: 'PUNCHOUT_CONFIG_3', index: 3, secretVar: 'PUNCHOUT_SHARED_SECRET_3',
     purpose: 'RETIRED — was: no StoreId at all → cXML 500 for any identity (N16)',
     retired: 'not deployable since Punchout PR #2 (build 3.1000.0-pr-2): PunchoutOptionsValidator runs at platform start and refuses a configuration without Id/StoreId, so vc-deploy-dev#6926 removed it from vcptcore-qa1 (2026-10-14). Its secret now matches no configuration (cXML 401). The "no StoreId" scenario is a startup failure, not a cXML answer — test it as a deployment check, not with this alias.' },
+  // VCST-5888 OrderRequest default methods (vc-deploy-dev#7011). NO `index` — see "POSITION vs INDEX".
+  { alias: 'PUNCHOUT_CONFIG_DEFAULTS', position: 3, secretVar: 'PUNCHOUT_SHARED_SECRET_DEFAULTS',
+    purpose: 'same store as config 0; DefaultShipmentMethodCode + DefaultPaymentMethodCode name methods ACTIVE on that store — the OrderRequest applies them (VCST-5888 T1 methods / T4)' },
+  { alias: 'PUNCHOUT_CONFIG_BADCODES', position: 4, secretVar: 'PUNCHOUT_SHARED_SECRET_BADCODES',
+    purpose: 'same store as config 0; default method codes that match NO method of that store (VCST-5888 T17b)' },
 ];
+
+/** The yml positional index of a configuration on the current deployment; null for a retired one. */
+export const configPosition = (spec) => (spec.retired ? null : (spec.position ?? spec.index));
+
+/**
+ * SECOND RULE triad for the OrderRequest default methods (VCST-5888): three configurations of ONE store
+ * that differ in their default method codes — none (config 0, T17a), active codes (T1/T4), codes that
+ * exist nowhere (T17b). Guard [5] asserts the shared store and the three diverging code states.
+ */
+export const DEFAULT_METHODS_TRIAD = { absent: 'PUNCHOUT_CONFIG_0', valid: 'PUNCHOUT_CONFIG_DEFAULTS', invalid: 'PUNCHOUT_CONFIG_BADCODES' };
 
 /** Configurations a deployment can actually carry (the retired one is excluded everywhere it is probed). */
 export const ACTIVE_CONFIG_SPECS = CONFIG_SPECS.filter((c) => !c.retired);
@@ -78,11 +106,14 @@ export const DEFAULT_SESSION_LIFETIME = '04:00:00';
 
 /**
  * What each env actually deployed. Keyed by TEST_ENV. Only envs listed here get config facts in their
- * overlay. `storeExists` is asserted live by the seeder's --verify (GET /api/stores/{id}).
+ * overlay. Keyed by POSITION (configPosition), never by alias index. `storeExists` is asserted live by
+ * the seeder's --verify (GET /api/stores/{id}); `defaultMethodsActive` (true = both codes are ACTIVE
+ * methods of the configuration's store, false = neither exists there) by POST /api/shipping/search +
+ * /api/payment/search filtered by storeId + codes.
  */
 export const DEPLOYED_CONFIGS = {
   vcptcore_qa1: {
-    source: 'vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)',
+    source: 'vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14) + #7011 (positions 3 qa1-punchout-defaults, 4 qa1-punchout-badcodes, 2026-10-27)',
     configs: {
       0: { id: 'qa1-punchout-0', storeId: 'B2B-store', storeExists: true, senderDomain: 'NetworkId', allowedReturnUrls: ['https://punchoutcommerce.com/*'],
            tokenLifetime: '00:15:00', sessionLifetime: '04:00:00' },
@@ -90,6 +121,13 @@ export const DEPLOYED_CONFIGS = {
            tokenLifetime: '00:02:00', sessionLifetime: '00:10:00' },
       2: { id: 'qa1-punchout-2', storeId: 'AGENT-TEST-no-such-store', storeExists: false, senderDomain: '', allowedReturnUrls: [],
            tokenLifetime: '', sessionLifetime: '' },
+      // #7011: neither sets AllowedReturnUrls or lifetimes (platform defaults apply).
+      3: { id: 'qa1-punchout-defaults', storeId: 'B2B-store', storeExists: true, senderDomain: 'NetworkId', allowedReturnUrls: [],
+           tokenLifetime: '', sessionLifetime: '',
+           defaultShipmentMethodCode: 'FixedRate', defaultPaymentMethodCode: 'DefaultManualPaymentMethod', defaultMethodsActive: true },
+      4: { id: 'qa1-punchout-badcodes', storeId: 'B2B-store', storeExists: true, senderDomain: '', allowedReturnUrls: [],
+           tokenLifetime: '', sessionLifetime: '',
+           defaultShipmentMethodCode: 'AGENT-TEST-NoSuchShipping', defaultPaymentMethodCode: 'AGENT-TEST-NoSuchPayment', defaultMethodsActive: false },
     },
   },
   // vcst (vc-deploy-dev#6935) is NOT listed: as of 2026-10-22 the vcst-qa branch's backend/packages.json carries no
@@ -122,6 +160,23 @@ export function configOverlayFields(spec, deployed) {
     sessionLifetime,
     tokenLifetimeMinutes: hhmmssToMinutes(tokenLifetime),
     sessionLifetimeMinutes: hhmmssToMinutes(sessionLifetime),
+    ...defaultMethodFields(deployed),
+  };
+}
+
+/**
+ * Default-method facts (pure). `defaultMethodsDeclared` = at least one code is set; `defaultMethodsActive`
+ * is the deployment's declaration (null when no code is set), re-checked live by --verify.
+ */
+export function defaultMethodFields(deployed = {}) {
+  const ship = deployed.defaultShipmentMethodCode || '';
+  const pay = deployed.defaultPaymentMethodCode || '';
+  const declared = Boolean(ship || pay);
+  return {
+    defaultShipmentMethodCode: ship,
+    defaultPaymentMethodCode: pay,
+    defaultMethodsDeclared: declared,
+    defaultMethodsActive: declared ? Boolean(deployed.defaultMethodsActive) : null,
   };
 }
 
@@ -131,6 +186,7 @@ export function retiredOverlayFields(spec) {
     deployed: false, retired: true, retiredReason: spec.retired, configurationId: '', storeId: '', storeExists: false,
     senderDomain: '', senderDomainCheck: false, allowedReturnUrl: '', returnUrlCheck: false,
     tokenLifetime: '', sessionLifetime: '', tokenLifetimeMinutes: null, sessionLifetimeMinutes: null,
+    ...defaultMethodFields(),
   };
 }
 
@@ -258,6 +314,12 @@ export function accountBody(spec, { password, storeId, roleId }) {
 // expected outcome is decided BEFORE the success path writes nothing; config 1's own success path
 // would write a PunchoutSession row, so config 1 is verified by the cases, not here.
 // `provesMapping: true` = the probe's outcome must CHANGE if the identity were unmapped (guard [8]).
+// `config` is a POSITION (configPosition), never a legacy alias index.
+// `opensSession: true` = the deliberate exception (VCST-5888): a setup that SUCCEEDS (cXML 200 +
+// StartPage) for the dedicated REQUISITION buyer, proving the configuration is live under its secret.
+// It writes one PunchoutSession row (expires by its lifetime) and touches NO cart — the setup processor
+// neither reads nor writes carts, and the StartPage URL is never followed. Guard [8] allows it only for
+// an owned, provisioned buyer.
 
 export const FOREIGN_RETURN_URL = 'https://evil.example.com/return';
 export const ALLOWED_RETURN_URL = 'https://punchoutcommerce.com/tools/cxml-punchout-return';
@@ -275,7 +337,14 @@ export const VERIFY_PROBES = [
     config: 2, identity: 'AGENT-TEST-PO-UNMAPPED', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '401' },
   { name: 'config2 + mapped REQUISITION → 500 (dedicated buyer mapping is active and recognised)',
     config: 2, mapping: 'PUNCHOUT_MAPPING_REQUISITION', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '500', provesMapping: true },
+  { name: 'DEFAULTS (position 3) + mapped REQUISITION → 200 + StartPage (secret live; session only, no cart)',
+    config: 3, mapping: 'PUNCHOUT_MAPPING_REQUISITION', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '200', opensSession: true },
+  { name: 'BADCODES (position 4) + mapped REQUISITION → 200 + StartPage (secret live; session only, no cart)',
+    config: 4, mapping: 'PUNCHOUT_MAPPING_REQUISITION', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '200', opensSession: true },
 ];
+
+/** True when a cXML response carries a non-empty StartPage URL (pure; the URL holds a token — never log it). */
+export const cxmlHasStartPage = (xml) => /<StartPage>\s*<URL>\s*[^<\s][^<]*<\/URL>/.test(String(xml || ''));
 
 /**
  * Cart reset scope (pure): from a /api/carts/search page, the cart ids that belong to the dedicated
