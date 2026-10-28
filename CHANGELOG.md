@@ -8,6 +8,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Parallel `/qa-bug` runs no longer share scratch files — `vc-fix` `0.18.2` — 2026-10-28
+
+### Fixed
+
+- `/qa-bug` gives every run its own work folder (`$WORK`, `knowledge/execution/jira-bug-fields.md` §0) and writes
+  every Jira/Azure payload (`fields.json`, `issue.json`, `link.json`, readbacks) there by absolute path. Before, the
+  recipe named bare `fields.json` / `issue.json`, so two runs filed in parallel from one session wrote the same files
+  in the shared temp dir — observed when VCST-6594 and VCST-6595 were filed at the same minute.
+- Before each write to an existing issue, `--key` must equal `$WORK/KEY` and the payload must be this bug's; a
+  mismatch stops the run instead of sending.
+
 ## `qa-investigate` from a subagent: the caller writes `source/findings.md` — `vc-fix` `0.18.1` — 2026-10-28
 
 ### Fixed — a subagent's evidence package could not be completed without bypassing a refusal
