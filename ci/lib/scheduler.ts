@@ -68,9 +68,11 @@ export function orderLpt<T extends SuiteCapsInput & { id: string }>(suites: read
 }
 
 /**
- * Makespan of a continuous pool: assign each suite, in the given order, to whichever slot
- * is currently least loaded. Pure and side-effect free — used both by the tests and to log
- * a predicted makespan so the scheduler's model can be scored against reality later.
+ * Makespan of a continuous pool, simulated the way `runLanePool` dispatches: whenever a slot is
+ * free, it takes the first queued suite (in the given order) whose `exclusiveGroup` is not held.
+ * Pure and side-effect free — used both by the tests and to log a predicted makespan so the
+ * scheduler's model can be scored against reality later. `perSlotMinutes` is busy time, not
+ * wall-clock: a slot can sit idle while every queued suite waits on a group.
  *
  * Deliberately ignores slot affinity (deny lists / preferred browsers): it is a planning
  * model, not the dispatcher. Affinity can only make the real makespan longer, so this is a
@@ -79,21 +81,45 @@ export function orderLpt<T extends SuiteCapsInput & { id: string }>(suites: read
  * It does NOT ignore `exclusiveGroup`: the pool serialises a group, so a member starts no earlier
  * than the previous member ends. Ignoring that predicted `104,105` on 3 slots at 60 min for a run
  * that takes ~100 — exactly the plan-vs-run drift a predicted makespan exists to expose.
+ *
+ * Nor does it park a blocked member on a slot. The model used to put every suite on the
+ * least-loaded slot and idle that slot until the member's group freed, while the pool skips the
+ * member and fills the slot with other work. On `full`, once 113 made `Punchout.Enabled` a
+ * 450-min four-suite chain, that predicted 1505 min against the 1433 the pool packs (the Sum/3
+ * floor) — the same plan-vs-run drift, in the other direction.
  */
 export function simulateMakespan(
   suites: readonly (SuiteCapsInput & { exclusiveGroup?: string })[],
   concurrency: number,
 ): { makespanMinutes: number; perSlotMinutes: number[] } {
-  const slots = new Array(Math.max(1, concurrency)).fill(0) as number[];
-  const groupFreeAt = new Map<string, number>();
-  for (const suite of suites) {
-    let lightest = 0;
-    for (let i = 1; i < slots.length; i++) if (slots[i] < slots[lightest]) lightest = i;
-    const group = suite.exclusiveGroup;
-    slots[lightest] = Math.max(slots[lightest], group ? groupFreeAt.get(group) ?? 0 : 0) + minutesOf(suite);
-    if (group) groupFreeAt.set(group, slots[lightest]);
+  const slotCount = Math.max(1, concurrency);
+  const busy = new Array(slotCount).fill(0) as number[];
+  const running: Array<{ slot: number; end: number; group?: string }> = [];
+  const held = new Set<string>();
+  const queue = [...suites];
+  let now = 0;
+  let makespan = 0;
+  while (queue.length > 0) {
+    for (let i = running.length - 1; i >= 0; i--) {
+      if (running[i].end > now) continue;
+      const done = running.splice(i, 1)[0];
+      if (done.group) held.delete(done.group);
+    }
+    for (let slot = 0; slot < slotCount && queue.length > 0; slot++) {
+      if (running.some((r) => r.slot === slot)) continue;
+      const index = queue.findIndex((s) => !s.exclusiveGroup || !held.has(s.exclusiveGroup));
+      if (index === -1) break; // every queued suite waits on a group in flight
+      const suite = queue.splice(index, 1)[0];
+      const minutes = minutesOf(suite);
+      running.push({ slot, end: now + minutes, group: suite.exclusiveGroup });
+      if (suite.exclusiveGroup) held.add(suite.exclusiveGroup);
+      busy[slot] += minutes;
+      makespan = Math.max(makespan, now + minutes);
+    }
+    // Nothing running means nothing is held, so the next pass dispatches — this cannot spin.
+    if (running.length > 0) now = Math.min(...running.map((r) => r.end));
   }
-  return { makespanMinutes: Math.max(...slots), perSlotMinutes: slots };
+  return { makespanMinutes: makespan, perSlotMinutes: busy };
 }
 
 /** Makespan of the OLD fixed-batch barrier, kept so the gain is asserted, not asserted-about. */
