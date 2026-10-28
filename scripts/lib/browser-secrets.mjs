@@ -167,13 +167,14 @@ const expandVars = (s) => s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\
 /**
  * The `--secrets` file the playwright-* servers are started with: the first `--secrets` arg in the nearest
  * `.mcp.json` that declares one, from `root` upwards (a parent workspace's `.mcp.json` may declare the
- * servers). Relative paths resolve against `root`. Null when no `.mcp.json` declares one.
+ * servers). Relative paths resolve against `root`. Null when no `.mcp.json` declares one. With `lane`
+ * (e.g. `playwright-edge`), that server's own `--secrets` wins: lanes may read different files.
  */
-export function declaredSecretsFile(root) {
+export function declaredSecretsFile(root, lane) {
   for (let dir = resolve(root), prev = null; dir !== prev; prev = dir, dir = dirname(dir)) {
     let servers;
     try { servers = JSON.parse(readFileSync(join(dir, '.mcp.json'), 'utf8')).mcpServers ?? {}; } catch { continue; }
-    for (const server of Object.values(servers)) {
+    for (const server of [...(lane && servers[lane] ? [servers[lane]] : []), ...Object.values(servers)]) {
       const args = server?.args ?? [];
       const i = args.indexOf('--secrets');
       if (i !== -1 && args[i + 1]) {
