@@ -116,8 +116,9 @@ Ref `PB-n · R<k>`, the `R` of its `### Prior bugs` row.
 
 **A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
 `BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's
-rows go in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`: `FAIL <severity>` per finding, and one `PASS` row
-naming each VISUAL risk it covered without one. Never absent. **After each
+rows go in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`, the checklist's 7 cells
+(`# | Ref | Item | Proof | Data | Result | Evidence`, Data `none` when it used none): `FAIL <severity>` per finding,
+and one `PASS` row naming each VISUAL risk it covered without one. Never absent. **After each
 wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,PB-n,…][,visual][,pixel]>` (an id's last row wins, never duplicated); exit 2 ⇒
 `missing` / `refused` back to their agent once, merge those again.
 
