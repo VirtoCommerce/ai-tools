@@ -515,8 +515,8 @@ Storefront accessible at {{FRONT_URL}}; at least two supported locales available
 [DOM] Language indicator shows COLLISION_LOCALE as active","[NETWORK] GET for SUT_URL returns HTTP 200
 [CONSOLE] No TypeError or routing errors in browser console during direct navigation
 [API] GraphQL response errors[] is empty",SUT_URL shows eaten slug chars (e.g. '/de/stinations'); 404 page shown; different category displayed compared to control nav; console TypeError on load,Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage,VCST-5144;VCST-5144 residual | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
-L10N-ROUTE-003,Cross-Locale Explicit Deep-Link Does Not Stack Prefixes — Incoming /{locale}/ Switches Active Locale Instead of Prepending,Localization > Routing > Cross-Locale Deep Link,High,PROPOSED-BL-L10N-001,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes available (e.g. de and en or en-US); four route types accessible: home, a PDP, a category listing, and search",url={{FRONT_URL}};active_locale=de;incoming_locale=en,"[NOTE] --- SETUP: establish a non-default active locale ---
+"L10N-ROUTE-003","Cross-Locale Explicit Deep-Link Does Not Stack Prefixes — Incoming /{locale}/ Switches Active Locale Instead of Prepending","Localization > Routing > Cross-Locale Deep Link","High","PROPOSED-BL-L10N-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes available (de and en-US — a bare /en/ is not a locale prefix, KB-E9471929); four route types accessible: home, a PDP, a category listing, and search","url={{FRONT_URL}};active_locale=de;incoming_locale=en-US","[NOTE] --- SETUP: establish a non-default active locale ---
 [ACT] Open language switcher in the header or footer
 [ACT] Click the language switcher to open the locale list
 [WAIT] Locale list is open
@@ -524,12 +524,12 @@ Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes avail
 [WAIT] Page reloads; language indicator shows 'de' / 'Deutsch'
 [ASSERT] Verify active locale is now de (language indicator confirms)
 [NOTE] --- SUB-FLOW A: explicit /{incoming_locale}/ home deep link ---
-[NAV] Navigate directly to {{FRONT_URL}}/en/ in the address bar
+[NAV] Navigate directly to {{FRONT_URL}}/en-US/ in the address bar
 [WAIT] Page loads; wait for main content to settle
 [ASSERT] Capture URL as URL_A and page heading/language-indicator as LOCALE_A
-[ASSERT] Verify URL_A does NOT contain '/de/en/' (prefix-stack pattern)
+[ASSERT] Verify URL_A does NOT contain '/de/en-US/' (prefix-stack pattern)
 [ASSERT] Verify page is not a 404
-[ASSERT] Verify language indicator shows 'en' or English as the now-active locale (locale switched, not stacked)
+[ASSERT] Verify language indicator shows 'English (United States)' as the now-active locale (locale switched, not stacked)
 [NOTE] --- SUB-FLOW B: explicit /{incoming_locale}/ + category deep link ---
 [NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Category page loads
@@ -537,24 +537,24 @@ Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes avail
 [WAIT] Category page loads; URL settles
 [ACT] Capture the slug portion of the URL (the path after the locale prefix, e.g. '/accessories') as CAT_SLUG
 [NAV] Set active locale back to de: open language switcher → select Deutsch → wait for reload
-[NAV] Navigate directly to {{FRONT_URL}}/en/<CAT_SLUG> in the address bar (explicit en prefix)
+[NAV] Navigate directly to {{FRONT_URL}}/en-US/<CAT_SLUG> in the address bar (explicit en-US prefix)
 [WAIT] Page loads; wait for heading or error state to settle
 [ASSERT] Capture URL as URL_B
-[ASSERT] Verify URL_B does NOT contain '/de/en/' (prefix-stack pattern)
+[ASSERT] Verify URL_B does NOT contain '/de/en-US/' (prefix-stack pattern)
 [ASSERT] Verify page is not a 404
-[ASSERT] Verify language indicator shows 'en' or English (locale switched to en, not stacked)
+[ASSERT] Verify language indicator shows 'English (United States)' (locale switched to en-US, not stacked)
 [NOTE] --- SUB-FLOW C: explicit /{incoming_locale}/ + search query deep link ---
 [NAV] Set active locale back to de: open language switcher → select Deutsch → wait for reload
-[NAV] Navigate directly to {{FRONT_URL}}/en/search?q=laptop in the address bar
+[NAV] Navigate directly to {{FRONT_URL}}/en-US/search?q=laptop in the address bar
 [WAIT] Page loads; wait for search results heading to settle
 [ASSERT] Capture URL as URL_C
-[ASSERT] Verify URL_C does NOT contain '/de/en/' prefix-stack pattern
+[ASSERT] Verify URL_C does NOT contain '/de/en-US/' prefix-stack pattern
 [ASSERT] Verify page is not a 404
-[ASSERT] Verify language indicator shows 'en' or English as active locale","[NAV] None of URL_A, URL_B, URL_C contain a double-prefix stacking pattern (e.g. '/de/en/', '/fr/de/', or any /{localeA}/{localeB}/ pattern)
+[ASSERT] Verify language indicator shows 'English (United States)' as active locale","[NAV] None of URL_A, URL_B, URL_C contain a double-prefix stacking pattern (e.g. '/de/en-US/', '/fr/de/', or any /{localeA}/{localeB}/ pattern)
 [DOM] Pages for sub-flows A, B, and C render valid content — not a 404 for any sub-flow
-[DOM] Language indicator shows the incoming locale ('en') as active after each explicit deep-link navigation — confirming locale switch occurred rather than stacking
+[DOM] Language indicator shows the incoming locale ('English (United States)', en-US) as active after each explicit deep-link navigation — confirming locale switch occurred rather than stacking
 [STATE] Active locale changed to the incoming locale on all three sub-flows","[NETWORK] HTTP responses for URL_A, URL_B, URL_C are all HTTP 200
-[CONSOLE] No TypeError or routing errors in browser console during any of the three sub-flow navigations",URL contains double-prefix stacking (e.g. '/de/en/'); 404 page shown on any sub-flow; language indicator still shows 'de' after navigating to an explicit '/en/' URL (no switch occurred); console TypeError on any sub-flow load,Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage to restore default locale,VCST-5144;VCST-5144 residual,Draft
+[CONSOLE] No TypeError or routing errors in browser console during any of the three sub-flow navigations","URL contains double-prefix stacking (e.g. '/de/en-US/'); 404 page shown on any sub-flow; language indicator still shows 'de' after navigating to an explicit '/en-US/' URL (no switch occurred); console TypeError on any sub-flow load","Open language switcher and select English (en-US) or en-GB; navigate to {{FRONT_URL}} homepage to restore default locale","VCST-5144;VCST-5144 residual; Re-aligned 2026-10-28 (REG-2026-10-28-1013 triage): a bare /en/ is not a locale prefix, en-US is (KB-E9471929)","Draft"
 L10N-ROUTE-004,"Post-Prefix Boundary Fuzz — Trailing Slash, Percent-Encoded Slash, Fragment, and Double Slash After Locale Prefix Are Handled Gracefully",Localization > Routing > Boundary Chars,Medium,PROPOSED-BL-L10N-001,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Storefront accessible at {{FRONT_URL}}; DE locale is available; a valid category slug is resolvable at runtime",url={{FRONT_URL}};test_locale=de,"[NOTE] --- SETUP: capture a valid category slug ---
 [NAV] Navigate to {{FRONT_URL}}/catalog
