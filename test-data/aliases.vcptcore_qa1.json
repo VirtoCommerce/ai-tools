@@ -866,12 +866,12 @@
     "config_id": "bb89c11b-783b-4fcc-9907-ed87f91ebc7f"
   },
   "PUNCHOUT_MAPPING_SECOND": {
-    "id": "f8c6ab17-17d6-46c9-80c1-4a6563aefdf6",
-    "userId": "33fe0afe-8639-4277-91d1-ee8a2d831fad",
-    "memberId": "78e5570d-bcb0-4f98-8088-172ca30d332d",
-    "currentOrganizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
+    "id": "",
+    "userId": "",
+    "memberId": "",
+    "currentOrganizationId": "",
     "otherOrganizationId": "",
-    "organizationCount": 1,
-    "organizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78"
+    "organizationCount": 0,
+    "organizationId": ""
   }
 }

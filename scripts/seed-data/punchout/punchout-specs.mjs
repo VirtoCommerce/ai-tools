@@ -236,6 +236,8 @@ export const MAPPING_SPECS = [
       scope: 'second',
       // No cart at all after a reset: the cases create the cart they need ("no pre-existing carts").
       mintDefaultCart: false,
+      // PNCO-052 Setup renews it and a renew writes the runtime ids back empty — an empty overlay id is normal.
+      renewedByCases: true,
     } },
 ];
 
@@ -368,9 +370,8 @@ export const VERIFY_PROBES = [
     config: 4, mapping: 'PUNCHOUT_MAPPING_REQUISITION', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '200', opensSession: true },
   { name: 'config2 + mapped SECOND → 500 (second buyer mapping is active and recognised)',
     config: 2, mapping: 'PUNCHOUT_MAPPING_SECOND', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '500', provesMapping: true },
-  // An Active session only — never Returned — so it cannot give PNCO-052's buyer a requisition.
-  { name: 'config0 + mapped SECOND → 200 + StartPage (setup on config 0 starts a session; no cart, never returned)',
-    config: 0, mapping: 'PUNCHOUT_MAPPING_SECOND', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '200', opensSession: true },
+  // No opensSession probe for SECOND: every verify would add an Active session to a buyer whose cases
+  // (PNCO-050/052) start their own; the config-2 probe proves the mapping, ensureBuyer the sign-in.
 ];
 
 /** True when a cXML response carries a non-empty StartPage URL (pure; the URL holds a token — never log it). */

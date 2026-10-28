@@ -277,6 +277,7 @@ for (const env of Object.keys(DEPLOYED_CONFIGS)) {
   }
   for (const m of MAPPING_SPECS) {
     const o = ov[m.alias] || {};
+    if (!o.id && m.buyer?.renewedByCases) continue; // empty after every --renew by design; cases read the id from xAPI `me`
     if (!o.id) { note(`${env}: ${m.alias} not provisioned (empty id) — seed it before the cases run`); continue; }
     for (const f of ['id', 'userId', 'memberId']) if (!GUID_RE.test(o[f] || '')) fail(`${env} overlay ${m.alias}.${f} is not a GUID`);
     if (m.maxOrganizations && !(o.organizationCount >= 1 && o.organizationCount <= m.maxOrganizations)) fail(`${env} overlay ${m.alias}.organizationCount=${o.organizationCount} outside 1..${m.maxOrganizations}`);

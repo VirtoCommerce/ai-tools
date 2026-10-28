@@ -184,7 +184,7 @@ async function ensureCategory(catalogId, name, code) {
   // legacy SEED-20260518-Configurables "Configurable Parents" category, so a fresh catalog's products
   // were placed in another catalog's category.
   const r = await api('POST', '/api/catalog/listentries', { catalogId, keyword: name, take: 20 }, { expectStatus: [200, 201, 400, 404] });
-  const found = (r?.listEntries || r?.results || []).find(c => c.name === name && c.type === 'category' && (!c.catalogId || c.catalogId === catalogId));
+  const found = (r?.listEntries || r?.results || []).find(c => c.name === name && c.type === 'category' && c.catalogId === catalogId);
   if (found) { await applyCategorySeo(found.id, seo); log(`↻ category: ${name} (${found.id})`); return { id: found.id, name }; }
   const cat = await api('POST', '/api/catalog/categories', {
     catalogId, name, code, isActive: true, priority: 1,

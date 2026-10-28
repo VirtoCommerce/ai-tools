@@ -2671,7 +2671,7 @@ auth: PW_TOKEN
 [EVIDENCE] author, VCST-5888 comment 112459 (N3/N4): refusal, message and no-order of this case {SPEC}
 [REL] the default cart read after (cart1) == the one read before (cart0): same line ids, SKUs, quantities and selectedForCheckout, purchaseOrderNumber empty, no shipment, no payment {HYPOTHESIS} a rejection that happens before the cart is touched leaves it as it was (the order of operations the code follows, Test Model 1c §3.2); it becomes {SPEC} once the author states it with S28","[NETWORK] the cXML endpoint answers HTTP 200 to every request (the result is the Status element); no 5xx on /graphql, /connect/token or /api/order/customerOrders/search
 [API] errors[] is empty in every GraphQL operation this case issues",an order created against an Active session; cXML Status 200; the message blames a line or a cart instead of the missing requisition; the buyer cart changed by a refused order,run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) so the dedicated buyer is left with only an empty `default` cart,VCST-5888 · S50 · Archetype:SCOPE · Technique:EG · Catches:VCST-5888 · Targets:SCOPE order placed against a requisition the ERP never received | Promoted: REG-2026-10-28-1049 (2026-10-28),Automated
-PNCO-050,"OrderRequest — an aux naming ANOTHER buyer's Returned session answers 400 ""No punchout requisition was returned"" and creates no order for either buyer",Punchout > OrderRequest,High,,,"Two mapped buyers on configuration 0: the dedicated punchout buyer R (the order is sent as R) and the dedicated second buyer O (`@td(PUNCHOUT_MAPPING_SECOND.externalId)`, same org and store, a different user; it owns no persona cart). O's session is Returned (O's cart: plain ×1), so its session id exists in a Returned requisition; R's own cart (plain ×1) holds a valid line. The ERP sends R's sender identity with R's line id and SKU but the session id of O's requisition. O's carts are reset by `npm run seed:punchout:second:reset-carts` (no cart is left), so there is no data gate. O ends this case with a Returned session: PNCO-052 must not run after this case without the renew in its own Setup. Oracle: PR #6 round-2 source (the session must belong to the mapped user), HYPOTHESIS until the author confirms.","back={{BACK_URL}}, buyer=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password), buyerUser=@td(PUNCHOUT_MAPPING_REQUISITION.userId), secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), store0=@td(PUNCHOUT_CONFIG_0.storeId), pA=@td(PUNCHOUT_PRODUCT_PLAIN.id), skuA=@td(PUNCHOUT_PRODUCT_PLAIN.sku), pB=@td(PUNCHOUT_PRODUCT_UOM.id), skuB=@td(PUNCHOUT_PRODUCT_UOM.sku), emailO=@td(PUNCHOUT_MAPPING_SECOND.persona_email), passO=@td(PUNCHOUT_MAPPING_SECOND.persona_password), otherUser=@td(PUNCHOUT_MAPPING_SECOND.userId), buyerO=@td(PUNCHOUT_MAPPING_SECOND.externalId)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) so the dedicated buyer holds exactly one empty `default` cart
+PNCO-050,"OrderRequest — an aux naming ANOTHER buyer's Returned session answers 400 ""No punchout requisition was returned"" and creates no order for either buyer",Punchout > OrderRequest,High,,,"Two mapped buyers on configuration 0: the dedicated punchout buyer R (the order is sent as R) and the dedicated second buyer O (`@td(PUNCHOUT_MAPPING_SECOND.externalId)`, same org and store, a different user; it owns no persona cart). O's session is Returned (O's cart: plain ×1), so its session id exists in a Returned requisition; R's own cart (plain ×1) holds a valid line. The ERP sends R's sender identity with R's line id and SKU but the session id of O's requisition. O's carts are reset by `npm run seed:punchout:second:reset-carts` (no cart is left), so there is no data gate. O ends this case with a Returned session: PNCO-052 must not run after this case without the renew in its own Setup. Oracle: PR #6 round-2 source (the session must belong to the mapped user), HYPOTHESIS until the author confirms.","back={{BACK_URL}}, buyer=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password), buyerUser=@td(PUNCHOUT_MAPPING_REQUISITION.userId), secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), store0=@td(PUNCHOUT_CONFIG_0.storeId), pA=@td(PUNCHOUT_PRODUCT_PLAIN.id), skuA=@td(PUNCHOUT_PRODUCT_PLAIN.sku), pB=@td(PUNCHOUT_PRODUCT_UOM.id), skuB=@td(PUNCHOUT_PRODUCT_UOM.sku), emailO=@td(PUNCHOUT_MAPPING_SECOND.persona_email), passO=@td(PUNCHOUT_MAPPING_SECOND.persona_password), buyerO=@td(PUNCHOUT_MAPPING_SECOND.externalId)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) so the dedicated buyer holds exactly one empty `default` cart
 [AUTH] password grant for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] the access token → PW_TOKEN
 [SETUP] random-data: a unique `AGENT-TEST-` orderID → PO_1; another → PO_2; a unique `AGENT-TEST-` payloadID → PAYLOAD_1; another → PAYLOAD_2 (a request that is meant to repeat an id says so; none is reused across cases)
 [GQL-OP add1]
@@ -2686,10 +2686,15 @@ auth: PW_TOKEN
 [GQL-EXEC cart0]
 --- LAYER: the second buyer O returns a requisition ---
 [AUTH] password grant for {{emailO}} / {{passO}} (the second mapped persona); [CAPTURE] the access token → PW_TOKEN_O
+[GQL-OP meO]
+query Me { me { id } }
+auth: PW_TOKEN_O
+[GQL-EXEC meO]
+[GQL-CAPTURE meO.data.me.id → OTHER_USER] (the user id the token was minted for — never @td: Test_Data is resolved before Setup runs)
 [SETUP] run `npm run seed:punchout:second:reset-carts` (TEST_ENV=<env>) so the second buyer owns no `default` cart (the reset leaves no cart); the dedicated buyer owns no persona cart, so there is no data gate
 [GQL-OP addO]
 mutation AddItem($command: InputAddItemType!) { addItem(command: $command) { id itemsCount items { id sku quantity } } }
-variables: { ""command"": { ""storeId"": ""{{store0}}"", ""userId"": ""{{otherUser}}"", ""productId"": ""{{pA}}"", ""quantity"": 1, ""currencyCode"": ""USD"", ""cultureName"": ""en-US"" } }
+variables: { ""command"": { ""storeId"": ""{{store0}}"", ""userId"": ""{{OTHER_USER}}"", ""productId"": ""{{pA}}"", ""quantity"": 1, ""currencyCode"": ""USD"", ""cultureName"": ""en-US"" } }
 auth: PW_TOKEN_O
 [GQL-EXEC addO]
 [CAPTURE] the cart id of data.addItem in addO → OTHER_CART_ID
@@ -2734,8 +2739,9 @@ auth: PW_TOKEN
 [REST-OP ordO]
 POST {{back}}/api/order/customerOrders/search
 Content-Type: application/json
-Body: {""customerId"":""{{otherUser}}"",""take"":100,""sort"":""createdDate:desc"",""responseGroup"":""Full""}
-[REST-EXEC ordO]","[ERRORS label=wrong] HTTP 200 {SPEC}
+Body: {""customerId"":""{{OTHER_USER}}"",""take"":100,""sort"":""createdDate:desc"",""responseGroup"":""Full""}
+[REST-EXEC ordO]","[DATA label=meO] data.me.id matches /.+/ {OBSERVED}
+[ERRORS label=wrong] HTTP 200 {SPEC}
 [DATA label=wrong] body matches /Status[^>]*code=""400""/ {SPEC}
 [DATA label=wrong] body matches /No punchout requisition was returned for the order\./ {SPEC}
 [COUNT label=ord] body.results[*?purchaseOrderNumber={{PO_1}}].length = 0 {SPEC}
@@ -2819,18 +2825,23 @@ auth: PW_TOKEN
 [EVIDENCE] note on the assertion above: author decision 2026-10-28: the ERP addresses do not stay on the cart {SPEC}
 [EVIDENCE] the Status code and text of the second answer (second.body) and whether a customer order exists for {{PO_2}} are RECORDED {HYPOTHESIS} with the cart cleared the remaining requisition line has no cart line to match (""The order items do not match any cart."" expected); the author states whether a requisition may be ordered in several purchase orders","[NETWORK] the cXML endpoint answers HTTP 200 to every request (the result is the Status element); no 5xx on /graphql, /connect/token or /api/order/customerOrders/search
 [API] errors[] is empty in every GraphQL operation this case issues","an unordered line, any item or an address left on the buyer cart after a successful order; the first order holding both lines; a 500 on the second order",run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) so the dedicated buyer is left with only an empty `default` cart,VCST-5888 · S51 · Archetype:LIFECYCLE · Technique:EG · Catches:VCST-5888 · Targets:LIFECYCLE cart not cleared completely after a partial order (author decision 2026-10-28),Draft
-PNCO-052,"OrderRequest — a mapped buyer with no Returned punchout session answers 400 ""No punchout requisition was returned for the order."" and creates no order",Punchout > OrderRequest,High,,,"The dedicated second buyer (`@td(PUNCHOUT_MAPPING_SECOND.externalId)`, same org and store as the requisition buyer, a different user) on configuration 0, holding one plain line in a `default` cart created by this case, sending an OrderRequest with a bare line id while no session of this user ever returned a requisition. Oracle: the author answer in VCST-5888 comment 112459 (N1: a user with no returned punchout gets 400 ""No punchout requisition was returned for the order.""). Data: a Returned session cannot be listed or deleted, so Setup runs `npm run seed:punchout:second:renew`, which recreates the user (new userId, same externalId and email); `userId` is read only after it. This case must not run after PNCO-050 without that renew (it is in Setup). With the renew an answer 200 is a real FAIL.","back={{BACK_URL}}, secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), store0=@td(PUNCHOUT_CONFIG_0.storeId), pA=@td(PUNCHOUT_PRODUCT_PLAIN.id), buyer=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), emailO=@td(PUNCHOUT_MAPPING_SECOND.persona_email), passO=@td(PUNCHOUT_MAPPING_SECOND.persona_password), otherUser=@td(PUNCHOUT_MAPPING_SECOND.userId), buyerO=@td(PUNCHOUT_MAPPING_SECOND.externalId)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) so the dedicated buyer holds exactly one empty `default` cart
-[SETUP] run `npm run seed:punchout:second:renew` (TEST_ENV=<env>): the second buyer is recreated (new userId, same externalId and email), so no session of this user ever returned a requisition; read `@td(PUNCHOUT_MAPPING_SECOND.userId)` only after it, never before
+PNCO-052,"OrderRequest — a mapped buyer with no Returned punchout session answers 400 ""No punchout requisition was returned for the order."" and creates no order",Punchout > OrderRequest,High,,,"The dedicated second buyer (`@td(PUNCHOUT_MAPPING_SECOND.externalId)`, same org and store as the requisition buyer, a different user) on configuration 0, holding one plain line in a `default` cart created by this case, sending an OrderRequest with a bare line id while no session of this user ever returned a requisition. Oracle: the author answer in VCST-5888 comment 112459 (N1: a user with no returned punchout gets 400 ""No punchout requisition was returned for the order.""). Data: a Returned session cannot be listed or deleted, so Setup runs `npm run seed:punchout:second:renew`, which recreates the user (new userId, same externalId and email); the user id is read from xAPI `me` after it (Test_Data is resolved before Setup, so an @td userId would be the deleted user's). This case must not run after PNCO-050 without that renew (it is in Setup). With the renew an answer 200 is a real FAIL.","back={{BACK_URL}}, secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), store0=@td(PUNCHOUT_CONFIG_0.storeId), pA=@td(PUNCHOUT_PRODUCT_PLAIN.id), buyer=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), emailO=@td(PUNCHOUT_MAPPING_SECOND.persona_email), passO=@td(PUNCHOUT_MAPPING_SECOND.persona_password), buyerO=@td(PUNCHOUT_MAPPING_SECOND.externalId)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) so the dedicated buyer holds exactly one empty `default` cart
+[SETUP] run `npm run seed:punchout:second:renew` (TEST_ENV=<env>): the second buyer is recreated (new userId, same externalId and email), so no session of this user ever returned a requisition; the new user id is read below from xAPI `me` with the buyer's own token, never from @td
 [SETUP] random-data: a unique `AGENT-TEST-` orderID → PO_1; a unique `AGENT-TEST-` payloadID → PAYLOAD_1
 [AUTH] password grant for {{emailO}} / {{passO}} (the second mapped persona); [CAPTURE] the access token → PW_TOKEN_O
+[GQL-OP meO]
+query Me { me { id } }
+auth: PW_TOKEN_O
+[GQL-EXEC meO]
+[GQL-CAPTURE meO.data.me.id → OTHER_USER] (the user id the token was minted for — never @td: Test_Data is resolved before Setup runs)
 [GQL-OP addO]
 mutation AddItem($command: InputAddItemType!) { addItem(command: $command) { id itemsCount items { id sku quantity } } }
-variables: { ""command"": { ""storeId"": ""{{store0}}"", ""userId"": ""{{otherUser}}"", ""productId"": ""{{pA}}"", ""quantity"": 1, ""currencyCode"": ""USD"", ""cultureName"": ""en-US"" } }
+variables: { ""command"": { ""storeId"": ""{{store0}}"", ""userId"": ""{{OTHER_USER}}"", ""productId"": ""{{pA}}"", ""quantity"": 1, ""currencyCode"": ""USD"", ""cultureName"": ""en-US"" } }
 auth: PW_TOKEN_O
 [GQL-EXEC addO]
 [GQL-OP cartO]
 query Cart($storeId: String!, $currencyCode: String!, $userId: String) { cart(storeId: $storeId, currencyCode: $currencyCode, cartName: ""default"", userId: $userId) { id items { id sku quantity } } }
-variables: { ""storeId"": ""{{store0}}"", ""currencyCode"": ""USD"", ""userId"": ""{{otherUser}}"" }
+variables: { ""storeId"": ""{{store0}}"", ""currencyCode"": ""USD"", ""userId"": ""{{OTHER_USER}}"" }
 auth: PW_TOKEN_O
 [GQL-EXEC cartO]
 [CAPTURE] from cartO the cart id → OTHER_CART_ID; the single line's id → LINE_O; SKU → SKU_O; quantity → QTY_O; and the line's placed price read through xAPI `cart` (auth PW_TOKEN_O) → PRICE_O
@@ -2844,8 +2855,9 @@ Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""{{PAYLOAD_1}}"
 [REST-OP ordO]
 POST {{back}}/api/order/customerOrders/search
 Content-Type: application/json
-Body: {""customerId"":""{{otherUser}}"",""take"":100,""sort"":""createdDate:desc"",""responseGroup"":""Full""}
-[REST-EXEC ordO]","[ERRORS label=wrong] HTTP 200 {SPEC}
+Body: {""customerId"":""{{OTHER_USER}}"",""take"":100,""sort"":""createdDate:desc"",""responseGroup"":""Full""}
+[REST-EXEC ordO]","[DATA label=meO] data.me.id matches /.+/ {OBSERVED}
+[ERRORS label=wrong] HTTP 200 {SPEC}
 [DATA label=wrong] body matches /Status[^>]*code=""400""/ {SPEC}
 [DATA label=wrong] body matches /No punchout requisition was returned for the order\./ {SPEC}
 [EVIDENCE] note on the three assertions above: author answer in VCST-5888 comment 112459 (N1) {SPEC}
