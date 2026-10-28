@@ -1,6 +1,6 @@
 ---
 description: "Run any regression: a one-off selection (smoke, critical, full, suite ids), or one wave of a sprint or stable-bundle regression that several QA run in parallel (claim → known ground → run → triage into the ledger → PR). After every run it triages the failures automatically, and after triage ALWAYS asks whether to put the result in GitHub. Plans come from /qa-test-plan. The successor of /qa-regression, built to move into a plugin."
-argument-hint: "smoke | critical | full | <ids> | sprint:<XX-YY> <wave> | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | sprint:<XX-YY> status | stable:<N> status [--cases <tier>] [--seed=…] [--teardown] [--run-blocked]"
+argument-hint: "smoke | critical | full | <ids> | sprint:<XX-YY> <wave> | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | sprint:<XX-YY> status | stable:<N> status | <release> all [--continue] [--cases <tier>] [--seed=…] [--teardown] [--run-blocked]"
 disable-model-invocation: true
 ---
 
@@ -16,6 +16,7 @@ then the file the argument needs, **whole**.
 /qa-run 042,078 --cases critical         # one-off: these suites, Critical cases only
 /qa-run sprint:26-20 status              # who holds which wave of the sprint regression (/qa-test-plan 26-20 writes the plan)
 /qa-run sprint:26-20 W2 --claim          # claim one wave of it and run it
+/qa-run sprint:26-20 all                 # run every free wave yourself: W0, then the rest as one run, then WX
 /qa-run stable:17 status                 # who holds which wave of Stable 17 (/qa-test-plan stable 17 writes the plan)
 /qa-run stable:17 W3 --claim             # claim one wave and run it
 /qa-run stable:17 W3 --continue          # pick up a wave someone handed over
@@ -29,7 +30,7 @@ recorded BLOCKED with that reason and **not run** — no browser slot, no model 
 | Argument | Read | Then |
 |---|---|---|
 | a selection group, suite ids | [`run.md`](../skills/qa-run/run.md) | run → triage (automatic) → **ask: GitHub?** |
-| `stable:<N> <wave> [flag]`, `stable:<N> status`, `sprint:<XX-YY> <wave> [flag]`, `sprint:<XX-YY> status` | [`run.md`](../skills/qa-run/run.md) + [`waves.md`](../skills/qa-run/waves.md) | claim → pre-flight → known ground → run → triage into the ledger (automatic) → **ask: file bugs?** → **ask: GitHub?** |
+| `stable:<N> <wave> [flag]`, `stable:<N> status`, `sprint:<XX-YY> <wave> [flag]`, `sprint:<XX-YY> status`, `<release> all [--continue]` | [`run.md`](../skills/qa-run/run.md) + [`waves.md`](../skills/qa-run/waves.md) | claim → pre-flight → known ground → run → triage into the ledger (automatic) → **ask: file bugs?** → **ask: GitHub?** |
 | bare `stable:<N>`; bare `sprint` / `sprint:<XX-YY>` whose plan has a release folder | — | refuse; show `npm run release:status -- <release>` (a release runs wave by wave) |
 | bare `sprint` / `sprint:<XX-YY>` whose plan has no release folder (planned with `--no-waves`, or before sprint plans had waves) | [`run.md`](../skills/qa-run/run.md) | the whole plan as one run → triage → **ask: GitHub?** |
 

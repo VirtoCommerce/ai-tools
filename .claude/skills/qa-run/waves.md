@@ -22,6 +22,8 @@ claim protocol (§8). This file is the procedure; that file is the contract.
 /qa-run stable:16 W4 --publish      # put the wave in GitHub
 /qa-run stable:16 W4 --handover     # stop here, leave it for someone else
 /qa-run sprint:26-20 W2 --claim     # the same for a wave of a sprint regression
+/qa-run sprint:26-20 all            # one owner runs every free wave: W0, then the rest as one run, then WX
+/qa-run sprint:26-20 all --continue # pick that up where it stopped
 ```
 
 **Where each entry point starts.** A flag never skips a step: triage (Step 4) starts, and the GitHub question (Step 7)
@@ -220,6 +222,30 @@ where any repair lives, which must be a pushed branch — and go to Step 7 so it
 (on the user's yes): an assigned sub-task is a live claim, and `--continue` will not take it. The next owner runs
 `/qa-run <rel> <wave> --continue`, which claims through Step 1 and records the handover in `handovers`; the wave id
 stays.
+
+## `all` — one owner runs every free wave
+
+For when one person runs the whole release. Same steps, same records, but asked once and run as one:
+
+1. **Ask once, at the start:** claim every free wave (`NOT_STARTED`, sub-task unassigned) for the user — assign each
+   sub-task, comment the claim — **and** push each wave's record to one branch (`claude/qa-release/<release>-all`) as
+   soon as that wave closes. One yes covers both; on a *no*, run the waves one by one instead. A wave someone else holds
+   stays theirs and is left out.
+2. **W0 alone, first** (Steps 0–5 as for any wave). A red smoke gate stops everything — the one stop of this mode.
+3. **The other claimed waves as ONE run** — Steps 0 and 2 for each wave (pre-flight over the union of their suites,
+   known ground per wave), then Step 3 once with the union of their suite ids and all priorities: three browser slots
+   kept busy across waves finish sooner than the waves back to back. Every suite is in exactly one wave, so the run splits
+   back by suite: `npm run release:split -- <release> --run-id <RUN_ID> --write` writes each wave's `runIds`, `totals`,
+   `notRun` and `untriaged` (never counted by hand).
+4. **A wave closes the moment its last suite finishes** — run `release:split` then, triage the wave (Step 5) and push
+   its record (Step 7 items 1 and 3, no PR yet), while the run goes on for the others. A session that dies mid-run
+   loses nothing that closed.
+5. **WX alone, last.**
+6. **Asked once, at the end:** which `DRAFT` bugs to file (Step 6, all waves together), then one PR with every wave and
+   the wave reports in the tracker (`release:report --wave <W> --post` per wave).
+
+`all --continue` resumes: closed waves stay closed; the waves still open run again as one run over the suites the
+previous run did not finish (`notRun`), and `release:split` ADDS that run's totals to theirs.
 
 ## Rules
 
