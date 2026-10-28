@@ -15,6 +15,8 @@
  *   - otherwise → `RUNNING` only; the run id and the totals go in together once the wave is complete.
  * `--final` (after `regression:close`): the run is over, so a suite left with PENDING cases is finished too and those
  * cases go to `notRun` — without it, a run cut short would keep its waves RUNNING for ever.
+ * `--final --waves W1,W2,…`: the waves of the shared run whose suites never started (no results at all) are closed too,
+ * every suite in `notRun` — so an owner who stops mid-`all` leaves no wave stuck in RUNNING for the next owner.
  * A wave that already has OTHER run ids (a `--continue` that ran only what was left) gets this run's totals ADDED;
  * a run id already recorded next to others is refused, so a second split cannot count a run twice.
  *
@@ -41,11 +43,14 @@ function fail(msg: string, code = 1): never {
 }
 
 const argv = process.argv.slice(2);
-const release = argv.find((a) => !a.startsWith("--") && argv[argv.indexOf(a) - 1] !== "--run-id");
+const release = argv.find((a, i) => !a.startsWith("--") && !["--run-id", "--waves"].includes(argv[i - 1]));
 const runId = argv[argv.indexOf("--run-id") + 1];
 const write = argv.includes("--write");
 const final = argv.includes("--final");
-if (!release || argv.indexOf("--run-id") < 0 || !runId) fail("usage: release:split -- <release> --run-id <RUN_ID> [--final] [--write]");
+const wavesArg = argv.indexOf("--waves") >= 0 ? argv[argv.indexOf("--waves") + 1] ?? "" : "";
+const closeEmpty = new Set(wavesArg.split(",").map((w) => w.trim()).filter(Boolean));
+if (!release || argv.indexOf("--run-id") < 0 || !runId) fail("usage: release:split -- <release> --run-id <RUN_ID> [--final [--waves W1,W2,…]] [--write]");
+if (closeEmpty.size && !final) fail("--waves closes waves the run never reached, so it needs --final");
 
 const relDir = join(REPO_ROOT, "regression/releases", release);
 const runDir = join(REPO_ROOT, "reports/regression", runId);
@@ -57,6 +62,8 @@ const suites = new Map(loadAllSuites(runDir).map((s) => [s.suiteId, s]));
 if (suites.size === 0) fail(`no suite results in reports/regression/${runId}/`, 2);
 
 // Every suite of the run must map to exactly one wave, or its cases would be counted twice (or nowhere).
+const unknownWaves = [...closeEmpty].filter((id) => !plan.waves.some((w) => w.id === id));
+if (unknownWaves.length) fail(`--waves names wave(s) ${unknownWaves.join(", ")} that ${release} does not have`);
 const owner = new Map<string, string[]>();
 for (const w of plan.waves) for (const s of w.suites) owner.set(s, [...(owner.get(s) ?? []), w.id]);
 const shared = [...suites.keys()].filter((s) => (owner.get(s) ?? []).length > 1);
@@ -96,7 +103,7 @@ const rows: string[] = [];
 let refused = false;
 for (const w of plan.waves) {
   const inRun = w.suites.filter((s) => suites.has(s));
-  if (!inRun.length) continue;
+  if (!inRun.length && !closeEmpty.has(w.id)) continue;
   const runSuites = inRun.map((s) => suites.get(s)!);
   // --final: the run is closed, so a suite with PENDING cases will not get them — it is finished, and those
   // cases go to notRun. Without it, such a suite is still running.

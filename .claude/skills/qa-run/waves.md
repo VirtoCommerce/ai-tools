@@ -37,7 +37,7 @@ is asked, whenever the wave reaches them, whatever flag brought it there.
 | `RUN_DONE` with `untriaged > 0` (FAIL or BLOCKED cases without a ledger row) — with no flag, `--triage`, `--publish` or `--handover` | **Step 4** (triage runs first) |
 | `RUN_DONE` with `untriaged = 0`, or `TRIAGED` | Step 6 |
 | `--handover` on `CLAIMED` (nothing ran) | Step 8 |
-| `all`, `all --continue` | [§`all`](#all--one-owner-runs-every-free-wave) |
+| `all`, `all --continue` (same owner), stopping mid-`all` | [§`all`](#all--one-owner-runs-every-free-wave) |
 
 **Only the owner writes a wave.** Every entry except `status`, `--claim` and `--continue` starts by checking that
 `state.json` `owner` is the user **and** the wave sub-task is assigned to them. Otherwise STOP and show who holds it —
@@ -247,8 +247,28 @@ For when one person runs the whole release. Same steps, same records, but asked 
 6. **Asked once, at the end:** which `DRAFT` bugs to file (Step 6, all waves together), then one PR with every wave and
    the wave reports in the tracker (`release:report --wave <W> --post` per wave).
 
-`all --continue` resumes: closed waves stay closed; the waves still open run again as one run over the suites the
-previous run did not finish (`notRun`), and `release:split` ADDS that run's totals to theirs.
+`all --continue` resumes — **for the same owner only**: closed waves stay closed; the waves still open run again as one
+run over the suites the previous run did not finish (`notRun`), and `release:split` ADDS that run's totals to theirs.
+`all` has no handover of its own: whoever takes `all` runs it to the end, or stops as below.
+
+### Stopping in the middle of `all`
+
+When the owner will not finish (the deadline cannot wait for the usage limit to reset), the waves left open go back to
+the pool as ordinary waves, and others take them one by one with `/qa-run <rel> <wave> --continue` (Step 1). Close what
+ran, then release the rest — the same four steps whether Claude does them (asked to stop; the unassigning on one yes)
+or a person does them by hand because the tokens are already gone; nothing here needs Claude:
+
+1. `npm run release:split -- <release> --run-id <RUN_ID> --final --waves <every wave of the shared run> --write` —
+   closes every wave of the shared run as `RUN_DONE`: what ran gets its totals, what did not goes to `notRun`.
+2. In each wave left open (`notRun` or FAIL/BLOCKED without a ledger row), write `waves/<W>/report.md` with a
+   `## Before the next owner continues` section: where it stopped, the run id, and that the FAIL evidence (screenshots,
+   traces) is on the previous owner's machine — the next owner re-runs those cases before triaging them.
+3. `npm run release:status -- <release> --write` and `npm run release:check -- <release>` (green), then commit and push
+   the branch `claude/qa-release/<release>-all`.
+4. In the tracker, unassign the sub-tasks of the waves left open — an assigned sub-task is a live claim (contract §8).
+
+Waves that closed and were triaged stay the owner's; their PR and bug filing (item 6) can wait for the owner, or the
+next owner files them from the ledger's `DRAFT` rows.
 
 ## Rules
 
