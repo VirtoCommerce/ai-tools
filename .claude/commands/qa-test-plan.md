@@ -14,7 +14,7 @@ gap-diff, exploratory charters, the rules).
 ## Usage
 
 ```
-/qa-test-plan Sprint26-20 --ticket VCST-7100   # sprint plan + its waves (also 26-20, current, last; --no-jira, --frontend, --from/--to, --draft, --no-suites, --no-sitemap, --env, --no-waves)
+/qa-test-plan Sprint26-20 --ticket VCST-7100   # sprint plan + its waves (also 26-20, current, last; --no-jira, --frontend, --from/--to, --draft, --no-suites, --no-sitemap, --env, --update, --no-waves)
 /qa-test-plan stable 17              # stable-bundle regression: bundles/v16 → v17
 /qa-test-plan stable 17 --ref feat/VCST-7000-stable-17-bundle --ticket VCST-7000
 /qa-test-plan stable 17 --update     # the bundle moved after a hotfix; re-scope, keep wave state

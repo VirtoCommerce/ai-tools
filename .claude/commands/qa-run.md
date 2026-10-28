@@ -31,7 +31,7 @@ recorded BLOCKED with that reason and **not run** — no browser slot, no model 
 | a selection group, suite ids | [`run.md`](../skills/qa-run/run.md) | run → triage (automatic) → **ask: GitHub?** |
 | `stable:<N> <wave> [flag]`, `stable:<N> status`, `sprint:<XX-YY> <wave> [flag]`, `sprint:<XX-YY> status` | [`run.md`](../skills/qa-run/run.md) + [`waves.md`](../skills/qa-run/waves.md) | claim → pre-flight → known ground → run → triage into the ledger (automatic) → **ask: file bugs?** → **ask: GitHub?** |
 | bare `stable:<N>`; bare `sprint` / `sprint:<XX-YY>` whose plan has a release folder | — | refuse; show `npm run release:status -- <release>` (a release runs wave by wave) |
-| bare `sprint` / `sprint:<XX-YY>` whose plan has no release folder (`--no-waves`, or planned before 2026-10-28) | [`run.md`](../skills/qa-run/run.md) | the whole plan as one run → triage → **ask: GitHub?** |
+| bare `sprint` / `sprint:<XX-YY>` whose plan has no release folder (planned with `--no-waves`, or before sprint plans had waves) | [`run.md`](../skills/qa-run/run.md) | the whole plan as one run → triage → **ask: GitHub?** |
 
 ## Rules
 
