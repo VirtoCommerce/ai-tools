@@ -1,0 +1,180 @@
+{
+  "ticket": "VCST-6121",
+  "title": "Passkey Sign-In (Face ID, Touch ID, Windows Hello, Security Keys)",
+  "env": "vcptcore",
+  "draft": true,
+  "flow": "feature-test",
+  "type": "Story",
+  "path": "FULL",
+  "shape_class": {
+    "value": null,
+    "surface_source": [
+      "vc-frontend#2601 diff: no ui-kit/stories/styles change (deploy:pr storybook rule)"
+    ]
+  },
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "narrow_story_tokens": {
+      "priority": "P1 (High) — fails P2-P3",
+      "layer": "cross-layer",
+      "domains": "auth (+ store settings, admin security)",
+      "chain_shape": "adds new chain links (passkey grant, registration)",
+      "surface": "new",
+      "reach": "exceeds diff (token endpoint, customer org validation BREAKING)"
+    },
+    "escalated_reason": "Story default FULL; preflight breaking:vc-module-customer also forces FULL"
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA (id 4)",
+      "by": "qa-lead (orchestrator inline)",
+      "confirmed": false,
+      "when": "2026-10-28"
+    }
+  ],
+  "attachments": [
+    {
+      "name": "2026-10-27 23-18-43.mp4",
+      "id": "86746",
+      "state": "GAP",
+      "reason": "downloaded; no frame-extraction tool available (no ffmpeg/python) and the browser-eval hook blocks in-page playback — not viewed"
+    }
+  ],
+  "design": {
+    "source": "Claude Design canvas linked as 'Idea for Designs' (7 screens), not a binding spec; VCDZ-907 design task In Progress"
+  },
+  "build": {
+    "deployed": {
+      "platform": "3.1091.0-pr-3144-e637",
+      "relevant_modules": {
+        "VirtoCommerce.Passkeys": "3.1000.0-pr-1-5d36",
+        "VirtoCommerce.Customer": "3.1032.0-pr-324-b30b",
+        "VirtoCommerce.Store": "3.1012.0-pr-190-ded5",
+        "VirtoCommerce.XFrontend": "3.1008.0-alpha.64-vcst-6121-passkeys",
+        "VirtoCommerce.AdminShell": "3.1002.0-pr-4-1dd1",
+        "VirtoCommerce.MFA": "3.1000.1",
+        "VirtoCommerce.OTP": "3.1001.0"
+      },
+      "theme": "2.61.0-pr-2601-8058-80583415"
+    },
+    "deploy_pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7016"
+  },
+  "preflight": {
+    "verdict": "READY",
+    "warn": [
+      "breaking:vc-module-customer"
+    ]
+  },
+  "axes": {
+    "layer": {
+      "value": "cross-layer",
+      "members": [
+        "platform",
+        "module",
+        "api",
+        "storefront",
+        "admin-spa"
+      ],
+      "surface_source": [
+        "PR repos: vc-platform, vc-module-passkeys, vc-module-customer, vc-module-store, vc-module-x-frontend, vc-frontend, vc-module-admin-shell"
+      ]
+    },
+    "visual_surface": {
+      "value": true,
+      "surface_source": [
+        "vc-frontend#2601 .vue",
+        "vc-module-admin-shell#4",
+        "vc-module-passkeys#1 admin blades"
+      ]
+    },
+    "contract_surface": {
+      "value": true,
+      "surface_source": [
+        "vc-module-x-frontend#13 GraphType files",
+        "live schema: signInMethods, passkeyCreationOptions, passkeyRequestOptions, createPasskey"
+      ],
+      "refreshed": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/knowledge/api/graphql-schema.md @ 2026-10-28",
+      "fixtures": "86/86 pass"
+    },
+    "coverage_surface": {
+      "value": true,
+      "surface_source": [
+        "domain auth",
+        "tc:scope 222 hits in 104,105,110,111,031,032,033,042,078,082"
+      ]
+    },
+    "data_surface": {
+      "value": true,
+      "surface_source": [
+        "ladder 3: per-run key state + passkey-only + lockout need disposable accounts",
+        "ladder 4: new entity state (AspNetUserPasskeys) only creatable in-case"
+      ]
+    },
+    "domain_map": {
+      "state": "PRESENT",
+      "slug": "auth",
+      "rev": 2,
+      "generated": "2026-10-21",
+      "mind_map": ".claude/knowledge/domain/auth.mind-map.json",
+      "note": "passkeys listed as not deployed — new chain link",
+      "all_layer_confirmed_at": "1e-confirmed"
+    }
+  },
+  "timing": {
+    "reachability_minutes": 2,
+    "time_to_first_test_minutes": null
+  },
+  "reachability": {
+    "verdict": "BLOCKED(lane-secrets)",
+    "note": "pages reachable; lane secrets file generated for vcst; not a stand or product blocker, run continues browserless until lanes carry vcptcore passwords",
+    "observed": [
+      "storefront sign-in: password form, Google, Sign in with Passkey (in that order); footer 2.61.0-pr-2601-8058-80583415",
+      "AngularJS login shows Passkey link",
+      "Admin Shell login /apps/admin-shell/#/login shows NO passkey button",
+      "AngularJS login: anonymous GET api/platform/settings/VirtoCommerce.Platform.UI.WidgetColorMarkers 401 plus unhandled rejection"
+    ]
+  },
+  "test_model": {
+    "path": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/test-model.md",
+    "state": "new",
+    "prior": "reports/ba/test-models/VCST-6132-2026-10-20.md (org links carried)",
+    "scenarios": 28,
+    "gate": "13/13 PASS (inline)"
+  },
+  "deploy_prs": [
+    "vc-deploy-dev#7016 merged, live",
+    "vc-deploy-dev#7018 merged, live: MFA 3.1000.1 + OTP 3.1001.0 (verified via /api/platform/modules 2026-10-28)"
+  ],
+  "tooling_changes": [
+    "enforce-real-user.mjs + plugins/vc-fix mirror: WebAuthn CDP allowance",
+    "enforce-secret-token.mjs + scripts/lib/browser-secrets.mjs: lane-aware secrets file"
+  ],
+  "test_data": {
+    "seeder": "npm run seed:passkey (re-arm) / seed:passkey:teardown / seed:passkey:verify",
+    "aliases": [
+      "PK_BUYER",
+      "PK_BUYER_MULTI",
+      "PK_B2C",
+      "PK_LOCKOUT",
+      "PK_PASSKEY_ONLY",
+      "PK_BO_MANAGER",
+      "PK_BO_MANAGER_2",
+      "PK_OPERATOR",
+      "PK_ORG_MAIN",
+      "PK_ORG_LOCKABLE"
+    ],
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "store_on": "B2B-store",
+    "store_off_probe": "Clothing",
+    "td_validate": "green",
+    "td_reconcile": "6 pre-existing role accounts fail sign-in on vcptcore (USER2, ORG_USER, MULTI_ORG_USER, EUR_USER, SALES_REP, SALES_REP_NOCUSTOMERS) - not this ticket",
+    "fixture_gaps": [
+      "IMPERSONATION_ADMIN unusable on vcptcore (login_failed, email empty) - replaced by PK_OPERATOR; one failed attempt recorded on that shared account",
+      "Customers get 403 on REST currentuser/sign-in-methods (xAPI serves them) - KB-4E40858D"
+    ]
+  }
+}
