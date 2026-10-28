@@ -374,17 +374,25 @@ User signed in, out-of-stock product exists on PDP","url={{FRONT_URL}},user={{US
 [DOM] Product appears in /account/back-in-stock list after subscribing
 [DOM] Product name and image shown in the list
 [STATE] Subscription persists after page refresh","[CONSOLE] no uncaught JS errors","Notify When Available button missing on OOS product; no confirmation after clicking; subscription not appearing in back-in-stock list","none","Coverage Gap Analysis","Draft"
-"B2C-STOCK-003","Unsubscribe from Alert","B2C Features > Back in Stock","Medium","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-User signed in, at least one product subscribed in back-in-stock list","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/back-in-stock
-2. [ASSERT] Locate a subscribed product entry
-3. [ACT] Click remove or unsubscribe action
-4. [ACT] Confirm removal if prompted
-5. [ASSERT] Verify product no longer in list
-6. [NAV] Navigate back to product PDP
-7. [ASSERT] Verify PDP no longer shows active subscription state","[DOM] Remove or unsubscribe action available per subscribed product
-[DOM] Product removed from list immediately after action (no page refresh required)
-[DOM] List updates without full page refresh
-[STATE] Product PDP no longer shows active subscription state after unsubscribe","[CONSOLE] no uncaught JS errors","Unsubscribe action missing; product remaining in list after unsubscribe; PDP still showing active subscription state","none","Coverage Gap Analysis","Draft"
+"B2C-STOCK-003","Unsubscribe from Alert — Row Stays With 'Stock alert' Button, Persists, and Can Be Re-subscribed (by design)","B2C Features > Back in Stock","Medium",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+User signed in, at least one product with an ACTIVE back-in-stock subscription (its row on /account/back-in-stock shows the 'You'll be notified' button). By design the list does not remove an unsubscribed product: Remove buttons are hidden and the row stays with a notify button so the user can renew.","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/back-in-stock
+2. [ASSERT] Locate a subscribed product row; note its product name as PRODUCT_NAME and that its button reads 'You'll be notified'
+3. [ACT] Click the row's 'You'll be notified' button (no confirmation prompt is expected)
+4. [ASSERT] The PRODUCT_NAME row is still in the list and its button now reads 'Stock alert'
+5. [NAV] Reload /account/back-in-stock
+6. [ASSERT] The PRODUCT_NAME row is still listed and its button still reads 'Stock alert' (the unsubscribe persisted server-side)
+7. [NAV] Open PRODUCT_NAME's PDP
+8. [ASSERT] The PDP shows the unsubscribed state ('Stock alert' button), not the 'You'll be notified' state
+9. [NAV] Navigate back to /account/back-in-stock
+10. [ACT] Click the PRODUCT_NAME row's 'Stock alert' button
+11. [ASSERT] The row's button reads 'You'll be notified' again
+12. [NAV] Reload /account/back-in-stock
+13. [ASSERT] The PRODUCT_NAME row's button still reads 'You'll be notified' (re-subscription persisted)","[DOM] After unsubscribing, the PRODUCT_NAME row remains in the list (by design — not removed, no Remove button) and its button reads 'Stock alert'
+[STATE] Button state 'Stock alert' persists after a full page reload (the subscription is deactivated server-side, not only toggled in the UI)
+[STATE] PDP no longer shows the active subscription state after unsubscribe
+[DOM] Clicking 'Stock alert' on the retained row re-subscribes: the button returns to 'You'll be notified' and stays so after reload
+[DOM] No second row for the same product appears after the unsubscribe or the re-subscribe","[NETWORK] The unsubscribe and re-subscribe requests return HTTP 200 with no errors[] in the GraphQL response
+[CONSOLE] no uncaught JS errors","Row disappears after unsubscribe (list behaviour changed from the documented by-design); button still reads 'You'll be notified' after the click or after reload (unsubscribe not applied or not persisted); 'Stock alert' click does not re-subscribe or creates a duplicate row; PDP still shows the active subscription state after unsubscribe; a confirmation prompt or a Remove button appears","End state equals the state found: the subscription is active ('You'll be notified'). If the case stopped after the unsubscribe, click the PRODUCT_NAME row's 'Stock alert' button on /account/back-in-stock to re-subscribe and confirm the button reads 'You'll be notified'.","VCST-2557 (developer comment 2025-01-31: Remove buttons hidden; inactive rows kept with a notify button so users can renew); VCST-6612 (works as designed); vc-frontend client-app/modules/back-in-stock/pages/subscriptions.vue (renders inactive rows with BackInStockNotifyButton)","Draft"
 "B2C-POINTS-001","Points History Page","B2C Features > Loyalty","Medium","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 User signed in, loyalty/points feature enabled for store","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
 2. [NAV] Navigate to /account/points-history
