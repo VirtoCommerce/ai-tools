@@ -52,7 +52,7 @@ trim: "[NOT_FILED, AREAS, QUESTIONS, BUGS]"
 
 **Not filed (below severity floor)**
 {{#NOT_FILED}}
-- [{{severity}}] {{title}}
+- {{severity}} — {{title}}
 {{/NOT_FILED}}
 {{#NOT_FILED_MORE}}
 - {{.}}

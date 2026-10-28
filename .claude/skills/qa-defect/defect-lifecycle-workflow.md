@@ -185,7 +185,7 @@ Reference `/qa-risk` skill's `risk-prioritization-framework.md` for definitions.
 |-----------|----------|------------|
 | Storefront UI, checkout, cart, mobile | qa-frontend-expert | Page/flow bugs, CSS issues, responsive failures |
 | Platform API, GraphQL, Admin SPA, modules | qa-backend-expert | API errors (4xx/5xx), data integrity, background jobs |
-| Storybook components, accessibility, design system | ui-ux-expert | Component rendering, WCAG violations, design drift |
+| Storybook components, accessibility, design system | vc-test:ui-ux-expert | Component rendering, WCAG violations, design drift |
 | Cross-module, workflow spanning frontend+backend | qa-lead-orchestrator | Payment flows, BOPIS end-to-end, multi-org |
 | Security vulnerabilities | qa-lead-orchestrator | XSS, CSRF, auth bypass, injection — always escalate |
 

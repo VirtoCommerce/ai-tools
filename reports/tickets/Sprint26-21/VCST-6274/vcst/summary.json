@@ -1,0 +1,128 @@
+{
+  "ticket": "VCST-6274",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "tracker": {
+    "kind": "jira",
+    "comment_id": "112446"
+  },
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "reason": "Task, priority High (P0/P1) — ticket-routing.md §4 Task row; same PR as VCST-6231, run jointly",
+    "escalated_reason": null
+  },
+  "shape_class": {
+    "value": "ui-kit",
+    "surface_source": [
+      "diff: client-app/ui-kit/**, preflight.scss, _dark.scss split, storybook-styles/**, .storybook/preview.ts",
+      "ticket names design tokens and layer order"
+    ]
+  },
+  "verdict": "FAIL",
+  "date": "2026-10-27",
+  "environment": "vcst",
+  "build": {
+    "declared": {
+      "theme": "vc-frontend#2577 @ 4c171a96 (+#2592)"
+    },
+    "deployed": {
+      "theme": "2.61.0-pr-2577-4c17-4c171a96"
+    },
+    "theme": "vc-frontend#2577 @ 4c171a96 (+#2592)"
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "confirmed": false,
+      "actor": "qa-lead",
+      "at_utc": "2026-10-27T20:40:00Z"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "from": "Testing",
+      "to": null,
+      "transition": null,
+      "confirmed": true,
+      "actor": "qa-lead",
+      "skipped": "operator chose to leave the ticket in Testing; its one failure is VCST-6529 item 1, tracked as non-blocking"
+    }
+  ],
+  "total_cases": 9,
+  "passed": 7,
+  "failed": 2,
+  "blocked": 0,
+  "new_cases_authored": 0,
+  "regression": {
+    "c1": {
+      "suites": [],
+      "ids": [],
+      "run_id": null,
+      "pass_rate": null,
+      "skipped_reason": "ui-kit shape class — no authored cases and no 2a REPAIR/RE-BASE ids this round (ticket-routing.md §5c)"
+    },
+    "feature_release_gate": "not-assessed"
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "pre-existing (tracked)",
+      "summary": "Bulk results modal 'View cart' not full width at 448–479px — confirmed live, VCST-6529 item 1",
+      "report": "VCST-6529",
+      "title": "Bulk results modal 'View cart' not full width at 448–479px — confirmed live, VCST-6529 item 1"
+    }
+  ],
+  "screenshots": "reports/tickets/Sprint26-21/VCST-6231/vcst/screenshots/",
+  "report": {
+    "checklist": "reports/tickets/Sprint26-21/VCST-6231/vcst/testing-checklist.md (Round 2, T6274-* and R2-* rows)",
+    "comment_id": "112446",
+    "page_url": null
+  },
+  "ac_analysis": {
+    "story_acs": 2,
+    "impl_coverage": {
+      "satisfied": 1,
+      "drift": 0,
+      "contradicts": 1,
+      "not_found": 0
+    },
+    "conditions_total": 2,
+    "conditions_with_evidence": 2,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 100,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "verdict_basis": "AC-1 PASS (source: 0 !important declarations, 0 Tailwind ! modifiers at 4c171a96). AC-2 contradicted live: bulk results modal View cart is 128px in a 412px row at 460px (VCST-6529 item 1, filed by the PR reviewer as a non-blocking follow-up). Coffee preset not checked.",
+    "checklist_rows": {
+      "round1": "SC-1.x, SC-2.x, SC-5.1/5.2, SC-6.x, SC-8.1-8.5, SC-12.6, SC-12.10-12.13, PIX-1/2, VIS-7",
+      "round2": "T6274-1, T6274-2, R2-1..R2-7"
+    },
+    "residual_risk": [
+      "coffee preset not checked",
+      "the change-password error alert (text-xs removed) not triggered",
+      "builder-preview scroll-to-element not reachable (editor preview only)"
+    ],
+    "joint_record": "reports/tickets/Sprint26-21/VCST-6231/vcst/summary.json"
+  },
+  "test_data": {
+    "data_surface": false,
+    "surface_source": [
+      "logins via {{VAR}}",
+      "live-discover",
+      "quote/cart created in-case"
+    ],
+    "left_behind": [
+      "quote RFQ261027-00006 (ORG_USER)",
+      "USER_EMAIL cart still holds 2 AGENT-TEST lines (removal reverted by another session on the shared account)"
+    ]
+  }
+}

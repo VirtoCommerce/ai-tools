@@ -208,12 +208,12 @@ in every report:
 
 ## Agent Automation Recipes
 
-The agent runs these via Chrome DevTools MCP and/or Playwright MCP. **Do not reference axe DevTools browser extension** — extensions can't be loaded in MCP-driven browsers.
+The agent runs these on a Playwright MCP lane — `browser_evaluate`, which the real-user hook passes for `axe.run` and the computed-style reads below. **Do not reference axe DevTools browser extension** — extensions can't be loaded in MCP-driven browsers.
 
 ### Recipe 1 — Inject and run axe-core
 
 ```js
-// In evaluate_script (Chrome DevTools MCP) or page.evaluate (Playwright MCP)
+// In browser_evaluate (Playwright MCP) or page.evaluate (a Playwright script)
 // 1. Load axe.min.js from CDN or local copy via addScriptTag/inject <script>
 // 2. Run with WCAG-only tags — exclude best-practice rules
 const results = await axe.run(document, {
@@ -226,9 +226,9 @@ const results = await axe.run(document, {
 
 Re-run after each dynamic state listed above. Wait on a sentinel selector before scanning to avoid false negatives from async Vue chunks.
 
-### Recipe 2 — Lighthouse accessibility category
+### Recipe 2 — retired: no trend score on the Playwright lanes
 
-Call Chrome DevTools MCP `lighthouse_audit` per route. Read the `accessibility` category for a numeric trend score. Lighthouse runs ~50 axe rules — **never use as the only signal**; pair with Recipe 1.
+The per-route trend-score audit this recipe ran is a tool the Playwright lanes do not have, and every browser lane is a Playwright lane. Recipe 1 is the automated signal; a missing score is never reported as a pass. (The number is kept so Recipes 3–5 keep theirs.)
 
 ### Recipe 3 — Keyboard walk (focus-order verification)
 

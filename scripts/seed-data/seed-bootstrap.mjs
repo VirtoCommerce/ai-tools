@@ -60,6 +60,9 @@ const TEARDOWN_STEPS = [
   { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', args: ['--teardown'], demoFamily: 'sales-rep' },
   // VCST-5748 OTP sign-in accounts — independent of every other domain; deletes only agent-test-otp-* accounts/contacts.
   { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', args: ['--teardown'] },
+  // VCST-6121 passkey sign-in accounts — independent; deletes only agent-test-pk-* accounts, their memberships
+  // and contacts, the two AGENT-TEST-PK orgs and the AGENT-TEST-PK-Impersonator role.
+  { name: 'passkey', script: 'auth/seed-passkey.mjs', args: ['--teardown'] },
   // Wishlists are carts referencing products AND a security account, so they go before both.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', args: ['--teardown'] },
   // Orders/quotes reference products + users, so sweep them FIRST (before the entities they point at).
@@ -245,6 +248,9 @@ const STEPS = [
   // VCST-5748 OTP sign-in accounts (the non-optIn SEEDED_ACCOUNTS of auth/otp-signin-specs.mjs — no
   // Administrator: the opt-in back-office accounts need --only). Self-contained: creates its own contacts/accounts on STORE_ID.
   { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', required: false, priority: 102 },
+  // VCST-6121 passkey sign-in accounts (auth/passkey-specs.mjs). Self-contained: its own two orgs, contacts,
+  // accounts on STORE_ID and one AGENT-TEST role.
+  { name: 'passkey', script: 'auth/seed-passkey.mjs', required: false, priority: 103 },
 ].sort((a, b) => a.priority - b.priority);
 
 function runStep(step) {

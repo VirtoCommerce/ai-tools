@@ -43,7 +43,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ### Design Spec Verification
 
-> Primary source is a **Claude Design** project's local files, parsed by `npm run design:extract` (never call `DesignSync`) — protocol in [`skills/qa-design/claude-design-verification.md`](../skills/qa-design/claude-design-verification.md), differ in [`scripts/lib/verify-design-spec.ts`](../../scripts/lib/verify-design-spec.ts). Figma is a manual screenshot reference only (its MCP is auth-only here, ~6 calls/month on Starter).
+> Primary source is a **Claude Design** project's local files, parsed by `npm run design:extract` (never call `DesignSync`) — protocol in `plugins/vc-test/skills/qa-design/claude-design-verification.md`, differ in [`scripts/lib/verify-design-spec.ts`](../../scripts/lib/verify-design-spec.ts). Figma is a manual screenshot reference only (its MCP is auth-only here, ~6 calls/month on Starter).
 
 **Always compare:** spacing, colors (hex), typography (family, weight, size, line height), icons, component states (hover, focus, disabled, loading, error), responsive breakpoints (375px, 768px, 1024px, 1280px, 1920px).
 
@@ -290,6 +290,6 @@ Store reports in `reports/regression/` or `reports/bugs/`. Use **compact format*
 ### Scope Boundaries
 
 **You test**: Both storefront and admin — interactive test execution, design spec verification, console/network debugging, exploratory testing, cross-browser, evidence collection.
-**You don't test**: Storybook in isolation (`ui-ux-expert`), WCAG audits (`ui-ux-expert`), test plan creation (`test-management-specialist`).
+**You don't test**: Storybook in isolation or WCAG audits (`vc-test:ui-ux-expert`), test plan creation (`test-management-specialist`).
 **vs. qa-frontend-expert**: They own storefront strategy and regression. You execute with emphasis on debugging and design spec verification.
 **vs. qa-backend-expert**: They own API contracts and Admin CRUD. You execute Admin tests with cross-layer investigation.

@@ -1,7 +1,7 @@
 # The visual axis — what runs for which surface, and what its verdict may do
 
-**This file is the only place the visual axis is specified — for `/qa-test` and for `/qa-test-fast`.**
-`commands/qa-test.md`, `commands/qa-test-fast.md`, `skills/qa-test/SKILL.md`, `skills/qa-test-fast/`,
+**This file is the only place the visual axis is specified — for vc-test's visual lane (`/vc-test:qa-ticket`), and in this repository for `/qa-test` and for `/qa-test-fast`.**
+This repository's `commands/qa-test.md`, `commands/qa-test-fast.md`, `skills/qa-test/SKILL.md`, `skills/qa-test-fast/`,
 `authoring.md` and `close-out.md` **cite it and never restate it** — the same
 single-source-of-truth discipline `ticket-routing.md` holds for flow routing.
 
@@ -19,7 +19,7 @@ axis in the pipeline can see.
 
 Derived at `1b` item 2c. The **shared derivation contract** — derived-never-asked-never-defaulted,
 `surface_source[]` always recorded, `false` recorded with its sources, lane-not-effort — is stated once in
-[`axes.md`](axes.md) §2 and is **not** repeated here. What is specific to this axis:
+`axes.md` §2 (in this repository: `.claude/skills/qa-test/axes.md`) and is **not** repeated here. What is specific to this axis:
 
 | # | Source | Yields `true` when |
 |---|---|---|
@@ -36,7 +36,7 @@ The three sources are OR'd, so a bare `layer: storefront` made **every** storefr
 matter what its diff held — and the storefront is the dominant surface here. Source 3 does not discriminate
 either, since the target suites of a storefront ticket are `layer: frontend` essentially by definition. So
 two of the three sources were decorative and the axis was **effectively pinned `true`** — the exact defect
-[`axes.md`](axes.md) §3 diagnoses for `data_surface` (*"an axis that dispatches an opus agent whenever it
+`axes.md` §3 (in this repository: `.claude/skills/qa-test/axes.md`) diagnoses for `data_surface` (*"an axis that dispatches an opus agent whenever it
 is unsure is not subtracting"*), against a measured yield of **one block in 28 runs**.
 
 **So `true` needs eligibility PLUS one positive rendered-surface signal:**
@@ -65,37 +65,38 @@ before, they could only observe that the ticket was on the storefront.
 
 | Ticket surface | Axes that run | Executor | Target resolved from |
 |---|---|---|---|
-| **Storefront page or flow** | a11y · design-system · `vs. DESIGN` | `ui-ux-expert` | the route(s) the ticket changes |
-| **Storefront component** | a11y · design-system · `vs. DESIGN` | `ui-ux-expert` | the component, **dual** Storybook + storefront (the two surfaces catch different bug classes) |
-| **Admin SPA blade** | a11y · design-system | `ui-ux-expert` | the blade under change; `vs. DESIGN` only if the design project covers admin |
+| **Storefront page or flow** | a11y · design-system · `vs. DESIGN` | `vc-test:ui-ux-expert` | the route(s) the ticket changes |
+| **Storefront component** | a11y · design-system · `vs. DESIGN` | `vc-test:ui-ux-expert` | the component, **dual** Storybook + storefront (the two surfaces catch different bug classes) |
+| **Admin SPA blade** | a11y · design-system | `vc-test:ui-ux-expert` | the blade under change; `vs. DESIGN` only if the design project covers admin |
 | **`api` / `module` / `platform` only** | none | — | — the lane does not dispatch |
 
 The three axes, and where each is specified:
 
 | Axis | What it asserts | Specification |
 |---|---|---|
-| **a11y** | WCAG 2.2 AA + `BL-A11Y-001..004` (all **P1**) — keyboard operability, accessible naming, contrast, axe-clean. `BL-UI-006` touch targets rides along, since 2.5.8 measures it anyway | `skills/qa-accessibility/` |
-| **design-system** | live resolved custom properties vs the generated token set; no hardcoded colour/spacing literals; sized-control token + aspect equality | `skills/qa-design/design-system-consistency.md` |
-| **`vs. DESIGN`** | declared tokens · control geometry · icon name→glyph parity, diffed against the Claude Design project **named by the ticket's own Prototype link** (no global default — `DESIGN_SYSTEM_PROJECT_ID` was removed 2026-09-03; a ticket with no design link ⇒ `SKIPPED`) | `skills/qa-design/claude-design-verification.md` |
+| **a11y** | WCAG 2.2 AA + `BL-A11Y-001..004` (all **P1**) — keyboard operability, accessible naming, contrast, axe-clean. `BL-UI-006` touch targets rides along, since 2.5.8 measures it anyway | [`wcag-accessibility-checklist.md`](../../knowledge/wcag-accessibility-checklist.md) (in this repository: the `qa-accessibility` skill, `.claude/skills/qa-accessibility/`) |
+| **design-system** | live resolved custom properties vs the generated token set; no hardcoded colour/spacing literals; sized-control token + aspect equality | [`design-system-consistency.md`](design-system-consistency.md) |
+| **`vs. DESIGN`** | declared tokens · control geometry · icon name→glyph parity, diffed against the Claude Design project **named by the ticket's own Prototype link** (no global default — `DESIGN_SYSTEM_PROJECT_ID` was removed 2026-09-03; a ticket with no design link ⇒ `SKIPPED`) | [`claude-design-verification.md`](claude-design-verification.md) |
 
-### Dispatch the agent — the agent invokes the `qa-design` skill
+### Dispatch the agent — the agent invokes the `vc-test:qa-design` skill
 
 There are two `qa-design` files and they behave differently. The **command**
-([`commands/qa-design.md`](../../commands/qa-design.md)) is `disable-model-invocation: true`, so no pipeline
+(in this repository: `.claude/commands/qa-design.md`) is `disable-model-invocation: true`, so no pipeline
 may run it — the same constraint that makes 5-status/5-docs *point* at `/ba-analyze` rather than run it. That
-costs nothing: the command only parses a target and dispatches `ui-ux-expert`. The **skill**
-([`skills/qa-design/SKILL.md`](../qa-design/SKILL.md)) carries no such flag and **is** the methodology.
+costs nothing: the command is a shim that invokes the skill, and the skill's [`SKILL.md`](SKILL.md) holds
+Steps 1–5 (parse a target, resolve scope, dispatch `vc-test:ui-ux-expert`, report). The **skill** carries no
+such flag and **is** the methodology.
 
-So `/qa-test` Step 4v and `/qa-test-fast` Stage 2 dispatch `ui-ux-expert` directly, exactly as they dispatch
+So `/qa-test` Step 4v and `/qa-test-fast` Stage 2 dispatch `vc-test:ui-ux-expert` directly, exactly as they dispatch
 `qa-frontend-expert` / `qa-backend-expert`, and **the brief's first instruction is: *invoke the Skill tool
-with `skill: "qa-design"` before any browser call*.** The agent loads it into **its own** context, never the
-orchestrator's — the skill is ~30K chars, and loaded inline it is re-paid by every later step of the run and
+with `skill: "vc-test:qa-design"` before any browser call*.** The agent loads it into **its own** context, never the
+orchestrator's — the skill and the files it reads are large, and loaded inline they are re-paid by every later step of the run and
 used by none of them. The agent then reads the per-axis files in §2's table as each axis needs them, and
 **its return opens with `qa-design skill: loaded`** — a return without that line did not apply the
-methodology and is re-dispatched once. `/qa-accessibility` carries no `disable-model-invocation` flag
+methodology and is re-dispatched once. `/qa-accessibility` (in this repository) carries no `disable-model-invocation` flag
 either; the agent may invoke it the same way for the a11y axis.
 
-The brief carries: the `Skill qa-design` instruction above · the resolved target · **the design project id resolved from the ticket's Prototype link,
+The brief carries: the `Skill vc-test:qa-design` instruction above · the resolved target · **the design project id resolved from the ticket's Prototype link,
 plus the artboard its `file=` param names** (there is no `DESIGN_SYSTEM_PROJECT_ID` to inherit — removed
 2026-09-03; if the ticket carries no design link, the brief says so and the axis returns `SKIPPED`) · the
 `BL-A11Y-*` / `BL-UI-*` invariant **text** (not just the IDs) · the screenshot path · the verdict vocabulary
@@ -106,26 +107,23 @@ below.
 1. **The `vs. DESIGN` expectations, as a spec JSON path.** At the top of Step 4, before the dispatch,
    the orchestrator resolves the source from the ticket's Prototype link — the local copy at
    `.design-source/<uuid>/`, else an artifact link via `Artifact` `read` — runs
-   **`npm run design:extract`** (`--only icons,geometry,stroke,changes` for an artifact page, whose `:root` is its
+   **`node <plugin>/lib/design/design-spec-extract.mjs`** (in this repository: `npm run design:extract`; `<plugin>` is the vc-test plugin root, as [`SKILL.md`](SKILL.md) defines it) (`--only icons,geometry,stroke,changes` for an artifact page, whose `:root` is its
    own chrome), and passes the output path in the brief. **Neither the orchestrator nor the agent calls
    `DesignSync`**: its own description restricts it to the user-started `/design-sync` skill, and on
    VCST-5957 (2026-10-01) that left the axis to an eyeballed screenshot comparison. A run's own extract
    makes `unresolved` machine-counted; relayed by hand it is *unknown*, never zero. Ladder and the
-   artifact-chrome trap: `.claude/skills/qa-design/claude-design-verification.md` §1.
-2. **No credential variable NAMES on this lane — and the brief must NAME the auth path.** `--secrets` is a
-   `@playwright/mcp` flag; Chrome DevTools MCP has no equivalent, so typing `TEST_USER_PASSWORD` submits
-   that literal string and the sign-in is refused. Measured: VCST-5733's visual axis was briefed exactly
-   that way and all three axes came back `INCONCLUSIVE`/`SKIPPED`, costing a whole agent turn. There are
-   **three** paths and the brief picks one explicitly — an agent left to infer its own is what produced
-   that loss: the **pre-signed persistent profile** (`--userDataDir`, signed in once by hand) for a
-   **role-gated or data-bearing** target; **minting an account through the UI** (`/sign-up`,
-   `uniqueEmail("AGENT-TEST")`, a password the agent generates) for a **role-agnostic** one — public
-   pages, the design system, WCAG/axe, tokens, geometry; or **dispatch to a Playwright lane**. Minting a
-   role-gated target is not a fallback but a wrong answer: the surface renders its **empty state**, which
-   **reads as a pass**. Whichever is chosen, the brief never carries a credential, a variable name, or a
-   workaround for a permission denial
-   (`.claude/knowledge/execution/browser-lanes.md` §*Chrome DevTools MCP has no `--secrets`* — conditions and cleanup
-   obligations live there).
+   artifact-chrome trap: [`claude-design-verification.md`](claude-design-verification.md) §1. **In a vc-test run no step before the agent runs the extract** (`/vc-test:qa-ticket` does not): `vc-test:ui-ux-expert` resolves the source and runs it itself before its first measurement, else the axis is `SKIPPED` as above.
+2. **The lane and the account role — never a credential.** The visual lane is a Playwright lane: in a
+   vc-test run the one `plan-run` drew from the pool (§4), in this repository's `/qa-test` and
+   `/qa-test-fast` the one its wave leaves free (§4). It signs in the way every Playwright lane does — the login
+   as plain text from the env (`USER_LOGIN`, …), the password's bare NAME (`USER_PASSWORD`, …) typed into
+   the password field, the lane supplying the value — the **Signing in.** paragraph of the project's `vc-browser.md`, which
+   `vc-init` writes (in this repository: `.claude/rules/vc-browser.md`). So the brief names the **lane** and
+   the **account role** the target needs. A role-gated or data-bearing target (sales-rep hub, orders, a B2B
+   org, a loyalty tier) needs that role's account: any other renders its **empty state**, which **reads as
+   a pass**. Measured: VCST-5733's visual axis was briefed with a sign-in its lane could not resolve, and
+   all three axes came back `INCONCLUSIVE`/`SKIPPED`, costing a whole agent turn. The brief never carries a
+   password value, and never a workaround for a permission denial.
 
 ---
 
@@ -137,10 +135,10 @@ checklist's visual rows and `/qa-visual-regression` cite it. A visual row with n
 
 | Instrument | Question | Engine | Takes the risk when |
 |---|---|---|---|
-| `PIXEL` | Did anything change that should not have? | [`/qa-visual-regression`](../qa-visual-regression/SKILL.md) — `visual:snap` base + head (Storybook stories, or app pages with API answers replayed from one HAR) → `visual:diff` | the `ui-kit` class ([`ui-kit-class.md`](ui-kit-class.md)) · a global style, token, theme preset or Tailwind change · a refactor, dependency upgrade, upstream merge into a fork or other change on rendering code that **declares no visual effect** |
-| `DESIGN` | Does it match its reference? | §2 table: design-system + `vs. DESIGN` (`ui-ux-expert`); rendered component vs its reference (prod vs Storybook, a fork's theme): `visual:design`, [`../qa-design/component-acceptance.md`](../qa-design/component-acceptance.md) | new or redesigned UI with a design link · a customer theme |
-| `PROBE` | Does layout hold on hard data? | `layout-runner` / `048c` probes (§5) | any rendered change; the data that breaks it: locale × text length × width × theme |
-| `CONTENT` | Is the rendered text right? | `layout-runner` `[PROBE:CONTENT]` → `[CONTENT] rawKeys / guids / brokenImages / placeholders / midWrap == 0` (`scripts/lib/measure-layout.ts` `contentAuditSnippet`; the same snippet in a browser lane's `evaluate`), plus checklist text assertions for what a pattern cannot know (a wrong label, a wrong price) | a changed label, format, empty state or i18n key |
+| `PIXEL` | Did anything change that should not have? | `/qa-visual-regression` (in this repository: `.claude/skills/qa-visual-regression/SKILL.md`) — `visual:snap` base + head (Storybook stories, or app pages with API answers replayed from one HAR) → `visual:diff` | the `ui-kit` class ([`ui-kit-class.md`](../../knowledge/ui-kit-class.md)) · a global style, token, theme preset or Tailwind change · a refactor, dependency upgrade, upstream merge into a fork or other change on rendering code that **declares no visual effect** |
+| `DESIGN` | Does it match its reference? | §2 table: design-system + `vs. DESIGN` (`vc-test:ui-ux-expert`); rendered component vs its reference (prod vs Storybook, a fork's theme): `visual:design`, [`component-acceptance.md`](component-acceptance.md) | new or redesigned UI with a design link · a customer theme |
+| `PROBE` | Does layout hold on hard data? | `layout-runner` / `048c` probes (in this repository: `scripts/layout/layout-runner.ts`, suite `048c`; §5) | any rendered change; the data that breaks it: locale × text length × width × theme |
+| `CONTENT` | Is the rendered text right? | `layout-runner` `[PROBE:CONTENT]` (in this repository) → `[CONTENT] rawKeys / guids / brokenImages / placeholders / midWrap == 0` (`node <plugin>/lib/design/snippet.mjs contentAuditSnippet`, the same snippet in a browser lane's `evaluate`; in this repository the TypeScript at `scripts/lib/measure-layout.ts` is canonical; the plugin file is generated from it), plus checklist text assertions for what a pattern cannot know (a wrong label, a wrong price) | a changed label, format, empty state or i18n key |
 
 - **One risk can take several instruments.** A token change takes `PIXEL` for the blast radius and
   `DESIGN` for conformance. The strategy writes them as one technique token, comma-separated:
@@ -169,14 +167,14 @@ wrong. What changed is what a confirmed a11y FAIL *does to the story*: on a func
 ticket it files its own ticket rather than failing that one, because accessibility is a cross-cutting
 property of the surface and the defect is usually pre-existing on the component, inherited by whichever
 story next edits that file. Full rule, the carve-out, and why a non-blocking finding must keep its real
-severity: [`triage.md`](triage.md) §7a.
+severity: `triage.md` §7a (in this repository: `.claude/skills/qa-test/triage.md`).
 
 | Outcome | Lands in | May fail the ticket? |
 |---|---|---|
 | `BL-UI-*` **FAIL** (layout, overflow, alignment, CLS) | `summary.json.visual.invariant_failures[]` | **Yes** — an ordinary finding: triaged at 5-triage, severity-graded, filed under the existing 5-file floor |
-| `BL-A11Y-*` **FAIL**, ticket is functional / feature / E2E | `visual.a11y_findings[]` | **No** — filed as its **own standalone ticket** at its **real severity**, named in the report, never blocking ([`triage.md`](triage.md) §7a) |
+| `BL-A11Y-*` **FAIL**, ticket is functional / feature / E2E | `visual.a11y_findings[]` | **No** — filed as its **own standalone ticket** at its **real severity**, named in the report, never blocking (`triage.md` §7a (in this repository: `.claude/skills/qa-test/triage.md`)) |
 | `BL-A11Y-*` **FAIL**, ticket is *about* accessibility | `visual.invariant_failures[]` | **Yes** — the carve-out: an a11y/WCAG remediation ticket, ACs naming an accessibility outcome, or a `/qa-accessibility` run. The test is the ticket's own ACs, never the finding's severity |
-| `PIXEL` **regression** (an unintended change, [`../qa-visual-regression/triage.md`](../qa-visual-regression/triage.md)) | `visual.pixel.regressions[]` | **Yes** — an ordinary finding, like a `BL-UI` FAIL |
+| `PIXEL` **regression** (an unintended change, `/qa-visual-regression`'s `triage.md` (in this repository: `.claude/skills/qa-visual-regression/triage.md`)) | `visual.pixel.regressions[]` | **Yes** — an ordinary finding, like a `BL-UI` FAIL |
 | `PIXEL` **intended** / **noise** | `visual.pixel` | No — each row names the AC or PR line that intends the change, or the re-shoot that cleared it |
 | `vs. DESIGN` **DRIFT** / **MISSING** | `visual.advisory[]` | **No** — recorded and reported, never blocking |
 | **UNSPEC** | `visual.advisory[]` | No — a design project is rarely exhaustive; failing "not in the spec" turns the axis into ignored noise |
@@ -190,7 +188,7 @@ artifact instead of only from this prose.
 
 **`SKIPPED` is a legitimate outcome, not an error.** No local copy of the ticket's project and no usable
 artifact (`design:extract` exit `2`) ⇒ the `vs. DESIGN` axis records `SKIPPED` + the reason — naming the
-folder to fill, `.design-source/<uuid>/` — and the other two axes carry on. Same discipline as `tokens:check`
+folder to fill, `.design-source/<uuid>/` — and the other two axes carry on. Same discipline as `tokens:check` (in this repository: `npm run tokens:check`)
 exiting `2` on an unreachable source rather than passing. A non-zero `unresolved` count from the extractor
 **downgrades an otherwise-clean design axis to WARN**, and the count is printed — a guessed expectation
 fails every correct implementation.
@@ -208,8 +206,14 @@ than as a PASS:
 
 ## 4. Browser budget
 
-`ui-ux-expert` runs on **Chrome DevTools MCP** — a fourth lane beside chrome/firefox/edge, and one the
-`/qa-test` pool did not previously list. The **max-3-concurrent** cap still binds across every lane.
+`vc-test:ui-ux-expert` runs on **a Playwright lane from the pool**. In a vc-test run `plan-run` draws it from
+the `visual` entry's `lanes` (`lib/artifacts.json`): edge first, because a run's scenarios start at chrome, then
+chrome, then firefox — only lanes this install has (`mcp:playwright-*`), and none at all is an error that
+names the three. On an install with only `playwright-chrome` the visual lane and the scenarios share that
+lane across waves, never within one. In this repository's `/qa-test` and `/qa-test-fast` the brief names
+the Playwright lane its wave leaves free — the checklist dispatches (`/qa-test` 4a) hold theirs — and the
+visual lane waits for the next wave when none is free: the rule `plan-run` applies, never a fixed default
+and never two agents on one lane. The **max-3-concurrent** cap still binds across every lane.
 
 When the checklist agents + regression lanes + this lane exceed 3, run in this order and **state the order
 chosen**: checklist track → visual lane → regression. The ticket verdict is the priority, and the visual
@@ -220,19 +224,21 @@ fewer than three are dispatched (`--layer`, a lane with no items, `--no-explore`
 the **same message**; otherwise it is dispatched **the moment the first lane returns**, and `verdict.md`
 states the order. Never a fourth concurrent browser agent.
 
-Never schedule the visual lane on `playwright-firefox`: this pass is click- and hover-driven, and
-any of the three lanes will do — firefox clicks here again since 2026-09-08 (`.claude/rules/agents.md`).
+Any of the three lanes will do: this pass is click- and hover-driven, and firefox clicks here again since
+2026-09-08 (in this repository: `.claude/rules/agents.md`).
 
 ---
 
 ## 5. What this axis does NOT own
+
+*(in this repository's `/qa-test`: this section — suite `048c`, the FAST flags `--visual` / `--no-visual`, the FAST-by-default argument — describes this repository's `/qa-test` and `/qa-test-fast`. A vc-test run has none of them: its strategy's floors decide whether the visual lane runs.)*
 
 **BL-UI-001..005** — CLS, spacing grid, alignment, content boundary, state-induced shift — are *not* a
 scheduled axis here. They keep their existing owner: loaded at Step 2 for authoring, asserted through the
 measurable tags `[SHIFT] [TOUCH] [SPACING] [ALIGN] [OVERFLOW] [CLS]`, and executed by suite `048c` in
 regression. Adding a second executor would put two owners on one invariant set with no rule for which wins.
 
-**Always on FULL. On FAST the lane is opt-in — `--visual` (or `--axes`)** ([`axes.md`](axes.md) §4).
+**Always on FULL. On FAST the lane is opt-in — `--visual` (or `--axes`)** (`axes.md` §4 (in this repository: `.claude/skills/qa-test/axes.md`)).
 `visual_surface` still *derives* on FAST and is recorded with its sources; what the flag controls is
 whether the lane **runs**. It never re-routes the ticket: a FAST run with `--visual` still authors no
 cases, writes no Test Model and runs no verifier — it gains one agent and the checklist rows in §6.
@@ -255,7 +261,7 @@ whose third sub-axis is structurally unrunnable in a subagent (§2), so a mandat
 reporting `SKIPPED` by construction. Revisit at 5+ runs.
 
 **One slice of that argument now HAS its case, and was promoted on 2026-09-11: the `ui-kit` shape class**
-([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5c). The argument two paragraphs up is
+(`ticket-routing.md` §5c (in this repository: `.claude/knowledge/execution/ticket-routing.md`)). The argument two paragraphs up is
 *general* — "a `.scss`-only PR is the class most likely to break the UI" — and general is exactly what left
 it a prediction. The shape class is the narrow, derivable subset where it is not a prediction: when the
 change **is** the design system, the rendered surface is the deliverable, so a run without this lane has not
@@ -271,7 +277,7 @@ cannot supply coverage it does not have.
 
 ## 6. The durable record
 
-On **FAST the Artifact-B checklist is the run's only durable record**, so every visual condition appears in
+In this repository's `/qa-test`, on **FAST the Artifact-B checklist is the run's only durable record**, so every visual condition appears in
 it as a row with a verdict, exactly like every other condition. **An uncovered visual condition is listed,
 never omitted** — dropping the row is what makes a checklist look complete when it is not.
 
@@ -279,7 +285,7 @@ never omitted** — dropping the row is what makes a checklist look complete whe
 (§2a). The rows are derived after the ticket analysis, never written as "check the page":
 
 - `PIXEL` rows: one per component group `visual:affected` puts in scope, in the row format of
-  [`../qa-visual-regression/triage.md`](../qa-visual-regression/triage.md) §3.
+  `/qa-visual-regression`'s `triage.md` §3 (in this repository: `.claude/skills/qa-visual-regression/triage.md`).
 - Every `uncovered[]` file becomes a row on the pages source or on another instrument.
 - `DESIGN` rows: one per design-specified surface. `PROBE` rows: one per breaking dimension (locale, length,
   width, theme). `CONTENT` rows: one per changed label, format or empty state.
@@ -287,16 +293,16 @@ never omitted** — dropping the row is what makes a checklist look complete whe
 A visual row without an instrument decides nothing, and it is the shape a by-eye check takes.
 
 The pass also writes its own per-ticket `design-report.md` **into the run's own ticket folder**
-(`{RUN_DIR}/design-report.md`) — `.claude/rules/reports.md` category 6, which
+(`{RUN_DIR}/design-report.md`) — [`reports.md`](../../knowledge/reports.md) category 6, which
 already permits a ticket-scoped `/qa-design` run; 30–60 lines, cap 120. Note this is deliberately the
 **ticket-folder** path, not the `reports/tickets/{SPRINT}/qa-design/<slug>-<date>/` tree a standalone
 `/qa-design` invocation uses: dispatched from `/qa-test` the audit belongs to the ticket's evidence, beside
 `summary.json` and the checklist.
 
-Its machine half lands in `summary.json.visual`. A `null` `visual` block means the step never ran — a gap,
-not a clean result.
+In this repository's `/qa-test`, its machine half lands in `summary.json.visual`. A `null` `visual` block means the step never ran — a gap,
+not a clean result. **A vc-test run** writes `{RUN_DIR}/design-report.md` and its rows to `scenarios/visual.rows.md` (`VIS-<m>`, Proof `visual`) instead — `/vc-test:qa-ticket`; it has no `summary.json`. Each row's Ref is the `R<n>` of the strategy risk it covers (`R3`, or `R3 · R5` for two) — the id `lib/trace.mjs` resolves: a Ref naming a risk the round lacks is reported as unknown, and a risk with no row stays unresulted.
 
 **Scope note.** `critical-ui-scope.md`'s matrix is not only `GAP`-filled, it is **stale**: suite `048c`
-exists with 30 `LAYOUT-*` cases (registered runner-native in `config/test-suites.json`) whose cells the
+exists with 30 `LAYOUT-*` cases (in this repository: registered runner-native in `config/test-suites.json`) whose cells the
 matrix still marks `GAP`, and four component rows are flagged as drifted/unenforced. Use it to resolve
 *which invariants apply*; do not read its coverage column as fact, and never auto-edit it.

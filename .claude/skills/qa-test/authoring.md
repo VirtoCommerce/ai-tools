@@ -44,7 +44,7 @@ returned.
   to this load: the pipeline previously carried no accessibility oracle at any step),
   `oracles/critical-ui-scope.md` (36 components × applicable invariants, with real selectors — a scope
   selector, **not** a coverage claim; its matrix is `GAP`-filled and stale against `048c`),
-  `skills/qa-design/SKILL.md` **§State-Stress Pass** (the seven states a surface must survive),
+  `plugins/vc-test/skills/qa-design/methodology.md` **§State-Stress Pass** (the seven states a surface must survive),
   `automation/storefront-selectors.md`, and the generated design tokens (`SPACING_GRID` et al. via
   `tokens:sync` — never transcribed). Assert these with the **measurable tags**
   (`[SHIFT] [TOUCH] [SPACING] [ALIGN] [OVERFLOW] [CLS]`), never as prose inside `[DOM]`.
@@ -52,7 +52,7 @@ returned.
   The condition is the **derived token**, not a judgment call — this bullet used to open *"For a UI/storefront
   surface"*, a phrase nothing checked was ever applied. Loading these oracles is **authoring-time** work and
   is separate from *executing* the design + a11y pass, which is the Step-4 visual lane
-  ([`visual-axis.md`](visual-axis.md)). FULL does both; FAST skips authoring and still runs the lane.
+  ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md)). FULL does both; FAST skips authoring and still runs the lane.
 - **`skills/qa-sbtm/modern-web-attack-surface.md` §The `UIP-*` sweep** — resolve all ten probes for a UI
   flow: each covered by a scenario row or waived with a reason. These are the cases a real user produces
   (Back, refresh, two tabs, expired session, deep link) and the corpus has almost none of them:

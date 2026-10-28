@@ -1,6 +1,6 @@
 # Design System Consistency — Coffee Theme
 
-> Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: `BL-UI-002` (spacing grid) and `BL-UI-005` (alignment) — `npm run bl:extract -- --id BL-UI-002,BL-UI-005`. Canonical helper: [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts). Canonical suite: none — `048b-layout-stability.csv` was removed 2026-07-25; these checks now run only through this skill.
+> Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: `BL-UI-002` (spacing grid) and `BL-UI-005` (alignment) — [`bl-ui.md`](../../knowledge/bl-ui.md) (in this repository: `npm run bl:extract -- --id BL-UI-002,BL-UI-005`). Canonical helper: [`<plugin>/lib/design/measure-layout.mjs`](../../lib/design/measure-layout.mjs), each snippet printed by `node <plugin>/lib/design/snippet.mjs <name> …` (`<plugin>` is the vc-test plugin root, as [`SKILL.md`](SKILL.md) defines it; in this repository the TypeScript at `scripts/lib/measure-layout.ts` is canonical; the plugin file is generated from it). Canonical suite: none — `048b-layout-stability.csv` was removed 2026-07-25; these checks now run only through this skill.
 
 ---
 
@@ -37,7 +37,7 @@ The result is your ground truth for this run. Diff component computed styles aga
 
 ## Spacing — BL-UI-002 (canonical)
 
-**Allowed computed values**: do **not** hand-list them — they are derived. Import `SPACING_GRID` from [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts), which re-exports `design-tokens.generated.ts` (produced by `npm run tokens:sync` from Tailwind's default scale at the version vc-frontend pins, unioned with that repo's `theme.extend.spacing`). As of 2026-07-25 that is 39 values including the half-steps `2, 6, 10, 14` and the project additions `18, 68, 72, 76`.
+**Allowed computed values**: do **not** hand-list them — they are derived. Import `SPACING_GRID` from [`<plugin>/lib/design/measure-layout.mjs`](../../lib/design/measure-layout.mjs) (in this repository the TypeScript at `scripts/lib/measure-layout.ts` is canonical; the plugin file is generated from it), which re-exports `design-tokens.generated.ts` (produced by `npm run tokens:sync` from Tailwind's default scale at the version vc-frontend pins, unioned with that repo's `theme.extend.spacing`). As of 2026-07-25 that is 39 values including the half-steps `2, 6, 10, 14` and the project additions `18, 68, 72, 76`.
 
 > ⚠️ This is **not** a strict 4 px multiple. The old `{0,4,8,…,96}` list was wrong and flagged the UI kit's own `vc-button` (10 px / 14 px padding) as a violation.
 
@@ -46,8 +46,11 @@ Anything outside this set (13 px, 27 px, 41 px, etc.) is a violation, regardless
 **Audit protocol** (replaces the eyeball checklist):
 
 ```js
-// Pass the snippet from scripts/lib/measure-layout.ts
-import { spacingAuditSnippet, classifySpacing } from '../../../../scripts/lib/measure-layout';
+// Print the snippet: node <plugin>/lib/design/snippet.mjs spacingAuditSnippet '".product-card, .product-card *"'
+// (in this repository the TypeScript at scripts/lib/measure-layout.ts is canonical; the plugin file is generated from it)
+// Client form (layout classifiers are exports of measure-layout.mjs, the design ones — classifyDesignToken, classifyIconParity … — of verify-design-spec.mjs):
+// node --input-type=module -e "import { classifySpacing } from '<plugin>/lib/design/measure-layout.mjs'; console.log(JSON.stringify(classifySpacing(<the snippet's result JSON>)))"
+import { spacingAuditSnippet, classifySpacing } from '<plugin>/lib/design/measure-layout.mjs';
 
 // Step 1 — agent runs:
 const result = await browser_evaluate(spacingAuditSnippet('.product-card, .product-card *'));
@@ -70,7 +73,7 @@ Audit at multiple viewports — some breakpoints introduce token overrides.
 
 **Violation pattern:** `background-color: #0066CC` or `color: rgb(40, 167, 69)` in computed styles — should be a `var(--…)` reference. Test by toggling the theme preset: if a literal hex doesn't change but everything else does, the literal is hardcoded.
 
-**Cross-check against [storefront-config-flags.md](../../knowledge/automation/storefront-config-flags.md)** for active preset → expected token shifts.
+**Cross-check against [storefront-config-flags.md](../../knowledge/storefront-config-flags.md)** for active preset → expected token shifts.
 
 ---
 
@@ -134,7 +137,7 @@ Coffee uses a consistent icon library (likely from vc-frontend). Audit:
 
 A single design-system audit produces 0–N findings. Decision tree for what to file:
 
-1. **One component, one violation** → file individual bug via [/qa-bug](../../../plugins/vc-fix/commands/qa-bug.md) tagged with the violated `BL-UI-NNN`.
+1. **One component, one violation** → file individual bug via `/vc-fix:qa-bug` tagged with the violated `BL-UI-NNN`.
 2. **One component, multiple violations** → file ONE bug per component listing all violations (don't fragment).
 3. **Multiple components share the same violation** (e.g. five components all use the same off-token color) → file ONE rollup bug describing the systemic drift. Title: `Design System Drift — [violation type] across [N] components`. Reference `BL-UI-002` or whichever invariant.
 4. **Token itself is wrong** (e.g. theme switch broke `--color-primary` resolution) → P1 bug, the design system is broken, not the components.

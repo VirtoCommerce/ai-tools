@@ -7,7 +7,7 @@ argument-hint: "component name | atoms | molecules | organisms | all"
 
 # /qa-storybook — Storybook Component Testing
 
-Test Storybook components for responsive behavior, state completeness and in-story a11y. **Pixel regression is not done here:** it is the `PIXEL` instrument of [`/qa-visual-regression`](../qa-visual-regression/SKILL.md), a scripted base-vs-head comparison. Delegates to **ui-ux-expert** agent with Chrome DevTools MCP.
+Test Storybook components for responsive behavior, state completeness and in-story a11y. **Pixel regression is not done here:** it is the `PIXEL` instrument of [`/qa-visual-regression`](../qa-visual-regression/SKILL.md), a scripted base-vs-head comparison. Delegates to the **`vc-test:ui-ux-expert`** agent on a Playwright lane.
 
 ## Usage
 ```
@@ -34,9 +34,9 @@ Test Storybook components for responsive behavior, state completeness and in-sto
    - If component name: find matching stories in Storybook
    - If tier (atoms/molecules/organisms): test all components in that Atomic Design tier
 
-3. **Delegate to ui-ux-expert** via Task tool (`subagent_type: ui-ux-expert`):
+3. **Delegate to `vc-test:ui-ux-expert`** via Task tool (`subagent_type: vc-test:ui-ux-expert`):
    - Pass component name(s), Storybook URL
-   - Agent uses Chrome DevTools MCP for screenshot capture
+   - Agent uses the Playwright lane the brief names (a lane the run leaves free) for screenshot capture
    - Agent reads supporting files from this skill folder for methodology
 
 4. **For each component, test:**

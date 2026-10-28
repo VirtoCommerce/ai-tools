@@ -20,6 +20,6 @@ comparing them by eye — is retired, for three reasons:
   one run instead.
 
 Which visual instrument a risk takes (`PIXEL` / `DESIGN` / `PROBE` / `CONTENT`):
-[`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2a. Chromatic and the other hosted
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2a. Chromatic and the other hosted
 services are still an option for vc-frontend's own CI ([`tooling-stack.md`](tooling-stack.md)
 §Decision). That is a frontend-team decision and Phase 6 of the plan, not something this repo runs.

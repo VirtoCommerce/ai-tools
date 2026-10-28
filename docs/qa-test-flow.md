@@ -398,7 +398,7 @@ flowchart TB
     subgraph L3["L3 · Execution (1 agent / browser lane · max 3)"]
         FE["qa-frontend-expert<br/>chrome"]
         BE["qa-backend-expert<br/>edge"]
-        UX["ui-ux-expert<br/>DevTools MCP"]
+        UX["ui-ux-expert<br/>free Playwright lane"]
         REG["/qa-regression<br/>Artifact C · own 3-lane pool"]
     end
     subgraph L4["L4 · External systems (read-only except 2 gated writes)"]
@@ -446,7 +446,7 @@ flowchart TB
 | `test-data-engineer` | L2 | 3 (cond.) | gap fixtures needed | seeded data, `@td()` aliases, green `td:validate` | none |
 | `qa-frontend-expert` | L3 | 4 | checklist + A + `@td()` + BL/ECL | pass/fail + evidence + bugs | chrome |
 | `qa-backend-expert` | L3 | 4, 5-triage | same; triage oracle at 5-triage | same; App-Insights classification | edge |
-| `ui-ux-expert` | L3 | 4 (UI) | component scope | a11y / design findings | DevTools MCP |
+| `ui-ux-expert` | L3 | 4 (UI) | component scope | a11y / design findings | a Playwright lane the wave leaves free |
 | `/qa-regression` | L3 | 4 (track 2) | Artifact-C suite IDs (incl. the new Draft cases) | `RUN_ID` + pass rate | own pool |
 | `/qa-triage-results` | L3 | 5-triage | `RUN_ID` + `--fix` | `triage-report.md` (confirmed bugs / test-fixes applied / dismissed) + flakiness history feed | own pool |
 

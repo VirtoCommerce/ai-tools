@@ -16,7 +16,7 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 |---|---|---|
 | F1 | any **High/Critical** risk in the register, or the ticket is **P0/P1** (D8). Layer and domain counts do **not** fire it — they raise a risk's L×I | exploratory; a High/Critical risk on a `{HYPOTHESIS}` oracle takes technique `MODEL` (M1) |
 | F2 | a Story whose surface purpose is `UNDECLARED` in the domain map §1 ([`domain-map.md`](../../knowledge/domain-map.md)) | a purpose risk with technique `MODEL` whose Source carries `floor:F2`, + exploratory, whatever else holds |
-| F3 | a rendering file in the diff ([`visual-axis.md`](../../../../.claude/skills/qa-test/visual-axis.md) §1 source 1) — a lower bound, see below | visual lane |
+| F3 | a rendering file in the diff ([`visual-axis.md`](../qa-design/visual-axis.md) §1 source 1) — a lower bound, see below | visual lane |
 | F4 | a revenue-critical flow is touched (cart, checkout, payment, pricing, orders) | no risk on it below Medium |
 | F5 | the bundle's `known.cases_at_risk` is non-empty (`/vc-test:ticket-context` block 4 ran `regression:select` over the changed files; the strategy adds `npm run tc:scope -- --domain <slug> --observable <each observable the diff or an AC moves>` where path tokens miss (in this repository: `/qa-test-fast`'s `.claude/knowledge/execution/regression-selection.md`)) | coverage triage + a regression run over those cases, **after the staleness check below**. Under vc-test (`--change-map`) the requirement is the list, not the run: every suite at risk, their residual risk and `/qa-regression <suites>` in Out of scope, the row `SKIP` (gate 6h, vc-test U7); fired on doubt, Out of scope names the failed lookup instead of the suites |
 | F6 | a `NOT DEPLOYED:` line in the bundle's `blockers[]` — a counted PR whose build the stand does not carry. A `DEPLOYMENT UNKNOWN:` line (no live source for that layer, or not checked) does **not** fire it | **BLOCKED** before any browser opens. `UNKNOWN` is not blocked: the run proceeds and the verdict says "deployment unverified", quoting the line |
@@ -37,11 +37,13 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
   false), and no case is at risk ⇒ `skipped: "regression-select"`, not fired. A lookup that ran and failed stays doubt
   and fires it; a case at risk fires it.
 - **A row this install cannot run.** A fired floor stays fired, and every other requirement holds. `unavailable[]`
-  lists each row it needs that the install lacks a tool for: `Exploratory` needs a browser lane (`mcp:playwright-*`),
-  `Visual lane` needs `mcp:chrome-devtools`, `Coverage triage + regression` needs `regression-select`. That row may
+  lists each row it needs that the install lacks a tool for: `Exploratory` and `Visual lane` each need a browser lane
+  from the pool `plan-run` draws it from (`lib/artifacts.json`: the scenario template's browser proof, the `visual`
+  entry's `lanes`), `Coverage triage + regression` needs `regression-select`. That row may
   read `SKIP — not available in this install: <capability>` instead of `RUN`. **Only a probe says a tool is
   missing:** a lane is missing when `capabilities.json` lists the MCP servers it was given (`mcp`) and none of them
-  is one (a browser lane: a name containing `playwright`; the Visual lane: `chrome-devtools`); a script, when
+  is one (a browser lane: one of that pool's `mcp:<lane>` — any other Playwright server is not a lane `plan-run`
+  can place, so it does not count); a script, when
   `scripts.<name>` is `false`. A
   capability the file does not state — no `--mcp`, `{}` — is not missing. A file that is not an object exits 2. F8's `PIXEL` risk (§VISUAL) needs
   `capabilities.json` `pixel`: an engine and a front checkout; without them the risk stays, its Lane reads that
@@ -96,7 +98,7 @@ not have — a change that declares no visual effect or moves shared UI), `DESIG
 - **F1's P0/P1 names** come from `project-profile.json` `tracker.p0p1Priorities`; without it, Highest/High/P0/P1/Blocker/Critical.
 - **F8 fails closed:** an unread diff never fires it — it needs an affirmative ui-kit path in what was read ([`lib/floors.mjs`](lib/floors.mjs) `UI_KIT`).
 - **F3 is a lower bound.** It fires on a rendering file in the diff
-  ([`visual-axis.md`](../../../../.claude/skills/qa-test/visual-axis.md) §1 source 1) and never on a bare storefront/admin-spa
+  ([`visual-axis.md`](../qa-design/visual-axis.md) §1 source 1) and never on a bare storefront/admin-spa
   layer, because eligibility-as-trigger pinned that axis to true (visual-axis.md §1). The strategy adds the visual
   lane itself when it identifies a changed rendered value.
 - **F4 reads names, never prose:** paths, operations, endpoints, settings, components and domains — not claims

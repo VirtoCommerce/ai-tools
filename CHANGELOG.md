@@ -8,6 +8,51 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Parallel `/qa-bug` runs no longer share scratch files — `vc-fix` `0.18.2` — 2026-10-28
+
+### Fixed
+
+- `/qa-bug` gives every run its own work folder (`$WORK`, `knowledge/execution/jira-bug-fields.md` §0) and writes
+  every Jira/Azure payload (`fields.json`, `issue.json`, `link.json`, readbacks) there by absolute path. Before, the
+  recipe named bare `fields.json` / `issue.json`, so two runs filed in parallel from one session wrote the same files
+  in the shared temp dir — observed when VCST-6594 and VCST-6595 were filed at the same minute.
+- Before each write to an existing issue, `--key` must equal `$WORK/KEY` and the payload must be this bug's; a
+  mismatch stops the run instead of sending.
+
+## `qa-investigate` from a subagent: the caller writes `source/findings.md` — `vc-fix` `0.18.1` — 2026-10-28
+
+### Fixed — a subagent's evidence package could not be completed without bypassing a refusal
+
+Claude Code refuses a subagent's `Write` of a report-like file, and Part A row 13's `source/findings.md` is
+one. During VCST-6121 a subagent building packages hit that refusal and wrote the file through a shell
+heredoc instead — the package was complete, the rule was not. `evidence-and-root-cause.md` row 13 now says
+how it works from a subagent: the findings come back in the hand-back under a `## source/findings.md`
+heading and the calling session writes them verbatim to `<package>/source/findings.md` before
+`/qa-bug --evidence`. Inline runs are unchanged.
+
+## The visual lane runs from the plugin — `vc-test` `0.12.0` — 2026-10-27
+
+P2-5c of the `vc-test` plan (`docs/superpowers/plans/2026-10-27-vc-test-p2-5c-design.md`).
+Teammates: run `/plugin marketplace update ai-tools` (vc-test ≥ 0.12.0) before `/qa-test`, `/qa-test-fast` or `/qa-design`; all three now invoke `vc-test:qa-design` and `vc-test:ui-ux-expert`.
+
+**Moved — the design skill.** `skills/qa-design/` holds the whole skill with its supporting files, including `visual-axis.md`. Its verdict is unchanged: the outcome, landing and blocks table, `CONFIRMED` / `DRIFT` / `MISSING` / `UNSPEC` / `KNOWN_DIVERGENCE` / `SKIPPED`, precedence `BL-UI` > design spec > UX heuristic, and a SKIPPED axis is never a PASS. This repository's `/qa-design` is now a shim that runs `vc-test:qa-design` (needs vc-test ≥ 0.12.0).
+
+**Moved — the agent.** `agents/ui-ux-expert.md` (the `.claude/agents/` copy is deleted). `/qa-test`, `/qa-test-fast`, `/qa-accessibility`, `/qa-storybook` and the agent roster dispatch `vc-test:ui-ux-expert`.
+
+**Changed — the lane.** The visual lane runs on a Playwright lane (`playwright-edge`, `-chrome`, `-firefox`) that the run's wave leaves free: in a `vc-test` run `plan-run` draws it from the pool beside the scenarios, and in this repository's `/qa-test` it takes the lane the wave's other dispatches do not hold, or the next wave when none is. Chrome DevTools MCP and Lighthouse are retired from the lane; the checks run through `browser_evaluate` with the plugin's snippets (`vc-browser.md`).
+
+**Added — `lib/design/`.** The measurement code (layout, design-spec verification, spec extraction) as a generated bundle with a snippet printer. `npm run vc-test:design` regenerates it and `vc-test:design:check` fails when it is stale; the check runs as a `gates.yml` step. **BL-sync authors:** a BL YAML edit (`bl/ui.yaml`, `a11y.yaml`, `price`, `cat`, `chk`) changes the generated `knowledge/bl-ui.md` and makes `vc-test:design:check` fail until `npm run vc-test:design` is run.
+
+**Added — `knowledge/`.** Four copies, repository copy canonical: `bl-ui.md` (generated), `critical-ui-scope.md`, `storefront-selectors.md`, `wcag-accessibility-checklist.md`. `context:check` DOC-009 is now 2.
+
+**Changed — `vc-fix`, no version change.** `plugins/vc-fix/knowledge/oracles/business-logic.md` changed by one generated line (`bl:render` from `bl/ui.yaml`, whose intro named the moved skill); `vc-fix` is not bumped for it.
+
+**Changed — manifest.** The "visual-axis floors still live in a checkout of `ai-tools`" caveat is gone from the README; `plugin.json` and the marketplace entry name `/vc-test:qa-design` and the `ui-ux-expert` agent.
+
+**Fixed — review of this release.** The occlusion / contrast / focus-indicator / image-aspect classifiers emit `PROPOSED-BL-UI-007..010` (and `PROPOSED-BL-UI-008-NONTEXT`): the bare ids collided with the oracle's own `BL-UI-007`. The `Exploratory` and `Visual lane` floors need one of the lanes `plan-run` draws from (`lib/artifacts.json`), not any server named `playwright`. `scenario-rows.mjs` counts a `\\|` and a row without its closing `|` correctly. `snippet.mjs` JSON-parses only an argument that starts with `[`, `{` or `"`. `esbuild` is an exact devDependency, so the generated bundle is byte-stable.
+
+---
+
 ## Triage runs from the plugin — `vc-test` `0.11.0` — 2026-10-27
 
 P2-5b of the `vc-test` plan (`docs/superpowers/plans/2026-10-27-vc-test-p2-5b-triage.md`).

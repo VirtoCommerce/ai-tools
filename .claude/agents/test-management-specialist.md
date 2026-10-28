@@ -121,7 +121,7 @@ EP, BVA, Decision Tables, State Transitions, Pairwise, Classification Tree, Erro
 | Admin UI | `qa-backend-expert` | `playwright-edge` / Chrome DevTools |
 | Storefront UI | `qa-frontend-expert` | `playwright-chrome` |
 | E2E Cross-Layer | `qa-frontend-expert` (lead) + `qa-backend-expert` (verify) | coordinated |
-| A11y / UX | `ui-ux-expert` | Chrome DevTools |
+| A11y / UX | `vc-test:ui-ux-expert` | a Playwright lane (the run assigns it) |
 
 ---
 

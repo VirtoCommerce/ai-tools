@@ -2,14 +2,14 @@
 
 One message, at most three browser lanes ([`../../rules/agents.md`](../../rules/agents.md) §Parallel
 Execution); the visual lane joins it or follows as soon as one lane returns
-([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §4). Each lane is its own agent with its own browser session and its own pool user.
+([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §4). Each lane is its own agent with its own browser session and its own pool user.
 
 | Lane | Agent | Browser | Pool user | Runs |
 |---|---|---|---|---|
 | Storefront | `qa-frontend-expert` | `playwright-chrome` | `@td(AGENT_POOL_SLOT_1.*)` | the checklist's storefront section |
 | Admin + API | `qa-backend-expert` | `playwright-edge` | `@td(AGENT_POOL_SLOT_3.*)` | the Admin/REST/GraphQL section |
 | Exploratory | `qa-testing-expert` | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.*)` | `/qa-exploratory ticket <TICKET> <env>` |
-| Visual | `ui-ux-expert` | Chrome DevTools MCP | the auth path the brief names (§Visual) | the `qa-design` skill's axes, when `visual_surface: true` |
+| Visual | `vc-test:ui-ux-expert` | the Playwright lane left free (else the first to return) | the account role the brief names (§Visual) | the `vc-test:qa-design` skill's axes, when `visual_surface: true` |
 
 The pool slots are the ones in [`../../knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
 §Test isolation in parallel runs. A checklist with a cross-layer section gives it to the lane that
@@ -57,15 +57,15 @@ The lane runs only when that row is `RUN`.
 
 ## Visual
 
-Dispatch `ui-ux-expert` — never run the `/qa-design` command. **The brief's first instruction: invoke
-the Skill tool with `skill: "qa-design"` before any browser call**, and open the return with
+Dispatch `vc-test:ui-ux-expert` — never run the `/qa-design` command. **The brief's first instruction: invoke
+the Skill tool with `skill: "vc-test:qa-design"` before any browser call**, and open the return with
 `qa-design skill: loaded`. Everything else the brief carries (target, the design project from the
-ticket's Prototype link + the `design:extract` spec path, the invariant text, the auth path, no
-credential names), the lane-count rule and the verdict vocabulary are
-[`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2–§4 — cited, not restated here.
+ticket's Prototype link + the `design:extract` spec path, the invariant text, the lane and the account
+role, never a credential), the lane-count rule and the verdict vocabulary are
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2–§4 — cited, not restated here.
 - **Writes** `{RUN_DIR}/design-report.md`; you write `summary.json.visual`.
-- **Read-only.** It creates no data; a role-gated target uses the pre-signed profile, never a minted
-  account ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2).
+- **Read-only.** It creates no data; a role-gated target signs in as that role's account on its lane, never a
+  minted account ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2).
 - **Skipped** (`visual_surface: false` or `--no-visual`) ⇒ `visual.ran: false` + the reason.
 
 ## Data — made during the run

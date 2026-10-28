@@ -111,7 +111,7 @@ Each row names THE file that is normative for its topic. Read it before acting o
 |---|---|
 | Ticket → flow routing (type × status → `feature-test` / `/qa-verify-fix` / `/qa-hotfix-check`) | `.claude/knowledge/execution/ticket-routing.md` |
 | Ticket status transitions — `qa-lead-orchestrator` is the only actor, two hops per run | `.claude/knowledge/execution/ticket-status-transitions.md` |
-| `/qa-test` — the pipeline contract (steps, gates, FAST vs FULL) | `.claude/commands/qa-test.md` (shell) + `.claude/skills/qa-test/` (methodology: `authoring.md`, `close-out.md`, `modes.md`, `axes.md`, `visual-axis.md`, `contract-refresh.md`, `coverage-triage.md`, `exploratory-lane.md`, `triage.md`) · the Test Model: `.claude/skills/qa-test-model/` |
+| `/qa-test` — the pipeline contract (steps, gates, FAST vs FULL) | `.claude/commands/qa-test.md` (shell) + `.claude/skills/qa-test/` (methodology: `authoring.md`, `close-out.md`, `modes.md`, `axes.md`, `contract-refresh.md`, `coverage-triage.md`, `exploratory-lane.md`, `triage.md`) · the visual axis: `plugins/vc-test/skills/qa-design/visual-axis.md` · the Test Model: `.claude/skills/qa-test-model/` |
 | The six derived pre-flight axes (`layer`, `visual_surface`, `contract_surface`, `coverage_surface`, `data_surface`, `domain_map`) | `.claude/skills/qa-test/axes.md` |
 | **What a domain IS** — actors, value chain, surface inventory per layer, where the layers DISAGREE, coverage shape | `.claude/knowledge/domain/<domain>.md` (shape: `domain-map.md`; build/refresh `/qa-domain-map <slug>`; freshness `npm run domain:check`) |
 | Orders & Fulfillment (`ord`) — CustomerOrder + PaymentIn/Shipment/Refund across Admin, storefront, REST/xAPI | `.claude/knowledge/domain/orders.md` |
@@ -128,7 +128,7 @@ Each row names THE file that is normative for its topic. Read it before acting o
 | MCP servers, `--secrets`, Chrome DevTools auth options | `.claude/knowledge/execution/browser-lanes.md` |
 | Oracles — BL invariants, ECL edge cases, bug catalog; their audit + value gate | `.claude/knowledge/oracles/`, `.claude/skills/qa-review-oracles/` (`npm run oracles:rank`, `bl:lint`, `ecl:lint`) |
 | Test-case staleness audit (Dim 11, `--triangulate`) | `.claude/skills/qa-review-tests/triangulation-criteria.md` |
-| Claude Design `vs. DESIGN` axis | `.claude/skills/qa-design/claude-design-verification.md` |
+| Claude Design `vs. DESIGN` axis | `plugins/vc-test/skills/qa-design/claude-design-verification.md` |
 | Tier classification for cross-product reuse | `.claude/architecture/TIER.md` |
 | **Creating or restructuring an agent / skill / command** — placement, budget, mandatory citations, the observed-behaviour (`kb`) step | `.claude/knowledge/agents/authoring-standard.md` |
 | Command / skill arguments | each file's frontmatter (the `/` menu) |

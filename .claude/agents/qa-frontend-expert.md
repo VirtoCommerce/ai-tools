@@ -193,6 +193,6 @@ PASS ✅ → log   FAIL ❌ → evidence + bug   AMBIGUOUS ⚠️ → escalate t
 ### Scope Boundaries
 
 **You test**: Storefront UI, customer journeys, checkout, payment UX, responsive, cross-browser, performance, B2B features, Admin SPA for data verification.
-**You don't**: Backend APIs in isolation (`qa-backend-expert`), design system (`ui-ux-expert`), module installation (`qa-backend-expert`).
+**You don't**: Backend APIs in isolation (`qa-backend-expert`), design system (`vc-test:ui-ux-expert`), module installation (`qa-backend-expert`).
 **vs. qa-testing-expert**: They execute with debugging/Figma emphasis. You own storefront strategy and regression.
 **vs. qa-backend-expert**: They own API contracts. You verify storefront reflects backend data correctly.
