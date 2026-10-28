@@ -119,6 +119,7 @@ async function resolveAssets(uploaded) {
     }
     if (!id) { fail(`asset ${a.key} (${a.filename}) missing — refs to it are not compared below`); continue; }
     ids[a.key] = id;
+    if (!url) { fail(`asset ${a.key} (${id}) url missing`); continue; }
     const r = await fetch(url, { method: 'HEAD' });
     if (r.status === 200) ok(`asset ${a.key} (${id}) url answers 200`); else fail(`asset ${a.key} url → ${r.status}`);
   }
@@ -205,15 +206,29 @@ async function teardown() {
     catch (e) { fail(`${ds}: residue UNKNOWN — the residue query failed (${String(e.message).slice(0, 200)})`); continue; }
     if (left === 0) ok(`${ds}: zero AGENT-TEST-6475 residue`); else fail(`${ds}: ${left} AGENT-TEST-6475 residue`);
   }
-  // Clear an overlay entry only for an asset this run actually deleted.
-  writeEnvAliasOverride(Object.fromEntries(ASSET_SPECS.filter((a) => deleted.has(a.filename)).map((a) => [a.alias, { id: '', url: '' }])));
+  // Clear an overlay entry when its asset was deleted in this run OR no longer exists (looked up by the
+  // overlay id, so a sha1-deduplicated asset under another filename is covered). Keep it only while the
+  // asset still exists (e.g. kept for a foreign referrer). A dry run clears nothing.
+  if (DRY_RUN) return;
+  const clear = {};
+  for (const a of ASSET_SPECS) {
+    const ovId = overlayAsset(a.alias)?.id || '';
+    if (deleted.has(a.filename)) { clear[a.alias] = { id: '', url: '' }; continue; }
+    if (!ovId) continue;
+    const exists = await query(DATASETS.primary, 'count(*[_id == $id])', { id: ovId });
+    if (exists === 0) { clear[a.alias] = { id: '', url: '' }; log(`  · ${a.alias}: overlay asset ${ovId} no longer exists — cleared`); }
+    else log(`  · ${a.alias}: overlay asset ${ovId} still exists — kept`);
+  }
+  writeEnvAliasOverride(clear);
 }
 
 async function main() {
   console.log(`=== seed-sanity (VCST-6475)${TEARDOWN ? ' TEARDOWN' : ''}${DRY_RUN ? ' [dry-run]' : ''}${VERIFY_ONLY ? ' [verify-only]' : ''} ===`);
   if (!PROJECT) { log(`SKIP: {{${ENV.projectId}}} is not set for TEST_ENV=${TEST_ENV} — no QA Sanity project on this env.`); return; }
-  // --verify-only writes nothing, so it needs no risk gate; seed and teardown do.
-  const risk = VERIFY_ONLY && !TEARDOWN ? `TEST_ENV=${TEST_ENV} | read-only` : assertSafeRisk(`Sanity project {{${ENV.projectId}}}`);
+  // The risk gate is skipped only for --verify-only on the READ token; a fallback to the write token
+  // (and every seed/teardown) goes through assertSafeRisk.
+  const readOnly = VERIFY_ONLY && !TEARDOWN && TOKEN_LABEL === ENV.readToken;
+  const risk = readOnly ? `TEST_ENV=${TEST_ENV} | read-only` : assertSafeRisk(`Sanity project {{${ENV.projectId}}}`);
   if (!TOKEN) {
     const need = VERIFY_ONLY ? `{{${ENV.readToken}}} or {{${ENV.writeToken}}}` : `{{${ENV.writeToken}}}`;
     console.error(`ABORT: ${need} is not set (.env.local).`); process.exit(2);
