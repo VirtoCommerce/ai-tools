@@ -1,265 +1,54 @@
 {
-  "runId": "REG-2026-10-28-1013",
+  "runId": "REG-2026-10-28-1519",
   "status": "in_progress",
-  "startedAt": "2026-10-28T09:15:25.387Z",
-  "windowStart": "2026-10-28T09:15:25.387Z",
-  "selection": "104,106,107,109,111,112,089,091,093,082,090,028,097,011,010,014,037,006,008,002,005,031,044,046,015,004,042,043,045,032,072,001,093b,013",
-  "env": "vcst",
-  "scoped": false,
-  "cases": "all",
-  "purpose": "/qa-run sprint:26-21 --frontend — Sprint 26-21 plan §5.1.1 (VCST-6417)",
-  "plan": "docs/Sprint plans/sprint-26-21-summary.json",
+  "startedAt": "2026-10-28T14:20:14.7907584Z",
+  "windowStart": "2026-10-28T14:20:14.7907584Z",
+  "selection": "114,114a,114b,115,105,027",
+  "env": "vcptcore",
+  "scoped": true,
+  "cases": "ids",
+  "purpose": "/qa-test VCST-6121 step 4c - C1 exact set (33 new Draft + 3 RE-BASE), --no-promote",
+  "plan": "reports/regression/REG-2026-10-28-1519/preflight.json",
   "suites": {
-    "104": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "pass": 23,
-      "fail": 2,
-      "blocked": 2
-    },
-    "106": {
-      "status": "pending",
-      "lane": "browser",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 29,
-      "note": "re-run: hub served on firefox (091 ran 69 cases)"
-    },
-    "107": {
-      "status": "not_deployed",
-      "lane": "browser",
-      "reason": "VirtoCommerce.Punchout not installed on vcst — run on vcptcore-qa1 (plan §7.1 gate 4)"
-    },
-    "109": {
-      "status": "not_deployed",
-      "lane": "browser",
-      "reason": "VirtoCommerce.Punchout not installed on vcst — run on vcptcore-qa1 (plan §7.1 gate 4)"
-    },
-    "111": {
-      "status": "done",
-      "lane": "browser",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 13,
-      "browser": "none"
-    },
-    "112": {
-      "status": "pending",
-      "lane": "browser",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 28,
-      "note": "re-run: hub served on firefox (091 ran 69 cases)"
-    },
-    "089": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-firefox",
-      "pass": 11,
-      "fail": 0,
-      "blocked": 43,
-      "note": "SR_REP_PRIMARY login rejected; persona cases blocked; candidate re-run"
-    },
-    "091": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-firefox",
-      "pass": 60,
-      "fail": 2,
-      "blocked": 6
-    },
-    "093": {
-      "status": "pending",
-      "lane": "browser",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 79,
-      "note": "re-run: hub served on firefox (091 ran 69 cases)"
-    },
-    "082": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "pass": 37,
-      "fail": 3,
-      "blocked": 3
-    },
-    "090": {
-      "status": "pending",
-      "lane": "browser",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 22,
-      "note": "re-run: hub served on firefox (091 ran 69 cases)"
-    },
-    "028": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "pass": 35,
-      "fail": 0,
-      "blocked": 0
-    },
-    "097": {
-      "status": "pending",
-      "lane": "browser",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 51,
-      "note": "re-run: hub served on firefox (091 ran 69 cases)"
-    },
-    "011": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-firefox",
-      "pass": 26,
-      "fail": 4,
-      "blocked": 11
-    },
-    "010": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "pass": 32,
-      "fail": 12,
-      "blocked": 4
-    },
-    "014": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-firefox",
-      "pass": 52,
-      "fail": 1,
-      "blocked": 14,
-      "note": "infra: secrets file generated for vcptcore; needs re-run"
-    },
-    "037": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "pass": 3,
-      "fail": 0,
-      "blocked": 1
-    },
-    "006": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "pass": 54,
-      "fail": 4,
-      "blocked": 12
-    },
-    "008": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "pass": 12,
-      "fail": 0,
-      "blocked": 22
-    },
-    "002": {
+    "105": {
       "status": "running",
       "lane": "browser",
-      "browser": "playwright-firefox"
+      "browser": "none",
+      "startedAt": "2026-10-28T14:22:44Z",
+      "total": 1
     },
-    "005": {
+    "114": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-28T14:22:44Z",
+      "total": 17,
+      "pass": 10,
+      "fail": 5,
+      "blocked": 2,
+      "finishedAt": "2026-10-28T15:05:49Z"
+    },
+    "115": {
       "status": "running",
       "lane": "browser",
-      "browser": "playwright-edge"
-    },
-    "031": {
-      "status": "done",
-      "lane": "browser",
       "browser": "playwright-edge",
-      "pass": 18,
-      "fail": 3,
-      "blocked": 5
+      "startedAt": "2026-10-28T15:05:49Z",
+      "total": 14
     },
-    "044": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "pass": 3,
-      "fail": 2,
-      "blocked": 6
-    },
-    "046": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-firefox",
-      "pass": 4,
-      "fail": 1,
-      "blocked": 0
-    },
-    "015": {
+    "114a": {
       "status": "pending",
       "lane": "browser"
     },
-    "004": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-firefox",
-      "pass": 32,
-      "fail": 1,
-      "blocked": 22
-    },
-    "042": {
-      "status": "running",
-      "lane": "browser",
-      "browser": "playwright-edge"
-    },
-    "043": {
-      "status": "running",
-      "lane": "browser",
-      "browser": "playwright-chrome"
-    },
-    "045": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-firefox",
-      "pass": 2,
-      "fail": 4,
-      "blocked": 2
-    },
-    "032": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "pass": 4,
-      "fail": 0,
-      "blocked": 13
-    },
-    "072": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 5,
-      "note": "infra: secrets file generated for vcptcore"
-    },
-    "001": {
-      "status": "running",
-      "lane": "browser",
-      "browser": "playwright-firefox"
-    },
-    "093b": {
+    "114b": {
       "status": "pending",
-      "lane": "browser",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 16,
-      "note": "re-run: hub served on firefox (091 ran 69 cases)"
+      "lane": "browser"
     },
-    "013": {
-      "status": "done",
+    "027": {
+      "status": "running",
       "lane": "browser",
-      "browser": "playwright-chrome",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 1,
-      "note": "infra: secrets file generated for vcptcore"
+      "browser": "none",
+      "startedAt": "2026-10-28T14:22:44Z",
+      "total": 2
     }
   }
 }

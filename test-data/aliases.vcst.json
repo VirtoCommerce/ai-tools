@@ -945,12 +945,12 @@
     "contactId": "089afd9f-fefc-43cb-9219-8f42b45047c0"
   },
   "SR_ORDER_ACME_WIN_NEW": {
-    "id": "11463564-0ff0-4c73-bb01-eec7725570b2",
-    "createdDate": "2026-10-13T07:46:53.7510695Z"
+    "id": "a450fdbb-a8b5-4db4-ba78-9c24006f7bc1",
+    "createdDate": "2026-10-28T14:30:56.5936011Z"
   },
   "SR_ORDER_ACME_WIN_PROC": {
-    "id": "550825f4-c0ec-41e3-b173-1172351e1b40",
-    "createdDate": "2026-10-13T07:46:59.0473958Z"
+    "id": "aea03312-3a0c-4f37-9975-8990f5f0e469",
+    "createdDate": "2026-10-28T14:31:09.8002082Z"
   },
   "CAT_EMPTY": {
     "id": "ccb46dbd-c966-4159-8093-9c5a2f264603",
@@ -967,8 +967,8 @@
     "url": "/seed-test-fixtures/agent-test-seo-configured-product"
   },
   "SR_ORDER_ACME_ELEC": {
-    "id": "c030493a-fb39-4e35-b7d3-65dadd7aa8c7",
-    "createdDate": "2026-10-13T07:47:21.3477265Z"
+    "id": "e01f1da1-2eeb-4ea2-8b50-8066572090a8",
+    "createdDate": "2026-10-28T14:31:25.4006242Z"
   },
   "MSN_ORDERVALUE": {
     "id": "74e4f6b5-7d81-4b94-a799-7623a022d653",
@@ -1654,7 +1654,8 @@
     "seeded_values_json": "[\"Organization employee\",\"Purchasing agent\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\",\"AGENT-TEST-Org-Returns-View-Submit\",\"AGENT-TEST-Org-Returns-Viewer\"]",
     "narrowed_values": "[\"Organization employee\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\",\"AGENT-TEST-Org-Returns-View-Submit\",\"AGENT-TEST-Org-Returns-Viewer\"]",
     "narrowed_omitted_role": "Purchasing agent",
-    "returns_roles": "AGENT-TEST-Org-Returns-View-Submit;AGENT-TEST-Org-Returns-Viewer"
+    "returns_roles": "AGENT-TEST-Org-Returns-View-Submit;AGENT-TEST-Org-Returns-Viewer",
+    "narrowed_picker_keyword": "Purchasing agent"
   },
   "SC_MULTI": {
     "_inline": true,
@@ -2074,60 +2075,60 @@
     ]
   },
   "SR_TASK_FUTURE_YANKEE": {
-    "id": "ce4a65bb-d8e4-4223-a2f3-fec37d2d2af4",
-    "due_date": "2026-10-16T11:00:00.000Z"
+    "id": "a865e545-57dc-4db4-be3a-bf777f1d143b",
+    "due_date": "2026-10-29T11:00:00.000Z"
   },
   "SR_TASK_OVERDUE_MIKE": {
-    "id": "3bb8caaa-40ed-40b5-89db-0f38d35761a6",
-    "due_date": "2026-10-14T09:00:00.000Z"
+    "id": "c33b552b-ad76-4444-a4f6-e27afa01139e",
+    "due_date": "2026-10-27T09:00:00.000Z"
   },
   "SR_TASK_DONE_ECHO": {
-    "id": "7a293a9b-a817-4d53-8735-437cf1109c57",
-    "due_date": "2026-10-06T16:00:00.000Z"
+    "id": "adf86081-023e-42ff-b74d-519eb372d2cd",
+    "due_date": "2026-10-19T16:00:00.000Z"
   },
   "SR_TASK_FUTURE_ROMEO": {
-    "id": "d88ff71d-4410-45f4-9425-e0bc861310e3",
-    "due_date": "2026-10-22T09:00:00.000Z"
+    "id": "a8e7e694-b5ae-4ab5-994b-aa21ed880c19",
+    "due_date": "2026-11-04T09:00:00.000Z"
   },
   "SR_TASK_TODAY_SIERRA": {
-    "id": "a54213c6-cf8b-4b89-99cd-fa6802891a1f",
-    "due_date": "2026-10-15T12:00:00.000Z"
+    "id": "bd3483dc-2493-4432-a84f-aaf248293f4f",
+    "due_date": "2026-10-28T12:00:00.000Z"
   },
   "SR_TASK_FUTURE_OSCAR": {
-    "id": "528bda00-587a-41f5-be28-8bd99239741e",
-    "due_date": "2026-10-29T13:00:00.000Z"
+    "id": "d9bbfa69-0d0d-4428-b8ba-35d4e771cdc1",
+    "due_date": "2026-11-11T13:00:00.000Z"
   },
   "SR_TASK_OVERDUE_ZULU": {
-    "id": "dbfc0069-b286-4a3c-b667-9be135014706",
-    "due_date": "2026-10-10T10:00:00.000Z"
+    "id": "89dbaa70-c342-4150-b747-2573c2510514",
+    "due_date": "2026-10-23T10:00:00.000Z"
   },
   "SR_TASK_DONE_FOXTROT": {
-    "id": "e44f5b94-a2a4-49d7-8852-6b9fe9f4384f",
-    "due_date": "2026-10-20T10:00:00.000Z"
+    "id": "67c1a27a-9302-48de-a397-d53a1df7a82d",
+    "due_date": "2026-11-02T10:00:00.000Z"
   },
   "SR_TASK_TODAY_DELTA": {
-    "id": "dd200be9-e0ac-4b96-ba6b-9022e88f6821",
-    "due_date": "2026-10-15T20:00:00.000Z"
+    "id": "60134bc7-682f-410d-9a5c-371b0f4c9f78",
+    "due_date": "2026-10-28T20:00:00.000Z"
   },
   "SR_TASK_FUTURE_CHARLIE": {
-    "id": "6f9a793e-4d95-416d-9ee7-715fd1b4d039",
-    "due_date": "2026-10-22T17:00:00.000Z"
+    "id": "e3f5d239-18a5-4256-bf21-9edfbcd47459",
+    "due_date": "2026-11-04T17:00:00.000Z"
   },
   "SR_TASK_DONE_NOVEMBER": {
-    "id": "a855238e-a85a-4bc4-910b-bb2ec2607135",
-    "due_date": "2026-10-13T12:00:00.000Z"
+    "id": "2b660624-3c25-45a7-ae1d-7d26bf138d2f",
+    "due_date": "2026-10-26T12:00:00.000Z"
   },
   "SR_TASK_TODAY_ALPHA": {
-    "id": "724dc655-b550-41b2-8660-9a0683b8940f",
-    "due_date": "2026-10-15T07:00:00.000Z"
+    "id": "33a539ea-f870-421f-abaa-e5659ce41044",
+    "due_date": "2026-10-28T07:00:00.000Z"
   },
   "SR_TASK_FUTURE_BRAVO": {
-    "id": "3ebfd8fb-8188-46c7-8937-f8a898c5ad7f",
-    "due_date": "2026-10-18T15:00:00.000Z"
+    "id": "c55452bb-42fe-4d6c-bb89-8ca5e511d7e9",
+    "due_date": "2026-10-31T15:00:00.000Z"
   },
   "SR_TASK_DONE_TANGO": {
-    "id": "53e9e024-63f4-4c38-b314-042116870048",
-    "due_date": "2026-10-15T15:00:00.000Z"
+    "id": "83a69fe5-1bff-42af-925e-ddbc07e53980",
+    "due_date": "2026-10-28T15:00:00.000Z"
   },
   "SR_TASK_GROUPS": {
     "open_overdue": "2",
@@ -2135,8 +2136,8 @@
     "open_future": "7",
     "completed": "4",
     "total": "22",
-    "seeded_at": "2026-10-15T13:33:38.038Z",
-    "decays_at_utc": "2026-10-15T22:00:00.000Z",
+    "seeded_at": "2026-10-28T14:31:30.854Z",
+    "decays_at_utc": "2026-10-28T23:00:00.000Z",
     "owner_rep_email": "agent-test-sr-primary@example.com",
     "canceled": "3",
     "dateless": "1",
@@ -2150,36 +2151,36 @@
     "browser_tz": "Europe/Budapest"
   },
   "SR_TASK_EDGE_QUEBEC": {
-    "id": "4afd1668-e2cc-4919-87fa-c896fd19a2bb",
-    "due_date": "2026-10-16T03:30:00.000Z"
+    "id": "48e78f47-e184-4c44-9701-2fb992f174e1",
+    "due_date": "2026-10-29T03:30:00.000Z"
   },
   "SR_TASK_CANCELED_LIMA": {
-    "id": "186d3db0-a06f-4220-8f53-e652ab0a18d7",
-    "due_date": "2026-10-15T10:00:00.000Z"
+    "id": "d2d61052-aebf-4dc0-a4d9-1fb45d876684",
+    "due_date": "2026-10-28T10:00:00.000Z"
   },
   "SR_TASK_EDGE_UNIFORM": {
-    "id": "7fad3bfa-eebb-4cbc-8c91-6b5e74870233",
-    "due_date": "2026-12-14T10:00:00.000Z"
+    "id": "986735a6-b15b-40b0-9aa7-e03648739706",
+    "due_date": "2026-12-27T10:00:00.000Z"
   },
   "SR_TASK_NODATE_INDIA": {
-    "id": "f50fad0f-5860-4b0d-a5ae-68e1f7c82eea",
+    "id": "8ecab910-56e2-4607-95fb-686c609aa1b0",
     "due_date": ""
   },
   "SR_TASK_CANCELED_KILO": {
-    "id": "3310f26b-3b72-432c-96ee-4e5efb2f6af1",
-    "due_date": "2026-10-12T11:00:00.000Z"
+    "id": "805c71c7-ad51-4dd1-be7d-910ba2ed2bcc",
+    "due_date": "2026-10-25T11:00:00.000Z"
   },
   "SR_TASK_EDGE_GOLF": {
-    "id": "99a7a51c-9049-4b2b-b22e-d37ebe6d53a9",
-    "due_date": "2026-10-14T22:00:00.000Z"
+    "id": "2917e9df-8102-4c86-a702-c2846930078d",
+    "due_date": "2026-10-27T23:00:00.000Z"
   },
   "SR_TASK_CANCELED_HOTEL": {
-    "id": "5f293670-5c6e-40bc-80e2-4d0f5f198366",
-    "due_date": "2026-10-17T14:00:00.000Z"
+    "id": "c43f724e-5084-46e0-bfdc-69e9d85d34df",
+    "due_date": "2026-10-30T14:00:00.000Z"
   },
   "SR_TASK_EDGE_PAPA": {
-    "id": "4ab4d444-6569-4420-a3ec-56e3b686f977",
-    "due_date": "2026-10-15T21:30:00.000Z"
+    "id": "cb5105f8-d6ff-43b3-a7be-1e6e20e0aba1",
+    "due_date": "2026-10-28T22:30:00.000Z"
   },
   "SR_TASK_GROUPS_NY": {
     "open_overdue": "3",
@@ -2196,8 +2197,8 @@
     "today_scope_excl_canceled": "6",
     "canceled_due_today": "1",
     "all_minus_tabs": "4",
-    "seeded_at": "2026-10-15T13:33:38.038Z",
-    "decays_at_utc": "2026-10-16T04:00:00.000Z"
+    "seeded_at": "2026-10-28T14:31:30.854Z",
+    "decays_at_utc": "2026-10-29T04:00:00.000Z"
   },
   "ORG_RET_VIEWER_ORG": {
     "id": "180022db-2ef9-44ad-8999-6fd6e7ca7d09"
@@ -3321,5 +3322,46 @@
     "email": "agent-test-6443-nocreate@test.virtocommerce.com",
     "role": "AGENT-TEST-6443 no-create",
     "password_var": "DEFAULT_TEST_PASSWORD"
+  },
+  "ORDER_UNSERVED_BUYER": {
+    "id": "13e7ce11-ccc2-48ec-b7d8-13b6937f5188",
+    "createdDate": "2026-10-28T14:31:16.7261911Z",
+    "customerId": "b8e16c28-a01b-4712-a855-9677bd4942ac"
+  },
+  "SR_STATS_CART_SPLIT": {
+    "id": "20df7783-7a53-4579-8ffe-b6d80075b277",
+    "name": "default"
+  },
+  "ORG_ADDR22": {
+    "org_id": "9171f45d-fbcd-4f92-a723-99687e629aea",
+    "org_name": "AGENT-TEST-Org-Addr22-20260811",
+    "count": 22
+  },
+  "ORG_ADDR22_ADMIN": {
+    "email": "agent-test-addr22-admin-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "bd8d6a08-96bc-485e-9e3e-33e10d022f0a",
+    "contactId": "91a63a7a-f3ef-45ba-b86a-9d4bbe0fd7be"
+  },
+  "DISCONTINUED_ORDER_BUYER": {
+    "email": "agent-test-discontinued-buyer-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "5be82f6e-ad9d-4fe0-a1bd-a5d2316511e9",
+    "contactId": "56249ab1-2cf8-451f-aede-6a343b7839f8"
+  },
+  "DISCONTINUED_ITEM_ORDER": {
+    "id": "d1ee1721-da49-4ee8-9ee7-74327d4afd07",
+    "number": "AGENT-TEST-ORD-DISCONTINUED",
+    "discontinued_sku": "AGENT-TEST-DISC-SKU-20260811",
+    "discontinued_product_id": "3681ebaf-0ea5-4330-8623-2563968e5bc4"
+  },
+  "PERSONAL_NON_ORG_USER": {
+    "email": "agent-test-personal-virto-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "35a04982-3cb5-4ffd-8092-2c5c15c44bb3",
+    "contactId": "40e2ab80-988a-420c-999a-c2cd37b3f321"
   }
 }

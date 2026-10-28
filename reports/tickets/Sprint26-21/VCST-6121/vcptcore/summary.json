@@ -51,7 +51,7 @@
     "deployed": {
       "platform": "3.1091.0-pr-3144-e637",
       "relevant_modules": {
-        "VirtoCommerce.Passkeys": "3.1000.0-pr-1-5d36",
+        "VirtoCommerce.Passkeys": "3.1000.0-pr-1-a25f",
         "VirtoCommerce.Customer": "3.1032.0-pr-324-b30b",
         "VirtoCommerce.Store": "3.1012.0-pr-190-ded5",
         "VirtoCommerce.XFrontend": "3.1008.0-alpha.64-vcst-6121-passkeys",
@@ -61,7 +61,12 @@
       },
       "theme": "2.61.0-pr-2601-8058-80583415"
     },
-    "deploy_pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7016"
+    "deploy_pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7016",
+    "mid_run_change": {
+      "what": "VirtoCommerce.Passkeys 3.1000.0-pr-1-5d36 -> 3.1000.0-pr-1-a25f (vc-deploy-dev vcptcore-qa commit 2026-10-28T11:19:30Z, PR head a25fea03)",
+      "diff": "5 commits: storefront plugin (usePasskeySignIn.ts +24/-2, passkey-provider.vue, index.ts), locales, manifest tags; no server C# change",
+      "effect": "1c ran on 5d36; 3x and 4a on a25f. Server-side findings unaffected; storefront baselines re-observed on a25f"
+    }
   },
   "preflight": {
     "verdict": "READY",
@@ -126,7 +131,8 @@
   },
   "timing": {
     "reachability_minutes": 2,
-    "time_to_first_test_minutes": null
+    "time_to_first_test_minutes": null,
+    "first_test_at": "2026-10-28T13:33:49Z"
   },
   "reachability": {
     "verdict": "BLOCKED(lane-secrets)",
@@ -175,6 +181,238 @@
     "fixture_gaps": [
       "IMPERSONATION_ADMIN unusable on vcptcore (login_failed, email empty) - replaced by PK_OPERATOR; one failed attempt recorded on that shared account",
       "Customers get 403 on REST currentuser/sign-in-methods (xAPI serves them) - KB-4E40858D"
+    ]
+  },
+  "discovery": {
+    "ran": true,
+    "lane": "playwright-chrome + playwright-edge",
+    "minutes": 54,
+    "charter_sources": {
+      "matrix_gaps": [
+        "V8: covered - no runtime switch"
+      ],
+      "reverse_edges": [
+        "xAPI delete: covered (not terminated)",
+        "REST delete: covered",
+        "store off: covered (token still issued)",
+        "admin revoke: ABSENT IN PRODUCT"
+      ],
+      "hypothesis_rows": [
+        "S3 S5 S7 S9 S12 S23 S24 S28 grounded",
+        "S13 NOT_REACHED - no-WebAuthn browser not emulated"
+      ],
+      "ac_drift": [
+        "C-11 covered (no flow)",
+        "C-13/C-14 NOT_REACHED - store-wide MFA mode with a shared store; moved to 4a",
+        "C-36 covered (no limit)",
+        "C-45 covered (no audit)"
+      ],
+      "rebase_rows": [
+        "031 AUTH-025/026, 033 AUTH-030/032/033 contradicted by new surface; 104/111 not"
+      ]
+    },
+    "hypotheses_grounded": 8,
+    "hypotheses_remaining": 1,
+    "model_amendments": 6,
+    "scenarios_new": [
+      {
+        "id": "N1",
+        "fate": "PROMOTE"
+      },
+      {
+        "id": "N2",
+        "fate": "PROMOTE"
+      },
+      {
+        "id": "N3",
+        "fate": "PROMOTE"
+      },
+      {
+        "id": "N4",
+        "fate": "PROMOTE"
+      },
+      {
+        "id": "N5",
+        "fate": "PROMOTE"
+      },
+      {
+        "id": "N6",
+        "fate": "PROMOTE"
+      },
+      {
+        "id": "N7",
+        "fate": "PROMOTE"
+      },
+      {
+        "id": "N8",
+        "fate": "DECLINE"
+      }
+    ],
+    "oracle_proposals": 4,
+    "bugs_surfaced": [
+      "9 handed to 5-triage - never filed here",
+      "1 out-of-scope (passwordHash in admin users API) for separate triage"
+    ],
+    "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/exploratory/SBTM-VCST-6121-2026-10-28.md"
+  },
+  "coverage_triage": {
+    "phase": "2a",
+    "owner": "test-management-specialist (Artifact A)",
+    "round": 2,
+    "hits": 274,
+    "suites": [
+      "104",
+      "105",
+      "110",
+      "111",
+      "031",
+      "032",
+      "033",
+      "042",
+      "078",
+      "082"
+    ],
+    "counts": {
+      "CONFIRMED": 271,
+      "REPAIR": 0,
+      "RE_BASE": 3,
+      "SUPERSEDED": 0
+    },
+    "re_base": [
+      "OTP-048 (105): impersonate gets fallback under customer#324",
+      "CUST-112 (027): password grant naming a bogus/foreign organization_id must be refused - credential grants now fall back",
+      "CUST-099 (027): dangling/all-zero org id recorded as defect - fallback now by design"
+    ],
+    "unscannable": [
+      "074 (legacy 11-column header, no hits)"
+    ],
+    "unmatchedObservables": [
+      "account security"
+    ],
+    "confirmed_families": {
+      "sign_in_ui": "additive passkey button / autocomplete / on-load request - no row asserts their absence",
+      "lockout": "codes and texts unchanged after the move into the platform base handler",
+      "org_fallback": "credential-grant fallbacks and refresh_token refusals still hold under customer#324",
+      "sign_in_log": "rows assert MFA/OTP types, Passkey is an added type",
+      "impersonation": "form and banner unaffected",
+      "smoke": "unaffected"
+    },
+    "gate_3_cases": "REJECT x2 (round 2: 3 oracle mis-tags + 033 note) -> operator ruled PASSED on 2026-10-28 conditional on 4 fixes (PKS-014, PKA-002, PKA-003 oracle tags; 033 note reverted to summary.json); no third verifier",
+    "rescan": "tc:scope --domain auth,b2b --suite 027,011b,008,006, oracles BL-AUTH-009,012-017: 35 suites, 1357 rows, 105 hits (52 new external)",
+    "state_notes": [
+      "033 AUTH-030/032: User group now carries Security, covered by suite 114"
+    ]
+  },
+  "execution": {
+    "edge": {
+      "start": "2026-10-28T14:33:50+01:00",
+      "minutes": 29,
+      "items": {
+        "20": "PASS",
+        "21": "PASS",
+        "26": "PASS",
+        "27": "PASS",
+        "28": "FAIL",
+        "29": "PASS",
+        "30": "FAIL",
+        "31": "PASS (recorded)",
+        "33": "PASS (recorded)",
+        "34": "PASS",
+        "35": "FAIL",
+        "36": "PASS",
+        "37": "PASS (recorded)",
+        "38": "BLOCKED fixture gap"
+      }
+    },
+    "chrome": {
+      "start": "2026-10-28T13:33:49Z",
+      "minutes": 40,
+      "items": {
+        "1": "PASS",
+        "2": "PASS",
+        "3": "PASS (recorded)",
+        "4": "PASS",
+        "5": "PASS",
+        "6": "PASS (recorded)",
+        "7": "PASS (recorded)",
+        "8": "PASS",
+        "9": "PASS",
+        "10": "NOT RUN - omitted, carried to wave 2",
+        "11": "PASS",
+        "12": "PASS",
+        "13": "PASS",
+        "14": "PASS (recorded) + Low finding",
+        "15": "PASS (recorded)",
+        "16": "PASS",
+        "17": "PASS",
+        "18": "PASS",
+        "19": "PASS (recorded) - 327 s challenge accepted",
+        "20": "PASS",
+        "22": "PASS + note (Clothing trusts B2B-store; tested on a non-trusting store)",
+        "23": "PASS",
+        "32": "FAIL",
+        "42": "PASS",
+        "43": "PASS (recorded)",
+        "44": "PASS (recorded)"
+      },
+      "findings": [
+        "14b stale credential shows Login attempt failed on page load",
+        "19 challenge 327 s accepted (no server expiry)",
+        "22 store refusal logged reason Unknown with user store",
+        "7 rename does not update modifiedDate",
+        "23 UV-failed registration shows no message",
+        "revoke/token without client_id returns 200 but refresh still works (incidental)"
+      ]
+    }
+  },
+  "c1_scope": {
+    "105": "OTP-048",
+    "114": "PKS-001..011, PKS-014..019",
+    "115": "PKA-001..014",
+    "114a": "PKS-012",
+    "114b": "PKS-013",
+    "027": "CUST-099, CUST-112"
+  },
+  "visual": {
+    "surface": "true",
+    "ran": true,
+    "lane": "playwright-edge",
+    "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/design-report.md",
+    "axes": {
+      "a11y": {
+        "ran": true,
+        "verdict": "FAIL (non-blocking, functional ticket)",
+        "findings": 10
+      },
+      "design_system": {
+        "ran": true,
+        "verdict": "PARTIAL",
+        "skipped_reason": "BL-UI-002 on storefront Security only (0/231 off-grid); BL-UI-001/003 not measured"
+      },
+      "design_spec": {
+        "ran": false,
+        "known_divergence": 6,
+        "unresolved": 1,
+        "skipped_reason": "design:extract exit 2 - canvas declares nothing diffable (ideas, VCDZ-907 In Progress); manual comparison advisory"
+      }
+    },
+    "invariant_failures": [],
+    "a11y_high": [
+      "B1 Admin Shell login passkey/Google focus ~1.3:1",
+      "C2 AngularJS sign-in-methods icon links: no focus indicator, 2.45:1, unlabeled rename input",
+      "A1 storefront primary 2.11:1 (stand theme, pre-existing)"
+    ],
+    "a11y_other": [
+      "A2 identical Edit/Delete names",
+      "A3 focus lost to BODY after add/delete",
+      "A4 section title not a heading",
+      "B2 Admin Shell login 4.06:1 + 6x6 dots",
+      "B3 Admin Shell tab order",
+      "B4 Admin Shell focus after rename",
+      "C1 AngularJS login chrome (pre-existing)"
+    ],
+    "out_of_scope": [
+      "Admin Shell raw EF Core 409 concurrency toast on language change after adding a passkey"
     ]
   }
 }

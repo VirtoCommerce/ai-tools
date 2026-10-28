@@ -3283,6 +3283,7 @@
       "tenant_type": "Store",
       "org_roles": "Organization employee;Purchasing agent;Organization maintainer",
       "narrowed_omitted_role": "Purchasing agent",
+      "narrowed_picker_keyword": "Purchasing agent",
       "seeded_values": "",
       "seeded_values_json": "",
       "sales_rep_roles": "",

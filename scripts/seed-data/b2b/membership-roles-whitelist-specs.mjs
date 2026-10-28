@@ -82,7 +82,7 @@ export const ALIAS = 'B2B_STORE_MEMBERSHIP_ROLES';
 export const ALIAS_RUNTIME_FIELDS = Object.freeze([
   'seeded_values', 'seeded_values_json', 'sales_rep_roles', 'returns_roles', 'narrowed_values', 'pre_state', 'captured_at',
 ]);
-export const ALIAS_STATIC_FIELDS = Object.freeze(['setting', 'tenant_type', 'org_roles', 'narrowed_omitted_role']);
+export const ALIAS_STATIC_FIELDS = Object.freeze(['setting', 'tenant_type', 'org_roles', 'narrowed_omitted_role', 'narrowed_picker_keyword']);
 
 /** The alias fields whose value must parse as a JSON array of strings when non-empty. */
 export const ALIAS_JSON_ARRAY_FIELDS = Object.freeze(['pre_state', 'seeded_values_json', 'narrowed_values']);
@@ -210,7 +210,22 @@ export const NARROWED_OMITTED_ROLE = 'Purchasing agent';
 
 export const NARROWED_OMITTED_ROLE_EVIDENCE =
   'vcst 2026-09-19: POST /api/platform/security/roles/search {keyword:"", take:20} -> 20 of 60 roles, '
-  + '"Purchasing agent" at position 19; "Organization employee" and "Organization maintainer" both outside the page.';
+  + '"Purchasing agent" at position 19; "Organization employee" and "Organization maintainer" both outside the page. '
+  + 'vcst 2026-10-28: 77 roles, "Purchasing agent" at position 21 — the thin margin ran out, which is why the case now '
+  + 'reads the picker through NARROWED_PICKER_KEYWORD instead of the keyword-less page.';
+
+/**
+ * The keyword a case types into the role picker before reading the narrowed role.
+ *
+ * The keyword-less page (`PICKER_PAGE_SIZE`, sorted by name descending) is shared with every role on the
+ * environment, so a pool role's place in it moves whenever anyone adds a role — on vcst it fell from #19
+ * to #21 between 2026-09-19 and 2026-10-28, and all three pool roles are now outside it. With a keyword
+ * the picker calls `roles.search({keyword, take: 20})` and filters THAT page, so the page holds only the
+ * roles whose name matches. The omitted role then stays visible under the seeded whitelist and hidden
+ * under the narrowed one, however many roles the environment grows: its disappearance is the whitelist.
+ * The live half of `findNarrowingProblems()` still checks it, against the keyword page.
+ */
+export const NARROWED_PICKER_KEYWORD = NARROWED_OMITTED_ROLE;
 
 /* ────────────────────────────────────────────────────────────────────────────────────────────────
  * 3. PURE DERIVATION — the builders and transforms the unit tests own
@@ -517,11 +532,15 @@ export function findDecidabilityProblems({ orgRoleNames = ORG_ROLE_NAMES, salesR
  * @param seededValues         the full applied whitelist
  * @param omittedRole          the declared role to drop
  * @param orderedLiveRoleNames live role names in the order `roles/search` returns them; omit for static-only
- * @param pageSize             the picker's keyword-less page size
+ * @param keywordPageNames     role names `roles/search {keyword: NARROWED_PICKER_KEYWORD, take: pageSize}`
+ *                             returns — the page the case reads. When given, it replaces the keyword-less
+ *                             page check; omit it and the keyword-less page is checked instead
+ * @param pageSize             the picker's page size
  * @param pool                 the module's hardcoded AllowedValues literal
  */
 export function findNarrowingProblems({
   seededValues = [], omittedRole = NARROWED_OMITTED_ROLE, orderedLiveRoleNames = null,
+  keywordPageNames = null, keyword = NARROWED_PICKER_KEYWORD,
   pageSize = PICKER_PAGE_SIZE, pool = DESCRIPTOR_POOL,
 } = {}) {
   const problems = [];
@@ -559,11 +578,20 @@ export function findNarrowingProblems({
     }
   }
 
-  // 4. LIVE: it must sit inside the picker's default keyword-less page, or its disappearance is paging.
-  if (Array.isArray(orderedLiveRoleNames)) {
-    if (!toSet(orderedLiveRoleNames).has(want)) {
-      problems.push(`narrowed_omitted_role "${omittedRole}" matches NO live role — it cannot disappear from a picker it never appears in`);
-    } else if (entriesOutsideDefaultPage(orderedLiveRoleNames, [omittedRole], pageSize).length) {
+  // 4. LIVE: it must sit inside the page the case reads, or its disappearance is paging.
+  if (Array.isArray(orderedLiveRoleNames) && !toSet(orderedLiveRoleNames).has(want)) {
+    problems.push(`narrowed_omitted_role "${omittedRole}" matches NO live role — it cannot disappear from a picker it never appears in`);
+  } else if (Array.isArray(keywordPageNames)) {
+    // The case types `keyword` first, so the picker's page is the keyword page, not the shared one.
+    if (!toSet(keywordPageNames.slice(0, pageSize)).has(want)) {
+      problems.push(
+        `narrowed_omitted_role "${omittedRole}" is NOT in the first ${pageSize} roles that roles/search returns for the keyword "${keyword}" `
+        + `(${keywordPageNames.length} returned) — the picker the case reads after typing that keyword would not show it whether or not it is `
+        + 'whitelisted, so its disappearance under the narrowed variant would be paging, not narrowing. Change NARROWED_PICKER_KEYWORD to one that matches it.',
+      );
+    }
+  } else if (Array.isArray(orderedLiveRoleNames)) {
+    if (entriesOutsideDefaultPage(orderedLiveRoleNames, [omittedRole], pageSize).length) {
       const pos = orderedLiveRoleNames.findIndex((n) => norm(n) === want) + 1;
       problems.push(
         `narrowed_omitted_role "${omittedRole}" sits at position ${pos} of the live roles list, OUTSIDE the picker's default keyword-less page of ${pageSize} `
@@ -583,7 +611,8 @@ export const FIXTURE_LIMITS = Object.freeze([
   'Its APPLIED state does NOT decide the NARROWING link ("a whitelist hides an org role that would otherwise be offered"). '
   + 'All three pool entries are whitelisted, so the org half of the picker looks identical to an unfiltered one. '
   + `That link is decided by the DECLARED narrowed variant (\`narrowed_values\` = seeded minus "${NARROWED_OMITTED_ROLE}"), which a case WRITES during its own `
-  + 'run and restores from `seeded_values_json` afterwards. The seeder records the target and never leaves the store narrowed.',
+  + 'run and restores from `seeded_values_json` afterwards, reading the picker after typing `narrowed_picker_keyword`. '
+  + 'The seeder records the target and never leaves the store narrowed.',
   'It does NOT decide server-side ENFORCEMENT. Per BL-B2B-011 the whitelist constrains only the Admin UI '
   + 'picker\'s offered options; PUT /api/organizations and changeOrganizationContactRole still accept a '
   + 'non-whitelisted roleId (VCST-5239 EPIC-5239-03 is the planned gate).',
@@ -648,6 +677,9 @@ export function findAliasProblems(aliases = {}) {
   }
   if (fields.narrowed_omitted_role !== undefined && fields.narrowed_omitted_role !== NARROWED_OMITTED_ROLE) {
     problems.push(`alias ${ALIAS}.narrowed_omitted_role is "${fields.narrowed_omitted_role}" but the spec declares "${NARROWED_OMITTED_ROLE}"`);
+  }
+  if (fields.narrowed_picker_keyword !== undefined && fields.narrowed_picker_keyword !== NARROWED_PICKER_KEYWORD) {
+    problems.push(`alias ${ALIAS}.narrowed_picker_keyword is "${fields.narrowed_picker_keyword}" but the spec declares "${NARROWED_PICKER_KEYWORD}"`);
   }
   // The DECLARED omitted role must be admissible on its declaration-only axes — it is a literal, so
   // this is the guard's business and not a unit test's (`.claude/rules/test-data.md` FOURTH RULE).
