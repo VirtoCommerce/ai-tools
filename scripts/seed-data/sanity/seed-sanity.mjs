@@ -7,8 +7,9 @@
  *     the Sanity Assets API. Identical bytes → Sanity returns the same asset document (idempotent).
  *   - Writes every declared document with createOrReplace, ONE transaction per dataset
  *     (Mutations API). Re-running rebuilds any drifted document.
- *   - Reads every document back (raw perspective, so the draft is visible) and checks the count +
- *     title per id, and that both asset CDN urls answer 200.
+ *   - Reads every document back (raw perspective, so the draft is visible) and compares, per id, the
+ *     fields the cases depend on — _type, title, permalink.current, seo.slug.current and every
+ *     reference _ref (+ _weak) — and checks that both asset CDN urls answer 200.
  *   - Writes the asset id + url to test-data/aliases.<TEST_ENV>.json (document ids are business keys
  *     and stay in the committed aliases.json).
  *
@@ -18,27 +19,34 @@
  * USAGE
  *   TEST_ENV=<env> node scripts/seed-data/sanity/seed-sanity.mjs [--dry-run] [--verbose]
  *   TEST_ENV=<env> node scripts/seed-data/sanity/seed-sanity.mjs --verify-only
- *   TEST_ENV=<env> node scripts/seed-data/sanity/seed-sanity.mjs --teardown
+ *       reads only; uses {{SANITY_QA_READ_TOKEN}}, falling back to the write token
+ *   TEST_ENV=<env> node scripts/seed-data/sanity/seed-sanity.mjs --teardown [--dry-run]
  *
  * ENV: {{SANITY_QA_PROJECT_ID}} (.env.<env>; absent ⇒ skip, exit 0 — this env has no QA Sanity
- *      project), {{SANITY_QA_WRITE_TOKEN}} (.env.local only, never printed).
+ *      project), {{SANITY_QA_WRITE_TOKEN}} (seed/teardown) and {{SANITY_QA_READ_TOKEN}} (verify-only),
+ *      both .env.local only, never printed. No BACK_URL / admin credentials: the platform is not touched.
  *
- * SAFETY: assertSafeTarget (ENV_RISK=production aborts). Teardown deletes ONLY the declared ids
- * (never a wildcard), and an asset only when no document outside this fixture references it; then
- * asserts zero residue in both datasets. The project's own (non AGENT-TEST) documents are never read
- * for writing, changed or deleted.
+ * SAFETY: assertSafeRisk (ENV_RISK undeclared or production aborts). Teardown deletes ONLY the
+ * declared ids (never a wildcard), and an asset only when no document outside this fixture (exact id
+ * prefix) references it; then asserts zero residue in both datasets. A --dry-run teardown deletes
+ * nothing and reports the residue as NOT verified. The project's own (non AGENT-TEST) documents are
+ * never written, changed or deleted.
  */
 import '../../lib/sync-stdio.mjs';
-import { assertSafeTarget, log, verbose, verifyRemoved, writeEnvAliasOverride, DRY_RUN, TEARDOWN } from '../../lib/seed-common.mjs';
+import { assertSafeRisk, log, verbose, verifyRemoved, writeEnvAliasOverride, DRY_RUN, TEARDOWN } from '../../lib/seed-common.mjs';
 import {
-  ENV, SANITY_API_VERSION, DATASETS, ASSET_SPECS, PLACEHOLDER_ASSETS, allDatasets, docsFor, docIdsFor,
+  ENV, SANITY_API_VERSION, DATASETS, ASSET_SPECS, allDatasets, docsFor, docIdsFor, collectRefs,
   mutationBody, deleteBody, strongDanglingRefs, overlayAliases, RESIDUE_QUERY, OWN_ASSETS_QUERY, FOREIGN_REFERRERS_QUERY,
 } from './sanity-specs.mjs';
 
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 const VERIFY_ONLY = process.argv.includes('--verify-only');
 const PROJECT = (process.env[ENV.projectId] || '').trim();
-const TOKEN = (process.env[ENV.writeToken] || '').trim();
+const WRITE_TOKEN = (process.env[ENV.writeToken] || '').trim();
+const READ_TOKEN = (process.env[ENV.readToken] || '').trim();
+/** verify-only reads with the read token when there is one; seed and teardown need the write token. */
+const TOKEN = VERIFY_ONLY ? (READ_TOKEN || WRITE_TOKEN) : WRITE_TOKEN;
+const TOKEN_LABEL = VERIFY_ONLY && READ_TOKEN ? ENV.readToken : ENV.writeToken;
 const failures = [];
 const ok = (m) => log(`✓ ${m}`);
 const fail = (m) => { failures.push(m); log(`✗ ${m}`); };
@@ -73,26 +81,36 @@ async function uploadAssets() {
   return out;
 }
 
-async function verify(expectedAssets) {
-  for (const ds of allDatasets()) {
-    const expected = docsFor(ds, expectedAssets);
-    const got = await query(ds, '*[_id in $ids]{_id, _type, title}', { ids: expected.map((d) => d._id) });
-    const byId = new Map(got.map((d) => [d._id, d]));
-    for (const d of expected) {
-      const g = byId.get(d._id);
-      if (!g) fail(`${ds}: ${d._id} missing`);
-      else if (g._type !== d._type || g.title !== d.title) fail(`${ds}: ${d._id} drifted (${g._type} "${g.title}")`);
-    }
-    if (got.length === expected.length && failures.length === 0) ok(`${ds}: ${got.length}/${expected.length} documents present, type+title match`);
-  }
+/** The fields a case depends on, as one comparable string per document. */
+const shape = (d) => JSON.stringify({
+  type: d._type, title: d.title, permalink: d.permalink?.current ?? null, seoSlug: d.seo?.slug?.current ?? null,
+  refs: collectRefs(d).map((r) => `${r._ref}${r._weak ? ' (weak)' : ''}`).sort(),
+});
+
+/** Read everything back. Assets are found live by filename, so the expected asset refs are the real ids. */
+async function verify() {
   const assets = await query(DATASETS.primary, OWN_ASSETS_QUERY);
+  const assetIds = {};
   for (const a of ASSET_SPECS) {
     const live = assets.find((x) => x.originalFilename === a.filename);
     if (!live) { fail(`asset ${a.filename} missing`); continue; }
+    assetIds[a.key] = live._id;
     const r = await fetch(live.url, { method: 'HEAD' });
-    if (r.status === 200) ok(`asset ${a.key} url answers 200`); else fail(`asset ${a.key} url → ${r.status}`);
+    if (r.status === 200) ok(`asset ${a.key} (${live._id}) url answers 200`); else fail(`asset ${a.key} url → ${r.status}`);
   }
-  return assets;
+  for (const ds of allDatasets()) {
+    const expected = docsFor(ds, assetIds);
+    const got = await query(ds, '*[_id in $ids]', { ids: expected.map((d) => d._id) });
+    const byId = new Map(got.map((d) => [d._id, d]));
+    let bad = 0;
+    for (const d of expected) {
+      const g = byId.get(d._id);
+      if (!g) { fail(`${ds}: ${d._id} missing`); bad++; continue; }
+      const want = shape(d); const have = shape(g);
+      if (want !== have) { fail(`${ds}: ${d._id} drifted — want ${want} got ${have}`); bad++; }
+    }
+    if (!bad) ok(`${ds}: ${expected.length}/${expected.length} documents present; type, title, permalink, seo.slug and refs match`);
+  }
 }
 
 async function seed() {
@@ -100,19 +118,26 @@ async function seed() {
     const bad = strongDanglingRefs(ds);
     if (bad.length) throw new Error(`strong dangling reference(s) in ${ds} — Sanity would 409: ${bad.join('; ')}`);
   }
-  if (VERIFY_ONLY) { await verify(PLACEHOLDER_ASSETS); return; }
+  if (VERIFY_ONLY) { await verify(); return; }
   const uploaded = await uploadAssets();
-  const assetIds = DRY_RUN ? PLACEHOLDER_ASSETS : Object.fromEntries(Object.entries(uploaded).map(([k, v]) => [k, v._id]));
+  const assetIds = Object.fromEntries(Object.entries(uploaded).map(([k, v]) => [k, v._id]));
   for (const ds of allDatasets()) {
-    const body = mutationBody(ds, assetIds);
+    const body = mutationBody(ds, DRY_RUN ? undefined : assetIds);
     if (DRY_RUN) { log(`  (dry) ${ds}: createOrReplace ${body.mutations.length} doc(s) in one transaction`); continue; }
     const r = await mutate(ds, body);
     ok(`${ds}: transaction ${r.transactionId} — ${body.mutations.length} doc(s)`);
   }
   if (DRY_RUN) return;
-  await verify(assetIds);
+  await verify();
   writeEnvAliasOverride(overlayAliases(uploaded));
   ok(`aliases.${TEST_ENV}.json ← ${ASSET_SPECS.map((a) => a.alias).join(', ')}`);
+}
+
+/** Fixture hits still in a dataset: exact-prefix ids + own assets + the declared ids by name. */
+async function residue(ds) {
+  const r = await query(ds, RESIDUE_QUERY);
+  const byId = await query(ds, 'count(*[_id in $ids])', { ids: docIdsFor(ds) });
+  return r.docs + r.assets + byId;
 }
 
 async function teardown() {
@@ -120,7 +145,7 @@ async function teardown() {
   // the same transaction), so no fixture document still references an asset when it is deleted.
   for (const ds of [DATASETS.secondary, DATASETS.primary]) {
     const ids = docIdsFor(ds);
-    if (DRY_RUN) { log(`  (dry) ${ds}: delete ${ids.length} doc(s)`); continue; }
+    if (DRY_RUN) { log(`  (dry) ${ds}: delete ${ids.length} declared id(s)`); continue; }
     const r = await mutate(ds, deleteBody(ids));
     ok(`${ds}: deleted ${ids.length} declared id(s) (tx ${r.transactionId})`);
   }
@@ -128,16 +153,13 @@ async function teardown() {
   for (const a of assets) {
     const foreign = await query(DATASETS.primary, FOREIGN_REFERRERS_QUERY, { id: a._id });
     if (foreign > 0) { fail(`asset ${a._id} is referenced by ${foreign} non-fixture document(s) — left in place`); continue; }
-    if (DRY_RUN) { log(`  (dry) delete asset ${a._id}`); continue; }
+    if (DRY_RUN) { log(`  (dry) delete asset ${a._id} (no non-fixture referrer)`); continue; }
     await mutate(DATASETS.primary, deleteBody([a._id]));
     ok(`asset ${a.originalFilename} deleted`);
   }
   for (const ds of allDatasets()) {
-    const left = await verifyRemoved(async () => {
-      const r = await query(ds, RESIDUE_QUERY);
-      const byId = await query(ds, 'count(*[_id in $ids])', { ids: docIdsFor(ds) });
-      return r.docs + r.assets + byId;
-    });
+    if (DRY_RUN) { log(`  (dry) ${ds}: residue NOT verified — nothing was deleted; ${await residue(ds)} fixture hit(s) present now`); continue; }
+    const left = await verifyRemoved(() => residue(ds));
     if (left === 0) ok(`${ds}: zero AGENT-TEST-6475 residue`); else fail(`${ds}: ${left} AGENT-TEST-6475 residue`);
   }
   writeEnvAliasOverride(Object.fromEntries(ASSET_SPECS.map((a) => [a.alias, { id: '', url: '' }])));
@@ -145,12 +167,16 @@ async function teardown() {
 
 async function main() {
   console.log(`=== seed-sanity (VCST-6475)${TEARDOWN ? ' TEARDOWN' : ''}${DRY_RUN ? ' [dry-run]' : ''}${VERIFY_ONLY ? ' [verify-only]' : ''} ===`);
-  assertSafeTarget();
   if (!PROJECT) { log(`SKIP: {{${ENV.projectId}}} is not set for TEST_ENV=${TEST_ENV} — no QA Sanity project on this env.`); return; }
-  if (!TOKEN) { console.error(`ABORT: {{${ENV.writeToken}}} is not set (.env.local).`); process.exit(2); }
-  log(`Sanity project from {{${ENV.projectId}}}; datasets ${allDatasets().join(', ')}`);
+  const risk = assertSafeRisk(`Sanity project {{${ENV.projectId}}}`);
+  if (!TOKEN) {
+    const need = VERIFY_ONLY ? `{{${ENV.readToken}}} or {{${ENV.writeToken}}}` : `{{${ENV.writeToken}}}`;
+    console.error(`ABORT: ${need} is not set (.env.local).`); process.exit(2);
+  }
+  log(`Target: Sanity project {{${ENV.projectId}}} | ${risk} | token {{${TOKEN_LABEL}}} | datasets ${allDatasets().join(', ')}`);
   if (TEARDOWN) await teardown(); else await seed();
   if (failures.length) { console.error(`\nFAILED — ${failures.length} problem(s)`); process.exit(1); }
-  log(DRY_RUN ? 'DRY RUN complete.' : TEARDOWN ? 'Teardown complete.' : 'Seed complete.');
+  if (DRY_RUN) log(`DRY RUN complete${TEARDOWN ? ' — nothing deleted, residue NOT verified' : ''}.`);
+  else log(TEARDOWN ? 'Teardown complete.' : VERIFY_ONLY ? 'Verify complete.' : 'Seed complete.');
 }
 main().catch((e) => { console.error('SEED FAILED:', e.message); process.exit(1); });
