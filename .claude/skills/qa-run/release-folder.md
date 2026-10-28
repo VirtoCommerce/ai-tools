@@ -82,8 +82,8 @@ stand that still runs the previous build):
 - **W0 is always the smoke gate** and every other wave depends on it: a broken job engine or a
   failed login stops the release before anyone spends a wave on it.
 - **After W0, waves are independent domain groups** ([`plan-sections.md`](../../knowledge/execution/test-plan/plan-sections.md) §Waves, for both plan modes):
-  each depends on W0 only, so several QA run them at the same time. A wave holds every priority of its suites, and the
-  owner runs them in tier order inside the wave ([`waves.md`](waves.md) Step 3). A case whose `Priority` is unreadable
+  each depends on W0 only, so several QA run them at the same time. A wave holds every priority of its suites and runs them in
+  one run (three priority passes with `--by-priority`, [`waves.md`](waves.md) Step 3). A case whose `Priority` is unreadable
   is in no tier and appears only in the run's Scope Exclusions.
 - **`tier` (legacy).** A plan may still declare tier waves (`tier`: `critical`, `high` or `rest`, run as
   `--cases <tier>`, `rest` = `medium,low`). Such a wave must depend on every wave of every higher tier — `release:check`

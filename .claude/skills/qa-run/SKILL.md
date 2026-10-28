@@ -14,7 +14,7 @@ The methodology behind [`/qa-run`](../../commands/qa-run.md). The plan comes fro
 | File | Read when | Holds |
 |---|---|---|
 | [`run.md`](run.md) | every run | what each argument selects, the execution pipeline, the automatic triage and the GitHub question after the run |
-| [`waves.md`](waves.md) | `stable:<N>` or `sprint:<XX-YY>` with a wave, `all` or `status` | claiming a wave, known ground, the run in priority order, triage into the ledger, publishing, handover |
+| [`waves.md`](waves.md) | `stable:<N>` or `sprint:<XX-YY>` with a wave, `all` or `status` | claiming a wave, known ground, the run, triage into the ledger, publishing, handover |
 | [`release-folder.md`](release-folder.md) | any work on `regression/releases/<release>/` | the contract: layout, `release.json`, `state.json`, the ledger and its verdicts, parallel-run rules, claims |
 
 ## Scripts

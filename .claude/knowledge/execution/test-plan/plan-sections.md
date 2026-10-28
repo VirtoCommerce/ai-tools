@@ -138,10 +138,10 @@ time and nobody waits for anybody:
    wave waits for a whole priority tier. A domain group that cannot run beside another one (it consumes the other's
    disposable fixtures or pooled state, [`../../../rules/test-data.md`](../../../rules/test-data.md) §DISPOSABLE
    FIXTURES rule 4) is merged into it — never ordered after it.
-2. **Priority is honoured inside the wave, not between waves:** the owner runs the wave's cases `critical`, then
-   `high`, then `medium,low` ([`waves.md`](../../../skills/qa-run/waves.md) Step 3), so if the wave is cut short its
-   most important cases have run. Tiers come from the cases' own priority through `npm run suites:filter`; never
-   re-grade a case in the plan.
+2. **A wave runs all its priorities in one run**, the way a sprint regression always ran its plan — no wave waits for
+   a priority tier of another. A long wave may run in three priority passes instead (`--by-priority`,
+   [`waves.md`](../../../skills/qa-run/waves.md) Step 3). Priorities come from the cases themselves; never re-grade a
+   case in the plan.
 3. **One owner keeps one domain** across all its priorities, so its data stays in one pair of hands.
 4. **Env-wide cases** (settings, job schedules, reindex/rebuild, restore, restart, re-seed — contract §7.2) go into
    `exclusive` and the WX wave, out of every domain wave — and so does a suite whose manifest `notes` say to run it

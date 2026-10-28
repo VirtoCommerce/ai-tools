@@ -1,6 +1,6 @@
 ---
 description: "Run any regression: a one-off selection (smoke, critical, full, suite ids), or one wave of a sprint or stable-bundle regression that several QA run in parallel (claim → known ground → run → triage into the ledger → PR). After every run it triages the failures automatically, and after triage ALWAYS asks whether to put the result in GitHub. Plans come from /qa-test-plan. The successor of /qa-regression, built to move into a plugin."
-argument-hint: "smoke | critical | full | <ids> | sprint:<XX-YY> <wave> | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | sprint:<XX-YY> status | stable:<N> status | <release> all [--continue] [--cases <tier>] [--seed=…] [--teardown] [--run-blocked]"
+argument-hint: "smoke | critical | full | <ids> | sprint:<XX-YY> <wave> | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | sprint:<XX-YY> status | stable:<N> status | <release> all [--continue] [--by-priority] [--cases <tier>] [--seed=…] [--teardown] [--run-blocked]"
 disable-model-invocation: true
 ---
 

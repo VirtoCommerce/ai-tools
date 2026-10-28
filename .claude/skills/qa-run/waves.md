@@ -106,7 +106,7 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
 
 ## Step 3 — Run
 
-1. **Resolve the run** with `npm run regression:plan -- <suite ids>` ([`release-folder.md`](release-folder.md) §3: unreadable priorities only in Scope Exclusions). **A wave runs in priority order:** `--cases critical`, then `--cases high`, then `--cases medium,low` — three runs, each appended to `runIds`, so a wave cut short has its most important cases done. (A legacy wave with a `tier` runs only `--cases <tier>`, `rest` = `medium,low`.) Remove every suite or case listed in
+1. **Resolve the run** with `npm run regression:plan -- <suite ids>` ([`release-folder.md`](release-folder.md) §3: unreadable priorities only in Scope Exclusions). **A wave is one run over all its cases** — the same run `/qa-regression sprint --frontend` makes over a whole plan, only over this wave's suites. With `--by-priority`, it is three runs instead — `--cases critical`, then `high`, then `medium,low` — for a long wave whose owner may be cut short; each is split into the wave by Step 3.4. (A legacy wave with a `tier` runs only `--cases <tier>`, `rest` = `medium,low`.) Remove every suite or case listed in
    **another** wave's `exclusive` (contract §7.2) — this wave's own `exclusive` list is what it exists to run.
    Machine-lane suites first: they cost no model tokens (contract §7).
 2. **Do not re-seed** a fixture set another wave uses while another wave is running — check the wave sub-tasks
@@ -252,8 +252,8 @@ previous run did not finish (`notRun`), and `release:split` ADDS that run's tota
 
 ## Rules
 
-- **W0 first, then nobody waits:** every wave after W0 depends on W0 only, so owners run in parallel; priority is the
-  order of runs inside the wave (Step 3), not an order between waves. Only WX waits for the others.
+- **W0 first, then nobody waits:** every wave after W0 depends on W0 only, so owners run in parallel. Only WX waits for
+  the others. A wave is one run over all its priorities (`--by-priority` for three passes, Step 3).
 - **One wave, one owner.** Write only this wave's `waves/<W>/`, the generated `PROGRESS.md`, and the suites you are
   repairing; never another wave's files ([`release-folder.md`](release-folder.md) §2).
 - **Parallel-safe or not at all:** own personas, no env-wide changes, no re-seed under a running wave (§7).
