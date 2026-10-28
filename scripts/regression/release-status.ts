@@ -157,6 +157,12 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
   }
   const waves = new Map(plan.waves.map((w) => [w.id, w]));
   if (!waves.has("W0")) problems.push("release.json: no W0 wave — every release starts with the W0 smoke gate, which every other wave depends on");
+  // Every suite is in ONE wave, so a run (a wave's own, or one shared by several) is recorded per case without
+  // double counting (release:split). Allowed overlaps: an exclusive suite also in the WX wave that runs its env-wide
+  // cases, and legacy tier waves, which split one suite by priority.
+  const holders = new Map<string, string[]>();
+  for (const w of plan.waves) if (w.tier === undefined) for (const s of w.suites ?? []) if (!(w.exclusive ?? []).includes(s)) holders.set(s, [...(holders.get(s) ?? []), w.id]);
+  for (const [s, ids] of holders) if (ids.length > 1) problems.push(`release.json: suite ${s} is in waves ${ids.join(", ")} — a suite belongs to one wave (an exclusive suite may also sit in WX)`);
   if (waves.size !== plan.waves.length) problems.push("release.json: a wave id is duplicated");
   const cycle = hasCycle(plan.waves);
   if (cycle) problems.push(`release.json: dependsOn has a cycle through ${cycle}`);

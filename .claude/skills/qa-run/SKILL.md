@@ -1,7 +1,7 @@
 ---
 name: qa-run
 description: "[QA Methodology] Methodology behind /qa-run — running any regression (a one-off selection, or one wave of a sprint or stable-bundle regression that several QA run in parallel) with the release folder, the triage ledger, triage that starts on its own after the run, and the always-asked GitHub question after triage. Kept self-contained so it can move into a plugin."
-argument-hint: "smoke | critical | full | <suite ids> | sprint:<XX-YY> <wave> | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | sprint:<XX-YY> status | stable:<N> status | <release> all [--continue]"
+argument-hint: "smoke | critical | full | <suite ids> | sprint:<XX-YY> <wave> | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | sprint:<XX-YY> status | stable:<N> status | <rel> all [--continue]"
 ---
 
 # qa-run — run any regression
@@ -24,7 +24,7 @@ The methodology behind [`/qa-run`](../../commands/qa-run.md). The plan comes fro
 | `npm run release:diff` | which bundle components changed code (used by the planner) |
 | `npm run release:status` | overview, generated `PROGRESS.md`, ledger export for triage (`--ledger --suites … --with-baseline`) |
 | `npm run release:report` | the tracker side: wave sub-tasks (`--subtasks --apply`), and per finished wave the release dashboard + the run dashboard as two new comments (`--wave <W> --post`) |
-| `npm run release:split` | lays one shared run (`/qa-run <release> all`) out over the waves: per-wave totals, `notRun`, `untriaged` (`--write`) |
+| `npm run release:split` | records a run in the waves case by case (`waves/<W>/cases.json`) and derives each wave's totals, `notRun`, `untriaged` (`--write`); used by every wave run and by `/qa-run <rel> all` |
 | `npm run release:check` | validates a release folder; CI runs `--all` |
 
 They read and write `regression/releases/` under the project directory (`QA_RUN_HOME`, else the working

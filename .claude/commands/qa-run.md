@@ -1,6 +1,6 @@
 ---
 description: "Run any regression: a one-off selection (smoke, critical, full, suite ids), or one wave of a sprint or stable-bundle regression that several QA run in parallel (claim → known ground → run → triage into the ledger → PR). After every run it triages the failures automatically, and after triage ALWAYS asks whether to put the result in GitHub. Plans come from /qa-test-plan. The successor of /qa-regression, built to move into a plugin."
-argument-hint: "smoke | critical | full | <ids> | sprint:<XX-YY> <wave> | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | sprint:<XX-YY> status | stable:<N> status | <release> all [--continue] [--by-priority] [--cases <tier>] [--seed=…] [--teardown] [--run-blocked]"
+argument-hint: "smoke | critical | full | <ids> | sprint:<XX-YY> <wave> | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | sprint:<XX-YY> status | stable:<N> status | <rel> all [--continue] [--by-priority] [--cases <tier>] [--seed=…] [--teardown] [--run-blocked]"
 disable-model-invocation: true
 ---
 
@@ -30,7 +30,7 @@ recorded BLOCKED with that reason and **not run** — no browser slot, no model 
 | Argument | Read | Then |
 |---|---|---|
 | a selection group, suite ids | [`run.md`](../skills/qa-run/run.md) | run → triage (automatic) → **ask: GitHub?** |
-| `stable:<N> <wave> [flag]`, `stable:<N> status`, `sprint:<XX-YY> <wave> [flag]`, `sprint:<XX-YY> status`, `<release> all [--continue]` | [`run.md`](../skills/qa-run/run.md) + [`waves.md`](../skills/qa-run/waves.md) | claim → pre-flight → known ground → run → triage into the ledger (automatic) → **ask: file bugs?** → **ask: GitHub?** |
+| `stable:<N> <wave> [flag]`, `stable:<N> status`, `sprint:<XX-YY> <wave> [flag]`, `sprint:<XX-YY> status`, `stable:<N> all` / `sprint:<XX-YY> all [--continue]` | [`run.md`](../skills/qa-run/run.md) + [`waves.md`](../skills/qa-run/waves.md) | claim → pre-flight → known ground → run → triage into the ledger (automatic) → **ask: file bugs?** → **ask: GitHub?** |
 | bare `stable:<N>`; bare `sprint` / `sprint:<XX-YY>` whose plan has a release folder | — | refuse; show `npm run release:status -- <release>` (a release runs wave by wave) |
 | bare `sprint` / `sprint:<XX-YY>` whose plan has no release folder (planned with `--no-waves`, or before sprint plans had waves) | [`run.md`](../skills/qa-run/run.md) | the whole plan as one run → triage → **ask: GitHub?** |
 

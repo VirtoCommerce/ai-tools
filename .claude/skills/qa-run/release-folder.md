@@ -31,6 +31,7 @@ is the same problem at a smaller size — one person running every suite of the 
 | `module-diff.json` | planner — bundle only | `npm run release:diff` output for the two bundles — the raw facts behind the scope |
 | `scope.json` | planner — bundle only | One row per in-scope component: versions, class (§4), wave, suites, what changed, tickets. A sprint's scope is its plan (`docs/Sprint plans/`), which `release.json` `sprint.plan` names |
 | `waves/<W>/state.json` | that wave's owner only | Who holds the wave, its status, run ids, totals, what was not run (§5) |
+| `waves/<W>/cases.json` | `npm run release:split` only | Every case's latest result in the wave, from all its runs — what `totals`, `untriaged` and `notRun` are derived from |
 | `waves/<W>/ledger.csv` | that wave's owner only | One row per triaged finding — filed or not (§6) |
 | `waves/<W>/report.md` | that wave's owner only | The wave report: results per suite, what the failures were, BLOCKED causes, what is left |
 | `PROGRESS.md` | **generated** — `npm run release:status -- <release> --write` | The overview. Never edited by hand |
@@ -88,6 +89,8 @@ stand that still runs the previous build):
 - **`tier` (legacy).** A plan may still declare tier waves (`tier`: `critical`, `high` or `rest`, run as
   `--cases <tier>`, `rest` = `medium,low`). Such a wave must depend on every wave of every higher tier — `release:check`
   fails otherwise — which is exactly the waiting the independent shape avoids; new plans do not use it.
+- **A suite is in one wave**, so a run is recorded case by case without double counting (`release:split`); the one
+  overlap is an exclusive suite that also sits in WX. `release:check` enforces it (legacy tier waves excepted).
 - A wave's `suites` is a plan, not a promise. The owner re-resolves it with `npm run regression:plan`
   when claiming, and records what actually ran in `state.json`.
 - `exclusive` names suites that change state the whole environment shares (§7.2). They live in one

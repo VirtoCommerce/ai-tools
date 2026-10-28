@@ -142,7 +142,9 @@ time and nobody waits for anybody:
    a priority tier of another. A long wave may run in three priority passes instead (`--by-priority`,
    [`waves.md`](../../../skills/qa-run/waves.md) Step 3). Priorities come from the cases themselves; never re-grade a
    case in the plan.
-3. **One owner keeps one domain** across all its priorities, so its data stays in one pair of hands.
+3. **One owner keeps one domain** across all its priorities, so its data stays in one pair of hands, and **every suite is
+   in exactly one wave** — the smoke suites only in W0 — so runs are recorded without double counting. The one overlap:
+   a suite whose env-wide cases go to WX sits in both (`exclusive` in WX). `release:check` enforces it.
 4. **Env-wide cases** (settings, job schedules, reindex/rebuild, restore, restart, re-seed — contract §7.2) go into
    `exclusive` and the WX wave, out of every domain wave — and so does a suite whose manifest `notes` say to run it
    alone or in an operator window. A manifest `exclusiveGroup` is **not** by itself a WX reason: it keeps its members

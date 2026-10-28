@@ -43,7 +43,7 @@ Resolution order:
 
 A stable-bundle or sprint regression is run wave by wave with `/qa-run stable:<N> <wave>` or `/qa-run sprint:<XX-YY> <wave>`
 — selection, tiers and exclusions: `.claude/skills/qa-run/run.md` §1 and `waves.md`. `/qa-regression` has no `stable:N`
-selection, and its `sprint` runs the whole plan as one run.
+selection, and its `sprint` runs a plan whole only when the sprint has no waves (step 0 above).
 
 ## Change-Scoped Selection — not running a suite beats running it fast
 
