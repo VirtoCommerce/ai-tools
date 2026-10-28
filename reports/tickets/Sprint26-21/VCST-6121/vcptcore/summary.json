@@ -57,6 +57,16 @@
       "confirmed": false,
       "when": "2026-10-28",
       "hop": "opening"
+    },
+    {
+      "at": "5-status",
+      "hop": "closing",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8)",
+      "by": "qa-lead (orchestrator inline)",
+      "confirmed": true,
+      "when": "2026-10-28"
     }
   ],
   "timing": {
@@ -276,11 +286,36 @@
         "114b": "PKS-013",
         "027": "CUST-099, CUST-112"
       },
-      "note": "expected FAILs hold the SPEC on known defects"
+      "note": "expected FAILs hold the SPEC on known defects",
+      "pass_rate": 0.5555555555555556
     },
     "release_gate": "not-assessed"
   },
   "bugs_filed": [
+    {
+      "key": "VCST-6598",
+      "item": "25 / S15 / N3",
+      "title": "Passkey sign-in ignores the store Passkey switch (already-open page still gets a token)",
+      "severity": "Medium",
+      "type": "Bug",
+      "link": "relates to VCST-6121",
+      "provenance": "IN-SCOPE",
+      "repo": "vc-module-passkeys (PasskeyGrantTypeHandler.ValidateGrantAsync)",
+      "expected_pending": "author Q2",
+      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/medium/BUG-Passkey-Grant-Ignores-Store-Passkey-Switch-VCST-6598.md"
+    },
+    {
+      "key": "VCST-6594",
+      "item": "32",
+      "title": "xAPI deleteSignInKey does not end other sessions (refresh tokens keep working)",
+      "severity": "Medium",
+      "type": "Bug",
+      "link": "relates to VCST-6121",
+      "provenance": "IN-SCOPE",
+      "repo": "vc-module-x-frontend (DeleteSignInKeyCommandHandler)",
+      "expected_pending": "author Q3",
+      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/medium/BUG-xAPI-DeleteSignInKey-Keeps-Other-Sessions-VCST-6594.md"
+    },
     {
       "key": "VCST-6593",
       "item": "B1",
@@ -302,43 +337,6 @@
       "provenance": "IN-SCOPE",
       "repo": "vc-platform + vc-module-passkeys (two fixes)",
       "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/critical-high/BUG-Classic-Admin-SignIn-Methods-Focus-Contrast-Label-VCST-6595.md"
-    },
-    {
-      "key": "VCST-6596",
-      "item": "28",
-      "title": "Passkey sign-in does not reset the failed sign-in counter",
-      "severity": "High",
-      "type": "Bug",
-      "link": "relates to VCST-6121",
-      "provenance": "IN-SCOPE",
-      "repo": "vc-module-passkeys (PasskeyService.AuthenticateAsync; fix in open PR #1)",
-      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/critical-high/BUG-Passkey-Signin-Does-Not-Reset-Failed-Counter-VCST-6596.md",
-      "status": "NOT A BUG per developer 2026-10-28 - framework behaviour; close pending operator OK",
-      "oracle_note": "BL-AUTH-003 rule text is password-sourced; propose clarifying via /qa-review-oracles bl with the developer resolution as human source"
-    },
-    {
-      "key": "VCST-6594",
-      "item": "32",
-      "title": "xAPI deleteSignInKey does not end other sessions (refresh tokens keep working)",
-      "severity": "Medium",
-      "type": "Bug",
-      "link": "relates to VCST-6121",
-      "provenance": "IN-SCOPE",
-      "repo": "vc-module-x-frontend (DeleteSignInKeyCommandHandler)",
-      "expected_pending": "author Q3",
-      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/medium/BUG-xAPI-DeleteSignInKey-Keeps-Other-Sessions-VCST-6594.md"
-    },
-    {
-      "key": "VCST-6598",
-      "item": "25 / S15 / N3",
-      "title": "Passkey sign-in ignores the store Passkey switch (already-open page still gets a token)",
-      "severity": "Medium",
-      "type": "Bug",
-      "link": "relates to VCST-6121",
-      "provenance": "IN-SCOPE",
-      "repo": "vc-module-passkeys (PasskeyGrantTypeHandler.ValidateGrantAsync)",
-      "expected_pending": "author Q2",
-      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/medium/BUG-Passkey-Grant-Ignores-Store-Passkey-Switch-VCST-6598.md"
     },
     {
       "key": "VCST-6599",
@@ -369,42 +367,42 @@
     {
       "id": "L1",
       "severity": "Low",
-      "title": "impersonated xAPI changePassword not refused + feeds target lockout counter (Low, pre-existing)"
+      "summary": "impersonated xAPI changePassword not refused + feeds target lockout counter (Low, pre-existing)"
     },
     {
       "id": "L2",
       "severity": "Low",
-      "title": "AngularJS last-key delete enabled, 400: Bad request (Low)"
+      "summary": "AngularJS last-key delete enabled, 400: Bad request (Low)"
     },
     {
       "id": "L3",
       "severity": "Low",
-      "title": "stale credential: Login attempt failed on /sign-in load (Low)"
+      "summary": "stale credential: Login attempt failed on /sign-in load (Low)"
     },
     {
       "id": "L4",
       "severity": "Low",
-      "title": "challenge older than 300 s accepted (Low, question)"
+      "summary": "challenge older than 300 s accepted (Low, question)"
     },
     {
       "id": "L5",
       "severity": "Low",
-      "title": "passkey store refusal logged reason Unknown, user store (Low)"
+      "summary": "passkey store refusal logged reason Unknown, user store (Low)"
     },
     {
       "id": "L6",
       "severity": "Low",
-      "title": "rename does not update modifiedDate (Low)"
+      "summary": "rename does not update modifiedDate (Low)"
     },
     {
       "id": "L7",
       "severity": "Low",
-      "title": "Admin Shell set password validateuserpassword 403 for Manager (Low)"
+      "summary": "Admin Shell set password validateuserpassword 403 for Manager (Low)"
     },
     {
       "id": "L8",
       "severity": "Low",
-      "title": "sign-in log Type filter has no Passkey option; failed rows drop storeId (Low)"
+      "summary": "sign-in log Type filter has no Passkey option; failed rows drop storeId (Low)"
     }
   ],
   "report": {
@@ -607,7 +605,25 @@
         "all_layer_confirmed_at": "1e-confirmed"
       }
     },
-    "oracle_change": "BL-AUTH-003 narrowed (reports/knowledge/BL-AUDIT-2026-10-28.md)"
+    "oracle_change": "BL-AUTH-003 narrowed (reports/knowledge/BL-AUDIT-2026-10-28.md)",
+    "cancelled_bugs": [
+      {
+        "key": "VCST-6596",
+        "item": "28",
+        "title": "Passkey sign-in does not reset the failed sign-in counter",
+        "severity": "High",
+        "type": "Bug",
+        "link": "relates to VCST-6121",
+        "provenance": "IN-SCOPE",
+        "repo": "vc-module-passkeys (PasskeyService.AuthenticateAsync; fix in open PR #1)",
+        "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/critical-high/BUG-Passkey-Signin-Does-Not-Reset-Failed-Counter-VCST-6596.md",
+        "status": "NOT A BUG per developer 2026-10-28 - framework behaviour; close pending operator OK",
+        "oracle_note": "BL-AUTH-003 rule text is password-sourced; propose clarifying via /qa-review-oracles bl with the developer resolution as human source"
+      }
+    ],
+    "comment_id": "112494",
+    "page_local": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/report.html",
+    "page_published": false
   },
   "ac_analysis": {
     "conditions": 98,

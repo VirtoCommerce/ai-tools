@@ -206,6 +206,11 @@ into a ticket. The GIF proves *the sequence happened*; the stills carry *the val
 **Budget:** at most **1** GIF per bug, ≤ 8 frames, ≥ 1.5 s per frame, width ≤ 960, ≤ 5 MB — counting
 as one item against the screenshot budget above. A second GIF usually means it is two bugs.
 
+**Documentation is the exception — there a GIF is mandatory.** A published guide carries one
+walkthrough GIF per user-facing flow it documents (shopper and administrator sections; none for
+developers), built from per-step stills of `PASS` states, ≤ 12 frames, plus the success-state still. A
+flow that could not be captured is named on the guide's `Not documented` line.
+
 **Mechanism — nothing new.** An animated GIF attaches and embeds exactly like a PNG: same attachment
 upload, same `!filename.gif|width=700!` through the v2 comment API, same three-signal `renderedBody`
 check as §5.0. Measured 2026-09-14 — one `<img src=…/attachment/content/<id>>`, one ADF `media` node
