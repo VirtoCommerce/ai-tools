@@ -36,10 +36,11 @@ Resolution order:
 
 5. **`--no-plan` opt-out** → skip this resolution entirely (`/qa-regression` Step 1c; `/qa-run` §1 for `sprint`); use the static `sprint` group from the manifest.
 
-### `stable:N`
+### `stable:N` and sprint waves
 
-A stable-bundle regression is run wave by wave with `/qa-run stable:<N> <wave>` — selection, tiers and exclusions:
-`.claude/skills/qa-run/run.md` §1 and `waves.md`. `/qa-regression` has no `stable:N` selection.
+A stable-bundle or sprint regression is run wave by wave with `/qa-run stable:<N> <wave>` or `/qa-run sprint:<XX-YY> <wave>`
+— selection, tiers and exclusions: `.claude/skills/qa-run/run.md` §1 and `waves.md`. `/qa-regression` has no `stable:N`
+selection, and its `sprint` runs the whole plan as one run.
 
 ## Change-Scoped Selection — not running a suite beats running it fast
 

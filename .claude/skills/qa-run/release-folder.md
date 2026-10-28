@@ -1,8 +1,9 @@
-# Release regression — a bundle regression split into waves that several QA run in parallel
+# Release regression — a bundle or sprint regression split into waves that several QA run in parallel
 
-The contract behind [`/qa-test-plan stable <N>`](../../knowledge/execution/test-plan/stable-mode.md) (the plan) and
-[`/qa-run stable:<N> <wave>`](waves.md) (the run). It is the single source for the folder
-layout, every field, the verdict vocabulary and the rules that let two or three QA test one bundle
+The contract behind [`/qa-test-plan stable <N>`](../../knowledge/execution/test-plan/stable-mode.md) and
+[`/qa-test-plan <sprint>`](../../knowledge/execution/test-plan/sprint-mode.md) (the plan) and
+[`/qa-run stable:<N> <wave>` / `/qa-run sprint:<XX-YY> <wave>`](waves.md) (the run). It is the single source for the folder
+layout, every field, the verdict vocabulary and the rules that let two or three QA test one bundle or one sprint
 on one environment at the same time. The commands cite it; they do not restate it.
 
 ## 1. Why this exists
@@ -14,20 +15,21 @@ Nobody else could continue it, and the next run would have re-triaged the same f
 scratch.
 
 So a release regression keeps **everything a second person needs in git**, in one folder per
-release, and splits the work into **waves** that are independent enough to run side by side.
+release, and splits the work into **waves** that are independent enough to run side by side. A sprint regression
+is the same problem at a smaller size — one person running every suite of the sprint plan — and uses the same folder.
 
 ## 2. The folder — `regression/releases/<release>/`
 
-`<release>` is lower-case and dash-separated: `stable-16`, `stable-17`. The folder is tracked
+`<release>` is lower-case and dash-separated: `stable-16`, `stable-17` for a bundle, `sprint-26-20` for a sprint. The folder is tracked
 (`.gitattributes` pins it to LF). Raw run output never goes here — it stays in the owner's local
 `reports/regression/<runId>/` (gitignored), and a filed bug carries its own evidence in the tracker.
 
 | Path | Written by | What it is |
 |---|---|---|
-| `release.json` | planner, once | The machine-readable plan: release, ticket, baseline, bundle, env, waves (§3) |
+| `release.json` | planner, once | The machine-readable plan: release, ticket, baseline, bundle or sprint, env, waves (§3) |
 | `PLAN.md` | planner, once | The human plan: how the scope was decided, waves, prerequisites, env gaps |
-| `module-diff.json` | planner | `npm run release:diff` output for the two bundles — the raw facts behind the scope |
-| `scope.json` | planner | One row per in-scope component: versions, class (§4), wave, suites, what changed, tickets |
+| `module-diff.json` | planner — bundle only | `npm run release:diff` output for the two bundles — the raw facts behind the scope |
+| `scope.json` | planner — bundle only | One row per in-scope component: versions, class (§4), wave, suites, what changed, tickets. A sprint's scope is its plan (`docs/Sprint plans/`), which `release.json` `sprint.plan` names |
 | `waves/<W>/state.json` | that wave's owner only | Who holds the wave, its status, run ids, totals, what was not run (§5) |
 | `waves/<W>/ledger.csv` | that wave's owner only | One row per triaged finding — filed or not (§6) |
 | `waves/<W>/report.md` | that wave's owner only | The wave report: results per suite, what the failures were, BLOCKED causes, what is left |
@@ -64,9 +66,22 @@ cannot reach `main`.
 }
 ```
 
+A **sprint** release carries `sprint` instead of `bundle`, and its `baseline` is the previous sprint's folder when one
+exists (its ledger is the known ground; there is no baseline build to compare on unless `env.baselineEnv` names a
+stand that still runs the previous build):
+
+```json
+{
+  "release": "sprint-26-20", "ticket": "VCST-7100", "baseline": "sprint-26-19",
+  "sprint": { "label": "Sprint26-20", "startDate": "2026-10-01", "endDate": "2026-10-14", "plan": "docs/Sprint plans/sprint-26-20-test-plan.md" },
+  "env": { "testEnv": "vcst" },
+  "waves": [ … the same grid as above … ]
+}
+```
+
 - **W0 is always the smoke gate** and every other wave depends on it: a broken job engine or a
   failed login stops the release before anyone spends a wave on it.
-- **Waves are priority tier × domain group** (`/qa-test-plan stable` Step 3, [`stable-mode.md`](../../knowledge/execution/test-plan/stable-mode.md)): `tier` is `critical`, `high` or
+- **Waves are priority tier × domain group** ([`plan-sections.md`](../../knowledge/execution/test-plan/plan-sections.md) §Waves, for both plan modes): `tier` is `critical`, `high` or
   `rest` (the cases neither tier selects), and the domain groups split each tier between owners. A wave's tier becomes
   `--cases <tier>`; `rest` becomes `--cases medium,low`. A case whose `Priority` is unreadable is in no tier: every
   tiered wave leaves it out, and it appears only in the run's Scope Exclusions. Tier order is a dependency: a wave
@@ -121,7 +136,7 @@ Status moves forward only:
 | Status | Means | Set when |
 |---|---|---|
 | `NOT_STARTED` | nobody holds it | the planner creates the wave |
-| `CLAIMED` | an owner holds it, nothing ran yet | `/qa-run stable:<N> <wave> --claim` |
+| `CLAIMED` | an owner holds it, nothing ran yet | `/qa-run stable:<N> <wave> --claim` (or `sprint:<XX-YY>`) |
 | `RUNNING` | a run is in progress | the first `/qa-run` of the wave starts |
 | `RUN_DONE` | the run finished; triage not done or not complete | the run is consolidated |
 | `TRIAGED` | every FAIL and BLOCKED case has a ledger row (`untriaged` 0); repairs or filing may still be open | triage is written to the ledger |
@@ -145,7 +160,7 @@ Columns (exact header, in this order):
 | `case_id` | the suite case id; `OBS-<ISSUE>` for a finding that was not a case row (an incidental observation) |
 | `status` | the case result: `FAIL` · `BLOCKED` · `SKIPPED` · `OBSERVED` |
 | `verdict` | one of the vocabulary below |
-| `new_in_release` | `yes` (introduced by this bundle) · `no` (same on the baseline) · `unknown` |
+| `new_in_release` | `yes` (introduced by this bundle or sprint) · `no` (same on the baseline) · `unknown` |
 | `summary` | what was seen, one line |
 | `reason` | **why** this verdict — the evidence a re-check would start from. Required |
 | `decided_by` | who decided — or, for `PENDING_DECISION`, who must decide |

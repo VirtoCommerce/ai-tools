@@ -93,7 +93,7 @@ Each of these is read by the step that needs it and by nothing else. Anchors (`�
 | Storefront selectors — generated surface, `selectors:sync` / `selectors:check` | [`knowledge/execution/regression-selectors.md`](../knowledge/execution/regression-selectors.md) |
 | Headless CI runner internals, the App Insights monitoring twin, the suite staleness-audit twin | [`knowledge/execution/regression-pipelines.md`](../knowledge/execution/regression-pipelines.md) |
 | Suite inventory rules (unique IDs, naming, XREF-001) | [`knowledge/execution/regression-suites.md`](../knowledge/execution/regression-suites.md) |
-| A stable-bundle regression several QA run in parallel — `/qa-test-plan stable <N>`, `/qa-run stable:<N> <wave>`, `regression/releases/stable-<N>/`, the triage ledger | [`skills/qa-run/release-folder.md`](../skills/qa-run/release-folder.md) |
+| A stable-bundle or sprint regression several QA run in parallel — `/qa-test-plan stable <N>` or `<sprint>`, `/qa-run stable:<N>` or `sprint:<XX-YY>` `<wave>`, `regression/releases/<release>/`, the triage ledger | [`skills/qa-run/release-folder.md`](../skills/qa-run/release-folder.md) |
 
 ## Prompt Templates
 

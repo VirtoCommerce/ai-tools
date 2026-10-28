@@ -1,7 +1,7 @@
 ---
 name: qa-run
-description: "[QA Methodology] Methodology behind /qa-run — running any regression (one-off selection, a sprint plan, or one wave of a stable-bundle regression that several QA run in parallel) with the release folder, the triage ledger, triage that starts on its own after the run, and the always-asked GitHub question after triage. Kept self-contained so it can move into a plugin."
-argument-hint: "smoke | critical | full | <suite ids> | sprint[:XX-YY] | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | stable:<N> status"
+description: "[QA Methodology] Methodology behind /qa-run — running any regression (a one-off selection, or one wave of a sprint or stable-bundle regression that several QA run in parallel) with the release folder, the triage ledger, triage that starts on its own after the run, and the always-asked GitHub question after triage. Kept self-contained so it can move into a plugin."
+argument-hint: "smoke | critical | full | <suite ids> | sprint:<XX-YY> <wave> | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | sprint:<XX-YY> status | stable:<N> status"
 ---
 
 # qa-run — run any regression
@@ -14,7 +14,7 @@ The methodology behind [`/qa-run`](../../commands/qa-run.md). The plan comes fro
 | File | Read when | Holds |
 |---|---|---|
 | [`run.md`](run.md) | every run | what each argument selects, the execution pipeline, the automatic triage and the GitHub question after the run |
-| [`waves.md`](waves.md) | `stable:<N> <wave>` or `stable:<N> status` | claiming a wave, known ground, the tiered run, triage into the ledger, publishing, handover |
+| [`waves.md`](waves.md) | `stable:<N>` or `sprint:<XX-YY>` with a wave or `status` | claiming a wave, known ground, the tiered run, triage into the ledger, publishing, handover |
 | [`release-folder.md`](release-folder.md) | any work on `regression/releases/<release>/` | the contract: layout, `release.json`, `state.json`, the ledger and its verdicts, parallel-run rules, claims |
 
 ## Scripts

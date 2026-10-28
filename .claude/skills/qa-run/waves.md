@@ -1,7 +1,10 @@
-# Release waves — `/qa-run stable:<N> <wave>`
+# Release waves — `/qa-run <release> <wave>`
 
-Read by [`/qa-run`](../../commands/qa-run.md) when the selection is `stable:<N>` with a wave or `status`.
-The plan comes from [`/qa-test-plan stable <N>`](../../knowledge/execution/test-plan/stable-mode.md). You run **one wave** of a release regression
+Read by [`/qa-run`](../../commands/qa-run.md) when the selection is `stable:<N>` or `sprint:<XX-YY>` with a wave or `status`.
+The plan comes from [`/qa-test-plan stable <N>`](../../knowledge/execution/test-plan/stable-mode.md) or
+[`/qa-test-plan <sprint>`](../../knowledge/execution/test-plan/sprint-mode.md) Step 8. Below, `<rel>` is the argument as
+typed (`stable:17`, `sprint:26-20`) and `<release>` its folder under `regression/releases/` (`stable-17`,
+`sprint-26-20`). You run **one wave** of a release regression
 on behalf of its owner. Other QA may be running other waves
 on the same environment right now, so everything you do respects the parallel-run rules.
 
@@ -18,6 +21,7 @@ claim protocol (§8). This file is the procedure; that file is the contract.
 /qa-run stable:16 W4 --triage       # triage the wave's runs
 /qa-run stable:16 W4 --publish      # put the wave in GitHub
 /qa-run stable:16 W4 --handover     # stop here, leave it for someone else
+/qa-run sprint:26-20 C-purchase --claim   # the same for a wave of a sprint regression
 ```
 
 **Where each entry point starts.** A flag never skips a step: triage (Step 4) starts, and the GitHub question (Step 7)
@@ -39,16 +43,16 @@ taking a wave over is `--continue`, which goes through Step 1.
 ## `status` — read-only
 
 Pull `main` first (`git checkout main && git pull`, or a clean worktree of `origin/main`) — the script reads
-the files on disk, so a stale checkout shows a stale picture. Then `npm run release:status -- stable-<N>` and
+the files on disk, so a stale checkout shows a stale picture. Then `npm run release:status -- <release>` and
 show: the wave table, *Not run yet*, *Real bugs awaiting filing*, *Decisions pending*, which waves are free to
 claim (`NOT_STARTED`, every `dependsOn` wave at least `RUN_DONE`), and — from the tracker — which wave
 sub-tasks are assigned and in progress right now. Change nothing.
 
 ## Step 0 — Pre-flight
 
-1. Work on a branch from current `main`: `claude/qa-release/stable-<N>-<wave>` (create it or check it out; a
+1. Work on a branch from current `main`: `claude/qa-release/<release>-<wave>` (create it or check it out; a
    reused checkout keeps old tips — reset to `origin/<branch>` before adding to it).
-2. `npm run release:check -- stable-<N>` must be green. Read `release.json` (this wave's `suites`, `dependsOn`,
+2. `npm run release:check -- <release>` must be green. Read `release.json` (this wave's `suites`, `dependsOn`,
    `exclusive`) and every other wave's `state.json`.
 3. **Dependencies:** every wave in `dependsOn` is at least `RUN_DONE` — W0 especially. If not, STOP and say which.
 4. **Before every wave, and before every resumed run of one:** run the [`/preflight`](../../skills/preflight/SKILL.md)
@@ -84,13 +88,13 @@ sub-tasks are assigned and in progress right now. Change nothing.
    never borrow another owner's accounts.
 6. Write `state.json`: `owner`, `status: CLAIMED` (on `--continue` the status stays), `personas`, `updatedAt`. On
    `--continue`, append the previous owner to `handovers` first. Commit it to
-   `claude/qa-release/stable-<N>-<wave>` and push now — a second claimant then hits the existing branch before
+   `claude/qa-release/<release>-<wave>` and push now — a second claimant then hits the existing branch before
    the run, not after it.
 
 ## Step 2 — Known ground before running
 
 ```
-npm run release:status -- stable-<N> --ledger --suites <this wave's suite ids> --with-baseline
+npm run release:status -- <release> --ledger --suites <this wave's suite ids> --with-baseline
 ```
 
 Keep that output: earlier verdicts for these suites, from this release and from the `baseline` release when its
@@ -134,7 +138,10 @@ the user stops it.
    it to `qa-backend-expert` (`playwright-edge`) or `qa-frontend-expert` (`playwright-chrome`) per
    [`../rules/agents.md`](../../rules/agents.md) §Parallel Execution, with a brief built from
    [`../templates/agent-dispatch.md`](../../templates/agent-dispatch.md) including its observed-behaviour line.
-   Temporary data only, removed afterwards; `yes` only when the baseline does not show it.
+   Temporary data only, removed afterwards; `yes` only when the baseline does not show it. A sprint release has a
+   baseline stand only when `release.json` `env.baselineEnv` names one; without it, `new_in_release` is `no` when the
+   baseline release's ledger (Step 2) already holds the finding, otherwise `unknown` — never `yes` without a build that
+   shows the difference.
 4. Write one ledger row per triaged finding — **including every one that will not be filed** — in
    `waves/<W>/ledger.csv`, mapping the triage class per the contract §6. Amend a row for a re-check of the same run;
    never append a duplicate. Real bugs not filed yet: `follow_up: DRAFT`; the same defect seen in several cases: one
@@ -183,8 +190,8 @@ that bug.
 
 **Always ask after triage:** "Commit the wave, open a PR and post the wave report?" On *yes*:
 
-1. `npm run release:status -- stable-<N> --write`, then `npm run release:check -- stable-<N>` — must be green.
-2. **The wave report in the tracker:** `npm run release:report -- stable-<N> --wave <W> --post` — before the commit, so
+1. `npm run release:status -- <release> --write`, then `npm run release:check -- <release>` — must be green.
+2. **The wave report in the tracker:** `npm run release:report -- <release> --wave <W> --post` — before the commit, so
    the comment ids it records in `state.json` `reports` are in it. It posts two NEW comments, each with an inline image:
    - on the **wave sub-task** — the run's own dashboard (`regression-report.html`, its summary part as a PNG; the HTML
      attached), the totals, the wave's real bugs, the ledger's verdict counts, what was not run;
@@ -211,7 +218,7 @@ Triage (Step 4) runs first if the wave has FAIL or BLOCKED cases without a ledge
 if nothing ran) with `notRun` filled in and a "Before the next owner continues" section in `report.md` — including
 where any repair lives, which must be a pushed branch — and go to Step 7 so it reaches git. Unassign the sub-task
 (on the user's yes): an assigned sub-task is a live claim, and `--continue` will not take it. The next owner runs
-`/qa-run stable:<N> <wave> --continue`, which claims through Step 1 and records the handover in `handovers`; the wave id
+`/qa-run <rel> <wave> --continue`, which claims through Step 1 and records the handover in `handovers`; the wave id
 stays.
 
 ## Rules

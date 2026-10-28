@@ -54,31 +54,9 @@ line on what changed, ticket keys.
 - **Risk per domain**, per [`plan-sections.md`](plan-sections.md) §Risk assessment — it orders the domains inside each
   priority tier and decides which domains get charters.
 
-## Step 3 — Waves: priority tiers × domain slices
+## Step 3 — Waves
 
-A wave is one **(tier, domain group)** cell, so the plan honours priority *and* lets several QA work at once:
-
-| | purchase flow | catalog & search | accounts & B2B | … |
-|---|---|---|---|---|
-| **W0** smoke gate | one wave, first, alone | | | |
-| **critical** (`--cases critical`) | `C-purchase` | `C-catalog` | `C-accounts` | run in parallel |
-| **high** (`--cases high`) | `H-purchase` | `H-catalog` | `H-accounts` | start when every critical wave has run |
-| **rest** (`--cases medium,low`) | `R-purchase` | `R-catalog` | `R-accounts` | start when every high wave has run |
-| **WX** exclusive window | env-wide cases, one owner, last | | | |
-
-1. **Tiers come from the cases' own priority**, through `npm run suites:filter` — the same tiers `/qa-regression --cases`
-   uses. Never re-grade a case in the plan.
-2. **Domain groups** are chosen so two parallel waves never consume the same disposable fixture set or the same pooled
-   state ([`../../../rules/test-data.md`](../../../rules/test-data.md) §DISPOSABLE FIXTURES rule 4). One owner keeping one
-   domain across tiers keeps its data in one pair of hands.
-3. **Tier order is a dependency:** each `H-*` wave lists every `C-*` wave in `dependsOn`, each `R-*` wave every `H-*`
-   wave (every `C-*` wave when there is no `H-*`). `release:check` enforces it.
-4. **Env-wide cases** (settings, job schedules, reindex/rebuild, restore, restart, re-seed — contract §7.2) go into
-   `exclusive` and the WX wave, out of every tier.
-5. **Size** each wave with `npm run regression:plan -- <suite ids> --cases <tier>` (`rest`: `medium,low`); a wave fits one owner's day. Numbers
-   only from that output.
-6. **Prerequisites per wave:** seed profiles (`npm run models:check -- --plan <profile>`,
-   [`/qa-seed-data`](../../../skills/qa-seed-data/SKILL.md)), personas per owner (contract §7.1), env settings.
+Per [`plan-sections.md`](plan-sections.md) §Waves, over the suites Step 2 scoped.
 
 ## Step 4 — Write the release folder
 
