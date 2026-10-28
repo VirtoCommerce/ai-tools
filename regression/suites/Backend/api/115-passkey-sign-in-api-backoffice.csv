@@ -114,35 +114,22 @@ State under test: (a) the account is temporarily locked by five wrong passwords,
 With the account Bearer list {signInMethods{name keys{id}}} through {{FRONT_URL}}/graphql and delete every Passkey key with mutation deleteSignInKey(command:{signInMethodName:""Passkey"", keyId}); read the list back with no Passkey key (@td(PK_LOCKOUT.email)) (sign in again first if the token expired)
 Re-arm with npm run seed:passkey:verify (unlock, failed-attempt count 0)
 Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)",VCST-6121 · Archetype:CONFIG · Technique:ST · Behavior:auth.lockout.temporary · Behavior:auth.lockout.admin-lock · Catches:lockout moved into GrantTypeHandlerBase lets a locked account in with a passkey · BL-AUTH-003 BL-AUTH-013,Draft
-PKA-004,Passkey back office — a customer account cannot sign in to the back office with a passkey,Auth > Passkey sign-in > API and Backoffice,High,"BL-AUTH-005, BL-AUTH-014",,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
-CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). A WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol before the first step (WebAuthn.enable, then addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}) and removed in Cleanup. The relying-party id is the host of the request (1c), so a credential is created and used on a page of the SAME host as the endpoint it is sent to: a page of {{FRONT_URL}} for the storefront token endpoint, a page of {{BACK_URL}} for the back office. Every assertion is single use: a fresh navigator.credentials.get for every grant.
-Fixtures are the seeded personas of scripts/seed-data/auth/seed-passkey.mjs (re-arm before the run with npm run seed:passkey:verify); every passkey a case creates it deletes in Cleanup.
-Open the platform sign-in log recording (Settings > Platform > Sign In Log > Record sign-in attempts = On); the writer is buffered, so every ""row appears"" read polls up to 90s.
-The credential must be bound to the PLATFORM host because the back-office cookie sign-in is on that host: it is created on a page of {{BACK_URL}} through the platform GraphQL for @td(PK_BUYER.email), a storefront Customer with no back-office role (the MFA suite covers a customer WITH a back-office role under MFA).
-State under test: a Customer-role account presents its own valid passkey to POST {{BACK_URL}}/api/platform/security/sign-in (the cookie sign-in of the back office). vc-platform#3144 CanSignInAsync refuses Customer-role users on the cookie scheme.",user=@td(PK_BUYER.email),"[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[SETUP] set up the virtual authenticator over CDP (CEREMONY)
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username=@td(PK_BUYER.email), password={{DEFAULT_TEST_PASSWORD}}, storeId={{STORE_ID}}) to obtain the account Bearer token
-[NAV] Navigate to {{BACK_URL}}/ (a page of the platform host, no sign-in is made there)
-[HTTP] POST {{BACK_URL}}/graphql with the account Bearer and {passkeyCreationOptions}; capture creationOptions
-[ACT] In the page run navigator.credentials.create with creationOptions parsed as publicKey
-[ACT] Serialise with toJSON() as credCreate
-[HTTP] POST {{BACK_URL}}/graphql with the account Bearer and mutation createPasskey(command:{credential: credCreate}); require succeeded=true
---- LAYER: Cookie sign-in as a customer ---
-[HTTP] POST {{BACK_URL}}/api/passkeys/request-options with no Authorization header; capture requestOptions
-[ACT] In the page of {{BACK_URL}} run navigator.credentials.get with requestOptions
-[ACT] Serialise with toJSON() as assertion1
+PKA-004,"Passkey back office — a customer account has no passkey path into the back office (reachable part: creation refused, no cookie for a forged credential)",Auth > Passkey sign-in > API and Backoffice,High,BL-AUTH-014,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
+LANE LIMIT: the regression lane is a real-user lane. Only WebAuthn.* CDP calls (enable, addVirtualAuthenticator, setAutomaticPresenceSimulation, setUserVerified, addCredential, removeVirtualAuthenticator) are allowed; no page JavaScript (no Runtime.evaluate, no Page.addScriptToEvaluateOnNewDocument, no navigator.credentials call from a script). Everything is observed through the page itself (accessibility snapshot, the real controls) and the lane network log (browser_network_requests); REST and GraphQL calls from the runner (Node, Bearer token) are not page JavaScript and stay allowed.
+LIMIT STATED: the full condition - a storefront Customer presenting its OWN valid platform-host passkey to POST {{BACK_URL}}/api/platform/security/sign-in - is structurally unreachable: the Customer has no back-office UI, REST POST /api/passkeys/creation-options answers 403 for it, and a platform-host credential can only be minted by page JavaScript. So the cookie refusal of CanSignInAsync for a Customer-role user stays unexercised here and is a manual or fixture item (the MFA suite covers a customer WITH a back-office role). This case asserts the part that IS observable: the Customer cannot start a registration on the platform host over REST, and the cookie sign-in gives no cookie and no session for a forged passkey credential.
+Account: @td(PK_BUYER.email), a storefront Customer with no back-office role. Every call is made by the runner with a Bearer token or none (not page JavaScript).",user=@td(PK_BUYER.email),"[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username=@td(PK_BUYER.email), password={{DEFAULT_TEST_PASSWORD}}, storeId={{STORE_ID}}) to obtain the buyer Bearer token
+[HTTP] POST {{BACK_URL}}/api/passkeys/creation-options with the buyer Bearer; capture restCreate (status, body start)
+[HTTP] POST {{BACK_URL}}/graphql with the buyer Bearer and {passkeyCreationOptions}; capture gqlCreate (the options; read rp.id)
 [CAPTURE] T0 = current UTC time
-[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in with a cookie jar and JSON body {""grant_type"":""passkey"",""credential"": assertion1}; capture resCookie (status, error, set-cookie header present or not)
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in with a cookie jar and JSON body {""grant_type"":""passkey"",""credential"":""{}""}; capture resCookie (status, error, set-cookie header present or not)
 [HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with the same cookie jar and no Bearer; capture currentRes
-[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and {""userName"":""@td(PK_BUYER.email)"",""signInTypes"":[""Passkey""],""take"":20,""sort"":""createdDate:desc"",""startDate"":T0}
-[NAV] Navigate to {{BACK_URL}}/#!/ with the cookie jar loaded into the page
-[ASSERT] Read whether the back-office workspace renders","[STATUS] resCookie status is not HTTP 200 and it sets no authentication cookie (a refusal, HTTP 400 or 403) {SPEC} (vc-platform#3144: CanSignInAsync refuses Customer-role users on the cookie scheme) {BL} (BL-AUTH-005: a Customer account has no back-office permission)
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and {""userName"":""@td(PK_BUYER.email)"",""startDate"":T0,""take"":20,""sort"":""createdDate:desc""}; capture logRows (poll up to 90s)","[STATUS] restCreate returns HTTP 403: a Customer cannot start a passkey registration through the platform REST route {OBSERVED} (REG-2026-10-28-1519 probe) {SPEC} (vc-platform#3144: Customer-role users are refused on the back-office side)
+[STATUS] resCookie status is not HTTP 200 and it sets no authentication cookie {SPEC} (vc-platform#3144: the cookie sign-in refuses what is not a valid passkey assertion of an allowed user)
 [STATUS] currentRes with the cookie jar returns HTTP 401: no back-office session exists {BL} (BL-AUTH-014: an API call without identity is 401, never a login page)
-[STATE] The back-office workspace does not render for the customer: the login page is shown {BL} (BL-AUTH-005)
-[COUNT] The sign-in log has a Passkey row for the attempt that is not succeeded, with a failureReason that names a refusal and not Unknown {SPEC} (VCST-6121: audit events handle passkey)","[API] the grant to the storefront token endpoint is not used here: only the cookie sign-in is under test
-[API] no response is HTTP 5xx
-[ERRORS] errors[] of every GraphQL answer in this case is empty, except where an assertion above expects the refusal",A storefront customer receives a back-office cookie with a passkey; currentuser answers 200 with the cookie; the back-office workspace renders; the refusal is HTTP 500; no log row for the attempt,"With the account Bearer list {signInMethods{name keys{id}}} through {{BACK_URL}}/graphql and delete every Passkey key with mutation deleteSignInKey(command:{signInMethodName:""Passkey"", keyId}); read the list back with no Passkey key (@td(PK_BUYER.email))
-Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)",VCST-6121 · Archetype:SCOPE · Technique:DT · Behavior:auth.access.admin-entry · Catches:a storefront customer enters the back office through the passkey cookie sign-in,Draft
+[BODY] gqlCreate rp.id equals the host name of {{BACK_URL}}: the platform GraphQL mints options for the platform host (the reason a key is bound to the host) {OBSERVED} (REG-2026-10-28-1519 probe)
+[COUNT] logRows holds no succeeded Passkey row for @td(PK_BUYER.email) after T0 {SPEC} (VCST-6121: audit events handle passkey)","[API] no response is HTTP 5xx
+[ERRORS] errors[] of the GraphQL answer is empty or the refusal expected above",A storefront customer receives a back-office cookie; currentuser answers 200 with the cookie; the creation route answers 200 to a Customer; the refusal is HTTP 500,none - no state is created (no passkey is registered),VCST-6121 · Archetype:SCOPE · Technique:DT · Behavior:auth.access.admin-entry · Catches:a storefront customer enters the back office through the passkey cookie sign-in · Reduced: the valid-credential half is unreachable without page JavaScript (see Preconditions),Draft
 PKA-005,"Passkey back office — Manager adds, renames, deletes a passkey and signs in with it (AngularJS admin)",Auth > Passkey sign-in > API and Backoffice,High,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). A WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol before the first step (WebAuthn.enable, then addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}) and removed in Cleanup. The relying-party id is the host of the request (1c), so a credential is created and used on a page of the SAME host as the endpoint it is sent to: a page of {{FRONT_URL}} for the storefront token endpoint, a page of {{BACK_URL}} for the back office. Every assertion is single use: a fresh navigator.credentials.get for every grant.
 Fixtures are the seeded personas of scripts/seed-data/auth/seed-passkey.mjs (re-arm before the run with npm run seed:passkey:verify); every passkey a case creates it deletes in Cleanup.
@@ -198,24 +185,25 @@ State under test: the account has a password (the first sign-in is by password) 
 [NETWORK] no 5xx on /api/platform/security/sign-in",The blade or the login link is missing; the add succeeds but no row appears; a name with markup renders as HTML; the passkey sign-in fails with a valid key; a deleted credential signs in; spinner >5s,"Sign in with the password, open the blade and delete every passkey this case created; the password is untouched
 Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)",VCST-6121 · Archetype:LIFECYCLE · Technique:FLOW · Catches:a back-office user cannot manage or use a passkey in the AngularJS admin,Draft
 PKA-006,"Passkey back office — Manager adds, renames and signs in with a passkey (Admin Shell); password delete leaves the last passkey protected",Auth > Passkey sign-in > API and Backoffice,High,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
-CEREMONY: Chromium lanes only (chrome or edge), a WebAuthn virtual authenticator over CDP (WebAuthn.enable, addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}), removed in Cleanup; on the Edge lane select the window before every create or get. The relying-party id is the host of the page, here the platform host.
-Admin Shell: @td(PK_BO_MANAGER.email) is a Manager whose login renders the Admin Shell (Login.vue). Resolve the shell login route from the stand before the run (the route that shows 'Sign in with a passkey'); if the stand serves only the AngularJS back office, the case is BLOCKED and states which UI the route serves. Re-arm with npm run seed:passkey:verify before the run (the case removes the password).
+CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.
+Admin Shell: @td(PK_BO_MANAGER.email) is a Manager whose login renders the Admin Shell (vc-shell framework 2.7.0 on the stand that carries this change). Login route: {{BACK_URL}}/apps/admin-shell/#/login. If the stand serves only the AngularJS back office, the case is BLOCKED and states which UI the route serves. Re-arm with npm run seed:passkey:verify before the run (the case removes the password).
+Surface wording observed in REG-2026-10-28-1519: the login order is 'Sign in with a passkey', then 'Continue with Google', then the email and password form with the button 'Sign in'; the blade is titled 'Sign-in methods' and shows the COUNT as a badge (1, then 2), not the text ""Sign-in methods (1)""; the password row control is 'Delete: Password is set'; after the password delete the section reads 'Password is not set' with the action 'Set a password'. Incidental, recorded only: after loading #/login while still signed in, a passkey click can give sign-in 204 followed by an automatic logout and ""The session has expired, so this request was not completed.""; always sign out before opening the login route.
 State under test: the Manager has a password and no passkey. The journey is add, rename, sign in with the key, delete the password, then the last-key control state - the Admin Shell DISABLES the delete control of the last key (3x S17), the baseline the AngularJS blade is compared to in the sibling case on the AngularJS blade (PKA-013).",user=@td(PK_BO_MANAGER.email),"[SETUP] set up the virtual authenticator over CDP (CEREMONY)
 [PRE:CLEAR_SESSION]
 --- SCREEN: Login page ---
-[NAV] Navigate to the Admin Shell login route of the stand
+[NAV] Navigate to {{BACK_URL}}/apps/admin-shell/#/login
 [ASSERT] Read the order of the sign-in controls
 [ACT] Fill the user name with @td(PK_BO_MANAGER.email)
 [ACT] Fill the password with DEFAULT_TEST_PASSWORD (the lane secret name)
-[ACT] Click 'Continue'
+[ACT] Click 'Sign in'
 [WAIT] the shell renders
 --- SCREEN: Sign-in methods ---
-[NAV] Navigate to /user-profile/sign-in-methods of the shell
+[NAV] Navigate to {{BACK_URL}}/apps/admin-shell/#/user-profile/sign-in-methods
 [WAIT] the blade renders
-[ASSERT] Read the blade title and whether the delete control of the Password row is enabled
-[ACT] Click the control that adds a passkey
+[ASSERT] Read the blade title, the count badge and whether 'Delete: Password is set' is enabled
+[ACT] Click 'Add a passkey'
 [WAIT] the authenticator answers and the toast appears
-[ASSERT] Read the toast, the blade title and whether the delete control of the Password row is enabled
+[ASSERT] Read the toast, the count badge and whether 'Delete: Password is set' is enabled
 [ACT] Open the rename control of the passkey row
 [ACT] Fill the name with ""Shell key""
 [ACT] Confirm the rename
@@ -224,41 +212,41 @@ State under test: the Manager has a password and no passkey. The journey is add,
 [CAPTURE] T0 = current UTC time before the passkey sign-in
 --- SCREEN: Sign in with the passkey ---
 [ACT] Sign out of the shell
-[NAV] Navigate to the Admin Shell login route of the stand
+[NAV] Navigate to {{BACK_URL}}/apps/admin-shell/#/login
 [ACT] Click 'Sign in with a passkey'
 [WAIT] the shell renders
-[ASSERT] Read the signed-in user
+[ASSERT] Read the signed-in user in the Account panel
 [SETUP] resize the window to 768 px wide
 [ACT] Sign out of the shell
-[NAV] Navigate to the Admin Shell login route of the stand
+[NAV] Navigate to {{BACK_URL}}/apps/admin-shell/#/login
 [ASSERT] Read whether 'Sign in with a passkey' is visible and not clipped
 [SETUP] resize the window back to the desktop width
 [ACT] Click 'Sign in with a passkey'
 [WAIT] the shell renders
 --- SCREEN: The last key ---
-[NAV] Navigate to /user-profile/sign-in-methods of the shell
+[NAV] Navigate to {{BACK_URL}}/apps/admin-shell/#/user-profile/sign-in-methods
 [WAIT] the blade renders
-[ACT] Delete the Password row
+[ACT] Click 'Delete: Password is set'
 [WAIT] the confirmation ""Delete your password? You'll sign in only with your other sign-in methods."" is shown
 [ASSERT] Read the confirmation text
 [ACT] Confirm the delete
-[WAIT] the section reads that the password is not set
-[ASSERT] Read whether the delete control of the passkey row is enabled
-[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and {""userName"":""@td(PK_BO_MANAGER.email)"",""signInTypes"":[""Passkey""],""startDate"":T0,""take"":20,""sort"":""createdDate:desc""}","[DOM] 'Sign in with a passkey' is the FIRST sign-in control, above 'Continue with Google' and the password form {OBSERVED} (3x S17)
-[DOM] With only a password the blade is titled ""Sign-in methods (1)"" and the Password delete control is DISABLED; after a passkey is added the toast reads ""Added to Passkeys"" and the Password delete control is enabled {OBSERVED} (3x S17)
-[DOM] After the rename the passkey row reads ""Shell key"" {SPEC} (VCST-6121: back-office users rename a key)
-[STATE] The passkey sign-in at the shell login signs the Manager in (cookie 204): the shell renders with the Manager signed in {SPEC} (VCST-6121: back-office users sign in with a passkey) {OBSERVED} (3x S17)
-[DOM] At 768 px wide the passkey control is visible and not clipped {OBSERVED} (3x S17: works at 768 and in Arabic RTL)
-[DOM] After the password is deleted the delete control of the last passkey row is DISABLED, so the last sign-in key cannot be removed from this UI {SPEC} (VCST-6121: the last sign-in key is protected) {OBSERVED} (3x S17: last-key delete DISABLED in the Admin Shell; server refusal last_sign_in_key)
+[WAIT] the section reads 'Password is not set'
+[ASSERT] Read whether the delete control of the passkey row ('Delete: Shell key') is enabled
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and {""userName"":""@td(PK_BO_MANAGER.email)"",""signInTypes"":[""Passkey""],""startDate"":T0,""take"":20,""sort"":""createdDate:desc""}","[DOM] 'Sign in with a passkey' is the FIRST sign-in control, above 'Continue with Google' and the password form {OBSERVED} (3x S17; REG-2026-10-28-1519)
+[DOM] With only a password the count badge reads 1 and 'Delete: Password is set' is DISABLED; after a passkey is added the toast reads ""Added to Passkeys"", the badge reads 2 and 'Delete: Password is set' is enabled {OBSERVED} (3x S17; REG-2026-10-28-1519)
+[DOM] After the rename the passkey row reads ""Shell key"" {SPEC} (VCST-6121: back-office users rename a key) {OBSERVED} (REG-2026-10-28-1519)
+[STATE] The passkey sign-in at the shell login signs the Manager in (cookie 204): the shell renders with the Manager in the Account panel {SPEC} (VCST-6121: back-office users sign in with a passkey) {OBSERVED} (3x S17)
+[DOM] At 768 px wide 'Sign in with a passkey' is visible and not clipped {OBSERVED} (3x S17: works at 768 and in Arabic RTL; REG-2026-10-28-1519)
+[DOM] After the password is deleted the section reads 'Password is not set' and 'Delete: Shell key' is DISABLED, so the last sign-in key cannot be removed from this UI {SPEC} (VCST-6121: the last sign-in key is protected) {OBSERVED} (3x S17: last-key delete DISABLED in the Admin Shell; server refusal last_sign_in_key; REG-2026-10-28-1519)
 [COUNT] The sign-in log holds at least one succeeded Passkey row for the Manager after T0 {SPEC} (VCST-6121: audit events handle passkey)","[API] sign-in log holds a succeeded Passkey row for the Manager
-[CONSOLE] the known 403 on POST validateuserpassword when setting a password as a Manager is recorded, not failed (3x S17)
+[CONSOLE] the known 403 on GET users/{manager} (the Manager lacks the permission) is recorded, not failed
 [NETWORK] no 5xx",The shell login offers no passkey control; the password form stays visible with no password method; the rename is not shown; the passkey sign-in fails; the control is clipped on a narrow screen; the delete control of the last key is enabled in the Admin Shell,"Re-arm @td(PK_BO_MANAGER.email) with npm run seed:passkey:verify (re-sets the password, deletes leftover passkeys)
 Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:PARITY · Technique:FLOW · Catches:the Admin Shell offers no passkey sign-in, rename or last-key protection where the AngularJS admin does · Probe:VC-AUTH-004",Draft
 PKA-007,Passkey back office — deleting a passkey over REST ends the user's other sessions,Auth > Passkey sign-in > API and Backoffice,Medium,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). A WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol before the first step (WebAuthn.enable, then addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}) and removed in Cleanup. The relying-party id is the host of the request (1c), so a credential is created and used on a page of the SAME host as the endpoint it is sent to: a page of {{FRONT_URL}} for the storefront token endpoint, a page of {{BACK_URL}} for the back office. Every assertion is single use: a fresh navigator.credentials.get for every grant.
 Fixtures are the seeded personas of scripts/seed-data/auth/seed-passkey.mjs (re-arm before the run with npm run seed:passkey:verify); every passkey a case creates it deletes in Cleanup.
 Runs after PKA-005/PKA-006 or re-arm @td(PK_BO_MANAGER_2.email) first (npm run seed:passkey:verify): one disposable back-office account per case.
-State under test: the Manager has a passkey and TWO sessions: a token pair from a password grant (the other session) and the back-office cookie session of the browser (the current one). The key is deleted over REST from the browser (the AngularJS blade, which calls DELETE currentuser/sign-in-methods/Passkey/keys/{id}). The REST sibling calls TryTerminateUserSessions; the Admin Shell PR note says the own cookie session is kept.",user=@td(PK_BO_MANAGER.email),"[SETUP] set up the virtual authenticator over CDP (CEREMONY)
+State under test: the Manager has a passkey and TWO sessions: a token pair from a password grant (the other session) and the back-office cookie session of the browser (the current one). The key is deleted over REST from the browser (the AngularJS blade, which calls DELETE currentuser/sign-in-methods/Passkey/keys/{id}). The REST sibling calls TryTerminateUserSessions; the Admin Shell PR note says the own cookie session is kept.",user=@td(PK_BO_MANAGER_2.email),"[SETUP] set up the virtual authenticator over CDP (CEREMONY)
 [PRE:CLEAR_SESSION]
 [NAV] Navigate to {{BACK_URL}}/#!/login
 [ACT] Fill 'User name' with @td(PK_BO_MANAGER_2.email)
@@ -401,39 +389,74 @@ State under test: the REST key routes under currentuser and the xAPI key operati
 [BODY] g2 returns no creation challenge to an anonymous caller (errors[] holds an authorization error and no options) {SPEC} (VCST-6121: creation options are for a signed-in account; the request options, by contrast, are anonymous by design {OBSERVED} 1c)
 [STATUS] No response is HTTP 5xx and none leaks a stack trace {BL} (BL-AUTH-017)","[API] GET {{BACK_URL}}/api/platform/security/sign-in-methods anonymous is recorded: status and the method names returned
 [NETWORK] no 5xx",An anonymous call returns 200 or key data; the answer is a 302 to a login page or HTML; an anonymous caller gets a creation challenge; the answer is HTTP 500,none - no state is created,VCST-6121 · Archetype:SCOPE · Technique:DT · Behavior:auth.access.api-challenge.anonymous · Catches:key management answers anonymously or redirects to a login page · Probe:VC-AUTH-005,Draft
-PKA-012,"Passkey grant — a passkey success resets the failed-attempt counter, as a password success does",Auth > Passkey sign-in > API and Backoffice,High,BL-AUTH-003,ECL-4.2,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
-CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). A WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol before the first step (WebAuthn.enable, then addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}) and removed in Cleanup. The relying-party id is the host of the request (1c), so a credential is created and used on a page of the SAME host as the endpoint it is sent to: a page of {{FRONT_URL}} for the storefront token endpoint, a page of {{BACK_URL}} for the back office. Every assertion is single use: a fresh navigator.credentials.get for every grant.
+PKA-012,"Passkey grant — a passkey success leaves the failed-attempt counter unchanged; the next wrong password locks, and a locked account's passkey sign-in is refused",Auth > Passkey sign-in > API and Backoffice,High,BL-AUTH-003,ECL-4.2,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
+CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). A WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol before the first step (WebAuthn.enable, then addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}) and removed in Cleanup. The relying-party id is the host of the page, so a credential is created and used on the SAME host as the endpoint it is sent to.
+LANE LIMIT: the regression lane is a real-user lane. Only WebAuthn.* CDP calls (enable, addVirtualAuthenticator, setAutomaticPresenceSimulation, setUserVerified, addCredential, removeVirtualAuthenticator) are allowed; no page JavaScript (no Runtime.evaluate, no Page.addScriptToEvaluateOnNewDocument, no navigator.credentials call from a script). Everything is observed through the page itself (accessibility snapshot, the real controls) and the lane network log (browser_network_requests); REST and GraphQL calls from the runner (Node, Bearer token) are not page JavaScript and stay allowed.
+Presence simulation: a request that starts while automaticPresenceSimulation is OFF stays pending and is NOT answered when it is switched on later (observed in REG-2026-10-28-1519), and a page load with it ON re-signs the buyer in silently. The working order is: presence OFF, load /sign-in, presence ON, click 'Sign in with Passkey'.
 Fixtures are the seeded personas of scripts/seed-data/auth/seed-passkey.mjs (re-arm before the run with npm run seed:passkey:verify); every passkey a case creates it deletes in Cleanup.
 Open the platform sign-in log recording (Settings > Platform > Sign In Log > Record sign-in attempts = On); the writer is buffered, so every ""row appears"" read polls up to 90s.
 Persona @td(PK_LOCKOUT.email) (DESTRUCTIVE; re-arm with npm run seed:passkey:verify before this case, because PKA-003 also locks it, and in Cleanup). Lockout is enabled with a threshold of 5 (observed on vcptcore).
-State under test: 4 wrong passwords (counter 4), then a passkey success, then ONE more wrong password. BL-AUTH-003: a successful login resets the counter, so the fifth failure must not lock. The 3x session saw the counter stay at 4 after a passkey success and the next wrong password lock the account, while a password success resets it to 0 (KB-CA7DBAD0).",user=@td(PK_LOCKOUT.email),"[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+Oracle: BL-AUTH-003 as narrowed on 2026-10-28 from a human source - a successful password sign-in or second-factor completion resets the counter; a successful PASSKEY sign-in does NOT reset it (a passkey is not a password sign-in; ASP.NET Core Identity PasskeySignInAsync runs the pre-sign-in check but never resets the lockout counter), and lockout still applies to a passkey sign-in. Source: the VCST-6596 resolution (Cancelled, by design). Open product question, recorded and not graded: whether the passkey and the OTP grant should behave the same way.
+State under test: 4 wrong passwords (counter 4), then a passkey success (counter stays 4), then ONE more wrong password (the fifth failure, which locks), then a valid passkey on the now locked account. The key is added and used through the real storefront controls; the counter reads and the wrong-password grants are runner REST calls.",user=@td(PK_LOCKOUT.email),"[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] set up the virtual authenticator over CDP (CEREMONY)
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username=@td(PK_LOCKOUT.email), password={{DEFAULT_TEST_PASSWORD}}, storeId={{STORE_ID}}) to obtain the account Bearer token
-[NAV] Navigate to {{FRONT_URL}}/ (a page of the storefront host: the relying-party id of the ceremony is this host)
-[HTTP] POST {{FRONT_URL}}/graphql with the account Bearer and {passkeyCreationOptions}; capture creationOptions
-[ACT] In the page run navigator.credentials.create with creationOptions parsed as publicKey
-[ACT] Serialise the result with toJSON() as credCreate
-[HTTP] POST {{FRONT_URL}}/graphql with the account Bearer and mutation createPasskey(command:{credential: credCreate}){succeeded errors{code description}}; require succeeded=true
+[PRE:CLEAR_SESSION]
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email' with @td(PK_LOCKOUT.email)
+[ACT] Fill 'Password' with DEFAULT_TEST_PASSWORD (the lane secret name - the Playwright lane types the value)
+[ACT] Click 'Sign in'
+[WAIT] the page leaves /sign-in (up to 15s)
+[NAV] Navigate to {{FRONT_URL}}/account/security
+[ACT] Click 'Add passkey'
+[WAIT] the authenticator answers and one row appears
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous (the account button no longer names a customer)
 [HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(PK_LOCKOUT.email) with the admin Bearer; capture count0 = accessFailedCount (require 0, otherwise BLOCKED: re-arm first)
 [HTTP] POST {{BACK_URL}}/connect/token (grant_type=password, username=@td(PK_LOCKOUT.email), password=WrongPass1!, storeId={{STORE_ID}}) four times
 [HTTP] GET the user again; capture count4 = accessFailedCount
-[HTTP] POST {{FRONT_URL}}/graphql with no Authorization header and {passkeyRequestOptions}; capture requestOptions
-[ACT] In the page run navigator.credentials.get with requestOptions parsed as publicKey
-[ACT] Serialise the result with toJSON() as assertion1
-[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=passkey, scope=offline_access, storeId={{STORE_ID}}, credential=assertion1; capture res1 (status, error, errors[], access_token)
-[HTTP] GET the user again; capture countAfterPasskey
-[HTTP] one more wrong password grant; capture resWrong5
-[HTTP] POST {{BACK_URL}}/connect/token (grant_type=password, username=@td(PK_LOCKOUT.email), password={{DEFAULT_TEST_PASSWORD}}, storeId={{STORE_ID}}); capture resRight
-[HTTP] GET .../users/@td(PK_LOCKOUT.userId)/locked with the admin Bearer; capture lockedAfter","[COUNT] count4 is 4 {SPEC} (BL-AUTH-003: failures count per attempt)
-[STATUS] The passkey grant is HTTP 200 with an access_token {SPEC} (VCST-6121)
-[COUNT] countAfterPasskey is 0: a successful passkey sign-in resets the failed-attempt counter exactly as a password sign-in does {BL} (BL-AUTH-003: a successful login resets the counter; verify: 4 failures + 1 success, the next failure starts from 1) {OBSERVED} (3x: the password control resets to 0)
-[STATUS] resWrong5 is HTTP 400 with error invalid_grant and NO lockout code (not user_is_temporary_locked_out): the account is not locked by the fifth typo {BL} (BL-AUTH-003)
-[STATUS] resRight is HTTP 200 and lockedAfter is {""locked"": false} {BL} (BL-AUTH-003)","[API] sign-in log search: the passkey success row exists and the failures before it have the failureReason InvalidPassword
-[API] no response is HTTP 5xx
-[ERRORS] errors[] of every GraphQL answer in this case is empty, except where an assertion above expects the refusal","The counter is still 4 after the passkey success (suspected defect, 3x bug 1: the passkey handler never resets it); the next single wrong password locks the account; the account is not re-armed in Cleanup","POST {{BACK_URL}}/api/platform/security/users/@td(PK_LOCKOUT.userId)/unlock with the admin Bearer if locked
-With the account Bearer list {signInMethods{name keys{id}}} through {{FRONT_URL}}/graphql and delete every Passkey key with mutation deleteSignInKey(command:{signInMethodName:""Passkey"", keyId}); read the list back with no Passkey key (@td(PK_LOCKOUT.email))
+--- SCREEN: Passkey sign-in, counter at 4 ---
+[SETUP] WebAuthn.setAutomaticPresenceSimulation false for the authenticator
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[WAIT] the page settles (network idle)
+[SETUP] WebAuthn.setAutomaticPresenceSimulation true for the authenticator
+[CAPTURE] T0 = current UTC time
+[ACT] Click 'Sign in with Passkey'
+[WAIT] the page leaves /sign-in (up to 15s)
+[CAPTURE] grant1 = the POST /connect/token request with grant_type=passkey in the lane network log (status)
+[ASSERT] Read the account button
+[HTTP] GET the user again; capture countAfterPasskey = accessFailedCount
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous (the account button no longer names a customer)
+--- LAYER: The fifth failure ---
+[HTTP] one more wrong password grant (the fifth failure); capture resWrong5
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(PK_LOCKOUT.userId)/locked with the admin Bearer; capture lockedAfter
+--- SCREEN: Passkey sign-in on the locked account ---
+[SETUP] WebAuthn.setAutomaticPresenceSimulation false for the authenticator
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[WAIT] the page settles (network idle)
+[SETUP] WebAuthn.setAutomaticPresenceSimulation true for the authenticator
+[CAPTURE] T1 = current UTC time
+[ACT] Click 'Sign in with Passkey'
+[WAIT] 10s for any sign-in to happen
+[CAPTURE] grant2 = the POST /connect/token request with grant_type=passkey in the lane network log (status)
+[ASSERT] Read the URL, the account button and the error banner (data-test-id=""sign-in-error-alert"")
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and {""userName"":""@td(PK_LOCKOUT.email)"",""startDate"":T0,""take"":20,""sort"":""createdDate:desc""}; capture logRows (poll up to 90s)
+[HTTP] POST {{BACK_URL}}/connect/token (grant_type=password, username=@td(PK_LOCKOUT.email), password={{DEFAULT_TEST_PASSWORD}}, storeId={{STORE_ID}}); capture resRight","[COUNT] count4 equals 4 {BL} (BL-AUTH-003: failures count per attempt)
+[STATUS] grant1 (the passkey sign-in with the counter at 4) returns HTTP 200 and the account button names the customer {SPEC} (VCST-6121)
+[COUNT] countAfterPasskey equals 4: a successful passkey sign-in does NOT reset the failed-attempt counter {BL} (BL-AUTH-003 as narrowed: a passkey is not a password sign-in; with 4 failures and 1 passkey success the counter stays at 4) {DOC} (VCST-6596 resolution; ASP.NET Core Identity PasskeySignInAsync never resets the lockout counter) {OBSERVED} (REG-2026-10-28-1519)
+[STATUS] resWrong5 returns HTTP 400 with error invalid_grant and the lockout code user_is_temporary_locked_out: the fifth failure locks the account {BL} (BL-AUTH-003) {OBSERVED} (REG-2026-10-28-1519)
+[BODY] lockedAfter is {""locked"": true} {BL} (BL-AUTH-003)
+[STATUS] grant2 (a valid passkey on the locked account) returns HTTP 400, the URL stays /sign-in and the account button stays anonymous {BL} (BL-AUTH-003 as narrowed: a locked account cannot sign in with a passkey) {OBSERVED} (3x S19a)
+[DOM] The error banner reads ""Your account has been temporarily locked. Please try again later."" {OBSERVED} (3x S19a; REG-2026-10-28-1519)
+[COUNT] logRows holds a succeeded Passkey row (grant1) and a failed Passkey row with the failureReason LockedOut (grant2) for the account {OBSERVED} (3x S19a: log Passkey/user/store/LockedOut)
+[STATUS] resRight (the right password on the locked account) returns HTTP 400 with invalid_grant and no access_token {BL} (BL-AUTH-003: during lockout even correct credentials are rejected) {OBSERVED} (REG-2026-10-28-1519)","[API] sign-in log search: the failures before the passkey success have the failureReason InvalidPassword
+[API] no response is HTTP 5xx",The counter changes after the passkey success; the fifth wrong password does not lock; the locked account signs in with a passkey; a correct password is accepted during the lockout; the account is not re-armed in Cleanup,"POST {{BACK_URL}}/api/platform/security/users/@td(PK_LOCKOUT.userId)/unlock with the admin Bearer if locked
+Unlock first, then sign in with the password and delete every passkey this case created on /account/security, sign out
 Re-arm with npm run seed:passkey:verify (unlock, failed-attempt count 0)
-Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:CONFIG · Technique:ST · Behavior:auth.lockout.temporary · Catches:a passkey success leaves the failure counter running, so one typo later locks the customer · Suspected: PasskeyGrantTypeHandler never calls the AccessFailed reset (3x bug 1 Medium-High, KB-CA7DBAD0; BL-AUTH-003 stays as written - review via /qa-review-oracles bl)",Draft
+Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:CONFIG · Technique:ST · Behavior:auth.lockout.temporary · Catches:a passkey success silently resets the failure counter (it must not, BL-AUTH-003 as narrowed), the fifth failure fails to lock, or a locked account signs in with a passkey · Source: VCST-6596 resolution (Cancelled, by design), BL-AUDIT-2026-10-28",Draft
 PKA-013,Passkey back office — AngularJS shows why the last passkey cannot be deleted,Auth > Passkey sign-in > API and Backoffice,Low,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). A WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol before the first step (WebAuthn.enable, then addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}) and removed in Cleanup. The relying-party id is the host of the request (1c), so a credential is created and used on a page of the SAME host as the endpoint it is sent to: a page of {{FRONT_URL}} for the storefront token endpoint, a page of {{BACK_URL}} for the back office. Every assertion is single use: a fresh navigator.credentials.get for every grant.
 Fixtures are the seeded personas of scripts/seed-data/auth/seed-passkey.mjs (re-arm before the run with npm run seed:passkey:verify); every passkey a case creates it deletes in Cleanup.

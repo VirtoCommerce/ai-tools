@@ -242,76 +242,79 @@ State under test: TWO passkeys from two different virtual authenticators (the sa
 [NETWORK] no 5xx on /graphql","Both keys disappear; the wrong key is removed (""Key two"" gone); the list keeps the deleted row until a reload; the remaining key cannot sign in; the delete asks no confirmation","Sign in with the password and delete every passkey this case created on /account/security
 Sign out through the account menu
 Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable) (both authenticators)","VCST-6121 · Archetype:SILENT · Technique:ST · Catches:delete removes the wrong key or both, or leaves a stale row",Draft
-PKS-007,Passkey — the sign-in page autofill offers the passkey in the email field,Auth > Passkey sign-in > Storefront,Medium,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
+PKS-007,"Passkey — one click on 'Sign in with Passkey' makes one passkey grant, and the page load alone signs nobody in",Auth > Passkey sign-in > Storefront,Medium,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.
 Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, one organization) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey:verify (unlock, failed-attempt count 0, leftover passkeys removed). The case registers its own passkeys in the virtual authenticator and deletes every passkey it created in Cleanup.
-GET-RECORDING SCRIPT: a script registered with Page.addScriptToEvaluateOnNewDocument before the first navigation that wraps navigator.credentials.get; for every call it pushes {mediation, aborted (set when the call signal fires), time} to window.__getCalls, and the record is read back with Runtime.evaluate on window.__getCalls.
-The browser suggestion list of the autofill (conditional mediation) cannot be driven by a virtual authenticator, so this case asserts the mechanism (the field attribute and the conditional request); picking the suggestion itself stays a manual check.
-State under test: the account has one passkey; the authenticator is set to automaticPresenceSimulation false (WebAuthn.setAutomaticPresenceSimulation) for the page-load part so the conditional request stays pending instead of signing in on its own (that behaviour is PKS-015).",user=@td(PK_BUYER.email),"[PRE:CLEAR_SESSION]
-[SETUP] set up the virtual authenticator over CDP (Preconditions CEREMONY) and the get-recording script
+LANE LIMIT: the regression lane is a real-user lane. Only WebAuthn.* CDP calls (enable, addVirtualAuthenticator, setAutomaticPresenceSimulation, setUserVerified, addCredential, removeVirtualAuthenticator) are allowed; no page JavaScript (no Runtime.evaluate, no Page.addScriptToEvaluateOnNewDocument, no navigator.credentials call from a script). Everything is observed through the page itself (accessibility snapshot, the real controls) and the lane network log (browser_network_requests); REST and GraphQL calls from the runner (Node, Bearer token) are not page JavaScript and stay allowed.
+Presence simulation: a request that starts while automaticPresenceSimulation is OFF stays pending and is NOT answered when it is switched on later (observed in REG-2026-10-28-1519), and a page load with it ON re-signs the buyer in silently. The working order is: presence OFF, load /sign-in, presence ON, click 'Sign in with Passkey'.
+LIMIT STATED: the autocomplete attribute of the 'Email' field (""email webauthn"", observed in 1c) and the conditional-mediation call itself are page-context facts: the accessibility snapshot does not expose the attribute and a call-recording script is page JavaScript, so neither is asserted here. Picking the autofill suggestion is a manual check. What this case asserts is observable: with presence off the page load signs nobody in, and after presence is on one click gives one grant and one sign-in.
+State under test: the account has one passkey; the sign-in page is loaded with presence OFF so the load-time request stays pending, then presence is switched ON and the button is clicked.",user=@td(PK_BUYER.email),"[PRE:CLEAR_SESSION]
+[SETUP] set up the virtual authenticator over CDP (Preconditions CEREMONY)
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email' with @td(PK_BUYER.email)
 [ACT] Fill 'Password' with DEFAULT_TEST_PASSWORD (the lane secret name - the Playwright lane types the value)
 [ACT] Click 'Sign in'
 [WAIT] the page leaves /sign-in (up to 15s)
 [NAV] Navigate to {{FRONT_URL}}/account/security
-[ACT] Click the control that adds a passkey
-[WAIT] the authenticator answers
-[WAIT] one row appears
+[ACT] Click 'Add passkey'
+[WAIT] the authenticator answers and one row appears
 [ACT] Click the account button (data-test-id=""account-button"")
 [WAIT] the account menu is open
 [ACT] Click the sign-out button (data-test-id=""sign-out-button"")
 [WAIT] the session is anonymous (the account button no longer names a customer)
 [SETUP] WebAuthn.setAutomaticPresenceSimulation false for the authenticator
---- SCREEN: Sign-in page ---
+--- SCREEN: Sign-in page, presence off ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
-[WAIT] the page settles (network idle)
-[ASSERT] Read the autocomplete attribute of the 'Email' field and the recorded get calls
-[ACT] Click into the 'Email' field
-[WAIT] the page settles (spinner gone, network idle)
-[ASSERT] Read the recorded get calls again
+[WAIT] 15s with no click and no typing
+[CAPTURE] loadRequests = the network requests of the load from the lane network log (POST /graphql operations, POST /connect/token with grant_type)
+[ASSERT] Read the account button and the URL
+--- SCREEN: Presence on, one click ---
+[SETUP] WebAuthn.setAutomaticPresenceSimulation true for the authenticator
+[CAPTURE] T0 = current UTC time
 [ACT] Click 'Sign in with Passkey'
-[WAIT] the page settles (spinner gone, network idle)
-[ASSERT] Read the recorded get calls: which call was aborted and which is the new one
-[SETUP] WebAuthn.setAutomaticPresenceSimulation true so the pending request is answered
-[WAIT] the page leaves /sign-in (up to 15s)","[DOM] The 'Email' field carries autocomplete=""email webauthn"" {OBSERVED} (1c, vc-frontend#2601: the email fields autocomplete is ""email webauthn"")
-[COUNT] After the load exactly one get call with mediation ""conditional"" is pending and none with another mediation {SPEC} (VCST-6121: the passkey is offered in the email field autofill)
-[STATE] Clicking 'Sign in with Passkey' aborts the conditional request and starts one modal get (mediation not conditional): at no time are two requests pending {SPEC} (VCST-6121: the button and the autofill do not race)
-[STATE] The customer ends signed in: the page leaves /sign-in and the account button names the buyer {SPEC} (VCST-6121)","[CONSOLE] no TypeError; an aborted conditional request may log an AbortError and nothing else
-[NETWORK] no 5xx on /graphql or /connect/token",The email field has no webauthn autocomplete token; two get requests stay pending after the click; the button click does nothing while the conditional request is pending; the click signs in twice; the page throws a TypeError,"Sign in with the password and delete every passkey this case created on /account/security
+[WAIT] the page leaves /sign-in (up to 15s)
+[CAPTURE] clickRequests = the POST /connect/token requests with grant_type=passkey in the lane network log after T0
+[ASSERT] Read the account button","[COUNT] loadRequests holds no POST /connect/token with grant_type=passkey: the page load with presence off sends no grant {SPEC} (VCST-6121: the passkey is offered, it does not sign in on its own)
+[STATE] After the load the URL is still /sign-in and the account button is anonymous: nothing signed in without a click {SPEC} (VCST-6121)
+[COUNT] clickRequests holds exactly 1 POST /connect/token with grant_type=passkey, and its status is 200 {OBSERVED} (REG-2026-10-28-1519: with the working order a click signs in once)
+[STATE] After the click the page leaves /sign-in and the account button names the buyer {SPEC} (VCST-6121)","[API] sign-in log holds at least one succeeded Passkey row for the buyer after T0
+[CONSOLE] no TypeError (an aborted request may log an AbortError)
+[NETWORK] no 5xx on /graphql or /connect/token",The page load alone signs the buyer in or sends a passkey grant; one click sends two or more grants; the click does nothing while a load-time request is pending; the page throws a TypeError,"Sign in with the password and delete every passkey this case created on /account/security
 Sign out through the account menu
-Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)",VCST-6121 · Archetype:RACE · Technique:EG · Catches:button and autofill fight for the same ceremony,Draft
-PKS-008,Passkey — a passkey created in the back office does not sign in on the storefront,Auth > Passkey sign-in > Storefront,High,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
+Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:RACE · Technique:EG · Catches:the button and the load-time passkey request fight for one ceremony, or the page load signs a visitor in",Draft
+PKS-008,Passkey — a credential bound to the platform host is not offered on the storefront sign-in page,Auth > Passkey sign-in > Storefront,High,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.
 Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, one organization) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey:verify (unlock, failed-attempt count 0, leftover passkeys removed). The case registers its own passkeys in the virtual authenticator and deletes every passkey it created in Cleanup.
-State under test: the buyer holds a credential whose relying-party id is the PLATFORM host (it is created on a page of {{BACK_URL}} through the platform GraphQL, so it is bound to that host), and NO credential for the storefront host. The key is bound to the host where it was created (3x: rpId = the request host).",user=@td(PK_BUYER.email),"[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+LANE LIMIT: the regression lane is a real-user lane. Only WebAuthn.* CDP calls (enable, addVirtualAuthenticator, setAutomaticPresenceSimulation, setUserVerified, addCredential, removeVirtualAuthenticator) are allowed; no page JavaScript (no Runtime.evaluate, no Page.addScriptToEvaluateOnNewDocument, no navigator.credentials call from a script). Everything is observed through the page itself (accessibility snapshot, the real controls) and the lane network log (browser_network_requests); REST and GraphQL calls from the runner (Node, Bearer token) are not page JavaScript and stay allowed.
+Presence simulation: a request that starts while automaticPresenceSimulation is OFF stays pending and is NOT answered when it is switched on later (observed in REG-2026-10-28-1519), and a page load with it ON re-signs the buyer in silently. The working order is: presence OFF, load /sign-in, presence ON, click 'Sign in with Passkey'.
+LIMIT STATED: the full condition - a platform-host passkey REGISTERED on the server for the buyer and presented at the storefront token endpoint - cannot be built by a user: the buyer is a storefront Customer with no back-office UI and the browser is never signed in as admin (REST POST /api/passkeys/creation-options answers 403 for the buyer; a platform-host credential can only be minted by page script). WebAuthn.addCredential plants a credential in the virtual authenticator but cannot register it on the server. So this case asserts the part that is observable: an authenticator holding ONLY a credential whose relying-party id is the platform host offers nothing for the storefront host, and nothing reaches the token endpoint. Server-side refusal of a platform-host credential is a manual or fixture item.
+State under test: the virtual authenticator holds exactly one resident credential, planted with WebAuthn.addCredential {rpId: the host name of {{BACK_URL}}, isResidentCredential: true, a fresh credentialId, privateKey and userHandle, signCount 0}; it holds no credential for the host of {{FRONT_URL}}.",user=@td(PK_BUYER.email),"[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] set up the virtual authenticator over CDP (Preconditions CEREMONY)
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username=@td(PK_BUYER.email), password={{DEFAULT_TEST_PASSWORD}}, storeId={{STORE_ID}}) to obtain the buyer Bearer token
---- LAYER: Create a credential for the platform host ---
-[NAV] Navigate to {{BACK_URL}}/ (any page of the platform host, no sign-in is made there)
-[HTTP] POST {{BACK_URL}}/graphql with the buyer Bearer and {passkeyCreationOptions}; capture creationOptions (note rp.id)
-[ACT] In that page run navigator.credentials.create with creationOptions
-[ACT] Serialise the result with toJSON() as platformCredential
-[HTTP] POST {{BACK_URL}}/graphql with the buyer Bearer and mutation createPasskey(command:{credential: platformCredential}); capture succeeded
---- SCREEN: Storefront sign-in ---
+[SETUP] WebAuthn.addCredential on the authenticator with rpId = the host name of {{BACK_URL}} (see Preconditions); require WebAuthn.getCredentials to list exactly that one credential
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(PK_BUYER.email) with the admin Bearer; capture failedBefore = accessFailedCount
+[SETUP] WebAuthn.setAutomaticPresenceSimulation false for the authenticator
 [PRE:CLEAR_SESSION]
 [NAV] Navigate to {{FRONT_URL}}/sign-in
+[WAIT] the page settles (network idle)
+[SETUP] WebAuthn.setAutomaticPresenceSimulation true for the authenticator
+[CAPTURE] T0 = current UTC time
 [ACT] Click 'Sign in with Passkey'
 [WAIT] 10s for any sign-in to happen
-[ASSERT] Read the URL, the account button, any error banner and whether a POST /connect/token with grant_type=passkey was sent
-[HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(PK_BUYER.email) with the admin Bearer; read accessFailedCount","[STATE] rp.id of creationOptions is the platform host name, not the storefront host name {OBSERVED} (1c: rpId = the request host, anonymous options on both hosts)
-[STATE] The storefront does not sign the buyer in: the browser stays on /sign-in, the account button stays anonymous and no access_token is issued {SPEC} (VCST-6121: a passkey is bound to the domain it was created for; phishing-resistant)
-[STATE] No grant request with a credential for the other host reaches the token endpoint: the browser offers no key for the storefront host {OBSERVED} (3x S18: a platform-host key is never offered on the storefront)
-[BODY] accessFailedCount of the buyer is unchanged: a refused cross-host attempt does not count as a failed password {OBSERVED} (3x: failed passkey grants have no user and never count)","[CONSOLE] no TypeError (a swallowed NotAllowedError is acceptable)
-[NETWORK] no 5xx on /connect/token
-[ERRORS] errors[] of every GraphQL answer in this case is empty, except where an assertion above expects the refusal",The storefront signs the buyer in with a key created for the platform host; the sign-in page shows a server error; the failed attempt raises the failed-attempt count; the key for one host appears in the key list of the other host as usable,"DELETE the passkey this case created: with the buyer Bearer run mutation deleteSignInKey(command:{signInMethodName:""Passkey"", keyId}) for each key of the Passkey method (keyId read from {signInMethods{name keys{id}}}); read the list empty
-Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:SCOPE · Technique:EG · Catches:rpId not enforced, so a key signs in on a host other than the one it was created for",Draft
+[CAPTURE] grants = the POST /connect/token requests with grant_type=passkey in the lane network log after T0
+[ASSERT] Read the URL, the account button and any error banner
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(PK_BUYER.email) with the admin Bearer; capture failedAfter = accessFailedCount","[STATE] The browser stays on /sign-in and the account button stays anonymous: a credential bound to the platform host does not sign in on the storefront {SPEC} (VCST-6121: a passkey is bound to the domain it was created for; phishing-resistant)
+[COUNT] grants holds 0 requests: the authenticator offers no credential for the storefront host, so no assertion is sent to the token endpoint {OBSERVED} (3x S18: a platform-host key is never offered on the storefront)
+[COUNT] failedAfter equals failedBefore: a cross-host attempt does not count as a failed password {OBSERVED} (3x: failed passkey grants have no user and never count)","[CONSOLE] no TypeError (a swallowed NotAllowedError is acceptable)
+[NETWORK] no 5xx on /connect/token",The storefront signs the buyer in with a credential planted for the platform host; a grant request is sent; the sign-in page shows a server error; the attempt raises the failed-attempt count,"WebAuthn.getCredentials, then remove the planted credential
+Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:SCOPE · Technique:EG · Catches:rpId not enforced, so a key signs in on a host other than the one it was created for · Reduced: server-side acceptance of a registered platform-host key is not reachable by a user (see Preconditions)",Draft
 PKS-009,"Passkey — store with passkeys switched off hides the button, autofill and the Security section",Auth > Passkey sign-in > Storefront,High,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.
 Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, one organization) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey:verify (unlock, failed-attempt count 0, leftover passkeys removed). The case registers its own passkeys in the virtual authenticator and deletes every passkey it created in Cleanup.
 Runs ALONE: store {{STORE_ID}} must have its Passkey authentication scheme active at the start. The store-scheme cases of the passkey suites flip that store-wide scheme; the exclusiveGroup store-setting:Passkey separates only the members of that group from each other, so any other sign-in suite on {{STORE_ID}} can still run beside this case - schedule it alone.
-GET-RECORDING SCRIPT: a script registered with Page.addScriptToEvaluateOnNewDocument before the first navigation that wraps navigator.credentials.get; for every call it pushes {mediation, aborted (set when the call signal fires), time} to window.__getCalls, and the record is read back with Runtime.evaluate on window.__getCalls.
-The store scheme is flipped through REST in the case and restored in Cleanup (FIFTH RULE); the storefront reads store settings once per page load and the settings cache can lag, so the case polls a fresh load.",store={{STORE_ID}},"[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+LANE LIMIT: the regression lane is a real-user lane. Only WebAuthn.* CDP calls (enable, addVirtualAuthenticator, setAutomaticPresenceSimulation, setUserVerified, addCredential, removeVirtualAuthenticator) are allowed; no page JavaScript (no Runtime.evaluate, no Page.addScriptToEvaluateOnNewDocument, no navigator.credentials call from a script). Everything is observed through the page itself (accessibility snapshot, the real controls), the lane network log (browser_network_requests) and the console (browser_console_messages); REST and GraphQL calls from the runner (Node, Bearer token) are not page JavaScript and stay allowed.
+Presence simulation: a request that starts while automaticPresenceSimulation is OFF stays pending and is NOT answered when it is switched on later (observed in REG-2026-10-28-1519), and a page load with it ON re-signs the buyer in silently. The working order is: presence OFF, load /sign-in, presence ON, click 'Sign in with Passkey'.
+The store scheme is flipped through REST in the case and restored in Cleanup (FIFTH RULE); the storefront reads store settings once per page load and the settings cache can lag, so the case polls a fresh load.
+LIMIT STATED: the autocomplete attribute of the 'Email' field (""email webauthn"") and the load-time conditional passkey request are page-context facts that the accessibility snapshot and the network log do not expose (the request body of /graphql is not read), so ""the autofill follows the switch"" is NOT asserted here; it stays a manual check. What is asserted is observable: the button, the Security page and the grant requests.",store={{STORE_ID}},"[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] set up the virtual authenticator over CDP (Preconditions CEREMONY)
 [HTTP] GET {{BACK_URL}}/api/store-authentication-schemes/{{STORE_ID}} with the admin Bearer; capture schemesBefore (the whole array, as returned)
 [ASSERT] schemesBefore holds an entry named Passkey with isActive=true - otherwise BLOCKED: the store does not offer passkeys and the case proves nothing
@@ -323,36 +326,40 @@ The store scheme is flipped through REST in the case and restored in Cleanup (FI
 [ACT] Click 'Sign in'
 [WAIT] the page leaves /sign-in (up to 15s)
 [NAV] Navigate to {{FRONT_URL}}/account/security
-[ACT] Click the control that adds a passkey
-[WAIT] the authenticator answers
-[WAIT] one row appears
+[ACT] Click 'Add passkey'
+[WAIT] the authenticator answers and one row appears
 [ACT] Click the account button (data-test-id=""account-button"")
 [WAIT] the account menu is open
 [ACT] Click the sign-out button (data-test-id=""sign-out-button"")
 [WAIT] the session is anonymous (the account button no longer names a customer)
+[SETUP] WebAuthn.setAutomaticPresenceSimulation false for the authenticator
 [NAV] Navigate to {{FRONT_URL}}/sign-in
+[WAIT] the page settles (network idle)
 [ASSERT] Read whether 'Sign in with Passkey' is shown (control reading)
 --- LAYER: Switch passkeys off for the store ---
 [HTTP] PUT {{BACK_URL}}/api/store-authentication-schemes/{{STORE_ID}} with the admin Bearer and body schemesBefore in which the entry named Passkey has isActive=false (every other entry unchanged); GET it again and require Passkey isActive=false
 --- SCREEN: Fresh load, passkeys off ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [WAIT] reload /sign-in every 15s for up to 3 minutes until 'Sign in with Passkey' is no longer shown (the storefront reads the store settings once per load and the cache can lag)
-[ASSERT] Read the 'Sign in with Passkey' button, the autocomplete attribute of the 'Email' field and whether a conditional get request was started on load (the get-recording script of the Preconditions)
+[ASSERT] Read whether 'Sign in with Passkey' is shown
+[CAPTURE] loadRequests = the POST /connect/token requests with grant_type=passkey in the lane network log since the load
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email' with @td(PK_BUYER.email)
 [ACT] Fill 'Password' with DEFAULT_TEST_PASSWORD (the lane secret name - the Playwright lane types the value)
 [ACT] Click 'Sign in'
 [WAIT] the page leaves /sign-in (up to 15s)
 [NAV] Navigate to {{FRONT_URL}}/account/security
+[WAIT] the page settles
 [ASSERT] Read the page: any passkey section, key rows or add control","[DOM] With the scheme active the sign-in page shows 'Sign in with Passkey' {OBSERVED} (3x: the button is shown iff WebAuthn is available and Passkey is in the store authentication types)
 [DOM] Within the polling window a fresh load of /sign-in shows no 'Sign in with Passkey' button {SPEC} (VCST-6121: a store can switch the passkey method off) {OBSERVED} (3x S14: a fresh load hides the button)
-[COUNT] No conditional get request is started on that load and the 'Email' field no longer carries the webauthn autocomplete token {SPEC} (VCST-6121: the autofill follows the same store switch)
+[COUNT] loadRequests holds 0 passkey grants: the load with the method off sends no passkey grant {SPEC} (VCST-6121)
 [STATE] The Security page shows no passkey section, no key rows and no add control {OBSERVED} (1c: the page lists only the methods in the store authentication types that have a contribution, and the only contribution is Passkey)
 [STATE] The password sign-in still works while passkeys are off: the page leaves /sign-in {SPEC} (VCST-6121: the other methods are unaffected)","[API] GET {{BACK_URL}}/api/store-authentication-schemes/{{STORE_ID}} shows Passkey isActive=false during the case and the original array after Cleanup
 [CONSOLE] no TypeError
-[NETWORK] no 5xx on /graphql","The button, the autofill or the Security section stays after the scheme is off and a fresh load; the page never reflects the change within 3 minutes; the password form disappears with the passkey switch; the store array is not restored in Cleanup","PUT {{BACK_URL}}/api/store-authentication-schemes/{{STORE_ID}} with the admin Bearer and body schemesBefore exactly as captured; GET it and require every entry equal to schemesBefore (name, isActive, position)
-Sign in with the password only if no session is open, delete every passkey this case created on /account/security, sign out through the account menu
-Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)",VCST-6121 · Archetype:CONFIG · Technique:DT · Behavior:auth.signin.method-choice · Catches:passkey controls stay visible after the store switched passkeys off · Probe:VC-AUTH-004,Draft
+[NETWORK] no 5xx on /graphql",The button or the Security section stays after the scheme is off and a fresh load; the page never reflects the change within 3 minutes; a passkey grant is sent while the method is off; the password form disappears with the passkey switch; the store array is not restored in Cleanup,"PUT {{BACK_URL}}/api/store-authentication-schemes/{{STORE_ID}} with the admin Bearer and body schemesBefore exactly as captured; GET it and require every entry equal to schemesBefore (name, isActive, position)
+With the buyer Bearer list {signInMethods{name keys{id}}} through {{FRONT_URL}}/graphql and delete every Passkey key with mutation deleteSignInKey(command:{signInMethodName:""Passkey"", keyId}); read the list back with no Passkey key (the scheme is restored first so the key list is reachable)
+Sign out through the account menu
+Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)",VCST-6121 · Archetype:CONFIG · Technique:DT · Behavior:auth.signin.method-choice · Catches:passkey controls stay visible after the store switched passkeys off · Probe:VC-AUTH-004 · Autofill sub-check not observable on the real-user lane (see Preconditions),Draft
 PKS-010,"Passkey — operator signed in on behalf of a buyer cannot add, rename or delete the buyer's passkeys",Auth > Passkey sign-in > Storefront,Critical,BL-AUTH-010,ECL-4.3,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.
 Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, one organization) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey:verify (unlock, failed-attempt count 0, leftover passkeys removed). The case registers its own passkeys in the virtual authenticator and deletes every passkey it created in Cleanup.
@@ -469,27 +476,29 @@ POST {{BACK_URL}}/api/platform/security/users/@td(PK_BUYER.userId)/unlock if the
 PKS-015,"Opening /sign-in with a stored or a stale passkey: silent sign-in, no error for a stale key",Auth > Passkey sign-in > Storefront,Medium,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.
 Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, one organization) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey:verify (unlock, failed-attempt count 0, leftover passkeys removed). The case registers its own passkeys in the virtual authenticator and deletes every passkey it created in Cleanup.
-GET-RECORDING SCRIPT: a script registered with Page.addScriptToEvaluateOnNewDocument before the first navigation that wraps navigator.credentials.get; for every call it pushes {mediation, aborted (set when the call signal fires), time} to window.__getCalls, and the record is read back with Runtime.evaluate on window.__getCalls.
-State under test: the virtual authenticator holds a RESIDENT credential for the buyer (a) valid, then (b) stale (the server key is deleted while the authenticator keeps the credential). automaticPresenceSimulation is true, so the conditional request is answered without a click - exactly the page-load behaviour under test.
-Open question for the author (N1, nothing in the ticket or the docs describes it): is a silent passkey sign-in on page load intended? The valid-credential half records what the build does; the stale-credential half asserts the generic expectation that opening a public page throws no console error.",user=@td(PK_BUYER.email),"[PRE:CLEAR_SESSION]
-[SETUP] set up the virtual authenticator over CDP (Preconditions CEREMONY) and the get-recording script
+LANE LIMIT: the regression lane is a real-user lane. Only WebAuthn.* CDP calls (enable, addVirtualAuthenticator, setAutomaticPresenceSimulation, setUserVerified, addCredential, removeVirtualAuthenticator) are allowed; no page JavaScript (no Runtime.evaluate, no Page.addScriptToEvaluateOnNewDocument, no navigator.credentials call from a script). Everything is observed through the page itself (accessibility snapshot, the real controls), the lane network log (browser_network_requests) and the console (browser_console_messages); REST and GraphQL calls from the runner (Node, Bearer token) are not page JavaScript and stay allowed.
+State under test: the virtual authenticator holds a RESIDENT credential for the buyer (a) valid, then (b) stale (the server key is deleted over xAPI by the runner while the authenticator keeps the credential). automaticPresenceSimulation is ON for both loads, so the load-time conditional request is answered without a click - exactly the page-load behaviour under test. Console errors are read with browser_console_messages and requests with browser_network_requests (neither is page JavaScript).
+Open question for the author (N1, nothing in the ticket or the docs describes it): is a silent passkey sign-in on page load intended? The valid-credential half records what the build does; the stale-credential half asserts the generic expectation that opening a public page throws no console error and makes no 4xx request.",user=@td(PK_BUYER.email),"[PRE:CLEAR_SESSION]
+[SETUP] set up the virtual authenticator over CDP (Preconditions CEREMONY)
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email' with @td(PK_BUYER.email)
 [ACT] Fill 'Password' with DEFAULT_TEST_PASSWORD (the lane secret name - the Playwright lane types the value)
 [ACT] Click 'Sign in'
 [WAIT] the page leaves /sign-in (up to 15s)
 [NAV] Navigate to {{FRONT_URL}}/account/security
-[ACT] Click the control that adds a passkey
+[ACT] Click 'Add passkey'
 [WAIT] the authenticator answers and one row appears
-[CAPTURE] keyId = the id of that key, read from {signInMethods{name keys{id}}} through {{FRONT_URL}}/graphql with the buyer token
+[CAPTURE] keyId = the id of that key, read from {signInMethods{name keys{id}}} through {{FRONT_URL}}/graphql with the buyer token (runner call)
 [ACT] Click the account button (data-test-id=""account-button"")
 [WAIT] the account menu is open
 [ACT] Click the sign-out button (data-test-id=""sign-out-button"")
 [WAIT] the session is anonymous (the account button no longer names a customer)
 --- SCREEN: Load /sign-in with a valid resident credential ---
+[CAPTURE] T0 = current UTC time
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [WAIT] 15s with no click and no typing
-[ASSERT] Read the URL, the account button, the recorded get calls and the grant requests
+[CAPTURE] validRequests = the POST /connect/token requests with grant_type=passkey in the lane network log after T0 (status)
+[ASSERT] Read the URL and the account button
 [ACT] Click the account button (data-test-id=""account-button"")
 [WAIT] the account menu is open
 [ACT] Click the sign-out button (data-test-id=""sign-out-button"")
@@ -499,11 +508,18 @@ Open question for the author (N1, nothing in the ticket or the docs describes it
 [HTTP] POST {{FRONT_URL}}/graphql with the buyer Bearer: mutation deleteSignInKey(command:{signInMethodName:""Passkey"", keyId}) for keyId (the password remains, so it is not the last key); the authenticator still holds its credential
 --- SCREEN: Load /sign-in with a stale credential ---
 [PRE:CLEAR_SESSION]
+[CAPTURE] T1 = current UTC time
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [WAIT] 15s with no click and no typing
-[ASSERT] Read the URL, the console errors and the network requests with a 4xx status during the load","[STATE] With a valid resident credential the page signs the buyer in on load with no click: the URL leaves /sign-in and the account button names the buyer {OBSERVED} (3x N1, KB-CD356AF4: a valid credential signs in silently on load; recorded, not graded - see the open question)
-[COUNT] With a stale credential the load of the public page /sign-in logs no console error and makes no 4xx request {HYPOTHESIS} (open question N1: observed 3x - a 400 login_failed on /connect/token and one console error on every load; the expectation that a public page load is quiet is generic, the author has not confirmed it)
-[STATE] With a stale credential the visitor is not signed in and the form stays usable: the 'Email' field accepts typing and 'Sign in' works {SPEC} (VCST-6121: password sign-in is unaffected by a stale key)","[CONSOLE] the stale-credential load has zero console errors
+[CAPTURE] staleRequests = the requests with a 4xx or 5xx status in the lane network log after T1
+[CAPTURE] staleConsole = the console errors of the page since T1 (browser_console_messages)
+[ASSERT] Read the URL and the account button
+[ACT] Fill 'Email' with @td(PK_BUYER.email)
+[ACT] Fill 'Password' with DEFAULT_TEST_PASSWORD (the lane secret name)
+[ACT] Click 'Sign in'
+[WAIT] the page leaves /sign-in (up to 15s)","[STATE] With a valid resident credential the page signs the buyer in on load with no click: validRequests holds a passkey grant with status 200, the URL leaves /sign-in and the account button names the buyer {OBSERVED} (3x N1, KB-CD356AF4: a valid credential signs in silently on load; recorded, not graded - see the open question)
+[COUNT] With a stale credential the load of the public page /sign-in logs no console error and makes no 4xx request: staleConsole holds 0 errors and staleRequests holds 0 requests {HYPOTHESIS} (open question N1: observed 3x - a 400 login_failed on /connect/token and one console error on every load; the expectation that a public page load is quiet is generic, the author has not confirmed it)
+[STATE] With a stale credential the visitor is not signed in after the load and the password form still works: the URL was /sign-in after the load and the password sign-in leaves /sign-in {SPEC} (VCST-6121: password sign-in is unaffected by a stale key)","[CONSOLE] the stale-credential load has zero console errors
 [NETWORK] the stale-credential load has no 4xx or 5xx
 [ERRORS] errors[] of every GraphQL answer in this case is empty, except where an assertion above expects the refusal",A visitor is signed in just by opening /sign-in without choosing a key (record it); a stale credential produces a console error and a 400 on every page load; the form is unusable after a failed conditional request,"Sign out through the account menu if a session is open
 Delete every passkey this case created (the stale one is already gone); re-arm with npm run seed:passkey:verify
@@ -572,9 +588,9 @@ State under test: an impersonated session calls the xAPI password mutation with 
 [CONSOLE] no TypeError
 [NETWORK] no 5xx",The xAPI password mutation runs the buyer password check for an impersonated session (PasswordMismatch instead of a refusal); with the right old password it would change a customer password under impersonation; the buyer password grant fails after the case,"Stop the impersonation (data-test-id=""back-to-operator-row"") and sign out
 If the buyer password no longer works, reset it with npm run seed:passkey:verify (it re-sets the password)","VCST-6121 · Archetype:SCOPE · Technique:DT · Behavior:auth.impersonate.acts-as-target · Role:impersonation-operator · Catches:an operator changes a customer password through xAPI while impersonating · Suspected: xAPI changePassword has no impersonation guard (3x bug 4, may predate this change, KB-B93A97C4) · context: BL-AUTH-009 (SUSPECT, nested impersonation)",Draft
-PKS-018,Passkey — an impersonated session opens /account/security and shows no key content,Auth > Passkey sign-in > Storefront,Low,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
-Operator @td(PK_OPERATOR.email) impersonates @td(PK_BUYER.email) (re-arm with npm run seed:passkey:verify). The buyer already owns ONE passkey, created by this case in step 2 under the buyer own session, so the page has something to hide.
-The oracle is the source contract ""an impersonated session is refused key management"" (3x S22: the key mutations answer ""Access denied.""); BL-AUTH-009 is context only - it concerns nested impersonation and is under review. Whether the page should EXPLAIN the empty state is not specified anywhere: that line is recorded, not graded.
+PKS-018,Passkey — an impersonated session opens /account/security and offers no key management controls,Auth > Passkey sign-in > Storefront,Low,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
+Operator @td(PK_OPERATOR.email) impersonates @td(PK_BUYER.email) (re-arm with npm run seed:passkey:verify). The buyer already owns ONE passkey, created by this case in step 2 under the buyer own session, so the page has something to show or hide.
+The oracle for the controls is the source contract ""an impersonated session is refused key management"" (3x S22: the key mutations answer ""Access denied.""); BL-AUTH-009 is context only - it concerns nested impersonation and is under review. Observed in REG-2026-10-28-1519: the impersonated Security page lists the buyer keys READ-ONLY (heading plus the Passkeys section and the key row), with no add, rename or delete control and no message; the earlier 3x reading (heading only) was on another build. Whether the page should show the keys or explain the read-only state is not specified anywhere: those lines are recorded, not graded.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.","operator=@td(PK_OPERATOR.email), target=@td(PK_BUYER.email)","[PRE:CLEAR_SESSION]
 [SETUP] set up the virtual authenticator over CDP (Preconditions CEREMONY)
 [NAV] Navigate to {{FRONT_URL}}/sign-in
@@ -601,13 +617,13 @@ CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firef
 [NAV] Navigate to {{FRONT_URL}}/account/security
 [WAIT] the page settles
 [ASSERT] Read the page heading, every row and control under it, and any message
-[HTTP] POST {{FRONT_URL}}/graphql with impToken: {signInMethods{name keys{id name}}}; capture readAnswer","[DOM] The page shows the heading ""Security"" {OBSERVED} (3x S22: the heading only)
-[COUNT] No key row, no add control, no Rename and no Delete control are shown to the operator {SPEC} (VCST-6121: an impersonated session is refused key management; VCST-6522 is the open follow-up for operator key management)
-[STATE] RECORD whether a message explains the empty page; no verdict {HYPOTHESIS} (open question: no document says whether the page should explain it) {OBSERVED} (3x S22: heading only, no section and no message)
-[BODY] RECORD whether readAnswer lists the buyer keys with their names {OBSERVED} (3x S22: the read answered 200 for an impersonated session)","[CONSOLE] no TypeError
-[NETWORK] no 5xx on /graphql","The operator sees the buyer key names or an add, rename or delete control; the page errors","Stop the impersonation (data-test-id=""back-to-operator-row"") and sign out
+[HTTP] POST {{FRONT_URL}}/graphql with impToken: {signInMethods{name canCreateKey canRenameKey canDeleteKey keys{id name}}}; capture readAnswer","[DOM] The page shows the heading ""Security"" {OBSERVED} (3x S22 and REG-2026-10-28-1519)
+[COUNT] No add control, no Rename control and no Delete control are shown to the operator {SPEC} (VCST-6121: an impersonated session is refused key management; VCST-6522 is the open follow-up for operator key management)
+[STATE] In readAnswer canCreateKey, canRenameKey and canDeleteKey all equal false for the Passkey method {OBSERVED} (REG-2026-10-28-1519: the read answered 200 with the three flags false)
+[DOM] RECORD whether the buyer key rows are shown read-only and whether a message explains the read-only state; no verdict {HYPOTHESIS} (open question: no document says whether the page should show or explain them) {OBSERVED} (REG-2026-10-28-1519: the key row ""Unnamed key / Device only"" is shown, no message)","[CONSOLE] no TypeError
+[NETWORK] no 5xx on /graphql","The operator sees an add, rename or delete control, or any of the three can-flags is true; the page errors","Stop the impersonation (data-test-id=""back-to-operator-row"") and sign out
 Sign in as the buyer and delete every passkey this case created
-Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:RENDER · Technique:EP · Behavior:auth.impersonate.acts-as-target · Catches:an impersonated session leaks the key list or offers key controls · Low · Suspected UX gap: blank unexplained Security page for an impersonated session (3x S22, no spec)",Draft
+Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:RENDER · Technique:EP · Behavior:auth.impersonate.acts-as-target · Catches:an impersonated session offers key management controls · Low · Recorded, not graded: the buyer key row is shown read-only with no message (REG-2026-10-28-1519)",Draft
 PKS-019,Passkey — a personal customer with no organization sees the Security page content on the first render after passkey sign-in,Auth > Passkey sign-in > Storefront,Low,BL-AUTH-015,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.
 Persona @td(PK_B2C.email), the personal customer with no organization (re-arm with npm run seed:passkey:verify). The case is about the FIRST render after a passkey sign-in: no reload is allowed before the reading.",user=@td(PK_B2C.email),"[PRE:CLEAR_SESSION]

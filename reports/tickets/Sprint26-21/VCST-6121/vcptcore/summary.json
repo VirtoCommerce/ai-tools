@@ -312,7 +312,7 @@
         "21": "PASS",
         "26": "PASS",
         "27": "PASS",
-        "28": "FAIL",
+        "28": "PASS (recorded) - by design (developer + .NET 10 SignInManager.PasskeySignInAsync does not reset lockout); re-graded from FAIL",
         "29": "PASS",
         "30": "FAIL",
         "31": "PASS (recorded)",
@@ -414,5 +414,57 @@
     "out_of_scope": [
       "Admin Shell raw EF Core 409 concurrency toast on language change after adding a passkey"
     ]
-  }
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6593",
+      "item": "B1",
+      "title": "Admin Shell login: keyboard focus on passkey/Google not visible",
+      "severity": "High",
+      "type": "Bug (a11y, standalone)",
+      "link": "relates to VCST-6121",
+      "provenance": "IN-SCOPE",
+      "repo": "vc-module-admin-shell",
+      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/critical-high/BUG-AdminShell-Login-Provider-Focus-Invisible-VCST-6593.md"
+    },
+    {
+      "key": "VCST-6595",
+      "item": "C2",
+      "title": "Classic admin Sign-in methods blade: no focus indicator, 2.44:1 icons, unlabeled rename input",
+      "severity": "High",
+      "type": "Bug (a11y, standalone)",
+      "link": "relates to VCST-6121",
+      "provenance": "IN-SCOPE",
+      "repo": "vc-platform + vc-module-passkeys (two fixes)",
+      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/critical-high/BUG-Classic-Admin-SignIn-Methods-Focus-Contrast-Label-VCST-6595.md"
+    },
+    {
+      "key": "VCST-6596",
+      "item": "28",
+      "title": "Passkey sign-in does not reset the failed sign-in counter",
+      "severity": "High",
+      "type": "Bug",
+      "link": "relates to VCST-6121",
+      "provenance": "IN-SCOPE",
+      "repo": "vc-module-passkeys (PasskeyService.AuthenticateAsync; fix in open PR #1)",
+      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/critical-high/BUG-Passkey-Signin-Does-Not-Reset-Failed-Counter-VCST-6596.md",
+      "status": "NOT A BUG per developer 2026-10-28 - framework behaviour; close pending operator OK",
+      "oracle_note": "BL-AUTH-003 rule text is password-sourced; propose clarifying via /qa-review-oracles bl with the developer resolution as human source"
+    },
+    {
+      "key": "VCST-6594",
+      "item": "32",
+      "title": "xAPI deleteSignInKey does not end other sessions (refresh tokens keep working)",
+      "severity": "Medium",
+      "type": "Bug",
+      "link": "relates to VCST-6121",
+      "provenance": "IN-SCOPE",
+      "repo": "vc-module-x-frontend (DeleteSignInKeyCommandHandler)",
+      "expected_pending": "author Q3",
+      "report": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/bugs/medium/BUG-xAPI-DeleteSignInKey-Keeps-Other-Sessions-VCST-6594.md"
+    }
+  ],
+  "filing_notes": [
+    "parallel qa-bug runs shared scratchpad file names (fields.json/get.json); VCST-6594 and VCST-6595 summaries, descriptions, attachments, links and labels re-read by the orchestrator - each matches its own bug"
+  ]
 }

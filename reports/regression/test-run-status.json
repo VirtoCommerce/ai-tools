@@ -1,6 +1,6 @@
 {
   "runId": "REG-2026-10-28-1519",
-  "status": "in_progress",
+  "status": "completed",
   "startedAt": "2026-10-28T14:20:14.7907584Z",
   "windowStart": "2026-10-28T14:20:14.7907584Z",
   "selection": "114,114a,114b,115,105,027",
@@ -11,11 +11,15 @@
   "plan": "reports/regression/REG-2026-10-28-1519/preflight.json",
   "suites": {
     "105": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "browser": "none",
       "startedAt": "2026-10-28T14:22:44Z",
-      "total": 1
+      "total": 1,
+      "pass": 0,
+      "fail": 0,
+      "blocked": 1,
+      "finishedAt": "2026-10-28T16:02:41Z"
     },
     "114": {
       "status": "done",
@@ -29,26 +33,49 @@
       "finishedAt": "2026-10-28T15:05:49Z"
     },
     "115": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "browser": "playwright-edge",
       "startedAt": "2026-10-28T15:05:49Z",
-      "total": 14
+      "total": 14,
+      "pass": 8,
+      "fail": 5,
+      "blocked": 1,
+      "finishedAt": "2026-10-28T15:45:28Z"
     },
     "114a": {
-      "status": "pending",
-      "lane": "browser"
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-28T15:45:28Z",
+      "total": 1,
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-10-28T15:52:38Z"
     },
     "114b": {
-      "status": "pending",
-      "lane": "browser"
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-28T15:52:38Z",
+      "total": 1,
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-10-28T16:02:41Z"
     },
     "027": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "browser": "none",
       "startedAt": "2026-10-28T14:22:44Z",
-      "total": 2
+      "total": 2,
+      "pass": 0,
+      "fail": 1,
+      "blocked": 1,
+      "finishedAt": "2026-10-28T16:02:41Z"
     }
-  }
+  },
+  "finishedAt": "2026-10-28T16:04:37.645Z"
 }

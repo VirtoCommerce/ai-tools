@@ -470,15 +470,18 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Lifecycle:** SUSPECT — [code] vc-module-profile-experience-api@42213c4:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/RegisterRequestCommandHandler.cs#LockAccount - when email verification is required the account is locked until the email is confirmed, so the user cannot sign in at all; the rule describes a signed-in unverified user (browse, cart allowed, checkout blocked, 'Please verify' message) and expiring links - re-run the check
 
 ### BL-AUTH-003: Account lockout after N failed attempts `[P1-data]`
-- **Rule:** After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. Successful login resets the failure counter.
-- **Verify:** Enter wrong password 5 times → 6th attempt (even with correct password) → "Account locked" message. Wait for lockout expiry → successful login. Verify 4 failures + 1 success → counter resets (next failure starts from 1).
-- **Violation signal:** No lockout after many failures; lockout message reveals account existence ("Account locked" vs "No such user"); lockout doesn't expire; counter not reset after success.
+- **Rule:** After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. A successful password sign-in, or a successful second-factor completion, resets the failure counter. A successful passkey sign-in does not reset it (a passkey is not a password sign-in), but lockout still applies to it: a locked account cannot sign in with a passkey.
+- **Verify:** Enter wrong password 5 times → 6th attempt (even with correct password) → "Account locked" message. Wait for lockout expiry → successful login. Verify 4 failures + 1 successful password sign-in → counter resets (next failure starts from 1). With 4 failures + 1 successful passkey sign-in the counter stays at 4. A locked account's passkey sign-in is refused with the lockout code.
+- **Violation signal:** No lockout after many failures; lockout message reveals account existence ("Account locked" vs "No such user"); lockout doesn't expire; counter not reset after a successful password sign-in; a locked account signs in with a passkey.
 - **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
 - **Docs:** platform/developer-guide/docs/Fundamentals/Security/passwords-management.md (published) — Lockout node locks accounts after repeated failed logins; DefaultLockoutTimeSpan sets duration.
 - **Source:** vc-platform `AuthorizationController.Exchange()` password branch — `CheckPasswordSignInAsync(..., lockoutOnFailure: true)`.
 - **Source:** VCST-4999 (Done) — fixed lockout policy not enforced on back-office login after 5 wrong passwords, as it already was on storefront.
 - **Source:** VCST-5374 (Done) — fixed org members getting a permanent-lockout code for a temporary failed-attempt lockout.
 - **Source:** KB-8646A9CB (corroborated) — five failed storefront sign-ins return user_is_temporary_locked_out with about 15-minute lockoutEnd.
+- **Source:** VCST-6596 (Cancelled, not a bug) — developer decision — a passkey sign-in is not a password sign-in, so it does not reset the failed sign-in counter; lockout still blocks a passkey sign-in.
+- **Source:** ASP.NET Core Identity (release/10.0) `SignInManager.PasskeySignInAsync` runs `PreSignInCheck` but never `ResetLockout`; the counter is reset only by `CheckPasswordSignInAsync` (password success) and `DoTwoFactorSignInAsync` (second-factor success).
+- **Source:** KB-CA7DBAD0 — passkey success leaves the counter unchanged; a temporarily or admin-locked account is refused for passkey (user_is_temporary_locked_out / user_is_locked_out).
 - **Trust:** DECLARED
 
 ### BL-AUTH-004: Returning vs new customer defaults `[P2-ux]`
