@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * visual:design — does a component under review match its reference? (the DESIGN instrument, visual-axis.md §2a)
+ * visual:design — does a component under review match its reference? (the DESIGN instrument, vc-test skills/qa-design/visual-axis.md §2a)
  *
  * PIXEL compares a build with the build before it. This compares the SAME component in two places at once:
  *   reference   Storybook (an existing component: same code base as prod) or a design-system build

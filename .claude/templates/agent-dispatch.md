@@ -55,7 +55,7 @@ Each agent MUST be assigned an explicit browser server. If the primary browser f
 | `qa-frontend-expert` | `playwright-chrome` | `playwright-firefox` |
 | `qa-backend-expert` | `playwright-edge` | `playwright-chrome` |
 | `qa-testing-expert` | `playwright-firefox` | `playwright-edge` |
-| `ui-ux-expert` | Chrome DevTools MCP | `playwright-edge` |
+| `vc-test:ui-ux-expert` | a Playwright lane (the run assigns it) | — |
 | `test-management-specialist` | `playwright-chrome` (sequential only) | `playwright-firefox` |
 | `ba-system-analyzer` | `playwright-firefox` | `playwright-edge` |
 | `ba-api-specialist` | `playwright-edge` | `playwright-firefox` |

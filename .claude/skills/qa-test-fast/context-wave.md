@@ -39,7 +39,7 @@ drift, the suspect list and `mind_map_findings`. Before Wave 2, **wait for C** w
   quotes the line.
 - **Domain map.** C's result, when it ran, supersedes `known.domain_map` in the run context.
 - **Visual axis.** `visual_surface` + `surface_source[]`, derived from the bundle's `change.prs[].layers`
-  and written to the run context, per [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1.
+  and written to the run context, per [`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §1.
 - **Pass the run context** (it names the bundle) as `/qa-test-model --context`, and the bundle path to
   every later brief that needs the ticket.
 

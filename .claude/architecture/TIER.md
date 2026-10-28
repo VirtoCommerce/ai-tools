@@ -33,7 +33,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `qa-frontend-expert.md` | **C** | LAYER 1 hardcodes BL-CHK-003, BL-PRICE-001, BL-CROSS-002. LAYER 2 is Vue.js + storefront payment iframes. **Becomes the template** for per-product `qa-{product}-expert.md`. |
 | `qa-backend-expert.md` | **C** | Same coupling pattern. Storefront xAPI, Admin SPA hardcoded. |
 | `qa-testing-expert.md` | **C** | Storefront-heavy interactive testing. |
-| `ui-ux-expert.md` | **C** | Storybook (vc-frontend), critical-ui-scope (storefront pages). |
+| `ui-ux-expert.md` (now `plugins/vc-test/agents/`) | **C** | Storybook (vc-frontend), critical-ui-scope (storefront pages). |
 
 ### BA Team (`agents/`)
 

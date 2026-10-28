@@ -43,12 +43,21 @@ export function planRun({ strategy, registry, capabilities, root = PLUGIN_ROOT }
   if (unread.length) return { ok: false, errors: unread.map((r) => `${r.row}: decision "${r.cell ?? ""}" is neither RUN nor SKIP — the cell must start with one of them`) };
   const selected = new Map();
   const notRun = [];
+  const errors = [];
+  // A browser pool (a browser proof's `lanes`, or a RUN row entry's own) is drawn from at wave placement; a lane without
+  // its MCP server is not in it, and an empty pool is an error naming the lanes it needs.
+  const mcpOf = (l) => `mcp:${l.slice("browser:".length)}`;
+  const poolOf = (lanes, who) => {
+    if (!lanes) return {};
+    const pool = lanes.filter((l) => capabilities[mcpOf(l)]);
+    if (!pool.length) errors.push(`${who}: needs one of ${lanes.map(mcpOf).join(", ")}, which this install does not have`);
+    return { pool };
+  };
   for (const r of strategy.rows.filter((x) => x.decision === "RUN" && !isTemplateRow(x))) {
     const entry = byRow.get(r.row);
-    if (entry) selected.set(entry.id, { entry, order: r.order });
+    if (entry) selected.set(entry.id, { entry, order: r.order, ...poolOf(entry.lanes, r.row) });
     else notRun.push({ row: r.row, reason: registry.rows_not_run[r.row] ?? "not in the vc-test registry" });
   }
-  const errors = [];
   for (const tpl of templates) {
     const { list, noun, key } = INSTANCES[tpl.per];
     const items = list(strategy);
@@ -59,11 +68,8 @@ export function planRun({ strategy, registry, capabilities, root = PLUGIN_ROOT }
       if (!proof) errors.push(`${it.name}: Proof "${it.proof}" is not one of ${Object.keys(tpl.proofs ?? {}).join(", ")}`);
       else if (selected.has(id)) errors.push(`${it.name}: listed twice in the ${tpl.row} table`);
       else {
-        // A browser proof draws its lane from the pool at wave placement; a lane without its MCP server is not in it.
-        const pool = proof.lanes?.filter((l) => capabilities[`mcp:${l.slice("browser:".length)}`]);
-        if (pool && !pool.length) errors.push(`${id}: needs one of ${proof.lanes.map((l) => `mcp:${l.slice("browser:".length)}`).join(", ")}, which this install does not have`);
         const { proofs, per, ...rest } = tpl;
-        selected.set(id, { entry: { ...rest, id, row: null, lane: null, requires: proof.requires }, order: null, instanceOf: tpl.row, [key]: it.item, ...(pool ? { pool } : {}) });
+        selected.set(id, { entry: { ...rest, id, row: null, lane: null, requires: proof.requires }, order: null, instanceOf: tpl.row, [key]: it.item, ...poolOf(proof.lanes, id) });
       }
     }
   }
@@ -91,8 +97,8 @@ export function planRun({ strategy, registry, capabilities, root = PLUGIN_ROOT }
     return base.get(id);
   };
   const byId = (a, b) => a.localeCompare(b, "en", { numeric: true });
-  // A fixed-lane entry is placed before an instance (a scenario, a prior bug) of the same base wave, so an instance takes
-  // a lane the others left free.
+  // A non-instance entry (a fixed lane, or a row's own pool: `visual`) is placed before an instance (a scenario, a prior
+  // bug) of the same base wave, so an instance takes a lane the others left free.
   const ordered = [...selected.keys()].sort((a, b) => baseWave(a) - baseWave(b) || !!selected.get(a).instanceOf - !!selected.get(b).instanceOf || byId(a, b));
   const wave = new Map();
   const browserCount = [];

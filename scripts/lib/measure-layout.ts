@@ -26,7 +26,7 @@
  * any MCP `evaluate` tool (playwright-*, Chrome DevTools). They use no imports
  * and no TypeScript syntax — pure JS executable in any modern browser context.
  *
- * Invariants enforced (see `.claude/agents/ui-ux-expert.md` Layer 1):
+ * Invariants enforced (see `plugins/vc-test/agents/ui-ux-expert.md` Layer 1):
  *   BL-UI-001  Layout stability (CLS ≤ 0.1)
  *   BL-UI-002  Spacing grid — Tailwind's default scale (incl. half-steps 2/6/10/14 px)
  *              plus vc-frontend's `theme.extend.spacing`. NEVER a hand-picked subset;
@@ -103,17 +103,17 @@ export const TOUCH_TARGET_AAA_MIN_PX = 44;
 /** Minimum gap between adjacent interactive elements at mobile viewport (BL-UI-006). */
 export const TOUCH_TARGET_GAP_PX = 8;
 
-/** WCAG 1.4.3 contrast ratio thresholds (BL-UI-008). AA normal text 4.5:1, large text 3:1. */
+/** WCAG 1.4.3 contrast ratio thresholds (PROPOSED-BL-UI-008). AA normal text 4.5:1, large text 3:1. */
 export const CONTRAST_RATIOS = { normal: 4.5, large: 3.0, uiComponent: 3.0 } as const;
 
-/** WCAG 2.4.7 focus-indicator minimum visible-area outline (BL-UI-009). 2 px solid is the common floor. */
+/** WCAG 2.4.7 focus-indicator minimum visible-area outline (PROPOSED-BL-UI-009). 2 px solid is the common floor. */
 export const FOCUS_INDICATOR_MIN_PX = 2;
 
-/** BL-UI-010 image aspect-ratio tolerance — `displayed / intrinsic` must stay within ±5% to avoid visible squash/stretch. */
+/** PROPOSED-BL-UI-010 image aspect-ratio tolerance — `displayed / intrinsic` must stay within ±5% to avoid visible squash/stretch. */
 export const IMAGE_ASPECT_TOLERANCE = 0.05;
 
 /**
- * BL-UI-007 critical-alert selectors. Any decorative or interactive element overlapping these rects is a violation.
+ * PROPOSED-BL-UI-007 critical-alert selectors. Any decorative or interactive element overlapping these rects is a violation.
  *
  * NOTE (VCST-4400 gap): VC surfaces some user-facing warnings in NON-semantic containers
  * (e.g. the cart line-item over-stock message renders in `div.vc-line-item__after` with no
@@ -406,7 +406,7 @@ export function imageIntrinsicDimsSnippet(selector: string = "img"): string {
 // ---------------------------------------------------------------------------
 // Static snippets — pass these strings verbatim to `browser_evaluate`
 // ---------------------------------------------------------------------------
-// CONTENT — the rendered text is wrong, not the layout (visual-axis.md §2a `CONTENT`)
+// CONTENT — the rendered text is wrong, not the layout (plugins/vc-test/skills/qa-design/visual-axis.md §2a `CONTENT`)
 // ---------------------------------------------------------------------------
 
 /** One offender of a [PROBE:CONTENT] class: the text (or attribute) that matched, and where. */
@@ -1030,7 +1030,7 @@ export function rectSnapshotSnippet(selector: string): string {
  * Detect interactive controls or decorative siblings that visually occlude any
  * critical alert / warning / `role="alert"` element. Returns OcclusionAuditResult.
  *
- * Defect class caught (BL-UI-007): an `overflow:visible` sibling whose rect
+ * Defect class caught (PROPOSED-BL-UI-007): an `overflow:visible` sibling whose rect
  * extends into the alert's rect — same-stacking-context layout collision, not
  * z-index reordering. F-CART-006 (save-for-later bookmark covering the "product
  * no longer available" alert on /cart) is the reference case.
@@ -1608,6 +1608,8 @@ export function bladeStaticOverflowSnippet(bladeHeaderText = ""): string {
 export type Severity = "PASS" | "WARN" | "FAIL" | "P0";
 
 export interface LayoutFinding {
+  // The PROPOSED- ids are audits not yet promoted into the BL oracle. They keep the prefix because the oracle's own
+  // BL-UI-007 is a different rule (admin keyboard operability): a bare id here would be cited against it.
   invariant:
     | "BL-UI-001"
     | "BL-UI-002"
@@ -1615,11 +1617,11 @@ export interface LayoutFinding {
     | "BL-UI-004"
     | "BL-UI-005"
     | "BL-UI-006"
-    | "BL-UI-007"
-    | "BL-UI-008"
-    | "BL-UI-008-NONTEXT"
-    | "BL-UI-009"
-    | "BL-UI-010"
+    | "PROPOSED-BL-UI-007"
+    | "PROPOSED-BL-UI-008"
+    | "PROPOSED-BL-UI-008-NONTEXT"
+    | "PROPOSED-BL-UI-009"
+    | "PROPOSED-BL-UI-010"
     | "SIZED-CONTROL"
     | "WCAG-4.1.3"
     | "ADMIN-BLADE-OVERLAP";
@@ -1788,7 +1790,7 @@ export function classifyTouchTargets(
 export function classifyOcclusion(result: OcclusionAuditResult): LayoutFinding {
   if (result.overlaps.length === 0) {
     return {
-      invariant: "BL-UI-007",
+      invariant: "PROPOSED-BL-UI-007",
       severity: "PASS",
       message: `No occlusion of ${result.alertsFound} critical alert(s)`,
       evidence: result,
@@ -1797,7 +1799,7 @@ export function classifyOcclusion(result: OcclusionAuditResult): LayoutFinding {
   const severeCount = result.overlaps.filter((o) => o.severe).length;
   const sample = result.overlaps[0];
   return {
-    invariant: "BL-UI-007",
+    invariant: "PROPOSED-BL-UI-007",
     severity: severeCount > 0 ? "P0" : "FAIL",
     message: `${result.overlaps.length} occlusion(s) of critical alerts${severeCount > 0 ? ` (${severeCount} severe, ≥ 25% coverage)` : ""}; first: ${sample.occluderTag} overlaps ${sample.alertTag} by ${sample.overlapWidth}×${sample.overlapHeight} px`,
     evidence: result,
@@ -1814,7 +1816,7 @@ export function classifyContrast(result: ContrastAuditResult): LayoutFinding {
     // Same discipline as classifyFocusIndicator's indeterminate branch: partial coverage
     // reported as a pass is how 8 of 14 probes went missing unnoticed (VCST-5346).
     return {
-      invariant: "BL-UI-008",
+      invariant: "PROPOSED-BL-UI-008",
       severity: skipped > 0 ? "WARN" : "PASS",
       message: `${result.evaluated} text nodes evaluated, 0 WCAG 1.4.3 violations${skipNote}`,
       evidence: result,
@@ -1822,7 +1824,7 @@ export function classifyContrast(result: ContrastAuditResult): LayoutFinding {
   }
   const worst = result.violations.reduce((a, b) => (a.ratio < b.ratio ? a : b));
   return {
-    invariant: "BL-UI-008",
+    invariant: "PROPOSED-BL-UI-008",
     severity: "FAIL",
     message: `${result.violations.length} contrast violation(s); worst: ${worst.ratio}:1 (needs ${worst.requiredRatio}:1) on "${worst.text}"${skipNote}`,
     evidence: result,
@@ -1838,14 +1840,14 @@ export function classifyFocusIndicator(
     // No confirmed miss. If some were indeterminate, WARN rather than a clean PASS —
     // programmatic focus couldn't assess a :focus-visible-gated ring on those.
     return {
-      invariant: "BL-UI-009",
+      invariant: "PROPOSED-BL-UI-009",
       severity: indet > 0 ? "WARN" : "PASS",
       message: `${result.evaluated} interactives audited: no confirmed missing focus ring${indetNote}`,
       evidence: result,
     };
   }
   return {
-    invariant: "BL-UI-009",
+    invariant: "PROPOSED-BL-UI-009",
     severity: "FAIL",
     message: `${result.missing.length} interactive(s) with :focus-visible active but no ring (≥ ${FOCUS_INDICATOR_MIN_PX} px outline OR contrasting box-shadow)${indetNote}`,
     evidence: result,
@@ -1862,7 +1864,7 @@ export function classifyNonTextContrast(
       : "";
   if (result.violations.length === 0) {
     return {
-      invariant: "BL-UI-008-NONTEXT",
+      invariant: "PROPOSED-BL-UI-008-NONTEXT",
       severity: skipped > 0 ? "WARN" : "PASS",
       message: `All ${result.evaluated} enabled glyphs meet WCAG 1.4.11 (${NON_TEXT_CONTRAST_RATIO}:1); ${result.exempt} exempt (disabled)${skipNote}`,
       evidence: result,
@@ -1870,7 +1872,7 @@ export function classifyNonTextContrast(
   }
   const worst = result.violations.reduce((a, b) => (a.ratio < b.ratio ? a : b));
   return {
-    invariant: "BL-UI-008-NONTEXT",
+    invariant: "PROPOSED-BL-UI-008-NONTEXT",
     severity: "FAIL",
     message: `${result.violations.length} icon/graphic contrast violation(s) (WCAG 1.4.11); worst ${worst.ratio}:1 (needs ${worst.requiredRatio}:1)${worst.label ? ` on "${worst.label}"` : ""}`,
     evidence: result,
@@ -1922,7 +1924,7 @@ export function classifyImageAspect(
 ): LayoutFinding {
   if (result.violations.length === 0) {
     return {
-      invariant: "BL-UI-010",
+      invariant: "PROPOSED-BL-UI-010",
       severity: "PASS",
       message: `All ${result.evaluated} images preserve their intrinsic aspect ratio (±${IMAGE_ASPECT_TOLERANCE * 100}%)`,
       evidence: result,
@@ -1930,7 +1932,7 @@ export function classifyImageAspect(
   }
   const worst = result.violations.reduce((a, b) => (a.drift > b.drift ? a : b));
   return {
-    invariant: "BL-UI-010",
+    invariant: "PROPOSED-BL-UI-010",
     severity: "FAIL",
     message: `${result.violations.length} distorted image(s); worst drift ${(worst.drift * 100).toFixed(1)}% on ${worst.src.split("/").pop()}`,
     evidence: result,

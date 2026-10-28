@@ -1,9 +1,11 @@
 # Component acceptance — a component under review against its reference
 
-**Read when a `DESIGN` risk** ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2a) compares a rendered
+**Read when a `DESIGN` risk** ([`visual-axis.md`](visual-axis.md) §2a) compares a rendered
 component with its reference: prod, QA or a fork's preview against Storybook, or a new component against the
-design system. The engine is `npm run visual:design` (`plugins/vc-frontend/visual/design.mjs`; its header documents
-the spec file, the output and the exit codes). It complements
+design system. The engine is `node <vc-frontend>/visual/design.mjs` — `<vc-frontend>` is the vc-frontend plugin's root,
+which vc-test's `lib/capabilities.mjs` `pixelProbe` finds beside this plugin (in this repository: `npm run visual:design`, `plugins/vc-frontend/visual/design.mjs`); its header documents
+the spec file, the output and the exit codes. The engine is optional: **with no vc-frontend plugin, this check is
+`SKIPPED — no vc-frontend`**, never a PASS. It complements
 [`claude-design-verification.md`](claude-design-verification.md), which diffs the *declared* tokens, geometry and
 icons of a design project. This file diffs what the browser *rendered*.
 
@@ -39,12 +41,12 @@ visible elements is compared on the first and reported as `info` with the count;
 | AC-PIX | the element's own pixels, at DPR 2 | never across two presets (a token both pages define differs) |
 | AC-THM | the theme tokens that differ between the two pages, listed for confirmation | — |
 | AC-STA | one spec entry per state (`hover` / `focus` on a target, or the state's story) | — |
-| AC-A11Y | — | `qa-accessibility`, `measure-layout.ts` contrast (our thresholds, BL-A11Y) |
-| AC-RSP, AC-CNT | — | `layout-runner` `[PROBE:OVERFLOW]` / `[PROBE:TOUCH]` / `[PROBE:CONTENT]` and its stress data |
-| AC-TOK | — | `tokens:check`, [`design-system-consistency.md`](design-system-consistency.md) |
+| AC-A11Y | — | the a11y axis ([`wcag-accessibility-checklist.md`](../../knowledge/wcag-accessibility-checklist.md); in this repository: `qa-accessibility`), the `measure-layout.mjs` contrast snippets (`node <plugin>/lib/design/snippet.mjs`; in this repository: `scripts/lib/measure-layout.ts`) (our thresholds, BL-A11Y) |
+| AC-RSP, AC-CNT | — | `layout-runner` (in this repository: `scripts/layout/layout-runner.ts`) `[PROBE:OVERFLOW]` / `[PROBE:TOUCH]` / `[PROBE:CONTENT]` and its stress data |
+| AC-TOK | — | `tokens:check` (in this repository: `npm run tokens:check`), [`design-system-consistency.md`](design-system-consistency.md) |
 
 **Thresholds the catalog states differently from ours: ours win.** Touch targets are BL-UI-006 / WCAG 2.5.8 —
-24 px AA, 44 px AAA, `measure-layout.ts`. The catalog's "44 px at 390" is a design-system guideline, judged against
+24 px AA, 44 px AAA, `measure-layout.mjs` (`node <plugin>/lib/design/snippet.mjs`; in this repository: `scripts/lib/measure-layout.ts`). The catalog's "44 px at 390" is a design-system guideline, judged against
 the design project only. The spacing grid is the generated token scale (`tokens:sync`), not a fixed 4/8.
 
 ## 3. Theme normalisation
@@ -60,7 +62,7 @@ resolves to **different** tokens on the two sides is a defect, because the compo
 ## 4. What a finding may do
 
 The catalog's verdict — FAIL / PASS WITH ISSUES / PASS — is the report's. **What it does to the ticket** is
-[`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §3, unchanged:
+[`visual-axis.md`](visual-axis.md) §3, unchanged:
 
 - A P2 or P3 is `vs. DESIGN` DRIFT: it goes to `visual.advisory[]` and is not blocking.
 - A clipped, overlapping or hidden element (the catalog's P1) is a `BL-UI` invariant FAIL. It blocks through
@@ -69,5 +71,5 @@ The catalog's verdict — FAIL / PASS WITH ISSUES / PASS — is the report's. **
 - `INCONCLUSIVE` (exit 2) is not a result: a page did not load, or one side matched nothing at all. Fix the spec or
   the stand and run again. Never report it as a pass or as advisory drift.
 
-A `ui-kit` ticket ([`../qa-test/ui-kit-class.md`](../qa-test/ui-kit-class.md)) is the exception the carrier matrix
+A `ui-kit` ticket ([`ui-kit-class.md`](../../knowledge/ui-kit-class.md)) is the exception the carrier matrix
 already makes: there the rendered surface is the deliverable, so its own component's P2 is triaged as a finding.

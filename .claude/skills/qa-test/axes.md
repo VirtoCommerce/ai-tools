@@ -5,7 +5,7 @@ Single source of truth for the derived tokens `1b` resolves: **`layer` (2b) · `
 contract they share and the ways they genuinely differ. **Cite it; never restate it.**
 
 Each axis's own *behaviour* stays in its own file, which this one does not duplicate:
-[`visual-axis.md`](visual-axis.md) (the three sub-axes, verdict vocabulary, browser budget) ·
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) (the three sub-axes, verdict vocabulary, browser budget) ·
 [`contract-refresh.md`](contract-refresh.md) (two artifacts, two commands, `UNKNOWN`, drift as a `1e` input) ·
 [`coverage-triage.md`](coverage-triage.md) (`runFate`, the four dispositions, the `REPAIR`/`RE-BASE` split) ·
 [`authoring.md`](authoring.md) §Step 3a (what `test-data-engineer` owns once `data_surface` is `true`).
@@ -59,7 +59,7 @@ block, and it was the one the shared *"same discipline"* phrasing concealed.
 |---|---|---|---|---|---|---|
 | **Unresolved ⇒** | **`null` + `UNRESOLVED`** | `true` | `true` | `true` | **`false`** | **`unresolved` + recommend** |
 | Shape | 6 values + `cross-layer` | boolean | boolean | boolean | boolean | **4 states** (`PRESENT`/`STALE`/`ABSENT`/`unresolved`) |
-| Dispatches an agent? | no | **yes** (`ui-ux-expert`) | no | no | **yes** (`test-data-engineer`) | **FULL only**, and only on `ABSENT` + all-layer (`ba-system-analyzer`, `1c-map`) |
+| Dispatches an agent? | no | **yes** (`vc-test:ui-ux-expert`) | no | no | **yes** (`test-data-engineer`) | **FULL only**, and only on `ABSENT` + all-layer (`ba-system-analyzer`, `1c-map`) |
 | Costs I/O in `1b`? | no | no | **yes** (~8.6 s) | yes (~1 s, wave B) | yes (~1 s, wave B) | **no** (one local frontmatter read) |
 | Has a conflict rule? | **yes** (`layers_conflict`) | no | no | no | no | no |
 | **Adds** a step, or **gates** one? | gates 5-status/5-docs | adds the visual lane | adds two refreshers | adds Artifact A's `2a` phase | **gates Step 3a** | **adds `1c-map` on FULL; RECOMMENDS on FAST. Gates nothing, ever** |

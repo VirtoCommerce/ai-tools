@@ -26,7 +26,7 @@ hand.
 | **By design** | `kb` (confirm or capture) and a line in `verdict.md`. Never a bug |
 
 A visual finding's effect on the verdict is set by
-[`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §3: a `BL-UI` FAIL blocks, an a11y FAIL on a
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §3: a `BL-UI` FAIL blocks, an a11y FAIL on a
 functional ticket is filed standalone, and `vs. DESIGN` drift only advises.
 
 Before calling a finding a product bug, the investigation must check the back office for the value it

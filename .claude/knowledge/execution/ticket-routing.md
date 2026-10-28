@@ -142,7 +142,7 @@ everything else was dropped is that the cut and the risk point in opposite direc
 PR, an icon migration or a P2 restyle is *single-layer, single-domain, obvious surface, P2* by construction,
 so **the change most likely to break the UI is the one this row routes**, and a functional checklist cannot
 see a contrast failure or a token collision. Spec:
-[`skills/qa-test/visual-axis.md`](../../skills/qa-test/visual-axis.md).
+[`plugins/vc-test/skills/qa-design/visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md).
 
 ---
 
@@ -294,7 +294,7 @@ A gone the checklist is the run's **only** durable record, which raises what tha
 restate.
 
 **Why `visual` defaults ON: this class is the measured case the axis was waiting for.**
-[`visual-axis.md`](../../skills/qa-test/visual-axis.md) §5 argues that *"the change class most likely to
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §5 argues that *"the change class most likely to
 break the UI is exactly the class FAST routes"* and then declines to act on it, correctly, for want of
 evidence. Here the evidence exists: the change is the rendered surface, and a functional checklist cannot
 see a contrast failure or a token collision by construction.

@@ -10,7 +10,7 @@ disable-model-invocation: true
 [`/qa-test`](../../commands/qa-test.md) is the orchestration shell: what runs, in what order, and the
 gate each step must clear. **This skill is the reasoning** — why each rule exists, what it was measured
 against, and what goes wrong without it. Same split as
-[`/qa-design`](../../commands/qa-design.md) ↔ [`skills/qa-design/`](../qa-design/SKILL.md).
+[`/qa-design`](../../commands/qa-design.md) ↔ [`vc-test:qa-design`](../../../plugins/vc-test/skills/qa-design/SKILL.md).
 
 The command is normative and self-sufficient for running the pipeline. Read the file here for the step
 you are in when you need to make a judgment call the command's gate does not settle, or when you are
@@ -25,7 +25,7 @@ about to change how a step works.
 | [`triage.md`](triage.md) | **5-triage** — correlate, validate evidence, classify, provenance, severity, dedup | Turning raw results into findings |
 | [`reporting.md`](reporting.md) | **5-report · 5-status · 5-docs** — the release gate, the tracker comment, `summary.json`, the checklist, the transition | Delivering the run |
 | [`axes.md`](axes.md) | The six pre-flight axes as ONE mechanism — the contract they share, and the fail-CLOSED/fail-OPEN split the old "same discipline" phrasing hid | Adding an axis, or deciding whether one runs on FAST |
-| [`visual-axis.md`](visual-axis.md) | The visual axis — the `visual_surface` derivation, surface → axes → executor, the invariant-blocks/spec-advises verdict rule, the browser budget | A UI-visible ticket, or changing how design/a11y is scheduled |
+| [`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) | The visual axis — the `visual_surface` derivation, surface → axes → executor, the invariant-blocks/spec-advises verdict rule, the browser budget | A UI-visible ticket, or changing how design/a11y is scheduled |
 | [`contract-refresh.md`](contract-refresh.md) | The contract-refresh axis — the `contract_surface` derivation at `1b` 2d, the two-artifacts/two-commands split, `UNKNOWN` never falling back, drift as a `1e` input | A ticket touching GraphQL/xAPI, or changing when the schema + fixtures are refreshed |
 | [`coverage-triage.md`](coverage-triage.md) | The coverage-triage axis — the `coverage_surface` derivation at `1b` 2e, the `2a` phase's four dispositions, and why a `RE-BASE` is resolved BY the run rather than before it | A change that renames, moves or removes something existing cases already assert |
 | [`exploratory-lane.md`](exploratory-lane.md) | Step 3x — the discovery lane: why it runs beside 3a and before authoring, the five charter sources, the four routed outputs | A FULL run, or changing when discovery happens |
@@ -141,7 +141,7 @@ never-parallelise table is there.
 |---|---|---|
 | Storefront UI, checkout, cart, search, mobile | `qa-frontend-expert` | `playwright-chrome` |
 | Admin SPA, APIs, modules, GraphQL, backend | `qa-backend-expert` | `playwright-edge` |
-| Storybook components, accessibility, design system, the `vs. DESIGN` spec diff | `ui-ux-expert` | Chrome DevTools MCP |
+| Storybook components, accessibility, design system, the `vs. DESIGN` spec diff | `vc-test:ui-ux-expert` | the Playwright lane 4a leaves free (none free ⇒ the next wave) |
 | Cross-browser, debugging | `qa-testing-expert` | `playwright-firefox` |
 | **Step-3x discovery (FULL)** — **invoke `/qa-exploratory ticket <ticket-key> <env>`**, do not hand-roll a session | that command's own | any free browser lane (all 3 click since 2026-09-08) |
 
@@ -150,14 +150,14 @@ never counts against the max-3 cap that governs the rows above it.
 
 **Minimum dispatch — and it is capped at THREE, which the old wording could exceed.** backend-only →
 `qa-backend-expert`; frontend-only → `qa-frontend-expert`; both → both in parallel; **`visual_surface: true`
-→ add `ui-ux-expert`** (the visual lane); P0 or critical-revenue → **add a second execution pass, not a
+→ add `vc-test:ui-ux-expert`** (the visual lane); P0 or critical-revenue → **add a second execution pass, not a
 fourth agent** (see below). **FAST → one execution agent** (the single owning specialist) **plus the visual
 lane when `visual_surface: true`** — the one documented exception, reasoned in
-[`visual-axis.md`](visual-axis.md) §5.
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §5.
 
 **Two hard corrections to what this table used to say:**
 
-- **The cap is 3 and it binds.** `both → both` (2) + `ui-ux-expert` (3) + `qa-testing-expert` (4) exceeded
+- **The cap is 3 and it binds.** `both → both` (2) + `vc-test:ui-ux-expert` (3) + `qa-testing-expert` (4) exceeded
   `.claude/rules/agents.md`'s *"max 3 concurrent browser agents total (QA + BA combined)"*. A P0
   cross-layer UI ticket hits exactly that combination, so it was not a corner case. **Resolution: the
   P0 extra pass is SEQUENCED, never a fourth concurrent lane** — and since 2026-09-10 the sequence is a
@@ -173,7 +173,7 @@ lane when `visual_surface: true`** — the one documented exception, reasoned in
 `visual_surface` is derived at `1b` item 2c, recorded with its sources, and replaces the undefined
 *"UI/component"* trigger this table used to carry — a phrase no gate ever checked was applied. The lane's
 targets, the three axes it runs, the verdict vocabulary and the browser-budget ordering all live in
-[`visual-axis.md`](visual-axis.md); **do not restate them here.**
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md); **do not restate them here.**
 
 Each ticket-agent prompt must carry: the ticket ID; **Artifact B** checklist; **test data** (the `@td()`/`{{VAR}}` the cases use, confirmed seeded — never
 hardcode IDs, `.claude/rules/test-data.md`); the **`BL-*`** rule text + **`ECL-*`** patterns from Step 2

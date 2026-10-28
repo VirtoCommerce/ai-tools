@@ -9,8 +9,8 @@
  * severity in business context, filing decisions. The MEASUREMENT is here.
  *
  * Deliberately NOT duplicated (already in `measure-layout.ts`):
- *   contrast (BL-UI-008 / WCAG 1.4.3) → contrastAuditSnippet
- *   focus indicator (BL-UI-009 / WCAG 2.4.7) → focusIndicatorAudit
+ *   contrast (PROPOSED-BL-UI-008 / WCAG 1.4.3) → contrastAuditSnippet
+ *   focus indicator (PROPOSED-BL-UI-009 / WCAG 2.4.7) → focusIndicatorAudit
  *   touch targets (BL-UI-006 / WCAG 2.5.5) → touchTargetAudit
  *
  * NOT included: screenshot pixel-diff. A DOM snippet can't diff PNGs; visual

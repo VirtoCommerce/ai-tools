@@ -1,0 +1,210 @@
+{
+  "ticket": "VCST-6231",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "tracker": {
+    "kind": "jira",
+    "comment_id": "112445"
+  },
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "reason": "Task, priority Highest (P0/P1) — ticket-routing.md §4 Task row",
+    "escalated_reason": null
+  },
+  "shape_class": {
+    "value": "ui-kit",
+    "surface_source": [
+      "diff: client-app/ui-kit/**, preflight.scss, _dark.scss split, storybook-styles/**, .storybook/preview.ts",
+      "ticket names design tokens and layer order"
+    ]
+  },
+  "verdict": "FAIL",
+  "date": "2026-10-27",
+  "environment": "vcst",
+  "build": {
+    "declared": {
+      "theme": "vc-frontend#2577 @ 4c171a96 (+#2592)"
+    },
+    "deployed": {
+      "theme": "2.61.0-pr-2577-4c17-4c171a96"
+    },
+    "theme": "vc-frontend#2577 @ 4c171a96 (+#2592)"
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "confirmed": false,
+      "actor": "qa-lead",
+      "at_utc": "2026-10-27T20:40:00Z"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "from": "Testing",
+      "to": null,
+      "transition": null,
+      "confirmed": true,
+      "actor": "qa-lead",
+      "skipped": "operator chose to leave the ticket in Testing while the PO decides on the intended deviations (Q1–Q4) and VCST-6582"
+    }
+  ],
+  "total_cases": 113,
+  "passed": 79,
+  "failed": 15,
+  "blocked": 17,
+  "new_cases_authored": 0,
+  "regression": {
+    "c1": {
+      "suites": [],
+      "ids": [],
+      "run_id": null,
+      "pass_rate": null,
+      "skipped_reason": "ui-kit shape class — no authored cases and no 2a REPAIR/RE-BASE ids this round (ticket-routing.md §5c)"
+    },
+    "feature_release_gate": "not-assessed"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6582",
+      "severity": "Medium",
+      "provenance": "in-scope",
+      "relationship": "Subtask of VCST-6231",
+      "summary": "Sales Rep Hub layout cards show no focus ring in Edit layout: unlayered plugin CSS beats the layered theme ring",
+      "report": "reports/tickets/Sprint26-21/VCST-6231/vcst/bugs/medium/BUG-SalesRep-Hub-Edit-Layout-No-Focus-Ring.md",
+      "title": "Sales Rep Hub cards: no focus ring in Edit layout"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "out-of-scope",
+      "summary": "Opening another buyer's quote edit URL shows a 'Save changes?' prompt and a spinner before /403",
+      "report": "reports/tickets/Sprint26-21/VCST-6231/vcst/testing-checklist.md (round 2 notes)",
+      "title": "Opening another buyer's quote edit URL shows a 'Save changes?' prompt and a spinner before /403"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Storybook VcProductCard 'no image' placeholder renders at natural size instead of filling the card (PIX-1)",
+      "report": "reports/tickets/Sprint26-21/VCST-6231/vcst/testing-checklist.md",
+      "title": "Storybook VcProductCard 'no image' placeholder renders at natural size instead of filling the card (PIX-1)"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing (tracked)",
+      "summary": "Sales Rep My Customers even rows lose hover highlight — confirmed live, VCST-6529 item 2",
+      "report": "VCST-6529",
+      "title": "Sales Rep My Customers even rows lose hover highlight — confirmed live, VCST-6529 item 2"
+    }
+  ],
+  "screenshots": "reports/tickets/Sprint26-21/VCST-6231/vcst/screenshots/",
+  "report": {
+    "checklist": "reports/tickets/Sprint26-21/VCST-6231/vcst/testing-checklist.md",
+    "strategy": "reports/tickets/Sprint26-21/VCST-6231/vcst/test-strategy.md",
+    "comment_id": "112445",
+    "page_url": null
+  },
+  "ac_analysis": {
+    "story_acs": 26,
+    "impl_coverage": {
+      "satisfied": 16,
+      "drift": 6,
+      "contradicts": 2,
+      "not_found": 0
+    },
+    "conditions_total": 26,
+    "conditions_with_evidence": 24,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 92.3,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "detail": {
+      "conditions_total": 26,
+      "conditions_with_evidence": 24,
+      "ac_coverage_pct": 92.3,
+      "satisfied": [
+        "AC-1",
+        "AC-2",
+        "AC-3",
+        "AC-5",
+        "AC-7",
+        "AC-9",
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-14",
+        "AC-15",
+        "AC-17",
+        "AC-18",
+        "AC-20",
+        "AC-22",
+        "AC-25"
+      ],
+      "not_met_live": [
+        "AC-8"
+      ],
+      "drift_confirmed": [
+        "AC-4",
+        "AC-16",
+        "AC-19",
+        "AC-21",
+        "AC-23",
+        "AC-24"
+      ],
+      "failed_low": [
+        "AC-13"
+      ],
+      "partial": {
+        "AC-6": "red light+dark covered by scenarios + Storybook pixel diff; coffee preset and the full 8-page computed-style diff not run"
+      },
+      "blocked": {
+        "AC-26": "no release published yet"
+      },
+      "dod_pct": null
+    },
+    "verdict_basis": "AC-8 not met live (VCST-6582, Medium, in-scope); AC-4, AC-16, AC-19, AC-21, AC-23, AC-24 confirmed different from the ticket text and intended by the PR (PO questions Q1–Q4); AC-13 FAIL Low (Storybook VcProductCard no-image placeholder)",
+    "po_questions": [
+      "Q1 AC-4: <html data-preset> is no longer written (PR removed it on purpose) — accept and update the AC?",
+      "Q2 AC-19: served layer order is 'theme, base, plugins-vendor, vc, components, plugins, utilities' with vc.print and without vc.preset / vc.design.kit / vc.design.app — accept as the public order?",
+      "Q3 AC-21/AC-16: print ships as one _print.scss in the last layer vc.print (no kit/app split, no @media screen wrapper on soft entries) — accept?",
+      "Q4 AC-24: check-soft-styles.ts became check-designs.ts and does not enforce 'block exists on that directory's side' — accept? (AC-23: browserslist refresh is inside the feature commit, not its own first commit)"
+    ],
+    "residual_risk": [
+      "coffee preset not checked (stand serves red; preset switch not approved)",
+      "Storybook dark not diffed",
+      "soft design halves out of scope (no soft build)",
+      "multi-step checkout, purchase requests and punchout ProceedTo sites not reachable on the store (source shows the caller class lands)"
+    ],
+    "known_tracked": [
+      "VCST-6529 item 1 (bulk results 'View cart' not full width at 448–479px) confirmed live",
+      "VCST-6529 item 2 confirmed live",
+      "VCST-6529 item 3 = C-28 (latent, not reachable on the served build)",
+      "VCST-6529 item 8 = data-preset removal (AC-4)"
+    ],
+    "run_mode": "joint round 2 on the existing /vc-test:qa-ticket round-1 record (operator choice: build on it); Test Model, 1c/1d, 3x and authoring not re-run — round 1's test-strategy.md stands in for them",
+    "related_tickets_in_run": [
+      "VCST-6274"
+    ],
+    "skipped_rows": 2
+  },
+  "test_data": {
+    "data_surface": false,
+    "surface_source": [
+      "logins via {{VAR}}",
+      "live-discover",
+      "quote/cart created in-case"
+    ],
+    "left_behind": [
+      "quote RFQ261027-00006 (ORG_USER)",
+      "USER_EMAIL cart still holds 2 AGENT-TEST lines (removal reverted by another session on the shared account)"
+    ]
+  }
+}

@@ -8,7 +8,7 @@ argument-hint: "storybook <checkout> <base ref> | pages <targets.json> <base url
 
 This skill owns **one** of the four visual instruments, `PIXEL`. Which instrument a risk takes —
 `PIXEL`, `DESIGN`, `PROBE`, `CONTENT` — is decided in
-[`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2a. That is the single source for the
+[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2a. That is the single source for the
 choice. In short: `PIXEL` compares a build with the build before it. It is useless on a new
 surface (there is no "before") and blind to defects that predate the change.
 
@@ -128,7 +128,7 @@ the header, not a copy of it here.
 
 ## What the verdict may do
 
-The blocking rule is [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §3.
+The blocking rule is [`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §3.
 
 | Outcome | Effect |
 |---|---|
