@@ -1,0 +1,226 @@
+{
+  "ticket": "VCST-6442",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "tracker": "jira",
+  "path": "FULL",
+  "date": "2026-10-28",
+  "verdict": "FAIL",
+  "recommendation": "NOT READY — return to development",
+  "environment": "vcptcore (vcptcore-qa)",
+  "build": {
+    "platform": "3.1091.0-pr-3144-e637",
+    "PageBuilderModule": "3.1039.0-pr-179-5c9d",
+    "Pages": "3.1011.0-pr-24-8c93",
+    "XCMS": "3.1009.0-pr-28-7ebe",
+    "Seo": "3.1007.0",
+    "theme": "2.61.0-pr-2601-8058-80583415"
+  },
+  "axes": {
+    "layer": "cross-layer",
+    "visual_surface": true,
+    "contract_surface": {
+      "value": true,
+      "state": "REFRESHED",
+      "date": "2026-10-28"
+    },
+    "coverage_surface": true,
+    "data_surface": true,
+    "domain_map": {
+      "state": "PRESENT",
+      "path": ".claude/knowledge/domain/page-builder.md",
+      "rev": 2,
+      "all_layer_confirmed_at": "1e-confirmed"
+    }
+  },
+  "ac_results": {
+    "admin": {
+      "A1": "PASS (no links in warning)",
+      "A2": "PASS",
+      "A3": "PASS",
+      "A4": "PASS (direction-dependent)",
+      "A5": "PASS",
+      "A6": "PASS",
+      "A7": "PASS",
+      "A8": "PASS"
+    },
+    "frontend": {
+      "F1": "PASS",
+      "F2": "PASS",
+      "F3": "PASS",
+      "F4": "FAIL"
+    },
+    "xapi": {
+      "X1": "PASS",
+      "X2": "PASS",
+      "X3": "PASS",
+      "X4": "PASS"
+    }
+  },
+  "c1": {
+    "run_id": "REG-2026-10-28-1917",
+    "total": 39,
+    "pass": 30,
+    "fail": 3,
+    "blocked": 6,
+    "fail_ids": [
+      "CMS-PC-026",
+      "CMS-PC-027",
+      "CMS-PC-028"
+    ],
+    "blocked_ids": [
+      "CMS-PC-011",
+      "CMS-130",
+      "CMS-ML-019",
+      "CMS-GQL-133",
+      "CMS-GQL-134",
+      "CMS-082"
+    ]
+  },
+  "suites_authored": {
+    "059p": {
+      "path": "regression/suites/Backend/page-builder/059p-page-builder-permalink-conflicts.csv",
+      "cases": 28,
+      "status": "Draft",
+      "gate_3_cases": "APPROVE (round 2)"
+    }
+  },
+  "coverage_triage": {
+    "REPAIR_proposed": [
+      "060b CMS-087 (expects 4xx on duplicate create — reversed by 112272; superseded by 059p CMS-PC-002)"
+    ],
+    "RE_BASE": [
+      "059 CMS-126",
+      "059 CMS-128",
+      "059 CMS-130",
+      "059 CMS-135",
+      "059 CMS-136",
+      "059m CMS-ML-019",
+      "060 CMS-082",
+      "060 CMS-083",
+      "050f CMS-GQL-133",
+      "050f CMS-GQL-134",
+      "050f CMS-GQL-135"
+    ],
+    "note": "existing suites not edited (user decision)"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6601",
+      "severity": "High",
+      "relation": "sub-task",
+      "title": "POST /grouped with status Published bypasses the permalink conflict check",
+      "file": "reports/bugs/open/critical-high/BUG-PageBuilder-Grouped-Create-Published-Bypasses-Permalink-Conflict-VCST-6442.md"
+    },
+    {
+      "key": "VCST-6602",
+      "severity": "Medium",
+      "relation": "sub-task",
+      "title": "Concurrent publishes both succeed",
+      "file": "reports/bugs/open/medium/BUG-PageBuilder-Concurrent-Publish-Race-Two-Published-VCST-6442.md"
+    },
+    {
+      "key": "VCST-6603",
+      "severity": "Medium",
+      "relation": "sub-task",
+      "title": "Storefront 404 right after republish (cached slug)",
+      "file": "reports/bugs/open/medium/BUG-Storefront-Page-404-After-Republish-Cached-Slug-VCST-6442.md",
+      "provenance": "IN-SCOPE (AC-named); pre-existence unproven",
+      "fix_area": "vc-frontend (likely)"
+    },
+    {
+      "key": "VCST-6604",
+      "severity": "Medium",
+      "relation": "relates (out of scope)",
+      "title": "Shell popup Confirm button contrast 4.01:1",
+      "file": "reports/bugs/open/medium/BUG-Shell-Popup-Confirm-Button-Contrast-Below-AA.md"
+    }
+  ],
+  "bugs_not_filed": {
+    "drafts": "reports/tickets/Sprint26-21/VCST-6442/vcptcore/bugs/low/VCST-6442-low-findings.md",
+    "items": [
+      "Low: permalink-usages null/empty body -> 500",
+      "Low: userGroups as array on POST /grouped / create-group-page -> 500",
+      "Low: create-group-page without content + userGroups -> 500",
+      "Low: grouped/archive ignores ids in the body",
+      "Low: warning names are not links (112272 'links to them')",
+      "Low: warning stale after another page is renamed",
+      "Low: focus not moved into the second chained dialog",
+      "Low: Load content silently ignores an unknown JSON shape",
+      "Low: popup chrome English in de/ru; 'Show more' untranslated in ru; destructive confirm emphasis inverted; 'Unpublish them' for one page"
+    ]
+  },
+  "questions_to_dev": [
+    "112407 Admin 4 example '{vip, gold} and {gold}' is direction-dependent: {vip,gold} over {gold} = Certain, reverse = Possible — confirm intended",
+    "Tie-break wording: 112272 'most recently published' vs 112409/code 'most recently changed'",
+    "unpublishConflicting 403 branch is unreachable (builder:* permissions have no scopes) — intended?",
+    "Touching dates count as overlap (inclusive) and Archived pages are not listed in usages — confirm",
+    "Possible conflict is UI-only (API publishes 200) — state it in the API docs"
+  ],
+  "data": {
+    "seeded": [
+      "LOYALTY_VIP_USER vcptcore overlay",
+      "TECHFLOW_BUYER / OTHER_ORG_USER org links (user-provision.mjs reuse-branch fix)",
+      "PB_LEGACY_ORG_MEMBER, PB_LEGACY_ORG2_MEMBER (seed:pb-legacy-members)"
+    ],
+    "fixture_gap_unreachable": [
+      "admin without rights on a conflicting page (#16)"
+    ],
+    "pages_created_all_archived": "AGENT-TEST-VCST6442-{X,E,R,F,A,V}-*"
+  },
+  "artifacts": {
+    "test_model": "test-model.md",
+    "checklist": "testing-checklist.md",
+    "design_report": "design-report.md",
+    "exploratory": "exploratory/SBTM-VCST-6442-2026-10-28.md",
+    "regression": "reports/regression/REG-2026-10-28-1917/"
+  },
+  "kb": {
+    "captured": [
+      "KB-2CAAAA84",
+      "KB-304E47CC",
+      "KB-DA0955FC",
+      "KB-9C945CB3",
+      "KB-8B811D0D",
+      "KB-8AF47E45",
+      "KB-D70A146D",
+      "KB-45981F33",
+      "KB-BEC9CFB5"
+    ],
+    "confirmed": [
+      "KB-DA0955FC",
+      "KB-9C945CB3",
+      "KB-8AF47E45",
+      "KB-4EDC989E",
+      "KB-C3D589EA"
+    ]
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "action": "skipped",
+      "reason": "ticket already in Testing"
+    },
+    {
+      "at": "5-status",
+      "action": "transitioned",
+      "transition": "Need fixes (id 7)",
+      "from": "Testing",
+      "to": "Reopen",
+      "confirmed_by_user": true,
+      "date": "2026-10-28"
+    }
+  ],
+  "timing": {
+    "reachability_minutes": 7
+  },
+  "verifiers": {
+    "3-cases": "APPROVE (round 2)",
+    "5-report": "APPROVE"
+  },
+  "tracker_comment": {
+    "id": "112492",
+    "posted": "2026-10-28",
+    "rendered_check": "renderedBody: inline image present, 2 tables, 0 errors"
+  }
+}

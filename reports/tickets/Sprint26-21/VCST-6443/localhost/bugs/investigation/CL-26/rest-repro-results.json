@@ -1,0 +1,99 @@
+[
+ {
+  "ep": "POST create-group-page",
+  "len": 2048,
+  "status": 200,
+  "ct": "application/json; charset=utf-8",
+  "body": "(200, id 01a16447-68c1-75cf-8cb2-adc1fe68dfd0, permalink.length=2048)",
+  "storedAfter": "FOUND"
+ },
+ {
+  "ep": "POST create-group-page",
+  "len": 2049,
+  "status": 500,
+  "ct": "application/json",
+  "body": "{\"message\":\"22001: value too long for type character varying(2048)\",\"stackTrace\":null}",
+  "storedAfter": "not found"
+ },
+ {
+  "ep": "POST create-group-page",
+  "len": 10000,
+  "status": 500,
+  "ct": "application/json",
+  "body": "{\"message\":\"22001: value too long for type character varying(2048)\",\"stackTrace\":null}",
+  "storedAfter": "not found"
+ },
+ {
+  "ep": "POST grouped",
+  "len": 2048,
+  "status": 200,
+  "ct": "application/json; charset=utf-8",
+  "body": "(200, id 01a16447-6abe-7d1b-98f9-88396272263f)",
+  "storedAfter": "FOUND"
+ },
+ {
+  "ep": "POST grouped",
+  "len": 2049,
+  "status": 500,
+  "ct": "application/json",
+  "body": "{\"message\":\"22001: value too long for type character varying(2048)\",\"stackTrace\":null}",
+  "storedAfter": "not found"
+ },
+ {
+  "ep": "POST grouped",
+  "len": 10000,
+  "status": 500,
+  "ct": "application/json",
+  "body": "{\"message\":\"22001: value too long for type character varying(2048)\",\"stackTrace\":null}",
+  "storedAfter": "not found"
+ },
+ {
+  "ep": "PUT grouped",
+  "len": 2049,
+  "status": 500,
+  "ct": "application/json",
+  "body": "{\"message\":\"22001: value too long for type character varying(2048)\",\"stackTrace\":null}",
+  "storedAfter": "permalink.length=26 modifiedDate=2026-10-22T15:42:44.497982Z"
+ },
+ {
+  "ep": "PUT grouped",
+  "len": 10000,
+  "status": 500,
+  "ct": "application/json",
+  "body": "{\"message\":\"22001: value too long for type character varying(2048)\",\"stackTrace\":null}",
+  "storedAfter": "permalink.length=26 modifiedDate=2026-10-22T15:42:44.497982Z"
+ },
+ {
+  "ep": "PUT grouped",
+  "len": 2048,
+  "status": 200,
+  "ct": "application/json; charset=utf-8",
+  "body": "{\"storeId\":\"B2B-store\",\"pages\":[{\"groupId\":\"01a16447-6b11-792e-b6a5-054bb046f73f\",\"storeId\":\"B2B-store\",\"status\":\"Draft\",\"content\":\"{\\\"settings\\\":{\\\"name\\\":\\\"AGENT-TEST-6443 inv26 put target\\\",\\\"permalink\\\":\\\"/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "storedAfter": "permalink.length=2048 modifiedDate=2026-10-22T15:42:44.576298Z"
+ },
+ {
+  "beforePut": {
+   "permalink": "/agent-test-6443-inv26-put",
+   "modifiedDate": "2026-10-22T15:42:44.497982Z"
+  }
+ },
+ {
+  "teardown": [
+   {
+    "id": "01a16447-68c1-75cf-8cb2-adc1fe68dfd0",
+    "del": 200,
+    "get": 404
+   },
+   {
+    "id": "01a16447-6abe-7d1b-98f9-88396272263f",
+    "del": 200,
+    "get": 404
+   },
+   {
+    "id": "01a16447-6b11-792e-b6a5-054bb046f73f",
+    "del": 200,
+    "get": 404
+   }
+  ]
+ }
+]

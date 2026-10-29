@@ -719,3 +719,413 @@ The calendar cell keeps its marker
 A badge keeps the inflated number
 The page is left blank after deleting the chip day's only task
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] if NEW_TITLE is still listed, locate it by its AGENT-TEST-TASK prefix under All and delete it from Edit task","VCST-6077 · Archetype:STALE · Technique:ST · Catches: a deleted task lingers as a ghost row, a stale marker or inflated counts | Promoted: REG-2026-10-15-1453 (2026-10-15)",Automated
+SR-TK-030,"[JOURNEY] Schedule call from a served customer's page: saved at the picked local time and listed with time, customer and Call",Sales Rep > Tasks > Calls,Critical,BL-SR-011,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). This is the ticket's value chain end to end (customer page, popup, saved instant, Tasks list); an unchanged-popup refinement of each link is in the cases that follow.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","--- SCREEN: Customer profile ---
+[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)
+[WAIT] the customer profile has rendered with the Quick actions widget
+[KEY] record whether the 'Schedule call' tile is enabled (TILE_ENABLED)
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+--- SCREEN: Schedule call popup ---
+[KEY] record the Title, Customer, Due date, Time and Priority values (TITLE_0, CUST_0, DATE_0, TIME_0, PRIO_0)
+[ACT] fill 'Title' with a random AGENT-TEST-CALL title (CALL_TITLE)
+[ACT] set 'Due date' to PICK_DAY
+[ACT] set 'Time' to '2:30 PM'
+[ACT] click 'Save'
+[WAIT] the 'Task saved' toast appears and the popup closes
+[KEY] record the createSalesRepTask command dueDate (SENT_DUE) and from its response the type, customerId, customerName and dueDate (RESP_TYPE, RESP_CUST_ID, RESP_CUST_NAME, RESP_DUE)
+--- SCREEN: Tasks list ---
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the PICK_DAY cell in the Due dates calendar
+[WAIT] the date chip for PICK_DAY appears and the list shows that day's heading
+[KEY] record the row text of CALL_TITLE (ROW_TEXT), the day heading (HEAD), the PICK_DAY cell marker (MARK) and the number of rows under the heading (ROWS_N)
+--- SCREEN: Tasks list after reload ---
+[ACT] reload the page
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the PICK_DAY cell in the Due dates calendar
+[WAIT] the date chip for PICK_DAY appears
+[KEY] record the row text of CALL_TITLE again (ROW_RELOAD)","[STATE] TILE_ENABLED is true -- the tile is a working action, not a placeholder {OBSERVED}
+[DOM] TITLE_0 is 'Call', CUST_0 names {{customer}}, DATE_0 is empty, TIME_0 is '9:00 AM' and PRIO_0 is 'Normal' {OBSERVED}
+[REL] SENT_DUE, shown in the browser's zone, is PICK_DAY at 2:30 PM -- one instant, the picked local time {SPEC}
+[REL] RESP_TYPE is 'Call', RESP_CUST_ID equals {{customer_id}}, RESP_CUST_NAME equals {{customer}} and RESP_DUE is the same instant as SENT_DUE {SPEC}
+[DOM] ROW_TEXT reads 'Due <PICK_DAY, medium date>, 2:30 PM · <customer> · Call' with the customer equal to {{customer}} {OBSERVED}
+[REL] HEAD names PICK_DAY, MARK shows exactly one marker and ROWS_N is 1 -- the call is on the picked day and nowhere else {SPEC}
+[REL] ROW_RELOAD equals ROW_TEXT -- the saved instant survives a reload and is not recomputed {SPEC}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Mid-journey: the popup opens with a different customer, a prefilled date or a Save button that is enabled without a date
+Mid-journey: after Save the row shows 9:00 AM or another time than the one picked, or the call sits under another day
+Mid-journey: the row lists no customer or no Call type although the popup carried them
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
+[ASSERT] CALL_TITLE is no longer listed under All
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.","VCST-6314 · Archetype:SILENT · Technique:FLOW · Behavior:sr.tasks · Catches: a customer-page call that is dropped, shown at 9:00 AM, or listed on the wrong day · Observed: SBTM-VCST-6314-2026-10-27",Draft
+SR-TK-031,"Schedule call popup defaults: Title Call, customer prefilled, no due date, 9:00 AM, Normal, calendar boxes unticked, Save disabled until a date",Sales Rep > Tasks > Calls,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). Nothing is saved: the popup is dismissed, so no cleanup beyond closing it.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)
+[WAIT] the customer profile has rendered with the Quick actions widget
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[KEY] record Title, Customer and whether Customer has a Clear control (TITLE_0, CUST_0, CUST_CLEAR), Due date (DATE_0), Time (TIME_0) and whether Time has a Clear control (TIME_CLEAR), Priority (PRIO_0), the Notes counter (NOTES_0), the Google and Apple calendar boxes (GOOGLE_0, APPLE_0) and the Save enabled state (SAVE_0)
+[ACT] open the Time list
+[KEY] record the number of options, the first and the last label and the step between neighbours (TIME_COUNT, TIME_FIRST, TIME_LAST, TIME_STEP)
+[ACT] close the Time list without changing it
+[ACT] open the Priority list
+[KEY] record the option labels (PRIO_OPTIONS)
+[ACT] close the Priority list without changing it
+[ACT] set 'Due date' to PICK_DAY
+[KEY] record the Save enabled state (SAVE_1)
+[ACT] press Escape
+[WAIT] the popup closes
+[KEY] record whether any createSalesRepTask request was sent in this case (CREATE_SENT)","[DOM] TITLE_0 is 'Call', CUST_0 names {{customer}} with CUST_CLEAR true, DATE_0 is empty, TIME_0 is '9:00 AM' with TIME_CLEAR false and PRIO_0 is 'Normal' {OBSERVED}
+[DOM] NOTES_0 is '0 / 1000', GOOGLE_0 and APPLE_0 are unticked {OBSERVED}
+[STATE] SAVE_0 is false and SAVE_1 is true -- a call cannot be saved before a date exists {SPEC}
+[COUNT] TIME_COUNT is 96, TIME_FIRST is '12:00 AM', TIME_LAST is '11:45 PM' and TIME_STEP is 15 minutes {OBSERVED}
+[REL] PRIO_OPTIONS are Lowest, Low, Normal, High, Highest in that order and contain no 'Medium' {OBSERVED}
+[STATE] CREATE_SENT is false -- dismissing the popup creates nothing {SPEC}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A default (time, priority, date, customer) differs from the list in Assertions
+Save is enabled while Due date is empty
+The popup writes a call when dismissed
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (nothing is saved; the popup is dismissed with Escape),VCST-6314 · Archetype:FALLBACK · Technique:EP · Catches: a drifted popup default books the call at the wrong time or customer · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-TK-032,"A call at 01:30 local time east of UTC stays on the local day in the list, calendar marker and Today count",Sales Rep > Tasks > Calls,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). The case needs a browser zone at least 2 hours EAST of UTC (the picked 1:30 AM then falls on the previous UTC day): record BROWSER_OFFSET_H from the lane (new Date().getTimezoneOffset()/-60) first; if it is below 2 record BLOCKED with reason 'lane zone is not east of UTC' and stop. The reverse (west of UTC) is covered by SR-TK-011.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the browser's UTC offset in hours (BROWSER_OFFSET_H)
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the Today badge (TODAY0) and the marker of the day before PICK_DAY (MARK_PREV0)
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)
+[WAIT] the customer profile has rendered
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[ACT] fill 'Title' with a random AGENT-TEST-CALL title (CALL_TITLE)
+[ACT] set 'Due date' to PICK_DAY
+[ACT] set 'Time' to '1:30 AM'
+[ACT] click 'Save'
+[WAIT] the 'Task saved' toast appears and the popup closes
+[KEY] record the createSalesRepTask command dueDate (SENT_DUE) and the UTC calendar date of that instant (SENT_UTC_DATE)
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the PICK_DAY cell in the Due dates calendar
+[WAIT] the date chip for PICK_DAY appears
+[KEY] record the day heading (HEAD), the row text of CALL_TITLE (ROW_TEXT), the PICK_DAY cell marker (MARK), the marker of the day before PICK_DAY (MARK_PREV1) and the Today badge (TODAY1)","[REL] SENT_UTC_DATE is the day before PICK_DAY -- the precondition: this instant really crosses the UTC day {OBSERVED}
+[REL] HEAD names PICK_DAY and ROW_TEXT starts 'Due <PICK_DAY, medium date>, 1:30 AM' -- the call is on the LOCAL day {SPEC}
+[REL] MARK shows one marker on PICK_DAY and MARK_PREV1 equals MARK_PREV0 -- the calendar marker did not slip to the previous day {SPEC}
+[MATH] TODAY1 = TODAY0 -- a call on a later local day does not enter Today {SPEC}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The call is listed under the previous day or its marker sits on the previous day
+The Today badge grows for a call booked on a later local day
+ROW_TEXT shows a time other than 1:30 AM
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
+[ASSERT] CALL_TITLE is no longer listed under All
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:BOUNDARY · Technique:BVA · Probe:VC-PLATFORM-005 · Catches: VC-PLATFORM-005 -- a call booked for 1:30 AM tomorrow appears under today or on the wrong marker · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-TK-033,Saving the Schedule call popup twice in quick succession creates one call,Sales Rep > Tasks > Calls,Medium,BL-SR-030,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). The double activation is two Save activations issued back to back in one browser tick, not two human clicks.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)
+[WAIT] the customer profile has rendered with the Quick actions widget
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[ACT] fill 'Title' with a random AGENT-TEST-CALL title (CALL_TITLE)
+[ACT] set 'Due date' to PICK_DAY
+[ACT] double-click 'Save'
+[WAIT] the popup closes and the list refetches
+[KEY] record the number of createSalesRepTask requests sent (CREATE_REQS)
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the PICK_DAY cell in the Due dates calendar
+[WAIT] the date chip for PICK_DAY appears
+[KEY] record the number of rows whose title is CALL_TITLE (ROWS_N)","[COUNT] CREATE_REQS is 1 -- exactly one create request per intended save {BL}
+[COUNT] ROWS_N is 1 -- the rep sees one call, not two identical ones {BL}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Two createSalesRepTask requests for one double activation
+Two identical rows for CALL_TITLE under PICK_DAY
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
+[ASSERT] CALL_TITLE is no longer listed under All
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.
+If ROWS_N was 2, delete both rows.",VCST-6314 · Archetype:REPLAY · Technique:EG · Catches: a double click on Save books the same call twice · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-TK-034,Tasks page: Call adds Customer and Time; switching to another type and back sends no hidden customer,Sales Rep > Tasks > Calls,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-TASK, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). The Tasks-page New task form is the second entry to a call; the customer and time it collects while Type is Call must not outlive a switch to another type.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click 'New task'
+[WAIT] the New task modal is open
+[ACT] fill 'Title' with a random AGENT-TEST-TASK title (TASK_TITLE)
+[ACT] set 'Type' to 'Call'
+[KEY] record whether the Customer and Time fields are present (FIELDS_CALL)
+[ACT] set 'Customer' to {{customer}}
+[ACT] set 'Type' to 'Other'
+[KEY] record whether the Customer and Time fields are present (FIELDS_OTHER)
+[ACT] set 'Due date' to PICK_DAY
+[ACT] click 'Save'
+[WAIT] the modal closes and the list refetches
+[KEY] record the createSalesRepTask command type, customerId and dueDate (CMD_TYPE, CMD_CUST, CMD_DUE)
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the PICK_DAY cell in the Due dates calendar
+[WAIT] the date chip for PICK_DAY appears
+[KEY] record the row text of TASK_TITLE (ROW_TEXT)","[REL] FIELDS_CALL shows Customer and Time and FIELDS_OTHER shows neither -- the extra fields follow the type {OBSERVED}
+[REL] CMD_TYPE is 'Other' and CMD_CUST is absent -- the customer picked under Call was not sent {OBSERVED}
+[REL] CMD_DUE is the local start of PICK_DAY, not PICK_DAY at 9:00 AM -- the call's time default did not leak into a non-call task {OBSERVED}
+[DOM] ROW_TEXT contains no customer segment and not 'Customer not assigned' {OBSERVED}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A non-call task is saved with the customer chosen before the type switch
+A non-call task carries the call time default (9:00 AM)
+The row shows Customer not assigned for a task that is not a call
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] open TASK_TITLE through its title in {{FRONT_URL}}/company/tasks, click 'Delete' in the Edit task modal and confirm
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-TASK under All and delete it.",VCST-6314 · Archetype:STALE · Technique:ST · Catches: a non-call task silently linked to a customer picked before the type was switched · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-TK-035,"Google Calendar export opens an event at the saved instant, 30 minutes long, titled Call — <customer>",Sales Rep > Tasks > Calls,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). The Google tab is observed through its URL; the case never signs in to Google and closes the tab. Notes carry a comma, a semicolon and a backslash on purpose (UIP-DATA).","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)
+[WAIT] the customer profile has rendered with the Quick actions widget
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[ACT] fill 'Title' with a random AGENT-TEST-CALL title (CALL_TITLE)
+[ACT] set 'Due date' to PICK_DAY
+[ACT] set 'Time' to '2:30 PM'
+[ACT] fill 'Notes' with 'Line1, comma; semi \ back'
+[ACT] tick 'Google' under Add to calendar
+[WAIT] the page has settled
+[ACT] click 'Save'
+[WAIT] the popup closes and a new browser tab opens
+[KEY] record the new tab's URL (GOOGLE_URL), its host, and its text, dates and details parameters decoded (G_HOST, G_TEXT, G_DATES, G_DETAILS) and the number of tabs opened by this Save (TABS_OPENED)
+[KEY] record the createSalesRepTask response dueDate (SAVED_DUE)
+[ACT] close the Google tab","[COUNT] TABS_OPENED is 1 and G_HOST is calendar.google.com {SPEC}
+[REL] G_TEXT is '<CALL_TITLE> — <customer>' with the customer equal to {{customer}} -- the event title is the Title field, then the customer {OBSERVED}
+[REL] G_DATES is '<SAVED_DUE as YYYYMMDDTHHMMSSZ>/<SAVED_DUE + 30 minutes in the same format>' -- the event starts at the saved instant and lasts 30 minutes {OBSERVED}
+[REL] G_DETAILS equals the Notes text with the comma, semicolon and backslash intact {OBSERVED}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The Google event starts at another hour than the saved call (UTC vs local mix)
+The event lasts other than 30 minutes
+Notes lose a comma, semicolon or backslash in the event description
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
+[ASSERT] CALL_TITLE is no longer listed under All
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:PARITY · Technique:DT · Probe:VC-EXEC-005 · Catches: VC-EXEC-005 -- the rep's Google event is at a different hour than the call in the hub · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-TK-036,Apple Calendar export downloads call.ics whose start equals the saved instant and end is 30 minutes later,Sales Rep > Tasks > Calls,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). Both calendar boxes are ticked on purpose: one Save must fire both exports. The downloaded call.ics is read from the browser download, then discarded. Title and Notes carry a comma, a semicolon and a backslash so the hand-written escaping is exercised.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)
+[WAIT] the customer profile has rendered with the Quick actions widget
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[ACT] fill 'Title' with a random AGENT-TEST-CALL title that contains the text ', a;b\c' (CALL_TITLE)
+[ACT] set 'Due date' to PICK_DAY
+[ACT] set 'Time' to '2:30 PM'
+[ACT] fill 'Notes' with 'Line1, comma; semi \ back'
+[ACT] press Shift+Enter in 'Notes'
+[ACT] type 'Line2' in 'Notes'
+[ACT] tick 'Google' under Add to calendar
+[WAIT] the page has settled
+[ACT] tick 'Apple' under Add to calendar
+[WAIT] the page has settled
+[ACT] click 'Save'
+[WAIT] the popup closes
+[KEY] record whether a Google tab opened (GOOGLE_OPENED) and whether a file named call.ics was downloaded (ICS_DOWNLOADED)
+[KEY] read call.ics and record its DTSTART, DTEND, SUMMARY, DESCRIPTION, UID and PRODID lines and whether its lines end with CRLF (ICS_START, ICS_END, ICS_SUMMARY, ICS_DESC, ICS_UID, ICS_PRODID, ICS_CRLF)
+[KEY] record the createSalesRepTask response id and dueDate (TASK_ID, SAVED_DUE)
+[ACT] close the Google tab","[STATE] GOOGLE_OPENED and ICS_DOWNLOADED are both true -- one Save fires both exports {OBSERVED}
+[REL] ICS_START is SAVED_DUE as YYYYMMDDTHHMMSSZ and ICS_END is 30 minutes later {SPEC}
+[REL] ICS_SUMMARY is '<CALL_TITLE> — <customer>' with every comma, semicolon and backslash of the title escaped by a backslash (RFC 5545) {OBSERVED}
+[REL] ICS_DESC is the Notes text with comma, semicolon and backslash escaped and the line break written as \n {OBSERVED}
+[REL] ICS_UID equals TASK_ID, ICS_PRODID is '-//Virto Commerce//Sales Rep Hub//EN' and ICS_CRLF is true {OBSERVED}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","call.ics is not downloaded or only one of the two exports fires
+DTSTART differs from the saved instant
+An unescaped comma or semicolon breaks the SUMMARY or DESCRIPTION line
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
+[ASSERT] CALL_TITLE is no longer listed under All
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:PARITY · Technique:DT · Probe:VC-EXEC-005 · Catches: VC-EXEC-005 -- the calendar file imports at the wrong time or fails to import · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-TK-037,Edit call keeps the picked time on an unchanged save and offers no type and no calendar options,Sales Rep > Tasks > Calls,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). Edit call is reached from the Tasks list, so the case first saves its own call with no calendar box ticked.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)
+[WAIT] the customer profile has rendered with the Quick actions widget
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[ACT] fill 'Title' with a random AGENT-TEST-CALL title (CALL_TITLE)
+[ACT] set 'Due date' to PICK_DAY
+[ACT] set 'Time' to '2:30 PM'
+[ACT] click 'Save'
+[WAIT] the popup closes
+[KEY] record the createSalesRepTask response dueDate (SAVED_DUE)
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the PICK_DAY cell in the Due dates calendar
+[WAIT] the date chip for PICK_DAY appears
+[ACT] click the title of CALL_TITLE
+[WAIT] the edit dialog is open
+[KEY] record the dialog title (DLG_TITLE), whether a Type field is present (TYPE_PRESENT), whether 'Add to calendar' is present (CAL_PRESENT), the Customer and Time values (CUST_0, TIME_0)
+[ACT] click 'Save' without changing anything
+[WAIT] the dialog closes and the list refetches
+[KEY] record the updateSalesRepTask command dueDate and customerId (SENT_1, SENT_CUST_1)
+[ACT] click the title of CALL_TITLE
+[WAIT] the edit dialog is open
+[ACT] set 'Time' to '4:45 PM'
+[ACT] click 'Save'
+[WAIT] the dialog closes and the list refetches
+[KEY] record the updateSalesRepTask command dueDate (SENT_2) and the row text of CALL_TITLE (ROW_2)","[DOM] DLG_TITLE is 'Edit call', TYPE_PRESENT is false and CAL_PRESENT is false {OBSERVED}
+[REL] CUST_0 equals {{customer}} and TIME_0 is '2:30 PM' -- the edit shows the saved values, not the 9:00 AM default {SPEC}
+[REL] SENT_1 is identical to SAVED_DUE -- an unchanged save does not move the call {SPEC}
+[REL] SENT_CUST_1 equals {{customer_id}} -- an unchanged save keeps the customer link {SPEC}
+[REL] SENT_2 is SAVED_DUE plus 2 hours 15 minutes and ROW_2 shows '4:45 PM' {OBSERVED}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","An unchanged save moves the call to 9:00 AM
+The edit dialog offers Type or Add to calendar for a call
+The customer link is dropped by an edit
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
+[ASSERT] CALL_TITLE is no longer listed under All
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:SILENT · Technique:ST · Probe:VC-API-008 · Behavior:sr.tasks · Catches: VC-API-008 -- editing a call silently moves it to 9:00 AM or drops its customer · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-TK-038,A call whose customer the rep stops serving stays listed as Customer not assigned and an edit keeps the original link,Sales Rep > Tasks > Calls,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). FIXTURE GAP (hold): this case needs a disposable rep and a disposable organization the rep serves, so that the membership can be removed WITHOUT touching SR_REP_PRIMARY (about 40 cases depend on it) -- no such pair is declared yet; it is a test-data-engineer top-up (the SR_REP_LOCKABLE rep is an account-state fixture, not a membership one). Until it exists record BLOCKED with reason 'no disposable served org' and stop. The call is created in the case (FIFTH RULE) because an unserved customer is a state the environment can change under it.",customer=the disposable org's name,"[SETUP] as the disposable rep, open the disposable org's customer page and save a call for it (CALL_TITLE, any future day) through 'Schedule call'
+[KEY] record the call's row text (ROW_0)
+[SETUP] remove the disposable org from the disposable rep's served organizations (admin membership change)
+[NAV] {{FRONT_URL}}/company/tasks
+[ACT] click the 'All' chip
+[WAIT] the page has settled
+[KEY] record the row text of CALL_TITLE (ROW_1) and the number of rows (COUNT_1)
+[ACT] click the title of CALL_TITLE
+[WAIT] the edit dialog is open
+[ACT] click 'Save' without changing anything
+[WAIT] the page has settled
+[KEY] record the updateSalesRepTask command customerId (SENT_CUST)
+[SETUP] restore the disposable org to the disposable rep's served organizations
+[KEY] record the row text of CALL_TITLE once more (ROW_2)","[REL] ROW_1 is still listed and reads '… · Customer not assigned · Call' -- the call is not lost when the rep stops serving the customer {SPEC}
+[REL] SENT_CUST is the disposable org's id (or the edit is refused with no write) -- an edit does not erase which customer the call was for {SPEC}
+[REL] ROW_2 names the disposable org again -- the link survived {SPEC}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The call disappears from the list when the rep stops serving the customer
+An edit while the customer is unserved clears the stored customer link
+The unserved customer's name is still shown
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[SETUP] restore the disposable org to the disposable rep (if the case aborted before the restore step)
+[ACT] delete CALL_TITLE from Edit call and confirm","VCST-6314 · Archetype:LIFECYCLE · Technique:ST · Catches: the rep loses a booked call, or an edit erases which customer it was for · Observed: SBTM-VCST-6314-2026-10-27",Draft
+SR-TK-039,"German locale: Schedule call popup, time list and the call row show translated text with no raw keys",Sales Rep > Tasks > Calls,Low,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). Locale is German for this case: switch the storefront language to German through the header language selector before opening the popup, and back to English in Cleanup. The type name 'Call' and the other task type names stay English (pre-existing, recorded not judged).","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)
+[WAIT] the customer profile has rendered
+[ACT] switch the storefront language to German
+[WAIT] the page re-renders in German
+[KEY] record the label of the Schedule call tile (TILE_DE)
+[ACT] click that tile
+[WAIT] the popup is open
+[KEY] record the popup heading, the Title value, the Time label and the Time default, the Priority label and its default (HEAD_DE, TITLE_DE, TIMELBL_DE, TIME_DE, PRIOLBL_DE, PRIO_DE) and every visible text that matches a dotted lowercase key pattern (RAW_KEYS)
+[ACT] fill 'Title' with a random AGENT-TEST-CALL title (CALL_TITLE)
+[ACT] set 'Due date' to PICK_DAY
+[ACT] set 'Time' to the 1:30 option in the German list
+[ACT] click 'Save'
+[WAIT] the popup closes
+[NAV] {{FRONT_URL}}/company/tasks
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the PICK_DAY cell in the Due dates calendar
+[WAIT] the date chip for PICK_DAY appears
+[KEY] record the row text of CALL_TITLE (ROW_DE) and any raw key on the page (RAW_KEYS_LIST)","[DOM] TILE_DE and HEAD_DE are 'Anruf planen', TITLE_DE is 'Anruf', TIMELBL_DE is 'Uhrzeit' and PRIOLBL_DE is 'Priorität' {OBSERVED}
+[REL] TIME_DE matches /^0?9:00$/ -- 24-hour German form; the leading zero depends on the browser's Intl rendering (Firefox 09:00, Chromium 9:00 — both observed 2026-10-27), so it is not asserted {OBSERVED}
+[COUNT] RAW_KEYS and RAW_KEYS_LIST are empty -- no raw i18n key reaches the rep {BL}
+[DOM] ROW_DE starts 'Fällig <PICK_DAY, German medium date>, ' followed by 1:30 or 01:30 (leading zero browser-dependent) and ends '· Call' -- the type name staying English is recorded, not judged {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A raw key such as sales-rep.* is visible in the popup or the row
+The tile or popup stays in English under German
+The time list is 12-hour under German
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
+[ASSERT] CALL_TITLE is no longer listed under All
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.
+[ACT] switch the storefront language back to English",VCST-6314 · Archetype:RENDER · Technique:EP · Probe:VC-UI-007 · Catches: VC-UI-007 -- a German-speaking rep sees raw keys or English labels in the call popup · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-TK-040,"Edit task on a non-call task: picking Type Call converts it, and it then reopens as Edit call with no Type (one-way)",Sales Rep > Tasks > Calls,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-TASK, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). NEW observation of the build (PO question open: is Edit task to Call conversion wanted, and convertible back?) -- the case asserts the observed one-way behaviour; the customer left empty is RECORD ONLY.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click 'New task'
+[WAIT] the page has settled
+[ACT] fill 'Title' with a random AGENT-TEST-TASK title (TASK_TITLE)
+[ACT] set 'Type' to 'Other'
+[ACT] set 'Due date' to PICK_DAY
+[ACT] click 'Save'
+[WAIT] the modal closes and the list refetches
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the PICK_DAY cell in the Due dates calendar
+[WAIT] the date chip for PICK_DAY appears
+[ACT] click the title of TASK_TITLE
+[WAIT] the edit dialog is open
+[KEY] record the dialog title (DLG_0), the Type options in order (TYPE_OPTIONS) and whether 'Add to calendar' is present (CAL_0)
+[ACT] set 'Type' to 'Call'
+[KEY] record whether Customer and Time fields appeared (FIELDS_AFTER_PICK) and the dialog title (DLG_1)
+[ACT] click 'Save'
+[WAIT] the dialog closes and the list refetches
+[KEY] record the updateSalesRepTask command type (CMD_TYPE) and RECORD ONLY, no verdict: its customerId and the row text of TASK_TITLE (CMD_CUST, ROW_1)
+[ACT] click the title of TASK_TITLE
+[WAIT] the edit dialog is open
+[KEY] record the dialog title (DLG_2) and whether a Type field is present (TYPE_2)
+[ACT] press Escape","[DOM] DLG_0 is 'Edit task', CAL_0 is false and TYPE_OPTIONS ends with 'Call' {OBSERVED}
+[REL] FIELDS_AFTER_PICK is true and CMD_TYPE is 'Call' -- picking Call turns the task into a call {OBSERVED}
+[DOM] ROW_1 ends '· Call' {OBSERVED}
+[DOM] DLG_2 is 'Edit call' and TYPE_2 is false -- once a call, the type cannot be changed back through the UI (one-way) {OBSERVED}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The converted task no longer opens (no Edit call dialog) or loses its due date
+The Type list has no Call option although the rep serves customers
+The converted call can be switched back to another type in the same dialog
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] open TASK_TITLE through its title in {{FRONT_URL}}/company/tasks, click 'Delete' in the dialog and confirm
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-TASK under All and delete it.","VCST-6314 · Archetype:LIFECYCLE · Technique:ST · Behavior:sr.tasks · Catches: a converted call loses its time, or the dialog offers a way back that the API drops · Observed: SBTM-VCST-6314-2026-10-27",Draft
+SR-TK-041,A rep who serves no organization gets an empty task type list: New task has no Type select and Call is unreachable,Sales Rep > Tasks > Calls,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]
+SR_REP_NOCUSTOMERS holds the global sales-rep role and serves no organization. The expected value (no Type select, empty type list) is OBSERVED on build SalesRep 3.1016.0-pr-26-92d4 and is a PRODUCT QUESTION for the PO (finding F-1: whether the empty list predates PR #26 needs a control run on a build without it) -- a changed value is reported, never silently re-based. Nothing is saved: the form is dismissed.","rep=@td(SR_REP_NOCUSTOMERS.email), password={{TEST_USER_PASSWORD}}","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the salesRepTaskTypes response of the page load (TYPES)
+[ACT] click 'New task'
+[WAIT] the New task modal is open
+[KEY] record the visible fields of the modal (FIELDS), whether a Type field is present (TYPE_PRESENT) and whether an error toast is visible (TOAST)
+[ACT] press Escape
+[WAIT] the modal closes
+[KEY] record whether any createSalesRepTask request was sent (CREATE_SENT)","[COUNT] TYPES is an empty list -- no task type is offered to a rep with no customers {OBSERVED}
+[STATE] TYPE_PRESENT is false and FIELDS are Title, Due date, Priority and Notes -- Call is unreachable {OBSERVED}
+[STATE] TOAST is false and CREATE_SENT is false -- the empty list is not an error and nothing is written {SPEC}
+[ERRORS] the errors[] of every createSalesRepTask and updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A Call option or a Type select that errors is offered to a rep with no customers
+An error toast replaces the form
+The type list contains a customer-scoped type for a rep who serves nobody
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (nothing is saved; the form is dismissed with Escape),VCST-6314 · Archetype:SCOPE · Technique:EG · Catches: a rep with no customers is offered a call they cannot complete · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-TK-042,A call due today at a time that has already passed stays in Upcoming and is not counted as Overdue,Sales Rep > Tasks > Calls,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is TODAY: the call is booked at a time earlier than now on the local day. If NOW_LOCAL is before 12:30 AM there is no slot 30 minutes earlier: record BLOCKED (NOW_LOCAL < 12:30 AM). EXPECTED VALUE IS A PO QUESTION (should a call whose time passed count as Overdue?): the case asserts the OBSERVED day-based rule and its result is reported as {OBSERVED}, never as an unremarkable PASS -- the counts query sends today as local midnight, so overdue is judged by day.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the current local time (NOW_LOCAL) and the Today, Upcoming and Overdue badges (TODAY0, UP0, OVER0)
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[ACT] fill 'Title' with a random AGENT-TEST-CALL title (CALL_TITLE)
+[ACT] set 'Due date' to today
+[ACT] set 'Time' to the latest option that is at least 30 minutes before NOW_LOCAL (PAST_SLOT)
+[ACT] click 'Save'
+[WAIT] the popup closes
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the Today, Upcoming and Overdue badges (TODAY1, UP1, OVER1), the status chip of CALL_TITLE under All (CHIP_CALL) and whether CALL_TITLE is listed under Upcoming and under Overdue (IN_UP, IN_OVER)","[MATH] OBSERVED RULE: TODAY1 = TODAY0 + 1, UP1 = UP0 + 1 and OVER1 = OVER0 -- a call due earlier today stays Upcoming and in Today; overdue is decided by day, not by time of day {OBSERVED}
+[REL] CHIP_CALL is 'Upcoming', IN_UP is true and IN_OVER is false {OBSERVED}
+[REL] the three badges agree with the lists under Today, Upcoming and Overdue -- no surface calls it overdue while another calls it upcoming {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The call appears under Overdue on one surface and Upcoming on another
+The badges and the lists disagree about the same call
+A call whose time has passed today silently disappears from Today
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
+[ASSERT] CALL_TITLE is no longer listed under All
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:BOUNDARY · Technique:BVA · Catches: a rep misses a call because it stays Upcoming after its time passed (PO question on time-aware overdue) · Observed: SBTM-VCST-6314-2026-10-27,Draft

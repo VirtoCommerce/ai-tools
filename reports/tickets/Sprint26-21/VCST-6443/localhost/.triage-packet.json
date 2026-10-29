@@ -1,0 +1,83 @@
+{
+  "source": "checklist",
+  "ticketDir": "C:\\VIRTO\\Platform\\vc-mcp-testing-module\\reports\\tickets\\Sprint26-21\\VCST-6443\\localhost",
+  "environment": "localhost",
+  "issueCount": 2,
+  "byStatus": {
+    "FAIL": 2,
+    "BLOCKED": 0,
+    "SKIPPED": 0
+  },
+  "advisoryCount": 3,
+  "unresulted": [],
+  "batchCount": 1,
+  "maxPerBatch": 25,
+  "batches": [
+    {
+      "key": "checklist::FAIL#0",
+      "suiteId": "checklist",
+      "suiteName": "",
+      "status": "FAIL",
+      "count": 2,
+      "issues": [
+        {
+          "fingerprint": "9036b9f6e387",
+          "source": "checklist",
+          "status": "FAIL",
+          "suiteId": "checklist",
+          "suiteName": "",
+          "environment": "localhost",
+          "caseId": "CL-18",
+          "title": "Storefront: published `/agent-test-6443-4a%20pct` (accepted by the rule) renders at its natural URL",
+          "evidence": "FAIL",
+          "consoleErrors": [],
+          "tracePath": null,
+          "trace": null,
+          "screenshots": [
+            "screenshots/4a-fe-cl18-pct-double-encoded-renders.png",
+            "screenshots/4a-fe-cl18-pct-natural-url-404.png"
+          ],
+          "harPath": null,
+          "csvRow": {
+            "#": "CL-18",
+            "Condition (atomic)": "Storefront: published `/agent-test-6443-4a%20pct` (accepted by the rule) renders at its natural URL",
+            "Source": "gap-AC-20, C-28",
+            "Scenario": "S11b",
+            "Surface": "Storefront",
+            "Verdict": "FAIL",
+            "Evidence": "4a-fe-cl18-pct-natural-url-404.png · 4a-fe-cl18-pct-double-encoded-renders.png · same in 3x and C1 CMS-231"
+          },
+          "flaky": false,
+          "priorRuns": 0
+        },
+        {
+          "fingerprint": "b41aa90c2db1",
+          "source": "checklist",
+          "status": "FAIL",
+          "suiteId": "checklist",
+          "suiteName": "",
+          "environment": "localhost",
+          "caseId": "CL-26",
+          "title": "`create-group-page` with a 2 048- and a 10 000-character valid permalink → defined 2xx/4xx, never 5xx, no truncation",
+          "evidence": "FAIL",
+          "consoleErrors": [],
+          "tracePath": null,
+          "trace": null,
+          "screenshots": [],
+          "harPath": null,
+          "csvRow": {
+            "#": "CL-26",
+            "Condition (atomic)": "`create-group-page` with a 2 048- and a 10 000-character valid permalink → defined 2xx/4xx, never 5xx, no truncation",
+            "Source": "gap-AC-9, C-23",
+            "Scenario": "S3",
+            "Surface": "REST",
+            "Verdict": "FAIL",
+            "Evidence": "4a-be: 2048 → 200; 2049/10000 → 500 `22001: value too long for type character varying(2048)` on 3 endpoints"
+          },
+          "flaky": false,
+          "priorRuns": 0
+        }
+      ]
+    }
+  ]
+}
