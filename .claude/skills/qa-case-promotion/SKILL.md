@@ -177,7 +177,8 @@ run artifact. REJECT → `flip.ts restore` the snapshot → fix → re-verify. �
 
 ## Report
 
-Add this section to the run's chat report (or print it alone after `promote VCST-XXXX`):
+**Chat only.** Add this section to the run's chat report (or print it alone after `promote VCST-XXXX`).
+Never save it — no report file, nothing written into a `summary.json` (a legacy one is read, never updated):
 
 ```markdown
 ## Promotion

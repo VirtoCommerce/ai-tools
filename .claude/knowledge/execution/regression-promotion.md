@@ -116,7 +116,8 @@ the automated runner.
    Then `npm run suites:sync && npm run suites:lint`; re-run
    `suites:review -- <target-suite.csv> --fail-on=High` (an append that introduced a new Blocker/Critical is
    reverted).
-5. **Record the split** in `summary.json.promotion` (`automated`/`reviewed`/`blocked`/`reverted`).
+5. **Report the split in chat** (`automated`/`reviewed`/`blocked`/`reverted`) — never in a file, and never
+   written back into a `summary.json`.
 
 **Gate (1 round):** every `Automated`/`Reviewed` upgrade traces to a real artifact from this run;
 every surviving `{HYPOTHESIS}` is resolved or reworded; `suites:lint` green. A fresh `qa-lead` verifier
