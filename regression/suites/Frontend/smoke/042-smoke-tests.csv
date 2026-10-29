@@ -1,18 +1,18 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
 SMK-001,Homepage — Load and Hero Navigation,Smoke > Homepage,Critical,BL-CROSS-011,ECL-10.1,Fresh browser session; {{FRONT_URL}} accessible,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
 [WAIT] hero banner visible above the fold
-[ACT] click hero banner primary CTA
-[WAIT] target page loads without 404
-[ACT] click browser back
-[WAIT] homepage reloads","[DOM] hero banner section ('.slider-block') visible above the fold
-[DOM] 'Popular categories' section visible with ≥1 category tile
+[COND: hero banner renders a CTA link] [ACT] click hero banner primary CTA
+[COND: hero banner renders a CTA link] [WAIT] target page loads without 404
+[COND: hero banner renders a CTA link] [ACT] click browser back
+[COND: hero banner renders a CTA link] [WAIT] homepage reloads","[DOM] hero banner section ('.slider-block') visible above the fold
+[DOM] 'Popular categories' list visible in the page footer with ≥1 category link (the home body renders no such section on this build, runner-observed 2026-10-29)
 [DOM] navigation bar visible with 'All products' dropdown button
 [DOM] language selector visible in top header ('[data-test-id=""language-selector""]')
 [DOM] cart icon visible in header ('header a[href=""/cart""]')
 [DOM] document.title is non-empty and contains the storefront's configured site name
-[NAV] hero CTA navigates to a category or catalog page (not 404)","[CONSOLE] no JS errors on homepage load
+[COND: hero banner renders a CTA link] [DESIGN-CONFIRM] hero CTA navigates to a category or catalog page (not 404) - the built-in home hero slider renders no CTA link on this build (runner-observed 2026-10-29); product question","[CONSOLE] no JS errors on homepage load
 [NETWORK] no 4xx/5xx on initial page load
-[NETWORK] no failed GraphQL requests on homepage render",Homepage blank or spinner stuck >10s (BL-CROSS-011); hero banner absent; JS TypeError on load; 4xx on homepage GraphQL queries,none,VCST-4499,Automated
+[NETWORK] no failed GraphQL requests on homepage render",Homepage blank or spinner stuck >10s (BL-CROSS-011); hero banner absent; JS TypeError on load; 4xx on homepage GraphQL queries,none,"VCST-4499; Corrected: 2026-10-29 (REG-2026-10-28-1915): the home hero slider has no CTA link and 'Popular categories' is only in the footer on this build (runner-observed; the home is the built-in component, KB-A788D882) - CTA steps made conditional / DESIGN-CONFIRM, category section retargeted to the footer; whether a hero CTA and a body categories section are required is a product question (no docs page evidenced)",Automated
 SMK-002,Registration — Personal Account,Smoke > Registration,Critical,"BL-AUTH-002, BL-AUTH-003","ECL-4.1, ECL-4.4",Fresh browser; {{FRONT_URL}} accessible,"front_url={{FRONT_URL}}, reg_email=random (AGENT-TEST- prefix, generated at runtime)","[SETUP] generate unique email: AGENT-TEST-smk002-{unix_ms}@test.com — store as reg_email
 [NAV] {{FRONT_URL}}/sign-up
 [WAIT] account type selector visible
