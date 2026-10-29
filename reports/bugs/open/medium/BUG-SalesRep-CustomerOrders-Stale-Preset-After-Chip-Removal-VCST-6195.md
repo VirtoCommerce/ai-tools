@@ -44,3 +44,6 @@ Control (no PR 2519): `reports/tickets/Sprint26-20/VCST-6001/screenshots/ab-2-b7
 - **Component / module:** vc-frontend `client-app/modules/sales-rep` (customer orders filter)
 - **RCA anchor:** sales-rep-orders-filters.vue `watch(() => props.applied` — `if (!value.startDate && !value.endDate)`
 - **Routing confidence:** HIGH
+
+## Blocked 2026-10-27
+`/qa-verify-fix` of vc-frontend#2609 (OPEN, @52e9649c) on a local frontend-only stand bound to vcptcore-qa: RED re-reproduced on vcptcore-qa (drawer still "Last week" after the Start chip is removed). GREEN not executable — the Sales Rep hub renders the SalesRep module's federated plugin chunk (pluginVersion 0.2.5, pre-fix), not the theme chunk that carries the fix. Needs a SalesRep module plugin rebuilt from #2609 to verify. Evidence: `reports/tickets/Sprint26-21/VCST-6195/verification-report.md`.

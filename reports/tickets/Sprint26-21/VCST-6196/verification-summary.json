@@ -1,0 +1,33 @@
+{
+  "ticket": "VCST-6196",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "verdict_note": "PR #2609 code fixes the label (theme built-in Sales Rep hub). Delivery gap: on vcst-qa/vcptcore-qa the page is rendered by the vc-module-sales-rep MF plugin (sales-rep 0.2.5), whose copy of sales-rep-orders-filters.vue is still pre-fix. Ticket status left unchanged at the operator's decision.",
+  "date": "2026-10-28",
+  "environment": "http://localhost (local theme, xAPI proxied to https://vcst-qa.govirto.com, store B2B-store)",
+  "build": {
+    "platform": "vcst-qa (remote)",
+    "theme": "vc-theme-b2b-vue-2.61.0-pr-2609-52e9-52e9649c (sales_rep_builtin_enabled flipped to true in the local bundle for this run)",
+    "relevant_modules": { "VirtoCommerce.SalesRep (storefront plugin)": "0.2.5 — not loaded locally" },
+    "pr_build": "vc-frontend#2609 head 52e9649c (open, not merged)",
+    "control": "vcst-qa storefront, theme 2.61.0-pr-2577-4c17"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3 (de in-session), 3/3 (de cold), 1/1 ja, 1/1 zh",
+  "baseline_reproduction": "RED (pre-fix, live control on vcst-qa): de in-session 1/1, ja cold 1/1, zh cold 1/1; de cold 0/2",
+  "checklist_total": 11,
+  "checklist_passed": 11,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "observed_not_filed": [
+    "fr/zh: filter drawer status heading reads 'Status' in English (@:common.labels.status) while the table column is translated",
+    "fr: order grid dates in English format (Oct 20, 2026) while chips use 20/10/2026"
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-SR-013"],
+  "tracker_transition": null,
+  "tracker_comment": "VCST-6196 comment 112412 (amended)",
+  "evidence": "reports/tickets/Sprint26-21/VCST-6196/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-21/VCST-6196/"
+}

@@ -1,0 +1,37 @@
+{
+  "ticket": "VCST-6589",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-28",
+  "environment": "https://vcptcore-qa.govirto.com/apps/page-builder-shell/",
+  "build": {
+    "platform": null,
+    "theme": null,
+    "relevant_modules": {
+      "VirtoCommerce.PageBuilderModule": "3.1040.0-pr-181-812c"
+    },
+    "pr_build": "vc-module-pagebuilder#181 @ 812c83bd (open, base dev)"
+  },
+  "agent_used": "inline (orchestrator on playwright-edge)",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug (tester screenshots on 3.1039.0-pr-175)",
+  "checklist_total": 8,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    "truncated value has no visible ellipsis at 1280 (end of text under the clear icon) — cosmetic"
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "tracker_transition": null,
+  "evidence": "reports/tickets/Sprint26-21/VCST-6589/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-21/VCST-6589/",
+  "tracker_comment": {
+    "id": "112480",
+    "posted": "2026-10-28",
+    "inline_screenshots": 2,
+    "rendered_verified": true
+  },
+  "tracker_note": "status left in Draft — no path to Testing from Draft"
+}

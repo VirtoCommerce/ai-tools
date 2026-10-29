@@ -1,0 +1,72 @@
+{
+ "env": "vcst",
+ "endpoint": "POST {BACK_URL}/graphql",
+ "note": "Authorization header omitted; responses verbatim from server",
+ "calls": [
+  {
+   "at": "2026-10-26T23:33:29.378Z",
+   "request": {
+    "query": "mutation($command:InputUpdateMemberAddressType!){ updateMemberAddresses(command:$command){ id addresses { totalCount items { id firstName lastName line1 } } } }",
+    "variables": {
+     "command": {
+      "memberId": "ce0aab83-e49b-4e20-9cdc-06cbd1b7d2ce",
+      "addresses": [
+       {
+        "firstName": "Jane2",
+        "lastName": "Doe",
+        "line1": "11 Agent Test Street",
+        "city": "Boston",
+        "countryCode": "USA",
+        "countryName": "United States",
+        "regionId": "MA",
+        "regionName": "Massachusetts",
+        "postalCode": "02101",
+        "addressType": 3
+       },
+       {
+        "firstName": "Jane",
+        "lastName": "Doe_",
+        "line1": "12 Agent Test Street",
+        "city": "Boston",
+        "countryCode": "USA",
+        "countryName": "United States",
+        "regionId": "MA",
+        "regionName": "Massachusetts",
+        "postalCode": "02101",
+        "addressType": 3
+       }
+      ]
+     }
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "errors": [
+      {
+       "message": "Error trying to resolve field 'updateMemberAddresses'.",
+       "locations": [
+        {
+         "line": 1,
+         "column": 51
+        }
+       ],
+       "path": [
+        "updateMemberAddresses"
+       ],
+       "extensions": {
+        "code": "VALIDATION",
+        "codes": [
+         "VALIDATION"
+        ]
+       }
+      }
+     ],
+     "data": {
+      "updateMemberAddresses": null
+     }
+    }
+   }
+  }
+ ]
+}
