@@ -1,0 +1,194 @@
+---
+description: "Unattended routine: clone a fresh vc-knowledge, settle a batch of disputed clusters with /kb-judge (one commit per cluster), and stop at ONE open PR. Skips cleanly when a judge PR is already open or the machine is not ready. Meant as the prompt of a scheduled task."
+argument-hint: "[--dry-run] [--max-clusters N] [--budget-min M]"
+disable-model-invocation: true
+---
+
+# /kb-judge-routine — settle a batch of disputed kb clusters, unattended
+
+You are an unattended routine running in this repo. Settle a BATCH of disputed knowledge-base
+clusters by running the [`/kb-judge` skill](../skills/kb-judge/SKILL.md) on each in turn, on ONE
+branch, one commit per cluster, and stop at ONE open PR. A human merges. Report to the operator in
+Russian; everything written to the base or its PR is in English.
+
+**Batch limits:** at most `--max-clusters` clusters (default **8**) and no new cluster started once
+`--budget-min` minutes (default **120**) have passed since Step 1. Whichever comes first ends the
+batch; a cluster already started is finished or abandoned per Step 3, never cut mid-write.
+
+**Why a batch and not the whole queue:** the PR must stay reviewable in ~15 minutes, a long run is
+fragile (sleep, redeploy mid-run, context), and the branch drifts from `main` the longer it lives.
+One commit per cluster lets the reviewer revert one verdict without touching the others.
+
+**`--dry-run`:** do Steps 0–3 up to and including the verdicts, but write nothing to the base —
+no branch, no `observe`, no `resolve`, no commit, no push, no PR. Report the verdicts you would have
+written and the diff you would have made, per cluster.
+
+## Hard rules
+
+- Never merge a PR, never push to `main` of VirtoCommerce/vc-knowledge, never pass `--force`.
+- Never call `kb_confirm` or `kb_dispute` in this session — on any entry. You are the judge; a party
+  cannot judge (`kb:disputes resolve` refuses anyway).
+- No verdict from papers. If a stand, a lane or a source cannot be reached, that dispute stays open
+  and the report says what was missing.
+- Browser work only through the Playwright lanes (`playwright-chrome`, `playwright-edge`), at most
+  three browser agents at once, one agent per lane. If no `mcp__playwright-*` tool loads, stop —
+  do not switch browsers.
+- Nothing client-specific, no credentials, no emails, no screenshots in the base or the PR: both
+  are public.
+- Never write into this repo's working tree.
+- **Leave no trace on a stand.** Prefer observing over creating. Anything the investigation must
+  create there (a page, an upload, an account, an order) is named `AGENT-TEST-kbjudge-<yyyymmdd>-…`
+  where the entity has a name, is deleted in the same cluster once observed, and the deletion is
+  checked; whatever could not be deleted is listed in the report with its stand and id. In
+  `--dry-run` create nothing unless the clause cannot be observed otherwise, and say so per dispute.
+  Never touch another run's leftovers.
+
+## Credentials: vc-secrets, never `.env`
+
+Test-user and admin passwords live in vc-secrets and reach only two places; `ADMIN_PASSWORD` is
+absent from every `.env` layer **by design**, so its absence is never a blocker and never a reason
+to skip or to leave a dispute open.
+
+- **Admin SPA and the back office:** sign in through a Playwright lane (`playwright-edge` for
+  `qa-backend-expert`), typing the bare NAME `ADMIN_PASSWORD` into the password field
+  ([`../rules/vc-browser.md`](../rules/vc-browser.md)). REST checks that need an admin session go
+  through that lane, not through a token minted from `.env`.
+- **The stand's deployed build** (platform, modules, theme): `node "$VC_RUN" runner plugin deployed
+  --key KBJUDGE-<yyyymmdd>` for the current `TEST_ENV`; it writes `.vc-fix/vc-test/<key>/<env>/deployed.json`
+  (gitignored). A side it reports UNKNOWN stays unknown — never "not deployed". When it refuses
+  (e.g. `profile has no test block`), read the build through the admin lane instead —
+  `GET /api/platform/modules` signed in on `playwright-edge` for platform and modules, the
+  storefront's own version for the theme — and note which path gave each number.
+- **A stand with no password in vc-secrets** (`node "$VC_SECRETS" doctor` lists what resolves): its
+  disputes stay open with `open — no credentials for <stand>`; never borrow another stand's.
+- When `/preflight` reports `ADMIN_PASSWORD` missing or an admin token refused, record it as a note
+  and carry on — that check reads `.env`, which vc-secrets never writes.
+
+## Step 0 — Gate (skip the run, don't fail it)
+
+Record `git status --porcelain` of this repo as the start snapshot. Then stop with a one-line
+`skipped: <reason>` report if any of these holds:
+
+1. An open PR from a `judge/*` branch exists:
+   `gh pr list -R VirtoCommerce/vc-knowledge --state open --json number,headRefName,url`
+   → any `headRefName` starting with `judge/`. Report its URL and whether review comments are
+   waiting (the operator, not you, acts on them).
+2. `gh auth status` fails, or `gh api repos/VirtoCommerce/vc-knowledge --jq .permissions.push` is
+   not `true`.
+3. The [`/preflight` skill](../skills/preflight/SKILL.md) reports the stands down or the Playwright
+   lanes unavailable. Nothing else it reports stops the run (§Credentials).
+
+## Step 1 — Fresh base
+
+Clone into a new folder per run, outside this repo:
+
+```powershell
+$base = Join-Path $env:TEMP "kb-judge\$(Get-Date -Format yyyyMMdd-HHmm)\vc-knowledge"
+git clone https://github.com/VirtoCommerce/vc-knowledge.git $base
+```
+
+Full clone, no `--depth`: `resolve` compares against `origin/main` and reads history. Use `$base`
+as `--base` everywhere below. Then `npm run kb -- push` (lands anything queued on this machine).
+
+## Step 2 — Plan the batch
+
+1. `npm run kb:disputes -- list --base $base` — save the counts as **before**. Queue empty → report
+   `queue empty` and go to Step 5.
+2. **Which stands this machine can reach, and how.** A dossier names a stand by its kb name
+   (`vcst_qa`, `vcptcore_qa1`); vc-secrets and the lanes name it by its `TEST_ENV` (`vcst`). Never
+   compare the two spellings — map them: `node scripts/kb/core/stands.mjs` prints kb stand →
+   `.env.<env>` (read from each profile's `KB_STAND=`), and `node "$VC_SECRETS" doctor` lists the
+   secrets that resolve (`admin-password-<env>`, …). Reachability is per **stand AND role**: an
+   admin password is not a sales rep's or a buyer's. The roles a lane can sign in as on an env are
+   the `*_PASSWORD` names `.claude/vc-secrets.local.json` declares for `playwright-*.<env>` whose
+   secret resolves, each paired with its `<ROLE>_LOGIN` in `.env.<env>`. A (stand, role) is then one of:
+   - **signed-in reachable** — mapped to an env, and that role's password resolves there;
+   - **guest reachable** — mapped to an env with a `FRONT_URL` / `BACK_URL`, but not that role;
+   - **unreachable** — unmapped, or `local` (someone's own machine: its `localhost` is not theirs).
+   Never sign in as a different role than the clause names because its password happens to exist.
+3. **Classify every open dispute** from its dossier row and note — by what a verdict needs, not by
+   the stand it was made on:
+   - **build** — the sides ran on different builds (a `soft` dispute, the dossier's "made on another
+     build" hint, or build stamps that differ). Decided by the source at both builds plus a live
+     observation on ANY signed-in or guest-reachable stand running the current build; the original
+     stand is not needed — its build has moved on anyway.
+   - **guest** — the clause is observable without signing in (storefront as an anonymous visitor, a
+     public endpoint). Decided on any guest-reachable stand; open the stand's own `FRONT_URL` from its
+     `.env.<env>` in the lane's browser.
+   - **signed-in** — the clause depends on a role, an account, or the stand's own settings or data.
+     Needs THAT (stand, role) signed-in reachable; otherwise it stays
+     `open — no credentials for <role> on <stand>` (or `open — <stand> unreachable`).
+   A dispute that fits two classes takes the cheaper one first, and falls through to the next only
+   if the cheaper one does not decide it.
+4. Walk the queue top-down (clusters, worst first; within the same rank prefer an entry with more
+   disputes than confirms) and build the batch:
+   - **Skip without investigating** a cluster only when EVERY open dispute in it is `signed-in` on a
+     (stand, role) that is not signed-in reachable. List it as `skipped — <role> on <stand>` per
+     dispute; it is not part of the batch and costs no time.
+   - Take the rest until `--max-clusters`. Inside a taken cluster, a dispute that cannot be decided
+     stays open with its reason; the others still get verdicts.
+5. Create the ONE branch for the run (not in dry run):
+   `git -C $base switch -c judge/batch-<yyyymmdd-HHmm>`.
+
+## Step 3 — Judge, cluster by cluster
+
+For each cluster of the batch, in order, while the budget allows starting a new one:
+
+1. Run `/kb-judge` on it with `--base $base`, Steps 2–6 of its SKILL.md and `investigation.md`, on
+   the run's branch (skip `/kb-judge`'s own `switch -c`; the branch already exists). The live
+   checks go to the specialists as `/kb-judge` dispatches them; this session holds dossiers and
+   verdicts, not page dumps.
+2. **Per-cluster cap ~45 minutes.** Not converging → keep the observations already made, leave the
+   unresolved disputes open with what was missing, and move on.
+3. **A verdict covers only the clauses that were checked.** Split the entry into its clauses
+   (`/kb-judge` Step 4.1); an amended claim rewrites only the clauses observed, and a clause that
+   could not be checked keeps its old wording and is named in the `--why` as unchecked. When the
+   dispute itself is about an unchecked clause, it gets no verdict — `open — <clause> not checked:
+   <why>`. Never let a verdict on its neighbours close it.
+4. Before committing, `git -C $base diff` — every change explained by one of THIS cluster's
+   verdicts; no `kb reindex`.
+5. **Commit, one per cluster** — even when only `observe` items were written:
+   `git -C $base add -A && git -C $base commit -m "judge: <KB-id> — <verdicts, e.g. 3x version-scoped>"`.
+   A cluster that wrote nothing gets no commit and goes into the report as `no verdict: <reason>`.
+6. **A cluster that fails** (a tool refuses, a write is half done, an error you cannot explain):
+   discard its uncommitted changes with `git -C $base reset --hard HEAD` — the clone is this run's
+   own, and earlier clusters are already committed — report it as `failed: <reason>`, and go on to
+   the next one.
+
+Never `kb_confirm` / `kb_dispute` anything while the batch runs: a party in any cluster is refused
+on that cluster's `resolve`, and the batch is one session.
+
+## Step 4 — One PR for the batch
+
+No commit on the branch → no PR; report `no verdict` and go to Step 5. Otherwise:
+
+1. `npm run kb:sync-base -- --base $base`, review what it brought, commit it as
+   `judge: sync main`.
+2. `git -C $base diff main...HEAD` — every change belongs to one cluster's commit or the sync.
+3. `npm run kb:disputes -- list --base $base` — the **after** counts.
+4. Push the branch and open ONE PR against `main` of VirtoCommerce/vc-knowledge. Description, in
+   English, readable without this session (`/kb-judge` Step 7 applies per cluster):
+   - a table first: cluster · entries · verdict per dispute · commit sha — the reviewer's map;
+   - one section per cluster with the clauses, the observations (stand, conditions, date), the
+     sources and the oracles it touches;
+   - per dispute, its class (`build` / `guest` / `signed-in`) and the stand it was decided on; a
+     `build` verdict reached without re-observing the dispute's own stand says so in one line —
+     it relaxes `/kb-judge` Step 4, and the reviewer must see where;
+   - skipped and failed clusters, each with its reason;
+   - open disputes before → after;
+   - one line: "to reject one cluster's verdict, revert its commit; the others stand."
+
+## Step 5 — Clean up and report
+
+Delete the clone folder. Compare this repo's `git status --porcelain` with the start snapshot; any
+difference goes into the report as a defect of this run. Then report to the operator, in Russian:
+
+- outcome: `PR opened` / `dry run` / `skipped: <reason>` / `queue empty` / `no verdict: <reason>`;
+- the PR link, the batch size and the time spent;
+- per cluster: entry ids, verdict per dispute (or why it stayed open), its commit; then the
+  clusters skipped for credentials and those that failed, each with its reason;
+- ids of entries banked during the investigation;
+- what this run created on each stand and whether it was deleted — anything left is listed with
+  its stand and id; "nothing created" is said explicitly;
+- every `BL-*` / `ECL-*` the verdicts contradict (for `/qa-review-oracles bl`);
+- open disputes before → after.
