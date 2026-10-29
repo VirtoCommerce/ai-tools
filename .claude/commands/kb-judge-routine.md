@@ -1,5 +1,5 @@
 ---
-description: "Unattended routine: clone a fresh vc-knowledge, settle a batch of disputed clusters with /kb-judge (one commit per cluster), and stop at ONE open PR. Skips cleanly when a judge PR is already open or the machine is not ready. Meant as the prompt of a scheduled task."
+description: "Unattended routine: clone a fresh vc-knowledge, settle a batch of disputed clusters with /kb-judge (one commit per cluster), and stop at ONE open PR. Skips cleanly when another run is open (PR, unpublished branch, lock or kept clone) or the machine is not ready. Meant as the prompt of a scheduled task."
 argument-hint: "[--dry-run] [--max-clusters N] [--budget-min M]"
 disable-model-invocation: true
 ---
@@ -12,7 +12,8 @@ branch, one commit per cluster, and stop at ONE open PR. A human merges. Report 
 Russian; everything written to the base or its PR is in English.
 
 **Batch limits:** at most `--max-clusters` clusters (default **8**) and no new cluster started once
-`--budget-min` minutes (default **120**) have passed since Step 1. Whichever comes first ends the
+`--budget-min` minutes (default **120**) have passed since the start time Step 0 prints (`Get-Date
+-Format o`); read the clock again before each cluster and compare. Whichever comes first ends the
 batch; a cluster already started is finished or abandoned per Step 3, never cut mid-write.
 
 **Why a batch and not the whole queue:** the PR must stay reviewable in ~15 minutes, a long run is
@@ -25,15 +26,19 @@ you would have written and the entry edits you would have made (in words: which 
 
 **`<BASE>` is a literal path, never a shell variable.** Every tool call starts a new shell, so a
 variable set in one is empty in the next — and `git -C ""` runs against THIS repo. Write the clone's
-absolute path from Step 1 into every command below.
+absolute path from Step 1 into every command below, **with forward slashes and in double quotes**
+(`"C:/Users/…/kb-judge/…/vc-knowledge"`): unquoted backslashes are eaten by Git Bash.
 
 ## Hard rules
 
 - Never merge a PR, never push to `main` of VirtoCommerce/vc-knowledge, never pass `--force`.
-  That includes `npm run kb -- push`: it lands this machine's queue straight on the base's `main`,
-  and nothing in this routine queues anything — never run it.
-- Never call `kb_confirm` or `kb_dispute` in this session — on any entry. You are the judge; a party
-  cannot judge (`kb:disputes resolve` refuses anyway).
+  Never run `npm run kb -- push` yourself: it lands this machine's queue straight on the base's
+  `main`. Observations of OTHER entries that the specialists capture through the normal door
+  (`/kb-judge` `investigation.md` §3) are queued and flushed by the usual session hook — that is the
+  base's own write path, not this routine's PR.
+- Never call `kb_confirm` or `kb_dispute` on an entry of a cluster in this batch, before or after
+  judging it — the batch is one session, and a party cannot judge (`kb:disputes resolve` refuses
+  anyway). Other entries go through the normal door.
 - No verdict from papers. If a stand, a lane or a source cannot be reached, that dispute stays open
   and the report says what was missing.
 - Browser work only through the Playwright lanes (`playwright-chrome`, `playwright-edge`), at most
@@ -57,6 +62,11 @@ Test-user and admin passwords live in vc-secrets and reach only two places; `ADM
 absent from every `.env` layer **by design**, so its absence is never a blocker and never a reason
 to skip or to leave a dispute open.
 
+**A lane signs in to ONE stand: the `TEST_ENV` this session started with.** Each lane gets the
+passwords of the env that was current when its server started (`plugins/vc-init/bridge/run.mjs`),
+so typing `ADMIN_PASSWORD` on any other stand types the wrong password. Note that env in Step 0; for
+every other stand this run is a guest, whatever vc-secrets holds for it.
+
 - **Admin SPA and the back office:** sign in through a Playwright lane (`playwright-edge` for
   `qa-backend-expert`), typing the bare NAME `ADMIN_PASSWORD` into the password field
   ([`../rules/vc-browser.md`](../rules/vc-browser.md)). REST checks that need an admin session go
@@ -66,7 +76,9 @@ to skip or to leave a dispute open.
   (gitignored). A side it reports UNKNOWN stays unknown — never "not deployed". When it refuses
   (e.g. `profile has no test block`), read the build through the admin lane instead —
   `GET /api/platform/modules` signed in on `playwright-edge` for platform and modules, the
-  storefront's own version for the theme — and note which path gave each number.
+  storefront's own version for the theme — and note which path gave each number. Both paths cover
+  the session's env only; on any other stand, the theme from the storefront is all a guest reads,
+  and platform and modules stay `unknown` — never inferred.
 - **A stand with no password in vc-secrets** (`node "$VC_SECRETS" doctor` lists what resolves): its
   disputes stay open with `open — no credentials for <stand>`; never borrow another stand's.
 - When `/preflight` reports `ADMIN_PASSWORD` missing or an admin token refused, record it as a note
@@ -74,17 +86,29 @@ to skip or to leave a dispute open.
 
 ## Step 0 — Gate (skip the run, don't fail it)
 
-Record `git status --porcelain` of this repo as the start snapshot. Then stop with a one-line
-`skipped: <reason>` report if any of these holds:
+Print the start time (`Get-Date -Format o`) and the session's `TEST_ENV` (§Credentials), and record
+`git status --porcelain` of this repo as the start snapshot. The work folder is `%TEMP%/kb-judge/`.
+Then stop with a one-line `skipped: <reason>` report if any of these holds:
 
-1. An open PR from a `judge/*` branch exists:
-   `gh pr list -R VirtoCommerce/vc-knowledge --state open --json number,headRefName,url`
-   → any `headRefName` starting with `judge/`. Report its URL and whether review comments are
-   waiting (the operator, not you, acts on them).
+1. **Another run is open — in any of three shapes** (two runs on one queue make two judge branches,
+   which `/kb-judge` forbids, or judge the same clusters twice):
+   - an open PR from a `judge/*` branch:
+     `gh pr list -R VirtoCommerce/vc-knowledge --state open --json number,headRefName,url` →
+     report its URL and whether review comments are waiting (the operator acts on them);
+   - a `judge/batch-*` branch on the base with no PR at all, open or closed
+     (`gh api repos/VirtoCommerce/vc-knowledge/branches --paginate --jq '.[].name'` against
+     `gh pr list --state all`) — a run that pushed and never opened its PR;
+   - `%TEMP%/kb-judge/RUNNING` exists and is younger than 6 hours (a run in progress), or any
+     `%TEMP%/kb-judge/*/vc-knowledge` folder exists (a clone kept with unpublished verdicts, Step 5)
+     → report its path. A `RUNNING` file older than 6 hours is stale: report it, delete it, go on.
 2. `gh auth status` fails, or `gh api repos/VirtoCommerce/vc-knowledge --jq .permissions.push` is
    not `true`.
-3. The [`/preflight` skill](../skills/preflight/SKILL.md) reports the stands down or the Playwright
+3. **`/kb-judge` Step 7's precondition fails:** every client must read resolutions. `kb:disputes`
+   must be in the `package.json` of this repo's `origin/main` (`git fetch origin` first).
+4. The [`/preflight` skill](../skills/preflight/SKILL.md) reports the stands down or the Playwright
    lanes unavailable. Nothing else it reports stops the run (§Credentials).
+
+Passed → write `%TEMP%/kb-judge/RUNNING` with the start time; Step 5 deletes it.
 
 ## Step 1 — Fresh base
 
@@ -92,7 +116,7 @@ Clone into a new folder per run, outside this repo, and print the path you will 
 
 ```powershell
 $base = Join-Path $env:TEMP "kb-judge\$(Get-Date -Format yyyyMMdd-HHmm)\vc-knowledge"
-git clone https://github.com/VirtoCommerce/vc-knowledge.git $base; $base
+git clone https://github.com/VirtoCommerce/vc-knowledge.git $base; $base -replace '\\','/'
 ```
 
 Full clone, no `--depth`: `resolve` compares against `origin/main` and reads history. From here on
@@ -110,7 +134,8 @@ the printed absolute path is `<BASE>` in every command (see the note above the h
    admin password is not a sales rep's or a buyer's. The roles a lane can sign in as on an env are
    the `*_PASSWORD` names `.claude/vc-secrets.local.json` declares for `playwright-*.<env>` whose
    secret resolves, each paired with its `<ROLE>_LOGIN` in `.env.<env>`. A (stand, role) is then one of:
-   - **signed-in reachable** — mapped to an env, and that role's password resolves there;
+   - **signed-in reachable** — the stand maps to the session's `TEST_ENV` (§Credentials: the lanes
+     hold no other env's passwords), and that role's password resolves there;
    - **guest reachable** — mapped to an env with a `FRONT_URL` / `BACK_URL`, but not that role;
    - **unreachable** — unmapped, or `local` (someone's own machine: its `localhost` is not theirs).
    Never sign in as a different role than the clause names because its password happens to exist.
@@ -171,14 +196,13 @@ on that cluster's `resolve`, and the batch is one session.
 
 No commit on the branch → no PR; report `no verdict` and go to Step 5. Otherwise:
 
-0. **`/kb-judge` Step 7's precondition:** every client must read resolutions before a PR is
-   opened. Check that `kb:disputes` is in the `package.json` of this repo's `origin/main`; if it is
-   not, push nothing and report `not opened: clients cannot read resolutions yet`.
-1. `npm run kb:sync-base -- --base <BASE>`, review what it brought, commit it as
+1. `npm run kb:sync-base -- --base <BASE>`. It prints `already contains … nothing to do` when `main`
+   has not moved — then there is nothing to commit. Otherwise review what it staged and commit it as
    `judge: sync main`. **If it refuses** (an entry `main` changed beyond appended evidence, a
    conflict it will not resolve), push nothing: report `not opened: sync-base refused — <its
    message>` and keep the clone (Step 5).
-2. `git -C <BASE> diff main...HEAD` — every change belongs to one cluster's commit or the sync.
+2. `git -C <BASE> fetch origin`, then `git -C <BASE> diff origin/main...HEAD` — every change
+   belongs to one cluster's commit or the sync. (The clone's local `main` is as old as the clone.)
 3. `npm run kb:disputes -- list --base <BASE>` — the **after** counts.
 4. Push the branch and open ONE PR against `main` of VirtoCommerce/vc-knowledge. Description, in
    English, readable without this session (`/kb-judge` Step 7 applies per cluster):
@@ -191,15 +215,19 @@ No commit on the branch → no PR; report `no verdict` and go to Step 5. Otherwi
    - skipped and failed clusters, each with its reason;
    - open disputes before → after;
    - one line on rejecting one cluster: revert its commit; `index.json` will conflict, because
-     every cluster rewrote rows of it — take either side, then `npm run kb -- reindex --base
-     <checkout>` rebuilds it from the entries. The other clusters stand.
+     every cluster rewrote rows of it — resolve by taking that cluster's entries' rows from
+     `origin/main`'s `index.json` (what the base held before the judgement) and keeping every other
+     row. Never `kb reindex` on the branch: `/kb-judge` Step 6.4 forbids it. The other clusters stand.
 
 ## Step 5 — Clean up and report
 
 **Delete the clone only when nothing in it is still needed:** after the PR is open, or on `dry run`,
 `skipped`, `queue empty` and `no verdict`. When the batch has commits that did not reach a PR — the
 sync refused, the push or `gh pr create` failed, the run was cut short — **keep it** and put its path
-and branch in the report: those commits are the batch's verdicts and exist nowhere else.
+and branch in the report: those commits are the batch's verdicts and exist nowhere else. A kept
+clone stops every later run at the gate until the operator publishes or deletes it.
+
+Delete `%TEMP%/kb-judge/RUNNING` (if this run wrote it) in every outcome.
 
 Compare this repo's `git status --porcelain` with the start snapshot; any difference goes into the
 report as a defect of this run. Then report to the operator, in Russian:
