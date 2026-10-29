@@ -18,7 +18,10 @@ theirs from the path you put in the brief (`briefs.md`).
 
 0. **Pre-flight** (below).
 1. **Scope** — [`scope.md`](scope.md): input → affected suites + change inventory. `suite`/`domain`
-   inputs skip Phase 2 (sync) inside step 2; generation and review still run.
+   inputs skip Phase 2 (sync) inside step 2 — except on mind-map suspects, which it syncs; generation and
+   review still run. Then load the domain
+   map, mind map and data model of the domains in scope — [`models.md`](models.md) §Phase 1 (read-only;
+   a missing one passes).
 2. **Dispatch Phases 2–4** to `test-management-specialist` as one brief ([`briefs.md`](briefs.md)):
    sync stale cases ([`sync.md`](sync.md)), analyze gaps and generate ([`generate.md`](generate.md)),
    review and auto-fix ([`review.md`](review.md) 4a, 4b). 4c is yours, at step 8.
@@ -27,7 +30,7 @@ theirs from the path you put in the brief (`briefs.md`).
    Each DRIFT becomes a `rewrite` for step 4's list, with its evidence.
 4. **One approval round.** Put the returned `pendingApprovals[]` and the DRIFT rewrites to the user as
    **one list**: cases to remove / deprecate / rewrite, the Feature Test Matrix of new cases, the manual
-   review items. Then re-dispatch with `approved` set to what they approved, minus removals and
+   review items, the data profiles to seed (`models.md` §Approval list). Then re-dispatch with `approved` set to what they approved, minus removals and
    deprecations, plus the CONFIRMED stamp refreshes (`briefs.md`). Unapproved items are reported, not written.
 5. **Write the approved removals and deprecations** yourself — through `scripts/retire.ts` (`sync.md`
    *For BROKEN cases*), after the re-dispatch returns and after a snapshot (§Writes).
@@ -131,6 +134,8 @@ The verdict is advisory: the user makes the go/no-go.
 - **Ground before you write** — `/preflight lifecycle` (kb → VirtoOZ, Context7 only as fallback) before
   updating or generating cases.
 - **Deduplicate** — before generating, check the target suite and related suites for semantic duplicates.
+- **The domain models are read-only here** — the stamps on the run's own cases are the only model links it
+  writes; a behaviour it found changed is listed for `/qa-test-mind-map update`, never edited (`models.md`).
 - **One browser at a time** — Phase 5 uses `playwright-firefox` via `qa-testing-expert`.
 - **URLs come from the env loader** (`config.js` → `process.env`), never hardcoded.
 - **Every write shows a diff summary**; updated cases record `Synced: {source} ({date})` in References.

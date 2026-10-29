@@ -80,6 +80,12 @@ UNCHECKED cases (a cap ran out in every round) are listed by ID with Result `UNC
 ## Files Modified
 - [list of CSV files with change summary]
 
+## Models (per domain in scope — `models.md` §Report)
+| Domain | Domain map | Mind map | Data model | Suspects (→ action) | Uncovered behaviours before → after | Stamps written |
+|--------|-----------|----------|------------|---------------------|-------------------------------------|----------------|
+
+Follow-up: `/qa-test-mind-map update <name>` for the nodes in `nodesChanged[]`: [node ids] (not run here).
+
 ## BL Audit (when the run surfaced BL candidates)
 - K rules: X marked `SUSPECT` (bug keys); Y written from a human source (`bl/<slug>.yaml`); Z resolved; W observations sent to the `kb`; V contradicted but unfiled (the user declined the bug — G6 fails for each). (Omit if 4c had no candidates.)
 
