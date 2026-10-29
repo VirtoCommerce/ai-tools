@@ -21,7 +21,7 @@ the ECL axis still triangulates (`ecl-audit-criteria.md`).
   (`/qa-bug`); the rule becomes `SUSPECT` until the Jira decision on that bug.
 - **Behaviour no rule covers, with no human source,** is an observation: `kb_ask`, then `kb_capture` /
   `kb_confirm` / `kb_dispute` (CLAUDE.md §Essential Rules → *Product context*). Never a new record.
-- **No proposals file, no review queue.** What was not applied is listed in the audit report only.
+- **No proposals file, no review queue.** What was not applied is listed in the audit report only — a chat summary, a file only when the operator asks.
 
 ## 1. The operations
 

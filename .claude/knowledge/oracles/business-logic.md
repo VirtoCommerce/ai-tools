@@ -650,6 +650,28 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-5623 (Done) — fixed POST /api/platform/security/login returning 500 instead of 400 on null/empty credential fields or body.
 - **Trust:** DECLARED
 
+### BL-AUTH-018: An expired password is enforced only on a password sign-in `[P0-security]`
+- **Rule:** The password-expiry state (`passwordExpired`, set when `User:MaxPasswordAge` runs out or an admin forces a change on next sign-in) is a property of the **password**, so it is enforced only on a session that was signed in **with that password**.
+  - **Password sign-in** (`password` grant): the session is treated as expired. `me.passwordExpired` is `true`, the gated xAPI operations answer with `errors[].code` `PasswordExpired`, and the storefront sends the user to Change Password before anything else.
+  - **Any other sign-in** — external SSO (Entra ID, Google), passkey, email code (OTP), impersonation: the expiry is **not** enforced for that session. `me.passwordExpired` is `false`, no operation fails with `PasswordExpired`, and the storefront opens normally.
+
+The rule is a whitelist of the one method that uses the password, never a list of exempt methods: a sign-in method added later is exempt unless it authenticates with the password.
+- **Verify:** Take an account whose password is expired (admin reset with "change on next sign-in", or `MaxPasswordAge` passed).
+  - **Password sign-in** → the storefront opens Change Password; `me.passwordExpired` is `true`; a gated xAPI operation answers `PasswordExpired`.
+  - **SSO sign-in** (an account linked to Entra ID or Google) → the storefront opens normally; `me.passwordExpired` is `false`.
+  - **Passkey sign-in** (add a passkey on Account → Security first) → opens normally; `me.passwordExpired` is `false`.
+  - **Email-code sign-in** → opens normally; `me.passwordExpired` is `false`.
+Read `passwordExpired` from `me` in the same session as the sign-in, never from the admin user record: the stored flag stays `true` on every path.
+- **Violation signal:** - A passkey, email-code or SSO sign-in sends the user to Change Password, or `me.passwordExpired` is `true` in that session.
+- A password sign-in with an expired password opens the storefront without forcing a change, or `me.passwordExpired` is `false`.
+- A new sign-in method ships and is treated as a password sign-in.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** PlatformDeveloperGuide, Passwords Management — `User:MaxPasswordAge` is the number of days a password remains valid, after which the user must set a new one. The page does not say which sign-in methods the expiry applies to.
+- **Source:** VCST-6630 — Expected result records the product owner's decision (2026-10-29): the expired password is checked only for a sign-in with a password; passkey and email-code sign-in must not force a password change. Added before the bug is resolved, at the QA lead's request; replace with the Jira resolution when VCST-6630 closes.
+- **Source:** `vc-module-x-api` `src/VirtoCommerce.Xapi.Data/Services/UserManagerCore.cs` `CheckUserState` — `user.PasswordExpired && !isExternalSignIn && !isImpersonated` → `AuthorizationError.PasswordExpired()`; `vc-module-profile-experience-api` `Schemas/UserType.cs` `GetPasswordExpired` and `Schemas/ProfileSchema.cs` use the same condition. Only SSO and impersonation are exempt, so passkey and OTP sign-in violate the rule (VCST-6630).
+- **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [bug] VCST-6630 — passkey and email-code sign-in force a password change: the code exempts SSO and impersonation only.
+
 ---
 
 ## Domain 6: B2B / Organization (BL-B2B)
@@ -2544,7 +2566,7 @@ ticket or a docs page disputes (`status`).
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 2 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
-| Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 10 | 5 |
+| Users & Authentication | BL-AUTH-001–018 | 18 | 6 | 11 | 1 | 11 | 6 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
@@ -2570,4 +2592,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **232** | **65** | **128** | **39** | **124** | **59** |
+| **Total** | | **233** | **66** | **128** | **39** | **125** | **60** |

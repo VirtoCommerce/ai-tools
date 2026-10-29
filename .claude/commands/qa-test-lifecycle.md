@@ -460,7 +460,7 @@ Phase 3 `blProposals.new[]`. **None ⇒ no-op.** A whole domain is standalone `/
 - **A candidate a human source states → NEW / SYNC** in `bl/<slug>.yaml` (value gate for NEW), then `npm run bl:render` + `bl:convert:check`.
 - **A `SUSPECT` rule in scope whose bug now has a Jira decision → RESOLVE** (Fixed → `ACTIVE`; By design / Won't fix → rule rewritten from the resolution).
 - Behaviour no rule covers → `kb_capture`. No proposals file, no review queue; RETIRE is only proposed.
-- `reports/knowledge/BL-AUDIT-<date>.md` is the receipt; it feeds the Phase 6 **G6** gate.
+- The 4c summary is the receipt (a `BL-AUDIT` file only on request); **G6** reads `SUSPECT` + bug keys from `bl/<slug>.yaml`.
 
 ---
 
@@ -739,7 +739,7 @@ Manifest: `config/test-suites.json` testCount updated for [suite ids]; `suites:l
 - [list of CSV files with change summary]
 
 ## BL Audit (when the run surfaced BL candidates)
-- K rules: X marked `SUSPECT` (bug keys); Y written from a human source (`bl/<slug>.yaml`); Z resolved; W observations sent to the `kb`. Receipt: `reports/knowledge/BL-AUDIT-<date>.md`. (Omit if 4c had no candidates.)
+- K rules: X marked `SUSPECT` (bug keys); Y written from a human source (`bl/<slug>.yaml`); Z resolved; W observations sent to the `kb`. (Omit if 4c had no candidates.)
 
 ## Next Steps
 - [ ] Address "Must Fix" items
