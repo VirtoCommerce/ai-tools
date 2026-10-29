@@ -142,12 +142,20 @@ the printed absolute path is `<BASE>` in every command (see the note above the h
 3. **Classify every open dispute** from its dossier row and note — by what a verdict needs, not by
    the stand it was made on:
    - **build** — the sides ran on different builds (a `soft` dispute, the dossier's "made on another
-     build" hint, or build stamps that differ). Decided by the source at both builds plus a live
-     observation on ANY signed-in or guest-reachable stand running the current build; the original
-     stand is not needed — its build has moved on anyway.
+     build" hint, or build stamps that differ). A different build is a HYPOTHESIS, not a verdict:
+     about a third of such disputes turned out to be simply wrong (`investigation.md` §4, 20 of 65).
+     `version-scoped` / `defect-fixed` needs ALL of: (a) the source names the change — a commit or
+     PR between the two builds that touches the mechanism of this clause; (b) a live observation
+     on a stand running a build at or after that change shows the newer behaviour; (c) the sides
+     differ in nothing else the clause can depend on (settings, store, role, data, ingress, browser)
+     — read each side's `conditions`, and where one is missing or differs, vary it on a reachable
+     stand (`/kb-judge` Step 4.5, one condition at a time). Then the dispute's own stand need not be
+     re-observed: its build has moved on. Any of (a)–(c) missing → it is not a `build` dispute;
+     re-class it, or leave it `open — cause not isolated: <what differs>`.
    - **guest** — the clause is observable without signing in (storefront as an anonymous visitor, a
-     public endpoint). Decided on any guest-reachable stand; open the stand's own `FRONT_URL` from its
-     `.env.<env>` in the lane's browser.
+     public endpoint). Decided on the stands the evidence names, observed as a guest in the lane's
+     browser (each stand's own `FRONT_URL` from its `.env.<env>`). Another stand may only add to
+     them, never stand in for them: a named stand that cannot be reached leaves the dispute open.
    - **signed-in** — the clause depends on a role, an account, or the stand's own settings or data.
      Needs THAT (stand, role) signed-in reachable; otherwise it stays
      `open — no credentials for <role> on <stand>` (or `open — <stand> unreachable`).
