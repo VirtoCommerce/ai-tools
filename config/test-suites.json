@@ -3939,7 +3939,7 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
-      "notes": "VCST-5748. Storefront half of OTP email sign-in (API half: 105). OTP-007 flips the store-wide OtpSignIn.Enabled setting, shared with 105 OTP-022 — exclusiveGroup keeps the two suites from running at the same time. Reads the code from the notification journal (SMTP may be off). Cases stay Draft until a run promotes them.",
+      "notes": "VCST-5748. Storefront half of OTP email sign-in (API half: 105). OTP-007 flips the store-wide OtpSignIn.Enabled setting, shared with 105 OTP-022 — exclusiveGroup keeps the two suites from running at the same time. Reads the code from the notification journal (SMTP may be off). Each case stays Draft until a run passes it and promotes it.",
       "exclusiveGroup": "store-setting:OtpSignIn.Enabled",
       "clickDriven": true
     },
@@ -4163,7 +4163,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 46,
+      "testCount": 51,
       "estimatedMinutes": 150,
       "agent": "qa-backend-expert",
       "tags": [
@@ -4178,7 +4178,7 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
-      "notes": "VCST-5888 (Epic VCST-5154). The ERP posts a signed cXML OrderRequest to /api/punchout/cxml and the platform turns the returned cart lines into a customer order (vc-module-punchout PR #6, x-cart #150, cart #199). PNCO-001 is the [JOURNEY] case, PNCO-034 the storefront observation. Env-scoped by requiresModules, so select it with `punchout`. Three configurations decide the data: configuration 0 (no default method codes, T17a), qa1-punchout-defaults (PUNCHOUT_CONFIG_DEFAULTS, codes of active store methods: PNCO-002, -005, -041) and qa1-punchout-badcodes (PUNCHOUT_CONFIG_BADCODES, codes that exist nowhere: PNCO-025); configuration 2 (nonexistent store) is PNCO-038. Every cart-touching case uses the dedicated buyer PUNCHOUT_MAPPING_REQUISITION and resets its carts in Setup and Cleanup (npm run seed:punchout:reset-carts), so it shares that buyer with 109 and is serialised with it by the exclusiveGroup. PNCO-023 flips the store-wide Punchout.Enabled of the configuration-0 store, PNCO-022 deactivates the buyer mapping, PNCO-027, -028 and -042 lower the stock of the plain product: all restored in Cleanup and re-read. The cXML answers need XML parsing, so the rows run on the agent lane. The stored PunchoutOrderRequest row has no REST read and no SQL on this stand: those clauses are NOT-OBSERVABLE notes, not assertions. Several expectations are the developer plan's (a 400 for a checkout validation failure, a payment sum equal to the order total on a partial order) and are known to differ from the build (PNCO-027, -028, -041); PNCO-029, -030, -032 and -043 only RECORD. Cases stay Draft until a run promotes them.",
+      "notes": "VCST-5888 (Epic VCST-5154). The ERP posts a signed cXML OrderRequest to /api/punchout/cxml and the platform turns the returned cart lines into a customer order (vc-module-punchout PR #6, x-cart #150, cart #199). PNCO-001 is the [JOURNEY] case, PNCO-034 the storefront observation. Env-scoped by requiresModules, so select it with `punchout`. Three configurations decide the data: configuration 0 (no default method codes, T17a), qa1-punchout-defaults (PUNCHOUT_CONFIG_DEFAULTS, codes of active store methods: PNCO-002, -005, -041) and qa1-punchout-badcodes (PUNCHOUT_CONFIG_BADCODES, codes that exist nowhere: PNCO-025); configuration 2 (nonexistent store) is PNCO-038. Every cart-touching case uses the dedicated buyer PUNCHOUT_MAPPING_REQUISITION and resets its carts in Setup and Cleanup (npm run seed:punchout:reset-carts), so it shares that buyer with 109 and is serialised with it by the exclusiveGroup. PNCO-050 and PNCO-052 also use a second dedicated buyer, PUNCHOUT_MAPPING_SECOND, which only this suite owns (reset with npm run seed:punchout:second:reset-carts). PNCO-052 Setup runs npm run seed:punchout:second:renew, which DELETES and recreates that account (new user id), because a Returned punchout session cannot be deleted. So never run PNCO-050 and PNCO-052 in parallel with each other, and never run PNCO-052 after PNCO-050 without that renew. PNCO-023 flips the store-wide Punchout.Enabled of the configuration-0 store, PNCO-022 deactivates the buyer mapping, PNCO-027, -028 and -042 lower the stock of the plain product: all restored in Cleanup and re-read. The cXML answers need XML parsing, so the rows run on the agent lane. The stored PunchoutOrderRequest row has no REST read and no SQL on this stand: those clauses are NOT-OBSERVABLE notes, not assertions. Several expectations are the developer plan's (a 400 for a checkout validation failure, a payment sum equal to the order total on a partial order) and are known to differ from the build (PNCO-027, -028, -041); PNCO-029, -030, -032 and -043 only RECORD. Cases stay Draft until a run promotes them.",
       "exclusiveGroup": "store-setting:Punchout.Enabled",
       "clickDriven": true
     }

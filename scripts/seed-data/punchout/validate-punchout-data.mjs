@@ -44,7 +44,7 @@ import { fileURLToPath } from 'node:url';
 import { parse as parseDotenv } from 'dotenv';
 import {
   CONFIG_SPECS, DEPLOYED_CONFIGS, configOverlayFields, retiredOverlayFields, MAPPING_SPECS, PROTECTED_EXTERNAL_IDS,
-  BACKOFFICE_SPECS, SEED_PREFIX, secretToken, VERIFY_PROBES, isProvisionedBuyer, configPosition, DEFAULT_METHODS_TRIAD,
+  BACKOFFICE_SPECS, SEED_PREFIX, secretToken, VERIFY_PROBES, isProvisionedBuyer, configPosition, DEFAULT_METHODS_TRIAD, BUYER_SCOPES,
   PRODUCT_SPECS, PRODUCT_PLACEMENT, PRODUCT_MIN_STOCK, FALLBACK_UOM, PRICELIST_SPECS, STORE_FFC_SPEC,
 } from './punchout-specs.mjs';
 
@@ -100,6 +100,25 @@ for (const m of MAPPING_SPECS) {
   if (!m.externalId.startsWith(SEED_PREFIX)) fail(`${m.alias}: externalId lacks ${SEED_PREFIX}`);
 }
 if (new Set(MAPPING_SPECS.map((m) => m.externalId)).size !== MAPPING_SPECS.length) fail('mapping externalIds are not unique (DB index is unique)');
+// Provisioned buyers (REQUISITION, SECOND): each a DIFFERENT account in the SAME org/role setup, so a
+// case that sends one buyer's session id as the other (PNCO-050) or needs a buyer with no Returned
+// session (PNCO-052) can tell the two apart — equal emails or scopes would make it undecidable.
+{
+  const buyers = MAPPING_SPECS.filter(isProvisionedBuyer);
+  if (new Set(buyers.map((m) => m.buyer.email.toLowerCase())).size !== buyers.length) fail('two provisioned buyers share an email — isolation collapsed');
+  if (new Set(buyers.map((m) => m.buyer.scope)).size !== buyers.length || buyers.some((m) => !BUYER_SCOPES.includes(m.buyer.scope))) fail(`provisioned buyers need distinct scopes from [${BUYER_SCOPES}] (--only <scope>)`);
+  const req = buyers.find((m) => m.alias === 'PUNCHOUT_MAPPING_REQUISITION');
+  const second = buyers.find((m) => m.alias === 'PUNCHOUT_MAPPING_SECOND');
+  if (!req || !second) fail('PUNCHOUT_MAPPING_REQUISITION and PUNCHOUT_MAPPING_SECOND must both be provisioned buyers');
+  else {
+    if (second.buyer.organizationFromPersonaVar !== req.buyer.organizationFromPersonaVar || second.buyer.orgRoleName !== req.buyer.orgRoleName) fail('SECOND must sit in the same org/role setup as REQUISITION (only the user may differ)');
+    if (req.buyer.mintDefaultCart !== true) fail('REQUISITION reset must mint the empty default cart (the requisition handler reads it)');
+    if (second.buyer.mintDefaultCart !== false) fail('SECOND reset must leave NO cart ("no pre-existing carts")');
+    const a2 = aliases[second.alias] || {};
+    if (a2.persona_email !== second.buyer.email) fail(`${second.alias}.persona_email must equal the buyer email ${second.buyer.email} (PNCO-050/052 read it)`);
+    if (a2.persona_password !== second.buyer.passwordToken) fail(`${second.alias}.persona_password must be the token ${second.buyer.passwordToken}`);
+  }
+}
 // SECOND RULE: DEFAULT (single org) and MULTI_ORG (≥2 orgs) must not be able to coincide, or the
 // org-resolution cases cannot tell "one org → that org" from "several → current/default".
 {
@@ -258,6 +277,7 @@ for (const env of Object.keys(DEPLOYED_CONFIGS)) {
   }
   for (const m of MAPPING_SPECS) {
     const o = ov[m.alias] || {};
+    if (!o.id && m.buyer?.renewedByCases) continue; // empty after every --renew by design; cases read the id from xAPI `me`
     if (!o.id) { note(`${env}: ${m.alias} not provisioned (empty id) — seed it before the cases run`); continue; }
     for (const f of ['id', 'userId', 'memberId']) if (!GUID_RE.test(o[f] || '')) fail(`${env} overlay ${m.alias}.${f} is not a GUID`);
     if (m.maxOrganizations && !(o.organizationCount >= 1 && o.organizationCount <= m.maxOrganizations)) fail(`${env} overlay ${m.alias}.organizationCount=${o.organizationCount} outside 1..${m.maxOrganizations}`);
