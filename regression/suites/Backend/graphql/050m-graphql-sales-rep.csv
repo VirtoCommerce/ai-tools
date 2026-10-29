@@ -1765,3 +1765,187 @@ query {
 [GQL-EXEC main]","[ERRORS label=main] errors[] empty {SPEC}
 [COUNT label=main] data.perOrg.length >= 1 {SPEC}
 [COUNT label=main] data.crossOrg.length >= 1 {SPEC}",none,errors[] non-empty with an ARGUMENT-class error on one alias; one alias resolves null or empty although the same field alone (SR-GQL-079) returns rows; the failure is intermittent - the same operation passes on the next run,none (read-only),"VCST-5337 r2 2026-10-20: split out of SR-GQL-079 (REG-2026-10-19-2032) so the race is asserted unhidden; pre-existing product defect, suspected CopyArgumentsToUserContext shared UserContext; Archetype:RACE · Technique:EG | Behavior:sr.stats.top-sellers",Draft
+SR-GQL-159,createSalesRepTask and updateSalesRepTask with a customerId the rep does not serve are refused with Customer not found and nothing is saved or changed,GraphQL > Sales Rep > Tasks > Calls,Critical,BL-SR-002,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. SALES_REP is SR_REP_PRIMARY, who serves ACME but does NOT serve the organization in {{unserved_org}} (SR_UNSERVED_ORG exists, so a refusal is not a not-found). Create: a refused create writes nothing (task count before and after, plus a keyword probe). Update: an existing ACME call moved to the unserved organization is refused and its customer is unchanged on read-back. The call is deleted in the last step; if the case aborts after create_ok, sweep any task named AGENT-TEST-6314-SR-GQL-159 under the rep. BL-SR-002 membership half: an organization the rep does not serve yields no data and no name.",unserved_org=@td(SR_UNSERVED_ORG.id); org_id=@td(ORG_ACME.platform_id); call_name=AGENT-TEST-6314-SR-GQL-159; due_a=2030-06-15T11:30:00Z,"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP count_before]
+query CountCalls { salesRepTasks(first: 1, storeId: ""{{STORE_ID}}"") { totalCount } }
+[GQL-EXEC count_before]
+[GQL-CAPTURE count_before.data.salesRepTasks.totalCount → COUNT0]
+[GQL-OP create_unserved]
+mutation CreateCall($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS create_unserved] {""command"": {""name"": ""{{call_name}}"", ""type"": ""Call"", ""dueDate"": ""{{due_a}}"", ""customerId"": ""{{unserved_org}}""}}
+[GQL-EXEC create_unserved]
+[GQL-OP count_after]
+query CountCalls { salesRepTasks(first: 1, storeId: ""{{STORE_ID}}"") { totalCount } }
+[GQL-EXEC count_after]
+[GQL-OP leak_probe]
+query LeakProbe { salesRepTasks(first: 5, keyword: ""{{call_name}}"", storeId: ""{{STORE_ID}}"") { totalCount items { id } } }
+[GQL-EXEC leak_probe]
+[GQL-OP create_ok]
+mutation CreateCall($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS create_ok] {""command"": {""name"": ""{{call_name}}"", ""type"": ""Call"", ""dueDate"": ""{{due_a}}"", ""customerId"": ""{{org_id}}""}}
+[GQL-EXEC create_ok]
+[GQL-CAPTURE create_ok.data.createSalesRepTask.id → TASK_ID]
+[GQL-OP update_unserved]
+mutation UpdateCall($command: InputUpdateSalesRepTask!) { updateSalesRepTask(command: $command) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS update_unserved] {""command"": {""id"": ""{{TASK_ID}}"", ""name"": ""{{call_name}}"", ""type"": ""Call"", ""dueDate"": ""{{due_a}}"", ""customerId"": ""{{unserved_org}}""}}
+[GQL-EXEC update_unserved]
+[GQL-OP read_after]
+query ReadCall($id: String!) { salesRepTask(id: $id) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS read_after] {""id"": ""{{TASK_ID}}""}
+[GQL-EXEC read_after]
+[GQL-OP cleanup_call]
+mutation DeleteCall($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS cleanup_call] {""command"": {""id"": ""{{TASK_ID}}""}}
+[GQL-EXEC cleanup_call]","[ERRORS label=count_before] errors[] empty {BL}
+[ERRORS label=create_unserved] errors[] non-empty {BL}
+[DATA label=create_unserved] errors[0].message matches /Customer not found/i {OBSERVED}
+[NULL label=create_unserved] data.createSalesRepTask {BL}
+[ERRORS label=count_after] errors[] empty {BL}
+[DATA label=count_after] data.salesRepTasks.totalCount = {{COUNT0}} {BL}
+[COUNT label=leak_probe] data.salesRepTasks.items.length = 0 {BL}
+[ERRORS label=create_ok] errors[] empty {BL}
+[ERRORS label=update_unserved] errors[] non-empty {BL}
+[DATA label=update_unserved] errors[0].message matches /Customer not found/i {OBSERVED}
+[ERRORS label=read_after] errors[] empty {BL}
+[DATA label=read_after] data.salesRepTask.customerId = {{org_id}} {BL}
+[DATA label=cleanup_call] data.deleteSalesRepTask = true {BL}","[API] errors[] is empty in the GraphQL response {BL}
+[NETWORK] no 4xx/5xx on /graphql","errors[] is empty and a task id is returned for an organization the rep does not serve
+The message names or echoes the unserved organization (id probing)
+The task count grows although the create was refused
+An update to an unserved organization succeeds or changes the stored customer",none (cleanup_call deletes the call inline; a refused create writes nothing),"VCST-6314 · Archetype:SCOPE · Technique:EG · Catches: a rep attaches calls to, and later reads the name of, a customer they do not serve · Observed: SBTM-VCST-6314-2026-10-27",Draft
+SR-GQL-160,Another rep cannot read or update a rep's call by id,GraphQL > Sales Rep > Tasks > Calls,Critical,BL-SR-002,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. TWO reps on one store: the owner SALES_REP (SR_REP_PRIMARY) and another rep SR_REP_DOCS, who also serves the same ACME organization, so the refusal cannot be explained by ""different customer"". The owner creates its own call (FIFTH RULE), the other rep tries to read and rewrite it by id, then the owner proves nothing changed; the call is deleted at the end. BL-SR-002: a rep never sees another rep's data. Another rep reading the SAME call through the main /graphql is covered by the kb entry on the shared task list, not here.",org_id=@td(ORG_ACME.platform_id); owner=@td(SR_REP_PRIMARY.email); other=@td(SR_REP_DOCS.email); call_name=AGENT-TEST-6314-SR-GQL-160; due_a=2030-06-15T11:30:00Z; hijack_name=AGENT-TEST-6314-SR-GQL-160-HIJACK,"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP create_owner]
+mutation CreateCall($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS create_owner] {""command"": {""name"": ""{{call_name}}"", ""type"": ""Call"", ""dueDate"": ""{{due_a}}"", ""customerId"": ""{{org_id}}""}}
+[GQL-EXEC create_owner]
+[GQL-CAPTURE create_owner.data.createSalesRepTask.id → TASK_ID]
+[AUTH role=SR_REP_DOCS]
+[GQL-OP other_read]
+query ReadCall($id: String!) { salesRepTask(id: $id) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS other_read] {""id"": ""{{TASK_ID}}""}
+[GQL-EXEC other_read]
+[GQL-OP other_update]
+mutation UpdateCall($command: InputUpdateSalesRepTask!) { updateSalesRepTask(command: $command) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS other_update] {""command"": {""id"": ""{{TASK_ID}}"", ""name"": ""{{hijack_name}}"", ""type"": ""Call"", ""customerId"": ""{{org_id}}""}}
+[GQL-EXEC other_update]
+[GQL-OP other_delete]
+mutation DeleteCall($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS other_delete] {""command"": {""id"": ""{{TASK_ID}}""}}
+[GQL-EXEC other_delete]
+[AUTH role=SALES_REP]
+[GQL-OP owner_readback]
+query ReadCall($id: String!) { salesRepTask(id: $id) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS owner_readback] {""id"": ""{{TASK_ID}}""}
+[GQL-EXEC owner_readback]
+[GQL-OP owner_cleanup]
+mutation DeleteCall($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS owner_cleanup] {""command"": {""id"": ""{{TASK_ID}}""}}
+[GQL-EXEC owner_cleanup]","[ERRORS label=create_owner] errors[] empty {BL}
+[DATA label=create_owner] data.createSalesRepTask.id is non-empty GUID {BL}
+[DATA label=other_read] data.salesRepTask is null OR errors[] non-empty {BL}
+[ERRORS label=other_update] errors[] non-empty {BL}
+[NULL label=other_update] data.updateSalesRepTask {BL}
+[DATA label=other_delete] data.deleteSalesRepTask = false OR errors[] non-empty {BL}
+[ERRORS label=owner_readback] errors[] empty {BL}
+[DATA label=owner_readback] data.salesRepTask.name = {{call_name}} {BL}
+[DATA label=owner_readback] data.salesRepTask.customerId = {{org_id}} {BL}
+[DATA label=owner_cleanup] data.deleteSalesRepTask = true {BL}","[API] errors[] is empty in the GraphQL response {BL}
+[NETWORK] no 4xx/5xx on /graphql","The other rep reads the owner's call (name, customer or time) by id
+The other rep renames or deletes the owner's call
+The owner's read-back shows the hijack name
+Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","none (owner_cleanup deletes the call inline; if the case aborted, a task named AGENT-TEST-6314-SR-GQL-160 under the owner is swept by the next run)",VCST-6314 · Archetype:SCOPE · Technique:EG · Catches: one rep sees or rewrites another rep's customer calls · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-GQL-161,updateSalesRepTask without customerId clears a served call's customer; re-sending it restores the link,GraphQL > Sales Rep > Tasks > Calls,High,,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. The call is created in the case with a customer the rep serves. For THIS input type an omitted customerId is the DEFINED way to clear the customer (the storefront form's Clear sends updateSalesRepTask without the customerId key and the row then reads 'Customer not assigned'; source SalesRepTaskCommandHandlerBase.ApplyCustomerAsync treats missing as null and keeps the stored link only when the stored organization is one the rep no longer serves). So omission here is a defined clear, not the VC-API-008 omitted-field-overwrite defect; the VC-API-008 probe is carried to confirm that the OTHER fields (name, dueDate) are applied and nothing else is lost. Oracle {SPEC}: the UI clear path plus that source rule. The call is deleted in the last step.",org_id=@td(ORG_ACME.platform_id); org_name=@td(ORG_ACME.name); call_name=AGENT-TEST-6314-SR-GQL-161; due_a=2030-06-15T11:30:00Z; due_b=2030-06-15T13:45:00Z,"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP create_call]
+mutation CreateCall($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS create_call] {""command"": {""name"": ""{{call_name}}"", ""type"": ""Call"", ""customerId"": ""{{org_id}}"", ""dueDate"": ""{{due_a}}""}}
+[GQL-EXEC create_call]
+[GQL-CAPTURE create_call.data.createSalesRepTask.id → TASK_ID]
+[GQL-OP update_clear]
+mutation UpdateCall($command: InputUpdateSalesRepTask!) { updateSalesRepTask(command: $command) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS update_clear] {""command"": {""id"": ""{{TASK_ID}}"", ""name"": ""{{call_name}}"", ""type"": ""Call"", ""dueDate"": ""{{due_b}}""}}
+[GQL-EXEC update_clear]
+[GQL-OP read_cleared]
+query ReadCall($id: String!) { salesRepTask(id: $id) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS read_cleared] {""id"": ""{{TASK_ID}}""}
+[GQL-EXEC read_cleared]
+[GQL-OP update_restore]
+mutation UpdateCall($command: InputUpdateSalesRepTask!) { updateSalesRepTask(command: $command) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS update_restore] {""command"": {""id"": ""{{TASK_ID}}"", ""name"": ""{{call_name}}"", ""type"": ""Call"", ""customerId"": ""{{org_id}}"", ""dueDate"": ""{{due_b}}""}}
+[GQL-EXEC update_restore]
+[GQL-OP read_restored]
+query ReadCall($id: String!) { salesRepTask(id: $id) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS read_restored] {""id"": ""{{TASK_ID}}""}
+[GQL-EXEC read_restored]
+[GQL-OP cleanup_call]
+mutation DeleteCall($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS cleanup_call] {""command"": {""id"": ""{{TASK_ID}}""}}
+[GQL-EXEC cleanup_call]","[ERRORS label=create_call] errors[] empty {SPEC}
+[DATA label=create_call] data.createSalesRepTask.customerId = {{org_id}} {SPEC}
+[ERRORS label=update_clear] errors[] empty {SPEC}
+[DATA label=update_clear] data.updateSalesRepTask.dueDate = {{due_b}} {SPEC}
+[ERRORS label=read_cleared] errors[] empty {SPEC}
+[NULL label=read_cleared] data.salesRepTask.customerId {SPEC}
+[NULL label=read_cleared] data.salesRepTask.customerName {SPEC}
+[DATA label=read_cleared] data.salesRepTask.dueDate = {{due_b}} {SPEC}
+[DATA label=read_cleared] data.salesRepTask.name = {{call_name}} {SPEC}
+[ERRORS label=update_restore] errors[] empty {SPEC}
+[ERRORS label=read_restored] errors[] empty {SPEC}
+[DATA label=read_restored] data.salesRepTask.customerId = {{org_id}} {SPEC}
+[DATA label=read_restored] data.salesRepTask.customerName = {{org_name}} {SPEC}
+[DATA label=cleanup_call] data.deleteSalesRepTask = true {SPEC}","[API] errors[] is empty in the GraphQL response {SPEC}
+[NETWORK] no 4xx/5xx on /graphql","After an update that omits customerId the customer is still linked (the clear path is dead)
+The update that omits customerId loses the new dueDate or the name
+Re-sending customerId does not restore customerId and customerName
+Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql",none (cleanup_call deletes the call inline),"VCST-6314 · Archetype:SILENT · Technique:EG · Probe:VC-API-008 · Catches: a clear or restore of a call's customer is silently lost, or an update drops its other fields (VC-API-008 probe: for this input type omission is a defined clear, not an overwrite defect) · Observed: SBTM-VCST-6314-2026-10-27",Draft
+SR-GQL-162,"createSalesRepTask Call round-trips dueDate, customerId and customerName on read; an update to another served organization moves the customer",GraphQL > Sales Rep > Tasks > Calls,High,,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Creates its own call (FIFTH RULE) with every field the popup sends and reads it back by id and through the list: the instant, the type, the customer id and the customer name must be what was sent. due is a pure input instant (no environment source), far in the future so it never mixes with the seeded task groups; the call is deleted in the last step. The second half changes the customer to ANOTHER organization the rep serves (SR_REP_PRIMARY serves ACME and TechFlow): customerId and customerName must follow on read-back (wrong-binding probe, scenario 7).",org_id=@td(ORG_ACME.platform_id); org_name=@td(ORG_ACME.name); call_name=AGENT-TEST-6314-SR-GQL-162; call_notes=Notes for the call; due=2030-06-15T11:30:00Z; org2_id=@td(ORG_TECHFLOW.platform_id); org2_name=@td(ORG_TECHFLOW.name); due_b=2030-06-15T13:45:00Z,"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP create_call]
+mutation CreateCall($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS create_call] {""command"": {""name"": ""{{call_name}}"", ""description"": ""{{call_notes}}"", ""type"": ""Call"", ""priority"": ""High"", ""dueDate"": ""{{due}}"", ""customerId"": ""{{org_id}}""}}
+[GQL-EXEC create_call]
+[GQL-CAPTURE create_call.data.createSalesRepTask.id → TASK_ID]
+[GQL-OP read_back]
+query ReadCall($id: String!) { salesRepTask(id: $id) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS read_back] {""id"": ""{{TASK_ID}}""}
+[GQL-EXEC read_back]
+[GQL-OP list_back]
+query ListBack { salesRepTasks(first: 5, keyword: ""{{call_name}}"", storeId: ""{{STORE_ID}}"") { totalCount items { id type customerId customerName dueDate } } }
+[GQL-EXEC list_back]
+[GQL-OP update_org2]
+mutation UpdateCall($command: InputUpdateSalesRepTask!) { updateSalesRepTask(command: $command) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS update_org2] {""command"": {""id"": ""{{TASK_ID}}"", ""name"": ""{{call_name}}"", ""type"": ""Call"", ""customerId"": ""{{org2_id}}"", ""dueDate"": ""{{due_b}}""}}
+[GQL-EXEC update_org2]
+[GQL-OP read_org2]
+query ReadCall($id: String!) { salesRepTask(id: $id) { id name description type priority dueDate isActive completed customerId customerName } }
+[GQL-VARS read_org2] {""id"": ""{{TASK_ID}}""}
+[GQL-EXEC read_org2]
+[GQL-OP cleanup_call]
+mutation DeleteCall($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS cleanup_call] {""command"": {""id"": ""{{TASK_ID}}""}}
+[GQL-EXEC cleanup_call]","[ERRORS label=create_call] errors[] empty {SPEC}
+[DATA label=create_call] data.createSalesRepTask.id is non-empty GUID {SPEC}
+[DATA label=create_call] data.createSalesRepTask.type = Call {SPEC}
+[ERRORS label=read_back] errors[] empty {SPEC}
+[DATA label=read_back] data.salesRepTask.type = Call {SPEC}
+[DATA label=read_back] data.salesRepTask.dueDate = {{due}} {SPEC}
+[DATA label=read_back] data.salesRepTask.customerId = {{org_id}} {SPEC}
+[DATA label=read_back] data.salesRepTask.customerName = {{org_name}} {SPEC}
+[DATA label=read_back] data.salesRepTask.priority = High {SPEC}
+[DATA label=read_back] data.salesRepTask.description = {{call_notes}} {SPEC}
+[ERRORS label=list_back] errors[] empty {SPEC}
+[COUNT label=list_back] data.salesRepTasks.items.length = 1 {SPEC}
+[DATA label=list_back] data.salesRepTasks.items.0.customerName = {{org_name}} {SPEC}
+[ERRORS label=update_org2] errors[] empty {SPEC}
+[ERRORS label=read_org2] errors[] empty {SPEC}
+[DATA label=read_org2] data.salesRepTask.customerId = {{org2_id}} {SPEC}
+[DATA label=read_org2] data.salesRepTask.customerName = {{org2_name}} {SPEC}
+[DATA label=read_org2] data.salesRepTask.dueDate = {{due_b}} {SPEC}
+[DATA label=cleanup_call] data.deleteSalesRepTask = true {SPEC}","[API] errors[] is empty in the GraphQL response {SPEC}
+[NETWORK] no 4xx/5xx on /graphql","After an update to another served organization the read-back still shows the original customer
+The stored dueDate differs from the instant sent (zone shift or lost seconds)
+customerId or customerName is null after a create that carried them
+The list and the by-id read disagree on the customer
+Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql",none (cleanup_call deletes the call inline),VCST-6314 · Archetype:PARITY · Technique:EP · Catches: the call's time or customer is stored differently from what the popup sent · Observed: SBTM-VCST-6314-2026-10-27,Draft

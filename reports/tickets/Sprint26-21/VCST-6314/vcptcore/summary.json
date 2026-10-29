@@ -1,0 +1,487 @@
+{
+  "ticket": "VCST-6314",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": {
+    "comment_id": "112418"
+  },
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "FULL",
+    "narrow_story_tokens": {
+      "priority": "P3 Medium — holds",
+      "layer": "cross-layer (storefront, api, module) — fails",
+      "domains": "sales-rep + task-management — fails",
+      "chain_shape": "adds links (call time, calendar export, Call type) — fails",
+      "surface": "deployed, reachable after env recovery",
+      "reach": "PR #26 diff incl. ExperienceApi schema — fails"
+    },
+    "escalated_reason": null
+  },
+  "layer": "cross-layer",
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "sr",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "rev": 3,
+    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json",
+    "built_in_run": false
+  },
+  "shape_class": {
+    "value": "none",
+    "sources": [
+      "PR #26 file list: module StorefrontApp, ExperienceApi, Data seeder, Web Module.cs — no ui-kit/token files"
+    ]
+  },
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-10-27",
+  "timing": {
+    "started_at": "2026-10-27T07:44:00Z",
+    "finished_at": "2026-10-27T13:00:00.863Z",
+    "reachability_minutes": 2,
+    "env_blocked_minutes": 140,
+    "time_to_first_test_minutes": 173,
+    "first_evidence_minutes": 183,
+    "steps": {
+      "step1": 10,
+      "step1r_blocked_wait": 140,
+      "step1e": 15,
+      "step3x": 25,
+      "step3": 20,
+      "step4": 30,
+      "step4c": 28,
+      "step4c_retry": 6,
+      "step5": 20
+    },
+    "agent_dispatches": 14,
+    "regression_predicted_minutes": 71,
+    "regression_actual_minutes": 28,
+    "note": "1r returned BLOCKED at ~07:50Z (CDN served a stale Sales Rep plugin build); the run resumed at 10:10Z when the CDN entry expired — 140 min of the time-to-first-test is that wait"
+  },
+  "environment": "vcptcore-qa (TEST_ENV=vcptcore)",
+  "build": {
+    "declared": "vc-module-sales-rep PR #26 (OPEN) head 92d48e1",
+    "deployed": {
+      "platform": "3.1085.0",
+      "theme": "2.61.0-pr-2597-372a-372a1bfd",
+      "relevant_modules": {
+        "VirtoCommerce.SalesRep": "3.1016.0-pr-26-92d4",
+        "VirtoCommerce.TaskManagement": "3.1005.0",
+        "VirtoCommerce.Xapi": "3.1027.0"
+      }
+    },
+    "releasedThrough": "UNKNOWN (PR unmerged — prerelease artifact)"
+  },
+  "release": {
+    "layer": "cross-layer",
+    "audience": "customer+admin",
+    "versions": {
+      "VirtoCommerce.SalesRep": "3.1016.0-pr-26-92d4"
+    },
+    "breaking": false,
+    "breaking_source": null,
+    "refusal": "no-version"
+  },
+  "documentation": null,
+  "status_transitions": [
+    {
+      "at": "1a",
+      "action": "skip",
+      "from": "Testing",
+      "to": null,
+      "reason": "already in the in-testing status"
+    },
+    {
+      "at": "5-status",
+      "action": "transition",
+      "from": "Testing",
+      "to": "Tested",
+      "transition_id": "8",
+      "confirmed_by": "operator (AskUserQuestion)",
+      "at_time": "2026-10-27T13:00:00.862Z"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert (1r)",
+    "ba-system-analyzer (1c)",
+    "ba-story-writer (1d)",
+    "qa-testing-expert (3x)",
+    "qa-frontend-expert (4a)",
+    "qa-backend-expert (4a)",
+    "ui-ux-expert (4v, DevTools — SKIPPED no auth)",
+    "ui-ux-expert (4v, playwright-mobile)",
+    "test-management-specialist (A)",
+    "qa-lead-orchestrator (3-cases verifier r1 REJECT)",
+    "qa-lead-orchestrator (3-cases verifier r2 APPROVE)",
+    "regression-orchestrator (4c)"
+  ],
+  "epic": {
+    "key": "VCST-5142",
+    "summary": "Sales Rep Hub",
+    "status": "In progress"
+  },
+  "ac_analysis": {
+    "story_acs": 10,
+    "weak_acs": 3,
+    "gap_acs_added": 27,
+    "impl_coverage": {
+      "satisfied": 8,
+      "drift": 1,
+      "contradicts": 1,
+      "not_found": 0
+    },
+    "conditions_total": 44,
+    "conditions_with_evidence": 40,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 90.9,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "ac_results": {
+      "AC-1 Google Calendar (optional)": "PASS",
+      "AC-2 Apple Calendar (optional)": "PASS",
+      "AC-3 rep sets the call's time": "PASS",
+      "AC-4 customer page opens the popup": "PASS (action reads 'Schedule call')",
+      "AC-5 task name prefilled Call": "PASS in English; translated in de (Anruf) — PO question",
+      "AC-6 customer prefilled": "PASS",
+      "AC-7 due date empty by default": "PASS",
+      "AC-8 time is mandatory": "PASS (cannot be emptied)",
+      "AC-9 time 9 am by default": "PASS",
+      "AC-10 priority Medium by default": "PO QUESTION — platform has no Medium; build defaults to Normal"
+    },
+    "no_evidence": [
+      "C-02 tile disabled without Task Management (module installed)",
+      "C-18 rep stops serving the customer (needs a disposable membership pair)",
+      "C-23 Google tab blocked (no lane blocks pop-ups)",
+      "V-4 vs. DESIGN (no Claude Design project)"
+    ],
+    "po_questions": [
+      "AC-10: priority default Normal (platform has no Medium)",
+      "AC-5: Title translated in de/fr (Anruf)",
+      "Notes limit 1000 (mockup 0/250)",
+      "Popup 'Schedule call' + 'Save' vs mockup 'New task' + 'Create task'",
+      "A call due earlier today stays Upcoming (Overdue is day-based)",
+      "Edit task → Call conversion is one-way",
+      "Calendar copy is never updated on edit/delete (by design)"
+    ]
+  },
+  "total_cases": 17,
+  "passed": 16,
+  "failed": 1,
+  "blocked": 0,
+  "iterations": null,
+  "new_cases_authored": 17,
+  "promotion": {
+    "ran": false,
+    "reason": "--no-promote (delegated C1); Draft → Automated is /qa-test-lifecycle 6P or a later direct /qa-regression"
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-27-1439",
+      "retry_run_id": "REG-2026-10-27-1439-retry050m",
+      "ids": [
+        "SR-TK-030",
+        "SR-TK-031",
+        "SR-TK-032",
+        "SR-TK-033",
+        "SR-TK-034",
+        "SR-TK-035",
+        "SR-TK-036",
+        "SR-TK-037",
+        "SR-TK-039",
+        "SR-TK-040",
+        "SR-TK-041",
+        "SR-TK-042",
+        "SR-GQL-159",
+        "SR-GQL-160",
+        "SR-GQL-161",
+        "SR-GQL-162",
+        "SR-CP-023"
+      ],
+      "first_pass": {
+        "pass": 12,
+        "fail": 5,
+        "blocked": 0
+      },
+      "final": {
+        "pass": 16,
+        "fail": 1,
+        "blocked": 0,
+        "pass_rate_pct": 94.1
+      },
+      "excluded": [
+        {
+          "id": "SR-TK-038",
+          "reason": "needs a disposable rep/served-org pair (BLOCKED guard in the row)"
+        }
+      ],
+      "release_scoped_sweep": "not-assessed — /qa-test runs no release sweep",
+      "pass_rate": 0.941
+    },
+    "release_scoped_sweep": {
+      "run_id": "REG-2026-10-27-SR-SWEEP",
+      "suites": "042,078,078b,078c,078d,089,090,091,092,092b,093,093b,097,106,050m,050m2",
+      "build": "SalesRep 3.1016.0-pr-26-92d4 · TM 3.1005.0 · platform 3.1085.0 · theme 2.61.0-pr-2576-be2c",
+      "totals": {
+        "cases": 705,
+        "pass": 522,
+        "fail": 59,
+        "blocked": 104,
+        "skipped": 20
+      },
+      "pass_rate_pct_executable": 76.2,
+      "ticket_scoped": {
+        "new_cases": "SR-TK-030..037,039..042 + SR-GQL-159..161 all PASS",
+        "expected_fail": [
+          "SR-CP-023 (RE-BASE: Schedule call tile now enabled)"
+        ],
+        "expected_blocked": [
+          "SR-TK-038 (own guard)"
+        ]
+      },
+      "attributed_to_change": 0,
+      "unresolved": [
+        "SR-GQL-157 salesRepCustomerOrders OR/keyword returns bulk-org rows (scope leak vs stale case; VCST-6536 case, not this change)"
+      ],
+      "note": "remaining FAIL/BLOCKED are pre-existing stale cases, lane capability, known bugs (VCST-6195, 6198/6220, 6462) or env; none touch the call/time flow"
+    }
+  },
+  "regression_triage": {
+    "invoked": true,
+    "run_ids": [
+      "REG-2026-10-27-1439",
+      "REG-2026-10-27-1439-retry050m"
+    ],
+    "confirmed_bugs": [],
+    "test_fixes_applied": [
+      {
+        "ids": [
+          "SR-GQL-159",
+          "SR-GQL-160",
+          "SR-GQL-161",
+          "SR-GQL-162"
+        ],
+        "class": "test-defect (stale test data)",
+        "fix": "@td(ORG_*.id) business key → @td(ORG_*.platform_id) GUID; dueDate added to 158/159 creates; re-run 4/4 PASS"
+      }
+    ],
+    "dismissed": [
+      {
+        "id": "SR-CP-023",
+        "class": "RE-BASE (expected)",
+        "reason": "asserts Schedule call is a disabled placeholder; PR #26 enables it. Assertion kept until PR #26 merges; re-base via /qa-test-lifecycle"
+      }
+    ],
+    "report_path": null
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "A rep with no served customers gets salesRepTaskTypes [] so New task has no Type (VCST-5732)",
+      "report": "reports/tickets/Sprint26-21/VCST-6314/vcptcore/bugs/LOW-salesreptasktypes-empty-no-customers.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "updateSalesRepTask returns the pre-save modifiedDate",
+      "report": "reports/tickets/Sprint26-21/VCST-6314/vcptcore/bugs/LOW-update-task-returns-stale-modifieddate.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "Task type names, incl. the new Call, stay English in other languages",
+      "report": "reports/tickets/Sprint26-21/VCST-6314/vcptcore/bugs/LOW-task-type-names-not-localized.md"
+    }
+  ],
+  "discovery": {
+    "ran": true,
+    "box_minutes": 45,
+    "used_minutes": 25,
+    "lane": "playwright-firefox",
+    "report": "reports/tickets/Sprint26-21/VCST-6314/vcptcore/exploratory/SBTM-VCST-6314-2026-10-27.md",
+    "model_amendments": 5,
+    "net_new_scenarios": [
+      {
+        "title": "Edit task → Call one-way conversion",
+        "fate": "PROMOTE",
+        "case": "SR-TK-040"
+      },
+      {
+        "title": "No-customers rep has no Type select",
+        "fate": "PROMOTE",
+        "case": "SR-TK-041"
+      },
+      {
+        "title": "Call due earlier today stays Upcoming",
+        "fate": "PROMOTE",
+        "case": "SR-TK-042"
+      },
+      {
+        "title": "Enter in Title does not submit",
+        "fate": "DECLINE"
+      },
+      {
+        "title": "Reload mid-draft discards it",
+        "fate": "DECLINE"
+      }
+    ],
+    "findings": [
+      "no-customers rep has no task types (pre-existing)",
+      "VCST-6456 still present",
+      "type names untranslated"
+    ],
+    "not_reached": [
+      "V7 Task Management absent (installed)"
+    ]
+  },
+  "visual": {
+    "surface": true,
+    "surface_source": [
+      "StorefrontApp/src/*.vue in PR #26"
+    ],
+    "ran": true,
+    "attempts": [
+      {
+        "lane": "Chrome DevTools MCP",
+        "result": "SKIPPED — profile signed out, no --secrets"
+      },
+      {
+        "lane": "playwright-mobile",
+        "result": "ran"
+      }
+    ],
+    "axes": {
+      "layout_bl_ui": "PASS (1440 + 390)",
+      "a11y_keyboard_axe": "PASS (axe 0 violations, 1 incomplete: Notes placeholder contrast — manual)",
+      "call_line": "covered by 4a screenshots; VCST-6456 known",
+      "vs_design": "SKIPPED — PNG mockup only, no Claude Design project"
+    },
+    "invariant_failures": [],
+    "advisory": [
+      "Add to calendar checkbox labels 20 px high (24 px target met via spacing exception) — shared VcCheckbox pattern"
+    ],
+    "report": "reports/tickets/Sprint26-21/VCST-6314/vcptcore/design-report.md"
+  },
+  "contract": {
+    "surface": true,
+    "surface_source": [
+      "ExperienceApi/Schemas/SalesRepTaskType.cs",
+      "InputCreate/UpdateSalesRepTaskType.cs"
+    ],
+    "schema": "REFRESHED 2026-10-27 (run copy knowledge/api/graphql-schema.md)",
+    "fixtures": "86/86 pass",
+    "drift": "scoped /graphql/sales-rep runner cache dated 2026-10-19 lacked customerId/customerName — refreshed into the run folder"
+  },
+  "coverage_triage": {
+    "surface": true,
+    "surface_source": [
+      "domains sales-rep, task-management",
+      "suites 091,106,085,050m,093,093b,092b"
+    ],
+    "hits": 22,
+    "dispositions": {
+      "CONFIRMED": 21,
+      "REPAIR": 0,
+      "RE-BASE": 1,
+      "SUPERSEDED": 0
+    },
+    "re_base_ids": [
+      "SR-CP-023"
+    ],
+    "unscannable": [],
+    "unmatched_observables": [
+      "Customer not assigned",
+      "Add to calendar",
+      "createSalesRepTask",
+      "TaskTypes"
+    ],
+    "filtered_out": "not-yet-computable at 1b"
+  },
+  "test_data": {
+    "surface": false,
+    "surface_source": [
+      "SR_REP_PRIMARY, SR_REP_DOCS, SR_REP_NOCUSTOMERS, ORG_ACME, ORG_TECHFLOW, SR_UNSERVED_ORG resolve on vcptcore",
+      "calls created in-case (FIFTH RULE)"
+    ],
+    "dispatched": false,
+    "leftover_data": "none — every AGENT-TEST-6314 / AGENT-TEST-CALL task deleted and re-checked"
+  },
+  "business_rules_verified": [
+    "BL-SR-002 PASS (picker = served orgs; unserved customer refused; other rep refused)",
+    "BL-SR-030 PASS (double Save → one call)",
+    "BL-SR-013 PARTIAL (labels translated; task type names not — Low)",
+    "BL-SR-011 not exercised"
+  ],
+  "appinsights": {
+    "checked": true,
+    "layers": [
+      "frontend",
+      "backend"
+    ],
+    "window_minutes": 135,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 3
+    },
+    "correlated_failures": [],
+    "dismissed": [
+      "SalesRep ExecutionErrors (Task not found ×11, Customer not found ×8, due date required ×4) = this run's negative probes and the first 050m attempt",
+      "FieldsOnCorrectTypeError ×2 = an agent's probe query",
+      "anonymous AuthorizationError / 500 on catalog + push operations = store configuration (KB-A48DF440), unrelated to the ticket"
+    ]
+  },
+  "screenshots": "reports/tickets/Sprint26-21/VCST-6314/vcptcore/screenshots/",
+  "report": {
+    "page_url": "https://claude.ai/artifact/QUy5kv8guGVWZwXvbhHogC",
+    "notes": {
+      "bugs_known_still_open": [
+        {
+          "key": "VCST-6456",
+          "severity": "Medium",
+          "relationship": "Sub-task (round 1)",
+          "state": "still reproduces — dashboard widget truncates the call line"
+        },
+        {
+          "key": "VCST-6455",
+          "severity": "Low",
+          "relationship": "Sub-task (round 1)",
+          "state": "not re-tested this round"
+        },
+        {
+          "key": "VCST-6466",
+          "severity": "Low",
+          "relationship": "Sub-task (round 1)",
+          "state": "not re-tested this round"
+        }
+      ],
+      "oracle_gaps": [
+        "No BL-* invariant covers sales-rep tasks/calls — proposals in the SBTM report for /qa-review-oracles"
+      ],
+      "environment_events": [
+        {
+          "at": "2026-10-27T07:50Z",
+          "what": "CDN served the Sales Rep plugin's unhashed remoteEntry.js from the 16 Oct build; its chunks 404 → hub never rendered",
+          "cleared": "2026-10-27T10:10Z by CDN expiry",
+          "kb": "KB-4358B2EC"
+        }
+      ],
+      "release_gate": {
+        "recommendation": "NOT EVALUATED",
+        "ratified_by": "qa-lead-orchestrator verifier (5-report) — DOWNGRADED from CONDITIONAL",
+        "reasons": [
+          "no --p1-deferred declared (CONDITIONAL unreachable)",
+          "change-scoped regression not-assessed (no release sweep)",
+          "smoke not run",
+          "AC-10 + drift/contradicts await PO"
+        ],
+        "security_note": "VCST-6457 Highest, pre-existing in vc-module-task-management 3.1005.0 — separate human decision",
+        "compute_metrics_raw": "NO-GO 70.59% (first pass; superseded by retry: ticket cases 16/17 = 94.1%)"
+      }
+    }
+  }
+}

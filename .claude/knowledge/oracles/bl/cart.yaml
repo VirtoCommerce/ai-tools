@@ -28,8 +28,8 @@ rules:
     violation_signal: On either surface, the quantity is silently capped to available stock with no error/message; OR the out-of-range quantity is accepted with no validation signal and "Place order" becomes enabled; OR the PDP path lets an over-limit line commit; OR an order is placed for more units than in inventory.
     status: ACTIVE
     verified:
-      date: 2026-10-20
-      by: REG-2026-10-20-1418
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-CART-002
     title: Out-of-stock mid-session
     rule: If a product's stock reaches 0 after the user has added it to cart but before checkout completes, the system must prevent the order from being placed. The cart should show an error state for the affected item.
@@ -150,8 +150,8 @@ rules:
     violation_signal: Duplicate line items for the same SKU; quantity not incremented on re-add; line count increases on every add.
     status: ACTIVE
     verified:
-      date: 2026-10-20
-      by: REG-2026-10-20-1418
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-CART-008
     title: Cart persistence across sign-out / sign-in
     rule: "A registered user's cart is persisted server-side. If the user signs out and signs back in, the cart must be restored with the same items and quantities. If the user had items as a guest (anonymous cart), upon sign-in those items should merge into the registered user's existing cart (merge strategy: add quantities, no duplicates). A coupon applied before the merge (on either side) persists through the merge — it is not silently dropped — and its discount **re-prices against the post-merge subtotal** rather than staying frozen at the pre-merge discount amount, because a merge always runs a full cart recalculation before saving."
@@ -216,8 +216,8 @@ rules:
     violation_signal: "`lineItem.listPrice` remains equal to `price_all_selected` after deselecting a placement; cart subtotal does not change; tax total does not update; pricing frozen at pre-toggle value."
     status: ACTIVE
     verified:
-      date: 2026-10-20
-      by: REG-2026-10-20-1418
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-CART-011
     title: Unmatched section key in batch selection is a silent no-op
     rule: When `selectCartConfigurationItems` or `unSelectCartConfigurationItems` receives a `configurationSections[]` list where one or more keys do not match any `ConfigurationItem` on the target lineItem, those unmatched keys MUST be silently skipped. The mutation MUST still process all matched keys, MUST return HTTP 200, and MUST return `errors[]` as empty. Unmatched keys leave no trace in the response.

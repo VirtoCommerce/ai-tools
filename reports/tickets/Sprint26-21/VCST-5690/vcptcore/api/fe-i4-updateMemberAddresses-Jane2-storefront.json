@@ -1,0 +1,6 @@
+{
+  "_note": "Captured from the storefront (/account/addresses > Add new address > Create) via playwright-chrome, vcptcore-qa, theme pr-2597-372a, 2026-10-27 07:20 UTC. Authorization header omitted, ids and email redacted.",
+  "request": {"operationName":"UpdateMemberAddresses","variables":{"command":{"memberId":"<contact-id>","addresses":[{"firstName":"Jane2","lastName":"Doe","email":"<redacted>","organization":"","postalCode":"10001","countryCode":"USA","countryName":"United States of America","regionId":"NY","regionName":"New York","city":"New York","line1":"789 Pine Street","line2":"","phone":"","description":"","name":"USA, New York, New York, 789 Pine Street","addressType":3}]}}},
+  "status": 200,
+  "response": {"errors":[{"message":"'First Name' contains invalid characters.","locations":[{"line":2,"column":3}],"path":["updateMemberAddresses"],"extensions":{"code":"VALIDATION","codes":["VALIDATION"],"field":"addresses[0].firstName","errorCode":"InvalidCharacters"}}],"data":{"updateMemberAddresses":null}}
+}

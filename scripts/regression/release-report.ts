@@ -36,7 +36,7 @@ import { parse as parseCsv } from "csv-parse/sync";
 const ROOT = process.env.QA_RUN_HOME || process.cwd();
 
 interface WaveDef { id: string; title?: string; suites?: string[]; subtask?: string; tier?: string }
-interface Release { release: string; ticket: string; baseline?: string; bundle?: { from?: string; to?: string }; env?: { testEnv?: string; platform?: string; theme?: string }; waves: WaveDef[] }
+interface Release { release: string; ticket: string; baseline?: string; bundle?: { from?: string; to?: string }; sprint?: { label?: string; startDate?: string; endDate?: string }; env?: { testEnv?: string; platform?: string; theme?: string }; waves: WaveDef[] }
 interface Totals { planned: number; executed: number; pass: number; fail: number; blocked: number; skipped: number; ambiguous: number }
 interface State {
   wave: string; owner: string | null; status: string; runIds: string[]; totals?: Partial<Totals>; untriaged?: number;
@@ -151,7 +151,7 @@ body{margin:0;background:#fff;font-family:Inter,"Segoe UI",Arial,sans-serif}
 .legend{color:#667;font-size:11px;margin-top:6px}.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 3px 0 8px;vertical-align:-1px}
 </style><div class="db" id="db">
 <h4>${esc(title(rel))} · regression</h4>
-<div class="sub">${esc([rel.bundle?.from && rel.bundle?.to ? `bundles/${rel.bundle.from} → ${rel.bundle.to}` : "", rel.env?.testEnv ?? "", `updated after ${asOf}`].filter(Boolean).join(" · "))}</div>
+<div class="sub">${esc([rel.bundle?.from && rel.bundle?.to ? `bundles/${rel.bundle.from} → ${rel.bundle.to}` : "", rel.sprint?.startDate && rel.sprint?.endDate ? `${rel.sprint.startDate} – ${rel.sprint.endDate}` : "", rel.env?.testEnv ?? "", `updated after ${asOf}`].filter(Boolean).join(" · "))}</div>
 <div class="kpis">
 <div class="kpi"><b>${snap.run.length} / ${snap.waves.length}</b><span>waves run</span></div>
 <div class="kpi"><b>${fmt(snap.executed)}</b><span>executed (of ${fmt(snap.planned)} planned in those waves)</span></div>
@@ -166,7 +166,7 @@ body{margin:0;background:#fff;font-family:Inter,"Segoe UI",Arial,sans-serif}
 /** A tile has room for about two words: "Theme cross-cutting + gap sessions" → "Theme cross-cutting". */
 const short = (t: string) => t.split(/[,&(+]| and /)[0].trim().split(/\s+/).slice(0, 2).join(" ");
 const trim = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
-const title = (rel: Release) => rel.release.replace(/^stable-(\d+)$/, "Stable $1");
+const title = (rel: Release) => rel.release.replace(/^stable-(\d+)$/, "Stable $1").replace(/^sprint-(\d{2}-\d{2})$/, "Sprint $1");
 
 async function png(html: string | null, file: string | null, out: string, opts: { clipBefore?: string; selector?: string; width: number }) {
   const { chromium } = await import("playwright");
