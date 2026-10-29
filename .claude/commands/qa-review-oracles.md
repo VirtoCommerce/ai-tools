@@ -103,7 +103,7 @@ Full rules: [SKILL.md](../skills/qa-review-oracles/SKILL.md) + the axis's criter
 
 ### Step 5 — Re-run the gate, then report
 
-Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for this run's own edits**; a run that raises the High count has broken something. Then write `reports/knowledge/BL-AUDIT-<date>.md` or `ECL-AUDIT-<date>.md` (verdict or operation table with a **Value** column — `business · product → label`, from `oracles:rank` — + Applied + **Held** (confirmed but not valuable enough, with which axis is missing) + **Excluded** (non-invariant class + redirect) + Not-applied + citation reconciliation + the gate's before/after counts), per [.claude/rules/reports.md](../rules/reports.md).
+Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for this run's own edits**; a run that raises the High count has broken something. Then give the audit report **in chat** — write `reports/knowledge/BL-AUDIT-<date>.md` or `ECL-AUDIT-<date>.md` only when the operator asks for a file (verdict or operation table with a **Value** column — `business · product → label`, from `oracles:rank` — + Applied + **Held** (confirmed but not valuable enough, with which axis is missing) + **Excluded** (non-invariant class + redirect) + Not-applied + citation reconciliation + the gate's before/after counts), per [.claude/rules/reports.md](../rules/reports.md).
 
 ---
 
