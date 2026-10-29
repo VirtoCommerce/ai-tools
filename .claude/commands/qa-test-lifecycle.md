@@ -1,6 +1,6 @@
 ---
-description: "Full test case lifecycle: detect changes → sync stale cases → analyze gaps → generate → review → fix → verify → approve → promote. Unified pipeline for change-driven sync and quality assurance; THE FULL promoter into regression/suites/ — handoff, re-promotion, legacy run-scoped cases, AND the Draft cases /qa-test appends during a run (it stopped promoting them itself on 2026-09-10). Pass --run-id to reach Draft -> Automated. A direct /qa-regression run also flips already-grounded cases at its Step 6.5."
-argument-hint: "suite <ID> | domain <name> | VCST-XXXX | PR #NNN | module <name> | diff | changelog <version> [--promote-only]"
+description: "Use to keep regression-suite cases current and promotion-ready: after a PR, ticket, module update, deploy diff or platform release changed what cases assert; to review and fix a suite or domain before regression; or to promote Draft cases out of Draft — including the ones /qa-test appends (--promote-only, --run-id for Draft -> Automated). Not for testing a ticket (/qa-test), a whole-suite triangulation sweep (/qa-review-tests --triangulate), or running suites (/qa-regression, whose Step 6.5 also flips already-grounded cases)."
+argument-hint: "suite <ID> | domain <name> | VCST-XXXX | PR <owner/repo>#NNN | module <name> | diff | changelog <version> [--skip-sync] [--skip-generate] [--skip-data] [--skip-verify] [--no-auto-fix] [--layer <name>] [--report-only] [--promote-only] [--run-id <RUN_ID|latest>] [--ci]"
 ---
 
 # /qa-test-lifecycle — Unified Test Case Pipeline
@@ -11,7 +11,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 
 ```
 # Change-driven (detect what changed, sync stale cases, then quality review)
-/qa-test-lifecycle PR #123                # From a PR — detect changes, sync affected suites, review quality
+/qa-test-lifecycle PR VirtoCommerce/vc-module-order#123   # From a PR — detect changes, sync affected suites, review quality
 /qa-test-lifecycle VCST-1234              # From JIRA ticket (fetch linked PRs/commits)
 /qa-test-lifecycle module orders          # After a module update — sync all related suites
 /qa-test-lifecycle diff                   # From current git diff / deploy diff
@@ -22,21 +22,17 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 /qa-test-lifecycle domain orders          # Full pipeline for all suites in a domain
 /qa-test-lifecycle suite 06 --skip-sync   # Skip sync, review existing cases only
 
-# Promotion (fold a legacy/handoff run-scoped case set into durable coverage)
-/qa-test-lifecycle VCST-1234                 # Also picks up a leftover reports/tickets/*/VCST-1234/test-cases.csv → Phase 6P
-/qa-test-lifecycle VCST-1234 --promote-only  # Skip Phases 2-5: re-derive G10 eligibility and promote only
+# Promotion (flip a ticket's Draft cases, or fold a legacy run-scoped case set into durable coverage)
+/qa-test-lifecycle VCST-1234                                  # Also picks up the ticket's Draft rows / a leftover test-cases.csv → Phase 6P
+/qa-test-lifecycle VCST-1234 --promote-only --run-id latest   # Skip Phases 2-5: re-derive G10 eligibility and promote only
 ```
 
-> **This command is the promoter for handoff, re-promotion, and non-`/qa-test` sources.** As of the
-> `/qa-test` rework, `/qa-test` **appends its own ticket cases directly into `regression/suites/` as `Draft`
-> in its Step 3** and **leaves them at `Draft`** — since 2026-09-10 it does not promote at all, so 6P is the only flip (`Draft → Automated` for a
-> case that ran green under the automated regression runner, else `Reviewed`/`Manual`; non-promotable rows
-> reverted) — verified
-> by a fresh `qa-lead` §Verifier Mode instance re-deriving G10 + user confirmation, so it no longer hands a
-> run-scoped CSV off to this command. Phase **6P** below remains the promoter for everything else: a case
-> set produced elsewhere, a re-promotion, or a legacy `reports/tickets/*/VCST-XXXX/test-cases.csv` that still
-> needs folding into durable coverage — `regression/suites/<layer>/<module>/*.csv` + a
-> `config/test-suites.json` entry, re-deriving G10 from the CSV itself (never trusting a hand-off record).
+> **This command is the promoter out of `Draft`.** `/qa-test` appends its ticket cases into
+> `regression/suites/` as `Draft` and leaves them there. Phase **6P** flips them in place (`Draft → Automated`
+> from a completed run with `--run-id`, else `Draft → Reviewed` on approval), and also folds a legacy
+> `reports/tickets/*/VCST-XXXX/test-cases.csv` or a re-promotion into durable coverage. It re-derives G10 from
+> the CSV itself, never trusting a hand-off record (why `/qa-test` stopped promoting:
+> `docs/decisions/qa-test-evolution.md` §Removing 5r and 5g).
 
 ## Flags
 
@@ -49,9 +45,9 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | `--no-auto-fix` | **Opt OUT** of the default auto-fix — confirm each auto-fixable update individually before it's written. Auto-fix is **on by default**: Phase 4b applies auto-fixable updates without asking (still shows a diff summary). |
 | `--layer <name>` | Scope to a specific layer: `api`, `graphql`, `admin`, `storefront`, `e2e` |
 | `--report-only` | Run all phases but don't modify any CSV files — output report only. **Also blocks Phase 6P** (promotion is a write) |
-| `--promote-only` | Skip Phases 2–5. Resolve the legacy/handoff run-scoped CSV, re-derive G10 eligibility, and run **Phase 6P** only. Use when a case set was already reviewed + executed and only promotion is outstanding |
+| `--promote-only` | Skip Phases 2–5. Resolve the promotion source (the ticket's in-suite `Draft` rows, or a legacy run-scoped CSV), re-derive G10 eligibility, and run **Phase 6P** only. Use when a case set was already reviewed + executed and only promotion is outstanding |
 | `--run-id <RUN_ID\|latest>` | Ground Phase 6P in a **completed regression run**, so it can reach `Draft → Automated` via `tc:promote` instead of stopping at `Reviewed`. Without it there is no runner verdict to cite and 6P promotes to `Reviewed` only. Combines with `--promote-only` (the usual pairing after a `/qa-test` run: `--promote-only --run-id latest`) |
-| `--ci` | CI mode: skip browser verification, apply all updates without confirmation, output machine-readable JSON. **Never promotes** (6P requires human/`qa-lead` approval) |
+| `--ci` | CI mode: skip browser verification, apply only the `--ci` write scope without confirmation, end with the line the CI caller asks for. **Never promotes** (6P requires human/`qa-lead` approval) |
 
 > **BL sync is automatic, not a flag.** Phases 2–3 always collect the `BL-*` a run touches (rules a case contradicted + rules a human source states); **Phase 4c always runs on exactly those** via `/qa-review-bl` — a contradicted rule goes `SUSPECT` with its bug, a rule is written only from a human source (AC, docs, Jira resolution). No candidates ⇒ no-op. For a whole domain use `/qa-review-bl domain <name>`; for every `SUSPECT` rule, `/qa-review-bl suspect`. (The former `--update-bl` flag is retired — code + live never edits a rule.)
 
@@ -85,7 +81,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | 4. Review & Fix | `test-management-specialist` | Not needed | `/qa-review-tests` static dimensions (1–7, 9, 10), auto-fix, manual items |
 | 5. Verify | `qa-testing-expert` | `playwright-firefox` | Live environment browser verification |
 | 6. Approve | Orchestrator (you) | Not needed | Quality gate evaluation, final verdict, report |
-| 6P. Promote | Orchestrator (you) | Not needed | Fold a legacy/handoff run-scoped case set into `regression/suites/` + the manifest, via `suites:append` + `suites:sync`. Approval-gated; verified by a fresh `qa-lead` (G12) |
+| 6P. Promote | Orchestrator (you) | Not needed | Flip a ticket's in-suite `Draft` rows in place, or fold a legacy/handoff run-scoped case set into `regression/suites/` + the manifest via `suites:append` + `suites:sync`. Approval-gated; verified by a fresh `qa-lead` (G12) |
 
 ---
 
@@ -99,8 +95,8 @@ Before starting the pipeline:
    Include its block in the lifecycle report header (Phase 6) and pass its kb/doc hits to
    `test-management-specialist`.
 2. **GraphQL schema refresh** (when scope includes GraphQL suites or `--layer graphql`):
-   - Run `npm run schema:refresh` to introspect the live GraphQL endpoint and update `knowledge/api/graphql-schema.md`
-   - Pass `graphql-schema.md` as a reference to `test-management-specialist` in the delegation payload
+   - Run `npm run schema:refresh` to introspect the live GraphQL endpoint and update `.claude/knowledge/api/graphql-schema.md`
+   - Pass `.claude/knowledge/api/graphql-schema.md` as a reference to `test-management-specialist` in the delegation payload
 
 ---
 
@@ -114,9 +110,13 @@ Parse any input type to produce a unified scope: **affected suites + change inve
 
 These inputs trigger Phase 2 (Sync) automatically — code changed, so existing cases may be stale.
 
-**PR (`PR #NNN`):**
-1. Run `gh pr view <number> --json title,body,files,labels,mergedAt` to get PR metadata
-2. Run `gh pr diff <number> --name-only` to get changed file list
+**PR (`PR <owner/repo>#NNN`):**
+0. **Name the repo.** A bare `PR #NNN` resolves against this ai-tools checkout, not the product repo. Take
+   `<owner/repo>` from the input, else from the linked ticket or `CHANGE_SOURCE` context; none ⇒ ask
+   (interactive) or STOP with "PR repo unknown" (`--ci`). Never guess it.
+1. Run `gh pr view <number> --repo <owner/repo> --json title,body,labels,mergedAt` to get PR metadata
+2. Get the changed file list from the paginated API — `gh api repos/<owner/repo>/pulls/<number>/files --paginate -q '.[].filename'`
+   (`gh pr view --json files` stops at 100 files without saying so)
 3. Classify files:
    - `.cs` / `.csproj` → Backend module changes
    - `.vue` / `.tsx` / `.jsx` / `.ts` → Frontend/storefront changes
@@ -129,11 +129,17 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
 2. Extract: summary, components, acceptance criteria, linked PRs, comments
 3. For each linked PR: run the PR analysis above
 4. Map JIRA components to VC modules
-5. **Detect a legacy/handoff promotion source (this is what makes Phase 6P reachable — a current `/qa-test` run produces none).** Glob
+5. **Detect a promotion source (this is what makes Phase 6P reachable).** Two kinds; record every one found.
+   - **In-suite (what a current `/qa-test` run leaves):** rows under `regression/suites/**/*.csv` whose
+     `Automation_Status` is `Draft` and whose `References` carries the ticket key. Add
+     `"promotionSource": { "kind": "in-suite", "rows": [{"caseId", "suiteCsv"}] }` — 6P flips them in place
+     (`.claude/skills/qa-test-lifecycle/promote.md` step 4i), never re-appends them.
+   - **Legacy run-scoped CSV:** Glob
    `reports/tickets/*/VCST-XXXX/test-cases.csv` — **across all sprints**; a ticket tested before a sprint rollover lives under the
    older folder. When a match exists, read its sibling `summary.json` and add to the scope:
    ```
    "promotionSource": {
+     "kind": "legacy",
      "casesCsv": "reports/tickets/Sprint26-15/VCST-XXXX/test-cases.csv",
      "summaryJson": "reports/tickets/Sprint26-15/VCST-XXXX/summary.json",
      "newCasesAuthored": 7,                  // summary.json new_cases_authored
@@ -143,57 +149,19 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
    ```
    `summary.json`'s `promotion` block is a **legacy hand-off record** from runs made before `/qa-test` `5g` was removed (2026-09-10) — where such a run got
    to. It is **not** an approval and **not** an eligibility verdict: Phase 6P re-derives eligibility itself
-   (see G10). No `test-cases.csv` ⇒ no `promotionSource` ⇒ **6P is a no-op**, and the ticket runs as an
+   (see G10). Neither kind found ⇒ no `promotionSource` ⇒ **6P is a no-op**, and the ticket runs as an
    ordinary change source.
 
 **Module (`module <name>`):**
-1. Match `<name>` against module names in `knowledge/execution/module-suite-map.md`
+1. Match `<name>` against module names in `.claude/knowledge/execution/module-suite-map.md`
 2. Query VirtoOZ (`/vc-docs`; Context7 fallback) for the module's current docs
 3. If a specific version is known: check GitHub releases via `gh api repos/VirtoCommerce/vc-module-<name>/releases/latest`
 
-**Diff (`diff`) — detect deployed platform + theme changes:**
-
-Step 1 — Fetch current deploy state via GitHub MCP:
-1. `backend/packages.json` — platform version + all module IDs and versions
-2. `theme/artifact.json` — theme package URL with version
-
-Use GitHub MCP: `get_file_contents` with `owner: "VirtoCommerce"`, `repo: "vc-deploy-dev"`, `branch: "vcst-qa"` (default; use the branch matching `TEST_ENV` for other envs) for each file.
-
-Step 2 — Compare against last known state:
-- Compare with `reports/full-cycle/last-deploy-state.json` (if exists)
-- Diff module versions: identify which modules have new versions
-- Diff theme version: if changed → theme/UI deployment
-
-Step 3 — Map changes to suites:
-
-| What changed | Affected suites |
-|---|---|
-| Backend module version changed | Map module name to suites via `module-suite-map.md` |
-| `PlatformVersion` changed | All suites (platform upgrade) — run `critical` selection |
-| Theme version changed | Frontend suites |
-| Nothing changed | No sync needed — skip Phase 2 |
-
-Step 4 — Save current state:
-- Write `reports/full-cycle/last-deploy-state.json` with both files' content
-
-Step 5 — Also check test repo changes:
-- `git diff --name-only` for changes to test files in this repo
-- Merge with deploy-detected affected suites (deduplicate)
-
-**Changelog (`changelog <version>`):**
-1. **Resolve through the local ledger** — `.claude/knowledge/domain/release-ledger.md`. §4 (component → month index) maps the version to its month; §2/§3 give that month's feature list with each feature's `component@version`, docs deep link and **⚠ BREAKING** flag; the digest URL is the citation. This is a local file read, no MCP call.
-   - Step 1 used to be "query Context7 for release notes for the specified version". That corpus does not carry them — its newest version page is Platform **3.917.1** while production is past **3.1050**. Fall back to Context7 only if the ledger's `generated:` date is >45 days old, or the version predates its window (§5 states the oldest month indexed).
-2. **Confirm against GitHub Releases** — the authoritative version + date, and the escape hatch for a version the ledger predates:
-   ```bash
-   gh api repos/VirtoCommerce/vc-platform/releases/tags/<version>
-   ```
-   Tags are bare semver for `vc-platform` / `vc-module-*` / `vc-frontend` (`3.1054.0`, `2.56.0`) but `v`-prefixed for `vc-shell` (`v2.5.0`) — normalize before querying. If `GITHUB_TOKEN` is set but invalid, `gh` fails with `401 Bad credentials` on every call; prefix with `env -u GITHUB_TOKEN` to fall through to the `gh` keyring account.
-   - Module release bodies are one terse HTML bullet (`<h3>🎯 Development</h3><ul><li>Documents library (#12)</li></ul>`) — authoritative for *when*, near-useless for *what*. Only `vc-frontend` and `vc-shell` carry prose, and those carry `VCST-*` keys per PR, which is what lets a change be traced back to a ticket.
-3. **Extract** new features, breaking changes, deprecated APIs, module updates — mostly already structured by step 1. **Note the boundary:** the ledger is `exhaustive: false`, so an absent feature is *unknown*, not *nonexistent*; and it records what was **released upstream**, never what is **deployed** on the env under test (`agent-dispatch.md § Build Verification`).
+**Diff (`diff`) and Changelog (`changelog <version>`):** follow [`change-sources.md`](../skills/qa-test-lifecycle/change-sources.md) — read it only for those two inputs.
 
 **For direct scopes (suite, domain):**
 
-These inputs skip Phase 2 by default (no code change to sync against). Use `--skip-sync` is implicit.
+These inputs skip Phase 2 by default (no code change to sync against). `--skip-sync` is implicit.
 
 - `suite <ID>` → resolve via `config/test-suites.json`
 - `domain <name>` → resolve all suites in the domain via `config/test-suites.json` selections
@@ -202,9 +170,9 @@ These inputs skip Phase 2 by default (no code change to sync against). Use `--sk
 ```
 {
   "inputType": "change-source | direct-scope",
-  "source": "PR #123 | VCST-1234 | module orders | diff | changelog 3.850.0 | suite 04c | domain orders",
+  "source": "PR <owner/repo>#123 | VCST-1234 | module orders | diff | changelog 3.850.0 | suite 04c | domain orders",
   "affectedSuites": ["04a", "04c", "20", "15"],
-  "promotionSource": null,                     // set only when a legacy/handoff run-scoped test-cases.csv exists (drives Phase 6P; a current /qa-test run produces none)
+  "promotionSource": null,                     // set only for a ticket input with in-suite Draft rows or a legacy run-scoped test-cases.csv (drives Phase 6P)
   "changeInventory": {                         // only for change sources
     "changedModules": ["Orders", "Cart"],
     "changedLayers": ["backend", "graphql", "storefront"],
@@ -227,11 +195,11 @@ Dispatch `test-management-specialist` with the change inventory to assess and up
 
 #### 2a. Map Changes to Cases
 
-Use `knowledge/execution/module-suite-map.md` to route changes to specific test cases:
+Use `.claude/knowledge/execution/module-suite-map.md` to route changes to specific test cases:
 
 1. **Direct mapping** — for each changed module, look up "Must Run" suites
 2. **Dependency mapping** — look up "Should Run" suites (downstream dependencies)
-3. **Page mapping** — cross-reference `knowledge/domain/sitemap.md`
+3. **Page mapping** — cross-reference `.claude/knowledge/domain/sitemap.md`
 4. **API mapping** — find cases exercising affected API endpoints
 5. **Layer filtering** — if `--layer` flag is set, filter to matching layer
 
@@ -244,9 +212,12 @@ For each affected suite, identify specific cases referencing changed areas and c
 | `NEW_NEEDED` | New feature/endpoint with no test coverage |
 | `UNAFFECTED` | Case in an affected suite but doesn't reference changed areas |
 
-#### 2b. Assess via VirtoOZ
+#### 2b. Assess via the kb, then VirtoOZ
 
-Query VirtoOZ (`/vc-docs`; Context7 fallback) for each changed module's current behavior:
+For each endpoint / GraphQL operation / page path the change inventory names, ask the base first —
+`mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`); it holds what the platform was
+observed to DO (`CLAUDE.md` §Essential Rules → *Product context*). Then query VirtoOZ (`/vc-docs`;
+Context7 fallback) for each changed module's documented behavior:
 - API response schemas, required fields, validation rules
 - GraphQL query/mutation signatures
 - Module configuration options
@@ -266,13 +237,13 @@ Reclassify each case:
 
 **For STALE cases:**
 1. Read current test case from suite CSV
-   - **KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
+   - **KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Essential Rules → *Product context*).
 2. Query VirtoOZ (Context7 fallback) for current behavior
 3. Update Steps and Assertions to match new behavior
 4. Preserve: case ID, Title (update if feature name changed), Section, Priority, Business_Rule, Edge_Case_Refs
 5. **Leave `Automation_Status` alone.** The legal values are exactly `Draft` | `Reviewed` | `Automated` |
-   `Manual` | `Semi-Automated` | `Deprecated` (`test-case-template.md` §Automation_Status, enforced by
-   `suites:review` **S-006**). There is no `synced` state — a sync is recorded in `References`, not in the
+   `Manual` | `Semi-Automated` | `Deprecated` (`AUTOMATION_STATUSES` in `scripts/test-cases/lint-test-cases.ts`, enforced by
+   `suites:review` **S-006**; meanings: `.claude/skills/qa-test-cases-generator/test-case-template.md` §Automation_Status). There is no `synced` state — a sync is recorded in `References`, not in the
    status column. Only Phase 6 may *demote* a case to `Draft`, and promotion out of `Draft` is never
    automatic (it needs zero GRD-001 + human approval — see the skill's promotion rule).
 6. Add to References: `"Synced: {source} ({date})"` — append; never clobber an existing
@@ -287,14 +258,15 @@ Reclassify each case:
 - Feature removed → mark `Automation_Status: Deprecated` (capitalized — the enum is case-sensitive), add note to References
 - Feature replaced → rewrite for replacement
 - Feature split → generate separate cases
-- **Always confirm with user** before deprecating or rewriting
+- **Always confirm with user** before deprecating or rewriting — from the subagent, that means returning the
+  item in `pendingApprovals[]` unwritten (§Delegation Protocol)
 
 **After updates:**
 - Re-run structural validation (CSV format, required fields, ID uniqueness)
 - Update `config/test-suites.json` testCount if cases were added/removed
 
 **BL staleness detection (always):**
-- For each BL-* whose expectation a STALE/BROKEN case contradicts, record `{id, observedBehavior, affectedCases, bug}` for Phase 4c: a mismatch with a `DECLARED` rule is a **bug candidate** (`knowledge/execution/cases-that-catch-bugs.md` §2), and 4c marks the rule `SUSPECT` until the Jira decision.
+- For each BL-* whose expectation a STALE/BROKEN case contradicts, record `{id, observedBehavior, affectedCases, bug}` for Phase 4c: a mismatch with a `DECLARED` rule is a **bug candidate** (`.claude/knowledge/execution/cases-that-catch-bugs.md` §2), and 4c marks the rule `SUSPECT` until the Jira decision.
 - Phase 2 never edits a rule or its YAML; the behaviour it saw is not a source.
 
 **Phase 2 output:**
@@ -319,11 +291,11 @@ Dispatch `test-management-specialist` (continuing from Phase 2 delegation).
 
 1. Read target suite CSV(s) — parse all existing test cases
 2. Load domain context:
-   - Domain checklist(s) from `domain-checklists.md` / `graphql-checklist.md`
+   - Domain checklist(s) from `.claude/skills/qa-checklist/domain-checklists.md` / `.claude/skills/qa-checklist/graphql-checklist.md`
    - BL-*: `npm run bl:extract -- --domain <d>`
-   - ECL-* patterns from `e-commerce-edge-cases-library.md`
-   - Expected coverage from `feature-domain-map.md`
-   - Product types and test data from `products.md`
+   - ECL-* patterns from `.claude/knowledge/oracles/e-commerce-edge-cases-library.md`
+   - Expected coverage from `.claude/skills/qa-coverage-gap/feature-domain-map.md`
+   - Product types and test data from `.claude/knowledge/domain/products.md`
 3. Query VirtoOZ (`/vc-docs`; Context7 fallback) for domain-relevant topics
 4. Identify gaps:
    - Checklist items with no corresponding test case
@@ -349,8 +321,8 @@ Instead of full gap detection, perform change impact analysis:
 
 Before authoring any case, prepare the data each gap needs so cases reference *prepared* combinations, not ad-hoc values. `test-management-specialist` (continuing delegation) invokes the **[`/qa-generate-data`](../skills/qa-generate-data/SKILL.md)** skill, scoped to the feature/flow behind the gaps (or the JIRA ticket for change sources):
 
-1. The skill scopes scenarios → learns live variant space → designs the **combination matrix** (pairwise/all-pairs) → resolves each cell **reuse-first**, authoring only true gaps as `seeded=false` fixtures + `@td()` combination aliases, then runs `validate-td-refs.ts` (green gate).
-2. It returns the **combination matrix inline** (Combo IDs + scenario-covered + reuse-vs-gap breakdown) — the on-disk output is the gap fixtures (`test-data/<domain>/*.csv`) + aliases (`aliases.json`). No stray files (honors `.claude/rules/reports.md`).
+1. The skill scopes scenarios → learns live variant space → designs the **combination matrix** (pairwise/all-pairs) → resolves each cell **reuse-first**, authoring only true gaps as `seeded=false` fixtures + `@td()` combination aliases, then runs `scripts/test-data/validate-td-refs.ts` (green gate).
+2. It returns the **combination matrix inline** (Combo IDs + scenario-covered + reuse-vs-gap breakdown) — the on-disk output is the gap fixtures (`test-data/<domain>/*.csv`) + aliases (`test-data/aliases.json`). No stray files (honors `.claude/rules/reports.md`).
 3. Map each gap (and NEW_NEEDED item) to one or more **Combo IDs** — this mapping drives 3c (one case / case-group per combination).
 4. If gap fixtures were authored (`seeded=false`), note in the Phase 6 report that **`/qa-seed-data <domains>` must run before these cases execute live** (reused cells already exist). The skill never provisions.
 
@@ -363,15 +335,17 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
 2. **Query VirtoOZ** (Context7 fallback): API field names, validation rules, GraphQL signatures
 3. Generate test cases in enriched 15-column CSV format (1-3 cases per gap)
 4. Apply **minimum effective set** principle: clear bug hypothesis, happy path + most likely negative + known edge cases
-5. Use layer-specific tags from `test-case-template.md`
+5. Use layer-specific tags from `.claude/skills/qa-test-cases-generator/test-case-template.md`
 6. **GraphQL schema validation** (mandatory for GraphQL cases):
-   - Read `knowledge/api/graphql-schema.md`
+   - Read `.claude/knowledge/api/graphql-schema.md`
    - Validate every query/mutation: name exists, args match, `command` wrapper on mutations, response fields match return types
    - If query/mutation doesn't exist in schema → do NOT generate a case for it
 7. **BL candidate collection (always):**
    - For each generated case whose gap maps to a rule no record holds (`bl:extract -- --domain <d>`): **a human source states it** (the ticket's AC, a docs page, a Jira resolution) → record a candidate (`PROPOSED-BL-<DOMAIN>-<NNN>`, severity, rule, check, violation signal, that source) in `blProposals.new[]`; **only code or live shows it** → `kb_capture`, not a candidate.
    - Phase 3 never edits a rule; 4c writes the candidates (`/qa-review-bl`, value gate applies).
-8. **Present to user** as Feature Test Matrix for approval before proceeding
+8. **Present to user** as Feature Test Matrix for approval before proceeding — the subagent returns the
+   matrix in `pendingApprovals[]` and writes no generated case until the orchestrator re-dispatches the
+   approved ones (§Delegation Protocol)
 
 ---
 
@@ -383,7 +357,7 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
 
 Reviews ALL cases in scope (existing + updated + newly generated). **The
 [`/qa-review-tests` skill](../skills/qa-review-tests/SKILL.md) owns the dimension set — this command
-does not restate it.** Read its Review Dimensions table (and `review-criteria.md`) for the checks,
+does not restate it.** Read its Review Dimensions table (and `.claude/skills/qa-review-tests/review-criteria.md`) for the checks,
 codes, and severities; a restated copy here would drift, and has. Delegate by *dimension number*:
 
 | Dimensions | Where they run in this pipeline |
@@ -407,18 +381,21 @@ treats source-vs-live disagreement as CONTRADICTORY (usually deploy lag), never 
 So, symmetrically with 4c's handling of `BL-*`:
 
 - A Phase-2 STALE/BROKEN finding that changes only *how* a case is driven → apply in 4b.
-- A finding that changes *what behavior is expected* → run `/qa-review-tests --triangulate` **scoped to
-  those cases only**, and apply strictly under its auto-fix matrix (CONFIRMED → stamp refresh; DRIFT →
+- A finding that changes *what behavior is expected* → the subagent returns it in
+  `triangulationCandidates[]` unwritten; **you (the orchestrator), after the Phases 2–4 dispatch returns**,
+  run `/qa-review-tests --triangulate` **scoped to those cases only** — it dispatches `ba-system-analyzer`
+  for the docs + source axes, which a subagent cannot do — and apply strictly under its auto-fix matrix (CONFIRMED → stamp refresh; DRIFT →
   rewrite the drifted assertion only; MISSING/CONTRADICTORY/UNGROUNDED/RETIRE → report, never write).
 - A DRIFT rewrite must keep `{{VAR}}`/`@td()` and assert the structural invariant — never a literal
   price/SKU/URL observed live (DV-016). This is the most likely way an auto-fix does damage.
 - On a **legacy untagged case, do not add a provenance tag** to the assertion you rewrote — one tag
   makes the case provenance-adopted and turns every untagged sibling into a GRD-001 High. The row-level
-  `Audited:` stamp carries the evidence (`triangulation-criteria.md` §5 rule 4).
+  `Audited:` stamp carries the evidence (`.claude/skills/qa-review-tests/triangulation-criteria.md` §5 rule 4).
 
 #### 4b. Auto-Fix
 
-**Auto-fixable (applied automatically by default; pass `--no-auto-fix` to confirm each individually):**
+**Auto-fixable (applied automatically by default; pass `--no-auto-fix` to confirm each individually — the
+subagent returns those, and the manual items below, in `pendingApprovals[]` rather than asking):**
 - Missing step type tags → infer from verbs
 - Missing `errors[]` check → add to Cross_Layer_Checks
 - Hardcoded URLs → replace with `{{VAR}}`
@@ -456,7 +433,7 @@ Run **`/qa-review-bl`** on exactly the `BL-*` this run surfaced — the Phase 2 
 Phase 3 `blProposals.new[]`. **None ⇒ no-op.** A whole domain is standalone `/qa-review-bl domain
 <name>`. Operations (`.claude/skills/qa-review-oracles/bl-audit-criteria.md` §1):
 
-- **A rule a case contradicted → MARK-SUSPECT**: `status: SUSPECT`, `suspect_reason` = `[bug] <KEY>` (filed via the defect path; `bl:fresh --resolve` clears it on Fixed). The rule's text is never rewritten from what the run saw.
+- **A rule a case contradicted → MARK-SUSPECT**: `status: SUSPECT`, `suspect_reason` = `[bug] <KEY>` (`bl:fresh --resolve` clears it on Fixed). With no bug key yet, the rule goes into the run's `bugCandidates[]` — filed only as §Phase 5 *Filing a bug* says, never from inside 4c. The rule's text is never rewritten from what the run saw.
 - **A candidate a human source states → NEW / SYNC** in `bl/<slug>.yaml` (value gate for NEW), then `npm run bl:render` + `bl:convert:check`.
 - **A `SUSPECT` rule in scope whose bug now has a Jira decision → RESOLVE** (Fixed → `ACTIVE`; By design / Won't fix → rule rewritten from the resolution).
 - Behaviour no rule covers → `kb_capture`. No proposals file, no review queue; RETIRE is only proposed.
@@ -491,9 +468,14 @@ Phase 3 `blProposals.new[]`. **None ⇒ no-op.** A whole domain is standalone `/
 | BROKEN | Blocker | Page error or flow blocked → investigate |
 | BLOCKED | High | Precondition can't be met → may be env issue |
 | **Behavior CONFIRMED** | — | Upgrade that assertion's provenance tag to `{OBSERVED}` (clears GRD-001) |
-| **Behavior REFUTED** | Critical | **ENV-008**. A `{SPEC}`/`{DOC}`/`{BL}`/`Catches:` assertion is a **bug candidate**: keep it red, file it. Only a `{HYPOTHESIS}` may be rewritten to the observed behaviour (recorded) or dropped. **Never** upgrade the tag. |
+| **Behavior REFUTED** | Critical | **ENV-008**. A `{SPEC}`/`{DOC}`/`{BL}`/`Catches:` assertion is a **bug candidate**: keep it red and add it to `bugCandidates[]` (below). Only a `{HYPOTHESIS}` may be rewritten to the observed behaviour (recorded) or dropped. **Never** upgrade the tag. |
 
 Screenshots captured for every CHANGED/BROKEN/BLOCKED finding.
+
+**Filing a bug.** Neither subagent files anything. You (the orchestrator) collect `bugCandidates[]` from
+Phase 5 and 4c, list them in the report, and file one only through `/vc-fix:qa-bug` after the user confirms
+that candidate — with the found-by labels of `.claude/rules/reports.md` §0b. Under `--ci`, never: the
+candidates are reported only. The bug key it returns is what 4c writes into `suspect_reason`.
 
 ---
 
@@ -516,9 +498,9 @@ The orchestrator (you) evaluates all phases:
 | G9: Sync | All STALE cases updated, all BROKEN addressed | Yes (if synced) |
 | G10: Assertion Grounding | **0 GRD-001 Blocker/High** + 0 ENV-008. Provenance is **opt-in per case**: a fully-untagged *legacy* case is Informational only (it does not fail this gate), but once a case is **provenance-adopted** (any assertion tagged — i.e. everything Phase 3 generated or Phase 2/4 touched) an untagged sibling is **High** and a `{HYPOTHESIS}` in a past-`Draft` case is a **Blocker** | Yes |
 | G11: Technique Coverage | No feature group (≥3 cases) missing the positive + negative + boundary mix (TC-001) | Recommended |
-| G12: Promotion Integrity | **Only when 6P promotes.** No **incoming** ID collides with any case under `regression/suites/` — proven by `append-test-cases-to-suite.ts --check-global-ids --dry-run` exiting 0, **not** by a plain dry-run (which only checks the target suite); `npm run suites:lint` green after `suites:sync`; the target suite's `suites:review` no worse than before the append; no case promoted that G10 didn't clear. *(Scope note: this gate governs what 6P **adds**. It does not require the ~224 pre-existing cross-suite duplicate IDs to be fixed first.)* | Yes (if promoting) |
+| G12: Promotion Integrity | **Only when 6P promotes.** No **incoming** ID collides with any case under `regression/suites/` — proven by `append-test-cases-to-suite.ts --check-global-ids --dry-run` exiting 0, **not** by a plain dry-run (which only checks the target suite); `npm run suites:lint` green after `suites:sync`; the target suite's `suites:review` no worse than before the append; no case promoted that G10 didn't clear. *(Scope note: this gate governs what 6P **adds**. It does not require pre-existing cross-suite duplicate IDs to be fixed first.)* | Yes (if promoting) |
 
-**G10 is the promotion gate, not a nice-to-have.** Per the skill's promotion rule + `test-case-template.md`
+**G10 is the promotion gate, not a nice-to-have.** Per the skill's promotion rule + `.claude/skills/qa-test-cases-generator/test-case-template.md`
 §Automation_Status, a case moves `Draft → Reviewed` only when (a) the review verdict is ≥ PASS WITH
 WARNINGS, (b) every assertion is grounded — and for a new-feature suite that requires a passing Phase 5
 live pass — and (c) a human or `qa-lead-orchestrator` approves. **This pipeline never performs (c)
@@ -535,221 +517,14 @@ itself.** A gate-green run means *eligible for promotion*, not promoted.
 
 #### 6P. PROMOTE — fold a legacy/handoff run-scoped case set into durable coverage
 
-Serves case sets `/qa-test` did **not** finish in-run: a legacy `reports/tickets/*/VCST-XXXX/test-cases.csv`
-left by an older `/qa-test`, or a re-promotion of cases that stayed `Draft`. (A current `/qa-test` run
-appends its cases into `regression/suites/` as `Draft` and does NOT flip them (its `5g` gate was removed 2026-09-10), so it
-produces no `promotionSource`.)
-
-**Runs when** Phase 1 resolved a `promotionSource` **and** step 1 below re-derives G10 clean. **No-op**
-when there is no `promotionSource`. **Never runs** under `--ci` or `--report-only`.
-
-**Precondition, stated precisely — 6P does NOT require an APPROVED pipeline verdict.** It requires the
-**G10 re-derivation in step 1 to come back clean for the cases being promoted**, plus the step-2 approval.
-(`--promote-only` skips Phases 2–5 and so produces no verdict to gate on.) On a **full** run the pipeline verdict
-still applies as a second condition — NEEDS FIXES / BLOCKED means the suites in scope are not in a state to
-receive new cases, so do not promote into them.
-
-**Nothing in the manifest-driven runner reads `reports/tickets/**`**, so promotion is the only path from a
-ticket-scoped case to regression coverage, and this command is its only owner (`/qa-test` prepares, never promotes).
-
-**1 — Re-derive eligibility independently (do NOT trust the hand-off).** `summary.json`'s
-`promotion.eligible[]` says where the previous run got to; it is **not** an approval. Re-derive from the
-CSV itself, exactly as G10 does:
-
-- `npm run suites:review -- <promotionSource.casesCsv> --fail-on=High` → **0 GRD-001 Blocker/High, 0 ENV-008**.
-- `npm run td:validate` → green (a promoted case whose `@td()` no longer resolves is a permanent red).
-- `npm run graphql:lint-labels -- <csv>` for any GraphQL case (DV-019).
-- **Every assertion grounded** — no `{HYPOTHESIS}`, no unconfirmed `{SPEC}`. A `{HYPOTHESIS}` that
-  this phase cannot resolve keeps its case at `Draft`: **not promotable**, no exceptions. An
-  `{OBSERVED}` with no traceable artifact is the failure mode Dimension 10 exists to catch — if 6i's
-  upgrades look unbacked, REJECT the case rather than promoting a fabricated expectation into permanent
-  coverage.
-- A case the run **never executed** (no PASS/FAIL evidence) is not promotable regardless of its tags.
-
-Cases 6i marked *blocked* stay blocked; a case 6i marked *eligible* that fails re-derivation is **demoted
-back to blocked** with the reason. Report both sets.
-
-**2 — Human approval (the promotion gate).** Promotion out of `Draft` is **never automatic**
-(`.claude/agents/qa-lead-orchestrator.md` §Decision Framework — only `qa-lead-orchestrator` or the
-user may promote; `test-management-specialist` never self-promotes). Present the eligible set — case ID,
-title, target suite, `Draft → Reviewed` — and **wait for approval**. Rejected or unapproved cases stay
-`Draft` in the ticket folder.
-
-**3 — Route each approved case to its target suite.** Layer + domain → the owning suite, derived from
-`config/test-suites.json` + `.claude/knowledge/execution/module-suite-map.md`. **Prefer appending to an
-existing suite** over creating one. A genuinely new suite file needs: a free manifest id (check for
-collisions — id `092` is already carried by two suites), a `regression/suites/<Layer>/<module>/<id>-<name>.csv`
-path, and a full `config/test-suites.json` entry (id, name, file, domain, layer, priority, testCount,
-agent, tags, `requiresModules`). **Never invent a module/repo name** to force a route — an unroutable case
-stays in the ticket folder and is reported.
-
-**4 — Write via the deterministic appender only.** Hand-rolling the append silently merges two 15-column
-rows into one ~29-field record:
-
-```bash
-npx tsx scripts/test-cases/append-test-cases-to-suite.ts <target-suite.csv> --rows <approved-rows.csv> --check-global-ids --dry-run
-```
-
-Dry-run first; only on a clean dry-run drop `--dry-run`. The appender validates the 15-column schema,
-ID format, the `Priority`/`Automation_Status` enums, Title+Section duplicates against the target, and
-round-trip verifies the appended block.
-
-**`--check-global-ids` is mandatory here and is not the default.** Without it the appender enforces ID
-uniqueness **only within the target suite** — it cannot see an ID that already lives in a *different*
-suite, and that is exactly the collision that overwrites the other suite's per-case failure evidence. The flag scans every CSV under `regression/suites/` and
-rejects a colliding **incoming** ID. On a collision, **re-ID the incoming case** — never renumber the
-existing one, never reuse a retired ID.
-
-> It is opt-in because the corpus already carries **~224 IDs in more than one suite** (legacy debt, e.g.
-> `CAT-001`); checking the corpus against itself would fail every append on that debt. 6P only stops **adding** to it.
-
-The `Automation_Status` flip `Draft → Reviewed` happens **in the rows being appended** — that flip *is* the
-promotion. Stamp `References` with `Promoted: VCST-XXXX → <suite id> (YYYY-MM-DD)`, appending; never
-clobber an existing `Synced:` / `Audited:` / `Corrected:` stamp.
-
-> **6P promotes to `Reviewed` by default, and `Reviewed` is a different claim from `Automated`.**
-> `Reviewed` says a human/`qa-lead` approved the case; `Automated` says a runner executed it green,
-> which only a completed run can evidence — so without a run there is simply no `Automated` claim
-> available to make, and hand-editing the cell to say otherwise is the exact failure `tc:promote` exists
-> to end.
->
-> **Pass `--run-id <RUN_ID|latest>` and 6P makes both flips.** It runs `npm run tc:promote`
-> (`.claude/knowledge/execution/regression-promotion.md` §Post-Run Promotion), which derives
-> `Draft → Automated` from that run's own `suite-*-results.json`, writes nothing else, and holds
-> anything it cannot ground with a `PR-*` code. **A held case falls back to the `Reviewed` flip** if the
-> step-2 approval covers it — the two are a ladder, not alternatives. A checklist-verified case (no
-> automated-runner verdict at all) is `Reviewed`/`Manual` and stays a human call.
->
-> **The same `tc:promote` also runs at [`/qa-regression`](qa-regression.md) Step 6.5**, against the run
-> it just made. **That is not a second promoter — it is one mechanism reached from the two places the
-> evidence exists**, and the scopes are disjoint: 6.5 flips cases that are *already grounded* and does no
-> assertion work, while 6P harvests `{HYPOTHESIS}` → `{OBSERVED}`, re-derives G10, and is the only path
-> that can promote a case no run has executed. Neither weakens the shared invariant: **promotion out of
-> `Draft` is never automatic.**
-
-**5 — Re-sync the manifest and re-gate.**
-
-```bash
-npm run suites:sync && npm run suites:lint
-```
-
-`suites:sync` refreshes `testCount` + `_meta`; `suites:lint` hard-fails on a declared-but-absent CSV or a
-selection that expands to nothing. Then re-run `npm run suites:review -- <target-suite.csv> --fail-on=High`
-on the **target** suite. **An append that introduces a new Blocker/Critical in the target is reverted, not
-shipped** — same revert-on-regression rule as Phase 4b.
-
-**6 — Leave the ticket folder intact.** `test-cases.csv` stays as the run's evidence trail (it is category
-2 per `.claude/rules/reports.md`); promotion copies rows out, it does not move or delete the file. Record
-in the Phase 6 report: promoted (case ID → target suite), blocked (case ID + concrete reason), and
-unroutable.
-
-**Gate (G12) + independent verification:** promotion writes into permanent regression coverage, so the
-doer cannot certify it. A fresh `qa-lead` verifier **re-runs `suites:review` on the target suite** and
-**`suites:lint`**, and for a sample of promoted cases re-checks that each `{OBSERVED}` traces to a real
-`/qa-test` Step-4 artifact. REJECT → revert the append (`git checkout` the target CSV + manifest) → fix →
-re-verify. ≤2 iterations, then STOP for a human.
+When Phase 1 resolved a `promotionSource` (or under `--promote-only`), read and follow [`promote.md`](../skills/qa-test-lifecycle/promote.md) — steps 1–6 and the G12 verification. **No-op** without a `promotionSource`; **never runs** under `--ci` or `--report-only`.
 
 ---
 
 ## Final Report
 
-Generate run ID: `TLC-YYYY-MM-DD-HHMM` — used only to label the summary below and any gitignored Phase 5
-screenshots (`reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`, screenshots only). Per `.claude/rules/reports.md`
-§1, this run summary is **terminal-only** — present it directly in your final chat response, do not write a
-`lifecycle-report.md` or `lifecycle-summary.json` file to disk.
-
-### Terminal summary (present in chat — do not write to disk)
-
-```markdown
-# Test Case Lifecycle Report — {RUN_ID}
-
-## Summary
-- **Input:** [original input]
-- **Input Type:** change-source | direct-scope
-- **Date:** YYYY-MM-DD HH:MM
-- **Platform:** [PlatformVersion from packages.json]
-- **Theme:** [theme version from artifact.json]
-- **Module Versions:** [relevant modules with versions]
-- **Verdict:** APPROVED | APPROVED WITH WARNINGS | NEEDS FIXES | BLOCKED
-
-## Phase Results
-
-| Phase | Agent | Status | Key Metrics |
-|-------|-------|--------|-------------|
-| 1. Scope | orchestrator | Done | N suites affected, input type: X |
-| 2. Sync | test-management-specialist | Done/Skipped | N stale updated, M broken addressed |
-| 3. Analyze & Generate | test-management-specialist | Done/Skipped | N gaps found, M cases created |
-| 4. Review & Fix | test-management-specialist | Done | N findings (B: X, C: Y, H: Z, M: W) |
-| 5. Verify | qa-testing-expert | Done/Skipped | N verified, X changed, Y broken |
-| 6. Approve | orchestrator | **VERDICT** | Gates: N/M passed |
-| 6P. Promote | orchestrator | Done/No-op | N promoted → suite(s), M stayed `Draft` |
-
-## Change Inventory (if change-driven)
-| Module | Layer | Files Changed | Breaking | New Features |
-|--------|-------|--------------|----------|-------------|
-
-## Sync Results (if Phase 2 ran)
-| Case ID | Suite | Classification | Action | Before | After |
-|---------|-------|---------------|--------|--------|-------|
-
-## Coverage Delta (if Phase 3 ran)
-
-| Metric | Before | After | Delta |
-|--------|--------|-------|-------|
-| Total cases | N | M | +X |
-| BL-* coverage | X% | Y% | +Z% |
-| P0 case count | N | M | +X |
-
-## New Cases Generated
-| Case ID | Suite | Title | Layer | Priority |
-
-## Promotion (only when Phase 6P ran)
-Source: `reports/tickets/{SPRINT}/VCST-XXXX/test-cases.csv` — N authored, M promoted, K blocked, J unroutable.
-
-| Case ID | Target suite | Status | `Draft →` | Reason (if not promoted) |
-|---------|--------------|--------|-----------|--------------------------|
-| TC-XXX | 028 `Frontend/cart/028-cart-core.csv` | PROMOTED | Reviewed | — |
-| TC-YYY | — | BLOCKED | stays `Draft` | unresolved `{HYPOTHESIS}` — which error wins when both predicates block |
-
-Manifest: `config/test-suites.json` testCount updated for [suite ids]; `suites:lint` green.
-
-## Documentation Findings
-| Module | Topic Queried | Behavior Change Detected | Cases Influenced |
-
-## Quality Gates
-
-| Gate | Status | Details |
-|------|--------|---------|
-| G1-G11 | PASS/FAIL/WARN/SKIP | ... |
-
-## Environment Verification (if Phase 5 ran)
-
-| Case ID | URL | Check | Result | Screenshot |
-|---------|-----|-------|--------|------------|
-
-## Remaining Items
-
-### Must Fix (blocks regression)
-| Case ID | Issue | Dimension | Suggested Fix |
-
-### Should Fix (improves quality)
-| Case ID | Issue | Dimension | Suggested Fix |
-
-## Files Modified
-- [list of CSV files with change summary]
-
-## BL Audit (when the run surfaced BL candidates)
-- K rules: X marked `SUSPECT` (bug keys); Y written from a human source (`bl/<slug>.yaml`); Z resolved; W observations sent to the `kb`. (Omit if 4c had no candidates.)
-
-## Next Steps
-- [ ] Address "Must Fix" items
-- [ ] Run `/qa-regression` with reviewed suite(s)
-- [ ] File JIRA tickets for environment issues
-```
-
-No `lifecycle-summary.json` is written either — nothing downstream parses it today (CI's `run-full-cycle.ts`
-already consumes this agent's returned chat text directly, not a file), so the structured fields above
-(`gateResults`, `casesAnalyzed`, etc.) go in the terminal summary's tables, not a separate JSON artifact.
+At close-out, present the run summary in chat as [`report-template.md`](../skills/qa-test-lifecycle/report-template.md) gives it — run id, template, and why nothing is written to disk.
+For a `diff` input, save the deploy state now — [`change-sources.md`](../skills/qa-test-lifecycle/change-sources.md) Step 4 (only after Phase 2 completed; never under `--report-only`).
 
 ---
 
@@ -771,64 +546,13 @@ already consumes this agent's returned chat text directly, not a file), so the s
 | `--ci` / `--report-only` | Yes | ... | ... | Yes | Skip | Yes | **Never** |
 
 *Diff mode skips generation by default (no gap analysis — only reviews changed cases). G8 gate not evaluated when verify is skipped.
-†6P runs only when Phase 1 resolved a `promotionSource` (a `/qa-test` run-scoped `test-cases.csv` for that ticket); otherwise it is a no-op.
+†6P runs only when Phase 1 resolved a `promotionSource` (the ticket's in-suite `Draft` rows, or a legacy run-scoped `test-cases.csv`); otherwise it is a no-op.
 
 ---
 
 ## CI Integration
 
-### Full Cycle Pipeline (`ci/run-full-cycle.ts`)
-
-In CI mode, `/qa-test-lifecycle --ci` replaces the old 2-command flow — `/qa-sync-tests` was **removed**
-(its command file is deleted, not aliased), so both change-driven sync and standalone review are this one
-command at different scopes:
-
-```
-PR merged → ci/run-full-cycle.ts
-              │
-              ├─ Phase 1: SCOPE + SYNC + REVIEW          [runs unless SKIP_SYNC]
-              │   → /qa-test-lifecycle {CHANGE_SOURCE} --ci --skip-generate --skip-verify
-              │   → emits AFFECTED_SUITES: <ids> for Phase 3
-              │
-              ├─ Phase 2: REVIEW ONLY                    [runs ONLY when SKIP_SYNC=true]
-              │   → /qa-test-lifecycle suite <ids> --ci --skip-sync --skip-generate --skip-verify
-              │
-              └─ Phase 3: REGRESSION (run affected suites)
-                  → Delegates to ci/run-regression.ts
-```
-
-**Phases 1 and 2 are mutually exclusive.** Phase 4 (Review) always runs inside this command, so a
-change-driven Phase 1 has already reviewed the suites it synced — re-running the review as Phase 2
-would only pay for it twice. Consequence: `SKIP_LIFECYCLE` skips the **standalone** review pass only.
-There is no "sync without reviewing" mode, because this command has none.
-
-Neither CI phase generates cases (`--skip-generate`) or verifies live (`--skip-verify`, no browser in
-CI) — so **CI can never clear GRD-001**, and any case it touches that carries an ungrounded assertion
-stays `Draft` (G10 unmet) until an interactive `--verify` run grounds it.
-
-### npm scripts
-
-```bash
-npm run ci:cycle                                    # Full cycle (requires CHANGE_SOURCE env var)
-CHANGE_SOURCE="PR #123" npm run ci:cycle            # Full cycle for a PR
-CHANGE_SOURCE="diff" npm run ci:cycle:sync-only     # Sync only (Phases 1-2, no review/regression)
-SUITE_SELECTION=critical npm run ci:cycle:no-sync    # Skip sync, run review+regression on critical suites
-```
-
-### CI mode behavior (`--ci`)
-
-When `--ci` flag is set:
-- Phase 5 (browser verification) is skipped automatically
-- Output includes machine-readable JSON block for pipeline parsing
-- No interactive prompts
-- **The confirmation is replaced by PR review, and the write scope NARROWS — it does not widen.** `--ci`
-  holds a *narrower* privilege than an interactive run: it may write only what the deterministic linter
-  proved or what agreeing axes confirmed (see the Phase-4b write-scope table). It **never** promotes
-  `Automation_Status` out of `Draft`, **never** deprecates a case, and **never** writes a Dim-11
-  MISSING / CONTRADICTORY / UNGROUNDED / RETIRE verdict.
-- Because Phase 5 is skipped, `--ci` **cannot ground a `{HYPOTHESIS}`/`{SPEC}` assertion** — a suite
-  generated in the same `--ci` run stays `Draft` (G10 unmet) and is not regression-eligible until a
-  later `--verify` pass grounds it.
+Under `--ci`, or before changing `ci/run-full-cycle.ts`, read [`ci-mode.md`](../skills/qa-test-lifecycle/ci-mode.md): the full-cycle pipeline shape and §CI mode behavior, the `--ci` write-scope rules.
 
 ---
 
@@ -842,7 +566,14 @@ Input:
   - scope: [suite IDs from Phase 1]
   - changeInventory: [from Phase 1, if change-driven]
   - phases: [2,3,4] (or subset based on flags)
-  - flags: [--no-auto-fix | --report-only | --layer <name>]   // auto-fix is the default; pass --no-auto-fix to require per-fix confirmation
+  - flags: [every flag of this run, verbatim — incl. --ci, --skip-data, --no-auto-fix, --report-only, --layer <name>]   // --ci narrows the write scope (§4b table)
+  - preflight: {the /preflight block's kb hits + doc hits}
+  - approved: [items from a previous dispatch's pendingApprovals the user approved — apply exactly these]   // second dispatch only
+  - you cannot ask the user: anything this command says to confirm or present for approval (2c deprecate/rewrite,
+    the 3c Feature Test Matrix, 4b per-fix under --no-auto-fix, 4b manual items) → return it in pendingApprovals[]
+    and do NOT write it. Under --ci, such items are proposals only and are never approved.
+  - Observed behaviour: paste the "Observed behaviour" paragraph of `.claude/templates/agent-dispatch.md`
+    §Agent Prompt Structure verbatim
   - build:
     - platform: {PlatformVersion from packages.json}
     - theme: {theme version from artifact.json}
@@ -853,21 +584,20 @@ Input:
   - references:
     - config/test-suites.json (suite definitions)
     - regression/suites/ (target CSV files)
-    - skills/qa-review-tests/SKILL.md (canonical dimension set — do not restate it)
-    - skills/qa-review-tests/review-criteria.md
-    - skills/qa-review-tests/triangulation-criteria.md (only when 4a-bis triangulates a behavior rewrite)
-    - skills/qa-test-cases-generator/test-case-template.md (column contract + Automation_Status enum)
+    - .claude/skills/qa-review-tests/SKILL.md (canonical dimension set — do not restate it)
+    - .claude/skills/qa-review-tests/review-criteria.md
+    - .claude/skills/qa-test-cases-generator/test-case-template.md (column contract + Automation_Status meanings)
     - npm run bl:extract (BL-*)
-    - knowledge/oracles/e-commerce-edge-cases-library.md
-    - knowledge/domain/products.md
-    - knowledge/execution/module-suite-map.md
-    - knowledge/domain/sitemap.md
-    - skills/qa-checklist/domain-checklists.md
-    - skills/qa-checklist/backend-admin-checklists.md
-    - skills/qa-checklist/graphql-checklist.md
-    - skills/qa-coverage-gap/feature-domain-map.md
-    - knowledge/api/graphql-schema.md (for GraphQL scopes)
-  - VirtoOZ (`/vc-docs`; Context7 fallback): domain-specific module behavior
+    - .claude/knowledge/oracles/e-commerce-edge-cases-library.md
+    - .claude/knowledge/domain/products.md
+    - .claude/knowledge/execution/module-suite-map.md
+    - .claude/knowledge/domain/sitemap.md
+    - .claude/skills/qa-checklist/domain-checklists.md
+    - .claude/skills/qa-checklist/backend-admin-checklists.md
+    - .claude/skills/qa-checklist/graphql-checklist.md
+    - .claude/skills/qa-coverage-gap/feature-domain-map.md
+    - .claude/knowledge/api/graphql-schema.md (for GraphQL scopes)
+  - VirtoOZ (`/vc-docs`; Context7 fallback), after the kb: domain-specific module behavior
 
 Output: structured JSON with:
   - syncResults: [{caseId, classification, action, before, after}]
@@ -876,10 +606,17 @@ Output: structured JSON with:
   - reviewFindings: [{caseId, dimension, severity, issue, suggestedFix}]
   - fixesApplied: [{caseId, issue, fixAction}]
   - manualItems: [{caseId, issue, dimension}]
+  - pendingApprovals: [{caseId, phase, action: deprecate|rewrite|author|fix|manual, diff, reason}]   // unwritten
+  - triangulationCandidates: [{caseId, suiteCsv, assertion, why}]   // 4a-bis — the orchestrator triangulates
+  - kbEntries: {read: [ids], confirmed: [ids], disputed: [ids], captured: [ids]}
   - blProposals (candidates surfaced this run, fed to Phase 4c): {new: [{proposedId, severity, rule, verify, violationSignal, agents, source, triggeredByCases}], stale: [{id, observedBehavior, affectedCases, bug}]}
   - statistics: {totalCases, synced, generated, findings, autoFixed, manualRemaining}
   - filesModified: [paths]
 ```
+
+When `pendingApprovals[]` is non-empty (interactive runs): put it to the user, then dispatch again with
+`approved` set to what they approved and `phases` limited to the phases those items belong to. Unapproved
+items are reported, not written.
 
 **Phase 5** — Dispatch to `qa-testing-expert`:
 
@@ -887,7 +624,11 @@ Output: structured JSON with:
 Delegate to: qa-testing-expert
 Input:
   - verificationTargets: [{caseId, url, elementsToCheck, stepsToWalk, priority}]
+  - groundingTargets: [{caseId, assertion, tag: HYPOTHESIS|SPEC, coordinate}]  // check 6 — every {HYPOTHESIS} / unconfirmed {SPEC} in scope
   - stalenessChecks: [{caseId, reclassification, elementToVerify}]  // from Phase 2
+  - Observed behaviour: paste the "Observed behaviour" paragraph of `.claude/templates/agent-dispatch.md`
+    §Agent Prompt Structure verbatim
+  - file nothing: a refuted assertion goes back as BEHAVIOR_REFUTED, never to a tracker
   - build: {platform, theme, relevant_modules}
   - browser: playwright-firefox (fallback: playwright-edge)
   - environment: {frontend: FRONT_URL, backend: BACK_URL}
@@ -895,13 +636,16 @@ Input:
   - maxFlowWalkthroughs: 5
   - timeoutPerPage: 60s
   - totalBudget: 5min
-  - evidence: follow `skills/qa-evidence/evidence-capture-policy.md`
+  - evidence: follow `.claude/skills/qa-evidence/evidence-capture-policy.md`
 
 Output: per-case verification:
   - VERIFIED: page loads, elements found, flow reachable
   - CHANGED: element missing/renamed — include screenshot + actual label
   - BROKEN: page error, redirect loop, critical JS errors — include screenshot
   - BLOCKED: precondition can't be met (login fail, feature disabled)
+  - BEHAVIOR_CONFIRMED: {caseId, assertion, evidence artifact} — the grounding target holds on this build
+  - BEHAVIOR_REFUTED (ENV-008): {caseId, assertion, observed, evidence artifact}
+  - kbEntries: {read, confirmed, disputed, captured}
 ```
 
 ---
@@ -914,8 +658,8 @@ Output: per-case verification:
 | After a platform release | `/qa-test-lifecycle changelog <version>` |
 | Quick quality check on a suite | `/qa-test-lifecycle suite <ID> --skip-verify` |
 | After `/qa-coverage-gap` | `/qa-test-lifecycle suite <IDs> --skip-sync --skip-generate` (review only) |
-| **After a `/qa-test` run authored new cases** | **`/qa-test-lifecycle VCST-XXXX --promote-only`** — `/qa-test` appends its cases into `regression/suites/` as `Draft` and stops there (its `5g` gate was removed 2026-09-10), so this pass is what flips the eligible ones `Draft → Automated`/`Reviewed` from that run's `RUN_ID`. The same invocation still covers a **legacy** run that left a run-scoped `reports/tickets/*/VCST-XXXX/test-cases.csv` |
-| After Phase 6 APPROVED | Promote the `Draft` cases (6P for `/qa-test` hand-offs; the human approval step otherwise), then run `/qa-regression <affected suites>` |
+| **After a `/qa-test` run authored new cases** | **`/qa-test-lifecycle VCST-XXXX --promote-only --run-id <RUN_ID>`** — `/qa-test` leaves its cases in `regression/suites/` as `Draft`; 6P flips the eligible ones in place (`Draft → Automated` from that run, else `Reviewed` on approval). The same invocation still covers a **legacy** run-scoped `reports/tickets/*/VCST-XXXX/test-cases.csv` |
+| After Phase 6 APPROVED | Promote the `Draft` cases (6P when Phase 1 found a promotion source; the human approval step otherwise), then run `/qa-regression <affected suites>` |
 | A whole suite's assertions may have gone stale (not tied to one change) | `/qa-review-tests suite <ID> --triangulate` — Dimension 11 wholesale; this pipeline only triangulates the cases a change touched (4a-bis) |
 | Which suite is most overdue for triangulation | `/qa-review-tests stale` (or `npm run tc:audit:queue`) |
 
@@ -923,42 +667,25 @@ Output: per-case verification:
 
 ## Rules
 
-- Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
+- Follow `.claude/skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
-- **Agent delegation is mandatory** — do NOT run Phases 2-4 directly in the orchestrator; always dispatch to `test-management-specialist`
+- **Agent delegation is mandatory** — do NOT run Phases 2-4 directly in the orchestrator; always dispatch to `test-management-specialist`. One exception: the 4a-bis triangulation, which you run after the dispatch returns, because it dispatches `ba-system-analyzer` and a subagent cannot
 - **Division of labour with `/qa-review-tests` — complementary, never competing.** This command owns the
   *pipeline* (what runs when, in which phase, under which gate); the **skill owns the review methodology**
   (the 11 dimensions, their check codes, severities, evidence bars, and auto-fix matrix). When the two
   appear to disagree, **the skill wins on any dimension question** and this file is the bug. Never restate
   the dimension list, a check code's severity, or the triangulation evidence bar here — reference it.
-- **`Automation_Status` is a closed, case-sensitive enum** — `Draft` | `Reviewed` | `Automated` | `Manual` |
-  `Semi-Automated` | `Deprecated` (`test-case-template.md`, gated by `suites:review` S-006). Never invent a
-  state (`synced` is not one); a sync is recorded in `References`.
-- **Promotion out of `Draft` is never automatic, and this command is its only performer.** Eligibility is
-  **derived** (G10: 0 GRD-001 Blocker/High, 0 ENV-008, every assertion grounded, `td:validate` green); the
-  promotion itself needs **explicit human / `qa-lead-orchestrator` approval** and happens in **Phase 6P**.
-  `--ci` and `--report-only` never promote. `Draft` cases stay out of regression selections.
-- **A `/qa-test` hand-off is a record, not an approval.** `summary.json`'s `promotion.eligible[]` says where
-  the previous run got to; 6P **re-derives eligibility from the CSV** and freely demotes an "eligible" case
-  that fails re-derivation. When this pipeline promotes a legacy/handoff CSV it re-derives eligibility
-  itself — if it trusted a hand-off record, the promotion gate would be self-certified by the author.
-- **`/qa-test` Step 3 and this pipeline's Phases 3–4 run the SAME mechanism — the skills own it, both
-  commands consume it.** `/qa-test-cases-generator` (+ `test-case-template.md`) owns the authoring contract
-  and the `Automation_Status` enum; `/qa-review-tests` owns the dimensions/codes/severities/auto-fix matrix;
-  `/qa-generate-data` → `/qa-seed-data` owns data prep. Neither command restates any of it. Both now write
-  into **durable `regression/suites/` coverage** via the same appender — `/qa-test` appends its ticket cases
-  as `Draft` and leaves them there (`5g` removed 2026-09-10); this
-  pipeline's 6P promotes legacy/handoff/re-promotion case sets and remains the promoter for anything
-  `/qa-test` didn't finish.
-- **Never hand-roll a CSV append** — `regression/suites/` writes go through
-  `npx tsx scripts/test-cases/append-test-cases-to-suite.ts --check-global-ids` (dry-run first), then
-  `npm run suites:sync` + `npm run suites:lint`. A missing boundary newline merges two 15-column rows into
-  one broken record, and a manifest left unsynced means the
-  suite runs with a stale `testCount`.
-- **An incoming case ID must collide with nothing under `regression/suites/`** — and a plain append run
-  does **not** prove that: without `--check-global-ids` the appender only checks the target suite, so a
-  cross-suite collision (which overwrites the other suite's failure evidence) passes silently. Re-ID the
-  incoming case on collision; never renumber the existing one, never reuse a retired ID.
+- **`Automation_Status` is a closed, case-sensitive enum** — Phase 2c step 5. Never invent a state.
+- **Promotion out of `Draft` is never automatic, and this command is its only performer** — G10 derives
+  eligibility, a human / `qa-lead-orchestrator` approves, Phase 6P performs it. `--ci` and `--report-only`
+  never promote. `Draft` cases stay out of regression selections.
+- **A `/qa-test` hand-off is a record, not an approval** — 6P re-derives eligibility from the CSV
+  (`.claude/skills/qa-test-lifecycle/promote.md` step 1); trusting the record would let the author self-certify.
+- **The skills own the mechanism, both commands consume it** — `/qa-test-cases-generator` (authoring
+  contract), `/qa-review-tests` (dimensions, codes, auto-fix matrix), `/qa-generate-data` → `/qa-seed-data`
+  (data prep). Restate none of it here.
+- **Never hand-roll a CSV append, and no incoming ID may collide under `regression/suites/`** — the
+  appender with `--check-global-ids`, dry-run first, then `suites:sync` + `suites:lint` (`.claude/skills/qa-test-lifecycle/promote.md` step 4).
 - **Never delete test cases without user confirmation** — prefer deprecation (`Automation_Status: Deprecated`) over removal
 - **Preserve case IDs** — never renumber or reuse IDs. Deprecated cases keep their IDs.
 - **Ground via `/preflight lifecycle`** — kb → VirtoOZ, Context7 only as fallback — before updating or generating cases
@@ -971,7 +698,7 @@ Output: per-case verification:
 - **Don't over-sync** — if a case is VALID (false positive from diff), leave it untouched
 - **Environment issues != test case defects** — BROKEN/BLOCKED from Phase 5 may be env problems. Flag for investigation, don't auto-fix blindly.
 - **Quality gate is advisory** — deliver the verdict but the user makes the final go/no-go
-- **Report always written** — even with `--report-only`, produce the full report
+- **Report always produced in chat** — even with `--report-only`, produce the full report (never a file; §Final Report)
 - **Pre-flight before pipeline** — always run `/preflight lifecycle` and include its block in the report
-- **GraphQL schema refresh** — when scope includes GraphQL suites, run `npm run schema:refresh` in Pre-Flight and validate all queries/mutations against `graphql-schema.md`
-- **BL updates run through Phase 4c (`/qa-review-bl`), automatically**, scoped to the `BL-*` this run surfaced (none ⇒ no-op). Only a **human source** (AC, docs, Jira resolution) writes a rule; a contradicted rule goes `SUSPECT` with its bug; code + live never changes a rule; no proposals file — see Phase 4c. Records are env-agnostic.
+- **GraphQL schema refresh** — when scope includes GraphQL suites, run `npm run schema:refresh` in Pre-Flight and validate all queries/mutations against `.claude/knowledge/api/graphql-schema.md`
+- **BL updates run through Phase 4c (`/qa-review-bl`), automatically**, scoped to the `BL-*` this run surfaced — see Phase 4c. Records are env-agnostic.
