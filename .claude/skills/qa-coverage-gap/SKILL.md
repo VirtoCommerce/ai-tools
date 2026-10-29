@@ -97,7 +97,7 @@ Definition of Done: every generated case conforms to the template, references at
 
 1. Execute each new **P0 case** against QA via the assigned browser (default: `playwright-chrome`; fallback per `defaults.fallbackChain` in `config/test-suites.json`).
 2. If the steps don't work (element not found, flow changed), revise the case once; if still broken, leave it `Draft` with an explicit `Failure_Signals` note and list it in the report.
-3. **`Automation_Status` stays `Draft`.** The enforced vocabulary is `Draft | Reviewed | Automated | Manual | Semi-Automated` (`scripts/test-cases/lint-test-cases.ts`, finding `S-006`); any other value is a High finding on every row. **This skill never promotes.** A green live pass here upgrades the case's assertions to `{OBSERVED}` — that is all it earns. `Draft → Reviewed/Automated` is owned by `/qa-test-lifecycle` **6P** and `/qa-regression` **6.5** (`knowledge/execution/regression-promotion.md`), is never automatic, and needs `/qa-review-tests` ≥ PASS WITH WARNINGS plus explicit approval.
+3. **`Automation_Status` stays `Draft`.** The enforced vocabulary is `Draft | Reviewed | Automated | Manual | Semi-Automated` (`scripts/test-cases/lint-test-cases.ts`, finding `S-006`); any other value is a High finding on every row. **This skill never promotes.** A green live pass here upgrades the case's assertions to `{OBSERVED}` — that is all it earns. `Draft → Reviewed/Automated` is owned by **`qa-case-promotion`** and `/qa-regression` **6.5** (`knowledge/execution/regression-promotion.md`), is never automatic, and needs `/qa-review-tests` ≥ PASS WITH WARNINGS plus explicit approval.
 4. Clean up created test data using the `AGENT-TEST-` prefix (see `knowledge/execution/live-discovery.md` § Cleanup).
 
 Definition of Done: ≥80% of new P0 cases execute green and reach `{OBSERVED}` grounding; the remainder are flagged in the report with explicit failure signals, never silently skipped.
@@ -166,7 +166,7 @@ Never hardcode suite IDs in this skill — query the manifest.
 | Upstream | `knowledge/api/graphql-schema.md` | Schema verification before authoring GraphQL cases |
 | Downstream | `/qa-test-cases-generator` | Receives `--layer` invocations to author cases |
 | Downstream | `/qa-review-tests` | Reviews generated cases on 11 dimensions; `--fix` owns stale-row repair |
-| Downstream | `/qa-test-lifecycle` | **Owns promotion** of this skill's `Draft` cases (step 6P) |
+| Downstream | `/qa-test-lifecycle` | **Owns promotion** of this skill's `Draft` cases (step `qa-case-promotion`) |
 | Downstream | `/qa-test` | Generated cases can be executed by qa-testing-expert |
 | Downstream | `/qa-regression` | Updated suites feed into regression runs; step 6.5 promotes |
 | Downstream | `/qa-metrics` | Coverage metrics updated post-generation |
@@ -196,7 +196,7 @@ Never hardcode suite IDs in this skill — query the manifest.
 
 **Validation & gates:**
 - P0 validation requires actual browser execution, not just review.
-- This skill never sets `Automation_Status` past `Draft`. Promotion belongs to `/qa-test-lifecycle` 6P or `/qa-regression` 6.5.
+- This skill never sets `Automation_Status` past `Draft`. Promotion belongs to `qa-case-promotion` or `/qa-regression` 6.5.
 - Quality gate (Cycle 4): `td:validate` + `suites:lint` + `suites:review` + `scope:validate` (when applicable) + ≥80% P0 execution rate — all must pass before commit.
 
 **Knowledge sources:**

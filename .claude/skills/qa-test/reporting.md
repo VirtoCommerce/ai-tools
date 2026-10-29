@@ -15,7 +15,7 @@ verdict 5-verdict recorded), 5-status transitions **after** the report, 5-docs d
 `5-docs-map` writes back to the domain map last of all (FULL only, non-blocking). **Promotion is not here** —
 `/qa-test` stopped promoting on 2026-09-10; the procedure lives in
 [`regression-promotion.md`](../../knowledge/execution/regression-promotion.md), run by
-[`/qa-test-lifecycle`](../../commands/qa-test-lifecycle.md) 6P and, for cases already grounded, by a
+[`qa-case-promotion`](../qa-case-promotion/SKILL.md) and, for cases already grounded, by a
 direct [`/qa-regression`](../../commands/qa-regression.md) run's Step 6.5.
 
 ## 5-report. Report
