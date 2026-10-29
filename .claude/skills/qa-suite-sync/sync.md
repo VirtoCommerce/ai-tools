@@ -74,7 +74,7 @@ Reclassify each case:
 - Feature replaced → rewrite for replacement
 - Feature split → generate separate cases
 - **Always confirm with user** before removing, deprecating or rewriting — from the subagent, that means returning
-  the item in `pendingApprovals[]` unwritten (`briefs.md`). After approval the orchestrator writes it, never by hand:
+  the item in `pendingApprovals[]` unwritten, as `action: remove` (the default), `deprecate` or `rewrite` (`briefs.md`). After approval the orchestrator writes it, never by hand:
   `npx tsx .claude/skills/qa-suite-sync/scripts/retire.ts remove <suite.csv> --ids <A,B>` (or `deprecate … --reason "<why>"`),
   dry run first, then `--apply`; snapshot the suite first (`flip.ts snapshot`, see SKILL.md §Writes). A removed ID is
   retired — never allocate it again.
@@ -93,7 +93,7 @@ Cases in scope: 145
   - VALID (no change): 131
   - STALE → updated: 8
   - INCOMPLETE → enriched: 3
-  - BROKEN → deprecated/rewritten: 1
+  - BROKEN → proposed for removal/deprecation/rewrite: 1
   - NEW_NEEDED → forwarded to Phase 3: 5
 ```
 

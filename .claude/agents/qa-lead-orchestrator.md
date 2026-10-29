@@ -302,9 +302,9 @@ Steps 1, 2, 4, 5-verdict, 5-file, 5-status, 5-docs and all of FAST self-check in
 one**: unscoped, it returns the whole-history pass rate, not this run's claim.
 
 At the **promotion gate** (`qa-case-promotion`), `verify:gate --gate 5g --suite <csv>` has already re-run `suites:review` and
-already computed the promotion diff: **`tc:promote` only ever writes `Automated`, and only onto a row that
-is exactly `Draft`** — any other status pair under the sheet's *"NOT Draft → Automated"* line means someone
-hand-edited the cell, which is itself a REJECT, as is any row under *"a NON-status column changed"*. What
+already computed the promotion diff. **Legal, and only on an id the brief lists:** `Draft → Automated`
+(`tc:promote`), `Draft → Reviewed` (`flip.ts review`), an appended `Promoted:` stamp, a harvested tag.
+Any other change to such an id is a hand edit — REJECT; the brief names rows a prior sync of the run changed. What
 the sheet cannot do is the sampling: for a sample of upgraded assertions, re-open the Step-4 evidence
 grounding each `{OBSERVED}`; REJECT any `{OBSERVED}` with no traceable artifact, any `{HYPOTHESIS}` cleared
 by an invented value, or any case promoted while still carrying a Blocker/Critical → the append is

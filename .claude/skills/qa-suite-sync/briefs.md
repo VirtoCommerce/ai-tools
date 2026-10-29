@@ -13,8 +13,10 @@ Input:
   - changeInventory: [from Phase 1, if change-driven]
   - phases: [2,3,4] (no Phase 2 for a suite/domain input; on a re-dispatch, the phases the approved items belong to)
   - preflight: {the /preflight block's kb hits + doc hits}
-  - approved: [items from a previous dispatch's pendingApprovals the user approved — apply exactly these]   // second dispatch only
-  - you cannot ask the user: anything this command says to confirm or present for approval (2c deprecate/rewrite,
+  - approved: [items the user approved — pendingApprovals and 4a-bis DRIFT rewrites with their evidence; apply exactly
+    these. Removals and deprecations are never here: the orchestrator writes them with retire.ts]   // second dispatch only
+  - stampRefreshes: [4a-bis CONFIRMED cases — refresh their stamp, no approval needed]   // second dispatch only
+  - you cannot ask the user: anything this skill says to confirm or present for approval (2c remove/deprecate/rewrite,
     the 3c Feature Test Matrix, 4b manual items) → return it in pendingApprovals[]
     and do NOT write it.
   - Observed behaviour: paste the "Observed behaviour" paragraph of `.claude/templates/agent-dispatch.md`
@@ -53,7 +55,7 @@ Output: structured JSON with:
   - reviewFindings: [{caseId, dimension, severity, issue, suggestedFix}]
   - fixesApplied: [{caseId, issue, fixAction}]
   - manualItems: [{caseId, issue, dimension}]
-  - pendingApprovals: [{caseId, phase, action: deprecate|rewrite|author|fix|manual, diff, reason}]   // unwritten
+  - pendingApprovals: [{caseId, phase, action: remove|deprecate|rewrite|author|fix|manual, diff, reason}]   // unwritten
   - triangulationCandidates: [{caseId, suiteCsv, assertion, why}]   // 4a-bis — the orchestrator triangulates
   - kbEntries: {read: [ids], confirmed: [ids], disputed: [ids], captured: [ids]}
   - blProposals (candidates surfaced this run, fed to Phase 4c): {new: [{proposedId, severity, rule, verify, violationSignal, agents, source, triggeredByCases}], stale: [{id, observedBehavior, affectedCases, bug}]}
@@ -61,9 +63,9 @@ Output: structured JSON with:
   - filesModified: [paths]
 ```
 
-When `pendingApprovals[]` is non-empty (interactive runs): put it to the user, then dispatch again with
-`approved` set to what they approved and `phases` limited to the phases those items belong to. Unapproved
-items are reported, not written.
+When `pendingApprovals[]` or 4a-bis has anything for the user: put it to them as one list, then dispatch again
+with `approved` (minus removals and deprecations), `stampRefreshes`, and `phases` limited to the phases those
+items belong to. Unapproved items are reported, not written.
 
 **Phase 5** — Dispatch to `qa-testing-expert`:
 

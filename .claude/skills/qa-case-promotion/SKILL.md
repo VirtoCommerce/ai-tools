@@ -36,7 +36,12 @@ Exit 1 ⇒ "nothing to promote for VCST-XXXX" — stop. Otherwise two kinds, eac
 When it follows a `qa-suite-sync` run, that verdict still applies as a second condition — NEEDS FIXES /
 BLOCKED means the suites in scope are not in a state to receive new cases, so do not promote into them.
 
-## 1 — Re-derive eligibility independently (do NOT trust the hand-off)
+## 1 — Harvest, then re-derive eligibility independently (do NOT trust the hand-off)
+
+**Harvest first** when a run executed the cases (this is what a `PR-007` hold routed here needs): take the
+step-2 snapshot now, run `/qa-review-tests file <suite.csv> --verify --fix`, then resolve each remaining
+`{HYPOTHESIS}` — `.claude/knowledge/execution/regression-promotion.md` §The full procedure, steps 1–2. A
+refuted behaviour is ENV-008, never `{OBSERVED}`.
 
 A legacy `summary.json`'s `promotion.eligible[]` says where the previous run got to; it is **not** an
 approval. Re-derive from the CSV itself, exactly as G10 does:
@@ -113,8 +118,10 @@ clobber an existing `Synced:` / `Audited:` / `Corrected:` stamp.
   same with `--apply`. `<RUN_ID>` is `--run-id` when given, else `latest`. It writes `Draft → Automated`
   from that run's results and holds what it cannot ground with a `PR-*` code (`PR-002`: the run did not
   execute the case).
-- **`Reviewed` for the rest.** Each approved case it held, or every approved case when there is no usable
-  run:
+- **`Reviewed` for the cases the run says nothing against** — each approved case held at `PR-002` (not in
+  the run), `PR-004` (non-executing lane) or `PR-006` (green, too few runs), or every approved case when there
+  is no usable run (`PR-013`). Any other hold (`PR-003` not PASS, `PR-005` flaky, `PR-007`, `PR-008`, …)
+  keeps the case `Draft`: report it with its code.
   ```bash
   npx tsx .claude/skills/qa-case-promotion/scripts/flip.ts review <suite.csv> --ticket VCST-XXXX --ids <A,B>          # dry run
   npx tsx .claude/skills/qa-case-promotion/scripts/flip.ts review <suite.csv> --ticket VCST-XXXX --ids <A,B> --apply
@@ -162,7 +169,9 @@ G10 didn't clear. *(This gate governs what promotion **adds**; it does not requi
 duplicate IDs to be fixed first.)*
 
 Promotion writes into permanent regression coverage, so the doer cannot certify it. Dispatch a fresh
-`qa-lead-orchestrator` in §Verifier Mode: it **re-runs `suites:review` on each target suite** and
+`qa-lead-orchestrator` in §Verifier Mode — the brief lists the approved ids, which went `Automated` and which
+`Reviewed`, which were harvested, and the rows a `qa-suite-sync` earlier in this run changed (G1–G11
+gated those): it **re-runs `suites:review` on each target suite** and
 **`suites:lint`**, and for a sample of promoted cases re-checks that each `{OBSERVED}` traces to a real
 run artifact. REJECT → `flip.ts restore` the snapshot → fix → re-verify. ≤2 iterations, then STOP for a human.
 

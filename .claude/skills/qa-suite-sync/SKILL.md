@@ -18,18 +18,19 @@ theirs from the path you put in the brief (`briefs.md`).
 
 0. **Pre-flight** (below).
 1. **Scope** — [`scope.md`](scope.md): input → affected suites + change inventory. `suite`/`domain`
-   inputs skip step 2.
+   inputs skip Phase 2 (sync) inside step 2; generation and review still run.
 2. **Dispatch Phases 2–4** to `test-management-specialist` as one brief ([`briefs.md`](briefs.md)):
    sync stale cases ([`sync.md`](sync.md)), analyze gaps and generate ([`generate.md`](generate.md)),
    review and auto-fix ([`review.md`](review.md) 4a, 4b, 4c).
-3. **One approval round.** Put the returned `pendingApprovals[]` to the user as **one list**: cases to
-   remove / deprecate / rewrite, the Feature Test Matrix of new cases, the manual review items. Then
-   re-dispatch with `approved` set to what they approved (`briefs.md`). Unapproved items are reported,
-   not written.
-4. **Write what was approved but is not the subagent's** — removals and deprecations through
-   `scripts/retire.ts` (`sync.md` *For BROKEN cases*), after a snapshot (§Writes).
-5. **Triangulate behaviour rewrites** — you run [`review.md`](review.md) 4a-bis on the returned
-   `triangulationCandidates[]`; it dispatches `ba-system-analyzer`, which a subagent cannot.
+3. **Triangulate behaviour rewrites** — you run [`review.md`](review.md) 4a-bis on the returned
+   `triangulationCandidates[]`, report-only (it dispatches `ba-system-analyzer`, which a subagent cannot).
+   Each DRIFT becomes a `rewrite` for step 4's list, with its evidence.
+4. **One approval round.** Put the returned `pendingApprovals[]` and the DRIFT rewrites to the user as
+   **one list**: cases to remove / deprecate / rewrite, the Feature Test Matrix of new cases, the manual
+   review items. Then re-dispatch with `approved` set to what they approved, minus removals and
+   deprecations, plus the CONFIRMED stamp refreshes (`briefs.md`). Unapproved items are reported, not written.
+5. **Write the approved removals and deprecations** yourself — through `scripts/retire.ts` (`sync.md`
+   *For BROKEN cases*), after the re-dispatch returns and after a snapshot (§Writes).
 6. **Verify live** — [`verify.md`](verify.md): dispatch `qa-testing-expert` on every new or changed case.
    SKIPPED only when nothing new or changed is in scope, or no browser lane is available — say which.
 7. **Fix what verification found** — CHANGED labels and `{HYPOTHESIS}` rewrites go back through steps
@@ -113,7 +114,7 @@ The verdict is advisory: the user makes the go/no-go.
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback and error
   handling, and `.claude/skills/qa-evidence/output-paths.md` for artifact paths.
 - **Agent delegation is mandatory** — never run Phases 2–4 yourself; dispatch `test-management-specialist`.
-  The exceptions are the writes of step 4 and the 4a-bis triangulation of step 5.
+  The exceptions are the 4a-bis triangulation of step 3 and the writes of step 5.
 - **`/qa-review-tests` owns the review methodology** (dimensions, codes, severities, evidence bars,
   auto-fix matrix); this skill owns only what runs when. When they appear to disagree, the skill wins and
   this file is the bug. The other mechanisms are owned likewise: `/qa-test-cases-generator` (authoring

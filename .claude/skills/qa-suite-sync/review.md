@@ -35,10 +35,12 @@ So, symmetrically with 4c's handling of `BL-*`:
 
 - A Phase-2 STALE/BROKEN finding that changes only *how* a case is driven → apply in 4b.
 - A finding that changes *what behavior is expected* → the subagent returns it in
-  `triangulationCandidates[]` unwritten; **you (the orchestrator), after the Phases 2–4 dispatch returns**,
-  run `/qa-review-tests --triangulate` **scoped to those cases only** — it dispatches `ba-system-analyzer`
-  for the docs + source axes, which a subagent cannot do — and apply strictly under its auto-fix matrix (CONFIRMED → stamp refresh; DRIFT →
-  rewrite the drifted assertion only; MISSING/CONTRADICTORY/UNGROUNDED/RETIRE → report, never write).
+  `triangulationCandidates[]` unwritten; **you (the orchestrator), after the Phases 2–4 dispatch returns and
+  before the approval round**, run `/qa-review-tests --triangulate` **without `--fix`, scoped to those cases
+  only** — it dispatches `ba-system-analyzer` for the docs + source axes, which a subagent cannot do. Its
+  auto-fix matrix still decides what may be written, by the re-dispatch: CONFIRMED → stamp refresh, without
+  asking; DRIFT → rewrite the drifted assertion only, **once the user approves it in the one list**;
+  MISSING/CONTRADICTORY/UNGROUNDED/RETIRE → report, never write.
 - A DRIFT rewrite must keep `{{VAR}}`/`@td()` and assert the structural invariant — never a literal
   price/SKU/URL observed live (DV-016). This is the most likely way an auto-fix does damage.
 - On a **legacy untagged case, do not add a provenance tag** to the assertion you rewrote — one tag
@@ -73,8 +75,8 @@ Blocker/Critical is reverted, not shipped.**
 | | Without asking | Only after the user approves (`pendingApprovals[]`) | Never |
 |---|---|---|---|
 | Deterministic dim 1–7/9/10 fixes | ✓ (re-gated, reverted on regression) | | |
-| Dim 11 CONFIRMED / DRIFT (via 4a-bis) | ✓ | | |
-| Rewriting what a case expects, deleting/deprecating a case, authoring a case | | ✓ | |
+| Dim 11 CONFIRMED stamp refresh (via 4a-bis) | ✓ | | |
+| Rewriting what a case expects (incl. a Dim 11 DRIFT), removing/deprecating a case, authoring a case | | ✓ | |
 | Dim 11 MISSING / CONTRADICTORY / UNGROUNDED / RETIRE | | | written — reported only |
 | `Automation_Status` out of `Draft` | | | here — `qa-case-promotion` only |
 
