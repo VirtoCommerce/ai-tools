@@ -4,7 +4,8 @@ Supporting file for [`qa-suite-sync`](SKILL.md). Read it at Phase 2 — the suba
 
 ### Phase 2 — SYNC & UPDATE (Fix Stale Cases)
 
-**Runs when:** Phase 1 found a change source (PR, ticket, module, diff, changelog). Skipped for `suite` / `domain` inputs.
+**Runs when:** Phase 1 found a change source (PR, ticket, module, diff, changelog). For `suite` / `domain` inputs
+it runs only on the mind-map suspects in scope (`models.md` §Phase 2) — none ⇒ skipped.
 
 Dispatch `test-management-specialist` with the change inventory to assess and update existing cases.
 
@@ -16,6 +17,8 @@ Use `.claude/knowledge/execution/module-suite-map.md` to route changes to specif
 2. **Dependency mapping** — look up "Should Run" suites (downstream dependencies)
 3. **Page mapping** — cross-reference `.claude/knowledge/domain/sitemap.md`
 4. **API mapping** — find cases exercising affected API endpoints
+5. **Mind-map mapping** — the brief's `models.suspects` and `coverage` come before text matching
+   (`models.md` §Phase 2)
 
 For each affected suite, identify specific cases referencing changed areas and classify:
 

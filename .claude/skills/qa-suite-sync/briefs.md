@@ -11,7 +11,9 @@ Delegate to: test-management-specialist
 Input:
   - scope: [suite IDs from Phase 1]
   - changeInventory: [from Phase 1, if change-driven]
-  - phases: [2,3,4] (no Phase 2 for a suite/domain input; on a re-dispatch, the phases the approved items belong to,
+  - models: {per domain: domainMap|mindMap|dataModel present or missing, suspects, uncovered nodes,
+    caseless crossings — from models.md §Phase 1}
+  - phases: [2,3,4] (for a suite/domain input, Phase 2 only on models.suspects, else none; on a re-dispatch, the phases the approved items belong to,
     plus 4 whenever it writes or rewrites a case — 4a/4b review every case the re-dispatch writes)
   - preflight: {the /preflight block's kb hits + doc hits}
   - approved: [items the user approved — pendingApprovals and 4a-bis DRIFT rewrites with their evidence; apply exactly
@@ -29,7 +31,7 @@ Input:
   - environment:
     - frontend: {FRONT_URL}
     - backend: {BACK_URL}
-  - procedure — read whole before you start: .claude/skills/qa-suite-sync/sync.md (Phase 2), generate.md (Phase 3),
+  - procedure — read whole before you start: .claude/skills/qa-suite-sync/models.md, sync.md (Phase 2), generate.md (Phase 3),
     review.md (Phase 4: 4a and 4b — 4a-bis and 4c are the orchestrator's; return their candidates in
     triangulationCandidates[] and blProposals)
   - references:
@@ -59,6 +61,8 @@ Output: structured JSON with:
   - manualItems: [{caseId, issue, dimension}]
   - pendingApprovals: [{caseId, phase, action: remove|deprecate|rewrite|author|fix|manual, diff, reason}]   // unwritten
   - triangulationCandidates: [{caseId, suiteCsv, assertion, why}]   // 4a-bis — the orchestrator triangulates
+  - nodesChanged: [{node, map, what changed, cases}]   // for /qa-test-mind-map update — the map is never edited here
+  - stampsWritten: [{caseId, behavior, dataProfile}]
   - kbEntries: {read: [ids], confirmed: [ids], disputed: [ids], captured: [ids]}
   - blProposals (candidates surfaced this run, fed to Phase 4c): {new: [{proposedId, severity, rule, verify, violationSignal, agents, source, triggeredByCases}], stale: [{id, observedBehavior, affectedCases, bug}]}
   - statistics: {totalCases, synced, generated, findings, autoFixed, manualRemaining}
