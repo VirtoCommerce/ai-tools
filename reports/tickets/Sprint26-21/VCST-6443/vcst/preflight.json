@@ -1,0 +1,902 @@
+{
+  "for": "ticket",
+  "ticket": "VCST-6443",
+  "domain": null,
+  "sprint": "Sprint26-21",
+  "duplicate": null,
+  "facts": {
+    "env": "vcst",
+    "observedAt": "2026-10-23T10:08:27.611Z",
+    "backUrl": "https://vcst-qa.govirto.com",
+    "frontUrl": "https://vcst-qa-storefront.govirto.com",
+    "config": {
+      "missing": []
+    },
+    "health": "UP",
+    "declared": {
+      "platform": "3.1090.0-pr-3133-8b4a-vcst-5904-8b4a2e4e",
+      "theme": "vc-theme-b2b-vue-2.61.0-pr-2570-2fc9-2fc9261a",
+      "modules": {
+        "virtocommerce.otp": "3.1001.0-pr-3-d978",
+        "virtocommerce.mfa": "3.1000.0-pr-1-cf83",
+        "virtocommerce.pagebuildermodule": "3.1036.0-pr-178-add2",
+        "virtocommerce.loyalty": "3.1009.0",
+        "virtocommerce.contentful": "3.1001.0",
+        "virtocommerce.priceexportimport": "3.1001.0",
+        "virtocommerce.nativepaymentmethods": "3.1002.0",
+        "virtocommerce.shipstation": "3.1001.0",
+        "virtocommerce.openidconnectmodule": "3.1001.0",
+        "virtocommerce.ordermanagement": "3.1002.0",
+        "virtocommerce.sanity": "3.1003.0",
+        "virtocommerce.datatrans": "3.1002.0",
+        "virtocommerce.cybersourcepayment": "3.1002.0",
+        "virtocommerce.environmentscompare": "3.1001.0",
+        "virtocommerce.customerexportimport": "3.1002.0",
+        "virtocommerce.eventbus": "3.1010.0",
+        "virtocommerce.productsnapshot": "3.1003.0",
+        "virtocommerce.backinstock": "3.1002.0",
+        "virtocommerce.news": "3.1005.0",
+        "virtocommerce.marketingexperienceapi": "3.1004.0",
+        "virtocommerce.xrecommend": "3.1002.0",
+        "virtocommerce.taskmanagement": "3.1005.0",
+        "virtocommerce.systemoperations": "3.1002.0",
+        "virtocommerce.skyflow": "3.1005.0",
+        "virtocommerce.builderio": "3.1005.0",
+        "virtocommerce.elasticsearch": "3.806.0",
+        "virtocommerce.elasticappsearch": "3.1003.0",
+        "virtocommerce.opensearch": "3.1004.0",
+        "virtocommerce.core": "3.1012.0",
+        "virtocommerce.googlesso": "3.1003.0",
+        "virtocommerce.webhooks": "3.1005.0",
+        "virtocommerce.assets": "3.1010.0",
+        "virtocommerce.azuread": "3.1003.0",
+        "virtocommerce.applicationinsights": "3.1005.0",
+        "virtocommerce.opentelemetry": "3.1002.0",
+        "virtocommerce.search": "3.1010.0",
+        "virtocommerce.azureblobassets": "3.1009.0",
+        "virtocommerce.backuprestore": "3.1007.0",
+        "virtocommerce.filesystemassets": "3.1006.0",
+        "virtocommerce.azuresearch": "3.1007.0",
+        "virtocommerce.export": "3.1005.0",
+        "virtocommerce.bulkactionsmodule": "3.1004.0",
+        "virtocommerce.elasticsearch8": "3.1011.0",
+        "virtocommerce.lucenesearch": "3.1006.0",
+        "virtocommerce.notifications": "3.1018.0",
+        "virtocommerce.googleecommerceanalytics": "4.1004.0",
+        "virtocommerce.payment": "3.1010.0",
+        "virtocommerce.shipping": "3.1009.0",
+        "virtocommerce.sitemaps": "3.1006.0",
+        "virtocommerce.pages": "3.1010.0",
+        "virtocommerce.pricing": "3.1008.0",
+        "virtocommerce.inventory": "3.1010.0",
+        "virtocommerce.catalogcsvimportmodule": "3.1007.0",
+        "virtocommerce.xpickup": "3.1008.0",
+        "virtocommerce.contracts": "3.1006.0",
+        "virtocommerce.orders": "3.1018.0",
+        "virtocommerce.authorizenetpayment": "3.1005.0",
+        "virtocommerce.gdpr": "3.1003.0",
+        "virtocommerce.avalaratax": "3.1005.0",
+        "virtocommerce.xcms": "3.1008.0",
+        "virtocommerce.marketing": "3.1009.0",
+        "virtocommerce.dynamicassociationsmodule": "3.1003.0",
+        "virtocommerce.whitelabeling": "3.1005.0",
+        "virtocommerce.xcatalog": "3.1023.0",
+        "virtocommerce.xfrontend": "3.1007.0",
+        "virtocommerce.customerreviews": "3.1007.0",
+        "virtocommerce.ucp": "3.1010.0",
+        "virtocommerce.pushmessages": "3.1008.0",
+        "virtocommerce.customer": "3.1030.0",
+        "virtocommerce.cart": "3.1012.0",
+        "virtocommerce.catalog": "3.1049.0",
+        "virtocommerce.fileexperienceapi": "3.1008.0",
+        "virtocommerce.profileexperienceapimodule": "3.1021.0",
+        "virtocommerce.xapi": "3.1027.0",
+        "virtocommerce.sqlqueries": "3.1006.0",
+        "virtocommerce.imagetools": "3.1007.0",
+        "virtocommerce.tax": "3.1008.0",
+        "virtocommerce.catalogpersonalization": "3.1007.0",
+        "virtocommerce.catalogpublishing": "3.1008.0",
+        "virtocommerce.return": "3.1005.0",
+        "virtocommerce.seo": "3.1007.0",
+        "virtocommerce.store": "3.1010.0",
+        "virtocommerce.xcart": "3.1042.0",
+        "virtocommerce.xorder": "3.1016.0",
+        "virtocommerce.quote": "3.1005.0",
+        "virtocommerce.subscription": "3.1006.0",
+        "virtocommerce.backgroundjobs": "3.1053.0",
+        "virtocommerce.content": "3.1007.0",
+        "virtocommerce.salesrep": "3.1014.0"
+      }
+    },
+    "deployed": {
+      "platform": "3.1090.0-pr-3133-8b4a",
+      "modules": {
+        "virtocommerce.applicationinsights": {
+          "version": "3.1005.0",
+          "repo": "vc-module-app-insights",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.assets": {
+          "version": "3.1010.0",
+          "repo": "vc-module-assets",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.authorizenetpayment": {
+          "version": "3.1005.0",
+          "repo": "vc-module-authorize-net",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.avalaratax": {
+          "version": "3.1005.0",
+          "repo": "vc-module-avatax",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.azuread": {
+          "version": "3.1003.0",
+          "repo": "vc-module-azure-ad",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.azureblobassets": {
+          "version": "3.1009.0",
+          "repo": "vc-module-azureblob-assets",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.azuresearch": {
+          "version": "3.1007.0",
+          "repo": "vc-module-azure-search",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.backgroundjobs": {
+          "version": "3.1053.0",
+          "repo": "vc-module-background-jobs",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.backinstock": {
+          "version": "3.1002.0",
+          "repo": "vc-module-back-in-stock",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.backuprestore": {
+          "version": "3.1007.0",
+          "repo": "vc-module-backup-restore",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.builderio": {
+          "version": "3.1005.0",
+          "repo": "vc-module-builder-io",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.bulkactionsmodule": {
+          "version": "3.1004.0",
+          "repo": "vc-module-bulk-actions",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.cart": {
+          "version": "3.1012.0",
+          "repo": "vc-module-cart",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.catalog": {
+          "version": "3.1049.0",
+          "repo": "vc-module-catalog",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.catalogcsvimportmodule": {
+          "version": "3.1007.0",
+          "repo": "vc-module-catalog-csv-export-import",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.catalogpersonalization": {
+          "version": "3.1007.0",
+          "repo": "vc-module-catalog-personalization",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.catalogpublishing": {
+          "version": "3.1008.0",
+          "repo": "vc-module-catalog-publishing",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.content": {
+          "version": "3.1007.0",
+          "repo": "vc-module-content",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.contentful": {
+          "version": "3.1001.0",
+          "repo": "vc-module-contentful",
+          "repoGuessed": true,
+          "loadErrors": []
+        },
+        "virtocommerce.contracts": {
+          "version": "3.1006.0",
+          "repo": "vc-module-contract",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.core": {
+          "version": "3.1012.0",
+          "repo": "vc-module-core",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.customer": {
+          "version": "3.1030.0",
+          "repo": "vc-module-customer",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.customerexportimport": {
+          "version": "3.1002.0",
+          "repo": "vc-module-customer-export-import",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.customerreviews": {
+          "version": "3.1007.0",
+          "repo": "vc-module-customer-review",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.cybersourcepayment": {
+          "version": "3.1002.0",
+          "repo": "vc-module-cyber-source",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.datatrans": {
+          "version": "3.1002.0",
+          "repo": "vc-module-datatrans",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.dynamicassociationsmodule": {
+          "version": "3.1003.0",
+          "repo": "vc-module-dynamic-associations",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.elasticappsearch": {
+          "version": "3.1003.0",
+          "repo": "vc-module-elastic-app-search",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.elasticsearch": {
+          "version": "3.806.0",
+          "repo": "vc-module-elastic-search",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.elasticsearch8": {
+          "version": "3.1011.0",
+          "repo": "vc-module-elastic-search-8",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.environmentscompare": {
+          "version": "3.1001.0",
+          "repo": "vc-module-environments-compare",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.eventbus": {
+          "version": "3.1010.0",
+          "repo": "vc-module-event-bus",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.export": {
+          "version": "3.1005.0",
+          "repo": "vc-module-export",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.fileexperienceapi": {
+          "version": "3.1008.0",
+          "repo": "vc-module-file-experience-api",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.filesystemassets": {
+          "version": "3.1006.0",
+          "repo": "vc-module-filesystem-assets",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.gdpr": {
+          "version": "3.1003.0",
+          "repo": "vc-module-gdpr",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.googleecommerceanalytics": {
+          "version": "4.1004.0",
+          "repo": "vc-module-google-ecommerce-analytics",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.googlesso": {
+          "version": "3.1003.0",
+          "repo": "vc-module-google-sso",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.imagetools": {
+          "version": "3.1007.0",
+          "repo": "vc-module-image-tools",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.inventory": {
+          "version": "3.1010.0",
+          "repo": "vc-module-inventory",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.loyalty": {
+          "version": "3.1009.0",
+          "repo": "vc-module-loyalty",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.lucenesearch": {
+          "version": "3.1006.0",
+          "repo": "vc-module-lucene-search",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.marketing": {
+          "version": "3.1009.0",
+          "repo": "vc-module-marketing",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.marketingexperienceapi": {
+          "version": "3.1004.0",
+          "repo": "vc-module-marketing-experience-api",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.mfa": {
+          "version": "3.1000.0-pr-1-cf83",
+          "repo": "vc-module-mfa",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.nativepaymentmethods": {
+          "version": "3.1002.0",
+          "repo": "vc-module-NativePaymentMethods",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.news": {
+          "version": "3.1005.0",
+          "repo": "vc-module-news",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.notifications": {
+          "version": "3.1018.0",
+          "repo": "vc-module-notification",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.openidconnectmodule": {
+          "version": "3.1001.0",
+          "repo": "vc-module-openid-connect",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.opensearch": {
+          "version": "3.1004.0",
+          "repo": "vc-module-open-search",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.opentelemetry": {
+          "version": "3.1002.0",
+          "repo": "vc-module-opentelemetry",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.ordermanagement": {
+          "version": "3.1002.0",
+          "repo": "vc-module-order-management",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.orders": {
+          "version": "3.1018.0",
+          "repo": "vc-module-order",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.otp": {
+          "version": "3.1001.0-pr-3-d978",
+          "repo": "vc-module-otp",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.pagebuildermodule": {
+          "version": "3.1036.0-pr-178-add2",
+          "repo": "vc-module-pagebuilder",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.pages": {
+          "version": "3.1010.0",
+          "repo": "vc-module-pages",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.payment": {
+          "version": "3.1010.0",
+          "repo": "vc-module-payment",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.priceexportimport": {
+          "version": "3.1001.0",
+          "repo": "vc-module-price-export-import",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.pricing": {
+          "version": "3.1008.0",
+          "repo": "vc-module-pricing",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.productsnapshot": {
+          "version": "3.1003.0",
+          "repo": "vc-module-product-snapshot",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.profileexperienceapimodule": {
+          "version": "3.1021.0",
+          "repo": "vc-module-profile-experience-api",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.pushmessages": {
+          "version": "3.1008.0",
+          "repo": "vc-module-push-messages",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.quote": {
+          "version": "3.1005.0",
+          "repo": "vc-module-quote",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.return": {
+          "version": "3.1005.0",
+          "repo": "vc-module-return",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.salesrep": {
+          "version": "3.1014.0",
+          "repo": "vc-module-sales-rep",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.sanity": {
+          "version": "3.1003.0",
+          "repo": "vc-module-sanity",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.search": {
+          "version": "3.1010.0",
+          "repo": "vc-module-search",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.seo": {
+          "version": "3.1007.0",
+          "repo": "vc-module-seo",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.shipping": {
+          "version": "3.1009.0",
+          "repo": "vc-module-shipping",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.shipstation": {
+          "version": "3.1001.0",
+          "repo": "vc-module-ShipStation",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.sitemaps": {
+          "version": "3.1006.0",
+          "repo": "vc-module-sitemaps",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.skyflow": {
+          "version": "3.1005.0",
+          "repo": "vc-module-skyflow",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.sqlqueries": {
+          "version": "3.1006.0",
+          "repo": "vc-module-sql-queries",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.store": {
+          "version": "3.1010.0",
+          "repo": "vc-module-store",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.subscription": {
+          "version": "3.1006.0",
+          "repo": "vc-module-subscription",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.systemoperations": {
+          "version": "3.1002.0",
+          "repo": "vc-module-system-operations",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.taskmanagement": {
+          "version": "3.1005.0",
+          "repo": "vc-module-task-management",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.tax": {
+          "version": "3.1008.0",
+          "repo": "vc-module-tax",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.ucp": {
+          "version": "3.1010.0",
+          "repo": "vc-module-ucp",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.webhooks": {
+          "version": "3.1005.0",
+          "repo": "vc-module-webhooks",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.whitelabeling": {
+          "version": "3.1005.0",
+          "repo": "vc-module-white-labeling",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.xapi": {
+          "version": "3.1027.0",
+          "repo": "vc-module-x-api",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.xcart": {
+          "version": "3.1042.0",
+          "repo": "vc-module-x-cart",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.xcatalog": {
+          "version": "3.1023.0",
+          "repo": "vc-module-x-catalog",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.xcms": {
+          "version": "3.1008.0",
+          "repo": "vc-module-x-cms",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.xfrontend": {
+          "version": "3.1007.0",
+          "repo": "vc-module-x-frontend",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.xorder": {
+          "version": "3.1016.0",
+          "repo": "vc-module-x-order",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.xpickup": {
+          "version": "3.1008.0",
+          "repo": "vc-module-x-pickup",
+          "repoGuessed": false,
+          "loadErrors": []
+        },
+        "virtocommerce.xrecommend": {
+          "version": "3.1002.0",
+          "repo": "vc-module-x-recommend",
+          "repoGuessed": false,
+          "loadErrors": []
+        }
+      }
+    },
+    "deployedTheme": "2.61.0-pr-2570-2fc9-2fc9261a",
+    "storefrontVisible": {
+      "versionsHidden": false,
+      "modules": {
+        "virtocommerce.applicationinsights": "3.1005.0",
+        "virtocommerce.assets": "3.1010.0",
+        "virtocommerce.authorizenetpayment": "3.1005.0",
+        "virtocommerce.avalaratax": "3.1005.0",
+        "virtocommerce.azuread": "3.1003.0",
+        "virtocommerce.azureblobassets": "3.1009.0",
+        "virtocommerce.azuresearch": "3.1007.0",
+        "virtocommerce.backgroundjobs": "3.1053.0",
+        "virtocommerce.backinstock": "3.1002.0",
+        "virtocommerce.backuprestore": "3.1007.0",
+        "virtocommerce.builderio": "3.1005.0",
+        "virtocommerce.bulkactionsmodule": "3.1004.0",
+        "virtocommerce.cart": "3.1012.0",
+        "virtocommerce.catalog": "3.1049.0",
+        "virtocommerce.catalogcsvimportmodule": "3.1007.0",
+        "virtocommerce.catalogpersonalization": "3.1007.0",
+        "virtocommerce.catalogpublishing": "3.1008.0",
+        "virtocommerce.content": "3.1007.0",
+        "virtocommerce.contentful": "3.1001.0",
+        "virtocommerce.contracts": "3.1006.0",
+        "virtocommerce.core": "3.1012.0",
+        "virtocommerce.customer": "3.1030.0",
+        "virtocommerce.customerexportimport": "3.1002.0",
+        "virtocommerce.customerreviews": "3.1007.0",
+        "virtocommerce.cybersourcepayment": "3.1002.0",
+        "virtocommerce.datatrans": "3.1002.0",
+        "virtocommerce.dynamicassociationsmodule": "3.1003.0",
+        "virtocommerce.elasticappsearch": "3.1003.0",
+        "virtocommerce.elasticsearch": "3.806.0",
+        "virtocommerce.elasticsearch8": "3.1011.0",
+        "virtocommerce.environmentscompare": "3.1001.0",
+        "virtocommerce.eventbus": "3.1010.0",
+        "virtocommerce.export": "3.1005.0",
+        "virtocommerce.fileexperienceapi": "3.1008.0",
+        "virtocommerce.filesystemassets": "3.1006.0",
+        "virtocommerce.gdpr": "3.1003.0",
+        "virtocommerce.googleecommerceanalytics": "4.1004.0",
+        "virtocommerce.googlesso": "3.1003.0",
+        "virtocommerce.imagetools": "3.1007.0",
+        "virtocommerce.inventory": "3.1010.0",
+        "virtocommerce.loyalty": "3.1009.0",
+        "virtocommerce.lucenesearch": "3.1006.0",
+        "virtocommerce.marketing": "3.1009.0",
+        "virtocommerce.marketingexperienceapi": "3.1004.0",
+        "virtocommerce.mfa": "3.1000.0-pr-1-cf83",
+        "virtocommerce.nativepaymentmethods": "3.1002.0",
+        "virtocommerce.news": "3.1005.0",
+        "virtocommerce.notifications": "3.1018.0",
+        "virtocommerce.openidconnectmodule": "3.1001.0",
+        "virtocommerce.opensearch": "3.1004.0",
+        "virtocommerce.opentelemetry": "3.1002.0",
+        "virtocommerce.ordermanagement": "3.1002.0",
+        "virtocommerce.orders": "3.1018.0",
+        "virtocommerce.otp": "3.1001.0-pr-3-d978",
+        "virtocommerce.pagebuildermodule": "3.1036.0-pr-178-add2",
+        "virtocommerce.pages": "3.1010.0",
+        "virtocommerce.payment": "3.1010.0",
+        "virtocommerce.priceexportimport": "3.1001.0",
+        "virtocommerce.pricing": "3.1008.0",
+        "virtocommerce.productsnapshot": "3.1003.0",
+        "virtocommerce.profileexperienceapimodule": "3.1021.0",
+        "virtocommerce.pushmessages": "3.1008.0",
+        "virtocommerce.quote": "3.1005.0",
+        "virtocommerce.return": "3.1005.0",
+        "virtocommerce.salesrep": "3.1014.0",
+        "virtocommerce.sanity": "3.1003.0",
+        "virtocommerce.search": "3.1010.0",
+        "virtocommerce.seo": "3.1007.0",
+        "virtocommerce.shipping": "3.1009.0",
+        "virtocommerce.shipstation": "3.1001.0",
+        "virtocommerce.sitemaps": "3.1006.0",
+        "virtocommerce.skyflow": "3.1005.0",
+        "virtocommerce.sqlqueries": "3.1006.0",
+        "virtocommerce.store": "3.1010.0",
+        "virtocommerce.subscription": "3.1006.0",
+        "virtocommerce.systemoperations": "3.1002.0",
+        "virtocommerce.taskmanagement": "3.1005.0",
+        "virtocommerce.tax": "3.1008.0",
+        "virtocommerce.ucp": "3.1010.0",
+        "virtocommerce.webhooks": "3.1005.0",
+        "virtocommerce.whitelabeling": "3.1005.0",
+        "virtocommerce.xapi": "3.1027.0",
+        "virtocommerce.xcart": "3.1042.0",
+        "virtocommerce.xcatalog": "3.1023.0",
+        "virtocommerce.xcms": "3.1008.0",
+        "virtocommerce.xfrontend": "3.1007.0",
+        "virtocommerce.xorder": "3.1016.0",
+        "virtocommerce.xpickup": "3.1008.0",
+        "virtocommerce.xrecommend": "3.1002.0"
+      }
+    },
+    "drift": [],
+    "ledger": {
+      "generated": "2026-10-20",
+      "stale": false,
+      "releasedNotDeployed": [],
+      "noLiveSource": [],
+      "breaking": []
+    },
+    "components": [
+      {
+        "input": "VirtoCommerce.PageBuilderModule",
+        "repo": "vc-module-pagebuilder"
+      }
+    ]
+  },
+  "mcp": {
+    "servers": [
+      {
+        "server": "atlassian",
+        "scope": "user",
+        "class": "REQ_FALLBACK",
+        "fallback": "Jira REST via JIRA_API_TOKEN, else the user pastes the ticket",
+        "level": "NOT_VISIBLE",
+        "problem": null
+      },
+      {
+        "server": "github",
+        "scope": "project",
+        "class": "REQ_FALLBACK",
+        "fallback": "gh CLI / GIT_TOKEN REST",
+        "level": "ABSENT",
+        "problem": null
+      },
+      {
+        "server": "kb",
+        "scope": "project",
+        "class": "REQ_FALLBACK",
+        "fallback": "npm run kb -- ask",
+        "level": "READY",
+        "problem": null
+      },
+      {
+        "server": "virtooz",
+        "scope": "user",
+        "class": "REQ_FALLBACK",
+        "fallback": "Context7 /virtocommerce/vc-docs",
+        "level": "NOT_VISIBLE",
+        "problem": null
+      },
+      {
+        "server": "chrome-devtools",
+        "scope": "user",
+        "class": "OPT",
+        "fallback": null,
+        "when": "visual_surface",
+        "level": "READY",
+        "problem": null
+      },
+      {
+        "server": "azure",
+        "scope": "user",
+        "class": "OPT",
+        "fallback": "APPINSIGHTS_APP_ID_* + APPINSIGHTS_API_KEY_*",
+        "level": "NOT_VISIBLE",
+        "problem": null
+      },
+      {
+        "server": "playwright-chrome",
+        "scope": "project",
+        "class": "OPT",
+        "fallback": "next lane in the fallback chain",
+        "level": "CONFIGURED",
+        "problem": "@playwright/mcp must be pinned to a version, found @playwright/mcp@latest"
+      },
+      {
+        "server": "playwright-edge",
+        "scope": "project",
+        "class": "OPT",
+        "fallback": "next lane in the fallback chain",
+        "level": "CONFIGURED",
+        "problem": "@playwright/mcp must be pinned to a version, found @playwright/mcp@latest"
+      },
+      {
+        "server": "playwright-firefox",
+        "scope": "project",
+        "class": "OPT",
+        "fallback": "next lane in the fallback chain",
+        "level": "READY",
+        "problem": null
+      }
+    ],
+    "liveLanes": 1,
+    "lanes": {
+      "min": 1,
+      "want": 3
+    },
+    "jsonError": null
+  },
+  "checks": [
+    {
+      "id": "health",
+      "status": "OK",
+      "found": "UP",
+      "who": null,
+      "do": null,
+      "diagnose": []
+    },
+    {
+      "id": "declared",
+      "status": "OK",
+      "found": "Platform 3.1090.0-pr-3133-8b4a-vcst-5904-8b4a2e4e · Theme vc-theme-b2b-vue-2.61.0-pr-2570-2fc9-2fc9261a",
+      "who": null,
+      "do": null,
+      "diagnose": []
+    },
+    {
+      "id": "deployed",
+      "status": "OK",
+      "found": "89 modules probed",
+      "who": null,
+      "do": null,
+      "diagnose": []
+    },
+    {
+      "id": "expect",
+      "status": "OK",
+      "found": "VirtoCommerce.PageBuilderModule 3.1036.0-pr-178-add2",
+      "who": null,
+      "do": null,
+      "diagnose": []
+    },
+    {
+      "id": "sprint",
+      "status": "OK",
+      "found": "Sprint26-21",
+      "who": null,
+      "do": null,
+      "diagnose": []
+    },
+    {
+      "id": "mcp:github",
+      "status": "WARN",
+      "found": "ABSENT — working via gh CLI / GIT_TOKEN REST",
+      "who": "you",
+      "do": "add it to .mcp.json and restart, or keep the fallback",
+      "diagnose": []
+    },
+    {
+      "id": "lanes",
+      "status": "WARN",
+      "found": "1 of 3 lanes ready — the run serialises",
+      "who": "you",
+      "do": "proceed serially, or configure the missing lanes",
+      "diagnose": []
+    }
+  ],
+  "verdict": "READY"
+}

@@ -1,6 +1,6 @@
 # Member/contact write validation returns no field-level detail — `[Medium]`
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **Env:** vcst-qa @ platform `3.1058.0-pr-3077-8295`, ProfileExperienceApi `3.1015.0-pr-141-d7d8`, theme `2.55.0-pr-2423-a4e7`
 **Ticket:** VCST-5690 · **Investigated:** 2026-08-06 (Layer-3 live probe)
@@ -112,3 +112,10 @@ Probe data restored: contact name and the original 3 addresses left exactly as f
   storefront can render it inline. Optionally mirror the pattern client-side in `vc-frontend`.
 - **Second, separate action (not /qa-fix):** fix `SMK-017`/`SMK-025` execution to use the authored
   `@td(ADDR_NY.*)` / `'Runner'` values — a name field cannot carry digits.
+
+## Resolution
+
+- **Fixed in:** VirtoCommerce.ProfileExperienceApiModule `3.1022.0-pr-150-afd6` (vc-module-profile-experience-api PR #150 @ afd68e4, open at verification time). Storefront: vc-frontend#2597, theme `2.61.0-pr-2597-372a` (open at verification time).
+- **Tracker:** VCST-5690 → Tested (2026-10-27)
+- **Verified:** 2026-10-27 on vcptcore-qa via `/qa-verify-fix` — STR 3/3 GREEN on xAPI and 3/3 on the storefront (error shown on the field); A/B control on vcst-qa (3.1021.0) 3/3 RED. Each failed rule now returns `extensions.field` + `extensions.errorCode`.
+- **Evidence:** `reports/tickets/Sprint26-21/VCST-5690/vcptcore/`

@@ -16,6 +16,7 @@ Incidental repository / infrastructure defects found **while doing something els
 
 | # | Finding | Impact | Suggested fix |
 |---|---|---|---|
+| B-67 | **`/qa-local-env frontend-only` cannot deliver a fix to a Module Federation hub (Sales Rep): the generated nginx has no `/modules/` proxy, and even with one the hub renders the module's plugin chunk, not the theme's.** Found 2026-10-27 (`/qa-verify-fix VCST-6195`, vc-frontend#2609 theme on localhost → vcptcore-qa). `provision.ps1 -Mode frontend` proxies `/graphql`, `/connect/token`, `/files`, `/api/files`, `/cms-content`, `/hub/`, `/revoke/token` only, so `/modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/mf-manifest.json` → 404 and `/company/customer-orders` → "Page not found". With `location ^~ /modules/` added by hand (the `^~` is required, else the `\.(json|js|css)$` location serves it locally), the page loads `customer-orders-DWRY-_R8.js` from the SalesRep plugin (pluginVersion 0.2.5); the theme's own `customer-orders-BEaHXPfP.js` (which has the fix) is never requested. `resolve-task.mjs` also skipped the PR because its body has an empty `Artifact URL:`. | Silent for the healthcheck (theme marker + /graphql pass), so a PR theme for anything under vc-frontend `client-app/modules/sales-rep` (or any other federated module) looks provisioned while the page under test runs the deployed pre-fix plugin — or 404s. | (1) Add `location ^~ /modules/` → `-BindBackendUrl` to the generated conf. (2) In `resolve-task.mjs` / `provision.ps1`, flag a PR whose diff touches `client-app/modules/<federated module>/`: the fix needs that module's plugin rebuilt (module pre-release), not a theme ZIP. (3) When the PR body has no artifact, fall back to `resolve-theme pr <N>` and say so. |
 | B-66 | **The GraphQL runner cannot resolve the right-hand path of `>=` / `<=` assertions** — actual reads `lhs >= undefined`. Found 2026-10-19 (REG-2026-10-19-2032, VCST-5337 r2): SR-GQL-022, 143, 149, 152, 153 FAIL although the data satisfies them (022 newest-first, 143 29 vs 29, 149 8 vs 29). | Five 050m cases fail on a correct product every run; triage time burns on phantom FAILs. | Fix RHS path resolution in the comparison-assertion evaluator (`scripts/graphql/graphql-runner.ts`); a temporary runner unit case for `a.b >= c.d` while fixing (when-to-write-a-test.md). |
 | B-65 | **Layout-saving storefront cases run as `SR_REP_PRIMARY`, leaving saved `SalesRepLayout.*` rows on a rep whose "never-saved ⇒ null" baseline ~40 cases depend on.** Found 2026-10-19 (093 BLOCKED en masse; 050m SR-GQL-099/103/116 FAIL): dashboard rows written 2026-10-19T17:37Z, customerProfile 2026-10-07. `sales-rep-layout-specs.mjs` allows resets only for `DISPOSABLE_LAYOUT_REP_KEYS=[SR_REP_LAYOUT]` and `td:validate:sales-rep` [6] forbids adding PRIMARY, so no repo tool can restore PRIMARY (restored 2026-10-19 ~23:40Z by a one-off scratch script deleting 3 rows). | Silent stale data: later runs of 091/093/050m start from a polluted baseline and read as product drift. | Move every case that SAVES a layout (091 SR-CP-039/042/045/050/061-063/066, 093 save cases, 050m SR-GQL-103) to `@td(SR_REP_LAYOUT)`; add a guard failing a case that saves a layout as a rep outside the disposable list. |
 | B-64 | **vcst-qa rep fixtures no longer sign in with any registered Playwright secret** — `SR_REP_PRIMARY`, `SALES_REP`, `SR_REP_DOCS_WRITER` return `login_failed` with `TEST_USER_PASSWORD_VCST` / `SR_REP_PASSWORD` (passwords changed 2026-10-14). Found 2026-10-20 during the VCST-5337 A/B control; vcst `SALES_REP` now has accessFailedCount 3. Also vcptcore `TECHFLOW_ADMIN` with `ORG_USER_PASSWORD` → 400. | No sales-rep control runs on vcst; two more failed attempts lock the shared vcst account. | Re-seed the vcst sales-rep accounts (`seed:sales-rep`, TEST_ENV=vcst) or register the right key in `.env.playwright.local`; verify TECHFLOW_ADMIN on vcptcore. |
@@ -386,3 +387,36 @@ Found 2026-10-27 while posting the VCST-6443 Round-3 comment (vcptcore-qa) with
 
 Not fixed inline with VCST-6443: the posted comment was corrected by hand (brackets escaped, the empty table
 removed) and the template was left as it is.
+
+## 2026-10-26 — found during the VCST-4935 `/qa-test` run (vcptcore-qa)
+
+**Runner-native REST steps using `{{BACK_URL}}/api/…` return 404 on vcptcore.** `.env.vcptcore` sets
+`BACK_URL=https://vcptcore-qa.govirto.com/` (trailing slash). The GraphQL runner substitutes `{{BACK_URL}}`
+textually in `[REST-OP]` request lines, so `POST {{BACK_URL}}/api/…` becomes `…govirto.com//api/…`; because the
+result is an absolute URL, `scripts/graphql/graphql-runner.ts` (REST-OP path ~L702, cleanup `executeRest`
+~L437) uses it as-is and the platform answers **404** (verified: `//api/page-builder-pages/create-group-page`
+→ 404, `/api/…` → 401 unauthenticated). Every runner-native case with a `{{BACK_URL}}/api` REST step is
+therefore broken on vcptcore while passing on vcst (whose `BACK_URL` has no trailing slash). `--back-url` and
+an exported `BACK_URL` do not help: the runner's dotenv load overrides them.
+
+**Fix (pick one):** normalise the joined URL in the runner (collapse a doubled `/` after the authority for
+absolute URLs too), or drop the trailing slash from `BACK_URL` in `.env.vcptcore` after checking its other
+readers. Not fixed inline: the VCST-4935 050f rows were switched to `{{ADMIN_URL}}/api/…` instead.
+
+**Also seen in the same run:** `ORG_USER`'s env password does not authenticate on vcptcore B2B-store
+(`login_failed`, now `user_is_temporary_locked_out` after retries) — the runner role map and the 050* suites
+that use `ORG_USER` cannot run there; `ACME_BUYER` works.
+- **`tracker:comment` fails on any env but vcst** — `JIRA_BASE_URL` is set only in `.env.vcst` (empty in `.env.local`), so `TEST_ENV=vcptcore npm run tracker:comment` dies with "JIRA_BASE_URL is not set". The Jira site is env-independent → it belongs in `.env.defaults`. Worked around on VCST-4935 by exporting it for the one call.
+
+## 2026-10-28 — found during the VCST-6442 `/qa-test` run (vcptcore-qa)
+
+**`test-data/aliases.json` → `LOYALTY_VIP_USER` carries a literal `password` value** (committed in HEAD) next to its
+`password_env`. `.claude/rules/test-data.md` forbids password literals in committed test-data; `td:reconcile`
+secret-hygiene apparently does not scan alias objects. Fix: drop the literal (keep `password_env`), rotate the
+value if it is a real shared password, and extend the hygiene check to `aliases*.json`.
+
+**`TECHFLOW_BUYER` and `OTHER_ORG_USER` have no organization on vcptcore.** Their aliases imply org B (TechFlow /
+BuildRight), but on vcptcore-qa the members' `organizations` is `[]`, so every "other-org buyer" case there really
+tests "signed-in buyer without organization". Fix: give the vcptcore accounts their org memberships (seed),
+or add a vcptcore overlay that names a genuinely org-B buyer. **Fixed 2026-10-28** (same branch): the reuse branch of
+`seedContacts` in `scripts/lib/user-provision.mjs` now links missing CSV organizations; both accounts re-seeded on vcptcore.

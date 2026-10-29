@@ -447,6 +447,25 @@ export async function seedContacts(rows, orgMap) {
           await api('POST', '/api/members', contact, { expectStatus: [200, 201, 204] });
           console.log(`    ↻ reuse  ${row.contact_id} ${row.full_name} — currencyCode → ${wantCcy}`);
         }
+        // Reconcile org links on reuse (additive, never removes). xAPI resolves the storefront
+        // session's organization from contact.organizations, NOT from the OrganizationMembership
+        // (KB-4EDC989E), so a reused contact with an Approved membership but an empty organizations
+        // array signs in org-less: me.contact.organizationId = null. Measured on vcptcore 2026-10-28
+        // for TECHFLOW_BUYER / OTHER_ORG_USER. Same relink as ensureMembershipContact/seedInlineOrgUsers.
+        const wantOrgs = (row.org_id || '').split(';').map(s => s.trim()).filter(Boolean)
+          .map(o => orgMap[o]?.platform_id).filter(Boolean);
+        const haveOrgs = new Set(contact.organizations || []);
+        const missingOrgs = wantOrgs.filter(id => !haveOrgs.has(id));
+        if (missingOrgs.length) {
+          if (DRY_RUN) {
+            console.log(`    [DRY RUN] would link contact ${contact.id} → +${missingOrgs.length} org(s) (${row.email})`);
+          } else {
+            const fresh = await findContactById(contact.id) || contact; // re-read: the currency PUT above may have moved it
+            fresh.organizations = [...new Set([...(fresh.organizations || []), ...missingOrgs])];
+            await api('PUT', '/api/members', fresh, { expectStatus: [200, 204] });
+            console.log(`    ↻ link   contact ${contact.id} → +${missingOrgs.length} org(s) (${row.email})`);
+          }
+        }
         out[row.contact_id] = { csv_id: row.contact_id, name: row.full_name, email: row.email, platform_id: contact.id, reused: true, user_id: user.id };
         if (VERBOSE) console.log(`    ↻ reuse  ${row.contact_id} ${row.full_name} (${contact.id}) via user ${user.id}`);
         continue;

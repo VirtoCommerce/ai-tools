@@ -1,0 +1,135 @@
+{
+ "env": "vcptcore",
+ "endpoint": "POST {BACK_URL}/graphql",
+ "note": "Authorization header omitted; responses verbatim from server",
+ "calls": [
+  {
+   "at": "2026-10-26T23:33:34.343Z",
+   "request": {
+    "query": "mutation($command:InputUpdateMemberAddressType!){ updateMemberAddresses(command:$command){ id addresses { totalCount items { id firstName lastName line1 } } } }",
+    "variables": {
+     "command": {
+      "memberId": "c387d3ed-3cf2-435a-9244-1b2f53b53a0a",
+      "addresses": [
+       {
+        "firstName": "Jane2",
+        "lastName": "Doe",
+        "line1": "11 Agent Test Street",
+        "city": "Boston",
+        "countryCode": "USA",
+        "countryName": "United States",
+        "regionId": "MA",
+        "regionName": "Massachusetts",
+        "postalCode": "02101",
+        "addressType": 3
+       },
+       {
+        "firstName": "Jane",
+        "lastName": "Doe_",
+        "line1": "12 Agent Test Street",
+        "city": "Boston",
+        "countryCode": "USA",
+        "countryName": "United States",
+        "regionId": "MA",
+        "regionName": "Massachusetts",
+        "postalCode": "02101",
+        "addressType": 3
+       }
+      ]
+     }
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "errors": [
+      {
+       "message": "'First Name' contains invalid characters.",
+       "locations": [
+        {
+         "line": 1,
+         "column": 51
+        }
+       ],
+       "path": [
+        "updateMemberAddresses"
+       ],
+       "extensions": {
+        "code": "VALIDATION",
+        "codes": [
+         "VALIDATION"
+        ],
+        "field": "addresses[0].firstName",
+        "errorCode": "InvalidCharacters"
+       }
+      },
+      {
+       "message": "'Last Name' contains invalid characters.",
+       "locations": [
+        {
+         "line": 1,
+         "column": 51
+        }
+       ],
+       "path": [
+        "updateMemberAddresses"
+       ],
+       "extensions": {
+        "code": "VALIDATION",
+        "codes": [
+         "VALIDATION"
+        ],
+        "field": "addresses[1].lastName",
+        "errorCode": "InvalidCharacters"
+       }
+      }
+     ],
+     "data": {
+      "updateMemberAddresses": null
+     }
+    }
+   }
+  },
+  {
+   "at": "2026-10-26T23:33:34.587Z",
+   "request": {
+    "query": "query { me { id contact { id firstName lastName addresses { items { id firstName lastName line1 line2 city countryCode countryName regionId regionName postalCode phone email addressType } } } } }"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "data": {
+      "me": {
+       "id": "bf2f665e-05e8-47dd-bb48-64d50ab95300",
+       "contact": {
+        "id": "c387d3ed-3cf2-435a-9244-1b2f53b53a0a",
+        "firstName": "SmokeTest",
+        "lastName": "Runner",
+        "addresses": {
+         "items": [
+          {
+           "id": "f936a9f3-b844-4390-87d5-104f73b2f7e8",
+           "firstName": "Jane",
+           "lastName": "Doe",
+           "line1": "456 Oak Avenue",
+           "line2": "Apt 4B",
+           "city": "New York",
+           "countryCode": "USA",
+           "countryName": "United States of America",
+           "regionId": "NY",
+           "regionName": "New York",
+           "postalCode": "10001",
+           "phone": "",
+           "email": "<redacted-email>",
+           "addressType": 3
+          }
+         ]
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ ]
+}
