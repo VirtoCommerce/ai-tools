@@ -105,9 +105,9 @@ export function diffPromotion(beforeCsv: string, afterCsv: string): PromotionDif
   };
 }
 
-/** The promotion rule, as facts rather than a verdict: which status changes are NOT `Draft -> Automated`. */
+/** The promotion rule, as facts rather than a verdict: which status changes are neither `Draft -> Automated` (tc:promote) nor `Draft -> Reviewed` (qa-case-promotion flip.ts review). */
 export function illegalPromotions(diff: PromotionDiff): Array<{ id: string; before: string; after: string }> {
-  return diff.statusChanges.filter((c) => !(c.before === "Draft" && c.after === "Automated"));
+  return diff.statusChanges.filter((c) => !(c.before === "Draft" && (c.after === "Automated" || c.after === "Reviewed")));
 }
 
 // --- gate definitions -----------------------------------------------------------------------
@@ -166,11 +166,11 @@ export const GATES: Record<GateId, GateSpec> = {
     ],
   },
   "5g": {
-    title: "Promotion flip Draft -> Automated (hard STOP) — /qa-test-lifecycle 6P",
+    title: "Promotion flip Draft -> Automated / Reviewed (hard STOP) — qa-case-promotion",
     unchecked: [
       "for a sample of upgraded assertions, that each {OBSERVED} traces to real Step-4 evidence",
       "that no {HYPOTHESIS} was cleared by an invented value",
-      "that the doer ran tc:promote:apply (the write) and not bare tc:promote (the dry run)",
+      "that the doer ran the writes (tc:promote --apply, flip.ts review --apply), not only their dry runs, and only on the ids the brief lists",
     ],
   },
 };
@@ -252,8 +252,10 @@ function printPromotionSection(suite: string): void {
   const diff = diffPromotion(head.stdout, readFileSync(suite, "utf-8"));
   const illegal = illegalPromotions(diff);
   console.log(`  Automation_Status changes vs HEAD: ${diff.statusChanges.length}`);
-  console.log(`    Draft -> Automated:              ${diff.statusChanges.length - illegal.length}`);
-  console.log(`    NOT Draft -> Automated:          ${illegal.length}`);
+  const toAutomated = diff.statusChanges.filter((c) => c.before === "Draft" && c.after === "Automated").length;
+  console.log(`    Draft -> Automated:              ${toAutomated}`);
+  console.log(`    Draft -> Reviewed:               ${diff.statusChanges.length - illegal.length - toAutomated}`);
+  console.log(`    any other status change:         ${illegal.length}`);
   for (const c of illegal) console.log(`      ${c.id}: "${c.before}" -> "${c.after}"`);
   console.log(`  rows with a NON-status column changed: ${diff.otherColumnChanges.length}`);
   for (const c of diff.otherColumnChanges.slice(0, 20)) console.log(`      ${c.id}: ${c.column}`);

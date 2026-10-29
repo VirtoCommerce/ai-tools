@@ -1,6 +1,6 @@
 # qa-suite-sync — Phase 4, review and fix
 
-Supporting file for [`qa-suite-sync`](SKILL.md). Read it at Phase 4 — the subagent reads 4a, 4b and 4c; you run 4a-bis.
+Supporting file for [`qa-suite-sync`](SKILL.md). Read it at Phase 4 — the subagent reads 4a and 4b; you run 4a-bis (SKILL.md step 3) and 4c (step 8).
 
 ### Phase 4 — REVIEW & FIX (Quality Assurance)
 
@@ -9,7 +9,7 @@ Supporting file for [`qa-suite-sync`](SKILL.md). Read it at Phase 4 — the suba
 #### 4a. Static Analysis (`/qa-review-tests` dimensions 1–7, 9, 10)
 
 Reviews ALL cases in scope (existing + updated + newly generated). **The
-[`/qa-review-tests` skill](../qa-review-tests/SKILL.md) owns the dimension set — this command
+[`/qa-review-tests` skill](../qa-review-tests/SKILL.md) owns the dimension set — this skill
 does not restate it.** Read its Review Dimensions table (and `.claude/skills/qa-review-tests/review-criteria.md`) for the checks,
 codes, and severities; a restated copy here would drift, and has. Delegate by *dimension number*:
 
@@ -82,11 +82,16 @@ Blocker/Critical is reverted, not shipped.**
 
 #### 4c. BL Sync (always — scoped to the run's BL candidates)
 
-Run **`/qa-review-bl`** on exactly the `BL-*` this run surfaced — the Phase 2 contradictions + the
-Phase 3 `blProposals.new[]`. **None ⇒ no-op.** A whole domain is standalone `/qa-review-bl domain
-<name>`. Operations (`.claude/skills/qa-review-oracles/bl-audit-criteria.md` §1):
+**You (the orchestrator) run it, at SKILL.md step 8** — after Phase 5 and after the bug filing, never
+inside the Phases 2–4 dispatch: `/qa-review-bl` dispatches `ba-system-analyzer`, which a subagent cannot,
+and MARK-SUSPECT needs the bug key that filing returns.
 
-- **A rule a case contradicted → MARK-SUSPECT**: `status: SUSPECT`, `suspect_reason` = `[bug] <KEY>` (`bl:fresh --resolve` clears it on Fixed). With no bug key yet, the rule goes into the run's `bugCandidates[]` — filed only as `verify.md` *Filing a bug* says, never from inside 4c. The rule's text is never rewritten from what the run saw.
+Run **`/qa-review-bl`** on exactly the `BL-*` this run surfaced — the Phase 2 contradictions
+(`blProposals.stale[]`), the Phase 3 `blProposals.new[]`, and every `{BL}` assertion Phase 5 refuted.
+**None ⇒ no-op.** A whole domain is standalone `/qa-review-bl domain <name>`. Operations
+(`.claude/skills/qa-review-oracles/bl-audit-criteria.md` §1):
+
+- **A rule a case contradicted → MARK-SUSPECT**: `status: SUSPECT`, `suspect_reason` = `[bug] <KEY>`, the key `verify.md` *Filing a bug* returned (`bl:fresh --resolve` clears it on Fixed). A contradicted rule whose bug the user declined to file is left as it is and reported under *BL Audit* as contradicted, unfiled — G6 fails for it. The rule's text is never rewritten from what the run saw.
 - **A candidate a human source states → NEW / SYNC** in `bl/<slug>.yaml` (value gate for NEW), then `npm run bl:render` + `bl:convert:check`.
 - **A `SUSPECT` rule in scope whose bug now has a Jira decision → RESOLVE** (Fixed → `ACTIVE`; By design / Won't fix → rule rewritten from the resolution).
 - Behaviour no rule covers → `kb_capture`. No proposals file, no review queue; RETIRE is only proposed.

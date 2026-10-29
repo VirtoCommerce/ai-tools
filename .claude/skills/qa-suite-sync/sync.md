@@ -58,8 +58,8 @@ Reclassify each case:
 5. **Leave `Automation_Status` alone.** The legal values are exactly `Draft` | `Reviewed` | `Automated` |
    `Manual` | `Semi-Automated` | `Deprecated` (`AUTOMATION_STATUSES` in `scripts/test-cases/lint-test-cases.ts`, enforced by
    `suites:review` **S-006**; meanings: `.claude/skills/qa-test-cases-generator/test-case-template.md` §Automation_Status). There is no `synced` state — a sync is recorded in `References`, not in the
-   status column. Only Phase 6 may *demote* a case to `Draft`, and promotion out of `Draft` is never
-   automatic (it needs zero GRD-001 + human approval — see the skill's promotion rule).
+   status column. Nothing in this skill moves a case into or out of `Draft`: promotion is
+   `qa-case-promotion`'s and is never automatic (zero GRD-001 + human approval).
 6. Add to References: `"Synced: {source} ({date})"` — append; never clobber an existing
    `Audited:` / `Corrected:` stamp on that row (the `Audited:` stamp is the Dim-11 rotation state)
 
@@ -77,7 +77,9 @@ Reclassify each case:
   the item in `pendingApprovals[]` unwritten, as `action: remove` (the default), `deprecate` or `rewrite` (`briefs.md`). After approval the orchestrator writes it, never by hand:
   `npx tsx .claude/skills/qa-suite-sync/scripts/retire.ts remove <suite.csv> --ids <A,B>` (or `deprecate … --reason "<why>"`),
   dry run first, then `--apply`; snapshot the suite first (`flip.ts snapshot`, see SKILL.md §Writes). A removed ID is
-  retired — never allocate it again.
+  retired — never allocate it again. `retire.ts remove` refuses (exit 2, nothing written) an ID that is the highest
+  of its prefix in the corpus, because `tc:alloc` would hand that number out again; deprecate that case instead and
+  say so in the report.
 
 **After updates:**
 - Re-run structural validation (CSV format, required fields, ID uniqueness)

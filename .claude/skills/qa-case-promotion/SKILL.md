@@ -55,7 +55,10 @@ approval. Re-derive from the CSV itself, exactly as G10 does:
   `{OBSERVED}` with no traceable artifact is the failure mode Dimension 10 exists to catch — if the
   `{OBSERVED}` upgrades look unbacked, REJECT the case rather than promoting a fabricated expectation into
   permanent coverage.
-- A case **never executed** (no PASS/FAIL evidence) is not promotable regardless of its tags.
+- A case **never executed** (no PASS/FAIL evidence) is not promotable regardless of its tags. The evidence
+  is any completed run that executed it: the ticket's `/qa-test` run that appended it (its run folder —
+  `npm run run:dir -- --ticket VCST-XXXX --prior`), the `--run-id` run, or the harvest above. The `PR-002` / `PR-013` holds
+  of step 4i mean only that the `--run-id` run says nothing about the case, not that no run executed it.
 
 For a legacy source, cases the hand-off record lists in `promotion.blocked` stay blocked; a case it lists
 in `promotion.eligible` that fails re-derivation is **demoted back to blocked** with the reason. Report both sets.
@@ -68,8 +71,8 @@ self-promotes). Present the eligible set — case ID, title, target suite, `Draf
 `→ Automated` where a run will ground it) — and **wait for approval**. Rejected or unapproved cases stay
 `Draft` (in the ticket folder, or in place for in-suite rows).
 
-**Snapshot before any write.** Before step 4 or 4i, snapshot every CSV you will write and
-`config/test-suites.json`:
+**Snapshot before any write.** Before step 4 or 4i, snapshot every CSV you will write — a new suite file
+of step 3 too, which `restore` then deletes — and `config/test-suites.json`:
 
 ```bash
 npx tsx .claude/skills/qa-case-promotion/scripts/flip.ts snapshot <suite.csv>... config/test-suites.json > <scratchpad>/promotion-snapshot.json
@@ -109,7 +112,7 @@ flag scans every CSV under `regression/suites/` and rejects a colliding **incomi
 > and checking it against itself failed every append on that debt. Promotion passes the flag regardless.
 
 The `Automation_Status` flip `Draft → Reviewed` happens **in the rows being appended** — that flip *is* the
-promotion. Stamp `References` with `Promoted: VCST-XXXX → <suite id> (YYYY-MM-DD)`, appending; never
+promotion. Stamp `References` with `Promoted: VCST-XXXX (YYYY-MM-DD)` — the stamp `flip.ts review` writes — appending; never
 clobber an existing `Synced:` / `Audited:` / `Corrected:` stamp.
 
 ## 4i — Flip in place (in-suite source only; the rows are never re-appended)

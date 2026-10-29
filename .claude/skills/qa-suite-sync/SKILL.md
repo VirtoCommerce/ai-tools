@@ -21,7 +21,7 @@ theirs from the path you put in the brief (`briefs.md`).
    inputs skip Phase 2 (sync) inside step 2; generation and review still run.
 2. **Dispatch Phases 2–4** to `test-management-specialist` as one brief ([`briefs.md`](briefs.md)):
    sync stale cases ([`sync.md`](sync.md)), analyze gaps and generate ([`generate.md`](generate.md)),
-   review and auto-fix ([`review.md`](review.md) 4a, 4b, 4c).
+   review and auto-fix ([`review.md`](review.md) 4a, 4b). 4c is yours, at step 8.
 3. **Triangulate behaviour rewrites** — you run [`review.md`](review.md) 4a-bis on the returned
    `triangulationCandidates[]`, report-only (it dispatches `ba-system-analyzer`, which a subagent cannot).
    Each DRIFT becomes a `rewrite` for step 4's list, with its evidence.
@@ -34,14 +34,20 @@ theirs from the path you put in the brief (`briefs.md`).
 6. **Verify live** — [`verify.md`](verify.md): dispatch `qa-testing-expert` on every new or changed case.
    SKIPPED only when nothing new or changed is in scope, or no browser lane is available — say which.
 7. **Fix what verification found** — CHANGED labels and `{HYPOTHESIS}` rewrites go back through steps
-   2–6 for those cases only; at most **2** verify→fix rounds, then report what is left. A refuted
+   2–6 for those cases only, and UNCHECKED cases (the round's caps ran out) go back to step 6; at most
+   **2** verify→fix rounds, then report what is left. A refuted
    `{SPEC}`/`{DOC}`/`{BL}`/`Catches:` assertion is a bug candidate, never "fixed" (`verify.md` *Filing a bug*).
-8. **Gates and verdict** (below).
-9. **Report** in chat — [`report-template.md`](report-template.md). For a `diff` input, save the deploy
-   state now (`scope.md` *Diff* Step 4).
+8. **Bugs, then the BL sync** — put `bugCandidates[]` to the user as one list and file the confirmed ones
+   (`verify.md` *Filing a bug*); then run [`review.md`](review.md) 4c yourself with the bug keys that came
+   back. It runs here, not in step 2, because `/qa-review-bl` dispatches `ba-system-analyzer` (a subagent
+   cannot) and because `SUSPECT` needs a bug key that exists only after filing.
+9. **Gates and verdict** (below).
+10. **Report** in chat — [`report-template.md`](report-template.md). For a `diff` input, save the deploy
+    state now (`scope.md` *Diff* Step 4).
 
-When the input was a ticket, the router continues with `qa-case-promotion` after this skill — promotion out
-of `Draft` is not this skill's.
+When the input was a ticket, `qa-case-promotion` follows for the same ticket — the router runs it; if you
+reached this skill directly, read and follow it yourself after the report (skip it on NEEDS FIXES or
+BLOCKED). Promotion out of `Draft` is not this skill's.
 
 ## Writes
 
@@ -114,7 +120,7 @@ The verdict is advisory: the user makes the go/no-go.
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback and error
   handling, and `.claude/skills/qa-evidence/output-paths.md` for artifact paths.
 - **Agent delegation is mandatory** — never run Phases 2–4 yourself; dispatch `test-management-specialist`.
-  The exceptions are the 4a-bis triangulation of step 3 and the writes of step 5.
+  The exceptions are the 4a-bis triangulation of step 3, the writes of step 5 and the 4c BL sync of step 8.
 - **`/qa-review-tests` owns the review methodology** (dimensions, codes, severities, evidence bars,
   auto-fix matrix); this skill owns only what runs when. When they appear to disagree, the skill wins and
   this file is the bug. The other mechanisms are owned likewise: `/qa-test-cases-generator` (authoring

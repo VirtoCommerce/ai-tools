@@ -32,7 +32,7 @@ screenshots (`reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`, screenshots only). P
 | 3. Analyze & Generate | test-management-specialist | Done/Skipped | N gaps found, M cases created |
 | 4. Review & Fix | test-management-specialist | Done | N findings (B: X, C: Y, H: Z, M: W) |
 | 5. Verify | qa-testing-expert | Done/Skipped | N verified, X changed, Y broken |
-| 6. Approve | orchestrator | **VERDICT** | Gates: N/M passed |
+| 6. Verdict | orchestrator | **VERDICT** | Gates: N/M passed |
 
 ## Change Inventory (if change-driven)
 | Module | Layer | Files Changed | Breaking | New Features |
@@ -64,6 +64,8 @@ screenshots (`reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`, screenshots only). P
 
 ## Environment Verification (if Phase 5 ran)
 
+UNCHECKED cases (a cap ran out in every round) are listed by ID with Result `UNCHECKED` — never counted as verified.
+
 | Case ID | URL | Check | Result | Screenshot |
 |---------|-----|-------|--------|------------|
 
@@ -79,7 +81,7 @@ screenshots (`reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`, screenshots only). P
 - [list of CSV files with change summary]
 
 ## BL Audit (when the run surfaced BL candidates)
-- K rules: X marked `SUSPECT` (bug keys); Y written from a human source (`bl/<slug>.yaml`); Z resolved; W observations sent to the `kb`. (Omit if 4c had no candidates.)
+- K rules: X marked `SUSPECT` (bug keys); Y written from a human source (`bl/<slug>.yaml`); Z resolved; W observations sent to the `kb`; V contradicted but unfiled (the user declined the bug — G6 fails for each). (Omit if 4c had no candidates.)
 
 ## Next Steps
 - [ ] Address "Must Fix" items

@@ -261,7 +261,7 @@ post-edit typecheck).
 | `/qa-test` | `/qa-test` skill, `/qa-test-design`, `/qa-checklist`, `/qa-risk` | Command = the pipeline + its gates; skill = the methodology. The FULL path writes a Test Model before any case exists |
 | `/qa-test` | `/qa-test-cases-generator`, `/qa-review-tests`, `/qa-generate-data` | Step 3 reuses the same skills `/qa-test-lifecycle` Phases 3–4 use, and appends cases as `Draft` straight into `regression/suites/` |
 | `/qa-test` | `/qa-verify-fix`, `/qa-hotfix-check`, `/qa-regression` | Step 1a routes a fix-ready Bug into `/qa-verify-fix` inline, a hotfix-status Bug into `/qa-hotfix-check`, and a `technical-change` (refactor / migration / dependency bump) into a blast-radius `/qa-regression` with no feature test |
-| `/qa-test-lifecycle` | `/qa-coverage-gap`, `/qa-review-tests` | Unified pipeline: sync + gap analysis + quality review + promotion (`qa-case-promotion`) |
+| `/qa-test-lifecycle` | `/qa-suite-sync`, `/qa-case-promotion`, `/qa-coverage-gap`, `/qa-review-tests` | Thin router: `/qa-suite-sync` (sync + gap analysis + quality review + live check) then, for a ticket, `/qa-case-promotion` |
 | `/qa-test-plan` | `/qa-regression`, `/qa-risk`, `/qa-exploratory` | Plan maps risk-scored domains to suites (§5.1/§5.2) and derives the exploratory charters (§5.3) |
 | `/qa-verify-fix` | `/qa-investigate`, `/qa-checklist` | Verification uses the investigation flow + the Bug Fix Verification checklist |
 | `/qa-coverage-gap` | `/qa-test-cases-generator` | Coverage generation uses gap analysis + the case generator |

@@ -5,9 +5,11 @@
  *   npx tsx .claude/skills/qa-case-promotion/scripts/flip.ts restore <snapshot.json>
  *   npx tsx .claude/skills/qa-case-promotion/scripts/flip.ts review <suite.csv> --ticket <KEY> --ids <A,B> [--date YYYY-MM-DD] [--apply]
  *
- * snapshot/restore keep a blob of each file in git's object store (`git hash-object -w`), so a revert
+ * snapshot/restore keep a blob of each file in git's object store (`git hash-object -w --no-filters`:
+ * the raw bytes, not the eol-normalised ones), so a revert
  * puts back exactly those bytes — unlike `git checkout`, which also discards this run's earlier edits
- * and any other session's uncommitted work in the same file.
+ * and any other session's uncommitted work in the same file. A file that does not exist yet (a new
+ * suite) is recorded as `null`, and restore deletes it.
  *
  * review flips approved rows `Draft → Reviewed` in place and appends `Promoted: <KEY> (<date>)` to
  * References — two cells per row, written through applyCellEdits (tc:promote's byte-preserving
@@ -18,7 +20,7 @@
  * Draft, an unknown id, or a file the editor cannot place) — and on 2 nothing is written.
  */
 import "../../../../scripts/lib/sync-stdio.mjs";
-import { readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import { execFileSync } from "child_process";
 import { fileURLToPath } from "url";
@@ -56,17 +58,20 @@ export function planReviewFlip(
   return { edits, refused };
 }
 
-export function snapshot(files: string[]): Record<string, string> {
-  const map: Record<string, string> = {};
+export function snapshot(files: string[]): Record<string, string | null> {
+  const map: Record<string, string | null> = {};
   for (const f of files) {
-    map[resolve(f)] = execFileSync("git", ["hash-object", "-w", resolve(f)], { encoding: "utf8" }).trim();
+    map[resolve(f)] = existsSync(f)
+      ? execFileSync("git", ["hash-object", "-w", "--no-filters", resolve(f)], { encoding: "utf8" }).trim()
+      : null;
   }
   return map;
 }
 
-export function restore(map: Record<string, string>): void {
+export function restore(map: Record<string, string | null>): void {
   for (const [file, sha] of Object.entries(map)) {
-    writeFileSync(file, execFileSync("git", ["cat-file", "-p", sha]));
+    if (sha === null) rmSync(file, { force: true });
+    else writeFileSync(file, execFileSync("git", ["cat-file", "-p", sha]));
   }
 }
 

@@ -16,6 +16,8 @@ Do not re-create it. Why it was removed: [`docs/decisions/regression-history.md`
 ### 4. Full Test Cycle CI Pipeline (Sync → Lifecycle → Regression)
 `ci/run-full-cycle.ts` orchestrates a 3-phase pipeline triggered by code changes. Phase 1 (SYNC + REVIEW) uses `/qa-test-lifecycle --ci` to detect stale test cases from PRs/diffs/module updates, update Steps/Assertions, analyze coverage gaps, and run the `/qa-review-tests` **static** dimensions (1–7, 9, 10 — dim 8 needs a browser, dim 11 is the separate `ci/run-suite-audit.ts` twin). Phase 3 (REGRESSION) delegates to `ci/run-regression.ts` to execute the affected suites — the workflow's phase numbering (1 Sync · 2 Lifecycle · 3 Regression) is the one to quote. Each phase has independent skip flags and budget allocation (50%/50% of total budget). Results go to `reports/full-cycle/{RUN_ID}/`.
 
+**Phases 1–2 are broken until `ci/run-full-cycle.ts` is updated:** it still passes `--ci --skip-*`, which `/qa-test-lifecycle` (a router since its split into `qa-suite-sync` + `qa-case-promotion`) refuses with its usage block, so those phases sync and review nothing.
+
 **Invoke:** `CHANGE_SOURCE="PR #123" npm run ci:cycle` or via `.github/workflows/full-cycle.yml`
 **Triggers:** PR merge to main (auto), daily schedule (Mon-Fri 8AM UTC), manual dispatch
 **npm scripts:** `ci:cycle` (full), `ci:cycle:pr` (PR-driven), `ci:cycle:sync-only` (Phase 1 only), `ci:cycle:no-sync` (skip Phase 1)

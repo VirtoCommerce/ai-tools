@@ -11,7 +11,8 @@ Delegate to: test-management-specialist
 Input:
   - scope: [suite IDs from Phase 1]
   - changeInventory: [from Phase 1, if change-driven]
-  - phases: [2,3,4] (no Phase 2 for a suite/domain input; on a re-dispatch, the phases the approved items belong to)
+  - phases: [2,3,4] (no Phase 2 for a suite/domain input; on a re-dispatch, the phases the approved items belong to,
+    plus 4 whenever it writes or rewrites a case — 4a/4b review every case the re-dispatch writes)
   - preflight: {the /preflight block's kb hits + doc hits}
   - approved: [items the user approved — pendingApprovals and 4a-bis DRIFT rewrites with their evidence; apply exactly
     these. Removals and deprecations are never here: the orchestrator writes them with retire.ts]   // second dispatch only
@@ -29,7 +30,8 @@ Input:
     - frontend: {FRONT_URL}
     - backend: {BACK_URL}
   - procedure — read whole before you start: .claude/skills/qa-suite-sync/sync.md (Phase 2), generate.md (Phase 3),
-    review.md (Phase 4: 4a, 4b, 4c — 4a-bis is the orchestrator's; return its candidates)
+    review.md (Phase 4: 4a and 4b — 4a-bis and 4c are the orchestrator's; return their candidates in
+    triangulationCandidates[] and blProposals)
   - references:
     - config/test-suites.json (suite definitions)
     - regression/suites/ (target CSV files)
@@ -92,6 +94,7 @@ Output: per-case verification:
   - CHANGED: element missing/renamed — include screenshot + actual label
   - BROKEN: page error, redirect loop, critical JS errors — include screenshot
   - BLOCKED: precondition can't be met (login fail, feature disabled)
+  - UNCHECKED: a cap ran out before this case — never report it as verified (`verify.md`)
   - BEHAVIOR_CONFIRMED: {caseId, assertion, evidence artifact} — the grounding target holds on this build
   - BEHAVIOR_REFUTED (ENV-008): {caseId, assertion, observed, evidence artifact}
   - kbEntries: {read, confirmed, disputed, captured}

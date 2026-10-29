@@ -38,7 +38,7 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
 1. The skill scopes scenarios → learns live variant space → designs the **combination matrix** (pairwise/all-pairs) → resolves each cell **reuse-first**, authoring only true gaps as `seeded=false` fixtures + `@td()` combination aliases, then runs `scripts/test-data/validate-td-refs.ts` (green gate).
 2. It returns the **combination matrix inline** (Combo IDs + scenario-covered + reuse-vs-gap breakdown) — the on-disk output is the gap fixtures (`test-data/<domain>/*.csv`) + aliases (`test-data/aliases.json`). No stray files (honors `.claude/rules/reports.md`).
 3. Map each gap (and NEW_NEEDED item) to one or more **Combo IDs** — this mapping drives 3c (one case / case-group per combination).
-4. If gap fixtures were authored (`seeded=false`), note in the Phase 6 report that **`/qa-seed-data <domains>` must run before these cases execute live** (reused cells already exist). The skill never provisions.
+4. If gap fixtures were authored (`seeded=false`), note in the final report that **`/qa-seed-data <domains>` must run before these cases execute live** (reused cells already exist). The skill never provisions.
 
 > Data-prep is **design + author fixtures only** — never provisioning, never editing suite CSVs (the `/qa-generate-data` boundary). Cases written in 3c consume the combinations via `@td(COMBO_ALIAS.field)`.
 

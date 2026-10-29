@@ -85,7 +85,7 @@ Step 3 — Map changes to suites:
 | Theme version changed | Frontend suites |
 | Nothing changed | No sync needed — skip Phase 2 |
 
-Step 4 — Save current state, **at Phase 6 close-out, not now** — only once Phase 2 has completed, so an aborted run does not consume the delta:
+Step 4 — Save current state, **at close-out (SKILL.md step 10), not now** — only once Phase 2 has completed, so an aborted run does not consume the delta:
 - Write `reports/full-cycle/last-deploy-state.json` with both files' content
 
 Step 5 — Also check test repo changes:
@@ -105,7 +105,7 @@ Step 5 — Also check test repo changes:
 
 ## Scope-to-Phase Mapping
 
-| Input | Ph1 Scope | Ph2 Sync | Ph3 Gen | Ph4 Review | Ph5 Verify | Ph6 Approve |
+| Input | Ph1 Scope | Ph2 Sync | Ph3 Gen | Ph4 Review | Ph5 Verify | Ph6 Verdict |
 |-------|:---------:|:--------:|:-------:|:----------:|:----------:|:-----------:|
 | `PR <owner/repo>#N`, `VCST-XXXX`, `module <name>`, `diff`, `changelog <ver>` | Yes | Yes | Yes | Yes | Yes | Yes |
 | `suite <ids>`, `domain <name>` | Yes | Skip | Yes | Yes | Yes | Yes |

@@ -12,9 +12,9 @@
  *   References, through tc:promote's byte-preserving editor. The row and its ID stay; no lane runs it.
  * remove    — cuts the records out byte-for-byte (every other line untouched), then re-parses and
  *   proves exactly those records left. `--deprecated` selects every Deprecated row of the suite.
- *   Run `npm run suites:sync` afterwards (testCount). A removed ID is retired: it is never reused,
- *   and removing the highest ID of a prefix prints a warning, because the next allocation scans the
- *   corpus and would hand that number out again.
+ *   Run `npm run suites:sync` afterwards (testCount). A removed ID is retired: it is never reused.
+ *   So removing the highest ID of a prefix in the corpus is refused — `tc:alloc` starts after the
+ *   highest number still in the corpus and would hand that ID out again; deprecate that case instead.
  *
  * Dry run by default; --apply writes. Exit 0 done/doable · 1 nothing to do · 2 refused (nothing written).
  */
@@ -24,9 +24,12 @@ import { resolve } from "path";
 import { fileURLToPath } from "url";
 import { parse as parseCsv } from "csv-parse/sync";
 import { appendStamp, applyCellEdits, type CellEdit } from "../../../../scripts/test-cases/promote-cases.ts";
-import { isCanonicalHeader } from "../../../../scripts/test-cases/append-test-cases-to-suite.ts";
+import { collectCorpusIds, isCanonicalHeader } from "../../../../scripts/test-cases/append-test-cases-to-suite.ts";
+import { highestUsed } from "../../../../scripts/test-cases/alloc-case-ids.ts";
 
 type Row = Record<string, string>;
+
+const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../../..");
 
 function rowsOf(text: string): Row[] {
   return parseCsv(text, { columns: true, bom: true, skip_empty_lines: true, relax_column_count: true }) as Row[];
@@ -101,19 +104,15 @@ export function removeRows(text: string, ids: string[]): { text: string; removed
   return { text: out, removed, errors: [] };
 }
 
-const split = (id: string) => /^(.*?)(\d+)[A-Za-z]?$/.exec(id);
-
-export function reuseWarnings(removed: string[], remainingIds: string[]): string[] {
-  const max = new Map<string, number>();
-  for (const id of remainingIds) {
-    const m = split(id);
-    if (m) max.set(m[1], Math.max(max.get(m[1]) ?? -1, Number(m[2])));
-  }
-  return removed.flatMap((id) => {
-    const m = split(id);
-    return m && Number(m[2]) > (max.get(m[1]) ?? -1)
-      ? [`${id} was the highest ${m[1]}* id — never allocate it again (the corpus scan would)`]
-      : [];
+/**
+ * Removed IDs that `tc:alloc` would hand out again: the plain `<PREFIX>-<n>` form it allocates, with
+ * `n` above the highest number its prefix keeps anywhere in the corpus once these rows are gone.
+ */
+export function reallocatable(removed: string[], remainingCorpusIds: Iterable<string>): string[] {
+  const ids = [...remainingCorpusIds];
+  return removed.filter((id) => {
+    const m = /^(.+)-(\d+)$/.exec(id);
+    return !!m && Number(m[2]) > highestUsed(m[1], ids);
   });
 }
 
@@ -150,8 +149,16 @@ function main(argv: string[]): number {
     const out = removeRows(text, ids);
     for (const e of out.errors) console.error(`REFUSED ${e}`);
     if (out.errors.length) return 2;
+    const corpus = [
+      ...collectCorpusIds(resolve(REPO_ROOT, "regression", "suites"), file).keys(),
+      ...rowsOf(out.text).map((r) => r.ID),
+    ];
+    const reused = reallocatable(out.removed, corpus);
+    for (const id of reused) {
+      console.error(`REFUSED ${id}: the highest id of its prefix — tc:alloc would hand it out again; deprecate it instead`);
+    }
+    if (reused.length) return 2;
     for (const id of out.removed) console.log(`${id}: removed`);
-    for (const w of reuseWarnings(out.removed, rowsOf(out.text).map((r) => r.ID))) console.log(`WARN ${w}`);
     if (apply) {
       writeFileSync(file, out.text);
       console.log("now run: npm run suites:sync && npm run suites:lint");
