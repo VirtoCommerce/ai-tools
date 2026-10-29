@@ -39,7 +39,8 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
 
 **For direct scopes (suite, domain):**
 
-These inputs skip Phase 2 (no code change to sync against) and go straight to gap analysis and review.
+These inputs skip Phase 2 (no code change to sync against) and go straight to gap analysis and review —
+except the mind-map suspects in scope, which Phase 2 syncs (`models.md` §Phase 2).
 
 - `suite <ID>` → resolve via `config/test-suites.json`
 - `domain <name>` → resolve all suites in the domain via `config/test-suites.json` selections

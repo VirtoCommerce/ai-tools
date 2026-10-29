@@ -12,6 +12,7 @@ unconfirmed `{SPEC}` stay ungrounded and the case stays `Draft`. UNCHECKED cases
 (SKILL.md step 7); whatever is still UNCHECKED after the last round is listed by ID in the report.
 
 **Pre-flight:** re-run `/preflight lifecycle --domain <scope>` — a `health` row that is not OK (a WARN for lifecycle) ⇒ skip with warning.
+Seed the approved data profiles of `DataProfile:`-stamped targets first (`models.md` §Phase 5).
 
 **Verification checks:**
 1. **Page reachability** — navigate to each unique URL (max 20 pages)
