@@ -1,8 +1,9 @@
-# Release regression — a bundle regression split into waves that several QA run in parallel
+# Release regression — a bundle or sprint regression split into waves that several QA run in parallel
 
-The contract behind [`/qa-test-plan stable <N>`](../../knowledge/execution/test-plan/stable-mode.md) (the plan) and
-[`/qa-run stable:<N> <wave>`](waves.md) (the run). It is the single source for the folder
-layout, every field, the verdict vocabulary and the rules that let two or three QA test one bundle
+The contract behind [`/qa-test-plan stable <N>`](../../knowledge/execution/test-plan/stable-mode.md) and
+[`/qa-test-plan <sprint>`](../../knowledge/execution/test-plan/sprint-mode.md) (the plan) and
+[`/qa-run stable:<N> <wave>` / `/qa-run sprint:<XX-YY> <wave>`](waves.md) (the run). It is the single source for the folder
+layout, every field, the verdict vocabulary and the rules that let two or three QA test one bundle or one sprint
 on one environment at the same time. The commands cite it; they do not restate it.
 
 ## 1. Why this exists
@@ -14,21 +15,23 @@ Nobody else could continue it, and the next run would have re-triaged the same f
 scratch.
 
 So a release regression keeps **everything a second person needs in git**, in one folder per
-release, and splits the work into **waves** that are independent enough to run side by side.
+release, and splits the work into **waves** that are independent enough to run side by side. A sprint regression
+is the same problem at a smaller size — one person running every suite of the sprint plan — and uses the same folder.
 
 ## 2. The folder — `regression/releases/<release>/`
 
-`<release>` is lower-case and dash-separated: `stable-16`, `stable-17`. The folder is tracked
+`<release>` is lower-case and dash-separated: `stable-16`, `stable-17` for a bundle, `sprint-26-20` for a sprint. The folder is tracked
 (`.gitattributes` pins it to LF). Raw run output never goes here — it stays in the owner's local
 `reports/regression/<runId>/` (gitignored), and a filed bug carries its own evidence in the tracker.
 
 | Path | Written by | What it is |
 |---|---|---|
-| `release.json` | planner, once | The machine-readable plan: release, ticket, baseline, bundle, env, waves (§3) |
+| `release.json` | planner, once | The machine-readable plan: release, ticket, baseline, bundle or sprint, env, waves (§3) |
 | `PLAN.md` | planner, once | The human plan: how the scope was decided, waves, prerequisites, env gaps |
-| `module-diff.json` | planner | `npm run release:diff` output for the two bundles — the raw facts behind the scope |
-| `scope.json` | planner | One row per in-scope component: versions, class (§4), wave, suites, what changed, tickets |
+| `module-diff.json` | planner — bundle only | `npm run release:diff` output for the two bundles — the raw facts behind the scope |
+| `scope.json` | planner — bundle only | One row per in-scope component: versions, class (§4), wave, suites, what changed, tickets. A sprint's scope is its plan (`docs/Sprint plans/`), which `release.json` `sprint.plan` names |
 | `waves/<W>/state.json` | that wave's owner only | Who holds the wave, its status, run ids, totals, what was not run (§5) |
+| `waves/<W>/cases.json` | `npm run release:split` only | Every case's latest result in the wave, from all its runs — what `totals`, `untriaged` and `notRun` are derived from |
 | `waves/<W>/ledger.csv` | that wave's owner only | One row per triaged finding — filed or not (§6) |
 | `waves/<W>/report.md` | that wave's owner only | The wave report: results per suite, what the failures were, BLOCKED causes, what is left |
 | `PROGRESS.md` | **generated** — `npm run release:status -- <release> --write` | The overview. Never edited by hand |
@@ -57,21 +60,37 @@ cannot reach `main`.
   "env": { "testEnv": "vcptcore_regression", "platform": "3.1076.1", "theme": "2.59.0" },
   "waves": [
     { "id": "W0", "title": "Smoke gate", "suites": ["042", "078"], "modules": ["Platform"] },
-    { "id": "C-platform", "title": "Platform — critical", "tier": "critical", "suites": ["095", "020"], "dependsOn": ["W0"] },
-    { "id": "H-platform", "title": "Platform — high", "tier": "high", "suites": ["095", "020"], "dependsOn": ["C-platform"] },
-    { "id": "WX", "title": "Exclusive window", "suites": ["096"], "dependsOn": ["H-platform"], "exclusive": ["096"] }
+    { "id": "W1", "title": "Platform", "suites": ["095", "020"], "dependsOn": ["W0"] },
+    { "id": "W2", "title": "Purchase flow", "suites": ["031", "032"], "dependsOn": ["W0"] },
+    { "id": "WX", "title": "Exclusive window", "suites": ["096"], "dependsOn": ["W1", "W2"], "exclusive": ["096"] }
   ]
+}
+```
+
+A **sprint** release carries `sprint` instead of `bundle`, and its `baseline` is the previous sprint's folder when one
+exists (its ledger is the known ground; there is no baseline build to compare on unless `env.baselineEnv` names a
+stand that still runs the previous build):
+
+```json
+{
+  "release": "sprint-26-20", "ticket": "VCST-7100", "baseline": "sprint-26-19",
+  "sprint": { "label": "Sprint26-20", "startDate": "2026-10-01", "endDate": "2026-10-14", "plan": "docs/Sprint plans/sprint-26-20-test-plan.md" },
+  "env": { "testEnv": "vcst" },
+  "waves": [ … the same grid as above … ]
 }
 ```
 
 - **W0 is always the smoke gate** and every other wave depends on it: a broken job engine or a
   failed login stops the release before anyone spends a wave on it.
-- **Waves are priority tier × domain group** (`/qa-test-plan stable` Step 3, [`stable-mode.md`](../../knowledge/execution/test-plan/stable-mode.md)): `tier` is `critical`, `high` or
-  `rest` (the cases neither tier selects), and the domain groups split each tier between owners. A wave's tier becomes
-  `--cases <tier>`; `rest` becomes `--cases medium,low`. A case whose `Priority` is unreadable is in no tier: every
-  tiered wave leaves it out, and it appears only in the run's Scope Exclusions. Tier order is a dependency: a wave
-  depends on every wave of every higher tier (directly or through another wave) — `release:check` fails otherwise. A wave without `tier` runs all of its
-  suites' cases (W0, the exclusive wave, and plans written before tiers existed, such as Stable 16).
+- **After W0, waves are independent domain groups** ([`plan-sections.md`](../../knowledge/execution/test-plan/plan-sections.md) §Waves, for both plan modes):
+  each depends on W0 only, so several QA run them at the same time. A wave holds every priority of its suites and runs them in
+  one run (three priority passes with `--by-priority`, [`waves.md`](waves.md) Step 3). A case whose `Priority` is unreadable
+  is in no tier and appears only in the run's Scope Exclusions.
+- **`tier` (legacy).** A plan may still declare tier waves (`tier`: `critical`, `high` or `rest`, run as
+  `--cases <tier>`, `rest` = `medium,low`). Such a wave must depend on every wave of every higher tier — `release:check`
+  fails otherwise — which is exactly the waiting the independent shape avoids; new plans do not use it.
+- **A suite is in one wave**, so a run is recorded case by case without double counting (`release:split`); the one
+  overlap is an exclusive suite that also sits in WX. `release:check` enforces it (legacy tier waves excepted).
 - A wave's `suites` is a plan, not a promise. The owner re-resolves it with `npm run regression:plan`
   when claiming, and records what actually ran in `state.json`.
 - `exclusive` names suites that change state the whole environment shares (§7.2). They live in one
@@ -121,7 +140,7 @@ Status moves forward only:
 | Status | Means | Set when |
 |---|---|---|
 | `NOT_STARTED` | nobody holds it | the planner creates the wave |
-| `CLAIMED` | an owner holds it, nothing ran yet | `/qa-run stable:<N> <wave> --claim` |
+| `CLAIMED` | an owner holds it, nothing ran yet | `/qa-run stable:<N> <wave> --claim` (or `sprint:<XX-YY>`) |
 | `RUNNING` | a run is in progress | the first `/qa-run` of the wave starts |
 | `RUN_DONE` | the run finished; triage not done or not complete | the run is consolidated |
 | `TRIAGED` | every FAIL and BLOCKED case has a ledger row (`untriaged` 0); repairs or filing may still be open | triage is written to the ledger |
@@ -145,7 +164,7 @@ Columns (exact header, in this order):
 | `case_id` | the suite case id; `OBS-<ISSUE>` for a finding that was not a case row (an incidental observation) |
 | `status` | the case result: `FAIL` · `BLOCKED` · `SKIPPED` · `OBSERVED` |
 | `verdict` | one of the vocabulary below |
-| `new_in_release` | `yes` (introduced by this bundle) · `no` (same on the baseline) · `unknown` |
+| `new_in_release` | `yes` (introduced by this bundle or sprint) · `no` (same on the baseline) · `unknown` |
 | `summary` | what was seen, one line |
 | `reason` | **why** this verdict — the evidence a re-check would start from. Required |
 | `decided_by` | who decided — or, for `PENDING_DECISION`, who must decide |
