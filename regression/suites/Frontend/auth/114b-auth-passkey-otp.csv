@@ -1,7 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-PKS-013,Passkey — OTP store shows the passkey button on the code form and code sign-in still works,Auth > Passkey sign-in > Storefront,High,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
+PKS-013,Passkey — OTP store shows the passkey button on the code form and code sign-in still works,Auth > Passkey sign-in > Storefront,High,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - the PRs of VCST-6121, merged 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.
-Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, one organization) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey:verify (unlock, failed-attempt count 0, leftover passkeys removed). The case registers its own passkeys in the virtual authenticator and deletes every passkey it created in Cleanup.
+Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, one organization) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey (unlock, failed-attempt count 0, leftover passkeys removed). The case registers its own passkeys in the virtual authenticator and deletes every passkey it created in Cleanup.
 REQUIRES the OTP module (VirtoCommerce.Otp, 3.1001.0 on the stand that carries this change). On a stand without the module the case is BLOCKED for the build, never FAIL.
 Runs ALONE: this case flips the store-wide OtpSignIn.Enabled setting of {{STORE_ID}} through Admin (Stores > {{STORE_ID}} > Settings > 'OTP Sign-In' > 'General', as the OTP storefront suite does) and restores it in Cleanup; this suite holds the exclusiveGroup store-setting:OtpSignIn.Enabled, which separates it from the OTP suites only.
 State under test: OtpSignIn.Enabled is on, so the default sign-in view is the code flow; the passkey button must still be there and both methods must still sign the buyer in.",user=@td(PK_BUYER.email),"[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
@@ -35,10 +35,12 @@ State under test: OtpSignIn.Enabled is on, so the default sign-in view is the co
 [WAIT] the authenticator answers and one row appears in the list
 [ACT] Click the account button (data-test-id=""account-button"")
 [WAIT] the account menu is open
+[SETUP] WebAuthn.setAutomaticPresenceSimulation false for the authenticator
 [ACT] Click the sign-out button (data-test-id=""sign-out-button"")
-[WAIT] the session is anonymous (the account button no longer names a customer)
+[WAIT] the header shows the anonymous 'Sign in' link (the session is anonymous: the account button no longer names a customer)
 --- SCREEN: Passkey sign-in on the OTP store ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
+[SETUP] WebAuthn.setAutomaticPresenceSimulation true for the authenticator
 [ACT] Click 'Sign in with Passkey'
 [WAIT] the page leaves /sign-in (up to 15s)
 [ASSERT] Read the account button and whether a code step appeared
@@ -48,6 +50,7 @@ State under test: OtpSignIn.Enabled is on, so the default sign-in view is the co
 [STATE] The passkey signs the same buyer in on the OTP store with no code step: the page leaves /sign-in and no 'Check your email' step appeared {SPEC} (VCST-6121)
 [COUNT] The sign-in log holds a signInType OTP row and a signInType Passkey row, both succeeded, for the buyer after T0 {SPEC} (VCST-6121: audit events handle passkey) {OBSERVED} (105 OTP-026: OTP rows carry signInType OTP)","[API] sign-in log holds the OTP row (the code sign-in) and the Passkey row for the buyer
 [CONSOLE] no TypeError
-[NETWORK] no 5xx on /connect/token",The passkey button is missing from the OTP default view; the code sign-in broke after the sign-in refactor; the passkey asks for a code; the OTP setting is not restored,"Restore OtpSignIn.Enabled of {{STORE_ID}} to otpBefore through the Admin blade and read it back
+[NETWORK] no 5xx on /connect/token",The passkey button is missing from the OTP default view; the code sign-in broke after the sign-in refactor; the passkey asks for a code; the OTP setting is not restored,"Switch the virtual authenticator's presence simulation off (WebAuthn.setAutomaticPresenceSimulation false), so that no load-time passkey request signs anybody in again during the cleanup
+Restore OtpSignIn.Enabled of {{STORE_ID}} to otpBefore through the Admin blade and read it back
 Sign in and delete every passkey this case created, sign out
-Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:PARITY · Technique:EP · Behavior:auth.signin.method-choice · Catches:turning OTP on hides the passkey button, or the shared sign-in refactor breaks code sign-in",Draft
+Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:PARITY · Technique:EP · Behavior:auth.signin.method-choice · Behavior:auth.signin.method-choice.passkey-button · Catches:turning OTP on hides the passkey button, or the shared sign-in refactor breaks code sign-in · Synced: VCST-6121 PRs merged (2026-10-29) · Synced: VCST-6121 live-check fixes (2026-10-29)",Draft

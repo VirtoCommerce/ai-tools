@@ -3363,5 +3363,71 @@
     "store_id": "B2B-store",
     "userId": "35a04982-3cb5-4ffd-8092-2c5c15c44bb3",
     "contactId": "40e2ab80-988a-420c-999a-c2cd37b3f321"
+  },
+  "PK_ORG_MAIN": {
+    "name": "AGENT-TEST-PK-Org-Main",
+    "id": "0a59c41a-d59c-4017-a224-644d82128410"
+  },
+  "PK_ORG_LOCKABLE": {
+    "name": "AGENT-TEST-PK-Org-Lockable",
+    "id": "5829d4ca-2d13-4dd1-97ca-6f6a89565522"
+  },
+  "PK_BUYER": {
+    "userId": "c8a19b1b-352f-4fdd-a404-ff994495dccc",
+    "memberId": "9ed7eea4-ac23-404c-aab3-d869a503147e",
+    "storeId": "B2B-store",
+    "org_id": "0a59c41a-d59c-4017-a224-644d82128410"
+  },
+  "PK_BUYER_MULTI": {
+    "userId": "87d1456d-d19b-404d-ab6f-24ba281ce061",
+    "memberId": "b21c3b3f-9ecb-496a-ace4-eada97a77ba1",
+    "storeId": "B2B-store",
+    "org_id": "0a59c41a-d59c-4017-a224-644d82128410",
+    "org_a_id": "5829d4ca-2d13-4dd1-97ca-6f6a89565522",
+    "org_b_id": "0a59c41a-d59c-4017-a224-644d82128410",
+    "membership_a_id": "40ee434b-9a01-4128-b63c-a672ce642aff",
+    "membership_b_id": "ed7b0545-61ac-4fcf-8063-0f6f7f8b947e"
+  },
+  "PK_B2C": {
+    "userId": "52c52201-d4ee-4260-92e3-2e6b2641dadb",
+    "memberId": "c9420cc0-10c1-4a56-9285-b9bd163dd53b",
+    "storeId": "B2B-store",
+    "org_id": ""
+  },
+  "PK_LOCKOUT": {
+    "userId": "11831385-b250-41cd-aab1-dd8689ed3585",
+    "memberId": "9b20b601-c6b2-40d0-bac1-636034892cfd",
+    "storeId": "B2B-store",
+    "org_id": "0a59c41a-d59c-4017-a224-644d82128410"
+  },
+  "PK_PASSKEY_ONLY": {
+    "userId": "b661e64c-23ed-4f16-870c-ab56a5051ad3",
+    "memberId": "b7acb4e3-93c4-4ff7-ad74-97500ed6ac31",
+    "storeId": "B2B-store",
+    "org_id": "0a59c41a-d59c-4017-a224-644d82128410"
+  },
+  "PK_BO_MANAGER": {
+    "userId": "aadb5549-172b-4b2b-9f69-1f1bfa4bdb43",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_BO_MANAGER_2": {
+    "userId": "897a7e89-6b27-4fae-bae1-13005d31f57d",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_OPERATOR": {
+    "userId": "b2ba1790-17f4-44e6-a2b7-16948a2b66d8",
+    "memberId": "",
+    "storeId": "B2B-store",
+    "org_id": ""
+  },
+  "PK_FOREIGN_STORE": {
+    "userId": "7683040f-0cd4-4156-909e-84183e65b7e2",
+    "memberId": "287a7650-7d1b-4921-90e8-145544ea1cc1",
+    "storeId": "QA-STORE",
+    "org_id": ""
   }
 }
