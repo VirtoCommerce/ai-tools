@@ -13,7 +13,7 @@ file restates them. Read them:**
 | Review dimensions, check codes, severities, auto-fix matrix | [`qa-review-tests/SKILL.md`](../qa-review-tests/SKILL.md) + `review-criteria.md` |
 | Behavior-rewrite evidence bar (docs + live + source) | [`qa-review-tests/triangulation-criteria.md`](../qa-review-tests/triangulation-criteria.md) |
 | Test-data design + provisioning | `/qa-generate-data` → `/qa-seed-data` (`test-data-engineer`) |
-| Write-scope ceiling + revert-on-regression | [`qa-test-lifecycle.md`](../../commands/qa-test-lifecycle.md) §Phase 4b |
+| Write-scope ceiling + revert-on-regression | [`qa-suite-sync/review.md`](../qa-suite-sync/review.md) §4b |
 | Scaffolder, ID allocator, the KEEP gate | [`.claude/knowledge/execution/regression-scaffold.md`](../../knowledge/execution/regression-scaffold.md) §Pre-Authoring Scaffold |
 
 ---
@@ -483,6 +483,6 @@ Any **newly authored** case runs through `/qa-review-tests file <target-suite> -
 deterministic core (`npm run suites:review -- <csv>`, plus `npm run graphql:lint-labels -- <csv>` for
 GraphQL) and spend LLM effort only on the judgment rules.
 
-Confirmed fixes apply under `/qa-test-lifecycle` §Phase 4b's write-scope ceiling + **revert-on-regression**
+Confirmed fixes apply under `qa-suite-sync` `review.md` §4b's write-scope ceiling + **revert-on-regression**
 (re-run `suites:review -- <csv> --fail-on=High` + `npm run td:validate`; an auto-fix introducing a new
 Blocker/Critical is reverted). A case that can't pass review is flagged, not shipped.

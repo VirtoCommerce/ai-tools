@@ -6,7 +6,7 @@
 
 A run produces the only evidence that can justify calling a case `Automated`, and until
 2026-08-26 nothing consumed it. The promotion rule was written down three times (`/qa-test` `5g` — removed
-2026-09-10 — `/qa-test-lifecycle` 6P, plus `test-case-template.md` §Automation_Status) and performed by
+2026-09-10 — `qa-case-promotion`, plus `test-case-template.md` §Automation_Status) and performed by
 hand: an agent re-read a report, decided which cases "ran green", and edited the
 `Automation_Status` cell. `suites:lint` S-006 only ever checked the **vocabulary** — that
 `Automated` is a legal word, never that it is a justified one — so a promotion could not be
@@ -76,16 +76,16 @@ hand-editing the cell:**
 
 | Caller | When | Reaches |
 |---|---|---|
-| `/qa-regression` **Step 6.5** | after every **directly invoked** run, against the `RUN_ID` it just produced — dry by default, applied on `--promote`, skipped on `--no-promote` (what a `/qa-test`-delegated run passes) | `Automated`, for cases already grounded. It does no assertion harvest: a `{HYPOTHESIS}` row holds at `PR-007` and is routed to 6P |
-| `/qa-test-lifecycle` **Phase 6P** | handoff, re-promotion, legacy sources, and the `Draft` cases a `/qa-test` run left behind | `Reviewed` always; `Automated` too when given `--run-id`. The full path — harvest, G10 re-derivation, `verify:gate --gate 5g` ratification (§The full procedure) |
+| `/qa-regression` **Step 6.5** | after every **directly invoked** run, against the `RUN_ID` it just produced — dry by default, applied on `--promote`, skipped on `--no-promote` (what a `/qa-test`-delegated run passes) | `Automated`, for cases already grounded. It does no assertion harvest: a `{HYPOTHESIS}` row holds at `PR-007` and is routed to `qa-case-promotion` |
+| **`qa-case-promotion`** | handoff, re-promotion, legacy sources, and the `Draft` cases a `/qa-test` run left behind | `Reviewed` always; `Automated` too when given `--run-id`. The full path — harvest, G10 re-derivation, `verify:gate --gate 5g` ratification (§The full procedure) |
 
-## The full procedure — `/qa-test-lifecycle` 6P against a completed `RUN_ID`
+## The full procedure — `qa-case-promotion` against a completed `RUN_ID`
 
 > **Moved here from the `/qa-test` skill directory on 2026-09-10, and that file was deleted.**
 > It lived under `.claude/skills/qa-test/` describing a step `/qa-test` no longer has, so the location made the
 > procedure look like a `/qa-test` step it had stopped being. Promotion has one home: this file.
 > `/qa-regression` Step 6.5 runs **step 4 alone**, against the run it just produced; steps 1–3 are the
-> assertion work only 6P does, and a case that needs them holds at `PR-007` there and is routed here.
+> assertion work only `qa-case-promotion` does, and a case that needs them holds at `PR-007` there and is routed here.
 
 **Promote per `RUN_ID`, `--ids`-scoped to the cases that run actually executed.** `tc:promote` reads
 `Draft` and writes `Automated` and can **never re-promote**, so a premature flip is irreversible and would

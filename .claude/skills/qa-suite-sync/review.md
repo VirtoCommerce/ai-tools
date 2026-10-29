@@ -9,7 +9,7 @@ Supporting file for [`qa-suite-sync`](SKILL.md). Read it at Phase 4 — the suba
 #### 4a. Static Analysis (`/qa-review-tests` dimensions 1–7, 9, 10)
 
 Reviews ALL cases in scope (existing + updated + newly generated). **The
-[`/qa-review-tests` skill](../skills/qa-review-tests/SKILL.md) owns the dimension set — this command
+[`/qa-review-tests` skill](../qa-review-tests/SKILL.md) owns the dimension set — this command
 does not restate it.** Read its Review Dimensions table (and `.claude/skills/qa-review-tests/review-criteria.md`) for the checks,
 codes, and severities; a restated copy here would drift, and has. Delegate by *dimension number*:
 

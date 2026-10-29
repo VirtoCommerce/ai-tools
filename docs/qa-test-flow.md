@@ -204,8 +204,8 @@ sequenceDiagram
         Orch-->>User: Resolve env/data/dependency, re-run /qa-test
     end
     opt Step 3 authored new cases (new_cases_authored > 0)
-        note over Orch,User: They stay Draft. /qa-test STOPPED PROMOTING 2026-09-10 — the flip is a later /qa-test-lifecycle 6P pass, or a direct /qa-regression run's Step 6.5 (procedure: knowledge/execution/regression-promotion.md)
-        Orch-->>User: Next step = /qa-test-lifecycle VCST-XXXX --promote-only
+        note over Orch,User: They stay Draft. /qa-test STOPPED PROMOTING 2026-09-10 — the flip is a later qa-case-promotion pass, or a direct /qa-regression run's Step 6.5 (procedure: knowledge/execution/regression-promotion.md)
+        Orch-->>User: Next step = /qa-test-lifecycle promote VCST-XXXX
     end
 ```
 
@@ -300,7 +300,7 @@ sequenceDiagram
 - **Close-out loop (pointer, not auto-trigger — the default)** — FAIL/REOPEN → `/qa-fix` → human
   merge/deploy → `/qa-verify-fix` (RED→GREEN re-test) → TESTED/DONE; BLOCKED → resolve → re-run `/qa-test`.
   `/qa-test` states the next command and stops; it never fixes. **Promotion is not part of the close-out** —
-  cases authored at Step 3 stay `Draft` and a later `/qa-test-lifecycle --promote-only` pass flips them.
+  cases authored at Step 3 stay `Draft` and a later `/qa-test-lifecycle promote VCST-XXXX` pass flips them.
 - **`--iterate` — the bounded test → fix → re-test loop (opt-in, Step 5-loop)** — with `--iterate` (default
   `--max-rounds 2`) a FAIL is *driven*, not pointed: per round `/qa-test` runs `/qa-fix` for each IN-SCOPE
   fixable bug (G0–G7, **never merges**; a G0 BAIL STOPs to a human) → `/qa-deploy-pr` deploys the fix's
@@ -329,11 +329,11 @@ sequenceDiagram
   of `{OBSERVED}` and needs a live browser, so promoting before execution is impossible. **`/qa-test`'s own
   `5g` step was REMOVED 2026-09-10**: it was a corpus-wide write sitting at the tail of a ticket run as a
   hard-STOP gate that fired *after* the close-out had been delivered, so it could neither block nor be
-  skipped cleanly — and it made two promoters for one corpus. **`/qa-test-lifecycle` Phase 6P is the FULL
+  skipped cleanly — and it made two promoters for one corpus. **`qa-case-promotion` is the FULL
   promoter**, for these cases as for handoff, re-promotion and legacy sources — and a **direct**
   `/qa-regression` run flips already-grounded cases at its **Step 6.5**, from the `RUN_ID` it just made
   (same `tc:promote`, no assertion harvest, suppressed with `--no-promote` on the C1 run `/qa-test`
-  delegates). 6P harvests the run's
+  delegates). `qa-case-promotion` harvests the run's
   `RUN_ID`, flips each eligible case `Draft → Automated` (green under the automated runner) or
   `Reviewed`/`Manual` (checklist-only), **reverts non-promotable rows**, and leaves a case that failed on a
   real in-scope bug at `Draft` with a reason — ratified by a fresh `qa-lead` verifier + user confirmation,
@@ -442,7 +442,7 @@ flowchart TB
 | `ba-system-analyzer` | L2 | 1c (full path) | ticket fields + PR diff + comment/attachment signals | affected surface, flows, `VC-*` risk, docs grounding | firefox (RO) |
 | `ba-story-writer` (B) | L2 | 1d (full path) | existing ACs + PR diff | AC scorecard, gap-ACs, AC↔impl (static), DoD checklist | none |
 | `test-management-specialist` | L2 | 3 | Test Model (scenarios + user-flow diagram) | Artifact A (cases → suite as Draft), B (checklist), C (selection) | chrome (seq) |
-| `/qa-review-tests` | L2 | 3 (and later, in `/qa-test-lifecycle` 6P) | authored cases | fixed cases / unshippable flag; `--verify` upgrades to `{OBSERVED}` | — |
+| `/qa-review-tests` | L2 | 3 (and later, in `qa-case-promotion`) | authored cases | fixed cases / unshippable flag; `--verify` upgrades to `{OBSERVED}` | — |
 | `test-data-engineer` | L2 | 3 (cond.) | gap fixtures needed | seeded data, `@td()` aliases, green `td:validate` | none |
 | `qa-frontend-expert` | L3 | 4 | checklist + A + `@td()` + BL/ECL | pass/fail + evidence + bugs | chrome |
 | `qa-backend-expert` | L3 | 4, 5-triage | same; triage oracle at 5-triage | same; App-Insights classification | edge |
@@ -499,7 +499,7 @@ A `/qa-test` run is **Done** when all hold:
 7. **Feature Release Gate fed** (5-report) and independently ratified GO/CONDITIONAL/NO-GO.
 8. **Documentation published (5-docs)** — or its refusal stated — and, on FULL with an existing domain map,
    **`5-docs-map` has written back what the run verified** (or recorded `NOTHING_TO_AMEND`). New cases remain
-   `Draft`, with `/qa-test-lifecycle VCST-XXXX --promote-only` named as the next step: promotion is **not**
+   `Draft`, with `/qa-test-lifecycle promote VCST-XXXX` named as the next step: promotion is **not**
    part of this run's DoD.
 9. **Close-out pointers stated**, never auto-triggered: FAIL/REOPEN → `/qa-fix` → human merge/deploy →
    `/qa-verify-fix`; BLOCKED → resolve → re-run `/qa-test`.

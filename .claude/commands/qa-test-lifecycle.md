@@ -39,4 +39,4 @@ read the file, do not invoke it through the Skill tool.
   old doc does not run something else silently: `--skip-sync`, `--skip-generate`, `--skip-data`,
   `--skip-verify`, `--no-auto-fix`, `--layer`, `--report-only`, `--ci` (no replacement — the run does the
   whole job), and `--promote-only` (→ `promote VCST-XXXX`).
-- **A bare `PR #N` is not enough** — the PR's repo is part of the input (`qa-suite-sync` `scope.md`).
+- **A bare `PR #N` is not enough** — the PR's repo is part of the input (`.claude/skills/qa-suite-sync/scope.md`).
