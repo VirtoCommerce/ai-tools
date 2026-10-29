@@ -40,8 +40,8 @@ rules:
     violation_signal: Unverified user completes checkout; no verification prompt; expired link still works; verified status not persisted after sign-out/sign-in.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-AUTH-003
     title: Account lockout after N failed attempts
     rule: "After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. A successful password sign-in, or a successful second-factor completion, resets the failure counter. A successful passkey sign-in does not reset it (a passkey is not a password sign-in), but lockout still applies to it: a locked account cannot sign in with a passkey."
@@ -93,8 +93,8 @@ rules:
     violation_signal: "Checkout pre-fills a shipping address while the policy is at its disabled value, or fails to pre-fill while it is at the previous-order value; pre-fill overwrites a delivery address already chosen on the shipment; pre-fill draws from the saved address book rather than the most recent order; a brand-new customer sees pre-filled data; addresses or saved cards from another account are displayed. NOTE: a returning customer seeing an empty address form under the **default** (disabled) policy is **expected** — do not file it."
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-AUTH-005
     title: RBAC 6-permission model
     rule: Every module in Virto Commerce follows the same permission-claim model built from a canonical base set — `access`, `read`, `create`, `update`, `delete` (the 5-permission module template in `ModuleConstants.cs`) — plus `export` on modules that support data export, and further module-specific extensions (e.g. Orders adds `read_prices` / `update_shipments`). The commonly-used "6-permission" shorthand = the base 5 + `export`. Permissions are assigned to roles, and roles are assigned to users. A user without `create` permission on a module must not see the "Create" button in Admin. API calls without the required permission must return 403 Forbidden.
@@ -113,8 +113,8 @@ rules:
     violation_signal: Buttons visible for unauthorized actions; API returns 200 instead of 403; user can create/delete without permission; `access` permission not required to enter module.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-AUTH-006
     title: Role hierarchy
     rule: "Virto Commerce roles are independent permission-claim sets, **NOT** a built-in inheritance hierarchy — a role has exactly the permissions assigned to it and does not automatically inherit a lower role's permissions. The role entity carries no parent, base, extends, or child field of any kind. Three names are **reserved system roles** carried on the account rather than rows in the role list (administrator, manager, customer); every other role is **per-deployment data** — role names and their permission sets are created per deployment and must be read from the environment, never assumed to exist. Administrator power is a **short-circuit, not inheritance**: a principal in the reserved administrator system role passes every global permission check without holding the claim, while everyone else must hold the specific permission claim. Within that model: An Administrator can perform any action. Store Managers can manage their assigned store(s) but not platform settings. Customers can only access their own data — a storefront account is an account category, not a platform role, and typically holds no platform role at all (its rights arrive as organization-scoped claims). Anonymous users are limited to browsing (if `anonymousUsersAllowed = true`) — an unauthenticated state, not a role."
@@ -382,3 +382,37 @@ rules:
       ref: '`POST /api/platform/security/login` with `{}`, `{"userName":null,"password":null}`, a missing `password` key, or an empty raw body → `400`. The same shape with a well-formed but unknown `userName` → `200` + `succeeded:false`. Assert no `stackTrace` in any response.'
     violation_signal: "`500 Internal Server Error` on a malformed or empty request body; a parameter-name leak such as `Value cannot be null. (Parameter 'userName')` surfacing to the caller; or an over-correction that starts rejecting previously-valid payloads with `400`."
     status: ACTIVE
+  - id: BL-AUTH-018
+    title: An expired password is enforced only on a password sign-in
+    rule: |-
+      The password-expiry state (`passwordExpired`, set when `User:MaxPasswordAge` runs out or an admin forces a change on next sign-in) is a property of the **password**, so it is enforced only on a session that was signed in **with that password**.
+        - **Password sign-in** (`password` grant): the session is treated as expired. `me.passwordExpired` is `true`, the gated xAPI operations answer with `errors[].code` `PasswordExpired`, and the storefront sends the user to Change Password before anything else.
+        - **Any other sign-in** — external SSO (Entra ID, Google), passkey, email code (OTP), impersonation: the expiry is **not** enforced for that session. `me.passwordExpired` is `false`, no operation fails with `PasswordExpired`, and the storefront opens normally.
+
+      The rule is a whitelist of the one method that uses the password, never a list of exempt methods: a sign-in method added later is exempt unless it authenticates with the password.
+    priority: P0-security
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-6630 — Expected result records the product owner's decision (2026-10-29): the expired password is checked only for a sign-in with a password; passkey and email-code sign-in must not force a password change. Added before the bug is resolved, at the QA lead's request; replace with the Jira resolution when VCST-6630 closes."
+      - kind: doc
+        ref: "PlatformDeveloperGuide, Passwords Management — `User:MaxPasswordAge` is the number of days a password remains valid, after which the user must set a new one. The page does not say which sign-in methods the expiry applies to."
+      - kind: code
+        ref: "`vc-module-x-api` `src/VirtoCommerce.Xapi.Data/Services/UserManagerCore.cs` `CheckUserState` — `user.PasswordExpired && !isExternalSignIn && !isImpersonated` → `AuthorizationError.PasswordExpired()`; `vc-module-profile-experience-api` `Schemas/UserType.cs` `GetPasswordExpired` and `Schemas/ProfileSchema.cs` use the same condition. Only SSO and impersonation are exempt, so passkey and OTP sign-in violate the rule (VCST-6630)."
+    scope:
+      code_ref: vc-module-x-api:src/VirtoCommerce.Xapi.Data/Services/UserManagerCore.cs#CheckUserState
+    check:
+      kind: manual
+      ref: |-
+        Take an account whose password is expired (admin reset with "change on next sign-in", or `MaxPasswordAge` passed).
+          - **Password sign-in** → the storefront opens Change Password; `me.passwordExpired` is `true`; a gated xAPI operation answers `PasswordExpired`.
+          - **SSO sign-in** (an account linked to Entra ID or Google) → the storefront opens normally; `me.passwordExpired` is `false`.
+          - **Passkey sign-in** (add a passkey on Account → Security first) → opens normally; `me.passwordExpired` is `false`.
+          - **Email-code sign-in** → opens normally; `me.passwordExpired` is `false`.
+        Read `passwordExpired` from `me` in the same session as the sign-in, never from the admin user record: the stored flag stays `true` on every path.
+    violation_signal: |-
+      - A passkey, email-code or SSO sign-in sends the user to Change Password, or `me.passwordExpired` is `true` in that session.
+      - A password sign-in with an expired password opens the storefront without forcing a change, or `me.passwordExpired` is `false`.
+      - A new sign-in method ships and is treated as a password sign-in.
+    status: SUSPECT
+    suspect_reason: "[bug] VCST-6630 — passkey and email-code sign-in force a password change: the code exempts SSO and impersonation only."

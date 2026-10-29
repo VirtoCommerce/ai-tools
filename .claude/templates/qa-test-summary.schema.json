@@ -259,7 +259,7 @@
   },
   "new_cases_authored": 0,
   "promotion": {
-    "$comment": "HAND-OFF RECORD, normally all-empty. /qa-test STOPPED PROMOTING on 2026-09-10 (its 5g step was removed): cases are appended to regression/suites/ as Draft in Step 3, executed at Step 4 (C1), and LEFT AT DRAFT. The flip is /qa-test-lifecycle Phase 6P (or a direct /qa-regression run's Step 6.5), which re-derives eligibility from the CSV and never trusts this block. Populated arrays here are either a pre-2026-09-10 run or a later 6P pass recording its result against this ticket; empty arrays are the normal state and are NOT a gap. Procedure and gate: .claude/knowledge/execution/regression-promotion.md.",
+    "$comment": "HAND-OFF RECORD, normally all-empty. /qa-test STOPPED PROMOTING on 2026-09-10 (its 5g step was removed): cases are appended to regression/suites/ as Draft in Step 3, executed at Step 4 (C1), and LEFT AT DRAFT. The flip is qa-case-promotion (or a direct /qa-regression run's Step 6.5), which re-derives eligibility from the CSV and never trusts this block. Populated arrays here are either a pre-2026-09-10 run or a later `qa-case-promotion` pass recording its result against this ticket; empty arrays are the normal state and are NOT a gap. Procedure and gate: .claude/knowledge/execution/regression-promotion.md.",
     "automated": [],
     "reviewed": [],
     "blocked": [{ "case": "TC-ID", "reason": "unresolved {HYPOTHESIS} — <what stayed unknown> | failed on in-scope bug <link>" }],

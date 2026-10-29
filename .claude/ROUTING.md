@@ -42,7 +42,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Measure backend work per request / prove a perf change** | `/qa-perf-measure <ticket-key> \| <surface> [--ab a:b] [--scale] [--load]` | Command |
 | **Audit component/page design + UX + design spec** | `/qa-design component \| page \| flow [--storefront-only] [--design <project>]` | Command |
 | **Spin up a local VC stack** | `/qa-local-env [VCST-XXXX] [postgres\|mysql\|sqlserver]` | Command |
-| **Full test-case lifecycle (sync → … → promote)** | `/qa-test-lifecycle suite <ID> \| domain <name> \| PR #NNN \| module <name> \| diff [--promote-only]` | Command |
+| **Full test-case lifecycle (sync → … → promote)** | `/qa-test-lifecycle suite <ID> \| domain <name> \| PR <owner/repo>#N \| module <name> \| diff \| changelog <ver> \| promote VCST-XXXX` | Command |
 | **Build a sprint test plan** | `/qa-test-plan SprintXX-YY \| current \| last` | Command |
 | **Generate coverage at scale** | `/qa-coverage-gap [analyze \| generate \| validate \| full \| domain <name> \| suite <ID>]` — run per domain | Skill |
 | **Seed / teardown test data** | `/qa-seed-data [bootstrap\|minimal\|catalog\|b2b\|pricing\|inventory\|loyalty\|promotions\|bopis\|configurable\|users\|full\|teardown]` | Command |
@@ -95,7 +95,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-local-env` — Local VC stack (start-local + Docker) pinned to the deployed manifest; fresh DB every run
 
 ### Plan & Manage Test Cases (Commands + Skills)
-- `/qa-test-lifecycle` — Unified pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve → **promote** (Phase 6P is the **full** promoter — handoff / re-promotion / non-`/qa-test` sources / the `Draft` cases a `/qa-test` run left; `--run-id` reaches `Automated`. A direct `/qa-regression` flips already-grounded cases at its Step 6.5)
+- `/qa-test-lifecycle` — Unified pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve → **promote** (`qa-case-promotion` is the **full** promoter — handoff / re-promotion / non-`/qa-test` sources / the `Draft` cases a `/qa-test` run left; `--run-id` reaches `Automated`. A direct `/qa-regression` flips already-grounded cases at its Step 6.5)
 - `/qa-test-plan` — Plans any regression. `sprint`: tracker Done + merged vc-frontend PRs → risk-scored domains → suites (§5.1/§5.2), §5.3 exploratory charters and the waves (`regression/releases/sprint-<XX-YY>/`). `stable <N>`: bundle diff → classified scope → W0 first, then independent domain waves for several QA in parallel (`regression/releases/stable-<N>/`)
 - `/qa-coverage-gap` — autonomous coverage gap analysis + generation, 4-cycle pipeline (single-agent; the orchestrated `/qa-coverage-generation` twin was removed 2026-09-08 with zero recorded runs)
 - `/qa-plan` — Test plans from the E2E scenario catalog
@@ -261,7 +261,7 @@ post-edit typecheck).
 | `/qa-test` | `/qa-test` skill, `/qa-test-design`, `/qa-checklist`, `/qa-risk` | Command = the pipeline + its gates; skill = the methodology. The FULL path writes a Test Model before any case exists |
 | `/qa-test` | `/qa-test-cases-generator`, `/qa-review-tests`, `/qa-generate-data` | Step 3 reuses the same skills `/qa-test-lifecycle` Phases 3–4 use, and appends cases as `Draft` straight into `regression/suites/` |
 | `/qa-test` | `/qa-verify-fix`, `/qa-hotfix-check`, `/qa-regression` | Step 1a routes a fix-ready Bug into `/qa-verify-fix` inline, a hotfix-status Bug into `/qa-hotfix-check`, and a `technical-change` (refactor / migration / dependency bump) into a blast-radius `/qa-regression` with no feature test |
-| `/qa-test-lifecycle` | `/qa-coverage-gap`, `/qa-review-tests` | Unified pipeline: sync + gap analysis + quality review + promotion (Phase 6P) |
+| `/qa-test-lifecycle` | `/qa-suite-sync`, `/qa-case-promotion`, `/qa-coverage-gap`, `/qa-review-tests` | Thin router: `/qa-suite-sync` (sync + gap analysis + quality review + live check) then, for a ticket, `/qa-case-promotion` |
 | `/qa-test-plan` | `/qa-regression`, `/qa-risk`, `/qa-exploratory` | Plan maps risk-scored domains to suites (§5.1/§5.2) and derives the exploratory charters (§5.3) |
 | `/qa-verify-fix` | `/qa-investigate`, `/qa-checklist` | Verification uses the investigation flow + the Bug Fix Verification checklist |
 | `/qa-coverage-gap` | `/qa-test-cases-generator` | Coverage generation uses gap analysis + the case generator |

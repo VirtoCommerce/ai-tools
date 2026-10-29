@@ -72,6 +72,7 @@
 - **Source:** VCST-4597 (Done) — PDP shipment options content overflowed its widget container
 - **Source:** VCST-5124 (Done) — cart save-for-later control overflowed its card by 27px on mobile
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-ACT-016 failed in REG-2026-10-28-1915
 
 ### BL-UI-005: Alignment in horizontal groups `[P2-ux]`
 - **Rule:** Elements in a horizontal group share a baseline: text baselines align, vertical centers align within 1 px, buttons in the same row share `height` exactly, and an icon adjacent to text vertically centers with that text (within 1 px). Product-grid cells share height per row; table-row cells share height per row.

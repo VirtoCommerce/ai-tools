@@ -53,7 +53,7 @@ Omitting the axis means `all`. **`/qa-review-bl` is a retained alias** for `/qa-
 | Product value (what leans on it) | citing-case demand + a `BL-CROSS` level | citing-case demand + `[OBSERVED]` share + a High-`Frequency` level (exposure, not cost) |
 | Promotion queue | `npm run oracles:rank -- --axis=bl` | `npm run oracles:rank -- --axis=ecl` |
 | Proposals file | **none** | `reports/ba/ecl-proposals-<date>.md` |
-| Audit report | `reports/knowledge/BL-AUDIT-<date>.md` | `reports/knowledge/ECL-AUDIT-<date>.md` |
+| Audit report | chat (`reports/knowledge/BL-AUDIT-<date>.md` on request) | chat (`reports/knowledge/ECL-AUDIT-<date>.md` on request) |
 
 Everything below applies to **both** axes unless a row above says otherwise.
 
@@ -151,7 +151,7 @@ Collect the verdicts from all parallel agents, then apply **serially, one entry 
 - **BL edits** follow bl-audit-criteria §3: the YAML record only, then `npm run bl:render` and `npm run bl:convert:check`.
 - **ECL edits:**
   - Edit the **entry body only** — **Appendix D is updated deliberately, as its own coherent edit**, never incidentally.
-  - Stamp `Amended: <date> (auto-applied, triangulated — ECL-AUDIT-<date>)` and refresh the `Source:` anchor.
+  - Stamp `Amended: <date> (auto-applied, triangulated)` and refresh the `Source:` anchor.
   - For MISSING, assign the next free ID under the correct heading; **never renumber survivors**.
   - Keep evidence **env-agnostic** — no env names, URLs or slugs; say "the environment".
 - **ECL CONTRADICTORY / UNGROUNDED / STALE-RETIRE, BL RETIRE** → audit report (ECL: also its proposals file). Do NOT edit the oracle.
@@ -163,9 +163,9 @@ Feed the audit back into the test-case review flow:
 - **Dangling / renamed / newly-added IDs** → run `/qa-review-tests suite <ID> --fix` (or `file <path> --fix`) on the affected suites so the `Business_Rule` / `Edge_Case_Refs` cells follow. **`test-management-specialist` owns that write**; this skill never edits a CSV.
 - **Uncovered entries** → note as a coverage gap for `/qa-test-lifecycle` Phase 3 (generation). Do not fabricate cases here.
 
-### Step 5: Re-run the gate, then write the audit report
+### Step 5: Re-run the gate, then report the audit
 
-Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for your own edits**, and its High count belongs in the report. Then write the audit report (`.claude/rules/reports.md` — knowledge-maintenance artifact, target 15–40 / cap ~100 lines): per-entry verdict (ECL) or operation (BL) table with evidence refs and a **Value** column (`business · product → label`, from `oracles:rank`) · **Applied** (one line before→after each; the full diff is in `git diff`) · **Held** (confirmed but not valuable enough — id, both axes, citing-case count, and which half is missing) · **Excluded** (non-invariant class + the redirect) · **Not applied** (link the proposals file) · citation reconciliation summary · the gate's before/after counts.
+Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for your own edits**, and its High count belongs in the report. Then give the audit report in chat, a file only on request (`.claude/rules/reports.md` §1; 15–40, cap 100 lines): per-entry verdict (ECL) or operation (BL) table with evidence refs and a **Value** column (`business · product → label`, from `oracles:rank`) · **Applied** (one line before→after each; the full diff is in `git diff`) · **Held** (confirmed but not valuable enough — id, both axes, citing-case count, and which half is missing) · **Excluded** (non-invariant class + the redirect) · **Not applied** (link the proposals file) · citation reconciliation summary · the gate's before/after counts.
 
 ## Rules
 
@@ -190,7 +190,7 @@ Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm r
 - **Body-only edits.** Never rewrite a meta table as a side effect.
 - **Env-agnostic** and data-agnostic — no hardcoded IDs/SKUs/prices/emails/URLs in any applied entry, even inside an evidence note.
 - **Never edit a CSV from this skill.** Citation remaps are `/qa-review-tests --fix`'s write, under `test-management-specialist`.
-- **Reversible.** Every applied edit is recorded in the audit report and lives in a git-tracked file; keep edits minimal and per-entry so one can be reverted alone.
+- **Reversible.** Every applied edit is named in the audit report and lives in a git-tracked file; keep edits minimal and per-entry so one can be reverted alone.
 - **Retiring is destructive** → never auto-applied.
 - **P0-security invariants** clear the *same* evidence bar — but given blast radius, if the live axis cannot safely be observed (e.g. a real privilege-escalation probe), treat the axis as absent ⇒ UNGROUNDED ⇒ not applied.
 
