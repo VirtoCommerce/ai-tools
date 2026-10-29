@@ -37,8 +37,8 @@ rules:
     violation_signal: 'Computed values that map to **no** Tailwind scale step (e.g. `"13px"`, `"27px"`, `"41px"`). Note: spacing in vc-frontend is applied via Tailwind utility classes / `theme()` refs, **not** `--spacing-*` CSS variables (those do not exist in the codebase).'
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-UI-003
     title: No state-induced layout shift
     rule: Hover, focus, validation-message insertion, badge/counter updates, and skeleton → content swap MUST NOT move adjacent elements. A border that appears on hover must use `outline` (which does not affect layout) OR reserve its space with a transparent border in the default state. A counter widening from 1-digit to 3-digit must not push siblings.
@@ -69,10 +69,11 @@ rules:
       kind: manual
       ref: Inject stress content (80-char product title, 12-digit SKU, German-equivalent label, 4-digit quantity). At each viewport, run `LAYOUT_SNIPPETS.overflowAudit` — checks `document.documentElement.scrollWidth > window.innerWidth` (horizontal overflow) and for each suspect element `el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY === 'hidden'` (silent clipping).
     violation_signal: Page scrolls horizontally at 375 px. Product title is cut off mid-character with no `…`. Card stretches to fit the longest sibling's text, breaking grid alignment. Locale labels (German `Versandadresse`) overflow into adjacent column.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-27
       by: REG-2026-10-27-SR-SWEEP
+    suspect_reason: "[case] SR-ACT-016 failed in REG-2026-10-28-1915"
   - id: BL-UI-005
     title: Alignment in horizontal groups
     rule: "Elements in a horizontal group share a baseline: text baselines align, vertical centers align within 1 px, buttons in the same row share `height` exactly, and an icon adjacent to text vertically centers with that text (within 1 px). Product-grid cells share height per row; table-row cells share height per row."

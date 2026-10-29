@@ -46,17 +46,22 @@ Search returns multiple products","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT
 [MATH] Result count updates after each filter","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with filters applied
 [NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Sidebar filters absent on search results page; filters not narrowing results; result count unchanged after filter; 4xx on filtered search; console TypeError","none",regression-qa-theme-26.csv | Behavior:srch.results.facets | DataProfile:profile.srch.results-facets,"Automated"
-"SRCH-009","Organization Search - Find Org","Search > Organization","Medium","BL-SRCH-001","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multiple organizations exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
-[ACT] fill organization name search field with a known org name
-[KEY] press [Enter]
-[WAIT] Wait for results
-[ASSERT] Verify results match the query
-[ACT] Click on an organization result
-[WAIT] Wait for org detail/profile to load","[DOM] Organization search results match the entered query
-[NAV] Clicking on org result navigates to org detail page
-[DOM] Org detail page loads without error","[NETWORK] search request returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Org search returning no results for known org; org detail page returning 4xx; console TypeError","none","tests/VCST-4357-org-search","Automated"
+"SRCH-009","Organization Search - Find Org (Account-Menu Organization Switcher)","Search > Organization","Medium","BL-SRCH-001","","[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+Multi-organization buyer (2+ organizations). The only organization search on the storefront is the text box in the Account menu Organizations listbox (KB-8BE75346) - there is no organization-search page","url={{FRONT_URL}}; email=@td(MULTI_ORG_TF_BR_ALT.email)","[NAV] Navigate to {{FRONT_URL}}/account/dashboard
+[ACT] open the Account menu and its Organizations section
+[ASSERT] the Organizations listbox shows the user's organizations (active one first) and a search box
+[ACT] type a known organization name (read from the listbox, never hardcoded) in the organizations search box - it filters while typing, no Enter needed
+[WAIT] list filtered
+[ASSERT] every listed option matches the typed text, except the active organization which always stays first
+[ACT] type text that matches no organization
+[ASSERT] the list shows 'No results found'
+[ACT] clear the search box and click a non-active organization
+[WAIT] organization switch completes
+[ASSERT] the active organization is now the chosen one","[DOM] Organization search results match the entered query (the active organization stays first even when it does not match, KB-8BE75346)
+[DOM] a query matching nothing shows 'No results found'
+[STATE] Clicking an organization result switches the active organization to it (StorefrontUserGuide: select a different company from the list to work in it)
+[DOM] page loads without error after the switch","[NETWORK] search request returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Org search returning no results for a known org; non-matching organizations listed besides the active one; switch not applied; console TypeError","switch back to the organization that was active at the start of the case","tests/VCST-4357-org-search; Corrected: 2026-10-29 (REG-2026-10-28-1915, KB-8BE75346): no organization-search page exists - retargeted to the Account-menu organization switcher text box; demoted to Draft until re-proven on a stand","Draft"
 "SRCH-010","Organization Search - Filters","Search > Organization","Medium","BL-SRCH-001","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Organizations with different attributes exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
 [ACT] Search organizations (generic query or browse)
@@ -68,7 +73,7 @@ Organizations with different attributes exist; user has org search access","url=
 [ASSERT] Verify filtered results contain only matching orgs","[DOM] Organization filter options visible (industry, location)
 [STATE] Applying filters narrows org result set
 [MATH] Combined filters use AND logic","[NETWORK] filter requests return HTTP 200
-[CONSOLE] no TypeError or JS errors","Org filters not available; filters not narrowing results; combined filter returning wrong set; console TypeError","none","tests/VCST-4357-org-search","Automated"
+[CONSOLE] no TypeError or JS errors","Org filters not available; filters not narrowing results; combined filter returning wrong set; console TypeError","none","tests/VCST-4357-org-search; Deprecated: 2026-10-29 (REG-2026-10-28-1915, KB-8BE75346) - N/A on this build: there is no organization-search page and no industry / location filter; the only organization search is the Account-menu switcher text box (no filters), covered by SRCH-009","Deprecated"
 "SRCH-NEW-012","Search Results - Show in Stock Checkbox Default and Toggle","Search > Filters > Checkboxes","High","BL-CAT-002","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page
