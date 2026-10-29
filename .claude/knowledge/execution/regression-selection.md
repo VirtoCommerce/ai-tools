@@ -14,6 +14,9 @@ The static `sprint` selection group in `test-suites.json` is a generic "all P0+P
 
 Resolution order:
 
+0. **Waves first.** When the resolved sprint has a release folder (`regression/releases/sprint-{XX-YY}/`), its
+   regression runs wave by wave: STOP and point to `/qa-run sprint:{XX-YY} status`. Running the plan whole here would
+   bypass the wave claims and collide with the wave owners on the same environment.
 1. **Explicit pin** (`sprint:XX-YY`) → read `docs/Sprint plans/sprint-{XX-YY}-summary.json`. If missing → abort with a clear error: "No sprint plan found for {XX-YY}. Run /qa-test-plan {XX-YY} first, or use --no-plan to fall back to the static group."
 
 2. **Bare `sprint`** → auto-detect the active sprint plan:
@@ -36,10 +39,11 @@ Resolution order:
 
 5. **`--no-plan` opt-out** → skip this resolution entirely (`/qa-regression` Step 1c; `/qa-run` §1 for `sprint`); use the static `sprint` group from the manifest.
 
-### `stable:N`
+### `stable:N` and sprint waves
 
-A stable-bundle regression is run wave by wave with `/qa-run stable:<N> <wave>` — selection, tiers and exclusions:
-`.claude/skills/qa-run/run.md` §1 and `waves.md`. `/qa-regression` has no `stable:N` selection.
+A stable-bundle or sprint regression is run wave by wave with `/qa-run stable:<N> <wave>` or `/qa-run sprint:<XX-YY> <wave>`
+— selection, tiers and exclusions: `.claude/skills/qa-run/run.md` §1 and `waves.md`. `/qa-regression` has no `stable:N`
+selection, and its `sprint` runs a plan whole only when the sprint has no waves (step 0 above).
 
 ## Change-Scoped Selection — not running a suite beats running it fast
 
