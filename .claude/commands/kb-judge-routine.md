@@ -17,15 +17,21 @@ batch; a cluster already started is finished or abandoned per Step 3, never cut 
 
 **Why a batch and not the whole queue:** the PR must stay reviewable in ~15 minutes, a long run is
 fragile (sleep, redeploy mid-run, context), and the branch drifts from `main` the longer it lives.
-One commit per cluster lets the reviewer revert one verdict without touching the others.
+One commit per cluster lets the reviewer reject one verdict without touching the others.
 
 **`--dry-run`:** do Steps 0–3 up to and including the verdicts, but write nothing to the base —
-no branch, no `observe`, no `resolve`, no commit, no push, no PR. Report the verdicts you would have
-written and the diff you would have made, per cluster.
+no branch, no `observe`, no `resolve`, no commit, no push, no PR. Report, per cluster, the verdicts
+you would have written and the entry edits you would have made (in words: which clause, old → new).
+
+**`<BASE>` is a literal path, never a shell variable.** Every tool call starts a new shell, so a
+variable set in one is empty in the next — and `git -C ""` runs against THIS repo. Write the clone's
+absolute path from Step 1 into every command below.
 
 ## Hard rules
 
 - Never merge a PR, never push to `main` of VirtoCommerce/vc-knowledge, never pass `--force`.
+  That includes `npm run kb -- push`: it lands this machine's queue straight on the base's `main`,
+  and nothing in this routine queues anything — never run it.
 - Never call `kb_confirm` or `kb_dispute` in this session — on any entry. You are the judge; a party
   cannot judge (`kb:disputes resolve` refuses anyway).
 - No verdict from papers. If a stand, a lane or a source cannot be reached, that dispute stays open
@@ -35,7 +41,9 @@ written and the diff you would have made, per cluster.
   do not switch browsers.
 - Nothing client-specific, no credentials, no emails, no screenshots in the base or the PR: both
   are public.
-- Never write into this repo's working tree.
+- Never write into this repo's working tree. The one exception is the gitignored `.vc-fix/vc-test/`
+  output of `runner plugin deployed` (§Credentials); the `git status` comparison cannot see it, so
+  the report names the folder it wrote.
 - **Leave no trace on a stand.** Prefer observing over creating. Anything the investigation must
   create there (a page, an upload, an account, an order) is named `AGENT-TEST-kbjudge-<yyyymmdd>-…`
   where the entity has a name, is deleted in the same cluster once observed, and the deletion is
@@ -80,19 +88,19 @@ Record `git status --porcelain` of this repo as the start snapshot. Then stop wi
 
 ## Step 1 — Fresh base
 
-Clone into a new folder per run, outside this repo:
+Clone into a new folder per run, outside this repo, and print the path you will use as `<BASE>`:
 
 ```powershell
 $base = Join-Path $env:TEMP "kb-judge\$(Get-Date -Format yyyyMMdd-HHmm)\vc-knowledge"
-git clone https://github.com/VirtoCommerce/vc-knowledge.git $base
+git clone https://github.com/VirtoCommerce/vc-knowledge.git $base; $base
 ```
 
-Full clone, no `--depth`: `resolve` compares against `origin/main` and reads history. Use `$base`
-as `--base` everywhere below. Then `npm run kb -- push` (lands anything queued on this machine).
+Full clone, no `--depth`: `resolve` compares against `origin/main` and reads history. From here on
+the printed absolute path is `<BASE>` in every command (see the note above the hard rules).
 
 ## Step 2 — Plan the batch
 
-1. `npm run kb:disputes -- list --base $base` — save the counts as **before**. Queue empty → report
+1. `npm run kb:disputes -- list --base <BASE>` — save the counts as **before**. Queue empty → report
    `queue empty` and go to Step 5.
 2. **Which stands this machine can reach, and how.** A dossier names a stand by its kb name
    (`vcst_qa`, `vcptcore_qa1`); vc-secrets and the lanes name it by its `TEST_ENV` (`vcst`). Never
@@ -128,13 +136,13 @@ as `--base` everywhere below. Then `npm run kb -- push` (lands anything queued o
    - Take the rest until `--max-clusters`. Inside a taken cluster, a dispute that cannot be decided
      stays open with its reason; the others still get verdicts.
 5. Create the ONE branch for the run (not in dry run):
-   `git -C $base switch -c judge/batch-<yyyymmdd-HHmm>`.
+   `git -C <BASE> switch -c judge/batch-<yyyymmdd-HHmm>`.
 
 ## Step 3 — Judge, cluster by cluster
 
 For each cluster of the batch, in order, while the budget allows starting a new one:
 
-1. Run `/kb-judge` on it with `--base $base`, Steps 2–6 of its SKILL.md and `investigation.md`, on
+1. Run `/kb-judge` on it with `--base <BASE>`, Steps 2–6 of its SKILL.md and `investigation.md`, on
    the run's branch (skip `/kb-judge`'s own `switch -c`; the branch already exists). The live
    checks go to the specialists as `/kb-judge` dispatches them; this session holds dossiers and
    verdicts, not page dumps.
@@ -145,15 +153,16 @@ For each cluster of the batch, in order, while the budget allows starting a new 
    could not be checked keeps its old wording and is named in the `--why` as unchecked. When the
    dispute itself is about an unchecked clause, it gets no verdict — `open — <clause> not checked:
    <why>`. Never let a verdict on its neighbours close it.
-4. Before committing, `git -C $base diff` — every change explained by one of THIS cluster's
+4. Before committing, `git -C <BASE> diff` — every change explained by one of THIS cluster's
    verdicts; no `kb reindex`.
 5. **Commit, one per cluster** — even when only `observe` items were written:
-   `git -C $base add -A && git -C $base commit -m "judge: <KB-id> — <verdicts, e.g. 3x version-scoped>"`.
+   `git -C <BASE> add -A && git -C <BASE> commit -m "judge: <KB-id> — <verdicts, e.g. 3x version-scoped>"`.
    A cluster that wrote nothing gets no commit and goes into the report as `no verdict: <reason>`.
 6. **A cluster that fails** (a tool refuses, a write is half done, an error you cannot explain):
-   discard its uncommitted changes with `git -C $base reset --hard HEAD` — the clone is this run's
-   own, and earlier clusters are already committed — report it as `failed: <reason>`, and go on to
-   the next one.
+   discard its uncommitted changes with `git -C <BASE> reset --hard HEAD` AND
+   `git -C <BASE> clean -fd` — a half-done split leaves new untracked entries that the next
+   cluster's `add -A` would otherwise commit as its own. The clone is this run's own, and earlier
+   clusters are already committed. Report it as `failed: <reason>` and go on to the next one.
 
 Never `kb_confirm` / `kb_dispute` anything while the batch runs: a party in any cluster is refused
 on that cluster's `resolve`, and the batch is one session.
@@ -162,10 +171,15 @@ on that cluster's `resolve`, and the batch is one session.
 
 No commit on the branch → no PR; report `no verdict` and go to Step 5. Otherwise:
 
-1. `npm run kb:sync-base -- --base $base`, review what it brought, commit it as
-   `judge: sync main`.
-2. `git -C $base diff main...HEAD` — every change belongs to one cluster's commit or the sync.
-3. `npm run kb:disputes -- list --base $base` — the **after** counts.
+0. **`/kb-judge` Step 7's precondition:** every client must read resolutions before a PR is
+   opened. Check that `kb:disputes` is in the `package.json` of this repo's `origin/main`; if it is
+   not, push nothing and report `not opened: clients cannot read resolutions yet`.
+1. `npm run kb:sync-base -- --base <BASE>`, review what it brought, commit it as
+   `judge: sync main`. **If it refuses** (an entry `main` changed beyond appended evidence, a
+   conflict it will not resolve), push nothing: report `not opened: sync-base refused — <its
+   message>` and keep the clone (Step 5).
+2. `git -C <BASE> diff main...HEAD` — every change belongs to one cluster's commit or the sync.
+3. `npm run kb:disputes -- list --base <BASE>` — the **after** counts.
 4. Push the branch and open ONE PR against `main` of VirtoCommerce/vc-knowledge. Description, in
    English, readable without this session (`/kb-judge` Step 7 applies per cluster):
    - a table first: cluster · entries · verdict per dispute · commit sha — the reviewer's map;
@@ -176,18 +190,27 @@ No commit on the branch → no PR; report `no verdict` and go to Step 5. Otherwi
      it relaxes `/kb-judge` Step 4, and the reviewer must see where;
    - skipped and failed clusters, each with its reason;
    - open disputes before → after;
-   - one line: "to reject one cluster's verdict, revert its commit; the others stand."
+   - one line on rejecting one cluster: revert its commit; `index.json` will conflict, because
+     every cluster rewrote rows of it — take either side, then `npm run kb -- reindex --base
+     <checkout>` rebuilds it from the entries. The other clusters stand.
 
 ## Step 5 — Clean up and report
 
-Delete the clone folder. Compare this repo's `git status --porcelain` with the start snapshot; any
-difference goes into the report as a defect of this run. Then report to the operator, in Russian:
+**Delete the clone only when nothing in it is still needed:** after the PR is open, or on `dry run`,
+`skipped`, `queue empty` and `no verdict`. When the batch has commits that did not reach a PR — the
+sync refused, the push or `gh pr create` failed, the run was cut short — **keep it** and put its path
+and branch in the report: those commits are the batch's verdicts and exist nowhere else.
 
-- outcome: `PR opened` / `dry run` / `skipped: <reason>` / `queue empty` / `no verdict: <reason>`;
+Compare this repo's `git status --porcelain` with the start snapshot; any difference goes into the
+report as a defect of this run. Then report to the operator, in Russian:
+
+- outcome: `PR opened` / `dry run` / `skipped: <reason>` / `queue empty` / `no verdict: <reason>` /
+  `not opened: <reason>` (with the kept clone's path and branch);
 - the PR link, the batch size and the time spent;
 - per cluster: entry ids, verdict per dispute (or why it stayed open), its commit; then the
   clusters skipped for credentials and those that failed, each with its reason;
 - ids of entries banked during the investigation;
+- anything written under `.vc-fix/vc-test/` in this repo;
 - what this run created on each stand and whether it was deleted — anything left is listed with
   its stand and id; "nothing created" is said explicitly;
 - every `BL-*` / `ECL-*` the verdicts contradict (for `/qa-review-oracles bl`);
