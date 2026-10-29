@@ -31,14 +31,12 @@ absolute path from Step 1 into every command below, **with forward slashes and i
 
 ## Hard rules
 
-- Never merge a PR, never push to `main` of VirtoCommerce/vc-knowledge, never pass `--force`.
-  Never run `npm run kb -- push` yourself: it lands this machine's queue straight on the base's
-  `main`. Observations of OTHER entries that the specialists capture through the normal door
-  (`/kb-judge` `investigation.md` §3) are queued and flushed by the usual session hook — that is the
-  base's own write path, not this routine's PR.
-- Never call `kb_confirm` or `kb_dispute` on an entry of a cluster in this batch, before or after
-  judging it — the batch is one session, and a party cannot judge (`kb:disputes resolve` refuses
-  anyway). Other entries go through the normal door.
+- Never merge a PR, never push to `main` of VirtoCommerce/vc-knowledge, never pass `--force`,
+  never run `npm run kb -- push`.
+- **Nobody in the batch writes to the kb but `kb:disputes observe` / `resolve`** — no `kb_capture`,
+  `kb_confirm`, `kb_dispute`, by you or the specialists; every dispatch brief says so. Findings on
+  other entries go into the report as **to capture**. Why and how:
+  [`kb-judge-routine.md`](../knowledge/execution/kb-judge-routine.md) §Who writes to the kb.
 - No verdict from papers. If a stand, a lane or a source cannot be reached, that dispute stays open
   and the report says what was missing.
 - Browser work only through the Playwright lanes (`playwright-chrome`, `playwright-edge`), at most
@@ -46,9 +44,8 @@ absolute path from Step 1 into every command below, **with forward slashes and i
   do not switch browsers.
 - Nothing client-specific, no credentials, no emails, no screenshots in the base or the PR: both
   are public.
-- Never write into this repo's working tree. The one exception is the gitignored `.vc-fix/vc-test/`
-  output of `runner plugin deployed` (§Credentials); the `git status` comparison cannot see it, so
-  the report names the folder it wrote.
+- Never write into this repo's working tree, except the gitignored `.vc-fix/vc-test/` output of
+  `runner plugin deployed`, which the report names (the `git status` comparison cannot see it).
 - **Leave no trace on a stand.** Prefer observing over creating. Anything the investigation must
   create there (a page, an upload, an account, an order) is named `AGENT-TEST-kbjudge-<yyyymmdd>-…`
   where the entity has a name, is deleted in the same cluster once observed, and the deletion is
@@ -56,51 +53,24 @@ absolute path from Step 1 into every command below, **with forward slashes and i
   `--dry-run` create nothing unless the clause cannot be observed otherwise, and say so per dispute.
   Never touch another run's leftovers.
 
-## Credentials: vc-secrets, never `.env`
+## Credentials
 
-Test-user and admin passwords live in vc-secrets and reach only two places; `ADMIN_PASSWORD` is
-absent from every `.env` layer **by design**, so its absence is never a blocker and never a reason
-to skip or to leave a dispute open.
-
-**A lane signs in to ONE stand: the `TEST_ENV` this session started with.** Each lane gets the
-passwords of the env that was current when its server started (`plugins/vc-init/bridge/run.mjs`),
-so typing `ADMIN_PASSWORD` on any other stand types the wrong password. Note that env in Step 0; for
-every other stand this run is a guest, whatever vc-secrets holds for it.
-
-- **Admin SPA and the back office:** sign in through a Playwright lane (`playwright-edge` for
-  `qa-backend-expert`), typing the bare NAME `ADMIN_PASSWORD` into the password field
-  ([`../rules/vc-browser.md`](../rules/vc-browser.md)). REST checks that need an admin session go
-  through that lane, not through a token minted from `.env`.
-- **The stand's deployed build** (platform, modules, theme): `node "$VC_RUN" runner plugin deployed
-  --key KBJUDGE-<yyyymmdd>` for the current `TEST_ENV`; it writes `.vc-fix/vc-test/<key>/<env>/deployed.json`
-  (gitignored). A side it reports UNKNOWN stays unknown — never "not deployed". When it refuses
-  (e.g. `profile has no test block`), read the build through the admin lane instead —
-  `GET /api/platform/modules` signed in on `playwright-edge` for platform and modules, the
-  storefront's own version for the theme — and note which path gave each number. Both paths cover
-  the session's env only; on any other stand, the theme from the storefront is all a guest reads,
-  and platform and modules stay `unknown` — never inferred.
-- **A stand with no password in vc-secrets** (`node "$VC_SECRETS" doctor` lists what resolves): its
-  disputes stay open with `open — no credentials for <stand>`; never borrow another stand's.
-- When `/preflight` reports `ADMIN_PASSWORD` missing or an admin token refused, record it as a note
-  and carry on — that check reads `.env`, which vc-secrets never writes.
+Passwords come only from vc-secrets; a missing `ADMIN_PASSWORD` in `.env` is by design and never a
+blocker. **A lane signs in to ONE stand — the `TEST_ENV` this session started with**; every other
+stand is guest-only. How to sign in, read each stand's build (including anonymously), and what stays
+`unknown`: [`kb-judge-routine.md`](../knowledge/execution/kb-judge-routine.md) §Credentials and
+reachability.
 
 ## Step 0 — Gate (skip the run, don't fail it)
 
-Print the start time (`Get-Date -Format o`) and the session's `TEST_ENV` (§Credentials), and record
-`git status --porcelain` of this repo as the start snapshot. The work folder is `%TEMP%/kb-judge/`.
-Then stop with a one-line `skipped: <reason>` report if any of these holds:
+Print the start time and the session's `TEST_ENV`, and record `git status --porcelain` of this repo
+as the start snapshot. Then stop with a one-line `skipped: <reason>` report if any of these holds:
 
-1. **Another run is open — in any of three shapes** (two runs on one queue make two judge branches,
-   which `/kb-judge` forbids, or judge the same clusters twice):
-   - an open PR from a `judge/*` branch:
-     `gh pr list -R VirtoCommerce/vc-knowledge --state open --json number,headRefName,url` →
-     report its URL and whether review comments are waiting (the operator acts on them);
-   - a `judge/batch-*` branch on the base with no PR at all, open or closed
-     (`gh api repos/VirtoCommerce/vc-knowledge/branches --paginate --jq '.[].name'` against
-     `gh pr list --state all`) — a run that pushed and never opened its PR;
-   - `%TEMP%/kb-judge/RUNNING` exists and is younger than 6 hours (a run in progress), or any
-     `%TEMP%/kb-judge/*/vc-knowledge` folder exists (a clone kept with unpublished verdicts, Step 5)
-     → report its path. A `RUNNING` file older than 6 hours is stale: report it, delete it, go on.
+1. **Another run is open** — an open `judge/*` PR, a `judge/*` branch with no PR, a `RUNNING` lock
+   under 6 hours, or a leftover clone with unpublished commits. Two runs on one queue make two judge
+   branches, which `/kb-judge` forbids. The PowerShell for each check, and how a stale lock or an
+   empty leftover clone is cleared instead of stopping:
+   [`kb-judge-routine.md`](../knowledge/execution/kb-judge-routine.md) §Gate.
 2. `gh auth status` fails, or `gh api repos/VirtoCommerce/vc-knowledge --jq .permissions.push` is
    not `true`.
 3. **`/kb-judge` Step 7's precondition fails:** every client must read resolutions. `kb:disputes`
@@ -108,7 +78,7 @@ Then stop with a one-line `skipped: <reason>` report if any of these holds:
 4. The [`/preflight` skill](../skills/preflight/SKILL.md) reports the stands down or the Playwright
    lanes unavailable. Nothing else it reports stops the run (§Credentials).
 
-Passed → write `%TEMP%/kb-judge/RUNNING` with the start time; Step 5 deletes it.
+Passed → write the `RUNNING` lock (§Gate); Step 5 deletes it.
 
 ## Step 1 — Fresh base
 
@@ -197,8 +167,6 @@ For each cluster of the batch, in order, while the budget allows starting a new 
    cluster's `add -A` would otherwise commit as its own. The clone is this run's own, and earlier
    clusters are already committed. Report it as `failed: <reason>` and go on to the next one.
 
-Never `kb_confirm` / `kb_dispute` anything while the batch runs: a party in any cluster is refused
-on that cluster's `resolve`, and the batch is one session.
 
 ## Step 4 — One PR for the batch
 
@@ -222,10 +190,9 @@ No commit on the branch → no PR; report `no verdict` and go to Step 5. Otherwi
      it relaxes `/kb-judge` Step 4, and the reviewer must see where;
    - skipped and failed clusters, each with its reason;
    - open disputes before → after;
-   - one line on rejecting one cluster: revert its commit; `index.json` will conflict, because
-     every cluster rewrote rows of it — resolve by taking that cluster's entries' rows from
-     `origin/main`'s `index.json` (what the base held before the judgement) and keeping every other
-     row. Never `kb reindex` on the branch: `/kb-judge` Step 6.4 forbids it. The other clusters stand.
+   - how to reject one cluster, copied from
+     [`kb-judge-routine.md`](../knowledge/execution/kb-judge-routine.md) §Rejecting one cluster
+     (revert, restore its `index.json` rows from `origin/main`, the split case, no `kb reindex`).
 
 ## Step 5 — Clean up and report
 
@@ -235,7 +202,7 @@ sync refused, the push or `gh pr create` failed, the run was cut short — **kee
 and branch in the report: those commits are the batch's verdicts and exist nowhere else. A kept
 clone stops every later run at the gate until the operator publishes or deletes it.
 
-Delete `%TEMP%/kb-judge/RUNNING` (if this run wrote it) in every outcome.
+Delete the `RUNNING` lock (if this run wrote it) in every outcome.
 
 Compare this repo's `git status --porcelain` with the start snapshot; any difference goes into the
 report as a defect of this run. Then report to the operator, in Russian:
@@ -245,7 +212,7 @@ report as a defect of this run. Then report to the operator, in Russian:
 - the PR link, the batch size and the time spent;
 - per cluster: entry ids, verdict per dispute (or why it stayed open), its commit; then the
   clusters skipped for credentials and those that failed, each with its reason;
-- ids of entries banked during the investigation;
+- **to capture:** findings on other entries (entry or coordinate, stand, conditions, what was seen);
 - anything written under `.vc-fix/vc-test/` in this repo;
 - what this run created on each stand and whether it was deleted — anything left is listed with
   its stand and id; "nothing created" is said explicitly;
