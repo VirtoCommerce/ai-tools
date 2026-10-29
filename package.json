@@ -228,6 +228,7 @@
     "release:diagram": "node scripts/regression/release-flow-diagram.mjs",
     "release:diff": "npx tsx scripts/regression/release-diff.ts",
     "release:report": "npx tsx scripts/regression/release-report.ts",
+    "release:split": "npx tsx scripts/regression/release-split.ts",
     "release:status": "npx tsx scripts/regression/release-status.ts",
     "release:check": "npx tsx scripts/regression/release-status.ts --check",
     "suites:sync": "npx tsx scripts/test-cases/sync-test-suites.ts",

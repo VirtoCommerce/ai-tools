@@ -13,7 +13,7 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 /qa-regression                             # Default: smoke
 /qa-regression smoke                       # the smoke selection (pre-deploy gate)
 /qa-regression critical                    # the P0 selection
-/qa-regression sprint                      # Reads docs/Sprint plans/ for the current sprint plan and runs ALL Section 5.1 suites (5.1.1 Frontend + 5.1.2 Backend); falls back to static group if no plan
+/qa-regression sprint                      # Reads docs/Sprint plans/ for the current sprint plan and runs ALL §5.1 suites (Frontend + Backend); static group if no plan; stops if the sprint has waves
 /qa-regression sprint --frontend           # Run only the plan's §5.1.1 Frontend suites (regression/suites/Frontend/)
 /qa-regression sprint --backend            # Run only the plan's §5.1.2 Backend suites (regression/suites/Backend/)
 /qa-regression sprint:XX-YY                # Pin to a specific sprint plan
@@ -361,7 +361,7 @@ count and predicted makespan.
 | `smoke` | manifest `include` list | Daily pre-deploy |
 | `critical` | manifest `include` list (P0) | P0 gate |
 | `sprint` | **Plan-driven** — reads `docs/Sprint plans/sprint-{XX-YY}-summary.json` → `suitesActivated[]`. Falls back to the static group when no plan exists or `--no-plan` is set | Sprint release |
-| `sprint:XX-YY` | Pinned to a specific sprint plan | Re-run a past sprint's regression scope |
+| `sprint:XX-YY` | Pinned to a sprint plan (stops on waves) | Re-run a past sprint's scope |
 | `full` | all suites minus the manifest's `exclude` list | Production release |
 | `frontend` | `where: {layer: frontend}` minus its excludes | Frontend only |
 | `backend` | `where: {layer: backend}` minus its excludes | Backend only |
