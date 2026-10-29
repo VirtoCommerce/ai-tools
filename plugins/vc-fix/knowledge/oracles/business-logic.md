@@ -1072,6 +1072,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Source:** vc-module-x-catalog `ChildCategoriesQueryHandler` — server-side `TermFacetResult` term counts (`term_facets.terms.count`).
 - **Source:** VCST-1926 (Done) — a facet said 21 and 16 products came back; fixed. Also VCST-5324, VCST-3993 (Done)
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SRCH-NEW-104 failed in REG-2026-10-28-1915
 
 ### BL-SRCH-002: Zero-result query shows an intact empty state `[P2-ux]`
 - **Rule:** When a search query returns zero results, the search-results page (rendered by `category.vue` → `category-products.vue`) must render an intact empty state and never a blank grid, broken layout, or error. It must display (1) a clear no-results message via a `VcEmptyView` (variant `search`, icon `outline-stock`) using i18n key `pages.catalog.no_products_filtered_message` when a keyword/filters are active (else `pages.catalog.no_products_message`), with the searched term echoed in the page heading via i18n key `pages.search.header_empty`; and (2) a recovery action — a reset button (i18n key `pages.catalog.no_products_button`) that clears the keyword/filters (emits `resetFilterKeyword`). NOTE: vc-frontend does **NOT** implement spelling "Did you mean…" suggestions nor a popular-products/categories fallback — do not assert them.
@@ -1082,6 +1083,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Source:** VCST-4121 (Done) — the Reset search button was missing when filters returned no products; fixed
 - **Source:** kb KB-71011C1F (well attested) — zero hits show an empty state with Reset search (barcode route)
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SRCH-NEW-104 failed in REG-2026-10-28-1915
 
 ### BL-SRCH-003: Search index consistency after catalog change `[P1-data]`
 - **Rule:** After a product is created, updated, or deleted in Admin, the search index must reflect the change within the consistency window (BL-CROSS-009: 120s). Specifically: new product appears in search, updated product name/description changes in results, deleted product disappears from search. No ghost results for deleted products.
@@ -1384,6 +1386,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Agents:** qa-backend-expert, qa-frontend-expert, ui-ux-expert
 - **Docs:** storefront/developer-guide/docs/spa-architecture-for-seo-and-404-handling.md (docs) — default storefront renders no rel=canonical link; Open Graph tags are described for the home page
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] CAT-040 failed in REG-2026-10-28-1915
 
 ### BL-SEO-004: SEO link type controls URL format `[P1-data]`
 - **Rule:** The store setting `seoLinkType` controls how product and category URLs are generated. When changed, all storefront URLs must update to the new format. Old-format URLs should either redirect (301) to the new format or return 404 — never serve content at both old and new URLs simultaneously (duplicate content penalty).
@@ -1445,6 +1448,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Source:** VCST-4597 (Done) — PDP shipment options content overflowed its widget container
 - **Source:** VCST-5124 (Done) — cart save-for-later control overflowed its card by 27px on mobile
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-ACT-016 failed in REG-2026-10-28-1915
 
 ### BL-UI-005: Alignment in horizontal groups `[P2-ux]`
 - **Rule:** Elements in a horizontal group share a baseline: text baselines align, vertical centers align within 1 px, buttons in the same row share `height` exactly, and an icon adjacent to text vertically centers with that text (within 1 px). Product-grid cells share height per row; table-row cells share height per row.
@@ -2544,14 +2548,14 @@ ticket or a docs page disputes (`status`).
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
-| Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 1 |
+| Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 3 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
 | BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 0 |
 | Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 3 |
 | Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 | 1 | 0 |
-| SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 2 |
+| SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 3 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
-| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 3 |
+| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 4 |
 | GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 2 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
@@ -2566,4 +2570,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **232** | **65** | **128** | **39** | **124** | **55** |
+| **Total** | | **232** | **65** | **128** | **39** | **124** | **59** |
