@@ -4188,7 +4188,7 @@
       "file": "regression/suites/Frontend/auth/114-auth-passkey-sign-in.csv",
       "layer": "frontend",
       "concern": "functional",
-      "testCount": 17,
+      "testCount": 20,
       "estimatedMinutes": 120,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -4276,7 +4276,7 @@
       "file": "regression/suites/Backend/api/115-passkey-sign-in-api-backoffice.csv",
       "layer": "backend",
       "concern": "api",
-      "testCount": 14,
+      "testCount": 16,
       "estimatedMinutes": 90,
       "agent": "qa-backend-expert",
       "tags": [

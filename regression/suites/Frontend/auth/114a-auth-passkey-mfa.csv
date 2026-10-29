@@ -1,7 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-PKS-012,Passkey — store that requires MFA lets a passkey sign-in through without a code,Auth > Passkey sign-in > Storefront,Critical,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
+PKS-012,Passkey — store that requires MFA lets a passkey sign-in through without a code,Auth > Passkey sign-in > Storefront,Critical,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - the PRs of VCST-6121, merged 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
 CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.
-Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, one organization) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey:verify (unlock, failed-attempt count 0, leftover passkeys removed). The case registers its own passkeys in the virtual authenticator and deletes every passkey it created in Cleanup.
+Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, one organization) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey (unlock, failed-attempt count 0, leftover passkeys removed). The case registers its own passkeys in the virtual authenticator and deletes every passkey it created in Cleanup.
 LANE LIMIT: the regression lane is a real-user lane. Only WebAuthn.* CDP calls (enable, addVirtualAuthenticator, setAutomaticPresenceSimulation, setUserVerified, addCredential, removeVirtualAuthenticator) are allowed; no page JavaScript (no Runtime.evaluate, no Page.addScriptToEvaluateOnNewDocument, no navigator.credentials call from a script). Everything is observed through the page itself (accessibility snapshot, the real controls) and the lane network log (browser_network_requests); REST and GraphQL calls from the runner (Node, Bearer token) are not page JavaScript and stay allowed.
 Presence simulation: a request that starts while automaticPresenceSimulation is OFF stays pending and is NOT answered when it is switched on later (observed in REG-2026-10-28-1519), and a page load with it ON re-signs the buyer in silently. The working order is: presence OFF, load /sign-in, presence ON, click 'Sign in with Passkey'.
 REQUIRES the MFA module (VirtoCommerce.MFA, 3.1000.1 on the stand that carries this change). On a stand without the module the case is BLOCKED for the build, never FAIL.
@@ -12,6 +12,8 @@ Open author question Q4: what ""a passkey counts as MFA"" means (user verificati
 --- SCREEN: Register the key (the password sign-in is challenged, so the key is added after the code step) ---
 [PRE:CLEAR_SESSION]
 [NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email' with @td(PK_BUYER.email)
 [ACT] Fill 'Password' with DEFAULT_TEST_PASSWORD (the lane secret name)
 [CAPTURE] Tpw = current UTC time, taken immediately before the click
@@ -27,10 +29,10 @@ Open author question Q4: what ""a passkey counts as MFA"" means (user verificati
 [WAIT] the authenticator answers and one row appears in the list
 [ACT] Click the account button (data-test-id=""account-button"")
 [WAIT] the account menu is open
-[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
-[WAIT] the session is anonymous (the account button no longer names a customer)
---- SCREEN: Passkey sign-in on the MFA store ---
 [SETUP] WebAuthn.setAutomaticPresenceSimulation false for the authenticator
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the header shows the anonymous 'Sign in' link (the session is anonymous: the account button no longer names a customer)
+--- SCREEN: Passkey sign-in on the MFA store ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [WAIT] the page settles (network idle)
 [SETUP] WebAuthn.setAutomaticPresenceSimulation true for the authenticator
@@ -44,6 +46,7 @@ Open author question Q4: what ""a passkey counts as MFA"" means (user verificati
 [COUNT] rowsAfter holds no MfaSignInEmailNotification created after T0 for the buyer: no code email was sent for the passkey sign-in {SPEC} (VCST-6121)
 [COUNT] logRows holds at least one Passkey row with succeeded=true and holds no row with signInType MFA after T0 {OBSERVED} (110 MFA-019: an MFA step writes its own MFA row; a passkey writes none; REG-2026-10-28-1519)","[API] POST /connect/token grant_type=passkey answers 200 with an access_token and no two_factor_required
 [CONSOLE] no TypeError
-[NETWORK] no 5xx on /connect/token",The passkey sign-in still asks for an emailed code; a code email is sent anyway; the log shows an MFA row for the passkey sign-in; the store window is not restored,"Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
+[NETWORK] no 5xx on /connect/token",The passkey sign-in still asks for an emailed code; a code email is sent anyway; the log shows an MFA row for the passkey sign-in; the store window is not restored,"Switch the virtual authenticator's presence simulation off (WebAuthn.setAutomaticPresenceSimulation false), so that no load-time passkey request signs anybody in again during the cleanup
+Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
 Sign in as the buyer (password, then the code from the journal) and delete every passkey this case created on /account/security, sign out
-Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)",VCST-6121 · Archetype:CONFIG · Technique:DT · Behavior:auth.signin.mfa · Catches:passkey sign-in on an MFA store asks for an emailed code or skips the check,Draft
+Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)",VCST-6121 · Archetype:CONFIG · Technique:DT · Behavior:auth.signin.mfa · Behavior:auth.signin.passkey.skips-mfa · DataProfile:profile.auth.passkey-skips-mfa · Catches:passkey sign-in on an MFA store asks for an emailed code or skips the check · Synced: VCST-6121 PRs merged (2026-10-29) · Synced: VCST-6121 live-check fixes (2026-10-29),Draft
