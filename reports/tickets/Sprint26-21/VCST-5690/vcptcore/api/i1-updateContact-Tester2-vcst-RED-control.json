@@ -1,0 +1,48 @@
+{
+ "env": "vcst",
+ "endpoint": "POST {BACK_URL}/graphql",
+ "note": "Authorization header omitted; responses verbatim from server",
+ "calls": [
+  {
+   "at": "2026-10-26T23:33:27.916Z",
+   "request": {
+    "query": "mutation($command:InputUpdateContactType!){ updateContact(command:$command){ id firstName lastName } }",
+    "variables": {
+     "command": {
+      "id": "ce0aab83-e49b-4e20-9cdc-06cbd1b7d2ce",
+      "firstName": "mutykovaelena",
+      "lastName": "Tester2"
+     }
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "errors": [
+      {
+       "message": "Error trying to resolve field 'updateContact'.",
+       "locations": [
+        {
+         "line": 1,
+         "column": 45
+        }
+       ],
+       "path": [
+        "updateContact"
+       ],
+       "extensions": {
+        "code": "VALIDATION",
+        "codes": [
+         "VALIDATION"
+        ]
+       }
+      }
+     ],
+     "data": {
+      "updateContact": null
+     }
+    }
+   }
+  }
+ ]
+}

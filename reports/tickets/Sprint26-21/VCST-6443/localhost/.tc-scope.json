@@ -1,0 +1,1680 @@
+{
+  "scopedSuites": [
+    {
+      "id": "025",
+      "name": "Marketing Coupons & API",
+      "file": "regression/suites/Backend/marketing/025-marketing-coupons-api.csv",
+      "reasons": [
+        {
+          "kind": "path",
+          "detail": "changed path token 'api'"
+        }
+      ]
+    },
+    {
+      "id": "049",
+      "name": "Platform API",
+      "file": "regression/suites/Backend/api/049-platform-api.csv",
+      "reasons": [
+        {
+          "kind": "path",
+          "detail": "changed path token 'api'"
+        }
+      ]
+    },
+    {
+      "id": "050f",
+      "name": "GraphQL xCMS",
+      "file": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "reasons": [
+        {
+          "kind": "domain",
+          "detail": "domain=content-cms"
+        }
+      ]
+    },
+    {
+      "id": "059",
+      "name": "Page Builder",
+      "file": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "reasons": [
+        {
+          "kind": "domain",
+          "detail": "domain=content-cms"
+        },
+        {
+          "kind": "path",
+          "detail": "changed path token 'pages'"
+        }
+      ]
+    },
+    {
+      "id": "060",
+      "name": "Page Builder — Designer, Content & Storefront",
+      "file": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "reasons": [
+        {
+          "kind": "domain",
+          "detail": "domain=content-cms"
+        },
+        {
+          "kind": "path",
+          "detail": "changed path token 'builder'"
+        }
+      ]
+    },
+    {
+      "id": "060b",
+      "name": "Page Builder — Field Types, Scheduling & Operations",
+      "file": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "reasons": [
+        {
+          "kind": "domain",
+          "detail": "domain=content-cms"
+        },
+        {
+          "kind": "path",
+          "detail": "changed path token 'builder'"
+        }
+      ]
+    },
+    {
+      "id": "060c",
+      "name": "Page Builder — Asset Library (picker, pagination, references)",
+      "file": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "reasons": [
+        {
+          "kind": "domain",
+          "detail": "domain=content-cms"
+        },
+        {
+          "kind": "path",
+          "detail": "changed path token 'builder'"
+        }
+      ]
+    },
+    {
+      "id": "061b",
+      "name": "Search Indexation Jobs",
+      "file": "regression/suites/Backend/search/061b-search-indexation-jobs.csv",
+      "reasons": [
+        {
+          "kind": "path",
+          "detail": "changed path token 'api'"
+        }
+      ]
+    },
+    {
+      "id": "062",
+      "name": "Assets",
+      "file": "regression/suites/Backend/assets/062-assets.csv",
+      "reasons": [
+        {
+          "kind": "domain",
+          "detail": "domain=content-cms"
+        }
+      ]
+    },
+    {
+      "id": "069",
+      "name": "Image Tools",
+      "file": "regression/suites/Backend/image-tools/069-image-tools.csv",
+      "reasons": [
+        {
+          "kind": "domain",
+          "detail": "domain=content-cms"
+        }
+      ]
+    },
+    {
+      "id": "075d",
+      "name": "Loyalty Missions",
+      "file": "regression/suites/Backend/loyalty/075d-loyalty-missions.csv",
+      "reasons": [
+        {
+          "kind": "path",
+          "detail": "changed path token 'api'"
+        }
+      ]
+    },
+    {
+      "id": "075f",
+      "name": "Loyalty Organization Balance",
+      "file": "regression/suites/Backend/loyalty/075f-loyalty-organization-balance.csv",
+      "reasons": [
+        {
+          "kind": "path",
+          "detail": "changed path token 'api'"
+        }
+      ]
+    },
+    {
+      "id": "078",
+      "name": "Backend Smoke — Platform, API & GraphQL",
+      "file": "regression/suites/Backend/smoke/078-backend-smoke-tests.csv",
+      "reasons": [
+        {
+          "kind": "path",
+          "detail": "changed path token 'api'"
+        }
+      ]
+    },
+    {
+      "id": "084",
+      "name": "News Articles",
+      "file": "regression/suites/Backend/news/084-news-articles.csv",
+      "reasons": [
+        {
+          "kind": "domain",
+          "detail": "domain=content-cms"
+        }
+      ]
+    },
+    {
+      "id": "095",
+      "name": "Background Jobs — Hangfire Migration",
+      "file": "regression/suites/Backend/background-jobs/095-background-jobs-migration.csv",
+      "reasons": [
+        {
+          "kind": "path",
+          "detail": "changed path token 'api'"
+        }
+      ]
+    },
+    {
+      "id": "096",
+      "name": "Backup Restore — PR Verification Log",
+      "file": "regression/suites/Backend/import-export/096-backup-restore.csv",
+      "reasons": [
+        {
+          "kind": "path",
+          "detail": "changed path token 'api'"
+        }
+      ]
+    },
+    {
+      "id": "101",
+      "name": "Platform — Sign-in Log",
+      "file": "regression/suites/Backend/platform/101-platform-sign-in-log.csv",
+      "reasons": [
+        {
+          "kind": "path",
+          "detail": "changed path token 'api'"
+        }
+      ]
+    }
+  ],
+  "hits": [
+    {
+      "suiteId": "050f",
+      "suiteFile": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "caseId": "CMS-GQL-014",
+      "title": "xCMS — pages Happy Path",
+      "priority": "High",
+      "automationStatus": "Automated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "050f",
+      "suiteFile": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "caseId": "CMS-GQL-115",
+      "title": "xCMS — page Detail by ID (Captured)",
+      "priority": "High",
+      "automationStatus": "Automated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "050f",
+      "suiteFile": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "caseId": "CMS-GQL-123",
+      "title": "xCMS — pageContext Homepage with userId",
+      "priority": "High",
+      "automationStatus": "Automated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "050f",
+      "suiteFile": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "caseId": "CMS-GQL-124",
+      "title": "xCMS — pageDocuments List",
+      "priority": "Medium",
+      "automationStatus": "Automated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "050f",
+      "suiteFile": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "caseId": "CMS-GQL-125",
+      "title": "xCMS — pageDocument Zero-GUID Returns Null",
+      "priority": "Medium",
+      "automationStatus": "Automated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "050f",
+      "suiteFile": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "caseId": "CMS-GQL-126",
+      "title": "xCMS — pageContext Catalog Page with userId",
+      "priority": "High",
+      "automationStatus": "Automated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Failure_Signals"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "050f",
+      "suiteFile": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "caseId": "CMS-GQL-130",
+      "title": "[VCST-5069] xCMS pages Post-Reindex Health Check",
+      "priority": "Critical",
+      "automationStatus": "Automated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "050f",
+      "suiteFile": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "caseId": "CMS-GQL-131",
+      "title": "[VCST-5069] xCMS page Single-Item Round-Trip Post-Reindex",
+      "priority": "Critical",
+      "automationStatus": "Automated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "050f",
+      "suiteFile": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "caseId": "CMS-GQL-132",
+      "title": "[VCST-5069] xCMS builderPage Smoke After Reindex",
+      "priority": "High",
+      "automationStatus": "Automated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-001",
+      "title": "Create new page in Page Builder",
+      "priority": "Critical",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        },
+        {
+          "term": "permalink",
+          "column": "Failure_Signals"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-002",
+      "title": "Edit created page",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-017",
+      "title": "Status filter - Draft pages only",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-053",
+      "title": "Page Builder Admin shows correct frontend URL",
+      "priority": "Medium",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-099",
+      "title": "API — Archive endpoint and publish-status check",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-111",
+      "title": "Save content — download page content as JSON file",
+      "priority": "Critical",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Steps"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-113",
+      "title": "Load content — upload JSON file to create page from template",
+      "priority": "Critical",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Steps"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-115",
+      "title": "Load content — cancel file selection has no side effects",
+      "priority": "Medium",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-116",
+      "title": "Clone page — duplicate draft page with content",
+      "priority": "Critical",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        },
+        {
+          "term": "permalink",
+          "column": "Failure_Signals"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Steps"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-118",
+      "title": "Clone page — button disabled for new unsaved page",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-119",
+      "title": "Clone of a clone — name and permalink pattern",
+      "priority": "Medium",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Title"
+        },
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        },
+        {
+          "term": "permalink",
+          "column": "Failure_Signals"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-120",
+      "title": "API — Copy page content endpoint",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-121",
+      "title": "Load content — invalid file handling",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-122",
+      "title": "Save and Load round-trip — exported content imports correctly",
+      "priority": "Critical",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-124",
+      "title": "API — Copy endpoint returns 403 for user with insufficient permissions",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-126",
+      "title": "Clone permalink collision — page with '-copy' permalink already exists",
+      "priority": "Medium",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Title"
+        },
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        },
+        {
+          "term": "permalink",
+          "column": "Failure_Signals"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-129",
+      "title": "API — GetPageContent serves Archived page content",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-130",
+      "title": "Rename + republish a published page preserves content (VCST-5417 data-loss guard)",
+      "priority": "Critical",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        },
+        {
+          "term": "permalink",
+          "column": "Cross_Layer_Checks"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Steps"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "059",
+      "suiteFile": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "caseId": "CMS-135",
+      "title": "Publish a page — no stale 'Has unsaved changes' banner after a clean publish (VCST-5515)",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Steps"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-014",
+      "title": "Grid columns display correctly",
+      "priority": "Medium",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-016",
+      "title": "Search functionality in page list",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-030",
+      "title": "Archived page NOT accessible on frontend",
+      "priority": "High",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-059",
+      "title": "Designer — Save and Publish from toolbar",
+      "priority": "Critical",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-074",
+      "title": "Designer — Live preview real-time updates",
+      "priority": "Critical",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-078",
+      "title": "E2E — Create promotional landing page and publish",
+      "priority": "Critical",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-079",
+      "title": "E2E — Edit published page and verify storefront update",
+      "priority": "Critical",
+      "automationStatus": "synced",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-080",
+      "title": "E2E — Archive page and verify storefront 404",
+      "priority": "High",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-081",
+      "title": "Multi-language — Create page in EN, add DE translation",
+      "priority": "High",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        },
+        {
+          "term": "permalink",
+          "column": "Failure_Signals"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-082",
+      "title": "Personalization — Page visible only to Wholesaler user group",
+      "priority": "High",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060",
+      "suiteFile": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
+      "caseId": "CMS-083",
+      "title": "Personalization — Organization-restricted page",
+      "priority": "High",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-084",
+      "title": "Scheduling — Page appears at start date, disappears at end date",
+      "priority": "High",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-085",
+      "title": "Scheduling — Pending page with future start date",
+      "priority": "Medium",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-086",
+      "title": "Page blade — All configuration fields",
+      "priority": "High",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        },
+        {
+          "term": "permalink",
+          "column": "Failure_Signals"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-087",
+      "title": "Error handling — Duplicate permalink",
+      "priority": "Medium",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Title"
+        },
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Test_Data"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-088",
+      "title": "Error handling — Empty required fields on page creation",
+      "priority": "Medium",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        },
+        {
+          "term": "permalink",
+          "column": "Failure_Signals"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-089",
+      "title": "Error handling — Special characters in permalink",
+      "priority": "Medium",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Title"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        },
+        {
+          "term": "permalink",
+          "column": "Failure_Signals"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-093",
+      "title": "API — Page search with lifecycle filter",
+      "priority": "High",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Assertions"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-094",
+      "title": "API — Page CRUD operations",
+      "priority": "High",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-095",
+      "title": "Unpublish — Revert published page to draft",
+      "priority": "High",
+      "automationStatus": "generated",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-110",
+      "title": "Routing — Publish endpoint uses groupId path parameter not query string",
+      "priority": "Medium",
+      "automationStatus": "",
+      "matches": [
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-149",
+      "title": "Asset Library Picker — selected asset public URL loads on storefront",
+      "priority": "Critical",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-150",
+      "title": "Asset Library Picker — filename with spaces in name (e.g. hero banner.png)",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-151",
+      "title": "Asset Library Picker — %20-encoded URL round-trip",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-152",
+      "title": "Asset Library Picker — Cyrillic/non-Latin filename",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-153",
+      "title": "Asset Library Picker — asset URL with query string",
+      "priority": "Medium",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-157",
+      "title": "Admin Asset Library — asset details panel shows metadata and usage info",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-169",
+      "title": "Storefront renders the section element id from the Anchor setting, matching the designer value",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-170",
+      "title": "A deep link with a hash scrolls to the target section on page load",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-171",
+      "title": "A designer-authored in-page anchor link scrolls to its target section",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-172",
+      "title": "An anchor that normalizes away falls back to the generated item id on BOTH the designer and the storefront",
+      "priority": "Medium",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        },
+        {
+          "term": "page-builder-pages/grouped",
+          "column": "Cross_Layer_Checks"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060b",
+      "suiteFile": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "caseId": "CMS-173",
+      "title": "Anchor scrolling yields to a user scroll and does not replay a stale navigation",
+      "priority": "Low",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Preconditions"
+        },
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060c",
+      "suiteFile": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "caseId": "CMS-175",
+      "title": "Overwrite warning — states the reference count and lists the affected pages",
+      "priority": "Critical",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060c",
+      "suiteFile": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "caseId": "CMS-199",
+      "title": "Asset Library — an image picked on a new page raises N refs and removing it lowers them",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060c",
+      "suiteFile": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "caseId": "CMS-200",
+      "title": "Asset Library — the picker-stored URL and the absolute URL of one asset count as one asset in references",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060c",
+      "suiteFile": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "caseId": "CMS-207",
+      "title": "Designer picker — image filter counts only images and pages them",
+      "priority": "Critical",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060c",
+      "suiteFile": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "caseId": "CMS-208",
+      "title": "Designer picker — search and page size run on the server",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060c",
+      "suiteFile": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "caseId": "CMS-209",
+      "title": "Designer picker — an image picked from page 2 is saved in the page",
+      "priority": "High",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060c",
+      "suiteFile": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "caseId": "CMS-210",
+      "title": "Designer picker — legacy GET descriptor is translated to the paged search",
+      "priority": "Medium",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060c",
+      "suiteFile": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "caseId": "CMS-211",
+      "title": "Asset Library and picker — an older response never overwrites a newer one",
+      "priority": "Critical",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060c",
+      "suiteFile": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "caseId": "CMS-212",
+      "title": "Asset Library and picker — template expressions in search, folder and file names stay literal",
+      "priority": "Critical",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    },
+    {
+      "suiteId": "060c",
+      "suiteFile": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "caseId": "CMS-215",
+      "title": "Asset Library and picker — an empty folder disables the paginator Next and Last controls in both",
+      "priority": "Low",
+      "automationStatus": "Draft",
+      "matches": [
+        {
+          "term": "permalink",
+          "column": "Steps"
+        }
+      ],
+      "oracles": [],
+      "lastAudited": null,
+      "runFate": "WILL_RUN"
+    }
+  ],
+  "unscannable": [
+    {
+      "suiteId": "062",
+      "file": "regression/suites/Backend/assets/062-assets.csv",
+      "reason": "legacy header — header is not the canonical 15-column enriched format (found 11 column(s))."
+    },
+    {
+      "suiteId": "069",
+      "file": "regression/suites/Backend/image-tools/069-image-tools.csv",
+      "reason": "legacy header — header is not the canonical 15-column enriched format (found 11 column(s))."
+    }
+  ],
+  "unmatchedObservables": [
+    "create-group-page"
+  ],
+  "counts": {
+    "suitesScoped": 17,
+    "rowsScanned": 615,
+    "hits": 70,
+    "willRun": 70,
+    "filteredOut": 0,
+    "notExecuting": 0,
+    "neverAudited": 70
+  },
+  "namedUnscannable": []
+}

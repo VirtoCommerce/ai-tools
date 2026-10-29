@@ -46,3 +46,9 @@ Evidence: `screenshots/ab2-A-de.png`, `ab2-B-de.png`, `loc-ja-rawkey-cold.png`, 
 - **Component / module:** vc-frontend `client-app/modules/sales-rep` (customer orders filter)
 - **RCA anchor:** sales-rep-orders-filters.vue `const selectedRange = ref<RangeType>(ranges.value[0]);`
 - **Routing confidence:** HIGH
+
+## Verification 2026-10-28
+**Verdict:** VERIFIED_WITH_NOTES for the theme code; NOT delivered to stands. Stays open.
+- vc-frontend PR #2609 (head `52e9649c`, open) fixes the label in the theme's built-in hub: STR A 3/3, de cold 3/3, ja/zh cold 1/1 each; RED on the vcst-qa control (de in-session, ja, zh).
+- vcst-qa / vcptcore-qa render this page from the vc-module-sales-rep MF plugin (`sales-rep` 0.2.5); its copy `src/VirtoCommerce.SalesRep.Web/StorefrontApp/src/components/sales-rep-orders-filters.vue` is still pre-fix. The same change is needed there.
+- Evidence: `reports/tickets/Sprint26-21/VCST-6196/` (verification-report.md, evidence.html). Jira comment 112412.

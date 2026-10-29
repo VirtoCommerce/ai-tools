@@ -1,0 +1,89 @@
+{
+ "env": "vcst",
+ "endpoint": "POST {BACK_URL}/graphql",
+ "note": "Authorization header omitted; responses verbatim from server",
+ "calls": [
+  {
+   "at": "2026-10-26T23:33:28.700Z",
+   "request": {
+    "query": "mutation($command:InputUpdateContactType!){ updateContact(command:$command){ id firstName lastName } }",
+    "variables": {
+     "command": {
+      "id": "ce0aab83-e49b-4e20-9cdc-06cbd1b7d2ce",
+      "firstName": "mutykovaelena",
+      "lastName": "Tester2"
+     }
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "errors": [
+      {
+       "message": "Error trying to resolve field 'updateContact'.",
+       "locations": [
+        {
+         "line": 1,
+         "column": 45
+        }
+       ],
+       "path": [
+        "updateContact"
+       ],
+       "extensions": {
+        "code": "VALIDATION",
+        "codes": [
+         "VALIDATION"
+        ]
+       }
+      }
+     ],
+     "data": {
+      "updateContact": null
+     }
+    }
+   }
+  },
+  {
+   "at": "2026-10-26T23:33:28.909Z",
+   "request": {
+    "query": "query { me { contact { id firstName lastName } } }"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "data": {
+      "me": {
+       "contact": {
+        "id": "ce0aab83-e49b-4e20-9cdc-06cbd1b7d2ce",
+        "firstName": "mutykovaelena",
+        "lastName": "User"
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "at": "2026-10-26T23:33:29.163Z",
+   "request": {
+    "query": "query($id:String!){ contact(id:$id){ id firstName lastName } }",
+    "variables": {
+     "id": "ce0aab83-e49b-4e20-9cdc-06cbd1b7d2ce"
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "data": {
+      "contact": {
+       "id": "ce0aab83-e49b-4e20-9cdc-06cbd1b7d2ce",
+       "firstName": "mutykovaelena",
+       "lastName": "Tester2"
+      }
+     }
+    }
+   }
+  }
+ ]
+}

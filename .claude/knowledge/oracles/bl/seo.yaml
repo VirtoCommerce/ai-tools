@@ -32,7 +32,8 @@ rules:
       kind: manual
       ref: Give two entities the same slug in one store+language → explain / Debug SEO Links for that permalink lists both as candidates and resolves exactly one as Final, and xAPI slugInfo returns that same one. With Catalog.UseSeoDeduplication = true, the store's "conflicting semantic URLs" warning (GET /api/seoinfos/duplicates) lists the pair; with the default false it lists nothing.
     violation_signal: A permalink shared by two entities in the same store+language resolves to neither (404 for both, VP-7983) or to a different entity on repeated requests; with Catalog.UseSeoDeduplication = true, the pair is not reported as a conflict.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] CMS-GQL-133, CMS-GQL-135, CMS-ML-001 failed in REG-2026-10-23-1303"
   - id: BL-SEO-002
     title: Deleted product returns proper HTTP status
     rule: When a product is deleted, its slug returns an empty `slugInfo` from xAPI and the Vue-SPA storefront renders its client-side NotFound page. Because VC Frontend is served via a catch-all route, the document HTTP status is **200 by default (a documented "soft 404")** — a real HTTP 404/410 is produced only via load-balancer/CDN rules. The missing slug is logged as a broken link where an admin can assign a 301 redirect (surfaced as `slugInfo.redirectUrl`). The page must never show the deleted product's old content, blank/broken content, or a 500.
@@ -49,7 +50,8 @@ rules:
       kind: manual
       ref: Note the product URL → delete the product in Admin (or use a never-existing slug) → navigate to the URL → xAPI `slugInfo` entityInfo is empty and the SPA shows the NotFound page (HTTP 200 soft 404 by default, or a configured 301 redirect / CDN-forced 404). Never the old product content, a blank page, or a 500.
     violation_signal: Deleted product's old content still served; blank/broken content; 500 error; the product page still fully resolving after deletion. **NOTE:** HTTP 200 with the SPA NotFound page is the documented default and is **NOT** a violation.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] CMS-GQL-135 failed in REG-2026-10-23-1303"
   - id: BL-SEO-003
     title: Canonical URL set on all pages
     rule: "Every storefront page must expose its preferred URL to crawlers. Virto Commerce's storefront (vc-frontend, `@unhead/vue`) emits this as an Open Graph `<meta property=\"og:url\">` set to the page's own resolved SEO URL — it does **NOT** render a `<link rel=\"canonical\">` element (verified live 2026-07-15: zero canonical tags on PDP or category pages). A product resolves to one preferred URL (whatever format `seoLinkType` yields — see BL-SEO-004), so `og:url` points to that single URL regardless of the category path taken to reach it. (A true `rel=\"canonical\"` link would be a stronger de-dup signal than `og:url`; its absence is a documented SEO consideration, not a per-page bug — treat canonical-link emission as a separate feature-gap decision.)"

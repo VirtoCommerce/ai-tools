@@ -40,6 +40,9 @@ rules:
       ref: Change price in Admin → immediately check storefront listing (may show old price) → add to cart → cart must show the NEW price. After reindex → listing matches cart.
     violation_signal: Cart uses stale price from search index; order placed at old price after admin price increase; price mismatch between listing and cart persists beyond reindex window.
     status: ACTIVE
+    verified:
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-CROSS-003
     title: Module disable → API 404, Admin section removal, dependent degradation
     rule: When a module is disabled in Admin, its REST APIs return 404, its Admin SPA sections disappear, and its GraphQL schema types are removed. Dependent modules should degrade gracefully — not crash.
@@ -52,8 +55,8 @@ rules:
     violation_signal: API returns 500 instead of 404; Admin section still visible but broken; dependent module crashes; re-enable doesn't restore functionality.
     status: ACTIVE
     verified:
-      date: 2026-10-08
-      by: REG-2026-10-08-0812
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-CROSS-004
     title: Currency switch triggers multi-system recalculation
     rule: "When a user switches currency on the storefront, the following must all update atomically: (1) product prices switch to the new currency's price list, (2) cart line items recalculate using new prices, (3) shipping rates update for the new currency, (4) tax recalculates if rates differ. Products without prices in the new currency become unavailable."
@@ -153,6 +156,9 @@ rules:
       ref: Call `placeOrder` twice with same cart token → only 1 order created, 1 inventory decrement, 1 payment charge. Simulate network timeout + retry → same result. Refresh the confirmation page → no new order.
     violation_signal: Duplicate orders on retry; double payment charge; inventory decremented twice; different results on identical retry.
     status: ACTIVE
+    verified:
+      date: 2026-10-27
+      by: REG-2026-10-27-SR-SWEEP
   - id: BL-CROSS-011
     title: Graceful degradation when dependent service is down
     rule: "When a dependent service is unavailable (Elasticsearch down, payment gateway timeout, email service failure, analytics endpoint unreachable), the platform must degrade gracefully: (1) search down → show \"Search unavailable\" message, catalog browsing via categories still works; (2) payment gateway down → show error at checkout, don't create orphan orders; (3) email down → order still placed, email queued for retry; (4) analytics down → order still placed, events lost (acceptable)."

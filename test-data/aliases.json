@@ -3251,6 +3251,45 @@
     "_comment": "RESERVATION — this alias is reserved for the BACKEND lane (GraphQL / API); its FRONTEND-lane twin is MULTI_ORG_TF_BR_ALT (see that alias's _notes for why sharing the two ORGS is safe while sharing the ACCOUNT is not). An OrganizationMembership row is keyed on (userId, organizationId) and carries the per-org `status` + `isLocked` a run mutates, so a frontend-lane run must NEVER authenticate as this account: the two lanes would eat each other's state and both would report confident wrong results. Enforced executably by LANES in scripts/seed-data/b2b/membership-lock-specs.mjs, which `npm run td:validate:membership-lock` [1] cross-checks against this prose. VCST-5028 cross-org fixture (vcst-qa, re-seeded 2026-06-15). ONE AGENT-TEST member belonging to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 org-isolation has a clear oracle: TechFlow=org-maintainer (Organization maintainer), BuildRight=org-employee (Organization employee). Recipe: test-data/b2b/organization-memberships.csv → re-seed/refresh idempotently via `npm run seed:b2b:memberships` (IDs above are platform-assigned and change on each re-seed; refresh them from the run's _seed-results-orgs-{date}.json). `id` = contact/member platform id; `userId` = the security-account user id (the field POST /api/customer/organization-memberships keys on — NOT the contact id). Password {{DEFAULT_TEST_PASSWORD}}. Auth works via plain /connect/token password grant WITH storeId=B2B-store (a no-store grant returns user_cannot_login_in_store). AGENT-TEST- prefix → swept by `npm run seed:b2b:teardown`.",
     "_notes": "Membership create payload shape that worked: POST /api/customer/organization-memberships  body {\"userId\":\"631063d0-…\",\"organizationId\":\"<orgId>\",\"organizationName\":\"<name>\",\"roles\":[{\"roleId\":\"org-maintainer\",\"roleName\":\"Organization maintainer\"}]} → 200. Read back via POST /api/customer/organization-memberships/search {\"userId\":\"631063d0-…\"} → totalCount 2."
   },
+  "PB_LEGACY_ORG_MEMBER": {
+    "_inline": true,
+    "email": "agent-test-pb-legacy-atc-20261028@yopmail.com",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "org_name": "Automation Testing Corp",
+    "user_group": "VIP",
+    "role": "org-employee",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_name": "org_name",
+      "user_group": "user_group",
+      "role": "role",
+      "userId": "userId",
+      "contactId": "contactId",
+      "org_id": "org_id",
+      "membership_id": "membership_id"
+    },
+    "_comment": "VCST-6442 legacy duplicate-permalink READER. A storefront account that is a member of the PRE-EXISTING org \"Automation Testing Corp\" with contact group VIP, which is exactly what the legacy /bkp-test01 en-US pages (2 Published, org-targeted, userGroups VIP, window 2026-05-01..2026-12-31) require, so xAPI slugInfo on them is no longer null for every account. Sign in with the storefront password grant + storeId=B2B-store. Spec: scripts/seed-data/cms/pb-legacy-org-members-specs.mjs. Seed `npm run seed:pb-legacy-members` (live proof: `-- --verify`), guard `npm run td:validate:pb-legacy-members`, teardown `npm run seed:pb-legacy-members:teardown`. Runtime ids (userId, contactId, org_id, membership_id) live ONLY in aliases.<env>.json; the org exists only on the env where it was hand-made (vcptcore). NOTE the page window ends 2026-12-31: after that the tie is gone and --verify fails on purpose."
+  },
+  "PB_LEGACY_ORG2_MEMBER": {
+    "_inline": true,
+    "email": "agent-test-pb-legacy-wm-20261028@yopmail.com",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "org_name": "Watermelon123",
+    "user_group": "",
+    "role": "org-employee",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_name": "org_name",
+      "role": "role",
+      "userId": "userId",
+      "contactId": "contactId",
+      "org_id": "org_id",
+      "membership_id": "membership_id"
+    },
+    "_comment": "VCST-6442 second legacy READER, member of the PRE-EXISTING org \"Watermelon123\" (no group). That org owns the two EQUAL en-US Published pages \"09.10 Sasha1\" on /same_landing_page (the tie-break pair) and one /whitelabling page. Deliberately a DIFFERENT org from PB_LEGACY_ORG_MEMBER, so the two readers must see different pages. Same recipe, guard and teardown as PB_LEGACY_ORG_MEMBER; runtime ids in aliases.<env>.json only."
+  },
   "MULTI_ORG_TF_BR_ALT": {
     "_inline": true,
     "email": "agent-test-multiorg-alt-20260803@yopmail.com",
@@ -3423,6 +3462,22 @@
     "_comment": "VCST-5281 / B2C-MBR-040 (F8b) — the LEGACY-ASSOCIATION fixture: an AGENT-TEST contact with Contact.Status=Approved, associated with BOTH TechFlow and BuildRight through `contact.organizations` ONLY, holding ZERO OrganizationMembership rows and EMPTY global ApplicationUser.Roles. This is the shape 104 of the 105 at-risk accounts on this env have. Recipe: test-data/b2b/contacts.csv CON-025 + test-data/b2b/users.csv USR-025 (roles cell EMPTY) → seed with `TEST_ENV=<env> node scripts/seed-data/b2b/seed-company-users.mjs b2b --only USR-025`. The empty `roles` cell is the MECHANISM: provisionContactLogins pairs each org with its index-parallel role and filters out any org without one, so no role ⇒ no membership row, while seedContacts still writes both org associations and contactBody forces status=Approved. stripSeededGlobalRoles runs on every login, and the account is created with no roles at all. Runtime GUIDs (`userId`, `contactId`) live in aliases.<env>.json only; the two org ids are pinned inline (seedOrgs forces body.id = organizations.csv platform_id ⇒ identical on every env, DV-021 allowlist). Password {{DEFAULT_TEST_PASSWORD}}. AGENT-TEST- prefix on both the email and the member name ⇒ swept by `npm run seed:b2b:teardown`.",
     "_notes": "TWO LOAD-BEARING PROPERTIES — ADDING EITHER ONE DESTROYS THIS FIXTURE. (1) ZERO OrganizationMembership rows. (2) EMPTY global ApplicationUser.Roles. B2C-MBR-040 asserts the BL-B2B-007 three-term permission union — org-level Organization.Roles ∪ membership OrganizationMembership.Roles ∪ global ApplicationUser.Roles. With no membership row the membership term is empty, and with no global role the global term is empty, so the ORG-LEVEL term is the only one left and becomes observable for the first time. A future re-seed must NOT 'helpfully' add a membership row or a role: a role in users.csv USR-025 makes provisionContactLogins create a membership (td:validate:b2b check [4] now hard-fails that combination via the ASSOCIATION-ONLY marker), and a global role reintroduces exactly the defect that makes {{MULTI_ORG_USER_EMAIL}} useless here — that account has a global org-maintainer role, which yields an INVARIANT 11 permissions across five different org claims (including orgs whose Organization.Roles is empty), completely masking the org-level term. Every b2b/users.csv account with a role fails property 1 by construction. membership_status is blank and MOOT here — there is no membership row to carry a status. MEASURED LIVE ON vcst 2026-08-03 (the numbers the case compares against): TechFlow Organization.Roles = [purchasing-agent, org-employee] → org-scoped token carries 2 permission claims in the `permission` claim (storefront:organization:view, storefront:user:view); BuildRight Organization.Roles = [] → 0 permission claims (the `permission` claim is ABSENT entirely, not an empty array — assert on absence-or-zero, not on an empty list); and the UNSCOPED token also carries 0, which is the proof the global term really is zero. NOTE WHY 2 AND NOT 4: purchasing-agent and org-employee grant the SAME two storefront perms (see b2b/roles.csv), so the union of the two roles is 2 distinct permissions — do not expect one-per-role. Both grants return HTTP 200. The two counts DIFFER, so the org-level term IS flowing into the org-scoped JWT — no BL-B2B-007 / VCST-5239 regression on this env at this build. Note the absolute numbers are 2/0, NOT the 11→12 recorded in BL-B2B-007: that 11 was the global-role baseline of a DIFFERENT account, so 11→12 is not the oracle for this fixture; the oracle is 'TechFlow > BuildRight, and BuildRight == 0'.",
     "_related": "Deliberately NOT any of the four VCST-5281 membership fixtures (MULTI_ORG_TF_BR, MULTI_ORG_TF_BR_ALT, ORG_TF_ONLY_INVITEE, ORG_TF_ONLY_STATUS) — every one of those HAS membership rows, which is the opposite of what this fixture is for."
+  },
+  "VCST4935_BUYER": {
+    "_inline": true,
+    "email": "agent-test-vcst4935-buyer@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "org_name": "AGENT-TEST-Org-AcmeCorp-20260310",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "store_id": "store_id",
+      "org_name": "org_name",
+      "userId": "userId",
+      "contactId": "contactId"
+    },
+    "_comment": "VCST-4935 storefront buyer: Purchasing agent @ AcmeCorp (ORG-001) on B2B-store, Approved, EmailConfirmed, not locked. Recipe: test-data/b2b/contacts.csv CON-031 + users.csv USR-031 → `TEST_ENV=<env> node scripts/seed-data/b2b/seed-company-users.mjs b2b --only USR-031`. Runtime userId/contactId live in aliases.<env>.json only. Password {{DEFAULT_TEST_PASSWORD}} (Playwright lanes type DEFAULT_TEST_PASSWORD). Swept by npm run seed:b2b:teardown."
   },
   "MULTI_ORG_TF_BR_EMPLOYEE": {
     "_inline": true,

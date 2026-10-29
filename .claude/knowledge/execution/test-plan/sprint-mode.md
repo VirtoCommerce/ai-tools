@@ -17,10 +17,15 @@ You run this orchestration inline. Delegate the heavy "Write" step (Section 6: p
 | `--draft` | Write the plan with `Document status: Draft` and skip risk score validation gates. |
 | `--no-suites` | Skip Section 5 regression suite mapping. |
 | `--no-sitemap` | Skip Step 0 (storefront sitemap refresh). Use offline or when the env is unreachable. |
+| `--ticket <KEY>` | The sprint regression ticket. The wave sub-tasks go under it (Step 8), and bugs filed from the waves link to it. Required for waves: without it Step 8 offers to create one. |
+| `--env <TEST_ENV>` | The environment the sprint regression runs on (Step 8 `release.json` `env.testEnv`). Default: the session's env. |
+| `--update` | The sprint's scope or build moved after Step 8 (late Done items, a fix release or PR build deployed during the freeze): re-run Steps 2–8 and amend the plan, `-summary.json`, `release.json` and `PLAN.md`. A wave that already ran keeps its suites; a new suite goes to a wave that has not started. Never touches `waves/`. |
+| `--with-backend` | Step 8 builds the waves over the §5.1.2 Backend suites too. Default: Frontend only — the sprint regression is the storefront's. |
+| `--no-waves` | Skip Step 8: no release folder, the plan runs as one person's `/qa-run sprint:<XX-YY>`. Implied by `--no-suites`. |
 
 ---
 
-## Pipeline: Refresh sitemap → Resolve → Fetch JIRA → Fetch PRs → Correlate → Assess → Write
+## Pipeline: Refresh sitemap → Resolve → Fetch JIRA → Fetch PRs → Correlate → Assess → Write → Waves
 
 ### Step 0 — Refresh the storefront sitemap (diff-gated)
 
@@ -48,7 +53,7 @@ If parsing fails (input doesn't match `XX-YY` and isn't `current`/`last`), ask t
 
 **Output target:** `docs/Sprint plans/sprint-{XX-YY}-test-plan.md` (single canonical location for all sprint plans — co-located with the structural reference). Per-ticket test artifacts (test-cases.csv, exploratory-session.md, etc.) live in each ticket's run folder — the sprint plan does NOT go there. Create the `docs/Sprint plans/` directory if it doesn't exist.
 
-**Duplicate guard:** If `docs/Sprint plans/sprint-{XX-YY}-test-plan.md` already exists, ask the user whether to overwrite or append a `-v2` suffix. Never silently overwrite.
+**Duplicate guard:** If `docs/Sprint plans/sprint-{XX-YY}-test-plan.md` already exists, ask the user whether to overwrite or append a `-v2` suffix. Never silently overwrite. When `regression/releases/sprint-{XX-YY}/` exists too, the waves are under way: never overwrite — offer `--update`.
 
 ---
 
@@ -199,9 +204,48 @@ Use the **exact structure** of `docs/Sprint plans/sprint-26-08-test-plan.md`, **
   ],
   "criticalTickets": ["VCST-..."],
   "outOfScopeCount": 0,
-  "artifacts": "docs/Sprint plans/"
+  "artifacts": "docs/Sprint plans/",
+  "release": "sprint-{XX-YY}"
 }
 ```
+
+`release` is the Step 8 release folder name, or `null` with `--no-waves`. `suitesActivated[]` stays the whole §5.1 list; the waves
+hold its Frontend part unless `--with-backend`.
+
+---
+
+### Step 8 — Waves: the release folder (skip with `--no-waves`)
+
+A sprint regression is split between owners the same way a stable bundle is, so no single person has to run it.
+The environment is **frozen** for the regression: the build in `release.json` `env` is the frozen one, and only fixes
+for bugs found in the regression are deployed during the freeze — as a new release of the module or theme, or as
+the fix PR's build, never as a hotfix. The wave that sees the new version records it in its `report.md`
+([`waves.md`](../../../skills/qa-run/waves.md) Step 0), the cases the bug failed are re-run on it, and `--update` re-pins
+`env` and adds what the fix touches to waves not started. Over
+the Section 5.1.1 **Frontend** suites (`suitesActivated[]` whose CSV is under `regression/suites/Frontend/`; with
+`--with-backend`, all of `suitesActivated[]`) build the waves per [`plan-sections.md`](plan-sections.md) §Waves, with the
+Step 5 risk deciding which domain waves are offered first. **W0, the smoke gate — the manifest's `smoke` suites of the same
+layer — runs first and alone; every other wave depends on W0 only**, so once W0 has run all owners work at the same time. Then write `regression/releases/sprint-{XX-YY}/` per
+[`release-folder.md`](../../../skills/qa-run/release-folder.md):
+
+1. **`release.json`** — the sprint variant (contract §3): `release: "sprint-{XX-YY}"`, `ticket` from `--ticket`, `baseline`
+   the previous sprint's folder when `regression/releases/` has one, `sprint` (`label`, `startDate`, `endDate`, `plan` —
+   this plan's path), `env.testEnv` (`--env`) and the deployed platform and theme from the [`/preflight`](../../../skills/preflight/SKILL.md)
+   facts, and `waves`. No `bundle`, `module-diff.json` or `scope.json` — the plan is the scope.
+2. **`PLAN.md`** — short: a link to the plan, §Waves with the estimates from `regression:plan`, §Prerequisites (seed
+   profiles, personas per owner, env settings), §Not in scope. The rest stays in the plan; never copy it.
+3. **`waves/<W>/state.json`** for every wave (`NOT_STARTED`, `owner: null`), then
+   `npm run release:status -- sprint-{XX-YY} --write` and `npm run release:check -- sprint-{XX-YY}` — must be green.
+4. **Hand it out — one question, both gated:** the PR to `main` with the plan and the release folder (branch
+   `claude/qa-release/sprint-{XX-YY}-plan`, the user's git identity, body in English: the wave grid, prerequisites, how
+   to claim; **never merge**), and one tracker sub-task per wave under `--ticket`
+   (`npm run release:report -- sprint-{XX-YY} --subtasks`, `--apply` creates them). The sub-task is the claim, so
+   waves need a ticket: without `--ticket`, the same question offers to create a `Sprint {XX-YY} regression` task in
+   the sprint first (outward-facing — on the yes only). On a *no*, the waves are written but say they must run one
+   person at a time.
+
+If the folder already exists and `--update` is not set, STOP and show `npm run release:status -- sprint-{XX-YY}`: a
+re-plan never rewrites a wave's state.
 
 ---
 
@@ -222,11 +266,13 @@ New test cases estimated: {RANGE}
 
 Plan: docs/Sprint plans/sprint-{XX-YY}-test-plan.md
 Summary: docs/Sprint plans/sprint-{XX-YY}-summary.json
+Waves: regression/releases/sprint-{XX-YY}/ ({W} waves; sub-tasks under {TICKET} or "none — one owner at a time")
 
 Next: review the plan, then either:
   - /qa-test-cases-generator VCST-XXXX  (per-ticket case generation, driven by Section 6 counts/techniques)
   - /qa-test VCST-XXXX                  (test a specific ticket, prefilled from Section 11 row)
-  - /qa-regression sprint               (auto-resolves docs/Sprint plans/sprint-{XX-YY}-summary.json → suitesActivated[])
-  - /qa-regression sprint:{XX-YY}       (pin to this exact sprint plan; useful when re-running a past sprint)
+  - /qa-run sprint:{XX-YY} status       (who holds which wave)
+  - /qa-run sprint:{XX-YY} <wave> --claim   (each QA claims a wave and runs it)
+  - /qa-run sprint:{XX-YY}              (only with --no-waves: the whole plan as one run)
   - /qa-exploratory sprint              (run this plan's §5.3 charters — reads exploratoryCharters[] from the summary.json)
 ```

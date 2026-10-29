@@ -1,7 +1,10 @@
-# Release waves — `/qa-run stable:<N> <wave>`
+# Release waves — `/qa-run <release> <wave>`
 
-Read by [`/qa-run`](../../commands/qa-run.md) when the selection is `stable:<N>` with a wave or `status`.
-The plan comes from [`/qa-test-plan stable <N>`](../../knowledge/execution/test-plan/stable-mode.md). You run **one wave** of a release regression
+Read by [`/qa-run`](../../commands/qa-run.md) when the selection is `stable:<N>` or `sprint:<XX-YY>` with a wave or `status`.
+The plan comes from [`/qa-test-plan stable <N>`](../../knowledge/execution/test-plan/stable-mode.md) or
+[`/qa-test-plan <sprint>`](../../knowledge/execution/test-plan/sprint-mode.md) Step 8. Below, `<rel>` is the argument as
+typed (`stable:17`, `sprint:26-20`) and `<release>` its folder under `regression/releases/` (`stable-17`,
+`sprint-26-20`). You run **one wave** of a release regression
 on behalf of its owner. Other QA may be running other waves
 on the same environment right now, so everything you do respects the parallel-run rules.
 
@@ -18,6 +21,9 @@ claim protocol (§8). This file is the procedure; that file is the contract.
 /qa-run stable:16 W4 --triage       # triage the wave's runs
 /qa-run stable:16 W4 --publish      # put the wave in GitHub
 /qa-run stable:16 W4 --handover     # stop here, leave it for someone else
+/qa-run sprint:26-20 W2 --claim     # the same for a wave of a sprint regression
+/qa-run sprint:26-20 all            # one owner runs every free wave: W0, then the rest as one run, then WX
+/qa-run sprint:26-20 all --continue # pick that up where it stopped
 ```
 
 **Where each entry point starts.** A flag never skips a step: triage (Step 4) starts, and the GitHub question (Step 7)
@@ -31,6 +37,7 @@ is asked, whenever the wave reaches them, whatever flag brought it there.
 | `RUN_DONE` with `untriaged > 0` (FAIL or BLOCKED cases without a ledger row) — with no flag, `--triage`, `--publish` or `--handover` | **Step 4** (triage runs first) |
 | `RUN_DONE` with `untriaged = 0`, or `TRIAGED` | Step 6 |
 | `--handover` on `CLAIMED` (nothing ran) | Step 8 |
+| `all`, `all --continue` (same owner), stopping mid-`all` | [§`all`](#all--one-owner-runs-every-free-wave) |
 
 **Only the owner writes a wave.** Every entry except `status`, `--claim` and `--continue` starts by checking that
 `state.json` `owner` is the user **and** the wave sub-task is assigned to them. Otherwise STOP and show who holds it —
@@ -39,16 +46,16 @@ taking a wave over is `--continue`, which goes through Step 1.
 ## `status` — read-only
 
 Pull `main` first (`git checkout main && git pull`, or a clean worktree of `origin/main`) — the script reads
-the files on disk, so a stale checkout shows a stale picture. Then `npm run release:status -- stable-<N>` and
+the files on disk, so a stale checkout shows a stale picture. Then `npm run release:status -- <release>` and
 show: the wave table, *Not run yet*, *Real bugs awaiting filing*, *Decisions pending*, which waves are free to
 claim (`NOT_STARTED`, every `dependsOn` wave at least `RUN_DONE`), and — from the tracker — which wave
 sub-tasks are assigned and in progress right now. Change nothing.
 
 ## Step 0 — Pre-flight
 
-1. Work on a branch from current `main`: `claude/qa-release/stable-<N>-<wave>` (create it or check it out; a
+1. Work on a branch from current `main`: `claude/qa-release/<release>-<wave>` (create it or check it out; a
    reused checkout keeps old tips — reset to `origin/<branch>` before adding to it).
-2. `npm run release:check -- stable-<N>` must be green. Read `release.json` (this wave's `suites`, `dependsOn`,
+2. `npm run release:check -- <release>` must be green. Read `release.json` (this wave's `suites`, `dependsOn`,
    `exclusive`) and every other wave's `state.json`.
 3. **Dependencies:** every wave in `dependsOn` is at least `RUN_DONE` — W0 especially. If not, STOP and say which.
 4. **Before every wave, and before every resumed run of one:** run the [`/preflight`](../../skills/preflight/SKILL.md)
@@ -84,13 +91,13 @@ sub-tasks are assigned and in progress right now. Change nothing.
    never borrow another owner's accounts.
 6. Write `state.json`: `owner`, `status: CLAIMED` (on `--continue` the status stays), `personas`, `updatedAt`. On
    `--continue`, append the previous owner to `handovers` first. Commit it to
-   `claude/qa-release/stable-<N>-<wave>` and push now — a second claimant then hits the existing branch before
+   `claude/qa-release/<release>-<wave>` and push now — a second claimant then hits the existing branch before
    the run, not after it.
 
 ## Step 2 — Known ground before running
 
 ```
-npm run release:status -- stable-<N> --ledger --suites <this wave's suite ids> --with-baseline
+npm run release:status -- <release> --ledger --suites <this wave's suite ids> --with-baseline
 ```
 
 Keep that output: earlier verdicts for these suites, from this release and from the `baseline` release when its
@@ -99,22 +106,26 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
 
 ## Step 3 — Run
 
-1. **Resolve the run** with `npm run regression:plan -- <suite ids>`, plus `--cases <tier>` when the wave has a `tier` — `rest` is `--cases medium,low` ([`release-folder.md`](release-folder.md) §3: unreadable priorities only in Scope Exclusions). Remove every suite or case listed in
+1. **Resolve the run** with `npm run regression:plan -- <suite ids>` ([`release-folder.md`](release-folder.md) §3: unreadable priorities only in Scope Exclusions). **A wave is one run over all its cases** — the same run `/qa-regression sprint --frontend` makes over a whole plan, only over this wave's suites. With `--by-priority`, it is three runs instead — `--cases critical`, then `high`, then `medium,low` — for a long wave whose owner may be cut short; after each pass record it with Step 3.4 **without** `--final` (the
+   wave stays open while cases are left), and with `--final` only after the last pass or when stopping. (A legacy wave with a `tier` runs only `--cases <tier>`, `rest` = `medium,low`.) Remove every suite or case listed in
    **another** wave's `exclusive` (contract §7.2) — this wave's own `exclusive` list is what it exists to run.
    Machine-lane suites first: they cost no model tokens (contract §7).
 2. **Do not re-seed** a fixture set another wave uses while another wave is running — check the wave sub-tasks
    in the tracker, not only `state.json` (contract §7.3). Data this wave needs for itself is created under the
    owner's personas and removed afterwards.
-3. Set `state.json` `status: RUNNING` and move the sub-task to in-progress, then run
+3. If the wave is `CLAIMED`, set `state.json` `status: RUNNING` (a resumed wave keeps its status) and move the sub-task to
+   in-progress, then run
    the execution pipeline ([`run.md`](run.md) — today the `/qa-regression` pipeline, Steps 0–8) with the wave's suite ids, its `--cases` tier and
    `TEST_ENV=<env.testEnv>`. Its plan must write `reports/regression/<RUN_ID>/preflight.json` (`--preflight-out`): that
    file is what `suites:lanes` reads the `skip` map from. This second pre-flight is the one that counts: it re-derives
    the `skip` map after any Step 0 fix, so a gap fixed at Step 0 no longer skips its cases. Every rule of that pipeline applies unchanged (browser lanes, `--secrets`, the observed-behaviour steps of its runners).
-4. When it finishes — or is cut short (usage limit, env down) — append the run id to `runIds`, write `totals` from
-   the run's consolidated report (never counted by hand; `ambiguous` holds what is neither pass, fail, blocked nor
-   skipped), put anything not run into `notRun` (suite ids + case count + reason — including each suite's
-   `notDeployed` cases from its results file, reason `not deployed: <module>`), set `untriaged` to the FAIL + BLOCKED count,
-   `status: RUN_DONE`. **Then go to Step 4 — a cut-short run too.**
+4. When it finishes — or is cut short (usage limit, env down) — run
+   `npm run release:split -- <release> --run-id <RUN_ID> --wave <W> --final --write`. It records every case's latest
+   result in `waves/<W>/cases.json` and derives the rest from it — `runIds`, `totals` (`ambiguous` holds what is neither
+   pass, fail, blocked nor skipped), `untriaged`, `notRun` (per suite, what has no result yet) and `status: RUN_DONE` —
+   never counted or written by hand. A re-run case replaces its earlier result, so a `--continue` or a second pass is
+   never counted twice. A suite the pre-flight left out as not deployed shows in `notRun` as not run yet; name its
+   module in `report.md`. **Then go to Step 4 — a cut-short run too.**
 
 ## Step 4 — Triage starts on its own
 
@@ -134,7 +145,10 @@ the user stops it.
    it to `qa-backend-expert` (`playwright-edge`) or `qa-frontend-expert` (`playwright-chrome`) per
    [`../rules/agents.md`](../../rules/agents.md) §Parallel Execution, with a brief built from
    [`../templates/agent-dispatch.md`](../../templates/agent-dispatch.md) including its observed-behaviour line.
-   Temporary data only, removed afterwards; `yes` only when the baseline does not show it.
+   Temporary data only, removed afterwards; `yes` only when the baseline does not show it. A sprint release has a
+   baseline stand only when `release.json` `env.baselineEnv` names one; without it, `new_in_release` is `no` when the
+   baseline release's ledger (Step 2) already holds the finding, otherwise `unknown` — never `yes` without a build that
+   shows the difference.
 4. Write one ledger row per triaged finding — **including every one that will not be filed** — in
    `waves/<W>/ledger.csv`, mapping the triage class per the contract §6. Amend a row for a re-check of the same run;
    never append a duplicate. Real bugs not filed yet: `follow_up: DRAFT`; the same defect seen in several cases: one
@@ -183,8 +197,8 @@ that bug.
 
 **Always ask after triage:** "Commit the wave, open a PR and post the wave report?" On *yes*:
 
-1. `npm run release:status -- stable-<N> --write`, then `npm run release:check -- stable-<N>` — must be green.
-2. **The wave report in the tracker:** `npm run release:report -- stable-<N> --wave <W> --post` — before the commit, so
+1. `npm run release:status -- <release> --write`, then `npm run release:check -- <release>` — must be green.
+2. **The wave report in the tracker:** `npm run release:report -- <release> --wave <W> --post` — before the commit, so
    the comment ids it records in `state.json` `reports` are in it. It posts two NEW comments, each with an inline image:
    - on the **wave sub-task** — the run's own dashboard (`regression-report.html`, its summary part as a PNG; the HTML
      attached), the totals, the wave's real bugs, the ledger's verdict counts, what was not run;
@@ -211,13 +225,61 @@ Triage (Step 4) runs first if the wave has FAIL or BLOCKED cases without a ledge
 if nothing ran) with `notRun` filled in and a "Before the next owner continues" section in `report.md` — including
 where any repair lives, which must be a pushed branch — and go to Step 7 so it reaches git. Unassign the sub-task
 (on the user's yes): an assigned sub-task is a live claim, and `--continue` will not take it. The next owner runs
-`/qa-run stable:<N> <wave> --continue`, which claims through Step 1 and records the handover in `handovers`; the wave id
+`/qa-run <rel> <wave> --continue`, which claims through Step 1 and records the handover in `handovers`; the wave id
 stays.
+
+## `all` — one owner runs every free wave
+
+For when one person runs the whole release. Same steps, same records, but asked once and run as one:
+
+1. **Ask once, at the start:** claim every free wave (`NOT_STARTED`, sub-task unassigned) for the user — Step 1 for each:
+   assign the sub-task, comment the claim, write `CLAIMED` + `owner` + `personas` into its `state.json` and push them
+   before W0 runs — **and** push each wave's record to one branch (`claude/qa-release/<release>-all`) as
+   soon as that wave closes. One yes covers both; on a *no*, run the waves one by one instead. A wave someone else holds
+   stays theirs and is left out.
+2. **W0 alone, first** (Steps 0–5 as for any wave). A red smoke gate stops everything — the one stop of this mode.
+3. **The other claimed waves as ONE run** — Steps 0 and 2 for each wave (pre-flight over the union of their suites,
+   known ground per wave), then Step 3 once with the union of their suite ids and all priorities: three browser slots
+   kept busy across waves finish sooner than the waves back to back. Every suite is in exactly one wave, so the run splits
+   back by suite: `npm run release:split -- <release> --run-id <RUN_ID> --write` writes each wave's `runIds`, `totals`,
+   `notRun` and `untriaged` (never counted by hand).
+4. **A wave closes the moment its last suite finishes** — run `release:split -- <release> --run-id <RUN_ID> --write`
+   whenever a suite finishes: it closes only the waves whose every suite has finished, and leaves the others `RUNNING`.
+   Once the run itself is closed, run it with `--final` (a suite left with PENDING cases closes too; they go to `notRun`). For each wave it closed, triage it (Step 5) and push
+   its record — `cases.json` included (Step 7 items 1 and 3, no PR yet), while the run goes on for the others. A session that dies mid-run
+   loses nothing that closed.
+5. **WX alone, last.**
+6. **Asked once, at the end:** which `DRAFT` bugs to file (Step 6, all waves together), then one PR with every wave and
+   the wave reports in the tracker (`release:report --wave <W> --post` per wave).
+
+`all --continue` resumes — **for the same owner only**: the waves still open run again as one run over the suites
+with cases left (`notRun`); `release:split` replaces re-run cases' results and fills in the rest.
+`all` has no handover of its own: whoever takes `all` runs it to the end, or stops as below.
+
+### Stopping in the middle of `all`
+
+When the owner will not finish (the deadline cannot wait for the usage limit to reset), the waves left open go back to
+the pool as ordinary waves, and others take them one by one with `/qa-run <rel> <wave> --continue` (Step 1). Close what
+ran, then release the rest — the same four steps whether Claude does them (asked to stop; the unassigning on one yes)
+or a person does them by hand because the tokens are already gone; nothing here needs Claude:
+
+1. `npm run release:split -- <release> --run-id <RUN_ID> --final --waves <every wave of the shared run> --write` —
+   closes every wave of the shared run as `RUN_DONE`: what ran is in its `cases.json` and totals, what did not goes to
+   `notRun`.
+2. In each wave left open (`notRun` or FAIL/BLOCKED without a ledger row), write `waves/<W>/report.md` with a
+   `## Before the next owner continues` section: where it stopped, the run id, and that the FAIL evidence (screenshots,
+   traces) is on the previous owner's machine — the next owner re-runs those cases before triaging them.
+3. `npm run release:status -- <release> --write` and `npm run release:check -- <release>` (green), then commit and push
+   the branch `claude/qa-release/<release>-all`.
+4. In the tracker, unassign the sub-tasks of the waves left open — an assigned sub-task is a live claim (contract §8).
+
+Waves that closed and were triaged stay the owner's; their PR and bug filing (item 6) can wait for the owner, or the
+next owner files them from the ledger's `DRAFT` rows.
 
 ## Rules
 
-- **Tier order is a dependency:** a `high` wave starts only when every `critical` wave has run, a `rest` wave only when
-  every `high` wave has — Step 0.3 checks `dependsOn`, which the plan fills that way.
+- **W0 first, then nobody waits:** every wave after W0 depends on W0 only, so owners run in parallel. Only WX waits for
+  the others. A wave is one run over all its priorities (`--by-priority` for three passes, Step 3).
 - **One wave, one owner.** Write only this wave's `waves/<W>/`, the generated `PROGRESS.md`, and the suites you are
   repairing; never another wave's files ([`release-folder.md`](release-folder.md) §2).
 - **Parallel-safe or not at all:** own personas, no env-wide changes, no re-seed under a running wave (§7).

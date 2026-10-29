@@ -1,0 +1,30 @@
+{
+  "ticket": "VCST-6195",
+  "verdict": "BLOCKED",
+  "date": "2026-10-27",
+  "environment": "http://localhost (frontend-only, API proxied to vcptcore-qa)",
+  "build": {
+    "platform": "vcptcore-qa (remote, unchanged)",
+    "theme": "2.61.0-pr-2609-52e9-52e9649c (local)",
+    "relevant_modules": {"VirtoCommerce.SalesRep storefront plugin": "0.2.5 (deployed, pre-fix)"},
+    "pr_build": "vc-frontend#2609 @52e9649c (OPEN) — present in theme chunk, NOT in the SalesRep plugin chunk the hub renders"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "0/3 (not executable on the fixed code)",
+  "baseline_reproduction": "RED (pre-fix, live) on vcptcore-qa-storefront.govirto.com",
+  "checklist_total": 10,
+  "checklist_passed": 0,
+  "checklist_failed": 0,
+  "checklist_blocked": 9,
+  "checklist_partial": 1,
+  "blocker": "Sales Rep hub page code comes from the SalesRep module Module Federation plugin; a theme-only PR artifact cannot deliver a fix under client-app/modules/sales-rep. Local frontend-only nginx also lacks a /modules/ proxy (backlog B-62).",
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "tracker_transition": null,
+  "tracker_comment": null,
+  "evidence": "reports/tickets/Sprint26-21/VCST-6195/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-21/VCST-6195/"
+}

@@ -161,3 +161,180 @@ CMS-GQL-132,"[VCST-5069] xCMS builderPage Smoke After Reindex","GraphQL > xCMS >
     }
   }
 [GQL-EXEC builder_probe]","[DATA label=builder_probe] data is non-null OR errors[] is non-empty",,"HTTP 500; stack trace or schema error in errors[]; resolver panic on Builder.io content after reindex",none,"VCST-5069; xAPI; Query.builderPage",Automated
+CMS-GQL-133,slugInfo resolves a permalink of one language to the translation in the requested language,xCMS > Page documents > Multilanguage,Critical,BL-SEO-001,,"Runner-native. Admin token for the setup and cleanup REST calls; the xAPI queries need no token. Two published Landing Pages (en-US, fr-FR with distinct permalinks) are created, the en-US page is converted to a Multilanguage Page and the fr-FR page is linked to it; every fixture is AGENT-TEST-VCST4935-prefixed. The Pages index lag is handled by polling (up to 60 s), never by a fixed sleep. Resolution is asserted through the document the slug resolves to (its cultureName and permalink), not through an assumed id relation.",storeId={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_en]
+POST {{ADMIN_URL}}/api/page-builder-pages/create-group-page
+Content-Type: application/json
+Body: {""name"":""AGENT-TEST-VCST4935-gql133-en"",""permalink"":""/agent-test-vcst4935-gql133-en"",""cultureName"":""en-US"",""storeId"":""{{STORE_ID}}"",""visibility"":true,""content"":""{\""settings\"":{},\""content\"":[]}""}
+[REST-EXEC create_en]
+[REST-CAPTURE create_en.body.id → EN_ID]
+[REST-CAPTURE create_en.body.permalink → EN_PERMALINK]
+[REST-OP create_fr]
+POST {{ADMIN_URL}}/api/page-builder-pages/create-group-page
+Content-Type: application/json
+Body: {""name"":""AGENT-TEST-VCST4935-gql133-fr"",""permalink"":""/agent-test-vcst4935-gql133-fr"",""cultureName"":""fr-FR"",""storeId"":""{{STORE_ID}}"",""visibility"":true,""content"":""{\""settings\"":{},\""content\"":[]}""}
+[REST-EXEC create_fr]
+[REST-CAPTURE create_fr.body.id → FR_ID]
+[REST-CAPTURE create_fr.body.permalink → FR_PERMALINK]
+[REST-OP pub_en]
+POST {{ADMIN_URL}}/api/page-builder-pages/grouped/publishing/{{EN_ID}}?publish=true
+[REST-EXEC pub_en]
+[REST-OP pub_fr]
+POST {{ADMIN_URL}}/api/page-builder-pages/grouped/publishing/{{FR_ID}}?publish=true
+[REST-EXEC pub_fr]
+[REST-OP convert_en]
+POST {{ADMIN_URL}}/api/page-builder-multilanguage-pages/convert/{{EN_ID}}
+[REST-EXEC convert_en]
+[REST-CAPTURE convert_en.body.id → ROOT_ID]
+[REST-OP link_fr]
+POST {{ADMIN_URL}}/api/page-builder-multilanguage-pages/{{ROOT_ID}}/link/{{FR_ID}}
+[REST-EXEC link_fr]
+[GQL-OP slug_fr_en]
+  query { slugInfo(permalink: ""{{FR_PERMALINK}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { entityInfo { objectType id } } }
+[GQL-EXEC slug_fr_en]
+[WAIT until=slug_fr_en timeout=60 interval=3] data.slugInfo.entityInfo.id is non-null
+[GQL-CAPTURE slug_fr_en.data.slugInfo.entityInfo.id → DOC_FOR_EN]
+[GQL-OP doc_for_en]
+  query { pageDocument(id: ""{{DOC_FOR_EN}}"") { id cultureName permalink } }
+[GQL-EXEC doc_for_en]
+[GQL-OP slug_en_fr]
+  query { slugInfo(permalink: ""{{EN_PERMALINK}}"" storeId: ""{{STORE_ID}}"" cultureName: ""fr-FR"") { entityInfo { objectType id } } }
+[GQL-EXEC slug_en_fr]
+[WAIT until=slug_en_fr timeout=60 interval=3] data.slugInfo.entityInfo.id is non-null
+[GQL-CAPTURE slug_en_fr.data.slugInfo.entityInfo.id → DOC_FOR_FR]
+[GQL-OP doc_for_fr]
+  query { pageDocument(id: ""{{DOC_FOR_FR}}"") { id cultureName permalink } }
+[GQL-EXEC doc_for_fr]
+[GQL-OP slug_fr_fr]
+  query { slugInfo(permalink: ""{{FR_PERMALINK}}"" storeId: ""{{STORE_ID}}"" cultureName: ""fr-FR"") { entityInfo { objectType id } } }
+[GQL-EXEC slug_fr_fr]
+[GQL-CAPTURE slug_fr_fr.data.slugInfo.entityInfo.id → DOC_FR_OWN]
+[GQL-OP doc_fr_own]
+  query { pageDocument(id: ""{{DOC_FR_OWN}}"") { id cultureName } }
+[GQL-EXEC doc_fr_own]","[ERRORS label=create_en] HTTP 200
+[ERRORS label=create_fr] HTTP 200
+[ERRORS label=convert_en] HTTP 200
+[ERRORS label=slug_fr_en] errors[] empty
+[ERRORS label=doc_for_en] errors[] empty
+[DATA label=doc_for_en] data.pageDocument.cultureName = en-US
+[DATA label=doc_for_en] data.pageDocument.permalink = {{EN_PERMALINK}}
+[ERRORS label=slug_en_fr] errors[] empty
+[ERRORS label=doc_for_fr] errors[] empty
+[DATA label=doc_for_fr] data.pageDocument.cultureName = fr-FR
+[DATA label=doc_for_fr] data.pageDocument.permalink = {{FR_PERMALINK}}
+[ERRORS label=doc_fr_own] errors[] empty
+[DATA label=doc_fr_own] data.pageDocument.cultureName = fr-FR","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","slugInfo returns the permalink's own language whatever cultureName is requested (the pre-change behaviour); entityInfo stays null after 60 s (link not indexed, TranslationGroupId missing); errors[] non-empty","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/page-builder-multilanguage-pages/{{ROOT_ID}}/archive-all]
+[REST POST /api/page-builder-pages/grouped/archive?ids={{EN_ID}}]
+[REST POST /api/page-builder-pages/grouped/archive?ids={{FR_ID}}]",VCST-4935 · Archetype:PARITY · Technique:EP · Provenance: {SPEC} VCST-4935 dev comment 2026-10-21 AC5 row (slugInfo resolves a permalink of one language to the translation in the requested language) + BL-SEO-001; the resolution-by-document shape is {OBSERVED} SBTM-VCST-4935-2026-10-23 (BL-SEO-001 confirmed),Draft
+CMS-GQL-134,"pageDocument.alternates lists only published store-language versions, one per language",xCMS > Page documents > Multilanguage,High,,,"Runner-native. A root with a published en-US version and a published fr-FR version (both linked from Landing Pages), a de-DE version left as Draft and an es-ES version that is published and then archived. Every fixture is AGENT-TEST-VCST4935-prefixed; the Pages index lag is handled by polling (up to 60 s). The alternates list is read through pageDocument(id) of the en-US document; the list includes the document's own language ({SPEC} journey: en-US, fr-FR, de-DE).",storeId={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_en]
+POST {{ADMIN_URL}}/api/page-builder-pages/create-group-page
+Content-Type: application/json
+Body: {""name"":""AGENT-TEST-VCST4935-gql134-en"",""permalink"":""/agent-test-vcst4935-gql134-en"",""cultureName"":""en-US"",""storeId"":""{{STORE_ID}}"",""visibility"":true,""content"":""{\""settings\"":{},\""content\"":[]}""}
+[REST-EXEC create_en]
+[REST-CAPTURE create_en.body.id → EN_ID]
+[REST-CAPTURE create_en.body.permalink → EN_PERMALINK]
+[REST-OP create_fr]
+POST {{ADMIN_URL}}/api/page-builder-pages/create-group-page
+Content-Type: application/json
+Body: {""name"":""AGENT-TEST-VCST4935-gql134-fr"",""permalink"":""/agent-test-vcst4935-gql134-fr"",""cultureName"":""fr-FR"",""storeId"":""{{STORE_ID}}"",""visibility"":true,""content"":""{\""settings\"":{},\""content\"":[]}""}
+[REST-EXEC create_fr]
+[REST-CAPTURE create_fr.body.id → FR_ID]
+[REST-CAPTURE create_fr.body.permalink → FR_PERMALINK]
+[REST-OP pub_en]
+POST {{ADMIN_URL}}/api/page-builder-pages/grouped/publishing/{{EN_ID}}?publish=true
+[REST-EXEC pub_en]
+[REST-OP pub_fr]
+POST {{ADMIN_URL}}/api/page-builder-pages/grouped/publishing/{{FR_ID}}?publish=true
+[REST-EXEC pub_fr]
+[REST-OP convert_en]
+POST {{ADMIN_URL}}/api/page-builder-multilanguage-pages/convert/{{EN_ID}}
+[REST-EXEC convert_en]
+[REST-CAPTURE convert_en.body.id → ROOT_ID]
+[REST-OP link_fr]
+POST {{ADMIN_URL}}/api/page-builder-multilanguage-pages/{{ROOT_ID}}/link/{{FR_ID}}
+[REST-EXEC link_fr]
+[REST-OP create_de]
+POST {{ADMIN_URL}}/api/page-builder-multilanguage-pages/{{ROOT_ID}}/languages/de-DE
+[REST-EXEC create_de]
+[REST-OP create_es]
+POST {{ADMIN_URL}}/api/page-builder-multilanguage-pages/{{ROOT_ID}}/languages/es-ES
+[REST-EXEC create_es]
+[REST-CAPTURE create_es.body.id → ES_ID]
+[REST-OP pub_es]
+POST {{ADMIN_URL}}/api/page-builder-pages/grouped/publishing/{{ES_ID}}?publish=true
+[REST-EXEC pub_es]
+[REST-OP arch_es]
+POST {{ADMIN_URL}}/api/page-builder-pages/grouped/archive?ids={{ES_ID}}
+[REST-EXEC arch_es]
+[GQL-OP slug_en]
+  query { slugInfo(permalink: ""{{EN_PERMALINK}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { entityInfo { id } } }
+[GQL-EXEC slug_en]
+[WAIT until=slug_en timeout=60 interval=3] data.slugInfo.entityInfo.id is non-null
+[GQL-CAPTURE slug_en.data.slugInfo.entityInfo.id → EN_DOC]
+[GQL-OP alt]
+  query { pageDocument(id: ""{{EN_DOC}}"") { id cultureName alternates { id cultureName permalink } } }
+[GQL-EXEC alt]
+[WAIT until=alt timeout=60 interval=3] data.pageDocument.alternates.length = 2","[ERRORS label=create_en] HTTP 200
+[ERRORS label=create_fr] HTTP 200
+[ERRORS label=convert_en] HTTP 200
+[ERRORS label=create_es] HTTP 200
+[ERRORS label=alt] errors[] empty
+[COUNT label=alt] data.pageDocument.alternates.length = 2
+[COUNT label=alt] data.pageDocument.alternates[*?cultureName=en-US].length = 1
+[COUNT label=alt] data.pageDocument.alternates[*?cultureName=fr-FR].length = 1
+[COUNT label=alt] data.pageDocument.alternates[*?cultureName=de-DE].length = 0
+[COUNT label=alt] data.pageDocument.alternates[*?cultureName=es-ES].length = 0
+[DATA label=alt] data.pageDocument.alternates[*?cultureName=fr-FR].permalink = {{FR_PERMALINK}}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",The Draft de-DE or the Archived es-ES version is listed; two entries for one language; fr-FR entry carries the root permalink instead of its own; errors[] non-empty,"[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/page-builder-multilanguage-pages/{{ROOT_ID}}/archive-all]
+[REST POST /api/page-builder-pages/grouped/archive?ids={{EN_ID}}]
+[REST POST /api/page-builder-pages/grouped/archive?ids={{FR_ID}}]","VCST-4935 · Archetype:SCOPE · Technique:DT · Provenance: {SPEC} VCST-4935 dev comment 2026-10-21 §2 x-cms row (alternates = published translations in the store languages, one per language) and §1 AC5 row; Archived never Outdated and never served (BL-SEO-002)",Draft
+CMS-GQL-135,Product and category slugs resolve unchanged through the page-first resolver,xCMS > Page documents > Multilanguage,Critical,"BL-SEO-001, BL-SEO-002",,"Runner-native. Authenticated B2B storefront buyer (ACME_BUYER, org-granted), no fixtures: B2B-store requires an authenticated buyer for catalog queries (anonymous categories/products return errors[] Unauthorized with data null), so the buyer token is acquired first. A product and a category of {{STORE_ID}} are discovered through the catalog queries, in en-US and fr-FR, and resolved through slugInfo, the same resolver the page-first PageDocumentSeoResolver now runs first for every slug. A never-existing slug must resolve to an empty entityInfo. Assertions compare ids and never counts or names.",storeId={{STORE_ID}},"[AUTH role=ACME_BUYER]
+[GQL-OP list_cats_en]
+  query { categories(storeId: ""{{STORE_ID}}"" first: 1 cultureName: ""en-US"") { items { id slug } } }
+[GQL-EXEC list_cats_en]
+[GQL-CAPTURE list_cats_en.data.categories.items.0.id → CAT_ID]
+[GQL-CAPTURE list_cats_en.data.categories.items.0.slug → CAT_SLUG_EN]
+[GQL-OP list_cats_fr]
+  query { categories(storeId: ""{{STORE_ID}}"" first: 1 cultureName: ""fr-FR"") { items { id slug } } }
+[GQL-EXEC list_cats_fr]
+[GQL-CAPTURE list_cats_fr.data.categories.items.0.id → CAT_ID_FR]
+[GQL-CAPTURE list_cats_fr.data.categories.items.0.slug → CAT_SLUG_FR]
+[GQL-OP list_prod_en]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 cultureName: ""en-US"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { items { id slug } } }
+[GQL-EXEC list_prod_en]
+[GQL-CAPTURE list_prod_en.data.products.items.0.id → PROD_ID]
+[GQL-CAPTURE list_prod_en.data.products.items.0.slug → PROD_SLUG_EN]
+[GQL-OP list_prod_fr]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 cultureName: ""fr-FR"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { items { id slug } } }
+[GQL-EXEC list_prod_fr]
+[GQL-CAPTURE list_prod_fr.data.products.items.0.id → PROD_ID_FR]
+[GQL-CAPTURE list_prod_fr.data.products.items.0.slug → PROD_SLUG_FR]
+[GQL-OP slug_cat_en]
+  query { slugInfo(slug: ""{{CAT_SLUG_EN}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { entityInfo { objectType objectId } } }
+[GQL-EXEC slug_cat_en]
+[GQL-OP slug_cat_fr]
+  query { slugInfo(slug: ""{{CAT_SLUG_FR}}"" storeId: ""{{STORE_ID}}"" cultureName: ""fr-FR"") { entityInfo { objectType objectId } } }
+[GQL-EXEC slug_cat_fr]
+[GQL-OP slug_prod_en]
+  query { slugInfo(slug: ""{{PROD_SLUG_EN}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { entityInfo { objectType objectId } } }
+[GQL-EXEC slug_prod_en]
+[GQL-OP slug_prod_fr]
+  query { slugInfo(slug: ""{{PROD_SLUG_FR}}"" storeId: ""{{STORE_ID}}"" cultureName: ""fr-FR"") { entityInfo { objectType objectId } } }
+[GQL-EXEC slug_prod_fr]
+[GQL-OP slug_none]
+  query { slugInfo(slug: ""agent-test-vcst4935-never-exists-gql135"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { entityInfo { objectType id objectId } } }
+[GQL-EXEC slug_none]","[ERRORS label=slug_cat_en] errors[] empty
+[DATA label=slug_cat_en] data.slugInfo.entityInfo.objectId = {{CAT_ID}}
+[ERRORS label=slug_cat_fr] errors[] empty
+[DATA label=slug_cat_fr] data.slugInfo.entityInfo.objectId = {{CAT_ID_FR}}
+[ERRORS label=slug_prod_en] errors[] empty
+[DATA label=slug_prod_en] data.slugInfo.entityInfo.objectId = {{PROD_ID}}
+[ERRORS label=slug_prod_fr] errors[] empty
+[DATA label=slug_prod_fr] data.slugInfo.entityInfo.objectId = {{PROD_ID_FR}}
+[ERRORS label=slug_none] errors[] empty
+[NULL label=slug_none] data.slugInfo.entityInfo.id","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",A product or category slug resolves to nothing or to a Page Builder page after the Pages upgrade; the fr-FR slug resolves a different entity; the never-existing slug resolves to an entity; errors[] non-empty,none,"VCST-4935 · Archetype:PARITY · Technique:EP · Probe:VC-PLATFORM-002 · Provenance: {BL} BL-SEO-001 (a localized slug resolves in its language) and BL-SEO-002; {DOC} VirtoOZ Platform User Guide, Multilingual SEO URLs; the page-first resolver change is the {SPEC} dev comment 2026-10-21 §2 vc-module-pages row · Probe:VC-PLATFORM-002",Draft

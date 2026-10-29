@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-28",
-    "totalSuites": 168,
+    "generated": "2026-10-29",
+    "totalSuites": 170,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1600,7 +1600,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 19,
+      "testCount": 22,
       "estimatedMinutes": 8,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1611,7 +1611,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 19,
+        "machine": 22,
         "browser": 0,
         "manual": 0
       }
@@ -1778,7 +1778,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 157,
+      "testCount": 161,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1793,7 +1793,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 153,
+        "machine": 157,
         "browser": 1,
         "manual": 0,
         "deprecated": 3
@@ -2145,6 +2145,62 @@
       ],
       "requiresModules": [
         "VirtoCommerce.PageBuilderModule"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "059m",
+      "name": "Page Builder — Multilanguage Pages",
+      "file": "regression/suites/Backend/page-builder/059m-page-builder-multilanguage.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 33,
+      "estimatedMinutes": 60,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "cms",
+        "pages",
+        "multilanguage",
+        "hreflang",
+        "admin",
+        "storefront",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.PageBuilderModule"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "059p",
+      "name": "Page Builder — Permalink Conflicts",
+      "file": "regression/suites/Backend/page-builder/059p-page-builder-permalink-conflicts.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 28,
+      "estimatedMinutes": 45,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "cms",
+        "pages",
+        "permalink",
+        "publishing",
+        "conflict",
+        "xapi",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.PageBuilderModule",
+        "VirtoCommerce.Pages",
+        "VirtoCommerce.XCMS"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -3920,7 +3976,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 29,
+      "testCount": 42,
       "estimatedMinutes": 45,
       "agent": "qa-frontend-expert",
       "tags": [

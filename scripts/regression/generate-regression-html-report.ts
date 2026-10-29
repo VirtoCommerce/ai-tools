@@ -28,7 +28,7 @@ import { markRunStalled, clearRunStall, DEFAULT_IDLE_LIMIT_MS } from "./reap-sta
 
 type Verdict = "PASS" | "FAIL" | "SKIPPED" | "BLOCKED" | "PENDING" | "EMPTY" | "UNKNOWN";
 
-interface NormCase {
+export interface NormCase {
   id: string;
   title: string;
   status: Verdict;
@@ -41,7 +41,7 @@ interface NormCase {
   trace: string | null;
 }
 
-interface NormSuite {
+export interface NormSuite {
   suiteId: string;
   suiteName: string;
   category: "GraphQL" | "Frontend" | "Backend" | "Other";
@@ -651,7 +651,7 @@ export function applyCaseJsonl(raw: Record<string, unknown>, runDir: string, sui
   raw.testCases = cases;
 }
 
-function loadAllSuites(runDir: string): NormSuite[] {
+export function loadAllSuites(runDir: string): NormSuite[] {
   const allShots = listAllShots(runDir);
   const runId = runDir.replace(/[\\/]+$/, "").split(/[\\/]/).pop() ?? "";
   // Broadened to catch browser-suffixed files (suite-072b-…-results-chrome.json)

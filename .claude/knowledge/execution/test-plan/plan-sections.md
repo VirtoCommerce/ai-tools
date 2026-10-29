@@ -1,7 +1,8 @@
 # Test plan — sections both modes share
 
 Read by [`/qa-test-plan`](../../../commands/qa-test-plan.md) in both modes: [`sprint-mode.md`](sprint-mode.md) and
-[`stable-mode.md`](stable-mode.md). Moved verbatim from the command on 2026-10-16. Where a passage names the sprint
+[`stable-mode.md`](stable-mode.md). Moved verbatim from the command on 2026-10-16; §Waves moved here from
+`stable-mode.md` on 2026-10-28, when sprint plans started using waves too. Where a passage names the sprint
 (`sprintTrigger`, "this sprint"), a stable plan reads it as the release and its components.
 
 ## Risk assessment
@@ -118,6 +119,42 @@ Write the section as:
 
 The "Not chartered" line is mandatory: a silently omitted Critical domain is indistinguishable from one
 that was considered and correctly ruled out.
+
+## Waves — splitting the run between owners
+
+A regression that more than one person runs is split into **waves**, written to a release folder
+([`release-folder.md`](../../../skills/qa-run/release-folder.md) — the contract) and run with `/qa-run <release> <wave>`
+([`waves.md`](../../../skills/qa-run/waves.md)). Both modes build them the same way, over their own suite list: a stable
+plan over the suites its bundle diff scoped, a sprint plan over its §5.1.1 Frontend suites (all of §5.1 with `--with-backend`). The shape is **W0 first, then independent waves, WX last**, so after the smoke gate every owner works at the same
+time and nobody waits for anybody:
+
+| Wave | Holds | Depends on | Runs |
+|---|---|---|---|
+| **W0** smoke gate | the smoke cases of the scope | — | first, one owner, alone |
+| **W1 … Wn** one per domain group | every case of that group's suites, all priorities | **W0 only** | in parallel, one owner each |
+| **WX** exclusive window | env-wide cases | every other wave | last, one owner, alone |
+
+1. **Independent means independent:** a domain wave lists only `W0` in `dependsOn` — never another domain wave, and no
+   wave waits for a whole priority tier. A domain group that cannot run beside another one (it consumes the other's
+   disposable fixtures or pooled state, [`../../../rules/test-data.md`](../../../rules/test-data.md) §DISPOSABLE
+   FIXTURES rule 4) is merged into it — never ordered after it.
+2. **A wave runs all its priorities in one run**, the way a sprint regression always ran its plan — no wave waits for
+   a priority tier of another. A long wave may run in three priority passes instead (`--by-priority`,
+   [`waves.md`](../../../skills/qa-run/waves.md) Step 3). Priorities come from the cases themselves; never re-grade a
+   case in the plan.
+3. **One owner keeps one domain** across all its priorities, so its data stays in one pair of hands, and **every suite is
+   in exactly one wave** — the smoke suites only in W0 — so runs are recorded without double counting. The one overlap:
+   a suite whose env-wide cases go to WX sits in both (`exclusive` in WX). `release:check` enforces it.
+4. **Env-wide cases** (settings, job schedules, reindex/rebuild, restore, restart, re-seed — contract §7.2) go into
+   `exclusive` and the WX wave, out of every domain wave — and so does a suite whose manifest `notes` say to run it
+   alone or in an operator window. A manifest `exclusiveGroup` is **not** by itself a WX reason: it keeps its members
+   from running beside EACH OTHER only (`config/test-suites.schema.json`), so the whole group goes into one domain wave,
+   whose owner runs its members one after another.
+5. **Size** each wave with `npm run regression:plan -- <suite ids>` (and `--cases <tier>` per tier); a wave fits one
+   owner's day — a domain too big for that is split into two independent waves by suite, never by tier. Numbers only
+   from that output.
+6. **Prerequisites per wave:** seed profiles (`npm run models:check -- --plan <profile>`,
+   [`/qa-seed-data`](../../../skills/qa-seed-data/SKILL.md)), personas per owner (contract §7.1), env settings.
 
 ## Rules
 
