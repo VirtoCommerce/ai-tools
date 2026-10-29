@@ -359,13 +359,31 @@ Impersonation of IMPERSONATE_TARGET active. IMPERSONATE_TARGET has at least one 
 [STATE] SUPPORT_AGENT's own orders are NOT visible in this session","[API] GraphQL orders query returns orders with customerId = @td(IMPERSONATE_TARGET.userId)
 [CONSOLE] No JS errors on orders page during impersonation","SUPPORT_AGENT's own orders shown; empty orders list despite target having orders; 403 on orders endpoint; console TypeError","Stop impersonation.
 [PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-005 | Promoted: REG-2026-09-07-1342 (2026-09-07) | Behavior:auth.impersonate.acts-as-target | DataProfile:profile.auth.impersonate-acts-as-target",Automated
-"IMP-022","Admin Entry Point — 'Login on behalf' Absent for Administrator-type User Records","LoginOnBehalf > Admin Entry Point > Non-Customer User","Medium","BL-AUTH-005, BL-AUTH-006",,"[PRE:SIGNIN_AS:ADMIN] (Admin SPA — back_url={{BACK_URL}})
-Admin authenticated. An Administrator-type platform user record exists and is known.","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/#!/workspace/security
+"IMP-022","Admin Entry Point — 'Login on behalf' Available for an Administrator-type Target; Impersonation Succeeds, Banner and 'Back to' Revert Work (documented)","LoginOnBehalf > Admin Entry Point > Administrator Target","Medium","BL-AUTH-010, BL-AUTH-011",,"[PRE:SIGNIN_AS:ADMIN] (Admin SPA — back_url={{BACK_URL}})
+Admin authenticated. The Administrator-type target is the built-in administrator account (data.auth.account.admin, alias ADMIN_USER, login {{ADMIN}}) — a record with Account type 'Administrator', distinct from the operator below. The storefront operator is SUPPORT_AGENT, whose role holds platform:security:loginOnBehalf (counterpart check: it can impersonate IMPERSONATE_TARGET, IMP-039). Documented behaviour under test: an operator holding that permission 'can sign in as any user, including an administrator'; the session is recorded for audit, not restricted. If SUPPORT_AGENT cannot impersonate IMPERSONATE_TARGET either in this run, the operator lacks the permission: BLOCKED, not FAIL.","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, operator_name=@td(SUPPORT_AGENT.name), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{BACK_URL}}/#!/workspace/security
 [BLADE] Open 'Users' list blade
-[GRID] Search for a user with Administrator account type (e.g., 'admin')
-[BLADE] Open Administrator user's detail blade
-[ASSERT] Check toolbar for 'Login on behalf' button presence","[DOM] 'Login on behalf' button is absent from the Administrator user's blade toolbar
-[DOM] Alternatively: if present, clicking it should fail with appropriate error — Administrator accounts cannot be impersonated on storefront","[CONSOLE] No JS errors on blade open","'Login on behalf' button present for admin-type users and silently opens an impersonation session for an admin account on storefront","Admin SPA session untouched — no cleanup needed.","VCST-4725, BL-AUTH-006, BL-AUTH-005 | Behavior:auth.impersonate.no-target-guard | DataProfile:profile.auth.impersonate-no-target-guard","Draft"
+[GRID] Search for the built-in administrator account (login {{ADMIN}}) and confirm its row shows Account type 'Administrator'
+[BLADE] Open that Administrator user's detail blade; note its displayed user name as TARGET_NAME
+[ASSERT] Toolbar shows the 'Login on behalf' button, enabled
+[ACT] Click 'Login on behalf' toolbar button
+[WAIT] New browser tab opens on {{FRONT_URL}}/account/impersonate/<target userId> showing the Security verification form (operator not signed in on the storefront)
+[ACT] Fill the email input: @td(SUPPORT_AGENT.email)
+[ACT] Fill the password input: @td(SUPPORT_AGENT.password)
+[ACT] Click 'Verify and continue'
+[WAIT] Storefront session switches to the Administrator target
+[ASSERT] Impersonation banner: operator label (data-test-id='operator-name-label') shows @td(SUPPORT_AGENT.name), the 'logged in as' separator, and the account button (data-test-id='account-button') shows TARGET_NAME
+[ACT] Open the account-menu popup (data-test-id='account-button')
+[ASSERT] 'Back to <operator name>' row (data-test-id='back-to-operator-row') is present
+[ACT] Click 'Back to <operator name>' row
+[WAIT] Page navigates to the operator landing route
+[ASSERT] Banner is gone; account button shows @td(SUPPORT_AGENT.name); URL is not the sign-in route","[DOM] Admin SPA: 'Login on behalf' button is PRESENT and enabled in the toolbar of an Administrator-type user's blade (documented: login on behalf is not limited to customer accounts)
+[STATE] Clicking it opens a NEW tab on {{FRONT_URL}}/account/impersonate/<target userId> with the Security verification form
+[STATE] After the operator verifies, impersonation SUCCEEDS: the storefront session is the Administrator target's, no error is shown, no sign-in redirect
+[DOM] Banner shows '@td(SUPPORT_AGENT.name)' + 'logged in as' + TARGET_NAME (operator and target are different people, not a circular banner)
+[DOM] 'Back to <operator name>' is offered in the account-menu popup during the session
+[STATE] After 'Back to <operator name>': impersonation banner removed, account button shows @td(SUPPORT_AGENT.name), no re-authentication prompt, URL is not the sign-in route","[NETWORK] POST /connect/token (grant_type=impersonate, target user_id) returns HTTP 200 — not 4xx
+[NETWORK] The revert POST /connect/token carries grant_type=impersonate with an empty user_id; no grant_type=password call is made
+[CONSOLE] No JS errors in the Admin SPA blade or in the storefront tab","'Login on behalf' button absent or disabled for the Administrator target in the Admin blade; the impersonate grant is refused (4xx), an error is shown or the form loops for an Administrator target although the operator holds loginOnBehalf and can impersonate a customer; banner missing, shows the operator twice, or shows a name other than the target's; 'Back to <operator name>' row absent; revert redirects to sign-in or leaves the target session active; console TypeError","If still impersonating, click 'Back to <operator name>' in the account-menu popup, then [PRE:CLEAR_SESSION] on the storefront and close the impersonation tab. Admin SPA session untouched; the target account is read-only (never locked, edited or deleted).","VCST-6608 (closed, by design); VirtoCommerce/vc-platform docs/user-guide/login-on-behalf.md §Security (dev; PR #3117, VCST-5898); vc-docs platform/user-guide/docs/security/login-on-behalf.md | Behavior:auth.impersonate.no-target-guard | DataProfile:profile.auth.impersonate-no-target-guard","Draft"
 "IMP-023","Token Network Failure During Form Submit — Error Shown Not Blank Screen","LoginOnBehalf > Form Flow > Network Error","Medium","BL-AUTH-005","ECL-14.1","[PRE:CLEAR_SESSION]
 Unauthenticated user. Security verification form rendered. Network intercept available via Playwright `page.route()` (executed through browser_run_code_unsafe).","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email)","[PRE:SIGNOUT]
 [NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
@@ -719,14 +737,14 @@ SUPPORT_AGENT has CanImpersonate. IMPERSONATE_TARGET has a security account. Ope
 [ACT] Click 'Login on behalf' in the dropdown
 [WAIT] Security Verification Informer / confirmation modal opens (PR #2280 members.vue)
 [ASSERT] Confirmation modal contains 'You are logging in on behalf of' text and target identifier
-[ASSERT] 'Continue' and 'Cancel' buttons are visible
+[ASSERT] 'OK' and 'Cancel' buttons are visible (KB-3DCCDC7A)
 [ACT] Click 'Cancel' button in the modal
 [WAIT] Modal closes","[DOM] Confirmation modal closes after clicking 'Cancel'
 [NAV] URL remains {{FRONT_URL}}/company/members — no navigation to /account/impersonate/{userId}
 [STATE] Operator session is preserved (header still shows @td(SUPPORT_AGENT.email) identity, not target's)
 [STATE] No impersonation banner is rendered
 [DOM] Company members table is still visible (user not redirected away)","[NETWORK] No POST /connect/token with grant_type=impersonate issued after Cancel (no impersonation attempt)
-[CONSOLE] No JS errors on modal open or Cancel click","Modal does not open after clicking 'Login on behalf'; 'Cancel' button absent from modal; Cancel navigates to /account/impersonate/{userId} (modal Cancel does not prevent navigation); impersonation banner appears after Cancel; console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-007, ECL-14.1; Generated VCST-4906 / PR #2280 (2026-05-14); confirmation modal Cancel path from members.vue +44/-6 | Promoted: REG-2026-09-07-1342 (2026-09-07)",Automated
+[CONSOLE] No JS errors on modal open or Cancel click","Modal does not open after clicking 'Login on behalf'; 'Cancel' button absent from modal; Cancel navigates to /account/impersonate/{userId} (modal Cancel does not prevent navigation); impersonation banner appears after Cancel; console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-007, ECL-14.1; Generated VCST-4906 / PR #2280 (2026-05-14); confirmation modal Cancel path from members.vue +44/-6 | Promoted: REG-2026-09-07-1342 (2026-09-07)","Automated"
 "IMP-042","Header — 'Back to {operator}' Item Visible During Impersonation (Desktop)","LoginOnBehalf > Exit > Revert UI Presence","High","BL-AUTH-006, BL-AUTH-007","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 Silent impersonation of IMPERSONATE_TARGET completed (banner visible). Viewport is desktop (≥1024px). PR #2280 account-menu popup (top-header.vue / main-menu.vue) adds a 'Back to {operator}' link/button in the header during active impersonation.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
