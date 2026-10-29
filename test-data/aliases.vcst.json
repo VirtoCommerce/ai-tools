@@ -945,12 +945,12 @@
     "contactId": "089afd9f-fefc-43cb-9219-8f42b45047c0"
   },
   "SR_ORDER_ACME_WIN_NEW": {
-    "id": "11463564-0ff0-4c73-bb01-eec7725570b2",
-    "createdDate": "2026-10-13T07:46:53.7510695Z"
+    "id": "a450fdbb-a8b5-4db4-ba78-9c24006f7bc1",
+    "createdDate": "2026-10-28T14:30:56.5936011Z"
   },
   "SR_ORDER_ACME_WIN_PROC": {
-    "id": "550825f4-c0ec-41e3-b173-1172351e1b40",
-    "createdDate": "2026-10-13T07:46:59.0473958Z"
+    "id": "aea03312-3a0c-4f37-9975-8990f5f0e469",
+    "createdDate": "2026-10-28T14:31:09.8002082Z"
   },
   "CAT_EMPTY": {
     "id": "ccb46dbd-c966-4159-8093-9c5a2f264603",
@@ -967,8 +967,8 @@
     "url": "/seed-test-fixtures/agent-test-seo-configured-product"
   },
   "SR_ORDER_ACME_ELEC": {
-    "id": "c030493a-fb39-4e35-b7d3-65dadd7aa8c7",
-    "createdDate": "2026-10-13T07:47:21.3477265Z"
+    "id": "e01f1da1-2eeb-4ea2-8b50-8066572090a8",
+    "createdDate": "2026-10-28T14:31:25.4006242Z"
   },
   "MSN_ORDERVALUE": {
     "id": "74e4f6b5-7d81-4b94-a799-7623a022d653",
@@ -1654,7 +1654,8 @@
     "seeded_values_json": "[\"Organization employee\",\"Purchasing agent\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\",\"AGENT-TEST-Org-Returns-View-Submit\",\"AGENT-TEST-Org-Returns-Viewer\"]",
     "narrowed_values": "[\"Organization employee\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\",\"AGENT-TEST-Org-Returns-View-Submit\",\"AGENT-TEST-Org-Returns-Viewer\"]",
     "narrowed_omitted_role": "Purchasing agent",
-    "returns_roles": "AGENT-TEST-Org-Returns-View-Submit;AGENT-TEST-Org-Returns-Viewer"
+    "returns_roles": "AGENT-TEST-Org-Returns-View-Submit;AGENT-TEST-Org-Returns-Viewer",
+    "narrowed_picker_keyword": "Purchasing agent"
   },
   "SC_MULTI": {
     "_inline": true,
@@ -3326,5 +3327,41 @@
     "id": "13e7ce11-ccc2-48ec-b7d8-13b6937f5188",
     "createdDate": "2026-10-28T14:31:16.7261911Z",
     "customerId": "b8e16c28-a01b-4712-a855-9677bd4942ac"
+  },
+  "SR_STATS_CART_SPLIT": {
+    "id": "20df7783-7a53-4579-8ffe-b6d80075b277",
+    "name": "default"
+  },
+  "ORG_ADDR22": {
+    "org_id": "9171f45d-fbcd-4f92-a723-99687e629aea",
+    "org_name": "AGENT-TEST-Org-Addr22-20260811",
+    "count": 22
+  },
+  "ORG_ADDR22_ADMIN": {
+    "email": "agent-test-addr22-admin-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "bd8d6a08-96bc-485e-9e3e-33e10d022f0a",
+    "contactId": "91a63a7a-f3ef-45ba-b86a-9d4bbe0fd7be"
+  },
+  "DISCONTINUED_ORDER_BUYER": {
+    "email": "agent-test-discontinued-buyer-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "5be82f6e-ad9d-4fe0-a1bd-a5d2316511e9",
+    "contactId": "56249ab1-2cf8-451f-aede-6a343b7839f8"
+  },
+  "DISCONTINUED_ITEM_ORDER": {
+    "id": "d1ee1721-da49-4ee8-9ee7-74327d4afd07",
+    "number": "AGENT-TEST-ORD-DISCONTINUED",
+    "discontinued_sku": "AGENT-TEST-DISC-SKU-20260811",
+    "discontinued_product_id": "3681ebaf-0ea5-4330-8623-2563968e5bc4"
+  },
+  "PERSONAL_NON_ORG_USER": {
+    "email": "agent-test-personal-virto-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "35a04982-3cb5-4ffd-8092-2c5c15c44bb3",
+    "contactId": "40e2ab80-988a-420c-999a-c2cd37b3f321"
   }
 }

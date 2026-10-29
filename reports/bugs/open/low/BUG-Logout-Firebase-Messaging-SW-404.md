@@ -16,7 +16,7 @@ Sign in (notification permission not granted), open any page, sign out; read the
 ## Expected / Actual
 No failed request on logout · one 404 + console error per logout (2/2; guest and signed-in page loads 0/5).
 
-![After logout on the configurable PDP](../../screenshots/Logout-Firebase-Messaging-SW-404/02-config-pdp-after-logout.png)
+![After logout on the configurable PDP](../../../screenshots/Logout-Firebase-Messaging-SW-404/02-config-pdp-after-logout.png)
 
 ## Root Cause Analysis
 - `client-app/modules/push-messages/composables/useWebPushNotifications/useWebPushNotificationsModule.ts`: L68 hooks `deleteFcmToken` on logout; L91–95 call `deleteToken(messaging)` without checking a token was obtained.

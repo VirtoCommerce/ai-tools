@@ -1,0 +1,53 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+PKS-013,Passkey — OTP store shows the passkey button on the code form and code sign-in still works,Auth > Passkey sign-in > Storefront,High,,,"Build under test: platform 3.1091.0-pr-3144, storefront theme 2.61.0-pr-2601, Passkeys module 3.1000.0-pr-1, Customer module with customer#324 - all open PRs on 2026-10-28. On a stand without them the case is BLOCKED for the build, never FAIL, and is never re-based to the older behaviour.
+CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get, or the ceremony silently does nothing.
+Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, one organization) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey:verify (unlock, failed-attempt count 0, leftover passkeys removed). The case registers its own passkeys in the virtual authenticator and deletes every passkey it created in Cleanup.
+REQUIRES the OTP module (VirtoCommerce.Otp, 3.1001.0 on the stand that carries this change). On a stand without the module the case is BLOCKED for the build, never FAIL.
+Runs ALONE: this case flips the store-wide OtpSignIn.Enabled setting of {{STORE_ID}} through Admin (Stores > {{STORE_ID}} > Settings > 'OTP Sign-In' > 'General', as the OTP storefront suite does) and restores it in Cleanup; this suite holds the exclusiveGroup store-setting:OtpSignIn.Enabled, which separates it from the OTP suites only.
+State under test: OtpSignIn.Enabled is on, so the default sign-in view is the code flow; the passkey button must still be there and both methods must still sign the buyer in.",user=@td(PK_BUYER.email),"[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] set up the virtual authenticator over CDP (Preconditions CEREMONY)
+[SETUP] read OtpSignIn.Enabled of {{STORE_ID}} (GET {{BACK_URL}}/api/stores/{{STORE_ID}}, settings[]) as otpBefore
+[PRE:CLEAR_SESSION]
+--- SCREEN: Admin ---
+[NAV] Navigate to {{BACK_URL}}
+[ACT] Sign in to the admin as {{ADMIN_EMAIL}}
+[ACT] Open Stores > {{STORE_ID}} > Settings widget > 'OTP Sign-In' > 'General'
+[ACT] Turn 'Enable OTP sign-in' on (leave it on if it already is)
+[SAVE] Save the store blade
+--- SCREEN: Default OTP view ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[WAIT] reload /sign-in every 15s for up to 3 minutes until the page offers the code form (the storefront reads the setting once per load and the xAPI settings cache can lag)
+[ASSERT] Read the default view: the 'Email' field, the 'Continue' button and whether 'Sign in with Passkey' is shown
+[ACT] Fill 'Email' with @td(PK_BUYER.email)
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown (up to 15s)
+[ASSERT] Read the step title and the number of code cells
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer and {""keyword"":""@td(PK_BUYER.email)"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to @td(PK_BUYER.email) created after T0 appears (SMTP may be off, the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong> in that message body
+[ACT] Type the 6 digits of code into 'Code'
+[WAIT] the page leaves /sign-in (up to 15s)
+[ASSERT] Read the account button
+--- SCREEN: Register the passkey (signed in by code) ---
+[NAV] Navigate to {{FRONT_URL}}/account/security
+[ACT] Click the control that adds a passkey
+[WAIT] the authenticator answers and one row appears in the list
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous (the account button no longer names a customer)
+--- SCREEN: Passkey sign-in on the OTP store ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Click 'Sign in with Passkey'
+[WAIT] the page leaves /sign-in (up to 15s)
+[ASSERT] Read the account button and whether a code step appeared
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer and JSON body {""userName"":""@td(PK_BUYER.email)"",""startDate"":T0,""take"":20,""sort"":""createdDate:desc"",""signInTypes"":[""OTP"",""Passkey""]}","[DOM] The default view of an OTP store shows the button 'Sign in with Passkey' next to the code flow {SPEC} (VCST-6121: the passkey is offered wherever the store offers it) {OBSERVED} (1c: the button is a slot on the sign-in page, shown iff Passkey is in the store authentication types)
+[DOM] The code step title reads 'Check your email' and shows exactly 6 code cells {OBSERVED} (104 OTP-001)
+[STATE] The emailed code signs the customer in: the page leaves /sign-in and the account button names the buyer {SPEC} (VCST-5748: a requested code signs the user in) {OBSERVED} (104 OTP-001)
+[STATE] The passkey signs the same buyer in on the OTP store with no code step: the page leaves /sign-in and no 'Check your email' step appeared {SPEC} (VCST-6121)
+[COUNT] The sign-in log holds a signInType OTP row and a signInType Passkey row, both succeeded, for the buyer after T0 {SPEC} (VCST-6121: audit events handle passkey) {OBSERVED} (105 OTP-026: OTP rows carry signInType OTP)","[API] sign-in log holds the OTP row (the code sign-in) and the Passkey row for the buyer
+[CONSOLE] no TypeError
+[NETWORK] no 5xx on /connect/token",The passkey button is missing from the OTP default view; the code sign-in broke after the sign-in refactor; the passkey asks for a code; the OTP setting is not restored,"Restore OtpSignIn.Enabled of {{STORE_ID}} to otpBefore through the Admin blade and read it back
+Sign in and delete every passkey this case created, sign out
+Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · Archetype:PARITY · Technique:EP · Behavior:auth.signin.method-choice · Catches:turning OTP on hides the passkey button, or the shared sign-in refactor breaks code sign-in",Draft

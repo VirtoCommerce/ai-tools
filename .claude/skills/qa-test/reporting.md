@@ -332,7 +332,8 @@ in the body*, ONE comment however long (never a split across comments; a body th
 fit is attached to the ticket and referenced from that one comment), and never a `reports/ba/` path standing in for content a reader cannot reach; **§5a** for
 the body dialect (Markdown for Jira, HTML for Azure — never Jira wiki markup) and **§5c** for its one
 carve-out: a screenshot needs an attachment plus a **wiki-markup** reference, which makes the whole Jira
-body wiki. §5c also records the three ADF dead ends, so do not re-probe them.
+body wiki. §5c also records the three ADF dead ends, so do not re-probe them. Each shopper / administrator
+flow carries a walkthrough GIF — mandatory, `reports-policy.md` §5.2a.
 
 **Redact and contain first** (§10.4): secrets scrubbed regardless of destination, and on a client project
 every client host, path, identifier and datum. A payload that cannot be shown clean is described in

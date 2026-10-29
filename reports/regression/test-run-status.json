@@ -1,59 +1,29 @@
 {
-  "runId": "REG-2026-10-28-1917",
+  "runId": "REG-2026-10-28-2059",
   "status": "completed",
-  "startedAt": "2026-10-28T16:17:24.324Z",
-  "env": "vcptcore",
-  "selection": "059p,059,059m,060,050f (--ids, VCST-6442 C1)",
+  "startedAt": "2026-10-28T20:03:42.660Z",
+  "windowStart": "2026-10-28T20:03:42.660Z",
+  "selection": "042",
+  "env": "vcst",
+  "scoped": false,
+  "cases": "all",
+  "purpose": "/qa-run sprint:26-21 --frontend — P0 completion of stalled REG-2026-10-28-1013 (VCST-6417)",
+  "plan": "reports/regression/REG-2026-10-28-2059/preflight.json",
   "suites": {
-    "059p": {
+    "042": {
       "status": "done",
       "browser": "playwright-chrome",
       "lane": "browser",
-      "startedAt": "2026-10-28T16:18:36.380Z",
-      "pass": 24,
-      "fail": 3,
-      "blocked": 1,
-      "finishedAt": "2026-10-28T16:49:54.778Z"
-    },
-    "059": {
-      "status": "done",
-      "browser": "playwright-chrome",
-      "lane": "browser",
-      "startedAt": "2026-10-28T16:18:36.380Z",
-      "pass": 4,
-      "fail": 0,
-      "blocked": 1,
-      "finishedAt": "2026-10-28T16:49:54.779Z"
-    },
-    "059m": {
-      "status": "done",
-      "browser": "playwright-chrome",
-      "lane": "browser",
-      "startedAt": "2026-10-28T16:18:36.380Z",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 1,
-      "finishedAt": "2026-10-28T16:49:54.779Z"
-    },
-    "060": {
-      "status": "done",
-      "browser": "playwright-chrome",
-      "lane": "browser",
-      "startedAt": "2026-10-28T16:18:36.380Z",
-      "pass": 1,
-      "fail": 0,
-      "blocked": 1,
-      "finishedAt": "2026-10-28T16:49:54.780Z"
-    },
-    "050f": {
-      "status": "done",
-      "lane": "fastpath",
-      "startedAt": "2026-10-28T16:18:36.380Z",
-      "pass": 1,
+      "startedAt": "2026-10-28T20:04:34.927Z",
+      "attempts": 5,
+      "tests": 34,
+      "pass": 27,
       "fail": 0,
       "blocked": 2,
-      "finishedAt": "2026-10-28T16:49:54.780Z"
+      "skipped": 5,
+      "ambiguous": 0,
+      "finishedAt": "2026-10-28T20:39:35.453Z"
     }
   },
-  "finishedAt": "2026-10-28T16:50:09.478Z"
+  "finishedAt": "2026-10-28T20:27:09.690Z"
 }

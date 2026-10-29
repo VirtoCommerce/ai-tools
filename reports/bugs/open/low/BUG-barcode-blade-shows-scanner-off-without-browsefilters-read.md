@@ -26,7 +26,7 @@ Preconditions: `@td(BARCODE_STORE.id)` stored as `{"scannerEnabled":true,"fields
 | After Dismiss | the blade still shows that the data is unavailable | a clean "scanner OFF" form with no error indication |
 | Tile | not offered to a user who cannot read it | "Barcode scanner" tile shown and opens |
 
-![After Dismiss — scanner shown OFF, stored value is ON](../../screenshots/barcode-blade-scanner-off-without-browsefilters-read/SRCHA-056-FAIL-false-off-after-dismiss.png)
+![After Dismiss — scanner shown OFF, stored value is ON](../../../screenshots/barcode-blade-scanner-off-without-browsefilters-read/SRCHA-056-FAIL-false-off-after-dismiss.png)
 
 Evidence: `reports/bugs/screenshots/barcode-blade-scanner-off-without-browsefilters-read/` (`SRCHA-056-FAIL-false-disabled-blade.png` shows the banner state, `…-false-off-after-dismiss.png` shows the state after Dismiss). Trace: `reports/regression/REG-2026-09-28-1518/traces/SRCHA-056-FAIL-trace.json`. Console: `Failed to load resource: 403 … /api/catalog/barcode-search/store/AGENT-TEST-BARCODE/fields`.
 

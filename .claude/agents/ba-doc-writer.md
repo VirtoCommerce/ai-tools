@@ -369,7 +369,7 @@ the verdict** (not versions, which this mode does not print), and `testing-check
 |---|---|---|
 | 1 | `summary.json` — `layer`, `verdict`, `build.deployed` | the layer, the verdict gate, and whether the change is live at all |
 | 2 | `{RUN_DIR}/testing-checklist.md` | **every step you write** — the verified condition → case → verdict table |
-| 3 | `{RUN_DIR}/screenshots/` | referenced by filename in the guide; **never embedded in the comment** (style guide §10.2) |
+| 3 | `{RUN_DIR}/screenshots/` | step stills + a walkthrough GIF per UI flow (`reports-policy.md` §5.2a), embedded per §5c |
 | 4 | The PR diff | the changed operation name for a `developer` section |
 | 5 | `scripts/.graphql-evidence/<CASE>-*.json` | the real request/response for `developer` — never hand-written, never unredacted |
 | 6 | **VirtoOZ MCP**, via the §Project Context audience→tool map | terminology and voice, per audience |

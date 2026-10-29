@@ -1,70 +1,57 @@
-# Impersonation has no account-type gate — an Administrator account can be impersonated `[P0]` `[Security]`
+# Impersonate grant has no target guard — a non-admin operator gets an Administrator session `[Critical]` `[Security]`
 
-**Env:** vcst-qa @ Store `3.1007.0` · Customer `3.1023.0` · Theme `2.57.0-alpha.2490`
-**Found by:** `/qa-regression` REG-2026-09-07-1342, suite 082 (`IMP-022`) · triaged `REAL_BUG` · live-verified 2026-09-08
+## Status: READY_TO_SUBMIT
+**Found by:** agent — regression REG-2026-10-28-1013
+**Tracker:** [VCST-6608](https://virtocommerce.atlassian.net/browse/VCST-6608) (Relates → VCST-6417)
+
+**Env:** vcst · Platform 3.1090.0 · Theme 2.61.0-alpha.2605 · Customer 3.1031.0 · Xapi 3.1028.0 · Store 3.1011.0 · Edge (playwright-edge) · reproduced 2026-10-28T20:40Z · TRACE_ID: none (the stand sends neither `Request-Id` nor `traceparent`)
+**Evidence package:** `reports/regression/REG-2026-10-28-1013/evidence/IMP-022/` (suite 082 / IMP-022)
 
 ## Summary
-
-Neither the Admin SPA's "Login on behalf" entry point, the storefront's impersonation-verification form, nor the
-`/connect/token grant_type=impersonate` OAuth endpoint checks the **target's account type**. An operator holding
-only `loginOnBehalf` (no other administrative right) successfully minted a live storefront session impersonating
-a platform user whose `Account type = Administrator` / `isAdministrator = true`. This is distinct from the
-already-filed `BUG-nested-impersonation-privilege-escalation.md` (BL-AUTH-009, chained-token escalation) — that
-defect is about a *second* impersonation riding an already-impersonated token; this one is a missing check on the
-very *first* grant's target.
+`POST /connect/token grant_type=impersonate` checks only that the **operator** holds `loginOnBehalf` and that the
+**target** exists. An Organization maintainer (Customer-type, not an administrator) impersonated an
+Administrator-type user and received a token with `role: "__administrator"`. The Admin SPA also offers
+"Login on behalf" on Administrator-type users. Distinct from VCST-5174 (nested impersonation, closed by-design):
+this is the first grant, and the operator gains rights it never had.
 
 ## Steps to reproduce
-
-1. Sign in to Admin SPA (`{{BACK_URL}}/#!/workspace/security`) as an admin. Open Users, find an
-   Administrator-type user with a `memberId`/`storeId` set (e.g. `e2e-test-store-administrator@e2e-contoso.com`,
-   `userType=Administrator`, `isAdministrator=true`, `storeId=B2B-store`).
-2. Open that user's detail blade. Observe the "Login on behalf" button is present in the toolbar.
-3. Click it — a new tab opens `{{FRONT_URL}}/account/impersonate/<targetUserId>`, rendering the storefront's
-   security-verification form (not a silent bypass).
-4. Sign the verification form with `SUPPORT_AGENT` credentials (an operator whose own storefront role is
-   "Organization maintainer" — not a platform admin, holds `loginOnBehalf` only).
-5. `POST /connect/token grant_type=impersonate` → **HTTP 200**. Storefront redirects home with header
-   **"John Mitchell logged in as [E2E Test] Store Administrator"**. `Back to John Mitchell` reverts cleanly.
+1. Sign in to the storefront `{{FRONT_URL}}/sign-in` with a password as `@td(IMPERSONATION_ADMIN)` — Organization maintainer with `platform:security:loginOnBehalf`, `isAdministrator=false`.
+2. Open `{{FRONT_URL}}/account/impersonate/<id>` for an Administrator-type user (here the fixture `e2e-test-store-administrator@e2e-contoso.com`: `userType=Administrator`, `isAdministrator=true`, store `{{STORE_ID}}`). The Admin SPA "Login on behalf" button opens the same URL.
+3. Observe `POST {{FRONT_URL}}/connect/token` `grant_type=impersonate&user_id=<id>`.
 
 ## Expected vs actual
+**Expected:** an Administrator-type target is refused (4xx, no token) unless the operator is itself an administrator; the Admin SPA does not offer "Login on behalf" for such users.
+**Actual:**
+- `/connect/token` → **200**, 30-min token; decoded claims `sub` = target, **`role: "__administrator"`**, `vc_operator_name` = the operator.
+- Storefront header: "Impersonation Operator **logged in as** [E2E Test] Store Administrator"; `GetPageContext.user.isAdministrator: true`.
 
-**Expected:** an Administrator-type target is refused at some layer — the Admin SPA button absent for
-non-customer account types, or the OAuth grant rejecting a `user_id` whose `userType = Administrator`.
-**Actual:** all three layers permit it. The button renders, the verification form accepts SUPPORT_AGENT's
-credentials, and the token endpoint issues a valid 30-minute Bearer for the Administrator target with no
-account-type check anywhere in the chain.
+![Operator logged in as an Administrator-type user](../../screenshots/impersonation-no-account-type-gate-administrator-target/IMP-022-admin-target-impersonated.png)
+![Admin SPA offers Login on behalf on an Administrator user (regression run)](../../screenshots/impersonation-no-account-type-gate-administrator-target/IMP-022-FAIL-login-on-behalf-present-for-admin-user.png)
 
-![Login on behalf present on an Administrator-type user's blade](../../../regression/REG-2026-09-07-1342/screenshots/IMP-022-VERIFY-button-present.png)
-![Impersonation succeeded — header shows the operator logged in as the Administrator target](../../../regression/REG-2026-09-07-1342/screenshots/IMP-022-VERIFY-REPRODUCED-admin-impersonated.png)
+## Layer Validation
+| Layer | Result | Evidence |
+|-------|--------|----------|
+| 1. Storefront Frontend | FAIL (inherits) | `screenshots/IMP-022-admin-target-impersonated.png`, `screenshots/dom-impersonated-home.yml` |
+| 2. Backend Admin | FAIL | regression `screenshots/IMP-022-FAIL-login-on-behalf-present-for-admin-user.png` |
+| 3. GraphQL xAPI | FAIL (inherits) | `network/pagecontext-user-after-impersonate.json` → `isAdministrator: true` |
+| 4. Platform REST API | FAIL | `network/failing-connect-token-impersonate.json` → 200, `role: __administrator` |
 
-## Note on a secondary, non-blocking target
+**Owning layer:** Layer 4 — platform token endpoint.
 
-A second Administrator-type target (`demo_admin`, no `Container/storeId` configured) refused with *"Store URL was
-not added to the store setting. Please contact administrator"* — a **store-configuration** block, not an
-account-type refusal. It happens to be harmless here only because that particular admin record has no store
-context; it is not a defense against this defect and must not be read as one.
+## Root Cause Analysis
+See `root-cause.md` in the package. `vc-platform` `AuthorizationController.Exchange()` impersonate block: authorizes the
+operator's `SecurityLoginOnBehalf`, validates the target only for existence, then `context.User = impersonatedUser.CloneTyped()`
+and `CreateTicketAsync(impersonatedUser, …)`. `vc-module-x-api` `ContactSignInValidator` returns early for
+`context.User.IsAdministrator`. Present at the pinned platform of bundles v15 (3.1039.15) and v16 (3.1076.9).
+Alternatives ruled out: by-design (vc-docs silent; BL-AUTH-006 violation signal "a non-administrator passes a permission
+check without holding the claim"); data drift (account types read live). Not verified first-hand: calling an admin-only
+REST endpoint with the impersonated token (not done through the UI; the claim is the platform's administrator system role).
 
-## Root cause (hypothesis)
-
-No layer in the impersonation chain (Admin SPA blade toolbar, storefront `impersonate.vue` verification gate,
-platform `/connect/token grant_type=impersonate`) checks the target's `userType`/`isAdministrator`. The existing
-`SecurityLoginOnBehalf` permission check (see `AuthorizationController.IsImpersonateGrantType()`, referenced in
-the sibling `BUG-nested-impersonation-privilege-escalation.md`) authorizes the *operator*, never inspects the
-*target*.
-
-## Impact
-
-An operator with only `loginOnBehalf` — a support-desk-level permission — can obtain a live, fully-functional
-session as a platform Administrator-type account. Combined with whatever the Administrator account can reach on
-the storefront (and any Admin-SPA-adjacent capability an Administrator-type contact carries), this is a privilege
-boundary gap distinct from, and independent of, the chained-token escalation already filed.
-
-## Fix Routing
-
-- **Primary:** `vc-platform` `AuthorizationController` (or the impersonation grant handler) — reject
-  `grant_type=impersonate` when the resolved target's `userType`/`isAdministrator` marks it as a non-customer,
-  administrative account; only a customer-type target may be impersonated.
-- **Defense-in-depth:** Admin SPA — hide/disable "Login on behalf" on an Administrator-type user's blade
-  (`impersonation-menu` widget in whichever `vc-module-*` or platform Web module owns the Users blade toolbar).
-- **Layer:** backend (platform token endpoint), with an Admin SPA UI companion.
-- Do NOT auto-merge — human review required.
+## Fix Routing (→ /qa-fix)
+- **Owning layer:** Layer 4 — REST (`/connect/token`)
+- **Suggested repo:** VirtoCommerce/vc-platform
+- **repoKind:** platform
+- **Ownership hint:** platform
+- **Component / module:** Security — OpenIddict impersonate grant; Admin SPA Security users blade (companion)
+- **RCA anchor:** `src/VirtoCommerce.Platform.Web/Controllers/Api/AuthorizationController.cs` — `IsImpersonateGrantType()` block, after `FindByIdAsync(requestedUserId)`
+- **Routing confidence:** HIGH (security change — human review, not auto-fix)

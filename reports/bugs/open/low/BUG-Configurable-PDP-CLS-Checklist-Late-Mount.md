@@ -17,7 +17,7 @@ Install a `layout-shift` PerformanceObserver, load the configurable PDP cache-bu
 ## Expected / Actual
 CLS ≤ 0.1 · 0.1015 (3/3), dominant shift 0.0867 right after GetProductConfigurations.
 
-![1920 price block](../../screenshots/Configurable-PDP-CLS-Checklist-Late-Mount/02-vintage-1920-price-block.png)
+![1920 price block](../../../screenshots/Configurable-PDP-CLS-Checklist-Late-Mount/02-vintage-1920-price-block.png)
 
 ## Root Cause Analysis
 - PR #11 adds `<ProductConfigurationChecklist v-if="product.isConfigurable">` to `product-price-block.vue`; `product-configuration-checklist.vue` renders `<ul v-if="items.length">` from the async configuration, with no skeleton or reserved height.

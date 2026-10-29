@@ -222,7 +222,7 @@ verification step rather than a note.
 
 1. **A FAIL** — the failing check's state (on the MCP lanes the agent's capture is the only failure image, §5.1a), error states included (console error, 500 toast).
 2. **A bug report** — the confirmed bug, annotated.
-3. **Documentation** — a guide whose reader needs to see the screen (`ba-doc-writer`, `/qa-test` 5-docs).
+3. **Documentation** — a guide whose reader needs to see the screen (`ba-doc-writer`, `/qa-test` 5-docs); its walkthrough GIF is mandatory (§5.2a).
 4. **Visual regression** — `vs. DESIGN`, visual-axis and before/after evidence, where the image IS the check.
 5. **A tracker comment that makes a UI claim** (§5.0) — a PASS gets a capture only when that comment will show it.
 
@@ -253,6 +253,7 @@ full-page shot replaces the viewport shot, never the element shot, and still cou
 | Bug report | 1–3 | 5 |
 | Regression suite (20+ tests) | failures only | 15–20 |
 | Exploratory session | anomalies only | 10 |
+| Documentation (per audience section) | 1 walkthrough GIF per flow + its success-state stills (§5.2a) | 2 GIFs + 4 stills |
 
 **On a `/qa-test --iterate` run every round stamps `-r{N}`, round 1 included.** Round N+1 re-runs the
 **same** case IDs into the **same** folder, so an unstamped name means the round-2 PASS overwrites the
@@ -346,6 +347,37 @@ rule above. Two fit modes, and the choice is an evidence decision rather than a 
 `width` crops **silently**, so it is opt-in and the author owns the check that the cropped frame
 still shows the claim. Better still, pre-crop the stills to the region that carries it: a GIF a
 reader has to squint at fails §5.2 for the same reason a missing one does.
+
+### 5.2a Documentation — a walkthrough GIF is mandatory (2026-10-28)
+
+**§5.2 is conditional for a bug; for documentation it is not.** A how-to describes a sequence of clicks,
+and a reader follows a sequence far more reliably by watching it than by reading it. So a published
+guide — the `/qa-test` **5-docs** comment, a `/ba-analyze docs` Customer or Admin guide — carries **one
+walkthrough GIF per user-facing flow it documents**, built from stills captured step by step on the stand.
+
+| Section | Walkthrough |
+|---|---|
+| **For shoppers** / Customer guide | **GIF required**, one per documented flow (e.g. *add a passkey*, *sign in with a passkey*) |
+| **For administrators** / Admin guide | **GIF required**, one per documented blade or setting flow |
+| **For developers** | none — the request and its real response are the evidence |
+
+- **Captured for the doc, never reused from failures.** A passing step has no screenshot (§5.1), so the
+  doc step captures its own: one still per step, clicked as a real user on a Playwright lane
+  (`.claude/rules/vc-browser.md`), with an `AGENT-TEST-` account and no client data. **Every frame shows a
+  state the checklist verified `PASS`** (ticket-doc guardrail 1); a FAIL path is never animated as a how-to.
+- **Budget (documentation):** ≤ 2 GIFs per audience section, ≤ 12 frames each, ≥ 2 s per frame, width ≤ 960,
+  ≤ 5 MB. Pre-crop each still to the region the step names, so the control is legible at `|width=700!`.
+- **Stills too** — the success state of each flow is also attached as a still, for the §5.2 reason: a
+  reader cannot pause or quote a GIF.
+- **Video is optional, never instead.** A screen recording (MP4 / WebM, ≤ 2 min) may be attached *in
+  addition*; the GIF stays, because Jira animates a GIF inline while a video renders only as an attachment
+  link. The lanes still record no video (§5.2) — the GIF is built from the stills with `npm run gif`.
+- **Embedding** is [`tracker-ops.md`](tracker-ops.md) §5c — attach, wiki-markup reference, whole Jira body
+  wiki — and the three-signal `renderedBody` check of §5.0.
+- **Not captured ⇒ say so.** When a flow cannot be captured (no lane, sign-in impossible, the step needs a
+  real device), the comment still ships, and its `Not documented` line names
+  `walkthrough GIF: not captured — <reason>`. Never a placeholder, never a GIF of a different flow.
+- **Retention** is §9: never committed; the tracker attachment is the durable copy.
 
 ## 6. Console & Network Evidence
 

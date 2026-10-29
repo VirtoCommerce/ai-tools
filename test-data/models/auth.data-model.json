@@ -3,12 +3,14 @@
   "schema_version": "1.0",
   "domain_slug": "auth",
   "generated": "2026-10-21",
+  "amended": "2026-10-28",
   "metadata": {
     "scope": "The data states the auth mind map behaviours require: run personas, the OTP sign-in fixtures, disposable lockout and block accounts, the VCST-6132 case-created buyer and its membership states, the impersonation personas, and the store and platform switches (OTP, MFA, sign-in log).",
     "mind_map": ".claude/knowledge/domain/auth.mind-map.json",
-    "domain_map": ".claude/knowledge/domain/auth.md rev 2",
+    "domain_map": ".claude/knowledge/domain/auth.md rev 3",
     "built_from": "/qa-test-data-model build auth, 2026-10-21 — no live observation; seeders and aliases read at source, suite Preconditions read for the informal contract",
-    "known_limit": "MFA requirements are PR-stage (vc-module-mfa#1) and every MFA state is a SEEDER GAP: there is no dedicated MFA store or account, and the switches are shared by every suite that signs in."
+    "known_limit": "MFA requirements are PR-stage (vc-module-mfa#1) and every MFA state is a SEEDER GAP: there is no dedicated MFA store or account, and the switches are shared by every suite that signs in.",
+    "amended_from": "/qa-test-data-model update auth, 2026-10-28 — the rev-3 mind-map followups (passkey sign-in and key management, the per-user MFA flag, the 65-character Backoffice boundary); no live observation, seeders read at source, kb read"
   },
   "requirements": [
     {
@@ -1619,6 +1621,340 @@
         }
       ],
       "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.passkey-persona",
+      "entity": "User",
+      "purpose": "A seeded passkey persona: an account of its own that signs in by password on the host under test and holds no passkey yet.",
+      "required_state": {
+        "account": "one of the seed:passkey personas (AGENT-TEST-PK)",
+        "status": "Approved",
+        "lockoutEnabled": true,
+        "emailConfirmed": true,
+        "passwordExpired": false,
+        "accessFailedCount": 0,
+        "locked": false,
+        "password": "set ({{DEFAULT_TEST_PASSWORD}})",
+        "passkeys": "none"
+      },
+      "constraints": {
+        "kind_per_branch": "storefront journey, add / rename / delete, impersonation target: PK_BUYER; temporary lock, admin lock and counter-reset: PK_LOCKOUT; password delete and last-key refusal: PK_PASSKEY_ONLY; organization fallback on the passkey grant: PK_BUYER_MULTI (the only member of ORG-LOCKABLE); landing without an organization: PK_B2C; back-office passkey sign-in, REST key delete and the Sign-in methods blades: PK_BO_MANAGER (Admin Shell) and PK_BO_MANAGER_2 (AngularJS); impersonation operator: PK_OPERATOR",
+        "isolation": "per account: one case per account per run, re-armed by seed:passkey before the next"
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:passkey",
+      "td_alias": "PK_BUYER.email",
+      "cleanup": {
+        "required": true,
+        "via": "npm run seed:passkey re-arms every persona before the next run (unlock, accessFailedCount 0, flags and roles, memberships unlocked, password re-set, leftover passkeys deleted by signing in as the account); npm run seed:passkey:teardown removes them with a zero-residue assert"
+      },
+      "discriminates": "Each pair of personas differs in the one property a branch reads: PK_BUYER (Customer) against PK_BO_MANAGER (Manager) decides back-office passkey entry against customer-refused; PK_BUYER_MULTI (two different organizations) against PK_BUYER (one) gives the passkey fallback somewhere to go; PK_LOCKOUT and PK_PASSKEY_ONLY carry the destructive states so a lock or a deleted password never reaches the journey account. No key is seeded, so any key a case observes is the one it registered.",
+      "limits": "One requirement stands for the family: the case picks its alias from constraints.kind_per_branch. Destructive: a lock, a deleted password or a key left by a failed Cleanup stays on the account until the next seed:passkey re-arm, so two cases on one account in one run read each other's state. `npm run seed:passkey:verify` is --verify-only: it reports a dirty account and does not re-arm it (the 115 notes say \"re-arm with seed:passkey:verify\"). The seeder never registers a key: there is no admin endpoint for another user's keys.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/passkey-specs.mjs",
+          "note": "ACCOUNTS: eight personas, lockoutEnabled and emailConfirmed true, password token DEFAULT_TEST_PASSWORD; isolation per account",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/seed-passkey.mjs",
+          "note": "RE-ARM deletes leftover passkeys as the account; --verify-only writes nothing",
+          "date": "2026-10-28"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.passkey-registered",
+      "entity": "User",
+      "purpose": "The persona with exactly one passkey, registered by the case itself in its own browser context on the host under test.",
+      "required_state": {
+        "passkeys": "exactly one, registered by this case",
+        "authenticator": "a WebAuthn virtual authenticator added over CDP in this browser context: ctap2, internal transport, resident key, user verification supported and verified",
+        "host": "the host whose endpoint the case signs in on (storefront host for grant_type=passkey, platform host for the back-office cookie sign-in)",
+        "password": "still set"
+      },
+      "constraints": {
+        "lane": "Chromium only (playwright-chrome or playwright-edge), never firefox",
+        "order": "registered after the persona signed in by password and before the step that signs in with the key or manages it",
+        "same_account": "the key and the state under test sit on ONE account: counter-reset and locked-out register on PK_LOCKOUT, delete.password and last-key-refused on PK_PASSKEY_ONLY, the passkey leg of the organization fallback on PK_BUYER_MULTI, back-office cases on PK_BO_MANAGER(_2)"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.account.passkey-persona",
+          "required": true
+        }
+      ],
+      "lifecycle": "DERIVED",
+      "source": {
+        "produced_by": "auth.signin-methods.add-passkey",
+        "field": "the key id from signInMethods and the credential held by the case's virtual authenticator"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup deletes the key (xAPI deleteSignInKey or REST DELETE /api/platform/security/currentuser/sign-in-methods/Passkey/keys/{id}) and removes the virtual authenticator; npm run seed:passkey re-arm deletes any key a failed Cleanup left"
+      },
+      "discriminates": "The same account with a key and without one (auth.state.signin-key.none): the passkey grant issues tokens only while the key exists and is refused InvalidPasskey once it is deleted; the key signs in on the host it was created on and not on the other one (host-bound); with the authenticator verifying the user it signs in, with verification switched off it does not.",
+      "limits": "Cannot be seeded and is not a seeder gap: the private key lives only in the CDP virtual authenticator of the browser context that registered it and dies with that context, and seed-passkey.mjs only deletes keys. So it is per case, never shared and never carried to the next case (FIFTH RULE: the case uses it up). Conditional mediation (domain map D21) can sign a resident credential in on /sign-in by itself in Chromium: a case that needs the password form afterwards signs out and removes the authenticator first. Not observed by this pass (the VCST-6121 run is in progress).",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/test-model.md",
+          "note": "ceremony rows via the WebAuthn virtual authenticator (chrome / edge)"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/seed-passkey.mjs",
+          "note": "the seeder clears keys and never registers one",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "KB-CA7DBAD0",
+          "note": "a storefront buyer's passkey grant answered 200 after a registration in the VCST-6121 session (vcptcore)",
+          "date": "2026-10-28"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.account.passkey-only",
+      "entity": "User",
+      "purpose": "A persona whose password the case deleted and that still holds a passkey.",
+      "required_state": {
+        "password": "deleted",
+        "passkeys": "at least one, registered by this case",
+        "account": "PK_PASSKEY_ONLY"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.account.passkey-registered",
+          "required": true
+        }
+      ],
+      "lifecycle": "DERIVED",
+      "source": {
+        "produced_by": "auth.signin-methods.delete.password",
+        "field": "the account after the password delete succeeded"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "td_alias": "PK_PASSKEY_ONLY.email",
+      "cleanup": {
+        "required": true,
+        "via": "npm run seed:passkey -- --only PK_PASSKEY_ONLY re-sets the password and deletes the account's keys; the account's own surfaces cannot add a password back"
+      },
+      "discriminates": "Passkeys only against passkeys plus a password: deleting the last key is refused here (the account would have no way in) and allowed on data.auth.account.passkey-registered (it returns to password only); a password sign-in fails here and succeeds there.",
+      "limits": "Out of VCST-6121's scope yet reachable (author question Q1 open); only PK_PASSKEY_ONLY may carry it. The delete is logged in the user change history as \"Password changed\". Not observed by this pass.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "reports/tickets/Sprint26-21/VCST-6121/vcptcore/test-model.md",
+          "note": "password delete leaves a passkey-only account; last key refused"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/passkey-specs.mjs",
+          "note": "PK_PASSKEY_ONLY: DESTRUCTIVE, a case deletes its password",
+          "date": "2026-10-28"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.store.passkey-scheme-off",
+      "entity": "Store",
+      "purpose": "The run store with its Passkey authentication scheme switched off and saved, for the duration of one case.",
+      "required_state": {
+        "authenticationScheme.Passkey.isActive": false,
+        "persisted": "the store's scheme rows saved",
+        "store": "{{STORE_ID}}"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.store.auth-types",
+          "required": true,
+          "note": "reached from the default-on state and restored to the rows read before"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "authenticationScheme.Passkey.isActive": "true (the unsaved default, or saved on)"
+        },
+        "transition": "GET /api/store-authentication-schemes/{storeId} and keep the rows; PUT the same rows with only Passkey isActive false; read them back and check that xAPI store.settings.authenticationTypes no longer lists Passkey before the step"
+      },
+      "td_alias": "STORE_PRIMARY.id",
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup PUTs back the rows it read and reads them back; a store whose rows were unsaved defaults stays saved afterwards (an admin save writes every row, domain map D17), which the Cleanup records"
+      },
+      "discriminates": "Same store, same account with a key: a page loaded after the switch shows no Passkey button, while a page loaded before it still obtains a token (auth.signin.passkey.scheme-not-rechecked). The pre-load / post-load pair is what separates the UI gate from the token endpoint; with the scheme on both pages offer the button and the grant succeeds.",
+      "limits": "Store-wide toggle on the shared run store. The exclusiveGroup store-setting:Passkey separates only 114 and 115 from each other; while it is off the sign-in page changes for 114, 114a, 114b and 115, for the storefront sign-in suites 031, 032, 082 and 104 (their method choice), and inside 111's MFA operator window on the same store. Run the case alone. It is not the Passkeys-module-absent state (auth.signin.passkey.off: an appsettings switch with a restart, which no case on a shared stand can reach).",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "KB-2338B876",
+          "note": "every store lists Passkey, active by default and unsaved",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "config/test-suites.json 114 notes",
+          "note": "PKS-009 and PKS-016 flip the store-wide Passkey scheme and restore it in Cleanup (PUT /api/store-authentication-schemes/{storeId})"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.session.second-token",
+      "entity": "Session",
+      "purpose": "A second live session of the account, held by the case while it deletes a key from another session.",
+      "required_state": {
+        "account": "the account whose key is deleted",
+        "tokens": "access and refresh token from its own password grant (scope offline_access), or a second cookie session",
+        "minted": "after the key was registered and before the delete"
+      },
+      "constraints": {
+        "session_kind": "name it: a bearer-token session and a cookie session are ended differently (KB-4E12E506 note)",
+        "door": "the REST delete is read on a Manager (the REST currentuser sign-in-methods route answers 403 to a Customer); the xAPI delete on a Customer"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.account.passkey-registered",
+          "required": true
+        }
+      ],
+      "lifecycle": "DERIVED",
+      "source": {
+        "requirement": "data.auth.account.passkey-persona",
+        "field": "the access and refresh token of a second password grant"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Two sessions of one account, so the caller and the other session can answer differently: after a REST delete the other bearer session gets 401 and its refresh grant invalid_grant while the caller stays signed in; after an xAPI delete both were seen to stay valid (domain map D19, suspected defect). With one session only, \"other sessions end\" is undecidable.",
+      "limits": "A membership or account write between minting and the delete revokes refresh tokens by itself (BL-AUTH-013) and would fake the REST result. Never reused across cases.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "KB-4E12E506",
+          "note": "a second password-grant session of a Manager got 401 and invalid_grant after a REST key delete; a second cookie session still answered 10 s later",
+          "date": "2026-10-28"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.mfa-user-flag",
+      "entity": "User",
+      "purpose": "An account whose own two-factor flag is on while every MFA setting is off.",
+      "required_state": {
+        "twoFactorEnabled": true,
+        "emailConfirmed": true,
+        "userType": "Customer",
+        "MultiFactorAuthentication.Enabled": false,
+        "store": "the run's own AGENT-TEST-MFA store, no StoreMode override"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.store.mfa-off",
+          "required": true,
+          "note": "the global switch stays off; the store is the creator's own"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "seed_capability": "scripts/seed-data/auth/mfa-fixtures-specs.mjs#KINDS",
+      "cleanup": {
+        "required": true,
+        "via": "the run's teardown(runId): npm run td:mfa:teardown -- --run <runId> deletes the account, contact and store from the ledger and the run-marker searches, with a zero-residue assert"
+      },
+      "discriminates": "Kind per-user-2fa differs from its sibling customer-confirmed in twoFactorEnabled only (td:validate:mfa enforces it): with every setting off the flagged account is asked for a code and the sibling gets tokens in one step.",
+      "limits": "Created by the case through createMfaAccount({runId, store, kind: 'per-user-2fa'}) (110 MFA-021) on the run's own store, which has no url: reachable by API grants naming its storeId, not by a storefront host. One account per run: the case spends its code, ticket and lockout window.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/mfa-fixtures-specs.mjs",
+          "note": "KINDS per-user-2fa: twoFactorEnabled true, sibling customer-confirmed",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1503",
+          "note": "the mind-map node auth.signin.mfa.user-flag: the flag asks for a code with every MFA setting off"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.long-username-65",
+      "entity": "User",
+      "purpose": "A Customer-type account holding a back-office role whose user name is exactly 65 characters, one over the 64-character ModifiedBy column.",
+      "required_state": {
+        "userType": "Customer",
+        "backofficeRole": true,
+        "userName.length": 65,
+        "emailConfirmed": true
+      },
+      "constraints": {
+        "control": "the same kind with a 64-character user name",
+        "length_from_runId": "emailFor(runId, 'customer-role-for-backoffice') is 56 + runId.length characters: a 9-character runId gives 65, an 8-character one 64"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.platform.mfa-global-on",
+          "required": true,
+          "note": "the Backoffice code step needs the global switch"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "seed_capability": "scripts/seed-data/auth/mfa-fixtures-specs.mjs#KINDS",
+      "cleanup": {
+        "required": true,
+        "via": "npm run td:mfa:teardown -- --run <runId>; the 65-character session cannot sign out (logout answers 500), deleting the account is what ends it"
+      },
+      "discriminates": "64 against 65 characters on the same kind and the same path: 64 completes the code step, 65 answers HTTP 500 on POST /api/mfa/signin/verify while a session is still issued (KB-6C257B1B). A shorter account of the same kind is not the boundary.",
+      "limits": "SEEDER GAP: the creator has no user-name-length option; the length is reached only through the runId length (assertRunId allows 3-16), and newRunId's default 9 characters make it 65 by coincidence. MFA-030 (110) sends nonexistent names to the anonymous verify call and cannot show the session-issued half. Needs the global MFA window (whole stand).",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "KB-6C257B1B",
+          "note": "65-character Customer with a back-office role: verify 500, session issued, logout 500 (vcst)",
+          "date": "2026-10-23"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/mfa-fixtures-specs.mjs",
+          "note": "emailFor = agent-test-mfa-<runId>-<kind>@example.com",
+          "date": "2026-10-28"
+        }
+      ],
+      "status": "UNVERIFIED"
     }
   ],
   "profiles": [
@@ -2145,6 +2481,220 @@
       "purpose": "Data for auth.audit.signin-log.type-filter.",
       "requirements": [
         "data.auth.account.admin"
+      ]
+    },
+    {
+      "id": "profile.auth.passkey-signin",
+      "behavior": "auth.signin.passkey",
+      "purpose": "A persona signs in with the passkey it registered in this case.",
+      "requirements": [
+        "data.auth.account.passkey-registered"
+      ]
+    },
+    {
+      "id": "profile.auth.passkey-scheme-default",
+      "behavior": "auth.signin.method-choice.passkey-scheme-default",
+      "purpose": "Read whether the run store lists Passkey before its schemes were saved.",
+      "requirements": [
+        "data.auth.store.auth-types"
+      ]
+    },
+    {
+      "id": "profile.auth.passkey-scheme-off-button",
+      "behavior": "auth.signin.method-choice.passkey-off",
+      "purpose": "A freshly loaded sign-in page of a store with the Passkey scheme off.",
+      "requirements": [
+        "data.auth.store.passkey-scheme-off"
+      ]
+    },
+    {
+      "id": "profile.auth.passkey-scheme-not-rechecked",
+      "behavior": "auth.signin.passkey.scheme-not-rechecked",
+      "purpose": "A page loaded before the scheme switch-off, then a passkey grant.",
+      "requirements": [
+        "data.auth.store.passkey-scheme-off",
+        "data.auth.account.passkey-registered"
+      ]
+    },
+    {
+      "id": "profile.auth.passkey-locked-out",
+      "behavior": "auth.signin.passkey.locked-out",
+      "purpose": "A passkey grant for an account inside a temporary lock and under an admin lock.",
+      "requirements": [
+        "data.auth.account.temporarily-locked",
+        "data.auth.account.admin-locked",
+        "data.auth.account.passkey-registered"
+      ],
+      "notes": "The plan lists the producer's own account rows; this branch runs them on the passkey persona named in data.auth.account.passkey-registered constraints.same_account. Both locks go on PK_LOCKOUT; data.auth.account.admin-locked's producer pulls data.auth.account.block-target (seed:otp-signin), which this profile does not need — skip that row when seeding."
+    },
+    {
+      "id": "profile.auth.passkey-counter-reset",
+      "behavior": "auth.signin.passkey.counter-reset",
+      "purpose": "Wrong passwords, a passkey success, one more wrong password on one account.",
+      "requirements": [
+        "data.auth.account.lockout-disposable",
+        "data.auth.account.passkey-registered"
+      ],
+      "notes": "The lockout-disposable state is held by PK_LOCKOUT, the account that also carries the key; LOCKOUT_TEST_USERS is not used here."
+    },
+    {
+      "id": "profile.auth.passkey-skips-mfa",
+      "behavior": "auth.signin.passkey.skips-mfa",
+      "purpose": "A passkey sign-in on a store whose MFA mode is Enabled.",
+      "requirements": [
+        "data.auth.store.mfa-required",
+        "data.auth.account.passkey-registered"
+      ],
+      "notes": "Suite 114a carries the MFA exclusiveGroup: the store mode is the operator window W2."
+    },
+    {
+      "id": "profile.auth.signin-methods",
+      "behavior": "auth.signin-methods",
+      "purpose": "A signed-in persona opens its own sign-in methods.",
+      "requirements": [
+        "data.auth.account.passkey-persona"
+      ]
+    },
+    {
+      "id": "profile.auth.signin-methods-add-duplicate",
+      "behavior": "auth.signin-methods.add-passkey.duplicate",
+      "purpose": "The same authenticator registered twice.",
+      "requirements": [
+        "data.auth.account.passkey-registered"
+      ]
+    },
+    {
+      "id": "profile.auth.signin-methods-rename",
+      "behavior": "auth.signin-methods.rename",
+      "purpose": "Rename the case's own key, then blank its name.",
+      "requirements": [
+        "data.auth.account.passkey-registered"
+      ]
+    },
+    {
+      "id": "profile.auth.signin-methods-delete",
+      "behavior": "auth.signin-methods.delete",
+      "purpose": "Delete the case's own key while the password stays.",
+      "requirements": [
+        "data.auth.account.passkey-registered"
+      ]
+    },
+    {
+      "id": "profile.auth.signin-methods-last-key-refused",
+      "behavior": "auth.signin-methods.delete.last-key-refused",
+      "purpose": "Delete the last key of a passkey-only account.",
+      "requirements": [
+        "data.auth.account.passkey-only"
+      ]
+    },
+    {
+      "id": "profile.auth.signin-methods-impersonated-refused",
+      "behavior": "auth.signin-methods.impersonated-refused",
+      "purpose": "An impersonated session tries to add, rename and delete the target's key.",
+      "requirements": [
+        "data.auth.session.impersonating",
+        "data.auth.account.passkey-registered"
+      ],
+      "notes": "The target registers its key in its own session first (PK_BUYER); the operator is PK_OPERATOR. data.auth.session.impersonating's producer lists the seed:b2b operator and target; this branch uses the passkey personas instead."
+    },
+    {
+      "id": "profile.auth.signin-methods-no-admin-revoke",
+      "behavior": "auth.signin-methods.no-admin-revoke",
+      "purpose": "An administrator looks for a way to remove another user's key.",
+      "requirements": [
+        "data.auth.account.passkey-registered",
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "id": "profile.auth.revoke-access",
+      "behavior": "auth.signin-methods.revoke-access",
+      "purpose": "A key deleted from one session while a second session of the account is live.",
+      "requirements": [
+        "data.auth.account.passkey-registered",
+        "data.auth.session.second-token"
+      ]
+    },
+    {
+      "id": "profile.auth.org-passkey-leg",
+      "behavior": "auth.org.resolve.passkey-leg",
+      "purpose": "A passkey sign-in whose last-used organization is unusable.",
+      "requirements": [
+        "data.auth.membership.one-unusable",
+        "data.auth.account.passkey-registered"
+      ],
+      "notes": "PK_BUYER_MULTI holds both organizations and the key; the plan's data.auth.buyer.multi-org-blockable row (a case-created VCST-6132 buyer) is its stand-in and is not created for this branch."
+    },
+    {
+      "id": "profile.auth.org-fallback-any-grant",
+      "behavior": "auth.org.resolve.fallback-any-grant",
+      "purpose": "Each grant naming a blocked organization, against vc-module-customer#324.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.buyer.multi-org-blockable",
+        "data.auth.membership.one-unusable"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-user-flag",
+      "behavior": "auth.signin.mfa.user-flag",
+      "purpose": "A password grant for an account with its own two-factor flag on and every setting off.",
+      "requirements": [
+        "data.auth.account.mfa-user-flag"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-backoffice-long-username",
+      "behavior": "auth.signin.mfa.backoffice.long-username",
+      "purpose": "The Backoffice code step for a 64- and a 65-character user name.",
+      "requirements": [
+        "data.auth.account.long-username-65",
+        "data.auth.platform.mfa-global-on",
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-trusted-store-door",
+      "behavior": "auth.signin.mfa.trusted-store-door",
+      "purpose": "A grant naming a store that trusts the user's store, with the store mode on.",
+      "requirements": [
+        "data.auth.store.trusted-pair",
+        "data.auth.store.mfa-required"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-challenge-before-store-rule",
+      "behavior": "auth.signin.mfa.challenge-before-store-rule",
+      "purpose": "A store-refused customer's password grant with global MFA on.",
+      "requirements": [
+        "data.auth.account.foreign-store-contact",
+        "data.auth.platform.mfa-global-on"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-wrong-code-limit-per-instance",
+      "behavior": "auth.signin.mfa.wrong-code-limit.per-instance",
+      "purpose": "More than three wrong codes on one ticket.",
+      "requirements": [
+        "data.auth.mfa-ticket.issued"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-admin-shell",
+      "behavior": "auth.signin.mfa.admin-shell",
+      "purpose": "The Admin Shell sign-in inside the global MFA window.",
+      "requirements": [
+        "data.auth.platform.mfa-global-on"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-mfa-signed-in-operator",
+      "behavior": "auth.impersonate.mfa-signed-in-operator",
+      "purpose": "A signed-in operator starts impersonation on a store whose MFA mode is Enabled.",
+      "requirements": [
+        "data.auth.store.mfa-required",
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.with-security-account"
       ]
     }
   ]
