@@ -90,6 +90,8 @@ Admonitions may carry a title: `!!! note "Why do I enter the CVV every time?"`.
 - Place the image immediately after the step it illustrates, with an italic caption.
 - Budget per `.claude/rules/reports.md` §5 — illustrate state changes and final/confirmation states, not
   every navigation click.
+- **Plus one walkthrough GIF per documented flow** (Customer and Admin), built from the step stills —
+  mandatory, `reports-policy.md` §5.2a.
 
 ### Cross-links and navigation
 
@@ -541,7 +543,7 @@ the one comment.
 only for someone with that checkout at that commit, and for an uncommitted file, for nobody. The guide
 on disk is the durable copy for *this repo's* readers; the ticket reader gets the content.
 
-**Screenshots follow `tracker-ops.md` §5c — do not invent the mechanics, and do not skip them.** A
+**Each For shoppers / For administrators flow carries its walkthrough GIF** (`reports-policy.md` §5.2a), embedded right under that flow; a flow that could not be captured is named on the `Not documented` line. **Screenshots and GIFs follow `tracker-ops.md` §5c — do not invent the mechanics, and do not skip them.** A
 Markdown image reference in a Jira comment renders as **nothing**, silently, at `200 OK`, so a step that
 needs a screenshot needs both halves: **attach the file via the REST endpoint** (the Atlassian MCP has no
 attachment tool), then **reference it as wiki markup through the v2 comment API** — at which point the

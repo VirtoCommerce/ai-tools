@@ -128,8 +128,9 @@ cross-domain edges drawn in the source-side map; in `build` step 10, `Behavior:`
 - **`/qa-test` 5-mind-map** — a FULL run whose domain has a map but no mind map runs `build <slug> --from <ticket>` after the verdict and stamps only its own authored cases ([`../qa-test/reporting.md`](../qa-test/reporting.md) §5-mind-map).
 - **Case authoring** — a plan row's `behavior` / `dataProfile` fields become the stamps
   (`scripts/test-cases/scaffold-rows.ts`, [`../../knowledge/execution/regression-scaffold.md`](../../knowledge/execution/regression-scaffold.md)).
-- **`/qa-test-lifecycle`** — hand each suspect's suite to `/qa-test-lifecycle suite <ID>`; its Phase 2
-  re-syncs it. The lifecycle does not read `suspects` itself.
+- **`/qa-test-lifecycle`** — hand each suspect's suite to `/qa-test-lifecycle suite <ID>`; `qa-suite-sync`
+  reads `suspects`, `coverage` and the data profiles itself and never edits a map
+  ([`../qa-suite-sync/models.md`](../qa-suite-sync/models.md)).
 - **`/qa-review-oracles`** — every `DRIFT` whose `route` names it is a candidate for that audit.
 - **`/qa-checklist --from-model`** — Mode 5 selects the in-scope nodes by chain link, citation, descent
   and crossing ([`../qa-checklist/from-model.md`](../qa-checklist/from-model.md)).

@@ -25,7 +25,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  EMAIL_PREFIX, PASSWORD_TOKEN, STORE_TOKEN, ACCOUNTS, ORGS, OPERATOR_ROLE, BO_ROLE_NAME,
+  EMAIL_PREFIX, PASSWORD_TOKEN, STORE_TOKEN, ACCOUNTS, ORGS, OPERATOR_ROLE, BO_ROLE, BO_ROLE_NAME, OWN_ROLES, FOREIGN_STORE_MARKER,
 } from './passkey-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -52,7 +52,8 @@ for (const a of ACCOUNTS) {
   if (a.kind === 'buyer' && a.orgs.length !== 1) fail(`[1] ${a.alias}: a single-org buyer needs exactly one org`);
   if (a.kind === 'b2c' && a.orgs.length) fail(`[1] ${a.alias}: a personal customer must have NO organization`);
   if (a.userType === 'Customer') {
-    if (!a.hasContact || a.storeId !== STORE_TOKEN) fail(`[1] ${a.alias}: a Customer needs a contact and storeId ${STORE_TOKEN}`);
+    const wantStore = a.kind === 'foreign-store' ? FOREIGN_STORE_MARKER : STORE_TOKEN;
+    if (!a.hasContact || a.storeId !== wantStore) fail(`[1] ${a.alias}: a ${a.kind} Customer needs a contact and storeId ${wantStore}`);
     if (a.roles.length) fail(`[1] ${a.alias}: a Customer carries no global role (VCST-5028)`);
   } else {
     if (a.userType !== 'Manager') fail(`[1] ${a.alias}: back-office account must be a Manager, is ${a.userType}`);
@@ -67,10 +68,30 @@ for (const a of bo) {
   if (a.roles[0] !== BO_ROLE_NAME) fail(`[1] ${a.alias}: role must be ${BO_ROLE_NAME}`);
   if (a.storeId) fail(`[1] ${a.alias}: a back-office manager has no storeId`);
 }
+// PKA-015: the foreign-store contact is decidable only while it is a Customer of ANOTHER store with
+// no org (an org claim or the run store would let the grant succeed for an unrelated reason), and
+// only while no other persona borrows the marker. Its store is never written here (picked live).
+const foreign = ACCOUNTS.filter((a) => a.kind === 'foreign-store');
+if (foreign.length !== 1) fail(`[1] expected exactly one foreign-store account, found ${foreign.length}`);
+for (const a of foreign) {
+  if (a.userType !== 'Customer') fail(`[1] ${a.alias}: the foreign-store account must be a Customer (only Customers are held to the store rule), is ${a.userType}`);
+  if (a.orgs.length) fail(`[1] ${a.alias}: the foreign-store account must have NO organization`);
+  if (a.destructive) fail(`[1] ${a.alias}: the foreign-store account is not destructive — a lock would turn the store-rule refusal into a lockout refusal`);
+}
+for (const a of ACCOUNTS) if (a.kind !== 'foreign-store' && a.storeId === FOREIGN_STORE_MARKER) fail(`[1] ${a.alias}: only the foreign-store account may carry ${FOREIGN_STORE_MARKER}`);
 const op = by('PK_OPERATOR');
 if (!op || op.kind !== 'operator' || op.roles[0] !== OPERATOR_ROLE.name) fail('[1] PK_OPERATOR must hold OPERATOR_ROLE');
 if (JSON.stringify(OPERATOR_ROLE.permissions) !== JSON.stringify(['platform:security:loginOnBehalf'])) fail('[1] OPERATOR_ROLE must carry platform:security:loginOnBehalf and nothing else');
-if (!OPERATOR_ROLE.id.startsWith('AGENT-TEST-') || !OPERATOR_ROLE.name.startsWith('AGENT-TEST-')) fail('[1] OPERATOR_ROLE must carry the AGENT-TEST- prefix (teardown deletes it)');
+for (const r of OWN_ROLES) {
+  if (!r.id.startsWith('AGENT-TEST-') || !r.name.startsWith('AGENT-TEST-')) fail(`[1] own role ${r.name} must carry the AGENT-TEST- prefix (teardown deletes it)`);
+  if (!r.permissions.length) fail(`[1] own role ${r.name} has no permission — a Manager holding only it would land on the Admin SPA no-access screen`);
+}
+if (new Set(OWN_ROLES.map((r) => r.id)).size !== OWN_ROLES.length) fail('[1] own roles must have distinct pinned ids');
+if (!OWN_ROLES.includes(BO_ROLE) || BO_ROLE_NAME !== BO_ROLE.name) fail('[1] BO_ROLE must be one of OWN_ROLES — an EXISTING role is stand data and differs per env');
+// The two Manager kinds must stay apart: a back-office manager that could impersonate would blur the
+// operator-only refusal; an operator that is a plain back-office manager would have nothing to impersonate with.
+if (BO_ROLE.permissions.includes('platform:security:loginOnBehalf')) fail('[1] BO_ROLE must not carry loginOnBehalf (that is OPERATOR_ROLE\'s one permission)');
+if (BO_ROLE.permissions.some((p) => /^platform:security:/.test(p))) fail('[1] BO_ROLE must stay least-privilege: no platform:security:* permission');
 for (const o of ORGS) if (!o.name.startsWith('AGENT-TEST-')) fail(`[1] org ${o.key} lacks the AGENT-TEST- prefix`);
 const emails = ACCOUNTS.map((a) => a.email);
 if (new Set(emails).size !== emails.length) fail('[1] account emails are not unique — two cases would share one key set / lockout count');
@@ -88,6 +109,10 @@ for (const a of [...ACCOUNTS, ...ORGS]) {
     if (r.password !== PASSWORD_TOKEN) fail(`[2] ${a.alias}: password must be the ${PASSWORD_TOKEN} token`);
     if (r.userType !== a.userType) fail(`[2] ${a.alias}: base userType ${r.userType} ≠ spec ${a.userType}`);
     if (a.kind === 'multi-org' && !['org_a_id', 'org_b_id', 'membership_a_id'].every((f) => f in r)) fail(`[2] ${a.alias}: must declare org_a_id / org_b_id / membership_a_id`);
+    if (a.kind === 'foreign-store') {
+      if (!('storeId' in r)) fail(`[2] ${a.alias}: must declare storeId (the live-picked foreign store is written back there)`);
+      if (r.storeId_env) fail(`[2] ${a.alias}: storeId_env ${r.storeId_env} — its store is picked live, never an env variable`);
+    }
   } else if (r.name !== a.name) fail(`[2] ${a.alias}: base name ${r.name} ≠ spec ${a.name}`);
 }
 

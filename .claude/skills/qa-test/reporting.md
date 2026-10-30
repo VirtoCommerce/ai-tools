@@ -15,7 +15,7 @@ verdict 5-verdict recorded), 5-status transitions **after** the report, 5-docs d
 `5-docs-map` writes back to the domain map last of all (FULL only, non-blocking). **Promotion is not here** —
 `/qa-test` stopped promoting on 2026-09-10; the procedure lives in
 [`regression-promotion.md`](../../knowledge/execution/regression-promotion.md), run by
-[`/qa-test-lifecycle`](../../commands/qa-test-lifecycle.md) 6P and, for cases already grounded, by a
+[`qa-case-promotion`](../qa-case-promotion/SKILL.md) and, for cases already grounded, by a
 direct [`/qa-regression`](../../commands/qa-regression.md) run's Step 6.5.
 
 ## 5-report. Report
@@ -332,7 +332,8 @@ in the body*, ONE comment however long (never a split across comments; a body th
 fit is attached to the ticket and referenced from that one comment), and never a `reports/ba/` path standing in for content a reader cannot reach; **§5a** for
 the body dialect (Markdown for Jira, HTML for Azure — never Jira wiki markup) and **§5c** for its one
 carve-out: a screenshot needs an attachment plus a **wiki-markup** reference, which makes the whole Jira
-body wiki. §5c also records the three ADF dead ends, so do not re-probe them.
+body wiki. §5c also records the three ADF dead ends, so do not re-probe them. Each shopper / administrator
+flow carries a walkthrough GIF — mandatory, `reports-policy.md` §5.2a.
 
 **Redact and contain first** (§10.4): secrets scrubbed regardless of destination, and on a client project
 every client host, path, identifier and datum. A payload that cannot be shown clean is described in

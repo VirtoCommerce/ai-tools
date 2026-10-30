@@ -611,10 +611,10 @@
     "number": "AGENT-TEST-ORD-PROCESSING"
   },
   "QUOTE_WITH_ADMIN_RESPONSE": {
-    "id": "0aaa2b5b-72e6-4cf1-8132-94edef5145a7",
+    "id": "47745f38-3faa-4b0d-ad11-86a7ef7caf16",
     "number": "AGENT-TEST-QTE-ADMIN-RESPONSE",
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "0aaa2b5b-72e6-4cf1-8132-94edef5145a7",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "47745f38-3faa-4b0d-ad11-86a7ef7caf16",
     "number_slot1": "AGENT-TEST-QTE-ADMIN-RESPONSE",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
@@ -630,10 +630,10 @@
     "expiration_date_slot3": ""
   },
   "ACCEPTED_QUOTE": {
-    "id": "3c77e34b-eef7-4941-8753-39818afe653b",
+    "id": "f7637c4b-ad5d-4093-aec5-22b0ad88b5f6",
     "number": "AGENT-TEST-QTE-ACCEPTED",
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "3c77e34b-eef7-4941-8753-39818afe653b",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "f7637c4b-ad5d-4093-aec5-22b0ad88b5f6",
     "number_slot1": "AGENT-TEST-QTE-ACCEPTED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
@@ -945,12 +945,12 @@
     "contactId": "089afd9f-fefc-43cb-9219-8f42b45047c0"
   },
   "SR_ORDER_ACME_WIN_NEW": {
-    "id": "11463564-0ff0-4c73-bb01-eec7725570b2",
-    "createdDate": "2026-10-13T07:46:53.7510695Z"
+    "id": "a450fdbb-a8b5-4db4-ba78-9c24006f7bc1",
+    "createdDate": "2026-10-28T14:30:56.5936011Z"
   },
   "SR_ORDER_ACME_WIN_PROC": {
-    "id": "550825f4-c0ec-41e3-b173-1172351e1b40",
-    "createdDate": "2026-10-13T07:46:59.0473958Z"
+    "id": "aea03312-3a0c-4f37-9975-8990f5f0e469",
+    "createdDate": "2026-10-28T14:31:09.8002082Z"
   },
   "CAT_EMPTY": {
     "id": "ccb46dbd-c966-4159-8093-9c5a2f264603",
@@ -967,8 +967,8 @@
     "url": "/seed-test-fixtures/agent-test-seo-configured-product"
   },
   "SR_ORDER_ACME_ELEC": {
-    "id": "c030493a-fb39-4e35-b7d3-65dadd7aa8c7",
-    "createdDate": "2026-10-13T07:47:21.3477265Z"
+    "id": "e01f1da1-2eeb-4ea2-8b50-8066572090a8",
+    "createdDate": "2026-10-28T14:31:25.4006242Z"
   },
   "MSN_ORDERVALUE": {
     "id": "74e4f6b5-7d81-4b94-a799-7623a022d653",
@@ -1654,7 +1654,8 @@
     "seeded_values_json": "[\"Organization employee\",\"Purchasing agent\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\",\"AGENT-TEST-Org-Returns-View-Submit\",\"AGENT-TEST-Org-Returns-Viewer\"]",
     "narrowed_values": "[\"Organization employee\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\",\"AGENT-TEST-Org-Returns-View-Submit\",\"AGENT-TEST-Org-Returns-Viewer\"]",
     "narrowed_omitted_role": "Purchasing agent",
-    "returns_roles": "AGENT-TEST-Org-Returns-View-Submit;AGENT-TEST-Org-Returns-Viewer"
+    "returns_roles": "AGENT-TEST-Org-Returns-View-Submit;AGENT-TEST-Org-Returns-Viewer",
+    "narrowed_picker_keyword": "Purchasing agent"
   },
   "SC_MULTI": {
     "_inline": true,
@@ -2074,60 +2075,60 @@
     ]
   },
   "SR_TASK_FUTURE_YANKEE": {
-    "id": "ce4a65bb-d8e4-4223-a2f3-fec37d2d2af4",
-    "due_date": "2026-10-16T11:00:00.000Z"
+    "id": "ab4b3f59-22fe-45c5-8676-8a39ec78e880",
+    "due_date": "2026-10-30T11:00:00.000Z"
   },
   "SR_TASK_OVERDUE_MIKE": {
-    "id": "3bb8caaa-40ed-40b5-89db-0f38d35761a6",
-    "due_date": "2026-10-14T09:00:00.000Z"
+    "id": "aa1d6195-a9ca-4bf7-a9f8-bf6a31ad7cc8",
+    "due_date": "2026-10-28T09:00:00.000Z"
   },
   "SR_TASK_DONE_ECHO": {
-    "id": "7a293a9b-a817-4d53-8735-437cf1109c57",
-    "due_date": "2026-10-06T16:00:00.000Z"
+    "id": "146cd5bf-ff74-438b-893a-a4d39819196b",
+    "due_date": "2026-10-20T16:00:00.000Z"
   },
   "SR_TASK_FUTURE_ROMEO": {
-    "id": "d88ff71d-4410-45f4-9425-e0bc861310e3",
-    "due_date": "2026-10-22T09:00:00.000Z"
+    "id": "4cd359e2-cc9c-44dd-9d03-101f9a0cc9e7",
+    "due_date": "2026-11-05T09:00:00.000Z"
   },
   "SR_TASK_TODAY_SIERRA": {
-    "id": "a54213c6-cf8b-4b89-99cd-fa6802891a1f",
-    "due_date": "2026-10-15T12:00:00.000Z"
+    "id": "cc315773-704a-4eaa-8ad6-bdac1cd624c8",
+    "due_date": "2026-10-29T12:00:00.000Z"
   },
   "SR_TASK_FUTURE_OSCAR": {
-    "id": "528bda00-587a-41f5-be28-8bd99239741e",
-    "due_date": "2026-10-29T13:00:00.000Z"
+    "id": "98dba53b-a9b8-4dab-8dc7-82ca051977b5",
+    "due_date": "2026-11-12T13:00:00.000Z"
   },
   "SR_TASK_OVERDUE_ZULU": {
-    "id": "dbfc0069-b286-4a3c-b667-9be135014706",
-    "due_date": "2026-10-10T10:00:00.000Z"
+    "id": "3370a48c-4cf0-4446-8e76-e1732f7d79c5",
+    "due_date": "2026-10-24T10:00:00.000Z"
   },
   "SR_TASK_DONE_FOXTROT": {
-    "id": "e44f5b94-a2a4-49d7-8852-6b9fe9f4384f",
-    "due_date": "2026-10-20T10:00:00.000Z"
+    "id": "96861e0e-43ea-4053-83ec-a5c8247a6f94",
+    "due_date": "2026-11-03T10:00:00.000Z"
   },
   "SR_TASK_TODAY_DELTA": {
-    "id": "dd200be9-e0ac-4b96-ba6b-9022e88f6821",
-    "due_date": "2026-10-15T20:00:00.000Z"
+    "id": "b8a3e3a9-677a-4063-94df-e50cbba2ec39",
+    "due_date": "2026-10-29T20:00:00.000Z"
   },
   "SR_TASK_FUTURE_CHARLIE": {
-    "id": "6f9a793e-4d95-416d-9ee7-715fd1b4d039",
-    "due_date": "2026-10-22T17:00:00.000Z"
+    "id": "0e826481-e27e-494c-b6de-d28aa5450efc",
+    "due_date": "2026-11-05T17:00:00.000Z"
   },
   "SR_TASK_DONE_NOVEMBER": {
-    "id": "a855238e-a85a-4bc4-910b-bb2ec2607135",
-    "due_date": "2026-10-13T12:00:00.000Z"
+    "id": "578a6e38-757b-4964-b454-e20101cd5117",
+    "due_date": "2026-10-27T12:00:00.000Z"
   },
   "SR_TASK_TODAY_ALPHA": {
-    "id": "724dc655-b550-41b2-8660-9a0683b8940f",
-    "due_date": "2026-10-15T07:00:00.000Z"
+    "id": "07f0301d-dd93-4b86-914a-1cb1544878a2",
+    "due_date": "2026-10-29T07:00:00.000Z"
   },
   "SR_TASK_FUTURE_BRAVO": {
-    "id": "3ebfd8fb-8188-46c7-8937-f8a898c5ad7f",
-    "due_date": "2026-10-18T15:00:00.000Z"
+    "id": "0f672ee6-1be7-4503-a541-a51a96b6eb5d",
+    "due_date": "2026-11-01T15:00:00.000Z"
   },
   "SR_TASK_DONE_TANGO": {
-    "id": "53e9e024-63f4-4c38-b314-042116870048",
-    "due_date": "2026-10-15T15:00:00.000Z"
+    "id": "c4937cd6-6a57-405c-94c9-0888a2dd8209",
+    "due_date": "2026-10-29T15:00:00.000Z"
   },
   "SR_TASK_GROUPS": {
     "open_overdue": "2",
@@ -2135,8 +2136,8 @@
     "open_future": "7",
     "completed": "4",
     "total": "22",
-    "seeded_at": "2026-10-15T13:33:38.038Z",
-    "decays_at_utc": "2026-10-15T22:00:00.000Z",
+    "seeded_at": "2026-10-29T04:35:46.570Z",
+    "decays_at_utc": "2026-10-29T21:00:00.000Z",
     "owner_rep_email": "agent-test-sr-primary@example.com",
     "canceled": "3",
     "dateless": "1",
@@ -2147,39 +2148,39 @@
     "today_scope_excl_canceled": "6",
     "canceled_due_today": "1",
     "all_minus_tabs": "4",
-    "browser_tz": "Europe/Budapest"
+    "browser_tz": "Europe/Moscow"
   },
   "SR_TASK_EDGE_QUEBEC": {
-    "id": "4afd1668-e2cc-4919-87fa-c896fd19a2bb",
-    "due_date": "2026-10-16T03:30:00.000Z"
+    "id": "dea38142-8cb5-44e0-997b-57c0420be62e",
+    "due_date": "2026-10-30T03:30:00.000Z"
   },
   "SR_TASK_CANCELED_LIMA": {
-    "id": "186d3db0-a06f-4220-8f53-e652ab0a18d7",
-    "due_date": "2026-10-15T10:00:00.000Z"
+    "id": "131e01f0-cc51-4e1e-9f83-461c3c6c5aaa",
+    "due_date": "2026-10-29T10:00:00.000Z"
   },
   "SR_TASK_EDGE_UNIFORM": {
-    "id": "7fad3bfa-eebb-4cbc-8c91-6b5e74870233",
-    "due_date": "2026-12-14T10:00:00.000Z"
+    "id": "137a6b62-5f56-4bc9-829c-468e9877bb4b",
+    "due_date": "2026-12-28T10:00:00.000Z"
   },
   "SR_TASK_NODATE_INDIA": {
-    "id": "f50fad0f-5860-4b0d-a5ae-68e1f7c82eea",
+    "id": "1757fa5c-aa08-48c8-aec9-a0c2e150dd98",
     "due_date": ""
   },
   "SR_TASK_CANCELED_KILO": {
-    "id": "3310f26b-3b72-432c-96ee-4e5efb2f6af1",
-    "due_date": "2026-10-12T11:00:00.000Z"
+    "id": "781f246b-6a23-4149-ac7e-19aa32fdcf04",
+    "due_date": "2026-10-26T11:00:00.000Z"
   },
   "SR_TASK_EDGE_GOLF": {
-    "id": "99a7a51c-9049-4b2b-b22e-d37ebe6d53a9",
-    "due_date": "2026-10-14T22:00:00.000Z"
+    "id": "84d875e3-0321-4826-86cf-33e25278a606",
+    "due_date": "2026-10-28T21:00:00.000Z"
   },
   "SR_TASK_CANCELED_HOTEL": {
-    "id": "5f293670-5c6e-40bc-80e2-4d0f5f198366",
-    "due_date": "2026-10-17T14:00:00.000Z"
+    "id": "1a33b4b0-6b8c-4f3f-8dfd-8b90c43ad56d",
+    "due_date": "2026-10-31T14:00:00.000Z"
   },
   "SR_TASK_EDGE_PAPA": {
-    "id": "4ab4d444-6569-4420-a3ec-56e3b686f977",
-    "due_date": "2026-10-15T21:30:00.000Z"
+    "id": "e4f1a028-206d-416b-b6b6-73f6b496b74a",
+    "due_date": "2026-10-29T20:30:00.000Z"
   },
   "SR_TASK_GROUPS_NY": {
     "open_overdue": "3",
@@ -2196,8 +2197,8 @@
     "today_scope_excl_canceled": "6",
     "canceled_due_today": "1",
     "all_minus_tabs": "4",
-    "seeded_at": "2026-10-15T13:33:38.038Z",
-    "decays_at_utc": "2026-10-16T04:00:00.000Z"
+    "seeded_at": "2026-10-29T04:35:46.570Z",
+    "decays_at_utc": "2026-10-30T04:00:00.000Z"
   },
   "ORG_RET_VIEWER_ORG": {
     "id": "180022db-2ef9-44ad-8999-6fd6e7ca7d09"
@@ -2867,7 +2868,7 @@
   "CART_GA4_SFL_RB": {
     "_inline": true,
     "account_env": "USER_EMAIL",
-    "cart_id": "88062015-b3e5-4b05-ae2c-2d2f460fecb3",
+    "cart_id": "a37fee83-cefd-465b-b49b-0a210f82376f",
     "saved_for_later_list_id": "5dca4896-59ff-427d-a623-652112740326",
     "cart_line_codes": "111798",
     "cart_line_ids": "59bd14a6-c4f0-4647-84a1-d9805c1c97fd",
@@ -3021,12 +3022,12 @@
     "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09"
   },
   "QUOTE_PROCESSING": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "f0d9f4dd-6692-45ee-9e84-75216361bdfa",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "414a8d0a-d407-437b-84cb-4346daf18fd3",
     "number_slot1": "AGENT-TEST-QTE-PROCESSING",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
-    "id": "f0d9f4dd-6692-45ee-9e84-75216361bdfa",
+    "id": "414a8d0a-d407-437b-84cb-4346daf18fd3",
     "number": "AGENT-TEST-QTE-PROCESSING",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
@@ -3040,12 +3041,12 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_ON_HOLD": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "e7ce45f2-2307-4d1c-9307-72a112b02573",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "8a87f263-3158-4f7c-84fa-f349987e3041",
     "number_slot1": "AGENT-TEST-QTE-ON-HOLD",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
-    "id": "e7ce45f2-2307-4d1c-9307-72a112b02573",
+    "id": "8a87f263-3158-4f7c-84fa-f349987e3041",
     "number": "AGENT-TEST-QTE-ON-HOLD",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
@@ -3059,12 +3060,12 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_DECLINED": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "13b1128c-d69e-43f5-ba98-d33f0545b95c",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "20bd3499-863d-4365-a418-3a3e78914333",
     "number_slot1": "AGENT-TEST-QTE-DECLINED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
-    "id": "13b1128c-d69e-43f5-ba98-d33f0545b95c",
+    "id": "20bd3499-863d-4365-a418-3a3e78914333",
     "number": "AGENT-TEST-QTE-DECLINED",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
@@ -3078,15 +3079,15 @@
     "expiration_date_slot3": ""
   },
   "EXPIRED_QUOTE": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "5361f2c2-6997-476a-845d-f0d6e7ef1601",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "a8dd4b95-6a8c-412d-ab9f-f70653302149",
     "number_slot1": "AGENT-TEST-QTE-EXPIRED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "2026-10-12T12:39:57.886Z",
-    "id": "5361f2c2-6997-476a-845d-f0d6e7ef1601",
+    "expiration_date_slot1": "2026-10-26T04:40:03.873Z",
+    "id": "a8dd4b95-6a8c-412d-ab9f-f70653302149",
     "number": "AGENT-TEST-QTE-EXPIRED",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "2026-10-12T12:39:57.886Z",
+    "expiration_date": "2026-10-26T04:40:03.873Z",
     "id_slot2": "f746c7e2-188b-4492-8cde-9db45cbd092f",
     "number_slot2": "AGENT-TEST-QTE-EXPIRED-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
@@ -3097,15 +3098,15 @@
     "expiration_date_slot3": "2026-10-12T12:39:57.886Z"
   },
   "QUOTE_FUTURE_EXPIRY": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "f64bd29f-ef1d-4670-8a5c-5035f370de88",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "9ae4aa8c-8a10-490d-9da2-2583b51e0815",
     "number_slot1": "AGENT-TEST-QTE-FUTURE-EXPIRY",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "2026-11-14T12:39:57.886Z",
-    "id": "f64bd29f-ef1d-4670-8a5c-5035f370de88",
+    "expiration_date_slot1": "2026-11-28T04:40:03.873Z",
+    "id": "9ae4aa8c-8a10-490d-9da2-2583b51e0815",
     "number": "AGENT-TEST-QTE-FUTURE-EXPIRY",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "2026-11-14T12:39:57.886Z",
+    "expiration_date": "2026-11-28T04:40:03.873Z",
     "id_slot2": "56770eab-752b-4112-8957-1be9af8f94ac",
     "number_slot2": "AGENT-TEST-QTE-FUTURE-EXPIRY-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
@@ -3116,12 +3117,12 @@
     "expiration_date_slot3": "2026-11-14T12:39:57.886Z"
   },
   "QUOTE_TO_ACCEPT": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "57531860-3447-4cc2-adab-4f7ee9bf0fc3",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "f107d56b-8cd1-4e1c-8f84-38482b5c4ee5",
     "number_slot1": "AGENT-TEST-QTE-TO-ACCEPT",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
-    "id": "57531860-3447-4cc2-adab-4f7ee9bf0fc3",
+    "id": "f107d56b-8cd1-4e1c-8f84-38482b5c4ee5",
     "number": "AGENT-TEST-QTE-TO-ACCEPT",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
@@ -3135,12 +3136,12 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_DECLINE": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "2299bd27-b67c-4a9a-83d7-4b3e499a7c9f",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "574b9451-ea74-46ef-81bc-81ff57f0b8f0",
     "number_slot1": "AGENT-TEST-QTE-TO-DECLINE",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
-    "id": "2299bd27-b67c-4a9a-83d7-4b3e499a7c9f",
+    "id": "574b9451-ea74-46ef-81bc-81ff57f0b8f0",
     "number": "AGENT-TEST-QTE-TO-DECLINE",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
@@ -3154,12 +3155,12 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "d096d4eb-b541-4b10-9c6c-0db6941f18d4",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "19d4c079-d901-49b0-b5d2-fe94081f7bdc",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
-    "id": "d096d4eb-b541-4b10-9c6c-0db6941f18d4",
+    "id": "19d4c079-d901-49b0-b5d2-fe94081f7bdc",
     "number": "AGENT-TEST-QTE-TO-CONVERT",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
@@ -3173,12 +3174,12 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT_REPRICED": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "d2bc2ce0-379e-4278-8348-217b40b0e12b",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "6b4c17ba-8b2d-4b98-94ed-c4e264586e2d",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-REPRICED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
-    "id": "d2bc2ce0-379e-4278-8348-217b40b0e12b",
+    "id": "6b4c17ba-8b2d-4b98-94ed-c4e264586e2d",
     "number": "AGENT-TEST-QTE-TO-CONVERT-REPRICED",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
@@ -3192,12 +3193,12 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT_MULTILINE": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "f852da4a-d553-446d-a053-1174b3dec96d",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "e2195b5f-491e-4689-b079-1c28e8f5ff18",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
-    "id": "f852da4a-d553-446d-a053-1174b3dec96d",
+    "id": "e2195b5f-491e-4689-b079-1c28e8f5ff18",
     "number": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
@@ -3211,12 +3212,12 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT_STATUS": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "927c7d9d-2163-47bb-9b3a-7b10a6cf0339",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "445f3691-2f77-4d10-9d15-fad3a75ae0d7",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-STATUS",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
-    "id": "927c7d9d-2163-47bb-9b3a-7b10a6cf0339",
+    "id": "445f3691-2f77-4d10-9d15-fad3a75ae0d7",
     "number": "AGENT-TEST-QTE-TO-CONVERT-STATUS",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
@@ -3230,15 +3231,15 @@
     "expiration_date_slot3": ""
   },
   "EXPIRED_QUOTE_TO_ACCEPT": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "cb6b1adf-7a32-4e08-9f3d-f686c68bc795",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "3f07225d-887f-482f-8e57-c8875d5cdf19",
     "number_slot1": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "2026-10-12T13:33:08.64Z",
-    "id": "cb6b1adf-7a32-4e08-9f3d-f686c68bc795",
+    "expiration_date_slot1": "2026-10-26T04:40:03.873Z",
+    "id": "3f07225d-887f-482f-8e57-c8875d5cdf19",
     "number": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "2026-10-12T13:33:08.64Z",
+    "expiration_date": "2026-10-26T04:40:03.873Z",
     "id_slot2": "7115e4e7-5e1b-44f4-b9c2-ab7dd770385b",
     "number_slot2": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
@@ -3249,12 +3250,12 @@
     "expiration_date_slot3": "2026-10-12T12:39:57.886Z"
   },
   "QUOTE_PROPOSAL_OOS": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "1b06f141-bce8-4828-b01e-deb10db4c8cc",
+    "seeded_at": "2026-10-29T04:40:03.873Z",
+    "id_slot1": "be0590d4-bc45-4202-b01f-0e1fc5e81897",
     "number_slot1": "AGENT-TEST-QTE-OOS",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date_slot1": "",
-    "id": "1b06f141-bce8-4828-b01e-deb10db4c8cc",
+    "id": "be0590d4-bc45-4202-b01f-0e1fc5e81897",
     "number": "AGENT-TEST-QTE-OOS",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
@@ -3321,5 +3322,112 @@
     "email": "agent-test-6443-nocreate@test.virtocommerce.com",
     "role": "AGENT-TEST-6443 no-create",
     "password_var": "DEFAULT_TEST_PASSWORD"
+  },
+  "ORDER_UNSERVED_BUYER": {
+    "id": "13e7ce11-ccc2-48ec-b7d8-13b6937f5188",
+    "createdDate": "2026-10-28T14:31:16.7261911Z",
+    "customerId": "b8e16c28-a01b-4712-a855-9677bd4942ac"
+  },
+  "SR_STATS_CART_SPLIT": {
+    "id": "20df7783-7a53-4579-8ffe-b6d80075b277",
+    "name": "default"
+  },
+  "ORG_ADDR22": {
+    "org_id": "9171f45d-fbcd-4f92-a723-99687e629aea",
+    "org_name": "AGENT-TEST-Org-Addr22-20260811",
+    "count": 22
+  },
+  "ORG_ADDR22_ADMIN": {
+    "email": "agent-test-addr22-admin-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "bd8d6a08-96bc-485e-9e3e-33e10d022f0a",
+    "contactId": "91a63a7a-f3ef-45ba-b86a-9d4bbe0fd7be"
+  },
+  "DISCONTINUED_ORDER_BUYER": {
+    "email": "agent-test-discontinued-buyer-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "5be82f6e-ad9d-4fe0-a1bd-a5d2316511e9",
+    "contactId": "56249ab1-2cf8-451f-aede-6a343b7839f8"
+  },
+  "DISCONTINUED_ITEM_ORDER": {
+    "id": "d1ee1721-da49-4ee8-9ee7-74327d4afd07",
+    "number": "AGENT-TEST-ORD-DISCONTINUED",
+    "discontinued_sku": "AGENT-TEST-DISC-SKU-20260811",
+    "discontinued_product_id": "3681ebaf-0ea5-4330-8623-2563968e5bc4"
+  },
+  "PERSONAL_NON_ORG_USER": {
+    "email": "agent-test-personal-virto-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "35a04982-3cb5-4ffd-8092-2c5c15c44bb3",
+    "contactId": "40e2ab80-988a-420c-999a-c2cd37b3f321"
+  },
+  "PK_ORG_MAIN": {
+    "name": "AGENT-TEST-PK-Org-Main",
+    "id": "0a59c41a-d59c-4017-a224-644d82128410"
+  },
+  "PK_ORG_LOCKABLE": {
+    "name": "AGENT-TEST-PK-Org-Lockable",
+    "id": "5829d4ca-2d13-4dd1-97ca-6f6a89565522"
+  },
+  "PK_BUYER": {
+    "userId": "c8a19b1b-352f-4fdd-a404-ff994495dccc",
+    "memberId": "9ed7eea4-ac23-404c-aab3-d869a503147e",
+    "storeId": "B2B-store",
+    "org_id": "0a59c41a-d59c-4017-a224-644d82128410"
+  },
+  "PK_BUYER_MULTI": {
+    "userId": "87d1456d-d19b-404d-ab6f-24ba281ce061",
+    "memberId": "b21c3b3f-9ecb-496a-ace4-eada97a77ba1",
+    "storeId": "B2B-store",
+    "org_id": "0a59c41a-d59c-4017-a224-644d82128410",
+    "org_a_id": "5829d4ca-2d13-4dd1-97ca-6f6a89565522",
+    "org_b_id": "0a59c41a-d59c-4017-a224-644d82128410",
+    "membership_a_id": "40ee434b-9a01-4128-b63c-a672ce642aff",
+    "membership_b_id": "ed7b0545-61ac-4fcf-8063-0f6f7f8b947e"
+  },
+  "PK_B2C": {
+    "userId": "52c52201-d4ee-4260-92e3-2e6b2641dadb",
+    "memberId": "c9420cc0-10c1-4a56-9285-b9bd163dd53b",
+    "storeId": "B2B-store",
+    "org_id": ""
+  },
+  "PK_LOCKOUT": {
+    "userId": "11831385-b250-41cd-aab1-dd8689ed3585",
+    "memberId": "9b20b601-c6b2-40d0-bac1-636034892cfd",
+    "storeId": "B2B-store",
+    "org_id": "0a59c41a-d59c-4017-a224-644d82128410"
+  },
+  "PK_PASSKEY_ONLY": {
+    "userId": "b661e64c-23ed-4f16-870c-ab56a5051ad3",
+    "memberId": "b7acb4e3-93c4-4ff7-ad74-97500ed6ac31",
+    "storeId": "B2B-store",
+    "org_id": "0a59c41a-d59c-4017-a224-644d82128410"
+  },
+  "PK_BO_MANAGER": {
+    "userId": "aadb5549-172b-4b2b-9f69-1f1bfa4bdb43",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_BO_MANAGER_2": {
+    "userId": "897a7e89-6b27-4fae-bae1-13005d31f57d",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_OPERATOR": {
+    "userId": "b2ba1790-17f4-44e6-a2b7-16948a2b66d8",
+    "memberId": "",
+    "storeId": "B2B-store",
+    "org_id": ""
+  },
+  "PK_FOREIGN_STORE": {
+    "userId": "7683040f-0cd4-4156-909e-84183e65b7e2",
+    "memberId": "287a7650-7d1b-4921-90e8-145544ea1cc1",
+    "storeId": "QA-STORE",
+    "org_id": ""
   }
 }

@@ -28,9 +28,9 @@ Each text wraps (or truncates) inside the 256px card, as the label already does 
 - Control, same render: the same word in `label` wraps to 2 lines and stays 25px inside.
 - The text is not clipped (card `overflow: visible`) and the page does not scroll horizontally at 375. Console: no errors.
 
-![errorText past the border, 1280](../../screenshots/VcStatWidget-Unbreakable-Text-Overflows-Card/X27-run1-1280-errorText-unbreakable.png)
-![label wraps, errorText overflows — same render, 375](../../screenshots/VcStatWidget-Unbreakable-Text-Overflows-Card/X27-run2-375-control-label-wraps-errorText-overflows.png)
-![realistic URL message, 1280](../../screenshots/VcStatWidget-Unbreakable-Text-Overflows-Card/X27-run1-1280-errorText-url.png)
+![errorText past the border, 1280](../../../screenshots/VcStatWidget-Unbreakable-Text-Overflows-Card/X27-run1-1280-errorText-unbreakable.png)
+![label wraps, errorText overflows — same render, 375](../../../screenshots/VcStatWidget-Unbreakable-Text-Overflows-Card/X27-run2-375-control-label-wraps-errorText-overflows.png)
+![realistic URL message, 1280](../../../screenshots/VcStatWidget-Unbreakable-Text-Overflows-Card/X27-run1-1280-errorText-url.png)
 
 ## Environment & versions
 vcst · QA Storybook image `2.61.0-alpha.2597-vcst-5903-vc-stat-widget-a6255676` (source `vc-frontend@bfe0b259` + a CI-only

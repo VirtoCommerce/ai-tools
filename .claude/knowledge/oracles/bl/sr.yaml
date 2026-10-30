@@ -26,8 +26,8 @@ rules:
     violation_signal: Server re-truncates the caller's bounds to date boundaries; identical ranges aggregated more than once; omitted bounds error instead of all-time.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-SR-002
     title: Statistics are creator + membership scoped — no cross-rep / unserved-org leak
     rule: "**Two halves, and they have different scopes.** **(a) Membership scope — UNIVERSAL.** Every sales-rep surface is confined to the **organizations the rep serves**: a rep never sees another rep's data, an organization the rep does not serve yields no data (null / zero / empty) rather than a leak, and anonymous callers get an authorization error. **(b) Creator scope — the STATISTICS AND RANKINGS family ONLY.** `salesRepOrders`, the three statistics queries (`salesRepCustomerOrderStatistics` / `salesRepCustomerCartStatistics` / `salesRepCustomerCounts`), `salesRepTopSellers`, and the order-derived `salesRepCustomers` orderings additionally count **only the carts/orders the calling rep created**. **Half (b) does NOT extend to the index-backed \"every order of a served customer\" surface** (`salesRepCustomerOrders` / `salesRepCustomerOrder`), which is **deliberately creator-AGNOSTIC**: a rep sees orders placed by buyers and by colleagues within the orgs they serve. That is the surface working as designed, not a violation of this rule — judging that family against half (b) manufactures a false FAIL."
@@ -319,8 +319,8 @@ rules:
     violation_signal: A scope/storeId combination that was never saved returns anything but `null`; a rep's saved layout is visible to a different rep querying the same scope; `storeId` omitted and a real value resolve the same document.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-SR-016
     title: "`saveSalesRepLayout` is a full-document replace, never a merge"
     rule: Saving a layout replaces the entire stored document for that key — every region and block the caller omits from the mutation is gone after the save, not merely left unchanged. There is no partial-update / patch semantics.
@@ -337,8 +337,8 @@ rules:
     violation_signal: A region/block omitted from a save survives in the reloaded document (silent merge instead of replace).
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-SR-017
     title: Persisted block order and `hidden` are independent, verbatim round-trip fields
     rule: Within a `SalesRepLayoutRegion.blocks[]`, array position is the only signal of render order and `hidden` is a flag independent of position — both are stored and returned exactly as sent, with no server-side reordering, deduplication, or reinterpretation.
@@ -355,8 +355,8 @@ rules:
     violation_signal: Reload returns blocks in a different order than saved; a `hidden:true` block reverts to `false` (or vice versa) without a save.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-SR-018
     title: Save mutation echoes the persisted document, including a fresh UTC `modifiedDate`
     rule: "`saveSalesRepLayout`'s response IS the just-persisted document — the same regions/blocks that were sent, plus a `modifiedDate` set to the save's UTC instant. A caller does not need to re-query `salesRepLayout` after a successful save to see the current state."
@@ -483,8 +483,8 @@ rules:
     violation_signal: An unsaved change survives a reload; a drag/hide/reorder issues a save call by itself; Cancel or Reset issues a save call; the arrangement differs after sign-out/sign-in.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-SR-025
     title: The block registry owns structure and region placement; the saved document owns only order and hidden, with unknown types dropped and missing blocks appended
     rule: "Which block types exist and which region each renders in is decided by the frontend's block registry alone — never by the saved document. The document contributes only per-block order and a hidden flag. On load: a persisted block type absent from the registry is dropped silently (no error, no placeholder, no orphan entry); a registered block type absent from the document is appended after the document's own blocks; a registered block whose document region disagrees with the registry's region for that type renders in the registry's region, not the document's. Every such deviation self-heals on the next save — the round-trip payload always matches the registry's current structure."
@@ -517,8 +517,8 @@ rules:
     violation_signal: A never-saved key disables Edit, shows an error/alert, or is otherwise treated the same as a genuine read failure.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-SR-027
     title: The two widget columns are structurally separate drag groups — cross-column drag is impossible in either direction
     rule: The wide and rail widget columns are distinct drag-and-drop groups by construction; no widget can be dropped from one column into the other, regardless of runtime state.
@@ -553,8 +553,8 @@ rules:
     violation_signal: A stat card exposes a dismiss control; a hidden widget can be restored by dragging; a parked/hidden item remains rendered outside edit mode, or its state resets on reload.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-SR-029
     title: Keyboard grab-and-move announces every transition via `aria-live`, with position for reorder and without position for park/restore; however a grab ended by a pointer interruption is a tracked violation
     rule: Grabbing a block for keyboard reordering, moving it, and dropping it all announce via `aria-live`, including position (e.g. "position N of M") for reorder moves and edge cases; park and restore append to the end of their target zone and announce without a position — this asymmetry is intentional. Ending a grab must always restore the pre-grab state and announce the cancellation, regardless of what ends it — an explicit keyboard cancel (Escape / blur / tab-out) or any other interaction that terminates the grab.
@@ -571,8 +571,8 @@ rules:
     violation_signal: A reorder or edge announcement omits position; a park/restore announcement includes one; ending a grab by any means other than Escape/blur/tab commits the moved position without restoring it or announcing the cancellation.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-SR-030
     title: A save already in flight cannot be duplicated by a rapid repeat trigger
     rule: Triggering Save again while a save is already in flight never results in a second full-document-replace call reaching the backend — exactly one save request is issued per user-intended save, regardless of how a repeat trigger is delivered.
@@ -589,8 +589,8 @@ rules:
     violation_signal: Two save mutation calls are observed for a single rapid repeat trigger.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-SR-031
     title: A hidden widget's data query does not fire; a hidden stat card's page-level statistics query still fires unchanged
     rule: "A widget that is hidden and saved is not mounted at all, so none of its own data queries fire on load. Stat cards are different: every card's data comes from one shared page-level statistics query, so hiding a card does not shrink that query's scope or omit it — it still fires with the same request shape whether or not any card is hidden."
@@ -607,8 +607,8 @@ rules:
     violation_signal: A hidden widget's query still fires; a hidden stat card causes the page-level statistics query to change scope, drop a parameter, or stop firing.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-10-29
+      by: REG-2026-10-28-1915
   - id: BL-SR-032
     title: The rail region mounts only while it holds at least one visible block, and unmounts structurally (not just visually) when empty
     rule: The narrow rail column is not rendered at all when it has no visible blocks — the main column then runs full width — and mounts as soon as at least one block becomes visible in it. This is a structural mount/unmount, not a visual collapse; the unmounted state persists across a reload.

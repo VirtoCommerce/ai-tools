@@ -1,8 +1,8 @@
 # Code sign-in with the email typed in a different letter case does not send the last-used organization — **P3**
 
-## Status: CONFIRMED (live: 3x chrome, 4a chrome row 24, C1 REG-2026-10-20-0125 OTP-041)
+## Status: READY_TO_SUBMIT (filed; live: 3x chrome, 4a chrome row 24, C1 REG-2026-10-20-0125 OTP-041; re-verified vcst 2026-10-28)
 **Found by:** agent, testing VCST-6132 (`/qa-test` FULL, 2026-10-20)
-**Tracker:** not filed. It is below the severity floor (Low) and is named in the VCST-6132 QA comment.
+**Tracker:** VCST-6611 (filed 2026-10-28 from regression REG-2026-10-28-1013 OTP-041, re-verified live on vcst Chromium with a lowercase control; linked Relates VCST-6417). Package: `reports/regression/REG-2026-10-28-1013/evidence/OTP-041/`.
 **Archetype:** `STALE` · **Provenance:** PRE-EXISTING. The storefront code came in with VCST-5748 (vc-frontend #2477); PR #321 does not touch it.
 
 **Env:** vcptcore_qa1 · theme `2.61.0-pr-2575` · Customer `3.1030.0-pr-321-c54f` · `{{STORE_ID}}`.

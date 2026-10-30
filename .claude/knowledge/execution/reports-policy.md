@@ -15,7 +15,7 @@
 | 4 | Regression summary | `reports/regression/REG-*/` | One consolidated report per run |
 | 5 | Monitoring summary | `reports/monitoring/MONITOR-*/` | One consolidated report per `/qa-monitoring` (App Insights) run |
 | 6 | Per-ticket QA report | the ticket's **run folder** — where `QA_OUTPUT_DIR` puts it, by default `reports/tickets/<Sprint>/<TICKET>/<env>/` ([`run-output.md`](run-output.md)) | A ticket-scoped audit that has its own standalone value beyond the run that produced it — `/qa-verify-fix`, or a ticket-scoped `/qa-design`/`/qa-accessibility`/`/qa-storybook` run. **Includes `/qa-test`'s own `design-report.md`** when its Step-4 visual lane ran (`visual_surface: true`) — it lands in the ticket folder beside `summary.json`, not in the `qa-design/<slug>-<date>/` tree a standalone `/qa-design` invocation uses, because dispatched from a run it is that ticket's evidence. **Plus `test-strategy.md`** (`/vc-test:qa-test-strategy`): the approved plan of how the ticket is tested, one `## Round N` section per round (at most three), each reconciled in place at close-out against what ran, so it is the record a reviewer argues with. **Plus `/qa-test`'s `testing-checklist.md`** (Artifact B): on the FAST path `/qa-test` authors no cases and writes no Test Model, so the executed checklist is the run's **only** durable record of what was checked. `/qa-test`'s *other* step artifacts stay terminal-only — see the carve-out below |
-| 7 | BL audit report | `reports/knowledge/BL-AUDIT-<date>.md` | One receipt per `/qa-review-bl` (BL sync) run |
+| 7 | Oracle audit report (BL / ECL) | the run's summary **in chat** by default; `reports/knowledge/BL-AUDIT-<date>.md` / `ECL-AUDIT-<date>.md` **only when the operator asks for a file** | One summary per `/qa-review-oracles` run (alias `/qa-review-bl`, and `/qa-test-lifecycle` 4c) |
 | 8 | Exploratory session report | `reports/exploratory/SBTM-*.md` (a ticket run's: `exploratory/` in its run folder) | One report per `/qa-sbtm` / `/qa-exploratory` charter — read back by later sessions for the 24h duplicate-charter check |
 | 9 | Coverage generation report | `reports/coverage/COV-*/` | One consolidated `coverage-generation-report.md` per `/qa-coverage-gap` run (the run's own intermediate `gap-inventory.json`/`batch-*-results.json` are pipeline working data, not narrative report bloat — §2's cap applies to the markdown digest, not those) |
 | 10 | Performance investigation report | `reports/performance/{topic}-investigation-<date>.md` | A standalone performance investigation with findings worth keeping past the session that produced them. Written by **`/qa-perf-measure`** (deployed-env dependency-count / N+1 measurement); ticket-scoped runs may land as a category-6 per-ticket report instead |
@@ -83,7 +83,7 @@ Line caps in §2 apply to **narrative** files. A generated evidence page is exem
 
 **Not a report category — self-diagnostics artifacts.** The `vc-fix` self-diagnostics subsystem writes to `<outputRoot>/.vc-fix/diagnostics/` — the passive collector's `<session_id>.jsonl` (+ `.state.json`), the `/vc-self-check` `DIAG-*.md`, and the `deliver` `DELIVERY-*.md`. These are **gitignored diagnostic artifacts**, NOT one of the eleven report categories above; the `DIAG-*.md`/`DELIVERY-*.md` still obey the monitoring-summary size discipline (§2, target 15–40, cap ~100). They are **ephemeral, not archived**: the lifecycle is log → analyze (`/vc-self-check`) → contribute (`deliver` PR/issue) → **delete**. Once a finding is contributed upstream the PR/issue is the source of truth, so `deliver` removes the processed session's own artifacts (only that session — never others); nothing is deleted when nothing was delivered. So they don't accumulate and need no manual cleanup.
 
-**BL audit report — the receipt, not the source of truth.** `/qa-review-bl` writes `reports/knowledge/BL-AUDIT-<date>.md` — the receipt of a BL sync run (one operation per rule with its human source or bug key, what was written to `bl/<slug>.yaml`, and what was not — findings for the bug path, `kb` observations, proposed retirements). The edits themselves land in the git-tracked YAML; nothing unapplied is staged anywhere else — BL-AUDIT is just the log of that run (operation table + Applied + Not-applied + coverage reconciliation; reference the `git diff` rather than inlining it).
+**Oracle audit report — a chat summary, not a file, and never the source of truth.** `/qa-review-oracles` (and `/qa-review-bl`) ends with the run's summary **in chat**: one operation (BL) or verdict (ECL) per entry with its source or bug key, what was written to `bl/<slug>.yaml` / the ECL library, and what was not — findings for the bug path, `kb` observations, proposed retirements. The edits themselves land in the git-tracked oracle and `git diff` is their history, so a file would only repeat them. **Write `reports/knowledge/BL-AUDIT-<date>.md` / `ECL-AUDIT-<date>.md` only when the operator asks for a file** — the same shape (operation table + Applied + Not-applied + coverage reconciliation; reference the `git diff` rather than inlining it).
 
 **Terminal-only — `/qa-test-lifecycle` run summary.** The phase summary, changes inventory, coverage delta, quality-gate verdicts, and next steps are presented **directly in the chat response** — never written to `reports/test-lifecycle/` as a `lifecycle-report.md`/`lifecycle-summary.json` file. Nothing downstream reads those files today (CI's `run-full-cycle.ts` already consumes the agent's returned text, not a file on disk), so persisting them only adds tokens with no reader. Any Phase-5 environment-verification screenshots may still land under the gitignored `reports/test-lifecycle/TLC-*/` path, referenced inline from the chat summary by filename — but no narrative `.md`/`.json` is committed. This is the one pipeline output that is display-only; every other category above still writes to disk because a human or a later run needs to re-open it.
 
@@ -222,7 +222,7 @@ verification step rather than a note.
 
 1. **A FAIL** — the failing check's state (on the MCP lanes the agent's capture is the only failure image, §5.1a), error states included (console error, 500 toast).
 2. **A bug report** — the confirmed bug, annotated.
-3. **Documentation** — a guide whose reader needs to see the screen (`ba-doc-writer`, `/qa-test` 5-docs).
+3. **Documentation** — a guide whose reader needs to see the screen (`ba-doc-writer`, `/qa-test` 5-docs); its walkthrough GIF is mandatory (§5.2a).
 4. **Visual regression** — `vs. DESIGN`, visual-axis and before/after evidence, where the image IS the check.
 5. **A tracker comment that makes a UI claim** (§5.0) — a PASS gets a capture only when that comment will show it.
 
@@ -253,6 +253,7 @@ full-page shot replaces the viewport shot, never the element shot, and still cou
 | Bug report | 1–3 | 5 |
 | Regression suite (20+ tests) | failures only | 15–20 |
 | Exploratory session | anomalies only | 10 |
+| Documentation (per audience section) | 1 walkthrough GIF per flow + its success-state stills (§5.2a) | 2 GIFs + 4 stills |
 
 **On a `/qa-test --iterate` run every round stamps `-r{N}`, round 1 included.** Round N+1 re-runs the
 **same** case IDs into the **same** folder, so an unstamped name means the round-2 PASS overwrites the
@@ -347,6 +348,37 @@ rule above. Two fit modes, and the choice is an evidence decision rather than a 
 still shows the claim. Better still, pre-crop the stills to the region that carries it: a GIF a
 reader has to squint at fails §5.2 for the same reason a missing one does.
 
+### 5.2a Documentation — a walkthrough GIF is mandatory (2026-10-28)
+
+**§5.2 is conditional for a bug; for documentation it is not.** A how-to describes a sequence of clicks,
+and a reader follows a sequence far more reliably by watching it than by reading it. So a published
+guide — the `/qa-test` **5-docs** comment, a `/ba-analyze docs` Customer or Admin guide — carries **one
+walkthrough GIF per user-facing flow it documents**, built from stills captured step by step on the stand.
+
+| Section | Walkthrough |
+|---|---|
+| **For shoppers** / Customer guide | **GIF required**, one per documented flow (e.g. *add a passkey*, *sign in with a passkey*) |
+| **For administrators** / Admin guide | **GIF required**, one per documented blade or setting flow |
+| **For developers** | none — the request and its real response are the evidence |
+
+- **Captured for the doc, never reused from failures.** A passing step has no screenshot (§5.1), so the
+  doc step captures its own: one still per step, clicked as a real user on a Playwright lane
+  (`.claude/rules/vc-browser.md`), with an `AGENT-TEST-` account and no client data. **Every frame shows a
+  state the checklist verified `PASS`** (ticket-doc guardrail 1); a FAIL path is never animated as a how-to.
+- **Budget (documentation):** ≤ 2 GIFs per audience section, ≤ 12 frames each, ≥ 2 s per frame, width ≤ 960,
+  ≤ 5 MB. Pre-crop each still to the region the step names, so the control is legible at `|width=700!`.
+- **Stills too** — the success state of each flow is also attached as a still, for the §5.2 reason: a
+  reader cannot pause or quote a GIF.
+- **Video is optional, never instead.** A screen recording (MP4 / WebM, ≤ 2 min) may be attached *in
+  addition*; the GIF stays, because Jira animates a GIF inline while a video renders only as an attachment
+  link. The lanes still record no video (§5.2) — the GIF is built from the stills with `npm run gif`.
+- **Embedding** is [`tracker-ops.md`](tracker-ops.md) §5c — attach, wiki-markup reference, whole Jira body
+  wiki — and the three-signal `renderedBody` check of §5.0.
+- **Not captured ⇒ say so.** When a flow cannot be captured (no lane, sign-in impossible, the step needs a
+  real device), the comment still ships, and its `Not documented` line names
+  `walkthrough GIF: not captured — <reason>`. Never a placeholder, never a GIF of a different flow.
+- **Retention** is §9: never committed; the tracker attachment is the durable copy.
+
 ## 6. Console & Network Evidence
 
 **Console — capture:** specific error messages tied to the test/bug. **Skip:** full console dumps, benign Vue warnings, favicon 404s, analytics events.
@@ -378,7 +410,7 @@ Reports:
   Bug:           BUG-{Short-Description}.md   (in reports/bugs/open/{critical-high|medium|low}/ — §1a)
   Ticket check:  {check-type}-report.md  (inside the ticket's run folder, run-output.md — /qa-verify-fix, /qa-design, /qa-storybook, etc.; /qa-test writes only the checklist + summary.json, see below)
   Verify-fix:    verification-report.md + verification-summary.json + evidence.html  (the /qa-verify-fix triple, same folder)
-  BL audit:      BL-AUDIT-YYYY-MM-DD.md  (inside reports/knowledge/)
+  Oracle audit:  BL-AUDIT-YYYY-MM-DD.md / ECL-AUDIT-YYYY-MM-DD.md  (inside reports/knowledge/; only when the operator asks — §1 row 7)
   Exploratory:   SBTM-{charter}-YYYY-MM-DD.md  (inside reports/exploratory/; a ticket run's: exploratory/ in its run folder)
   Coverage:      coverage-generation-report.md  (inside reports/coverage/COV-YYYY-MM-DD-HHMM/)
   Regression:    {suite-name}-report.md  or  regression-YYYY-MM-DD.md

@@ -21,7 +21,7 @@ The unit price a buyer approves matches the line total at every width.
 ## Actual
 3/3: wide layout shows the list price, narrow layout the proposal price; totals are always the proposal.
 
-![1920](../../screenshots/Quote-Detail-Price-Per-Item-List-Vs-Proposal-By-Width/01-desktop-1920-price-per-item-list.png)
+![1920](../../../screenshots/Quote-Detail-Price-Per-Item-List-Vs-Proposal-By-Width/01-desktop-1920-price-per-item-list.png)
 
 ## Root Cause Analysis
 - `client-app/modules/quotes/components/quote-line-items.vue` passes `:actual-price="item.selectedTierPrice?.price"`, `:list-price`, `:total` but no `show-placed-price` / `list-total`.
