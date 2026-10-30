@@ -2,7 +2,7 @@
 
 The one document `/qa-docs` writes per ticket. The same text is the file
 `reports/ba/<Domain>/<ticket>-<slug>-guide.md` and the body of the one Jira comment. Rules for what
-may go into each placeholder: [`rules.md`](rules.md). Media lines: `media.md`.
+may go into each placeholder: [`rules.md`](rules.md). Media lines: [`media.md`](media.md).
 
 ```markdown
 ## Documentation — {TICKET}: {feature}

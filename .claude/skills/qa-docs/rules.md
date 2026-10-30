@@ -67,7 +67,7 @@ record, not bad copy.
   or host ([`../../rules/test-data.md`](../../rules/test-data.md)).
 - **Screenshots:** real captures, never a placeholder, placed right after the step they illustrate,
   cropped to the region the step names so the control is legible at `|width=700!`
-  (`media.md` §Capture).
+  ([`media.md`](media.md) §Capture).
 - **Admonitions** (MkDocs Material, for the file): `!!! note`, `!!! tip`, `!!! warning` (irreversible or
   risky), `!!! success`, `!!! example`, optionally titled. In the Jira comment they render as quoted
   paragraphs.
