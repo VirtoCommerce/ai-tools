@@ -14,7 +14,7 @@ production runs about nine months of releases ahead of it.
 
 | Question shape | Read FIRST |
 |---|---|
-| what shipped · what's new · which version introduced X · since when · is X supported yet · `3.10NN` / `2.5N` · *что нового* · *релиз* · *в какой версии* | **[`../domain/release-ledger.md`](../domain/release-ledger.md)** §1 (latest per component), §2 (last 6 months in full), §3 (older months index), §4 (component → month) |
+| what shipped · what's new · which version introduced X · since when · is X supported yet · `3.10NN` / `2.5N` — in any language | **[`../domain/release-ledger.md`](../domain/release-ledger.md)** §1 (latest per component), §2 (last 6 months in full), §3 (older months index), §4 (component → month) |
 | how does X work · where is it configured · what fields · API shape · deployment | **VirtoOZ**, through the connector (§VirtoOZ through the connector) |
 | one module's settings, defaults, limits or API that VirtoOZ is thin on · a NEW module with no doc page | **the module repo's `README.md` + `docs/`**, at the tag of the deployed version ([`../agents/qa/shared-instructions.md`](../agents/qa/shared-instructions.md) §Module repo docs) |
 | is it deployed on the env I am testing? | **none of them** — `GET {{BACK_URL}}/api/platform/modules` ([`../../templates/agent-dispatch.md`](../../templates/agent-dispatch.md) §Build Verification) |
