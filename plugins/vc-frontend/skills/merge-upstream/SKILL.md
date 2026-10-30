@@ -22,8 +22,8 @@ fork's own components and is the step that gets lost**: a green build after step
 and is not. The log, push and PR (step 9) wait until step 5 has run on the merge commit.
 
 Every merge leaves a log in the fork, next to `fork-map.json`: `upstream-merges/<YYYY-MM-DD>-<slug>.md`,
-one file per session (`-2` for a second that day). `<slug>` is the ref without `refs/upstream-tags/`, each
-`/` made `-` (`upstream/dev` → `upstream-dev`). `rerere` keeps only *how*; the log keeps *why* — decisions,
+one file per session (`-2` for a second that day). `<slug>` is the upstream release the merge brings
+([naming.md](naming.md)), else the ref with each `/` made `-`. `rerere` keeps only *how*; the log keeps *why* — decisions,
 deferrals, what QA could not reach — and the next merge reads it before asking anything. One new file per
 session, in a folder upstream never has, so logs cannot conflict. The first one also adds
 `upstream-merges/README.md`: what the folder is, and that upstream merges land as merge commits.
@@ -75,6 +75,7 @@ same text on both sides (a merge redone, a trial merge, a squashed PR merged aga
 - Fetch upstream's tags into their own namespace, so they cannot collide with the fork's:
   `git fetch --no-tags upstream '+refs/heads/dev:refs/remotes/upstream/dev' '+refs/tags/*:refs/upstream-tags/*'`
 - Ref: `upstream/dev` for vc-frontend-next, a release tag (`refs/upstream-tags/<version>`) for a customer theme.
+  Name the merge per [naming.md](naming.md).
 - `git merge-base origin/<base> <ref>` must print a commit. If it prints nothing, the fork was copied without
   history: stop and report that — this skill does not cover it. If `git merge-base --is-ancestor <ref>
   origin/<base>` succeeds, the ref is merged already: say so and stop (`port-upstream-to-fork` can still audit).
@@ -167,7 +168,7 @@ decisions, who made them), and fill it in as later steps produce results.
   (`git worktree add --detach "$(mktemp -d)" HEAD`, then `MERGE_HEAD`), never by checking a parent's file
   out into the merge: that overwrites the resolution.
 - Format only the files you resolved: `prettier --write` on a file the fork left unformatted rewrites it.
-- Commit the merge locally once the checks are done: `chore: merge upstream vc-frontend <ref>` (or
+- Commit the merge locally once the checks are done: `chore: merge upstream vc-frontend <name>` (or
   `chore: merge <base> into <branch>`), each conflict and its resolution in the body. Note its SHA in the log:
   steps 5 and 6 read its parents. Nothing is pushed yet. **The next action is step 5**, whatever else was
   asked in the meantime.
