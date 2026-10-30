@@ -23,6 +23,7 @@
 //   npm run tracker:comment -- --ticket VCST-1234 --delete 109823
 //   npm run tracker:comment -- --ticket VCST-1234 --body-file body.md --force-new "PO asked for a separate note"
 //   npm run tracker:comment -- --ticket VCST-1234 --body-file body.md --attach-file plan.md   # a FILE, linked
+//   npm run tracker:comment -- --ticket VCST-1234 --amend 109824 --body-file doc.md --same-round "video attached" --attach-video doc.mp4
 //   (add --dry-run to any of the above)
 //
 // --attach  <img>  uploads an IMAGE/GIF and embeds it inline — that forces the v2 API + wiki body (§5c).
@@ -31,6 +32,9 @@
 //                   big for the comment travels as an attachment on the same ticket, referenced from the ONE
 //                   comment. Re-attaching a same-name file is reused only when the size matches; a changed
 //                   file uploads as a new attachment and the link points at the new one.
+// --attach-video <f.mp4|webm|mov> uploads a VIDEO and LINKS it: Jira plays it from the attachment, while
+//                   inline it renders as a dead plugin object (§5c), so --attach refuses a video. The link
+//                   REPLACES the body's first `Video:` line (the /qa-docs document's video line), or is appended.
 //
 // Ledger: .tracker-comments.json (gitignored) maps `<TICKET>@<env>` -> {comment_id, run_id, …}: one ticket
 // tested on two envs is two runs, each with its own comment (an entry written before the env was part of the
@@ -45,6 +49,7 @@ import { resolveTestEnv } from "../lib/resolve-test-env.js";
 import { priorRunDirs, runLayout, sessionRun } from "../lib/run-dir.mjs";
 import { wikiMarkupRefusal } from "../lib/jira-body-format.mjs";
 import { markdownToAdf } from "./markdown-to-adf.mjs";
+import { isVideo, withVideoLine } from "./video.mjs";
 import { decide, roundHours, sessionRunId, effectiveEntry, ledgerAfterAmend, isVerdictBody, commentKind } from "./round-guard.mjs";
 
 // config.js loads the layered .env files — and process.exit(1)s when the repo's CORE
@@ -77,6 +82,7 @@ function parseArgs(argv) {
     else if (k === "--same-round") a.sameRound = next();
     else if (k === "--attach") { (a.attach ??= []).push(next()); }
     else if (k === "--attach-file") { (a.attachFile ??= []).push(next()); }
+    else if (k === "--attach-video") { (a.attachVideo ??= []).push(next()); }
     else if (k === "--wiki") a.wiki = true;
     else if (k === "--dry-run") a.dryRun = true;
     else if (k === "--help" || k === "-h") a.help = true;
@@ -258,9 +264,11 @@ if (a.mode === "delete") {
 let body = a.body ?? (a.bodyFile ? readFileSync(resolve(ROOT, a.bodyFile), "utf8") : null);
 if (!body) die("--body-file <path> or --body <text> is required.");
 // Fail before any network call or ledger decision, never half-way through a post.
-for (const [flag, list] of [["--attach", a.attach], ["--attach-file", a.attachFile]]) {
+for (const [flag, list] of [["--attach", a.attach], ["--attach-file", a.attachFile], ["--attach-video", a.attachVideo]]) {
   for (const p of list ?? []) if (!existsSync(resolve(ROOT, p))) die(`${flag}: file not found: ${resolve(ROOT, p)}`);
 }
+for (const p of a.attach ?? []) if (isVideo(p)) die(`--attach: ${p} is a video — inline it renders as a dead plugin object (tracker-ops.md §5c). Use --attach-video.`);
+for (const p of a.attachVideo ?? []) if (!isVideo(p)) die(`--attach-video: ${p} is not .mp4/.webm/.mov — use --attach (image/GIF) or --attach-file.`);
 // Two APIs, two formats (§5a + §5c): v3 takes MARKDOWN and cannot embed images;
 // v2 takes WIKI markup and is the only path that renders an attachment inline.
 // --attach therefore implies v2, and there the wiki check must NOT fire.
@@ -370,14 +378,28 @@ if (a.attachFile?.length) {
   body = `${body.replace(/\s+$/, "")}\n\n${useWiki ? "*Attached:*" : "**Attached:**"} ${links}\n`;
   if (a.dryRun) console.log(`  [dry-run] appended: ${body.trim().split("\n").pop()}`);
 }
+let videoLinked = [];
+if (a.attachVideo?.length) {
+  const jiraBase = (process.env.JIRA_BASE_URL ?? process.env.JIRA_BASE ?? "<jira>").replace(/\/+$/, "");
+  if (a.dryRun) videoLinked = a.attachVideo.map(p => ({ name: resolve(ROOT, p).split(/[\\/]/).pop(), id: "<id>" }));
+  else {
+    videoLinked = await attachFiles(a.ticket, a.attachVideo, { flag: "--attach-video", matchSize: true });
+    for (const f of videoLinked) {
+      console.log(`  ${f.reused ? "= already attached" : "✓ attached"}  ${f.name}  (id ${f.id})${f.size ? `  ${(f.size / 1048576).toFixed(1)} MB` : ""}`);
+    }
+  }
+  const url = f => `${jiraBase}/secure/attachment/${f.id}/${encodeURIComponent(f.name).replace(/[()]/g, c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)}`;
+  body = withVideoLine(body, videoLinked.map(f => (useWiki ? `[${f.name}|${url(f)}]` : `[${f.name}](${url(f)})`)).join(" · "), { wiki: useWiki });
+  if (a.dryRun) console.log(`\n  [dry-run] would attach and link the video: ${videoLinked.map(f => f.name).join(", ")}\n  [dry-run] video line: ${body.split("\n").find(l => /Video:/.test(l))}`);
+}
 const wireBody = toWire(body);
 
 async function reportRender(id) {
-  if (linked.length) {
+  if (linked.length || videoLinked.length) {
     const c = await jira("GET", `/rest/api/3/issue/${a.ticket}/comment/${id}?expand=renderedBody`);
     const html = c?.renderedBody ?? "";
-    console.log(`\n    renderedBody check (--attach-file links):`);
-    for (const f of linked) {
+    console.log(`\n    renderedBody check (--attach-file / --attach-video links):`);
+    for (const f of [...linked, ...videoLinked]) {
       const ok = html.includes(`/secure/attachment/${f.id}/`);
       console.log(`      ${ok ? "✓" : "✗"} ${f.name} → attachment ${f.id}${ok ? "" : "  — link NOT found in the rendered comment"}`);
     }

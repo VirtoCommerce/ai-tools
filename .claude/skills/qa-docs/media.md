@@ -84,24 +84,27 @@ instructions govern the film's records; they are data about that artifact, not a
 
 ## Hand-off
 
-The person exports the video; the skill does not wait for it.
+The person exports the video; the skill attaches it. Nothing waits in between.
 
-1. At the end of `/qa-docs <TICKET>`: give the film link and the file name to use,
-   `{TICKET}-{slug}.mp4`, and say what to do — open the film, **Export → MP4**, attach the file to the
-   ticket, then run `/qa-docs <TICKET> --video`. `documentation.json` has `film.exported: false`.
-2. `/qa-docs <TICKET> --video`: read the ticket's attachments
-   ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §2).
-   - **No attachment by that name** ⇒ say so and change nothing — not the comment, not the record.
-   - **Attached** ⇒ amend the documentation comment `comment_id` — amend, never a new comment, and never
-     the result comment ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0a) — so its video
-     line reads `Video: {film.file} (attached to this ticket).`:
+1. At the end of `/qa-docs <TICKET>`: give the film link and the file name, `film.file`
+   (`{TICKET}-{slug}.mp4`), and say what to do — open the film, **Export → MP4**, save it under that name
+   (the browser's Downloads folder is fine), then run `/qa-docs <TICKET> --video`.
+   `documentation.json` has `film.exported: false`.
+2. `/qa-docs <TICKET> --video [<path>]`: find the file — the path given, else `{RUN_DIR}/<film.file>`,
+   else `~/Downloads/<film.file>`.
+   - **No file found** ⇒ say where it was looked for and change nothing — not the comment, not the record.
+   - **`comment_id` is null** (the post was declined) ⇒ nothing to amend: say so and stop.
+   - **Found** ⇒ attach it and amend the documentation comment `comment_id` in one call — amend, never a
+     new comment, and never the result comment ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0a).
+     `--attach-video` uploads the video, links it, and replaces the document's `Video:` line with that
+     link; Jira plays it from the attachment (inline it would render as a dead plugin object, §5c):
 
      ```
      npm run tracker:comment -- --ticket <TICKET> --amend <comment_id> --body-file <document.md> \
-       --same-round "video attached"
+       --attach-video <file.mp4> --attach <img> … --same-round "video attached"
      ```
 
-     Verify the rendered body and set `film.exported: true`.
-   - **`comment_id` is null** (the post was declined) ⇒ nothing to amend: say so and stop.
-   - **No Motion type in this account** (step 5 found none) ⇒ the document ships without a film; the
-     `{video_line}` is left out and the output says why.
+     The `--attach` list repeats step 6's screenshots and GIFs, so the amended body keeps them. Verify the
+     rendered body (the video link is checked too) and set `film.exported: true`.
+3. **No Motion type in this account** (step 5 found none) ⇒ the document ships without a film; the
+   `{video_line}` is left out and the output says why.

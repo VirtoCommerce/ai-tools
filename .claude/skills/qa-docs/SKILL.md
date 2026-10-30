@@ -1,7 +1,7 @@
 ---
 name: qa-docs
 description: "[QA Method] Use when a ticket has reached status Tested and needs its documentation: ONE document — What's new, How to set it up, How it works — built from the run's PASS rows and real stand screenshots, posted as ONE Jira comment, plus a ≤30 s Motion film a person exports and attaches. Called by /qa-test FULL at 5-docs; run by hand after the /qa-test FAST path or /vc-test:qa-ticket. `release` mode aggregates the What's new sections of a sprint or version. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
-argument-hint: "<TICKET> [--video] | release --sprint <SprintXX-XX> | release --version <X.Y.Z>"
+argument-hint: "<TICKET> [--video [<file.mp4>]] | release --sprint <SprintXX-XX> | release --version <X.Y.Z>"
 ---
 
 # /qa-docs — the documentation of one tested ticket
@@ -23,7 +23,7 @@ states how the platform behaves — so it carries the `kb` read step (2) and wri
 | Form | Does |
 |---|---|
 | `/qa-docs <TICKET>` | steps 1–8 below |
-| `/qa-docs <TICKET> --video` | the video hand-off only: [`media.md`](media.md) §Hand-off |
+| `/qa-docs <TICKET> --video [<file.mp4>]` | attach the exported film and amend the comment: [`media.md`](media.md) §Hand-off |
 | `/qa-docs release --sprint <S>` · `--version <V>` | the aggregate: [`release.md`](release.md) §Aggregate |
 
 `/qa-test` FULL and its technical-change flow call `/qa-docs <TICKET>` at their 5-docs step, after
@@ -98,7 +98,7 @@ call it — QA runs it by hand when the ticket needs documentation.
    |---|---|
    | `published` | `true` when the document was written |
    | `files` | the guide path(s) under `reports/ba/` |
-   | `film` | `{ "url": <film artifact URL or null>, "file": "<TICKET>-<slug>.mp4", "exported": false }` — `exported` turns `true` only after `--video` found the attachment |
+   | `film` | `{ "url": <film artifact URL or null>, "file": "<TICKET>-<slug>.mp4", "exported": false }` — `exported` turns `true` only after `--video` attached it |
    | `comment_id` | the posted comment's id, or `null` |
    | `comment_posted` | `false` when the person declined the post |
    | `refusal` | `not-tested` · `not-deployed` · `not-user-visible` · `null` |
@@ -113,6 +113,6 @@ for the export.
 ## What this skill never does
 
 - Writes documentation for a ticket that is not in Tested, or an instruction with no `PASS` row.
-- Creates a video file, or renders stills of the film — the person exports the MP4 from the film page.
+- Creates a video file, or renders stills of the film — the person exports the MP4 from the film page; `--video` attaches it.
 - Posts a second documentation comment for the same run — `--video` amends the one there is.
 - Drives any browser other than a Playwright lane ([`../../rules/vc-browser.md`](../../rules/vc-browser.md)).

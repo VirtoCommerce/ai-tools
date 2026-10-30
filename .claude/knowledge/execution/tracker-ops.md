@@ -345,7 +345,9 @@ That is the **QuickTime ActiveX / NPAPI** embed. ActiveX died with IE11 and NPAP
 in 2015, so the buyer-facing result in any current browser is an empty box. The file is still attached and
 downloadable from the attachments panel — but it is **not inline evidence**, and because it posts `200 OK`
 with zero `<span class="error">`, a run that stops at the status code will believe it worked. **Use an
-animated GIF** (`npm run gif`), which renders as a real media node and animates inline.
+animated GIF** (`npm run gif`), which renders as a real media node and animates inline. A video a reader
+should watch (the `/qa-docs` film) goes as a **linked attachment** — `npm run tracker:comment -- … --attach-video
+<file.mp4>` uploads it and links it, and Jira plays it from the attachment; `--attach` refuses a video.
 
 Raw Playwright video is impractical anyway: a short session records **~84 MB** of VP8 `.webm`
 (`test-results/<lane>/video/`) and Playwright exposes no bitrate control — `recordVideo.size` sets frame
