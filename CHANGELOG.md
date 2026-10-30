@@ -14,14 +14,8 @@ VCST-6626.
 
 ### Fixed
 
-- A merge of `upstream/dev` is named after the newest upstream release tag the ref contains
-  (`refs/upstream-tags/[0-9]*`), never after upstream's root `package.json` version or a version-titled commit on
-  `dev`. Upstream bumps `dev` to the next version right after tagging a release, so the vc-frontend-next merge of
-  release `2.61.0` was titled, logged and posted to Jira as "2.62.0", a release that does not exist. When only that
-  bump rides on top of the tag, the slug, branch, log title, commit messages, PR title and tracker comments say the
-  release, and none mention upstream's next version: the fork numbers its own releases.
-- The rule lives in `merge-upstream/naming.md`, read at step 1 before the branch is created; `SKILL.md` and
-  `log-template.md` point at it.
+- A merge of `upstream/dev` is named after the upstream release tag it brings, not upstream's next version on `dev`
+  (`merge-upstream/naming.md`).
 
 ## Parallel `/qa-bug` runs no longer share scratch files — `vc-fix` `0.18.2` — 2026-10-28
 
