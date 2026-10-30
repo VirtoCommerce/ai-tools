@@ -121,6 +121,15 @@
     "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|no-version|see the documentation comment|null",
     "aggregated_into": null
   },
+  "documentation": {
+    "$comment": "LEGACY — written by the old 5-docs step up to 2026-10-30 and kept only so older summary.json files still validate. New runs never write it: /qa-docs records the ticket documentation in {RUN_DIR}/documentation.json (.claude/skills/qa-docs/SKILL.md step 8).",
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": [],
+    "comment_posted": false,
+    "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|null"
+  },
   "status_transitions": [
       {
         "$comment": "Every status hop this run made, AND every hop it skipped, with the reason. Single source of truth for the rules: .claude/knowledge/execution/ticket-status-transitions.md. WHY IT EXISTS: a skipped transition previously left NO trace in any artifact, so \"the ticket was never moved\" and \"the ticket was moved and the note was lost\" were indistinguishable after the fact — and the 5-status table had two rows for a four-value verdict vocabulary, so a BLOCKED run silently left the ticket parked in in-testing. A run makes at most TWO hops: the opening hop at 1a, the moment the feature-test route resolves (never confirmed, reversible, and on Jira the precondition both closing transitions need; it moved here from Step 4 because in-testing means QA OWNS the ticket, which is true when the run is accepted rather than when the first browser opens — at Step 4 the ticket read as unclaimed through 30+ minutes of context, modelling, authoring and seeding) and the closing hop at 5-status (always confirmed, terminal for the run). qa-lead is the only actor: no specialist, runner, verifier, doer or sub-agent transitions a ticket. NULL for this whole field means no hop was even attempted, which is a gap and not a clean run (the axes.md §2 rule one level down); an EMPTY ARRAY means the run reached the tracker and deliberately made no move. On --iterate the closing hop appears ONCE, at loop exit, whatever the round count.",
