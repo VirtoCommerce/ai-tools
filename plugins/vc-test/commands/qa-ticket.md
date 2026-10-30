@@ -162,3 +162,5 @@ question decides filing; each one filed ⇒ at once `node <plugin>/lib/rounds.mj
 `node <plugin>/lib/rounds.mjs close --key <TICKET> --run-dir <RUN_DIR> --bundle <BUNDLE>`. Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and
 its `manual`, `unknown`, `foreign` lists; 3 ⇒ the stand is not writable: all manual. Print `verdict.md`'s first two
 lines and path.
+
+Ticket moved to Tested? Run `/qa-docs <TICKET>` for its documentation, where that skill is installed.
