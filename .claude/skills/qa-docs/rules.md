@@ -5,8 +5,8 @@ sections by name.
 
 ## Evidence bar
 
-- **Only for a tested ticket.** The gate is the ticket's tracker status **Tested**, read live — any other
-  status is the refusal `not-tested` (`SKILL.md` step 1).
+- **Only for a tested ticket.** The gate is the ticket's tracker status **Tested** or **Done**, read live —
+  any other status is the refusal `not-tested` (`SKILL.md` step 1).
 - **Every instruction maps to a `PASS` row** of the run's `testing-checklist.md`: each step, each setting,
   each "you can now…". A condition that is `UNCOVERED`, or carries a `PASS WITH NOTES` note, is left out
   and named on the `Not documented` line. Padding is worse than leaving out: it puts an unverified

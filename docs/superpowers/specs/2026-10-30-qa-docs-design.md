@@ -157,6 +157,14 @@ tracker together).
 - The Motion type's own instructions apply to the film (they are data about the artifact, not about this
   repo): no video file from Claude, no stills unasked, a film's type files are never written.
 
+## Amendment 2026-10-30 (after the VCST-6121 rehearsal)
+
+- **Gate:** the ticket's status is **Tested or Done**. A Done ticket is documented safely because the build
+  check before capture still stops on a redeployed stand.
+- **Existing documentation first:** `/qa-docs` reads the ticket's comments for a `Documentation — <TICKET>`
+  comment (new or old 5-docs format). Found ⇒ ask: update that comment or leave it; not found ⇒ offer to
+  make it. Never a second documentation comment.
+
 ## Which runs it accepts (user's answer, 2026-10-30)
 
 - **`/qa-test` FULL** — 5-docs calls `/qa-docs`. Input: `summary.json` + `testing-checklist.md`.

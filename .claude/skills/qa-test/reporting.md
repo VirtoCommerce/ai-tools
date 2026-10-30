@@ -267,8 +267,8 @@ media, the posting mechanics — is that skill's; nothing of it is restated here
 
 - **FULL and the technical-change flow** ([`technical-change.md`](technical-change.md)). The FAST path stops at 5-status; when a FAST ticket needs documentation, QA runs `/qa-docs <ticket-key>`
   by hand.
-- **After 5-status**, because `/qa-docs` documents only a ticket in status Tested, and 5-status is the step that
-  moves it there. A run that did not reach Tested gets the skill's `not-tested` refusal — an outcome, not a failure.
+- **After 5-status**, because `/qa-docs` documents only a ticket in status Tested or Done, and 5-status is the
+  step that moves it to Tested. A run that did not reach Tested gets the skill's `not-tested` refusal — an outcome, not a failure.
 - **`--iterate`: once, at loop exit.** The loop re-tests an unmerged prerelease; documenting a build about to be
   replaced publishes instructions nobody can use yet, and a per-round comment buries the ticket.
 

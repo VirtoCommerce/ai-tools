@@ -8,7 +8,7 @@ release that collects the *What's new* sections of the window's ticket documents
 
 **Input.** Every ticket of the window (the sprint's tickets, or the tickets whose *Shipped in* names the
 version) and, per ticket, its document `reports/ba/<Domain>/<ticket>-<slug>-guide.md` and its run's
-`documentation.json`. A ticket document exists only for a ticket that reached Tested
+`documentation.json`. A ticket document exists only for a ticket that was Tested or Done when it was written
 ([`rules.md`](rules.md) §Evidence bar).
 
 **Included** — a ticket whose document exists and whose *Shipped in* is resolved (not `UNKNOWN`).

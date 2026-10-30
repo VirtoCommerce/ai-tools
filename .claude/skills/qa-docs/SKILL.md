@@ -1,6 +1,6 @@
 ---
 name: qa-docs
-description: "[QA Method] Use when a ticket has reached status Tested and needs its documentation: ONE document — What's new, How to set it up, How it works — built from the run's PASS rows and real stand screenshots, posted as ONE Jira comment, plus a ≤30 s Motion film a person exports and attaches. Called by /qa-test FULL and its technical-change flow at 5-docs; run by hand after the /qa-test FAST path or /vc-test:qa-ticket. `release` mode aggregates the What's new sections of a sprint or version. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
+description: "[QA Method] Use when a ticket in status Tested or Done needs its documentation: ONE document — What's new, How to set it up, How it works — built from the run's PASS rows and real stand screenshots, posted as ONE Jira comment, plus a ≤30 s Motion film a person exports and attaches. Called by /qa-test FULL and its technical-change flow at 5-docs; run by hand after the /qa-test FAST path or /vc-test:qa-ticket. `release` mode aggregates the What's new sections of a sprint or version. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
 argument-hint: "<TICKET> [--video [<file.mp4>]] | release --sprint <SprintXX-XX> | release --version <X.Y.Z>"
 ---
 
@@ -44,12 +44,25 @@ call it — QA runs it by hand when the ticket needs documentation.
    | Refusal | When |
    |---|---|
    | `no-run` | the bound folder lacks `testing-checklist.md` plus `summary.json` or `verdict.json` — pruned by `reports:prune`, or the folder of another env. Name the folder read |
-   | `not-tested` | the status is anything but **Tested** — earlier (In Testing, Reopened) **and later** (Done, Closed): documentation is written at the Tested moment, from that run. Say which status was read |
+   | `not-tested` | the status is neither **Tested** nor **Done** — earlier ones (In Testing, Reopened) were not verified; later ones (Closed, Released) are past documenting. Say which status was read. A Done ticket is safe to document because the build check (step 1 of [`media.md`](media.md) §Capture) still stops on a redeployed stand |
    | `not-deployed` | the probed versions do not carry the change ([`rules.md`](rules.md) §Shipped in). A run that probed no versions (a `/vc-test:qa-ticket` run) is judged right after the capture probe (step 1 of [`media.md`](media.md) §Capture), before any frame is taken |
    | `not-user-visible` | no `PASS` row a person can act on ([`rules.md`](rules.md) §Evidence bar) |
    | `build-changed` | the stand runs another build than the run tested, and the person declines to document from it (step 1 of [`media.md`](media.md) §Capture) |
 
    A refusal is an outcome: no guide and no comment — only `documentation.json` (step 8) records it; then stop.
+
+   **Then look for documentation already on the ticket** — it may have been posted from another machine or
+   by the old 5-docs, which this checkout's ledger does not know. Read the ticket's comments
+   ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §2; Jira: `getJiraIssue` with the `comment`
+   field) and find one whose first line is **`Documentation — <TICKET>`** (wiki `h2.` or Markdown `##`;
+   the old format has *For shoppers* / *For administrators* sections), or the `comment_id` that
+   `documentation.json` already holds.
+   - **Found** ⇒ say so, with its author and date, and ask once: **update that comment** (the steps below,
+     then step 6 amends it — `--doc --amend <its id> --same-round "documentation update"`) or **leave it**
+     (stop; record `comment_id`, `published: false`, `refusal: null`, `existing: true`). Never a second
+     documentation comment.
+   - **Not found** ⇒ say the ticket has no documentation yet and **offer to make it**; on a yes, go on; on a
+     no, stop and record nothing. Called from `/qa-test` 5-docs, the step-6 confirmation is that one offer.
 
 2. **Ground what the document will state.** The `PASS` rows give the behaviour and the settings. Before
    the first live check:
@@ -112,15 +125,18 @@ call it — QA runs it by hand when the ticket needs documentation.
    | `refusal` | `no-run` · `not-tested` · `not-deployed` · `not-user-visible` · `build-changed` · `null` |
    | `versions_source` | `run` or `capture` |
    | `aggregated_into` | set later by `/qa-docs release` — the aggregate file that includes this ticket |
+   | `existing` | `true` when step 1 found documentation already on the ticket (its id is `comment_id`) |
 
-   A `null` refusal with `published: false` never happens: either the document exists or the reason does.
+   A `null` refusal with `published: false` happens only with `existing: true` (the person chose to leave the
+   ticket's documentation as it is): otherwise either the document exists or the reason does.
 
 Then hand the video to the person ([`media.md`](media.md) §Hand-off) and stop. The skill does not wait
 for the export.
 
 ## What this skill never does
 
-- Writes documentation for a ticket that is not in Tested, or an instruction with no `PASS` row.
+- Writes documentation for a ticket that is neither Tested nor Done, or an instruction with no `PASS` row.
+- Posts a documentation comment beside one already on the ticket — it updates that one, or leaves it.
 - Creates a video file, or renders stills of the film — the person exports the MP4 from the film page; `--video` attaches it.
 - Posts a second documentation comment for the same run — `--video` amends the one there is.
 - Drives any browser other than a Playwright lane ([`../../rules/vc-browser.md`](../../rules/vc-browser.md)).
