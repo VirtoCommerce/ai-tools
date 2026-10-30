@@ -218,8 +218,6 @@ Return structured JSON:
 
 Write API docs that a developer can read and use in under 5 minutes. The structure must be **scenario-led with runnable code snippets**, not a per-endpoint template repeated N times.
 
-**Canonical example to mirror**: `reports/ba/pr-114-api-docs.md` (Cart Configuration-Item Selection mutations). Open it before authoring. Match its rhythm.
-
 #### Required structure (top to bottom)
 
 1. **One-paragraph "What this PR/feature adds"** — the punchline, the asymmetry that matters, the migration story. Not a feature list.
