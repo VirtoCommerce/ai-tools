@@ -1,6 +1,7 @@
 // qa-docs film kit — written into a Motion film's modules/shared.js store document (append the
 // FILM_CSS rules to the film's modules/base.css). Never published as a file: a film owns no files.
 // Source: the VCST-6121 "Sign in with a passkey" film, 2026-10-30. See media.md §Film.
+// Shots: {file, w?, h?, masks?: [[x, y, w, h], …]} — mask boxes in screenshot pixels, measured per stand.
 
 // eslint-disable-next-line no-unused-vars
 const FILM_CSS = ".desk { position:absolute; inset:0; background:color-mix(in srgb, var(--ground) 94%, var(--second)) }\n.scr-win { position:absolute; border-radius:16px; overflow:hidden; background:var(--ground); box-shadow:0 30px 80px rgba(0,0,0,.16), 0 0 0 1px color-mix(in srgb, var(--second) 12%, transparent) }\n.scr-bar { height:40px; display:flex; align-items:center; gap:9px; padding:0 18px; background:color-mix(in srgb, var(--ground) 92%, var(--second)) }\n.scr-bar i { width:12px; height:12px; border-radius:50%; background:color-mix(in srgb, var(--ground) 72%, var(--second)) }\n.scr-url { margin-left:18px; width:520px; height:26px; border-radius:13px; background:var(--ground); font-size:15px; line-height:26px; padding:0 14px; color:color-mix(in srgb, var(--second) 65%, var(--ground)); white-space:nowrap }\n.scr-view { position:relative; overflow:hidden }\n.scr-layer { position:absolute; left:0; top:0; overflow:hidden } .scr-layer img { display:block }\n.scr-mask { position:absolute; border-radius:50%; background:var(--ground) }\n.scr-hl { position:absolute; border-radius:8px; background:color-mix(in srgb, var(--second) 8%, transparent); opacity:0 }\n.scr-kick { left:240px; top:30px }\n.pr-dim { position:absolute; inset:0; background:color-mix(in srgb, var(--second) 45%, transparent) }\n.pr-card { position:absolute; left:660px; top:260px; width:600px; height:500px; border-radius:28px; background:var(--ground); box-shadow:0 30px 90px rgba(0,0,0,.25); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px }\n.pr-title { margin:0; font-size:32px; font-weight:700; text-align:center; width:500px } .pr-note { margin:0; font-size:24px; color:color-mix(in srgb, var(--second) 60%, var(--ground)) }\n.pr-fill { fill:var(--main) } .pr-arc { fill:none; stroke:var(--accent); stroke-width:9; stroke-linecap:round; stroke-dasharray:1 1 } .pr-ok { fill:none; stroke:var(--ground); stroke-width:14; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1 1 }";
@@ -15,7 +16,9 @@ UI.screen = function (kit, shots) {
     const w = (f.w || 1920) * S.s, h = (f.h || 1080) * S.s;
     return '<div class="scr-layer scr-l' + i + '" style="width:' + w + 'px;height:' + h + 'px;opacity:0">' +
       '<img src="' + kit.assets.url(f.file) + '" style="width:' + w + 'px;height:' + h + 'px" alt="">' +
-      '<div class="scr-mask" style="left:' + 45 * S.s + 'px;top:' + 59 * S.s + 'px;width:' + 50 * S.s + 'px;height:' + 51 * S.s + 'px"></div></div>';
+      (f.masks || []).map(function (m) {
+        return '<div class="scr-mask" style="border-radius:6px;left:' + m[0] * S.s + 'px;top:' + m[1] * S.s + 'px;width:' + m[2] * S.s + 'px;height:' + m[3] * S.s + 'px"></div>';
+      }).join('') + '</div>';
   }).join('');
   const root = kit.h('<div class="scr-cam" style="position:absolute;inset:0"><div class="desk"></div>' +
     '<div class="scr-win" style="left:' + S.x + 'px;top:' + (S.y - S.bar) + 'px;width:' + W + 'px">' +
@@ -43,7 +46,10 @@ UI.screen = function (kit, shots) {
 };
 
 // The device's own confirmation prompt (drawn: the OS dialog cannot be captured).
-UI.prompt = function (kit) {
+UI.prompt = function (kit, opts) {
+  const o = opts || {};
+  const title = kit.esc(o.title || 'Confirm on your device');
+  const note = kit.esc(o.note || 'Illustration — your device’s own prompt');
   const { seg, eo, ei, eob } = kit;
   const arcs = [24, 44, 64, 84].map(function (r) {
     const a0 = -200 * Math.PI / 180, a1 = 20 * Math.PI / 180;
@@ -52,7 +58,7 @@ UI.prompt = function (kit) {
   const root = kit.h('<div style="position:absolute;inset:0;opacity:0"><div class="pr-dim"></div>' +
     '<div class="pr-card"><svg width="200" height="200" viewBox="-110 -110 220 220"><circle class="pr-fill" r="104"/><g class="pr-print">' + arcs + '</g>' +
     '<path class="pr-ok" pathLength="1" d="M-44 2 L-12 34 L48 -30"/></svg>' +
-    '<p class="pr-title">Confirm with your fingerprint, face or PIN</p><p class="pr-note">Your device asks, as it always does</p></div></div>');
+    '<p class="pr-title">' + title + '</p><p class="pr-note">' + note + '</p></div></div>');
   kit.stage.append(root);
   const dim = root.querySelector('.pr-dim').style, card = root.querySelector('.pr-card').style;
   const fill = root.querySelector('.pr-fill').style, print = root.querySelector('.pr-print').style, ok = root.querySelector('.pr-ok').style;

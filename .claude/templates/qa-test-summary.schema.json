@@ -108,7 +108,7 @@
     }
   },
   "release": {
-    "$comment": "Resolved at 5-report.0 and written at 5-report.3, for a PASS/PASS_WITH_NOTES verdict. Carries the probed versions and the breaking flag the result comment's Release note line prints (plugins/vc-fix/skills/qa-report/lib/model.mjs). No fragment file is written any more: What's new lives in the /qa-docs document, so `fragment` is null and, when no other refusal applies, `refusal` is \"see the documentation comment\". `aggregated_into` is set by /qa-docs release.",
+    "$comment": "Resolved at 5-report.0 and written at 5-report.3, for a PASS/PASS_WITH_NOTES verdict. Carries the probed versions and the breaking flag the result comment's Release note line prints (plugins/vc-fix/skills/qa-report/lib/model.mjs). No fragment file is written any more: What's new lives in the /qa-docs document, so `fragment` is null and, when no other refusal applies, `refusal` says whether /qa-docs may still document it (see 5-report.0). `aggregated_into` is LEGACY: /qa-docs release records it in documentation.json.",
     "layers": [],
     "layer_source": [],
     "layers_conflict": false,
@@ -118,7 +118,7 @@
     "breaking_source": null,
     "user_visible": null,
     "fragment": null,
-    "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|no-version|see the documentation comment|null",
+    "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|no-version|documented separately by /qa-docs, when the ticket is documented|not documented by this run|null",
     "aggregated_into": null
   },
   "documentation": {

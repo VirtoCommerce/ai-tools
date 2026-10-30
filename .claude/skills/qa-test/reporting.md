@@ -35,8 +35,10 @@ item 2b and is read from `summary.json.layer`. What 5-report.0 resolves is every
   `not-user-visible` · `no-version`. A pure refactor with nothing a user can observe is a legitimate
   `not-user-visible`, not a thin note. A refusal is an outcome, not a failure.
 - **No fragment file is written any more.** *What's new* lives in the `/qa-docs` document (5-docs), so
-  `fragment` is always `null`. When no refusal applies, set `refusal: "see the documentation comment"` — the
-  result comment then reads `Release note none — see the documentation comment`
+  `fragment` is always `null`. When no refusal applies, set `refusal` to the truth at 5-report, which is posted
+  before anyone knows whether `/qa-docs` will document the ticket: FULL and technical-change ⇒
+  `"documented separately by /qa-docs, when the ticket is documented"`; FAST ⇒ `"not documented by this run"`.
+  The result comment then reads `Release note none — <that text>`
   (`plugins/vc-fix/skills/qa-report/lib/model.mjs`), not `none — not resolved`.
 
 `/qa-docs` reads the same probed versions for its *Shipped in* line at 5-docs.

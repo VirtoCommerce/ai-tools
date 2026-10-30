@@ -7,7 +7,7 @@ applicability_rationale: "BA-team shared framework — VirtoOZ-first sourcing, n
 
 Shared framework for the **BA team** — `ba-system-analyzer`, `ba-api-specialist`, `ba-story-writer`, and
 `ba-doc-writer`. These agents analyze a Virto Commerce project (code + GitHub + live UI + docs) and
-produce analysis reports, user stories, and **audience-targeted documentation**. Agents reference this
+produce analysis reports, user stories and UX improvement specs (product documentation is `/qa-docs`). Agents reference this
 file to avoid duplicating boilerplate.
 
 ## Step 0 — read the prior art BEFORE analysing. MANDATORY, every mode.
@@ -173,9 +173,8 @@ All BA deliverables go to **`reports/ba/`** as one of the **ten** allowed report
 (`.claude/rules/reports.md` is the single source of truth for paths, size caps, screenshot budgets, and
 required sections). Do NOT create intermediate/working/"draft" files — return reasoning via the
 orchestrator, write only the final artifact. Naming: `ba-report-{date}.md`, `{jira-id}-stories.md`,
-`{feature}-{audience}-guide.md` (e.g. `vcst-5009-skyflow-customer-guide.md`), and — under the two named
-sub-paths — `test-models/<TICKET>-<date>.md` and
-`release-notes/<ticket>-<layer>-release-note.md` / `release-notes/release-<label>.md`. The `/ba-analyze`
+`<Domain>/<slug>-flow-improvements.md`, and — under the named sub-path — `test-models/<TICKET>-<date>.md`
+(ticket documents and release aggregates are `/qa-docs`'s). The `/ba-analyze`
 orchestrator owns index generation across runs — do not write your own `README.md` in `reports/ba/`.
 
 ## Knowledge files (read on-demand)

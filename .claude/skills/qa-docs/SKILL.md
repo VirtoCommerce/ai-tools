@@ -26,9 +26,9 @@ states how the platform behaves — so it carries the `kb` read step (2) and wri
 | `/qa-docs <TICKET> --video` | the video hand-off only: [`media.md`](media.md) §Hand-off |
 | `/qa-docs release --sprint <S>` · `--version <V>` | the aggregate: [`release.md`](release.md) §Aggregate |
 
-`/qa-test` FULL calls `/qa-docs <TICKET>` at its 5-docs step, after 5-status; on `--iterate`, once, at
-loop exit. The `/qa-test` FAST path and `/vc-test:qa-ticket` do not call it — QA runs it by hand when the
-ticket needs documentation.
+`/qa-test` FULL and its technical-change flow call `/qa-docs <TICKET>` at their 5-docs step, after
+5-status; on `--iterate`, once, at loop exit. The `/qa-test` FAST path and `/vc-test:qa-ticket` do not
+call it — QA runs it by hand when the ticket needs documentation.
 
 ## Steps
 
@@ -44,10 +44,10 @@ ticket needs documentation.
    | Refusal | When |
    |---|---|
    | `not-tested` | the status is anything but **Tested** — earlier (In Testing, Reopened) **and later** (Done, Closed): documentation is written at the Tested moment, from that run. Say which status was read |
-   | `not-deployed` | the probed versions do not carry the change ([`rules.md`](rules.md) §Shipped in) |
+   | `not-deployed` | the probed versions do not carry the change ([`rules.md`](rules.md) §Shipped in). A run that probed no versions (a `/vc-test:qa-ticket` run) is judged right after the capture probe (step 1 of [`media.md`](media.md) §Capture), before any frame is taken |
    | `not-user-visible` | no `PASS` row a person can act on ([`rules.md`](rules.md) §Evidence bar) |
 
-   A refusal is an outcome: record it (step 8) and stop.
+   A refusal is an outcome: no guide and no comment — only `documentation.json` (step 8) records it; then stop.
 
 2. **Ground what the document will state.** The `PASS` rows give the behaviour and the settings. Before
    the first live check:
@@ -73,9 +73,18 @@ ticket needs documentation.
 6. **Post — ask once.** Show the composed comment and the film link, and ask before posting: the comment
    is an external write, and it is the run's one sanctioned documentation comment
    ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0 rule 4). A decline posts nothing.
-   Posting mechanics are [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §5a (body
+   **Post it as a new comment, never as an amend**: the one-comment hook knows the run's result comment
+   (5-report) and will suggest `--amend <its id>` — **never amend the result comment**; that would replace
+   the QA verdict with the documentation. Use, with one `--attach` per screenshot and GIF:
+
+   ```
+   npm run tracker:comment -- --ticket <TICKET> --body-file <document.md> --attach <img> … \
+     --force-new "documentation comment (tracker-ops §0 rule 4), confirmed by <person>"
+   ```
+
+   Mechanics behind it are [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §5a (body
    dialect), §5c (screenshots and GIFs: attach, then reference) and §5d (the document in full, in one
-   comment) — read them before the first API call. Verify from the rendered body, not the status code
+   comment). Verify from the rendered body, not the status code
    ([`reports-policy.md`](../../knowledge/execution/reports-policy.md) §5.0). Keep the comment's id.
 
 7. **Bank what the run established** — for each platform behaviour the document states: matched ⇒
@@ -89,7 +98,7 @@ ticket needs documentation.
    |---|---|
    | `published` | `true` when the document was written |
    | `files` | the guide path(s) under `reports/ba/` |
-   | `film` | `{ "url": <film artifact URL or null>, "exported": false }` — `true` only after `--video` found the attachment |
+   | `film` | `{ "url": <film artifact URL or null>, "file": "<TICKET>-<slug>.mp4", "exported": false }` — `exported` turns `true` only after `--video` found the attachment |
    | `comment_id` | the posted comment's id, or `null` |
    | `comment_posted` | `false` when the person declined the post |
    | `refusal` | `not-tested` · `not-deployed` · `not-user-visible` · `null` |

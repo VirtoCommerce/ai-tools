@@ -7,7 +7,7 @@ three siblings are the detail. **5-triage before 5-verdict is load-bearing:** th
 terms of a finding's *provenance* ([`triage.md`](triage.md)) and the AC/DoD state `5-verdict` reconciles before
 it decides (5-verdict.1 below), so neither can be skipped or reordered ahead of it.
 
-FAST runs 5-triage → 5-verdict → 5-file → 5-report → **5-status**, and stops there; a FAST ticket that needs documentation gets `/qa-docs <ticket-key>` by hand. **5-docs** and `5-docs-map` are FULL-only — 5-docs calls `/qa-docs`, and `5-docs-map` writes back what `1c` reported, a step FAST does not run. (**`5r` and `5g` were removed 2026-09-10**; **`5b` was FOLDED INTO `5-verdict` 2026-09-16** — its label is retired, never reused, and the reconciliation itself survives as `5-verdict.1`: [`decisions`](../../../docs/decisions/qa-test-evolution.md) §Folding 5b into 5-verdict.) The reconciliation runs on **both** paths — it is
+FAST runs 5-triage → 5-verdict → 5-file → 5-report → **5-status**, and stops there; a FAST ticket that needs documentation gets `/qa-docs <ticket-key>` by hand. **5-docs** runs on FULL and the technical-change flow (it calls `/qa-docs`); `5-docs-map` is FULL-only — it writes back what `1c` reported, a step FAST does not run. (**`5r` and `5g` were removed 2026-09-10**; **`5b` was FOLDED INTO `5-verdict` 2026-09-16** — its label is retired, never reused, and the reconciliation itself survives as `5-verdict.1`: [`decisions`](../../../docs/decisions/qa-test-evolution.md) §Folding 5b into 5-verdict.) The reconciliation runs on **both** paths — it is
 what produces the verdict, and dropping it would leave `5-verdict` deciding on nothing.
 
 **On an `--iterate` run these phases do not all fire once.** Per round: **5-triage–5-file**, plus a round-delta

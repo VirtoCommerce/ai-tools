@@ -134,7 +134,6 @@ Over the hard cap is a review failure — trim before merge. If content genuinel
 **Ticket document and release aggregate:** `.claude/skills/qa-docs/template.md` and `release.md` §Aggregate.
 
 
-**Release note (aggregate):** Label + window · **⚠ Breaking changes first** whenever any fragment carries one · per-audience sections (one line + a link per fragment) · **`Not included`** — every ticket in the window whose fragment was refused, with its reason (mandatory; an omitted section is indistinguishable from a clean window) · one `Upstream cross-check` line against the release ledger, which may note a ledger row with no fragment but may **never** say "missed" or quote a coverage percentage.
 
 **Per-ticket QA report:** Ticket ID + title + check type (execution / AC-analysis / a11y / storybook / bundle-size / …) · Env (1 line) · Summary (≤3 sentences) · Findings/checks table · Verdict (PASS/FAIL/PARTIAL) · Bugs filed (links only, not inlined).
 
@@ -389,8 +388,7 @@ Reports:
   Test strategy: test-strategy.md  (inside the ticket's run folder — /vc-test:qa-test-strategy)
   Testing checklist: testing-checklist.md  (inside the ticket's run folder — /qa-test Artifact B)
   Test model:    test-model.md  (inside the ticket's run folder — /qa-test Step 1e, FULL path; older ones: reports/ba/test-models/<TICKET>-YYYY-MM-DD.md)
-  Ticket docs:   <ticket-lowercase>-<slug>-<audience>-guide.md  (inside reports/ba/ — the /qa-test 5-docs guides; the comment itself is not a file)
-  Release note:  <ticket-lowercase>-<layer>-release-note.md  (inside reports/ba/release-notes/ — the per-ticket fragment)
+  Ticket document: <ticket-lowercase>-<slug>-guide.md  (inside reports/ba/<Domain>/ — written by /qa-docs; see .claude/skills/qa-docs/)
   Release aggregate: release-<slugified-label>.md             (same folder — e.g. release-Sprint-42.md, release-platform-3.1054.0.md)
 
 Terminal-only, no file: `/qa-test-lifecycle` (labeled TLC-YYYY-MM-DD-HHMM in chat) and `/qa-test`'s

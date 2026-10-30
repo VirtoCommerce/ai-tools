@@ -20,7 +20,7 @@ Shipped in: {shipped_in}
 {video_line}
 
 Not documented: {not_documented}
-Verified on {env} · run {run_id} · captured {capture_date} · versions {versions_source}
+Verified on {env} · run {run_id} · verdict {verdict} · captured {capture_date} · versions {versions_source}
 ```
 
 | Placeholder | What goes there |
@@ -33,4 +33,5 @@ Verified on {env} · run {run_id} · captured {capture_date} · versions {versio
 | `{scenarios}` | one `#### {scenario}` per user-visible flow: numbered UI-literal steps, a cropped screenshot after each meaningful step, then the scenario's walkthrough GIF |
 | `{video_line}` | before the person attaches the film: `Video: {film-name}.mp4 — being exported, will be attached to this ticket.` After `/qa-docs <TICKET> --video`: `Video: {film-name}.mp4 (attached to this ticket).` No film: the line is left out |
 | `{not_documented}` | each condition left out — `UNCOVERED`, a `PASS WITH NOTES` note, or `changed since the run` — with its reason; otherwise `None` |
+| `{verdict}` | the run's verdict, verbatim (`PASS` or `PASS WITH NOTES`; with notes, the `Not documented` line names them) |
 | `{versions_source}` | `run` (the test run probed them) or `capture` (read from `/api/platform/modules` before the capture walk) |

@@ -54,7 +54,7 @@ command's §Usage.
 
 Per round, once the 5-verdict verdict is in:
 
-1. **PASS / PASS WITH NOTES** → exit the loop → the **exit round's close-out** (5-report in full → 5-status → 5-docs → 5-docs-map,
+1. **PASS / PASS WITH NOTES** → exit the loop → the **exit round's close-out** (5-report in full → 5-status → 5-docs (FULL and the technical-change flow only, not on FAST) → 5-docs-map,
    §The exit round) → GO/NO-GO recommendation → **STOP for the human to merge + release** (never
    automated). Done.
 2. **BLOCKED** → **STOP.** A fix cannot clear an env/data/dependency blocker. The exit round's close-out
@@ -127,7 +127,7 @@ promotion. This table is the rest of the contract.
 | `5-report.4` `testing-checklist.md` | **PER ROUND**, **append-only** | On FAST it is the run's ONLY durable record, and the RED→GREEN transition *is* the loop's deliverable: overwriting a round-1 FAIL with a round-2 PASS deletes the evidence that the defect was ever there. |
 | Evidence screenshots | **PER ROUND**, round-stamped | Round N+1 re-runs the same case IDs into the same folder, so an unstamped `{TC-ID}-FAIL-{description}.png` lets the round-2 PASS **overwrite the round-1 FAIL** — and the checklist row that cites it then points at a green image. Every round stamps `-r{N}`, round 1 included (`.claude/rules/reports.md` §7). |
 | `5-status` tracker transition | **AT LOOP EXIT** | REOPEN is the human-handoff signal, and a loop about to start another round is not handing off. A per-round REOPEN would also flap the ticket out of in-testing — the precondition both closing transitions need — and fire N−1 false handoff notifications. **Bug-level hops follow the same rule, with one exception:** a bug verified green on a **merged and deployed** fix hops to `TESTED` at round entry — that is monotonic, no later round can un-merge it — while a bug still failing keeps its in-testing state and takes its `REOPEN` at exit (§Which hop a verified bug takes). |
-| `5-docs` documentation | **AT LOOP EXIT, ONCE** | The loop only ever re-tests an **unmerged prerelease**. Documenting a build that the next round replaces publishes instructions for something nobody can use yet, and a per-round comment buries the ticket under near-identical guides. One documentation comment per run, whatever the round count — same reasoning as `5-status`. |
+| `5-docs` documentation (FULL and the technical-change flow only) | **AT LOOP EXIT, ONCE** | The loop only ever re-tests an **unmerged prerelease**. Documenting a build that the next round replaces publishes instructions for something nobody can use yet, and a per-round comment buries the ticket under near-identical guides. One documentation comment per run, whatever the round count — same reasoning as `5-status`. |
 
 #### Round entry (`5-loop.0`) — re-read the board before re-running anything
 
@@ -210,7 +210,7 @@ with the failure list, which is the moment the loop actually hands off. Every su
 
 **The exit round behaves exactly like a close-out without the flag.** Whatever ends the loop — PASS, the
 cap, a G0 BAIL, BLOCKED — the final round runs 5-report in full (gate ratification · the full comment ·
-`summary.json` · the checklist), then 5-status, then 5-docs, then 5-docs-map. **A `--iterate` run posts ONE QA-Complete comment and
+`summary.json` · the checklist), then 5-status, then 5-docs (FULL and the technical-change flow only, not on FAST), then 5-docs-map. **A `--iterate` run posts ONE QA-Complete comment and
 makes ONE transition on the ticket under test**, the same as a run without it, whatever the round count.
 
 **5-status at exit also closes out the bugs the loop left open.** Every bug round entry moved into in-testing and
