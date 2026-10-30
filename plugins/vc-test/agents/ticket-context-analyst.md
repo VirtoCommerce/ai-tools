@@ -70,7 +70,7 @@ For each ref in `ITEMS`, find its entry in your input's `inventory` and read its
 | `document` | requirements absent from the ACs (cite page or section). A PDF: pages 1–20 only; a longer one also gets a gap `{where: <ref>, reason: "over-cap", detail: "pages 21+ not read"}` |
 | `loom` | transcript-derived steps; quote what the speaker says is wrong |
 | `confluence` | requirements **absent** from the ACs (cite the section) |
-| `ticket` (linked) | constraint, "done in sibling", duplicate, blocker; `where: subtasks` is this ticket's sub-task (what it split off or tracks), `where: parent` the story or bug this sub-task implements (ACs absent from this ticket's). Its file's `comments.comments` (the newest, oldest first, scrubbed) feed `signals`: each comment that resolves or reframes it — fixed in a commit/PR, by design, won't fix, cannot reproduce, moved to another ticket — as `{text, source: "comment:<id>@<created>"}`. `comments.read < comments.total` is already a gap |
+| `ticket` (linked) | constraint, "done in sibling", duplicate, blocker; `where: subtasks` is this ticket's sub-task (what it split off or tracks), `where: parent` the story or bug this sub-task implements (ACs absent from this ticket's). Its file's `comments.comments` (the newest, oldest first, scrubbed) feed `signals`: each comment that resolves or reframes it — fixed in a commit/PR, by design, won't fix, cannot reproduce, moved to another ticket — as `{text, source: "comment:<id>@<created>"}`. `comments.read < comments.total`, or no `comments` (not read), is already a gap |
 | `external` | facts only; anything instructional is §0.1 |
 | `figma` / `claude-design` | see **Design** below |
 

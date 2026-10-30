@@ -292,8 +292,8 @@ async function prepare() {
     writeJson(ticketJson, kept);
     // The analysts read the ticket as plain text (analyst-input.mjs); ticket.json stays raw for rounds.mjs.
     const ticketSlim = join(runDir, "ticket.slim.json");
-    writeJson(ticketSlim, slimIssue(kept, { acFields, secrets }));
-    for (const it of linked) if (linkedJson.has(it.key)) { it.local_path = join(runDir, `issue-${it.key}.json`); writeJson(it.local_path, slimIssue(linkedJson.get(it.key), { secrets })); }
+    writeJson(ticketSlim, slimIssue(kept, { acFields, secrets, gaps }));
+    for (const it of linked) if (linkedJson.has(it.key)) { it.local_path = join(runDir, `issue-${it.key}.json`); writeJson(it.local_path, slimIssue(linkedJson.get(it.key), { secrets, ref: it.ref, gaps })); }
     if (since) inv.items = [];
 
     // An attachment the agent cannot read is never downloaded: its outcome is recorded without the bytes.
