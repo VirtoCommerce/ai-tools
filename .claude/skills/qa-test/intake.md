@@ -150,7 +150,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
 
     | | Token | Derived from | Unresolved ⇒ | When true |
     |---|---|---|---|---|
-    | **2b** | `layer` | the PR diff → repo identity (`REPO_PROFILES` + `resolveOwningSubApp()`) · `regression.suites[]` → `config/test-suites.json` · which of theme/module/platform `build` moved · `bugs_filed[]` → fix-PR repo · the ticket's Components → `module-suite-map.md` | **`null` + `UNRESOLVED`** — fails **CLOSED**; **never default to `storefront`** | 5-status/5-docs audience routing |
+    | **2b** | `layer` | the PR diff → repo identity (`REPO_PROFILES` + `resolveOwningSubApp()`) · `regression.suites[]` → `config/test-suites.json` · which of theme/module/platform `build` moved · `bugs_filed[]` → fix-PR repo · the ticket's Components → `module-suite-map.md` | **`null` + `UNRESOLVED`** — fails **CLOSED**; **never default to `storefront`** | 5-status's `release` block |
     | **2c** | `visual_surface` | `.vue`/`.scss`/`.css`/`.html`/blade/icons/tokens in the diff · derived layer `storefront`/`admin-spa` · a target suite `layer: frontend` | `true` | Step 4 dispatches `vc-test:ui-ux-expert` ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md)) |
     | **2d** | `contract_surface` | `.graphql`/`*ExperienceApi*`/`*.Web/Controllers`/GraphType files · derived layer `api` · suite tags `graphql`/`xapi` · an AC naming a query/mutation/field | `true` | **both** refreshers, concurrently, in ONE message ([`contract-refresh.md`](contract-refresh.md)) |
     | **2e** | `coverage_surface` | the ticket's `1a` domains + derived layer + the target suites' manifest `domain`/`tags`/`requiresModules` — **never diff paths** (a path token may only ADD a suite) · the observables the change moves · the `BL-*`/`ECL-*` it amends | `true` | `tc:scope` in wave B, **scope + risk terms only** ([`coverage-triage.md`](coverage-triage.md)) |
@@ -169,7 +169,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
     axis is a LANE trigger, never an EFFORT trigger, and never promotes FAST → FULL.
 
     **Effort (`axes.md` §4): FULL derives and runs all six. FAST derives and applies `layer` and
-    `data_surface`** — the first because 5-status/5-docs need it and it dispatches nothing, the second because it can
+    `data_surface`** — the first because 5-status needs it and it dispatches nothing, the second because it can
     only ever *remove* a dispatch, so gating it behind a flag would restore the cost it exists to end. The
     other **three** — `2c`/`2d`/`2e` — are **opt-in** there via `--visual` / `--contract` / `--coverage` /
     `--axes`, default off. Each of those has run at most **once in 28 recorded runs**, so mandatory-on-FAST
@@ -256,5 +256,5 @@ worse than reading none, because it arrives with a written deliverable's authori
 SAME ticket amends that model in place; another ticket on this surface writes its own file and carries the
 predecessor's Part 0 forward, citing it** — what is forbidden either way is a second independently-derived
 model of one surface, and VCST-5346 already has two:
-[`test-model.md`](../qa-test-model/test-model.md) §Why it is a durable file), and `5-docs` (an existing guide
-for this surface is amended, never forked).
+[`test-model.md`](../qa-test-model/test-model.md) §Why it is a durable file), and [`/qa-docs`](../qa-docs/SKILL.md) (an existing guide
+for this ticket is amended, never forked).

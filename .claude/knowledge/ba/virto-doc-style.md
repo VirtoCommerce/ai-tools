@@ -339,7 +339,7 @@ When unsure how a style should read, open the exemplar before drafting.
 
 A **release note** answers a different question from the four skeletons above: not *how do I use this*
 but *what shipped, and what can I now do that I could not before*. It is produced per tested ticket at
-`/qa-test` 5f (as a pointer — see `.claude/skills/qa-test/reporting.md` §Release note), and aggregated
+`/qa-test` 5f, and aggregated
 per release or sprint.
 
 **This is the one deliberate inversion of §1's "audience ≠ document".** A feature legitimately produces up

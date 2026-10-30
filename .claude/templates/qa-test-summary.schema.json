@@ -1,5 +1,5 @@
 {
-  "$comment": "Schema for /qa-test's summary.json ({RUN_DIR}/summary.json, the ticket's run folder: .claude/knowledge/execution/run-output.md). The ONLY narrative-adjacent artifact /qa-test persists (per .claude/rules/reports.md §1) — it must carry every field a later consumer needs: 1b's cross-sprint duplicate check reads `date`; 5-report's Feature Release Gate reads `regression`; 5g records `promotion`; `layer` is derived at 1b item 2b and `release` resolved at 5-report.0, both persisted at 5-report.3, and their only reader is /ba-analyze docs release. Replace <..> placeholders; 0/[]/null are empty defaults.",
+  "$comment": "Schema for /qa-test's summary.json ({RUN_DIR}/summary.json, the ticket's run folder: .claude/knowledge/execution/run-output.md). The ONLY narrative-adjacent artifact /qa-test persists (per .claude/rules/reports.md §1) — it must carry every field a later consumer needs: 1b's cross-sprint duplicate check reads `date`; 5-report's Feature Release Gate reads `regression`; 5g records `promotion`; `layer` is derived at 1b item 2b and `release` resolved at 5-report.0, both persisted at 5-report.3, and their readers are the result comment (vc-fix qa-report) and /qa-docs (Shipped in). Replace <..> placeholders; 0/[]/null are empty defaults.",
   "ticket": "<ticket-key>",
   "ticket_type": "Bug|Story|Task|Technical task|Review task|Sub-task|Epic|Tweak",
   "flow": "feature-test|verify-fix|hotfix-verify|technical-change",
@@ -108,28 +108,18 @@
     }
   },
   "release": {
-    "$comment": "Resolved at 5-report.0 and written at 5-report.3, for a PASS/PASS_WITH_NOTES verdict (5-status only POINTS at /ba-analyze; it computes nothing) \u2014 the MACHINE half of the per-ticket release-note fragment. The prose half is ba-doc-writer's reports/ba/release-notes/<ticket>-<layer>-release-note.md, and this block is the ONLY thing that doc may take a layer, a version or a breaking flag from (ba-doc-writer never re-derives them; a second derivation site is how the two drift). It exists because the top-level `layer` is the axis a release note routes on (layer -> audience -> skeleton, .claude/knowledge/ba/virto-doc-style.md \u00a79) and nothing here recorded it: `regression.suites` carries the layer of what was RE-TESTED, `build` carries versions of what was DEPLOYED, and neither answers 'which surface did THIS ticket change'. A null block means the release step never ran (FAIL/BLOCKED, or a run predating the block) \u2014 a gap, not 'nothing shipped'. `fragment` null WITH a non-null `refusal` is the opposite: the step ran and declined, and the reason is the finding. `component_versions`/`platform_version` are copied from build.deployed (PROBED) \u2014 never from build.relevant_modules (declared git state) and never from release-ledger.md, which records what shipped UPSTREAM, not what is deployed here; UNKNOWN is legal, an absent or guessed version refuses the fragment. `breaking` is true only from build.releasedThrough.breaking[] or a cited contract change in the diff \u2014 never from ticket, PR or commit prose, so breaking:true with breaking_source:null is a defect in the fragment.",
+    "$comment": "Resolved at 5-report.0 and written at 5-report.3, for a PASS/PASS_WITH_NOTES verdict. Carries the probed versions and the breaking flag the result comment's Release note line prints (plugins/vc-fix/skills/qa-report/lib/model.mjs). No fragment file is written any more: What's new lives in the /qa-docs document, so `fragment` is null and, when no other refusal applies, `refusal` is \"see the documentation comment\". `aggregated_into` is set by /qa-docs release.",
     "layers": [],
     "layer_source": [],
     "layers_conflict": false,
-    "audience": [],
     "component_versions": {},
     "platform_version": null,
     "breaking": false,
     "breaking_source": null,
     "user_visible": null,
     "fragment": null,
-    "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|no-version|null",
+    "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|no-version|see the documentation comment|null",
     "aggregated_into": null
-  },
-  "documentation": {
-    "$comment": "Written at 5-docs, AFTER the 5-status transition — the record of the ordinary product DOCUMENTATION published for this ticket (§10 of .claude/knowledge/ba/virto-doc-style.md), which is a different artifact from the `release` block above: that one is a what-shipped record, this one is how-do-I-use-this. Deliberately carries NO version fields — a how-to does not quote a build number, which is why `no-version` is absent from this block's refusal set. `audiences` is derived from the top-level `layer` via the §9.1 row and may hold MORE than one entry (the layer's audience is a floor, not a ceiling — the ordinary §1 rule, unlike the release note's one-per-layer inversion); `sales` is never among them. `files` are the reports/ba/<ticket>-<slug>-<audience>-guide.md paths, and `amended` names any pre-existing guide updated in place rather than forked. `comment_posted` is FALSE when the guides were written but the operator declined the tracker post — distinct from `published:false`, which means nothing was written at all. A null block means 5-docs never ran (a gap); `published:false` WITH a non-null `refusal` is the opposite — the step ran and declined, and the reason is the finding.",
-    "published": false,
-    "audiences": [],
-    "files": [],
-    "amended": [],
-    "comment_posted": false,
-    "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|null"
   },
   "status_transitions": [
       {

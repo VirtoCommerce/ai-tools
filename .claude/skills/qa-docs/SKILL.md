@@ -94,6 +94,7 @@ ticket needs documentation.
    | `comment_posted` | `false` when the person declined the post |
    | `refusal` | `not-tested` · `not-deployed` · `not-user-visible` · `null` |
    | `versions_source` | `run` or `capture` |
+   | `aggregated_into` | set later by `/qa-docs release` — the aggregate file that includes this ticket |
 
    A `null` refusal with `published: false` never happens: either the document exists or the reason does.
 
