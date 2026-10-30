@@ -5,6 +5,7 @@ model: sonnet
 color: orange
 applicability: universal
 applicability_rationale: "Parameterized template ({{SUITE_ID}}, {{BROWSER_SERVER}}, etc.). Template is itself the contract; customer-runnable."
+disallowedTools: Artifact, ArtifactComments, ArtifactData, PowerShell, CronCreate, CronDelete, RemoteTrigger, PushNotification, DesignSync, mcp__Claude_Browser__*, mcp__claude-in-chrome__*, mcp__Chrome_DevTools__*, mcp__chrome-devtools__*, mcp__plugin_playwright_playwright__*, mcp__figma-remote-mcp__*, mcp__ucp-qa__*, mcp__mcp-registry__*, mcp__scheduled-tasks__*, mcp__terminal__*, mcp__visualize__*, mcp__ccd_session__*, mcp__ccd_session_mgmt__*, mcp__ccd_sidebar__*, mcp__ccd_window__*, mcp__ccd_view__*, mcp__ccd_settings__*, mcp__ccd_host__*, mcp__ccd_pr__*, mcp__azure-mcp__*
 ---
 
 # Test Runner Agent — Suite Execution Template
@@ -212,32 +213,7 @@ For each FAIL record a preliminary entry with `confirmed: false`. A separate `qa
 
 ### Failure trace file (real FAIL only — Phase 2 step 8b)
 
-Written to `reports/regression/{{RUN_ID}}/traces/{TC-ID}-FAIL-trace.json`, referenced by the case's `trace` field, gitignored (secrets-redacted; the repo is public). Shape:
-
-```json
-{
-  "caseId": "SMK-008", "suiteId": "{{SUITE_ID}}", "runId": "{{RUN_ID}}",
-  "capturedAt": "<ISO>", "url": "<page URL at failure>",
-  "failedAssertion": "[MATH] line total = unit price × quantity",
-  "networkFailures": [
-    {
-      "method": "POST", "url": "/graphql (SearchProducts)", "status": 500,
-      "requestBodySnippet": "{\"query\":\"…\"}",
-      "responseBodySnippet": "{\"errors\":[{\"message\":\"…\"}]}",
-      "graphqlErrors": ["Object reference not set to an instance of an object"]
-    }
-  ],
-  "consoleErrors": [
-    {
-      "level": "error",
-      "message": "TypeError: Cannot read property 'price' of undefined",
-      "stack": ["at ProductCard.vue:47:12", "at renderList (runtime-core.esm.js:2233)", "…"]
-    }
-  ]
-}
-```
-
-Only real FAILs get a trace — a `BLOCKED`/`SKIPPED`/`AMBIGUOUS` row never sets `trace`.
+On a real FAIL only, read [`knowledge/agents/qa/test-runner-failure-trace.md`](../knowledge/agents/qa/test-runner-failure-trace.md) and write the trace file it specifies.
 
 ## Error Handling
 

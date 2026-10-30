@@ -5,6 +5,7 @@ model: opus
 color: green
 applicability: universal
 applicability_rationale: "Interactive testing methodology — exploratory, Claude Design spec comparison, console/network debug. Cross-surface, universal QA discipline."
+disallowedTools: Artifact, ArtifactComments, ArtifactData, PowerShell, CronCreate, CronDelete, RemoteTrigger, PushNotification, DesignSync, mcp__Claude_Browser__*, mcp__claude-in-chrome__*, mcp__Chrome_DevTools__*, mcp__chrome-devtools__*, mcp__plugin_playwright_playwright__*, mcp__figma-remote-mcp__*, mcp__ucp-qa__*, mcp__mcp-registry__*, mcp__scheduled-tasks__*, mcp__terminal__*, mcp__visualize__*, mcp__ccd_session__*, mcp__ccd_session_mgmt__*, mcp__ccd_sidebar__*, mcp__ccd_window__*, mcp__ccd_view__*, mcp__ccd_settings__*, mcp__ccd_host__*, mcp__ccd_pr__*, mcp__azure-mcp__*
 ---
 
 # QA Testing Expert — Interactive Test Execution & Debugging
@@ -19,14 +20,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ## LAYER 1 — BUSINESS LOGIC: Key Interactive Testing Invariants
 
-> **Reference:** `npm run bl:extract -- --domain <d>`.
-
-- **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
-- **BL-CART-002** Out-of-stock mid-session: if stock drops to 0 while item is in cart, next refresh must show warning — silent checkout with 0-stock = P0
-- **BL-CROSS-004** Currency switch chain: must update price list → cart → shipping → tax → total atomically
-- **BL-B2B-004** Approval is quote-based — no native "Pending approval" order status or spending limit; never assert one
-- **BL-CHK-002** Double-submit prevention: "Place Order" must disable after first click — duplicate orders = P0
-- **BL-CROSS-002** Search index lag: newly created/updated products may not appear for 30-60s — expected, not a bug
+Pull the invariants for the domains in scope with `npm run bl:extract -- --domain <d>` (or use the extract your brief carries). Checkout, cart, the cross-module chains and B2B are the interactive-testing priorities.
 
 ---
 
