@@ -403,6 +403,7 @@
     "td:test-attribution": "node scripts/maintenance/td-test-attribution.mjs",
     "test:roi-check": "node scripts/maintenance/lint-test-roi.mjs",
     "test:quality": "node scripts/maintenance/test-quality-report.mjs",
+    "agents:cost": "node scripts/maintenance/agent-token-cost.mjs",
     "tracker:comment": "node scripts/tracker/comment.mjs",
     "tracker:wiki": "node scripts/tracker/md-to-wiki.mjs",
     "ucp:schema:refresh": "node scripts/ucp/refresh-ucp-schema.mjs",
