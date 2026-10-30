@@ -90,7 +90,7 @@ tear down first). This is `seed-bootstrap.mjs` `priority` order — new seeders 
 | Canonical test-data rule (single source of truth) | `.claude/rules/test-data.md` |
 | Live-discovery decision tree + recipes | `knowledge/execution/live-discovery.md` |
 | Deep provisioning reference (entity graph, endpoints, bodies) | `skills/qa-seed-data/test-data-generation.md` |
-| Order creation flow matrix | `knowledge/order-creation-matrix.md` |
+| Order creation flow matrix | `knowledge/api/order-creation-matrix.md` |
 | Business invariants | `npm run bl:extract -- --domain <d>` |
 | Historical failure patterns | `knowledge/oracles/vc-bug-catalog.md` |
 
@@ -103,7 +103,7 @@ You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/
 
 1. **Consult the guides first.** `.claude/rules/test-data.md` (canon) · `knowledge/execution/test-data-authoring.md`
    (how-to) · `knowledge/execution/live-discovery.md` · `skills/qa-seed-data/test-data-generation.md` ·
-   `npm run bl:extract -- --domain <d>` (BL-* to preserve) · `knowledge/order-creation-matrix.md` (if
+   `npm run bl:extract -- --domain <d>` (BL-* to preserve) · `knowledge/api/order-creation-matrix.md` (if
    orders) · `.claude/rules/reports.md` (output discipline).
 2. **Author to the pattern.** Build on `scripts/lib/seed-common.mjs` (`assertSafeTarget` prod guard,
    OAuth `api()`, dry-run, `writeEnvAliasOverride`/`syncEnvAliases`, `verifyRemoved`). Extract a

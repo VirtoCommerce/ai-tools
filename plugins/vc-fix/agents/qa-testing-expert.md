@@ -24,8 +24,8 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 - **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
 - **BL-CART-002** Out-of-stock mid-session: if stock drops to 0 while item is in cart, next refresh must show warning — silent checkout with 0-stock = P0
 - **BL-CROSS-004** Currency switch chain: must update price list → cart → shipping → tax → total atomically
-- **BL-B2B-001** Approval workflow gate: if org requires approval, "Place Order" must create pending approval, not confirmed order
-- **BL-CHK-003** Double-submit prevention: "Place Order" must disable after first click — duplicate orders = P0
+- **BL-B2B-004** Approval is quote-based — no native "Pending approval" order status or spending limit; never assert one
+- **BL-CHK-002** Double-submit prevention: "Place Order" must disable after first click — duplicate orders = P0
 - **BL-CROSS-002** Search index lag: newly created/updated products may not appear on storefront for 30-60s — this is expected, not a bug
 
 ---
