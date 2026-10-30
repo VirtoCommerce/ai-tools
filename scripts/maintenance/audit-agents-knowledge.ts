@@ -60,7 +60,7 @@ const CLASSIFICATIONS: Classification[] = [
   { path: ".claude/knowledge/agents/qa/shared-instructions.md", category: "agent-shared", applicability: "reference",
     rationale: "Four-layer agent architecture template — universal pattern. But agent-pool table at line 210 (slot 1/2/3 with @td(AGENT_POOL_SLOT_N.*) refs) shows vcst values as 'reference'. Customer fills agent-user-pool.csv." },
   { path: ".claude/knowledge/agents/ba/shared-instructions.md", category: "agent-shared", applicability: "universal",
-    rationale: "BA-team framework — VirtoOZ-first sourcing, the four documentation audiences, no-hardcode + external-write discipline, output policy. Pure BA craft/process, no vcst-specific assumptions." },
+    rationale: "BA-team framework — VirtoOZ-first sourcing, no-hardcode + external-write discipline, output policy. Pure BA craft/process, no vcst-specific assumptions." },
   { path: "plugins/vc-fix/knowledge/agents/developers/shared-instructions.md", category: "agent-shared", applicability: "reference",
     rationale: "Developers-team framework — write-token discipline, CLA commit identity, gate ladder, escalation/reporting. Universal pattern; the GITHUB_FIX_BUGS_TOKEN binding + repo allowlist are env/data (plugins/vc-fix/skills/qa-fix-routing/fix-repos.json)." },
 
