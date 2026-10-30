@@ -37,7 +37,7 @@ The user's decisions (2026-10-30):
    Jira comment, after one confirmation. `/qa-test` 5-docs calls it instead of `/ba-analyze docs ticket`.
 2. The document has three sections and a fixed footer (template below).
 3. **Documentation is written only for a tested ticket** (user, 2026-10-30): the gate is the ticket's
-   tracker status **Tested**, read live from the tracker. Any other status is refused with `not-tested`. This replaces today's §10.4 rule that a non-PASS verdict scopes the guide instead of
+   tracker status **Tested** — widened to **Tested or Done** by the amendment below — read live from the tracker. Any other status is refused with `not-tested`. This replaces today's §10.4 rule that a non-PASS verdict scopes the guide instead of
    refusing it. Inside a tested ticket, every instruction still maps to a `PASS` row of the run's
    `testing-checklist.md`.
 4. Media: real screenshots inline (cropped to the step), one walkthrough GIF per scenario, and one Motion
@@ -103,9 +103,9 @@ tracker together).
 
 1. **Read the run.** `npm run --silent run:dir -- --ticket <TICKET>` → `summary.json`,
    `testing-checklist.md`, the ticket. Refuse with a reason, writing nothing:
-   `not-tested` (the ticket's tracker status is not Tested),
+   `no-run` (no run folder with its checklist), `not-tested` (the status is neither Tested nor Done — amendment below),
    `not-deployed` (the change is not live on the env), `not-user-visible` (no `PASS` row a person can
-   act on). `layer-unresolved` is dropped: with no audiences the layer selects nothing.
+   act on), `build-changed` (the stand runs another build and the person declines to document it). `layer-unresolved` is dropped: with no audiences the layer selects nothing.
 2. **Ground the mechanism.** Settings and behaviour the document states come from the checklist's `PASS`
    rows; their documented mechanism from `.claude/knowledge/execution/doc-sources.md` (VirtoOZ connector,
    module README at the deployed tag). A doc claim is quoted with its URL.
@@ -160,7 +160,7 @@ tracker together).
 ## Amendment 2026-10-30 (after the VCST-6121 rehearsal)
 
 - **Gate:** the ticket's status is **Tested or Done**. A Done ticket is documented safely because the build
-  check before capture still stops on a redeployed stand.
+  check before capture asks before it captures a redeployed stand; on a yes, the versions come from the capture probe.
 - **Existing documentation first:** `/qa-docs` reads the ticket's comments for a `Documentation — <TICKET>`
   comment (new or old 5-docs format). Found ⇒ ask: update that comment or leave it; not found ⇒ offer to
   make it. Never a second documentation comment.

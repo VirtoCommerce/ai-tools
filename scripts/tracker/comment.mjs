@@ -23,8 +23,13 @@
 //   npm run tracker:comment -- --ticket VCST-1234 --delete 109823
 //   npm run tracker:comment -- --ticket VCST-1234 --body-file body.md --force-new "PO asked for a separate note"
 //   npm run tracker:comment -- --ticket VCST-1234 --body-file body.md --attach-file plan.md   # a FILE, linked
-//   npm run tracker:comment -- --ticket VCST-1234 --amend 109824 --body-file doc.md --same-round "video attached" --attach-video doc.mp4
+//   npm run tracker:comment -- --ticket VCST-1234 --doc --body-file doc.wiki.txt --attach 01.png   # the /qa-docs comment
+//   npm run tracker:comment -- --ticket VCST-1234 --doc --amend 109830 --wiki --body-file doc.wiki.txt --same-round "video attached" --attach-video doc.mp4
 //   (add --dry-run to any of the above)
+//
+// --doc  the /qa-docs documentation comment (tracker-ops.md §0 rule 4): its own ledger entry `<TICKET>@<env>#doc`,
+//        never mirrored into summary.json. A second --doc post for the ticket is refused (amend the recorded one), and
+//        a body headed `Documentation —`, or an amend of the recorded documentation comment, is refused without --doc.
 //
 // --attach  <img>  uploads an IMAGE/GIF and embeds it inline — that forces the v2 API + wiki body (§5c).
 // --attach-file <f> uploads any file (a plan, a report page, a log) and LINKS it: the body keeps its
@@ -32,7 +37,7 @@
 //                   big for the comment travels as an attachment on the same ticket, referenced from the ONE
 //                   comment. Re-attaching a same-name file is reused only when the size matches; a changed
 //                   file uploads as a new attachment and the link points at the new one.
-// --attach-video <f.mp4|webm|mov> uploads a VIDEO and LINKS it: Jira plays it from the attachment, while
+// --attach-video <f.mp4|m4v|webm|mov|mkv|avi> uploads a VIDEO and LINKS it: Jira plays it from the attachment, while
 //                   inline it renders as a dead plugin object (§5c), so --attach refuses a video. The link
 //                   REPLACES the body's first `Video:` line (the /qa-docs document's video line), or is appended.
 //
@@ -257,6 +262,7 @@ if (a.mode === "delete") {
   if (a.dryRun) { console.log(`\n  [dry-run] DELETE comment ${a.id} on ${a.ticket}\n`); process.exit(0); }
   await jira("DELETE", `/rest/api/3/issue/${a.ticket}/comment/${a.id}`);
   if (entryOf(ledger, a.ticket)?.comment_id === String(a.id)) { delete ledger[entryKey(a.ticket)]; delete ledger[a.ticket]; writeLedger(ledger); }
+  if (ledger[`${entryKey(a.ticket)}#doc`]?.comment_id === String(a.id)) { delete ledger[`${entryKey(a.ticket)}#doc`]; writeLedger(ledger); }
   console.log(`\n  ✓ deleted comment ${a.id} on ${a.ticket}\n`);
   process.exit(0);
 }
@@ -269,7 +275,7 @@ for (const [flag, list] of [["--attach", a.attach], ["--attach-file", a.attachFi
   for (const p of list ?? []) if (!existsSync(resolve(ROOT, p))) die(`${flag}: file not found: ${resolve(ROOT, p)}`);
 }
 for (const p of a.attach ?? []) if (isVideo(p)) die(`--attach: ${p} is a video — inline it renders as a dead plugin object (tracker-ops.md §5c). Use --attach-video.`);
-for (const p of a.attachVideo ?? []) if (!isVideo(p)) die(`--attach-video: ${p} is not .mp4/.webm/.mov — use --attach (image/GIF) or --attach-file.`);
+for (const p of a.attachVideo ?? []) if (!isVideo(p)) die(`--attach-video: ${p} is not a video (.mp4/.m4v/.webm/.mov/.mkv/.avi) — use --attach (image/GIF) or --attach-file.`);
 // Two APIs, two formats (§5a + §5c): v3 takes MARKDOWN and cannot embed images;
 // v2 takes WIKI markup and is the only path that renders an attachment inline.
 // --attach therefore implies v2, and there the wiki check must NOT fire.
@@ -296,6 +302,11 @@ const thisRun = runId(a);
 const docKey = `${entryKey(a.ticket)}#doc`;
 const recorded = a.doc ? ledger[docKey] : entryOf(ledger, a.ticket);
 const saveEntry = (entry) => { if (a.doc) ledger[docKey] = entry; else setEntry(ledger, a.ticket, entry); };
+// The round guard lets a post through from another session or after the round window, so the one-documentation-
+// comment rule is enforced here, by the ledger alone. And a documentation comment written without --doc would land in
+// the result entry and repoint it (ledgerAfterAmend treats it as the newer comment).
+if (a.doc && a.mode === "post" && recorded && !a.forceNew) die(`${a.ticket} already has a documentation comment (${recorded.comment_id}) — amend it: --doc --amend ${recorded.comment_id} --same-round "<reason>"`);
+if (!a.doc && (/^\s*(?:h\d\.\s*|#+\s*)?Documentation\s+—/.test(body) || (a.mode === "amend" && String(ledger[docKey]?.comment_id) === String(a.id)))) die("this is the /qa-docs documentation comment — add --doc, so the run's result comment entry is not repointed to it");
 const tracked = recorded && String(recorded.comment_id) === String(a.id);
 // --same-round can fold a new build into this comment, so whether it holds a PUBLISHED VERDICT must
 // be known: from the ledger's `kind` when this checkout posted it, else from Jira's own body.
@@ -440,7 +451,7 @@ if (a.mode === "amend") {
   if (a.dryRun) { console.log(`\n  [dry-run] PUT (api v${API}) comment ${a.id} on ${a.ticket} (${body.length} chars)\n`); process.exit(0); }
   await jira("PUT", `/rest/api/${API}/issue/${a.ticket}/comment/${a.id}`, { body: wireBody });
   // Amending an OLDER comment must not erase the current round's entry (round-guard.mjs ledgerAfterAmend).
-  saveEntry(ledgerAfterAmend(recorded, existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound, kind: commentKind(body) }));
+  saveEntry(ledgerAfterAmend(recorded, existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound, kind: a.doc ? "documentation" : commentKind(body) }));
   writeLedger(ledger);
   console.log(`\n  ✓ amended comment ${a.id} on ${a.ticket} (api v${API}) — an edit notifies NOBODY; a new build is a new comment (--artifact)`);
   await reportRender(a.id);

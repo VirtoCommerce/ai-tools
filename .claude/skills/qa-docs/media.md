@@ -8,8 +8,9 @@ cropped stills in the document, the scenario GIFs and the film.
 1. **Same build, or stop.** Probe `GET {{BACK_URL}}/api/platform/modules` and compare the versions of the
    changed modules (and the storefront theme, if it changed) with the run's probed versions
    ([`rules.md`](rules.md) §Shipped in). Different ⇒ **stop and ask**: the stand was redeployed and the
-   frames would show a build the run never verified. A yes ⇒ capture, and the footer names the captured
-   build; a no ⇒ the refusal `build-changed` (`SKILL.md` step 1). The run probed nothing (a `/vc-test:qa-ticket` run)
+   frames would show a build the run never verified. A yes ⇒ capture; the document then states the captured build:
+   `Shipped in` comes from this probe, `versions_source` is `capture`, and `Not documented` says the run tested
+   another build. A no ⇒ the refusal `build-changed` (`SKILL.md` step 1). The run probed nothing (a `/vc-test:qa-ticket` run)
    ⇒ this capture probe supplies the document's versions (`versions_source: capture`), and `not-deployed`
    is judged here, before any frame: the changed module's probed version must carry the change
    ([`rules.md`](rules.md) §Shipped in).
@@ -116,7 +117,9 @@ The person exports the video; the skill attaches it. Nothing waits in between.
        --body-file {RUN_DIR}/documentation.wiki.txt --attach-video <file.mp4> --same-round "video attached"
      ```
 
-     Verify the rendered body (images and the video link are both checked), set `film.exported: true`, and
-     change the guide file's `Video:` line to the after-export wording too.
+     **Render the body from the guide first**, never reuse an old wiki file: `reports:prune` may have removed
+     the run folder since the post (recreate it). Change the guide file's `Video:` line to the after-export
+     wording, then `npm run tracker:wiki -- <guide.md> {RUN_DIR}/documentation.wiki.txt`, then the call above.
+     Verify the rendered body (images and the video link are both checked) and set `film.exported: true`.
 3. **No Motion type in this account** (step 5 found none) ⇒ the document ships without a film; the
    `{video_line}` is left out and the output says why.

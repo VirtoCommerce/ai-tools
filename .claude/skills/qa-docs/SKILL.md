@@ -44,7 +44,7 @@ call it — QA runs it by hand when the ticket needs documentation.
    | Refusal | When |
    |---|---|
    | `no-run` | the bound folder lacks `testing-checklist.md` plus `summary.json` or `verdict.json` — pruned by `reports:prune`, or the folder of another env. Name the folder read |
-   | `not-tested` | the status is neither **Tested** nor **Done** — earlier ones (In Testing, Reopened) were not verified; later ones (Closed, Released) are past documenting. Say which status was read. A Done ticket is safe to document because the build check (step 1 of [`media.md`](media.md) §Capture) still stops on a redeployed stand |
+   | `not-tested` | the status is neither **Tested** nor **Done** — earlier ones (In Testing, Reopened) were not verified; later ones (Closed, Released) are past documenting. Say which status was read. A Done ticket is safe to document because the build check (step 1 of [`media.md`](media.md) §Capture) asks before it captures a redeployed stand |
    | `not-deployed` | the probed versions do not carry the change ([`rules.md`](rules.md) §Shipped in). A run that probed no versions (a `/vc-test:qa-ticket` run) is judged right after the capture probe (step 1 of [`media.md`](media.md) §Capture), before any frame is taken |
    | `not-user-visible` | no `PASS` row a person can act on ([`rules.md`](rules.md) §Evidence bar) |
    | `build-changed` | the stand runs another build than the run tested, and the person declines to document from it (step 1 of [`media.md`](media.md) §Capture) |
@@ -54,13 +54,17 @@ call it — QA runs it by hand when the ticket needs documentation.
    **Then look for documentation already on the ticket** — it may have been posted from another machine or
    by the old 5-docs, which this checkout's ledger does not know. Read the ticket's comments
    ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §2; Jira: `getJiraIssue` with the `comment`
-   field) and find one whose first line is **`Documentation — <TICKET>`** (wiki `h2.` or Markdown `##`;
-   the old format has *For shoppers* / *For administrators* sections), or the `comment_id` that
-   `documentation.json` already holds.
+   field) and find one whose first line is **`Documentation — <TICKET>`** (wiki `h2.` or Markdown `##`),
+   or the `comment_id` that `documentation.json` already holds. Also count as documentation the old 5-docs
+   format — *For shoppers* / *For administrators* sections, sometimes one comment per audience — and any
+   comment that is plainly a user guide for this ticket in another shape (a hand-written one after a FAST run);
+   when unsure, show it and ask.
    - **Found** ⇒ say so, with its author and date, and ask once: **update that comment** (the steps below,
      then step 6 amends it — `--doc --amend <its id> --same-round "documentation update"`) or **leave it**
      (stop; record `comment_id`, `published: false`, `refusal: null`, `existing: true`). Never a second
-     documentation comment.
+     documentation comment. Several old per-audience comments ⇒ update the first; name the others and leave
+     them for a person — never delete one. The update is refused with 403 (another person's comment) ⇒ hand
+     the person the rendered body to paste; never retry with another token.
    - **Not found** ⇒ say the ticket has no documentation yet and **offer to make it**; on a yes, go on; on a
      no, stop and record nothing. Called from `/qa-test` 5-docs, the step-6 confirmation is that one offer.
 
@@ -103,7 +107,7 @@ call it — QA runs it by hand when the ticket needs documentation.
    under its own ledger entry, so the run's result comment (5-report) stays the one every later correction
    amends and `summary.json` is not repointed. **A re-run amends** the comment `documentation.json` already
    holds — `… --doc --amend <comment_id> --same-round "documentation re-run"` — and `--doc` refuses a second
-   post. The helper verifies the rendered body (one `<img>` per attached image, none left literal,
+   post for a ticket this checkout's ledger already holds (another machine's comment is step 1's to find). The helper verifies the rendered body (one `<img>` per attached image, none left literal,
    [`reports-policy.md`](../../knowledge/execution/reports-policy.md) §5.0) — read its check, not the status
    code. Keep the comment's id. **Azure Boards:** `tracker:comment` is Jira-only — stop and post through
    `ado.mjs` (`upload-attachment`, then an HTML body with `<img src>`), [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §5c.

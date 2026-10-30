@@ -262,7 +262,7 @@ VERIFIED/REOPEN verdict, and `hotfix-verify` handed off before 1b.
 
 **Call [`/qa-docs <ticket-key>`](../qa-docs/SKILL.md).** It writes the ticket's one document (What's new · How to set it
 up · How it works), asks once before posting it as the documentation comment, builds the Motion film and records
-`{RUN_DIR}/documentation.json`. Everything about it — the Tested gate, the refusals, the evidence bar, the
+`{RUN_DIR}/documentation.json`. Everything about it — the Tested-or-Done gate, the refusals, the evidence bar, the
 media, the posting mechanics — is that skill's; nothing of it is restated here.
 
 - **FULL and the technical-change flow** ([`technical-change.md`](technical-change.md)). The FAST path stops at 5-status; when a FAST ticket needs documentation, QA runs `/qa-docs <ticket-key>`
@@ -285,7 +285,7 @@ artifacts, produced by `ba-system-analyzer` at `1c` and by the execution agents 
 against the map's inventory, so a run that widened the map first would be checking its own output. The
 verdict is recorded before anything is written back.
 
-**Independent of `/qa-docs`'s refusals.** `not-tested`, `not-deployed` and `not-user-visible` decide whether
+**Independent of `/qa-docs`'s refusals** (`no-run`, `not-tested`, `not-deployed`, `not-user-visible`, `build-changed`). They decide whether
 the *ticket* earned its document. A surface this run rendered is a fact either way, and a `FAIL` or
 `BLOCKED` verdict changes nothing here — the map records what EXISTS, never what is correct.
 

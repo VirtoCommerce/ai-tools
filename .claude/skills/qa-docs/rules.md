@@ -78,8 +78,8 @@ record, not bad copy.
   cropped to the region the step names so the control is legible at `|width=700!`
   ([`media.md`](media.md) §Capture).
 - **Admonitions** (MkDocs Material, for the file): `!!! note`, `!!! tip`, `!!! warning` (irreversible or
-  risky), `!!! success`, `!!! example`, optionally titled. In the Jira comment they render as quoted
-  paragraphs.
+  risky), `!!! success`, `!!! example`, optionally titled. In the Jira comment `tracker:wiki` renders them as `{info}` / `{tip}` /
+  `{warning}` / `{panel}` panels.
 - **Voice:** second person, present tense, active voice, sentences ≤20 words. Use Virto's terms (catalog,
   price list, fulfillment center, blade, store, organization), checked against VirtoOZ.
 - **Sources:** end the file with a `Sources:` line — the doc pages (VirtoOZ chunk URLs, module README at
