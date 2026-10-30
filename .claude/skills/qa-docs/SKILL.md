@@ -1,6 +1,6 @@
 ---
 name: qa-docs
-description: "[QA Method] Use when a ticket has reached status Tested and needs its documentation: ONE document — What's new, How to set it up, How it works — built from the run's PASS rows and real stand screenshots, posted as ONE Jira comment, plus a ≤30 s Motion film a person exports and attaches. Called by /qa-test FULL at 5-docs; run by hand after the /qa-test FAST path or /vc-test:qa-ticket. `release` mode aggregates the What's new sections of a sprint or version. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
+description: "[QA Method] Use when a ticket has reached status Tested and needs its documentation: ONE document — What's new, How to set it up, How it works — built from the run's PASS rows and real stand screenshots, posted as ONE Jira comment, plus a ≤30 s Motion film a person exports and attaches. Called by /qa-test FULL and its technical-change flow at 5-docs; run by hand after the /qa-test FAST path or /vc-test:qa-ticket. `release` mode aggregates the What's new sections of a sprint or version. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
 argument-hint: "<TICKET> [--video [<file.mp4>]] | release --sprint <SprintXX-XX> | release --version <X.Y.Z>"
 ---
 
@@ -43,9 +43,11 @@ call it — QA runs it by hand when the ticket needs documentation.
 
    | Refusal | When |
    |---|---|
+   | `no-run` | the bound folder lacks `testing-checklist.md` plus `summary.json` or `verdict.json` — pruned by `reports:prune`, or the folder of another env. Name the folder read |
    | `not-tested` | the status is anything but **Tested** — earlier (In Testing, Reopened) **and later** (Done, Closed): documentation is written at the Tested moment, from that run. Say which status was read |
    | `not-deployed` | the probed versions do not carry the change ([`rules.md`](rules.md) §Shipped in). A run that probed no versions (a `/vc-test:qa-ticket` run) is judged right after the capture probe (step 1 of [`media.md`](media.md) §Capture), before any frame is taken |
    | `not-user-visible` | no `PASS` row a person can act on ([`rules.md`](rules.md) §Evidence bar) |
+   | `build-changed` | the stand runs another build than the run tested, and the person declines to document from it (step 1 of [`media.md`](media.md) §Capture) |
 
    A refusal is an outcome: no guide and no comment — only `documentation.json` (step 8) records it; then stop.
 
@@ -73,19 +75,25 @@ call it — QA runs it by hand when the ticket needs documentation.
 6. **Post — ask once.** Show the composed comment and the film link, and ask before posting: the comment
    is an external write, and it is the run's one sanctioned documentation comment
    ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0 rule 4). A decline posts nothing.
-   **Post it as a new comment, never as an amend**: the one-comment hook knows the run's result comment
-   (5-report) and will suggest `--amend <its id>` — **never amend the result comment**; that would replace
-   the QA verdict with the documentation. Use, with one `--attach` per screenshot and GIF:
+
+   **The body is wiki markup, not the guide's Markdown.** With screenshots the comment goes through the v2
+   API, where the whole body is wiki (tracker-ops.md §5c); a Markdown body shows literal `##` and renders no
+   image. Render it, and post THAT file:
 
    ```
-   npm run tracker:comment -- --ticket <TICKET> --body-file <document.md> --attach <img> … \
-     --force-new "documentation comment (tracker-ops §0 rule 4), confirmed by <person>"
+   npm run tracker:wiki -- <guide.md> {RUN_DIR}/documentation.wiki.txt
+   npm run tracker:comment -- --ticket <TICKET> --doc --body-file {RUN_DIR}/documentation.wiki.txt \
+     --attach <img> …            # one --attach per screenshot and GIF the body names
    ```
 
-   Mechanics behind it are [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §5a (body
-   dialect), §5c (screenshots and GIFs: attach, then reference) and §5d (the document in full, in one
-   comment). Verify from the rendered body, not the status code
-   ([`reports-policy.md`](../../knowledge/execution/reports-policy.md) §5.0). Keep the comment's id.
+   **`--doc`, never a plain post or an amend of the result comment.** It records the documentation comment
+   under its own ledger entry, so the run's result comment (5-report) stays the one every later correction
+   amends and `summary.json` is not repointed. **A re-run amends** the comment `documentation.json` already
+   holds — `… --doc --amend <comment_id> --same-round "documentation re-run"` — and `--doc` refuses a second
+   post. The helper verifies the rendered body (one `<img>` per attached image, none left literal,
+   [`reports-policy.md`](../../knowledge/execution/reports-policy.md) §5.0) — read its check, not the status
+   code. Keep the comment's id. **Azure Boards:** `tracker:comment` is Jira-only — stop and post through
+   `ado.mjs` (`upload-attachment`, then an HTML body with `<img src>`), [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §5c.
 
 7. **Bank what the run established** — for each platform behaviour the document states: matched ⇒
    `mcp__kb__kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (CLI:
@@ -101,7 +109,7 @@ call it — QA runs it by hand when the ticket needs documentation.
    | `film` | `{ "url": <film artifact URL or null>, "file": "<TICKET>-<slug>.mp4", "exported": false }` — `exported` turns `true` only after `--video` attached it |
    | `comment_id` | the posted comment's id, or `null` |
    | `comment_posted` | `false` when the person declined the post |
-   | `refusal` | `not-tested` · `not-deployed` · `not-user-visible` · `null` |
+   | `refusal` | `no-run` · `not-tested` · `not-deployed` · `not-user-visible` · `build-changed` · `null` |
    | `versions_source` | `run` or `capture` |
    | `aggregated_into` | set later by `/qa-docs release` — the aggregate file that includes this ticket |
 

@@ -241,7 +241,7 @@ By default `/qa-test` verifies and reports; it never fixes — it states the nex
 not auto-triggers). This close-out is the `feature-test` flow's; `verify-fix` already ended at its own
 VERIFIED/REOPEN verdict, and `hotfix-verify` handed off before 1b.
 
-- **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate. Done — **on FULL, 5-docs calls
+- **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate. Done — **on FULL and the technical-change flow, 5-docs calls
   `/qa-docs`** (§5-docs) and `5-docs-map` writes back to the domain map (non-blocking). New cases
   stay `Draft` — promotion is [`/qa-test-lifecycle`](../../commands/qa-test-lifecycle.md)'s pass, not this one.
 - **FAIL → REOPEN** → `/vc-fix:qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge +

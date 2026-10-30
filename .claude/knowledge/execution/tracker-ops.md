@@ -27,7 +27,8 @@ deliver one conclusion — and left them to reconcile which version is current.
    report until close-out. If the operator explicitly says *post now*, that post becomes **the**
    comment for the run and everything later amends it.
 4. **A second comment *in the same round* requires the operator to ask for one**, for a reason they
-   state. Learning something new about the same build is an amend — a run always learns something new.
+   state. The one standing exception is the `/qa-docs` **documentation comment**, posted after one
+   confirmation with `tracker:comment --doc`, which keeps it out of the run's ledger entry. Learning something new about the same build is an amend — a run always learns something new.
 5. **A retest on an UPDATED artifact is a new round, and a new round is a NEW comment.** The developer
    shipped new builds, so the people waiting on them must be notified, and an edit notifies nobody. The
    earlier comment stays as that round's record. Name the build: `--artifact "<build under test>"`.

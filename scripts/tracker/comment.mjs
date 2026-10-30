@@ -83,6 +83,7 @@ function parseArgs(argv) {
     else if (k === "--attach") { (a.attach ??= []).push(next()); }
     else if (k === "--attach-file") { (a.attachFile ??= []).push(next()); }
     else if (k === "--attach-video") { (a.attachVideo ??= []).push(next()); }
+    else if (k === "--doc") a.doc = true;
     else if (k === "--wiki") a.wiki = true;
     else if (k === "--dry-run") a.dryRun = true;
     else if (k === "--help" || k === "-h") a.help = true;
@@ -290,7 +291,11 @@ const thisRun = runId(a);
 // The ledger is per checkout: an amend of a comment it does not know (another worktree or clone
 // posted it), or one whose entry has no posted_at, takes its age from Jira itself. Skipped on
 // --dry-run, which must stay offline.
-const recorded = entryOf(ledger, a.ticket);
+// --doc: the /qa-docs documentation comment (tracker-ops.md §0 rule 4) keeps its OWN ledger entry, so the run's
+// result comment stays the one every later correction amends, and summary.json is never pointed at it.
+const docKey = `${entryKey(a.ticket)}#doc`;
+const recorded = a.doc ? ledger[docKey] : entryOf(ledger, a.ticket);
+const saveEntry = (entry) => { if (a.doc) ledger[docKey] = entry; else setEntry(ledger, a.ticket, entry); };
 const tracked = recorded && String(recorded.comment_id) === String(a.id);
 // --same-round can fold a new build into this comment, so whether it holds a PUBLISHED VERDICT must
 // be known: from the ledger's `kind` when this checkout posted it, else from Jira's own body.
@@ -357,11 +362,16 @@ if (a.attach?.length) {
     }
   }
 }
-const mediaNames = (a.attach ?? []).map(p => resolve(ROOT, p).split(/[\\/]/).pop());
+// The images the body embeds: the --attach uploads, or — on a --wiki body that references images already on the
+// issue (an amend that re-attaches nothing) — the `!name.png|…!` references themselves.
+const mediaNames = a.attach?.length
+  ? a.attach.map(p => resolve(ROOT, p).split(/[\\/]/).pop())
+  : (useWiki ? [...new Set([...body.matchAll(/!([^!|\s]+\.(?:png|gif|jpe?g|webp))(?:\|[^!\n]*)?!/gi)].map(m => m[1]))] : []);
 
 // ---- files: upload (or reuse), then ONE appended `Attached:` line that links each by id
 let linked = [];
 if (a.attachFile?.length) {
+  if (!a.dryRun) await loadEnv(); // JIRA_BASE_URL lives in .env.local, loaded lazily at the first Jira call
   const jiraBase = (process.env.JIRA_BASE_URL ?? process.env.JIRA_BASE ?? "<jira>").replace(/\/+$/, "");
   if (a.dryRun) {
     linked = a.attachFile.map(p => ({ name: resolve(ROOT, p).split(/[\\/]/).pop(), id: "<id>" }));
@@ -380,6 +390,7 @@ if (a.attachFile?.length) {
 }
 let videoLinked = [];
 if (a.attachVideo?.length) {
+  if (!a.dryRun) await loadEnv(); // JIRA_BASE_URL lives in .env.local, loaded lazily at the first Jira call
   const jiraBase = (process.env.JIRA_BASE_URL ?? process.env.JIRA_BASE ?? "<jira>").replace(/\/+$/, "");
   if (a.dryRun) videoLinked = a.attachVideo.map(p => ({ name: resolve(ROOT, p).split(/[\\/]/).pop(), id: "<id>" }));
   else {
@@ -417,7 +428,10 @@ async function reportRender(id) {
     console.log(`\n    ⚠ a video attachment rendered as a QuickTime ActiveX/NPAPI <object> — dead in every`);
     console.log(`      current browser. Use an animated GIF for motion evidence (reports-policy.md §5.2).`);
   }
-  if (v.errors || v.perFile.some(f => f.literalLeft)) {
+  if (v.imgs < mediaNames.length) {
+    console.log(`\n    ✗ only ${v.imgs} of ${mediaNames.length} images rendered — a Markdown body on the wiki API renders none.`);
+  }
+  if (v.errors || v.perFile.some(f => f.literalLeft) || v.imgs < mediaNames.length) {
     console.log(`\n    ✗ media did NOT render. Do not post a corrected copy — amend this one.`);
   }
 }
@@ -426,7 +440,7 @@ if (a.mode === "amend") {
   if (a.dryRun) { console.log(`\n  [dry-run] PUT (api v${API}) comment ${a.id} on ${a.ticket} (${body.length} chars)\n`); process.exit(0); }
   await jira("PUT", `/rest/api/${API}/issue/${a.ticket}/comment/${a.id}`, { body: wireBody });
   // Amending an OLDER comment must not erase the current round's entry (round-guard.mjs ledgerAfterAmend).
-  setEntry(ledger, a.ticket, ledgerAfterAmend(recorded, existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound, kind: commentKind(body) }));
+  saveEntry(ledgerAfterAmend(recorded, existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound, kind: commentKind(body) }));
   writeLedger(ledger);
   console.log(`\n  ✓ amended comment ${a.id} on ${a.ticket} (api v${API}) — an edit notifies NOBODY; a new build is a new comment (--artifact)`);
   await reportRender(a.id);
@@ -437,16 +451,18 @@ if (a.mode === "amend") {
 // post
 if (a.dryRun) { console.log(`\n  [dry-run] POST (api v${API}) comment on ${a.ticket} (${body.length} chars)${a.forceNew ? ` — force-new: ${a.forceNew}` : ""}\n`); process.exit(0); }
 const created = await jira("POST", `/rest/api/${API}/issue/${a.ticket}/comment`, { body: wireBody });
-setEntry(ledger, a.ticket, {
-  comment_id: String(created.id), run_id: thisRun, posted_at: new Date().toISOString(), kind: commentKind(body),
+saveEntry({
+  comment_id: String(created.id), run_id: thisRun, posted_at: new Date().toISOString(), kind: a.doc ? "documentation" : commentKind(body),
   ...(a.artifact ? { artifact: a.artifact.trim() } : {}),
   ...(a.forceNew ? { force_new_reason: a.forceNew } : {}),
 });
 writeLedger(ledger);
-const mirrored = mirrorToSummary(a.ticket, created.id);
+const mirrored = a.doc ? null : mirrorToSummary(a.ticket, created.id);
 console.log(`\n  ✓ posted comment ${created.id} on ${a.ticket} (api v${API})`);
 console.log(`    ledger   : .tracker-comments.json`);
 if (mirrored) console.log(`    summary  : ${mirrored.replace(ROOT + "\\", "").replace(ROOT + "/", "")}`);
 await reportRender(created.id);
 console.log(`\n    Any further change to this ticket in this run must AMEND:`);
-console.log(`      npm run tracker:comment -- --ticket ${a.ticket} --amend ${created.id} --artifact "<build under test>" --body-file <path>\n`);
+console.log(a.doc
+  ? `      npm run tracker:comment -- --ticket ${a.ticket} --doc --amend ${created.id} --same-round "<reason>" --body-file <path>\n`
+  : `      npm run tracker:comment -- --ticket ${a.ticket} --amend ${created.id} --artifact "<build under test>" --body-file <path>\n`);

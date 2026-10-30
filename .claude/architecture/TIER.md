@@ -42,7 +42,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `ba-system-analyzer.md` | **B** | Already generic VC-module-oriented. Minor sanitization. |
 | `ba-api-specialist.md` | **B** | Same. Postman/Swagger/Github-MCP workflow is universal. |
 | `ba-story-writer.md` | **A** | Pure BDD/Agile story craft. Zero product coupling. Promote. |
-| `ba-doc-writer.md` | **A** | Pure documentation craft. Promote. |
+| `ba-doc-writer.md` | **A** | UX improvement specs from BA analysis; product documentation moved to `/qa-docs`. Promote. |
 | `README.md` | **A** | Agent system documentation. Sanitize storefront refs. |
 
 ### Knowledge (`knowledge/`)

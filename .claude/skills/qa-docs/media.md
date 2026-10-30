@@ -8,7 +8,8 @@ cropped stills in the document, the scenario GIFs and the film.
 1. **Same build, or stop.** Probe `GET {{BACK_URL}}/api/platform/modules` and compare the versions of the
    changed modules (and the storefront theme, if it changed) with the run's probed versions
    ([`rules.md`](rules.md) §Shipped in). Different ⇒ **stop and ask**: the stand was redeployed and the
-   frames would show a build the run never verified. The run probed nothing (a `/vc-test:qa-ticket` run)
+   frames would show a build the run never verified. A yes ⇒ capture, and the footer names the captured
+   build; a no ⇒ the refusal `build-changed` (`SKILL.md` step 1). The run probed nothing (a `/vc-test:qa-ticket` run)
    ⇒ this capture probe supplies the document's versions (`versions_source: capture`), and `not-deployed`
    is judged here, before any frame: the changed module's probed version must carry the change
    ([`rules.md`](rules.md) §Shipped in).
@@ -17,13 +18,21 @@ cropped stills in the document, the scenario GIFs and the film.
    the run used, password typed by its lane secret NAME. A passkey-style ceremony uses a CDP
    `WebAuthn.*` virtual authenticator through `browser_run_code_unsafe` (the only evaluate the real-user
    hook allows for it); remove it afterwards and undo what the walk created (a key, an address) — the
-   suite's own cleanup or seeder re-arm (`npm run seed:<domain>`).
+   suite's own cleanup or seeder re-arm (`npm run seed:<domain>`). **Check that each action landed before
+   the next one** — the first `create` after an authenticator is added can silently do nothing: read
+   `WebAuthn.getCredentials`, and if it is empty, reload the page and click again.
 3. **The walk.** For every `PASS` scenario the document will show, one **full-viewport** screenshot
    (1920×1080, `browser_take_screenshot` with `type: "png"` — the GIF tool reads PNG only) per meaningful step — the screen before the
    click and the state after it — into `test-results/<lane>/docs/<TICKET>/` (gitignored, never committed,
    `reports-policy.md` §9). A dashboard or list that must scroll: one `fullPage: true` shot, so the film
    can pan it. Note each clicked control's box (`getBoundingClientRect`, read-only, allowed by the hook):
    the film's camera and cursor aim at those coordinates.
+   **Capture a state, not a moment.** Before each screenshot wait for the text that proves the state
+   (`browser_wait_for` the buyer's name after a sign-in, the new row after an add, the dialog's own words
+   after a click), never a fixed pause: a fixed 4 s wait produced an all-white frame. Then look at the
+   frame before moving on. **A dialog that the screenshot does not show** (it is in the page, but the frame
+   comes out without it — seen with the storefront's Delete key dialog) is not retried in a loop: describe
+   the step in words, quote the dialog's text from the page, and name the missing frame on `Not documented`.
 4. **A step that no longer behaves as its `PASS` row says** ⇒ drop that scenario, name it on the
    `Not documented` line as `changed since the run`, and say so in the output. Never show it.
 5. **Crops for the document** (PNG): the region each step names, legible at `|width=700!`. Redaction per
@@ -90,21 +99,24 @@ The person exports the video; the skill attaches it. Nothing waits in between.
    (`{TICKET}-{slug}.mp4`), and say what to do — open the film, **Export → MP4**, save it under that name
    (the browser's Downloads folder is fine), then run `/qa-docs <TICKET> --video`.
    `documentation.json` has `film.exported: false`.
-2. `/qa-docs <TICKET> --video [<path>]`: find the file — the path given, else `{RUN_DIR}/<film.file>`,
-   else `~/Downloads/<film.file>`.
+2. `/qa-docs <TICKET> --video [<path>]`: find the file — the path given (absolute), else
+   `{RUN_DIR}/<film.file>`, else the newest `<film.file>` or `<film.file> (N)` in the person's Downloads
+   folder created after the film was. Pass it as an absolute path: `~` is not expanded for a node argument
+   in PowerShell.
    - **No file found** ⇒ say where it was looked for and change nothing — not the comment, not the record.
    - **`comment_id` is null** (the post was declined) ⇒ nothing to amend: say so and stop.
    - **Found** ⇒ attach it and amend the documentation comment `comment_id` in one call — amend, never a
      new comment, and never the result comment ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0a).
-     `--attach-video` uploads the video, links it, and replaces the document's `Video:` line with that
-     link; Jira plays it from the attachment (inline it would render as a dead plugin object, §5c):
+     `--attach-video` uploads the video, links it, and replaces the body's `Video:` line with that link;
+     Jira plays it from the attachment (inline it would render as a dead plugin object, §5c). The body is
+     the same wiki file; its images are already on the issue and resolve by name, so nothing is re-attached:
 
      ```
-     npm run tracker:comment -- --ticket <TICKET> --amend <comment_id> --body-file <document.md> \
-       --attach-video <file.mp4> --attach <img> … --same-round "video attached"
+     npm run tracker:comment -- --ticket <TICKET> --doc --amend <comment_id> --wiki \
+       --body-file {RUN_DIR}/documentation.wiki.txt --attach-video <file.mp4> --same-round "video attached"
      ```
 
-     The `--attach` list repeats step 6's screenshots and GIFs, so the amended body keeps them. Verify the
-     rendered body (the video link is checked too) and set `film.exported: true`.
+     Verify the rendered body (images and the video link are both checked), set `film.exported: true`, and
+     change the guide file's `Video:` line to the after-export wording too.
 3. **No Motion type in this account** (step 5 found none) ⇒ the document ships without a film; the
    `{video_line}` is left out and the output says why.

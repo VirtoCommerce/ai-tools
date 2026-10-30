@@ -38,7 +38,7 @@ UI.screen = function (kit, shots) {
     st(t, px, py) { const c = cam.at(t), p = pt(px, py); return [(p[0] - c.cx) * c.z + 960, (p[1] - c.cy) * c.z + 540]; },
     rect(t, px, py, w, h) { const c = cam.at(t), p = pt(px, py); return { x: (p[0] - c.cx) * c.z + 960, y: (p[1] - c.cy) * c.z + 540, w: w * S.s * c.z, h: h * S.s * c.z }; },
     hlAt(px, py, w, h, a) { hl.left = px * S.s + 'px'; hl.top = py * S.s + 'px'; hl.width = w * S.s + 'px'; hl.height = h * S.s + 'px'; hl.opacity = a; },
-    wipe(i, x0, x1, y0, y1, p) { L[i].opacity = p > 0 ? 1 : 0; L[i].clipPath = 'inset(' + y0 * S.s + 'px ' + (1920 - lerpX(x0, x1, p)) * S.s + 'px ' + (1080 - y1) * S.s + 'px 0px)'; },
+    wipe(i, x0, x1, y0, y1, p) { const w = shots[i].w || 1920, h = shots[i].h || 1080; L[i].opacity = p > 0 ? 1 : 0; L[i].clipPath = 'inset(' + y0 * S.s + 'px ' + (w - lerpX(x0, x1, p)) * S.s + 'px ' + (h - y1) * S.s + 'px 0px)'; },
     path(t, list) { let s = list[0][1]; list.forEach(function (e) { if (t >= e[0]) s = e[1]; }); if (url.textContent !== s) url.textContent = s; },
     chip(text, at, off) { const n = kit.chip(text, { x: at[0] + off[0], y: at[1] + off[1], anchor: at, style: 'font-family:var(--sans, system-ui, sans-serif)' }); if (!n.isConnected) kit.stage.append(n); return n; },
   };
