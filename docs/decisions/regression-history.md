@@ -20,7 +20,7 @@ and this tombstone records why so it is not re-created:
   `/qa-triage-results` and `/qa-monitoring` both deliberately stop at drafting.
 
 What was kept: the graduated rate-limit guard and the 30/60s backoff ladder, now in
-`.claude/agents/regression-orchestrator.md` Step 5. Mode 2 (headless CI) and mode 1 (interactive)
+`.claude/agents/regression-orchestrator.md` Step 5 (detail: `.claude/knowledge/agents/qa/regression-orchestrator-retry.md`). Mode 2 (headless CI) and mode 1 (interactive)
 remain; the interactive one is the path in daily use.
 
 ## Shared-tree losses
@@ -245,3 +245,70 @@ half of the fix fails them). Both tools now agree id-for-id and case-for-case; `
 from 9 entries to 5, and `BL-SEC-001`/`BL-SEC-002` were tightened to their measured counts (6→3, 3→1)
 because the ratchet accepts a shrink silently, so an entry left above its real count is headroom the next
 drift can grow into unnoticed.
+
+
+## Regression orchestrator — rationale
+
+Moved out of the agent prompt (VCST-6423, 2026-10-30). Rationale and measurements that used to sit in `.claude/agents/regression-orchestrator.md` (re-paid on every dispatch). Moved verbatim; never loaded into an agent context. The imperatives they justify stay in the agent.
+
+### Step 1.5 — why a command instead of deriving the plan by hand
+
+**Why a command instead of doing this yourself.** Every part of this used to be hand-derived, and
+each part was got wrong at least once on the record:
+
+- Lane classification by grepping CSVs. `regression:plan` decides the SUITE lane from
+  `ci/lib/lane-classifier.ts` (which knows, for instance, that `[REST-OP]` counts — suite `050l`
+  is runner-native and a GraphQL-only grep misses it). Step 3 then splits a mixed suite's cases
+  with `suites:lanes`, so `050d`'s 46 runner-native rows no longer ride a browser slot on account
+  of its other 3.
+- The firefox rule, once prose in three files, now ONE switch: `defaults.firefoxClickOk`, read
+  through `browserDenyListFor` (`ci/lib/suite-manifest.ts`). **`true` since 2026-09-08** (root cause:
+  `knowledge/automation/browser-quirks.md` §Firefox), so the browser lane is three wide; `false` brings
+  `NOT ON playwright-firefox` back for click-driven suites. `[ACT]` alone does not mean clicking —
+  `049`'s 37 `[ACT]` lines are REST calls.
+- Dispatch order, which was arbitrary.
+
+### Step 3 — why per-case lane routing, not per-suite
+
+   Why per-case and not per-suite: the all-or-nothing rule strands **169 machine-ready rows in 10
+   suites** on the browser lane (050d sends 46 runner-native cases through an agent because 3 of
+   its 49 are prose). The bigger prize is verdict quality — at the measured ~29% artefactual-BLOCKED
+   rate for long agent sessions, roughly 54 of those rows currently come back BLOCKED for reasons
+   about HOW they ran, not about the product.
+
+### Step 3 — why batching is bounded
+
+Why bounded and not one agent per lane, which is what the 2026-09-07 audit's §6 item 9 proposed:
+that is ~1,230 cases in a single session on `full`, and the corpus measures artefactual BLOCKED at
+19.9% overall, **28.6% on 81+ cases**. Session length is the driver, so the unbounded version buys
+tokens by degrading the verdict. Bounded at 60 the saving is real (36 fewer dispatches, each paying
+the always-loaded preamble plus `SETUP_TURNS` of env check / sign-in / first navigate) and no session
+is longer than the longest suite already is.
+
+### Step 3 — why continuous refill replaces fixed batches
+
+> **This replaces fixed batches — the biggest wall-clock win available here.**
+> Dispatching in groups of 3 and waiting for the whole group means each group costs its SLOWEST
+> suite while the other two slots sit idle. Measured on the real manifest at 3 slots, `full`'s
+> browser lane is **21h 09m** under fixed batches and **14h 15m** under continuous refill + longest
+> first — a third of the run was pure waiting. `npm run regression:plan` prints both numbers, so
+> the comparison is checkable rather than asserted.
+>
+> It does NOT help a selection whose critical path IS one suite: the plan then reports `0% saved`,
+> so read that line rather than assuming a saving.
+
+### Step 2 — why a `NOT ON` suite queues instead of downgrading
+
+(Moved from the slot rule "A suite the plan marks `NOT ON <server>` QUEUES for another slot — it is never downgraded onto that server.")
+
+An idle lane is strictly cheaper than a firefox attempt on a clicking suite: the
+click resolves the element and then times out on the actionability gate, so the whole attempt is
+wasted and has to be redone. Confirmed six times independently.
+
+### Step 3 item 5 — why the CSV goes by path
+
+(Moved from "Pass that PATH as `{{SUITE_CSV_PATH}}`. **Never embed CSV content in a prompt**".)
+
+suite `027` is
+282 KB (~78k tokens) against a 200k window, and a single `browser_snapshot` costs 10-30k, so an
+inlined suite starves the very evidence the run exists to collect.
