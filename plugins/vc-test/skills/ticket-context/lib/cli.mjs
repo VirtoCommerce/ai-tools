@@ -30,6 +30,7 @@ import { CHANGE_PART_RE, OUT_FILES, checkAgentOutputs, compose, mergeChange } fr
 import { checkBundle } from "./check-bundle.mjs";
 import { acceptanceChanged, classifyPr, commentsAfter, outOfScopeKeys, readRoundRecord } from "./since.mjs";
 import { extractAgentOutput, findAgentTranscript, readTranscript } from "./agent-output.mjs";
+import { ANALYST_FILES, analystInputs, slimIssue } from "./analyst-input.mjs";
 
 const argv = process.argv.slice(2);
 const cmd = argv[0];
@@ -289,7 +290,10 @@ async function prepare() {
     // A delta read keeps only the comments posted after the round closed; the inventory above saw them all (rung 1).
     const kept = since ? commentsAfter(issue, since.record.closedAt) : issue;
     writeJson(ticketJson, kept);
-    for (const it of linked) if (linkedJson.has(it.key)) { it.local_path = join(runDir, `issue-${it.key}.json`); writeJson(it.local_path, linkedJson.get(it.key)); }
+    // The analysts read the ticket as plain text (analyst-input.mjs); ticket.json stays raw for rounds.mjs.
+    const ticketSlim = join(runDir, "ticket.slim.json");
+    writeJson(ticketSlim, slimIssue(kept, { acFields, secrets }));
+    for (const it of linked) if (linkedJson.has(it.key)) { it.local_path = join(runDir, `issue-${it.key}.json`); writeJson(it.local_path, slimIssue(linkedJson.get(it.key), { secrets })); }
     if (since) inv.items = [];
 
     // An attachment the agent cannot read is never downloaded: its outcome is recorded without the bytes.
@@ -381,8 +385,10 @@ async function prepare() {
     const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, ...(HOST ? { fetched_via: "host" } : {}), project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
       fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: since ? null : fk, fields: tf.fields, ticket_json: ticketJson,
       ...(benchmark ? { benchmark } : {}), ...(delta ? { delta } : {}), ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
+    // One input per analyst mode, beside prepare.json under a fixed name: the agent reads its own, never prepare.json.
+    for (const [mode, input] of Object.entries(analystInputs(prepared, { ticketSlim, schema: SCHEMA }))) writeJson(join(runDir, ANALYST_FILES[mode]), input);
     const prepPathOut = join(runDir, "prepare.json");
-    writeJson(prepPathOut, prepared);
+    writeJson(prepPathOut, { ...prepared, ticket_slim: ticketSlim });
     const count = (v) => prs.filter((p) => p.delta === v).length;
     out({ status: "prepared", prepare_path: prepPathOut, run_dir: runDir, run_dir_in_project: inProject, inventory: inv.items.length, prs: prs.length,
       rung: ladder.rung, needs_connector: inv.items.filter((i) => i.needs_connector).map((i) => i.ref), gaps: gaps.length,
