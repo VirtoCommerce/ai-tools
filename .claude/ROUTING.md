@@ -62,6 +62,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Ask what the platform was OBSERVED to do** | `mcp__kb__kb_ask` (fallback `npm run kb -- ask "<q>"`) — rule: `CLAUDE.md` §Essential Rules → *Product context* | MCP / CLI |
 | **Report on the knowledge base itself** (what was asked, what it could not answer) | `/kb-report` | Skill |
 | **Settle a disputed knowledge-base entry** (live investigation, verdict as a reviewed PR on the base) | `/kb-judge <KB-id> \| cluster <KB-id> \| next` | Skill |
+| **Settle disputes unattended, in batches** (the prompt of a scheduled task: one `judge/batch-*` PR per run) | `/kb-judge-routine [--dry-run]` | Command |
 | **Build a ticket's test model (fault model) on its own** | `/qa-test-model <ticket-key> [--context <file>]` | Skill |
 | **Choose a ticket's test strategy before running anything** (risks, mix, technique + oracle per risk, artifacts, criteria; one approval) | `/vc-test:qa-test-strategy <ticket-key> [--domain <slug>] [--yes]` | Skill (vc-test) |
 | **Model how a domain behaves (behaviour graph, stable ids, evidence)** | `/qa-test-mind-map build \| update \| audit <domain-slug>` | Skill |
@@ -155,6 +156,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/preflight` — Read-only environment + build pre-flight at the start of a `/qa-test`-family or BA run: one result, one output form, then a diagnose → fix → re-check loop on what is not READY
 - `/kb-report` — The observed-behaviour knowledge base's own report: what agents asked, what it could not answer, which answers were useless
 - `/kb-judge` — Settle disputed knowledge-base entries: dossier, full live investigation, a verdict per dispute as a reviewed PR on the base (`npm run kb:disputes`)
+- `/kb-judge-routine` (command) — `/kb-judge` unattended, for a scheduled task: a fresh clone of the base, a batch of clusters, one commit each, one PR for a human to merge
 - `/qa-teams-watch` (command) — Teams group chats → newly reported bugs → dedup against Jira → a VCST Bug labelled for `/qa-fix`
 
 ### VC Knowledge (Skill — auto-invocable)
