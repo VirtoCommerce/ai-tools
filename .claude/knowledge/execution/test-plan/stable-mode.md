@@ -47,7 +47,7 @@ line on what changed, ticket keys.
 
 - **Class from the commits, not the version.** Migration, obsolete removal or package alignment is `T`; a feature or a
   behaviour fix is `F`. When the commit list does not settle it, open the ticket.
-- **A new module's intended behaviour comes from VirtoOZ** (`/vc-docs`), never from memory — `CLAUDE.md` §Essential
+- **A new module's intended behaviour comes from VirtoOZ**, never from memory — `CLAUDE.md` §Essential
   Rules → *Product context*. A new module with no suite is a gap: `PLAN.md` §Gaps, with an exploratory charter.
 - **Suites:** start from the `module-diff.json` candidates (the path matcher is broad), narrow by domain, add the suites
   a cross-cutting change needs. A suite whose `requiresModules` the env does not run is BLOCKED by plan.

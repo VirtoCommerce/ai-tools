@@ -95,7 +95,7 @@ question — the page path, the GraphQL operation, the endpoint the scope names.
 A miss (exit 1: nobody has written it down) never blocks; what this run establishes is a later `kb_capture`
 ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*). Exit 3 means the base was NOT read: record it as degraded grounding, not as a miss.
 
-Then VirtoOZ through `/vc-docs` for what the platform is MEANT to do; Context7
+Then VirtoOZ (connector) for what the platform is MEANT to do; Context7
 (`/virtocommerce/vc-docs`) only as its fallback. Record the kb hit ids and the doc tools used.
 Never Context7 first: VirtoOZ is the primary docs source and Context7 only its fallback (same `CLAUDE.md` §).
 

@@ -54,7 +54,7 @@ npm run suites:lint          # suite + case totals, corpus-wide unique-ID check
    - `skills/qa-plan/e2e-scenario-catalog.md` — E2E scenario catalog (its own header derives the count; never quote one)
    - `skills/qa-checklist/domain-checklists.md`, `backend-admin-checklists.md`, `graphql-checklist.md`
    - `skills/qa-api/xapi-query-ref.md`, `test-cases-api-graphql.md`
-4. **Product documentation — VirtoOZ first, Context7 as fallback.** Per `CLAUDE.md` §Essential Rules, when what the platform is *supposed* to do is unclear, query VirtoOZ (`/vc-docs`) before acting on it; fall back to Context7 `/virtocommerce/vc-docs` only when VirtoOZ returns thin or off-topic chunks. Grounding order is **repo knowledge → VirtoOZ → live/source**. Flag features documented upstream but absent from coverage; a *released* behaviour VirtoOZ does not document is itself a finding. What VirtoOZ had to tell you that the repo should have known goes back into the domain map.
+4. **Product documentation — VirtoOZ first, Context7 as fallback.** Per `CLAUDE.md` §Essential Rules, when what the platform is *supposed* to do is unclear, query VirtoOZ before acting on it; fall back to Context7 `/virtocommerce/vc-docs` only when VirtoOZ returns thin or off-topic chunks. Grounding order is **repo knowledge → VirtoOZ → live/source**. Flag features documented upstream but absent from coverage; a *released* behaviour VirtoOZ does not document is itself a finding. What VirtoOZ had to tell you that the repo should have known goes back into the domain map.
 5. **Map every test case** to its manifest domain via the manifest's `domain` field; supplement with the `Section` column and title keywords only when the manifest is ambiguous.
 6. **Identify gaps** per `coverage-gap-methodology.md` categories (`ZERO_COVERAGE`, `SHALLOW_HAPPY`, `MISSING_NEGATIVE`, `MISSING_INTEGRATION`, `MISSING_CROSS_DOMAIN`, `STALE_COVERAGE`).
 7. **Score gaps** using the 4-factor matrix in `coverage-gap-methodology.md` §3:
@@ -201,7 +201,7 @@ Never hardcode suite IDs in this skill — query the manifest.
 
 **Knowledge sources:**
 - Gap analysis must reference `BL-*` invariants for priority scoring and case authoring.
-- Query VirtoOZ (`/vc-docs`) during Cycle 1 for any unclear product behaviour; Context7 `/virtocommerce/vc-docs` is the fallback, not the primary. Never rely solely on local knowledge files.
+- Query VirtoOZ during Cycle 1 for any unclear product behaviour; Context7 `/virtocommerce/vc-docs` is the fallback, not the primary. Never rely solely on local knowledge files.
 - For GraphQL cases, consult `graphql-schema.md` (live introspection) before authoring queries/mutations.
 
 **Output:**

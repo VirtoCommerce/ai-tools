@@ -44,7 +44,7 @@ Read the dossier's **hints** as hypotheses to test, never as findings.
 - **The base, for each coordinate of the cluster:** `mcp__kb__kb_ask` (CLI:
   `npm run kb -- ask "<coordinate> <question>"`) — siblings at the same coordinates, an entry that
   already states the other half, a duplicate. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
-- **VirtoOZ, for the documented mechanism** (`/vc-docs`) — what the platform is supposed to do. A doc
+- **VirtoOZ, for the documented mechanism** — what the platform is supposed to do. A doc
   decides a mechanism, never a UI string, a count or a layout.
 - **The oracles, for the intended behaviour:** the `BL-*` rules (`.claude/knowledge/oracles/bl/*.yaml`)
   and `ECL-*` sections at the cluster's coordinates and concepts — what the platform should do,

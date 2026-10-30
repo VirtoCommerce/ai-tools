@@ -386,7 +386,7 @@ left, and asking before knowing what those are fetches the same docs twice.
 | **`visual_surface`** | `BL-UI-*` **and `BL-A11Y-001..004`** · `plugins/vc-test/skills/qa-design/methodology.md` §State-Stress · `.claude/knowledge/oracles/critical-ui-scope.md` · the generated selectors **and** design tokens · `.claude/skills/qa-sbtm/modern-web-attack-surface.md` §`UIP-*` |
 | **`contract_surface`** | the **refreshed** `graphql-schema.md` (the run's `{RUN_DIR}/knowledge/api/` copy) · `.claude/knowledge/api/graphql-test-cases-runner.md` · the `test-data/graphql/index.json` fixture inventory — read it **before** proposing a new fixture (each op lists its `usedBy[]`) |
 
-**2-topup** — then VirtoOZ via `/vc-docs`, **skipped when `1c` delegated to `ba-system-analyzer`**; top up
+**2-topup** — then VirtoOZ (connector), **skipped when `1c` delegated to `ba-system-analyzer`**; top up
 specific gaps only.
 
 **Gate (inline) — FAST:** the domains' `BL-*` **and `ECL-*`** text is loaded (the agent prompt contract

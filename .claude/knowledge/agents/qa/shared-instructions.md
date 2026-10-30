@@ -172,7 +172,7 @@ narrowness: the ticket names one control, the map names the whole surface that c
 Applies to any question of how the platform or the storefront is **supposed** to behave. Grounding order:
 
 1. **This repo's knowledge first** — the domain map (`knowledge/domain/<slug>.md`), the oracles (`BL-*`, `ECL-*`), `.claude/ROUTING.md` §Knowledge bases. Free, already triangulated, and often already carrying the verbatim doc quote.
-2. **VirtoOZ next** — `/vc-docs`, topic-scoped tool (the topic→tool table is `knowledge/agents/ba/shared-instructions.md` §Documentation source — VirtoOZ first, always). Context7 `/virtocommerce/vc-docs` is the fallback only.
+2. **VirtoOZ next** — through the connector, the narrowest topic-scoped tool. Which source answers which question (the release ledger first for *what shipped*), the topic→tool table and the Context7 fallback: [`../../execution/doc-sources.md`](../../execution/doc-sources.md).
 3. **The module repo's own docs next** — `README.md` + `docs/` of the `vc-module-*` repo, at the deployed version's tag (§Module repo docs below). Mandatory when VirtoOZ is thin or silent on the module, and for a NEW feature.
 4. **Live / source last** — what the environment actually does.
 
@@ -374,7 +374,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Filing a bug report | `/qa-defect` | `defect-report-templates.md` |
 | Triaging a defect | `/qa-defect` | `defect-lifecycle-workflow.md` |
 | Sign-off | `/qa-evidence` | `sign-off-templates.md` |
-| VC documentation | `/vc-docs` | **VirtoOZ MCP** (primary, 12 topic-scoped tools); Context7 fallback |
+| VC documentation | VirtoOZ connector | 12 topic-scoped tools, Context7 fallback — [`../../execution/doc-sources.md`](../../execution/doc-sources.md) |
 | Module mapping | `knowledge/execution/module-suite-map.md` | direct file reference |
 | xAPI queries | `/qa-api ref <module>` | `xapi-query-ref.md` |
 

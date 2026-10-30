@@ -59,7 +59,7 @@ excludes: <what was deliberately left out, and that it is a later pass>
 **Purpose: <one sentence, or `UNDECLARED`>.**
 
 `UNDECLARED` is the correct answer when no purpose statement exists in the prior art, **every published
-guide the domain touches** (`/vc-docs` → VirtoOZ: `PlatformUserGuide` **and** `StorefrontUserGuide` at
+guide the domain touches** (VirtoOZ: `PlatformUserGuide` **and** `StorefrontUserGuide` at
 minimum), or a previous map — and it is a **finding**, not a blank. Say where you looked. Then reconstruct
 the chain from source + live and mark it as **the first written statement**, to be cited against rather
 than treated as authority.

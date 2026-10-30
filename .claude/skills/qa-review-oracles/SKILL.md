@@ -10,7 +10,7 @@ disable-model-invocation: true
 Keep the QA pipeline's **shared oracles** true, then reconcile the test-case citations that point at what changed. The two axes now differ in **method** (BL 2.0, `docs/bug-detection-requirements.md` §7.3a):
 
 - **`bl`** — **sync, not triangulation.** A rule changes only from a **human source** (ticket AC, a docs page, a Jira bug resolution); a run that contradicts a rule makes it `SUSPECT` and files a bug; `SUSPECT` rules are resolved from the Jira decision or a re-run of their check. Code + live agreeing never edits a rule. Records live in `bl/<slug>.yaml`; `business-logic.md` is their render. Rules: **bl-audit-criteria.md**.
-- **`ecl`** — **three-axis triangulation** (docs via `/vc-docs`, live via playwright, source via GitHub MCP), verdict, auto-apply what is confirmed. Rules: **ecl-audit-criteria.md**.
+- **`ecl`** — **three-axis triangulation** (docs via VirtoOZ, live via playwright, source via GitHub MCP), verdict, auto-apply what is confirmed. Rules: **ecl-audit-criteria.md**.
 
 Shared once, here: the single writer, the stable-ID contract, the deterministic lint core, the value gate on growth, and the citation reconciliation into `regression/suites/**`.
 
@@ -113,7 +113,7 @@ Evidence gathering is read-only and per-entry, so **run it in parallel**. Split 
 
 ECL: each agent captures the three axes with concrete evidence, never a bare opinion (per-domain/chapter source map is in the criteria file):
 
-- **Docs axis** — `/vc-docs` (VirtoOZ MCP), topic-scoped tool by domain (`StorefrontUserGuide`/`StorefrontDeveloperGuide` for cart/checkout UX, `PlatformDeveloperGuide` for platform/admin, `*SourceCode` for "where is this implemented"). Capture a **quote + doc reference**.
+- **Docs axis** — VirtoOZ (connector), topic-scoped tool by domain (`StorefrontUserGuide`/`StorefrontDeveloperGuide` for cart/checkout UX, `PlatformDeveloperGuide` for platform/admin, `*SourceCode` for "where is this implemented"). Capture a **quote + doc reference**.
 - **Source axis** — GitHub MCP `search_code` / `get_file_contents` on `org:VirtoCommerce` (read-only; QA never clones). Capture a **`file:line` anchor** and the relevant code shape.
 - **Live axis** — OBSERVE the behavior via the real UI/API. Capture an **`{OBSERVED}` result + screenshot**. Honors the REAL-USER rule — no `browser_evaluate` / `run_code_unsafe` bypass.
   > **In parallel mode (the default) each batch agent does its OWN live observation on its assigned slot — do NOT sub-delegate to `qa-testing-expert`.** Three batch agents already occupy the three browser slots; a sub-delegated fourth blows the cap. `qa-testing-expert` is reserved for a *sequential* single-entry deep-dive after the batches finish. (Only in a single-batch run is delegating the live axis to `qa-testing-expert` on `playwright-firefox` the right call.)

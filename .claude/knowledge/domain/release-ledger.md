@@ -30,7 +30,7 @@ exhaustive: false
 | Your question | Read | Not this |
 |---|---|---|
 | What shipped / which version introduced X / since when | **this file** | VirtoOZ (~9 months stale on releases) |
-| How does X work / where is it configured / API shape | VirtoOZ via `/vc-docs` | this file — it carries no behaviour |
+| How does X work / where is it configured / API shape | VirtoOZ (connector) | this file — it carries no behaviour |
 | Can I test it **on this env**? | `GET {{BACK_URL}}/api/platform/modules` | this file, nor the git-declared manifest |
 | Can the STOREFRONT see it (and is its flag on)? | `npm run store:caps` — anonymous, no token | the platform manifest: it answers "installed", not "visible" |
 

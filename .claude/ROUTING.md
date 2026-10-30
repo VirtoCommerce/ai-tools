@@ -71,7 +71,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Analyze test coverage gaps** | `/qa-coverage-gap analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Skill |
 | **Review test-case quality / triangulate staleness** | `/qa-review-tests suite <ID> \| file <path> \| diff \| --triangulate \| --fix` | Skill |
 | **Create Postman collections** | `/qa-postman create <purpose> \| env <profile> \| verify <collection>` | Skill |
-| **Look up VC documentation** | `/vc-docs topic \| module \| concept` | Skill |
+| **Look up VC documentation** | VirtoOZ connector — `knowledge/execution/doc-sources.md` | Knowledge |
 
 > `/qa-sync-tests` was **removed** — the command file is deleted and there is no redirect or alias.
 > Use `/qa-test-lifecycle PR #NNN \| module <name> \| diff` instead.
@@ -159,8 +159,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/kb-judge-routine` (command) — `/kb-judge` unattended, for a scheduled task: a fresh clone of the base, a batch of clusters, one commit each, one PR for a human to merge
 - `/qa-teams-watch` (command) — Teams group chats → newly reported bugs → dedup against Jira → a VCST Bug labelled for `/qa-fix`
 
-### VC Knowledge (Skill — auto-invocable)
-- `/vc-docs` — Documentation lookup. **Primary: VirtoOZ MCP** (12 topic-scoped tools); Context7 `/virtocommerce/vc-docs` is the fallback
+### Knowledge
+- `knowledge/execution/doc-sources.md` — which documentation source answers which question. **Primary: the VirtoOZ connector** (12 topic-scoped tools); Context7 `/virtocommerce/vc-docs` is the fallback
 
 ### Agents (use directly for complex multi-step work)
 

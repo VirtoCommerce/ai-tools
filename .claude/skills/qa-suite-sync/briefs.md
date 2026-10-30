@@ -50,7 +50,7 @@ Input:
     - .claude/skills/qa-checklist/graphql-checklist.md
     - .claude/skills/qa-coverage-gap/feature-domain-map.md
     - .claude/knowledge/api/graphql-schema.md (for GraphQL scopes)
-  - VirtoOZ (`/vc-docs`; Context7 fallback), after the kb: domain-specific module behavior
+  - VirtoOZ (connector; Context7 fallback), after the kb: domain-specific module behavior
 
 Output: structured JSON with:
   - syncResults: [{caseId, classification, action, before, after}]

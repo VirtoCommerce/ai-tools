@@ -125,7 +125,7 @@ Reliability order: `data-testid` > `aria-label` > semantic HTML > text content >
 | Test coverage checklists | `/qa-checklist` | `domain-checklists.md` (28 storefront domains) |
 | Seeding test data | `/qa-seed-data` | `test-data-generation.md` |
 | Figma comparison | `/qa-design` | `design-system-consistency.md` |
-| VC documentation | `/vc-docs` | Context7 MCP |
+| VC documentation | VirtoOZ | Context7 MCP |
 
 ---
 

@@ -35,7 +35,7 @@ opinion:
 
 | Axis | Concrete evidence required | Source |
 |------|----------------------------|--------|
-| **Docs** | A quote + a doc reference (VirtoOZ topic + section, or a docs URL) that states the behavior | `/vc-docs` (VirtoOZ MCP), Context7 fallback |
+| **Docs** | A quote + a doc reference (VirtoOZ topic + section, or a docs URL) that states the behavior | VirtoOZ (connector), Context7 fallback |
 | **Source** | A `file:line` anchor **for every surface that can write the asserted state** (§1c) — not one anchor | GitHub MCP `search_code` / `get_file_contents` (read-only; QA never clones) |
 | **Live** | An `{OBSERVED}` result (screenshot / captured API response) confirming the behavior on the deployed build | `qa-testing-expert` (playwright-firefox), real UI/API only — REAL-USER rule, no `browser_evaluate` / `run_code_unsafe` bypass |
 
