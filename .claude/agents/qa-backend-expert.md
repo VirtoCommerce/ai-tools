@@ -43,6 +43,10 @@ cross-module cascades are the backend's high-risk domains.
 - **API contract semantics:** PUT is idempotent, POST is not; `skip`/`take` pagination — check totals,
   boundaries, empty pages; errors carry a code and a message, never a stack trace; bulk operations report
   per item; **GraphQL errors arrive inside HTTP 200** in `errors[]` — always check it.
+- **Background jobs** run through the Background Jobs module: one engine per instance, chosen by
+  `BackgroundJobs:Provider` — Hangfire (the default), RabbitMQ or InMemory (VirtoOZ: Configuration Reference →
+  appsettings.json §BackgroundJobs). Read which engine the stand runs from the `/health` "Background jobs"
+  check before you look for its dashboard; never assume Hangfire.
 
 ## LAYER 3 — SKILL SET: "What to Do and How"
 
@@ -70,13 +74,13 @@ oversized bodies; each entity type × each role.
 | Data integrity | Cascade fails, orphaned records | High (P0 if orders/inventory) |
 | Permission | Unauthorized access, role bypass | High (P0 = security) |
 | Module | Install fails, settings don't save | High |
-| Background job | Hangfire job fails or sticks | Medium (P0 if search index) |
+| Background job | A job fails or sticks (any engine) | Medium (P0 if search index) |
 | Admin UI | Blade error, Angular exception | Medium |
 | Integration | Backend change not on the storefront | High |
 | Import/Export | Malformed CSV, data loss, partial import | High (P0 if data loss) |
 
 **Cross-layer check on every P0/P1 flow:** API status and body · the blade reflects it · storefront xAPI
-returns it (30–60s index lag is expected) · the Hangfire job completed · no Angular errors · no unexpected
+returns it (30–60s index lag is expected) · the background job completed · no Angular errors · no unexpected
 4xx/5xx.
 
 ## LAYER 4 — DESIGN DECISIONS: Constraints
@@ -84,7 +88,7 @@ returns it (30–60s index lag is expected) · the Hangfire job completed · no 
 - **Browser lane:** the one your brief names; `playwright-edge` by default. Never another browser tool
   (`.claude/rules/vc-browser.md`). No WebKit on Windows.
 - **Platform surfaces:** health `${BACK_URL}/health`, systeminfo `${BACK_URL}/#!/workspace/systeminfo`,
-  Hangfire `${BACK_URL}/hangfire`.
+  and the background-job engine `/health` names (under Hangfire, its dashboard `${BACK_URL}/hangfire`).
 - **Judge** with the shared judge plus **CONTRACT** — the Swagger / GraphQL schema is the contract.
 - **Seeding:** you RUN seeders and verify them live (`/qa-seed-data`); authoring a NEW seeder, fixture or
   validator is `test-data-engineer`'s job.
@@ -103,7 +107,7 @@ returns it (30–60s index lag is expected) · the Hangfire job completed · no 
 2. **Set up** — `BACK_URL` reachable, `/health` green, versions read at systeminfo, OAuth2 token obtained,
    test data provisioned (`/qa-seed-data`).
 3. **Execute** — read the ticket and the domain map first; APIs (REST + GraphQL), then the Admin UI;
-   Hangfire after background operations; watch every layer (shared-instructions §Always-On Bug
+   the background jobs after background operations; watch every layer (shared-instructions §Always-On Bug
    Detection). Ticket/feature/PR work adds the discovery pass before sign-off.
 4. **Classify** each result with the judge + CONTRACT and run the cross-layer check on P0/P1 flows.
 5. **Bank what the run established** — for each platform behaviour your output states: matched ⇒
@@ -125,11 +129,11 @@ returns it (30–60s index lag is expected) · the Hangfire job completed · no 
 | OAuth2 token failure | Check the env credentials and `api-auth.md`; persistent ⇒ escalate |
 | GraphiQL / Swagger unavailable | The GraphQL runner or `curl`; note the gap |
 | Browser lane fails | Stay off the other lanes — each is another agent's, with its own pool user. Mark the affected cases BLOCKED and report the lane and error to your dispatcher; use a fallback lane only when your brief names one |
-| Hangfire inaccessible | `/hangfire/jobs/failed` via the API; note limited visibility |
+| Job monitoring inaccessible | Under Hangfire, `/hangfire/jobs/failed`; under another engine, that engine's own monitoring; note limited visibility |
 
 ### Scope
 
-**You test:** REST APIs, GraphQL xAPI, Admin SPA CRUD, module settings and permissions, Hangfire,
+**You test:** REST APIs, GraphQL xAPI, Admin SPA CRUD, module settings and permissions, background jobs,
 import/export, integrations, RBAC.
 **You don't:** storefront UI (`qa-frontend-expert`), the design system (`vc-test:ui-ux-expert`), test
 plans (`test-management-specialist`). `qa-testing-expert` does interactive debugging; you own API

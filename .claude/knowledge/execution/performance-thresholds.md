@@ -37,4 +37,4 @@ Unified performance criteria for storefront, API, and admin testing.
 |--------|------|-----|---------------|
 | Search index rebuild | < 30s | > 60s | stuck > 5min |
 | CSV import (100 items) | < 30s | > 60s | — |
-| Hangfire job | completes | fails silently | stuck > 5min |
+| Background job | completes | fails silently | stuck > 5min |

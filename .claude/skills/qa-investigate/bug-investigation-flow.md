@@ -15,7 +15,7 @@ BUG REPORTED / SUSPECTED
    │ TEST_ENV │    │           │    │  LAYER   │    │ ALL LOGS  │    │ ROOT CAUSE │    │  HAND OFF    │
    └──────────┘    └───────────┘    └──────────┘    └───────────┘    └────────────┘    └──────────────┘
     Which env?      Confirm it's      Layer →         Console, net,     Pattern match     Bug report +
-    URLs + App      real & get STR    repoKind →      HAR, Hangfire,    against known     Fix Routing
+    URLs + App      real & get STR    repoKind →      HAR, bg jobs,     against known     Fix Routing
     Insights +                        module/repo     App Insights      VC patterns       handoff block
     ENV_RISK                          (§3 + §8)       (§4 + §9)         (§7)
                                                             │
@@ -35,7 +35,7 @@ BUG REPORTED / SUSPECTED
 **Key rules:**
 - **Resolve `TEST_ENV` *first*** (Section 1) — every URL, credential, and App Insights resource is per-env. Investigating the wrong env wastes the whole session.
 - **Never file a bug you cannot reproduce.** If you can't reproduce after exhausting the checklist in Section 2, document the failed attempt and escalate.
-- **Gather *all* logs, not just the browser** (Section 4 + 9) — a frontend symptom often has a server-side cause that only App Insights / Hangfire reveal.
+- **Gather *all* logs, not just the browser** (Section 4 + 9) — a frontend symptom often has a server-side cause that only App Insights / the background-job engine reveal.
 
 ---
 
@@ -147,7 +147,7 @@ Insights resource pair all differ per env.** A bug confirmed on the wrong env is
 **3c. Module / Configuration:**
 - Feature broken after update → Module version compatibility (see Pattern P1)
 - Setting not taking effect → Cache invalidation needed, or platform restart
-- Background job not running → Check Hangfire dashboard at `BACK_URL/hangfire`
+- Background job not running → Check the background-job engine `/health` names (under Hangfire: the dashboard at `BACK_URL/hangfire`)
 
 ### Step 4: Infrastructure / Environment
 
@@ -187,7 +187,7 @@ evidence is how by-design behavior and infra blips get misfiled as code bugs.
 |---|---|---|
 | **Browser console** | `browser_console_messages` (all tabs incl. Admin SPA via Chrome DevTools) | errors + warnings tied to the action; ignore favicon/analytics noise |
 | **Network / HAR** | `browser_network_requests` → export HAR | the failing request URL/payload/status + the **operation/trace ID** for §9 correlation |
-| **Hangfire jobs** | `{BACK_URL}/hangfire` — Failed / Scheduled / Recurring tabs | failed background jobs behind "didn't happen" symptoms (P8) |
+| **Background jobs** | the engine `/health` names; under Hangfire, `{BACK_URL}/hangfire` — Failed / Scheduled / Recurring tabs | failed background jobs behind "didn't happen" symptoms (P8) |
 | **Platform / module info** | `{BACK_URL}/#!/workspace/systeminfo` | platform + module versions (P1 version-skew) |
 | **Application Insights** | Azure MCP `applicationinsights` — **env-matched resource** (§9) | server exceptions, dependency failures, and the full request trace for the op ID. **Mandatory whenever any REST/xAPI/Admin layer is involved.** |
 
@@ -234,7 +234,7 @@ Before filing: confirm the bug is a real defect, not environment- or data-specif
 ### Data Freshness
 - [ ] Elasticsearch index current? (Admin > Search Index > check last rebuild timestamp)
 - [ ] Data recently modified? (stale cache possible — wait 30s, retry)
-- [ ] Background jobs running? (`BACK_URL/hangfire` — check Failed and Scheduled tabs)
+- [ ] Background jobs running? (the engine `/health` names; under Hangfire, `BACK_URL/hangfire` — Failed and Scheduled tabs)
 
 ---
 
@@ -300,10 +300,10 @@ When the storefront displays incorrect data:
 **Cause:** Vue component re-rendering triggers duplicate fetches; no cache policy set.
 **Check:** Network tab → filter by GraphQL → look for identical operation names with same variables.
 
-### P8: Hangfire Job Failure
+### P8: Background Job Failure
 **Symptom:** Expected background processing not happening (emails not sent, index not updated).
 **Cause:** Job failed silently, stuck in retry queue, or scheduler not running.
-**Check:** `BACK_URL/hangfire` — check Failed, Scheduled, and Recurring tabs.
+**Check:** the background-job engine `/health` names (Hangfire, RabbitMQ or InMemory, set by `BackgroundJobs:Provider`); under Hangfire, `BACK_URL/hangfire` — Failed, Scheduled, and Recurring tabs.
 
 ---
 
@@ -596,7 +596,7 @@ name:
    exists. Defaults for `vcst` live in memory (`Azure Application Insights` index) — treat them as an example
    of the *pattern*, not a hardcoded target.
 3. **No App Insights for this env (e.g. `localhost` / a fresh demo)?** Fall back to local/server logs: the
-   platform console/stdout, container logs, and `{BACK_URL}/hangfire` — and say so in the report ("App
+   platform console/stdout, container logs, and the background-job dashboard (`{BACK_URL}/hangfire` under Hangfire) — and say so in the report ("App
    Insights N/A for this env; used server console logs").
 
 Record the chosen resource(s) once, then point every KQL query below at them.
@@ -606,7 +606,7 @@ Record the chosen resource(s) once, then point every KQL query below at them.
 - 5xx errors from API with no useful response body
 - Intermittent failures that don't reproduce locally
 - Performance degradation (slow endpoints, timeouts)
-- Background job failures not visible in Hangfire UI
+- Background job failures not visible in the job engine's UI
 - Correlation between frontend errors and backend exceptions
 - Deployment-related regressions (compare before/after metrics)
 

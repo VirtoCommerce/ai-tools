@@ -41,7 +41,7 @@ When consolidating agent reports, always ask: "Were the domain's BL-* invariants
 
 | Agent | Model | Owns | When to Engage |
 |---|---|---|---|
-| **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Admin SPA, Modules, Hangfire, RBAC | Backend, API, admin, module changes |
+| **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Admin SPA, Modules, background jobs, RBAC | Backend, API, admin, module changes |
 | **qa-frontend-expert** | opus | Storefront UI, customer journeys, checkout, responsive | Storefront, UI, checkout changes |
 | **qa-testing-expert** | opus | Interactive test execution, Figma verification, debugging | Test case execution, failure investigation |
 | **vc-test:ui-ux-expert** | sonnet | Storybook components, WCAG accessibility, design system | Component changes, accessibility |
@@ -77,7 +77,7 @@ The regression orchestrator sub-spawns **test-runner-agent** — one isolated br
 
 **B2B-Critical (P1):** Organization hierarchies, Quote management, Contract pricing, Approval workflows, Quick/Bulk ordering
 
-**Platform-Critical (P1):** Module installation/upgrades, Admin SPA CRUD, xAPI, Hangfire, Search indexing
+**Platform-Critical (P1):** Module installation/upgrades, Admin SPA CRUD, xAPI, background jobs, Search indexing
 
 ### Module Impact → Testing Scope
 

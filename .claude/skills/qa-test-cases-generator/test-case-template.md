@@ -329,7 +329,7 @@ API, console, and network verification. Each on its own line, prefixed with laye
 | `[CONSOLE]` | Browser console — errors, warnings |
 | `[NETWORK]` | Network tab — HTTP status codes, failed requests |
 | `[ADMIN]` | Verification in admin panel (VC back-office) |
-| `[EMAIL]` | Email notification sent (check via Hangfire or test email) |
+| `[EMAIL]` | Email notification sent (check via the background-job engine or test email) |
 
 Examples:
 ```

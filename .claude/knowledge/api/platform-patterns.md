@@ -22,7 +22,7 @@ Cross-layer architecture knowledge shared by all QA agents.
 - **Memory leaks**: Angular console errors on blade open/close = bug (watch for repeated open/close)
 - **State persistence**: Edit form -> open nested blade -> return -> edits must persist
 - **Tooltip behavior**: Only one tooltip unfolded at a time, folds when switching
-- **Hangfire dashboard** (`/hangfire`): Shows background job health — silent failures hide here
+- **Background jobs**: one engine per instance — Hangfire, RabbitMQ or InMemory (`BackgroundJobs:Provider`; `/health` names it). Under Hangfire the dashboard (`/hangfire`) shows job health — silent failures hide here
 - **Module changes**: Admin changes may not reflect on storefront until Elasticsearch reindex or cache purge
 
 ## API Layer
