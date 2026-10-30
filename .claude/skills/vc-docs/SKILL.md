@@ -31,6 +31,7 @@ returned nothing for either. So route the release axis somewhere else FIRST.
 |---|---|
 | what shipped · what's new · which version introduced X · since when · is X supported yet · recently added · new in · `3.10NN` / `2.5N` · *что нового* · *релиз* · *в какой версии* | **`.claude/knowledge/domain/release-ledger.md`** §1 (latest per component), §2 (last 6 months in full), §3 (older months index), §4 (component → month) |
 | how does X work · where is it configured · what fields · API shape · deployment | VirtoOZ, per the table below |
+| one module's settings, defaults, limits or API that VirtoOZ is thin on · a NEW module with no doc page | **the module repo's `README.md` + `docs/`**, at the tag of the deployed version ([`../../knowledge/agents/qa/shared-instructions.md`](../../knowledge/agents/qa/shared-instructions.md) §Module repo docs) |
 | is it deployed on the env I am testing? | **neither** — `GET {{BACK_URL}}/api/platform/modules`. See `.claude/templates/agent-dispatch.md` § Build Verification |
 | what does it actually DO on the build in front of me · does it really behave the way the guide says | **`mcp__kb__kb_ask`** — what was OBSERVED, on a named deployment, with a trust count ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*) |
 
@@ -78,7 +79,7 @@ Use Context7 only when VirtoOZ returns no relevant chunks or for non-VC librarie
 2. **Query VirtoOZ** with focused `query` text and `top_k: 3–5`.
 3. **If results are thin or off-topic** — broaden via the general `VirtoCommerce` tool, then fall back to Context7.
 4. **Synthesize** — clear, structured answer; cite chunks via the URLs returned; reference VC modules/concepts by their correct names.
-5. **If docs don't cover the topic** — say so explicitly; suggest the relevant source-code tool or module repo on GitHub.
+5. **If docs don't cover the topic** — say so explicitly, then read the module repo's own `README.md` + `docs/` at the deployed version's tag (§Module repo docs, linked in Step 0); only then the source-code tools. A README answer is quoted with its file URL at that tag.
 
 ## Rules
 
