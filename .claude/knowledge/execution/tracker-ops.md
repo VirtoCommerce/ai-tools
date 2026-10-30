@@ -27,7 +27,8 @@ deliver one conclusion — and left them to reconcile which version is current.
    report until close-out. If the operator explicitly says *post now*, that post becomes **the**
    comment for the run and everything later amends it.
 4. **A second comment *in the same round* requires the operator to ask for one**, for a reason they
-   state. Learning something new about the same build is an amend — a run always learns something new.
+   state. The one standing exception is the `/qa-docs` **documentation comment**, posted after one
+   confirmation with `tracker:comment --doc`, which keeps it out of the run's ledger entry. Learning something new about the same build is an amend — a run always learns something new.
 5. **A retest on an UPDATED artifact is a new round, and a new round is a NEW comment.** The developer
    shipped new builds, so the people waiting on them must be notified, and an edit notifies nobody. The
    earlier comment stays as that round's record. Name the build: `--artifact "<build under test>"`.
@@ -345,7 +346,9 @@ That is the **QuickTime ActiveX / NPAPI** embed. ActiveX died with IE11 and NPAP
 in 2015, so the buyer-facing result in any current browser is an empty box. The file is still attached and
 downloadable from the attachments panel — but it is **not inline evidence**, and because it posts `200 OK`
 with zero `<span class="error">`, a run that stops at the status code will believe it worked. **Use an
-animated GIF** (`npm run gif`), which renders as a real media node and animates inline.
+animated GIF** (`npm run gif`), which renders as a real media node and animates inline. A video a reader
+should watch (the `/qa-docs` film) goes as a **linked attachment** — `npm run tracker:comment -- … --attach-video
+<file.mp4>` uploads it and links it, and Jira plays it from the attachment; `--attach` refuses a video.
 
 Raw Playwright video is impractical anyway: a short session records **~84 MB** of VP8 `.webm`
 (`test-results/<lane>/video/`) and Playwright exposes no bitrate control — `recordVideo.size` sets frame

@@ -71,6 +71,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Analyze test coverage gaps** | `/qa-coverage-gap analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Skill |
 | **Review test-case quality / triangulate staleness** | `/qa-review-tests suite <ID> \| file <path> \| diff \| --triangulate \| --fix` | Skill |
 | **Create Postman collections** | `/qa-postman create <purpose> \| env <profile> \| verify <collection>` | Skill |
+| **Document a tested ticket** (What's new · How to set it up · How it works, one Jira comment, a Motion film) | `/qa-docs <TICKET> [--video]` · `/qa-docs release --sprint <S> \| --version <V>` | Skill |
 | **Look up VC documentation** | VirtoOZ connector — `knowledge/execution/doc-sources.md` | Knowledge |
 
 > `/qa-sync-tests` was **removed** — the command file is deleted and there is no redirect or alias.
@@ -188,7 +189,7 @@ Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](kn
 - `ba-system-analyzer` — Repo structure, module inventory, user flows, pain points; **gathers the evidence for both shared oracles** (BL from human sources only; never edits a CSV)
 - `ba-api-specialist` — API surface via Postman/Swagger, health assessment
 - `ba-story-writer` — Agile user stories with BDD acceptance criteria
-- `ba-doc-writer` — Audience-targeted docs (Customer / Admin / Developer / Sales)
+- `ba-doc-writer` — UX improvement specs from BA analysis (product documentation is `/qa-docs`)
 
 **Developers Team (plugin-only — `plugins/vc-fix/agents/`, picker name `vc-fix:<name>`; the only write-capable team, used by `/qa-fix`; one dev + one reviewer per repo kind):**
 - `fullstack-backend` — One `vc-module-*` / `vc-platform` repo (.NET 10 + the module's Admin Angular): reproduce-as-test → minimal fix → PR

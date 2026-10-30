@@ -11,7 +11,7 @@
 |---|----------|------|------|
 | 1 | Bug report | `reports/bugs/open/<severity>/` or `reports/bugs/fixed/` — **exactly one, never both** (a ticket run's drafts: `bugs/<severity>/` in its run folder) | A confirmed defect with reproducible STR. **`open/` is foldered by severity — `critical-high/` (Critical/P0 + High/P1) · `medium/` (Medium/P2) · `low/` (Low/P3)** — because at 90+ open reports a flat directory could not answer *what must ship first*, which is the only question the open backlog is read for; see §1a. `/qa-verify-fix` **moves** `open/<severity>/` → `fixed/` on a VERIFIED verdict (adding a `## Resolution` block) — it is a move, not a copy, and `fixed/` stays FLAT (severity is a triage axis on work still to do; once fixed it is history). A file present in both trees is a defect: the stale `open/` copy makes a fixed bug look outstanding and gets counted twice by any open-bug scan, including the Feature Release Gate's "0 open P0" criterion. When you find one, delete the `open/` copy |
 | 2 | Test cases | `regression/suites/` (CSV) | Adding/updating test coverage. `/qa-test`-authored cases land here directly as `Automation_Status = Draft` (Step 3) and **stay `Draft`** — the flip to `Automated`/`Reviewed` is a later `/qa-test-lifecycle` pass (`/qa-test`'s `5g` gate was removed 2026-09-10) — never a run-scoped ticket CSV |
-| 3 | BA report | `reports/ba/` — optionally in a **domain subfolder** (the established convention: `Configurable products/`, `Organization roles/`, `Page Builder (CMS)/`, `Sales-rep/`…; spaces are fine, quote the path in shell) | `/ba-analyze` deliverables, and **test-design models** — `reports/ba/test-models/<TICKET>-<date>.md`, the artifact `/qa-test` Step 1e and `/qa-test-fast` Stage 1 write (target 80–160 lines; the cap is §2’s row, never restated here — it was transcribed as 220 and was stale from the day §2 raised it). Written on the **FULL path only** — required for every Epic and substantial feature, and for every Story bar the narrow case `.claude/knowledge/execution/ticket-routing.md` §5b downgrades (never one whose surface purpose is `UNDECLARED`); not built at all on FAST. It is a durable BA deliverable and is deliberately **exempt** from the `/qa-test` terminal-only rule below: a model that cannot be re-opened cannot be argued with, and the parameter model for a surface is reused across tickets. (Being a file also makes it *lintable in principle* — but `npm run model:lint` is **not implemented**, so that is an intention, not a gate; don't cite it as one.) <!-- doclint:may-not-exist --> Hand-authored standalone models may also live directly under `reports/ba/<domain>/` (the pre-existing convention). **And release notes** — `reports/ba/release-notes/`, a second named sub-path alongside `test-models/`: a per-ticket **fragment** `<ticket>-<layer>-release-note.md` (15–40 lines, cap 60) written by `ba-doc-writer` `doc_scope: release` when `/qa-test` 5-status points at it, plus a per-release **aggregate** `release-<label>.md` (40–80, cap 150) that links the fragments. One fragment per ticket **per layer** — the layer picks the audience (`.claude/knowledge/ba/virto-doc-style.md` §9.1), and it is the one place audience *is* the document, because a release note is read as a single *what shipped* record and splitting it four ways yields files nobody can reconcile. `/qa-test` writes only the machine half (`summary.json.layer` + its `release` block); all prose is `ba-doc-writer`'s, and a refused fragment (`verdict-not-pass` · `layer-unresolved` · `not-deployed` · `not-user-visible` · `no-version`) writes no file at all. **And per-ticket documentation** — the ordinary `reports/ba/<ticket>-<slug>-<audience>-guide.md` guides written by `ba-doc-writer` `doc_scope: ticket-doc` when `/qa-test` **5-docs** points at it, one file per audience, which are then **published as ONE tracker comment with a section per audience** (`.claude/knowledge/ba/virto-doc-style.md` §10). Not a release note and not in `release-notes/`: it answers *how do I use this*, prints **no version literals**, and may serve more than one audience — the ordinary §1 rule, not §9's one-note-per-layer inversion. An existing guide for the same surface is **amended, never forked**. Same refusals minus `no-version` **and minus `verdict-not-pass`** — a non-`PASS` run *scopes* the guide to its passing paths and names the omitted ones in a mandatory `Not documented` line rather than refusing the whole document; the per-instruction `PASS`-row rule is what keeps an unverified step out, and 5-docs runs only after a human has transitioned the ticket to TESTED |
+| 3 | BA report | `reports/ba/` — optionally in a **domain subfolder** (the established convention: `Configurable products/`, `Organization roles/`, `Page Builder (CMS)/`, `Sales-rep/`…; spaces are fine, quote the path in shell) | `/ba-analyze` deliverables, and **test-design models** — `reports/ba/test-models/<TICKET>-<date>.md`, the artifact `/qa-test` Step 1e and `/qa-test-fast` Stage 1 write (target 80–160 lines; the cap is §2’s row, never restated here — it was transcribed as 220 and was stale from the day §2 raised it). Written on the **FULL path only** — required for every Epic and substantial feature, and for every Story bar the narrow case `.claude/knowledge/execution/ticket-routing.md` §5b downgrades (never one whose surface purpose is `UNDECLARED`); not built at all on FAST. It is a durable BA deliverable and is deliberately **exempt** from the `/qa-test` terminal-only rule below: a model that cannot be re-opened cannot be argued with, and the parameter model for a surface is reused across tickets. (Being a file also makes it *lintable in principle* — but `npm run model:lint` is **not implemented**, so that is an intention, not a gate; don't cite it as one.) <!-- doclint:may-not-exist --> Hand-authored standalone models may also live directly under `reports/ba/<domain>/` (the pre-existing convention). **And the ticket documents of [`/qa-docs`](../../skills/qa-docs/SKILL.md)** — `reports/ba/<Domain>/<ticket>-<slug>-guide.md`, one per ticket, and its release aggregates under `reports/ba/release-notes/`; their shape and caps are the skill's, not restated here |
 | 4 | Regression summary | `reports/regression/REG-*/` | One consolidated report per run |
 | 5 | Monitoring summary | `reports/monitoring/MONITOR-*/` | One consolidated report per `/qa-monitoring` (App Insights) run |
 | 6 | Per-ticket QA report | the ticket's **run folder** — where `QA_OUTPUT_DIR` puts it, by default `reports/tickets/<Sprint>/<TICKET>/<env>/` ([`run-output.md`](run-output.md)) | A ticket-scoped audit that has its own standalone value beyond the run that produced it — `/qa-verify-fix`, or a ticket-scoped `/qa-design`/`/qa-accessibility`/`/qa-storybook` run. **Includes `/qa-test`'s own `design-report.md`** when its Step-4 visual lane ran (`visual_surface: true`) — it lands in the ticket folder beside `summary.json`, not in the `qa-design/<slug>-<date>/` tree a standalone `/qa-design` invocation uses, because dispatched from a run it is that ticket's evidence. **Plus `test-strategy.md`** (`/vc-test:qa-test-strategy`): the approved plan of how the ticket is tested, one `## Round N` section per round (at most three), each reconciled in place at close-out against what ran, so it is the record a reviewer argues with. **Plus `/qa-test`'s `testing-checklist.md`** (Artifact B): on the FAST path `/qa-test` authors no cases and writes no Test Model, so the executed checklist is the run's **only** durable record of what was checked. `/qa-test`'s *other* step artifacts stay terminal-only — see the carve-out below |
@@ -106,10 +106,8 @@ Line caps in §2 apply to **narrative** files. A generated evidence page is exem
 | Functional bug | 50–80 | 120 |
 | Cross-layer bug | 80–120 | 150 |
 | BA report | 80–150 | 250 (exec summary ≤5 sentences; diagram OR prose, not both) |
-| Release note — per-ticket fragment (`reports/ba/release-notes/`) | **15–40** | 60 (one evidence item, never two and never zero; the version/derivation footer is mandatory and counts toward the cap) |
-| Ticket documentation — the tracker **comment** (`/qa-test` 5-docs) | **30–80** | 120 — a **target for a well-written guide, never a licence to truncate one.** `.claude/knowledge/execution/tracker-ops.md` §5d: publishing a deliverable means the deliverable *in full*, and a summary plus a repo path is not a delivery. A body that genuinely will not fit is **split one comment per audience**, never abridged and never replaced by a `reports/ba/` path. Screenshots follow §5c (attach, then a wiki-markup reference — which makes the whole Jira body wiki), not a bare repo path |
+| Ticket document and release aggregate (`/qa-docs`) | — | the caps in `.claude/skills/qa-docs/` (`rules.md` §Size cap, `release.md` §Aggregate) — never restated here |
 | Result tracker comment (`/vc-fix:qa-report`) | — | the **char** budget in its template's front-matter (`plugins/vc-fix/skills/qa-report/templates/comment-*.md`) — never restated here |
-| Release note — aggregate (`reports/ba/release-notes/release-*.md`) | 40–80 | 150 (link fragments, never inline them; the `Not included` section is mandatory even when empty) |
 | Monitoring summary | **15–40** | 100 (confirmed / needs-review / dismissed tables; reference telemetry by portal link; a truncated top-frames stack — ≤6 lines — is OK for confirmed/needs-review items, but never full multi-frame dumps) |
 | Per-ticket QA report (each file in the folder) | 30–60 | 120 (one file per check type; a bug found during the check still files separately to `reports/bugs/`, referenced by link, not inlined) |
 | BL audit report | **15–40** | 100 (verdict table + Applied + Not-applied + coverage reconciliation; link the oracle diff, don't inline it) |
@@ -133,11 +131,9 @@ Over the hard cap is a review failure — trim before merge. If content genuinel
 
 **BA report:** Title + scope + env · Executive summary (≤5 sentences) · One of: architecture diagram OR prose · Findings table (issue, severity, recommendation) · Open questions/follow-ups.
 
-**Release note (fragment):** Title (what changed, ≤12 words) · the `Layer · Audience · Shipped in · Breaking` strip · **What changed** (1–2 sentences in the derived audience's voice) · **What you can now do** (that audience's own skeleton) · **exactly one** evidence item · an optional `!!! note` (**mandatory** on a PASS WITH NOTES verdict) · the footer re-printing every version literal with its probe source, the verdict, the evidence folder, and the layer derivation. Full skeleton: `.claude/knowledge/ba/virto-doc-style.md` §9.2.
+**Ticket document and release aggregate:** `.claude/skills/qa-docs/template.md` and `release.md` §Aggregate.
 
-**Ticket documentation (the 5-docs tracker comment):** `## Documentation — {TICKET}` · a 1–2 sentence what-you-can-now-do opener in the reader's words · one section per earned audience, headings fixed and in this order — **For shoppers** (§3 shape) · **For administrators** (§4 shape) · **For developers** (§5 shape) · a footer line carrying the verdict **verbatim** (never laundered), a mandatory `Not documented` line naming every condition omitted because it did not pass (`none` when there are none), the env, the evidence folder and the layer the audiences were derived from — **not** a `reports/ba/` guide path offered as somewhere to go read the rest (`.claude/knowledge/execution/tracker-ops.md` §5d: the comment carries the guides in full). An audience the ticket did not earn is an **absent heading, never an empty one**. Full skeleton: `.claude/knowledge/ba/virto-doc-style.md` §10.2.
 
-**Release note (aggregate):** Label + window · **⚠ Breaking changes first** whenever any fragment carries one · per-audience sections (one line + a link per fragment) · **`Not included`** — every ticket in the window whose fragment was refused, with its reason (mandatory; an omitted section is indistinguishable from a clean window) · one `Upstream cross-check` line against the release ledger, which may note a ledger row with no fragment but may **never** say "missed" or quote a coverage percentage.
 
 **Per-ticket QA report:** Ticket ID + title + check type (execution / AC-analysis / a11y / storybook / bundle-size / …) · Env (1 line) · Summary (≤3 sentences) · Findings/checks table · Verdict (PASS/FAIL/PARTIAL) · Bugs filed (links only, not inlined).
 
@@ -176,7 +172,7 @@ Real examples from recent reports (BUG-IMP-049 at 315 lines vs 150 target; BA-VC
 ### 5.0 MANDATORY — a tracker comment that makes a UI claim carries its screenshots INLINE, or it is not delivered
 
 **A delivery requirement, not a formatting preference, and it binds every tracker comment:**
-documentation (`/qa-test` 5-report + 5-docs, `/ba-analyze docs ticket --publish`), bug reports (`/qa-bug`), fix
+result comments (`/qa-test` 5-report), documentation (`/qa-docs`), bug reports (`/qa-bug`), fix
 verification (`/qa-verify-fix`), monitoring drafts, and hotfix delivery. If a comment asserts something
 a human LOOKS AT — a screen, a label, a control, a state, a layout, a rendered value — the evidence is
 embedded in that comment. A reader must never have to open a repo path, an evidence folder or a linked
@@ -222,7 +218,7 @@ verification step rather than a note.
 
 1. **A FAIL** — the failing check's state (on the MCP lanes the agent's capture is the only failure image, §5.1a), error states included (console error, 500 toast).
 2. **A bug report** — the confirmed bug, annotated.
-3. **Documentation** — a guide whose reader needs to see the screen (`ba-doc-writer`, `/qa-test` 5-docs); its walkthrough GIF is mandatory (§5.2a).
+3. **Documentation** — a guide whose reader needs to see the screen (`/qa-docs`); its walkthrough GIF is mandatory (`.claude/skills/qa-docs/media.md` §GIF).
 4. **Visual regression** — `vs. DESIGN`, visual-axis and before/after evidence, where the image IS the check.
 5. **A tracker comment that makes a UI claim** (§5.0) — a PASS gets a capture only when that comment will show it.
 
@@ -253,7 +249,7 @@ full-page shot replaces the viewport shot, never the element shot, and still cou
 | Bug report | 1–3 | 5 |
 | Regression suite (20+ tests) | failures only | 15–20 |
 | Exploratory session | anomalies only | 10 |
-| Documentation (per audience section) | 1 walkthrough GIF per flow + its success-state stills (§5.2a) | 2 GIFs + 4 stills |
+| Documentation (`/qa-docs`) | per `.claude/skills/qa-docs/media.md` §GIF | — |
 
 **On a `/qa-test --iterate` run every round stamps `-r{N}`, round 1 included.** Round N+1 re-runs the
 **same** case IDs into the **same** folder, so an unstamped name means the round-2 PASS overwrites the
@@ -348,36 +344,9 @@ rule above. Two fit modes, and the choice is an evidence decision rather than a 
 still shows the claim. Better still, pre-crop the stills to the region that carries it: a GIF a
 reader has to squint at fails §5.2 for the same reason a missing one does.
 
-### 5.2a Documentation — a walkthrough GIF is mandatory (2026-10-28)
+### 5.2a Documentation — walkthrough GIFs and the film
 
-**§5.2 is conditional for a bug; for documentation it is not.** A how-to describes a sequence of clicks,
-and a reader follows a sequence far more reliably by watching it than by reading it. So a published
-guide — the `/qa-test` **5-docs** comment, a `/ba-analyze docs` Customer or Admin guide — carries **one
-walkthrough GIF per user-facing flow it documents**, built from stills captured step by step on the stand.
-
-| Section | Walkthrough |
-|---|---|
-| **For shoppers** / Customer guide | **GIF required**, one per documented flow (e.g. *add a passkey*, *sign in with a passkey*) |
-| **For administrators** / Admin guide | **GIF required**, one per documented blade or setting flow |
-| **For developers** | none — the request and its real response are the evidence |
-
-- **Captured for the doc, never reused from failures.** A passing step has no screenshot (§5.1), so the
-  doc step captures its own: one still per step, clicked as a real user on a Playwright lane
-  (`.claude/rules/vc-browser.md`), with an `AGENT-TEST-` account and no client data. **Every frame shows a
-  state the checklist verified `PASS`** (ticket-doc guardrail 1); a FAIL path is never animated as a how-to.
-- **Budget (documentation):** ≤ 2 GIFs per audience section, ≤ 12 frames each, ≥ 2 s per frame, width ≤ 960,
-  ≤ 5 MB. Pre-crop each still to the region the step names, so the control is legible at `|width=700!`.
-- **Stills too** — the success state of each flow is also attached as a still, for the §5.2 reason: a
-  reader cannot pause or quote a GIF.
-- **Video is optional, never instead.** A screen recording (MP4 / WebM, ≤ 2 min) may be attached *in
-  addition*; the GIF stays, because Jira animates a GIF inline while a video renders only as an attachment
-  link. The lanes still record no video (§5.2) — the GIF is built from the stills with `npm run gif`.
-- **Embedding** is [`tracker-ops.md`](tracker-ops.md) §5c — attach, wiki-markup reference, whole Jira body
-  wiki — and the three-signal `renderedBody` check of §5.0.
-- **Not captured ⇒ say so.** When a flow cannot be captured (no lane, sign-in impossible, the step needs a
-  real device), the comment still ships, and its `Not documented` line names
-  `walkthrough GIF: not captured — <reason>`. Never a placeholder, never a GIF of a different flow.
-- **Retention** is §9: never committed; the tracker attachment is the durable copy.
+Owned by `/qa-docs`: the GIFs in `.claude/skills/qa-docs/media.md` §GIF, the film in `.claude/skills/qa-docs/media.md` §Film. Not restated here.
 
 ## 6. Console & Network Evidence
 
@@ -419,8 +388,7 @@ Reports:
   Test strategy: test-strategy.md  (inside the ticket's run folder — /vc-test:qa-test-strategy)
   Testing checklist: testing-checklist.md  (inside the ticket's run folder — /qa-test Artifact B)
   Test model:    test-model.md  (inside the ticket's run folder — /qa-test Step 1e, FULL path; older ones: reports/ba/test-models/<TICKET>-YYYY-MM-DD.md)
-  Ticket docs:   <ticket-lowercase>-<slug>-<audience>-guide.md  (inside reports/ba/ — the /qa-test 5-docs guides; the comment itself is not a file)
-  Release note:  <ticket-lowercase>-<layer>-release-note.md  (inside reports/ba/release-notes/ — the per-ticket fragment)
+  Ticket document: <ticket-lowercase>-<slug>-guide.md  (inside reports/ba/<Domain>/ — written by /qa-docs; see .claude/skills/qa-docs/)
   Release aggregate: release-<slugified-label>.md             (same folder — e.g. release-Sprint-42.md, release-platform-3.1054.0.md)
 
 Terminal-only, no file: `/qa-test-lifecycle` (labeled TLC-YYYY-MM-DD-HHMM in chat) and `/qa-test`'s

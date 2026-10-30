@@ -26,8 +26,6 @@ Done **first**, because 5-report.2's comment carries a mandatory `Release note:`
 block — both of which need these values. The **layer itself is not decided here**: it was derived at `1b`
 item 2b and is read from `summary.json.layer`. What 5-report.0 resolves is everything downstream of it:
 
-- **`audience` is derived from the layer**, per `.claude/knowledge/ba/virto-doc-style.md` §9.1 — never a
-  choice made here.
 - **Versions come from `build.deployed`** (probed), never from `build.relevant_modules` (declared git
   state) and never from the release ledger, which records what shipped **upstream**. `UNKNOWN` is legal;
   a guess is not, and a version that cannot be resolved sets `refusal: "no-version"`.
@@ -36,9 +34,14 @@ item 2b and is read from `summary.json.layer`. What 5-report.0 resolves is every
 - **Refuse rather than pad.** `refusal` ∈ `verdict-not-pass` · `layer-unresolved` · `not-deployed` ·
   `not-user-visible` · `no-version`. A pure refactor with nothing a user can observe is a legitimate
   `not-user-visible`, not a thin note. A refusal is an outcome, not a failure.
+- **No fragment file is written any more.** *What's new* lives in the `/qa-docs` document (5-docs), so
+  `fragment` is always `null`. When no refusal applies, set `refusal` to the truth at 5-report, which is posted
+  before anyone knows whether `/qa-docs` will document the ticket: FULL and technical-change ⇒
+  `"documented separately by /qa-docs, when the ticket is documented"`; FAST ⇒ `"not documented by this run"`.
+  The result comment then reads `Release note none — <that text>`
+  (`plugins/vc-fix/skills/qa-report/lib/model.mjs`), not `none — not resolved`.
 
-The **pointer** that hands these to `/ba-analyze` is 5-status §Release note — after the report, with the
-transition, because it is a next-step hand-off rather than a value to compute.
+`/qa-docs` reads the same probed versions for its *Shipped in* line at 5-docs.
 ### 1. Feed and independently ratify the Feature Release Gate
 
 **`--iterate`: AT LOOP EXIT only.** There is one release, so there is one recommendation. Do **not**
@@ -118,8 +121,7 @@ then `1b`-confirmed, `ticket-routing.md` §5b),
 blocks — **`visual`** (2c), **`contract`** (2d), **`coverage_triage`** (2e's scan + Artifact A's `2a`
 phase) and **`discovery`**
 (Step 3x). In each of those, `null` means the axis **never ran**, which is not the same fact as an empty
-array. The **`documentation`** block is the one field written later — at **5-docs**, after the transition —
-because it records an action that has not happened yet at this point.
+array. The ticket's documentation is not recorded here: `/qa-docs` writes `{RUN_DIR}/documentation.json` at 5-docs.
 
 **Then validate it, because nothing used to.** The schema above was the declared contract and was cited by
 five files while **no script checked it**, so the live artifacts drifted into incompatible shapes — the
@@ -239,10 +241,9 @@ By default `/qa-test` verifies and reports; it never fixes — it states the nex
 not auto-triggers). This close-out is the `feature-test` flow's; `verify-fix` already ended at its own
 VERIFIED/REOPEN verdict, and `hotfix-verify` handed off before 1b.
 
-- **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate. Done — **5-docs publishes the
-  documentation to the ticket** (§5-docs) and `5-docs-map` writes back to the domain map (non-blocking). New cases
+- **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate. Done — **on FULL and the technical-change flow, 5-docs calls
+  `/qa-docs`** (§5-docs) and `5-docs-map` writes back to the domain map (non-blocking). New cases
   stay `Draft` — promotion is [`/qa-test-lifecycle`](../../commands/qa-test-lifecycle.md)'s pass, not this one.
-  **Then point at the release note** — see §Release note below.
 - **FAIL → REOPEN** → `/vc-fix:qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge +
   deploy → `/vc-fix:qa-verify-fix <ticket-key>`. A too-complex/multi-repo bug (G0 BAIL) is handed to a human,
   resuming at `/vc-fix:qa-verify-fix`. Once the fix is deployed, a re-run of `/qa-test <ticket-key>` auto-routes the
@@ -253,105 +254,23 @@ VERIFIED/REOPEN verdict, and `hotfix-verify` handed off before 1b.
   Everything else here is unchanged: merge and release stay the human’s, and the loop only ever
   re-tests an unmerged prerelease.
 
-### Release note — a pointer, not a trigger
-
-The **machine half is already written and persisted** — `summary.json.layer` plus the `release` block,
-resolved at 5-report.0 and written at 5-report.3. Nothing is computed here.
-
-**Point, and stop.** `/ba-analyze` is `disable-model-invocation: true`, so nothing here can (or
-should) auto-fire it. When `refusal` is null, state exactly this:
-
-```
-/ba-analyze docs release <ticket-key>
-# layer=<layer> · audience=<audience> · summary.json: {RUN_DIR}/summary.json
-```
-
-Those four facts are the whole hand-off — the follow-up run re-derives nothing. When `refusal` is
-non-null, state `no release fragment: <refusal>` and **name no command**. The aggregate is a separate,
-later run (`/ba-analyze docs release --sprint {SPRINT}`), never part of this close-out.
-
-**The `verify-fix` flow produces no fragment**, by design: it writes `verification-summary.json` rather
-than `summary.json`, and a fix’s release story is the bundle/hotfix narrative `/qa-hotfix` owns.
-
 ---
 
 ---
 
-## 5-docs. Publish the documentation to the ticket — after TESTED, both paths
+## 5-docs. Document the ticket — FULL and the technical-change flow, after 5-status
 
-The release-note pointer above hands off a *what shipped* record. **This step delivers the ordinary
-product documentation** — the §3/§4/§5 guides for the surface this ticket moved — and **posts it as one
-comment on the ticket**, so the people who asked for the change read it where they are already looking.
-Shape, audience derivation, size caps and refusals: [`knowledge/ba/virto-doc-style.md`](../../knowledge/ba/virto-doc-style.md) §10.
+**Call [`/qa-docs <ticket-key>`](../qa-docs/SKILL.md).** It writes the ticket's one document (What's new · How to set it
+up · How it works), asks once before posting it as the documentation comment, builds the Motion film and records
+`{RUN_DIR}/documentation.json`. Everything about it — the Tested-or-Done gate, the refusals, the evidence bar, the
+media, the posting mechanics — is that skill's; nothing of it is restated here.
 
-Runs **after 5-status**, on **both paths**. FAST is included deliberately and costs nothing: a P2 config tweak
-refuses `not-user-visible`, which is the correct outcome, not a skipped step.
-
-### 1. Decide whether the ticket earned documentation
-
-Read `summary.json` — `verdict`, `layer`, `build.deployed` — and `testing-checklist.md`. Refuse, with the
-reason, when any of these holds (§10.4):
-
-| Refusal | When |
-|---|---|
-| `layer-unresolved` | `summary.json.layer` is null — never guess, never default to `storefront` |
-| `not-deployed` | the change is not live on the env under test |
-| `not-user-visible` | no `PASS` row a shopper, operator or integrator can act on — including a run in which nothing passed |
-
-**A refusal is a legitimate outcome, not a failure.** State it and stop — no file, no comment.
-
-**The verdict is not one of them.** `FAIL`/`BLOCKED` **scopes** this step rather than refusing it:
-document the conditions that PASSed, omit the ones that did not, and carry the mandatory `Not documented`
-line plus the verbatim verdict (§10.2/§10.4). 5-status's release note keeps its `verdict-not-pass` gate —
-*what shipped* and *how do I use this* fail differently. **The precondition is 5-status having run, not the ticket having reached TESTED** — a FAIL run transitions to REOPEN and never reaches TESTED, so a TESTED precondition would refuse precisely the runs this paragraph says to scope. What the ordering buys is that a human has already seen 5-status's transition and the verdict behind it, whatever that verdict was; this step runs only once
-transitioned the ticket to TESTED. There is likewise no `no-version` refusal here: a how-to does not
-quote a build number, and requiring one would refuse guides that are perfectly writable (§10, head
-table).
-
-### 2. Run the writer, then post
-
-```
-/ba-analyze docs ticket <ticket-key> --publish
-# layer=<layer> · audiences=<derived list> · summary.json: {RUN_DIR}/summary.json
-```
-
-`ba-doc-writer` runs **alone** (same reason as `doc_scope: release` — there is no per-ticket
-`system_analysis` to have), writes the guides to `reports/ba/`, and returns the composed comment body.
-Audiences come from the **§9.1 layer→audience row**, read for a different purpose — do not re-derive the
-layer and do not build a second map.
-
-**Ask before posting.** This is the run's one sanctioned second comment (`tracker-ops.md` §0 rule 4) —
-the ask names it as a separate documentation comment, and a decline posts nothing. The comment is an external write to the tracker; confirmation is required here
-exactly as it is at 5-file and 5-status, and a subagent never posts it unprompted
-(`.claude/rules/agents.md` §Agent Delegation, and the standing subagent external-write rule).
-
-**The posting mechanics are `tracker-ops.md`'s, not this step's** — read §5a/§5c/§5d **before** the first
-API call, not after the first failure. §2 **Comment** for the endpoint (Jira `addCommentToJiraIssue`,
-Azure Boards the work-item comments REST endpoint); **§5d** for what a delivery is — *the guides in full,
-in the body*, ONE comment however long (never a split across comments; a body that genuinely does not
-fit is attached to the ticket and referenced from that one comment), and never a `reports/ba/` path standing in for content a reader cannot reach; **§5a** for
-the body dialect (Markdown for Jira, HTML for Azure — never Jira wiki markup) and **§5c** for its one
-carve-out: a screenshot needs an attachment plus a **wiki-markup** reference, which makes the whole Jira
-body wiki. §5c also records the three ADF dead ends, so do not re-probe them. Each shopper / administrator
-flow carries a walkthrough GIF — mandatory, `reports-policy.md` §5.2a.
-
-**Redact and contain first** (§10.4): secrets scrubbed regardless of destination, and on a client project
-every client host, path, identifier and datum. A payload that cannot be shown clean is described in
-prose, never embedded.
-
-### 3. Record it
-
-Write the `documentation` block of `summary.json` (schema:
-[`qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json)) — `published`, `audiences`,
-`files`, `amended`, `comment_posted`, `refusal`. Two distinctions the block exists to keep: a **null**
-block means 5-docs never ran, while `published: false` with a non-null `refusal` means it ran and declined —
-and `comment_posted: false` alongside `published: true` means the guides were written but the operator
-declined the post. Recording a refusal is the same discipline as the 5-report comment’s `Not filed` line
-saying `None`: an omission is indistinguishable from a step nobody ran.
-
-**`--iterate`: 5-docs runs AT LOOP EXIT, ONCE.** The loop re-tests an unmerged prerelease; documenting a
-build that is about to be replaced publishes instructions for something nobody can use yet, and a
-per-round comment buries the ticket. One documentation comment per run, whatever the round count.
+- **FULL and the technical-change flow** ([`technical-change.md`](technical-change.md)). The FAST path stops at 5-status; when a FAST ticket needs documentation, QA runs `/qa-docs <ticket-key>`
+  by hand.
+- **After 5-status**, because `/qa-docs` documents only a ticket in status Tested or Done, and 5-status is the
+  step that moves it to Tested. A run that did not reach Tested gets the skill's `not-tested` refusal — an outcome, not a failure.
+- **`--iterate`: once, at loop exit.** The loop re-tests an unmerged prerelease; documenting a build about to be
+  replaced publishes instructions nobody can use yet, and a per-round comment buries the ticket.
 
 ---
 
@@ -366,8 +285,8 @@ artifacts, produced by `ba-system-analyzer` at `1c` and by the execution agents 
 against the map's inventory, so a run that widened the map first would be checking its own output. The
 verdict is recorded before anything is written back.
 
-**Independent of 5-docs's refusals.** `not-user-visible`, `not-deployed` and `layer-unresolved` decide whether
-the *ticket* earned a how-to guide. A surface this run rendered is a fact either way, and a `FAIL` or
+**Independent of `/qa-docs`'s refusals** (`no-run`, `not-tested`, `not-deployed`, `not-user-visible`, `build-changed`). They decide whether
+the *ticket* earned its document. A surface this run rendered is a fact either way, and a `FAIL` or
 `BLOCKED` verdict changes nothing here — the map records what EXISTS, never what is correct.
 
 ### What may be amended — a closed list. Everything else stays a proposal.

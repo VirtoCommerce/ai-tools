@@ -81,7 +81,7 @@ existing `§2a` citations still resolve.
 
 ```
 TECH   1a → 1b → 2a ‖ [B] ‖ RG → 5-triage → 5-verdict → 5-file → 5-report → 5-status → 5-docs   ← a FLOW, not a path
-FAST   1a → 1b → 2 → 3 → 4 → 5-triage → 5-verdict → 5-file → 5-report → 5-status → 5-docs
+FAST   1a → 1b → 2 → 3 → 4 → 5-triage → 5-verdict → 5-file → 5-report → 5-status
 FULL   1a → 1b → 1r ‖ 1c ‖ 1d ‖ [1c-map] ‖ 2-load
                 → 1e → 1e-plan → 2-topup
                 → 3x  ‖  3a          ← discovery on one lane, seeding browserless beside it
@@ -148,7 +148,7 @@ mirror.
     → the 3-exec gate (inline) releases execution, here as on FULL; 2a does NOT gate it
 4   ONE execution agent runs the checklist; then C1 — the exact-set run of every case 2a REPAIRed
     or RE-BASEd (skipped entirely, and said so, when there are none). No 1r pass (§FULL mode)
-5-triage → 5-verdict (reconcile AC/DoD, then decide) → 5-file → 5-report → 5-status → 5-docs
+5-triage → 5-verdict (reconcile AC/DoD, then decide) → 5-file → 5-report → 5-status   (documentation: `/qa-docs` by hand)
 ```
 
 **FAST is one execution agent — that is the promise, and every rule below serves it.** Three of the six
@@ -628,7 +628,7 @@ The ordered close-out phases, plus **`5-loop`** — the bounded loop that repeat
 | **5-file** | File bugs | **Ask first.** **Severity floor: `Critical`/`High`/`Medium` only** — a `Low` keeps its `{RUN_DIR}/bugs/` draft, is named in the 5-report comment and `summary.json.bugs_not_filed`, and gets no tracker item, in either shape. Relationship by provenance: IN-SCOPE → Sub-task · PRE-EXISTING → link only · OUT-OF-SCOPE → standalone + related · **`BL-A11Y-*` on a functional/feature/E2E ticket → standalone + related, at its real severity, and it does NOT fail 5-verdict** ([`triage.md`](../skills/qa-test/triage.md) §7a) | inline |
 | **5-report** | Report | Feed + ratify the Feature Release Gate · post the tracker comment (**incl. the mandatory `Not filed (below severity floor)` line, `None` when empty**) · persist `summary.json` + update the checklist in place with verdicts · output the one chat report | verifier |
 | **5-status** | Change status | **After** the report, **ask first**, `qa-lead` only. PASS / PASS WITH NOTES → TESTED · FAIL → REOPEN with failures + bug links · **BLOCKED → NO transition + a mandatory comment naming the blocker** (the ticket stays in-testing: TESTED would be a lie and REOPEN files an env blocker into the dev queue). **TESTED is the terminal state this command may reach.** One row per verdict, the record, and the per-flow ownership: [`ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) | — |
-| **5-docs** | Publish documentation | **After** TESTED, **both paths**. Write the §3/§4/§5 guides for the surface the ticket moved into `reports/ba/`, then post them as **ONE tracker comment with a section per audience** — the run's one sanctioned second comment (`tracker-ops.md` §0 rule 4). Audiences, size caps and the three refusals: [`virto-doc-style.md`](../knowledge/ba/virto-doc-style.md) §10. Not a release note: no version literals. **A non-`PASS` verdict SCOPES this step rather than refusing it** — document the passing paths, carry the `Not documented` line and the verbatim verdict. Precondition is **5-status having run**, not TESTED. Ask before posting; refuse rather than pad. An existing guide is **amended, never forked** | inline |
+| **5-docs** | Document the ticket | FULL and the technical-change flow, **after** 5-status: call [`/qa-docs <ticket-key>`](../skills/qa-docs/SKILL.md) — one document (What's new · How to set it up · How it works), one documentation comment once confirmed, a Motion film; ticket in Tested or Done. The FAST path documents by hand. | inline |
 | **5-docs-map** | Amend the domain map | **FULL only, after 5-status, when a map EXISTS.** Write back what this run VERIFIED **live** (the closed list is `reporting.md`'s), one `§7` row per write. **No dispatch.** Live-`CONFIRMED` only; **never deletes a row or renumbers an id**. Independent of 5-docs's refusals. Non-blocking; `NOTHING_TO_AMEND` is a recorded outcome. A mind map is never edited here (`mind_map_findings[]`); a missing one: `5-mind-map`. Mechanism: [`reporting.md`](../skills/qa-test/reporting.md) §5-docs-map | inline |
 | **5-loop** | Iterate (`--iterate` only) | The bounded test → fix → re-test loop. **Per round (≥2):** `5-loop.0` round entry — probe the build, re-read the board, verify each fix-ready bug inline — then 5-triage–5-file + the round delta (an **amend** of the run's one comment) + `summary.json` + an appended checklist section. **At loop exit, once:** 5-report in full → 5-status → 5-docs → 5-docs-map, so a `--iterate` run posts **one** QA-Complete comment and makes **one** transition whatever the round count. Round entry, the per-round table and the reason for each row: [`modes.md`](../skills/qa-test/modes.md) §5-loop | round cap · deploy confirm · G0 BAIL → STOP |
 

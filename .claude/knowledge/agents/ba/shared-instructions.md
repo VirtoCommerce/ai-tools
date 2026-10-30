@@ -1,13 +1,13 @@
 ---
 applicability: universal
-applicability_rationale: "BA-team shared framework — VirtoOZ-first sourcing, four documentation audiences, no-hardcode + real-user + no-unauthorized-external-write discipline, output policy. Universal across VC customers; the storefront/admin under analysis is data (FRONT_URL/BACK_URL)."
+applicability_rationale: "BA-team shared framework — VirtoOZ-first sourcing, no-hardcode + real-user + no-unauthorized-external-write discipline, output policy. Universal across VC customers; the storefront/admin under analysis is data (FRONT_URL/BACK_URL)."
 ---
 
 # Shared BA Instructions — Virto Commerce Business Analysis
 
 Shared framework for the **BA team** — `ba-system-analyzer`, `ba-api-specialist`, `ba-story-writer`, and
 `ba-doc-writer`. These agents analyze a Virto Commerce project (code + GitHub + live UI + docs) and
-produce analysis reports, user stories, and **audience-targeted documentation**. Agents reference this
+produce analysis reports, user stories and UX improvement specs (product documentation is `/qa-docs`). Agents reference this
 file to avoid duplicating boilerplate.
 
 ## Step 0 — read the prior art BEFORE analysing. MANDATORY, every mode.
@@ -98,18 +98,11 @@ the CLAIM, not the source.
 
 **Grounding order** (same for all three teams — QA, BA, Developers): this repo's own knowledge first (Step 0 prior art + `knowledge/domain/<slug>.md` + the oracles), **VirtoOZ second**, **the module repo's own `README.md` + `docs/` third** (GitHub MCP, at the tag of the deployed version — mandatory when VirtoOZ is thin on the module, and for a NEW one; cite the file URL at that tag; rule: [`../qa/shared-instructions.md`](../qa/shared-instructions.md) §Module repo docs), live/source last. Anything VirtoOZ had to tell you that the repo should have known goes back into the right knowledge file per `.claude/ROUTING.md`. The rule itself: [`../../../CLAUDE.md`](../../../../CLAUDE.md) §Essential Rules → *Product context*.
 
-## The four documentation audiences
+## Product documentation is not BA's
 
-The BA team writes for four distinct audiences, each with its own Virto style. The canonical skeletons,
-voice rules, and signature elements live in **`.claude/knowledge/ba/virto-doc-style.md` — read it
-before authoring any doc.**
-
-| Audience | Style source | Owned by |
-|----------|--------------|----------|
-| **Customer** (shopper) | StorefrontUserGuide — task-first, zero jargon, screenshots | `ba-doc-writer` |
-| **Admin** (operator) | PlatformUserGuide — procedure-heavy, field tables, blade nav | `ba-doc-writer` |
-| **Developer** (integrator) | PlatformDeveloperGuide — prerequisites → quick start → runnable code → API ref | `ba-doc-writer` + `ba-api-specialist` (API ref) |
-| **Sales** (rep / decision maker) | virtocommerce.com — benefit-led, pain→capability→outcome, use cases, CTA | `ba-doc-writer` |
+The BA team writes analysis, user stories and UX improvement specs. Product documentation of a tested
+ticket — what's new, how to set it up, how it works — is written by QA with
+[`/qa-docs`](../../../skills/qa-docs/SKILL.md) after testing.
 
 ## Real-user rule (analysis agents)
 
@@ -180,9 +173,8 @@ All BA deliverables go to **`reports/ba/`** as one of the **ten** allowed report
 (`.claude/rules/reports.md` is the single source of truth for paths, size caps, screenshot budgets, and
 required sections). Do NOT create intermediate/working/"draft" files — return reasoning via the
 orchestrator, write only the final artifact. Naming: `ba-report-{date}.md`, `{jira-id}-stories.md`,
-`{feature}-{audience}-guide.md` (e.g. `vcst-5009-skyflow-customer-guide.md`), and — under the two named
-sub-paths — `test-models/<TICKET>-<date>.md` and
-`release-notes/<ticket>-<layer>-release-note.md` / `release-notes/release-<label>.md`. The `/ba-analyze`
+`<Domain>/<slug>-flow-improvements.md`, and — under the named sub-path — `test-models/<TICKET>-<date>.md`
+(ticket documents and release aggregates are `/qa-docs`'s). The `/ba-analyze`
 orchestrator owns index generation across runs — do not write your own `README.md` in `reports/ba/`.
 
 ## Knowledge files (read on-demand)
@@ -190,7 +182,6 @@ orchestrator owns index generation across runs — do not write your own `README
 | File | When |
 |------|------|
 | `reports/ba/` · `reports/ba/test-models/` · `.claude/knowledge/domain/` | **Step 0 — before anything else, every mode.** What already exists on this surface: suites, oracle citations, prior BA analysis, prior test models, tickets already tested. Generated; never hand-edit |
-| `.claude/knowledge/ba/virto-doc-style.md` | **Before authoring any documentation** — the four audience skeletons, plus §9 for release notes (where the layer picks the audience) |
 | `npm run bl:extract -- --domain <d>` | Before drafting BL proposals or story `Business_Rule` mappings |
 | `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | Negative ACs / pain-point risk cross-refs (ECL-*) |
 | `.claude/knowledge/domain/sitemap.md`, `products.md`, `catalog.md`, `store-settings.md` | Storefront/catalog/admin doc references |
@@ -206,6 +197,5 @@ orchestrator owns index generation across runs — do not write your own `README
 | `ba-system-analyzer` | `playwright-firefox` | `playwright-edge` |
 | `ba-api-specialist` | `playwright-edge` | `playwright-firefox` |
 
-`ba-story-writer` and `ba-doc-writer` consume other agents' output and do not require browsers — except
-`ba-doc-writer` uses a browser **only** to capture real screenshots for Customer/Admin docs. Do not run BA
+`ba-story-writer` and `ba-doc-writer` consume other agents' output and do not require browsers. Do not run BA
 browsers in parallel with QA browsers on the same server.

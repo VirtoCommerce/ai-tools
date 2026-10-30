@@ -1,0 +1,11 @@
+{
+  "published": true,
+  "files": ["reports/ba/Auth/vcst-6121-passkey-sign-in-guide.md"],
+  "film": { "url": "https://claude.ai/artifact/A6TU9r9rvMeYUHGRg66nWn", "file": "VCST-6121-passkey-sign-in.mp4", "exported": false },
+  "comment_id": null,
+  "comment_posted": false,
+  "refusal": null,
+  "versions_source": "run",
+  "aggregated_into": null,
+  "rehearsal": "2026-10-30 skill test: the live gate read status Done (a real run refuses not-tested); continued for the test only; capture on theme 2.61.0-pr-2608 (run tested pr-2601), accepted by the user; tracker:comment --dry-run only"
+}

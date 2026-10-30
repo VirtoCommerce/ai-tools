@@ -38,20 +38,19 @@ Project `.mcp.json` (gitignored, per machine): `playwright-chrome` / `playwright
 
 ## BA Team (+ shared-instructions)
 
-Team framework: `knowledge/agents/ba/shared-instructions.md` (VirtoOZ-first sourcing, the four documentation audiences, no-hardcode, external-write discipline, output policy).
+Team framework: `knowledge/agents/ba/shared-instructions.md` (VirtoOZ-first sourcing, no-hardcode, external-write discipline, output policy).
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
 | **ba-system-analyzer** | sonnet | Repo structure, GitHub module search, live UI exploration (storefront + admin), user flows, pain points. **Also gathers the evidence for BOTH shared oracles** (`/qa-review-oracles`, alias `/qa-review-bl`): each `BL-*` rule is synced in `bl/<slug>.yaml` **only from a human source** (AC, docs, Jira resolution) — a contradicted rule goes `SUSPECT` with its bug, never rewritten; each `ECL-<n>.<m>` section is triangulated against docs (VirtoOZ) + live + source (GitHub MCP) and confirmed changes auto-applied (body-only). **Never renumbers a surviving entry** — IDs are a citation contract the suites point at — and **never edits a CSV** (citation remaps belong to `test-management-specialist` via `/qa-review-tests --fix`). See §8/§8a in its definition. |
 | **ba-api-specialist** | sonnet | API surface via Postman/Swagger, GitHub module code, live Swagger UI, health assessment |
 | **ba-story-writer** | sonnet | Agile user stories with BDD acceptance criteria, DoD, test scenarios |
-| **ba-doc-writer** | sonnet | Audience-targeted documentation — **Customer / Admin / Developer / Sales** (per `knowledge/ba/virto-doc-style.md`) + UX improvement specs |
+| **ba-doc-writer** | sonnet | UX improvement specs from BA analysis; product documentation of a tested ticket is `/qa-docs` |
 
 **BA agent tools:**
 - All BA agents use **GitHub MCP** to search VirtoCommerce module repos (`org:VirtoCommerce vc-module-*`) and **VirtoOZ** (connector) to ground terminology/voice
 - `ba-system-analyzer` and `ba-api-specialist` use browsers for live UI analysis (see assignments below)
-- `ba-story-writer` consumes other agents' output (no browser/GitHub); `ba-doc-writer` uses a browser **only** to capture real screenshots for Customer/Admin docs
-- **Documentation audiences:** `ba-doc-writer` writes for four audiences — Customer (StorefrontUserGuide style), Admin (PlatformUserGuide style), Developer (PlatformDeveloperGuide style), and **Sales** (virtocommerce.com benefit-led marketing). Invoked via `/ba-analyze docs [audience]`. Virto's customers/partners are B2B enterprise organizations.
+- `ba-story-writer` consumes other agents' output (no browser/GitHub); `ba-doc-writer` needs no browser
 
 ## Developers Team (+ shared-instructions)
 

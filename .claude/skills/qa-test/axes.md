@@ -62,8 +62,8 @@ block, and it was the one the shared *"same discipline"* phrasing concealed.
 | Dispatches an agent? | no | **yes** (`vc-test:ui-ux-expert`) | no | no | **yes** (`test-data-engineer`) | **FULL only**, and only on `ABSENT` + all-layer (`ba-system-analyzer`, `1c-map`) |
 | Costs I/O in `1b`? | no | no | **yes** (~8.6 s) | yes (~1 s, wave B) | yes (~1 s, wave B) | **no** (one local frontmatter read) |
 | Has a conflict rule? | **yes** (`layers_conflict`) | no | no | no | no | no |
-| **Adds** a step, or **gates** one? | gates 5-status/5-docs | adds the visual lane | adds two refreshers | adds Artifact A's `2a` phase | **gates Step 3a** | **adds `1c-map` on FULL; RECOMMENDS on FAST. Gates nothing, ever** |
-| Consumed by | 5-status / 5-docs routing | Step 4's visual lane | `1c`/`1d`/`1e`/3b pack | phase `2a`'s dispositions | Step 3a's dispatch | `2-map`'s read order · `1c-map`'s trigger · `1e` clauses 11/11b · `1c`'s unmapped-surface report |
+| **Adds** a step, or **gates** one? | gates 5-status | adds the visual lane | adds two refreshers | adds Artifact A's `2a` phase | **gates Step 3a** | **adds `1c-map` on FULL; RECOMMENDS on FAST. Gates nothing, ever** |
+| Consumed by | 5-status's `release` block | Step 4's visual lane | `1c`/`1d`/`1e`/3b pack | phase `2a`'s dispositions | Step 3a's dispatch | `2-map`'s read order · `1c-map`'s trigger · `1e` clauses 11/11b · `1c`'s unmapped-surface report |
 
 ### 2g `domain_map` — the axis whose lane is a WRITE, not a read
 
@@ -211,7 +211,7 @@ need a superlative.
 **On FULL every axis derives and runs, as it always has.**
 
 **On FAST they are opt-in, default off** — `--visual` · `--contract` · `--coverage` · `--axes` (all three).
-`layer` is not on that list: it derives on both paths, always, because 5-status and 5-docs need it and it dispatches
+`layer` is not on that list: it derives on both paths, always, because 5-status needs it and it dispatches
 nothing. **`data_surface` is not on it either, and for the opposite reason:** it can only ever *remove* a
 dispatch, so making it opt-in would restore the always-on cost it exists to end. It derives and applies on
 both paths — on FAST it gates the same `3a`, which that path had always described as *"test data if
@@ -239,7 +239,7 @@ one classifier, rather than flipping it on for every FAST run.
 ([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5d;
 [`technical-change.md`](technical-change.md)) is not on the FAST/FULL axis at all, so nothing here opts in
 or out on it: `coverage` is not an axis there, it is the flow's own `2a` step and always runs; `layer`
-still derives, because 5-status and 5-docs need it; `visual` and `contract` do not run at all, argued in
+still derives, because 5-status needs it; `visual` and `contract` do not run at all, argued in
 `technical-change.md` §7. Listed here so a reader counting exceptions on this page does not conclude the
 flow simply forgot to declare its axes.
 

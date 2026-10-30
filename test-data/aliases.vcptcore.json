@@ -1485,5 +1485,11 @@
     "contactId": "e10d1fc7-a275-40b3-950f-cffedd3e891c",
     "org_id": "cb7ed54a-9b3e-4235-b4d6-28be7e7fceb1",
     "membership_id": "a62f83ae-7d45-4eaa-aef0-3f808a73d69a"
+  },
+  "PK_FOREIGN_STORE": {
+    "userId": "fff0e0a1-c3de-47ea-983c-9bb31b87b81d",
+    "memberId": "c85a9505-a395-482f-a7d9-00f249f477be",
+    "storeId": "123",
+    "org_id": ""
   }
 }
