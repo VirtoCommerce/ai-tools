@@ -34,12 +34,7 @@ Suite selection: a manifest `selections` name (`smoke`, `critical`, `sprint` —
 
 ### Step 0.5: Pre-Seed (only if `--seed=<profile>` provided)
 
-1. **Reject smoke-with-seed** — if selection is `smoke`/`042`, warn and skip seeding (no coverage benefit).
-2. **Reuse check** — if `test-data/b2b/.seed-fingerprint.json` exists AND mtime within last 2 hours AND its `kind`/`env`/`storeId` match the profile, skip and log "Seed reused from {timestamp}".
-3. **Invoke** `/qa-seed-data <profile>` (via Skill or delegate to `qa-backend-expert` with the qa-seed-data skill). Wait for completion.
-4. **Wait 60s** for reindex before proceeding to Step 1 so storefront tests see new data.
-5. **On seed failure** — abort the run; report the seeding error to the user. Do not proceed to Step 1.
-6. **Record** seed profile + timestamp for the report header (Step 6).
+Procedure: `knowledge/agents/qa/regression-orchestrator-modes.md` §Step 0.5. **On seed failure — abort the run; report the seeding error to the user. Do not proceed to Step 1.**
 
 ### Step 1: Read Manifest & Initialize
 
@@ -66,21 +61,6 @@ timeout, and any browser constraint. Exit 1 = the selection cannot run as-is (un
 missing CSV, no executor, or a cap that would guarantee truncation), 2 = pre-flight NOT READY, 3 = it
 could not run — on any, **stop and report, never improvise around it**.
 
-**Why a command instead of doing this yourself.** Every part of this used to be hand-derived, and
-each part was got wrong at least once on the record:
-
-- Lane classification by grepping CSVs. `regression:plan` decides the SUITE lane from
-  `ci/lib/lane-classifier.ts` (which knows, for instance, that `[REST-OP]` counts — suite `050l`
-  is runner-native and a GraphQL-only grep misses it). Step 3 then splits a mixed suite's cases
-  with `suites:lanes`, so `050d`'s 46 runner-native rows no longer ride a browser slot on account
-  of its other 3.
-- The firefox rule, once prose in three files, now ONE switch: `defaults.firefoxClickOk`, read
-  through `browserDenyListFor` (`ci/lib/suite-manifest.ts`). **`true` since 2026-09-08** (root cause:
-  `knowledge/automation/browser-quirks.md` §Firefox), so the browser lane is three wide; `false` brings
-  `NOT ON playwright-firefox` back for click-driven suites. `[ACT]` alone does not mean clicking —
-  `049`'s 37 `[ACT]` lines are REST calls.
-- Dispatch order, which was arbitrary.
-
 Record each suite's lane in `test-run-status.json` as `lane: "browser" | "fastpath" | "deterministic"`.
 The three lanes do **not** share slots.
 
@@ -97,9 +77,7 @@ The three lanes do **not** share slots.
 
 - Never put two agents on the same browser server simultaneously.
 - **A suite the plan marks `NOT ON <server>` QUEUES for another slot — it is never downgraded onto
-  that server.** An idle lane is strictly cheaper than a firefox attempt on a clicking suite: the
-  click resolves the element and then times out on the actionability gate, so the whole attempt is
-  wasted and has to be redone. Confirmed six times independently.
+  that server.**
 - A suite marked `REQUIRES <server>` (039/041 — cross-origin CyberSource iframes need Chromium)
   waits for that server rather than taking a different one.
 - Never use WebKit.
@@ -111,65 +89,7 @@ The three lanes do **not** share slots.
 1. Read the suite CSV from the manifest's `file` path.
 2. Resolve every `@td(ALIAS.field)` token against `test-data/aliases.json` + the referenced data CSVs.
 3. Write the resolved CSV to `reports/regression/{RUN_ID}/suite-{ID}-resolved.csv`.
-3a. **`--cases <tier>` or `--ids <IDs>` only — narrow the resolved CSV to those cases, before lanes
-    sees it:**
-
-   ```bash
-   npm run suites:filter -- reports/regression/{RUN_ID}/suite-{ID}-resolved.csv \
-     --priority <tier> [--also-ids <ids>] \
-     --out reports/regression/{RUN_ID}/suite-{ID}-resolved.scoped.csv \
-     --scope-out reports/regression/{RUN_ID}/suite-{ID}-filter.json
-   ```
-
-   Then pass the **scoped** file to step 4: `npm run suites:lanes -- {ID} --run-id {RUN_ID} --csv
-   reports/regression/{RUN_ID}/suite-{ID}-resolved.scoped.csv`.
-
-   **Write a NEW file — never `--out` back over the source.** Overwriting destroys the only record of
-   what the suite held, so "6 of 44" stops being re-derivable and the Step-6 Scope Exclusions claim
-   becomes unfalsifiable; it also makes the step non-idempotent (a re-run filters an already-filtered
-   file) and a crash mid-write truncates the resolved CSV with no recovery. `plan-lanes.ts` emits a
-   new `…-resolved.browser.csv` for exactly this reason.
-
-   **`--scope-out` is mandatory on a scoped run, not decorative.** The sidecar carries `sourceCases`
-   — the suite's unfiltered size — which `suites:merge` folds into the results envelope and
-   `triage:history` writes as `scoped` + `suite_total`. Without it a 6-of-44 run records `total: 6`
-   and reports 6/6 = 100% coverage, so `estimate-calibration`'s 95% truncation guard never fires and
-   `regression:recalibrate` calibrates a 44-case suite from a sixth of its work — feeding a false
-   number straight back into the `--target` budget the scoping exists to satisfy.
-
-   This hop is where a change-scoped run gets its scope. Filtering HERE — after `@td()` resolution,
-   before `suites:lanes` — means lanes, the machine lane, the merge, the results envelope, triage and
-   promotion are all untouched: they see a smaller suite, not a new mechanism.
-
-   **A legacy 11-column header (exit 2) is RUN WHOLE, and named in Step 6.** `parseSuite` maps
-   positionally, so `Priority` is not `Priority` there and filtering would drop real cases with total
-   confidence. Running it whole is the fail-safe choice: dropping the suite would silently delete
-   Critical coverage, whereas running it costs time you can see. Pass the *unfiltered*
-   `suite-{ID}-resolved.csv` to `suites:lanes` and write no sidecar for it. If that blows the run's
-   time budget, the fix is to drop the suite from the **selection** deliberately, not to let the
-   filter appear to have applied.
-
-   **`--ids <IDs>` is the exact-set form, and it replaces the tier rather than narrowing it.**
-   `npm run suites:filter -- … --ids <IDs> --out … --scope-out …` selects precisely those cases and
-   reads no `Priority` at all — so an unreadable one is *not* a finding on this path (nothing
-   consulted it). It is mutually exclusive with `--priority`/`--also-ids`, and it is what
-   `/qa-test` `5-loop`'s RED→GREEN track re-runs exactly the previously-failed cases. **An
-   empty `tiers` in the sidecar therefore means *ids-only*, never *unfiltered*** — `sourceCases` is
-   still the denominator, and `--scope-out` is just as mandatory. On an ids-only run **most suites in
-   the selection legitimately contribute zero cases**, so the zero-kept line stops being an edge case
-   and becomes the norm; report it, do not treat it as a failure.
-
-  **`--also-ids` is how a case that is not in the tier still runs** — `/qa-test` passes its own newly
-   authored `Draft` case IDs, which are in scope by construction whatever their priority. The id list
-   is run-global while the filter runs per suite, so **`missingAlsoIds` is expected noise on every
-   suite that does not own the case**: reconcile it once at run level (an id missing from *every*
-   suite is the real miss) rather than reporting it per suite.
-
-   **Every exclusion is reported, never silent** (Step 6). The filter prints the kept/dropped counts,
-   names any row whose `Priority` it could not read, and says so when a suite contributes **zero**
-   cases — 11 of 128 suites hold no Critical case at all, and a suite that disappears without a line
-   is indistinguishable from a suite that passed. Build Step 6's section from the
-   `suite-{ID}-filter.json` sidecars, **not** from scrollback.
+3a. **`--cases <tier>` or `--ids <IDs>` only — narrow the resolved CSV to those cases, before lanes sees it.** Command and rules: `knowledge/agents/qa/regression-orchestrator-scoped-runs.md` §Step 3 item 3a. Pass the **scoped** file to step 4. **Write a NEW file — never `--out` back over the source.** **`--scope-out` is mandatory on a scoped run, not decorative.** **A legacy 11-column header (exit 2) is RUN WHOLE, and named in Step 6.** Build Step 6's Scope Exclusions from the `suite-{ID}-filter.json` sidecars, **not** from scrollback.
 4. **Split the suite's cases between the machine lane and the agent — one command:**
 
    ```bash
@@ -194,59 +114,18 @@ The three lanes do **not** share slots.
    c. When both lanes have reported → `npm run suites:merge -- <ID> --run-id {RUN_ID}`. This is
       what produces the canonical `suite-{ID}-results.json` every reader expects. **Exit 1 means
       an invariant failed and nothing was written** — do not hand-edit around it, report it.
+   Why per-case lanes, bounded batching, continuous refill: `docs/decisions/regression-history.md` §Regression orchestrator — rationale.
+5. Pass that PATH as `{{SUITE_CSV_PATH}}`. **Never embed CSV content in a prompt**.
 
-   Why per-case and not per-suite: the all-or-nothing rule strands **169 machine-ready rows in 10
-   suites** on the browser lane (050d sends 46 runner-native cases through an agent because 3 of
-   its 49 are prose). The bigger prize is verdict quality — at the measured ~29% artefactual-BLOCKED
-   rate for long agent sessions, roughly 54 of those rows currently come back BLOCKED for reasons
-   about HOW they ran, not about the product.
-5. Pass that PATH as `{{SUITE_CSV_PATH}}`. **Never embed CSV content in a prompt** — suite `027` is
-   282 KB (~78k tokens) against a 200k window, and a single `browser_snapshot` costs 10-30k, so an
-   inlined suite starves the very evidence the run exists to collect.
+**Batch the short tail before you dispatch (bounded, never unbounded).** Grouping rule (60-case cap, affinity, `EXCLUSIVE`) and refill procedure: `knowledge/agents/qa/regression-orchestrator-dispatch-queue.md` §Step 3 — read before the first dispatch.
 
-**Batch the short tail before you dispatch (bounded, never unbounded).**
+**A batch of one is the normal case** — nothing changes for a long suite.
 
-`npm run regression:plan -- <selection>` prints, per lane, what batching costs and saves on THIS
-selection. Group the lane's queue with the same rule the plan prices (`ci/lib/suite-batching.ts`,
-`batchSuites`): fill a session up to **60 cases**, never past it; a suite bigger than that goes alone
-and is never split; only suites with the SAME affinity (`REQUIRES` / `NOT ON`) share a session; an
-`EXCLUSIVE <group>` suite is its own batch — **never two of one group in flight at once**.
+**A suite whose results file is missing after its batch returns is re-dispatched ALONE.**
 
-Each dispatch then carries a `{{SUITE_BATCH}}` of one or more suites. **A batch of one is the normal
-case** — nothing changes for a long suite.
-
-Why bounded and not one agent per lane, which is what the 2026-09-07 audit's §6 item 9 proposed:
-that is ~1,230 cases in a single session on `full`, and the corpus measures artefactual BLOCKED at
-19.9% overall, **28.6% on 81+ cases**. Session length is the driver, so the unbounded version buys
-tokens by degrading the verdict. Bounded at 60 the saving is real (36 fewer dispatches, each paying
-the always-loaded preamble plus `SETUP_TURNS` of env check / sign-in / first navigate) and no session
-is longer than the longest suite already is.
-
-**A suite whose results file is missing after its batch returns is re-dispatched ALONE.** The runner
-writes each suite's file as that suite finishes, so a mid-batch death loses only the in-flight suite —
-re-dispatching the whole batch would re-run work that already has results, and dropping the suite
-would silently lose coverage.
-
-**Then dispatch by keeping every slot busy:**
-
-1. Fill all free slots from the head of the lane's dispatch order (longest batch first).
-2. **The moment ONE suite finishes, immediately dispatch the next suite that the freed slot can
-   accept.** Do not wait for the others.
-3. If the freed slot cannot accept the head of the queue (a `NOT ON`/`REQUIRES` constraint), take
-   the first suite in the queue that it *can* accept, and leave the head for a slot that can.
-4. Repeat until the lane's queue is empty.
+**The moment ONE suite finishes, immediately dispatch the next suite that the freed slot can accept.** Do not wait for the others.
 
 Run the three lanes concurrently — a fastpath suite must never wait on a browser slot.
-
-> **This replaces fixed batches — the biggest wall-clock win available here.**
-> Dispatching in groups of 3 and waiting for the whole group means each group costs its SLOWEST
-> suite while the other two slots sit idle. Measured on the real manifest at 3 slots, `full`'s
-> browser lane is **21h 09m** under fixed batches and **14h 15m** under continuous refill + longest
-> first — a third of the run was pure waiting. `npm run regression:plan` prints both numbers, so
-> the comparison is checkable rather than asserted.
->
-> It does NOT help a selection whose critical path IS one suite: the plan then reports `0% saved`,
-> so read that line rather than assuming a saving.
 
 **Per sub-agent:**
 - **subagent_type**: the `agent` field from the manifest (`qa-testing-expert`, `qa-frontend-expert`,
@@ -306,42 +185,7 @@ Discard any free-form prose — all detail belongs in the results files.
 | Rate limit | Retry same browser | 60s |
 | Auth failure | Retry once, then mark failed | 30s |
 | Environment unreachable | Mark ALL remaining as blocked, stop | 0 |
-
-**Backoff is a ladder, not a flat delay.** A retry that fires at the same interval as the attempt
-that just failed tends to fail the same way; and a suite whose first retry hit a rate limit is the
-least likely to succeed 30 seconds later.
-
-| Attempt | Delay | Browser |
-|---|---|---|
-| 1 (original) | — | assigned slot |
-| 2 (retry 1) | 30s | same slot |
-| 3 (retry 2) | 60s | next in `defaults.fallbackChain` **that the suite is allowed on** |
-
-A retry NEVER lands on a server the plan marked `NOT ON` for that suite. The fallback chain is
-`playwright-chrome → playwright-edge → playwright-firefox`. Firefox sits third for continuity, not
-because it is degraded: since 2026-09-08 it takes click-driven suites like any other slot
-(`defaults.firefoxClickOk`). If clicks start timing out there at *"visible, enabled and stable"*, the
-MCP server was not restarted after the occlusion-pref config change — see
-`knowledge/automation/browser-quirks.md` §Firefox before assuming a suite defect.
-
-**Rate-limit guard.** Rate limits are a property of the whole run, not of one suite, so treat them
-globally rather than retrying into the wall:
-
-| Signal | Action |
-|---|---|
-| 1 suite reports a rate limit | wait 60s before the next dispatch |
-| 2 suites report rate limits | wait 90s between dispatches |
-| 3+ suites report rate limits | pause ALL dispatch for 120s |
-| cumulative hits > 10 | drop browser concurrency from 3 to 2 for the rest of the run |
-
-**Fast-path specific failures:**
-
-| Failure Type | Action | Delay |
-|---|---|---|
-| `graphql_lint_failed` | Do NOT retry — structural defect, mark suite failed, surface DV-019 in bug list | 0 |
-| `schema_introspection_failed` | Run `npm run schema:refresh` then retry once | 60s |
-| `graphql_runtime_fatal` (network / unexpected) | Retry once with fresh introspection | 30s |
-| `authentication_failure` (token-grant) | Retry once, then mark failed | 30s |
+Backoff ladder, rate-limit guard, fast-path failures: `knowledge/agents/qa/regression-orchestrator-retry.md` §Step 5, on the first failed or rate-limited suite. **A retry NEVER lands on a server the plan marked `NOT ON` for that suite.**
 
 Max 2 retries per suite (3 total attempts). After max retries → mark `failed`.
 
@@ -349,39 +193,7 @@ Max 2 retries per suite (3 total attempts). After max retries → mark `failed`.
 
 Write `reports/regression/regression-YYYY-MM-DD.md`:
 
-```markdown
-# Regression Test Report — {RUN_ID}
-## Executive Summary
-| Field | Value |
-|-------|-------|
-| Run ID / Date / Environment / Selection | ... |
-| Total Suites / Passed / Failed | ... |
-| Total Cases / Passed / Failed / Blocked / Skipped | ... |
-| Overall Pass Rate | X% |
-| Case filter (`--cases` runs only) | `<tier>` — N of M cases in scope; K excluded |
-
-## Scope Exclusions   ← `--cases` / `--ids` runs only; omit the section entirely on a full run
-Built from the `suite-{ID}-filter.json` sidecars in the run dir — **not** from scrollback. Report what
-did NOT run, because a scoped run's silence is otherwise unreadable:
-- per suite: `keptCases` of `sourceCases`, and the tier(s) asked for — or, on an ids-only run, that
-  it was an exact set (an empty `tiers` in the sidecar means ids-only, NEVER unfiltered)
-- suites that contributed **zero** cases, by ID
-- any case whose `Priority` the filter could not read, by ID — it did not run and it is not a pass
-- any suite refused as legacy 11-column and therefore **run whole**, by ID
-- `--also-ids` / `--ids` entries that matched **no suite in the run** (an id missing from one suite is
-  normal — the list is run-global and the filter is per suite; only a run-wide miss is a finding)
-
-## Suite Results
-| Suite | Name | Browser | Tests | Pass | Fail | Rate | Attempts |
-## Bugs Found
-| Bug ID | Suite | Severity | Title | Test Case |
-## NOT_DEPLOYED — the gated suites with their module and state (BLOCKED-on-deploy, never FAIL)
-| Suite | Module | State |
-## Retry Log
-| Suite | Attempt | Browser | Outcome | Error |
-## Suite Details
-(per-suite test case results from JSON files)
-```
+Template (+ Scope Exclusions on `--cases` / `--ids` runs): `knowledge/agents/qa/regression-orchestrator-report.md` §Step 6.
 
 Close the run with **one command** — it appends `history.json`, flips `test-run-status.json` to
 `completed` (the watcher then writes the final HTML and exits), and writes this env's baseline from
@@ -413,15 +225,7 @@ backstop when you cannot is `npm run regression:reap` / `:apply`.
 
 ## Smoke Mode (selection = `smoke`)
 
-Split Suite 01 into two parallel tracks for ~15 min target:
-
-**Track A — Storefront** (`qa-frontend-expert` on `playwright-chrome`): Execute all 12 smoke cases (SMK-001–SMK-012)
-
-**Track B — Admin & Backend** (`qa-backend-expert` on `playwright-edge`): Admin SPA loads, modules Active, API health, auth token works, Track A data appears in Admin
-
-**Verdict:** All pass + Admin healthy → **GO** | 1-2 non-critical fail → **CONDITIONAL GO** | Checkout/payment fail OR Admin down OR 3+ fail → **NO-GO**
-
-Run ID: `SMOKE-YYYY-MM-DD-HHMM`. Report: `reports/regression/{RUN_ID}/smoke-report.md`
+On selection `smoke`: `knowledge/agents/qa/regression-orchestrator-modes.md` §Smoke Mode (two parallel tracks, own verdict, run ID `SMOKE-YYYY-MM-DD-HHMM`).
 
 ---
 
@@ -439,8 +243,4 @@ Run ID: `SMOKE-YYYY-MM-DD-HHMM`. Report: `reports/regression/{RUN_ID}/smoke-repo
 
 ### Sub-Agent → Suite Type Mapping
 
-| Sub-Agent Type | Suite Types |
-|---|---|
-| `qa-testing-expert` | Smoke, Payment, Analytics, Accessibility, Localization, Performance, Compatibility |
-| `qa-frontend-expert` | Auth, Catalog, Cart, BOPIS, B2C, White Labeling, Configurable Products |
-| `qa-backend-expert` | Security, Platform API, GraphQL, Admin modules |
+`knowledge/agents/qa/regression-orchestrator-dispatch-queue.md` §Sub-Agent → Suite Type Mapping.

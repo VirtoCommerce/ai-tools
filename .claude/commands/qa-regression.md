@@ -82,7 +82,7 @@ There is **one** orchestrator: `regression-orchestrator`, dispatched via the Tas
 > A second `--autonomous` mode (Agent Teams, `results/{RUN_ID}/`) was removed 2026-08-26. It was a
 > parallel stack whose output no tooling read: no live dashboard, no `/qa-triage-results`, no
 > `history.json` flakiness feed, no `reap-stalled-run` backstop, no `compute-metrics` gate. Why: `docs/decisions/regression-history.md`. Its two genuinely useful pieces — the graduated rate-limit guard and the 30/60s backoff
-> ladder — were folded into `regression-orchestrator.md` Step 5. Its auto-JIRA filing was dropped
+> ladder — were folded into `regression-orchestrator.md` Step 5 (the ladder itself: `knowledge/agents/qa/regression-orchestrator-retry.md` §Step 5). Its auto-JIRA filing was dropped
 > deliberately: `/qa-triage-results` and `/qa-monitoring` both stop short of filing, and a
 > regression run should not be the one thing that does.
 
