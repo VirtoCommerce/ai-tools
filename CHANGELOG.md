@@ -10,8 +10,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## `merge-upstream` names a merge after the upstream release it brings — `vc-frontend` `0.3.2` — 2026-10-30
 
-VCST-6626.
-
 ### Fixed
 
 - A merge of `upstream/dev` is named after the upstream release tag it brings, not upstream's next version on `dev`
