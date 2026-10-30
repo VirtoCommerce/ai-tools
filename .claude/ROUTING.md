@@ -160,7 +160,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-teams-watch` (command) — Teams group chats → newly reported bugs → dedup against Jira → a VCST Bug labelled for `/qa-fix`
 
 ### Knowledge
-- `knowledge/execution/doc-sources.md` — which documentation source answers which question. **Primary: the VirtoOZ connector** (12 topic-scoped tools); Context7 `/virtocommerce/vc-docs` is the fallback
+- `knowledge/execution/doc-sources.md` — which documentation source answers which question. **Primary: the VirtoOZ connector** (12 topic-scoped tools); Context7 `/virtocommerce/vc-docs` is the fallback. The vc-fix plugin still ships its own `/vc-docs` for client installs that have no VirtoOZ connector
 
 ### Agents (use directly for complex multi-step work)
 
