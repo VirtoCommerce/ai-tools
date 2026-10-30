@@ -11,7 +11,7 @@ the ECL axis still triangulates (`ecl-audit-criteria.md`).
   Edit that file, then `npm run bl:render`. **Never edit `business-logic.md`**: it is generated, and
   `npm run bl:convert:check` (CI) fails a hand edit.
 - **Only a human source changes what a rule says, adds a rule, or makes a rule `DECLARED`**:
-  the ticket's acceptance criteria, a documentation page (VirtoOZ via `/vc-docs`), or a Jira bug
+  the ticket's acceptance criteria, a documentation page (VirtoOZ), or a Jira bug
   resolution (Fixed / By design / Won't fix). A Cancelled or duplicate ticket shipped nothing and is
   not a resolution source.
 - **Code and the live stand agreeing is one observation, not a source.** A regression is in the code

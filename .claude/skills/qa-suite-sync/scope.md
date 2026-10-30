@@ -32,8 +32,9 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
 
 **Module (`module <name>`):**
 1. Match `<name>` against module names in `.claude/knowledge/execution/module-suite-map.md`
-2. Query VirtoOZ (`/vc-docs`; Context7 fallback) for the module's current docs
-3. If a specific version is known: check GitHub releases via `gh api repos/VirtoCommerce/vc-module-<name>/releases/latest`
+2. Query VirtoOZ (connector; Context7 fallback) for the module's current docs
+3. Read the module repo's own `README.md` + `docs/` at the tag of the deployed version (`.claude/knowledge/agents/qa/shared-instructions.md` §Module repo docs); a README claim a case relies on is quoted with its file URL at that tag
+4. If a specific version is known: check GitHub releases via `gh api repos/VirtoCommerce/vc-module-<name>/releases/latest`
 
 **Diff (`diff`) and Changelog (`changelog <version>`):** §Diff and §Changelog below.
 

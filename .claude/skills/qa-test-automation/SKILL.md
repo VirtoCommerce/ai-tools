@@ -38,7 +38,7 @@ step and for nothing else. The design and every decision (D1–D18) are in
    tools via `ToolSearch` → `select:mcp__kb__kb_ask,mcp__kb__kb_show,mcp__kb__kb_none,mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute`;
    CLI fallback: `npm run kb -- ask "<coordinate> <question>"`), the **coordinate in the question**.
    Close each list by its handle (`kb_show` / `kb_none`); a miss is not a blocker. Then VirtoOZ
-   (`/vc-docs`) for what the platform is *supposed* to do, then **observe live** last. Docs bind MECHANISM,
+   for what the platform is *supposed* to do, then **observe live** last. Docs bind MECHANISM,
    never SURFACE (labels, control types, counts are `{OBSERVED}`). Rule: [`CLAUDE.md`](../../../CLAUDE.md)
    §Essential Rules → *Product context*; authoring step: [`../../knowledge/agents/authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5.
 3. **Write from source first (D18).** Draft the spec from the component/source and the generated selector

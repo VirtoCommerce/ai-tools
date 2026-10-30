@@ -157,7 +157,7 @@ proof **before the PR opens**:
 | Test coverage checklists | `/qa-checklist` | `backend-admin-checklists.md`, `graphql-checklist.md` |
 | Bug investigation / filing | `/qa-investigate`, `/qa-defect` | `bug-investigation-flow.md`, `defect-report-templates.md` |
 | Evidence capture | `/qa-evidence` | `evidence-capture-policy.md` |
-| VC documentation | `/vc-docs` | Context7 MCP |
+| VC documentation | VirtoOZ | Context7 MCP |
 
 ---
 

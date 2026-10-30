@@ -33,7 +33,7 @@ For each affected suite, identify specific cases referencing changed areas and c
 
 For each endpoint / GraphQL operation / page path the change inventory names, ask the base first —
 `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`); it holds what the platform was
-observed to DO (`CLAUDE.md` §Essential Rules → *Product context*). Then query VirtoOZ (`/vc-docs`;
+observed to DO (`CLAUDE.md` §Essential Rules → *Product context*). Then query VirtoOZ (connector;
 Context7 fallback) for each changed module's documented behavior:
 - API response schemas, required fields, validation rules
 - GraphQL query/mutation signatures

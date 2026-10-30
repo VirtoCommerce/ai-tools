@@ -17,7 +17,7 @@ Dispatch `test-management-specialist` (continuing from Phase 2 delegation).
    - ECL-* patterns from `.claude/knowledge/oracles/e-commerce-edge-cases-library.md`
    - Expected coverage from `.claude/skills/qa-coverage-gap/feature-domain-map.md`
    - Product types and test data from `.claude/knowledge/domain/products.md`
-3. Query VirtoOZ (`/vc-docs`; Context7 fallback) for domain-relevant topics
+3. Query VirtoOZ (connector; Context7 fallback) for domain-relevant topics
 4. Identify gaps:
    - Checklist items with no corresponding test case
    - BL-* invariants with no test case mapping

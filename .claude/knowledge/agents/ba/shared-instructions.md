@@ -71,7 +71,7 @@ Then, in your report:
 ## Documentation source — VirtoOZ first, always
 
 For any Virto Commerce concept, terminology, module behavior, API surface, or doc-voice question, query
-**VirtoOZ MCP first** (via the `/vc-docs` skill). Pick the topic-scoped tool:
+**VirtoOZ first**, through the connector ([`../../execution/doc-sources.md`](../../execution/doc-sources.md) says which source answers which question). Pick the topic-scoped tool:
 
 **One exception, and it is the one that bites a BA hardest: where the question is what the platform ACTUALLY DOES rather than what it is documented to do, ask `kb_ask` first** (CLI fallback: `npm run kb -- ask "<q>"`) — it is the banked result of a live check somebody already ran, on a named deployment. This matters here because **a released behaviour VirtoOZ documents WRONGLY is a finding**, and the base is where that divergence is already recorded if anybody has hit it. Put the coordinate in the question — endpoint, GraphQL operation, page path. **It fires on the coordinates, not on a suspicion:** every page path, GraphQL operation and endpoint the task's input names — suite CSV, ticket, diff — is a question, asked before its first live check, *including while you execute prescribed steps*, which is where most observations are made and where a "do I know this?" trigger never fires ([`../authoring-standard.md`](../authoring-standard.md) §5.1). **A list is not an answer: close each list by its handle (`kb_show`/`kb_none`)** (`CLAUDE.md` *Product context*). Exit 1 = nobody wrote it down: find out, then `kb_capture` — anchor = the route or request, never a label; fields and their sources: [`../../execution/kb-capture-contract.md`](../../execution/kb-capture-contract.md). **Contradicts an entry ⇒ `kb_dispute`, matches ⇒ `kb_confirm`** — never a second capture of the same fact. The base is PUBLIC, so no client or customer names. Full rule: [`../../../CLAUDE.md`](../../../../CLAUDE.md) §Essential Rules → *Product context*.
 
@@ -96,7 +96,7 @@ invariant is promoted. Full rule, the enforceable quote test and the measured in
 [`../qa/shared-instructions.md`](../qa/shared-instructions.md) §What VirtoOZ is authoritative FOR — split
 the CLAIM, not the source.
 
-**Grounding order** (same for all three teams — QA, BA, Developers): this repo's own knowledge first (Step 0 prior art + `knowledge/domain/<slug>.md` + the oracles), **VirtoOZ second**, live/source last. Anything VirtoOZ had to tell you that the repo should have known goes back into the right knowledge file per `.claude/ROUTING.md`. The rule itself: [`../../../CLAUDE.md`](../../../../CLAUDE.md) §Essential Rules → *Product context*.
+**Grounding order** (same for all three teams — QA, BA, Developers): this repo's own knowledge first (Step 0 prior art + `knowledge/domain/<slug>.md` + the oracles), **VirtoOZ second**, **the module repo's own `README.md` + `docs/` third** (GitHub MCP, at the tag of the deployed version — mandatory when VirtoOZ is thin on the module, and for a NEW one; cite the file URL at that tag; rule: [`../qa/shared-instructions.md`](../qa/shared-instructions.md) §Module repo docs), live/source last. Anything VirtoOZ had to tell you that the repo should have known goes back into the right knowledge file per `.claude/ROUTING.md`. The rule itself: [`../../../CLAUDE.md`](../../../../CLAUDE.md) §Essential Rules → *Product context*.
 
 ## The four documentation audiences
 

@@ -12,7 +12,7 @@ this is the doc it pointed you at. For **which** tool to reach for, see the deci
   `/qa-test`, `/qa-bug`. These are the verbs of the plugin: "go do this test thing."
 - **Skill** — a packaged **methodology or knowledge reference** Claude pulls in. Some skills also run
   work (`/qa-seed-data`, `/qa-review-tests`); some just inform a task you're already doing
-  (`/qa-checklist`, `/vc-docs`). Mechanically, *a skill is a slash command with supporting reference
+  (`/qa-checklist`, `/qa-test-design`). Mechanically, *a skill is a slash command with supporting reference
   files* (their frontmatter is the reference — the harness renders it as the `/` menu) — so you
   invoke it the same way you invoke a command.
 - **Agent** — a **specialist Claude delegates to** for multi-step work (e.g. `qa-frontend-expert`,
@@ -35,7 +35,7 @@ filing bugs, editing code. That's the large majority of the toolkit. Example:
 ```
 
 **2. Describe the task in natural language.** This only works for the handful of **read-only** tools
-that are safe to auto-trigger: `/qa-status`, `/qa-env-check`, and `/vc-docs`. Saying *"show me the QA
+that are safe to auto-trigger: `/qa-status` and `/qa-env-check`. Saying *"show me the QA
 dashboard"* will run `/qa-status`; saying *"run the smoke suite"* will **not** auto-run `/qa-smoke` —
 you have to type it.
 

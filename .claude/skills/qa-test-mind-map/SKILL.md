@@ -73,7 +73,7 @@ cross-domain edges drawn in the source-side map; in `build` step 10, `Behavior:`
    domain map §2 names for the behaviours in scope, run `mcp__kb__kb_ask`
    (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit ids; a miss is not a blocker. Rule: [`CLAUDE.md`](../../../CLAUDE.md)
    §Essential Rules → *Product context*.
-3. **VirtoOZ before any behaviour claim** (`/vc-docs`), the same rule. Released vs new decides the
+3. **VirtoOZ before any behaviour claim**, the same rule. Released vs new decides the
    source: released behaviour needs `{DOC}`, `{BL}` or `{OBSERVED}` evidence before it can be CONFIRMED.
    New behaviour may rest on `{SPEC}` and is marked `"maturity": "new"`.
 

@@ -290,15 +290,15 @@ Look for these anti-patterns — from **both** code analysis AND live UI explora
 - Missing error handling in API calls
 
 ### 7. VC Docs Cross-Reference
-Use **VirtoOZ MCP** (primary — pick the topic-scoped tool that matches the question: `PlatformDeveloperGuide`, `StorefrontDeveloperGuide`, `PlatformUserGuide`, `StorefrontUserGuide`, `MarketplaceUserGuide`/`MarketplaceDeveloperGuide`, `DeploymentGuide`, `B2BExperts`, `*SourceCode`, or general `VirtoCommerce`). Fallback: **Context7** `/virtocommerce/vc-docs` if VirtoOZ is thin. Fetch relevant sections from `https://docs.virtocommerce.org` to:
-- Verify the project is using best practices for detected modules
+Use **VirtoOZ MCP** (primary — pick the topic-scoped tool that matches the question: `PlatformDeveloperGuide`, `StorefrontDeveloperGuide`, `PlatformUserGuide`, `StorefrontUserGuide`, `MarketplaceUserGuide`/`MarketplaceDeveloperGuide`, `DeploymentGuide`, `B2BExperts`, `*SourceCode`, or general `VirtoCommerce`). Fallback: Context7 `/virtocommerce/vc-docs`. Fetch relevant sections from `https://docs.virtocommerce.org` to:
+- Check best practices for detected modules
 - Identify features available in the platform that aren't being used
 - Flag deprecated APIs or patterns
 
 Key doc areas to check:
 - `https://docs.virtocommerce.org/platform/developer-guide/`
 - `https://docs.virtocommerce.org/storefront/`
-- Module-specific docs for each detected module
+- Each module repo's `README.md` + `docs/` (qa shared-instructions §Module repo docs)
 
 ### 8. Business Invariant Extraction
 
@@ -330,7 +330,7 @@ refreshed via **`/qa-domain-map <slug>`** (shape: `.claude/knowledge/domain/doma
 contract** — updated in place on a refresh, never deleted or renumbered. Three things a map is **not**:
 it carries **no behavioural rules** (those are the `BL-*` below) · it **never grounds an assertion as
 `{DOC}`**, being a pointer index plus a surface inventory · and it records *what exists and where*, never
-*what correct looks like*. **Query every published guide the domain touches** (`/vc-docs` → VirtoOZ:
+*what correct looks like*. **Query every published guide the domain touches** (VirtoOZ:
 `PlatformUserGuide` **and** `StorefrontUserGuide` at minimum) and carry doc claims as **verbatim quotes
 with their URL, triangulated against live** — a docs-vs-build divergence is customer-facing and usually
 the map's highest-impact row, while a divergence the docs declare **on purpose** is not a defect and
@@ -351,8 +351,8 @@ Everything in this section applies to both axes unless it names one. Three `ecl`
 **You never edit a CSV** on either axis. Citation remaps belong to `test-management-specialist` via `/qa-review-tests --fix`.
 
 - **Parallel batch (default).** `/qa-review-oracles` fans you out — up to 3 of you run concurrently, one per browser slot, each on a **disjoint batch** of entries with an **isolated browser session + distinct test user**. In this mode you **do your own live observation on your assigned slot** (never sub-delegate to `qa-testing-expert` — it breaks the 3-browser cap), and you **return each verdict + evidence tuple + the proposed edit; you do NOT write the oracle yourself.** The orchestrator applies all edits serially (single writer).
-- **`bl` — per record:** read the tickets in its `source` / `suspect_reason` (Jira AC and resolutions) and the docs (`/vc-docs`); re-run its `check` on your slot (executable: `npm run inv:run`; manual: follow `check.ref`, REAL-USER rule). Return **one operation** — SYNC / SYNC-UPDATE / NEW / MARK-SUSPECT / RESOLVE / RE-RUN / RETIRE-proposed / UNCHANGED — with the human source and the proposed YAML change. Code + live agreeing is never a source; behaviour no rule covers is a `kb` observation.
-- **`ecl` — three axes (all three required to confirm):** **docs** (`/vc-docs` — quote + reference), **source** (GitHub MCP, read-only — a `file:line` anchor), **live** (your own slot — an `{OBSERVED}` result + screenshot, REAL-USER rule, no `browser_evaluate` bypass). CONFIRMED / DRIFT / MISSING → propose a body-only edit with an `Amended:` + `Source:` stamp; not confirmed → a finding or a `kb` observation. No proposals file.
+- **`bl` — per record:** read the tickets in its `source` / `suspect_reason` (Jira AC and resolutions) and the docs (VirtoOZ); re-run its `check` on your slot (executable: `npm run inv:run`; manual: follow `check.ref`, REAL-USER rule). Return **one operation** — SYNC / SYNC-UPDATE / NEW / MARK-SUSPECT / RESOLVE / RE-RUN / RETIRE-proposed / UNCHANGED — with the human source and the proposed YAML change. Code + live agreeing is never a source; behaviour no rule covers is a `kb` observation.
+- **`ecl` — three axes (all three required to confirm):** **docs** (VirtoOZ — quote + reference), **source** (GitHub MCP, read-only — a `file:line` anchor), **live** (your own slot — an `{OBSERVED}` result + screenshot, REAL-USER rule, no `browser_evaluate` bypass). CONFIRMED / DRIFT / MISSING → propose a body-only edit with an `Amended:` + `Source:` stamp; not confirmed → a finding or a `kb` observation. No proposals file.
 - **Env-agnostic** on both axes (no env names/URLs/slugs); the orchestrator assigns final ids at apply time.
 - **Opportunistic extraction during `/ba-analyze`** returns candidates only, routed by `/ba-analyze` Step 4.5 — never an oracle edit, never a proposals file.
 - **Re-run the axis's gate before returning.** `npm run bl:convert:check` + `bl:lint` / `npm run ecl:lint` is the acceptance check for your own edits — report its before/after High count. A run that raises the count has broken something. Note that a green lint proves each citation **exists**, never that it is **right**: a case citing a real-but-wrong entry passes every gate. Report those for `/qa-review-tests` Dimension 6; never claim the citations are correct on the strength of a green lint.

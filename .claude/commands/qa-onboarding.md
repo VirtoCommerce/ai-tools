@@ -108,11 +108,11 @@ Notice you could also have just *asked* — "show me the QA dashboard" would hav
 anything that runs tests, files bugs, or changes code has a guard and must be typed as a slash.
 ```
 
-(If `/vc-docs` is available, optionally also run `/vc-docs cart` to show a **skill** — same slash
-invocation, but it pulls in reference knowledge rather than executing a test.)
+(Optionally also run `/qa-checklist cart` to show a **skill** — same slash invocation, but it pulls
+in reference knowledge rather than executing a test.)
 
 **And name its counterpart, because a newcomer will otherwise re-derive things the team already
-knows.** `/vc-docs` answers what the platform is *supposed* to do. What it was *observed* to do — on
+knows.** VirtoOZ (a claude.ai connector, `.claude/knowledge/execution/doc-sources.md`) answers what the platform is *supposed* to do. What it was *observed* to do — on
 a named deployment, with a count of how many people have since confirmed it — lives in a shared,
 public base, and it is a lookup rather than a search: `mcp__kb__kb_ask`, or `npm run kb -- ask
 "<question>"` when the `kb` server is not connected. Put the coordinate in the question (the page path, the endpoint, the GraphQL
@@ -124,8 +124,8 @@ afternoon ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product c
 
 ```
 • Command — you type a slash, a test workflow runs now (/qa-smoke, /qa-regression, /qa-test, /qa-bug)
-• Skill   — methodology/knowledge Claude pulls in; some run, some just inform (/qa-checklist, /vc-docs)
-• Natural language only auto-runs the read-only three: /qa-status, /qa-env-check, /vc-docs.
+• Skill   — methodology/knowledge Claude pulls in; some run, some just inform (/qa-checklist, /qa-test-design)
+• Natural language only auto-runs the read-only two: /qa-status, /qa-env-check.
   Everything with side effects you must type.
 
 Full explanation + how to read an `argument-hint`: docs/using-commands-and-skills.md

@@ -827,7 +827,7 @@ export function renderDoc(snap, tail) {
   p('| Your question | Read | Not this |');
   p('|---|---|---|');
   p('| What shipped / which version introduced X / since when | **this file** | VirtoOZ (~9 months stale on releases) |');
-  p('| How does X work / where is it configured / API shape | VirtoOZ via `/vc-docs` | this file — it carries no behaviour |');
+  p('| How does X work / where is it configured / API shape | VirtoOZ (connector) | this file — it carries no behaviour |');
   p('| Can I test it **on this env**? | `GET {{BACK_URL}}/api/platform/modules` | this file, nor the git-declared manifest |');
   p('| Can the STOREFRONT see it (and is its flag on)? | `npm run store:caps` — anonymous, no token | the platform manifest: it answers "installed", not "visible" |');
   p();

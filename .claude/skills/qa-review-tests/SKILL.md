@@ -428,7 +428,7 @@ Read **triangulation-criteria.md** (this folder) first — it holds the evidence
 
 **8b. Fan out — PARALLEL (ba-system-analyzer).** Triangulation is read-only and per-assertion, so run it in parallel. Split the suite's cases into disjoint batches and dispatch **up to 3 `ba-system-analyzer` agents concurrently** (one Agent-tool call per batch, all in a single message — matches the 3-slot browser pool). Each gets its **own** browser slot (`playwright-firefox` / `playwright-chrome` / `playwright-edge`, never shared) and a **distinct test/org user** if the live axis needs auth. Each agent captures all three axes with concrete evidence:
 
-- **Docs axis** — `/vc-docs` (VirtoOZ MCP), topic-scoped tool per the source map. Capture a **quote + doc reference**.
+- **Docs axis** — VirtoOZ (connector), topic-scoped tool per the source map. Capture a **quote + doc reference**.
 - **Source axis** — GitHub MCP `search_code` / `get_file_contents` on the resolved repo (read-only; QA never clones). Capture a **`file:line` anchor**.
 - **Live axis** — the agent's **own** assigned slot. Capture an **`{OBSERVED}` result + screenshot**. REAL-USER rule — no `browser_evaluate` / `run_code_unsafe` bypass. Do NOT sub-delegate to `qa-testing-expert` from inside a batch agent; that would exceed the 3-browser cap.
 

@@ -172,8 +172,9 @@ narrowness: the ticket names one control, the map names the whole surface that c
 Applies to any question of how the platform or the storefront is **supposed** to behave. Grounding order:
 
 1. **This repo's knowledge first** — the domain map (`knowledge/domain/<slug>.md`), the oracles (`BL-*`, `ECL-*`), `.claude/ROUTING.md` §Knowledge bases. Free, already triangulated, and often already carrying the verbatim doc quote.
-2. **VirtoOZ next** — `/vc-docs`, topic-scoped tool (the topic→tool table is `knowledge/agents/ba/shared-instructions.md` §Documentation source — VirtoOZ first, always). Context7 `/virtocommerce/vc-docs` is the fallback only.
-3. **Live / source last** — what the environment actually does.
+2. **VirtoOZ next** — through the connector, the narrowest topic-scoped tool. Which source answers which question (the release ledger first for *what shipped*), the topic→tool table and the Context7 fallback: [`../../execution/doc-sources.md`](../../execution/doc-sources.md).
+3. **The module repo's own docs next** — `README.md` + `docs/` of the `vc-module-*` repo, at the deployed version's tag (§Module repo docs below). Mandatory when VirtoOZ is thin or silent on the module, and for a NEW feature.
+4. **Live / source last** — what the environment actually does.
 
 **That order is for what the platform SHOULD do. For what it DOES, `kb_ask` comes before step 3 and before grepping an oracle** — it is the banked result of a live check somebody already ran, on a named deployment, with a trust count (`npm run kb -- ask "<q>"` when the MCP server is not bound yet; it needs no server). **Put the coordinate in the question** — endpoint, GraphQL operation, page path. **A list is not an answer: close each list by its handle (`kb_show`/`kb_none`)** (`CLAUDE.md` *Product context*). **It fires on the coordinates, not on a suspicion:** every page path, GraphQL operation and endpoint the task's input names — suite CSV, ticket, diff — is a question, asked before its first live check, *including while you execute prescribed steps*, which is where most observations are made and where a "do I know this?" trigger never fires ([`../authoring-standard.md`](../authoring-standard.md) §5.1). Exit 1 = nobody wrote it down: find out, then `kb_capture` — anchor = the route or request, never a label; fields and their sources: [`../../execution/kb-capture-contract.md`](../../execution/kb-capture-contract.md). **Contradicts an entry ⇒ `kb_dispute`, matches ⇒ `kb_confirm`** — capturing it again instead gives the base two answers to one question. The base is PUBLIC. Full rule and why: [`../../../CLAUDE.md`](../../../../CLAUDE.md) §Essential Rules → *Product context*.
 
@@ -188,9 +189,36 @@ Docs are ONE source: a `BL-*`/`ECL-*` promotion still needs its 3-source bar (do
 | The feature is… | Authoritative source | When it isn't there |
 |---|---|---|
 | **Released / existing** | VirtoOZ **+** this repo's domain maps and oracles — provenance `{DOC}` / `{BL}` | **A released feature VirtoOZ does not document, or documents wrongly, is a FINDING** — a doc gap / doc drift, reported with the verbatim quote + URL beside the live observation. Then fall through to source + live for this run. **Never read documentation silence as "no requirement"** |
-| **New / unreleased** | the ticket's AC `{SPEC}` + source + **live on the deployed build** `{OBSERVED}` | there is no VirtoOZ page yet and often no source snapshot — live is the primary ground truth, and the assertion is confirmed live before promotion (§5 below, Dimension 10 / `GRD-*`) |
+| **New / unreleased** | the ticket's AC `{SPEC}` + the module's `README.md`/`docs/` `{DOC}` + source + **live on the deployed build** `{OBSERVED}` | there is no VirtoOZ page yet and often no source snapshot — live is the primary ground truth, and the assertion is confirmed live before promotion (§5 below, Dimension 10 / `GRD-*`) |
 
 Doc drift is normal here and is measured, not hypothetical: `knowledge/domain/sales-rep.md` §D1 (the published API reference lists 13 queries + 1 mutation; live introspection returns 21 + 2) and §D10 (the guide claims store scoping the live schema does not enforce). So **a VirtoOZ answer for a released feature is triangulated against live, never substituted for it** — and when they disagree, both go in the report.
+
+### Module repo docs — README.md + docs/
+
+Every `vc-module-*` repo (and `vc-platform`, `vc-frontend`) carries its own developer documentation: the
+root `README.md` and, where the repo has one, a `docs/` folder. They often state what VirtoOZ does not —
+settings and their defaults, the GraphQL/REST surface, limits, per-instance vs shared state — and for a NEW
+module they are often the only written description (punchout: `knowledge/domain/punchout.md`; the MFA
+wrong-code cap being per platform instance: `knowledge/domain/auth.md` D23).
+
+- **When:** after VirtoOZ, before live/source, for every module the task touches. Mandatory when VirtoOZ is
+  thin or silent on that module, and for a NEW feature.
+- **How:** GitHub MCP `get_file_contents` (`owner: VirtoCommerce`, the module's repo, `README.md`, then the
+  `docs/` listing), or `gh api repos/VirtoCommerce/<repo>/contents/<path>?ref=<tag>`. A vc-fix developer
+  reads them straight from its `.fix-workspace/<repo>/` checkout.
+- **Which version:** the tag equal to the module `version` the stand reports
+  (`GET {{BACK_URL}}/api/platform/modules`), never `dev` — `dev` can describe what is not deployed yet.
+  Documented on `dev` but absent from the deployed build is `NOT_DEPLOYED`, never a bug.
+- **Provenance:** a README claim is `{DOC}`, quoted verbatim with the file URL at that tag
+  (`https://github.com/VirtoCommerce/<repo>/blob/<tag>/README.md`). The split below binds it too: mechanism
+  yes, exact UI strings and counts no.
+- **It is written next to the code and drifts with it** — the punchout README called OrderRequest "coming
+  soon" while the deployed build shipped it (`punchout.md` D1). README vs VirtoOZ, or README vs live,
+  disagreeing is a **finding**: both quotes go in the report beside the observation, never pick one
+  silently. A released behaviour the README documents and VirtoOZ does not is a VirtoOZ doc gap.
+- **Close the loop** as for VirtoOZ: what the README told you that this repo should have known goes into
+  the domain map or oracle per `.claude/ROUTING.md`, with the README URL as its source. A **client**
+  module's README is client material — it never goes into the public `kb`.
 
 ### What VirtoOZ is authoritative FOR — split the CLAIM, not the source
 
@@ -346,7 +374,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Filing a bug report | `/qa-defect` | `defect-report-templates.md` |
 | Triaging a defect | `/qa-defect` | `defect-lifecycle-workflow.md` |
 | Sign-off | `/qa-evidence` | `sign-off-templates.md` |
-| VC documentation | `/vc-docs` | **VirtoOZ MCP** (primary, 12 topic-scoped tools); Context7 fallback |
+| VC documentation | VirtoOZ connector | 12 topic-scoped tools, Context7 fallback — [`../../execution/doc-sources.md`](../../execution/doc-sources.md) |
 | Module mapping | `knowledge/execution/module-suite-map.md` | direct file reference |
 | xAPI queries | `/qa-api ref <module>` | `xapi-query-ref.md` |
 

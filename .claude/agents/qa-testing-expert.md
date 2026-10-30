@@ -167,7 +167,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 | **Runner-native GraphQL test cases** | — | **`knowledge/api/graphql-test-cases-runner.md`** — read before writing, reviewing or migrating any GraphQL case: the `Steps`/`Assertions`/`Cleanup` grammar `scripts/graphql/graphql-runner.ts` consumes. |
 | **Live discovery + random inputs** | — | **`knowledge/execution/live-discovery.md`** — decision tree (`{{VAR}}` / `@td()` / `live-discover` / `random-data`), JS + CSV-runner recipes, agent-user-pool isolation, `AGENT-TEST-` cleanup prefix. Consult before authoring any test that resolves an entity at runtime. |
 | Live xAPI schema | — | `knowledge/api/graphql-schema.md` |
-| VC documentation | `/vc-docs` | Context7 MCP |
+| VC documentation | VirtoOZ | Context7 MCP |
 
 ---
 

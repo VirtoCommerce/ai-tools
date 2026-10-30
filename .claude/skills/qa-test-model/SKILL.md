@@ -74,7 +74,7 @@ model's header**, never a guess.
    ticket's own diff touches is a chain link and a candidate reverse edge in the model.
 4. **Ask the base for this run's coordinates** — for each page path / GraphQL operation / endpoint in
    the change surface that the bundle does not already carry kb hit ids for: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit
-   ids; a miss is not a blocker. VirtoOZ (`/vc-docs`) before any claim about what the platform is
+   ids; a miss is not a blocker. VirtoOZ before any claim about what the platform is
    supposed to do — released vs new decides the source. Rule: [`../../../CLAUDE.md`](../../../CLAUDE.md)
    §Essential Rules → *Product context*.
 5. **Write the model** to `{RUN_DIR}/test-model.md` in the template's shape, Part 0 first, per the method

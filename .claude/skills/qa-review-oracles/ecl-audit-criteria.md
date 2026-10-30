@@ -28,7 +28,7 @@ The tuple: concrete artifacts from all three **applicable** axes, agreeing.
 
 | Axis | Concrete evidence required | Source |
 |------|----------------------------|--------|
-| **Docs** | A quote + doc reference establishing the feature/flow the pattern applies to exists and behaves as described | `/vc-docs` (VirtoOZ MCP), Context7 fallback |
+| **Docs** | A quote + doc reference establishing the feature/flow the pattern applies to exists and behaves as described | VirtoOZ (connector), Context7 fallback |
 | **Source** | A `file:line` anchor in an `org:VirtoCommerce` repo showing the code path the pattern targets (the validator, the calculator, the resolver) | GitHub MCP `search_code` / `get_file_contents` (read-only) |
 | **Live** | An `{OBSERVED}` result showing the surface exists and is reachable — **not necessarily the failure itself** | `qa-testing-expert` (playwright-firefox), real UI/API only |
 

@@ -58,7 +58,7 @@ returned.
   (Back, refresh, two tabs, expired session, deep link) and the corpus has almost none of them:
   8 · 5 · 11 · 5 · 5 out of 1,961 Frontend cases.
 
-**VirtoOZ docs query** (via `/vc-docs`) — **skip when `1c` delegated to `ba-system-analyzer`** (reuse its
+**VirtoOZ docs query** (connector) — **skip when `1c` delegated to `ba-system-analyzer`** (reuse its
 docs grounding; top up specific gaps only). Otherwise query the affected domain against the topic-scoped
 VirtoOZ tool that fits; fall back to Context7 (`/virtocommerce/vc-docs`, `tokens: 8000`) only if VirtoOZ
 returns nothing. **Fold in `ba-system-analyzer` risk areas** as mandatory verification points alongside the
