@@ -5,6 +5,7 @@ model: sonnet
 color: indigo
 applicability: universal
 applicability_rationale: "VC module + system analysis. Uses GitHub MCP to search vc-module-* repos. Universal for any VC customer with module access."
+disallowedTools: Artifact, ArtifactComments, ArtifactData, PowerShell, CronCreate, CronDelete, RemoteTrigger, PushNotification, DesignSync, mcp__Claude_Browser__*, mcp__claude-in-chrome__*, mcp__Chrome_DevTools__*, mcp__chrome-devtools__*, mcp__plugin_playwright_playwright__*, mcp__figma-remote-mcp__*, mcp__ucp-qa__*, mcp__mcp-registry__*, mcp__scheduled-tasks__*, mcp__terminal__*, mcp__visualize__*, mcp__ccd_session__*, mcp__ccd_session_mgmt__*, mcp__ccd_sidebar__*, mcp__ccd_window__*, mcp__ccd_view__*, mcp__ccd_settings__*, mcp__ccd_host__*, mcp__ccd_pr__*, mcp__azure-mcp__*
 ---
 
 # BA System Analyzer
