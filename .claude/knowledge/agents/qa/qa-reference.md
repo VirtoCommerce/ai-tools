@@ -54,7 +54,7 @@ BACKEND LAYER                          FRONTEND LAYER
 INTEGRATIONS                           ├── Design System (Coffee theme)
 ├── Payment (Skyflow, CyberSource...)  └── Accessibility (WCAG 2.2 AA)
 ├── Search (Elasticsearch)
-└── Background Jobs (Hangfire)
+└── Background Jobs (one engine per instance: Hangfire, RabbitMQ or InMemory)
 ```
 
 ## Critical Regression Areas (priority order)

@@ -505,7 +505,7 @@ error, a dependency upgrade. Table and archetypes: [`knowledge/execution/cases-t
 | Search index lag | Add product in admin, search immediately | Elasticsearch index not yet updated |
 | Multi-store config bleed | Switch stores, check pricing/catalog | Store-scoped settings leaking between stores |
 | Dynamic property missing | Feature depends on DP that was deleted | Null reference in rendering or business logic |
-| Background job stuck | Trigger action that depends on Hangfire job | Job failed silently, feature appears broken |
+| Background job stuck | Trigger action that depends on a background job | Job failed silently, feature appears broken |
 | xAPI schema change | After platform update, query returns null field | Field renamed or removed in resolver refactor |
 | Large cart performance | Add 50+ items to cart | GraphQL response timeout, UI render freeze |
 

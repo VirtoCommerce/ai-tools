@@ -59,7 +59,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
    - P5: Pre-authentication API call
    - P6: External resource URL assumption
    - P7: Duplicate GraphQL queries
-   - P8: Hangfire job failure
+   - P8: Background job failure
 
 7. **Dig into the source code — answer WHERE, then WHEN & WHY** (`bug-investigation-flow.md` §8). When browser/log evidence isn't enough to explain the behavior, read the actual code via GitHub MCP (read-only):
    - **WHERE** (§8A backend `vc-module-*` / §8B frontend `vc-frontend`): `search_code` for the controller/service/resolver or page/composable/store, trace the logic chain, and decide by-design vs. defect.
