@@ -53,8 +53,8 @@ usually Opus. Pick by what the subagent does:
 | The subagent… | `model` |
 |---|---|
 | fetches or collects (Jira/GitHub reads, file inventory, a list to compile) | `haiku` |
-| classifies, implements to a spec, reviews against a checklist | `sonnet` |
-| makes a judgment no checklist settles (root cause, a verdict, a design call) | omit (inherit) |
+| triages, investigates a failure or root cause, classifies, implements to a spec, reviews against a checklist | `sonnet` (`haiku` when the triage is mechanical: dedup, known-issue match) |
+| makes a judgment no checklist settles (a release verdict, a design call) | omit (inherit) |
 
 Measured 2026-10-30 (VCST-6423): improvised data-gathering and triage dispatches ran on the inherited
 Opus model until a skill named `sonnet` for them; `qa-triage-results` already does.
