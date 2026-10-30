@@ -115,7 +115,7 @@ Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `
 
 ## Agent User Pool (Parallel Isolation)
 
-When running in parallel, each browser slot uses a **dedicated test user** to prevent session/cart/order conflicts. Resolve via `@td(AGENT_POOL_SLOT_N.email)` (and `.password`, `.b2b_email`, etc.) — the alias points at `test-data/users/agent-user-pool.csv` row where `slot=N`. Match on your assigned `{{BROWSER_SERVER}}`:
+When running in parallel, each browser slot uses a **dedicated test user** to prevent session/cart/order conflicts. Resolve via `@td(AGENT_POOL_SLOT_N.email)` (and `.b2b_email`, `.b2b_org`, etc.) — the alias points at `test-data/users/agent-user-pool.csv` row where `slot=N`. Match on your assigned `{{BROWSER_SERVER}}`. **The password is never resolved and typed:** its column holds a `{{NAME}}` token (`{{AGENT_SLOT1_PASSWORD}}`); type the bare NAME inside it (`AGENT_SLOT1_PASSWORD`, or `AGENT_SLOT1_PASSWORD_<ENV>` on `.env.playwright.all`) and the lane fills the value ([`browser-rules.md`](browser-rules.md)) — typing the token itself is blocked by the hook or misses silently.
 
 | Browser Server | Personal User alias | B2B User alias |
 |---------------|---------------------|----------------|

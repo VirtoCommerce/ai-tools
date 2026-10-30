@@ -80,8 +80,10 @@ events fired.
   (`.claude/rules/vc-browser.md`). No WebKit on Windows — Edge instead.
 - **Observe through the lane:** `browser_snapshot` (DOM), `browser_take_screenshot` (only for the reasons
   in shared-instructions §Evidence and output), `browser_console_messages`, `browser_network_requests`.
-  Core Web Vitals: a read-only measurement through the lane (the real-user hook allows it), judged against
-  `knowledge/execution/performance-thresholds.md`.
+  Core Web Vitals, judged against `knowledge/execution/performance-thresholds.md`: CLS through the lane (the
+  real-user hook allows the read-only `layout-shift` observer, `scripts/lib/measure-layout.ts`). LCP and TTI
+  have no allowed measurement in a test run (not on the hook's allow-list; `@allow-eval` is not for test
+  runs) — report them as not measured, never estimate.
 - **Admin SPA** (`BACK_URL`): create test data, check storefront ↔ admin consistency, clean up.
 
 ---
@@ -115,7 +117,7 @@ events fired.
 
 | Failure | Action |
 |---------|--------|
-| Browser lane fails | Fall back chrome → firefox → edge; note it in the report |
+| Browser lane fails | Stay off the other lanes — each is another agent's, with its own pool user. Mark the affected cases BLOCKED and report the lane and error to your dispatcher; use a fallback lane only when your brief names one |
 | Storefront unreachable | Retry 3×; still down ⇒ mark everything BLOCKED and escalate |
 | Test data missing or stale | `/qa-seed-data` to regenerate; blocked ⇒ the case is BLOCKED |
 | Payment provider error | Check the test-card env values; try another provider; file only a confirmed bug |

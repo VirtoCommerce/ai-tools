@@ -124,7 +124,7 @@ returns it (30–60s index lag is expected) · the Hangfire job completed · no 
 | Platform API unreachable | `/health`; down ⇒ mark everything BLOCKED and escalate |
 | OAuth2 token failure | Check the env credentials and `api-auth.md`; persistent ⇒ escalate |
 | GraphiQL / Swagger unavailable | The GraphQL runner or `curl`; note the gap |
-| Browser lane fails | Fall back edge → chrome → firefox; note it in the report |
+| Browser lane fails | Stay off the other lanes — each is another agent's, with its own pool user. Mark the affected cases BLOCKED and report the lane and error to your dispatcher; use a fallback lane only when your brief names one |
 | Hangfire inaccessible | `/hangfire/jobs/failed` via the API; note limited visibility |
 
 ### Scope

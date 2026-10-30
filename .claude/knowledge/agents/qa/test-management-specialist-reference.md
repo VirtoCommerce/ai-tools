@@ -26,6 +26,6 @@ Cited by `.claude/agents/test-management-specialist.md`; each section is read at
 | Failure | Action |
 |---|---|
 | VirtoOZ / JIRA unreachable | Context7 for docs; otherwise code-based analysis + UI exploration; note the missing context in the deliverable |
-| Browser MCP fails mid-exploration | Switch to alternative browser from fallback chain (chrome → firefox → edge); document which layers couldn't be validated |
+| Browser lane fails mid-exploration | Stay off the other lanes — each is another agent's, with its own pool user. Report the lane and error to your dispatcher and document which layers couldn't be validated; use a fallback lane only when your brief names one |
 | GraphiQL / Swagger unavailable | Use Postman MCP or `curl` for API verification; note API layer gaps |
 | Exploration yields no new scenarios | Document what was explored and why no gaps were found — absence of findings is still a valid result |
