@@ -3,6 +3,7 @@
 //   npm run agents:cost -- --cutoff <ISO time of the change> [--since 2026-10-01] [--root <projects dir>] [--json]
 // Per run: first-turn context (system prompt + tools + agent definition + brief = the fixed cost a prompt or tool
 // cut changes), total tokens over all turns (input + cache write + cache read + output) and turns. Medians.
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import fs from "node:fs"; import path from "node:path"; import os from "node:os";
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
 const root = arg("root", path.join(os.homedir(), ".claude", "projects"));
