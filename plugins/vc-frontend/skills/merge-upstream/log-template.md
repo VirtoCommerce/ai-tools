@@ -1,4 +1,4 @@
-# <upstream ref> into <fork branch> — <YYYY-MM-DD>
+# <upstream release (step 1), or the ref> into <fork branch> — <YYYY-MM-DD>
 
 - Base: `<base>`; range: `<merge base sha>`..`<upstream sha>` (<N> upstream commits)
 - Merge commit: `<sha>`; ports: `<sha>` …
