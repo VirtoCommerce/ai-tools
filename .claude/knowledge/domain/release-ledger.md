@@ -3,7 +3,7 @@ applicability: universal
 rationale: |
   What shipped in the Virto Commerce product line and when. Upstream release history is
   deployment-independent, so every agent on every deployment reads the same ledger.
-generated: 2026-10-20
+generated: 2026-10-30
 rev: 2
 source: https://www.virtocommerce.org/c/news-digest/15.rss
 ledger_through: 3.1071.0
@@ -15,7 +15,7 @@ exhaustive: false
 
 # VC Release Ledger — what shipped, when
 
-**Generated** 2026-10-20 (rev 2) · **24** monthly digests · **258** features indexed · window 2024-12 → 2026-10
+**Generated** 2026-10-30 (rev 2) · **24** monthly digests · **258** features indexed · window 2024-12 → 2026-10
 
 > **GENERATED FILE — do not edit by hand.** Regenerate: `npm run releases:refresh`.
 > Drift guard: `npm run releases:check` + `scripts/unit/release-ledger.test.mjs` (runs in `npm test`).
