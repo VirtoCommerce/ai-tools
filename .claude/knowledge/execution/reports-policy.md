@@ -197,7 +197,8 @@ including the one that returns `201` and then renders an error.
 **Verification is PART OF THE STEP; a status code is not verification.** After posting, read
 `GET /rest/api/3/issue/<KEY>/comment/<id>?expand=renderedBody` and require all three:
 
-1. one `<img src=…/rest/api/3/attachment/content/<id>>` **per image**;
+1. one `<img src=…/rest/api/3/attachment/content/<id>>` **per image** — `…/attachment/thumbnail/<id>` for a
+   `!name.png|thumbnail!` embed (`tracker-ops.md` §5c, the positive-signal table);
 2. **zero** surviving literal `!….png!` — proves the markup was converted rather than printed;
 3. **zero** `<span class="error">`.
 
