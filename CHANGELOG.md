@@ -8,6 +8,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A `|thumbnail!` screenshot is no longer reported as not rendered — `vc-fix` `0.18.4` — 2026-11-02
+
+### Fixed
+
+- The Jira `renderedBody` check in `knowledge/execution/tracker-ops.md` and `.claude/rules/reports.md` §5.0 now
+  names the thumbnail form: `!name.png|thumbnail!` renders as `<img src=…/attachment/thumbnail/<id>>`, not
+  `…/attachment/content/<id>`. It rendered, but it is not the house form — amend the embed to `|width=700!`.
+  Observed on VCST-6232 comment 112573, where the old rule reported two rendered images as missing.
+- The repo's `npm run tracker:comment` check (`scripts/tracker/rendered-media.mjs`) counts both forms, once per
+  attachment id, and warns on a thumbnail.
+
+### Verified
+
+- Live read of VCST-6232 comment 112573: 2 images counted, 0 error spans, check passes, both flagged as thumbnails.
+- `npm test` 0 failures; `npm run context:check` exits 0.
+
 ## ticket-context analysts read the ticket as plain text and only their mode's input — `vc-test` `0.13.0` — 2026-10-30
 
 ### Changed
