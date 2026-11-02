@@ -18,7 +18,7 @@
  *
  * WHY NO PIXEL THRESHOLD BY DEFAULT (--min-diff-px 1): same build shot twice, the noisiest story
  * differed by 10 px — and a REAL seeded regression (VcBadge radius −2 px) moved only 12 px on its
- * outline story (ai-tools `docs/superpowers/plans/2026-10-26-visual-regression.md` §Evidence). A threshold that
+ * outline story. A threshold that
  * hides the noise hides that regression too. Noise is handled by repetition instead: shoot the flagged
  * stories again with `visual:snap --repeat 3` and diff those — a story that only renders differently
  * sometimes then has a matching pair and comes back `same`.

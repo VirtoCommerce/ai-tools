@@ -6,8 +6,7 @@ argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--tick
 
 # /preflight — is this stand fit for the work, and what does it run?
 
-The facts and the policy are **code**; this skill is only what code cannot do. Design and
-rationale: [`docs/superpowers/specs/2026-10-08-preflight-skill-design.md`](../../../docs/superpowers/specs/2026-10-08-preflight-skill-design.md).
+The facts and the policy are **code**; this skill is only what code cannot do.
 **Pre-flight is read-only.** It never fixes anything on its own — remediation (step 5) is a separate
 step the user chooses.
 
@@ -82,7 +81,7 @@ The CLI sees `.mcp.json` only (levels 1–2; it also matches a server's `mcpKeys
   list, so the CLI never reports it — probe it yourself.
 - Absent `REQ_FALLBACK` ⇒ WARN naming the fallback, and the run uses it.
 - Absent `OPT` ⇒ that lane is `SKIPPED` in the run's record — never PASS.
-- Never edit `.mcp.json` and never restart a server: for a missing or broken one, say in one line what to add and that a restart is required (`docs/superpowers/specs/2026-10-08-preflight-skill-design.md` §7).
+- Never edit `.mcp.json` and never restart a server: for a missing or broken one, say in one line what to add and that a restart is required.
 - A server that needs OAuth: Claude cannot start the flow — the user authorises it in `/mcp` or the claude.ai connector settings.
 
 ## Step 3 — ask the knowledge base, then the docs
@@ -104,7 +103,7 @@ Never Context7 first: VirtoOZ is the primary docs source and Context7 only its f
 Run the CLI once more without `--json` and print its output **verbatim** — the CLI renders it from
 `checks[]`; you do not compose it — then append — in the same columns — only the rows the CLI cannot see: step 2's
 level-3 MCP rows and step 3's misses. Do not reword a row, do not re-grade it, and never show an
-`UNKNOWN` as OK. Form and rules: `docs/superpowers/specs/2026-10-08-preflight-skill-design.md` §8a.
+`UNKNOWN` as OK.
 
 - `READY` with no rows ⇒ one line, proceed.
 - `READY` with warnings ⇒ name each in one line. If any has a fix you can make (list 1 of step 5), ask step 5's one question first; otherwise proceed. A WARN never asks anything else.

@@ -29,7 +29,7 @@ oracle clause depends on, and the observed-behaviour steps.
 The strategy is the authority: refine a technique if you must, but a wrong technique, a weaker oracle or a
 new risk is appended to that round's `### Amendments` with its reason (a High/Critical change re-asks
 approval) — never a silent disagreement with a strategy row. Ticket mode is deleted when `/qa-test` runs the
-strategy (design: `docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md` M8).
+strategy.
 
 ## Inputs — the context bundle
 
