@@ -32,6 +32,9 @@
 //        a body headed `Documentation —`, or an amend of the recorded documentation comment, is refused without --doc.
 //
 // --attach  <img>  uploads an IMAGE/GIF and embeds it inline — that forces the v2 API + wiki body (§5c).
+//                   The post-write renderedBody check counts both embed forms as rendered, `!name.png|width=700!`
+//                   and `!name.png|thumbnail!`, and warns on a thumbnail: it is not the house form
+//                   (tracker-ops.md §5c, the positive-signal table).
 // --attach-file <f> uploads any file (a plan, a report page, a log) and LINKS it: the body keeps its
 //                   dialect and one `Attached:` line is appended. tracker-ops.md §5d — a deliverable too
 //                   big for the comment travels as an attachment on the same ticket, referenced from the ONE
@@ -55,6 +58,7 @@ import { priorRunDirs, runLayout, sessionRun } from "../lib/run-dir.mjs";
 import { wikiMarkupRefusal } from "../lib/jira-body-format.mjs";
 import { markdownToAdf } from "./markdown-to-adf.mjs";
 import { isVideo, withVideoLine } from "./video.mjs";
+import { renderedMedia, renderFailed } from "./rendered-media.mjs";
 import { decide, roundHours, sessionRunId, effectiveEntry, ledgerAfterAmend, isVerdictBody, commentKind } from "./round-guard.mjs";
 
 // config.js loads the layered .env files — and process.exit(1)s when the repo's CORE
@@ -204,19 +208,7 @@ async function attachFiles(ticket, paths, { flag = "--attach", matchSize = false
  */
 async function verifyRender(ticket, id, names) {
   const c = await jira("GET", `/rest/api/3/issue/${ticket}/comment/${id}?expand=renderedBody`);
-  const html = c?.renderedBody ?? "";
-  // The rendered <img src> carries the ATTACHMENT ID, never the filename — so the
-  // filename is NOT a positive signal (measured 2026-09-17). The reliable per-file
-  // signal is the absence of a surviving literal `!name!`.
-  const imgs = (html.match(/<img[^>]+attachment\/content\//g) ?? []).length;
-  const errors = (html.match(/<span class="error">/g) ?? []).length;
-  // A legacy QuickTime/ActiveX plugin object — what .mp4/.webm degrade to. Not a player.
-  const plugins = (html.match(/<div class="embeddedObject">/g) ?? []).length;
-  const perFile = names.map(n => ({
-    name: n,
-    literalLeft: html.includes(`!${n}|`) || html.includes(`!${n}!`),
-  }));
-  return { imgs, errors, plugins, perFile, html };
+  return renderedMedia(c?.renderedBody ?? "", names);
 }
 
 // ---------- main ----------
@@ -429,20 +421,28 @@ async function reportRender(id) {
   if (!mediaNames.length) return;
   const v = await verifyRender(a.ticket, id, mediaNames);
   console.log(`\n    renderedBody check (§5c — a 200 OK proves nothing):`);
-  console.log(`      <img …attachment/content/…> : ${v.imgs}`);
-  console.log(`      <span class="error">        : ${v.errors}`);
-  if (v.plugins) console.log(`      legacy plugin <object>      : ${v.plugins}`);
+  console.log(`      <img …attachment/{content|thumbnail}/…> : ${v.imgs}`);
+  console.log(`      <span class="error">                     : ${v.errors}`);
+  if (v.plugins) console.log(`      legacy plugin <object>                   : ${v.plugins}`);
   for (const f of v.perFile) {
-    console.log(`      ${f.literalLeft ? "✗" : "✓"} ${f.name}${f.literalLeft ? "  — LITERAL !name! survived: it did NOT render" : ""}`);
+    const why = f.literalLeft ? "  — LITERAL !name! survived: it did NOT render"
+      : f.rendered === false ? "  — no rendered <img> names this file" : "";
+    console.log(`      ${why ? "✗" : "✓"} ${f.name}${why}`);
   }
   if (v.plugins) {
     console.log(`\n    ⚠ a video attachment rendered as a QuickTime ActiveX/NPAPI <object> — dead in every`);
     console.log(`      current browser. Use an animated GIF for motion evidence (reports-policy.md §5.2).`);
   }
-  if (v.imgs < mediaNames.length) {
-    console.log(`\n    ✗ only ${v.imgs} of ${mediaNames.length} images rendered — a Markdown body on the wiki API renders none.`);
+  if (v.imgs < v.perFile.length) {
+    console.log(`\n    ✗ only ${v.imgs} of ${v.perFile.length} images rendered — a Markdown body on the wiki API renders none.`);
+  } else if (v.unaccounted) {
+    console.log(`\n    ✗ ${v.unaccounted} file(s) have no rendered <img> of their own — the other images name other files.`);
   }
-  if (v.errors || v.perFile.some(f => f.literalLeft) || v.imgs < mediaNames.length) {
+  if (v.thumbnails.length) {
+    console.log(`\n    ⚠ rendered as a thumbnail, not the house form: ${v.thumbnails.join(", ")}`);
+    console.log(`      Legibility is judged at |width=700! (reports-policy.md §5.1a) — amend the embed to !name.png|width=700!.`);
+  }
+  if (renderFailed(v)) {
     console.log(`\n    ✗ media did NOT render. Do not post a corrected copy — amend this one.`);
   }
 }
