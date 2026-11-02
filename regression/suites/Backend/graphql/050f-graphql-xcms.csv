@@ -229,17 +229,23 @@ POST {{ADMIN_URL}}/api/page-builder-multilanguage-pages/{{ROOT_ID}}/link/{{FR_ID
 [REST POST /api/page-builder-pages/grouped/archive?ids={{EN_ID}}]
 [REST POST /api/page-builder-pages/grouped/archive?ids={{FR_ID}}]",VCST-4935 · Archetype:PARITY · Technique:EP · Provenance: {SPEC} VCST-4935 dev comment 2026-10-21 AC5 row (slugInfo resolves a permalink of one language to the translation in the requested language) + BL-SEO-001; the resolution-by-document shape is {OBSERVED} SBTM-VCST-4935-2026-10-23 (BL-SEO-001 confirmed),Draft
 CMS-GQL-134,"pageDocument.alternates lists only published store-language versions, one per language",xCMS > Page documents > Multilanguage,High,,,"Runner-native. A root with a published en-US version and a published fr-FR version (both linked from Landing Pages), a de-DE version left as Draft and an es-ES version that is published and then archived. Every fixture is AGENT-TEST-VCST4935-prefixed; the Pages index lag is handled by polling (up to 60 s). The alternates list is read through pageDocument(id) of the en-US document; the list includes the document's own language ({SPEC} journey: en-US, fr-FR, de-DE).",storeId={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_seed]
+POST {{ADMIN_URL}}/api/page-builder-pages/create-group-page
+Content-Type: application/json
+Body: {""name"":""AGENT-TEST-VCST4935-gql134-seed"",""permalink"":""/agent-test-vcst4935-gql134-seed"",""cultureName"":""en-US"",""storeId"":""{{STORE_ID}}"",""visibility"":true,""content"":""{\""settings\"":{},\""content\"":[]}""}
+[REST-EXEC create_seed]
+[REST-CAPTURE create_seed.body.id → SEED_ID]
 [REST-OP create_en]
 POST {{ADMIN_URL}}/api/page-builder-pages/create-group-page
 Content-Type: application/json
-Body: {""name"":""AGENT-TEST-VCST4935-gql134-en"",""permalink"":""/agent-test-vcst4935-gql134-en"",""cultureName"":""en-US"",""storeId"":""{{STORE_ID}}"",""visibility"":true,""content"":""{\""settings\"":{},\""content\"":[]}""}
+Body: {""name"":""AGENT-TEST-VCST4935-gql134-en"",""permalink"":""/agent-test-vcst4935-gql134-{{SEED_ID}}-en"",""cultureName"":""en-US"",""storeId"":""{{STORE_ID}}"",""visibility"":true,""content"":""{\""settings\"":{},\""content\"":[]}""}
 [REST-EXEC create_en]
 [REST-CAPTURE create_en.body.id → EN_ID]
 [REST-CAPTURE create_en.body.permalink → EN_PERMALINK]
 [REST-OP create_fr]
 POST {{ADMIN_URL}}/api/page-builder-pages/create-group-page
 Content-Type: application/json
-Body: {""name"":""AGENT-TEST-VCST4935-gql134-fr"",""permalink"":""/agent-test-vcst4935-gql134-fr"",""cultureName"":""fr-FR"",""storeId"":""{{STORE_ID}}"",""visibility"":true,""content"":""{\""settings\"":{},\""content\"":[]}""}
+Body: {""name"":""AGENT-TEST-VCST4935-gql134-fr"",""permalink"":""/agent-test-vcst4935-gql134-{{SEED_ID}}-fr"",""cultureName"":""fr-FR"",""storeId"":""{{STORE_ID}}"",""visibility"":true,""content"":""{\""settings\"":{},\""content\"":[]}""}
 [REST-EXEC create_fr]
 [REST-CAPTURE create_fr.body.id → FR_ID]
 [REST-CAPTURE create_fr.body.permalink → FR_PERMALINK]
@@ -279,6 +285,8 @@ POST {{ADMIN_URL}}/api/page-builder-pages/grouped/archive?ids={{ES_ID}}
 [GQL-EXEC alt]
 [WAIT until=alt timeout=60 interval=3] data.pageDocument.alternates.length = 2","[ERRORS label=create_en] HTTP 200
 [ERRORS label=create_fr] HTTP 200
+[ERRORS label=pub_en] HTTP 200
+[ERRORS label=pub_fr] HTTP 200
 [ERRORS label=convert_en] HTTP 200
 [ERRORS label=create_es] HTTP 200
 [ERRORS label=alt] errors[] empty
@@ -287,11 +295,12 @@ POST {{ADMIN_URL}}/api/page-builder-pages/grouped/archive?ids={{ES_ID}}
 [COUNT label=alt] data.pageDocument.alternates[*?cultureName=fr-FR].length = 1
 [COUNT label=alt] data.pageDocument.alternates[*?cultureName=de-DE].length = 0
 [COUNT label=alt] data.pageDocument.alternates[*?cultureName=es-ES].length = 0
-[DATA label=alt] data.pageDocument.alternates[*?cultureName=fr-FR].permalink = {{FR_PERMALINK}}","[API] errors[] is empty in the GraphQL response
+[DATA label=alt] data.pageDocument.alternates[?cultureName=fr-FR].permalink = {{FR_PERMALINK}}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql",The Draft de-DE or the Archived es-ES version is listed; two entries for one language; fr-FR entry carries the root permalink instead of its own; errors[] non-empty,"[AUTH role=ADMIN_DEFAULT]
 [REST POST /api/page-builder-multilanguage-pages/{{ROOT_ID}}/archive-all]
 [REST POST /api/page-builder-pages/grouped/archive?ids={{EN_ID}}]
-[REST POST /api/page-builder-pages/grouped/archive?ids={{FR_ID}}]","VCST-4935 · Archetype:SCOPE · Technique:DT · Provenance: {SPEC} VCST-4935 dev comment 2026-10-21 §2 x-cms row (alternates = published translations in the store languages, one per language) and §1 AC5 row; Archived never Outdated and never served (BL-SEO-002)",Draft
+[REST POST /api/page-builder-pages/grouped/archive?ids={{FR_ID}}]
+[REST POST /api/page-builder-pages/grouped/archive?ids={{SEED_ID}}]","VCST-4935 · Archetype:SCOPE · Technique:DT · Provenance: {SPEC} VCST-4935 dev comment 2026-10-21 §2 x-cms row (alternates = published translations in the store languages, one per language) and §1 AC5 row; Archived never Outdated and never served (BL-SEO-002)",Draft
 CMS-GQL-135,Product and category slugs resolve unchanged through the page-first resolver,xCMS > Page documents > Multilanguage,Critical,"BL-SEO-001, BL-SEO-002",,"Runner-native. Authenticated B2B storefront buyer (ACME_BUYER, org-granted), no fixtures: B2B-store requires an authenticated buyer for catalog queries (anonymous categories/products return errors[] Unauthorized with data null), so the buyer token is acquired first. A product and a category of {{STORE_ID}} are discovered through the catalog queries, in en-US and fr-FR, and resolved through slugInfo, the same resolver the page-first PageDocumentSeoResolver now runs first for every slug. A never-existing slug must resolve to an empty entityInfo. Assertions compare ids and never counts or names.",storeId={{STORE_ID}},"[AUTH role=ACME_BUYER]
 [GQL-OP list_cats_en]
   query { categories(storeId: ""{{STORE_ID}}"" first: 1 cultureName: ""en-US"") { items { id slug } } }
