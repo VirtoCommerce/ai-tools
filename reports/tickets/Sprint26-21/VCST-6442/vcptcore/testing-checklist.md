@@ -1,4 +1,4 @@
-# Testing checklist — VCST-6442 (permalink conflicts) · vcptcore-qa · 2026-10-28
+FAIL r2 (High, IN-SCOPE) — PUT ML root: (a) permalink → a live standalone page's permalink: 200, en+de stay Published on it, usages Certain, slugInfo serves the ML version, standalone shadowed; (b) root org A → null: same | 4a-be (14a/14b) |FAIL r2 (High, IN-SCOPE) — PUT /grouped on a PUBLISHED page: (a) permalink → a live Certain-equal page's permalink: 200, both Published, usages Certain, slugInfo switches to the moved page, the other page is never served; (b) audience org A → everyone: same. Reproduced independently by the orchestrator (2 groups Published, usages Certain). Reachable from the landing-page form Save | 4a-be (13a/13b) + orchestrator repro |PASS r2 — en-US everyone + de-DE overridden to org A: others get alternates [en-US] only, de-DE falls back to en-US, no hreflang; org A gets de-DE + hreflang de-DE/en-US/x-default | 4a-be + 4a-fe-r2-12-*.png |PASS r2 — org-A ML page: anonymous / TechFlow / Watermelon / BuildRight get slugInfo null, pageDocument null, no errors[]; storefront 404 (signed-in) / sign-in redirect (anonymous, store has anonymousUsersAllowed=false), no hreflang; org A gets both versions + alternates [de-DE,en-US] | 4a-be + 4a-fe-r2-11-*.png |PASS r2 — ML root Save confirms "… is already used by: … This is fine for other visitors or dates; publishing checks for conflicts. Save anyway?"; old sentence gone. Note: first save of a new root (no versions) does not confirm; the confirm moves to Create version | 4a-ui-r2-R2-10-*.png |PASS r2 — warning under the field "Other pages use this permalink: … This is fine for other visitors or dates; publishing checks for conflicts."; Save without a dialog | 4a-ui-r2-R2-09-*.png |PASS r2 — 5 rounds publish-all ‖ single publish: always exactly 1 live en-US page, both outcomes seen, no hang/5xx | 4a-be |PASS r2 — single publish 409 conflicts[Certain, canUnpublish]; dialog "Already published at this permalink for the same visitors: …. Unpublish them and publish this page?"; Cancel no request; Confirm → version Published, standalone Draft | 4a-be + 4a-ui-r2-R2-07-*.png |PASS r2 — Possible ({gold} over {vip,gold}; dated over evergreen) publishes; evergreen over dated = Certain → skipped (consistent with the classifier) | 4a-be |PASS r2 — publish-all 200 {processedCultureNames:[de-DE], skipped:[{en-US, PermalinkConflict}]}; UI toast "Not published: en-US. Another page is published at this permalink for the same visitors. Publish these languages one by one to replace it."; standalone stays Published | 4a-be + 4a-ui-r2-R2-05-*.png |FAIL r2 (Low) — swagger.json: grouped/publishing has no summary/description; none of the module's 67 operations has XML docs (source has the /// summary) | 4a-be swagger.json |PASS r2 — 6/6 rounds: one 200 + one 409 (both sides won), loser Draft; next publish 409 in ~270 ms, unpublishConflicting 200 | 4a-be |PASS r2 — POST /grouped (status+pages Published) → 200, group Draft; also without pages[] and on a free permalink; live page stays the only Published | 4a-be (run ks8j2) |# Testing checklist — VCST-6442 (permalink conflicts) · vcptcore-qa · 2026-10-28
 
 Build: PageBuilderModule 3.1039.0-pr-179-5c9d · Pages 3.1011.0-pr-24-8c93 · XCMS 3.1009.0-pr-28-7ebe · Platform 3.1091.0-pr-3144-e637 · theme 2.61.0-pr-2601-8058
 Oracle: comments 112272 (decision), 112407 (ACs), 112409 (conflict rule). Model: `test-model.md`. Regression: REG-2026-10-28-1917.
@@ -61,3 +61,44 @@ popup "Confirm" contrast 4.01:1 → VCST-6604 (shared framework) · 1024 px not 
 Low: null/"" body on permalink-usages → 500 · `userGroups` as array on POST /grouped and create-group-page → 500 · create-group-page without content + userGroups → 500 ·
 grouped/archive ignores ids in the body · warning names not links · warning stale after another page is renamed · focus not moved into the 2nd chained dialog ·
 Load content silently ignores an unknown JSON shape · popup chrome English in de/ru · "Show more" untranslated in ru · destructive confirm emphasis inverted · "Unpublish them" for one page.
+
+---
+
+# Round 2 — 2026-10-29 · vcptcore-qa
+
+Build: PageBuilderModule 3.1041.0-pr-179-5e6c · Pages 3.1013.0-alpha.93-vcst-6442 (commit 57823a4 = pr-24-5782) · XCMS 3.1010.0-pr-28-35cb · Platform 3.1091.0-pr-3144-e637 · theme 2.61.0-pr-2608-86ad
+Oracle: comments 112508, 112509 (+ 112409 rule). Model: `test-model.md` §Round 2 (#27–#39). Round-1 rows above are kept as they were.
+
+## Fixes re-tested
+
+| # | Condition | Result | Evidence |
+|---|---|---|---|
+| R2-01 | POST /grouped with status Published (+ pages[] Published) next to a live Certain-equal page → created as Draft, live page untouched, never two Published (VCST-6601) | | C1 CMS-PC-026 + 4a |
+| R2-02 | Two concurrent publishes of Certain-equal drafts, 5 attempts → exactly one 200 + one 409 each time; loser stays Draft; next publish after a 409 is not stuck (VCST-6602) | | C1 CMS-PC-027 + 4a |
+| R2-03 | permalink-usages without a page (no body / null) → 400, no stack trace | PASS r2 (1r probe: 400 "The page is required." for both) | 1r probe, C1 CMS-PC-028 |
+| R2-04 | Swagger description of grouped/publishing names Certain (409) and Possible (200) | | 4a |
+
+## New in this build (112508/112509)
+
+| # | Condition | Result | Evidence |
+|---|---|---|---|
+| R2-05 | ML page en-US + de-DE drafts; standalone live en-US everyone page on the same permalink → Publish all: en-US "Not published", de-DE published, standalone still Published (UI message + API result) | | PENDING-A + 4a |
+| R2-06 | Same, standalone conflict only Possible → Publish all publishes it | | PENDING-A + 4a |
+| R2-07 | Skipped version published alone from its language → unpublish offer; confirm → version Published, standalone Draft | | PENDING-A + 4a |
+| R2-08 | Publish all and a single publish of the competing page at the same moment → never two live | | 4a |
+| R2-09 | Landing-page form: duplicate permalink → warning under the field, Save without a confirmation | | 4a (Admin UI) |
+| R2-10 | Multilanguage Page form: Save with a used permalink still confirms; text no longer says the storefront shows only one page per permalink | | 4a (Admin UI) |
+| R2-11 | xAPI alternates of an org-A ML page: anonymous / org B get none of the org-A versions; org A gets them (pageDocument + slugInfo) | | PENDING-A + 4a |
+| R2-12 | ML page: en-US everyone, de-DE overridden to org A → alternates of en-US exclude de-DE for anonymous / org B, include it for org A; storefront `<link rel="alternate">` matches | | PENDING-A + 4a (storefront) |
+
+## Bypass probes (model #30, #31 — {HYPOTHESIS})
+
+| # | Condition | Result | Evidence |
+|---|---|---|---|
+| R2-13 | PUT /grouped on a PUBLISHED page: permalink → one a Certain-equal live page serves; and audience org A → everyone over a live everyone page → is a second live page created without the check? | | PENDING-A + 4a |
+| R2-14 | ML page with published versions: PUT root permalink (and audience) to collide with a live standalone page → does propagation make two live pages? | | PENDING-A + 4a |
+
+## Carried from round 1
+- VCST-6603 → VCST-6614 (vc-frontend, To do): not part of this ticket; not re-run.
+- Round-1 C1 BLOCKED rows (CMS-ML-019, CMS-GQL-133/134 — 4935 builds were missing): the builds are deployed now → in C1.
+- Round-1 Lows: usages null/"" fixed (R2-03); userGroups-as-array 500 = by design (112508); UI follow-ups (warning not refreshed, focus) deferred by dev.
