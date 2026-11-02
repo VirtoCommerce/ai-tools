@@ -474,7 +474,11 @@ nested under 11 because the two read the same token.
 11. `Chain position` states this ticket's chain as a **SLICE** of the domain chain — the links it TOUCHES
     **and**, explicitly, the links it does **not**.
     **11b.** Every matrix **VARIANT** resolves to a surface the domain map enumerates, or is reported as
-    a surface the map is MISSING.
+    a surface the map is MISSING. **For a global change** (the `ui-kit` class, a global style, token,
+    theme or Tailwind change) the matrix also carries a **page axis resolved against the storefront page
+    inventory** (`config/storefront-pages.generated.json`, [`ui-kit-class.md`](../qa-test/ui-kit-class.md)
+    §1a): every `core` page × its `auth` states is a row holding a scenario # or `WAIVED + reason`. A page
+    axis typed from memory or prior art fails this clause.
 12. **Role scenarios, when the feature is permission-scoped.** Where the `Mechanism coverage matrix`
     carries **more than one ROLE variant**, `Part 0r` is present; **every** scenario in it carries a
     `Not allowed` line; and **every** role it names resolves to a fixture alias or is marked
