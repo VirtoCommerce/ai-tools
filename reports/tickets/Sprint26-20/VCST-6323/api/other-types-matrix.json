@@ -1,0 +1,62 @@
+{
+  "platform": "3.1085.0-pr-3141-a644",
+  "contact": "35a7fcc6-797f-4026-8b5a-1adbf35da31f",
+  "results": [
+    {
+      "type": "Decimal",
+      "sent": 12345.5,
+      "status": 204,
+      "response": "",
+      "stored": 12345.5
+    },
+    {
+      "type": "Decimal",
+      "sent": 99999999999999,
+      "status": 500,
+      "response": "{\"message\":\"Parameter value '99999999999999.00000' is out of range.\",\"stackTrace\":null}",
+      "stored": 12345.5
+    },
+    {
+      "type": "Decimal",
+      "sent": 1000000000000000,
+      "status": 500,
+      "response": "{\"message\":\"Parameter value '1000000000000000.00000' is out of range.\",\"stackTrace\":null}",
+      "stored": 12345.5
+    },
+    {
+      "type": "Decimal",
+      "sent": 1.123456789,
+      "status": 204,
+      "response": "",
+      "stored": 1.12346
+    },
+    {
+      "type": "Integer",
+      "sent": 2147483647,
+      "status": 204,
+      "response": "",
+      "stored": 2147483647
+    },
+    {
+      "type": "Integer",
+      "sent": 2147483648,
+      "status": 500,
+      "response": "{\"message\":\"Value was either too large or too small for an Int32.\",\"stackTrace\":null}",
+      "stored": 2147483647
+    },
+    {
+      "type": "Integer",
+      "sent": 3000000000,
+      "status": 500,
+      "response": "{\"message\":\"Value was either too large or too small for an Int32.\",\"stackTrace\":null}",
+      "stored": 2147483647
+    },
+    {
+      "type": "LongText",
+      "sent": "str(100000)",
+      "status": 204,
+      "response": "",
+      "stored": "str(100000)"
+    }
+  ]
+}

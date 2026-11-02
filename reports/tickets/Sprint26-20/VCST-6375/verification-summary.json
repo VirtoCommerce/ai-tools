@@ -1,0 +1,35 @@
+{
+  "ticket": "VCST-6375",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-20",
+  "environment": "http://localhost (frontend-only, API proxied to https://vcptcore-qa1.govirto.com, store B2B-store)",
+  "build": {
+    "platform": "vcptcore-qa1 (remote, unchanged)",
+    "theme": "local build of vc-frontend claude/qa-autofix/VCST-6375 @ 871e7eb5 (X-VC-Local-Theme fe-f23723b99db0)",
+    "relevant_modules": {},
+    "pr_build": "vc-frontend PR #2588 (open, not merged; no CI artifact — built locally)"
+  },
+  "pre_merge_local_verification": true,
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live) on vcptcore-qa1 storefront with the released theme, same backend and cart",
+  "checklist_total": 9,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "checklist_not_applicable": 1,
+  "regression_issues": [],
+  "side_effects": [
+    "Wishlist (and quote) lines show the list price in the narrow slot instead of the sale/tier price — accepted, consistent with their wide column; product to confirm"
+  ],
+  "observations_not_filed": [
+    "Buyer with multiple named carts: /cart shows the newest named cart, but remove-item and add-coupon act on the default cart (both builds)",
+    "Non-coupon promotion 'QA Category Percent' (rounding off) is never applied to cart lines on vcptcore-qa1 (KB-BD09051C)"
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-UI: same unit price across breakpoints"],
+  "tracker_transition": null,
+  "tracker_transition_note": "None — ticket is In progress, PR unmerged; local verification does not prove deployment",
+  "evidence": "reports/tickets/Sprint26-20/VCST-6375/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-20/VCST-6375/"
+}

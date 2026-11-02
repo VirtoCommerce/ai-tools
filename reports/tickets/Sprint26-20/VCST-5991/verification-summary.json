@@ -1,0 +1,52 @@
+{
+  "ticket": "VCST-5991",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-15",
+  "environment": "http://localhost",
+  "build": {
+    "platform": "vcst-qa (remote, unchanged by the fix)",
+    "theme": "2.60.0-pr-2542-334f-334f88ab (local frontend-only, API proxied to vcst-qa)",
+    "relevant_modules": {},
+    "pr_build": "VirtoCommerce/vc-frontend#2542 @ 334f88ab (open, not merged)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live) — vcst-qa storefront theme 2.60.0, component probe; ticket comment 2026-09-17 (pr-2484) as prior baseline",
+  "checklist_total": 11,
+  "checklist_passed": 11,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    "max=0 with min=1 and value above the ceiling: decrement also disabled (declared by PR, unreachable from the shipped app)"
+  ],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "title": "Mission modal counts an over-stock invalid quantity toward Targets met / points summary",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING"
+    },
+    {
+      "title": "PDP stepper announces aria-valuemax=999999 on untracked products",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING"
+    }
+  ],
+  "business_rules_verified": [],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested",
+    "via": "Finish test",
+    "from": "Testing",
+    "at": "2026-10-15"
+  },
+  "evidence": "reports/tickets/Sprint26-20/VCST-5991/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-20/VCST-5991/",
+  "tracker_comment_id": "112083",
+  "mobile": {
+    "viewport": "390x844 touch",
+    "result": "PASS",
+    "evidence": "screenshots/mobile-5-of-5-minus-enabled.png"
+  }
+}

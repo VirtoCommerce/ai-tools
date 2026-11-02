@@ -1,0 +1,468 @@
+{
+  "ticket": "VCST-5443",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "tracker": {
+    "kind": "jira",
+    "comment_id": "112366"
+  },
+  "path": "fast",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "narrow_story_tokens": null,
+    "escalated_reason": null,
+    "basis": "Task row (ticket-routing.md §4): Medium/P2, single layer (module-embedded Angular Designer), one domain (page-builder) -> FAST. technical-change not resolved (adds user capability); ui-kit not resolved (no kit/token signal)."
+  },
+  "layer": "admin-spa",
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/page-builder.md",
+    "mind_map": null,
+    "recommended": false
+  },
+  "shape_class": {
+    "value": null,
+    "sources": [
+      "diff: Angular designer dialogs/services/settings.json/dialogs.scss - no ui-kit/token/storybook signal"
+    ]
+  },
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-10-26",
+  "timing": {
+    "started_at": null,
+    "test_window_start": "2026-10-06T16:42:51Z",
+    "finished_at": "2026-10-06T17:07:00Z",
+    "time_to_first_test_minutes": null,
+    "reachability_minutes": null,
+    "agent_dispatches": 2,
+    "execution_agent_minutes": 24.1,
+    "note": "Run held ~waiting for the operator to merge deploy PR vc-deploy-dev#6842 (PR build not deployed at 1b).",
+    "round2": {
+      "test_window_start": "2026-10-23T07:48:44Z",
+      "valid_window": "2026-10-23T08:32:58Z/08:45:38Z"
+    }
+  },
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "declared": {
+      "PageBuilderModule": "3.1033.0-pr-166-60e2 (AzureBlob, vc-deploy-dev#6842 on vcptcore-qa1)"
+    },
+    "deployed": {
+      "platform": "3.1076.0",
+      "PageBuilderModule": "3.1033.0-pr-166-60e2 (verified LIVE /api/platform/modules)"
+    },
+    "pr": "VirtoCommerce/vc-module-pagebuilder#166 head 60e271c (open, unmerged)",
+    "temporary_pin": "revert vcptcore-qa1 PageBuilderModule to a release after testing"
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "by": "qa-lead (inline)",
+      "confirmed": false
+    },
+    {
+      "at": "1a",
+      "round": 2,
+      "skipped": true,
+      "reason": "already in Testing"
+    },
+    {
+      "at": "5-status",
+      "round": 4,
+      "skipped": true,
+      "reason": "operator: do not transition for now"
+    },
+    {
+      "at": "5-status",
+      "round": 5,
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8)",
+      "by": "qa-lead (inline)",
+      "confirmed": true,
+      "confirmed_by": "operator 2026-10-26"
+    }
+  ],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "id": "BUG-R2-1",
+      "severity": "Low",
+      "provenance": "IN-SCOPE (introduced by 27668d0d)",
+      "title": "Below ~700px the New folder error row squeezes the message (21px at 390) and pushes the grid down up to 658px; Cancel/Create pushed off-screen (BL-UI-003/004)",
+      "evidence": "screenshots/r2b-u1-error-Abc-390.png",
+      "status": "OUT OF SCOPE — operator: Page Builder Designer has no mobile layout"
+    },
+    {
+      "id": "SUG-1",
+      "severity": "Low",
+      "provenance": "IN-SCOPE",
+      "title": "Visible label \"Cancel new folder\" -> \"Cancel\" (keep aria-label) — round-1 suggestion, unchanged",
+      "status": "done in b5ea2da2 (icon buttons, one Cancel)"
+    },
+    {
+      "id": "OBS-1",
+      "severity": "Low",
+      "provenance": "unverified",
+      "title": "Asset counter counts files only and reads \"1 assets\" for one file"
+    },
+    {
+      "id": "BUG-R3-1",
+      "severity": "Low",
+      "provenance": "IN-SCOPE (introduced by 3a31b201)",
+      "title": "Admin Assets Library sort select has no accessible name after label->prefix (BL-UI-007)",
+      "evidence": "screenshots/r3-n4-toolbar-1920.png"
+    },
+    {
+      "id": "BUG-R3-2",
+      "severity": "Low",
+      "provenance": "IN-SCOPE (b5ea2da2, residual BUG-1)",
+      "title": "At 390px the folder error needs 3 lines in a 2-line slot; grid shifts +17px (BL-UI-003)",
+      "evidence": "screenshots/r3-n3-error-Abc-390.png",
+      "status": "OUT OF SCOPE — operator: Page Builder Designer has no mobile layout"
+    },
+    {
+      "id": "F1",
+      "severity": "Medium",
+      "provenance": "IN-SCOPE (module PR #166, multi control value mapping)",
+      "title": "Re-opening the picker on a filled multi-image control appends the selection without dedup — duplicate images/slides stored",
+      "evidence": "test-results/edge/r4-m7-save-body.json (10 items, 3 duplicates)",
+      "status": "BY_DESIGN (operator 2026-10-26)"
+    },
+    {
+      "id": "F2",
+      "severity": "Low",
+      "provenance": "IN-SCOPE (module picker, worsens pre-existing INC-2)",
+      "title": "Multi-select tiles do not expose selected state to assistive tech (no pressed/checked/selected; badge aria-hidden) — BL-UI-007",
+      "status": "deferred — operator: not fixing for now"
+    },
+    {
+      "id": "F3",
+      "severity": "Low",
+      "provenance": "IN-SCOPE (module picker)",
+      "title": "Select (N) wraps to two lines; checkmark off-centre in tile badge; proposal: show the count in the footer (operator)",
+      "status": "FIXED in 4108ac1e — verified by operator (manual) and round 5 (measured)"
+    },
+    {
+      "id": "OBS-2",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING (vc-frontend slider.vue, inherited by Image carousel)",
+      "title": "Carousel arrows are non-focusable divs without accessible names; every slide alt=\"Slider image\""
+    },
+    {
+      "id": "BUG-R5-1",
+      "severity": "Low",
+      "provenance": "IN-SCOPE (introduced by 4108ac1e)",
+      "title": "At 390px the selected count squeezes the paginator: range label wraps per character, pager row grows 52px and overflows ~15px (BL-UI-003/004)",
+      "evidence": "screenshots/r5-p4-pager-390-1-selected-wrap.png",
+      "status": "OUT OF SCOPE — operator: Page Builder Designer has no mobile layout"
+    },
+    {
+      "id": "NIT-R5-2",
+      "severity": "Low",
+      "provenance": "pre-existing paginator style, made visible by 4108ac1e",
+      "title": "Paginator keeps a white background while the pager row is grey — row reads as two blocks",
+      "evidence": "screenshots/r5-operator-f3-fixed-4108.png",
+      "status": "dev fixes and releases directly (operator)"
+    }
+  ],
+  "regression": {
+    "c1": "skipped - FAST, no authored/REPAIR/RE-BASE cases",
+    "feature_release_gate": "not-assessed"
+  },
+  "visual": {
+    "surface": true,
+    "ran": false,
+    "surface_source": [
+      ".html/.scss in diff"
+    ],
+    "note": "FAST, --visual not passed; layout/keyboard covered by checklist U1/U2 only"
+  },
+  "contract": {
+    "surface": false,
+    "surface_source": [
+      "no .graphql/ExperienceApi/Controllers in diff; reuses existing POST /api/assets/folder"
+    ]
+  },
+  "coverage_triage": {
+    "surface": true,
+    "ran": false,
+    "surface_source": [
+      "060b-page-builder-fields-assets.csv CMS-139..147 assert the picker"
+    ],
+    "note": "FAST, --coverage not passed"
+  },
+  "test_data": {
+    "data_surface": false,
+    "surface_source": [
+      "live-discover; agent created AGENT-TEST-5443 page/folders/assets and deleted them"
+    ],
+    "cleanup": "all AGENT-TEST-5443 folders/assets/page deleted; re-list shows none"
+  },
+  "ac_analysis": {
+    "conditions_total": 8,
+    "conditions_with_evidence": 7,
+    "percent": 87.5,
+    "blocked": [
+      "AC8 (multi-selection half — unreachable, follows AC1)"
+    ],
+    "detail": "FAIL on AC1/AC2: no Designer control enables multi-select (every images control in the deployed vc-frontend builder-preview schemas is multiple:false), so the picker still returns exactly one asset — the ticket's own Current behaviour is unchanged live (operator confirmed by hand 2026-10-09: multi-select works in Assets, not in the Designer). AC3-7 PASS, security fix PASS, AC8 dialog half PASS. Verdict changed from BLOCKED to FAIL by the operator.",
+    "untested_risks": [],
+    "checklist": "reports/tickets/Sprint26-20/VCST-5443/testing-checklist.md",
+    "rbac": "R2a FAIL: non-admin without platform:asset:create sees Upload (New folder hidden correctly), upload -> 403. R2b PASS: with the permission both buttons work.",
+    "suggestions": [
+      "New folder form: visible label Cancel instead of Cancel new folder (keep aria-label)",
+      "Upload in the picker: allow multiple files regardless of the control multiple flag"
+    ],
+    "not_met": [
+      "AC1",
+      "AC2"
+    ],
+    "round4": {
+      "conditions_total": 8,
+      "met": 8,
+      "percent": 100,
+      "dependency": "vc-frontend PR #2595"
+    },
+    "final": {
+      "conditions_total": 8,
+      "met": 8,
+      "percent": 100,
+      "notes": [
+        "AC1/AC2 depend on vc-frontend PR #2595 (Image carousel) shipping with vc-module-pagebuilder PR #166",
+        "Paginator background nit: dev (Basil Kotov) fixes and releases directly",
+        "Assets Library sort select accessible name (Low) open",
+        "Temporary pins on vcst-qa: module pr-166-4108 + theme pr-2595-5fb3 — revert after QA"
+      ]
+    }
+  },
+  "screenshots": "reports/tickets/Sprint26-20/VCST-5443/screenshots/",
+  "report": {
+    "har": "test-results/edge/"
+  },
+  "total_cases": 21,
+  "passed": 14,
+  "failed": 4,
+  "blocked": 1,
+  "agents_dispatched": [
+    {
+      "agent": "qa-backend-expert",
+      "lane": "playwright-edge",
+      "track": "4a"
+    },
+    {
+      "agent": "qa-backend-expert",
+      "lane": "playwright-edge",
+      "track": "4a (R2 RBAC)"
+    },
+    {
+      "agent": "qa-backend-expert",
+      "lane": "playwright-edge",
+      "track": "4a round 2 (qa1, invalidated)"
+    },
+    {
+      "agent": "qa-backend-expert",
+      "lane": "playwright-edge",
+      "track": "4a round 2b (vcst)"
+    }
+  ],
+  "business_rules_verified": [
+    "BL-UI-001",
+    "BL-UI-003 (violated: BUG-1, Low)",
+    "BL-UI-004",
+    "BL-UI-005",
+    "BL-UI-007"
+  ],
+  "iterations": {
+    "$comment": "Manual retest rounds (not --iterate): round 2 was a separate /qa-test invocation after the developer pushed fixes.",
+    "enabled": false,
+    "rounds": 5,
+    "max_rounds": null,
+    "outcome": "passed",
+    "per_round": [
+      {
+        "round": 1,
+        "date": "2026-10-06",
+        "env": "vcptcore_qa1",
+        "build": {
+          "deployed": {
+            "PageBuilderModule": "3.1033.0-pr-166-60e2"
+          },
+          "deploy_pr": "vc-deploy-dev#6842",
+          "deploy_confirmed": true
+        },
+        "verdict": "FAIL",
+        "comment_id": "111774"
+      },
+      {
+        "round": 2,
+        "date": "2026-10-23",
+        "verdict": "FAIL",
+        "attempts": [
+          {
+            "env": "vcptcore_qa1",
+            "pin": "vc-deploy-dev#6977",
+            "valid": false,
+            "reason": "vc-deploy-dev#6978 (VCST-6327) re-pinned PageBuilderModule to 3.1036.0-pr-174-1cae at 07:52Z, 3 min into the run; mixed build (PR-166 main from Cloudflare cache + PR-174 container). Text-block chunk 404 = rollover artifact (chunk present in the PR-166 zip, serves 200 on vcst)."
+          },
+          {
+            "env": "vcst",
+            "pin": "vc-deploy-dev#6979",
+            "valid": true,
+            "window": "2026-10-23T08:32:58Z/08:45:38Z",
+            "build_guard": "PASS at start and end"
+          }
+        ],
+        "build": {
+          "deployed": {
+            "platform": "3.1076.0",
+            "PageBuilderModule": "3.1036.0-pr-166-e2d3 (verified LIVE /api/platform/modules + served main-HAAVLKFY.js)"
+          },
+          "pr": "VirtoCommerce/vc-module-pagebuilder#166 head e2d395ea (fix 27668d0d), open",
+          "deploy_pr": "vc-deploy-dev#6979",
+          "deploy_confirmed": true
+        },
+        "bug_retests": {
+          "BUG-2": "FIXED — no New folder/Upload without platform:asset:create; with it both work",
+          "BUG-1": "PARTIAL — fixed at >=768px; below ~700px grid still shifts (+11 @640, +28 @560, +658 @390, message squeezed to 21px)"
+        },
+        "not_met": [
+          "AC1",
+          "AC2"
+        ],
+        "ac_analysis": {
+          "conditions_total": 8,
+          "met": 5,
+          "not_met": [
+            "AC1",
+            "AC2"
+          ],
+          "blocked": [
+            "AC8 (multi-selection half)"
+          ],
+          "percent": 62.5
+        },
+        "temporary_pins": [
+          "vcst-qa: vc-deploy-dev#6979 — revert after QA",
+          "vcptcore-qa1: #6977 already superseded by #6978"
+        ]
+      },
+      {
+        "round": 3,
+        "date": "2026-10-26",
+        "verdict": "PENDING (AC1/AC2 need theme PR #2595)",
+        "env": "vcst",
+        "window": "2026-10-26T08:19:38Z/08:36:12Z",
+        "build": {
+          "deployed": {
+            "PageBuilderModule": "3.1036.0-pr-166-3a31",
+            "theme": "vc-theme-b2b-vue-2.61.0-pr-2570-8619"
+          },
+          "deploy_pr": "vc-deploy-dev#6989",
+          "deploy_confirmed": true
+        },
+        "results": {
+          "N1": "PASS",
+          "N2": "PASS",
+          "N3": "PASS >=430px, FAIL 390 (+17px, Low)",
+          "N4": "PASS layout+sort; FAIL a11y name (Low)",
+          "R2": "PASS",
+          "A1": "NOT AVAILABLE (multi control only in vc-frontend PR #2595, not deployed)",
+          "B": "PASS",
+          "S1": "PASS",
+          "X": "PASS"
+        }
+      },
+      {
+        "round": 4,
+        "date": "2026-10-26",
+        "verdict": "NOT DECIDED — operator: no transition for now",
+        "env": "vcst",
+        "window": "2026-10-26T08:58:21Z/09:09:15Z",
+        "build": {
+          "deployed": {
+            "PageBuilderModule": "3.1036.0-pr-166-3a31",
+            "theme": "vc-theme-b2b-vue-2.61.0-pr-2595-5fb3"
+          },
+          "deploy_pr": "vc-deploy-dev#6991",
+          "deploy_confirmed": true
+        },
+        "results": {
+          "M0": "PASS",
+          "M1": "PASS",
+          "M2": "PASS",
+          "M3": "PASS",
+          "M4": "PASS",
+          "M5": "PASS + F1",
+          "M6": "PASS",
+          "M7": "PASS",
+          "M8": "REPORTED (uploads join selection)",
+          "X": "PASS"
+        },
+        "ac": {
+          "met": [
+            "AC1",
+            "AC2",
+            "AC3",
+            "AC4",
+            "AC5",
+            "AC6",
+            "AC7",
+            "AC8"
+          ],
+          "dependency": "AC1/AC2 reachable only with vc-frontend PR #2595 (Image carousel)"
+        },
+        "comment_id": "112358"
+      },
+      {
+        "round": 5,
+        "date": "2026-10-26",
+        "verdict": "PASS_WITH_NOTES",
+        "env": "vcst",
+        "window": "2026-10-26T10:44:33Z/10:53:42Z",
+        "build": {
+          "deployed": {
+            "PageBuilderModule": "3.1036.0-pr-166-4108",
+            "theme": "vc-theme-b2b-vue-2.61.0-pr-2595-5fb3"
+          },
+          "deploy_pr": "vc-deploy-dev#6993",
+          "deploy_confirmed": true
+        },
+        "results": {
+          "F3_manual": "PASS (operator)",
+          "P1": "PASS",
+          "P2": "PASS",
+          "P3": "PASS",
+          "P4": "PASS 1920/768, FAIL 390 (Low)",
+          "P5": "PASS",
+          "P6": "PASS",
+          "P7": "PASS",
+          "X": "PASS"
+        }
+      }
+    ]
+  },
+  "documentation": {
+    "published": true,
+    "audiences": [
+      "admin",
+      "developer"
+    ],
+    "files": [
+      "reports/ba/Page Builder (CMS)/asset-picker-multi-select-folders-VCST-5443.md"
+    ],
+    "amended": [],
+    "comment_posted": true,
+    "refusal": null,
+    "comment_id": "112366",
+    "not_documented": [
+      "narrow/mobile widths (no mobile layout)",
+      "files controls (no theme section uses one)",
+      "label localization (out of scope)"
+    ],
+    "sources": "VirtoOZ PlatformUserGuide (Page Builder Office > Manage assets) for terminology; new behaviour from AC + PR #166 + PR #2595 + live runs"
+  }
+}

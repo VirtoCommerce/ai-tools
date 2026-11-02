@@ -1,0 +1,200 @@
+{
+ "ticket": "VCST-5906",
+ "ticket_type": "Story",
+ "flow": "feature-test",
+ "tracker": {
+  "system": "jira",
+  "comment_id": "112121",
+  "artifact": "vc-theme-b2b-vue-2.61.0-pr-2575-2024-2024d7ad",
+  "docs_comment_id": "112122"
+ },
+ "path": "FULL",
+ "path_route": {
+  "decided_at": "1a",
+  "provisional": false,
+  "narrow_story_tokens": {
+   "priority": "P2 (Medium)",
+   "layer": "storefront (single)",
+   "domains": "ui-kit (1)",
+   "chain_shape": "net-new primitive, no consumer",
+   "surface": "Storybook only — reachable after the storybook deploy",
+   "reach": "additive tokens + a scoped dark partial"
+  },
+  "escalated_reason": null,
+  "basis": "ticket-routing.md §5b + precedent VCST-5097 (ui-kit Story run FULL); no ui-kit domain map ⇒ surface purpose not declared in a domain artifact ⇒ FULL"
+ },
+ "layer": "storefront",
+ "domain_map": {
+  "state": "ABSENT",
+  "path": null,
+  "rev": null,
+  "mind_map": null,
+  "all_layer_chain": false,
+  "built_in_run": false,
+  "unmapped_surfaces": [
+   "ui-kit / Storybook (no domain map for the design system)"
+  ],
+  "mind_map_findings": []
+ },
+ "shape_class": {
+  "value": "ui-kit",
+  "sources": [
+   "PR #2575 diff: client-app/ui-kit/components/molecules/tile-button/**, _ui-kit-tokens.scss, _dark.scss, *.stories.ts"
+  ]
+ },
+ "derived_oracle": {
+  "source_of_truth": "VirtoCommerce/vc-frontend PR #2575 @ 2024d7ad — _ui-kit-tokens.scss, dark/molecules/vc-tile-button.scss, vc-tile-button.vue; expected colours read from live :root custom properties per preset",
+  "cross_checked_with": [
+   "in-page WCAG implementation",
+   "independent node WCAG calculation",
+   "PR body declared 2.11 (default solid primary)"
+  ],
+  "agreement": "2 decimals (4.5189/4.52, 3.0048/3.00, 2.0938/2.09, 2.1118/2.11)"
+ },
+ "verdict": "PASS WITH NOTES",
+ "date": "2026-10-16",
+ "timing": {
+  "started_at": "2026-10-16T13:00:00Z",
+  "test_window_start": "2026-10-16T13:18:00Z",
+  "finished_at": "2026-10-16T13:37:18.953Z",
+  "time_to_first_test_minutes": 18,
+  "reachability_minutes": null,
+  "agent_dispatches": 2,
+  "note": "1r not run (Storybook availability polled directly: 503 until the storybook deploy rolled out, then 200); 1c/1d done inline from the PR diff; 3x folded into the 4a lane (20-min box); 4v + 4a in one message; no A/3-cases/4c (ui-kit class); 5-report verifier not dispatched"
+ },
+ "environment": "vcptcore-qa1 — Storybook https://vcptcore-qa1-storybook.govirto.com, storefront https://vcptcore-qa1-storefront.govirto.com",
+ "build": {
+  "storybook_image": "2.61.0-alpha.2589-vcst-5906-vc-tile-button-2024d7ad",
+  "theme": "vc-theme-b2b-vue-2.61.0-pr-2575-2024-2024d7ad",
+  "pr": "VirtoCommerce/vc-frontend#2575",
+  "head": "2024d7ad",
+  "deployed_by": [
+   "vc-deploy-dev#6948 (theme)",
+   "vc-deploy-dev#6949 (storybook)"
+  ]
+ },
+ "status_transitions": [
+  {
+   "at": "1a",
+   "from": "Testing",
+   "to": "Testing",
+   "made": false,
+   "reason": "already in the in-testing status"
+  },
+  {
+   "at": "5-status",
+   "from": "Testing",
+   "to": "Tested",
+   "made": true,
+   "transition": "Finish test",
+   "confirmed_by": "operator 2026-10-19",
+   "reason": "PASS WITH NOTES"
+  }
+ ],
+ "agents_dispatched": [
+  "ui-ux-expert (4v, Chrome DevTools)",
+  "qa-frontend-expert (4a + 3x, playwright-chrome)"
+ ],
+ "total_cases": 20,
+ "passed": 17,
+ "failed": 1,
+ "blocked": 0,
+ "new_cases_authored": 0,
+ "regression": {
+  "c1": {
+   "ran": false,
+   "skipped_reason": "no authored cases — ui-kit shape class (ticket-routing.md §5c)"
+  },
+  "feature_release_gate": "not-assessed",
+  "coverage_statement": "this run adds no durable regression coverage; route back in: /qa-test-lifecycle"
+ },
+ "bugs_filed": [],
+ "bugs_not_filed": [
+  {
+   "severity": "Low",
+   "provenance": "in-scope",
+   "summary": "VcTileButton outline-warning icon 2.09:1 on the tile surface (light, Coffee + Red) — token contract",
+   "report": "reports/bugs/open/low/BUG-vc-tile-button-outline-warning-icon-contrast-VCST-5906.md"
+  },
+  {
+   "severity": "Low",
+   "provenance": "in-scope",
+   "summary": "VcTileButton stories do not wire click to the Actions panel (target control is a raw object editor)",
+   "report": "reports/bugs/open/low/BUG-vc-tile-button-stories-click-not-wired-to-actions-VCST-5906.md"
+  }
+ ],
+ "discovery": {
+  "ran": true,
+  "lane": "folded into 4a (qa-frontend-expert), 20-min box",
+  "findings": [
+   "stories do not wire click to Actions",
+   "target control is a raw object editor",
+   "Basic template hardcodes the label (default-slot control inert)"
+  ],
+  "not_reached": [
+   "double-click count (click not observable)",
+   "unbroken word via story (label hardcoded; covered by UX DOM stress)"
+  ]
+ },
+ "visual": {
+  "surface": true,
+  "ran": true,
+  "report": null,
+  "axes": {
+   "design_system": {
+    "verdict": "PASS",
+    "detail": "resolved custom properties equal the token chains in every Coffee/Red × light/dark cell, both variants × 8 colours; dark map equals VcButton's; no hardcoded colour literals"
+   },
+   "a11y": {
+    "verdict": "PASS WITH NOTES",
+    "detail": "axe 0 violations (32 runs + 375px); outline-warning icon 2.09:1 (Low)"
+   },
+   "design_spec": {
+    "verdict": "SKIPPED",
+    "skipped_reason": "no Prototype link on the ticket"
+   }
+  },
+  "invariant_failures": [
+   "BL-A11Y-003 outline-warning icon 2.09:1 (Low, icon supplementary to a 10.37:1 label)"
+  ],
+  "advisories": [
+   "several solid labels clear 4.5:1 by 0.01–0.02",
+   "outline border vs surface 1.19–2.03 (label identifies the control)"
+  ]
+ },
+ "contract": null,
+ "coverage_triage": {
+  "ran": false,
+  "skipped_reason": "net-new component; the token edit only ADDS --vc-tile-button-* properties and a .vc-tile-button-scoped dark partial, so no existing case can assert a changed value"
+ },
+ "test_data": {
+  "data_surface": false,
+  "fixtures": []
+ },
+ "business_rules_verified": [
+  "BL-UI-001",
+  "BL-UI-002",
+  "BL-UI-004",
+  "BL-UI-006",
+  "BL-A11Y-001",
+  "BL-A11Y-002",
+  "BL-A11Y-003"
+ ],
+ "appinsights": {
+  "ran": false,
+  "skipped_reason": "Storybook is static; no backend calls in scope"
+ },
+ "screenshots": "reports/tickets/Sprint26-20/VCST-5906/screenshots/",
+ "report": null,
+ "documentation": {
+  "ran": true,
+  "audiences": [
+   "developer"
+  ],
+  "file": "reports/ba/vcst-5906-vc-tile-button-developer-guide.md",
+  "not_documented": [
+   "shopper/admin — no consumer yet",
+   "live click emission — stories not wired"
+  ]
+ }
+}

@@ -1,0 +1,30 @@
+{
+  "ticket": "VCST-6142",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "scope": "pre-merge local PR artifact (frontend-only container, API proxied to vcst-qa); not a deployed-build verification",
+  "date": "2026-10-20",
+  "environment": "http://localhost (API https://vcst-qa.govirto.com, B2B-store)",
+  "build": {
+    "theme": "2.61.0-pr-2590-0a4b-0a4bd8b3",
+    "pr_build": "vc-frontend#2590 (open, unmerged)",
+    "baseline_theme": "3.1.0-pr-11-d67b-d67b0e0a (vcst-qa remote storefront)"
+  },
+  "agent_used": "qa-frontend-expert (playwright-chrome)",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live on vcst-qa remote storefront)",
+  "contrast": { "fixed_light": 5.31, "fixed_dark_red": 7.17, "prefix_light_p05": 2.04, "prefix_dark_black_art_computed": 2.31 },
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "gaps": ["default/mercury dark preset (3.74:1) not observed live", "no completed card over dark art or placeholder banner"],
+  "business_rules_verified": ["BL-A11Y-003"],
+  "tracker_transition": null,
+  "tracker_transition_reason": "ticket In review with unmerged PR; QA-side transitions deferred to post-merge verification",
+  "kb": ["KB-0ADAC454 captured (pre-fix overlay structure/contrast)"],
+  "evidence": "reports/tickets/Sprint26-20/VCST-6142/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-20/VCST-6142/"
+}
