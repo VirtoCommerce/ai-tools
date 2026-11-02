@@ -6,9 +6,8 @@ in parallel on one environment, written to git so any of them can pick it up. Th
 `/qa-run stable:<N> <wave>` ([`waves.md`](../../../skills/qa-run/waves.md)).
 
 **Read first:** [`release-folder.md`](../../../skills/qa-run/release-folder.md) — the folder layout, every field, the wave rules
-and the claim protocol. Design and the parts still to come (the release → PR → Jira trace, `deploy:bundle`,
-`release:compare`, the `stable next` forecast): `docs/superpowers/plans/2026-10-05-qa-test-plan-stable-releases.md`
-(VCST-6177).
+and the claim protocol. Not built yet (VCST-6177): the release → PR → Jira trace,
+`deploy:bundle`, `release:compare`, the `stable next` forecast.
 
 ## Arguments
 

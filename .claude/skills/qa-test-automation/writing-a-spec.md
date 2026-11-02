@@ -1,6 +1,6 @@
 # Writing a spec — layout, link, data, CLI session (fallback), the one run
 
-Read from `/qa-test-automation` step 4–5. Decisions cited by number (D5–D13): [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8.
+Read from `/qa-test-automation` step 4–5. Decisions cited by number (D5–D13): [`regression-suites.md`](../../knowledge/execution/regression-suites.md) §Spec decisions.
 
 ## Layout and title (D5, D6)
 
