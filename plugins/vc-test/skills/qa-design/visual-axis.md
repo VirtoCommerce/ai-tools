@@ -151,6 +151,12 @@ checklist's visual rows and `/qa-visual-regression` cite it. A visual row with n
   included. A rendering file with no story is listed by `visual:affected` as `uncovered`. Its row
   goes to the pages source or to another instrument.
 
+- **A global change's `PIXEL` pages source is the page inventory, not a chosen list.** For the
+  `ui-kit` class and any global style, token, theme or Tailwind change on the storefront, generate
+  `targets.json` from the derived inventory (in this repository: `npm run pages:targets -- --tier core
+  --auth <state> --out <file>`, from `config/storefront-pages.generated.json`; rule and waivers:
+  [`ui-kit-class.md`](../../knowledge/ui-kit-class.md) §1a). A page left out is `WAIVED` with a reason.
+
 `PIXEL` is a headless script, not an MCP browser lane, so it does not take one of the §4 slots.
 Run it while the lanes are waiting, never instead of one.
 
