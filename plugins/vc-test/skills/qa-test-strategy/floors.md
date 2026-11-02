@@ -9,8 +9,7 @@ verify-fix, hotfix-check); depth comes from these signals and the risk register,
 
 **No floor requires the test model itself.** It runs if and only if a risk has technique `MODEL`; the floors
 that need modelling require a `MODEL` risk instead, and F2, F10 and F11 each require **their own** — its
-Source carries the token `floor:<id>`, and no risk carries two (test-model redesign M9, M10:
-[`2026-10-09-qa-test-model-redesign.md`](../../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md) §3).
+Source carries the token `floor:<id>`, and no risk carries two (test-model redesign M9, M10).
 
 | # | Signal (from the bundle) | Floor |
 |---|---|---|
