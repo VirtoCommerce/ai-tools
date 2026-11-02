@@ -20,8 +20,6 @@ comes from one of two sources:
 | `--storybook` | every story of a Storybook 7+ build | vc-frontend, frontend-next, a customer fork, vc-shell, any framework | two builds from source: the base ref and the head |
 | `--pages` | named routes in a targets file | any running web app: the storefront, Admin SPA, a fork's preview | two base URLs, with the API answers replayed from one HAR so data drift is not a diff |
 
-Plan, evidence and later phases: [`docs/superpowers/plans/2026-10-26-visual-regression.md`](../../../docs/superpowers/plans/2026-10-26-visual-regression.md).
-
 **Observed-behaviour base (`kb`): exempt — Mechanic** ([`authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5.2).
 It compares two renders of the same targets and states nothing about how the platform behaves.
 
