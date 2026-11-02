@@ -1,5 +1,5 @@
 {
-  "$comment": "DECLARED half of the storefront page inventory — what the router cannot say. Keys are vc-frontend route NAMES; a key the router no longer has fails `npm run pages:check`. A route absent here is `extended` with derived defaults. tier: core = always in scope for a global style/token/theme/ui-kit change; extended = in scope when the change touches its area, or by a WAIVED-with-reason decision otherwise. auth: the session(s) to visit it in. fixtures: how a route param is acquired (never a literal — @td() alias or live-discover). visits: concrete visits when one route renders several pages (the catch-all) or a query variant matters; {name} placeholders are fixtures too. Seeded from VCST-6232's widened Page set P (2026-11-02). Generator: scripts/maintenance/sync-storefront-pages.mjs.",
+  "$comment": "DECLARED half of the storefront page inventory — what the router cannot say. Keys are vc-frontend route NAMES; a key the router no longer has fails `npm run pages:check`. A route absent here is `extended` with derived defaults. tier: core = always in scope for a global style/token/theme/ui-kit change; extended = in scope when the change touches its area, or by a WAIVED-with-reason decision otherwise. auth: the session(s) to visit it in — anonymous, signed-in (a personal account) or corporate (an organization member; the default for a route that requiresOrganization). fixtures: how a route param is acquired (never a literal — @td() alias or live-discover). visits: concrete visits when one route renders several pages (the catch-all) or a query variant matters; {name} placeholders are fixtures too; a visit with `setup` cannot be reached by a direct goto (a guard redirects), so pages:targets leaves it out of PIXEL and lists it for a browser lane or a WAIVE. Seeded from VCST-6232's widened Page set P (2026-11-02). Generator: scripts/maintenance/sync-storefront-pages.mjs.",
   "pages": {
     "Matcher": {
       "tier": "core",
@@ -46,27 +46,27 @@
     "Shipping": {
       "tier": "core",
       "auth": ["signed-in"],
-      "visits": [{ "id": "checkout-shipping", "path": "/checkout/shipping" }],
+      "visits": [{ "id": "checkout-shipping", "path": "/checkout/shipping", "setup": "a cart line, entered from /cart" }],
       "fixtures": { "cartLine": "a cart line; enter from /cart (the route guard redirects a direct visit back to the cart)" },
       "overlays": ["address picker modal"]
     },
     "Billing": {
       "tier": "core",
       "auth": ["signed-in"],
-      "visits": [{ "id": "checkout-billing", "path": "/checkout/billing" }],
+      "visits": [{ "id": "checkout-billing", "path": "/checkout/billing", "setup": "a cart line, entered from /cart" }],
       "fixtures": { "cartLine": "a cart line; enter from /cart" },
       "overlays": ["address picker modal"]
     },
     "Review": {
       "tier": "core",
       "auth": ["signed-in"],
-      "visits": [{ "id": "checkout-review", "path": "/checkout/review" }],
+      "visits": [{ "id": "checkout-review", "path": "/checkout/review", "setup": "a cart line, entered from /cart" }],
       "fixtures": { "cartLine": "a cart line; enter from /cart — never place the order" }
     },
     "CheckoutPayment": {
       "tier": "core",
       "auth": ["signed-in"],
-      "visits": [{ "id": "checkout-payment", "path": "/checkout/payment" }],
+      "visits": [{ "id": "checkout-payment", "path": "/checkout/payment", "setup": "a cart line, entered from /cart" }],
       "fixtures": { "cartLine": "a cart line; enter from /cart — never submit payment" }
     },
     "CheckoutCompleted": {

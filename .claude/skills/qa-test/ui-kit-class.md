@@ -55,10 +55,14 @@ against the router.
   clause 11b) and in the checklist — "needs a placed order", "store has no loyalty catalog". Silence is
   not a waiver.
 - **Briefs cite the inventory, never a page list.** A checklist row or a visual-lane / `PIXEL` brief says
-  *"core tier of the page inventory, signed-in + anonymous, overlays included"* and names the waived pages;
+  *"core tier of the page inventory, anonymous + signed-in + corporate, overlays included"* and names the
+  waived pages;
   it does not enumerate paths. PIXEL's targets file is generated:
   `npm run pages:targets -- --out <run>/targets.json --tier core --auth <state> --param <name>=<value>…`
   (each `--param` resolved per the page's `fixtures` entry — `@td()` or live-discover, never a literal).
+  `signed-in` is a personal account and `corporate` an organization member, each with its own storage
+  state. A visit with `setup` (the checkout steps) is listed, not emitted: a browser lane covers it, or
+  it is `WAIVED`.
 - **Before the run, `npm run pages:sync -- --from <PR checkout>`** if the PR adds or removes a route; a new
   route arrives `extended` and uncurated until someone tiers it.
 

@@ -27,14 +27,14 @@
  *   npm run pages:sync                       # clone vc-frontend@dev, rewrite the generated file
  *   npm run pages:sync -- --from ../vc-frontend
  *   npm run pages:check                      # drift gate (routes + curation consistency)
- *   npm run pages:targets -- --out <targets.json> [--tier core|all] [--auth anonymous|signed-in]
+ *   npm run pages:targets -- --out <targets.json> [--tier core|all] [--auth anonymous|signed-in|corporate]
  *                            [--param name=value ...]   # a /qa-visual-regression --pages file
  *   --ref <ref>   git ref to read (default: dev)
  *
  * EXIT CODES
  *   0  in sync / written
- *   1  drift (check), or a curation entry names a route that does not exist, or a target needs a
- *      param that was not supplied
+ *   1  drift (check), or a curation entry names a route that does not exist, or a route the reader
+ *      could not resolve, or a target needs a param that was not supplied
  *   2  could not reach a source (network/checkout) — advisory, NEVER a silent pass
  */
 
@@ -101,7 +101,7 @@ function matchClose(src, start) {
   for (let i = start; i < src.length; i++) {
     const c = src[i];
     if (c === "/" && src[i + 1] === "/") { i = src.indexOf("\n", i); if (i < 0) break; continue; }
-    if (c === "/" && src[i + 1] === "*") { i = src.indexOf("*/", i) + 1; continue; }
+    if (c === "/" && src[i + 1] === "*") { const e = src.indexOf("*/", i); if (e < 0) break; i = e + 1; continue; }
     if (c === '"' || c === "'" || c === "`") { i = skipString(src, i); continue; }
     if (c === open) depth++;
     else if (c === close && --depth === 0) return i + 1;
@@ -124,13 +124,13 @@ function splitTop(body) {
   for (let i = 0; i < body.length; i++) {
     const c = body[i];
     if (c === "/" && body[i + 1] === "/") { i = body.indexOf("\n", i); if (i < 0) break; continue; }
-    if (c === "/" && body[i + 1] === "*") { i = body.indexOf("*/", i) + 1; continue; }
+    if (c === "/" && body[i + 1] === "*") { const e = body.indexOf("*/", i); if (e < 0) break; i = e + 1; continue; }
     if (c === '"' || c === "'" || c === "`") { i = skipString(body, i); continue; }
     if (c === "{" || c === "[" || c === "(") { i = matchClose(body, i) - 1; continue; }
     if (c === ",") { parts.push(body.slice(last, i)); last = i + 1; }
   }
   parts.push(body.slice(last));
-  return parts.map((p) => p.replace(/^\s*(\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)\s*/g, "").trim()).filter(Boolean);
+  return parts.map((p) => p.replace(/^(?:\s*(?:\/\/[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/))+/, "").trim()).filter(Boolean);
 }
 /** `{ a: 1, b() {...}, async c(x) {...} }` → { a: "1", b: "<fn>", c: "<fn>" } (raw value text). */
 function readObject(text) {
@@ -188,13 +188,15 @@ export function extractRoutes(files) {
     if (path == null) { unresolved.push(`${file}: path ${o.path}`); return; }
     const full = join2(parent.path, path);
     const meta = o.meta ? o.meta : "";
-    const flag = (k) => new RegExp(`\\b${k}\\s*:\\s*true`).test(meta);
+    // vue-router merges meta parent → child, so a child's explicit true/false overrides the inherited value
+    const flag = (k, inherited) =>
+      new RegExp(`\\b${k}\\s*:\\s*true`).test(meta) ? true : new RegExp(`\\b${k}\\s*:\\s*false`).test(meta) ? false : inherited;
     const layout = /layout\s*:\s*"(\w+)"/.exec(meta)?.[1] ?? parent.layout;
     const ctx = {
       path: full,
-      requiresAuth: parent.requiresAuth || flag("requiresAuth"),
-      requiresOrganization: parent.requiresOrganization || flag("requiresOrganization"),
-      public: flag("public") || (parent.public && !/public\s*:\s*false/.test(meta)),
+      requiresAuth: flag("requiresAuth", parent.requiresAuth),
+      requiresOrganization: flag("requiresOrganization", parent.requiresOrganization),
+      public: flag("public", parent.public),
       layout,
       guarded: parent.guarded || o.beforeEnter !== undefined,
     };
@@ -204,7 +206,8 @@ export function extractRoutes(files) {
         name,
         path: full,
         file,
-        access: ctx.requiresOrganization ? "organization" : ctx.requiresAuth ? "signed-in" : ctx.public ? "public" : "store-setting",
+        // the sign-in guard is `!meta.public && (meta.requiresAuth || !anonymousUsersAllowed)`: public wins over requiresAuth
+        access: ctx.requiresOrganization ? "organization" : ctx.public ? "public" : ctx.requiresAuth ? "signed-in" : "store-setting",
         params: [...full.matchAll(/:(\w+)/g)].map((m) => m[1]),
         catchAll: /\(\.\*\)/.test(full),
         guarded: ctx.guarded,
@@ -228,7 +231,8 @@ export function extractRoutes(files) {
 // Merge with curation
 // ---------------------------------------------------------------------------
 
-const DEFAULT_AUTH = { public: ["anonymous"], "store-setting": ["anonymous"], "signed-in": ["signed-in"], organization: ["signed-in"] };
+/** signed-in = a personal account (a corporate member is redirected off some account pages); corporate = an organization member. */
+const DEFAULT_AUTH = { public: ["anonymous"], "store-setting": ["anonymous"], "signed-in": ["signed-in"], organization: ["corporate"] };
 
 function merge(pages, curation) {
   const byName = new Map(pages.map((p) => [p.name, p]));
@@ -238,7 +242,8 @@ function merge(pages, curation) {
     const c = curation.pages[p.name] ?? {};
     const auth = c.auth ?? DEFAULT_AUTH[p.access];
     const visits = (c.visits ?? [{ id: p.name, path: p.path }]).map((v) => ({ auth, ...v }));
-    for (const v of visits) {
+    // an uncurated route lands `extended` as is; its params are asked for only when a run targets it
+    for (const v of curation.pages[p.name] ? visits : []) {
       for (const prm of [...v.path.matchAll(/:(\w+)\??/g)].map((m) => m[0]).filter((x) => !x.endsWith("?"))) {
         const key = prm.slice(1);
         if (!(c.fixtures ?? {})[key]) errors.push(`${p.name}: visit ${v.id} needs a fixture for :${key} (curation "fixtures")`);
@@ -280,10 +285,13 @@ function emitTargets(inventory) {
   const params = Object.fromEntries(argValues("--param").map((kv) => kv.split(/=(.*)/s).slice(0, 2)));
   const missing = new Set();
   const targets = [];
+  const needsSetup = [];
   for (const p of inventory.pages) {
     if (tier !== "all" && p.tier !== tier) continue;
     for (const v of p.visits) {
       if (!v.auth.includes(auth)) continue;
+      // a direct goto cannot reach it (a guard redirects); a screenshot would be of the redirect target
+      if (v.setup) { needsSetup.push(`${v.id} (${v.setup})`); continue; }
       const path = v.path
         .replace(/\/:(\w+)\?/g, (_, k) => (params[k] ? `/${params[k]}` : ""))
         .replace(/:(\w+)|\{(\w+)\}/g, (m, a, b) => params[a ?? b] ?? (missing.add(`${a ?? b} (${v.id})`), m));
@@ -297,7 +305,10 @@ function emitTargets(inventory) {
   }
   writeFileSync(out, JSON.stringify({ targets }, null, 2) + "\n");
   console.log(`[pages:targets] ${targets.length} target(s), tier ${tier}, ${auth} → ${out}`);
-  if (auth === "signed-in") console.log("[pages:targets] signed-in targets need `visual:snap --storage-state <file>`.");
+  if (needsSetup.length) {
+    console.log(`[pages:targets] NOT in targets — needs setup PIXEL cannot do; cover on a browser lane or WAIVE: ${needsSetup.join("; ")}`);
+  }
+  if (auth !== "anonymous") console.log(`[pages:targets] ${auth} targets need \`visual:snap --storage-state <file>\` of ${auth === "corporate" ? "an organization member" : "a personal account"}.`);
   process.exit(0);
 }
 
@@ -330,8 +341,9 @@ function main() {
 
   console.log(`[pages:${MODE}] source     : ${sourcedFrom} @ ${commit.slice(0, 12)}`);
   console.log(`[pages:${MODE}] routes     : ${merged.length} (core ${core}, extended ${merged.length - core}, uncurated ${merged.filter((p) => !p.curated).length})`);
-  if (extracted.unresolved.length) console.log(`[pages:${MODE}] unresolved : ${extracted.unresolved.join("; ")}`);
-  if (extracted.unreached.length) console.log(`[pages:${MODE}] unreached arrays (not mounted from ${ROOT_ARRAY}): ${extracted.unreached.join(", ")}`);
+  // a route the reader could not resolve is a page silently missing from the inventory — never a pass
+  for (const u of extracted.unresolved) errors.push(`unresolved route: ${u} — extend the reader`);
+  for (const a of extracted.unreached) errors.push(`array ${a} is not mounted from ${ROOT_ARRAY} — extend the reader or confirm it is dead`);
   if (errors.length) {
     for (const e of errors) console.error(`[pages:${MODE}] FAIL — ${e}`);
     process.exit(1);
