@@ -32,8 +32,9 @@
 //        a body headed `Documentation —`, or an amend of the recorded documentation comment, is refused without --doc.
 //
 // --attach  <img>  uploads an IMAGE/GIF and embeds it inline — that forces the v2 API + wiki body (§5c).
-//                   The post-write renderedBody check accepts both embed forms, `!name.png|width=700!` and
-//                   `!name.png|thumbnail!` (tracker-ops.md §5c, the positive-signal table).
+//                   The post-write renderedBody check counts both embed forms as rendered, `!name.png|width=700!`
+//                   and `!name.png|thumbnail!`, and warns on a thumbnail: it is not the house form
+//                   (tracker-ops.md §5c, the positive-signal table).
 // --attach-file <f> uploads any file (a plan, a report page, a log) and LINKS it: the body keeps its
 //                   dialect and one `Attached:` line is appended. tracker-ops.md §5d — a deliverable too
 //                   big for the comment travels as an attachment on the same ticket, referenced from the ONE
@@ -432,10 +433,16 @@ async function reportRender(id) {
     console.log(`\n    ⚠ a video attachment rendered as a QuickTime ActiveX/NPAPI <object> — dead in every`);
     console.log(`      current browser. Use an animated GIF for motion evidence (reports-policy.md §5.2).`);
   }
-  if (v.imgs < mediaNames.length) {
-    console.log(`\n    ✗ only ${v.imgs} of ${mediaNames.length} images rendered — a Markdown body on the wiki API renders none.`);
+  if (v.imgs < v.perFile.length) {
+    console.log(`\n    ✗ only ${v.imgs} of ${v.perFile.length} images rendered — a Markdown body on the wiki API renders none.`);
+  } else if (v.unaccounted) {
+    console.log(`\n    ✗ ${v.unaccounted} file(s) have no rendered <img> of their own — the other images name other files.`);
   }
-  if (renderFailed(v, mediaNames.length)) {
+  if (v.thumbnails.length) {
+    console.log(`\n    ⚠ rendered as a thumbnail, not the house form: ${v.thumbnails.join(", ")}`);
+    console.log(`      Legibility is judged at |width=700! (reports-policy.md §5.1a) — amend the embed to !name.png|width=700!.`);
+  }
+  if (renderFailed(v)) {
     console.log(`\n    ✗ media did NOT render. Do not post a corrected copy — amend this one.`);
   }
 }
