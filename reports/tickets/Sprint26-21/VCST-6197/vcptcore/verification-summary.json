@@ -1,0 +1,27 @@
+{
+  "ticket": "VCST-6197",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-11-02",
+  "environment": "https://vcptcore-qa-storefront.govirto.com",
+  "build": {
+    "platform": "n/a (storefront-only fix)",
+    "theme": "2.61.0-pr-2608-86ad-86adb577",
+    "relevant_modules": {},
+    "pr_build": "vc-frontend PR #2608 @ 86adb577 (open, not merged)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug (VCST-6001 run, Sprint26-20, ab-5-mobile-hscroll.png)",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": ["Low cosmetic, likely pre-existing: /account/orders at 375, calendar from filter sidebar clipped 19px at top"],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-UI-004"],
+  "tracker_transition": {"role": "tested", "state": "Tested"},
+  "tracker_comment_id": "112584",
+  "evidence": "reports/tickets/Sprint26-21/VCST-6197/vcptcore/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-21/VCST-6197/vcptcore/"
+}

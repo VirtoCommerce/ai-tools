@@ -40,3 +40,11 @@ Likely in the drawer's floating positioning: `sales-rep-orders-filters.vue` rend
 - **Component / module:** vc-frontend `client-app/modules/sales-rep` (customer orders filter)
 - **RCA anchor:** sales-rep-orders-filters.vue `<VcPopover placement="bottom-end"` (ui-kit VcPopover positioning)
 - **Routing confidence:** MEDIUM — the positioning mechanism is inferred from measurements, not traced in code
+
+## Resolution
+- **Fixed in:** vc-frontend PR #2608 (`vc-popover.vue`: `focus({ preventScroll: true })`), theme build `2.61.0-pr-2608-86ad-86adb577`
+- **Tracker:** VCST-6197 → Tested (2026-11-02)
+- **Verified:** 2026-11-02 on vcptcore-qa via /qa-verify-fix — STR 3/3, checklist 10/10, RED baseline from the VCST-6001 run
+- **Evidence:** `reports/tickets/Sprint26-21/VCST-6197/vcptcore/verification-report.md`
+
+## Status: FIXED
