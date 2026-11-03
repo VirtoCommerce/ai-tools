@@ -21,9 +21,12 @@ import { envFileNames, isGitTracked, readKey } from "./project-env.mjs";
 
 export const SELECTOR_FILE = ".env.test-env";
 
-/** The env a selector text names, or null — the same line shape lib/passwords.mjs currentEnv() reads. */
-export function selectedEnv(text) {
-  return /^\s*TEST_ENV\s*=\s*["']?([^"'\s#]+)/m.exec(String(text ?? ""))?.[1] ?? null;
+/** The env a selector text names, or null, and whether its line carries dotenv's `export ` prefix — which
+ *  the resolvers accept but lib/passwords.mjs currentEnv() (the Playwright lanes) does not. `[ \t]` and not
+ *  `\s`, so an empty `TEST_ENV=` never takes its value from the next line. */
+export function parseSelector(text) {
+  const m = /^[ \t]*(export[ \t]+)?TEST_ENV[ \t]*=[ \t]*["']?([^"'\s#]+)/m.exec(String(text ?? ""));
+  return { env: m?.[2] ?? null, exported: !!m?.[1] };
 }
 
 /** true inside a git work tree whose ignore rules cover `file`; false when it is in a work tree and NOT
@@ -57,8 +60,9 @@ function inspectSelector(root, path) {
   try { raw = readFileSync(path); } catch { return { env: null, problem: "unreadable" }; }
   // UTF-16 (Windows PowerShell 5.1's `>`): a BOM or NUL bytes. dotenv reads no key from it.
   if ((raw[0] === 0xff && raw[1] === 0xfe) || (raw[0] === 0xfe && raw[1] === 0xff) || raw.includes(0)) return { env: null, problem: "utf16" };
-  const env = selectedEnv(raw.toString("utf-8"));
+  const { env, exported } = parseSelector(raw.toString("utf-8"));
   if (!env) return { env: null, problem: "no-env" };
+  if (exported) return { env, problem: "exported" };
   // An env may live in a QA_ENV_PATH folder instead, so this one is a warning, not a verdict.
   if (!existsSync(join(root, `.env.${env}`))) return { env, problem: "no-env-file" };
   return { env };
@@ -102,6 +106,7 @@ export function describeSelector(result, env) {
         unreadable: `it cannot be read — ${fix}`,
         utf16: `it is UTF-16 (Windows PowerShell 5.1's >), which no resolver reads, so commands fall back to vcst — ${fix}`,
         "no-env": `it names no TEST_ENV, so commands fall back to vcst — ${fix}`,
+        exported: `its line starts with "export": commands use ${result.env}, but the Playwright lanes do not read it (they take the only declared env, else vcst) — drop "export"`,
         "no-env-file": `there is no .env.${result.env} here — fine if it is in a QA_ENV_PATH folder, else ${fix}`,
       }[result.problem];
       if (problem) return [`${SELECTOR_FILE}: kept, but ${problem}`];
