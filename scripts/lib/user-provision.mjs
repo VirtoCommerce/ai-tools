@@ -1032,7 +1032,7 @@ export async function seedMemberships({ only = null } = {}) {
   for (const [email, memberRows] of Object.entries(byEmail)) {
     const orgs = [];
     for (const r of memberRows) {
-      const org = await findOrgByName(r.org_name);
+      const org = await resolveDeclaredOrg(r.org_name);
       if (!org) { console.warn(`    ⚠ skip   ${r.membership_id}: org "${r.org_name}" not found (seed orgs first)`); continue; }
       orgs.push({ row: r, orgId: org.id });
     }
@@ -1050,8 +1050,51 @@ export async function seedMemberships({ only = null } = {}) {
       const membershipId = await ensureOrgMembership(userId, orgId, row.org_name, row.role_id, existing, false, null, status);
       out.push({ membership_id: row.membership_id, email, contact_id: contactId, user_id: userId, org_name: row.org_name, org_id: orgId, role_id: row.role_id, membership_status: status, platform_membership_id: membershipId });
     }
+    await pruneSameNamedDuplicateMemberships(userId, contactId, orgs, existing);
   }
   return out;
+}
+
+// organizations.csv pins each seeded org's platform_id (seedOrgs forces it on create), so that id —
+// not a name search — is the declared identity. A name search is ambiguous on an env that holds
+// same-named duplicates (vcptcore-qa, 2026-11-03: two AGENT-TEST-Org-TechFlow-20260310 and two
+// BuildRight-20260310 orgs) and returns whichever the index lists first, so successive re-seeds put
+// the account into different GUIDs and @td(MULTI_ORG_TF_BR*.org_techflow_id) named an org the
+// persona was not a member of. Falls back to the name search when the pinned org is absent (an env
+// whose orgs were created another way, e.g. vcptcore_qa1 — it overrides the ids in aliases.<env>.json).
+let _pinnedOrgIds = null;
+async function resolveDeclaredOrg(orgName) {
+  if (!_pinnedOrgIds) {
+    _pinnedOrgIds = Object.fromEntries(readCsv('test-data/b2b/organizations.csv')
+      .filter(r => r.org_name && r.platform_id).map(r => [r.org_name, r.platform_id]));
+  }
+  const pinned = _pinnedOrgIds[orgName];
+  if (pinned) {
+    const m = await findMemberById(pinned);
+    if (m?.id && m.name === orgName) return m;
+  }
+  return findOrgByName(orgName);
+}
+
+// A membership in a SAME-NAMED DUPLICATE of a declared org is drift, not a second declared org: it
+// shows up as an extra entry in the storefront org selector (two "TechFlow"s) and splits the
+// per-org state a case mutates. Removed only when the org NAME is one this account declares and the
+// id is not the one resolved for it — any membership in an org the CSV does not name is left alone.
+async function pruneSameNamedDuplicateMemberships(userId, contactId, orgs, existing) {
+  const declaredIds = new Set(orgs.map(o => o.orgId));
+  const declaredNames = new Set(orgs.map(o => o.row.org_name));
+  const stray = (existing || []).filter(m => declaredNames.has(m.organizationName) && !declaredIds.has(m.organizationId));
+  if (!stray.length) return;
+  for (const m of stray) console.log(`    ✗ prune  membership ${m.id} (same-named duplicate org ${m.organizationId} "${m.organizationName}")${DRY_RUN ? ' (dry)' : ''}`);
+  if (DRY_RUN) return;
+  await api('DELETE', `/api/customer/organization-memberships?${idsParam(stray.map(m => m.id))}`, null, { expectStatus: [200, 204, 404] });
+  const contact = contactId ? await findContactById(contactId) : null;
+  const strayOrgIds = new Set(stray.map(m => m.organizationId));
+  if (contact && (contact.organizations || []).some(id => strayOrgIds.has(id))) {
+    contact.organizations = contact.organizations.filter(id => !strayOrgIds.has(id));
+    for (const k of ['currentOrganizationId', 'defaultOrganizationId']) if (strayOrgIds.has(contact[k])) contact[k] = null;
+    await api('PUT', '/api/members', contact, { expectStatus: [200, 204] });
+  }
 }
 
 // --- Personal (no-org) users: env customer roles + agent-pool.csv + test-users.csv ---

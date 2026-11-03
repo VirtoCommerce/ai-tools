@@ -80,7 +80,7 @@ export function roleBody(role = RESTRICTED_ROLE) {
  * `account` defaults to RESTRICTED_ACCOUNT so existing callers keep the CMS behaviour; the
  * catalog-link fixture passes CATALOG_LINK_ACCOUNT (also Manager / isAdministrator=false).
  */
-export function accountBody({ email, password, roleId, roleName, storeId, account = RESTRICTED_ACCOUNT }) {
+export function accountBody({ email, password, roleId, roleName, storeId, account = RESTRICTED_ACCOUNT, memberId }) {
   return {
     userName: email,
     email,
@@ -89,6 +89,8 @@ export function accountBody({ email, password, roleId, roleName, storeId, accoun
     userType: account.userType,
     isAdministrator: account.isAdministrator,
     roles: [{ id: roleId, name: roleName }],
+    // A storefront account (one that declares a contact) signs in only when approved + confirmed.
+    ...(memberId ? { memberId, status: 'Approved', emailConfirmed: true, lockoutEnabled: false } : {}),
   };
 }
 
@@ -754,6 +756,64 @@ export function assertShellSearchReadRolePermissions(permissions = SHELL_SEARCH_
     excluded: SHELL_SEARCH_READ_EXCLUDED_PERMISSIONS,
     label: 'shell search read (VCST-6260)',
   });
+}
+
+// ============================================================================
+// IMP-038 (suite 082) — impersonation operator whose loginOnBehalf comes from ONE global role
+// ============================================================================
+//
+// IMP-038 proves that REMOVING platform:security:loginOnBehalf from a role stops the storefront
+// silent impersonation flow after a fresh sign-in. The case needs (1) a role that holds the
+// permission and (2) a storefront Customer whose ONLY source of the permission is that role —
+// assigned globally on the user, not through an organization membership. If the account got
+// loginOnBehalf from anywhere else (an org-scoped org-maintainer role, isAdministrator) the removal
+// would change nothing and the second half of the case could not fail. So: no organization, no
+// membership, no other role, isAdministrator=false.
+//
+// A global loginOnBehalf role with no organization relation to the target is enough for the
+// impersonate grant (kb KB-28DB8660). Customer + a personal Contact + storeId B2B-store is the
+// shape aliases.json AGENT_TEST_IMP_CUSTOMER declares for a storefront sign-in. Email and role
+// name are the business keys the suite already uses; the runtime user/contact ids land in
+// aliases.<env>.json. The case's own Cleanup deletes both — re-seed with `--only
+// AGENT_TEST_IMP_CUSTOMER` before the next run.
+export const IMP_OPERATOR_REQUIRED_PERMISSIONS = ['platform:security:loginOnBehalf'];
+export const IMP_OPERATOR_ROLE = {
+  role_id: 'AGENT-TEST-imp-role',
+  role_name: 'AGENT-TEST-imp-role',
+  description: 'Test role for impersonation regression — safe to delete',
+  permissions: [...IMP_OPERATOR_REQUIRED_PERMISSIONS],
+};
+export const IMP_OPERATOR_ACCOUNT = {
+  aliasName: 'AGENT_TEST_IMP_CUSTOMER',
+  email: 'agent-test-imp-customer@test-agent.com',
+  userType: 'Customer',
+  isAdministrator: false,
+  passwordVar: 'DEFAULT_TEST_PASSWORD',
+  passwordFallback: 'Password1!',
+  // Personal storefront contact (no organization): created first, linked through memberId.
+  contact: { firstName: 'Agent Test', lastName: 'Impersonation Customer' },
+};
+
+/** Personal Contact body for an account that declares `contact` (POST /api/members). */
+export function contactBodyFor(account) {
+  const { firstName, lastName } = account.contact;
+  const fullName = `${firstName} ${lastName}`;
+  return {
+    memberType: 'Contact', firstName, lastName, fullName, name: fullName,
+    emails: [account.email], status: 'Approved', timeZone: 'America/New_York', defaultLanguage: 'en-US', currencyCode: 'USD',
+  };
+}
+
+export function assertImpOperatorRolePermissions(permissions = IMP_OPERATOR_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: IMP_OPERATOR_REQUIRED_PERMISSIONS,
+    excluded: [],
+    label: 'impersonation operator (IMP-038)',
+  });
+  // The role must hold loginOnBehalf and NOTHING else: IMP-038 removes that one permission and
+  // expects the silent flow to stop, so a second permission would only blur what was removed.
+  const extra = permissions.filter((p) => !IMP_OPERATOR_REQUIRED_PERMISSIONS.includes(p));
+  if (extra.length) throw new Error(`impersonation operator (IMP-038) role must hold only ${IMP_OPERATOR_REQUIRED_PERMISSIONS.join(', ')} — extra: ${extra.join(', ')}`);
 }
 
 const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
