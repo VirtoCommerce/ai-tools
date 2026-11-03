@@ -1,0 +1,301 @@
+- generic [ref=f130e1]:
+  - generic [ref=f130e2]:
+    - generic [ref=f130e3]:
+      - list:
+        - listitem:
+          - link "Skip to main content":
+            - /url: "#main-content"
+        - listitem:
+          - link "Skip to footer":
+            - /url: "#footer"
+      - generic [ref=f130e4]:
+        - navigation "Main menu" [ref=f130e5]:
+          - link [ref=f130e6] [cursor=pointer]:
+            - /url: /
+            - img "B2B-store" [ref=f130e7]
+          - generic [ref=f130e10]:
+            - searchbox "Search products and parts" [ref=f130e11]
+            - generic [ref=f130e12]:
+              - button "Barcode scan" [ref=f130e13] [cursor=pointer]
+              - button "Search" [ref=f130e17] [cursor=pointer]
+          - list [ref=f130e23]:
+            - listitem [ref=f130e24]:
+              - link "Bulk order" [ref=f130e25] [cursor=pointer]:
+                - /url: /bulk-order
+            - listitem [ref=f130e39]:
+              - link "Compare" [ref=f130e40] [cursor=pointer]:
+                - /url: /compare
+            - listitem [ref=f130e51]:
+              - link "Lists" [ref=f130e52] [cursor=pointer]:
+                - /url: /account/lists
+            - listitem [ref=f130e58]:
+              - link "Orders" [ref=f130e59] [cursor=pointer]:
+                - /url: /account/orders
+            - listitem [ref=f130e66]:
+              - button "1 Alerts" [ref=f130e69] [cursor=pointer]:
+                - generic [ref=f130e70]: "1"
+                - generic [ref=f130e79]: Alerts
+            - listitem [ref=f130e80]:
+              - link "1 Cart" [ref=f130e81] [cursor=pointer]:
+                - /url: /cart
+                - generic [ref=f130e82]: "1"
+                - generic [ref=f130e90]: Cart
+          - generic [ref=f130e91]:
+            - button "USD · EN" [ref=f130e94] [cursor=pointer]
+            - button "Account menu" [ref=f130e101] [cursor=pointer]: SR
+        - navigation "Main navigation" [ref=f130e102]:
+          - button "All products" [ref=f130e105] [cursor=pointer]
+          - menubar "Navigation" [ref=f130e119]:
+            - menuitem "Christmas" [ref=f130e120] [cursor=pointer]
+            - menuitem "Easter" [ref=f130e121] [cursor=pointer]
+            - menuitem "Sports" [ref=f130e122] [cursor=pointer]
+      - main [ref=f130e123]:
+        - generic [ref=f130e128]:
+          - complementary "Sidebar" [ref=f130e129]:
+            - generic [ref=f130e131]:
+              - generic [ref=f130e132]:
+                - generic [ref=f130e133]: Purchasing
+                - generic [ref=f130e137]:
+                  - link "Dashboard" [ref=f130e139] [cursor=pointer]:
+                    - /url: /account/dashboard
+                  - link "Orders" [ref=f130e150] [cursor=pointer]:
+                    - /url: /account/orders
+                  - link "Lists" [ref=f130e159] [cursor=pointer]:
+                    - /url: /account/lists
+                  - link "Quote requests" [ref=f130e167] [cursor=pointer]:
+                    - /url: /account/quotes
+                  - link "Purchase requests" [ref=f130e178] [cursor=pointer]:
+                    - /url: /account/purchase-requests
+                  - link "Saved for later" [ref=f130e187] [cursor=pointer]:
+                    - /url: /account/saved-for-later
+                  - link "Back-in-stock list" [ref=f130e195] [cursor=pointer]:
+                    - /url: /account/back-in-stock
+              - generic [ref=f130e203]:
+                - generic [ref=f130e204]: Marketing
+                - generic [ref=f130e208]:
+                  - link "Coupons & promotions" [ref=f130e210] [cursor=pointer]:
+                    - /url: /account/coupons
+                  - link "Notifications" [ref=f130e219] [cursor=pointer]:
+                    - /url: /account/notifications
+                  - link "Points history" [ref=f130e228] [cursor=pointer]:
+                    - /url: /account/points-history
+              - generic [ref=f130e239]:
+                - generic [ref=f130e240]: User
+                - generic [ref=f130e244]:
+                  - link "Profile" [ref=f130e246] [cursor=pointer]:
+                    - /url: /account/profile
+                  - link "Addresses" [ref=f130e256] [cursor=pointer]:
+                    - /url: /account/addresses
+                  - link "Change password" [ref=f130e266] [cursor=pointer]:
+                    - /url: /account/change-password
+                  - link "Security" [ref=f130e275] [cursor=pointer]:
+                    - /url: /account/security
+                  - link "Saved credit cards" [ref=f130e284] [cursor=pointer]:
+                    - /url: /account/saved-credit-cards
+          - generic [ref=f130e294]:
+            - generic [ref=f130e295]:
+              - heading "Saved for later" [level=1] [ref=f130e296]
+              - generic [ref=f130e297]:
+                - button "Add all to cart" [ref=f130e298] [cursor=pointer]
+                - button "Buy now" [ref=f130e307] [cursor=pointer]
+                - button "Save changes" [disabled] [ref=f130e316]
+            - generic [ref=f130e329]:
+              - generic [ref=f130e331]:
+                - generic [ref=f130e332]:
+                  - generic [ref=f130e333]: Product
+                  - generic [ref=f130e334]: Properties
+                  - generic [ref=f130e335]: Price per item
+                - generic [ref=f130e336]:
+                  - generic [ref=f130e338]:
+                    - img "Amazon Echo Show 11 Smart Display with Alexa+, Graphite" [ref=f130e340]
+                    - generic [ref=f130e341]:
+                      - link "Amazon Echo Show 11 Smart Display with Alexa+, Graphite" [ref=f130e344] [cursor=pointer]:
+                        - /url: /virto-start-electronics/smart-home-consumer/smart-home/amazon-echo-show-11-smart-display-with-alexa-graphite
+                      - generic [ref=f130e345]:
+                        - generic [ref=f130e346]:
+                          - generic [ref=f130e347]: Brand
+                          - generic [ref=f130e349]: Amazon
+                        - generic [ref=f130e350]:
+                          - generic [ref=f130e351]: Condition
+                          - generic [ref=f130e353]: New
+                        - generic [ref=f130e354]:
+                          - generic [ref=f130e355]: Form factor
+                          - generic [ref=f130e357]: Smart display
+                      - generic [ref=f130e358]: $219.99
+                      - generic [ref=f130e363]:
+                        - generic [ref=f130e365]:
+                          - spinbutton "Product quantity" [ref=f130e366]: "1"
+                          - button "Add to cart" [ref=f130e368] [cursor=pointer]
+                        - generic "In stock" [ref=f130e372]: "105"
+                      - button "Remove from cart" [ref=f130e378] [cursor=pointer]
+                  - generic [ref=f130e385]:
+                    - img "Sprite no sugar 6x250ml" [ref=f130e387]
+                    - generic [ref=f130e388]:
+                      - link "Sprite no sugar 6x250ml" [ref=f130e391] [cursor=pointer]:
+                        - /url: /soft-drinks/softdrinks/sprite-no-sugar-6x250ml
+                      - generic [ref=f130e392]:
+                        - generic [ref=f130e393]:
+                          - generic [ref=f130e394]: product expires
+                          - generic [ref=f130e396]: 5/20/2024
+                        - generic [ref=f130e397]:
+                          - generic [ref=f130e398]: Sugar
+                          - generic [ref=f130e400]: "No"
+                        - generic [ref=f130e401]:
+                          - generic [ref=f130e402]: original_sku
+                          - generic [ref=f130e404]: "1649409025"
+                      - generic [ref=f130e405]: $20.00
+                      - generic [ref=f130e410]:
+                        - generic [ref=f130e412]:
+                          - spinbutton "Product quantity" [ref=f130e413]: "1"
+                          - button "Add to cart" [ref=f130e415] [cursor=pointer]
+                        - generic "In stock" [ref=f130e419]: "3463"
+                      - button "Remove from cart" [ref=f130e425] [cursor=pointer]
+                  - generic [ref=f130e432]:
+                    - img "Affligem Blond 6x75cl Bottle EN" [ref=f130e434]
+                    - generic [ref=f130e435]:
+                      - link "Affligem Blond 6x75cl Bottle EN" [ref=f130e438] [cursor=pointer]:
+                        - /url: /alcoholic-drinks/beer/affligem-dubbel-24x30cl-bottle
+                      - generic [ref=f130e439]:
+                        - generic [ref=f130e440]:
+                          - generic [ref=f130e441]: Decimal
+                          - generic [ref=f130e443]: "5.5"
+                        - generic [ref=f130e444]:
+                          - generic [ref=f130e445]: CPU Speed Boost
+                          - generic [ref=f130e447]: 5 kg
+                        - generic [ref=f130e448]:
+                          - generic [ref=f130e449]: new_property_measure
+                          - generic [ref=f130e450]: 500 g en-US
+                      - generic [ref=f130e451]: $128.00
+                      - generic [ref=f130e456]:
+                        - generic [ref=f130e458]:
+                          - spinbutton "Product quantity" [ref=f130e459]: "1"
+                          - button "Add to cart" [ref=f130e461] [cursor=pointer]
+                        - generic "In stock" [ref=f130e465]: "2319"
+                      - button "Remove from cart" [ref=f130e471] [cursor=pointer]
+                  - generic [ref=f130e478]:
+                    - img "Fosters 24x44cl Can" [ref=f130e480]
+                    - generic [ref=f130e481]:
+                      - link "Fosters 24x44cl Can" [ref=f130e484] [cursor=pointer]:
+                        - /url: /alcoholic-drinks/beer/fosters-24x44cl-can
+                      - generic [ref=f130e485]:
+                        - generic [ref=f130e486]:
+                          - generic [ref=f130e487]: brand
+                          - generic [ref=f130e489]: Fosters
+                        - generic [ref=f130e490]:
+                          - generic [ref=f130e491]: is_alcohol
+                          - generic [ref=f130e493]: "True"
+                        - generic [ref=f130e494]:
+                          - generic [ref=f130e495]: is_hnk_product
+                          - generic [ref=f130e497]: "True"
+                      - generic [ref=f130e498]: $119.00
+                      - generic [ref=f130e503]:
+                        - generic [ref=f130e505]:
+                          - spinbutton "Product quantity" [ref=f130e506]: "1"
+                          - button "Add to cart" [ref=f130e508] [cursor=pointer]
+                        - generic "In stock" [ref=f130e512]: "4240"
+                      - button "Remove from cart" [ref=f130e518] [cursor=pointer]
+                  - generic [ref=f130e525]:
+                    - img "Coca Cola Regular 6x330ml" [ref=f130e527]
+                    - generic [ref=f130e528]:
+                      - link "Coca Cola Regular 6x330ml" [ref=f130e531] [cursor=pointer]:
+                        - /url: /soft-drinks/softdrinks/coca-cola-regular-6x330ml
+                      - generic [ref=f130e532]:
+                        - generic [ref=f130e533]:
+                          - generic [ref=f130e534]: product expires
+                          - generic [ref=f130e536]: 5/9/2024
+                        - generic [ref=f130e537]:
+                          - generic [ref=f130e538]: qweTEST EN
+                          - generic [ref=f130e540]: qweTEST_2_UPD
+                        - generic [ref=f130e541]:
+                          - generic [ref=f130e542]: Sugar
+                          - generic [ref=f130e544]: "No"
+                      - generic [ref=f130e545]: $25.00
+                      - generic [ref=f130e550]:
+                        - generic [ref=f130e552]:
+                          - spinbutton "Product quantity" [ref=f130e553]: "1"
+                          - button "Add to cart" [ref=f130e555] [cursor=pointer]
+                        - generic "In stock" [ref=f130e559]: 9999+
+                      - button "Remove from cart" [ref=f130e565] [cursor=pointer]
+                  - generic [ref=f130e572]:
+                    - img "ROYAL RAVEN ORANGE" [ref=f130e574]
+                    - generic [ref=f130e575]:
+                      - link "ROYAL RAVEN ORANGE" [ref=f130e578] [cursor=pointer]:
+                        - /url: /alcoholic-drinks/distilled/royal-raven-orange
+                      - generic [ref=f130e579]:
+                        - generic [ref=f130e580]:
+                          - generic [ref=f130e581]: alcohol_content
+                          - generic [ref=f130e583]: "40"
+                        - generic [ref=f130e584]:
+                          - generic [ref=f130e585]: brand
+                          - generic [ref=f130e587]: Royal Raven
+                        - generic [ref=f130e588]:
+                          - generic [ref=f130e589]: original_sku
+                          - generic [ref=f130e591]: "1367"
+                      - generic [ref=f130e592]: $1,580.00
+                      - generic [ref=f130e597]:
+                        - generic [ref=f130e599]:
+                          - spinbutton "Product quantity" [ref=f130e600]: "1"
+                          - button "Add to cart" [ref=f130e602] [cursor=pointer]
+                        - generic "In stock" [ref=f130e606]: "448"
+                      - button "Remove from cart" [ref=f130e612] [cursor=pointer]
+              - generic [ref=f130e619]:
+                - generic [ref=f130e620]:
+                  - generic: "1"
+                  - button "2" [ref=f130e621] [cursor=pointer]
+                - generic [ref=f130e622]:
+                  - button "Previous" [disabled] [ref=f130e623]
+                  - button "Next" [ref=f130e629] [cursor=pointer]
+      - contentinfo "Footer" [ref=f130e635]:
+        - generic [ref=f130e636]:
+          - generic [ref=f130e637]:
+            - img "B2B-store" [ref=f130e639]
+            - navigation [ref=f130e640]:
+              - generic [ref=f130e641]:
+                - generic [ref=f130e642]: Account Details
+                - generic [ref=f130e646]:
+                  - link "Orders1" [ref=f130e648] [cursor=pointer]:
+                    - /url: /account/orders
+                  - link "Organization lists" [ref=f130e650] [cursor=pointer]:
+                    - /url: /account/lists
+                  - link "Quote requests" [ref=f130e652] [cursor=pointer]:
+                    - /url: /account/quotes
+                  - link "Notifications" [ref=f130e654] [cursor=pointer]:
+                    - /url: /account/notifications
+                  - link "Checkout defaults" [ref=f130e656] [cursor=pointer]:
+                    - /url: /account/checkout-defaults
+              - generic [ref=f130e657]:
+                - generic [ref=f130e658]: Customer Support
+                - generic [ref=f130e662]:
+                  - link "Catalog" [ref=f130e664] [cursor=pointer]:
+                    - /url: /catalog
+                  - link "Contact Us" [ref=f130e666] [cursor=pointer]:
+                    - /url: /contacts
+                  - link "Find a Branch" [ref=f130e668] [cursor=pointer]:
+                    - /url: /branch/vendor-fulfillment
+              - generic [ref=f130e669]:
+                - generic [ref=f130e670]: Online Resources
+                - generic [ref=f130e674]:
+                  - link "Sign up" [ref=f130e676] [cursor=pointer]:
+                    - /url: /sign-up
+                  - link "Catalog" [ref=f130e678] [cursor=pointer]:
+                    - /url: /catalog
+                  - link "Demo landing" [ref=f130e680] [cursor=pointer]:
+                    - /url: /demo-landing
+                  - link "Builder.IO Page" [ref=f130e682] [cursor=pointer]:
+                    - /url: /builder-io-page
+              - generic [ref=f130e683]:
+                - generic [ref=f130e684]: Brands
+                - link "All popular brands" [ref=f130e690] [cursor=pointer]:
+                  - /url: /brands
+          - generic [ref=f130e691]:
+            - generic [ref=f130e692]:
+              - text: Ver. 3.2.0-pr-19-4507-4507f3ae. © 2026
+              - strong [ref=f130e693]: Virto Commerce
+              - text: . All rights reserved
+            - generic [ref=f130e694]:
+              - text: ASP.NET ecommerce platform
+              - link "Virto Commerce" [ref=f130e695] [cursor=pointer]:
+                - /url: https://virtocommerce.com
+    - 'complementary "Environment indicator: QA-audit-test" [ref=f130e696]':
+      - generic [ref=f130e697]: QA-audit-test
+  - region "Notifications"

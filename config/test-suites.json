@@ -796,7 +796,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 52,
+      "testCount": 57,
       "estimatedMinutes": 41,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -899,7 +899,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 15,
+      "testCount": 20,
       "estimatedMinutes": 10,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1186,7 +1186,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 60,
+      "testCount": 67,
       "estimatedMinutes": 17,
       "agent": "qa-testing-expert",
       "tags": [
@@ -1245,7 +1245,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 31,
+      "testCount": 37,
       "estimatedMinutes": 22,
       "agent": "qa-testing-expert",
       "tags": [
@@ -4111,7 +4111,7 @@
       "file": "regression/suites/Frontend/auth/111-auth-mfa-sign-in.csv",
       "layer": "frontend",
       "concern": "functional",
-      "testCount": 13,
+      "testCount": 14,
       "estimatedMinutes": 90,
       "agent": "qa-frontend-expert",
       "domain": "auth-security",
@@ -4188,7 +4188,7 @@
       "file": "regression/suites/Frontend/auth/114-auth-passkey-sign-in.csv",
       "layer": "frontend",
       "concern": "functional",
-      "testCount": 20,
+      "testCount": 22,
       "estimatedMinutes": 120,
       "agent": "qa-frontend-expert",
       "tags": [
