@@ -10970,6 +10970,30 @@
     "lists_url": "/account/lists",
     "item_count": 3
   },
+  "VCST6626_PROFILE_BUYER": {
+    "_inline": true,
+    "seed": "node scripts/seed-data/auth/mfa-fixtures.mjs --run vcst6626",
+    "_comment": "VCST-6626 disposable confirmed B2B-store buyer for the 033 profile / address field-error rows (safe to edit). Created per run by the MFA fixtures creator (kind customer-confirmed); runtime user_id/contact_id in aliases.<env>.json; teardown: node scripts/seed-data/auth/mfa-fixtures.mjs --teardown --run vcst6626.",
+    "store_id": "B2B-store",
+    "password_var": "TEST_USER_PASSWORD",
+    "run_id": "vcst6626",
+    "kind": "customer-confirmed",
+    "email": "agent-test-mfa-vcst6626-customer-confirmed@example.com",
+    "user_id": "",
+    "contact_id": ""
+  },
+  "VCST6626_MFA_PER_USER_2FA": {
+    "_inline": true,
+    "seed": "node scripts/seed-data/auth/mfa-fixtures.mjs --run vcst6626",
+    "_comment": "VCST-6626 B2B-store buyer with the per-user two-factor flag on, for the 111 per-user MFA rows (store MFA mode stays off). Created per run by the MFA fixtures creator (kind per-user-2fa); runtime user_id/contact_id in aliases.<env>.json; teardown: node scripts/seed-data/auth/mfa-fixtures.mjs --teardown --run vcst6626.",
+    "store_id": "B2B-store",
+    "password_var": "TEST_USER_PASSWORD",
+    "run_id": "vcst6626",
+    "kind": "per-user-2fa",
+    "email": "agent-test-mfa-vcst6626-per-user-2fa@example.com",
+    "user_id": "",
+    "contact_id": ""
+  },
   "PB_LOGIN_SECTION": {
     "_inline": true,
     "seed": "seed:cms-pages",
