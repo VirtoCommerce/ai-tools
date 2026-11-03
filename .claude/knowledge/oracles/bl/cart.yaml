@@ -69,7 +69,7 @@ rules:
       kind: manual
       ref: Item at $100 list, $80 sale → apply 10% coupon → discount = $8 (10% of $80), not $10. Apply second coupon → rejected with "Only one coupon allowed" message.
     violation_signal: Coupon discount calculated on list price; coupon accepted when min-order threshold not met; multiple coupons applied when multi-coupon is disabled.
-    status: SUSPECT
+    status: ACTIVE
     verified:
       date: 2026-10-20
       by: REG-2026-10-20-1418

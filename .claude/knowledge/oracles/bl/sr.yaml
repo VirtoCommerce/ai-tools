@@ -461,7 +461,7 @@ rules:
       kind: manual
       ref: "Save a `customerProfile` layout while viewing one served customer; open a different served customer's profile → the same arrangement renders, confirmed in **both directions** (a save while viewing customer A renders on customer B, and a save while viewing B renders on A); inspecting the `saveSalesRepLayout` mutation payload shows no organization/customer id field anywhere in the request (SR-CP-042; draft/edit-mode carry-over: SR-CP-043)."
     violation_signal: A customer-profile layout differs per customer, or the schema/backend accepts a customer/organization argument for this query/mutation.
-    status: SUSPECT
+    status: ACTIVE
     verified:
       date: 2026-10-27
       by: REG-2026-10-27-SR-SWEEP

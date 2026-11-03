@@ -1,8 +1,8 @@
 ---
 kind: test
-budget: 1500
+budget: 3000
 lede_max: 240
-trim: "[NOT_FILED, AREAS, QUESTIONS, BUGS]"
+trim: "[AREAS, QUESTIONS, NOT_FILED, BUGS]"
 ---
 ## {{ICON}} QA {{VERDICT_LABEL}} — {{TICKET}}
 {{LEDE}}
@@ -49,6 +49,10 @@ trim: "[NOT_FILED, AREAS, QUESTIONS, BUGS]"
 {{^BUGS}}
 | Nothing filed | | |
 {{/BUGS}}
+
+{{#SHOTS}}
+!{{.}}|width=700!
+{{/SHOTS}}
 
 **Not filed (below severity floor)**
 {{#NOT_FILED}}

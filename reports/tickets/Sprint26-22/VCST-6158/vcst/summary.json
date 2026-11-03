@@ -1,0 +1,452 @@
+{
+  "ticket": "VCST-6158",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": {
+    "comment_id": "112649",
+    "amended": false
+  },
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": null,
+    "escalated_reason": null,
+    "narrow_story_tokens": {
+      "priority": "P2 Medium — holds",
+      "layer": "cross-layer (module api, storefront plugin, vc-frontend host card) — fails",
+      "domains": "sales-rep + marketing — fails",
+      "chain_shape": "adds a new link (rep reads store coupons) — fails",
+      "surface": "deployed; reachable after a CDN blocker cleared",
+      "reach": "exceeds diff — shared CouponItem used by the buyer page"
+    }
+  },
+  "layer": "cross-layer",
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "rev_at_run": 3,
+    "rev_now": 4,
+    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json",
+    "all_layer_chain": true,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "unmapped_surfaces": [
+      "salesRepCoupons + SalesRepCoupon",
+      "layout block coupons",
+      "route /company/my-customers/:org/coupons",
+      "Marketing optional dependency + isSalesRepCouponsEnabled",
+      "guardCustomerModuleRoute",
+      "@vc-frontend/core CouponItem export + compact prop + slot",
+      "buyer vs rep disagreements (expiry/used-up filter, null order, Expires meaning)"
+    ],
+    "note": "rev 4 committed by another session during this run (a9c44c553) covers the coupons surface; 5-docs-map amends rev 4"
+  },
+  "shape_class": {
+    "value": "feature",
+    "sources": [
+      "vc-frontend#2596 exposes an existing card, not a design-system primitive"
+    ]
+  },
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-11-03",
+  "timing": {
+    "start": "2026-11-03T15:45Z",
+    "reachability_minutes": 2,
+    "reachability_hold_minutes": 19,
+    "time_to_first_test_minutes": 58,
+    "test_window_start": "2026-11-03T16:43:26Z",
+    "end": "2026-11-03T18:30Z"
+  },
+  "environment": "vcst",
+  "build": {
+    "declared": null,
+    "deployed": {
+      "platform": "3.1093.0-pr-3154-4607",
+      "relevant_modules": {
+        "VirtoCommerce.SalesRep": "3.1017.0-pr-30-1e10",
+        "VirtoCommerce.Marketing": "3.1010.0",
+        "VirtoCommerce.MarketingExperienceApi": "3.1004.0"
+      },
+      "theme": "2.62.0-pr-2596-e749-e749b47f"
+    },
+    "deploy_pr": "VirtoCommerce/vc-deploy-dev#7029 (merged 2026-11-03T15:37:52Z; revert after verification)",
+    "platform": "3.1093.0-pr-3154-4607",
+    "theme": "2.62.0-pr-2596-e749-e749b47f",
+    "relevant_modules": {
+      "VirtoCommerce.SalesRep": "3.1017.0-pr-30-1e10",
+      "VirtoCommerce.Marketing": "3.1010.0",
+      "VirtoCommerce.MarketingExperienceApi": "3.1004.0"
+    }
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "action": "transition",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition_id": "4",
+      "by": "qa-lead (orchestrator inline)",
+      "confirmed_by": null
+    },
+    {
+      "at": "5-status",
+      "action": "transition",
+      "from": "Testing",
+      "to": "Tested",
+      "transition_id": "8",
+      "confirmed_by": "operator (chose item 3 in chat)",
+      "at_time": "2026-11-03T18:50:29.724Z"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert (1r, 4a-FE, SR-CP-074 follow-up)",
+    "ba-system-analyzer (1c)",
+    "ba-story-writer (1d)",
+    "test-data-engineer (3a, SR_UNSERVED_ORG write-back)",
+    "qa-testing-expert (3x)",
+    "qa-backend-expert (4a-BE)",
+    "vc-test:ui-ux-expert (4v)",
+    "test-management-specialist (A)",
+    "qa-lead-orchestrator (3-cases verifier, 2 rounds)",
+    "regression-orchestrator (4c C1)",
+    "general-purpose (5-file via vc-fix:qa-bug)"
+  ],
+  "epic": {
+    "key": "VCST-5142",
+    "summary": "Sales Rep Hub",
+    "status": "In progress"
+  },
+  "ac_analysis": {
+    "story_acs": 14,
+    "weak_acs": 4,
+    "gap_acs_added": 28,
+    "impl_coverage": {
+      "satisfied": 12,
+      "drift": 0,
+      "contradicts": 0,
+      "spec_conflict": 1,
+      "untested": 1,
+      "not_found": 0,
+      "notes": "AC-05 satisfied on content (copy string differs: PO wording question). AC-02 untested: the link-on-a-short-list case is not reachable while the store has >= 20 coupons (static suspicion only). AC-11 spec_conflict: same-set vs hide rule, root cause VCST-6675, awaiting PO; flips to FAIL if the PO means literally equal to the buyer page. AC-12/AC-13: ON half satisfied, OFF half not tested."
+    },
+    "conditions_total": 37,
+    "conditions_with_evidence": 35,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 78.6,
+      "basis": "11 of 14 story ACs fully evidenced live (not fully: AC-02 not reached; AC-12/AC-13 OFF half not tested). Checklist: 35 of 37 conditions fully evidenced (C-28 OFF half, C-33 widget half partial)",
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    }
+  },
+  "new_cases_authored": 29,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [
+      {
+        "case": "SR-CP-077",
+        "reason": "unresolved {HYPOTHESIS} on page clamp"
+      },
+      {
+        "case": "SR-GQL-174",
+        "reason": "observed no-release behaviour awaits PO answer"
+      },
+      {
+        "case": "SR-CP-084",
+        "reason": "failed on in-scope bug VCST-6673"
+      },
+      {
+        "case": "SR-CP-083",
+        "reason": "PO question on member-bound listing"
+      }
+    ],
+    "reverted": []
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-11-03-1732",
+      "ids_count": 37,
+      "first_pass": {
+        "pass": 26,
+        "fail": 3,
+        "blocked": 8
+      },
+      "final": {
+        "note": "SR-CP-074 re-run alone after the SR_UNSERVED_ORG write-back → PASS; no results file, outside the RUN_ID — the run-file numbers above are authoritative"
+      },
+      "fails": [
+        "SR-CP-084 (VCST-6673)",
+        "CPN-014 RE-BASE (VCST-6675, pre-existing)",
+        "SR-CP-050 RE-BASE (test-defect: layout payload now carries the coupons maxRows)"
+      ],
+      "blocked": 6,
+      "after_retry": {
+        "pass": 28,
+        "fail": 3,
+        "blocked": 6,
+        "pass_rate_pct": 75.7,
+        "blocked_triaged": 6
+      },
+      "bl_fresh": "bl:fresh marked BL-SR-023, BL-PRICE-001, BL-CART-003 SUSPECT from CPN-014 (pre-existing buyer page, VCST-6675) and SR-CP-050 (test-defect); reverted to ACTIVE at close-out; BL-SR-031 re-verified",
+      "suites": [
+        "050m",
+        "091",
+        "077"
+      ],
+      "ids": [
+        "SR-GQL-163",
+        "SR-GQL-164",
+        "SR-GQL-165",
+        "SR-GQL-166",
+        "SR-GQL-167",
+        "SR-GQL-168",
+        "SR-GQL-169",
+        "SR-GQL-170",
+        "SR-GQL-171",
+        "SR-GQL-172",
+        "SR-GQL-173",
+        "SR-GQL-174",
+        "SR-CP-070",
+        "SR-CP-071",
+        "SR-CP-072",
+        "SR-CP-073",
+        "SR-CP-074",
+        "SR-CP-075",
+        "SR-CP-076",
+        "SR-CP-077",
+        "SR-CP-078",
+        "SR-CP-079",
+        "SR-CP-080",
+        "SR-CP-081",
+        "SR-CP-082",
+        "SR-CP-083",
+        "SR-CP-084",
+        "SR-CP-047",
+        "SR-CP-050",
+        "SR-CP-068",
+        "CPN-066",
+        "CPN-067",
+        "CPN-006",
+        "CPN-025",
+        "CPN-050",
+        "CPN-053",
+        "CPN-014"
+      ],
+      "pass_rate": 0.757,
+      "skipped_reason": null,
+      "pass": 28,
+      "fail": 3
+    },
+    "release_scoped_sweep": "not-assessed — /qa-test runs no release sweep",
+    "release_gate": "not-assessed"
+  },
+  "coverage_triage": {
+    "scan": "reports/tickets/Sprint26-22/VCST-6158/vcst/tc-scope.json",
+    "hits": 204,
+    "dispositions": "reports/tickets/Sprint26-22/VCST-6158/vcst/coverage-disposition.json",
+    "confirmed": 196,
+    "repair": [
+      "CPN-006",
+      "CPN-025",
+      "CPN-050",
+      "CPN-053"
+    ],
+    "rebase": [
+      "CPN-014",
+      "SR-CP-047",
+      "SR-CP-050",
+      "SR-CP-068"
+    ],
+    "superseded": 0,
+    "unscannable": [],
+    "unmatchedObservables": [
+      "Promotion coupons (buyer heading is All coupons & promotions)"
+    ],
+    "note": "hits 204 / confirmed 196 are the wave-B scan that coverage-disposition.json disposes (20 suites, 804 rows); tc-scope.json was re-run after the run folder was deleted outside the run: 235 hits (21 suites, 838 rows) incl. this run's new rows"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6673",
+      "severity": "Medium",
+      "relationship": "sub-task",
+      "parent_or_linked_ticket": "VCST-6158",
+      "summary": "Coupon Expires shows the day after the code stops working (browser time zone)",
+      "provenance": "IN-SCOPE",
+      "autofix_labels": false,
+      "title": "Coupon Expires shows the day after the code stops working"
+    },
+    {
+      "key": "VCST-6675",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-6158",
+      "summary": "Buyer coupons page lists coupons checkout rejects",
+      "provenance": "OUT-OF-SCOPE (pre-existing buyer page)",
+      "autofix_labels": true,
+      "title": "Buyer coupons page lists coupons checkout rejects"
+    },
+    {
+      "key": "VCST-6676",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-6158",
+      "summary": "Unversioned remoteEntry.js served stale up to 4 h after a module redeploy",
+      "provenance": "OUT-OF-SCOPE (plugin delivery)",
+      "autofix_labels": false,
+      "title": "Plugin pages broken up to 4 h after a module redeploy (stale remoteEntry.js)"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Unserved customer coupons page: Back to customer leads to another not-found page",
+      "report": "reports/tickets/Sprint26-22/VCST-6158/vcst/bugs/low/BUG-Unserved-Customer-Coupons-Back-Link-Dead-End.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Coupons widget loading placeholder 44 px taller than the loaded list (layout shift)",
+      "report": "reports/tickets/Sprint26-22/VCST-6158/vcst/bugs/low/BUG-Coupons-Widget-Skeleton-Layout-Shift.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "Lowercase coupon code shown and copied in uppercase (VC-PROMO-003, now on the rep page)",
+      "report": "reports/tickets/Sprint26-22/VCST-6158/vcst/bugs/low/BUG-Rep-Coupon-Code-Shown-Copied-Uppercase.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "out-of-scope",
+      "summary": "xAPI order coupons field always fails with INVALID_OPERATION",
+      "report": "reports/tickets/Sprint26-22/VCST-6158/vcst/bugs/low/BUG-XAPI-Order-Coupons-Field-Invalid-Operation.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "salesRepCoupons totalUsesCount is cached for uncapped coupons (API only)",
+      "report": "reports/tickets/Sprint26-22/VCST-6158/vcst/bugs/low/BUG-Rep-Coupons-TotalUsesCount-Stale-Uncapped.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "Regular coupon card breaks ordinary codes mid-word at 1024-1280 px (suspected, needs a before-image)",
+      "report": "reports/tickets/Sprint26-22/VCST-6158/vcst/bugs/low/BUG-Coupon-Card-Code-Column-Breaks-Mid-Word.md"
+    }
+  ],
+  "discovery": {
+    "report": "reports/tickets/Sprint26-22/VCST-6158/vcst/exploratory/SBTM-VCST-6158-2026-11-03.md",
+    "minutes": 45,
+    "box": 60,
+    "net_new": 5,
+    "promoted": [
+      "S29",
+      "S32",
+      "S33"
+    ],
+    "declined": [
+      "buyer page unredeemable (VCST-6675)",
+      "promotion-level total limit not enforced (platform)"
+    ],
+    "open_questions": [
+      "member-bound coupon hidden from the bound org that can redeem it (S32)",
+      "cancelled order keeps the coupon use (S33, SR-GQL-174 held at Draft)",
+      "unverified suspect: promotion-level total usage limit of 1 applied twice (platform marketing; needs VirtoOZ check; revenue-relevant — human call)"
+    ]
+  },
+  "visual": {
+    "lane": "playwright-edge",
+    "report": "reports/tickets/Sprint26-22/VCST-6158/vcst/design-report.md",
+    "layout": "PASS (V-1 Low)",
+    "a11y": "PASS (axe 0 violations; V-2, V-3 advisory)",
+    "design": "SKIPPED — no Claude Design prototype named",
+    "deviation": "C-30 forced states via run-code under the @exploratory marker"
+  },
+  "contract": {
+    "contract_surface": true,
+    "schema": "reports/tickets/Sprint26-22/VCST-6158/vcst/knowledge/api/graphql-schema.md",
+    "refreshed": "2026-11-03",
+    "fixtures": "86/86"
+  },
+  "test_data": {
+    "data_surface": true,
+    "seeded": "SRCPN_* (9 promotions) via npm run seed:promotions:sales-rep-coupons; SR_UNSERVED_ORG write-back",
+    "teardown": "PENDING — TEST_ENV=vcst npm run seed:promotions:sales-rep-coupons:teardown; deploy pin vc-deploy-dev#7029 still to revert",
+    "recovery": "testing-checklist.md, design-report.md, coverage-disposition.json, tc-scope.json, preflight.json were deleted outside the run at ~19:19 and rewritten: checklist + design report + dispositions from the authors records; tc-scope.json and preflight.json re-run (235 hits, now incl. this runs new rows; READY)"
+  },
+  "appinsights": {
+    "checked": false,
+    "layers": [
+      "frontend",
+      "backend"
+    ],
+    "window_minutes": 0,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
+    "correlated_failures": [],
+    "note": "not checked — no API key; the PASS-row clause on correlated REAL_BUG is unverified, not clean"
+  },
+  "report": {
+    "page_url": null,
+    "verdict_md": null,
+    "kb": {
+      "read": [
+        "KB-50CD6A34",
+        "KB-F0C5CA5E",
+        "KB-1C28E89D",
+        "KB-3F3D3C6B",
+        "KB-843D0515"
+      ],
+      "confirmed": [
+        "KB-4358B2EC",
+        "KB-650B8BFB",
+        "KB-471859D5",
+        "KB-F0C5CA5E",
+        "KB-789D47BE",
+        "KB-F37AB317",
+        "KB-B1DBAD5D",
+        "KB-6824BC2B"
+      ],
+      "disputed": [],
+      "captured": [
+        "KB-B1B290C4",
+        "KB-F37AB317",
+        "KB-8CFB57D0",
+        "KB-B1DBAD5D",
+        "KB-AE34AB04",
+        "KB-18660449",
+        "KB-0BB4480E",
+        "KB-B6E151FC",
+        "KB-EACB5F0A",
+        "KB-F490DA8B",
+        "KB-60073765",
+        "KB-E0336E34"
+      ]
+    }
+  },
+  "release": {
+    "layers": [
+      "api",
+      "storefront"
+    ],
+    "layer_source": [
+      "vc-module-sales-rep#30 diff (.cs ExperienceApi + StorefrontApp .vue)",
+      "vc-frontend#2596 diff (.vue/.ts)"
+    ],
+    "layers_conflict": false,
+    "component_versions": {
+      "VirtoCommerce.SalesRep": "3.1017.0-pr-30-1e10",
+      "theme": "2.62.0-pr-2596-e749-e749b47f"
+    },
+    "platform_version": "3.1093.0-pr-3154-4607",
+    "breaking": false,
+    "breaking_source": null,
+    "user_visible": true,
+    "fragment": null,
+    "refusal": null,
+    "aggregated_into": null
+  }
+}

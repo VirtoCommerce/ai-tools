@@ -271,8 +271,8 @@ STATE NOTE (2026-08-04): the customerProfile layout currently saved for the sign
 [ACT] click the x on the 'Customer activity' widget
 [WAIT] all three hidden","[DOM] after hiding only 'Quick actions' and 'Customer information', the rail STILL renders (it holds the visible 'Customer activity' block) {OBSERVED}
 [DOM] with all three mainRight blocks hidden, no aside/rail column renders at all on the page {OBSERVED}
-[DOM] the mainLeft column ('Recent orders', 'Top sellers') now spans the full width previously shared with the rail {OBSERVED}
-[DOM] a 'Hidden widgets' tray lists 'Quick actions', 'Customer information' and 'Customer activity' {OBSERVED}","none (draft-local, pre-save)","an empty rail column remains visible, holding its desktop width, after all three blocks are hidden; the rail unmounts while a visible block is still in it; mainLeft does not expand to fill the freed space","[ACT] click 'Cancel' -- draft discarded, nothing persisted","VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.rail-mount | VCST-5337 r2 2026-10-20: mainRight now holds a third block, Customer activity (VCST-5337), so hiding the two named blocks leaves the rail mounted; case extended to hide all three (REG-2026-10-19-1950: intent verified, hiding all three unmounts the rail)",Reviewed
+[DOM] the mainLeft column ('My recent orders', 'Top sellers') now spans the full width previously shared with the rail {OBSERVED}
+[DOM] a 'Hidden widgets' tray lists 'Quick actions', 'Customer information' and 'Customer activity' {OBSERVED}","none (draft-local, pre-save)","an empty rail column remains visible, holding its desktop width, after all three blocks are hidden; the rail unmounts while a visible block is still in it; mainLeft does not expand to fill the freed space","[ACT] click 'Cancel' -- draft discarded, nothing persisted","VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.rail-mount | VCST-5337 r2 2026-10-20: mainRight now holds a third block, Customer activity (VCST-5337), so hiding the two named blocks leaves the rail mounted; case extended to hide all three (REG-2026-10-19-1950: intent verified, hiding all three unmounts the rail) · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Reviewed
 SR-CP-037,Hiding Only ONE mainRight Block Keeps the Rail Mounted,Storefront > Sales Rep > Customer Profile > Saved Layout > mainRight,Medium,BL-SR-032,,"state from SR-CP-036 (rep signed in, profile in edit mode, both mainRight blocks currently hidden).",front_url={{FRONT_URL}},"[ACT] click the 'Quick actions' pill in the hidden widgets tray to restore it (leave 'Customer information' hidden)
 [WAIT] 'Quick actions' restored, 'Customer information' still hidden","[DOM] the rail (aside element) is now mounted, showing only 'Quick actions' {OBSERVED}
 [DOM] the mainLeft column returns to its shared (not full) width now that the rail holds one visible block {OBSERVED}","none (draft-local, pre-save)",the rail stays unmounted even though 'Quick actions' is now visible in it; mainLeft stays full-width despite the rail holding a visible block,[ACT] click 'Cancel',"VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.rail-mount",Reviewed
@@ -307,9 +307,9 @@ STATE NOTE (2026-08-04): the customerProfile layout currently saved for the sign
 [DOM] no widget from mainRight ('Quick actions'/'Customer information') appears in mainLeft as a side effect of the failed drop {OBSERVED}
 [STATE] no console error accompanies the rejected cross-group drop {OBSERVED}",[CONSOLE] no error thrown by the rejected drop attempt,"the widget actually lands in mainRight, breaking the structural guarantee; a console error appears; the page visually glitches after the attempted drop",[ACT] click 'Cancel',"VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.column-groups",Reviewed
 SR-CP-041,Cross-Column Drag mainRight to mainLeft Is Also Impossible (Reverse Direction),Storefront > Sales Rep > Customer Profile > Saved Layout > Drag and Drop,Medium,BL-SR-027,,"state from SR-CP-040 (rep in edit mode, profile open for @td(ORG_ACME.id)).
-STATE NOTE (2026-08-04): the customerProfile layout currently saved for the signed-in rep has BOTH mainRight widgets hidden -- Reset+Save (or reseed) first if the rail is not already rendering the widgets this case expects.",front_url={{FRONT_URL}},"[ACT] attempt to drag the 'Quick actions' widget header from mainRight into the mainLeft column, dropping it beside 'Recent orders'
+STATE NOTE (2026-08-04): the customerProfile layout currently saved for the signed-in rep has BOTH mainRight widgets hidden -- Reset+Save (or reseed) first if the rail is not already rendering the widgets this case expects.",front_url={{FRONT_URL}},"[ACT] attempt to drag the 'Quick actions' widget header from mainRight into the mainLeft column, dropping it beside 'My recent orders'
 [WAIT] drop settles","[DOM] 'Quick actions' remains in the mainRight rail -- the reverse-direction drop was also rejected {OBSERVED}
-[STATE] no widget from mainLeft appears in mainRight as a side effect of the failed drop {OBSERVED}",[CONSOLE] no error thrown,"'Quick actions' lands in mainLeft, breaking the structural guarantee",[ACT] click 'Cancel',"VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.column-groups",Reviewed
+[STATE] no widget from mainLeft appears in mainRight as a side effect of the failed drop {OBSERVED}",[CONSOLE] no error thrown,"'Quick actions' lands in mainLeft, breaking the structural guarantee",[ACT] click 'Cancel',"VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.column-groups · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Reviewed
 SR-CP-042,Customer-Profile Layout Is Scope-Wide -- the Same Arrangement Applies on a Different Served Customer,Storefront > Sales Rep > Customer Profile > Saved Layout > Persistence,Critical,BL-SR-023,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036). SR_REP_LAYOUT is the designated DISPOSABLE-layout fixture (VCST-5367) and serves both @td(ORG_ACME.id) and @td(ORG_TECHFLOW.id) -- this case proves the layout is ONE document per rep per surface, not one per customer, without mutating SR_REP_PRIMARY's shared never-saved baseline. Cleanup MUST restore defaults since this case Saves.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
@@ -317,19 +317,19 @@ LAYOUT API GATE (see SR-CP-036). SR_REP_LAYOUT is the designated DISPOSABLE-layo
 [WAIT] profile page rendered
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
-[ACT] drag 'Top sellers' above 'Recent orders'
+[ACT] drag 'Top sellers' above 'My recent orders'
 [ACT] click 'Save layout'
 [WAIT] save completes
 [NAV] {{FRONT_URL}}/company/my-customers
 [ACT] click the @td(ORG_TECHFLOW.name) row to open ITS profile, a different served customer
 [WAIT] profile page rendered
-[ACT] on @td(ORG_TECHFLOW.name)'s profile, click 'Edit layout', drag 'Recent orders' back above 'Top sellers', click 'Save layout'
+[ACT] on @td(ORG_TECHFLOW.name)'s profile, click 'Edit layout', drag 'My recent orders' back above 'Top sellers', click 'Save layout'
 [WAIT] save completes
 [NAV] {{FRONT_URL}}/company/my-customers
 [ACT] click the @td(ORG_ACME.name) row to reopen ITS profile
-[WAIT] profile page rendered","[DOM] on @td(ORG_TECHFLOW.name)'s profile, 'Top sellers' also renders above 'Recent orders' -- the same arrangement, even though this is a different customer than the one it was saved from {OBSERVED}
+[WAIT] profile page rendered","[DOM] on @td(ORG_TECHFLOW.name)'s profile, 'Top sellers' also renders above 'My recent orders' -- the same arrangement, even though this is a different customer than the one it was saved from {OBSERVED}
 [STATE] no edit action was taken on @td(ORG_TECHFLOW.name)'s profile before this arrangement appeared {OBSERVED}
-[DOM] after saving the REVERSE arrangement from @td(ORG_TECHFLOW.name)'s profile, @td(ORG_ACME.name)'s profile also now shows 'Recent orders' above 'Top sellers' -- proven in both directions {OBSERVED}","[API] salesRepLayout(scope:customerProfile) is requested with no organizationId/customer-scoping argument, confirming one document serves every customer; structural proof that the payload carries no organizationId is pinned separately in SR-CP-050","the second customer's profile shows the registry-default order instead of the saved one, meaning the layout is wrongly per-customer","[ACT] Edit layout, then Reset, then Save layout to restore registry defaults","VCST-5367, PR vc-frontend#2400; design spec goal -- one layout per rep per page; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32); Corrected: 2026-09-07 (REG-2026-09-07-1342 triage) -- precondition re-pointed from the shared SR_REP_PRIMARY to the designated disposable SR_REP_LAYOUT fixture (fixture mis-binding: this Save-mutating case was writing into the shared happy-path rep's never-saved baseline, which ~40 other cases depend on) | Behavior:sr.layout.scope-keys",Reviewed
+[DOM] after saving the REVERSE arrangement from @td(ORG_TECHFLOW.name)'s profile, @td(ORG_ACME.name)'s profile also now shows 'My recent orders' above 'Top sellers' -- proven in both directions {OBSERVED}","[API] salesRepLayout(scope:customerProfile) is requested with no organizationId/customer-scoping argument, confirming one document serves every customer; structural proof that the payload carries no organizationId is pinned separately in SR-CP-050","the second customer's profile shows the registry-default order instead of the saved one, meaning the layout is wrongly per-customer","[ACT] Edit layout, then Reset, then Save layout to restore registry defaults","VCST-5367, PR vc-frontend#2400; design spec goal -- one layout per rep per page; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32); Corrected: 2026-09-07 (REG-2026-09-07-1342 triage) -- precondition re-pointed from the shared SR_REP_PRIMARY to the designated disposable SR_REP_LAYOUT fixture (fixture mis-binding: this Save-mutating case was writing into the shared happy-path rep's never-saved baseline, which ~40 other cases depend on) | Behavior:sr.layout.scope-keys · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Reviewed
 "SR-CP-043","Switching :organizationId Mid-Edit Discards the Never-Saved Draft and Exits Edit Mode","Storefront > Sales Rep > Customer Profile > Saved Layout > Persistence","Medium","BL-SR-023","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 NOT RUN 2026-08-04 (vcptcore-qa): remains unexecuted this session, not failing.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
@@ -337,11 +337,11 @@ NOT RUN 2026-08-04 (vcptcore-qa): remains unexecuted this session, not failing."
 [WAIT] profile page rendered
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
-[ACT] drag 'Top sellers' above 'Recent orders' -- do NOT save
+[ACT] drag 'Top sellers' above 'My recent orders' -- do NOT save
 [WAIT] draft reorder reflected
 [NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.id) (direct navigation to a different served customer's profile, mid-edit, without saving or cancelling)
 [WAIT] new profile page rendered","[DOM] switching :organizationId mid-edit exits edit mode: the new customer profile page renders in NORMAL mode with no edit bar, requiring the rep to click 'Edit layout' again to resume editing {OBSERVED}
-[DOM] the never-saved draft reorder ('Top sellers' above 'Recent orders') is discarded on the switch; the new customer profile shows its persisted (last-saved / registry) widget order, not the draft {OBSERVED}","none (draft-local, never saved)","the never-saved draft reorder, or edit mode itself, carries over to the new customer profile after the :organizationId switch (regression to the old carryover behavior)","[ACT] click 'Cancel' to discard the never-saved draft","BL-SR-024 (never-saved draft discarded, surface returns to NORMAL mode at the persisted/registry order on :organizationId switch) | VCST-5367, PR vc-frontend#2400 (superseded - the design-spec section 4 carryover this PR encoded is no longer the shipped behavior) | Caveat: BL-SR-023 Verify note names SR-CP-042 as the carrier of the saved scope-wide behavior; SR-CP-042 did NOT fail run REG-2026-09-18-1818, so this correction does not touch that P1 invariant - a future SR-CP-042 failure should re-open this case contract | Behavior:sr.profile.customer-switch-isolation","Draft"
+[DOM] the never-saved draft reorder ('Top sellers' above 'My recent orders') is discarded on the switch; the new customer profile shows its persisted (last-saved / registry) widget order, not the draft {OBSERVED}","none (draft-local, never saved)","the never-saved draft reorder, or edit mode itself, carries over to the new customer profile after the :organizationId switch (regression to the old carryover behavior)","[ACT] click 'Cancel' to discard the never-saved draft","BL-SR-024 (never-saved draft discarded, surface returns to NORMAL mode at the persisted/registry order on :organizationId switch) | VCST-5367, PR vc-frontend#2400 (superseded - the design-spec section 4 carryover this PR encoded is no longer the shipped behavior) | Caveat: BL-SR-023 Verify note names SR-CP-042 as the carrier of the saved scope-wide behavior; SR-CP-042 did NOT fail run REG-2026-09-18-1818, so this correction does not touch that P1 invariant - a future SR-CP-042 failure should re-open this case contract | Behavior:sr.profile.customer-switch-isolation · Synced: qa-test-lifecycle suite 091 (2026-11-03)","Draft"
 SR-CP-044,"Customer-Profile Statistics Row Has 5 Cards, Distinct From the Dashboard's 6 (Count-Agnostic, No Hole)",Storefront > Sales Rep > Customer Profile > Saved Layout > Stat Widgets,Medium,BL-SR-025,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 state from SR-CP-028 (rep signed in, profile open for @td(ORG_ACME.id), Sales widgets section rendered). See 093 SR-HD-004 for the dashboard's 6-card set; this case pins the customer-profile's own, smaller registry set. Independent of the layout mutation API -- the stat cards render from their own statistics queries regardless of whether salesRepLayout succeeds.
@@ -377,14 +377,14 @@ STATE NOTE (2026-08-04): the customerProfile layout currently saved for the sign
 [DOM] the aria-live announcer confirms the move for 'Customer information' with a position out of 3 (the rail now holds Quick actions, Customer information and Customer activity) {OBSERVED}","none (draft-local, pre-save)",keyboard sort has no effect within the rail; the announcer is silent for this rail-specific move,[ACT] click 'Cancel',"VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | VCST-5337 r2 2026-10-20: announcer reads ""position 1 of 3"": the rail gained the Customer activity block (VCST-5337)",Reviewed
 SR-CP-047,"Failed Layout Read on Customer Profile Still Renders All Three Regions' Defaults, With an Alert and Edit Disabled",Storefront > Sales Rep > Customer Profile > Saved Layout > Failure Handling,Critical,PROPOSED-BL-SR-LAYOUT-003,ECL-10.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-CORRECTION (2026-08-04, post-deploy): the layout API is now LIVE on vcptcore-qa (see 093 SR-HD-035) -- a plain page load no longer reproduces a read failure (salesRepLayout returns `null` for a never-saved rep, the non-failing path). This case now requires DELIBERATELY inducing the failure via devtools network interception (block/malform the salesRepLayout response), OR an env confirmed to lack the layout API. Customer-profile-specific because it has a THIRD region, mainRight, whose registry defaults (both 'actions' and 'info' visible, neither defaultHidden) must ALSO render despite the read failure -- a dashboard-only check (SR-HD-035) cannot exercise this.
-NOT RUN 2026-08-04 (vcptcore-qa): deliberate GraphQL request interception was not exercised this session. Chrome DevTools MCP is now bound but cannot authenticate -- it launches its own browser with no session and carries no --secrets support, so /company/my-customers redirects to /sign-in. The Playwright servers authenticate but expose no throttling or request interception. Throttling/interception and authentication live in different browsers, so no single browser can reach a signed-in profile page and selectively fail one of its requests. Tracked as B-09 in docs/repo-findings-backlog.md, with a concrete fix (a throttling primitive on the Playwright servers, or a shared CDP endpoint via --remote-debugging-port + --browser-url). Independently, nothing in the bound toolset offers SELECTIVE request interception even once auth is solved, so an isolated failed-read (this query fails while the rest of the page works) stays unreachable regardless -- an emulated 'Offline' state fails every request and is a different scenario. Remains unexecuted, not failing.",front_url={{FRONT_URL}},"[SETUP] force-fail the salesRepLayout GraphQL request (devtools network interception) -- or select an env confirmed to lack the layout API
+MANUAL (EX-200), decided 2026-11-03 after REG-2026-11-03-1732 left it BLOCKED. The case needs ONE request to fail while the rest of the page works -- the salesRepLayout GraphQL request -- and nothing a real-user lane can reach does that: the Playwright lanes (the only ones that authenticate) offer no request interception and refuse browser_evaluate / browser_run_code_unsafe for it; Chrome DevTools can intercept but cannot authenticate (B-09 in docs/repo-findings-backlog.md); an 'Offline' emulation fails every request, which is a different scenario; and the layout API is live on vcst, so a plain load returns null for a never-saved rep -- the NON-failing path. A person runs it in a browser's DevTools: sign in as SR_REP_PRIMARY, open the Network panel, block the salesRepLayout request (Block request URL on /graphql/sales-rep), then open the profile. The reachable half of this behaviour -- the registry defaults rendering in one piece -- is walked by the Reset case SR-CP-049; the failure branch (alert + Edit disabled) is only reachable here.
+Customer-profile-specific because it has a THIRD region, mainRight, whose registry defaults (both 'actions' and 'info' visible, neither defaultHidden) must ALSO render despite the read failure -- a dashboard-only check (SR-HD-035) cannot exercise this. 'Available coupons' (`coupons`, mainLeft, order 30) is part of the mainLeft defaults only when vc-module-marketing is installed (vc-module-sales-rep#30).",front_url={{FRONT_URL}},"[SETUP] (manual, browser DevTools) block the salesRepLayout GraphQL request -- Network panel, Block request URL on /graphql/sales-rep
 [NAV] {{FRONT_URL}}/company/my-customers
 [ACT] click the @td(ORG_ACME.name) row to open its profile
 [WAIT] page settles after the salesRepLayout request resolves (with an error)","[DOM] the load-failed alert is visible on the profile page {DOC}
-[DOM] all three regions render their registry defaults: the stats row (5 cards), mainLeft ('Recent orders', 'Top sellers'), and the mainRight rail ('Quick actions', 'Customer information') {SPEC}
+[DOM] all three regions render their registry defaults: the stats row (5 cards), mainLeft ('My recent orders' order 10, 'Top sellers' order 20 and, with the Marketing module installed, 'Available coupons' order 30), and the mainRight rail ('Quick actions', 'Customer information') {SPEC}
 [DOM] no 'Edit layout' button is rendered/enabled {SPEC}","[NETWORK] the salesRepLayout request shows as a GraphQL error / non-2xx
-[CONSOLE] a logged error accompanies it, no toast",the mainRight rail is blank/absent despite its blocks having no defaultHidden; 'Edit layout' remains clickable; the page crashes instead of degrading gracefully; a `null` (never-saved) result is wrongly treated as a failure (must NOT disable Edit -- see SR-CP-015),[SETUP] remove the network interception,"VCST-5367, PR vc-frontend#2400; requires deliberately-induced failure as of 2026-08-04 (layout API now live on vcptcore-qa) | Behavior:sr.layout.never-saved-defaults",Draft
+[CONSOLE] a logged error accompanies it, no toast",the mainRight rail is blank/absent despite its blocks having no defaultHidden; 'Edit layout' remains clickable; the page crashes instead of degrading gracefully; a `null` (never-saved) result is wrongly treated as a failure (must NOT disable Edit -- see SR-CP-015),[SETUP] (manual) remove the DevTools request block,"VCST-5367, PR vc-frontend#2400; requires deliberately-induced failure as of 2026-08-04 (layout API now live on vcptcore-qa); Re-based 2026-11-03 (REG-2026-11-03-1732): mainLeft defaults are now My recent orders (10) + Top sellers (20) + Available coupons (30); marked Manual because the forced failure is unreachable on the real-user lanes | Behavior:sr.layout.never-saved-defaults",Manual
 SR-CP-048,Failed Save on Customer Profile Preserves the Draft Across ALL Three Regions at Once,Storefront > Sales Rep > Customer Profile > Saved Layout > Failure Handling,High,PROPOSED-BL-SR-LAYOUT-003,ECL-10.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 LAYOUT API GATE (see SR-CP-036) -- requires the layout READ to succeed; force-fail ONLY the saveSalesRepLayout mutation. Mirrors 093 SR-HD-036's mechanism; profile-specific because it is the only surface with three regions to verify simultaneously -- a partial-region rollback would be a subtler bug than losing everything.
@@ -395,26 +395,27 @@ NOT RUN 2026-08-04 (vcptcore-qa): deliberate GraphQL request interception was no
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
 [ACT] drag the average-order-value stat card to the front of the visible stats row
-[ACT] drag 'Top sellers' above 'Recent orders' in mainLeft
+[ACT] drag 'Top sellers' above 'My recent orders' in mainLeft
 [ACT] drag 'Customer information' above 'Quick actions' in the rail
 [ACT] click 'Save layout'
 [WAIT] mutation settles (with a forced failure)","[DOM] the save-failed alert is visible and the edit bar is still shown, still in edit mode {SPEC}
-[DOM] all three draft changes are still visible -- the reordered stat card, the reordered mainLeft widgets, and the reordered rail widgets -- none of the three regions rolled back independently {SPEC}",[API] saveSalesRepLayout returns an error; no partial write is echoed,"one or two regions revert to their pre-drag order while another keeps its change, a partial rollback; edit mode exits despite the failure",[SETUP] remove the network interception; [ACT] click 'Cancel' to discard the never-actually-saved draft,"VCST-5367, PR vc-frontend#2400 | Behavior:sr.layout.explicit-save",Draft
+[DOM] all three draft changes are still visible -- the reordered stat card, the reordered mainLeft widgets, and the reordered rail widgets -- none of the three regions rolled back independently {SPEC}",[API] saveSalesRepLayout returns an error; no partial write is echoed,"one or two regions revert to their pre-drag order while another keeps its change, a partial rollback; edit mode exits despite the failure",[SETUP] remove the network interception; [ACT] click 'Cancel' to discard the never-actually-saved draft,"VCST-5367, PR vc-frontend#2400 | Behavior:sr.layout.explicit-save · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Draft
 SR-CP-049,Reset on Customer Profile Restores All Three Regions' Registry Defaults in One Action,Storefront > Sales Rep > Customer Profile > Saved Layout > Edit Mode,Medium,"BL-SR-024, BL-SR-025",,"state from SR-CP-039 (a non-default rail order is currently SAVED). Profile-specific because Reset must reconcile THREE regions at once, not two.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
 [ACT] click the @td(ORG_ACME.name) row to open its profile
 [WAIT] profile page rendered
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
 [ACT] click 'Reset'
-[WAIT] draft re-renders","[DOM] immediately after Reset, all three regions show registry defaults in one action: the 5-card stats row in its default order, mainLeft ('Recent orders' before 'Top sellers'), and mainRight ('Quick actions' before 'Customer information') {OBSERVED}
-[STATE] no mutation has fired from Reset alone {OBSERVED}",[NETWORK] no saveSalesRepLayout request fires from Reset alone,"Reset only restores one or two of the three regions, leaving another still showing the prior saved order","[ACT] click 'Save layout' to actually persist the registry defaults now that Reset staged them, finishing the restoration SR-CP-039's mutation asked for","VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.explicit-save",Reviewed
-"SR-CP-050","customerProfile Save Payload Carries No organizationId -- API-Side Twin of the Scope-Wide Invariant (BL-SR-023)","Storefront > Sales Rep > Customer Profile > Saved Layout > Persistence","High","BL-SR-023","","[PRE:CLEAR_SESSION]
+[WAIT] draft re-renders","[DOM] immediately after Reset, all three regions show registry defaults in one action: the 5-card stats row in its default order, mainLeft ('My recent orders' before 'Top sellers'), and mainRight ('Quick actions' before 'Customer information') {OBSERVED}
+[STATE] no mutation has fired from Reset alone {OBSERVED}",[NETWORK] no saveSalesRepLayout request fires from Reset alone,"Reset only restores one or two of the three regions, leaving another still showing the prior saved order","[ACT] click 'Save layout' to actually persist the registry defaults now that Reset staged them, finishing the restoration SR-CP-039's mutation asked for","VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.explicit-save · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Reviewed
+SR-CP-050,customerProfile Save Payload Carries No organizationId -- API-Side Twin of the Scope-Wide Invariant (BL-SR-023),Storefront > Sales Rep > Customer Profile > Saved Layout > Persistence,High,"BL-SR-023, BL-SR-025",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
-LAYOUT API GATE (see SR-CP-036). State from SR-CP-042 (SR_REP_LAYOUT signed in, profile open for @td(ORG_ACME.id), edit mode entered, 'Top sellers' dragged above 'Recent orders'). API-side twin of SR-CP-042's storefront-level scope-wide proof -- this case inspects the SaveSalesRepLayout mutation's own command payload directly (via network capture) rather than the rendered UI on a second customer.","front_url={{FRONT_URL}}","[ACT] click 'Save layout'
+LAYOUT API GATE (see SR-CP-036). State from SR-CP-042 (SR_REP_LAYOUT signed in, profile open for @td(ORG_ACME.id), edit mode entered, 'Top sellers' dragged above 'Recent orders'). API-side twin of SR-CP-042's storefront-level scope-wide proof -- this case inspects the SaveSalesRepLayout mutation's own command payload directly (via network capture) rather than the rendered UI on a second customer.
+MARKETING MODULE: the customer-profile layout has a third block, 'Available coupons' (id/type `coupons`, region mainLeft, order 30, one `maxRows` setting with default 5), registered only when vc-module-marketing is installed (vc-module-sales-rep#30, StorefrontApp/src/layout/coupons-block.ts). The saved payload this case inspects therefore carries it. Re-based 2026-11-03 (REG-2026-11-03-1732).",front_url={{FRONT_URL}},"[ACT] click 'Save layout'
 [WAIT] save network request captured","[NETWORK] the SaveSalesRepLayout mutation's command variable is inspected directly {OBSERVED}
-[STATE] the command payload contains no organizationId field and no customer/org-scoping argument anywhere in its structure -- only scope:""customerProfile"" plus the three regions (statistics, mainLeft, mainRight) and the command-level schemaVersion {OBSERVED}
-[STATE] all three regions are present in the payload in fixed order statistics, mainLeft, mainRight, with hidden blocks (if any) included after visible ones and id===type on every block {OBSERVED}
-[STATE] every block's settings equal the registry defaults for its type — [{maxRows:5}] for orders, top_sellers and tasks, [] for every other block — and schemaVersion:1 is a command-level field of the SaveSalesRepLayout command, not a per-block field {OBSERVED}","[API] saveSalesRepLayout errors[] empty; the subsequent salesRepLayout(scope:""customerProfile"") read on a DIFFERENT served customer reflects the same saved document (cross-reference SR-CP-042's storefront-level proof)","the payload includes an organizationId or any customer-scoping field (would mean the layout is wrongly per-customer, contradicting BL-SR-023); the three regions are not all present or not in fixed order","[ACT] Edit layout, then Reset, then Save layout to restore registry defaults","VCST-5367, PR vc-frontend#2400, BL-SR-023; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32); Corrected: 2026-09-07 (REG-2026-09-07-1342 triage) -- precondition re-pointed from the shared SR_REP_PRIMARY to the designated disposable SR_REP_LAYOUT fixture (fixture mis-binding: this Save-mutating case was writing into the shared happy-path rep's never-saved baseline, which ~40 other cases depend on) | Behavior:sr.layout.scope-keys","Reviewed"
+[STATE] the command payload contains no organizationId field and no customer/org-scoping argument anywhere in its structure; its top-level keys are exactly scope:""customerProfile"", storeId, schemaVersion and regions. storeId is the STORE key (it keys one layout document per store, exactly as the salesRepLayout read does), not a customer scope -- see References {OBSERVED}
+[STATE] all three regions are present in the payload in fixed order statistics, mainLeft, mainRight, with hidden blocks (if any) included after visible ones and id===type on every block; mainLeft holds the 'My recent orders' (orders), 'Top sellers' (top_sellers) and 'Available coupons' (coupons) blocks, in the order the rep saved them {OBSERVED}
+[STATE] every block's settings equal the registry defaults for its type -- [{key:""maxRows"", value:5}] for each configurable block the customer profile registers (orders, top_sellers and coupons), [] for every other block -- and schemaVersion:1 is a command-level field of the SaveSalesRepLayout command, not a per-block field {OBSERVED}","[API] saveSalesRepLayout errors[] empty; the subsequent salesRepLayout(scope:""customerProfile"") read on a DIFFERENT served customer reflects the same saved document (cross-reference SR-CP-042's storefront-level proof)","the payload includes an organizationId or any customer-scoping field (would mean the layout is wrongly per-customer, contradicting BL-SR-023; storeId alone is not one); a block's settings differ from its registry default (a configurable block with no maxRows, or any other block with a setting); the three regions are not all present or not in fixed order","[ACT] Edit layout, then Reset, then Save layout to restore registry defaults","VCST-5367, PR vc-frontend#2400, BL-SR-023; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32); Corrected: 2026-09-07 (REG-2026-09-07-1342 triage) -- precondition re-pointed from the shared SR_REP_PRIMARY to the designated disposable SR_REP_LAYOUT fixture (fixture mis-binding: this Save-mutating case was writing into the shared happy-path rep's never-saved baseline, which ~40 other cases depend on) | Re-based 2026-11-03 (REG-2026-11-03-1732, VCST-6158): vc-module-sales-rep#30 adds the 'Available coupons' block (layout/coupons-block.ts: region mainLeft, order 30, maxRows default 5) -- the product change is correct and the assertion pre-dated it. storeId on the command is NOT new with VCST-6158: the PR touches no layout document or command code, and the layout read/write are store-keyed (suite 050m, SR-GQL-104 'storeId keys a distinct document'), so the earlier 'only scope + regions + schemaVersion' wording was already imprecise. `tasks` is a dashboard block and is absent from the observed customerProfile payload | Behavior:sr.layout.scope-keys",Reviewed
 SR-CP-051,Customer Profile Statistics Refetch On Remount With Byte-Identical organizationId (State Transition),Storefront > Sales Rep > Customer Profile > Cache Freshness,High,PROPOSED-BL-SR-FRESHNESS-001,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 1. @td(ORG_ACME.id) has >=1 order (statistics tiles show a non-zero value).
@@ -499,16 +500,19 @@ SR-CP-058,"Recent Orders and Top Sellers Filter Rows Are Built From the Customer
 [STATE] a category chip represents the product's TOP-LEVEL catalog ancestor, not its own leaf sub-category — one chip may cover multiple sub-categories {SPEC}","[API] the status/category chip vocabularies returned for @td(ORG_ACME.id) are a DISTINCT projection over that organization's own orders/products, not the full platform dictionary {SPEC}
 [NETWORK] no 4xx/5xx while switching between organizations or applying chips
 [CONSOLE] no uncaught JS errors","a chip renders that returns zero rows when applied (a 'dead chip' — the exact defect VCST-5590 targeted); the zero-order organization shows a chip row (even an 'All'-only one) instead of none; the zero-order organization's empty-state text is missing, generic, or identical for both blocks instead of each having its own; a status chip persists after switching to an organization that doesn't have that status",reset any applied chip filter back to 'All' before leaving the page,VCST-5590 | Behavior:sr.profile.orders-section,Automated
-SR-CP-068,Max Rows Input Renders Only in Edit Mode on Customer Profile's Two Configurable Widgets (AC #4 Parity),Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,BL-SR-025,,"[PRE:CLEAR_SESSION]
+SR-CP-068,Max Rows Input Renders Only in Edit Mode on Customer Profile's Three Configurable Widgets (AC #4 Parity),Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,BL-SR-025,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
-LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Both surfaces (`dashboard` and `customerProfile`) register the SAME two configurable blocks (`orders`, `top_sellers`) with identical settings (AC #4); the dashboard-surface analogue is cited in References.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). The customer-profile surface registers THREE configurable blocks, each with one `maxRows` setting: `orders` (titled 'My recent orders'), `top_sellers` ('Top sellers') and, when vc-module-marketing is installed, `coupons` ('Available coupons', vc-module-sales-rep#30 layout/coupons-block.ts). The dashboard surface registers the same `orders` and `top_sellers` with identical settings (AC #4); its analogue is cited in References. Edit mode is left with the edit bar's 'Cancel' button. Re-based 2026-11-03 (REG-2026-11-03-1732).",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
 [ACT] click the @td(ORG_ACME.name) row to open its profile
 [WAIT] profile page rendered, outside edit mode
 [ASSERT] no rows input visible outside edit mode
 [ACT] click 'Edit layout'
-[WAIT] edit bar visible","[DOM] outside edit mode, neither 'Recent orders' nor 'Top sellers' shows a Max rows input {SPEC}
-[DOM] in edit mode, 'Recent orders' and 'Top sellers' both show a Max rows input {SPEC}
-[DOM] in edit mode, no stat card (e.g. 'Active projects') on the customer profile renders a 'Max rows' input or any settings control {SPEC}",,a stat card renders a rows input; the two list widgets show no rows input in edit mode,[ACT] click 'Editing layout' (Cancel) to exit edit mode,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified; dashboard analogue: SR-HD-061 in 093-sales-rep-hub-dashboard-storefront | Behavior:sr.layout.widget-settings",Draft
+[WAIT] edit bar visible
+[ACT] click 'Cancel' in the edit bar
+[WAIT] edit bar gone, profile back outside edit mode","[DOM] outside edit mode, none of 'My recent orders', 'Top sellers' and 'Available coupons' shows a Max rows input {SPEC}
+[DOM] in edit mode, 'My recent orders', 'Top sellers' and 'Available coupons' each show a Max rows input {SPEC}
+[DOM] in edit mode, no stat card (e.g. 'Active projects') on the customer profile renders a 'Max rows' input or any settings control {SPEC}
+[DOM] clicking 'Cancel' leaves edit mode: the edit bar is gone and the three Max rows inputs are gone with it {OBSERVED}",,a stat card renders a rows input; one of the three list widgets ('Available coupons' included) shows no rows input in edit mode; the rows inputs stay on screen after 'Cancel',"[ACT] if the page is still in edit mode, click 'Cancel' to leave it (nothing was saved)","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified; dashboard analogue: SR-HD-061 in 093-sales-rep-hub-dashboard-storefront | Re-based 2026-11-03 (REG-2026-11-03-1732, PASS with UI drift): orders widget retitled 'My recent orders', third configurable widget 'Available coupons' (vc-module-sales-rep#30), edit mode left with a 'Cancel' button | Behavior:sr.layout.widget-settings",Draft
 SR-CP-069,"Customer Profile Enforces the Same Per-Block Ranges: Recent Orders 1-20, Top Sellers 1-10",Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,"BL-SR-008, BL-SR-019, BL-SR-022",ECL-7.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Confirms the ranges are block-registry-driven (shared with the dashboard), not surface-specific; the dashboard-surface analogues are cited in References.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
@@ -516,15 +520,15 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [WAIT] profile page rendered
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
-[ACT] clear 'Recent orders' Max rows
+[ACT] clear 'My recent orders' Max rows
 [ACT] type '21' into the field
 [ACT] blur the field
 [ASSERT] field value after blur
 [ACT] clear 'Top sellers' Max rows
 [ACT] type '11' into the field
 [ACT] blur the field
-[ASSERT] field value after blur","[FORMAT] 'Recent orders' clamps '21' down to '20', the same ceiling as the dashboard {SPEC}
-[FORMAT] 'Top sellers' clamps '11' down to '10', the same ceiling as the dashboard, NOT 20 {SPEC}",,either widget's ceiling differs between customer profile and dashboard -- would mean the ranges are duplicated per-surface rather than shared from one registry; Recent Orders and Top Sellers share one uniform ceiling instead of their own distinct ones,[ACT] click 'Editing layout' (Cancel) to discard the draft -- no Save was performed,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified; dashboard analogues: SR-HD-062/SR-HD-063 in 093-sales-rep-hub-dashboard-storefront | Behavior:sr.layout.widget-settings",Draft
+[ASSERT] field value after blur","[FORMAT] 'My recent orders' clamps '21' down to '20', the same ceiling as the dashboard {SPEC}
+[FORMAT] 'Top sellers' clamps '11' down to '10', the same ceiling as the dashboard, NOT 20 {SPEC}",,either widget's ceiling differs between customer profile and dashboard -- would mean the ranges are duplicated per-surface rather than shared from one registry; Recent Orders and Top Sellers share one uniform ceiling instead of their own distinct ones,[ACT] click 'Editing layout' (Cancel) to discard the draft -- no Save was performed,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified; dashboard analogues: SR-HD-062/SR-HD-063 in 093-sales-rep-hub-dashboard-storefront | Behavior:sr.layout.widget-settings · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Draft
 SR-CP-059,Row Count Applies Only After Save on Customer Profile Too -- No Refetch Per Keystroke,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,BL-SR-024,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-066. Read-only, network-trace only.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
@@ -532,12 +536,12 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [WAIT] profile settles, note the salesRepOrders request count
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
-[ACT] clear 'Recent orders' Max rows
+[ACT] clear 'My recent orders' Max rows
 [ACT] type '3' into the field
 [ACT] type '18' into the field, replacing '3' (no blur between edits)
 [WAIT] brief pause
 [ASSERT] salesRepOrders request count since entering edit mode","[STATE] no additional salesRepOrders request fires as a result of typing into the Max rows field on the customer profile {SPEC}
-[DOM] the 'Recent orders' table on the customer profile still shows 5 rows (the last saved cap) while typing, before Save is clicked {SPEC}",[API] network trace shows zero new salesRepOrders calls attributable to the Max rows field edits,typing into the Max rows field fires a new salesRepOrders request per keystroke on the customer profile; the rendered table refreshes before Save is clicked,[ACT] click 'Editing layout' (Cancel) to discard the draft -- no Save was performed,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings",Draft
+[DOM] the 'My recent orders' table on the customer profile still shows 5 rows (the last saved cap) while typing, before Save is clicked {SPEC}",[API] network trace shows zero new salesRepOrders calls attributable to the Max rows field edits,typing into the Max rows field fires a new salesRepOrders request per keystroke on the customer profile; the rendered table refreshes before Save is clicked,[ACT] click 'Editing layout' (Cancel) to discard the draft -- no Save was performed,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Draft
 SR-CP-060,Default Checked Status Tabs on Customer Profile Are Also the Full Live Rule Catalog (Deviation #2 Parity),Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,BL-SR-009,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-067 -- confirms the same fictional-AC-vs-live-catalog deviation applies identically on the customer profile.",front_url={{FRONT_URL}},"[GQL] as SR_REP_PRIMARY, query salesRepOrderFilterRules and record the returned rule names
@@ -556,14 +560,14 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
 [ACT] uncheck exactly one status tab, leave all others checked
-[ACT] clear 'Recent orders' Max rows
+[ACT] clear 'My recent orders' Max rows
 [ACT] type '9' into the field
 [ACT] click 'Save layout'
 [WAIT] save completes
 [GQL] as SR_REP_LAYOUT, query salesRepLayout(scope:""customerProfile"") and inspect the `orders` block's settings list","[STATE] the settings list contains {key:'maxRows', value:9} {SPEC}
 [STATE] the settings list contains exactly one {key:'tab.<ruleName>', value:false} entry for the unchecked tab {SPEC}
 [STATE] no settings entry exists for any tab left checked {SPEC}
-[STATE] the `salesRepLayout(scope:""customerProfile"")` document carries no organization/customer id field anywhere (BL-SR-023) -- confirming this setting lives on the scope-wide document, not a per-customer one {SPEC}","[API] saveSalesRepLayout(scope:""customerProfile"") payload + the subsequent salesRepLayout(scope:""customerProfile"") read both inspected directly",a checked tab is written explicitly; the unchecked tab is missing instead of {value:false}; the document unexpectedly carries a customer/organization id,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings",Draft
+[STATE] the `salesRepLayout(scope:""customerProfile"")` document carries no organization/customer id field anywhere (BL-SR-023) -- confirming this setting lives on the scope-wide document, not a per-customer one {SPEC}","[API] saveSalesRepLayout(scope:""customerProfile"") payload + the subsequent salesRepLayout(scope:""customerProfile"") read both inspected directly",a checked tab is written explicitly; the unchecked tab is missing instead of {value:false}; the document unexpectedly carries a customer/organization id,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Draft
 SR-CP-062,Widget Settings Are Scope-Wide -- the Same Max Rows / Tab Selection Applies on a Different Served Customer,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,High,"BL-SR-023, BL-SR-024",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-CP-042, extended from arrangement to the new settings fields: SR_REP_LAYOUT serves both @td(ORG_ACME.id) and @td(ORG_TECHFLOW.id) -- this proves widget settings are ONE document per rep per surface, not one per customer (AC #4 + BL-SR-023). Cleanup MUST restore defaults since this case Saves.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
@@ -572,7 +576,7 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
 [ACT] set 'Top sellers' Max rows to '2'
-[ACT] uncheck one status tab on 'Recent orders'
+[ACT] uncheck one status tab on 'My recent orders'
 [ACT] click 'Save layout'
 [WAIT] save completes
 [NAV] {{FRONT_URL}}/company/my-customers
@@ -581,7 +585,7 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
 [ASSERT] Max rows value and tab-checked state on @td(ORG_TECHFLOW.name)'s profile","[STATE] on @td(ORG_TECHFLOW.name)'s profile, 'Top sellers' Max rows also shows '2' and the same status tab is unchecked -- the identical setting, even though this is a different customer than the one it was saved from {SPEC}
-[STATE] no edit action was taken on @td(ORG_TECHFLOW.name)'s profile before this state appeared {SPEC}","[API] a single salesRepLayout(scope:""customerProfile"") document (no organization id) serves both profile views -- confirmed by identical settings on both",the settings differ between @td(ORG_ACME.name)'s and @td(ORG_TECHFLOW.name)'s profiles -- would mean settings are (incorrectly) tracked per-customer; the saveSalesRepLayout payload unexpectedly carries an organization/customer id,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings",Draft
+[STATE] no edit action was taken on @td(ORG_TECHFLOW.name)'s profile before this state appeared {SPEC}","[API] a single salesRepLayout(scope:""customerProfile"") document (no organization id) serves both profile views -- confirmed by identical settings on both",the settings differ between @td(ORG_ACME.name)'s and @td(ORG_TECHFLOW.name)'s profiles -- would mean settings are (incorrectly) tracked per-customer; the saveSalesRepLayout payload unexpectedly carries an organization/customer id,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Draft
 SR-CP-063,Widget Settings Persist Across a Reload and a Fresh Sign-In on Customer Profile,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,"BL-SR-024, BL-SR-016",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-072, scoped to customerProfile.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
@@ -589,8 +593,8 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [WAIT] profile page rendered
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
-[ACT] set 'Recent orders' Max rows to '6'
-[ACT] uncheck one status tab on 'Recent orders'
+[ACT] set 'My recent orders' Max rows to '6'
+[ACT] uncheck one status tab on 'My recent orders'
 [ACT] click 'Save layout'
 [WAIT] save completes
 [NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.id) (full reload of the same profile)
@@ -604,8 +608,8 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [WAIT] profile page rendered
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
-[ASSERT] Max rows value and tab-checked state after a fresh sign-in","[STATE] after the reload, 'Recent orders' Max rows shows 6 with the same tab unchecked {SPEC}
-[STATE] after a fresh sign-in, the same settings render identically {SPEC}","[API] saveSalesRepLayout(scope:""customerProfile"") payload and subsequent reads agree across reload and re-sign-in",settings revert to defaults after reload or a fresh sign-in on the customer profile; the tab-checked state disagrees between the reload and the fresh sign-in,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings",Draft
+[ASSERT] Max rows value and tab-checked state after a fresh sign-in","[STATE] after the reload, 'My recent orders' Max rows shows 6 with the same tab unchecked {SPEC}
+[STATE] after a fresh sign-in, the same settings render identically {SPEC}","[API] saveSalesRepLayout(scope:""customerProfile"") payload and subsequent reads agree across reload and re-sign-in",settings revert to defaults after reload or a fresh sign-in on the customer profile; the tab-checked state disagrees between the reload and the fresh sign-in,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Draft
 SR-CP-064,Cancel and Reset Cover Widget-Settings Changes on Customer Profile,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,BL-SR-024,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-071. Read-only against SR_REP_PRIMARY -- neither path ever saves.",front_url={{FRONT_URL}},"--- SCREEN: Cancel discards settings edits ---
@@ -614,21 +618,21 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [WAIT] profile page rendered
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
-[ACT] set 'Recent orders' Max rows to '2'
-[ACT] uncheck one status tab on 'Recent orders'
+[ACT] set 'My recent orders' Max rows to '2'
+[ACT] uncheck one status tab on 'My recent orders'
 [ACT] click 'Editing layout' (Cancel)
 [WAIT] edit bar closes
 [ACT] click 'Edit layout' again
 [WAIT] edit bar visible
 [ASSERT] Max rows value and tab-checked state on re-entry
 --- SCREEN: Reset restores registry defaults into the draft ---
-[ACT] set 'Recent orders' Max rows to '2' again
-[ACT] uncheck one status tab on 'Recent orders' again
+[ACT] set 'My recent orders' Max rows to '2' again
+[ACT] uncheck one status tab on 'My recent orders' again
 [ACT] click 'Reset'
 [WAIT] draft re-renders
 [ASSERT] Max rows value and tab-checked state immediately after Reset","[STATE] after Cancel and re-entering edit mode, Max rows is back to 5 and every tab is checked {SPEC}
 [STATE] immediately after Reset (before Save), Max rows shows 5 and every tab is checked {SPEC}
-[STATE] neither Cancel nor Reset issued a save call {SPEC}",,a Cancelled settings edit persists into the next edit session on the customer profile; Reset does not restore registry defaults,"none (read-only, no Save was performed)","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings",Draft
+[STATE] neither Cancel nor Reset issued a save call {SPEC}",,a Cancelled settings edit persists into the next edit session on the customer profile; Reset does not restore registry defaults,"none (read-only, no Save was performed)","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Draft
 SR-CP-065,"The Max Rows Input Is Drag-Filtered on Customer Profile Too -- a Mousedown Inside It Focuses, Not Drags",Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Low,BL-SR-027,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-077. Read-only.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
@@ -636,10 +640,10 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [WAIT] profile page rendered
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
-[ACT] press down inside 'Recent orders' Max rows input
+[ACT] press down inside 'My recent orders' Max rows input
 [ACT] release without moving the pointer
 [WAIT] brief pause","[STATE] the click focuses the Max rows input, not a drag start {SPEC}
-[DOM] 'Recent orders' remains in its original position {SPEC}",,pressing down inside the Max rows input starts a drag on the customer profile; the widget's position changes after the click,[ACT] click 'Editing layout' (Cancel) to exit edit mode,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings",Draft
+[DOM] 'My recent orders' remains in its original position {SPEC}",,pressing down inside the Max rows input starts a drag on the customer profile; the widget's position changes after the click,[ACT] click 'Editing layout' (Cancel) to exit edit mode,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Draft
 SR-CP-066,E2E Cross-Layer: Customer Profile Recent Orders and Top Sellers Render the Configured Row Count,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,High,"BL-SR-002, BL-SR-008, BL-SR-024",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). SR_REP_LAYOUT's ORG-001 (ACME) profile is being seeded (parallel test-data task) with >=6 orders and >=6 distinct top-seller products for this customer -- enough that a saved cap below 6 is genuinely constraining. Precondition: >=6 orders and >=6 distinct top-seller products for @td(ORG_ACME.id) once seeded (do NOT assert an exact count).",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
@@ -647,17 +651,17 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [WAIT] profile page rendered
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
-[ACT] set 'Recent orders' Max rows to '4'
+[ACT] set 'My recent orders' Max rows to '4'
 [ACT] set 'Top sellers' Max rows to '3'
 [ACT] click 'Save layout'
 [WAIT] save completes
 [NAV] reload the same profile page
 [WAIT] widgets rendered
 [ASSERT] rendered row counts for both widgets
-[GQL] as SR_REP_LAYOUT, issue the same salesRepOrders and salesRepTopSellers queries the widgets fire (organizationId = @td(ORG_ACME.id)) and read their take/first parameters","[COUNT] 'Recent orders' renders exactly 4 rows for this customer {SPEC}
+[GQL] as SR_REP_LAYOUT, issue the same salesRepOrders and salesRepTopSellers queries the widgets fire (organizationId = @td(ORG_ACME.id)) and read their take/first parameters","[COUNT] 'My recent orders' renders exactly 4 rows for this customer {SPEC}
 [COUNT] 'Top sellers' renders exactly 3 rows for this customer {SPEC}
 [MATH] the underlying salesRepOrders request uses take/first = 4 {SPEC}
-[MATH] the underlying salesRepTopSellers request uses take = 3 {SPEC}","[API] both requests scoped to organizationId=@td(ORG_ACME.id), errors[] empty, item counts <= their respective take values",either widget renders a row count other than its saved cap; the underlying request parameter disagrees with the saved setting,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings",Draft
+[MATH] the underlying salesRepTopSellers request uses take = 3 {SPEC}","[API] both requests scoped to organizationId=@td(ORG_ACME.id), errors[] empty, item counts <= their respective take values",either widget renders a row count other than its saved cap; the underlying request parameter disagrees with the saved setting,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Draft
 SR-CP-067,Editing Customer-Profile Widget Settings Produces No Console Errors and No Failed Network Requests,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Baseline guard case, analogue of SR-HD-082, scoped to the customer profile.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
@@ -665,7 +669,7 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [WAIT] profile page rendered
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
-[ACT] set 'Recent orders' Max rows to '1' (boundary)
+[ACT] set 'My recent orders' Max rows to '1' (boundary)
 [ACT] set 'Top sellers' Max rows to '10' (boundary)
 [ACT] uncheck one status tab
 [ACT] tick that status tab's checkbox again
@@ -675,316 +679,4 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [ACT] click 'Editing layout' (Cancel)
 [WAIT] edit bar closes
 [ASSERT] console messages and network requests captured across the whole sequence","[STATE] no console error was logged at any point during the sequence {OBSERVED}
-[STATE] no network request in the sequence returned 4xx/5xx or a GraphQL errors[] entry {OBSERVED}",,any console error appears during pure settings interaction with no persist action on the customer profile; any network request returns 4xx/5xx or a GraphQL errors[] entry,"none (read-only, no Save was performed)","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings",Draft
-SR-CP-070,"[JOURNEY] Rep opens a customer, reads the coupons widget, opens All promotion coupons and copies a code",Sales Rep Hub > Customer profile > Available coupons,Critical,BL-SR-011,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-SR_REP_PRIMARY serves the TechFlow organization. The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. The rep's customer-profile layout is the never-saved default, so the widget shows its default number of rows. The store lists more than 10 coupons, so the page has a second page. Seeded by `npm run seed:promotions:sales-rep-coupons` (SRCPN_* aliases; rolling dates and a recorded-use count, so every assertion is a relation between values the case reads, never a literal date or count).",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id); customer_name=@td(ORG_TECHFLOW.name),"--- SCREEN: Customer profile ---
-[SETUP] start recording every network request of the tab into REQ_LOG
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
-[WAIT] the customer profile has rendered with the 'Available coupons' widget
-[KEY] record the widget's card codes in order (W_CODES) and their count (W_N); from REQ_LOG record the first variable and the returned couponCodes of the salesRepCoupons request the widget sent (W_FIRST, API_W)
-[KEY] record the target of the 'All promotion coupons' link in the widget header (LINK_HREF)
---- SCREEN: Promotion coupons page ---
-[ACT] click 'All promotion coupons' in the widget header
-[WAIT] the page has rendered with coupon cards
-[KEY] record the URL (PAGE_URL), the page heading (H1), the breadcrumb texts in order (CRUMBS), the card codes in order (P_CODES) and their count (P_N); from REQ_LOG record the first and after variables and the returned couponCodes of the salesRepCoupons request the page sent (P_FIRST, P_AFTER, API_P)
-[ACT] click 'Click to copy' on the third card
-[WAIT] the 'Coupon copied successfully' notification appears
-[KEY] record the code shown on the third card (CARD3)
---- SCREEN: Clipboard check ---
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
-[WAIT] the customer profile has rendered
-[ACT] click 'Schedule call'
-[WAIT] the 'Schedule call' popup is open
-[ACT] click into 'Title'
-[WAIT] the field has focus
-[ACT] press Ctrl+A
-[WAIT] the text of the field is selected
-[ACT] press Ctrl+V
-[WAIT] the pasted text is in the field
-[KEY] record the text now in 'Title' (PASTED)
-[ACT] press Escape to close the popup without saving
-[WAIT] the popup is closed","[COUNT] W_N equals W_FIRST and the W_CODES are the first W_N of API_W, compared without regard to case -- the widget shows exactly the head of the list it asked for {SPEC}
-[REL] LINK_HREF ends with /company/my-customers/<the customer id>/coupons and PAGE_URL is the same path {SPEC}
-[DOM] H1 reads 'Promotion coupons for ' followed by the customer name {SPEC}
-[REL] CRUMBS read Account, Sales Rep hub, My customers, the customer name, Promotion coupons, in that order {SPEC}
-[COUNT] P_N is 10, P_FIRST is 10 and P_AFTER is 0, and P_CODES are API_P compared without regard to case -- the page shows the first ten of the list {SPEC}
-[REL] the first W_N of P_CODES equal W_CODES -- the widget and the page agree on the head of the list {SPEC}
-[REL] PASTED equals CARD3 compared without regard to case -- the clipboard holds the code of the card that was clicked {SPEC}
-[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}","[NETWORK] one salesRepCoupons request per surface, no duplicate fetch
-[CONSOLE] no TypeError or unhandled rejection from the plugin or the host card","the widget and the page list different coupons for the same head positions
-the link opens another customer or a not-found page
-the clipboard holds a code other than the clicked card's
-the page shows more or fewer than ten cards on its first page
-errors[] non-empty in a salesRepCoupons response",none (the Schedule call popup is closed without saving; nothing is written),"VCST-6158 · AC-01 AC-02 AC-03 AC-04 · Archetype:PARITY · Technique:FLOW · Behavior:sr.coupons · Catches: the rep sees coupons on the page that differ from the API, or copies a code other than the one on screen · Observed: SBTM-VCST-6158-2026-11-03",Draft
-SR-CP-071,Coupons — a capped coupon shows how many uses are left out of the cap,Sales Rep Hub > Customer profile > Available coupons,High,BL-SR-013,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. SRCPN_CAP_PARTIAL: cap 5 with 2 real recorded uses, so the line is computed, not a placeholder. COUPON_10PCT is the uncapped control. Seeded by `npm run seed:promotions:sales-rep-coupons` (SRCPN_* aliases; rolling dates and a recorded-use count, so every assertion is a relation between values the case reads, never a literal date or count).",capped=@td(SRCPN_CAP_PARTIAL.code); uncapped=@td(COUPON_10PCT.code); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] start recording every network request of the tab into REQ_LOG
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[WAIT] the page has rendered with coupon cards
-[ACT] page through the pager until the card with the code @td(SRCPN_CAP_PARTIAL.code) is on screen
-[WAIT] the page has rendered with coupon cards
-[KEY] record the text under the description of that card (USES_CAPPED); from REQ_LOG record the maxUsesNumber and totalUsesCount that the response gave for that code (MAX, USED)
-[ACT] page through the pager until the card with the code @td(COUPON_10PCT.code) is on screen
-[WAIT] the page has rendered with coupon cards
-[KEY] record the text under the description of that card (USES_UNCAPPED)","[COUNT] MAX is above 0 and USED is above 0 and below MAX -- the precondition: a capped coupon with a partial count {OBSERVED}
-[REL] USES_CAPPED equals the number MAX minus USED, then 'uses left out of', then MAX (for example '3 uses left out of 5') -- the left count comes from the fresh recount, not from the cap {SPEC}
-[DOM] USES_UNCAPPED reads 'Unlimited' {SPEC}
-[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}","[API] salesRepCoupons totalUsesCount for the coupon equals the number of promotion-usage records (admin coupons/search totalUsesCount)
-[CONSOLE] no vue-i18n warning for a missing plural form","the line shows the cap instead of the remaining uses
-the line shows a number that differs from MAX minus USED by one
-an uncapped coupon shows a number instead of Unlimited
-the card has no line at all",none (read-only),"VCST-6158 · AC-05 AC-06 · D-1 wording is a PO decision, asserted as shipped {OBSERVED} · Archetype:STALE · Technique:EP · Catches: the rep tells a buyer a coupon still has uses when it does not · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
-SR-CP-072,Coupons — a coupon with one use left reads in the singular,Sales Rep Hub > Customer profile > Available coupons,Medium,BL-SR-013,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. SRCPN_CAP_ONE_LEFT: cap 2 with 1 recorded use, so exactly one use is left. A used-up coupon is hidden, so a line that says 0 left must be unreachable on any page. Seeded by `npm run seed:promotions:sales-rep-coupons` (SRCPN_* aliases; rolling dates and a recorded-use count, so every assertion is a relation between values the case reads, never a literal date or count).",one_left=@td(SRCPN_CAP_ONE_LEFT.code); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] start recording every network request of the tab into REQ_LOG
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[WAIT] the page has rendered with coupon cards
-[ACT] page through the pager until the card with the code @td(SRCPN_CAP_ONE_LEFT.code) is on screen
-[WAIT] the page has rendered with coupon cards
-[KEY] record the text under the description of that card (USES_ONE); from REQ_LOG record maxUsesNumber and totalUsesCount of that code (MAX, USED)
-[KEY] on every page of the pager record every uses line that starts with 0 or with 1 (ZERO_LINES, ONE_LINES)","[COUNT] MAX minus USED is 1 -- the precondition: exactly one use is left {OBSERVED}
-[REL] USES_ONE reads '1 use left out of ' followed by MAX, with 'use' in the singular {SPEC}
-[COUNT] ZERO_LINES is empty -- no card on any page says 0 uses are left {SPEC}
-[REL] every line in ONE_LINES says '1 use left', never '1 uses left' {SPEC}
-[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}",[CONSOLE] no vue-i18n warning for a missing plural form,"the card reads '1 uses left' (plural noun for one)
-a card reads '0 uses left' (a used-up coupon was listed)
-the card shows the cap instead of the remaining count",none (read-only),VCST-6158 · AC-05 AC-08 · Archetype:BOUNDARY · Technique:BVA · Catches: the card reads 1 uses left or 0 uses left · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
-SR-CP-073,Coupons — a coupon with no end date shows no Expires line and sorts last,Sales Rep Hub > Customer profile > Available coupons,Medium,,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. SRCPN_LOWERCASE (agenttestlc062) has no end date at promotion or coupon level and is uncapped, so its card has no Expires line. The list puts coupons without an end date after every dated one, so they sit on the last page. Seeded by `npm run seed:promotions:sales-rep-coupons` (SRCPN_* aliases; rolling dates and a recorded-use count, so every assertion is a relation between values the case reads, never a literal date or count).",undated=@td(SRCPN_LOWERCASE.code); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] start recording every network request of the tab into REQ_LOG
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[WAIT] the page has rendered with coupon cards
-[ACT] click the last page in the pager
-[WAIT] the last page has rendered
-[KEY] record, card by card in order, whether it shows an 'Expires' line and its date text (LAST_PAGE_ROWS); record the card with the code @td(SRCPN_LOWERCASE.code) and whether it shows an 'Expires' line (UNDATED_EXPIRES)
-[KEY] record every 'Expires' text on every page of the pager (ALL_EXPIRES)","[REL] UNDATED_EXPIRES is false -- a coupon with no end date shows no Expires line {SPEC}
-[REL] in LAST_PAGE_ROWS, once a card without an Expires line appears every later card on that page also has none -- coupons without an end date come last {SPEC}
-[COUNT] no entry of ALL_EXPIRES is empty and none reads a date in 1970 or 1969 {SPEC}
-[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}",[API] the salesRepCoupons items for these codes have endDate null and expirationDate null,"an Expires label with no date or a 1970 date on a card
-a card without an end date appears before a dated one
-the undated coupon is missing from the list",none (read-only),VCST-6158 · AC-04 AC-10 · Archetype:FALLBACK · Technique:EP · Catches: an Expires date of 1970 or an empty date label is shown to the rep · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
-SR-CP-074,Coupons — the coupons page of a customer the rep does not serve shows not found and no coupons,Sales Rep Hub > Customer profile > Available coupons,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-SR_UNSERVED_ORG is an organization that exists but is not served by SR_REP_PRIMARY (an unserved id and a nonexistent id answer alike, so the fixture proves the org exists). The coupon list is store-wide and the organization only frames the page, so the served-organization check is a separate customer read that must decide the page state. The customer profile of the same organization is the reference for the not-found wording (SR-CP-004).",unserved=@td(SR_UNSERVED_ORG.id); rep=@td(SR_REP_PRIMARY.email),"[SETUP] start recording every network request of the tab into REQ_LOG
-[NAV] {{FRONT_URL}}/company/my-customers/@td(SR_UNSERVED_ORG.id)
-[WAIT] the profile page settles
-[KEY] record the not-found text of the profile page (PROFILE_NF)
-[NAV] {{FRONT_URL}}/company/my-customers/@td(SR_UNSERVED_ORG.id)/coupons
-[WAIT] the coupons page settles
-[KEY] record the page heading (H1), the not-found text (COUPONS_NF), the number of coupon cards on the page (CARDS_N), the breadcrumb texts (CRUMBS) and whether the organization name of SR_UNSERVED_ORG appears anywhere on the page (NAME_SHOWN)","[REL] COUPONS_NF equals PROFILE_NF -- the same not-found state the profile gives for this organization {SPEC}
-[REL] H1 is the fallback 'Promotion coupons' without a customer name and NAME_SHOWN is false {BL}
-[COUNT] CARDS_N is 0 -- no store coupons are framed as belonging to a customer the rep has no access to {BL}
-[REL] CRUMBS hold no customer segment {SPEC}","[API] salesRepCustomer for the unserved id is null (Access denied) while salesRepCoupons still answers store-wide -- the page, not the API, must withhold the framing","coupon cards render under a heading that names the unserved customer
-the not-found wording differs from the profile's, or the load-failed wording is shown for a refused customer
-the organization name of an unserved customer is shown",none (read-only),VCST-6158 · BL-SR-002 · Archetype:SCOPE · Technique:EP · Catches: the page frames store coupons as belonging to a customer the rep has no access to · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
-SR-CP-075,Coupons — a buyer who is not a rep opening the coupons URL is sent out of the rep area,Sales Rep Hub > Customer profile > Available coupons,High,BL-SR-011,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:ACME_BUYER]
-ACME_BUYER is a plain corporate member with NO sales-rep:access. The coupons route sits behind the rep gate and then the module gate (guardSalesRep, then guardCustomerModuleRoute), the second being a new shared factory. The hub plugin suite observed that a non-rep ends on the account dashboard from every hub route.",buyer=@td(ACME_BUYER.email); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] start recording every network request of the tab into REQ_LOG
-[NAV] {{FRONT_URL}}/account
-[WAIT] the account page has rendered
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[WAIT] navigation settles (the URL has not changed for 1 s)
-[KEY] record the final URL (FINAL_URL), whether the text 'Promotion coupons for' or any coupon card appeared at any moment (RAIL_SEEN) and the count of requests to /graphql/sales-rep in REQ_LOG (SR_REQS)","[REL] FINAL_URL equals {{FRONT_URL}}/account/dashboard -- the guard sends a non-rep home {OBSERVED}
-[REL] RAIL_SEEN is false -- no part of the rep's coupon tool rendered {BL}
-[COUNT] SR_REQS is 0 -- no rep data was fetched and discarded {BL}
-[STATE] the 'Sales Rep hub' rail section is absent from the left navigation {BL}","[API] a buyer token on salesRepCoupons answers an empty list (SR-GQL-173), so even a request that slipped through returns nothing
-[CONSOLE] no TypeError during the redirect","the coupons page or a card renders for the buyer
-the buyer stays on the coupons URL or lands on Page not found
-a request to /graphql/sales-rep is sent for the buyer session",none (read-only),VCST-6158 · BL-SR-011 · Archetype:SCOPE · Technique:DT · Catches: a buyer sees the rep's coupon tool · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
-SR-CP-076,Coupons — the widget shows exactly its row setting and hiding the block stops its query,Sales Rep Hub > Customer profile > Available coupons,Medium,"BL-SR-031, BL-SR-025",,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_LAYOUT]
-SR_REP_LAYOUT is the designated disposable-layout fixture: this case SAVES the customer-profile layout, which must never touch the shared SR_REP_PRIMARY baseline (see SR-CP-039). It serves the TechFlow organization. LAYOUT API GATE as SR-CP-036. The store lists at least 20 coupons, so a row setting below 20 is always reachable.",rep=@td(SR_REP_LAYOUT.email); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] start recording every network request of the tab into REQ_LOG
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
-[WAIT] the customer profile has rendered with the 'Available coupons' widget
-[KEY] record the number of coupon cards in the widget (N_DEFAULT) and the first variable of the salesRepCoupons request (FIRST_DEFAULT)
-[ACT] click 'Edit layout'
-[WAIT] the edit bar is visible
-[ACT] set 'Max rows' of 'Available coupons' to '3'
-[ACT] click 'Save layout'
-[WAIT] the save completes
-[ACT] reload the page
-[WAIT] the customer profile has rendered
-[KEY] record the number of coupon cards in the widget (N_SAVED) and the first variable of the salesRepCoupons request (FIRST_SAVED)
-[ACT] click 'Edit layout'
-[WAIT] the edit bar is visible
-[ACT] click the x on the 'Available coupons' widget
-[WAIT] the widget is hidden
-[ACT] click 'Save layout'
-[WAIT] the save completes
-[SETUP] clear REQ_LOG
-[ACT] reload the page
-[WAIT] the customer profile has rendered
-[KEY] record whether the 'Available coupons' widget is on the page (WIDGET_AFTER_HIDE) and the count of requests to /graphql/sales-rep whose operation is SalesRepCoupons in REQ_LOG (COUPON_REQS_HIDDEN)","[REL] N_DEFAULT equals FIRST_DEFAULT and is at most 5 -- the default row setting {SPEC}
-[REL] N_SAVED is 3 and FIRST_SAVED is 3 -- the saved setting is the number of cards and the number asked of the API {SPEC}
-[REL] WIDGET_AFTER_HIDE is false {SPEC}
-[COUNT] COUPON_REQS_HIDDEN is 0 -- a hidden widget does not query {BL}
-[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}","[API] salesRepLayout(scope:""customerProfile"") for this rep holds the coupons block with hidden true and a maxRows setting of 3 after the second save","the card count differs from the saved Max rows
-the API is asked for a different first than the setting
-the hidden widget still issues a salesRepCoupons request
-the layout save fails or the widget reappears after reload","[ACT] click 'Edit layout', then 'Reset', then 'Save layout' to restore the registry defaults of SR_REP_LAYOUT's customer-profile layout before the session ends
-If the case aborted midway: sign in as SR_REP_LAYOUT and repeat that reset",VCST-6158 · BL-SR-031 BL-SR-025 · Archetype:CONFIG · Technique:EP · Behavior:sr.layout.widget-settings · Catches: the widget floods the profile or a hidden widget still loads data · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
-SR-CP-077,Coupons — what the page shows when the list shrinks to one page fewer while the rep is on the last page,Sales Rep Hub > Customer profile > Available coupons,Low,,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. Disposable coupons are created in the case so that the total the store lists is 10n+1 and the LAST page holds exactly one coupon. D = (11 minus the current total modulo 10) modulo 10 single-coupon promotions are created through the admin REST sequence the sales-rep GraphQL suite uses to create an in-case coupon (no cap, name prefix AGENT-TEST-SRCPN-CLAMP). {HYPOTHESIS} The page clamps a local page ref in a watch on the page count; the refetch that delivers the smaller total is triggered by paging, not by time. Does a rep who deletes nothing and only pages back and forth ever see the smaller total, or does the page serve its cached answer?",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id),"[AUTH role=ADMIN_DEFAULT] obtain an admin token; read the current salesRepCoupons totalCount as the rep (TOTAL_0); create D disposable single-coupon promotions so that TOTAL_0 + D leaves 1 on the last page of ten; poll the rep list until totalCount = TOTAL_0 + D (TOTAL_1) for at most 60 s
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[WAIT] the page has rendered with coupon cards
-[ACT] click the last page in the pager
-[WAIT] the last page has rendered with one card
-[KEY] record the pager state (PAGES_BEFORE) and the code on the single card (LAST_CODE)
-[AUTH role=ADMIN_DEFAULT] delete the disposable promotion whose code is LAST_CODE; poll the rep list until totalCount = TOTAL_1 minus 1 for at most 60 s
-[ACT] click the previous page in the pager
-[WAIT] the page has rendered with coupon cards
-[ACT] click the last page in the pager
-[WAIT] the page settles
-[KEY] record the pager state (PAGES_AFTER), the page the rep is on and the number of cards on screen (CARDS_AFTER)","[COUNT] TOTAL_1 modulo 10 is 1 and the last page held one card before the delete -- the precondition {OBSERVED}
-[COUNT] CARDS_AFTER is above 0 -- the rep never sits on an empty page of a list that still has coupons {SPEC}
-[REL] PAGES_AFTER shows one page fewer than PAGES_BEFORE, or the page was already one page fewer when the rep returned -- the pager reflects the smaller total {HYPOTHESIS}",[API] salesRepCoupons totalCount = TOTAL_1 minus 1 after the delete,"the rep sees an empty page with the pager still offering it
-the pager keeps offering the removed last page
-the page throws on a page index past the last",[API] delete every disposable promotion named with the prefix AGENT-TEST-SRCPN-CLAMP (the one already deleted is gone); confirm the rep list total equals TOTAL_0,VCST-6158 · AC-03 · {HYPOTHESIS} stays Draft until a live run decides what a page-back-and-forth does · Archetype:LIFECYCLE · Technique:ST · Catches: the rep sees an empty page with no way to tell coupons exist · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
-SR-CP-078,Coupons — the loading skeleton and the load-failed state are shown and announced,Sales Rep Hub > Customer profile > Available coupons,Medium,"BL-A11Y-004, BL-SR-012",,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. The empty state ('No coupons available') cannot be reached on a store that lists coupons; it is covered by the plugin's component tests, not by this case. Failure is forced by network interception of the salesRepCoupons request (as SR-CP-018 does). The widget on the profile and the page share one list component, so both are walked.",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] throttle the network of the tab so that the salesRepCoupons response arrives about 3 s late
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[KEY] while loading, record the number of placeholder cards (SKELETON_N), whether the live region of the page reads anything (STATUS_LOADING) and whether the placeholders are hidden from the accessibility tree (SKELETON_HIDDEN)
-[WAIT] the coupon cards have rendered
-[SETUP] remove the throttle and force every salesRepCoupons request of the tab to fail (network interception)
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[WAIT] the page settles
-[KEY] record the text on screen in place of the cards (FAILED_TEXT), whether any coupon card is still on screen (CARDS_AFTER_FAIL) and the text of the live region (STATUS_FAILED)
-[ACT] click '2' in the pager if a pager is shown
-[WAIT] the page settles
-[KEY] record again whether any coupon card from the earlier successful load is on screen (STALE_CARDS)","[REL] SKELETON_N equals the number of cards the loaded page then shows -- the placeholders have the shape of the rows about to arrive {SPEC}
-[REL] SKELETON_HIDDEN is true and STATUS_LOADING is empty -- the loading placeholders are not announced as content {BL}
-[DOM] FAILED_TEXT reads 'Couldn't load coupons' {SPEC}
-[COUNT] CARDS_AFTER_FAIL is 0 and STALE_CARDS is 0 -- a failed load replaces the rows, it never leaves stale ones {SPEC}
-[REL] STATUS_FAILED equals FAILED_TEXT -- the failure is announced through the polite live region {BL}","[CONSOLE] the forced failure is logged once, no unhandled rejection","previous rows stay on screen after a failed refetch
-the failure has no text or the live region stays empty
-the placeholders are announced as content or their count differs from the page size","[SETUP] remove the network interception and the throttle
-none persisted",VCST-6158 · BL-A11Y-004 BL-SR-012 · Archetype:RENDER · Technique:EG · Catches: after a failed load the rep sees stale coupons or a blank card with no message · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
-SR-CP-079,"Coupons — copy buttons are keyboard-reachable, distinguishable and large enough",Sales Rep Hub > Customer profile > Available coupons,Medium,"BL-A11Y-001, BL-A11Y-002, BL-UI-006",,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. The host card's copy control was built for the buyer page, one coupon per row; here ten cards stand on one page, so the accessible name of each copy button must tell them apart.",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id),"[VIEWPORT] 1440x1080
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[WAIT] the page has rendered with coupon cards
-[KEY] press Tab from the page heading and record, in order, the accessible name of every focusable control until the pager (TAB_NAMES) and whether each shows a visible focus indicator (FOCUS_VISIBLE)
-[ACT] with focus on the third copy button press Enter
-[WAIT] the 'Coupon copied successfully' notification appears
-[VIEWPORT] 375x812
-[WAIT] the page has re-laid out
-[KEY] record the width and height of the first copy button (BTN_W, BTN_H)","[REL] the accessible names of the ten copy buttons in TAB_NAMES are pairwise different -- each names its coupon, none is just 'Click to copy' {BL}
-[COUNT] FOCUS_VISIBLE is true for every control {BL}
-[DOM] the 'Coupon copied successfully' notification appears after Enter on the focused copy button {SPEC}
-[TOUCH] BTN_W and BTN_H are each at least 24 CSS px at 375 px {BL}",[A11Y] axe reports no violation of button-name or aria-allowed-attr on the page,"ten buttons are announced with the same name
-a copy button is not reachable with Tab or does not react to Enter
-the copy button is smaller than 24 px at 375 px
-no focus indicator on a control",none (read-only),"VCST-6158 · BL-A11Y-001 BL-A11Y-002 BL-UI-006 · Archetype:RENDER · Technique:EG · Catches: a screen-reader rep hears ten identical Click to copy buttons · the host card is shared with the buyer page, so a defect here may be a vc-frontend defect, not the plugin's · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
-SR-CP-080,Coupons — the copied code matches the code the card shows,Sales Rep Hub > Customer profile > Available coupons,Medium,,ECL-1.3,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. SRCPN_LOWERCASE is stored lowercase (agenttestlc062); its uppercase form is no coupon, so an uppercasing copy is detectable. The card renders the code uppercase through CSS (observed 2026-11-03; the same host rule the buyer page has, VCST-5233), so what the card SHOWS is uppercase and what the clipboard must hold is the question. ECL-1.3: the server matches codes case-insensitively, so either case applies at checkout.",code=@td(SRCPN_LOWERCASE.code); customer=@td(ORG_TECHFLOW.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[WAIT] the page has rendered with coupon cards
-[ACT] page through the pager until the card for the code @td(SRCPN_LOWERCASE.code) is on screen
-[WAIT] the page has rendered with coupon cards
-[KEY] record the code text shown on that card exactly as the card renders it (SHOWN) and, as an observation only, whether SHOWN differs from the stored code @td(SRCPN_LOWERCASE.code) in case alone (CASE_DIFFERS)
-[ACT] click 'Click to copy' on that card
-[WAIT] the 'Coupon copied successfully' notification appears
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
-[WAIT] the customer profile has rendered
-[ACT] click 'Schedule call'
-[WAIT] the 'Schedule call' popup is open
-[ACT] click into 'Title'
-[WAIT] the field has focus
-[ACT] press Ctrl+A
-[WAIT] the text of the field is selected
-[ACT] press Ctrl+V
-[WAIT] the pasted text is in the field
-[KEY] record the text now in 'Title' (PASTED)
-[ACT] press Escape to close the popup without saving
-[WAIT] the popup is closed","[REL] PASTED equals SHOWN exactly -- the clipboard holds the code as the card shows it, which is the copy contract {SPEC}
-[REL] PASTED has no leading or trailing whitespace {SPEC}",[API] the buyer addCoupon with PASTED as typed returns isAppliedSuccessfully true for the same coupon (the server matches case-insensitively),"the clipboard holds a different coupon's code
-the clipboard holds the code with extra characters or whitespace
-the copy raises no confirmation",none (the popup is closed without saving),"VCST-6158 · VC-PROMO-003 ECL-1.3 · Probe:VC-PROMO-003 · Archetype:SILENT · Technique:EG · CASE_DIFFERS is recorded, not asserted: whether the shown case must equal the stored case is the open VCST-5233 question on the buyer page · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
-SR-CP-081,"Coupons — the widget and page offer no filters, audience badges or Apply to cart",Sales Rep Hub > Customer profile > Available coupons,Low,,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. The assignee comment of 2026-10-22 overrides the mockup: the filters, audience badges and 'Apply to cart' button the mockup showed are out of scope, and the obsolete mockup caption must not appear (D-4).",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
-[WAIT] the customer profile has rendered with the 'Available coupons' widget
-[KEY] record every button, chip and badge inside the widget (WIDGET_CONTROLS) and the text of the widget header and body (WIDGET_TEXT)
-[ACT] click 'All promotion coupons' in the widget header
-[WAIT] the page has rendered with coupon cards
-[KEY] record every button, chip, tab, filter and badge on the page apart from the pager and the copy buttons (PAGE_CONTROLS) and the page text (PAGE_TEXT)","[REL] WIDGET_CONTROLS holds only the 'All promotion coupons' link and the copy buttons {SPEC}
-[REL] PAGE_CONTROLS is empty {SPEC}
-[REL] neither WIDGET_TEXT nor PAGE_TEXT contains 'Apply to cart', a customer-audience badge such as 'Everyone' or 'Personal' or a filter label {SPEC}
-[REL] neither text contains the mockup caption of the obsolete design {SPEC}",[NETWORK] the salesRepCoupons request carries no filter or audience argument,"an Apply to cart button, an audience badge or a filter chip is shown
-the obsolete mockup caption is shown",none (read-only),VCST-6158 · AC-14 D-4 · Archetype:PARITY · Technique:EP · Catches: the rep sees per-customer claims the list does not honour · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
-SR-CP-082,Coupons — the customer activity page still serves a rep and still sends a non-rep away after the shared route-guard refactor,Sales Rep Hub > Customer profile > Available coupons,Medium,,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-vc-module-sales-rep#30 replaced guardCustomerActivitiesRoute by guardCustomerModuleRoute(isEnabled), which the activity page and the coupons page now share. On this stand both the analytics module and the Marketing module are installed, so the module-off branch (a rep redirected back to the customer's profile) cannot be exercised here; that branch is unit-tested in the module's routes.test.ts and is NOT asserted by this case. The Customer activity block of the TechFlow profile links to the activity page.",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id); buyer=@td(ACME_BUYER.email),"--- SCREEN: Rep opens the activity page ---
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
-[WAIT] the customer profile has rendered
-[ACT] click the link to the full activity in the 'Customer activity' widget
-[WAIT] the activity page has rendered
-[KEY] record the URL (ACT_URL) and the page heading (ACT_H1)
---- SCREEN: Non-rep opens the same URL ---
-[ACT] sign out
-[ACT] sign in as @td(ACME_BUYER.email)
-[WAIT] the account dashboard has rendered
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/activities
-[WAIT] navigation settles (the URL has not changed for 1 s)
-[KEY] record the final URL (BUYER_URL) and whether any activity data rendered (BUYER_SAW)","[REL] ACT_URL ends with /company/my-customers/<the customer id>/activities {SPEC}
-[REL] ACT_H1 is not the host Page not found heading and no error boundary is displayed {SPEC}
-[REL] BUYER_URL equals {{FRONT_URL}}/account/dashboard {OBSERVED}
-[REL] BUYER_SAW is false {BL}",[CONSOLE] no TypeError on either navigation,"the rep lands on the profile or a not-found page instead of the activity page
-the buyer reaches the activity page
-the activity page throws after the guard factory change",[ACT] sign out the buyer session,VCST-6158 · L3 gate guardCustomerModuleRoute · Archetype:CONFIG · Technique:EG · Catches: reps lose the customer activity page · module-off branch not exercisable on a stand with both modules · Observed: SBTM-VCST-6158-2026-11-03,Draft
-SR-CP-083,Coupons — a coupon bound to an organization stays off every rep page yet only that organization's buyer can redeem it,Sales Rep Hub > Customer profile > Available coupons,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-SRCPN_MEMBER_BOUND: an active public single-coupon promotion whose coupon has MemberId = the TechFlow organization. TECHFLOW_BUYER is a buyer of that organization; ACME_BUYER belongs to another. Apply only: the case adds the code to a cart and removes it, it places no order. Each sign-in is ONE attempt: the accounts lock on repeated failures. PO-QUESTION: should the page under a customer's name list that customer's own bound coupons? The expectation kept here is the SPEC reading (AC-11: account-issued coupons are not shown), so the first assertion is hidden; the second and third state what a buyer can do, observed 2026-11-03. Seeded by `npm run seed:promotions:sales-rep-coupons` (SRCPN_* aliases; rolling dates and a recorded-use count, so every assertion is a relation between values the case reads, never a literal date or count).",code=@td(SRCPN_MEMBER_BOUND.code); customer=@td(ORG_TECHFLOW.platform_id); bound_buyer=@td(TECHFLOW_BUYER.email); other_buyer=@td(ACME_BUYER.email),"--- SCREEN: Rep scans the bound organization's coupons page ---
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[WAIT] the page has rendered with coupon cards
-[KEY] on every page of the pager record every code shown (ALL_CODES)
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
-[WAIT] the customer profile has rendered with the 'Available coupons' widget
-[KEY] record the codes in the widget (WIDGET_CODES)
---- SCREEN: The bound organization's buyer applies the code ---
-[ACT] sign out
-[ACT] sign in as @td(TECHFLOW_BUYER.email)
-[WAIT] the account dashboard has rendered
-[NAV] {{FRONT_URL}}/cart
-[WAIT] the cart page has rendered with at least 1 item (add any buyable item first when the cart is empty)
-[ACT] type @td(SRCPN_MEMBER_BOUND.code) into 'Enter custom code' in the 'Discount & coupons' widget
-[WAIT] the code is in the field
-[ACT] click the apply button of the 'Custom code' card
-[WAIT] the card leaves its loading state
-[KEY] record the state of the 'Custom code' card (BOUND_STATE) and whether a Discount line is in the order summary (BOUND_DISCOUNT)
-[ACT] click the trash icon on the 'Custom code' card to remove the code
-[WAIT] the discount is removed
---- SCREEN: Another organization's buyer applies the same code ---
-[ACT] sign out
-[ACT] sign in as @td(ACME_BUYER.email)
-[WAIT] the account dashboard has rendered
-[NAV] {{FRONT_URL}}/cart
-[WAIT] the cart page has rendered with at least 1 item (add any buyable item first when the cart is empty)
-[ACT] type @td(SRCPN_MEMBER_BOUND.code) into 'Enter custom code' in the 'Discount & coupons' widget
-[WAIT] the code is in the field
-[ACT] click the apply button of the 'Custom code' card
-[WAIT] the card shows its error state
-[KEY] record the error text on the card (OTHER_ERROR) and whether a Discount line is in the order summary (OTHER_DISCOUNT)","[REL] the bound code is not in ALL_CODES and not in WIDGET_CODES, compared without regard to case -- the page under the bound organization's own name hides it (PO-QUESTION whether it should) {SPEC}
-[REL] BOUND_STATE is the applied state and BOUND_DISCOUNT is true -- the bound organization's buyer can redeem it {OBSERVED}
-[REL] OTHER_ERROR is the invalid-code text of the card and OTHER_DISCOUNT is false -- another organization is refused {OBSERVED}
-[NETWORK] no 5xx on any request of the case {SPEC}",[API] salesRepCoupons does not list the code for any rep (SR-GQL-167); the buyer promotionCoupons list does (no MemberId filter on the buyer path),"the bound code is listed on the rep page or in the widget
-the other organization's buyer gets a discount from the code
-the bound organization's buyer is refused the code that is bound to it",[ACT] remove the code from every cart it was applied to; sign out,"VCST-6158 · AC-11 · PO-QUESTION: should the page under a customer's name list that customer's own bound coupons? · Archetype:SCOPE · Technique:DT · Catches: the one organization that can redeem a code never sees it on its own page, or another organization can redeem it · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
-SR-CP-084,Coupons — the Expires date a rep reads is never after the last day the code works,Sales Rep Hub > Customer profile > Available coupons,Medium,,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. Needs a coupon whose end, in the BROWSER's zone, is exactly 00:00:00 -- the instant at which the date shown and the last working day come apart. Record BROWSER_OFFSET_H from the lane first (new Date().getTimezoneOffset()/-60); the case needs a zone other than UTC. Discover the coupon from the rep API (a listed item whose endDate falls on a whole local midnight, for example a code ending at 22:00Z in a UTC+2 browser); if none exists record BLOCKED:CONDITION_NOT_MET naming the zone. EXPECTATION KEPT AS SPEC EVEN THOUGH THE BUILD VIOLATES IT: the date a rep reads under 'Expires' is never after the last day on which the code works (observed 2026-11-03: ZUR10 ends 2027-05-31T22:00Z and a UTC+1 browser shows Jun 1, 2027, a day on which the code never works). PO-QUESTION: which calendar date is 'Expires': UTC, the store's zone or the viewer's? The relation below holds for any of them as long as the shown day is not later than the last working one in the viewer's zone. This row therefore stays Draft until the build or the oracle changes.",rep=@td(SR_REP_PRIMARY.email); storeId={{STORE_ID}},"[SETUP] start recording every network request of the tab into REQ_LOG
-[KEY] record the browser's UTC offset in hours (BROWSER_OFFSET_H); if it is 0 record BLOCKED:CONDITION_NOT_MET with reason 'lane zone is UTC' and stop
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
-[WAIT] the page has rendered with coupon cards
-[KEY] from REQ_LOG take the salesRepCoupons response; pick the first item whose endDate is a whole local midnight in the browser zone (MID_CODE, MID_END); if none is on this page, page through the pager until one is found; if none exists record BLOCKED:CONDITION_NOT_MET
-[ACT] page through the pager until the card with the code MID_CODE is on screen
-[WAIT] the page has rendered with coupon cards
-[KEY] record the 'Expires' date text on that card (SHOWN_DATE) and compute LAST_DAY, the local calendar date of the instant MID_END minus one second","[REL] SHOWN_DATE is not later than LAST_DAY -- the card never shows a day on which the code no longer works {SPEC}
-[REL] BROWSER_OFFSET_H is not 0 -- the precondition: a zone in which the UTC date and the local date can differ {OBSERVED}
-[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}","[UI] the buyer page and the cart sidebar format the same field; the buyer page shows the promotion end as Expires, which has the same time-zone shape","SHOWN_DATE is the day after LAST_DAY (the date is formatted date-only in the browser zone)
-the case ends BLOCKED because the lane zone is UTC
-the coupon has no whole-local-midnight end on this stand",none (read-only),"VCST-6158 · AC-09 · PO-QUESTION: which calendar date is Expires (UTC, store zone or viewer zone)? · Archetype:MONEY · Technique:BVA · Catches: a rep tells a buyer a code works until a day on which it never works · held at Draft: the build currently violates the SPEC expectation, no row certifies the defect · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
+[STATE] no network request in the sequence returned 4xx/5xx or a GraphQL errors[] entry {OBSERVED}",,any console error appears during pure settings interaction with no persist action on the customer profile; any network request returns 4xx/5xx or a GraphQL errors[] entry,"none (read-only, no Save was performed)","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings · Synced: qa-test-lifecycle suite 091 (2026-11-03)",Draft
