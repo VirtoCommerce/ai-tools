@@ -676,3 +676,315 @@ LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be depl
 [WAIT] edit bar closes
 [ASSERT] console messages and network requests captured across the whole sequence","[STATE] no console error was logged at any point during the sequence {OBSERVED}
 [STATE] no network request in the sequence returned 4xx/5xx or a GraphQL errors[] entry {OBSERVED}",,any console error appears during pure settings interaction with no persist action on the customer profile; any network request returns 4xx/5xx or a GraphQL errors[] entry,"none (read-only, no Save was performed)","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified | Behavior:sr.layout.widget-settings",Draft
+SR-CP-070,"[JOURNEY] Rep opens a customer, reads the coupons widget, opens All promotion coupons and copies a code",Sales Rep Hub > Customer profile > Available coupons,Critical,BL-SR-011,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves the TechFlow organization. The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. The rep's customer-profile layout is the never-saved default, so the widget shows its default number of rows. The store lists more than 10 coupons, so the page has a second page. Seeded by `npm run seed:promotions:sales-rep-coupons` (SRCPN_* aliases; rolling dates and a recorded-use count, so every assertion is a relation between values the case reads, never a literal date or count).",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id); customer_name=@td(ORG_TECHFLOW.name),"--- SCREEN: Customer profile ---
+[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
+[WAIT] the customer profile has rendered with the 'Available coupons' widget
+[KEY] record the widget's card codes in order (W_CODES) and their count (W_N); from REQ_LOG record the first variable and the returned couponCodes of the salesRepCoupons request the widget sent (W_FIRST, API_W)
+[KEY] record the target of the 'All promotion coupons' link in the widget header (LINK_HREF)
+--- SCREEN: Promotion coupons page ---
+[ACT] click 'All promotion coupons' in the widget header
+[WAIT] the page has rendered with coupon cards
+[KEY] record the URL (PAGE_URL), the page heading (H1), the breadcrumb texts in order (CRUMBS), the card codes in order (P_CODES) and their count (P_N); from REQ_LOG record the first and after variables and the returned couponCodes of the salesRepCoupons request the page sent (P_FIRST, P_AFTER, API_P)
+[ACT] click 'Click to copy' on the third card
+[WAIT] the 'Coupon copied successfully' notification appears
+[KEY] record the code shown on the third card (CARD3)
+--- SCREEN: Clipboard check ---
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
+[WAIT] the customer profile has rendered
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[ACT] click into 'Title'
+[WAIT] the field has focus
+[ACT] press Ctrl+A
+[WAIT] the text of the field is selected
+[ACT] press Ctrl+V
+[WAIT] the pasted text is in the field
+[KEY] record the text now in 'Title' (PASTED)
+[ACT] press Escape to close the popup without saving
+[WAIT] the popup is closed","[COUNT] W_N equals W_FIRST and the W_CODES are the first W_N of API_W, compared without regard to case -- the widget shows exactly the head of the list it asked for {SPEC}
+[REL] LINK_HREF ends with /company/my-customers/<the customer id>/coupons and PAGE_URL is the same path {SPEC}
+[DOM] H1 reads 'Promotion coupons for ' followed by the customer name {SPEC}
+[REL] CRUMBS read Account, Sales Rep hub, My customers, the customer name, Promotion coupons, in that order {SPEC}
+[COUNT] P_N is 10, P_FIRST is 10 and P_AFTER is 0, and P_CODES are API_P compared without regard to case -- the page shows the first ten of the list {SPEC}
+[REL] the first W_N of P_CODES equal W_CODES -- the widget and the page agree on the head of the list {SPEC}
+[REL] PASTED equals CARD3 compared without regard to case -- the clipboard holds the code of the card that was clicked {SPEC}
+[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}","[NETWORK] one salesRepCoupons request per surface, no duplicate fetch
+[CONSOLE] no TypeError or unhandled rejection from the plugin or the host card","the widget and the page list different coupons for the same head positions
+the link opens another customer or a not-found page
+the clipboard holds a code other than the clicked card's
+the page shows more or fewer than ten cards on its first page
+errors[] non-empty in a salesRepCoupons response",none (the Schedule call popup is closed without saving; nothing is written),"VCST-6158 · AC-01 AC-02 AC-03 AC-04 · Archetype:PARITY · Technique:FLOW · Behavior:sr.coupons · Catches: the rep sees coupons on the page that differ from the API, or copies a code other than the one on screen · Observed: SBTM-VCST-6158-2026-11-03",Draft
+SR-CP-071,Coupons — a capped coupon shows how many uses are left out of the cap,Sales Rep Hub > Customer profile > Available coupons,High,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. SRCPN_CAP_PARTIAL: cap 5 with 2 real recorded uses, so the line is computed, not a placeholder. COUPON_10PCT is the uncapped control. Seeded by `npm run seed:promotions:sales-rep-coupons` (SRCPN_* aliases; rolling dates and a recorded-use count, so every assertion is a relation between values the case reads, never a literal date or count).",capped=@td(SRCPN_CAP_PARTIAL.code); uncapped=@td(COUPON_10PCT.code); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[WAIT] the page has rendered with coupon cards
+[ACT] page through the pager until the card with the code @td(SRCPN_CAP_PARTIAL.code) is on screen
+[WAIT] the page has rendered with coupon cards
+[KEY] record the text under the description of that card (USES_CAPPED); from REQ_LOG record the maxUsesNumber and totalUsesCount that the response gave for that code (MAX, USED)
+[ACT] page through the pager until the card with the code @td(COUPON_10PCT.code) is on screen
+[WAIT] the page has rendered with coupon cards
+[KEY] record the text under the description of that card (USES_UNCAPPED)","[COUNT] MAX is above 0 and USED is above 0 and below MAX -- the precondition: a capped coupon with a partial count {OBSERVED}
+[REL] USES_CAPPED equals the number MAX minus USED, then 'uses left out of', then MAX (for example '3 uses left out of 5') -- the left count comes from the fresh recount, not from the cap {SPEC}
+[DOM] USES_UNCAPPED reads 'Unlimited' {SPEC}
+[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}","[API] salesRepCoupons totalUsesCount for the coupon equals the number of promotion-usage records (admin coupons/search totalUsesCount)
+[CONSOLE] no vue-i18n warning for a missing plural form","the line shows the cap instead of the remaining uses
+the line shows a number that differs from MAX minus USED by one
+an uncapped coupon shows a number instead of Unlimited
+the card has no line at all",none (read-only),"VCST-6158 · AC-05 AC-06 · D-1 wording is a PO decision, asserted as shipped {OBSERVED} · Archetype:STALE · Technique:EP · Catches: the rep tells a buyer a coupon still has uses when it does not · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
+SR-CP-072,Coupons — a coupon with one use left reads in the singular,Sales Rep Hub > Customer profile > Available coupons,Medium,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. SRCPN_CAP_ONE_LEFT: cap 2 with 1 recorded use, so exactly one use is left. A used-up coupon is hidden, so a line that says 0 left must be unreachable on any page. Seeded by `npm run seed:promotions:sales-rep-coupons` (SRCPN_* aliases; rolling dates and a recorded-use count, so every assertion is a relation between values the case reads, never a literal date or count).",one_left=@td(SRCPN_CAP_ONE_LEFT.code); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[WAIT] the page has rendered with coupon cards
+[ACT] page through the pager until the card with the code @td(SRCPN_CAP_ONE_LEFT.code) is on screen
+[WAIT] the page has rendered with coupon cards
+[KEY] record the text under the description of that card (USES_ONE); from REQ_LOG record maxUsesNumber and totalUsesCount of that code (MAX, USED)
+[KEY] on every page of the pager record every uses line that starts with 0 or with 1 (ZERO_LINES, ONE_LINES)","[COUNT] MAX minus USED is 1 -- the precondition: exactly one use is left {OBSERVED}
+[REL] USES_ONE reads '1 use left out of ' followed by MAX, with 'use' in the singular {SPEC}
+[COUNT] ZERO_LINES is empty -- no card on any page says 0 uses are left {SPEC}
+[REL] every line in ONE_LINES says '1 use left', never '1 uses left' {SPEC}
+[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}",[CONSOLE] no vue-i18n warning for a missing plural form,"the card reads '1 uses left' (plural noun for one)
+a card reads '0 uses left' (a used-up coupon was listed)
+the card shows the cap instead of the remaining count",none (read-only),VCST-6158 · AC-05 AC-08 · Archetype:BOUNDARY · Technique:BVA · Catches: the card reads 1 uses left or 0 uses left · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-CP-073,Coupons — a coupon with no end date shows no Expires line and sorts last,Sales Rep Hub > Customer profile > Available coupons,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. SRCPN_LOWERCASE (agenttestlc062) has no end date at promotion or coupon level and is uncapped, so its card has no Expires line. The list puts coupons without an end date after every dated one, so they sit on the last page. Seeded by `npm run seed:promotions:sales-rep-coupons` (SRCPN_* aliases; rolling dates and a recorded-use count, so every assertion is a relation between values the case reads, never a literal date or count).",undated=@td(SRCPN_LOWERCASE.code); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[WAIT] the page has rendered with coupon cards
+[ACT] click the last page in the pager
+[WAIT] the last page has rendered
+[KEY] record, card by card in order, whether it shows an 'Expires' line and its date text (LAST_PAGE_ROWS); record the card with the code @td(SRCPN_LOWERCASE.code) and whether it shows an 'Expires' line (UNDATED_EXPIRES)
+[KEY] record every 'Expires' text on every page of the pager (ALL_EXPIRES)","[REL] UNDATED_EXPIRES is false -- a coupon with no end date shows no Expires line {SPEC}
+[REL] in LAST_PAGE_ROWS, once a card without an Expires line appears every later card on that page also has none -- coupons without an end date come last {SPEC}
+[COUNT] no entry of ALL_EXPIRES is empty and none reads a date in 1970 or 1969 {SPEC}
+[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}",[API] the salesRepCoupons items for these codes have endDate null and expirationDate null,"an Expires label with no date or a 1970 date on a card
+a card without an end date appears before a dated one
+the undated coupon is missing from the list",none (read-only),VCST-6158 · AC-04 AC-10 · Archetype:FALLBACK · Technique:EP · Catches: an Expires date of 1970 or an empty date label is shown to the rep · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-CP-074,Coupons — the coupons page of a customer the rep does not serve shows not found and no coupons,Sales Rep Hub > Customer profile > Available coupons,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_UNSERVED_ORG is an organization that exists but is not served by SR_REP_PRIMARY (an unserved id and a nonexistent id answer alike, so the fixture proves the org exists). The coupon list is store-wide and the organization only frames the page, so the served-organization check is a separate customer read that must decide the page state. The customer profile of the same organization is the reference for the not-found wording (SR-CP-004).",unserved=@td(SR_UNSERVED_ORG.id); rep=@td(SR_REP_PRIMARY.email),"[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/company/my-customers/@td(SR_UNSERVED_ORG.id)
+[WAIT] the profile page settles
+[KEY] record the not-found text of the profile page (PROFILE_NF)
+[NAV] {{FRONT_URL}}/company/my-customers/@td(SR_UNSERVED_ORG.id)/coupons
+[WAIT] the coupons page settles
+[KEY] record the page heading (H1), the not-found text (COUPONS_NF), the number of coupon cards on the page (CARDS_N), the breadcrumb texts (CRUMBS) and whether the organization name of SR_UNSERVED_ORG appears anywhere on the page (NAME_SHOWN)","[REL] COUPONS_NF equals PROFILE_NF -- the same not-found state the profile gives for this organization {SPEC}
+[REL] H1 is the fallback 'Promotion coupons' without a customer name and NAME_SHOWN is false {BL}
+[COUNT] CARDS_N is 0 -- no store coupons are framed as belonging to a customer the rep has no access to {BL}
+[REL] CRUMBS hold no customer segment {SPEC}","[API] salesRepCustomer for the unserved id is null (Access denied) while salesRepCoupons still answers store-wide -- the page, not the API, must withhold the framing","coupon cards render under a heading that names the unserved customer
+the not-found wording differs from the profile's, or the load-failed wording is shown for a refused customer
+the organization name of an unserved customer is shown",none (read-only),VCST-6158 · BL-SR-002 · Archetype:SCOPE · Technique:EP · Catches: the page frames store coupons as belonging to a customer the rep has no access to · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-CP-075,Coupons — a buyer who is not a rep opening the coupons URL is sent out of the rep area,Sales Rep Hub > Customer profile > Available coupons,High,BL-SR-011,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+ACME_BUYER is a plain corporate member with NO sales-rep:access. The coupons route sits behind the rep gate and then the module gate (guardSalesRep, then guardCustomerModuleRoute), the second being a new shared factory. The hub plugin suite observed that a non-rep ends on the account dashboard from every hub route.",buyer=@td(ACME_BUYER.email); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/account
+[WAIT] the account page has rendered
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL), whether the text 'Promotion coupons for' or any coupon card appeared at any moment (RAIL_SEEN) and the count of requests to /graphql/sales-rep in REQ_LOG (SR_REQS)","[REL] FINAL_URL equals {{FRONT_URL}}/account/dashboard -- the guard sends a non-rep home {OBSERVED}
+[REL] RAIL_SEEN is false -- no part of the rep's coupon tool rendered {BL}
+[COUNT] SR_REQS is 0 -- no rep data was fetched and discarded {BL}
+[STATE] the 'Sales Rep hub' rail section is absent from the left navigation {BL}","[API] a buyer token on salesRepCoupons answers an empty list (SR-GQL-173), so even a request that slipped through returns nothing
+[CONSOLE] no TypeError during the redirect","the coupons page or a card renders for the buyer
+the buyer stays on the coupons URL or lands on Page not found
+a request to /graphql/sales-rep is sent for the buyer session",none (read-only),VCST-6158 · BL-SR-011 · Archetype:SCOPE · Technique:DT · Catches: a buyer sees the rep's coupon tool · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-CP-076,Coupons — the widget shows exactly its row setting and hiding the block stops its query,Sales Rep Hub > Customer profile > Available coupons,Medium,"BL-SR-031, BL-SR-025",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+SR_REP_LAYOUT is the designated disposable-layout fixture: this case SAVES the customer-profile layout, which must never touch the shared SR_REP_PRIMARY baseline (see SR-CP-039). It serves the TechFlow organization. LAYOUT API GATE as SR-CP-036. The store lists at least 20 coupons, so a row setting below 20 is always reachable.",rep=@td(SR_REP_LAYOUT.email); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
+[WAIT] the customer profile has rendered with the 'Available coupons' widget
+[KEY] record the number of coupon cards in the widget (N_DEFAULT) and the first variable of the salesRepCoupons request (FIRST_DEFAULT)
+[ACT] click 'Edit layout'
+[WAIT] the edit bar is visible
+[ACT] set 'Max rows' of 'Available coupons' to '3'
+[ACT] click 'Save layout'
+[WAIT] the save completes
+[ACT] reload the page
+[WAIT] the customer profile has rendered
+[KEY] record the number of coupon cards in the widget (N_SAVED) and the first variable of the salesRepCoupons request (FIRST_SAVED)
+[ACT] click 'Edit layout'
+[WAIT] the edit bar is visible
+[ACT] click the x on the 'Available coupons' widget
+[WAIT] the widget is hidden
+[ACT] click 'Save layout'
+[WAIT] the save completes
+[SETUP] clear REQ_LOG
+[ACT] reload the page
+[WAIT] the customer profile has rendered
+[KEY] record whether the 'Available coupons' widget is on the page (WIDGET_AFTER_HIDE) and the count of requests to /graphql/sales-rep whose operation is SalesRepCoupons in REQ_LOG (COUPON_REQS_HIDDEN)","[REL] N_DEFAULT equals FIRST_DEFAULT and is at most 5 -- the default row setting {SPEC}
+[REL] N_SAVED is 3 and FIRST_SAVED is 3 -- the saved setting is the number of cards and the number asked of the API {SPEC}
+[REL] WIDGET_AFTER_HIDE is false {SPEC}
+[COUNT] COUPON_REQS_HIDDEN is 0 -- a hidden widget does not query {BL}
+[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}","[API] salesRepLayout(scope:""customerProfile"") for this rep holds the coupons block with hidden true and a maxRows setting of 3 after the second save","the card count differs from the saved Max rows
+the API is asked for a different first than the setting
+the hidden widget still issues a salesRepCoupons request
+the layout save fails or the widget reappears after reload","[ACT] click 'Edit layout', then 'Reset', then 'Save layout' to restore the registry defaults of SR_REP_LAYOUT's customer-profile layout before the session ends
+If the case aborted midway: sign in as SR_REP_LAYOUT and repeat that reset",VCST-6158 · BL-SR-031 BL-SR-025 · Archetype:CONFIG · Technique:EP · Behavior:sr.layout.widget-settings · Catches: the widget floods the profile or a hidden widget still loads data · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-CP-077,Coupons — what the page shows when the list shrinks to one page fewer while the rep is on the last page,Sales Rep Hub > Customer profile > Available coupons,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. Disposable coupons are created in the case so that the total the store lists is 10n+1 and the LAST page holds exactly one coupon. D = (11 minus the current total modulo 10) modulo 10 single-coupon promotions are created through the admin REST sequence the sales-rep GraphQL suite uses to create an in-case coupon (no cap, name prefix AGENT-TEST-SRCPN-CLAMP). {HYPOTHESIS} The page clamps a local page ref in a watch on the page count; the refetch that delivers the smaller total is triggered by paging, not by time. Does a rep who deletes nothing and only pages back and forth ever see the smaller total, or does the page serve its cached answer?",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id),"[AUTH role=ADMIN_DEFAULT] obtain an admin token; read the current salesRepCoupons totalCount as the rep (TOTAL_0); create D disposable single-coupon promotions so that TOTAL_0 + D leaves 1 on the last page of ten; poll the rep list until totalCount = TOTAL_0 + D (TOTAL_1) for at most 60 s
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[WAIT] the page has rendered with coupon cards
+[ACT] click the last page in the pager
+[WAIT] the last page has rendered with one card
+[KEY] record the pager state (PAGES_BEFORE) and the code on the single card (LAST_CODE)
+[AUTH role=ADMIN_DEFAULT] delete the disposable promotion whose code is LAST_CODE; poll the rep list until totalCount = TOTAL_1 minus 1 for at most 60 s
+[ACT] click the previous page in the pager
+[WAIT] the page has rendered with coupon cards
+[ACT] click the last page in the pager
+[WAIT] the page settles
+[KEY] record the pager state (PAGES_AFTER), the page the rep is on and the number of cards on screen (CARDS_AFTER)","[COUNT] TOTAL_1 modulo 10 is 1 and the last page held one card before the delete -- the precondition {OBSERVED}
+[COUNT] CARDS_AFTER is above 0 -- the rep never sits on an empty page of a list that still has coupons {SPEC}
+[REL] PAGES_AFTER shows one page fewer than PAGES_BEFORE, or the page was already one page fewer when the rep returned -- the pager reflects the smaller total {HYPOTHESIS}",[API] salesRepCoupons totalCount = TOTAL_1 minus 1 after the delete,"the rep sees an empty page with the pager still offering it
+the pager keeps offering the removed last page
+the page throws on a page index past the last",[API] delete every disposable promotion named with the prefix AGENT-TEST-SRCPN-CLAMP (the one already deleted is gone); confirm the rep list total equals TOTAL_0,VCST-6158 · AC-03 · {HYPOTHESIS} stays Draft until a live run decides what a page-back-and-forth does · Archetype:LIFECYCLE · Technique:ST · Catches: the rep sees an empty page with no way to tell coupons exist · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-CP-078,Coupons — the loading skeleton and the load-failed state are shown and announced,Sales Rep Hub > Customer profile > Available coupons,Medium,"BL-A11Y-004, BL-SR-012",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. The empty state ('No coupons available') cannot be reached on a store that lists coupons; it is covered by the plugin's component tests, not by this case. Failure is forced by network interception of the salesRepCoupons request (as SR-CP-018 does). The widget on the profile and the page share one list component, so both are walked.",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id),"[SETUP] throttle the network of the tab so that the salesRepCoupons response arrives about 3 s late
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[KEY] while loading, record the number of placeholder cards (SKELETON_N), whether the live region of the page reads anything (STATUS_LOADING) and whether the placeholders are hidden from the accessibility tree (SKELETON_HIDDEN)
+[WAIT] the coupon cards have rendered
+[SETUP] remove the throttle and force every salesRepCoupons request of the tab to fail (network interception)
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[WAIT] the page settles
+[KEY] record the text on screen in place of the cards (FAILED_TEXT), whether any coupon card is still on screen (CARDS_AFTER_FAIL) and the text of the live region (STATUS_FAILED)
+[ACT] click '2' in the pager if a pager is shown
+[WAIT] the page settles
+[KEY] record again whether any coupon card from the earlier successful load is on screen (STALE_CARDS)","[REL] SKELETON_N equals the number of cards the loaded page then shows -- the placeholders have the shape of the rows about to arrive {SPEC}
+[REL] SKELETON_HIDDEN is true and STATUS_LOADING is empty -- the loading placeholders are not announced as content {BL}
+[DOM] FAILED_TEXT reads 'Couldn't load coupons' {SPEC}
+[COUNT] CARDS_AFTER_FAIL is 0 and STALE_CARDS is 0 -- a failed load replaces the rows, it never leaves stale ones {SPEC}
+[REL] STATUS_FAILED equals FAILED_TEXT -- the failure is announced through the polite live region {BL}","[CONSOLE] the forced failure is logged once, no unhandled rejection","previous rows stay on screen after a failed refetch
+the failure has no text or the live region stays empty
+the placeholders are announced as content or their count differs from the page size","[SETUP] remove the network interception and the throttle
+none persisted",VCST-6158 · BL-A11Y-004 BL-SR-012 · Archetype:RENDER · Technique:EG · Catches: after a failed load the rep sees stale coupons or a blank card with no message · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-CP-079,"Coupons — copy buttons are keyboard-reachable, distinguishable and large enough",Sales Rep Hub > Customer profile > Available coupons,Medium,"BL-A11Y-001, BL-A11Y-002, BL-UI-006",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. The host card's copy control was built for the buyer page, one coupon per row; here ten cards stand on one page, so the accessible name of each copy button must tell them apart.",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[WAIT] the page has rendered with coupon cards
+[KEY] press Tab from the page heading and record, in order, the accessible name of every focusable control until the pager (TAB_NAMES) and whether each shows a visible focus indicator (FOCUS_VISIBLE)
+[ACT] with focus on the third copy button press Enter
+[WAIT] the 'Coupon copied successfully' notification appears
+[VIEWPORT] 375x812
+[WAIT] the page has re-laid out
+[KEY] record the width and height of the first copy button (BTN_W, BTN_H)","[REL] the accessible names of the ten copy buttons in TAB_NAMES are pairwise different -- each names its coupon, none is just 'Click to copy' {BL}
+[COUNT] FOCUS_VISIBLE is true for every control {BL}
+[DOM] the 'Coupon copied successfully' notification appears after Enter on the focused copy button {SPEC}
+[TOUCH] BTN_W and BTN_H are each at least 24 CSS px at 375 px {BL}",[A11Y] axe reports no violation of button-name or aria-allowed-attr on the page,"ten buttons are announced with the same name
+a copy button is not reachable with Tab or does not react to Enter
+the copy button is smaller than 24 px at 375 px
+no focus indicator on a control",none (read-only),"VCST-6158 · BL-A11Y-001 BL-A11Y-002 BL-UI-006 · Archetype:RENDER · Technique:EG · Catches: a screen-reader rep hears ten identical Click to copy buttons · the host card is shared with the buyer page, so a defect here may be a vc-frontend defect, not the plugin's · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
+SR-CP-080,Coupons — the copied code matches the code the card shows,Sales Rep Hub > Customer profile > Available coupons,Medium,,ECL-1.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. SRCPN_LOWERCASE is stored lowercase (agenttestlc062); its uppercase form is no coupon, so an uppercasing copy is detectable. The card renders the code uppercase through CSS (observed 2026-11-03; the same host rule the buyer page has, VCST-5233), so what the card SHOWS is uppercase and what the clipboard must hold is the question. ECL-1.3: the server matches codes case-insensitively, so either case applies at checkout.",code=@td(SRCPN_LOWERCASE.code); customer=@td(ORG_TECHFLOW.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[WAIT] the page has rendered with coupon cards
+[ACT] page through the pager until the card for the code @td(SRCPN_LOWERCASE.code) is on screen
+[WAIT] the page has rendered with coupon cards
+[KEY] record the code text shown on that card exactly as the card renders it (SHOWN) and, as an observation only, whether SHOWN differs from the stored code @td(SRCPN_LOWERCASE.code) in case alone (CASE_DIFFERS)
+[ACT] click 'Click to copy' on that card
+[WAIT] the 'Coupon copied successfully' notification appears
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
+[WAIT] the customer profile has rendered
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[ACT] click into 'Title'
+[WAIT] the field has focus
+[ACT] press Ctrl+A
+[WAIT] the text of the field is selected
+[ACT] press Ctrl+V
+[WAIT] the pasted text is in the field
+[KEY] record the text now in 'Title' (PASTED)
+[ACT] press Escape to close the popup without saving
+[WAIT] the popup is closed","[REL] PASTED equals SHOWN exactly -- the clipboard holds the code as the card shows it, which is the copy contract {SPEC}
+[REL] PASTED has no leading or trailing whitespace {SPEC}",[API] the buyer addCoupon with PASTED as typed returns isAppliedSuccessfully true for the same coupon (the server matches case-insensitively),"the clipboard holds a different coupon's code
+the clipboard holds the code with extra characters or whitespace
+the copy raises no confirmation",none (the popup is closed without saving),"VCST-6158 · VC-PROMO-003 ECL-1.3 · Probe:VC-PROMO-003 · Archetype:SILENT · Technique:EG · CASE_DIFFERS is recorded, not asserted: whether the shown case must equal the stored case is the open VCST-5233 question on the buyer page · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
+SR-CP-081,"Coupons — the widget and page offer no filters, audience badges or Apply to cart",Sales Rep Hub > Customer profile > Available coupons,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. The assignee comment of 2026-10-22 overrides the mockup: the filters, audience badges and 'Apply to cart' button the mockup showed are out of scope, and the obsolete mockup caption must not appear (D-4).",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
+[WAIT] the customer profile has rendered with the 'Available coupons' widget
+[KEY] record every button, chip and badge inside the widget (WIDGET_CONTROLS) and the text of the widget header and body (WIDGET_TEXT)
+[ACT] click 'All promotion coupons' in the widget header
+[WAIT] the page has rendered with coupon cards
+[KEY] record every button, chip, tab, filter and badge on the page apart from the pager and the copy buttons (PAGE_CONTROLS) and the page text (PAGE_TEXT)","[REL] WIDGET_CONTROLS holds only the 'All promotion coupons' link and the copy buttons {SPEC}
+[REL] PAGE_CONTROLS is empty {SPEC}
+[REL] neither WIDGET_TEXT nor PAGE_TEXT contains 'Apply to cart', a customer-audience badge such as 'Everyone' or 'Personal' or a filter label {SPEC}
+[REL] neither text contains the mockup caption of the obsolete design {SPEC}",[NETWORK] the salesRepCoupons request carries no filter or audience argument,"an Apply to cart button, an audience badge or a filter chip is shown
+the obsolete mockup caption is shown",none (read-only),VCST-6158 · AC-14 D-4 · Archetype:PARITY · Technique:EP · Catches: the rep sees per-customer claims the list does not honour · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-CP-082,Coupons — the customer activity page still serves a rep and still sends a non-rep away after the shared route-guard refactor,Sales Rep Hub > Customer profile > Available coupons,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+vc-module-sales-rep#30 replaced guardCustomerActivitiesRoute by guardCustomerModuleRoute(isEnabled), which the activity page and the coupons page now share. On this stand both the analytics module and the Marketing module are installed, so the module-off branch (a rep redirected back to the customer's profile) cannot be exercised here; that branch is unit-tested in the module's routes.test.ts and is NOT asserted by this case. The Customer activity block of the TechFlow profile links to the activity page.",rep=@td(SR_REP_PRIMARY.email); customer=@td(ORG_TECHFLOW.platform_id); buyer=@td(ACME_BUYER.email),"--- SCREEN: Rep opens the activity page ---
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
+[WAIT] the customer profile has rendered
+[ACT] click the link to the full activity in the 'Customer activity' widget
+[WAIT] the activity page has rendered
+[KEY] record the URL (ACT_URL) and the page heading (ACT_H1)
+--- SCREEN: Non-rep opens the same URL ---
+[ACT] sign out
+[ACT] sign in as @td(ACME_BUYER.email)
+[WAIT] the account dashboard has rendered
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/activities
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (BUYER_URL) and whether any activity data rendered (BUYER_SAW)","[REL] ACT_URL ends with /company/my-customers/<the customer id>/activities {SPEC}
+[REL] ACT_H1 is not the host Page not found heading and no error boundary is displayed {SPEC}
+[REL] BUYER_URL equals {{FRONT_URL}}/account/dashboard {OBSERVED}
+[REL] BUYER_SAW is false {BL}",[CONSOLE] no TypeError on either navigation,"the rep lands on the profile or a not-found page instead of the activity page
+the buyer reaches the activity page
+the activity page throws after the guard factory change",[ACT] sign out the buyer session,VCST-6158 · L3 gate guardCustomerModuleRoute · Archetype:CONFIG · Technique:EG · Catches: reps lose the customer activity page · module-off branch not exercisable on a stand with both modules · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-CP-083,Coupons — a coupon bound to an organization stays off every rep page yet only that organization's buyer can redeem it,Sales Rep Hub > Customer profile > Available coupons,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SRCPN_MEMBER_BOUND: an active public single-coupon promotion whose coupon has MemberId = the TechFlow organization. TECHFLOW_BUYER is a buyer of that organization; ACME_BUYER belongs to another. Apply only: the case adds the code to a cart and removes it, it places no order. Each sign-in is ONE attempt: the accounts lock on repeated failures. PO-QUESTION: should the page under a customer's name list that customer's own bound coupons? The expectation kept here is the SPEC reading (AC-11: account-issued coupons are not shown), so the first assertion is hidden; the second and third state what a buyer can do, observed 2026-11-03. Seeded by `npm run seed:promotions:sales-rep-coupons` (SRCPN_* aliases; rolling dates and a recorded-use count, so every assertion is a relation between values the case reads, never a literal date or count).",code=@td(SRCPN_MEMBER_BOUND.code); customer=@td(ORG_TECHFLOW.platform_id); bound_buyer=@td(TECHFLOW_BUYER.email); other_buyer=@td(ACME_BUYER.email),"--- SCREEN: Rep scans the bound organization's coupons page ---
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[WAIT] the page has rendered with coupon cards
+[KEY] on every page of the pager record every code shown (ALL_CODES)
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
+[WAIT] the customer profile has rendered with the 'Available coupons' widget
+[KEY] record the codes in the widget (WIDGET_CODES)
+--- SCREEN: The bound organization's buyer applies the code ---
+[ACT] sign out
+[ACT] sign in as @td(TECHFLOW_BUYER.email)
+[WAIT] the account dashboard has rendered
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with at least 1 item (add any buyable item first when the cart is empty)
+[ACT] type @td(SRCPN_MEMBER_BOUND.code) into 'Enter custom code' in the 'Discount & coupons' widget
+[WAIT] the code is in the field
+[ACT] click the apply button of the 'Custom code' card
+[WAIT] the card leaves its loading state
+[KEY] record the state of the 'Custom code' card (BOUND_STATE) and whether a Discount line is in the order summary (BOUND_DISCOUNT)
+[ACT] click the trash icon on the 'Custom code' card to remove the code
+[WAIT] the discount is removed
+--- SCREEN: Another organization's buyer applies the same code ---
+[ACT] sign out
+[ACT] sign in as @td(ACME_BUYER.email)
+[WAIT] the account dashboard has rendered
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with at least 1 item (add any buyable item first when the cart is empty)
+[ACT] type @td(SRCPN_MEMBER_BOUND.code) into 'Enter custom code' in the 'Discount & coupons' widget
+[WAIT] the code is in the field
+[ACT] click the apply button of the 'Custom code' card
+[WAIT] the card shows its error state
+[KEY] record the error text on the card (OTHER_ERROR) and whether a Discount line is in the order summary (OTHER_DISCOUNT)","[REL] the bound code is not in ALL_CODES and not in WIDGET_CODES, compared without regard to case -- the page under the bound organization's own name hides it (PO-QUESTION whether it should) {SPEC}
+[REL] BOUND_STATE is the applied state and BOUND_DISCOUNT is true -- the bound organization's buyer can redeem it {OBSERVED}
+[REL] OTHER_ERROR is the invalid-code text of the card and OTHER_DISCOUNT is false -- another organization is refused {OBSERVED}
+[NETWORK] no 5xx on any request of the case {SPEC}",[API] salesRepCoupons does not list the code for any rep (SR-GQL-167); the buyer promotionCoupons list does (no MemberId filter on the buyer path),"the bound code is listed on the rep page or in the widget
+the other organization's buyer gets a discount from the code
+the bound organization's buyer is refused the code that is bound to it",[ACT] remove the code from every cart it was applied to; sign out,"VCST-6158 · AC-11 · PO-QUESTION: should the page under a customer's name list that customer's own bound coupons? · Archetype:SCOPE · Technique:DT · Catches: the one organization that can redeem a code never sees it on its own page, or another organization can redeem it · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
+SR-CP-084,Coupons — the Expires date a rep reads is never after the last day the code works,Sales Rep Hub > Customer profile > Available coupons,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The sales-rep plugin and the Marketing module are installed, so the 'Available coupons' block is registered and the coupons route exists. Needs a coupon whose end, in the BROWSER's zone, is exactly 00:00:00 -- the instant at which the date shown and the last working day come apart. Record BROWSER_OFFSET_H from the lane first (new Date().getTimezoneOffset()/-60); the case needs a zone other than UTC. Discover the coupon from the rep API (a listed item whose endDate falls on a whole local midnight, for example a code ending at 22:00Z in a UTC+2 browser); if none exists record BLOCKED:CONDITION_NOT_MET naming the zone. EXPECTATION KEPT AS SPEC EVEN THOUGH THE BUILD VIOLATES IT: the date a rep reads under 'Expires' is never after the last day on which the code works (observed 2026-11-03: ZUR10 ends 2027-05-31T22:00Z and a UTC+1 browser shows Jun 1, 2027, a day on which the code never works). PO-QUESTION: which calendar date is 'Expires': UTC, the store's zone or the viewer's? The relation below holds for any of them as long as the shown day is not later than the last working one in the viewer's zone. This row therefore stays Draft until the build or the oracle changes.",rep=@td(SR_REP_PRIMARY.email); storeId={{STORE_ID}},"[SETUP] start recording every network request of the tab into REQ_LOG
+[KEY] record the browser's UTC offset in hours (BROWSER_OFFSET_H); if it is 0 record BLOCKED:CONDITION_NOT_MET with reason 'lane zone is UTC' and stop
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/coupons
+[WAIT] the page has rendered with coupon cards
+[KEY] from REQ_LOG take the salesRepCoupons response; pick the first item whose endDate is a whole local midnight in the browser zone (MID_CODE, MID_END); if none is on this page, page through the pager until one is found; if none exists record BLOCKED:CONDITION_NOT_MET
+[ACT] page through the pager until the card with the code MID_CODE is on screen
+[WAIT] the page has rendered with coupon cards
+[KEY] record the 'Expires' date text on that card (SHOWN_DATE) and compute LAST_DAY, the local calendar date of the instant MID_END minus one second","[REL] SHOWN_DATE is not later than LAST_DAY -- the card never shows a day on which the code no longer works {SPEC}
+[REL] BROWSER_OFFSET_H is not 0 -- the precondition: a zone in which the UTC date and the local date can differ {OBSERVED}
+[NETWORK] no 4xx/5xx on /graphql/sales-rep and no GraphQL errors[] in any salesRepCoupons response during the case {SPEC}","[UI] the buyer page and the cart sidebar format the same field; the buyer page shows the promotion end as Expires, which has the same time-zone shape","SHOWN_DATE is the day after LAST_DAY (the date is formatted date-only in the browser zone)
+the case ends BLOCKED because the lane zone is UTC
+the coupon has no whole-local-midnight end on this stand",none (read-only),"VCST-6158 · AC-09 · PO-QUESTION: which calendar date is Expires (UTC, store zone or viewer zone)? · Archetype:MONEY · Technique:BVA · Catches: a rep tells a buyer a code works until a day on which it never works · held at Draft: the build currently violates the SPEC expectation, no row certifies the defect · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft

@@ -64,7 +64,7 @@ User is authenticated. Cart has at least one item ({{TEST_SKU}}). Coupon '@td(CO
 [API] cart.coupons contains code '@td(COUPON_10PCT.code)' with isAppliedSuccessfully=true after apply
 [CONSOLE] no TypeError during coupon apply
 [NETWORK] no 4xx/5xx on /graphql during coupon apply","'Discount & coupons' widget not found on /cart, custom code card absent, applied state not reached (green border missing), trash icon not visible after apply, spinner >5s, errors[] non-empty, discount amount is zero after successful apply","Click trash icon on applied coupon card to remove @td(COUPON_10PCT.code) after test","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
-"CPN-006","Multiple Coupons Listed — Each Card Has Functional Copy Button","Coupons & Promotions > Display","High","BL-PRICE-001","ECL-1.3","User is authenticated. 14 active public coupons exist per live GraphQL query: @td(COUPON_20PCT.code), @td(COUPON_FIXED5.code), @td(COUPON_FREESHIP.code), @td(COUPON_WINE.code), @td(COUPON_WELCOME.code), @td(COUPON_SHIPPING.code), @td(COUPON_THRESH50.code), @td(COUPON_E2E.code), @td(COUPON_SPECIAL_CHARS.code), @td(COUPON_10PCT.code), @td(COUPON_EXCLUSIVE.code), @td(COUPON_TOP20.code), super, wine.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-006","Multiple Coupons Listed — Each Card Has Functional Copy Button","Coupons & Promotions > Display","High","BL-PRICE-001","ECL-1.3","User is authenticated. At least these active public coupons exist per live GraphQL query (the store may list more, including seeded AGENT-TEST coupons — never pin the total): @td(COUPON_20PCT.code), @td(COUPON_FIXED5.code), @td(COUPON_FREESHIP.code), @td(COUPON_WINE.code), @td(COUPON_WELCOME.code), @td(COUPON_SHIPPING.code), @td(COUPON_THRESH50.code), @td(COUPON_E2E.code), @td(COUPON_SPECIAL_CHARS.code), @td(COUPON_10PCT.code), @td(COUPON_EXCLUSIVE.code), @td(COUPON_TOP20.code), super, wine.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] multiple coupon cards visible
 [ACT] click '@td(COUPON_SHIPPING.code) Click to copy' button (coupon for shipping discount)
@@ -73,12 +73,13 @@ User is authenticated. Cart has at least one item ({{TEST_SKU}}). Coupon '@td(CO
 [WAIT] notification dismissed
 [ACT] click '@td(COUPON_WELCOME.code) Click to copy' button
 [WAIT] 'Coupon copied successfully' notification
-[ACT] click 'Close alert' button","[DOM] 'Coupon copied successfully' notification appears after each copy action
+[ACT] click 'Close alert' button
+[WAIT] notification dismissed","[DOM] 'Coupon copied successfully' notification appears after each copy action
 [DOM] each click on a different coupon button copies that specific coupon's code
-[DOM] totalCount = 14 coupons are available (may span multiple pages per pagination feature)
+[DOM] the number of coupon cards across all pages equals totalCount of the page's own promotionCoupons /graphql response (relation, no pinned total; may span multiple pages per pagination feature)
 [DOM] all page(s) show coupon cards with functional 'Click to copy' buttons
 [FORMAT] each coupon code button displays the code text followed by 'Click to copy' label","[CONSOLE] no TypeError across multiple copy actions
-[NETWORK] no API calls triggered per copy action (clipboard is client-side)","Any copy button unresponsive, wrong code copied, notification missing for any card, totalCount mismatch from expected 14","none","VCST-4590","Automated"
+[NETWORK] no API calls triggered per copy action (clipboard is client-side)","Any copy button unresponsive, wrong code copied, notification missing for any card, card total across pages differs from the page's own promotionCoupons totalCount","none","VCST-4590","Automated"
 "CPN-007","Coupon With No Description — Card Renders Without Empty Space","Coupons & Promotions > Display","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Live data confirmed: 'Test 100%' (code: super) has null description. 'Wine as a gift' (code: wine) has a description. @td(COUPON_WELCOME.code) has description 'For new customer get a 15% discount for all items'.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] coupon cards visible
@@ -270,17 +271,17 @@ User is authenticated. Coupon '@td(COUPON_SUPER.code)' (promotion: '@td(COUPON_S
 [DATA] systemName field is identical in both responses (non-localized identifier unchanged)
 [DATA] couponCode field is identical in both responses (codes are not localized)","[API] HTTP 200 and errors[] empty on both queries
 [CONSOLE] no errors","Both queries return the same name (localization not applied), systemName changes per locale (regression), de-DE returns empty name","none","VCST-4590","Automated"
-"CPN-025","GraphQL — DataLoader Batch: Multiple Coupons Have Distinct Coupon Codes","Coupons & Promotions > API Backend","High","BL-PRICE-001, BL-CART-003","ECL-14.1","Multiple active public promotions exist. Live GraphQL query (2026-03-17) confirmed 14 items with codes: @td(COUPON_20PCT.code), @td(COUPON_FIXED5.code), @td(COUPON_FREESHIP.code), @td(COUPON_WINE.code), @td(COUPON_WELCOME.code), @td(COUPON_SHIPPING.code), @td(COUPON_THRESH50.code), @td(COUPON_E2E.code), @td(COUPON_SPECIAL_CHARS.code), @td(COUPON_10PCT.code), @td(COUPON_EXCLUSIVE.code), @td(COUPON_TOP20.code), super, wine. DataLoader batch loading is in use (PR #14).","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, culture_name={{CULTURE_NAME}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{BACK_URL}}/ui/graphiql
+"CPN-025","GraphQL — DataLoader Batch: Multiple Coupons Have Distinct Coupon Codes","Coupons & Promotions > API Backend","High","BL-PRICE-001, BL-CART-003","ECL-14.1","Multiple active public promotions exist. Live GraphQL query (2026-03-17) confirmed at least these codes (a floor — the store lists more since seeding, so the query window below is 100): @td(COUPON_20PCT.code), @td(COUPON_FIXED5.code), @td(COUPON_FREESHIP.code), @td(COUPON_WINE.code), @td(COUPON_WELCOME.code), @td(COUPON_SHIPPING.code), @td(COUPON_THRESH50.code), @td(COUPON_E2E.code), @td(COUPON_SPECIAL_CHARS.code), @td(COUPON_10PCT.code), @td(COUPON_EXCLUSIVE.code), @td(COUPON_TOP20.code), super, wine. DataLoader batch loading is in use (PR #14).","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, culture_name={{CULTURE_NAME}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL loads
-[GQL] execute query: { promotionCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""{{CULTURE_NAME}}"", first: 20) { totalCount items { id name couponCode } } }
+[GQL] execute query: { promotionCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""{{CULTURE_NAME}}"", first: 100) { totalCount items { id name couponCode } } }
 [WAIT] response","[ERRORS] errors[] is empty in the GraphQL response
-[COUNT] totalCount = 14 (matches known live count as of 2026-03-17)
+[COUNT] totalCount >= 11 (the confirmed codes below are a floor, not the store's total) and items.length equals totalCount (window first: 100 covers the whole list)
 [DATA] each item in the response has a non-null couponCode value
 [DATA] confirmed codes present: @td(COUPON_10PCT.code), @td(COUPON_20PCT.code), @td(COUPON_SHIPPING.code), @td(COUPON_WELCOME.code), @td(COUPON_E2E.code), @td(COUPON_WINE.code), @td(COUPON_FIXED5.code), @td(COUPON_FREESHIP.code), @td(COUPON_THRESH50.code), @td(COUPON_EXCLUSIVE.code), @td(COUPON_TOP20.code)
 [DATA] no item has an empty or null couponCode (all returned items have codes — promotions without codes are excluded by design)
 [DATA] no two items share the same couponCode value (DataLoader cross-contamination check)","[API] HTTP 200, errors[] empty
 [CONSOLE] no DataLoader or batch-related errors in browser console
-[NETWORK] single /graphql request observed in network tab (no N+1 requests visible)","Duplicate coupon codes across different promotions (DataLoader cross-contamination), null couponCode in results, totalCount not matching expected 14, promotions without codes included","none","VCST-4590","Automated"
+[NETWORK] single /graphql request observed in network tab (no N+1 requests visible)","Duplicate coupon codes across different promotions (DataLoader cross-contamination), null couponCode in results, totalCount below the confirmed-code floor or not equal to items.length, promotions without codes included","none","VCST-4590","Automated"
 "CPN-026","REST API — Promotion + Coupon CRUD (coupon is a SEPARATE entity via /coupons/add, not an inline promotion field)","Coupons & Promotions > Admin Backend","Critical","BL-PRICE-001","ECL-14.1","Admin user authenticated via OAuth2 token. Marketing module API accessible at {{ADMIN_URL}}. CONTRACT: the Promotion model has NO coupons[] collection — only a HasCoupons bool. Coupons are a separate entity (Coupon{code, promotionId}). Create the promotion FIRST, then attach the coupon via POST /api/marketing/promotions/coupons/add (body: Coupon[]). An inline coupons[] field on the promotion create/update body is silently ignored by the model binder.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, timestamp={{TIMESTAMP}} (generated at runtime as Date.now() or YYYYMMDD-HHmmss), coupon_code=AGENT-TEST-CPN026-{{TIMESTAMP}}","[AUTH] POST {{ADMIN_URL}}/connect/token with grant_type=password for {{ADMIN_EMAIL}} to obtain access_token
 [WAIT] access_token received
 [HTTP] POST {{ADMIN_URL}}/api/marketing/promotions with body: { name: 'AGENT-TEST Promotion CPN-026-{{TIMESTAMP}}', type: 'DynamicPromotion', isActive: true, isPublic: true }
@@ -723,7 +724,7 @@ User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code)
 [NETWORK] no 404 response on the GraphQL request for coupons
 [API] response body from /graphql contains promotionCoupons.totalCount = 14 (or current live count)
 [CONSOLE] no 404-related errors or 'failed to fetch' messages","Request to /xapi/graphql visible in network tab (bug not fixed), 404 on GraphQL request, empty state 'You don't have any coupons or promotions' visible, totalCount = 0 in response","none","VCST-4590","Automated"
-"CPN-050","Coupons Page — Pagination: Next Page Loads Additional Coupons","Coupons & Promotions > Pagination","High","BL-PRICE-001","ECL-14.1","User is authenticated. 14 public coupons exist (confirmed live). Pagination feature deployed (vc-frontend commit 05c0047 — add pagination, 2eb875a — use page size constant). Page size constant determines how many coupons appear per page.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-050","Coupons Page — Pagination: Next Page Loads Additional Coupons","Coupons & Promotions > Pagination","High","BL-PRICE-001","ECL-14.1","User is authenticated. More public coupons exist than one page holds (the live total is whatever the page's own promotionCoupons response reports — never pin it). Pagination feature deployed (vc-frontend commit 05c0047 — add pagination, 2eb875a — use page size constant). Page size constant determines how many coupons appear per page.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] first page of coupon cards visible (spinner gone)
 [ASSERT] note the number of coupon cards displayed on the first page
@@ -733,11 +734,11 @@ User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code)
 [WAIT] next page of coupons loaded","[DOM] first page displays up to page-size-constant number of coupon cards (determined by the page size constant from the code)
 [DOM] pagination control is visible when totalCount > page size constant
 [DOM] after loading page 2: different coupon cards are shown (no duplicates from page 1)
-[COUNT] total unique coupon cards across all pages = 14 (matches live totalCount)
+[COUNT] total unique coupon cards across all pages equals totalCount of the page's own promotionCoupons /graphql response (relation, no pinned total)
 [DOM] no infinite scroll duplicates — same coupon does not appear on multiple pages","[API] promotionCoupons query on page 1: after variable matches '0', first = page size constant
 [API] promotionCoupons query on page 2: after variable is non-zero cursor from page 1 response
 [API] both responses: errors[] empty, HTTP 200
-[CONSOLE] no JS errors during pagination interaction","Pagination control absent when 14 coupons exceed page size, duplicate cards on page 2, spinner never stops on page 2, errors[] non-empty on paginated query","none","VCST-4590","Automated"
+[CONSOLE] no JS errors during pagination interaction","Pagination control absent when the coupon total exceeds page size, duplicate cards on page 2, spinner never stops on page 2, errors[] non-empty on paginated query","none","VCST-4590","Automated"
 "CPN-051","Coupons Page — Skeleton Loading State Displays Before Data Arrives","Coupons & Promotions > Loading States","High","BL-PRICE-001","ECL-14.1","User is authenticated. Skeleton loading with vc-widget deployed (vc-frontend commit 0f87889). Network throttling to Slow 3G simulates loading delay.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons (with browser throttled to Slow 3G via DevTools)
 [WAIT] page begins loading (do NOT wait for full load — capture intermediate state immediately)
 [ASSERT] take screenshot of the page while loading is in progress (capture skeleton state)","[DOM] skeleton placeholder cards are visible during the loading state (before real coupon data arrives)
@@ -761,12 +762,14 @@ User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code)
 [API] errors[] empty
 [ADMIN] label value persists after blade close and reopen
 [CONSOLE] no JS errors on storefront after label is set","Label field absent from Admin promotion blade (feature not deployed), label value not returned in GraphQL response, label visible on storefront as empty string/element when null, console error during render","Restore label/displayName to empty/null on 'QA Coupon English Name' promotion after test","VCST-4590","Automated"
-"CPN-053","Coupon Card — Label Field Null Does Not Render Empty Element","Coupons & Promotions > Display","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. All 14 live coupons currently have label=null (confirmed 2026-03-17 via GraphQL). Page renders cards for all 14 coupons.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-053","Coupon Card — Label Field Null Does Not Render Empty Element","Coupons & Promotions > Display","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. The cards under test are chosen from the page's own promotionCoupons response: the first-page items whose label is null in that response. At least one such card is on the first page; when none is, record BLOCKED:CONDITION_NOT_MET (the store then has no null-label coupon to test).","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] all visible coupon cards rendered
-[SCROLL] scroll through all visible cards on the first page","[DOM] no coupon card has an empty label element visible (no blank line, empty badge, or empty div where label would appear)
-[DOM] all cards render cleanly without extra whitespace attributable to a null label field
-[FORMAT] card layout is consistent across all 14 coupons — no card appears taller or differently spaced due to null label","[API] promotionCoupons query: all 14 items have label = null confirmed
+[KEY] from the promotionCoupons response in REQ_LOG record the codes of the first-page items whose label is null (NULL_LABEL_CODES); if there are none record BLOCKED:CONDITION_NOT_MET and stop
+[SCROLL] scroll to each card whose code is in NULL_LABEL_CODES","[DOM] none of the cards in NULL_LABEL_CODES has an empty label element visible (no blank line, empty badge, or empty div where the label would appear)
+[DOM] each card in NULL_LABEL_CODES shows its name directly above its description and its 'Click to copy' button with the code, with no empty element (label, badge or div) between them
+[FORMAT] the height and spacing of each card in NULL_LABEL_CODES equal those of a card with a non-null label and the same description length, or differ only through its description length","[API] the promotionCoupons response lists, for every code in NULL_LABEL_CODES, label = null (the selection rule itself)
 [CONSOLE] no 'undefined' or null reference errors in console related to the label field","Empty badge or element visible on any card where label=null, card height varies only due to label null (not description length), console null reference error for label","none","VCST-4590","Automated"
 "CPN-L01","Coupon With Special Characters in Code — Card Renders and Copy Works","Coupons & Promotions > Display","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Coupon '@td(COUPON_SPECIAL_CHARS.code)' (promotion: '@td(COUPON_SPECIAL_CHARS.promo_name)') exists in live env with special characters in the code.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_SPECIAL_CHARS.code)","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
@@ -986,3 +989,44 @@ second_code=@td(COUPON_20PCT.code)","[NAV] {{FRONT_URL}}/cart
 [DOM] a preset card's own <input> carries the readonly attribute in both states (regression guard, not the primary probe) {BL}","[NETWORK] AddCoupon fires for {{second_code}}; errors[] is empty {SPEC}
 [API] cart.coupons[] holds exactly {{second_code}} after the sequence — the single slot is preserved {BL}
 [CONSOLE] no JS errors",Custom code input is read-only immediately after a PRESET coupon is applied (Claim C regression — it should be empty and editable); the input stays editable after a coupon was applied THROUGH it (it should lock); the input shows a stale or mismatched code,"Remove the active coupon via its 'Remove coupon' control, navigate away from cart","VCST-5518; VCST-4776. BL-CART-009 Claim C, corrected 2026-08-05 — see reports/knowledge/BL-AUDIT-2026-08-05.md. First case to cite BL-CART-009's read-only/input-provenance facet; CPN-060 and CPN-SMK-060 cite the ID for last-applied-wins anti-stacking instead. Added: /qa-test-lifecycle Phase 3 (2026-08-05).",Draft
+CPN-066,"Coupons page — the coupon card keeps its regular layout at xs, md, lg and 2xl widths",Coupons & Promotions > Account coupons page > Coupon card,High,"BL-UI-003, BL-UI-005",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+vc-frontend#2596 edited the card the buyer's /account/coupons page shares with the sales-rep plugin: a compact layout was added and the regular layout's description rule, shadow condition and code wrap were touched. The regular layout must stay as it was: below the lg breakpoint the description text is not shown and the name, expiry and code button are; at lg and above the description shows, clamped to four lines; every card keeps its drop shadow. The store lists more than one page of coupons, so the page holds a full set of cards.",buyer={{ORG_USER_EMAIL}},"[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/account/coupons
+[WAIT] the page has rendered with coupon cards
+[KEY] record, for the first card, whether its description text is visible (DESC_2XL), the number of text lines the description takes (DESC_LINES_2XL) and the box-shadow of the card (SHADOW_2XL; computed style is not exposed in the DOM tree, so browser_evaluate is the only way to read it)
+[VIEWPORT] 1280x900
+[WAIT] the page has re-laid out
+[KEY] record whether the description text of the first card is visible (DESC_LG) and whether the code button sits to the right of the name (CODE_RIGHT_LG)
+[VIEWPORT] 768x1024
+[WAIT] the page has re-laid out
+[KEY] record whether the description text of the first card is visible (DESC_MD), whether its name, 'Expires' line and code button are visible (CORE_MD) and the box-shadow of the card (SHADOW_MD)
+[VIEWPORT] 375x812
+[WAIT] the page has re-laid out
+[KEY] record whether the description text of the first card is visible (DESC_XS), whether its name, 'Expires' line and code button are visible (CORE_XS), the box-shadow of the card (SHADOW_XS) and whether the page scrolls horizontally (HSCROLL_XS)","[REL] DESC_2XL is true and DESC_LINES_2XL is at most 4 {SPEC}
+[REL] DESC_LG is true and CODE_RIGHT_LG is true -- the regular grid layout at lg {SPEC}
+[REL] DESC_MD is false and DESC_XS is false -- below lg the description text is not shown {SPEC}
+[REL] CORE_MD and CORE_XS are true -- the name, the expiry line and the code button stay visible {SPEC}
+[REL] SHADOW_2XL, SHADOW_MD and SHADOW_XS are all different from 'none' -- the card keeps its shadow at every width {SPEC}
+[OVERFLOW] HSCROLL_XS is false -- no horizontal scroll at 375 px {BL}
+[NETWORK] no 4xx/5xx on /graphql and no promotionCoupons errors[] during the case {SPEC}","[API] the page's promotionCoupons response lists the same codes as the cards, uppercase through CSS only
+[CONSOLE] no Vue warning about an unknown prop or slot on the coupon card","the description is shown below lg or missing at lg and above
+the card loses its shadow or shows the compact stacked layout at a wide viewport
+the code button leaves the card or the page scrolls sideways at 375 px
+the description takes more than four lines",none (read-only; the viewport is reset by the next case's [VIEWPORT]),VCST-6158 · BL-UI-003 BL-UI-005 · matches the behaviour vc-frontend#2596 declares (no pre-change render exists) · Archetype:RENDER · Technique:PW · Catches: buyers see broken or reflowed coupon cards on their own coupons page · Observed: SBTM-VCST-6158-2026-11-03,Draft
+CPN-067,Coupons page — a long coupon code wraps inside its button at 375 and 1280 px,Coupons & Promotions > Account coupons page > Coupon card,Medium,BL-UI-004,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+SRCPN_LONG_CODE is a listable single-coupon promotion whose code is 46 characters with no whitespace, so a card that cannot wrap its code overflows. vc-frontend#2596 set overflow-wrap:anywhere on the code so it wraps inside the full-width button instead of spilling out. The page orders by end date ascending with undated coupons first (KB-1C28E89D), so the coupon is on an early page: page through the pager until it is found. Seeded by `npm run seed:promotions:sales-rep-coupons`.",buyer={{ORG_USER_EMAIL}}; long_code=@td(SRCPN_LONG_CODE.code),"[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/account/coupons
+[WAIT] the page has rendered with coupon cards
+[ACT] page through the pager until the card with the code @td(SRCPN_LONG_CODE.code) is on screen
+[WAIT] the page has rendered with coupon cards
+[KEY] record the right edge of the code button (BTN_RIGHT_XS), the right edge of the card (CARD_RIGHT_XS), the number of text lines the code takes (CODE_LINES_XS), the code text on the button (CODE_TEXT_XS) and whether the page scrolls horizontally (HSCROLL_XS)
+[VIEWPORT] 1280x900
+[WAIT] the page has re-laid out
+[KEY] record the right edge of the code button (BTN_RIGHT_LG), the right edge of the card (CARD_RIGHT_LG), the number of text lines the code takes (CODE_LINES_LG) and whether the page scrolls horizontally (HSCROLL_LG)","[OVERFLOW] BTN_RIGHT_XS is at most CARD_RIGHT_XS and BTN_RIGHT_LG is at most CARD_RIGHT_LG -- the button stays inside its card {BL}
+[OVERFLOW] HSCROLL_XS is false and HSCROLL_LG is false -- no sideways page scroll {BL}
+[REL] CODE_TEXT_XS equals the stored code compared without regard to case -- the whole code is readable, wrapped, not cut off {SPEC}
+[COUNT] CODE_LINES_XS is above 1 -- at 375 px a 46-character code wraps instead of overflowing {OBSERVED}",[CONSOLE] no layout warning,"the code spills out of the card or out of its button
+the page scrolls sideways at 375 or 1280 px
+the code is cut off with an ellipsis or its tail is not readable",none (read-only),VCST-6158 · BL-UI-004 · Archetype:RENDER · Technique:BVA · Catches: a long code spills out of the card and the page scrolls sideways · the long-code coupon did not exist in live data before the seed · Observed: SBTM-VCST-6158-2026-11-03,Draft

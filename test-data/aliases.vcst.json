@@ -3465,5 +3465,9 @@
   "SRCPN_LONG_CODE": {
     "coupon_guid": "4f392cf9-f817-4c93-9122-923c261daf1f",
     "promotion_guid": "a5107611-af86-4aa4-bcdb-6a7415f3312e"
+  },
+  "SR_UNSERVED_ORG": {
+    "id": "8ec0e02f-ab23-4464-b0e1-7c7920175a66",
+    "platform_id": "8ec0e02f-ab23-4464-b0e1-7c7920175a66"
   }
 }

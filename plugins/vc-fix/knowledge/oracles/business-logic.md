@@ -39,6 +39,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** vc-module-marketing `BestRewardPromotionPolicy.cs` — coupon/promo reward evaluated against the already-computed `CartTotal` (post catalog/tier price), not the list price.
 - **Source:** VCST-1820 (Done) — a catalog promotion was not applied to each tier price separately; fixed so the discount applies to each tier price
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] CPN-014 failed in REG-2026-11-03-1732
 
 ### BL-PRICE-002: Tax calculation position `[P0-revenue]`
 - **Rule:** Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).
@@ -146,6 +147,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/user-guide/docs/marketing/combining-active-promotions.md — Best Reward (default) applies one best promotion; Stackable combines them and skips rewards that would go negative
 - **Source:** VCST-4896 (Done) — Coupons sidebar AC: main rule is one coupon at a time; a new code replaces the previous one
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] CPN-014 failed in REG-2026-11-03-1732
 
 ### BL-CART-004: Currency switching recalculates primary-currency lines `[P0-revenue]`
 - **Rule:** When the user switches the cart currency, every line item **denominated in the previous cart currency** must recalculate using the new currency's price list. If such a product has no price in the new currency, that line item must be flagged or removed. Shipping and tax recalculate. **Mixed Cart exception (Loyalty mode "Mixed Cart"):** line items denominated in a non-primary currency (e.g. a PTS loyalty line) are NOT converted — they are preserved at their original currency, so a cart MAY legitimately hold multiple currencies simultaneously. See BL-LOY-006 for the switch contract and BL-LOY-003 for the per-currency totals split.
@@ -2071,6 +2073,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Agents:** qa-backend-expert, qa-frontend-expert
 - **Source:** `vc-module-sales-rep` `SalesRepLayoutQuery`/`SaveLayoutCommand` (only `Scope`/`StoreId`/`UserId` fields — no customer/organization id anywhere in the layout schema); live-confirmed bidirectionally on the storefront, with the mutation payload inspected and carrying no organization/customer id.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SR-CP-050 failed in REG-2026-11-03-1732
 
 ### BL-SR-024: Configurable-layout changes persist only on explicit Save, are scoped to the rep's account, and survive reload and re-authentication `[P1-data]`
 - **Rule:** No drag, hide, or reorder action is persisted on its own — each is a draft-only change until the rep explicitly saves, and one Save issues exactly one full-document replace (BL-SR-016), never more. The persisted arrangement is scoped to the rep's account rather than a device or browser session: reloading, signing out and back in, or opening an independent browser session all resolve the same saved arrangement. Cancel and Reset discard the in-progress draft without issuing any save.
@@ -2574,8 +2577,8 @@ ticket or a docs page disputes (`status`).
 
 | Domain | ID Range | Total | P0 | P1 | P2 | DECLARED | SUSPECT |
 |--------|----------|-------|----|----|----|----------|---------|
-| Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
-| Cart | BL-CART-001–016 | 16 | 6 | 10 | 0 | 8 | 2 |
+| Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 3 |
+| Cart | BL-CART-001–016 | 16 | 6 | 10 | 0 | 8 | 3 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
 | Users & Authentication | BL-AUTH-001–018 | 18 | 6 | 11 | 1 | 11 | 6 |
@@ -2594,7 +2597,7 @@ ticket or a docs page disputes (`status`).
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
-| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 11 |
+| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 12 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
@@ -2604,4 +2607,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **234** | **67** | **128** | **39** | **126** | **60** |
+| **Total** | | **234** | **67** | **128** | **39** | **126** | **63** |

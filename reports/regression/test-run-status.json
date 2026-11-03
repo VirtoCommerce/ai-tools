@@ -1,53 +1,87 @@
 {
-  "runId": "REG-2026-11-03-1717",
+  "runId": "REG-2026-11-03-1732",
   "status": "completed",
-  "startedAt": "2026-11-03T16:17:38.000Z",
-  "windowStart": "2026-11-03T16:17:38.000Z",
-  "selection": "050b3,050i,102",
+  "startedAt": "2026-11-03T17:32:50.323Z",
+  "windowStart": "2026-11-03T17:32:50.323Z",
+  "selection": "050m,091,077",
   "env": "vcst",
   "scoped": true,
   "cases": "ids",
   "ids": [
-    "CRL-GQL-130",
-    "CRL-GQL-131",
-    "CRL-GQL-132",
-    "CRL-GQL-133",
-    "CRL-GQL-134",
-    "CRL-GQL-074",
-    "CRL-GQL-075",
-    "CFG-GQL-046",
-    "UCPA-014"
+    "SR-GQL-163",
+    "SR-GQL-164",
+    "SR-GQL-165",
+    "SR-GQL-166",
+    "SR-GQL-167",
+    "SR-GQL-168",
+    "SR-GQL-169",
+    "SR-GQL-170",
+    "SR-GQL-171",
+    "SR-GQL-172",
+    "SR-GQL-173",
+    "SR-GQL-174",
+    "SR-CP-070",
+    "SR-CP-071",
+    "SR-CP-072",
+    "SR-CP-073",
+    "SR-CP-074",
+    "SR-CP-075",
+    "SR-CP-076",
+    "SR-CP-077",
+    "SR-CP-078",
+    "SR-CP-079",
+    "SR-CP-080",
+    "SR-CP-081",
+    "SR-CP-082",
+    "SR-CP-083",
+    "SR-CP-084",
+    "SR-CP-047",
+    "SR-CP-050",
+    "SR-CP-068",
+    "CPN-066",
+    "CPN-067",
+    "CPN-006",
+    "CPN-025",
+    "CPN-050",
+    "CPN-053",
+    "CPN-014"
   ],
-  "purpose": "/qa-regression VCST-6185 mergeCart authorization — 9 most relevant cases",
-  "plan": "reports/regression/REG-2026-11-03-1717/preflight.json",
+  "purpose": "/qa-test VCST-6158 C1 — exact set (29 new Draft + 4 REPAIR + 4 RE-BASE), --no-promote",
+  "plan": "reports/regression/REG-2026-11-03-1732/preflight.json",
   "suites": {
-    "102": {
+    "050m": {
       "status": "done",
-      "lane": "fastpath",
-      "startedAt": "2026-11-03T16:19:59.845Z",
-      "pass": 1,
+      "lane": "browser",
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-03T17:34:50Z",
+      "machine": {
+        "pass": 9,
+        "fail": 0,
+        "blocked": 0
+      },
+      "pass": 12,
       "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-03T16:20:15.411Z"
+      "blocked": 0
     },
-    "050b3": {
+    "091": {
       "status": "done",
-      "lane": "fastpath",
-      "startedAt": "2026-11-03T16:19:00.496Z",
-      "pass": 7,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-03T16:19:48.610Z"
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-03T17:34:50Z",
+      "pass": 13,
+      "fail": 2,
+      "blocked": 3,
+      "retries": 1
     },
-    "050i": {
+    "077": {
       "status": "done",
-      "lane": "fastpath",
-      "startedAt": "2026-11-03T16:19:48.611Z",
-      "pass": 1,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-03T16:19:59.845Z"
+      "lane": "browser",
+      "browser": "playwright-firefox",
+      "startedAt": "2026-11-03T17:34:50Z",
+      "pass": 3,
+      "fail": 1,
+      "blocked": 3
     }
   },
-  "finishedAt": "2026-11-03T16:21:20.021Z"
+  "finishedAt": "2026-11-03T18:04:09.966Z"
 }

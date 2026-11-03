@@ -85,6 +85,7 @@
     "seed:bopis:teardown": "node scripts/seed-data/bopis/seed-bopis.mjs --teardown",
     "seed:sales-rep": "node scripts/seed-data/sales-rep/seed-sales-rep.mjs",
     "seed:sales-rep:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep.mjs --teardown",
+    "seed:sales-rep:writeback": "node scripts/seed-data/sales-rep/seed-sales-rep.mjs --writeback-only",
     "seed:sales-rep-docs": "node scripts/seed-data/sales-rep/seed-sales-rep-docs.mjs",
     "seed:sales-rep-docs:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep-docs.mjs --teardown",
     "seed:sales-rep-stats": "node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs",

@@ -69,10 +69,11 @@ rules:
       kind: manual
       ref: Item at $100 list, $80 sale → apply 10% coupon → discount = $8 (10% of $80), not $10. Apply second coupon → rejected with "Only one coupon allowed" message.
     violation_signal: Coupon discount calculated on list price; coupon accepted when min-order threshold not met; multiple coupons applied when multi-coupon is disabled.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-20
       by: REG-2026-10-20-1418
+    suspect_reason: "[case] CPN-014 failed in REG-2026-11-03-1732"
   - id: BL-CART-004
     title: Currency switching recalculates primary-currency lines
     rule: When the user switches the cart currency, every line item **denominated in the previous cart currency** must recalculate using the new currency's price list. If such a product has no price in the new currency, that line item must be flagged or removed. Shipping and tax recalculate. **Mixed Cart exception (Loyalty mode "Mixed Cart"):** line items denominated in a non-primary currency (e.g. a PTS loyalty line) are NOT converted — they are preserved at their original currency, so a cart MAY legitimately hold multiple currencies simultaneously. See BL-LOY-006 for the switch contract and BL-LOY-003 for the per-currency totals split.

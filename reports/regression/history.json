@@ -4493,5 +4493,52 @@
     "pass_rate": 100,
     "duration_minutes": 0.11,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-03-1732",
+    "date": "2026-11-03",
+    "suiteId": "050m",
+    "suiteName": "GraphQL xAPI — Sales Rep (scoped /graphql/sales-rep)",
+    "environment": "vcst",
+    "total": 12,
+    "passed": 12,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 7.69,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-03-1732",
+    "date": "2026-11-03",
+    "suiteId": "077",
+    "suiteName": "Coupons & Promotions Storefront",
+    "environment": "vcst",
+    "browser": "playwright-firefox",
+    "total": 7,
+    "passed": 3,
+    "failed": 1,
+    "blocked": 3,
+    "skipped": 0,
+    "pass_rate": 75,
+    "duration_minutes": 13.63,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-03-1732",
+    "date": "2026-11-03",
+    "suiteId": "091",
+    "suiteName": "Sales Rep — Customer Profile (storefront)",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 18,
+    "passed": 13,
+    "failed": 2,
+    "blocked": 3,
+    "skipped": 0,
+    "pass_rate": 86.67,
+    "duration_minutes": 17.89,
+    "mode": "interactive"
   }
 ]
