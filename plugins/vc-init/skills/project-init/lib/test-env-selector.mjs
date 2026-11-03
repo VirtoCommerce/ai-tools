@@ -8,8 +8,8 @@
  *
  * Written by scaffold-env.mjs right after it creates `.env.<env>`, and only when ALL hold:
  *   - the file does not exist yet — an existing one is the developer's own choice and is never rewritten;
- *   - the choice is unambiguous: this env is the only `.env.<env>` in the project, or the caller named
- *     it the default (`primary`);
+ *   - the choice is unambiguous: this env is the project's only one (an `.env.<x>` holding BACK_URL, so a
+ *     framework's `.env.development` does not count), or the caller named it the default (`primary`);
  *   - git will not pick it up: it is not tracked, and inside a work tree it is ignored (the caller ran
  *     ensureProjectIgnores first, which lists it in SECRET_IGNORES).
  * It holds an env name and nothing else.
@@ -17,7 +17,7 @@
 import { execFileSync } from "child_process";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
-import { envFileNames, isGitTracked } from "./project-env.mjs";
+import { envFileNames, isGitTracked, readKey } from "./project-env.mjs";
 
 export const SELECTOR_FILE = ".env.test-env";
 
@@ -42,6 +42,28 @@ function gitIgnored(root, file) {
   }
 }
 
+/** The project's environments: `.env.<x>` files that hold `BACK_URL` (every env onboarding writes does).
+ *  A framework's own `.env.development` / `.env.production` in a Vite or Next repo holds none. */
+function ourEnvs(root) {
+  return envFileNames(root).filter((n) => {
+    try { return readKey(readFileSync(join(root, n), "utf-8"), "BACK_URL") !== null; } catch { return false; }
+  }).map((n) => n.slice(".env.".length));
+}
+
+/** What an existing selector names, and why it names nothing a resolver can use (`problem`), if so. Never
+ *  rewritten — a broken file is reported, so a project that still falls back to vcst says why. */
+function inspectSelector(root, path) {
+  let raw;
+  try { raw = readFileSync(path); } catch { return { env: null, problem: "unreadable" }; }
+  // UTF-16 (Windows PowerShell 5.1's `>`): a BOM or NUL bytes. dotenv reads no key from it.
+  if ((raw[0] === 0xff && raw[1] === 0xfe) || (raw[0] === 0xfe && raw[1] === 0xff) || raw.includes(0)) return { env: null, problem: "utf16" };
+  const env = selectedEnv(raw.toString("utf-8"));
+  if (!env) return { env: null, problem: "no-env" };
+  // An env may live in a QA_ENV_PATH folder instead, so this one is a warning, not a verdict.
+  if (!existsSync(join(root, `.env.${env}`))) return { env, problem: "no-env-file" };
+  return { env };
+}
+
 /**
  * Write `.env.test-env` for `env` when that is safe and unambiguous. Never throws on a write failure — the
  * project still works with an explicit env argument, so it is reported as `skipped`.
@@ -53,12 +75,8 @@ function gitIgnored(root, file) {
  */
 export function ensureTestEnvSelector(root, env, { primary = false, dryRun = false, tracked = isGitTracked, ignored = gitIgnored } = {}) {
   const path = join(root, SELECTOR_FILE);
-  if (existsSync(path)) {
-    let text = "";
-    try { text = readFileSync(path, "utf-8"); } catch { /* unreadable — still never overwritten */ }
-    return { status: "kept", env: selectedEnv(text) };
-  }
-  const envs = envFileNames(root).map((n) => n.slice(".env.".length));
+  if (existsSync(path)) return { status: "kept", ...inspectSelector(root, path) };
+  const envs = ourEnvs(root);
   if (!envs.includes(env)) envs.push(env);
   if (envs.length > 1 && !primary) return { status: "skipped", env: null, reason: "several-envs", envs: envs.sort() };
   if (tracked(root, SELECTOR_FILE)) return { status: "skipped", env: null, reason: "tracked" };
@@ -78,11 +96,20 @@ export function describeSelector(result, env) {
   switch (result.status) {
     case "written":
       return [`${SELECTOR_FILE}: written (TEST_ENV=${result.env}) — commands run without an env use ${result.env}`];
-    case "kept":
+    case "kept": {
+      const fix = `rewrite it as the one line TEST_ENV=<env>, saved as UTF-8`;
+      const problem = {
+        unreadable: `it cannot be read — ${fix}`,
+        utf16: `it is UTF-16 (Windows PowerShell 5.1's >), which no resolver reads, so commands fall back to vcst — ${fix}`,
+        "no-env": `it names no TEST_ENV, so commands fall back to vcst — ${fix}`,
+        "no-env-file": `there is no .env.${result.env} here — fine if it is in a QA_ENV_PATH folder, else ${fix}`,
+      }[result.problem];
+      if (problem) return [`${SELECTOR_FILE}: kept, but ${problem}`];
       return [
-        `${SELECTOR_FILE}: kept (TEST_ENV=${result.env ?? "?"})`,
+        `${SELECTOR_FILE}: kept (TEST_ENV=${result.env})`,
         ...(result.env === env ? [] : [`  ${env} is not the default — ${switchHow}`]),
       ];
+    }
     default: {
       // Never a shell redirect (Windows PowerShell 5.1's `>` writes UTF-16, which no resolver reads), and never
       // a scaffold-env re-run (it would need the project's --tracker / --client-vcs to add nothing wrong).

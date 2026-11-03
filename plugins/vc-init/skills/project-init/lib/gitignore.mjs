@@ -138,6 +138,22 @@ export function ensureGitignoreEntries(root, entries, opts = {}) {
 }
 
 /**
+ * Only the `.env.test-env` entry, for normalize-env: it runs on every `--check`, where re-adding the whole
+ * SECRET_IGNORES list would bring back entries a team removed on purpose. Same never-throw contract.
+ */
+export function ensureSelectorIgnore(projectRoot) {
+  try {
+    return ensureGitignoreEntries(projectRoot, [".env.test-env"], {
+      title: "vc-init (/project-init) — default env selector",
+      notes: ["This checkout's default TEST_ENV (.env.test-env), written by /project-init. Never commit."],
+    });
+  } catch (e) {
+    console.warn(`[project-init] ⚠ could not update ${join(projectRoot, ".gitignore")} (${e.message}) — add .env.test-env by hand.`);
+    return [];
+  }
+}
+
+/**
  * The call every /project-init writer makes BEFORE creating its file. Extra entries (a relocated
  * `--out`/`--settings` destination) are merged into the same block. Returns what was added, so a
  * caller can log it; returns [] when everything was already covered. Never throws on a read-only

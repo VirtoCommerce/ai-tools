@@ -43,7 +43,7 @@ import { resolveOutPath } from "./lib/paths.mjs";
 import { LOCAL_FILE, describeMove, envSuffixesIn, moveProjectKeys } from "./lib/project-env.mjs";
 import { probeStorefrontBackend } from "./lib/storefront-probe.mjs";
 import { describeSelector, ensureTestEnvSelector } from "./lib/test-env-selector.mjs";
-import { ensureProjectIgnores } from "./lib/gitignore.mjs";
+import { ensureSelectorIgnore } from "./lib/gitignore.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -203,16 +203,16 @@ async function main() {
   for (const line of describeMove(move)) log(`[normalize-env] ${args.check ? "(--check, not written) " : ""}${line}`);
 
   // A project onboarded before /project-init wrote .env.test-env gets it here (§3e and --check Step C);
-  // `kept` was already reported by scaffold-env, so only a change or a skip is said.
+  // A sound `kept` was already reported by scaffold-env, so only a change, a skip or a broken file is said.
   if (args.env) {
     // An older project's .gitignore block predates the entry; without it the selector refuses to write.
     if (!args.check) {
-      const ignored = ensureProjectIgnores(dirname(path));
+      const ignored = ensureSelectorIgnore(dirname(path));
       if (ignored.length) log(`[normalize-env] .gitignore += ${ignored.join(", ")}`);
     }
     // --check writes no .gitignore, so it does not ask git either: the real run adds the entry first.
     const selector = ensureTestEnvSelector(dirname(path), args.env, args.check ? { dryRun: true, ignored: () => null } : {});
-    if (selector.status !== "kept") for (const line of describeSelector(selector, args.env)) log(`[normalize-env] ${args.check && selector.status === "written" ? "(--check, not written) " : ""}${line}`);
+    if (selector.status !== "kept" || selector.problem) for (const line of describeSelector(selector, args.env)) log(`[normalize-env] ${args.check && selector.status === "written" ? "(--check, not written) " : ""}${line}`);
   }
 
   // The env names a per-env project key may carry in .env.local: every .env.<env> here, plus this one.

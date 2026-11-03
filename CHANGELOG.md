@@ -24,6 +24,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 - The `skipped` line says what to do for its reason: create the one-line file saved as UTF-8 (never `echo … >`, which
   Windows PowerShell 5.1 writes as UTF-16 that no resolver reads), add it to `.gitignore` first, or restore / untrack
   a tracked one. It never suggests re-running `scaffold-env`, which without the project's `--tracker` would add Jira placeholders.
+- An existing `.env.test-env` is checked, never rewritten: UTF-16, no `TEST_ENV` line, or an env with no
+  `.env.<env>` beside it is reported as `kept, but …` (by `normalize-env` too), so `--check` says why a project still
+  falls back to `vcst`.
+- Only an `.env.<x>` holding `BACK_URL` counts as an environment, so a Vite / Next repo's `.env.development` /
+  `.env.production` does not turn a one-env project into `several-envs`.
+- `normalize-env` adds only the `.env.test-env` entry to `.gitignore` (its own block), never the whole onboarding list
+  a team may have trimmed on purpose.
 - `.env.test-env` joins the `.gitignore` block `/project-init` writes. The resolvers and their `vcst` default are unchanged.
 
 ## A `|thumbnail!` screenshot is no longer reported as not rendered — `vc-fix` `0.18.4` — 2026-11-02
