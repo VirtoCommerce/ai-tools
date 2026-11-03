@@ -71,7 +71,7 @@ Viewport 1440, locale en-US. The route, route name, nav id and four locale keys 
 [NETWORK] no 4xx/5xx on /graphql","Sidebar or dashboard link still points at /company/calendar
 H1 or breadcrumb still reads Calendar
 /company/calendar renders the Tasks page (a silent alias nobody decided on)
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:FALLBACK · Technique:EP · Behavior:sr.tasks.nav-visibility · Catches: a leftover Calendar link lands the rep on a 404, or the page still reads Calendar | Promoted: REG-2026-10-15-1115 (2026-10-15)",Automated
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:FALLBACK · Technique:EP · Behavior:sr.tasks · Catches: a leftover Calendar link lands the rep on a 404, or the page still reads Calendar | Promoted: REG-2026-10-15-1115 (2026-10-15) · Synced: qa-test-lifecycle suite 106 (2026-11-03)",Automated
 SR-TK-003,"Overdue tab lists only open tasks due before local midnight today, with the danger chip and glyph",Sales Rep > Tasks > Storefront,High,BL-SR-009,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. The fixture holds exactly {{overdue}} open past-due tasks (Zulu, Mike), plus a completed past task (Echo) and a past-due canceled task that must NOT count as overdue. That divergence between open-overdue and past-due-in-any-status is what makes the case discriminating.","overdue=@td(SR_TASK_GROUPS.open_overdue), zulu=@td(SR_TASK_OVERDUE_ZULU.name), echo=@td(SR_TASK_DONE_ECHO.name)","[VIEWPORT] 1440x1080
@@ -191,7 +191,7 @@ The task fixture is wall-clock relative and decays at local midnight: re-seed th
 [NETWORK] no 4xx/5xx on /graphql","A badge disagrees with the length of its list
 All badge is zero or undefined (alias mis-wired)
 Chips show a count of 0 while rows are listed
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-6077 · Archetype:SILENT · Technique:EP · Catches: a badge promises N tasks while the list it opens shows a different number | Promoted: REG-2026-10-15-1453 (2026-10-15),Automated
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-6077 · Archetype:SILENT · Technique:EP · Behavior:sr.tasks.calendar-tabs · Catches: a badge promises N tasks while the list it opens shows a different number | Promoted: REG-2026-10-15-1453 (2026-10-15) · Synced: qa-test-lifecycle suite 106 (2026-11-03),Automated
 SR-TK-009,Counts refresh after a write made from the All view without a page reload,Sales Rep > Tasks > Storefront,High,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. The write is made from the All view on purpose: the counts refetch only through refreshAll() after a write, and All is the one scope with no status filter of its own to hide a stale badge. {{bravo}} is open and due in three days.","bravo=@td(SR_TASK_FUTURE_BRAVO.name), groups=@td(SR_TASK_GROUPS.total), up=@td(SR_TASK_GROUPS.chip_upcoming), done=@td(SR_TASK_GROUPS.chip_completed)","[VIEWPORT] 1440x1080
@@ -564,9 +564,9 @@ The task fixture is wall-clock relative and decays at local midnight: re-seed th
 A new string is left in English in es, pt or ru
 The month heading is clipped
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Restore the culture to en-US.,VCST-6077 · Archetype:FALLBACK · Technique:EP · Catches: a Spanish-speaking rep sees a raw key such as tasks.table.mark_complete instead of a label,Draft
-SR-TK-023,"Empty states with zero tasks: the day scopes (Today, a picked day) share one message, All has its own, badges read 0, chips stay enabled",Sales Rep > Tasks > Storefront,Low,,,"[PRE:CLEAR_SESSION]
+SR-TK-023,"Empty states for a rep with no served organization and no tasks: the day scopes (Today, a picked day) share one message, All has its own, badges read 0, chips stay enabled",Sales Rep > Tasks > Storefront,Low,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]
-Viewport 1440, locale en-US. SR_REP_NOCUSTOMERS owns no tasks (tasks are private per rep), so every scope is genuinely empty; the seeded primary rep is deliberately not used. No re-seed is needed. Today is a day view, so it shares the day-scope empty message (two copies exist: day scope and list scope). Which scope chips render for a rep with no tasks is an open PO question (observed: only Today and All, KB-A915AA45); the case records CHIP_LABELS and does not assert the set.",rep=@td(SR_REP_NOCUSTOMERS.email),"[VIEWPORT] 1440x1080
+Viewport 1440, locale en-US. SR_REP_NOCUSTOMERS owns no tasks (tasks are private per rep), so every scope is genuinely empty; the seeded primary rep is deliberately not used. No re-seed is needed. Today is a day view, so it shares the day-scope empty message (two copies exist: day scope and list scope). The Today and All chip set follows the empty served-organization scope, not the task count (KB-7052E6CD, domain map D26); the chip set and the nav are asserted in SR-TK-044. The case records CHIP_LABELS and does not assert the set.",rep=@td(SR_REP_NOCUSTOMERS.email),"[VIEWPORT] 1440x1080
 [NAV] {{FRONT_URL}}/company/tasks
 [WAIT] the Tasks page has rendered with the Today chip selected
 [KEY] record the empty-state title, copy and icon for the Today scope (EMPTY_TODAY), the label and badge value of every rendered scope chip (CHIP_LABELS, BADGES) and the enabled state of each chip (CHIPS_ENABLED)
@@ -577,12 +577,12 @@ Viewport 1440, locale en-US. SR_REP_NOCUSTOMERS owns no tasks (tasks are private
 [WAIT] the list refetches
 [KEY] record the empty-state title and copy for All (EMPTY_ALL) and whether an error toast is visible (TOAST)","[COUNT] every value in BADGES (one per rendered scope chip) is 0 {BL}
 [REL] EMPTY_TODAY and EMPTY_DAY carry the same day-scope message and EMPTY_ALL carries a different, list-scope message; none reads as an error or contains a raw key {OBSERVED}
-[DOM] every chip in CHIPS_ENABLED is enabled -- an empty scope can still be switched away from {SPEC}
-[STATE] TOAST is false and the page renders the New task control {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[DOM] every chip in CHIPS_ENABLED is enabled -- an empty scope can still be switched away from {OBSERVED}
+[STATE] TOAST is false and the page renders the New task control {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","A generic error replaces the empty state
 The All empty-state copy is identical to the day-scope copy
 A chip is disabled because it has no tasks
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-6077 · Archetype:FALLBACK · Technique:EP · Catches: a new rep sees a generic error instead of an empty Tasks page,Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-6077 · Archetype:FALLBACK · Technique:EP · Behavior:sr.tasks.calendar-tabs · Catches: a new rep sees a generic error instead of an empty Tasks page · Synced: qa-test-lifecycle suite 106 (2026-11-03) · verified live vcst 2026-11-03,Draft
 SR-TK-024,"Keyboard: after Mark as complete or Reopen via Enter, focus stays on that row action instead of dropping to the page",Sales Rep > Tasks > Storefront,Medium,BL-A11Y-001,ECL-15.1,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. KEYBOARD ONLY after the page has loaded: no pointer clicks. The expected behaviour is the CORRECT one (WCAG 2.4.3, BL-A11Y-001): after the action, focus stays on the row's action. The build under test is known to drop focus to the document root, so this case is EXPECTED TO FAIL on that build; its assertions are not to be rewritten to match the build. {{sierra}} is open and due today.",sierra=@td(SR_TASK_TODAY_SIERRA.name),"[VIEWPORT] 1440x1080
@@ -764,7 +764,7 @@ Mid-journey: after Save the row shows 9:00 AM or another time than the one picke
 Mid-journey: the row lists no customer or no Call type although the popup carried them
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
 [ASSERT] CALL_TITLE is no longer listed under All
-If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.","VCST-6314 · Archetype:SILENT · Technique:FLOW · Behavior:sr.tasks · Catches: a customer-page call that is dropped, shown at 9:00 AM, or listed on the wrong day · Observed: SBTM-VCST-6314-2026-10-27",Draft
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.","VCST-6314 · Archetype:SILENT · Technique:FLOW · Behavior:sr.tasks · Behavior:sr.tasks.schedule-call · Catches: a customer-page call that is dropped, shown at 9:00 AM, or listed on the wrong day · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03)",Draft
 SR-TK-031,"Schedule call popup defaults: Title Call, customer prefilled, no due date, 9:00 AM, Normal, calendar boxes unticked, Save disabled until a date",Sales Rep > Tasks > Calls,High,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). Nothing is saved: the popup is dismissed, so no cleanup beyond closing it.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
@@ -793,7 +793,7 @@ Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call
 [NETWORK] no 4xx/5xx on /graphql","A default (time, priority, date, customer) differs from the list in Assertions
 Save is enabled while Due date is empty
 The popup writes a call when dismissed
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (nothing is saved; the popup is dismissed with Escape),VCST-6314 · Archetype:FALLBACK · Technique:EP · Catches: a drifted popup default books the call at the wrong time or customer · Observed: SBTM-VCST-6314-2026-10-27,Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (nothing is saved; the popup is dismissed with Escape),VCST-6314 · Archetype:FALLBACK · Technique:EP · Behavior:sr.tasks.schedule-call · Behavior:sr.tasks.schedule-call.priority-default · Catches: a drifted popup default books the call at the wrong time or customer · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03),Draft
 SR-TK-032,"A call at 01:30 local time east of UTC stays on the local day in the list, calendar marker and Today count",Sales Rep > Tasks > Calls,High,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). The case needs a browser zone at least 2 hours EAST of UTC (the picked 1:30 AM then falls on the previous UTC day): record BROWSER_OFFSET_H from the lane (new Date().getTimezoneOffset()/-60) first; if it is below 2 record BLOCKED with reason 'lane zone is not east of UTC' and stop. The reverse (west of UTC) is covered by SR-TK-011.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
@@ -829,7 +829,7 @@ The Today badge grows for a call booked on a later local day
 ROW_TEXT shows a time other than 1:30 AM
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
 [ASSERT] CALL_TITLE is no longer listed under All
-If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:BOUNDARY · Technique:BVA · Probe:VC-PLATFORM-005 · Catches: VC-PLATFORM-005 -- a call booked for 1:30 AM tomorrow appears under today or on the wrong marker · Observed: SBTM-VCST-6314-2026-10-27,Draft
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:BOUNDARY · Technique:BVA · Probe:VC-PLATFORM-005 · Behavior:sr.tasks.schedule-call.local-day · Catches: VC-PLATFORM-005 -- a call booked for 1:30 AM tomorrow appears under today or on the wrong marker · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03),Draft
 SR-TK-033,Saving the Schedule call popup twice in quick succession creates one call,Sales Rep > Tasks > Calls,Medium,BL-SR-030,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). The double activation is two Save activations issued back to back in one browser tick, not two human clicks.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
@@ -856,7 +856,7 @@ Two identical rows for CALL_TITLE under PICK_DAY
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
 [ASSERT] CALL_TITLE is no longer listed under All
 If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.
-If ROWS_N was 2, delete both rows.",VCST-6314 · Archetype:REPLAY · Technique:EG · Catches: a double click on Save books the same call twice · Observed: SBTM-VCST-6314-2026-10-27,Draft
+If ROWS_N was 2, delete both rows.",VCST-6314 · Archetype:REPLAY · Technique:EG · Behavior:sr.tasks.schedule-call · Catches: a double click on Save books the same call twice · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03),Draft
 SR-TK-034,Tasks page: Call adds Customer and Time; switching to another type and back sends no hidden customer,Sales Rep > Tasks > Calls,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-TASK, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). The Tasks-page New task form is the second entry to a call; the customer and time it collects while Type is Call must not outlive a switch to another type.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
@@ -887,7 +887,7 @@ Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call
 A non-call task carries the call time default (9:00 AM)
 The row shows Customer not assigned for a task that is not a call
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] open TASK_TITLE through its title in {{FRONT_URL}}/company/tasks, click 'Delete' in the Edit task modal and confirm
-If the case aborted midway, locate every task whose title starts with AGENT-TEST-TASK under All and delete it.",VCST-6314 · Archetype:STALE · Technique:ST · Catches: a non-call task silently linked to a customer picked before the type was switched · Observed: SBTM-VCST-6314-2026-10-27,Draft
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-TASK under All and delete it.",VCST-6314 · Archetype:STALE · Technique:ST · Behavior:sr.tasks.type-call-fields · Catches: a non-call task silently linked to a customer picked before the type was switched · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03),Draft
 SR-TK-035,"Google Calendar export opens an event at the saved instant, 30 minutes long, titled Call — <customer>",Sales Rep > Tasks > Calls,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). The Google tab is observed through its URL; the case never signs in to Google and closes the tab. Notes carry a comma, a semicolon and a backslash on purpose (UIP-DATA).","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
@@ -915,7 +915,7 @@ The event lasts other than 30 minutes
 Notes lose a comma, semicolon or backslash in the event description
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
 [ASSERT] CALL_TITLE is no longer listed under All
-If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:PARITY · Technique:DT · Probe:VC-EXEC-005 · Catches: VC-EXEC-005 -- the rep's Google event is at a different hour than the call in the hub · Observed: SBTM-VCST-6314-2026-10-27,Draft
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:PARITY · Technique:DT · Probe:VC-EXEC-005 · Behavior:sr.tasks.schedule-call.calendar-export · Catches: VC-EXEC-005 -- the rep's Google event is at a different hour than the call in the hub · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03),Draft
 SR-TK-036,Apple Calendar export downloads call.ics whose start equals the saved instant and end is 30 minutes later,Sales Rep > Tasks > Calls,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). Both calendar boxes are ticked on purpose: one Save must fire both exports. The downloaded call.ics is read from the browser download, then discarded. Title and Notes carry a comma, a semicolon and a backslash so the hand-written escaping is exercised.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
@@ -949,7 +949,7 @@ DTSTART differs from the saved instant
 An unescaped comma or semicolon breaks the SUMMARY or DESCRIPTION line
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
 [ASSERT] CALL_TITLE is no longer listed under All
-If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:PARITY · Technique:DT · Probe:VC-EXEC-005 · Catches: VC-EXEC-005 -- the calendar file imports at the wrong time or fails to import · Observed: SBTM-VCST-6314-2026-10-27,Draft
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:PARITY · Technique:DT · Probe:VC-EXEC-005 · Behavior:sr.tasks.schedule-call.calendar-export · Catches: VC-EXEC-005 -- the calendar file imports at the wrong time or fails to import · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03),Draft
 SR-TK-037,Edit call keeps the picked time on an unchanged save and offers no type and no calendar options,Sales Rep > Tasks > Calls,High,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). Edit call is reached from the Tasks list, so the case first saves its own call with no calendar box ticked.","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
@@ -991,7 +991,7 @@ The edit dialog offers Type or Add to calendar for a call
 The customer link is dropped by an edit
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
 [ASSERT] CALL_TITLE is no longer listed under All
-If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:SILENT · Technique:ST · Probe:VC-API-008 · Behavior:sr.tasks · Catches: VC-API-008 -- editing a call silently moves it to 9:00 AM or drops its customer · Observed: SBTM-VCST-6314-2026-10-27,Draft
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:SILENT · Technique:ST · Probe:VC-API-008 · Behavior:sr.tasks · Behavior:sr.tasks.schedule-call.local-day · Catches: VC-API-008 -- editing a call silently moves it to 9:00 AM or drops its customer · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03),Draft
 SR-TK-038,A call whose customer the rep stops serving stays listed as Customer not assigned and an edit keeps the original link,Sales Rep > Tasks > Calls,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). FIXTURE GAP (hold): this case needs a disposable rep and a disposable organization the rep serves, so that the membership can be removed WITHOUT touching SR_REP_PRIMARY (about 40 cases depend on it) -- no such pair is declared yet; it is a test-data-engineer top-up (the SR_REP_LOCKABLE rep is an account-state fixture, not a membership one). Until it exists record BLOCKED with reason 'no disposable served org' and stop. The call is created in the case (FIFTH RULE) because an unserved customer is a state the environment can change under it.",customer=the disposable org's name,"[SETUP] as the disposable rep, open the disposable org's customer page and save a call for it (CALL_TITLE, any future day) through 'Schedule call'
@@ -1015,7 +1015,7 @@ Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call
 An edit while the customer is unserved clears the stored customer link
 The unserved customer's name is still shown
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[SETUP] restore the disposable org to the disposable rep (if the case aborted before the restore step)
-[ACT] delete CALL_TITLE from Edit call and confirm","VCST-6314 · Archetype:LIFECYCLE · Technique:ST · Catches: the rep loses a booked call, or an edit erases which customer it was for · Observed: SBTM-VCST-6314-2026-10-27",Draft
+[ACT] delete CALL_TITLE from Edit call and confirm","VCST-6314 · Archetype:LIFECYCLE · Technique:ST · Behavior:sr.tasks.schedule-call.customer-unlinked · Catches: the rep loses a booked call, or an edit erases which customer it was for · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03)",Draft
 SR-TK-039,"German locale: Schedule call popup, time list and the call row show translated text with no raw keys",Sales Rep > Tasks > Calls,Low,BL-SR-013,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). Locale is German for this case: switch the storefront language to German through the header language selector before opening the popup, and back to English in Cleanup. The type name 'Call' and the other task type names stay English (pre-existing, recorded not judged).","empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
@@ -1084,7 +1084,7 @@ Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call
 The Type list has no Call option although the rep serves customers
 The converted call can be switched back to another type in the same dialog
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] open TASK_TITLE through its title in {{FRONT_URL}}/company/tasks, click 'Delete' in the dialog and confirm
-If the case aborted midway, locate every task whose title starts with AGENT-TEST-TASK under All and delete it.","VCST-6314 · Archetype:LIFECYCLE · Technique:ST · Behavior:sr.tasks · Catches: a converted call loses its time, or the dialog offers a way back that the API drops · Observed: SBTM-VCST-6314-2026-10-27",Draft
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-TASK under All and delete it.","VCST-6314 · Archetype:LIFECYCLE · Technique:ST · Behavior:sr.tasks · Behavior:sr.tasks.type-call-fields · Catches: a converted call loses its time, or the dialog offers a way back that the API drops · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03)",Draft
 SR-TK-041,A rep who serves no organization gets an empty task type list: New task has no Type select and Call is unreachable,Sales Rep > Tasks > Calls,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]
 SR_REP_NOCUSTOMERS holds the global sales-rep role and serves no organization. The expected value (no Type select, empty type list) is OBSERVED on build SalesRep 3.1016.0-pr-26-92d4 and is a PRODUCT QUESTION for the PO (finding F-1: whether the empty list predates PR #26 needs a control run on a build without it) -- a changed value is reported, never silently re-based. Nothing is saved: the form is dismissed.","rep=@td(SR_REP_NOCUSTOMERS.email), password={{TEST_USER_PASSWORD}}","[VIEWPORT] 1440x1080
@@ -1103,7 +1103,7 @@ SR_REP_NOCUSTOMERS holds the global sales-rep role and serves no organization. T
 [NETWORK] no 4xx/5xx on /graphql","A Call option or a Type select that errors is offered to a rep with no customers
 An error toast replaces the form
 The type list contains a customer-scoped type for a rep who serves nobody
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (nothing is saved; the form is dismissed with Escape),VCST-6314 · Archetype:SCOPE · Technique:EG · Catches: a rep with no customers is offered a call they cannot complete · Observed: SBTM-VCST-6314-2026-10-27,Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (nothing is saved; the form is dismissed with Escape),VCST-6314 · Archetype:SCOPE · Technique:EG · Behavior:sr.tasks.no-customers-no-type · Catches: a rep with no customers is offered a call they cannot complete · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03),Draft
 SR-TK-042,A call due today at a time that has already passed stays in Upcoming and is not counted as Overdue,Sales Rep > Tasks > Calls,Low,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default; times below are the rep's local times and the stored instant is compared through the browser zone, never a hardcoded offset. PICK_DAY is TODAY: the call is booked at a time earlier than now on the local day. If NOW_LOCAL is before 12:30 AM there is no slot 30 minutes earlier: record BLOCKED (NOW_LOCAL < 12:30 AM). EXPECTED VALUE IS A PO QUESTION (should a call whose time passed count as Overdue?): the case asserts the OBSERVED day-based rule and its result is reported as {OBSERVED}, never as an unremarkable PASS -- the counts query sends today as local midnight, so overdue is judged by day.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, customer=@td(ORG_ACME.name), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
@@ -1128,4 +1128,130 @@ The badges and the lists disagree about the same call
 A call whose time has passed today silently disappears from Today
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
 [ASSERT] CALL_TITLE is no longer listed under All
-If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:BOUNDARY · Technique:BVA · Catches: a rep misses a call because it stays Upcoming after its time passed (PO question on time-aware overdue) · Observed: SBTM-VCST-6314-2026-10-27,Draft
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.",VCST-6314 · Archetype:BOUNDARY · Technique:BVA · Behavior:sr.tasks.call-due-earlier-today · Catches: a rep misses a call because it stays Upcoming after its time passed (PO question on time-aware overdue) · Observed: SBTM-VCST-6314-2026-10-27 · Synced: qa-test-lifecycle suite 106 (2026-11-03),Draft
+SR-TK-043,"A rep who serves an organization but has no tasks still gets the Tasks link, the Tasks widget and all five chips at 0",Sales Rep > Tasks > Storefront,High,BL-SR-011,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_DOCS]
+Viewport 1440, locale en-US. SR_REP_DOCS serves one organization and owns no tasks (tasks are private per rep and no seeder gives this rep any), so the nav and chip results below cannot be explained by task count. The status chips follow Query.salesRepTaskFilterRules for the rep's served-organization scope; the task count plays no part (KB-7052E6CD). If any badge is above 0 another run has given this rep tasks: record BLOCKED with reason 'rep not task-free' and stop. Nothing is saved.",rep=@td(SR_REP_DOCS.email),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the Tasks widget has rendered
+[KEY] record whether the Tasks widget is present (WIDGET_PRESENT) and the href of its 'All tasks' link (WIDGET_HREF), and whether the sidebar has a 'Tasks' item (NAV_PRESENT) and its href (NAV_HREF)
+[ACT] click the sidebar 'Tasks' item
+[WAIT] the Tasks page has rendered with the Today chip selected
+[KEY] record the URL path (TASKS_PATH), the label and badge of every rendered chip in order (CHIP_LABELS, CHIP_BADGES), whether 'New task' is present (NEW_PRESENT) and whether an error toast is visible (TOAST)
+[KEY] record the names in the Query.salesRepTaskFilterRules response of the page load (RULES)
+[NAV] {{FRONT_URL}}/company/tasks?filter=overdue
+[WAIT] the Tasks page has rendered
+[KEY] record the selected chip (SEL_DEEP) and the URL query after the page settled (QUERY_DEEP)","[STATE] WIDGET_PRESENT and NAV_PRESENT are true and WIDGET_HREF and NAV_HREF end with /company/tasks -- the link and the widget do not depend on the rep owning a task {OBSERVED}
+[REL] TASKS_PATH ends with /company/tasks and the rep is not redirected to /account/dashboard {OBSERVED}
+[COUNT] CHIP_LABELS are exactly Today, All, Upcoming, Overdue, Completed and every value in CHIP_BADGES is 0 -- a rep with an organization and no tasks gets the full chip set {OBSERVED}
+[REL] RULES contain upcoming, overdue and completed -- the chips follow the filter rules, not the task count {OBSERVED}
+[STATE] NEW_PRESENT is true and TOAST is false {OBSERVED}
+[STATE] SEL_DEEP is Overdue -- the deep link finds a chip because the rep has the Overdue rule {OBSERVED}
+[ERRORS] the errors[] of every salesRepTaskFilterRules and salesRepTasks response in this case is empty {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The Tasks item or the Tasks widget is missing for a rep who owns no task (the rev 3 behaviour on SalesRep 3.1009.0, domain map G15)
+Only Today and All render for a rep who serves an organization
+The rep lands on /account/dashboard instead of the Tasks page
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:SCOPE · Technique:DT · Behavior:sr.tasks.nav-visibility · Behavior:sr.tasks.calendar-tabs · Catches: a rep with no tasks yet loses the Tasks link or widget, or a rep who serves organizations is shown only Today and All · Observed: domain map sr rev 4 section 3b and D26, KB-7052E6CD · verified live vcst 2026-11-03",Draft
+SR-TK-044,"A rep who serves no organization still gets the Tasks link and the Tasks widget, with only the Today and All chips",Sales Rep > Tasks > Storefront,High,BL-SR-011,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]
+Viewport 1440, locale en-US. SR_REP_NOCUSTOMERS holds sales-rep:access as a global role, serves no organization and owns no tasks. It is the other half of the pair with SR-TK-043: both reps hold zero tasks, so the one thing that differs between their chip sets is the served-organization scope (KB-7052E6CD, domain map D26). If any badge is above 0 record BLOCKED with reason 'rep not task-free' and stop. Nothing is saved.",rep=@td(SR_REP_NOCUSTOMERS.email),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the Tasks widget has rendered
+[KEY] record whether the Tasks widget is present (WIDGET_PRESENT) and the href of its 'All tasks' link (WIDGET_HREF), and whether the sidebar has a 'Tasks' item (NAV_PRESENT) and its href (NAV_HREF)
+[ACT] click the sidebar 'Tasks' item
+[WAIT] the Tasks page has rendered with the Today chip selected
+[KEY] record the URL path (TASKS_PATH), the label and badge of every rendered chip in order (CHIP_LABELS, CHIP_BADGES), whether 'New task' is present (NEW_PRESENT) and whether an error toast is visible (TOAST)
+[KEY] record the names in the Query.salesRepTaskFilterRules response of the page load (RULES)
+[NAV] {{FRONT_URL}}/company/tasks?filter=overdue
+[WAIT] the Tasks page has rendered
+[KEY] record the selected chip (SEL_DEEP) and the URL query after the page settled (QUERY_DEEP)","[STATE] WIDGET_PRESENT and NAV_PRESENT are true and WIDGET_HREF and NAV_HREF end with /company/tasks -- the link and the widget follow sales-rep:access, not organization membership {OBSERVED}
+[REL] TASKS_PATH ends with /company/tasks and the rep is not redirected to /account/dashboard {OBSERVED}
+[COUNT] CHIP_LABELS are exactly Today and All and every value in CHIP_BADGES is 0 -- no status chips for a rep with no served organization {OBSERVED}
+[COUNT] RULES is an empty list -- the missing chips come from the rules, not from a render failure {OBSERVED}
+[STATE] NEW_PRESENT is true and TOAST is false -- the control renders and nothing errors {OBSERVED}
+[STATE] SEL_DEEP is Today and QUERY_DEEP is empty -- an unknown scope token falls back to Today and the URL is cleaned, because the rep has no Overdue rule {OBSERVED}
+[ERRORS] the errors[] of every salesRepTaskFilterRules and salesRepTasks response in this case is empty {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The Tasks item or the Tasks widget is missing for a rep who serves no organization
+The rep is redirected from /company/tasks to /account/dashboard (visible-but-dead link, as in VCST-5494)
+Upcoming, Overdue or Completed render for a rep whose filter rules are empty
+An error toast replaces the page
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:SCOPE · Technique:DT · Behavior:sr.tasks.nav-visibility · Behavior:sr.tasks.calendar-tabs · Catches: a rep with no customers is shown a dead Tasks link, or the chip set follows task count instead of the served-organization scope · Observed: domain map sr rev 4 section 3b and D26, KB-7052E6CD · verified live vcst 2026-11-03",Draft
+SR-TK-045,"A task saved for a past day is accepted and lands under Overdue: Overdue and All grow by one, Upcoming and Completed do not move",Sales Rep > Tasks > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Viewport 1440, locale en-US, browser timezone at the lane default. PAST_DAY is yesterday in the browser's local calendar. The case compares badge values before and after its own write, so it needs no re-seed and no seeded count; it creates one task (title prefixed AGENT-TEST-TASK, random per run) and deletes it in Cleanup. Completion is a separate action on the row and is not part of this case. If the Due date control refuses a past day, record the refusal text (REFUSAL) and FAIL: the platform accepts a past dueDate on create (domain map 3i and 3k).",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the badge values of the All, Upcoming, Overdue and Completed chips (ALL0, UP0, OVER0, DONE0)
+[ACT] click 'New task'
+[WAIT] the New task modal is open
+[ACT] fill 'Title' with a random AGENT-TEST-TASK title (PAST_TITLE)
+[ACT] set 'Type' to 'Other'
+[ACT] set 'Due date' to PAST_DAY
+[ACT] click 'Save'
+[WAIT] the modal closes and the list, badges and calendar refetch
+[KEY] record whether an error toast is visible (TOAST) and the badge values (ALL1, UP1, OVER1, DONE1)
+[ACT] click the 'Overdue' tab
+[WAIT] the list refetches
+[KEY] record the row for PAST_TITLE: whether it is listed (LISTED), its status chip text (CHIP_PAST) and its action label (ACTION_PAST)","[STATE] the modal closed, TOAST is false and no refusal appeared -- a past due date is accepted on create {OBSERVED}
+[MATH] ALL1 = ALL0 + 1 and OVER1 = OVER0 + 1 and UP1 = UP0 and DONE1 = DONE0 -- the task is open, counted once in All and Overdue and nowhere else {OBSERVED}
+[DOM] LISTED is true, CHIP_PAST is 'Overdue' and ACTION_PAST is 'Mark as complete' {OBSERVED}
+[ERRORS] the errors[] of every createSalesRepTask response in this case is empty and the response succeeds {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The Save is refused or the date is silently moved to today
+The task is saved but is listed under Upcoming or Today
+The Overdue badge does not move until a reload
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] open PAST_TITLE through its title, click 'Delete' in the Edit task modal and confirm
+[ASSERT] PAST_TITLE is no longer listed under All and the All badge equals ALL0
+If the case aborted midway, locate PAST_TITLE by its AGENT-TEST-TASK prefix under All and delete it; the seeded tasks are untouched by this case.","VCST-6077 · Archetype:BOUNDARY · Technique:BVA · Behavior:sr.tasks.past-due-accepted · Catches: a rep cannot record a follow-up that is already late, or the late task lands under Upcoming · Observed: mind map node sr.tasks.past-due-accepted (API) and VCST-6314 (UI date accepted) · verified live vcst 2026-11-03",Draft
+SR-TK-046,The Customer list of the Schedule call popup offers exactly the customers the rep serves and no other organization,Sales Rep > Tasks > Calls,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Viewport 1440, locale en-US. SR_REP_PRIMARY serves four organizations plus its own RepOnly org; SR_UNSERVED_ORG exists (seeded with the SR_REP_PAGING orgs) and is not served by this rep. The served set is read from the rep's own My customers page, never hardcoded, so the case keeps holding when the fixture changes. Nothing is saved: the popup is dismissed. If SR_UNSERVED_ORG has not been seeded record BLOCKED with reason 'unserved org not seeded' and stop.","rep=@td(SR_REP_PRIMARY.email), customer_id=@td(ORG_ACME.platform_id), unserved=@td(SR_UNSERVED_ORG.name)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the My customers list has rendered
+[KEY] record the organization name of every row across all pages (SERVED_NAMES)
+[NAV] {{FRONT_URL}}/company/my-customers/{{customer_id}}
+[WAIT] the customer profile has rendered with the Quick actions widget
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[ACT] open the Customer list
+[KEY] record every option offered in the Customer list (PICK_OPTIONS)
+[ACT] type {{unserved}} into the 'Customer' field
+[KEY] record whether any option matches the typed text (UNSERVED_OFFERED)
+[ACT] press Escape to close the Customer list
+[ACT] press Escape again to close the popup
+[WAIT] the popup closes
+[KEY] record whether any createSalesRepTask request was sent in this case (CREATE_SENT)","[REL] the set PICK_OPTIONS equals the set SERVED_NAMES -- the picker offers every served customer and nothing else {OBSERVED}
+[STATE] UNSERVED_OFFERED is false and {{unserved}} is not in PICK_OPTIONS -- an organization the rep does not serve cannot be chosen {BL}
+[STATE] CREATE_SENT is false -- dismissing the popup saves nothing {OBSERVED}
+[ERRORS] the errors[] of every salesRepCustomers response in this case is empty {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The picker lists an organization that is not on My customers
+The picker is missing a served customer (the rep cannot book a call for them)
+Typing an unserved organization's name offers it
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (nothing is saved; the popup is dismissed with Escape),"VCST-6314 · Archetype:SCOPE · Technique:EP · Behavior:sr.tasks.schedule-call.served-only · Catches: a rep can attach a call to a customer they do not serve because the picker lists every organization · Observed: VCST-6314 C-17 (picker lists exactly the served organizations) · verified live vcst 2026-11-03",Draft
+SR-TK-047,"A call saved with the Customer cleared is kept and listed as 'Customer not assigned', with no customer sent to the API",Sales Rep > Tasks > Calls,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Fixture: the rep serves @td(ORG_ACME.platform_id); the case CREATES its own call (title prefixed AGENT-TEST-CALL, random per run) on a day that holds no seeded task and deletes it in Cleanup. Viewport 1440, locale en-US. Browser timezone is the lane default. PICK_DAY is today plus the FIRST offset in {{empty_offsets}} days (a day on which the task fixture holds no task). This is the no-customer half of the 'Customer not assigned' state; the served-then-unserved half is SR-TK-038 and needs a disposable organization.","rep=@td(SR_REP_PRIMARY.email), empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets), customer_id=@td(ORG_ACME.platform_id)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/my-customers/{{customer_id}}
+[WAIT] the customer profile has rendered with the Quick actions widget
+[ACT] click 'Schedule call'
+[WAIT] the 'Schedule call' popup is open
+[ACT] fill 'Title' with a random AGENT-TEST-CALL title (CALL_TITLE)
+[ACT] clear the 'Customer' field with its Clear control
+[ACT] set 'Due date' to PICK_DAY
+[ACT] click 'Save'
+[WAIT] the 'Task saved' toast appears and the popup closes
+[KEY] record the createSalesRepTask command customerId (SENT_CUST) and from its response the customerId and customerName (RESP_CUST_ID, RESP_CUST_NAME)
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the PICK_DAY cell in the Due dates calendar
+[WAIT] the date chip for PICK_DAY appears
+[KEY] record the row text of CALL_TITLE (ROW_TEXT)","[STATE] SENT_CUST is absent and RESP_CUST_ID and RESP_CUST_NAME are empty -- no customer was linked {OBSERVED}
+[DOM] ROW_TEXT reads 'Due <PICK_DAY, medium date>, 9:00 AM · Customer not assigned · Call' -- the call is kept and says why it names no customer {OBSERVED}
+[ERRORS] the errors[] of every createSalesRepTask response in this case is empty and the response succeeds {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The Save is refused because the Customer is empty
+The row shows another organization or a blank where Customer not assigned belongs
+The cleared customer is silently restored from the page the popup was opened on
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] on {{FRONT_URL}}/company/tasks open CALL_TITLE through its title, click 'Delete' in the Edit call dialog and confirm
+[ASSERT] CALL_TITLE is no longer listed under All
+If the case aborted midway, locate every task whose title starts with AGENT-TEST-CALL under All and delete it; the seeded tasks are untouched by this case.","VCST-6314 · Archetype:FALLBACK · Technique:EG · Behavior:sr.tasks.schedule-call.customer-unlinked · Catches: a call with no customer is refused, or shows a blank or the wrong organization · Observed: VCST-6314 C-19, KB-434F1EBE (single observation) · verified live vcst 2026-11-03",Draft
