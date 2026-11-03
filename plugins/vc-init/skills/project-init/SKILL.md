@@ -514,6 +514,9 @@ deletes the rest. Once a key is kept per env, every later env gets its own `<KEY
 a bare empty one. `write-env.mjs` never overwrites a different value already in `.env.local`: it
 refuses that key (exit 1) and says so.
 
+Then **`.env.test-env`** (`TEST_ENV=<env>`): written only if absent, the sole env (or
+`--primary`) and git-ignored; `normalize-env` too (§3e, `--check`). Relay its line.
+
 ### 3b. `.env.local` — test-user passwords (`scaffold-secrets.mjs`)
 
 ```bash
@@ -1167,7 +1170,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" --env <new> 
   `BACK_URL`, store/culture). All empty for the operator to fill. The **project-level** connection
   (`JIRA_*`, `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`) is already in `.env.local` and is NOT
   re-emitted — a project that still has it in its old env files gets it moved there now (§3a). Don't
-  ask the operator to re-enter tracker/org values they gave at onboarding.
+  ask the operator to re-enter tracker/org values they gave at onboarding. Relay its `.env.test-env` line.
 - `scaffold-secrets` adds ONLY the `_<ENV>`-suffixed per-env app passwords
   (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Passwords in vc-secrets**
   (`node "$VC_RUN" --where` lists `passwordEnvs`)? `scaffold-secrets` then skips the vc-secrets role's
@@ -1464,8 +1467,8 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 
 | Script | Role |
 |--------|------|
-| `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
-| `scaffold-secrets.mjs` | add the commented test-user password placeholders to `.env.local` (what/why/where per value); reports which tokens this topology stores in vc-secrets and warns on a plaintext token still in `.env.local`; idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
+| `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent; gitignores it first (VCST-5774). |
+| `scaffold-secrets.mjs` | add the commented test-user password placeholders to `.env.local` (what/why/where per value); reports which tokens this topology stores in vc-secrets and warns on a plaintext token still in `.env.local`; idempotent; gitignores it first (VCST-5774). |
 | `lib/gitignore.mjs` | the ONE list of what onboarding generates that must never be committed, plus the append-only writer. Shared because FOUR scripts create such files at four different steps and each must protect its own **before** creating it — while only `gen-mcp` (§7) wrote the block, `.env.local` (§3b) sat unignored through the operator's fill-in pause and through any run that aborted before §7. Idempotent, so four calls cost one read and produce one block |
 | `write-secrets-decl.mjs` | write `.claude/vc-secrets.local.json` — one `local` secret per PAT axis, the `vc-init-<group>` bridge tasks, the GitHub MCP server, a stable `projectId`. Owns only those keys, writes nothing when unchanged (so trust is re-asked only when the PAT axes change). `--from-profile` reads `auth.*`. `--password-envs` / `--password-names`: per env the password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers (`lib/passwords.mjs`, `lib/playwright-lanes.mjs`) <!-- doclint:may-not-exist --> |
 | `add-user.mjs` | **`--add-user`**: `--list` — every `.env.<env>`, its password mode and its users; `--env --key --role --login` — writes `<KEY>_LOGIN` into `.env.<env>` and declares `<KEY>_PASSWORD` in that env's vc-secrets declaration or adds its `.env.local` placeholder; prints the operator's `steps`. Never sees a password |

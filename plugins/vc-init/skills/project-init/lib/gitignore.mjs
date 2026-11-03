@@ -42,6 +42,8 @@ export const SECRET_IGNORES = [
   ".claude/vc-secrets.local.json",
   ".env.local",
   ".env.*.local",
+  // This checkout's default TEST_ENV (lib/test-env-selector.mjs) — a per-developer choice, not a team one.
+  ".env.test-env",
   "project-profile.json",
   ".vc-fix/",
 ];
