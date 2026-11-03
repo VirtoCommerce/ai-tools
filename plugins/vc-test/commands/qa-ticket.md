@@ -7,7 +7,6 @@ disable-model-invocation: true
 # /vc-test:qa-ticket — one ticket, the bugs a checklist misses
 
 You orchestrate **inline** and hold only paths: every hand-off is a file, never a summary.
-Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3, U60–U68.
 `<plugin>` is this plugin's folder (`plugins/vc-test` here). Run every command from the project root. `WORK` is
 `.vc-fix/vc-test/<TICKET>/<env>/`.
 **Dispatch `<x>` (`vc-test:<agent>` or `<model>`) with P** = that subagent type on the model in its own frontmatter, or a

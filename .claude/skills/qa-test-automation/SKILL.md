@@ -8,8 +8,8 @@ argument-hint: "<CASE-ID> [--repro]"
 
 A CSV row and its `.spec` are **one case**: the row says WHAT is checked, the spec is HOW a machine runs it.
 Whoever writes the case writes its spec (`test-management-specialist`); this skill is loaded for that
-step and for nothing else. The design and every decision (D1–D18) are in
-[`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8 — **cited here, never restated**.
+step and for nothing else. The decisions D1–D18 it cites by number are
+[`regression-suites.md`](../../knowledge/execution/regression-suites.md) §Spec decisions.
 
 **Files in this skill (read only the one the step names):**
 [`writing-a-spec.md`](writing-a-spec.md) — layout, title, preconditions, writing from source (a `playwright-cli` session as fallback), the one run ·

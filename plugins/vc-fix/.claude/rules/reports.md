@@ -134,7 +134,8 @@ markup). Azure Boards: `ado.mjs upload-attachment --file <path>` → `{ url }`, 
 
 **Verification is part of the posting step; a status code is not verification.** For Jira, read
 `GET /rest/api/3/issue/<KEY>/comment/<id>?expand=renderedBody` and require one
-`<img src=…/attachment/content/<id>>` per image, **zero** surviving literal `!….png!`, and **zero**
+`<img src=…/attachment/content/<id>>` per image (a `|thumbnail!` embed renders `…/attachment/thumbnail/<id>`:
+rendered, but not the house form — amend it to `|width=700!`), **zero** surviving literal `!….png!`, and **zero**
 `<span class="error">`. Do not gate on `file-preview-id` — it is absent from a working wiki render.
 
 **A claim with no capturable screenshot says so explicitly**, so a reader can tell *"nothing to show"*

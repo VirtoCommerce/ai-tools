@@ -156,3 +156,40 @@ Edge cases:  ECL-14.1 (#14, #22 null vs errors[]), ECL-14.2 (#1, #26 index lag �
 Docs grounding: VirtoOZ PlatformUserGuide — "Publish or unpublish pages", "Customize pages for specific users", Clone ({slug}-copy). Conflict detection, 409, unpublishConflicting, tie-break UNDOCUMENTED (NEW feature → ticket comments are ground truth). kb: none for slugInfo/pageDocument duplicate permalink (kb_none closed).
 Agents to dispatch: 3x /qa-exploratory ticket · 3a test-data-engineer (VIP alias for vcptcore, group-scoped admin) · 4a qa-backend-expert (REST/xAPI, Admin UI on edge) + qa-frontend-expert (storefront org/VIP, chrome) · 4v ui-ux-expert (banner + confirms) · A test-management-specialist → new suite 059p only
 Unresolved → 3x charter: V7×C2 GAP; #4, #12 touching, #16, #20 SEO scoring, #25 {HYPOTHESIS}; concurrency (G12); other publish paths bypassing the check (import/clone/create-with-status, G11); Builder.io page vs page-builder page collision (G3); A4 CONTRADICTS (direction) — ask dev.
+
+## Round 2 — 2026-10-29 (amendment; the model above stands, this changes which hypotheses are live)
+
+Build under test (preflight READY, deployed): PageBuilderModule 3.1041.0-pr-179-5e6c · Pages 3.1013.0-alpha.93-vcst-6442 (same commit 57823a4 as the announced pr-24-5782: the branch's "Publish nuget" run) · XCMS 3.1010.0-pr-28-35cb · Platform 3.1091.0-pr-3144-e637 · theme 2.61.0-pr-2608-86ad.
+Ticket signals (comments 112508, 112509): VCST-6601 fixed (POST /grouped always creates a Draft, body pages ignored — commit db1be24) · VCST-6602 fixed (publish runs under a local + distributed lock on store + normalized permalink and reloads the page — 4566f3e) · VCST-6603 moved out to VCST-6614 (vc-frontend, To do) · permalink-usages without a page → 400 (95880ca) · branch now carries VCST-4935 Multilanguage Pages: Publish all checks every language version like a single publish and reports "Not published: <languages>" for a version that would completely replace another page · landing-page form shows the warning under the field and no longer confirms on Save; the Multilanguage Page form still confirms on Save, without the "storefront shows only one page per permalink" sentence · xAPI pageDocument alternates are filtered by the visitor's organization (35cb129).
+Dev answers to round-1 questions (112508): direction-dependent {vip,gold}/{gold} intended · tie-break = most recently changed (page modified date) · 403 branch = safeguard for custom authorization handlers · API docs of grouped/publishing now describe Certain/Possible. userGroups stays a comma-separated string (round-1 Low "array → 500" = by design, closed).
+Chain position (amended): round 2 adds a second write path into L5 (Draft→Published) — MultilanguagePageService.PublishAll — and two settings-propagation paths that can change L2 (permalink) / L4 (audience, dates) of a page that is ALREADY Published without passing L5: PUT /grouped and PUT /api/page-builder-multilanguage-pages (root → non-overridden versions, MultilanguagePageInheritance fields Permalink, Visibility, UserGroups, OrganizationId, StartDate, EndDate → SaveGroupSettingsAsync). Code read at 5e6ccbf: neither path calls the conflict service.
+Variants added: V9 write path: grouped/publishing · ML publish-all · ML root update (propagation) · PUT /grouped settings on a Published page · POST /grouped with status. V10 visitor for alternates: anonymous · org B · org A.
+
+Mechanism coverage (round-2 delta; rows of the matrix above are unchanged):
+  | Variant | C3 classify | C4/C5 resolve | C6 index | C8 xAPI |
+  | V9 publish-all | 33,34 | 33,35 | 33 | WAIVED: alternates covered by 38 |
+  | V9 ML root update | 31 | 31 | 31 | WAIVED |
+  | V9 PUT /grouped on Published | 30 | 30 | 30 | WAIVED |
+  | V9 POST /grouped status | 27 | 27 | 27 | WAIVED |
+  | V10 alternates visitor | WAIVED: read path | WAIVED | 38 | 38,39 |
+Reverse edges (round 2): publish-all skip → the skipped version stays Draft and is publishable alone (#35) · lock released after a 409 so the next publish proceeds (#28).
+
+Test scenarios added (round 2):
+  | # | Cell | Defect hypothesis | Archetype | Technique | Oracle | P |
+  | 27 | POST /grouped {status:Published, pages:[Published]} on a permalink with a live Certain-equal page | create path still publishes → two live pages (VCST-6601 re-test, CMS-PC-026) | LIFECYCLE | EP | {SPEC} 112508 | High |
+  | 28 | two concurrent grouped/publishing of Certain-equal drafts (×5 attempts) | lock not shared → both 200 (VCST-6602 re-test, CMS-PC-027); lock never released → second publish hangs/500 | RACE | EG | {SPEC} 112508 | High |
+  | 29 | permalink-usages with no body / null | 500 (CMS-PC-028) | SILENT | BVA | {SPEC} 112508 → PASS at 1r probe | Low |
+  | 30 | PUT /grouped on a PUBLISHED page: permalink changed to a permalink another Certain-equal page serves; also audience org-A → everyone over a live everyone page | settings write reaches the live page without the conflict check → two live Certain-equal pages | LIFECYCLE | EG | {HYPOTHESIS} — 112272 "resolve the conflict at publishing" implies a live page cannot acquire a conflict outside publishing; dev answer needed if it can | High |
+  | 31 | Multilanguage Page with en-US + de-DE PUBLISHED; PUT root permalink → a permalink a live standalone everyone page serves (and: root audience change) | inheritance propagates permalink/audience into published versions with no check → two live pages | LIFECYCLE | EG | {HYPOTHESIS} same as #30; code shows no check | High |
+  | 32 | link / convert a published page into a Multilanguage Page | link renames it | SCOPE | — | WAIVED: code keeps the page's permalink (marks it overridden) — LinkAsync comment |
+  | 33 | ML page en-US + de-DE drafts; standalone live en-US everyone page on the same permalink; Publish all (UI + API) | conflicting version published anyway / whole batch refused / report missing | LIFECYCLE | DT | {SPEC} 112508 "Not published: <languages>, the other languages are published" | High |
+  | 34 | same, standalone page is Possible (e.g. dated, or {gold} vs everyone) | publish-all over-blocks a Possible version | BOUNDARY | DT | {SPEC} 112508 (only "completely replace" is skipped) | Medium |
+  | 35 | after #33, publish the skipped version alone from its language tab | no unpublish offer; or offer unpublishes the wrong page | LIFECYCLE | ST | {SPEC} 112508 | High |
+  | 36 | Publish all and a single publish of the competing standalone page at the same moment | publish-all not under the shared permalink lock → both live | RACE | EG | {HYPOTHESIS} code: both use ExecuteExclusiveAsync | Medium |
+  | 37 | landing-page form: dup permalink → warning under the field, Save without confirm; ML Page form: confirm on Save, no "only one page per permalink" sentence | old confirm survives / ML text unchanged | FALLBACK | EP | {SPEC} 112508 | Medium |
+  | 38 | ML page for org A (en-US + de-DE published): pageDocument(id) / slugInfo alternates as anonymous, org B, org A | alternates leak org-A versions (VCST-4935 + 6442 org filter) | SCOPE | DT | {SPEC} 112509 | Critical |
+  | 39 | ML page: en-US version everyone, de-DE version overridden to org A — alternates of the en-US page for anonymous / org B / org A | per-version organization not applied in alternates | SCOPE | DT | {SPEC} 112509 | High |
+Carried, not re-run: #26 (VCST-6603 → VCST-6614, vc-frontend, out of this ticket) · round-1 Lows except #29 (UI follow-ups per 112508).
+Archetype sweep (round 2): RACE #28,#36 · LIFECYCLE #27,#30,#31,#33,#35 · SCOPE #38,#39 · SILENT #29 · STALE WAIVED (VCST-6614).
+Probes carried in: KB-304E47CC (6601 bypass, suspected defect) → #27; KB-7F2A57D7 (ML clone -copy collisions) → drafts only, no publish conflict → WAIVED; KB-77A6C523 alternates shape → #38.
+3x: not re-run (round 2 — modes.md §per-round: the re-test interrogates the fix). 1c/1d: not re-dispatched — the delta is read off the PR commits db1be24/4566f3e/95880ca/4b2d003/5e6ccbf and x-cms 35cb129 directly.

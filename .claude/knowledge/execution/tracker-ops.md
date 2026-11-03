@@ -358,15 +358,18 @@ dimensions only. Transcoding is not available on the QA machines (no `ffmpeg`).
 
 | Attached | Renders as | Verdict |
 |---|---|---|
-| `.png` | `<span class="image-wrap"><img src="…/attachment/content/<id>" width="700">` | inline image |
+| `.png` as `!name.png\|width=700!` | `<span class="image-wrap"><img src="…/attachment/content/<id>" width="700">` | inline image |
+| `.png` as `!name.png\|thumbnail!` | `<img src="…/attachment/thumbnail/<id>" data-attachment-name="name.png">` (measured 2026-11-02, VCST-6232) | rendered, but **not the house form** — legibility is judged at `\|width=700!` (`reports-policy.md` §5.1a); amend the embed |
 | `.gif` | same shape, animates | **the motion-evidence format** |
 | `.mp4` / `.webm` | `<div class="embeddedObject"><object classid="clsid:02BF25D5…">` | **dead — do not use** |
 
 **Read the `<img>`, never the filename.** The rendered `src` carries the numeric **attachment id**, not the
 file name, so "is the filename present in the HTML" is not a success test — it was wrong in the first cut of
 `scripts/tracker/comment.mjs` and reported two correctly-rendered images as failures. The reliable per-file
-signal is that no literal `!name!` survived. `npm run tracker:comment -- --attach <file>` performs the
-upload, the v2 embed and this whole check in one step.
+signal is that no literal `!name!` survived; only the `thumbnail` form also names the file, in
+`data-attachment-name`. `npm run tracker:comment -- --attach <file>` performs the upload, the v2 embed and
+this whole check in one step (`scripts/tracker/rendered-media.mjs`): it counts both embed forms in the table
+above as rendered, once per attachment id, and warns on a thumbnail.
 
 **Do not** hand-build an ADF `media` node with the numeric attachment id — Jira rejects it with
 `400 ATTACHMENT_VALIDATION_ERROR`. The `media.attrs.id` must be a media-service **UUID**, which the
@@ -392,7 +395,7 @@ the 2026-09-02 VCST-5319 measurement and it does **not** appear on a working wik
 `<span class="image-wrap"><img src=".../rest/api/3/attachment/content/<attachmentId>" width=…>` with
 **zero** `file-preview-id` occurrences. A check gated on that attribute would have called three correctly
 rendered images a failure. The three signals that did hold: one `<img src=…/attachment/content/…>` per
-image in `renderedBody`; via the v3 read below, one ADF `media` node per image whose `attrs.id` is a
+image in `renderedBody` (`…/attachment/thumbnail/…` for a `|thumbnail!` embed); via the v3 read below, one ADF `media` node per image whose `attrs.id` is a
 36-char UUID with `type: "file"`; and **zero** surviving literal `!…png!` in `renderedBody`, which proves
 the wiki markup was converted rather than printed.
 

@@ -161,8 +161,8 @@ The measured losses behind every line above:
 
 ## Executable specs beside a suite
 
-A case that passed deterministically, or a bug's reproduction, has a Playwright `.spec` beside its row. Design and
-decisions D1–D18: [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8 — cited, not restated. Authoring: the skill
+A case that passed deterministically, or a bug's reproduction, has a Playwright `.spec` beside its row. The decisions
+D1–D18 are [§Spec decisions](#spec-decisions) below. Authoring: the skill
 [`/qa-test-automation`](../../skills/qa-test-automation/SKILL.md), loaded only while writing a spec.
 
 - **Layout (D5).** `<suite>.csv` stays; a folder with the CSV's stem sits beside it and holds `<CASE-ID>.spec.ts`,
@@ -178,3 +178,28 @@ decisions D1–D18: [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`]
   folder as one unit; a second writer in either is forbidden for the same reasons, and a conflict is never
   resolved with git.
 - **Runner-native rows (D4)** are not rewritten: `regression/lib/runner-cases.spec.ts` exposes them to Playwright.
+
+### Spec decisions
+
+Cited by number from the bullets above and from `/qa-test-automation`.
+
+| # | Decision |
+|---|---|
+| D1 | A CSV row and its spec are one case. The row describes it, the spec executes it |
+| D2 | A spec is written when a deterministic check **passed**, or as a bug's reproduction. No agent wave runs cases that have a spec **approved by the D17 fidelity review**; an unreviewed spec keeps its case on the agent lane |
+| D3 | Round 2 re-runs each prior bug's reproduction through its spec, with no browser agent |
+| D4 | Runner-native GraphQL/REST cases are **not rewritten**. One wrapper spec exposes them to Playwright and executes them with `graphql-runner` (`regression/lib/runner-cases.spec.ts`) |
+| D5 | Layout: a folder named after the CSV stem, beside the CSV, with one file per case, `<CASE-ID>.spec.ts` |
+| D6 | The link is the case ID: file name = `test()` title prefix = CSV `ID`. Nothing is written into the CSV or the manifest |
+| D7 | The CSV is the truth for **what** is checked and expected. A failing spec is fixed in the spec, never by editing the CSV expectation (`cases-that-catch-bugs.md`) |
+| D8 | An `expect` failure is `FAIL`. Any other error is `BLOCKED` with `spec-defect` in its notes: an action or navigation timeout, a fixture or auth failure |
+| D9 | A new spec runs **once** after it is written: deterministic, seconds, no agent. A passed check must PASS; a bug reproduction must FAIL on an `expect` |
+| D10 | `Automation_Status` gets no new value |
+| D11 | **No new agent.** Whoever writes the case writes its spec, which today is `test-management-specialist` (in a vc-test run, the narrow checklist agent — vc-test U55), loading the skill `/qa-test-automation` **only** while writing a spec. The skill costs nothing on any other dispatch |
+| D12 | A newly passed API check is written as a runner-grammar CSV row, which needs no spec. A handwritten API spec is only for what the grammar cannot express |
+| D13 | A spec runs once, on the suite's `preferredBrowser` or else the manifest default |
+| D14 | Harness in this repo first. vc-test gets a self-contained copy, as vc-fix does |
+| D15 | A passed check that cannot be scripted gets a CSV row with no spec, and a mini agent wave runs only those rows |
+| D16 | `test-management-specialist.md` must get under the 19K cap. Its detail moves into its skills' supporting files, and the spec hand-off is added inside that budget |
+| D17 | A new or changed spec passes a **fidelity review** before it replaces the agent in a regression run. It is a new `/qa-review-tests` dimension, done by a fresh agent that is not the spec's author, once per spec change (not per run). It builds the table "row item (Assertions, Cross_Layer_Checks) → `expect` → OK / WEAKENED / MISSING". Any WEAKENED or MISSING item means the case stays on the agent lane. The approval lapses when the spec or its row changes; how that is recorded and detected is the builder's call |
+| D18 | A spec is written **directly** from source and the generated selectors and run at once; a `playwright-cli` session attached to the paused draft spec (`--debug=cli`, signed in by its own fixtures) is the fallback, and its printed code the draft, not the default — the default has no browser agent per checklist item (vc-test U27, B4, U55) |

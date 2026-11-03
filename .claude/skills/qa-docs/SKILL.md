@@ -10,8 +10,7 @@ One ticket, one document, one comment. The document has three parts — **What's
 up**, **How it works** — and is written for everyone who reads the ticket; there are no audience
 variants. Its shape is [`template.md`](template.md); what may go into it is [`rules.md`](rules.md); the
 screenshots, GIFs and the film are [`media.md`](media.md); the release aggregate is
-[`release.md`](release.md). The design and its reasons:
-[`docs/superpowers/specs/2026-10-30-qa-docs-design.md`](../../../docs/superpowers/specs/2026-10-30-qa-docs-design.md).
+[`release.md`](release.md).
 
 **Runs in the main session and dispatches no subagent**: it needs a browser lane, the Artifact tool and
 the tracker in one place. It is an Observer and a Judge under
