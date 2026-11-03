@@ -934,6 +934,159 @@
     },
     "_notes": "COU-027 (promo P21 'AGENT-TEST Lowercase Coupon Case Fidelity', 5% off cart subtotal, public + active, no endDate, no threshold). Dedicated collision-free lowercase coupon for the CPN-062 VCST-5233 apply/validate case-fidelity guard. code='agenttestlc062' satisfies /[a-z]/; its all-uppercase form 'AGENTTESTLC062' is NOT a valid/existing coupon on the env (probed vcst-qa 2026-07-21: 0 matches), so uppercasing (VCST-5233 bug) => ValidateCoupon false => 'This code is not valid' (clean fail signal while unfixed); lowercase preserved (once fixed) => applies. Unlike COUPON_SUPER('super'), uppercasing does NOT hit the unrelated 'SUPER'/'Super Discount' coupon. Seeded by seed-promotions.mjs; teardown: npm run seed:promotions:teardown -- --only P21. No runtime GUID here — resolves by static business key (coupon_id/code)."
   },
+  "SRCPN_PROMO_END_EARLIER": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-028"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S7 — promotion ends +20d, coupon expires +40d (DISTINCT): salesRepCoupons endDate must equal the PROMOTION end. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_COUPON_END_EARLIER": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-029"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S6 — coupon expires +10d, promotion ends +60d (DISTINCT): endDate must equal the COUPON expiry. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_COUPON_EXPIRED": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-030"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S5 — promotion runs to +30d, coupon expired -1d (yesterday 23:59:59Z): HIDDEN by the coupon-level expiry filter (the buyer path ignores coupon expiry). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_PARTIAL": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-031"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S2 — cap 5, 2 REAL promotion-usage records (orders AGENT-TEST-SRCPN-COU-031-*): \"3 uses left out of 5\". LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_ONE_LEFT": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-032"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S4 — cap 2, 1 recorded use: singular \"1 use left out of 2\". LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_USED_UP": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-033"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S3 static half — cap 1, 1 recorded use: HIDDEN (used-up, counted fresh from usage records). The dynamic half (last use recorded by an order inside the case) is created IN the case, never seeded (FIFTH RULE). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_MEMBER_BOUND": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-034"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S8 — Coupon.MemberId = @td(ORG_TECHFLOW.platform_id) (resolved at seed time from member_ref ORG_TECHFLOW): HIDDEN for every rep. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_FUTURE_START": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-035"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S9 — promotion starts +10d (not active yet): NOT LISTED (excluded at the promotion search, OnlyActive). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_LONG_CODE": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-036"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S24 — 46-char code, no whitespace: card wrap on the rep page, buyer /account/coupons and cart sidebar. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_LOWERCASE": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-027"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id"
+    },
+    "_notes": "VCST-6158 S15 (copy / case fidelity on the rep coupon card) — REUSES COU-027 agenttestlc062 (P21, lowercase-stored, no end date, uncapped; LISTED by salesRepCoupons on vcst 2026-11-03). Same row as COUPON_LC_CASEFIDELITY: its uppercase form AGENTTESTLC062 is no coupon, so an uppercasing copy is detectable. Seeded by seed-promotions.mjs --only P21."
+  },
   "LOYALTY_SETTINGS": {
     "_inline": true,
     "currency_code": "PTS",

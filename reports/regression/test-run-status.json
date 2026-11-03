@@ -1,29 +1,53 @@
 {
-  "runId": "REG-2026-10-28-2059",
+  "runId": "REG-2026-11-03-1717",
   "status": "completed",
-  "startedAt": "2026-10-28T20:03:42.660Z",
-  "windowStart": "2026-10-28T20:03:42.660Z",
-  "selection": "042",
+  "startedAt": "2026-11-03T16:17:38.000Z",
+  "windowStart": "2026-11-03T16:17:38.000Z",
+  "selection": "050b3,050i,102",
   "env": "vcst",
-  "scoped": false,
-  "cases": "all",
-  "purpose": "/qa-run sprint:26-21 --frontend — P0 completion of stalled REG-2026-10-28-1013 (VCST-6417)",
-  "plan": "reports/regression/REG-2026-10-28-2059/preflight.json",
+  "scoped": true,
+  "cases": "ids",
+  "ids": [
+    "CRL-GQL-130",
+    "CRL-GQL-131",
+    "CRL-GQL-132",
+    "CRL-GQL-133",
+    "CRL-GQL-134",
+    "CRL-GQL-074",
+    "CRL-GQL-075",
+    "CFG-GQL-046",
+    "UCPA-014"
+  ],
+  "purpose": "/qa-regression VCST-6185 mergeCart authorization — 9 most relevant cases",
+  "plan": "reports/regression/REG-2026-11-03-1717/preflight.json",
   "suites": {
-    "042": {
+    "102": {
       "status": "done",
-      "browser": "playwright-chrome",
-      "lane": "browser",
-      "startedAt": "2026-10-28T20:04:34.927Z",
-      "attempts": 5,
-      "tests": 34,
-      "pass": 27,
+      "lane": "fastpath",
+      "startedAt": "2026-11-03T16:19:59.845Z",
+      "pass": 1,
       "fail": 0,
-      "blocked": 2,
-      "skipped": 5,
-      "ambiguous": 0,
-      "finishedAt": "2026-10-28T20:39:35.453Z"
+      "blocked": 0,
+      "finishedAt": "2026-11-03T16:20:15.411Z"
+    },
+    "050b3": {
+      "status": "done",
+      "lane": "fastpath",
+      "startedAt": "2026-11-03T16:19:00.496Z",
+      "pass": 7,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-03T16:19:48.610Z"
+    },
+    "050i": {
+      "status": "done",
+      "lane": "fastpath",
+      "startedAt": "2026-11-03T16:19:48.611Z",
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-03T16:19:59.845Z"
     }
   },
-  "finishedAt": "2026-10-28T20:27:09.690Z"
+  "finishedAt": "2026-11-03T16:21:20.021Z"
 }

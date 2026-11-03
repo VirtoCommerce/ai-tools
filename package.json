@@ -79,6 +79,8 @@
     "seed:loyalty-balance": "node scripts/seed-data/loyalty/seed-loyalty-balance.mjs",
     "seed:promotions": "node scripts/seed-data/promotions/seed-promotions.mjs",
     "seed:promotions:teardown": "node scripts/seed-data/promotions/seed-promotions.mjs --teardown",
+    "seed:promotions:sales-rep-coupons": "node scripts/seed-data/promotions/seed-promotions.mjs --family AGENT-TEST-SRCPN --verify",
+    "seed:promotions:sales-rep-coupons:teardown": "node scripts/seed-data/promotions/seed-promotions.mjs --family AGENT-TEST-SRCPN --teardown",
     "seed:bopis": "node scripts/seed-data/bopis/seed-bopis.mjs",
     "seed:bopis:teardown": "node scripts/seed-data/bopis/seed-bopis.mjs --teardown",
     "seed:sales-rep": "node scripts/seed-data/sales-rep/seed-sales-rep.mjs",
