@@ -14,7 +14,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W3 | Purchase flow | Elena Kutasina | TRIAGED | 840 | 757 | 500 | 95 | 159 | 0 | 256 | REG-2026-10-15-W3 REG-2026-10-26-1847-W3R REG-2026-10-26-2010-W3R2 REG-2026-10-26-2044-W3R3 |
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W6 | Theme cross-cutting + gap sessions | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W6 | Theme cross-cutting + gap sessions | Aleksandra Mitricheva | CLAIMED | — | — | — | — | — | — | 0 | — |
 | W7 | virto-start modules (autotests only) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | WX | Exclusive window (env-wide cases) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 

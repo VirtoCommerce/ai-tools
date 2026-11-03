@@ -1,9 +1,10 @@
 {
  "wave": "W6",
- "owner": null,
- "status": "NOT_STARTED",
+ "owner": "Aleksandra Mitricheva",
+ "status": "CLAIMED",
  "runIds": [],
  "notRun": [],
  "handovers": [],
- "updatedAt": "2026-10-16"
+ "updatedAt": "2026-11-04",
+ "personas": "config.js personas USER_DEFAULT and TECHFLOW_BUYER as the committed .env.vcptcore_regression defaults (no .env.local override) — shared with W0-W3 by the owner's decision: W6 is read-only storefront checks (no cart/order state); lockout case SEC-AUTH-003 uses its dedicated LOCKOUT_TEST_EMAIL"
 }
