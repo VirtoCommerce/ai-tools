@@ -30,7 +30,7 @@ Data: per-culture-slug product Affligem Dubbel 24x30cl Bottle (en `alcoholic-dri
 | B10 | Physical cart, single-page: Shipping, Payment, Order comment shown, theme spacing | S10, AC-8 | PASS |
 | B11 | Digital-only cart (Snack game): Shipping hidden, Payment shown | S11, AC-8 | PASS |
 | B12 | Incomplete payment: the warning names only visible sections | S12 | PASS (generic warning, names no section) |
-| B13 | Regular user: "Place order" present, no "Create requisition" (punch-out positive BLOCKED — module absent) | S13, AC-9/10 | PASS (negative); punch-out positive BLOCKED — module absent |
+| B13 | Regular user: "Place order" present, no "Create requisition" (punch-out positive BLOCKED — module absent) | S13, AC-9/10 | PASS — negative on vcptcore-qa; positive on a local build of 4507f3ae against vcptcore-qa1 (setup 200 → "Punchout mode" → "Create requisition", no quote → PunchOutOrderMessage posted with the cart: SKU 6022122 ×1 $233.00, BuyerCookie echoed) |
 | B14 | MULTI-STEP, local build http://localhost:3626 (same tree, `checkout_multistep_enabled=true`, backend vcptcore-qa): cart shows no checkout sections; the button opens the checkout steps; a step page renders. Result labelled "local build" | S14, AC-11 | PASS — local build of 4507f3ae, multi-step on |
 
 ## A4 GA4 lists (#2594, #2598) — lane chrome (read window.dataLayer)
@@ -42,6 +42,7 @@ Data: per-culture-slug product Affligem Dubbel 24x30cl Bottle (en `alcoholic-dri
 | B20 | PDP opened from a category click: count `view_item` (and on a direct load). Then the same on the pre-merge build for A/B — if unavailable, record Next counts only | S20, AC-16 | PASS — 1 view_item per visit (base: GA off in dev build) |
 | B21 | Sign-in: one `login` event; user_properties set | S21 | PASS |
 | B22 | Search dropdown + wishlist click: `select_item` with index | S22 | PASS |
+| B22a | GA-035/036/058 products_block markup, on an AGENT-TEST Page Builder page (the Next home `/` is the built-in demo-home with no products_block by design): guest vs org-scoped buyer list events, Customize → select_item, related/variations/recommended/recently-browsed payloads | GA-035, GA-036, GA-058 | PASS |
 
 ## A5 Profile and address field errors (#2597) — lane edge, profile buyer
 | B23 | Profile last name "Tester2" → message under Last name, no toast; restore original | S23, AC-17 | PASS |
@@ -83,4 +84,4 @@ Data: per-culture-slug product Affligem Dubbel 24x30cl Bottle (en `alcoholic-dri
 | B49 | VcTileButton / VcStatWidget: states, light + dark, 375/768/1920, keyboard, axe | S48 | PASS layout; a11y F1 contrast Low — not filed |
 | B50 | Changed kit components vs the pre-merge Storybook (quantity stepper, inputs, modals) | S49 | PASS — pixel diff 0 regressions |
 
-Not run, by decision: punch-out session (module absent) · MFA StoreMode window (per-user flag used instead; no shared setting written).
+Not run, by decision: MFA StoreMode window (per-user flag used instead; no shared setting written).
