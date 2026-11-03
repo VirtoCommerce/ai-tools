@@ -1,0 +1,185 @@
+{
+  "ticket": "VCST-6626",
+  "flow": "feature-test",
+  "path": "FULL",
+  "path_route": {
+    "at_1a": "FULL",
+    "reason": "Task + High (P1), >=2 domains; technical-change rejected (net-new runtime surfaces)"
+  },
+  "shape_class": {
+    "value": "feature",
+    "surface_source": [
+      "diff: 30/498 files under ui-kit",
+      "subject = merged features, not the kit"
+    ]
+  },
+  "verdict": "PASS WITH NOTES",
+  "build": {
+    "declared": {
+      "platform": "3.1091.0-pr-3144-9e58"
+    },
+    "deployed": {
+      "platform": "3.1091.0-pr-3144-9e58",
+      "theme": "vc-frontend-next 3.2.0-pr-19-4507-4507f3ae"
+    },
+    "pr": "VirtoCommerce/vc-frontend-next#19 @4507f3ae",
+    "control_base": "vc-frontend-next dev @f3d270a4 (local dev build, same backend)"
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "when": "2026-11-02T12:43:01Z"
+    },
+    {
+      "hop": "closing",
+      "from": "Testing",
+      "to": "Tested",
+      "transition_id": "8",
+      "at": "2026-11-03T11:10:51.029Z",
+      "confirmed_by": "operator (chat: переводи в тестед)"
+    }
+  ],
+  "timing": {
+    "run_started": "2026-11-02T12:40Z",
+    "time_to_first_test_dispatch": "2026-11-02T19:33:21Z",
+    "reachability_minutes": 4.5,
+    "notes": "firefox lane hung 3x; C1 orchestrator stalled 2x; re-dispatched as direct runners"
+  },
+  "regression": {
+    "run_id": "REG-2026-11-02-2307",
+    "c1_ids": 65,
+    "counts": {
+      "PASS": 53,
+      "BLOCKED": 11,
+      "FAIL": 1
+    },
+    "fail": [
+      "CART-123 (test-case defect vs ECL-5.3)"
+    ],
+    "note": "MFASF-001..013 run inside an operator-approved StoreMode window; MFASF-010 closed-window half verified by API after restore",
+    "stand_windows": [
+      {
+        "setting": "MultiFactorAuthentication.StoreMode (B2B-store)",
+        "from": null,
+        "to": "Enabled",
+        "opened": "2026-11-02T23:21:49Z",
+        "restored": "2026-11-02T23:32Z",
+        "readback": "null"
+      },
+      {
+        "setting": "Stores.AllowAnonymousUsers (B2B-store)",
+        "from": false,
+        "to": true,
+        "opened": "2026-11-02T23:12Z",
+        "restored": "2026-11-02T23:21Z",
+        "readback": false
+      },
+      {
+        "note": "store object diff vs pre-run snapshot: none"
+      }
+    ],
+    "tracker_comment_id": 112611
+  },
+  "coverage_triage": {
+    "repair": 35,
+    "rebase": 4,
+    "superseded": 0,
+    "new_draft": 26,
+    "scans": [
+      "1b: --domain auth,cart,chk,ga4,profile,punchout,sr (23 suites)",
+      "corrected: + sales-rep,purchase-flow,customer-b2b,cross-cutting,checkout (102 suites)"
+    ],
+    "unscannable": [
+      "056",
+      "065",
+      "074 (legacy 11-column header, backend, untriaged)"
+    ]
+  },
+  "visual": {
+    "surface": true,
+    "executor": "qa-testing-expert (stand-in for vc-test:ui-ux-expert)",
+    "report": "reports/tickets/Sprint26-21/VCST-6626/vcptcore/design-report.md",
+    "pixel": {
+      "storybook": {
+        "pairs_1920": 1530,
+        "pairs_responsive": 512,
+        "regressions": 0,
+        "added": 19,
+        "removed": 0,
+        "unrendered_both_builds": 43
+      },
+      "pages": {
+        "regressions_confirmed": 0,
+        "to_confirm": [
+          "R1 OTP focus ring",
+          "R2 Product Guide block"
+        ]
+      },
+      "F2_on_base": true
+    }
+  },
+  "discovery": {
+    "report": "reports/tickets/Sprint26-21/VCST-6626/vcptcore/exploratory/SBTM-VCST-6626-2026-11-02.md",
+    "truncated": "infrastructure (API ENOTFOUND, stall watchdog)"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6656",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING"
+    },
+    {
+      "key": "VCST-6657",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "status": "Cancelled",
+      "reason": "not reproducible: final state correct; 404 was an intermediate redirect state"
+    },
+    {
+      "key": "VCST-6658",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING"
+    },
+    {
+      "key": "VCST-6659",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING"
+    },
+    {
+      "key": "VCST-6660",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING",
+      "note": "rewritten 2026-11-03: reproduced at 400% desktop zoom with keyboard; mobile SR impact; phone Tab scenario dropped"
+    }
+  ],
+  "bugs_not_filed": [
+    "Security Edit/Delete names lack key name (IN-SCOPE, Low)",
+    "VcTileButton solid primary 2.11:1 (Low)",
+    "OTP code step focus ring first cell (Low)",
+    "bulk-order silent paste rejection (PRE-EXISTING, Low)",
+    "saved-for-later Remove from cart label (Low)",
+    "prefs dialog English in de (Low)",
+    "profile placeholders (Low)",
+    "GA4 category_undefined list id (Low)"
+  ],
+  "domain_map": {
+    "state": "PRESENT",
+    "maps": [
+      "auth",
+      "mobile-navigation",
+      "punchout",
+      "sales-rep"
+    ],
+    "absent": [
+      "i18n",
+      "ga4",
+      "cart-checkout",
+      "profile"
+    ]
+  },
+  "date": "2026-11-02",
+  "environment": "vcptcore-qa",
+  "ticket_type": "Task"
+}

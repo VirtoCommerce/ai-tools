@@ -437,6 +437,8 @@ Storefront /account accessible; Change Password form visible; VCST-4531 frontend
 [CONSOLE] No TypeError or JS errors during page load and form rendering","Information notice absent from Change Password page; console TypeError; page fails to load (500); Change Password section not accessible from account page","[PRE:SIGNOUT]","VCST-4531","Draft"
 "AUTH-070","Account Lockout — Storefront Login Blocked After Threshold Failed Attempts","Login > Security > Lockout","Critical","BL-AUTH-003","ECL-3.1","[PRE:CLEAR_SESSION]
 Storefront login page accessible; a DEDICATED lockout-test user exists (never use agent pool slot accounts — use test-specific AGENT-TEST- user created for this test); lockout policy configured (default 5 failed attempts); VCST-5074/5149 fix deployed (platform >=3.1007.12)","front_url={{FRONT_URL}};lockout_user_email=AGENT-TEST-lockout-sf@test.virtocommerce.com;lockout_user_password=ValidLockPw1!","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [WAIT] Login form visible
 [ACT] Fill 'Email': AGENT-TEST-lockout-sf@test.virtocommerce.com
 [ACT] Fill 'Password': WrongPassword1!
@@ -492,6 +494,8 @@ Org Maintainer (operator) is logged in. Their assigned role includes StorefrontP
 "AUTH-071","Login — Temporary Lockout Detailed Message on Storefront (PasswordLogin DetailedErrors=true)","Login > Security > Lockout","Medium","BL-AUTH-003; BL-AUTH-004","ECL-3.1","[PRE:CLEAR_SESSION]
 Storefront login page accessible; PasswordLogin__DetailedErrors=true and IdentityOptions__Lockout__MaxFailedAccessAttempts=5 configured (vc-deploy-dev infra/environments.yml @ vcst-qa)
 A DEDICATED AGENT-TEST lockout-test user exists (never use agent pool slot accounts)","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; lockout_user_email=AGENT-TEST-lockout-msg@test.virtocommerce.com; lockout_user_password=ValidLockPw1!","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [WAIT] Login form visible
 [ACT] Fill 'Email': lockout_user_email
 [ACT] Fill 'Password': WrongPass1!
@@ -518,6 +522,8 @@ PasswordLogin__DetailedErrors=true and Lockout 5 attempts / 0:15:0 configured; V
 [ASSERT] the membership reads back isCurrentlyLocked=false with an empty status (Inherit), GET {{BACK_URL}}/api/platform/security/users/{userId}/locked answers locked=false and the user reads back lockoutEnabled=true - otherwise BLOCKED: the fixture did not land and a lockout verdict on it proves nothing. Record email, userId, contactId and orgId in the run evidence
 --- SCREEN: Sign in with wrong passwords until the lockout ---
 [NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [WAIT] Login form visible
 [ACT] Fill 'Email': email
 [ACT] Fill 'Password': WrongPass1!

@@ -420,3 +420,23 @@ BuildRight), but on vcptcore-qa the members' `organizations` is `[]`, so every "
 tests "signed-in buyer without organization". Fix: give the vcptcore accounts their org memberships (seed),
 or add a vcptcore overlay that names a genuinely org-B buyer. **Fixed 2026-10-28** (same branch): the reuse branch of
 `seedContacts` in `scripts/lib/user-provision.mjs` now links missing CSV organizations; both accounts re-seeded on vcptcore.
+
+## 2026-11-02 — found during the VCST-6626 `/qa-test` run (vcptcore-qa)
+
+**PageBuilder seeders read only the first search page.** `POST /api/page-builder-pages/search` returns at most 200
+rows (776 pages on vcptcore-qa), so a single `take: 500/1000` call misses canonical pages and the seeder CREATES a
+duplicate (its publish then 409s against the live original). Fixed in `cms/seed-pagebuilder-pages.mjs` (pages
+through `skip`). Still single-call: `cms/seed-pagebuilder-shared-components.mjs` (take 500),
+`cms/seed-pagebuilder-legacy-permalinks.mjs` (take 1000), `cms/seed-pagebuilder-assets.mjs` (take 200, keyword-scoped).
+
+**`ORG_USER` on vcptcore fails `/connect/token` with `ORG_USER_PASSWORD` (`login_failed`)** — and `td:reconcile`
+spends one more failed sign-in on it every run. Account state 2026-11-02: storeId B2B-store, lockoutEnd in the past,
+emailConfirmed false, contact firstName/lastName empty, no organization-membership rows. Needs a password reset
+through its seeder (agent-user-pool slot 2) — not done inside VCST-6626.
+
+**Password sign-in rows have no OTP-first guard outside VCST-6626's C1.** B2B-store on vcptcore-qa is code-first
+(OTP on), so a row that navigates to `/sign-in` and types a password never sees the password form. VCST-6626 added
+the conditional "Sign in with a password instead" step (`otp-email-switch-to-password-link`) to its 34 REPAIR rows
+only. Candidates still without it (3-cases verifier, loose regex — some may not be sign-in rows): 031/032/033
+AUTH-013, 022, 048–051, 054–056, 061, 069, 073; 082 IMP-008, 010–013, 016, 020, 021, 025, 027, 029–031, 036, 040,
+042, 044–046, 048. Add the same guard; do not change their assertions.

@@ -895,3 +895,75 @@ Sign out through the account menu if a session is open
 Sign in with the password (if the one-time-code form is shown, click 'Sign in with a password instead' first), open /account/security and delete every passkey this case created (Delete, then confirm); the account returns to no passkey and keeps its password
 Sign out through the account menu
 Remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)","VCST-6121 · VCST-6630 · Archetype:FALLBACK · Technique:DT · Behavior:auth.signin.passkey · DataProfile:profile.auth.passkey-signin · Catches:a passkey sign-in on an expired-password account is forced to Change Password because the expiry check lists the exempt methods (SSO, impersonation) instead of the one method that uses the password (VCST-6630) · Probe:VC-AUTH-006 · Bug: VCST-6630 (open, reproduced live on vcst 2026-10-29) - expected-correct assertions kept and red, never rewritten to the build · Same defect for the email-code sign-in: suites 104/105 carry no case for it · Synced: VCST-6121 live-check fixes (2026-10-29) · Audited: 2026-10-29 (TCA-2026-10-29); Source: live vcst: control password sign-in lands on /change-password, passkey grant 200, VCST-6630 reproduced; Docs: N/A — project-specific: expiry per sign-in method is the product owner decision of VCST-6630 · Synced: VCST-6121 live-check fixes round 2 (2026-10-29)",Draft
+PKS-023,Security page — the link is in the account rail and the mobile account menu and opens the page,Auth > Passkeys > Security page,High,,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, password key DEFAULT_TEST_PASSWORD) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey. The Security page is new in the Next theme with this merge; the 2.61.0 menu.json carries the Security entry for both menus. The case adds no passkey: it only opens the page.","url={{FRONT_URL}}, buyer=@td(PK_BUYER.email), password={{DEFAULT_TEST_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
+[ACT] Fill 'Email' with @td(PK_BUYER.email)
+[ACT] Fill 'Password' with DEFAULT_TEST_PASSWORD (the lane secret name - the Playwright lane types the value)
+[ACT] Click 'Sign in'
+[WAIT] the page leaves /sign-in (up to 15s)
+--- SCREEN: Desktop account rail ---
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the buyer's name link in the account menu
+[WAIT] the account dashboard is open and the account rail is visible
+[ASSERT] read whether the rail has an item named 'Security'
+[ACT] click the rail item 'Security'
+[WAIT] the browser is on /account/security and the page has rendered
+[KEY] record the page H1 as H1_DESK and whether a list of sign-in methods or a control that adds a passkey is shown
+--- SCREEN: Mobile account menu ---
+[SETUP] set the browser viewport to 375x812
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the dashboard has rendered
+[ACT] open the mobile header navigation from its hamburger entry
+[ACT] open the account section of that menu
+[WAIT] the account section of the mobile menu is open
+[ASSERT] read whether the section has a link named 'Security'
+[ACT] click the link 'Security'
+[WAIT] the browser is on /account/security and the page has rendered
+[KEY] record the page H1 as H1_MOB","[DOM] the account rail has an item 'Security' and it opens /account/security {SPEC} (AC-22, #2601)
+[DOM] the mobile account menu has a link 'Security' and it opens /account/security {SPEC} (AC-22)
+[STATE] H1_MOB equals H1_DESK and the page lists the Passkey sign-in method or offers the control that adds a passkey, on both entries {SPEC} (AC-22, AC-23)
+[STATE] the link is in BOTH menus: a missing menu.json entry in either menu is the defect {SPEC} (S32)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Security link missing from the rail or from the mobile menu; the link opens a blank page or the dashboard,Restore the desktop viewport (1920x1080); sign out,VCST-6626 · Archetype:RENDER · Technique:EP · Behavior:auth.signin-methods,Draft
+PKS-024,"Security page — deleting a passkey asks for confirmation; Cancel keeps it, Confirm removes it",Auth > Passkeys > Security page,High,,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+CEREMONY: Chromium lanes only (playwright-chrome or playwright-edge, never firefox). Before the first step a WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol: WebAuthn.enable, then WebAuthn.addVirtualAuthenticator {protocol: ctap2, transport: internal, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}; capture authenticatorId; it is removed in Cleanup. On the Edge lane the window needs focus (select the tab) before every create or get.
+Persona @td(PK_BUYER.email) (B2B buyer of {{STORE_ID}}, password key DEFAULT_TEST_PASSWORD) is seeded by scripts/seed-data/auth/seed-passkey.mjs; re-arm it before the run with npm run seed:passkey. The case registers its own passkey and deletes it in Cleanup. PKS-006 covers the Confirm path with two keys; this case adds the Cancel path and the failure path of the modal (the modal must not close on a failure).","url={{FRONT_URL}}, buyer=@td(PK_BUYER.email), password={{DEFAULT_TEST_PASSWORD}}","[SETUP] set up the virtual authenticator over CDP (Preconditions CEREMONY); capture authenticatorId
+[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
+[ACT] Fill 'Email' with @td(PK_BUYER.email)
+[ACT] Fill 'Password' with DEFAULT_TEST_PASSWORD (the lane secret name - the Playwright lane types the value)
+[ACT] Click 'Sign in'
+[WAIT] the page leaves /sign-in (up to 15s)
+[NAV] {{FRONT_URL}}/account/security
+[WAIT] the Security page has rendered
+[ACT] Click the control that adds a passkey
+[WAIT] the authenticator answers and one row appears
+[CAPTURE] the server list holds one Passkey key: {signInMethods{name keys{id name}}} through {{FRONT_URL}}/graphql with the buyer token, KEY_ID = its id
+--- SCREEN: Cancel ---
+[ACT] Open Delete on the key row
+[WAIT] the confirmation modal is shown
+[ACT] Click 'Cancel'
+[WAIT] the modal is closed
+[KEY] record the number of rows (ROWS_CANCEL) and the server list (SERVER_CANCEL)
+--- SCREEN: A failed delete ---
+[ACT] Open Delete on the key row
+[WAIT] the confirmation modal is shown
+[SETUP] intercept the next delete request of the page and answer it with {""errors"":[{""message"":""Server error""}],""data"":null}
+[ACT] Click the primary action of the confirmation modal
+[WAIT] the page settles
+[KEY] record whether the modal is still open (MODAL_AFTER_FAIL), the number of rows (ROWS_FAIL) and the server list (SERVER_FAIL)
+--- SCREEN: Confirm ---
+[SETUP] remove the interception
+[ACT] if the modal was closed, open Delete on the key row again
+[ACT] Click the primary action of the confirmation modal
+[WAIT] the list refreshes without a page reload
+[KEY] record the number of rows (ROWS_CONFIRM) and the server list (SERVER_CONFIRM)","[COUNT] ROWS_CANCEL is 1 and SERVER_CANCEL still holds KEY_ID: Cancel keeps the key {SPEC} (AC-25, S35)
+[STATE] a confirmation was asked before any delete request was sent {SPEC} (AC-25)
+[STATE] MODAL_AFTER_FAIL is true and ROWS_FAIL is 1, SERVER_FAIL still holds KEY_ID: the modal does not close on a failure and the list is not changed {SPEC} (AC-25, S35)
+[COUNT] ROWS_CONFIRM is 0 and SERVER_CONFIRM holds no Passkey key, with no page reload: Confirm removes it {SPEC} (AC-25)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Cancel deletes the key; the modal closes on a failed delete and the list shows the key as gone; the list needs a reload after Confirm,"Delete the passkey if it is still there; switch the virtual authenticator's presence simulation off (WebAuthn.setAutomaticPresenceSimulation false); sign out; remove the virtual authenticator (WebAuthn.removeVirtualAuthenticator, then WebAuthn.disable)",VCST-6626 · Archetype:STALE · Technique:DT · Behavior:auth.signin-methods.delete,Draft

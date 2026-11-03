@@ -38,6 +38,7 @@ import {
   SHELL_SEARCH_NOREAD_ROLE, SHELL_SEARCH_NOREAD_ACCOUNT, SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSION, assertShellSearchNoReadRolePermissions,
   SHELL_SEARCH_READ_ROLE, SHELL_SEARCH_READ_ACCOUNT, SHELL_SEARCH_READ_EXCLUDED_PERMISSION, assertShellSearchReadRolePermissions,
   SHELL_SEARCH_READ_PERMISSIONS, SHELL_SEARCH_NEVER_PERMISSIONS,
+  IMP_OPERATOR_ROLE, IMP_OPERATOR_ACCOUNT, IMP_OPERATOR_REQUIRED_PERMISSIONS, assertImpOperatorRolePermissions,
   findGuidLeaks,
 } from './backoffice-rbac-specs.mjs';
 
@@ -175,6 +176,34 @@ checkAlias(BROWSEFILTERS_NONE_ROLE, BROWSEFILTERS_NONE_ACCOUNT, BROWSEFILTERS_NO
 checkAlias(RETURN_AGENT_ROLE, RETURN_AGENT_ACCOUNT, RETURN_AGENT_EXCLUDED_PERMISSION);
 checkAlias(SHELL_SEARCH_NOREAD_ROLE, SHELL_SEARCH_NOREAD_ACCOUNT, SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSION);
 checkAlias(SHELL_SEARCH_READ_ROLE, SHELL_SEARCH_READ_ACCOUNT, SHELL_SEARCH_READ_EXCLUDED_PERMISSION);
+
+// 4. IMP-038 operator. The case removes loginOnBehalf from the role and expects impersonation to stop,
+// so it is decidable only if the role holds that permission (else the first half cannot pass) and the
+// account has no other source of it: not an administrator, a Customer, one role. The suite reads the
+// role by @td(AGENT_TEST_IMP_ROLE.name) and the user by @td(AGENT_TEST_IMP_CUSTOMER.*).
+{
+  try { assertImpOperatorRolePermissions(); ok(`role "${IMP_OPERATOR_ROLE.role_name}" holds exactly ${IMP_OPERATOR_REQUIRED_PERMISSIONS.join(', ')} (IMP-038)`); }
+  catch (e) { fail(e.message); }
+  const roleAlias = aliases.AGENT_TEST_IMP_ROLE; const acct = aliases[IMP_OPERATOR_ACCOUNT.aliasName];
+  if (!roleAlias || !acct) fail('AGENT_TEST_IMP_ROLE / AGENT_TEST_IMP_CUSTOMER must both be registered in test-data/aliases.json');
+  else {
+    if (roleAlias.name !== IMP_OPERATOR_ROLE.role_name) fail(`AGENT_TEST_IMP_ROLE.name "${roleAlias.name}" != spec role "${IMP_OPERATOR_ROLE.role_name}"`);
+    else ok('AGENT_TEST_IMP_ROLE.name matches the spec role');
+    if (!IMP_OPERATOR_ROLE.permissions.includes(roleAlias.permission_key)) fail(`AGENT_TEST_IMP_ROLE.permission_key "${roleAlias.permission_key}" is not granted by the spec role`);
+    else ok(`AGENT_TEST_IMP_ROLE.permission_key "${roleAlias.permission_key}" is granted by the spec role (IMP-038 removes it)`);
+    if (acct.email !== IMP_OPERATOR_ACCOUNT.email) fail(`AGENT_TEST_IMP_CUSTOMER.email "${acct.email}" != spec "${IMP_OPERATOR_ACCOUNT.email}"`);
+    else ok('AGENT_TEST_IMP_CUSTOMER.email matches the spec');
+    if (acct.role_name !== IMP_OPERATOR_ROLE.role_name) fail(`AGENT_TEST_IMP_CUSTOMER.role_name "${acct.role_name}" != spec role`);
+    else ok('AGENT_TEST_IMP_CUSTOMER.role_name matches the spec role');
+    if (acct.account_type !== IMP_OPERATOR_ACCOUNT.userType || IMP_OPERATOR_ACCOUNT.isAdministrator !== false) fail(`AGENT_TEST_IMP_CUSTOMER must be a non-admin ${IMP_OPERATOR_ACCOUNT.userType} (alias account_type "${acct.account_type}")`);
+    else ok('AGENT_TEST_IMP_CUSTOMER is a non-admin Customer (no admin bypass of the gate under test)');
+    if (acct.password !== `{{${IMP_OPERATOR_ACCOUNT.passwordVar}}}`) fail(`AGENT_TEST_IMP_CUSTOMER.password must be the {{${IMP_OPERATOR_ACCOUNT.passwordVar}}} token the seeder sets, got "${acct.password}"`);
+    else ok(`AGENT_TEST_IMP_CUSTOMER.password is {{${IMP_OPERATOR_ACCOUNT.passwordVar}}} — the same secret the seeder sets`);
+    const leaks = findGuidLeaks(JSON.stringify(roleAlias) + JSON.stringify(acct));
+    if (leaks.length) fail(`IMP-038 aliases carry a runtime GUID in aliases.json (${leaks.join(', ')})`);
+    else ok('IMP-038 aliases carry no runtime GUID');
+  }
+}
 
 console.log(`\n${problems.length ? `FAILED — ${problems.length} problem(s)` : 'OK'}`);
 process.exit(problems.length ? 1 : 0);

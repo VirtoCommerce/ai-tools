@@ -109,5 +109,19 @@
       { "id": "html02", "type": "text", "heading": "h3", "title": "AGENT-TEST HTML Name Price Only", "text": "<div data-vc-track=\"product-list\" data-list-id=\"agent_test_html_partial\" data-list-name=\"AGENT-TEST HTML Name Price Only\">@@cards-partial:htmlPartial@@</div>" },
       { "id": "favorites03", "type": "favorite-products", "title": { "text": "AGENT-TEST GA4 Favorites No Match" }, "subtitle": { "text": "empty container" }, "viewMode": "grid", "count": 4, "filter": "\"code\":\"AGENT-TEST-GA4-NO-SUCH-SKU\"" }
     ]
+  },
+  "PB_SINGLE_LANG_EN": {
+    "settings": { "header": "AGENT-TEST Single Language EN Page", "hideBreadcrumbs": false },
+    "content": [
+      { "type": "title", "heading": "h1", "title": "AGENT-TEST Single Language Page", "subtitle": null },
+      { "type": "text", "text": "This page is published in en-US only. It has no translation in any other language, so switching the storefront language must not find a translated version of it." }
+    ]
+  },
+  "PB_LOGIN_SECTION": {
+    "settings": { "header": "AGENT-TEST Login Section Page", "hideBreadcrumbs": false },
+    "content": [
+      { "type": "title", "heading": "h1", "title": "AGENT-TEST Login Section Page", "subtitle": null },
+      { "id": "login01", "type": "login" }
+    ]
   }
 }
