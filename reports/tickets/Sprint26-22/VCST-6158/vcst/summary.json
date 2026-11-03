@@ -153,7 +153,7 @@
       },
       {
         "case": "SR-CP-084",
-        "reason": "failed on in-scope bug VCST-6673"
+        "reason": "failed on in-scope bug VCST-6677"
       },
       {
         "case": "SR-CP-083",
@@ -175,7 +175,7 @@
         "note": "SR-CP-074 re-run alone after the SR_UNSERVED_ORG write-back → PASS; no results file, outside the RUN_ID — the run-file numbers above are authoritative"
       },
       "fails": [
-        "SR-CP-084 (VCST-6673)",
+        "SR-CP-084 (VCST-6677)",
         "CPN-014 RE-BASE (VCST-6675, pre-existing)",
         "SR-CP-050 RE-BASE (test-defect: layout payload now carries the coupons maxRows)"
       ],
@@ -266,14 +266,15 @@
   },
   "bugs_filed": [
     {
-      "key": "VCST-6673",
+      "key": "VCST-6677",
       "severity": "Medium",
-      "relationship": "sub-task",
+      "relationship": "related",
       "parent_or_linked_ticket": "VCST-6158",
       "summary": "Coupon Expires shows the day after the code stops working (browser time zone)",
       "provenance": "IN-SCOPE",
       "autofix_labels": false,
-      "title": "Coupon Expires shows the day after the code stops working"
+      "title": "Coupon Expires shows the day after the code stops working",
+      "note": "re-filed as a standalone Bug 2026-11-03 at the operator's request; sub-task VCST-6673 cancelled"
     },
     {
       "key": "VCST-6675",

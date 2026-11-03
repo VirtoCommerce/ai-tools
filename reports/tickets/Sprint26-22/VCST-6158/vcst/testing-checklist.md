@@ -34,7 +34,7 @@ Regression track: C1 REG-2026-11-03-1732 — 37 ids, run files: **28 PASS / 3 FA
 | C-14 | Promotion end earlier ⇒ Expires = promotion end | AC-09 | S7 | 4a-BE + FE | PASS (C1 SR-GQL-166) |
 | C-15 | No end ⇒ no Expires line, sorts last | AC-10 | S14, S10 | 4a-FE + BE | PASS (C1 SR-CP-073) |
 | C-16 | Soonest end first; ties stable | AC-10 | S10 | 4a-BE | PASS (C1 SR-GQL-169) |
-| C-17 | The date shown is never after the last day the code works | 3x | S29 | 4a-FE | FAIL — Medium, filed VCST-6673; reference time zone = PO QUESTION (C1 SR-CP-084 FAIL) |
+| C-17 | The date shown is never after the last day the code works | 3x | S29 | 4a-FE | FAIL — Medium, filed VCST-6677; reference time zone = PO QUESTION (C1 SR-CP-084 FAIL) |
 
 ## D. Uses line (AC-05, AC-06)
 | # | Condition | Source | Scenario | Owner / status | Verdict |
@@ -87,4 +87,4 @@ Regression track: C1 REG-2026-11-03-1732 — 37 ids, run files: **28 PASS / 3 FA
 Back to customer dead-end · widget skeleton −44 px · lowercase code uppercased (VC-PROMO-003) · xAPI order.coupons INVALID_OPERATION · rep API totalUsesCount stale for uncapped coupons · regular card code column breaks codes mid-word at 1024–1280.
 
 ## Open PO questions and unverified suspects
-Member-bound coupon hidden from the bound org that can redeem it · a cancelled order keeps the coupon use · uses-line wording · number grouping · reference time zone (with VCST-6673) · AC-11 spec conflict · **unverified suspect:** a promotion-level total usage limit of 1 was applied twice in the cart (3x; platform marketing, needs a VirtoOZ check — revenue-relevant, needs a human call).
+Member-bound coupon hidden from the bound org that can redeem it · a cancelled order keeps the coupon use · uses-line wording · number grouping · reference time zone (with VCST-6677) · AC-11 spec conflict · **unverified suspect:** a promotion-level total usage limit of 1 was applied twice in the cart (3x; platform marketing, needs a VirtoOZ check — revenue-relevant, needs a human call).
