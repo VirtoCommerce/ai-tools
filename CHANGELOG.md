@@ -28,7 +28,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   `.env.<env>` beside it is reported as `kept, but …` (by `normalize-env` too), so `--check` says why a project still
   falls back to `vcst`.
 - An `export TEST_ENV=<env>` line is reported as such: the resolvers read it, the Playwright lanes do not. An empty
-  `TEST_ENV=` no longer takes its value from the next line.
+  `TEST_ENV=` no longer takes its value from the next line. A UTF-8 BOM is dropped and, of several `TEST_ENV` lines,
+  the last wins — both as dotenv reads them.
 - Only an `.env.<x>` holding `BACK_URL` counts as an environment, so a Vite / Next repo's `.env.development` /
   `.env.production` does not turn a one-env project into `several-envs`.
 - `normalize-env` adds only the `.env.test-env` entry to `.gitignore` (its own block), never the whole onboarding list

@@ -23,10 +23,12 @@ export const SELECTOR_FILE = ".env.test-env";
 
 /** The env a selector text names, or null, and whether its line carries dotenv's `export ` prefix — which
  *  the resolvers accept but lib/passwords.mjs currentEnv() (the Playwright lanes) does not. `[ \t]` and not
- *  `\s`, so an empty `TEST_ENV=` never takes its value from the next line. */
+ *  `\s`, so an empty `TEST_ENV=` never takes its value from the next line. A UTF-8 BOM (Notepad, PowerShell
+ *  5.1's Set-Content -Encoding UTF8) is dropped, as dotenv does; of several lines the LAST wins, as in dotenv. */
 export function parseSelector(text) {
-  const m = /^[ \t]*(export[ \t]+)?TEST_ENV[ \t]*=[ \t]*["']?([^"'\s#]+)/m.exec(String(text ?? ""));
-  return { env: m?.[2] ?? null, exported: !!m?.[1] };
+  const lines = [...String(text ?? "").replace(/^﻿/, "").matchAll(/^[ \t]*(export[ \t]+)?TEST_ENV[ \t]*=[ \t]*["']?([^"'\s#]*)/gm)];
+  const m = lines[lines.length - 1];
+  return { env: m?.[2] || null, exported: !!m?.[1] };
 }
 
 /** true inside a git work tree whose ignore rules cover `file`; false when it is in a work tree and NOT
@@ -62,9 +64,10 @@ function inspectSelector(root, path) {
   if ((raw[0] === 0xff && raw[1] === 0xfe) || (raw[0] === 0xfe && raw[1] === 0xff) || raw.includes(0)) return { env: null, problem: "utf16" };
   const { env, exported } = parseSelector(raw.toString("utf-8"));
   if (!env) return { env: null, problem: "no-env" };
-  if (exported) return { env, problem: "exported" };
-  // An env may live in a QA_ENV_PATH folder instead, so this one is a warning, not a verdict.
+  // An env may live in a QA_ENV_PATH folder instead, so this one is a warning, not a verdict. Checked before
+  // `export`: that message says commands use the env, which is false when its file is missing.
   if (!existsSync(join(root, `.env.${env}`))) return { env, problem: "no-env-file" };
+  if (exported) return { env, problem: "exported" };
   return { env };
 }
 
