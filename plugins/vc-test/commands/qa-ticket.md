@@ -1,6 +1,6 @@
 ---
 description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed."
-argument-hint: "<TICKET> [<env>] [--yes] [--dry-run]"
+argument-hint: "<TICKET> [<env>] [--yes] [--dry-run] [--full]"
 disable-model-invocation: true
 ---
 
@@ -72,7 +72,11 @@ analyst output it reuses a `<WORK>/bundle.json` stamped for round N.
 
 `/vc-test:ticket-context <TICKET> --domain <slug>` (none without a slug); its bundle is every agent's `BUNDLE`. Its
 STOPs are this run's; on a host-governed project it reads through the host's servers (its Step 0). Before its `finish`:
-`node <plugin>/lib/keep-prepare.mjs --prepare <prepare_path> --key <TICKET>` → `PREPARE` (none if cached). A `NOT DEPLOYED:` line in `blockers[]` ⇒ BLOCKED on deploy: write
+`node <plugin>/lib/keep-prepare.mjs --prepare <prepare_path> --key <TICKET>` → `PREPARE` (none if cached). Round 1,
+without `--full`: `node <plugin>/lib/route.mjs --bundle <BUNDLE> [--prepare <PREPARE>]` (the change's shape; the
+diffs in `PREPARE` let it see a page git records as a rename). `technical-change` ⇒ STOP:
+print its `reason` and its `shape.signals`, name `next` (the scoped regression plus the sync of the existing cases), and
+say `--full` runs the scenario hunt anyway. A `NOT DEPLOYED:` line in `blockers[]` ⇒ BLOCKED on deploy: write
 `verdict.md` with it and stop.
 
 ## 2 — Change map, then scenarios

@@ -1,6 +1,6 @@
 {
   "runId": "REG-2026-11-04-0827",
-  "status": "in_progress",
+  "status": "stalled",
   "startedAt": "2026-11-04T07:28:00.250Z",
   "windowStart": "2026-11-04T07:28:00.250Z",
   "selection": "061,098",
@@ -33,5 +33,8 @@
       "status": "pending",
       "lane": "browser"
     }
-  }
+  },
+  "stalledAt": "2026-11-04T13:29:31.827Z",
+  "stalledReason": "in_progress but silent for 71 min > 45 min limit (newest: test-run-status.json)",
+  "finishedAt": "2026-11-04T13:29:31.827Z"
 }
