@@ -3248,7 +3248,7 @@
   },
   "AGENT_TEST_IMP_ROLE": {
     "_inline": true,
-    "_comment": "Ephemeral test role created and destroyed by IMP-033/034/038 in suite 082-auth-impersonation.csv. Never seeded on a persistent environment. AGENT-TEST-* naming follows the /qa-seed-data teardown convention — any orphaned instances are removed by /qa-seed-data teardown.",
+    "_comment": "Test role for IMP-033/034/038 in suite 082-auth-impersonation.csv — holds exactly platform:security:loginOnBehalf. IMP-038 needs it PRE-EXISTING: seed with `npm run seed:rbac -- --only AGENT_TEST_IMP_CUSTOMER` (role + user together; spec scripts/seed-data/platform/backoffice-rbac-specs.mjs IMP_OPERATOR_ROLE; guard td:validate:rbac; teardown `npm run seed:rbac:teardown -- --only AGENT_TEST_IMP_CUSTOMER`). IMP-033 creates a role of this name through the Admin SPA — run it only after that teardown. IMP-038 Cleanup deletes it, so re-seed before the next run.",
     "name": "AGENT-TEST-imp-role",
     "description": "Test role for impersonation regression — safe to delete",
     "permission_key": "platform:security:loginOnBehalf",
@@ -3256,7 +3256,7 @@
   },
   "AGENT_TEST_IMP_CUSTOMER": {
     "_inline": true,
-    "_comment": "Ephemeral test customer user created and destroyed by IMP-034/038. REQUIRED provisioning when (re)creating via Admin SPA: (1) Security > Users > Add (Account type=Customer, Status=Approved, Password={{DEFAULT_TEST_PASSWORD}}, no roles) → Save. (2) On the user-DETAIL blade (NOT Add dialog), set Container store=B2B-store → Save again (without B2B-store the user cannot authenticate against the storefront). (3) Create an associated Contact record (Customers > Contacts > Add, link to this user account — required for B2B storefront flows). (4) Assign AGENT_TEST_IMP_ROLE. Password is the standard test password ({{DEFAULT_TEST_PASSWORD}}) — see user_test_accounts memory.",
+    "_comment": "IMP-038 (and IMP-034) storefront operator: Customer, Approved, storeId B2B-store, a personal Contact (no organization, no membership), ONE global role AGENT_TEST_IMP_ROLE and isAdministrator=false — so the role is its only source of loginOnBehalf. Seeded by `npm run seed:rbac -- --only AGENT_TEST_IMP_CUSTOMER` (scripts/seed-data/platform/seed-backoffice-rbac.mjs, spec IMP_OPERATOR_ACCOUNT; --verify signs in on the storefront and checks the permission). Password is {{DEFAULT_TEST_PASSWORD}}. Runtime user/contact ids live in aliases.<env>.json. Teardown: `npm run seed:rbac:teardown -- --only AGENT_TEST_IMP_CUSTOMER`. IMP-038 Cleanup deletes the user, so re-seed before the next run.",
     "email": "agent-test-imp-customer@test-agent.com",
     "password": "{{DEFAULT_TEST_PASSWORD}}",
     "display_name": "Agent Test Impersonation Customer",
@@ -11115,6 +11115,58 @@
     "full_list_id": "agent_test_html_full",
     "partial_list_id": "agent_test_html_partial",
     "empty_favorites_title": "AGENT-TEST GA4 Favorites No Match"
+  },
+  "WL_GA4_SELECT_ITEM": {
+    "_inline": true,
+    "seed": "seed:ga4-lists:wishlist",
+    "_comment": "VCST-6626 GA4 wishlist select_item subject: the run account ({{USER_EMAIL}}) holds exactly ONE Lists entry named AGENT-TEST-6626-GA4-WL with exactly 3 products at quantity 1, taken from the VCST-6017 pool group `wishlist` (disjoint from every cart / saved-for-later / recently-browsed / Page Builder list, distinct prices), so a select_item carrying another line or another list is visible. `seed:ga4-lists:wishlist` CONVERGES it from any state (extra lists of that name and foreign lines are removed). FIFTH RULE: the list is per-user state a run can edit, so re-run it right before the case. Teardown: `npm run seed:ga4-lists:teardown -- --only wishlist` (removes the list). Runtime id, product ids and url in aliases.<env>.json.",
+    "name": "AGENT-TEST-6626-GA4-WL",
+    "lists_url": "/account/lists",
+    "item_count": 3
+  },
+  "VCST6626_PROFILE_BUYER": {
+    "_inline": true,
+    "seed": "node scripts/seed-data/auth/mfa-fixtures.mjs --run vcst6626",
+    "_comment": "VCST-6626 disposable confirmed B2B-store buyer for the 033 profile / address field-error rows (safe to edit). Created per run by the MFA fixtures creator (kind customer-confirmed); runtime user_id/contact_id in aliases.<env>.json; teardown: node scripts/seed-data/auth/mfa-fixtures.mjs --teardown --run vcst6626.",
+    "store_id": "B2B-store",
+    "password_var": "TEST_USER_PASSWORD",
+    "run_id": "vcst6626",
+    "kind": "customer-confirmed",
+    "email": "agent-test-mfa-vcst6626-customer-confirmed@example.com",
+    "user_id": "",
+    "contact_id": ""
+  },
+  "VCST6626_MFA_PER_USER_2FA": {
+    "_inline": true,
+    "seed": "node scripts/seed-data/auth/mfa-fixtures.mjs --run vcst6626",
+    "_comment": "VCST-6626 B2B-store buyer with the per-user two-factor flag on, for the 111 per-user MFA rows (store MFA mode stays off). Created per run by the MFA fixtures creator (kind per-user-2fa); runtime user_id/contact_id in aliases.<env>.json; teardown: node scripts/seed-data/auth/mfa-fixtures.mjs --teardown --run vcst6626.",
+    "store_id": "B2B-store",
+    "password_var": "TEST_USER_PASSWORD",
+    "run_id": "vcst6626",
+    "kind": "per-user-2fa",
+    "email": "agent-test-mfa-vcst6626-per-user-2fa@example.com",
+    "user_id": "",
+    "contact_id": ""
+  },
+  "PB_LOGIN_SECTION": {
+    "_inline": true,
+    "seed": "seed:cms-pages",
+    "_comment": "VCST-6626 MFASF-014 static-page sign-in host: a Page Builder content page whose only functional block is the storefront `login` static-content block (login.vue renders LoginFormSection, the second host of the sign-in form). No personalization. Anonymous visitors reach it only while the store allows anonymous users (store setting Stores.AllowAnonymousUsers, read by the storefront as store.settings.anonymousUsersAllowed). Seed: `TEST_ENV=<env> node scripts/seed-data/cms/seed-pagebuilder-pages.mjs --only PB_LOGIN_SECTION`; archive with `--teardown --only PB_LOGIN_SECTION`. Runtime group_id in aliases.<env>.json.",
+    "name": "AGENT-TEST Login Section Page",
+    "permalink": "/agent-test-login-section",
+    "url": "/agent-test-login-section",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "PB_SINGLE_LANG_EN": {
+    "_inline": true,
+    "seed": "seed:cms-pages",
+    "_comment": "VCST-6626 single-language language-switch subject: ONE Page Builder page published in en-US ONLY, with NO sibling page in any other culture at its permalink (contrast PB_RETURN_POLICY, the multi-language subject). Plain title + text blocks only, because a category/product block rewrites the URL. No personalization, so a signed-in B2B-store buyer reaches it. Seed: `TEST_ENV=<env> node scripts/seed-data/cms/seed-pagebuilder-pages.mjs --only PB_SINGLE_LANG_EN`; teardown (archive) with `--teardown --only PB_SINGLE_LANG_EN`. Runtime group_id in aliases.<env>.json.",
+    "name": "AGENT-TEST Single Language EN Page",
+    "permalink": "/agent-test-single-language-en",
+    "url": "/agent-test-single-language-en",
+    "culture": "en-US",
+    "expect_status": "Published"
   },
   "PUNCHOUT_CONFIG_0": {
     "_inline": true,

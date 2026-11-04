@@ -11,7 +11,9 @@
  *                      → CART_GA4_SFL_RB. FIFTH RULE: this is pooled, test-mutable state (every PDP visit by
  *                      the account rewrites recently-browsed; other suites use the same cart), so it is a
  *                      PRECONDITION to re-run immediately before the case, not durable seed data.
- *   (no --only)        all three. The Page Builder pages are `npm run seed:cms-pages -- --only PB_GA4_…`.
+ *   --only wishlist    the run account's Lists entry WISHLIST_NAME CONVERGED to exactly the pool's 3 wishlist
+ *                      products at quantity 1 → WL_GA4_SELECT_ITEM (VCST-6626 wishlist select_item check)
+ *   (no --only)        all four. The Page Builder pages are `npm run seed:cms-pages -- --only PB_GA4_…`.
  *
  * Rules, shapes and the disjoint product pool live in ./ga4-lists-specs.mjs + ./ga4-pool.mjs (shared with
  * the Page Builder seeder and the drift guard). Runtime ids → aliases.<env>.json.
@@ -30,9 +32,9 @@ import { productSlug } from '../products/standard-specs.mjs';
 import {
   SEED_PREFIX, CURRENCY, CULTURE, CATEGORY_PATH, PRICELIST_NAME, RELATED, VARIATIONS, STOREFRONT_WINDOWS, ALIASES,
   variationSpecs, buildProductBody, buildAssociationBodies, isSeededAssociation, partitionProblems, validateSpec,
-  savedForLaterTarget, RB_SESSION_ID,
+  savedForLaterTarget, RB_SESSION_ID, WISHLIST_NAME,
 } from './ga4-lists-specs.mjs';
-import { discoverGa4Pool } from './ga4-pool.mjs';
+import { discoverGa4Pool, isUnauthorized, runAccountToken } from './ga4-pool.mjs';
 
 const specProblems = validateSpec();
 if (specProblems.length) {
@@ -40,17 +42,25 @@ if (specProblems.length) {
   for (const p of specProblems) console.error(`  ✗ ${p}`);
   process.exit(2);
 }
-const PARTS = ['related', 'variations', 'cart'];
+const PARTS = ['related', 'variations', 'cart', 'wishlist'];
 const want = ONLY ? new Set(String(ONLY).split(',')) : new Set(PARTS);
 for (const w of want) if (!PARTS.includes(w)) { console.error(`--only: unknown part "${w}" (${PARTS.join('|')})`); process.exit(2); }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// A guest read (no token) on a store that does not allow anonymous users comes back `Unauthorized`; it is
+// then re-asked as the run account, whose no-org view is the one the suite asserts (see ga4-pool.mjs).
+let _readToken = null;
 async function gql(query, variables = {}, token = null) {
-  const res = await fetch(`${BACK_URL}/graphql`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  const send = (t) => fetch(`${BACK_URL}/graphql`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
     body: JSON.stringify({ query, variables }),
   });
-  const j = await res.json().catch(() => null);
+  let res = await send(token ?? _readToken);
+  let j = await res.json().catch(() => null);
+  if (!token && !_readToken && isUnauthorized(j) && (_readToken = await runAccountToken(BACK_URL, STORE_ID))) {
+    res = await send(_readToken);
+    j = await res.json().catch(() => null);
+  }
   if (!res.ok || j?.errors?.length) throw new Error(`graphql ${res.status}: ${JSON.stringify(j?.errors || '').slice(0, 240)}`);
   return j.data;
 }
@@ -303,6 +313,42 @@ async function seedCart(pool) {
     saved_for_later_count: sfl.items.length, sfl_show_more_step: STOREFRONT_WINDOWS.savedForLaterStep, url: '/cart' };
 }
 
+const WL_LIST_Q = `query($s:String!,$u:String!){ wishlists(storeId:$s,userId:$u,cultureName:"${CULTURE}",currencyCode:"${CURRENCY}",first:100){ items{ id name items{ id productId sku name quantity } } } }`;
+const WL_CREATE_M = `mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id } }`;
+const WL_ADD_M = `mutation($c:InputAddWishlistItemType!){ addWishlistItem(command:$c){ id } }`;
+const WL_REMOVE_ITEM_M = `mutation($c:InputRemoveWishlistItemType!){ removeWishlistItem(command:$c){ id } }`;
+const WL_REMOVE_M = `mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }`;
+const ourWishlists = async (s) => ((await gql(WL_LIST_Q, { s: STORE_ID, u: s.userId }, s.token)).wishlists?.items || []).filter((l) => l.name === WISHLIST_NAME);
+
+/** CONVERGE the run account's WISHLIST_NAME list to exactly the pool's wishlist products at qty 1 (one list). */
+async function seedWishlist(pool) {
+  const s = await accountSession();
+  const target = pool.wishlist, ids = target.map((p) => p.id);
+  let lists = await ourWishlists(s);
+  if (DRY_RUN) { log(`[DRY] wishlist "${WISHLIST_NAME}": ${lists.length ? 'reuse' : 'create'}; target [${target.map((p) => p.code)}]`); return null; }
+  for (const extra of lists.slice(1)) await gql(WL_REMOVE_M, { c: { listId: extra.id } }, s.token);
+  let list = lists[0];
+  if (!list) {
+    const id = (await gql(WL_CREATE_M, { c: { ...base(s), listName: WISHLIST_NAME, scope: 'Private' } }, s.token)).createWishlist?.id;
+    list = { id, items: [] };
+  }
+  const seen = new Set();
+  for (const i of list.items || []) {
+    if (ids.includes(i.productId) && !seen.has(i.productId) && i.quantity === 1) { seen.add(i.productId); continue; }
+    await gql(WL_REMOVE_ITEM_M, { c: { listId: list.id, lineItemId: i.id } }, s.token);
+  }
+  for (const p of target) if (!seen.has(p.id)) await gql(WL_ADD_M, { c: { listId: list.id, productId: p.id, quantity: 1 } }, s.token);
+  lists = await ourWishlists(s);
+  const got = lists[0]?.items || [];
+  if (lists.length !== 1 || !sameSet(got.map((i) => i.productId), ids) || got.some((i) => i.quantity !== 1)) {
+    throw new Error(`wishlist proof failed: ${lists.length} list(s), items [${got.map((i) => `${i.sku}x${i.quantity}`).join(',')}], want [${target.map((p) => p.code)}] x1`);
+  }
+  log(`✓ wishlist proof: "${WISHLIST_NAME}" = [${target.map((p) => p.code).join(',')}] x1 (${got.length} items, distinct prices)`);
+  return { id: lists[0].id, name: WISHLIST_NAME, item_count: got.length,
+    product_codes: target.map((p) => p.code).join(','), product_ids: ids.join(','), product_names: target.map((p) => p.name).join('|'),
+    url: `/account/lists/${lists[0].id}`, lists_url: '/account/lists' };
+}
+
 /* ── main / teardown ─────────────────────────────────────────────────────── */
 async function main() {
   assertSafeTarget();
@@ -318,6 +364,7 @@ async function main() {
     if (want.has('variations')) { const r = await seedVariations(ctx); if (r) writeback[ALIASES.variations] = r; }
   }
   if (want.has('cart')) { const r = await seedCart(pool); if (r) writeback[ALIASES.cart] = r; }
+  if (want.has('wishlist')) { const r = await seedWishlist(pool); if (r) writeback[ALIASES.wishlist] = r; }
   if (!DRY_RUN && Object.keys(writeback).length) {
     writeEnvAliasOverride(writeback);
     log(`✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: ${Object.keys(writeback).join(', ')}`);
@@ -350,6 +397,14 @@ async function teardown() {
       return [...(c?.items || []), ...(l?.items || [])].filter((i) => ours.has(i.productId));
     });
     log(`${left ? '⚠' : '✓'} cart: ${sflOurs.length} SFL item(s) moved back + seeded lines removed — residue ${left} (recently-browsed history is not deletable)`);
+    if (left && !DRY_RUN) process.exitCode = 1;
+  }
+  if (want.has('wishlist')) {
+    const s = await accountSession();
+    const lists = await ourWishlists(s);
+    if (!DRY_RUN) for (const l of lists) await gql(WL_REMOVE_M, { c: { listId: l.id } }, s.token);
+    const left = await verifyRemoved(async () => (DRY_RUN ? [] : await ourWishlists(s)));
+    log(`${left ? '⚠' : '✓'} wishlist: removed ${lists.length} "${WISHLIST_NAME}" list(s) — residue ${left}`);
     if (left && !DRY_RUN) process.exitCode = 1;
   }
   const codes = [];

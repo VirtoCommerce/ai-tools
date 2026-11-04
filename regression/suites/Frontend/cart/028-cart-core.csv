@@ -977,3 +977,122 @@ coupon_code=@td(COUPON_THRESH50.code)","[NAV] navigate to {{FRONT_URL}}
 [API] addCoupon mutation at/above threshold: errors[] empty and cart.coupons[0].isAppliedSuccessfully = true
 [CONSOLE] no JS errors
 [NETWORK] no 5xx",coupon applies below the $50 threshold (min-order rule not enforced); Discount row disappears entirely instead of showing $0.00 below threshold; dashed border relied on as an error signal (it is also the default state); coupon still rejected once subtotal reaches/exceeds $50; discount calculated against list price instead of already-discounted price; order total does not match subtotal − discount + tax (tax on discounted base),Click trash icon to remove the coupon after test; restore cart quantity,"Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend PR #2422 (VCST-5518) useCoupon.ts applyCoupon — validate-before-remove + COUPON_ERROR_TIMEOUT=7000. LIVE 2026-08-06 (theme 2.55.0-pr-2417, #2422 NOT deployed): below-threshold sends validateCoupon->false with NO addCoupon and fails SILENTLY (no error UI); at/above threshold applies 10% with tax-on-discounted-base. Error message + 7s auto-clear are #2422-gated (re-verify once >=pr-2422 deploys); Docs: N/A — implementation-detail",Draft
+CART-119,"Cart — physical cart on single-page checkout shows Shipping, Payment and Order comment",Cart > Single-page checkout sections,Critical,BL-CHK-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Single-page checkout mode: the cart page itself carries the checkout sections (the theme multi-step setting is off). The cart holds exactly one physical product, added in the case.","url={{FRONT_URL}}, login={{USER_EMAIL}}, password={{USER_PASSWORD}}","--- SCREEN: Build a physical cart ---
+[GQL] xAPI products(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 20, filter: ""productType:Physical"") { items { id code name slug productType minQuantity maxQuantity } } on {{FRONT_URL}}/graphql with the signed-in buyer token
+[CAPTURE] PHYS_CODE, PHYS_NAME = the first item that is purchasable without a configuration step (a physical product, productType Physical)
+[SETUP] empty the cart of the signed-in buyer (remove every line on {{FRONT_URL}}/cart) so that PHYS is the only line
+[NAV] {{FRONT_URL}}/search?q=PHYS_CODE
+[ACT] open the product card of PHYS_CODE, click '+' (Increase quantity) once
+[WAIT] the 'in Cart' indicator shows 1
+--- SCREEN: Cart page ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page and its order summary have rendered
+[KEY] record the headings of the checkout sections on the cart page in document order as SECTIONS_1, and for each the vertical gap to the next section block in pixels as GAPS_1
+[ASSERT] read whether each of 'Shipping details', 'Payment' and 'Order comment' is present, and whether a 'Place order' button is present
+[ACT] reload the page
+[WAIT] the cart page has rendered again
+[KEY] record SECTIONS_2 and GAPS_2 the same way","[DOM] 'Shipping details', 'Payment' and 'Order comment' are each present exactly once on the cart page of a physical cart {SPEC} (test model S10, AC-8)
+[STATE] the three sections are in the order Shipping details, Payment, Order comment, and SECTIONS_2 equals SECTIONS_1 after the reload {SPEC} (AC-8)
+[MATH] every value of GAPS_1 and GAPS_2 = N with N > 0: no two section blocks touch or overlap (the fork spacing class survived the hand-merged cart.vue) {SPEC} (S10)
+[DOM] the 'Place order' button is present and enabled-state follows the sections' validity {BL} (BL-CHK-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",a section missing or duplicated after the hand-merged cart.vue; sections touching each other; Place order absent,Remove the product from the cart,VCST-6626 · Archetype:RENDER · Technique:EP,Draft
+CART-120,Cart — an all-digital cart hides Shipping and keeps Payment,Cart > Single-page checkout sections,High,BL-CHK-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Single-page checkout mode. Two products are used: one digital (productType Digital) and one physical, both discovered in the case.","url={{FRONT_URL}}, login={{USER_EMAIL}}, password={{USER_PASSWORD}}","--- SCREEN: Digital-only cart ---
+[GQL] xAPI products(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 20, filter: ""productType:Digital"") { items { id code name slug productType minQuantity maxQuantity } } on {{FRONT_URL}}/graphql with the signed-in buyer token
+[CAPTURE] DIG_CODE, DIG_NAME = the first item that is purchasable without a configuration step (a digital product, productType Digital)
+[SETUP] empty the cart of the signed-in buyer, then add DIG_CODE once through its product card '+' (Increase quantity)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page and its order summary have rendered
+[ASSERT] read whether 'Shipping details' and 'Payment' are present
+--- SCREEN: Add a physical product (mixed cart) ---
+[GQL] xAPI products(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 20, filter: ""productType:Physical"") { items { id code name slug productType minQuantity maxQuantity } } on {{FRONT_URL}}/graphql with the signed-in buyer token
+[CAPTURE] PHYS_CODE, PHYS_NAME = the first item that is purchasable without a configuration step (a physical product, productType Physical)
+[ACT] add PHYS_CODE once through its product card '+' (Increase quantity)
+[WAIT] the page settles (spinner gone, network idle)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with two lines
+[ASSERT] read whether 'Shipping details' and 'Payment' are present
+--- SCREEN: Remove the physical product again ---
+[ACT] remove the PHYS_CODE line from the cart
+[WAIT] the cart shows only DIG_CODE
+[ASSERT] read whether 'Shipping details' is present","[DOM] with only the digital product in the cart 'Shipping details' is absent and 'Payment' is present {SPEC} (AC-8, T-09: allItemsAreDigital)
+[DOM] with a physical product added 'Shipping details' appears, and 'Payment' stays {SPEC} (AC-8)
+[DOM] after the physical product is removed 'Shipping details' disappears again without a reload {SPEC} (AC-8)
+[COUNT] the number of sections among 'Shipping details' and 'Payment' shown = 1 on the digital-only cart and = 2 on the mixed cart {SPEC} (AC-8)
+[STATE] 'Shipping details' is not rendered anywhere on the page for the digital-only cart {BL} (BL-CHK-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Shipping details shown for a digital-only cart (allItemsAreDigital not wired); Shipping not returning for a mixed cart,Remove every product from the cart,VCST-6626 · Archetype:RENDER · Technique:DT,Draft
+CART-121,Cart — the incomplete-data warning counts only the sections shown,Cart > Single-page checkout sections,Medium,BL-CHK-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Single-page checkout mode. The warning under test is the one the cart shows near 'Place order' when a visible checkout section has incomplete data. If the build shows no such warning for an incomplete Payment section in either leg, the case is BLOCKED (state not reachable), never FAIL.","url={{FRONT_URL}}, login={{USER_EMAIL}}, password={{USER_PASSWORD}}","--- SCREEN: Digital-only cart with an incomplete Payment section ---
+[GQL] xAPI products(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 20, filter: ""productType:Digital"") { items { id code name slug productType minQuantity maxQuantity } } on {{FRONT_URL}}/graphql with the signed-in buyer token
+[CAPTURE] DIG_CODE = the first item that is purchasable without a configuration step (a digital product, productType Digital)
+[SETUP] empty the cart, add DIG_CODE once through its product card '+' (Increase quantity)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered; no payment method is chosen
+[KEY] record the incomplete-data warning near 'Place order' as WARN_TEXT_DIGITAL and the number it states as WARN_N_DIGITAL (empty if none is shown)
+[KEY] record the list of section headings visible on the page as VISIBLE_DIGITAL
+--- SCREEN: Mixed cart, nothing chosen ---
+[GQL] xAPI products(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 20, filter: ""productType:Physical"") { items { id code name slug productType minQuantity maxQuantity } } on {{FRONT_URL}}/graphql with the signed-in buyer token
+[CAPTURE] PHYS_CODE = the first item that is purchasable without a configuration step (a physical product, productType Physical)
+[ACT] add PHYS_CODE once through its product card '+' (Increase quantity)
+[WAIT] the page settles (spinner gone, network idle)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with two lines
+[KEY] record the warning as WARN_TEXT_MIXED, the number as WARN_N_MIXED and the visible section headings as VISIBLE_MIXED","[COUNT] WARN_N_DIGITAL equals the number of sections in VISIBLE_DIGITAL that have incomplete data (only 'Payment' can: Shipping is hidden) {SPEC} (#2564, S12)
+[STATE] WARN_TEXT_DIGITAL does not name 'Shipping' or 'Shipping details' {SPEC} (#2564)
+[COUNT] WARN_N_MIXED equals the number of incomplete sections among VISIBLE_MIXED, and the digital leg's count is not larger than the mixed leg's {BL} (BL-CHK-002)
+[STATE] 'Place order' is not offered as ready while a visible section is incomplete {BL} (BL-CHK-002)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",warning counts the hidden Shipping section; warning blocks Place order for a section the buyer cannot see; no warning at all for a visible incomplete section,Remove every product from the cart,VCST-6626 · Archetype:STALE · Technique:DT,Draft
+CART-122,Cart — with multi-step checkout enabled the cart shows no checkout sections and the button opens the steps,Cart > Single-page checkout sections,High,BL-CHK-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+MULTI-STEP window, by operator decision on a LOCAL build of the same tree (checkout_multistep_enabled=true) against the vcptcore-qa backend; the result is labelled ""local build"". If the served build renders the checkout sections on the cart page (single-page mode) the case is BLOCKED for the window, never FAIL. The case never writes a store or theme setting. Run it after the single-page cases (CART-119..121).","url={{FRONT_URL}}, login={{USER_EMAIL}}, password={{USER_PASSWORD}}","--- SCREEN: Cart in multi-step mode ---
+[SETUP] confirm the window: GET {{FRONT_URL}}/ and read the theme setting checkout_multistep_enabled from the served settings; if it is not true the case is BLOCKED (needs the multi-step window)
+[GQL] xAPI products(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 20, filter: ""productType:Physical"") { items { id code name slug productType minQuantity maxQuantity } } on {{FRONT_URL}}/graphql with the signed-in buyer token
+[CAPTURE] PHYS_CODE = the first item that is purchasable without a configuration step (a physical product, productType Physical)
+[SETUP] empty the cart, add PHYS_CODE once through its product card '+' (Increase quantity)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page and its order summary have rendered
+[ASSERT] read whether 'Shipping details', 'Payment' and 'Order comment' are present on the cart page, and the label of the primary button of the order summary (PROCEED_LABEL)
+[ACT] click the button PROCEED_LABEL in the order summary
+[WAIT] the URL leaves /cart (up to 15s)
+[KEY] record the URL as STEP_URL and the heading of the step page as STEP_H1
+[ASSERT] read whether the step page renders its form (at least one input or a section heading) and whether the console shows a JS error","[DOM] in multi-step mode the cart page shows none of 'Shipping details', 'Payment', 'Order comment' {SPEC} (AC-11)
+[NAV] the primary button leads to a /checkout step (STEP_URL starts with {{FRONT_URL}}/checkout) and not to a dead route or back to /cart {SPEC} (AC-11, VC-CHECKOUT-002)
+[DOM] the step heading STEP_H1 is visible and non-empty and the first step renders its form fields {SPEC} (AC-11)
+[STATE] no JS error in the console on the step page {BL} (VC-CHECKOUT-002: Place order with multi-step history VCST-5369)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",cart still renders the checkout sections in multi-step mode (isSinglePageCheckout ignores the flag after the hand-merge); the button goes nowhere; blank step page,Remove the product from the cart; the operator restores checkout_multistep_enabled to its previous value and the next run re-reads it,VCST-6626 · Archetype:RENDER · Technique:ST · Probe:VC-CHECKOUT-002,Draft
+CART-123,Cart — a product with no maximum quantity can still be increased on its cart line,Cart > Single-page checkout sections,High,BL-CART-001,ECL-5.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Two products are discovered in the case: A with no maximum quantity (maxQuantity 0 or null) and B, a control, with a real maximum (maxQuantity greater than 1). If no product with a real maximum exists the control leg is recorded SKIPPED and the A leg still decides.","url={{FRONT_URL}}, login={{USER_EMAIL}}, password={{USER_PASSWORD}}","--- SCREEN: Product A, no maximum ---
+[GQL] xAPI products(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 30) { items { code name minQuantity maxQuantity productType } } on {{FRONT_URL}}/graphql with the signed-in buyer token
+[CAPTURE] A_CODE = the first purchasable physical item with minQuantity <= 1 and maxQuantity equal to 0 or null; B_CODE = the first purchasable physical item with maxQuantity greater than 1 (B_MAX = its maxQuantity); if no A exists the case is BLOCKED (fixture drift)
+[SETUP] empty the cart, add A_CODE once through its product card '+' (Increase quantity)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with the A_CODE line at quantity 1
+[ACT] click '+' (Increase quantity) on the A_CODE line
+[WAIT] the line total recalculates
+[KEY] record the line quantity as QTY_PLUS and the line total as TOTAL_PLUS
+[ACT] set the quantity input of the A_CODE line to 10
+[ACT] press Enter
+[WAIT] the line total recalculates
+[KEY] record the line quantity as QTY_TYPED and the line total as TOTAL_TYPED
+--- SCREEN: Control product B, a real maximum ---
+[ACT] add B_CODE once through its product card '+' (Increase quantity)
+[WAIT] the page settles (spinner gone, network idle)
+[NAV] {{FRONT_URL}}/cart
+[ACT] set the quantity input of the B_CODE line to B_MAX + 1
+[ACT] press Enter
+[WAIT] the line settles
+[KEY] record the quantity shown on the B_CODE line as QTY_B and whether a limit message or a disabled '+' is shown","[STATE] QTY_PLUS is 2: a product with no maximum quantity can still be increased from the cart line {BL} (BL-CART-001; ECL-5.3: maxQuantity 0 means no limit)
+[STATE] QTY_TYPED is 10 and TOTAL_TYPED equals the unit price times 10 to two decimals {BL} (BL-CART-001)
+[STATE] the '+' (Increase quantity) control of the A_CODE line is not disabled at quantity 10 {SPEC} (S41: max === 0 is no longer treated as unlimited by the stepper, which must not become a real maximum of 0)
+[COUNT] QTY_B is not greater than B_MAX and a limit message or a disabled '+' is shown: the stepper still enforces a real maximum {BL} (BL-CART-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",the stepper blocks every increase on a product without a maximum (max 0 read as a real limit); the control product accepts more than its maximum,Remove both products from the cart,VCST-6626 · Archetype:BOUNDARY · Technique:BVA,Draft
