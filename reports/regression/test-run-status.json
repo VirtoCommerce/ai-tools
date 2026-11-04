@@ -1,76 +1,37 @@
 {
-  "runId": "REG-2026-11-02-2307",
-  "status": "stalled",
-  "startedAt": "2026-11-02T20:12:34.199Z",
-  "env": "vcptcore",
-  "selection": "C1 VCST-6626: 028,031,032,033,043,046,082,089,093b,111,114 --ids (65)",
+  "runId": "REG-2026-11-04-0827",
+  "status": "in_progress",
+  "startedAt": "2026-11-04T07:28:00.250Z",
+  "windowStart": "2026-11-04T07:28:00.250Z",
+  "selection": "061,098",
+  "env": "vcst",
+  "scoped": true,
+  "cases": "ids",
+  "ids": [
+    "SRCHA-006",
+    "SRCHA-007",
+    "SRCHA-012",
+    "SRCHA-019",
+    "SRCHA-047",
+    "CMP-004",
+    "CMP-007",
+    "CMP-024",
+    "CMP-032"
+  ],
+  "purpose": "Re-run of the 061 cases fixed by REG-2026-11-03-2035 triage + seed fix, and the 098 cases re-pointed off search (CMP-003 probe)",
+  "plan": "reports/regression/REG-2026-11-04-0827/preflight.json",
   "suites": {
-    "111": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-chrome"
-    },
-    "114": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "none (all cases pre-flight blocked)",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 2
-    },
-    "082": {
+    "061": {
       "status": "running",
       "lane": "browser",
-      "browser": "playwright-chrome"
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-04T07:29:29.000Z",
+      "total": 5,
+      "note": "attempt1_SRCHA-019_FAIL_retrying_case_alone"
     },
-    "028": {
+    "098": {
       "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-chrome"
-    },
-    "031": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-chrome"
-    },
-    "043": {
-      "status": "running",
-      "lane": "browser",
-      "browser": "playwright-edge"
-    },
-    "046": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-edge"
-    },
-    "032": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-edge"
-    },
-    "033": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-edge"
-    },
-    "089": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "none (all cases pre-flight blocked)",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 1
-    },
-    "093b": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "none (all cases pre-flight blocked)",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 1
+      "lane": "browser"
     }
-  },
-  "stalledAt": "2026-11-02T20:59:33.632Z",
-  "stalledReason": "no progress for 45 min (REG-2026-11-02-2307:in_progress:5:24:4)",
-  "finishedAt": "2026-11-02T20:59:33.632Z"
+  }
 }

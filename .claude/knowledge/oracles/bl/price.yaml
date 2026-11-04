@@ -28,6 +28,7 @@ rules:
     verified:
       date: 2026-10-29
       by: REG-2026-10-28-1915
+    suspect_reason: "[case] CPN-014 failed in REG-2026-11-03-1732"
   - id: BL-PRICE-002
     title: Tax calculation position
     rule: Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).

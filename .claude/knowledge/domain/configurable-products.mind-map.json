@@ -1751,16 +1751,23 @@
         {
           "class": "SPEC",
           "ref": "CFG-GQL-046",
-          "note": "Automated; VCST-5053, BL-CART-012"
+          "note": "Automated; VCST-5053, BL-CART-012. Since VCST-6185 the case merges the caller's own named cart, not a guest cart"
         },
         {
           "class": "OBSERVED",
           "ref": "kb:KB-66089074",
           "note": "merge is server-side during sign-in",
           "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-07721573",
+          "note": "the storefront sends an explicit MergeCart at sign-in with the guest's current cart, which can be a named cart",
+          "date": "2026-11-03"
         }
       ],
-      "notes": "integrates with: cart — the guest to signed-in cart merge"
+      "oracle_refs": ["BL-CART-016"],
+      "notes": "integrates with: cart — the guest to signed-in cart merge. VCST-6185 (BL-CART-016): mergeCart refuses a second cart the caller does not own unless it is a guest cart, so a cross-customer merge can no longer reach this node; CFG-GQL-046/047 now merge the caller's own named cart, which proves configuration survives a merge but not the guest path itself. Stays UNVERIFIED until a configured line is observed through a guest-to-signed-in merge. KB-66089074 (server-side merge) and KB-07721573 (explicit MergeCart at sign-in) disagree on how sign-in merges; KB-B4490B0B is disputed."
     },
     {
       "id": "cat.cfg.cart-line.saved-for-later",
@@ -2802,5 +2809,5 @@
       "type": "branches_to"
     }
   ],
-  "amended": "2026-10-20"
+  "amended": "2026-11-03"
 }
