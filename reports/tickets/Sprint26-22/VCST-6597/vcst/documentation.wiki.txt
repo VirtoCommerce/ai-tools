@@ -1,0 +1,77 @@
+h2. Documentation — VCST-6597: Each store decides who signs in with an emailed code
+
+h3. What's new
+Each store now chooses who must enter a one-time code from email after the password. Two new store modes
+join *Use global setting*, *Enabled* and *Disabled*:
+* *AdminManaged*: an administrator decides per customer and per company.
+* *CustomerChoice*: customers turn two-factor authentication on or off for themselves, and a company maintainer can require it for every member.
+
+Every storefront change is confirmed with a code sent by email. A customer whose own store requires the
+code is asked for it even when the sign-in names no store or another store.
+Shipped in: VirtoCommerce.MFA@3.1002.0-pr-3-1a0f · theme@2.62.0-pr-2622-caac-caac275a · platform@3.1094.0
+
+h3. How to set it up
+# In the back office, click *Stores*, select the store, and open the *SETTINGS* widget.
+# Under *Store > Security*, pick a mode in *Multi-factor authentication*, click *OK*, then *Save*.
+!doc-01-store-setting.png|width=700!
+
+||Mode||Who needs the code||
+|Use global setting|Whatever the global *Multi-factor authentication* setting says|
+|Enabled|Everyone who signs in to the store|
+|Disabled|Nobody among the store's own customers; Backoffice accounts and other stores' users follow the global setting|
+|AdminManaged|Only customers and companies the administrator set to *Required*|
+|CustomerChoice|Customers who turned it on, members of a company that requires it, and anyone set to *Required*|
+
+* *Back-office permissions:* {{mfa:read}} shows the *Multi-factor authentication* widget on user and organization blades, read-only. {{mfa:manage}} also lets you change and save the mode.
+* *Company switch:* maintainers need the {{xapi:my_organization:mfa:manage}} permission on their organization role. No stock organization role carries it.
+* *Turning it on in the storefront* needs a confirmed email.
+
+{panel:title=Confirm emails first|bgColor=#FFFAE6}
+A user whose email is not confirmed cannot receive the code, so once MFA applies to them they cannot
+sign in. Confirm the emails of the users before you require MFA for them or their company.
+{panel}
+
+h3. How it works
+
+h4. An administrator sets a customer or a company
+# In the back office, open the customer's account (or the organization) and click the *MULTI-FACTOR AUTHENTICATION* widget.
+# Pick *Off*, *Enabled* or *Required* in *Mode*. *Effective status* shows, per store, whether the code will be asked and why; it updates as a preview before you save.
+# Click *Save*. A *Required* mode cannot be turned off in the storefront.
+!doc-02-admin-mode-blade.png|width=700!
+
+In the Admin Shell the same page opens from the *MFA:* button of the user or organization blade.
+
+h4. A customer turns two-factor authentication on (CustomerChoice store)
+# Open the account menu, then *Security*. *Two-factor authentication* shows *Off*.
+!doc-03-security-off.png|width=700!
+# Click *Turn on*. A code is sent to your email; enter it and click *Confirm*.
+!doc-04-turnon-code-step.png|width=700!
+# The status shows *On*. *Turn off* works the same way, with a new code.
+!doc-05-security-on.png|width=700!
+# From the next sign-in, after your password the storefront asks for the code sent to your email.
+!doc-06-signin-code.png|width=700!
+
+!doc-gif-customer-turn-on.gif|width=700!
+
+h4. A company maintainer requires it for every member (CustomerChoice store)
+# Open *Company info*. Under *Two-factor authentication for the company*, click *Turn on* and confirm with the code sent to your email.
+!doc-07-company-code-step.png|width=700!
+# The status shows *On — Required for all company members*.
+!doc-08-company-on.png|width=700!
+# Every member is asked for the code at the next sign-in. On *Security* they see **Your company requires it** and have no switch of their own.
+!doc-09-member-company-requires.png|width=700!
+
+!doc-gif-company-requires.gif|width=700!
+
+{panel:title=Note|bgColor=#DEEBFF}
+A changed mode applies at the next password sign-in. Sessions already open, and their refresh tokens,
+keep working. OTP sign-in, passkeys and API keys are not affected.
+{panel}
+
+Video: VCST-6597-mfa-policy-per-store.mp4 — being exported, will be attached to this ticket.
+
+Not documented: the open notes of this run — a member of a company that requires MFA can still set their own mode Off through the API (VCST-6687), the Admin Shell sign-in mails an unrequested code (VCST-6694), the widget after an administrator turns MFA on for an unconfirmed email, the wording of the change-code email, and keyboard focus in the code step · AdminManaged storefront texts (read-only, with copy notes) · the store-setting and administrator scenarios have no walkthrough GIF (one step each) · the global-on behaviour of a Disabled store (verified in the regression run, not walked here)
+Verified on vcst · run REG-2026-11-04-1531 · verdict PASS WITH NOTES · captured 2026-11-04 · versions run
+
+Sources: vc-module-mfa README at the deployed commit (https://github.com/VirtoCommerce/vc-module-mfa/blob/1a0f48108b464a3bb8ae83b1b9d082f95c6a3fd1/README.md — Configuration, User and organization modes, Permissions, Rules) · VirtoOZ PlatformUserGuide / StorefrontUserGuide have no MFA page yet · kb KB-E23D35B2, KB-407E93C0, KB-94B6ECBD, KB-03964E9D, KB-18F911EF · testing-checklist rows C-1, C-2, C-3, C-4, C-16, C-19, C-20, C-22, C-23, C-27, C-29, C-32
+
