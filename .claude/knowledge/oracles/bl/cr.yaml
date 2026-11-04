@@ -27,8 +27,7 @@ rules:
       kind: manual
       ref: As an eligible buyer, submit a review for a purchased product → mutation returns a non-empty id with no validation errors → in Admin, the new review appears in the review list with Status = New → the review is absent from the public storefront review list until approved.
     violation_signal: A submitted review appears already Approved in Admin without any moderation action; the review is immediately visible on the storefront before approval; the create call returns a null id with no validation errors on a genuinely eligible purchase.
-    status: SUSPECT
-    suspect_reason: "[case] REV-GQL-001 failed in REG-2026-11-04-1022"
+    status: ACTIVE
   - id: BL-CR-008
     title: Anonymous visitors cannot access the review-submission control
     rule: "The storefront never offers the \"leave feedback\" control (button or inline form) to an unauthenticated visitor — feedback eligibility is computed only after authentication, so it defaults to unavailable for anonymous sessions. This is reinforced server-side: a review requires a completed order tied to the requesting user's id, which an anonymous session structurally cannot have."
@@ -63,8 +62,7 @@ rules:
       kind: manual
       ref: As a logged-in user with a completed order and no prior review for a product, open its page → the leave-feedback control is shown. As a logged-in user with no completed order for a different product, open that page → the control is hidden. After leaving a review, reload → the control is hidden for that product.
     violation_signal: The leave-feedback control appears for a user who never purchased the product, or reappears after the user has already reviewed it, allowing a second review attempt.
-    status: SUSPECT
-    suspect_reason: "[case] REV-GQL-009, REV-GQL-011 failed in REG-2026-11-04-1022"
+    status: ACTIVE
   - id: BL-CR-010
     title: The storefront review surface exposes only Approved reviews
     rule: Every storefront-facing review read (the reviews list and its total count) is scoped server-side to `ReviewStatus = Approved` — New and Rejected reviews are never included, regardless of any client-supplied filter. The surface supports pagination and sorting by creation date.
