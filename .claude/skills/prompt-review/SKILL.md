@@ -131,7 +131,7 @@ file:line · what · failure scenario (BLOCKER/MAJOR only) · fix`.
 - **A known, documented limitation** (e.g. plugin bare paths, `repo-profile.md` G3) is flagged only where the target
   adds a new instance or lacks the documented mitigation.
 - **Product claims:** before writing any judgement of one — "correct", "wrong", "unsourced" — ground
-  it in order: repo knowledge (`.claude/knowledge/domain/`, the BL/ECL oracles), then `/vc-docs`,
+  it in order: repo knowledge (`.claude/knowledge/domain/`, the BL/ECL oracles), then VirtoOZ (connector),
   then source (`CLAUDE.md` §Essential Rules → *Product context*). Check the claims a step **acts
   on** (gates, flags, verdict criteria, oracle ids an example teaches); list illustrative ones as
   *unverified* rather than spending a query on each. A mismatch is reported, never "fixed" by

@@ -4,7 +4,7 @@ description: "Frontend & Storefront QA Specialist - Customer-facing storefront U
 model: opus
 color: orange
 applicability: reference
-applicability_rationale: "LAYER 1 hardcodes BL-CHK-003 / BL-PRICE-001 / BL-CROSS-002. LAYER 2 is vc-frontend (Vue.js) patterns. Customer adapts for their storefront tech + BL refs to match their business invariants."
+applicability_rationale: "LAYER 1 hardcodes BL-CHK-002 / BL-PRICE-001 / BL-CROSS-002. LAYER 2 is vc-frontend (Vue.js) patterns. Customer adapts for their storefront tech + BL refs to match their business invariants."
 ---
 
 # QA Frontend Expert — Virto Commerce Storefront
@@ -21,12 +21,12 @@ You are a senior Frontend QA agent for the Virto Commerce B2B e-commerce platfor
 
 > **Reference:** `knowledge/oracles/business-logic.md` — read the file for the current invariant set; never quote a count from here.
 
-- **BL-CHK-003** Double-submit prevention: "Place Order" must disable after first click — duplicate orders = P0
+- **BL-CHK-002** Double-submit prevention: "Place Order" must disable after first click — duplicate orders = P0
 - **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
 - **BL-CART-004** Currency recalculation: switching currency must recalculate all line totals using the currency-specific price list, not just converting amounts
 - **BL-PRICE-001** Discount stacking: coupon applies to the already-discounted amount (post-tier), never to the original list price
 - **BL-CROSS-002** Search index lag: newly created/updated products may not appear for 30-60s — expected, not a bug
-- **BL-B2B-005** Org switching isolation: Org A cart ≠ Org B cart — switching orgs must not contaminate cart, addresses, or price context
+- **BL-B2B-001** Org switching isolation: Org A cart ≠ Org B cart — switching orgs must not contaminate cart, addresses, or price context
 
 ---
 

@@ -289,7 +289,7 @@ unpinned lane also stops reproducing what `ci/run-regression.ts` runs.
 Optional (each gates specific skills):
 - **postman** — enables `/qa-postman`, `/qa-api test`
 - **atlassian** — enables `/qa-bug` JIRA filing, `/qa-status`, `/qa-test-plan`
-- **context7** + **VirtoOZ MCP** — enables `/vc-docs` (docs lookup)
+- **context7** + **VirtoOZ connector** — product docs lookup (`.claude/knowledge/execution/doc-sources.md`)
 - **github** — enables `/qa-test PR #N`, `/ba-analyze`
 - **figma-remote-mcp** — enables `/qa-design` Figma comparison
 

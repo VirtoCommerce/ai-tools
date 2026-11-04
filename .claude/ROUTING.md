@@ -23,8 +23,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Run smoke tests** | `/qa-smoke [storefront\|admin]` | Command |
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|frontend\|backend\|IDs] [--cases <tier>] [--also-ids <ids>] [--no-plan]` | Command |
 | **Triage a finished regression run's failures** | `/qa-triage-results [RUN_ID\|latest] [--fix] [--verify]` | Command |
-| **Plan any regression — a sprint or a stable bundle** | `/qa-test-plan <sprint> \| stable <N> [--ref <branch>] [--ticket <KEY>]` | Command |
-| **Run any regression, then triage and publish it** (one-off, sprint, or one wave of a stable bundle) | `/qa-run <selection> \| sprint[:XX-YY] \| stable:<N> <wave> [--claim\|--continue\|--handover]` · `stable:<N> status` | Command |
+| **Plan any regression — a sprint or a stable bundle** (split into waves for several QA) | `/qa-test-plan <sprint> \| stable <N> [--ref <branch>] [--ticket <KEY>] [--no-waves]` | Command |
+| **Run any regression, then triage and publish it** (one-off, or one wave of a sprint or stable-bundle regression) | `/qa-run <selection> \| sprint:<XX-YY> <wave> \| stable:<N> <wave> [--claim\|--continue\|--handover]` · `sprint:<XX-YY> status` · `stable:<N> status` | Command |
 | **Test a ticket / feature / PR** | `/qa-test <ticket-key> \| feature \| PR #N \| --epic <KEY> [--iterate]` | Command |
 | **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory ‖ visual → triage → investigate → bugs → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--no-visual] [--dry-run]` | Command |
 | **Run an exploratory session** | `/qa-exploratory [sprint\|sprint:XX-YY\|checkout\|catalog\|B2B\|mobile\|new]` | Command |
@@ -42,7 +42,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Measure backend work per request / prove a perf change** | `/qa-perf-measure <ticket-key> \| <surface> [--ab a:b] [--scale] [--load]` | Command |
 | **Audit component/page design + UX + design spec** | `/qa-design component \| page \| flow [--storefront-only] [--design <project>]` | Command |
 | **Spin up a local VC stack** | `/qa-local-env [VCST-XXXX] [postgres\|mysql\|sqlserver]` | Command |
-| **Full test-case lifecycle (sync → … → promote)** | `/qa-test-lifecycle suite <ID> \| domain <name> \| PR #NNN \| module <name> \| diff [--promote-only]` | Command |
+| **Full test-case lifecycle (sync → … → promote)** | `/qa-test-lifecycle suite <ID> \| domain <name> \| PR <owner/repo>#N \| module <name> \| diff \| changelog <ver> \| promote VCST-XXXX` | Command |
 | **Build a sprint test plan** | `/qa-test-plan SprintXX-YY \| current \| last` | Command |
 | **Generate coverage at scale** | `/qa-coverage-gap [analyze \| generate \| validate \| full \| domain <name> \| suite <ID>]` — run per domain | Skill |
 | **Seed / teardown test data** | `/qa-seed-data [bootstrap\|minimal\|catalog\|b2b\|pricing\|inventory\|loyalty\|promotions\|bopis\|configurable\|users\|full\|teardown]` | Command |
@@ -62,6 +62,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Ask what the platform was OBSERVED to do** | `mcp__kb__kb_ask` (fallback `npm run kb -- ask "<q>"`) — rule: `CLAUDE.md` §Essential Rules → *Product context* | MCP / CLI |
 | **Report on the knowledge base itself** (what was asked, what it could not answer) | `/kb-report` | Skill |
 | **Settle a disputed knowledge-base entry** (live investigation, verdict as a reviewed PR on the base) | `/kb-judge <KB-id> \| cluster <KB-id> \| next` | Skill |
+| **Settle disputes unattended, in batches** (the prompt of a scheduled task: one `judge/batch-*` PR per run) | `/kb-judge-routine [--dry-run]` | Command |
 | **Build a ticket's test model (fault model) on its own** | `/qa-test-model <ticket-key> [--context <file>]` | Skill |
 | **Choose a ticket's test strategy before running anything** (risks, mix, technique + oracle per risk, artifacts, criteria; one approval) | `/vc-test:qa-test-strategy <ticket-key> [--domain <slug>] [--yes]` | Skill (vc-test) |
 | **Model how a domain behaves (behaviour graph, stable ids, evidence)** | `/qa-test-mind-map build \| update \| audit <domain-slug>` | Skill |
@@ -70,7 +71,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Analyze test coverage gaps** | `/qa-coverage-gap analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Skill |
 | **Review test-case quality / triangulate staleness** | `/qa-review-tests suite <ID> \| file <path> \| diff \| --triangulate \| --fix` | Skill |
 | **Create Postman collections** | `/qa-postman create <purpose> \| env <profile> \| verify <collection>` | Skill |
-| **Look up VC documentation** | `/vc-docs topic \| module \| concept` | Skill |
+| **Document a tested ticket** (What's new · How to set it up · How it works, one Jira comment, a Motion film) | `/qa-docs <TICKET> [--video]` · `/qa-docs release --sprint <S> \| --version <V>` | Skill |
+| **Look up VC documentation** | VirtoOZ connector — `knowledge/execution/doc-sources.md` | Knowledge |
 
 > `/qa-sync-tests` was **removed** — the command file is deleted and there is no redirect or alias.
 > Use `/qa-test-lifecycle PR #NNN \| module <name> \| diff` instead.
@@ -82,7 +84,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-test` — Test a ticket, feature or PR. Step `1a` routes on **two axes**: the FLOW by ticket type × status (fix-ready Bug → `/qa-verify-fix` inline; hotfix-status Bug → `/qa-hotfix-check`; Sub-task → inherit parent; a refactor/migration/dependency bump → the fixed-shape `technical-change` flow; else `feature-test`), then a **FAST** (checklist-only) or **FULL** (Test Model + authoring + verifiers + promotion) path. The command is the orchestration shell; the `/qa-test` **skill** holds the methodology
 - `/qa-regression` — Run suites in parallel. `sprint` resolves the most recent sprint plan → `suitesActivated[]`; `--cases critical` narrows to a priority tier within each suite
 - `/qa-triage-results` — Classify a completed run's FAIL/BLOCKED/SKIPPED into real bug vs test defect vs flaky/env; live-verify, route test fixes, draft bugs. Never files a ticket, never triggers `/qa-fix`
-- `/qa-run` — Runs any regression, triages the failures automatically after the run and ALWAYS asks to put the result in GitHub after triage; the successor of `/qa-regression`, built to move into a plugin (skill `qa-run`). With `/qa-test-plan stable <N>`: a stable-bundle regression in waves (priority tier × domain) that several QA run in parallel on one env: the plan, per-wave state and the triage ledger (every verdict, filed or not) live in git under `regression/releases/stable-<N>/`. Contract: `.claude/skills/qa-run/release-folder.md`
+- `/qa-run` — Runs any regression, triages the failures automatically after the run and ALWAYS asks to put the result in GitHub after triage; the successor of `/qa-regression`, built to move into a plugin (skill `qa-run`). With `/qa-test-plan stable <N>` or `/qa-test-plan <sprint>`: a stable-bundle or sprint regression in waves (W0 first, then independent domain waves) that several QA run in parallel on one env: the plan, per-wave state and the triage ledger (every verdict, filed or not) live in git under `regression/releases/<release>/` (`stable-<N>`, `sprint-<XX-YY>`). Contract: `.claude/skills/qa-run/release-folder.md`
 - `/qa-exploratory` — Scenario-discovery session. `sprint` runs the plan's §5.3 charters (≤5, in series). Lane: any free browser slot (all 3 click since 2026-09-08)
 - `/qa-bug` — Reproduce, document, optionally file
 - `/qa-fix` — Autonomous fix of an already-filed bug: G0 triage → G1 single-repo route → reproduce-as-test → minimal fix → review → PR → **STOP for human review** (never auto-merges)
@@ -95,8 +97,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-local-env` — Local VC stack (start-local + Docker) pinned to the deployed manifest; fresh DB every run
 
 ### Plan & Manage Test Cases (Commands + Skills)
-- `/qa-test-lifecycle` — Unified pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve → **promote** (Phase 6P is the **full** promoter — handoff / re-promotion / non-`/qa-test` sources / the `Draft` cases a `/qa-test` run left; `--run-id` reaches `Automated`. A direct `/qa-regression` flips already-grounded cases at its Step 6.5)
-- `/qa-test-plan` — Plans any regression. `sprint`: tracker Done + merged vc-frontend PRs → risk-scored domains → suites (§5.1/§5.2) and §5.3 exploratory charters. `stable <N>`: bundle diff → classified scope → waves by priority tier × domain for several QA in parallel (`regression/releases/stable-<N>/`)
+- `/qa-test-lifecycle` — Unified pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve → **promote** (`qa-case-promotion` is the **full** promoter — handoff / re-promotion / non-`/qa-test` sources / the `Draft` cases a `/qa-test` run left; `--run-id` reaches `Automated`. A direct `/qa-regression` flips already-grounded cases at its Step 6.5)
+- `/qa-test-plan` — Plans any regression. `sprint`: tracker Done + merged vc-frontend PRs → risk-scored domains → suites (§5.1/§5.2), §5.3 exploratory charters and the waves (`regression/releases/sprint-<XX-YY>/`). `stable <N>`: bundle diff → classified scope → W0 first, then independent domain waves for several QA in parallel (`regression/releases/stable-<N>/`)
 - `/qa-coverage-gap` — autonomous coverage gap analysis + generation, 4-cycle pipeline (single-agent; the orchestrated `/qa-coverage-generation` twin was removed 2026-09-08 with zero recorded runs)
 - `/qa-plan` — Test plans from the E2E scenario catalog
 - `/qa-checklist` — Oracle-grounded test-writing checklists (storefront + backend/admin + GraphQL domains)
@@ -155,10 +157,11 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/preflight` — Read-only environment + build pre-flight at the start of a `/qa-test`-family or BA run: one result, one output form, then a diagnose → fix → re-check loop on what is not READY
 - `/kb-report` — The observed-behaviour knowledge base's own report: what agents asked, what it could not answer, which answers were useless
 - `/kb-judge` — Settle disputed knowledge-base entries: dossier, full live investigation, a verdict per dispute as a reviewed PR on the base (`npm run kb:disputes`)
+- `/kb-judge-routine` (command) — `/kb-judge` unattended, for a scheduled task: a fresh clone of the base, a batch of clusters, one commit each, one PR for a human to merge
 - `/qa-teams-watch` (command) — Teams group chats → newly reported bugs → dedup against Jira → a VCST Bug labelled for `/qa-fix`
 
-### VC Knowledge (Skill — auto-invocable)
-- `/vc-docs` — Documentation lookup. **Primary: VirtoOZ MCP** (12 topic-scoped tools); Context7 `/virtocommerce/vc-docs` is the fallback
+### Knowledge
+- `knowledge/execution/doc-sources.md` — which documentation source answers which question. **Primary: the VirtoOZ connector** (12 topic-scoped tools); Context7 `/virtocommerce/vc-docs` is the fallback. The vc-fix plugin still ships its own `/vc-docs` for client installs that have no VirtoOZ connector
 
 ### Agents (use directly for complex multi-step work)
 
@@ -186,7 +189,7 @@ Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](kn
 - `ba-system-analyzer` — Repo structure, module inventory, user flows, pain points; **gathers the evidence for both shared oracles** (BL from human sources only; never edits a CSV)
 - `ba-api-specialist` — API surface via Postman/Swagger, health assessment
 - `ba-story-writer` — Agile user stories with BDD acceptance criteria
-- `ba-doc-writer` — Audience-targeted docs (Customer / Admin / Developer / Sales)
+- `ba-doc-writer` — UX improvement specs from BA analysis (product documentation is `/qa-docs`)
 
 **Developers Team (plugin-only — `plugins/vc-fix/agents/`, picker name `vc-fix:<name>`; the only write-capable team, used by `/qa-fix`; one dev + one reviewer per repo kind):**
 - `fullstack-backend` — One `vc-module-*` / `vc-platform` repo (.NET 10 + the module's Admin Angular): reproduce-as-test → minimal fix → PR
@@ -249,7 +252,7 @@ post-edit typecheck).
 | `/qa-exploratory` | `/qa-sbtm` | Command runs sessions; skill provides the methodology + the sprint charter-selection rule |
 | `/qa-smoke` | `/qa-plan` | Smoke uses the E2E scenario catalog for P0 selection |
 | `/qa-regression` | `/qa-triage-results`, `/qa-metrics` | Run → triage the failures → results feed the quality gates |
-| `/qa-test-plan` | `/qa-regression`, `/qa-exploratory`, `/qa-triage-results` | One planner for every regression: `sprint` → `/qa-run sprint` (or `/qa-regression sprint`) + `/qa-exploratory sprint`; `stable <N>` → each owner claims a wave with `/qa-run stable:<N> <wave> --claim`, triages it seeded with the ledger, publishes it as a PR |
+| `/qa-test-plan` | `/qa-regression`, `/qa-exploratory`, `/qa-triage-results` | One planner for every regression: `sprint` → each owner claims a wave with `/qa-run sprint:<XX-YY> <wave> --claim` (`--no-waves`: `/qa-run sprint` runs it whole) + `/qa-exploratory sprint`; `stable <N>` → each owner claims a wave with `/qa-run stable:<N> <wave> --claim`, triages it seeded with the ledger, publishes it as a PR |
 | `/qa-regression` | `/qa-coverage-gap` | Gap analysis validates suite completeness before a run |
 | `/qa-bug` | `/qa-investigate`, `/qa-defect` | Bug command uses the investigation flow + defect templates |
 | `/qa-fix` | `/qa-bug` (upstream), `/qa-verify-fix` (downstream) | `/qa-bug` files the ticket → `/qa-fix` triages, fixes, opens a PR (STOP for human review) → after merge `/qa-verify-fix` closes the loop. Gate ladder: `.claude/knowledge/execution/quality-gates.md` |
@@ -261,7 +264,7 @@ post-edit typecheck).
 | `/qa-test` | `/qa-test` skill, `/qa-test-design`, `/qa-checklist`, `/qa-risk` | Command = the pipeline + its gates; skill = the methodology. The FULL path writes a Test Model before any case exists |
 | `/qa-test` | `/qa-test-cases-generator`, `/qa-review-tests`, `/qa-generate-data` | Step 3 reuses the same skills `/qa-test-lifecycle` Phases 3–4 use, and appends cases as `Draft` straight into `regression/suites/` |
 | `/qa-test` | `/qa-verify-fix`, `/qa-hotfix-check`, `/qa-regression` | Step 1a routes a fix-ready Bug into `/qa-verify-fix` inline, a hotfix-status Bug into `/qa-hotfix-check`, and a `technical-change` (refactor / migration / dependency bump) into a blast-radius `/qa-regression` with no feature test |
-| `/qa-test-lifecycle` | `/qa-coverage-gap`, `/qa-review-tests` | Unified pipeline: sync + gap analysis + quality review + promotion (Phase 6P) |
+| `/qa-test-lifecycle` | `/qa-suite-sync`, `/qa-case-promotion`, `/qa-coverage-gap`, `/qa-review-tests` | Thin router: `/qa-suite-sync` (sync + gap analysis + quality review + live check) then, for a ticket, `/qa-case-promotion` |
 | `/qa-test-plan` | `/qa-regression`, `/qa-risk`, `/qa-exploratory` | Plan maps risk-scored domains to suites (§5.1/§5.2) and derives the exploratory charters (§5.3) |
 | `/qa-verify-fix` | `/qa-investigate`, `/qa-checklist` | Verification uses the investigation flow + the Bug Fix Verification checklist |
 | `/qa-coverage-gap` | `/qa-test-cases-generator` | Coverage generation uses gap analysis + the case generator |

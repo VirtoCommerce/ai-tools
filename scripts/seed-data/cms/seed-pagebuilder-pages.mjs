@@ -155,9 +155,18 @@ async function ensurePageState(page, spec, culture, { schedule } = {}) {
   return after > 0 ? `${fillNote}${schedNote}` : 'WRITE FAILED (still empty)';
 }
 
+// Pages through the whole store: the server caps one page (200 of 776 on vcptcore 2026-11-02), and a
+// canonical page past the first page read as missing — the seeder then CREATED a duplicate whose
+// publish 409'd against the live original.
 async function searchPages() {
-  const r = await api('POST', '/api/page-builder-pages/search', { storeId: STORE_ID, take: 500 }, { expectStatus: [200] });
-  return r?.results || r?.items || [];
+  const all = [];
+  for (let skip = 0; ; ) {
+    const r = await api('POST', '/api/page-builder-pages/search', { storeId: STORE_ID, skip, take: 200 }, { expectStatus: [200] });
+    const batch = r?.results || r?.items || [];
+    all.push(...batch);
+    skip += batch.length;
+    if (!batch.length || skip >= (r?.totalCount ?? 0)) return all;
+  }
 }
 const getGrouped = (id) => api('GET', `/api/page-builder-pages/grouped/${id}`, null, { expectStatus: [200, 404] });
 const upsert = (body) => api('POST', '/api/page-builder-pages/grouped', body, { expectStatus: [200, 201, 204] });

@@ -47,7 +47,7 @@ import {
 import {
   SETTING_NAME, TENANT_TYPE, ALIAS, ORG_ROLE_NAMES, DESCRIPTOR_POOL, DESCRIPTOR_POOL_SOURCE_REF,
   SALES_REP_GRANT_PERMISSION, DECLARED_GRANTING_ROLES, PICKER_PAGE_SIZE, PICKER_SOURCE_REF,
-  REFRESH_REQUIREMENT, FIXTURE_LIMITS, NARROWED_OMITTED_ROLE, ORG_RETURNS_GRANT_PERMISSIONS,
+  REFRESH_REQUIREMENT, FIXTURE_LIMITS, NARROWED_OMITTED_ROLE, NARROWED_PICKER_KEYWORD, ORG_RETURNS_GRANT_PERMISSIONS,
   tenantValuesPath, sameSet, selectSalesRepRoles, selectOrgReturnsRoles, buildWhitelist, planWrite,
   capturePreState, planTeardown, entriesOutsideDefaultPage, findRoleProblems, findDecidabilityProblems,
   buildNarrowedValues, toJsonArrayField, parseJsonArrayField, findNarrowingProblems,
@@ -158,6 +158,15 @@ async function readLiveRoles() {
   return out;
 }
 
+/**
+ * The page the picker fetches once the case has typed `NARROWED_PICKER_KEYWORD`: the same call
+ * `rolesPickerService.js` makes (`roles.search({keyword, take: 20})`), in the order the platform returns it.
+ */
+async function readKeywordPage(keyword) {
+  const found = await api('POST', '/api/platform/security/roles/search', { keyword, take: PICKER_PAGE_SIZE }, { expectStatus: [200, 201] });
+  return (found?.results || found?.items || []).map((r) => r.name);
+}
+
 /* ── the write ────────────────────────────────────────────────────────────────────────────────── */
 
 /**
@@ -224,13 +233,16 @@ async function verify() {
   const recordedNarrowed = parseJsonArrayField(ov.narrowed_values, `${ALIAS}.narrowed_values`);
   const recordedSeededJson = parseJsonArrayField(ov.seeded_values_json, `${ALIAS}.seeded_values_json`);
   const omittedPos = orderedLiveRoleNames.findIndex((n) => n.toLowerCase() === NARROWED_OMITTED_ROLE.toLowerCase()) + 1;
-  log(`  narrowed_omitted_role: "${NARROWED_OMITTED_ROLE}" — live position ${omittedPos || 'ABSENT'}/${orderedLiveRoleNames.length}`);
+  const keywordPageNames = await readKeywordPage(NARROWED_PICKER_KEYWORD);
+  const keywordPos = keywordPageNames.findIndex((n) => n.toLowerCase() === NARROWED_OMITTED_ROLE.toLowerCase()) + 1;
+  log(`  narrowed_omitted_role: "${NARROWED_OMITTED_ROLE}" — keyword-less position ${omittedPos || 'ABSENT'}/${orderedLiveRoleNames.length}; `
+    + `position ${keywordPos || 'ABSENT'}/${keywordPageNames.length} for keyword "${NARROWED_PICKER_KEYWORD}"`);
   log(`  seeded_values_json:    ${recordedSeededJson ? JSON.stringify(recordedSeededJson) : '(none — re-run apply)'}`);
   log(`  narrowed_values:       ${recordedNarrowed ? JSON.stringify(recordedNarrowed) : '(none — re-run apply)'}`);
 
   const narrowProblems = findNarrowingProblems({
     seededValues: recordedSeededJson || target, omittedRole: NARROWED_OMITTED_ROLE,
-    orderedLiveRoleNames, pageSize: PICKER_PAGE_SIZE, pool: DESCRIPTOR_POOL,
+    orderedLiveRoleNames, keywordPageNames, keyword: NARROWED_PICKER_KEYWORD, pageSize: PICKER_PAGE_SIZE, pool: DESCRIPTOR_POOL,
   });
   if (narrowProblems.length) {
     // Loud, and non-zero exit: a narrowed variant that no longer discriminates keeps every case
@@ -244,7 +256,7 @@ async function verify() {
   if (recordedNarrowed && recordedSeededJson && sameSet(recordedNarrowed, recordedSeededJson)) {
     throw new Error(`${ALIAS}.narrowed_values equals .seeded_values_json — the variant omits nothing and ORGROLE-019 would pass vacuously`);
   }
-  log(`  narrowed variant: ADMISSIBLE — "${NARROWED_OMITTED_ROLE}" is inside the picker's default page of ${PICKER_PAGE_SIZE} and inside the seeded set`);
+  log(`  narrowed variant: ADMISSIBLE — "${NARROWED_OMITTED_ROLE}" is inside the picker's page of ${PICKER_PAGE_SIZE} for keyword "${NARROWED_PICKER_KEYWORD}" and inside the seeded set`);
 
   return { whitelist, captured, seeded, salesRep, returnsRoles, liveRoles, missing, outside, recordedNarrowed, recordedSeededJson };
 }
@@ -286,15 +298,16 @@ async function apply() {
   log(`  divergence that makes it falsifiable: ${ORG_ROLE_NAMES.length} inside the module's hardcoded pool, ${salesRep.length} OUTSIDE it (${DESCRIPTOR_POOL_SOURCE_REF})`);
 
   // ── NARROWED VARIANT — derived, guarded LIVE, recorded. Never applied by default. ────────────
-  // The live check is the load-bearing one: the omitted role must sit inside the picker's default
-  // keyword-less page, or its disappearance under the narrowed whitelist is a PAGING artifact and
-  // the case built on it proves nothing while still passing.
+  // The live check is the load-bearing one: the omitted role must sit inside the page the case reads
+  // (the picker's page for NARROWED_PICKER_KEYWORD), or its disappearance under the narrowed whitelist
+  // is a PAGING artifact and the case built on it proves nothing while still passing.
   const orderedLiveRoleNames = liveRoles.map((r) => r.name);
+  const keywordPageNames = await readKeywordPage(NARROWED_PICKER_KEYWORD);
   const narrowProblems = findNarrowingProblems({
     seededValues: target, omittedRole: NARROWED_OMITTED_ROLE, orderedLiveRoleNames,
-    pageSize: PICKER_PAGE_SIZE, pool: DESCRIPTOR_POOL,
+    keywordPageNames, keyword: NARROWED_PICKER_KEYWORD, pageSize: PICKER_PAGE_SIZE, pool: DESCRIPTOR_POOL,
   });
-  const omittedPos = orderedLiveRoleNames.findIndex((n) => n.toLowerCase() === NARROWED_OMITTED_ROLE.toLowerCase()) + 1;
+  const omittedPos = keywordPageNames.findIndex((n) => n.toLowerCase() === NARROWED_OMITTED_ROLE.toLowerCase()) + 1;
   if (narrowProblems.length) {
     const msg = `NARROWED VARIANT INADMISSIBLE — refusing to record a variant that discriminates nothing:\n  - ${narrowProblems.join('\n  - ')}`;
     if (!NARROWED_WARN_ONLY) throw new Error(msg);
@@ -305,7 +318,7 @@ async function apply() {
   const narrowed = buildNarrowedValues(target, NARROWED_OMITTED_ROLE);
   log(`narrowed variant (${narrowed.length}): [${narrowed.join(', ')}]  — omits "${NARROWED_OMITTED_ROLE}"`);
   if (!narrowProblems.length) {
-    log(`  "${NARROWED_OMITTED_ROLE}" is live at position ${omittedPos}/${orderedLiveRoleNames.length}, INSIDE the picker's default page of ${PICKER_PAGE_SIZE} — its disappearance is the whitelist, not paging`);
+    log(`  "${NARROWED_OMITTED_ROLE}" is at position ${omittedPos}/${keywordPageNames.length} for keyword "${NARROWED_PICKER_KEYWORD}", INSIDE the picker's page of ${PICKER_PAGE_SIZE} — its disappearance is the whitelist, not paging`);
     log('  DECLARED TARGET ONLY: it is recorded to the alias overlay for a case to write during its own run; this seeder does not apply it.');
   }
 
@@ -346,6 +359,7 @@ async function apply() {
     // bag, so a case referencing .narrowed_omitted_role resolves on an env only if the seeder put
     // it here. Omitting it worked on vcst purely because the key had been added by hand.
     fields.narrowed_omitted_role = NARROWED_OMITTED_ROLE;
+    fields.narrowed_picker_keyword = NARROWED_PICKER_KEYWORD;
     writeEnvAliasOverride({ [ALIAS]: fields });
     log(`  wrote ${ALIAS}.${Object.keys(fields).join(' + .')} to test-data/aliases.${TEST_ENV}.json`);
   }

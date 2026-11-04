@@ -1,0 +1,91 @@
+{
+ "env": "vcptcore",
+ "endpoint": "POST {BACK_URL}/graphql",
+ "note": "Authorization header omitted; responses verbatim from server",
+ "calls": [
+  {
+   "at": "2026-10-26T23:33:32.226Z",
+   "request": {
+    "query": "mutation($command:InputUpdateContactType!){ updateContact(command:$command){ id firstName lastName } }",
+    "variables": {
+     "command": {
+      "id": "c387d3ed-3cf2-435a-9244-1b2f53b53a0a",
+      "firstName": "SmokeTest",
+      "lastName": "Tester2"
+     }
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "errors": [
+      {
+       "message": "'Last Name' contains invalid characters.",
+       "locations": [
+        {
+         "line": 1,
+         "column": 45
+        }
+       ],
+       "path": [
+        "updateContact"
+       ],
+       "extensions": {
+        "code": "VALIDATION",
+        "codes": [
+         "VALIDATION"
+        ],
+        "field": "lastName",
+        "errorCode": "InvalidCharacters"
+       }
+      }
+     ],
+     "data": {
+      "updateContact": null
+     }
+    }
+   }
+  },
+  {
+   "at": "2026-10-26T23:33:32.542Z",
+   "request": {
+    "query": "query { me { contact { id firstName lastName } } }"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "data": {
+      "me": {
+       "contact": {
+        "id": "c387d3ed-3cf2-435a-9244-1b2f53b53a0a",
+        "firstName": "SmokeTest",
+        "lastName": "Runner"
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "at": "2026-10-26T23:33:32.782Z",
+   "request": {
+    "query": "query($id:String!){ contact(id:$id){ id firstName lastName } }",
+    "variables": {
+     "id": "c387d3ed-3cf2-435a-9244-1b2f53b53a0a"
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "data": {
+      "contact": {
+       "id": "c387d3ed-3cf2-435a-9244-1b2f53b53a0a",
+       "firstName": "SmokeTest",
+       "lastName": "Runner"
+      }
+     }
+    }
+   }
+  }
+ ]
+}

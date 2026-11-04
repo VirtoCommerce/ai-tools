@@ -207,6 +207,8 @@ VCST-5281 root cause: contact.organizationId (the persisted default org that log
 [SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships/$TF_MEMBERSHIP_ID/lock — force the TechFlow (default) membership into a blocked/locked state, matching testing-checklist.md's BlockingStatuses set
 [ASSERT] [STATUS] 200
 [NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] fill [data-test-id=""email-input""] with AGENT-TEST-auth043-$TS_SUFFIX@yopmail.com
 [ACT] fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [ACT] click [data-test-id=""login-button""]
@@ -224,3 +226,114 @@ VCST-5281 root cause: contact.organizationId (the persisted default org that log
 [CONSOLE] no unhandled JS errors while the account menu operates against a Forbidden main content area
 [NETWORK] the org-switch request to BuildRight returns 200 and the subsequent page load has no 4xx/5xx","Account menu / org switcher itself also fails to render or throws when the main content area is Forbidden (would make this a P0 total lockout, not a P1 misroute — escalate); BuildRight is absent from the switcher list despite being Approved; selecting BuildRight does not recover access (still Forbidden); recovery requires a sign-out/sign-in cycle instead of same-session switch","[SAVE] Unlock the TechFlow membership: POST {{BACK_URL}}/api/customer/organization-memberships/$TF_MEMBERSHIP_ID/unlock
 [SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$TF_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$BR_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-auth043-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281; root_cause + p0_blast_radius.multi_org_user","Draft"
+AUTH-078,Mobile menu — on My customers’ activity the same link as the account rail is lit (text and icon),Account > Menu & Profile,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+The actor is the sales rep: the link ""My customers' activity"" belongs to the SalesRep plugin, so a failure of the link or its activeWhen rule is attributed to the plugin, not to the merge; the host's mobile-menu active-link logic is what this case reads. Viewport 375x812.","url={{FRONT_URL}}, rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org=@td(ORG_ACME.platform_id)","[SETUP] set the browser viewport to 375x812
+[NAV] {{FRONT_URL}}/company/activities?organizationId=@td(ORG_ACME.platform_id)
+[WAIT] the activity page has rendered
+[ACT] open the mobile header navigation from its hamburger entry
+[WAIT] the mobile menu is open
+[KEY] record every link of the account section of the menu that carries the active style on its text or on its icon, as LIT (text and icon recorded separately for each link)
+[ASSERT] read the active state of the link named ""My customers' activity"" and of the link named ""My activity"" (text and icon of each)","[DOM] ""My customers' activity"" is lit: both its text and its icon carry the active style {SPEC} (AC-6, #2458)
+[DOM] ""My activity"" is NOT lit on this page, neither its text nor its icon {SPEC} (AC-6)
+[COUNT] LIT holds exactly one link {SPEC} (AC-6)
+[STATE] for the lit link the text and the icon agree: both lit or both not lit {SPEC} (AC-7 icon/text agreement)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","""My activity"" lit instead of ""My customers' activity"" (plugin link lacks activeWhen); text lit but icon not; two links lit",Restore the desktop viewport (1920x1080),VCST-6626 · Archetype:PARITY · Technique:DT,Draft
+AUTH-079,"Mobile menu — on Compare only the Compare link is lit, icon and text agree",Account > Menu & Profile,Medium,,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Anonymous visitor; viewport 375x812. The Compare link is shown in the mobile menu independent of sign-in.",url={{FRONT_URL}},"[SETUP] set the browser viewport to 375x812
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page has rendered
+[ACT] open the mobile header navigation from its hamburger entry
+[WAIT] the mobile menu is open
+[KEY] record every link of the menu whose text or icon carries the active style as LIT (text and icon recorded separately)
+[ASSERT] read the text and the icon of the link named 'Compare'
+[ACT] close the mobile header navigation menu
+[ACT] reload the page
+[WAIT] the compare page has rendered again
+[ACT] open the mobile header navigation from its hamburger entry
+[KEY] record LIT_2 the same way","[DOM] the 'Compare' link is lit and both its text and its icon carry the active style {SPEC} (AC-7, #2458)
+[COUNT] LIT holds only the 'Compare' link; no other link of the menu is lit {SPEC} (AC-7)
+[STATE] LIT_2 equals LIT after the reload {SPEC} (AC-7)
+[STATE] the text of 'Compare' and its icon agree: both lit {SPEC} (AC-7: icon and text disagreed after the fork-modifier + upstream-rule merge)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",icon lit but text not (or the reverse); a second link lit on /compare; no link lit,Restore the desktop viewport (1920x1080),VCST-6626 · Archetype:RENDER · Technique:EP,Draft
+AUTH-080,Profile — a last name the backend rejects shows the message under Last name and no toast,Account > Menu & Profile,High,BL-PROFILE-001,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Profile buyer @td(VCST6626_PROFILE_BUYER.email) (disposable, safe to edit; password key TEST_USER_PASSWORD). The rule under test is the backend contact validation that rejects the last name ""Tester2"" (vc-module-customer#150); on a backend without it the case is BLOCKED for the build, never FAIL, because the theme can only route an error the backend sends.","url={{FRONT_URL}}, profile_buyer=@td(VCST6626_PROFILE_BUYER.email), password={{TEST_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
+[ACT] Fill 'Email' with @td(VCST6626_PROFILE_BUYER.email)
+[ACT] Fill 'Password' with TEST_USER_PASSWORD (the lane secret name - the Playwright lane types the value)
+[ACT] Click 'Sign in'
+[WAIT] the page leaves /sign-in (up to 15s)
+[NAV] {{FRONT_URL}}/account/profile
+[WAIT] the profile form has rendered
+[KEY] record the current 'Last name' as LAST_ORIG
+[ACT] set 'Last name' to Tester2
+[ACT] click 'Save'
+[WAIT] the page settles (spinner gone, network idle)
+[KEY] record the message shown under 'Last name' (FIELD_MSG), the count of toast notifications visible (TOASTS) and their texts
+[ASSERT] read whether the 'Last name' field keeps the typed value Tester2 and whether the form is still in edit mode","[DOM] a message is shown directly under 'Last name' and it is non-empty text, not a raw translation key {SPEC} (AC-17, #2597)
+[COUNT] TOASTS is 0: the field error is not also shown as a toast {SPEC} (AC-17)
+[STATE] the typed value Tester2 stays in the field and the form stays editable so the buyer can correct it {SPEC} (AC-17)
+[STATE] after a reload the saved last name is still LAST_ORIG: the rejected value was not stored {BL} (BL-PROFILE-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",a toast instead of a field message; no message at all (the error is swallowed); both toast and message; the rejected last name saved,Set Last name back to LAST_ORIG and Save if it was changed; sign out,VCST-6626 · Archetype:SILENT · Technique:EP,Draft
+AUTH-081,Profile — editing the rejected field clears only its message; a non-field error still toasts,Account > Menu & Profile,Medium,BL-PROFILE-001,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Profile buyer @td(VCST6626_PROFILE_BUYER.email) (password key TEST_USER_PASSWORD). One rejected field (Last name = Tester2, see AUTH-080 for the backend rule) next to one valid field (First name). The non-field error in the last leg is produced by the lane, not by the backend: the next profile-save request is answered with a GraphQL errors[] entry that names no field.","url={{FRONT_URL}}, profile_buyer=@td(VCST6626_PROFILE_BUYER.email), password={{TEST_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
+[ACT] Fill 'Email' with @td(VCST6626_PROFILE_BUYER.email)
+[ACT] Fill 'Password' with TEST_USER_PASSWORD (the lane secret name - the Playwright lane types the value)
+[ACT] Click 'Sign in'
+[WAIT] the page leaves /sign-in (up to 15s)
+[NAV] {{FRONT_URL}}/account/profile
+[WAIT] the profile form has rendered
+[KEY] record 'First name' as FIRST_ORIG and 'Last name' as LAST_ORIG
+[ACT] append the text X to 'First name'
+[ACT] set 'Last name' to Tester2
+[ACT] click 'Save'
+[WAIT] the page settles
+[KEY] record the message under 'Last name' as MSG_LAST_1 and any message under 'First name' as MSG_FIRST_1
+--- SCREEN: Edit the rejected field ---
+[ACT] type one more character into 'Last name'
+[KEY] record MSG_LAST_2 (the message under 'Last name') and MSG_FIRST_2 (under 'First name') right after the keystroke
+--- SCREEN: A non-field error ---
+[SETUP] intercept the next profile-save GraphQL request of the page and answer it with {""errors"":[{""message"":""Server error""}],""data"":null} (page.route + fulfill); no field is named in the error
+[ACT] set 'Last name' to LAST_ORIG
+[ACT] click 'Save'
+[WAIT] the page settles
+[KEY] record the count of toast notifications (TOASTS_NF) and their texts, and whether the 'Report a problem' offer is shown","[DOM] MSG_LAST_1 is shown and no message sits under the valid 'First name' (MSG_FIRST_1 is empty) {SPEC} (GAP-9, #2597)
+[STATE] after editing the rejected field MSG_LAST_2 is empty and MSG_FIRST_2 is still empty: editing a field clears only its own message {SPEC} (GAP-9)
+[COUNT] TOASTS_NF is 1: a non-field error is not swallowed and not doubled {SPEC} (GAP-9, #2597 error handler)
+[STATE] no message appears under any field for the non-field error {SPEC} (GAP-9)
+[COUNT] the number of messages under 'First name' after the edit = 0 and under 'Last name' after the edit = 0 {SPEC} (GAP-9)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",editing one field clears the other field's message; a non-field error shows nothing or two toasts; the error attaches to a field,Set First name and Last name back to FIRST_ORIG and LAST_ORIG and Save; sign out,VCST-6626 · Archetype:SILENT · Technique:DT,Draft
+AUTH-082,Addresses — saving an address with a rejected value keeps the modal open and marks the field,Account > Menu & Profile,Medium,BL-PROFILE-001,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Profile buyer @td(VCST6626_PROFILE_BUYER.email) (password key TEST_USER_PASSWORD). The rejected value is the one the backend contact rule refuses (Last name Tester2, vc-module-customer#150); if the address backend accepts it so that no rejected value can be reached, the case is BLOCKED for the build, never FAIL.","url={{FRONT_URL}}, profile_buyer=@td(VCST6626_PROFILE_BUYER.email), password={{TEST_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
+[ACT] Fill 'Email' with @td(VCST6626_PROFILE_BUYER.email)
+[ACT] Fill 'Password' with TEST_USER_PASSWORD (the lane secret name - the Playwright lane types the value)
+[ACT] Click 'Sign in'
+[WAIT] the page leaves /sign-in (up to 15s)
+[NAV] {{FRONT_URL}}/account/addresses
+[WAIT] the addresses page has rendered
+[KEY] record the number of address cards as ADDR_BEFORE
+[ACT] click 'Add address'
+[WAIT] the address modal is open
+[ACT] fill the required fields of the modal with valid values
+[ACT] set 'Last name' to Tester2
+[ACT] click 'Save' in the modal
+[WAIT] the page settles
+[KEY] record whether the modal is still open (MODAL_OPEN), the message under the rejected field (FIELD_MSG) and the count of toast notifications (TOASTS)
+[ACT] close the modal
+[ACT] reload the page
+[WAIT] the addresses page has rendered
+[KEY] record the number of address cards as ADDR_AFTER","[STATE] MODAL_OPEN is true: the modal stays open when a field is rejected {SPEC} (AC-18, #2597)
+[DOM] FIELD_MSG is visible as non-empty text under the rejected field 'Last name' {SPEC} (AC-18)
+[COUNT] TOASTS is 0 {SPEC} (AC-18)
+[COUNT] ADDR_AFTER equals ADDR_BEFORE: nothing was created {BL} (BL-PROFILE-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",modal closes and the rejection is lost; toast instead of a field message; the address is created anyway,Delete any address this case created; sign out,VCST-6626 · Archetype:SILENT · Technique:EP,Draft

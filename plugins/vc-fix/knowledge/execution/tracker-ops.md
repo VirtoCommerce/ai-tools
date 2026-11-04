@@ -160,7 +160,9 @@ resolve/comment/transition ops and for commit/PR cross-links (Azure: `AB#12345`)
 > A Markdown image reference (`![alt](path)`) and a prose file path both post `200 OK` and render
 > NOTHING. Such a comment is attached first, then written as **wiki markup** with
 > `!filename.png|width=700!` through the **v2** comment API, and VERIFIED from
-> `?expand=renderedBody` (one `<img …/attachment/content/N>` per image, zero surviving `!….png!`,
+> `?expand=renderedBody` (one `<img …/attachment/content/N>` per image — a `|thumbnail!` embed renders
+> `…/attachment/thumbnail/N` instead, which rendered but is not the house form: amend it to `|width=700!`;
+> zero surviving `!….png!`,
 > zero `<span class="error">`) — through the bridge: `jira attach`, then `jira comment --wiki`, then
 > `jira get-comment --rendered`. On Azure Boards the equivalent is `ado upload-attachment`
 > then an inline `<img src="{url}">`. Embedding is MANDATORY for any UI claim, not a style choice —
@@ -218,7 +220,7 @@ them. Always resolve the *destination status* by role, then map it to the live w
 
 ## 2a. Labels on bugs Claude files
 
-Every Jira **Bug** Claude creates — and every **Sub-task** that is a bug (§5b in-scope filing) — says who found it
+Every Jira **Bug** Claude creates says who found it
 and, for an agent finding, during what.
 In the VirtoCommerce QA repo a PreToolUse hook refuses the Atlassian MCP create call without a valid set; a bridge
 `jira request` POST is not checked, so it is used only without the MCP (`jira-bug-fields.md` §1).

@@ -934,6 +934,159 @@
     },
     "_notes": "COU-027 (promo P21 'AGENT-TEST Lowercase Coupon Case Fidelity', 5% off cart subtotal, public + active, no endDate, no threshold). Dedicated collision-free lowercase coupon for the CPN-062 VCST-5233 apply/validate case-fidelity guard. code='agenttestlc062' satisfies /[a-z]/; its all-uppercase form 'AGENTTESTLC062' is NOT a valid/existing coupon on the env (probed vcst-qa 2026-07-21: 0 matches), so uppercasing (VCST-5233 bug) => ValidateCoupon false => 'This code is not valid' (clean fail signal while unfixed); lowercase preserved (once fixed) => applies. Unlike COUPON_SUPER('super'), uppercasing does NOT hit the unrelated 'SUPER'/'Super Discount' coupon. Seeded by seed-promotions.mjs; teardown: npm run seed:promotions:teardown -- --only P21. No runtime GUID here — resolves by static business key (coupon_id/code)."
   },
+  "SRCPN_PROMO_END_EARLIER": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-028"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S7 — promotion ends +20d, coupon expires +40d (DISTINCT): salesRepCoupons endDate must equal the PROMOTION end. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_COUPON_END_EARLIER": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-029"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S6 — coupon expires +10d, promotion ends +60d (DISTINCT): endDate must equal the COUPON expiry. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_COUPON_EXPIRED": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-030"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S5 — promotion runs to +30d, coupon expired -1d (yesterday 23:59:59Z): HIDDEN by the coupon-level expiry filter (the buyer path ignores coupon expiry). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_PARTIAL": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-031"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S2 — cap 5, 2 REAL promotion-usage records (orders AGENT-TEST-SRCPN-COU-031-*): \"3 uses left out of 5\". LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_ONE_LEFT": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-032"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S4 — cap 2, 1 recorded use: singular \"1 use left out of 2\". LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_USED_UP": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-033"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S3 static half — cap 1, 1 recorded use: HIDDEN (used-up, counted fresh from usage records). The dynamic half (last use recorded by an order inside the case) is created IN the case, never seeded (FIFTH RULE). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_MEMBER_BOUND": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-034"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S8 — Coupon.MemberId = @td(ORG_TECHFLOW.platform_id) (resolved at seed time from member_ref ORG_TECHFLOW): HIDDEN for every rep. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_FUTURE_START": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-035"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S9 — promotion starts +10d (not active yet): NOT LISTED (excluded at the promotion search, OnlyActive). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_LONG_CODE": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-036"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S24 — 46-char code, no whitespace: card wrap on the rep page, buyer /account/coupons and cart sidebar. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_LOWERCASE": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-027"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id"
+    },
+    "_notes": "VCST-6158 S15 (copy / case fidelity on the rep coupon card) — REUSES COU-027 agenttestlc062 (P21, lowercase-stored, no end date, uncapped; LISTED by salesRepCoupons on vcst 2026-11-03). Same row as COUPON_LC_CASEFIDELITY: its uppercase form AGENTTESTLC062 is no coupon, so an uppercasing copy is detectable. Seeded by seed-promotions.mjs --only P21."
+  },
   "LOYALTY_SETTINGS": {
     "_inline": true,
     "currency_code": "PTS",
@@ -3095,7 +3248,7 @@
   },
   "AGENT_TEST_IMP_ROLE": {
     "_inline": true,
-    "_comment": "Ephemeral test role created and destroyed by IMP-033/034/038 in suite 082-auth-impersonation.csv. Never seeded on a persistent environment. AGENT-TEST-* naming follows the /qa-seed-data teardown convention — any orphaned instances are removed by /qa-seed-data teardown.",
+    "_comment": "Test role for IMP-033/034/038 in suite 082-auth-impersonation.csv — holds exactly platform:security:loginOnBehalf. IMP-038 needs it PRE-EXISTING: seed with `npm run seed:rbac -- --only AGENT_TEST_IMP_CUSTOMER` (role + user together; spec scripts/seed-data/platform/backoffice-rbac-specs.mjs IMP_OPERATOR_ROLE; guard td:validate:rbac; teardown `npm run seed:rbac:teardown -- --only AGENT_TEST_IMP_CUSTOMER`). IMP-033 creates a role of this name through the Admin SPA — run it only after that teardown. IMP-038 Cleanup deletes it, so re-seed before the next run.",
     "name": "AGENT-TEST-imp-role",
     "description": "Test role for impersonation regression — safe to delete",
     "permission_key": "platform:security:loginOnBehalf",
@@ -3103,7 +3256,7 @@
   },
   "AGENT_TEST_IMP_CUSTOMER": {
     "_inline": true,
-    "_comment": "Ephemeral test customer user created and destroyed by IMP-034/038. REQUIRED provisioning when (re)creating via Admin SPA: (1) Security > Users > Add (Account type=Customer, Status=Approved, Password={{DEFAULT_TEST_PASSWORD}}, no roles) → Save. (2) On the user-DETAIL blade (NOT Add dialog), set Container store=B2B-store → Save again (without B2B-store the user cannot authenticate against the storefront). (3) Create an associated Contact record (Customers > Contacts > Add, link to this user account — required for B2B storefront flows). (4) Assign AGENT_TEST_IMP_ROLE. Password is the standard test password ({{DEFAULT_TEST_PASSWORD}}) — see user_test_accounts memory.",
+    "_comment": "IMP-038 (and IMP-034) storefront operator: Customer, Approved, storeId B2B-store, a personal Contact (no organization, no membership), ONE global role AGENT_TEST_IMP_ROLE and isAdministrator=false — so the role is its only source of loginOnBehalf. Seeded by `npm run seed:rbac -- --only AGENT_TEST_IMP_CUSTOMER` (scripts/seed-data/platform/seed-backoffice-rbac.mjs, spec IMP_OPERATOR_ACCOUNT; --verify signs in on the storefront and checks the permission). Password is {{DEFAULT_TEST_PASSWORD}}. Runtime user/contact ids live in aliases.<env>.json. Teardown: `npm run seed:rbac:teardown -- --only AGENT_TEST_IMP_CUSTOMER`. IMP-038 Cleanup deletes the user, so re-seed before the next run.",
     "email": "agent-test-imp-customer@test-agent.com",
     "password": "{{DEFAULT_TEST_PASSWORD}}",
     "display_name": "Agent Test Impersonation Customer",
@@ -3251,6 +3404,45 @@
     "_comment": "RESERVATION — this alias is reserved for the BACKEND lane (GraphQL / API); its FRONTEND-lane twin is MULTI_ORG_TF_BR_ALT (see that alias's _notes for why sharing the two ORGS is safe while sharing the ACCOUNT is not). An OrganizationMembership row is keyed on (userId, organizationId) and carries the per-org `status` + `isLocked` a run mutates, so a frontend-lane run must NEVER authenticate as this account: the two lanes would eat each other's state and both would report confident wrong results. Enforced executably by LANES in scripts/seed-data/b2b/membership-lock-specs.mjs, which `npm run td:validate:membership-lock` [1] cross-checks against this prose. VCST-5028 cross-org fixture (vcst-qa, re-seeded 2026-06-15). ONE AGENT-TEST member belonging to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 org-isolation has a clear oracle: TechFlow=org-maintainer (Organization maintainer), BuildRight=org-employee (Organization employee). Recipe: test-data/b2b/organization-memberships.csv → re-seed/refresh idempotently via `npm run seed:b2b:memberships` (IDs above are platform-assigned and change on each re-seed; refresh them from the run's _seed-results-orgs-{date}.json). `id` = contact/member platform id; `userId` = the security-account user id (the field POST /api/customer/organization-memberships keys on — NOT the contact id). Password {{DEFAULT_TEST_PASSWORD}}. Auth works via plain /connect/token password grant WITH storeId=B2B-store (a no-store grant returns user_cannot_login_in_store). AGENT-TEST- prefix → swept by `npm run seed:b2b:teardown`.",
     "_notes": "Membership create payload shape that worked: POST /api/customer/organization-memberships  body {\"userId\":\"631063d0-…\",\"organizationId\":\"<orgId>\",\"organizationName\":\"<name>\",\"roles\":[{\"roleId\":\"org-maintainer\",\"roleName\":\"Organization maintainer\"}]} → 200. Read back via POST /api/customer/organization-memberships/search {\"userId\":\"631063d0-…\"} → totalCount 2."
   },
+  "PB_LEGACY_ORG_MEMBER": {
+    "_inline": true,
+    "email": "agent-test-pb-legacy-atc-20261028@yopmail.com",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "org_name": "Automation Testing Corp",
+    "user_group": "VIP",
+    "role": "org-employee",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_name": "org_name",
+      "user_group": "user_group",
+      "role": "role",
+      "userId": "userId",
+      "contactId": "contactId",
+      "org_id": "org_id",
+      "membership_id": "membership_id"
+    },
+    "_comment": "VCST-6442 legacy duplicate-permalink READER. A storefront account that is a member of the PRE-EXISTING org \"Automation Testing Corp\" with contact group VIP, which is exactly what the legacy /bkp-test01 en-US pages (2 Published, org-targeted, userGroups VIP, window 2026-05-01..2026-12-31) require, so xAPI slugInfo on them is no longer null for every account. Sign in with the storefront password grant + storeId=B2B-store. Spec: scripts/seed-data/cms/pb-legacy-org-members-specs.mjs. Seed `npm run seed:pb-legacy-members` (live proof: `-- --verify`), guard `npm run td:validate:pb-legacy-members`, teardown `npm run seed:pb-legacy-members:teardown`. Runtime ids (userId, contactId, org_id, membership_id) live ONLY in aliases.<env>.json; the org exists only on the env where it was hand-made (vcptcore). NOTE the page window ends 2026-12-31: after that the tie is gone and --verify fails on purpose."
+  },
+  "PB_LEGACY_ORG2_MEMBER": {
+    "_inline": true,
+    "email": "agent-test-pb-legacy-wm-20261028@yopmail.com",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "org_name": "Watermelon123",
+    "user_group": "",
+    "role": "org-employee",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_name": "org_name",
+      "role": "role",
+      "userId": "userId",
+      "contactId": "contactId",
+      "org_id": "org_id",
+      "membership_id": "membership_id"
+    },
+    "_comment": "VCST-6442 second legacy READER, member of the PRE-EXISTING org \"Watermelon123\" (no group). That org owns the two EQUAL en-US Published pages \"09.10 Sasha1\" on /same_landing_page (the tie-break pair) and one /whitelabling page. Deliberately a DIFFERENT org from PB_LEGACY_ORG_MEMBER, so the two readers must see different pages. Same recipe, guard and teardown as PB_LEGACY_ORG_MEMBER; runtime ids in aliases.<env>.json only."
+  },
   "MULTI_ORG_TF_BR_ALT": {
     "_inline": true,
     "email": "agent-test-multiorg-alt-20260803@yopmail.com",
@@ -3283,6 +3475,7 @@
       "tenant_type": "Store",
       "org_roles": "Organization employee;Purchasing agent;Organization maintainer",
       "narrowed_omitted_role": "Purchasing agent",
+      "narrowed_picker_keyword": "Purchasing agent",
       "seeded_values": "",
       "seeded_values_json": "",
       "sales_rep_roles": "",
@@ -3423,6 +3616,22 @@
     "_comment": "VCST-5281 / B2C-MBR-040 (F8b) — the LEGACY-ASSOCIATION fixture: an AGENT-TEST contact with Contact.Status=Approved, associated with BOTH TechFlow and BuildRight through `contact.organizations` ONLY, holding ZERO OrganizationMembership rows and EMPTY global ApplicationUser.Roles. This is the shape 104 of the 105 at-risk accounts on this env have. Recipe: test-data/b2b/contacts.csv CON-025 + test-data/b2b/users.csv USR-025 (roles cell EMPTY) → seed with `TEST_ENV=<env> node scripts/seed-data/b2b/seed-company-users.mjs b2b --only USR-025`. The empty `roles` cell is the MECHANISM: provisionContactLogins pairs each org with its index-parallel role and filters out any org without one, so no role ⇒ no membership row, while seedContacts still writes both org associations and contactBody forces status=Approved. stripSeededGlobalRoles runs on every login, and the account is created with no roles at all. Runtime GUIDs (`userId`, `contactId`) live in aliases.<env>.json only; the two org ids are pinned inline (seedOrgs forces body.id = organizations.csv platform_id ⇒ identical on every env, DV-021 allowlist). Password {{DEFAULT_TEST_PASSWORD}}. AGENT-TEST- prefix on both the email and the member name ⇒ swept by `npm run seed:b2b:teardown`.",
     "_notes": "TWO LOAD-BEARING PROPERTIES — ADDING EITHER ONE DESTROYS THIS FIXTURE. (1) ZERO OrganizationMembership rows. (2) EMPTY global ApplicationUser.Roles. B2C-MBR-040 asserts the BL-B2B-007 three-term permission union — org-level Organization.Roles ∪ membership OrganizationMembership.Roles ∪ global ApplicationUser.Roles. With no membership row the membership term is empty, and with no global role the global term is empty, so the ORG-LEVEL term is the only one left and becomes observable for the first time. A future re-seed must NOT 'helpfully' add a membership row or a role: a role in users.csv USR-025 makes provisionContactLogins create a membership (td:validate:b2b check [4] now hard-fails that combination via the ASSOCIATION-ONLY marker), and a global role reintroduces exactly the defect that makes {{MULTI_ORG_USER_EMAIL}} useless here — that account has a global org-maintainer role, which yields an INVARIANT 11 permissions across five different org claims (including orgs whose Organization.Roles is empty), completely masking the org-level term. Every b2b/users.csv account with a role fails property 1 by construction. membership_status is blank and MOOT here — there is no membership row to carry a status. MEASURED LIVE ON vcst 2026-08-03 (the numbers the case compares against): TechFlow Organization.Roles = [purchasing-agent, org-employee] → org-scoped token carries 2 permission claims in the `permission` claim (storefront:organization:view, storefront:user:view); BuildRight Organization.Roles = [] → 0 permission claims (the `permission` claim is ABSENT entirely, not an empty array — assert on absence-or-zero, not on an empty list); and the UNSCOPED token also carries 0, which is the proof the global term really is zero. NOTE WHY 2 AND NOT 4: purchasing-agent and org-employee grant the SAME two storefront perms (see b2b/roles.csv), so the union of the two roles is 2 distinct permissions — do not expect one-per-role. Both grants return HTTP 200. The two counts DIFFER, so the org-level term IS flowing into the org-scoped JWT — no BL-B2B-007 / VCST-5239 regression on this env at this build. Note the absolute numbers are 2/0, NOT the 11→12 recorded in BL-B2B-007: that 11 was the global-role baseline of a DIFFERENT account, so 11→12 is not the oracle for this fixture; the oracle is 'TechFlow > BuildRight, and BuildRight == 0'.",
     "_related": "Deliberately NOT any of the four VCST-5281 membership fixtures (MULTI_ORG_TF_BR, MULTI_ORG_TF_BR_ALT, ORG_TF_ONLY_INVITEE, ORG_TF_ONLY_STATUS) — every one of those HAS membership rows, which is the opposite of what this fixture is for."
+  },
+  "VCST4935_BUYER": {
+    "_inline": true,
+    "email": "agent-test-vcst4935-buyer@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "org_name": "AGENT-TEST-Org-AcmeCorp-20260310",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "store_id": "store_id",
+      "org_name": "org_name",
+      "userId": "userId",
+      "contactId": "contactId"
+    },
+    "_comment": "VCST-4935 storefront buyer: Purchasing agent @ AcmeCorp (ORG-001) on B2B-store, Approved, EmailConfirmed, not locked. Recipe: test-data/b2b/contacts.csv CON-031 + users.csv USR-031 → `TEST_ENV=<env> node scripts/seed-data/b2b/seed-company-users.mjs b2b --only USR-031`. Runtime userId/contactId live in aliases.<env>.json only. Password {{DEFAULT_TEST_PASSWORD}} (Playwright lanes type DEFAULT_TEST_PASSWORD). Swept by npm run seed:b2b:teardown."
   },
   "MULTI_ORG_TF_BR_EMPLOYEE": {
     "_inline": true,
@@ -4254,10 +4463,11 @@
   },
   "SR_UNSERVED_ORG": {
     "_inline": true,
-    "_notes": "An organization that PROVABLY EXISTS but is NOT served by SR_REP_PRIMARY — the target for the 'rep adds an unserved org to a Customer-scope share' negative (VCST-5707 / vc-module-sales-rep PR #21: adds must be served by the rep, else 'Access denied.' and nothing written). Deliberately the first SR_REP_PAGING org (AGENT-TEST-SR-Paging-01, created by scripts/seed-data/sales-rep/seed-sales-rep.mjs from the PAGING:12 cell in sales-rep/sales-reps.csv) rather than ORG-005 (b2b/organizations.csv, seeded=false): an unserved id and a NONEXISTENT id both return salesRepCustomer=null / organization 'Access denied.' to the rep, so an org whose existence nobody proved makes the negative undecidable — a 'denied' could be not-found. Existence is proven without admin rights: SR_REP_PAGING's own salesRepCustomers lists it. The negative writes nothing when correct, so it does not disturb SR_REP_PAGING's 15-org paging count. Business key = the name below; the runtime GUID lives ONLY in aliases.<env>.json — never in this committed file.",
+    "_notes": "An organization that PROVABLY EXISTS but is NOT served by SR_REP_PRIMARY — the target for the 'rep adds an unserved org to a Customer-scope share' negative (VCST-5707 / vc-module-sales-rep PR #21: adds must be served by the rep, else 'Access denied.' and nothing written). Deliberately the first SR_REP_PAGING org (AGENT-TEST-SR-Paging-01, created by scripts/seed-data/sales-rep/seed-sales-rep.mjs from the PAGING:12 cell in sales-rep/sales-reps.csv) rather than ORG-005 (b2b/organizations.csv, seeded=false): an unserved id and a NONEXISTENT id both return salesRepCustomer=null / organization 'Access denied.' to the rep, so an org whose existence nobody proved makes the negative undecidable — a 'denied' could be not-found. Existence is proven without admin rights: SR_REP_PAGING's own salesRepCustomers lists it. The negative writes nothing when correct, so it does not disturb SR_REP_PAGING's 15-org paging count. Business key = the name below; the runtime GUID lives ONLY in aliases.<env>.json — never in this committed file. Written back by seed-sales-rep.mjs (Phase 5 of npm run seed:sales-rep, or reads-only `npm run seed:sales-rep:writeback` when the paging orgs already exist) only after it checks live that the org exists (GET /api/members/{id}), SR_REP_PAGING serves it and SR_REP_PRIMARY does not; a full teardown blanks it. Static contract: td:validate:sales-rep [8].",
     "name": "AGENT-TEST-SR-Paging-01",
     "id": "",
-    "platform_id": ""
+    "platform_id": "",
+    "seed": "seed:sales-rep"
   },
   "SR_ADMIN_CUSTOMER_ONLY": {
     "file": "sales-rep/admin-users",
@@ -9887,7 +10097,7 @@
   "PK_BO_MANAGER": {
     "_inline": true,
     "seed": "seed:passkey",
-    "_notes": "VCST-6121 — back-office Manager — Admin Shell key management + back-office passkey sign-in. Manager (not Customer, not Administrator), no contact, global role \"Store access\" (existing least-privilege role, resolved by name; its permissions are read live by --verify); storeId none; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "_notes": "VCST-6121 — back-office Manager — Admin Shell key management + back-office passkey sign-in. Manager (not Customer, not Administrator), no contact, global role \"AGENT-TEST-PK-BackOffice\" (our own role, store:access + store:read, upserted by the seeder and deleted by its teardown; --verify reads its permissions live); storeId none; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
     "email": "agent-test-pk-bo-manager@test-agent.com",
     "userName": "agent-test-pk-bo-manager@test-agent.com",
     "password": "{{DEFAULT_TEST_PASSWORD}}",
@@ -9903,7 +10113,7 @@
   "PK_BO_MANAGER_2": {
     "_inline": true,
     "seed": "seed:passkey",
-    "_notes": "VCST-6121 — back-office Manager — AngularJS key management + back-office passkey sign-in (key set independent of PK_BO_MANAGER). Manager (not Customer, not Administrator), no contact, global role \"Store access\" (existing least-privilege role, resolved by name; its permissions are read live by --verify); storeId none; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
+    "_notes": "VCST-6121 — back-office Manager — AngularJS key management + back-office passkey sign-in (key set independent of PK_BO_MANAGER). Manager (not Customer, not Administrator), no contact, global role \"AGENT-TEST-PK-BackOffice\" (our own role, store:access + store:read, upserted by the seeder and deleted by its teardown; --verify reads its permissions live); storeId none; lockoutEnabled + emailConfirmed true. DISPOSABLE: cases register passkeys in-step (virtual authenticator) and may lock / strip the password — one case per account per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags + roles re-asserted, memberships unlocked, password re-set, leftover passkeys deleted). Live shape check: npm run seed:passkey:verify. Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids ONLY in aliases.<env>.json.",
     "email": "agent-test-pk-bo-manager-2@test-agent.com",
     "userName": "agent-test-pk-bo-manager-2@test-agent.com",
     "password": "{{DEFAULT_TEST_PASSWORD}}",
@@ -9926,6 +10136,22 @@
     "password_var": "DEFAULT_TEST_PASSWORD",
     "storeId_env": "STORE_ID",
     "userType": "Manager",
+    "isAdministrator": false,
+    "userId": "",
+    "memberId": "",
+    "storeId": "",
+    "org_id": ""
+  },
+  "PK_FOREIGN_STORE": {
+    "_inline": true,
+    "seed": "seed:passkey",
+    "_notes": "VCST-6121 / PKA-015 — customer of a FOREIGN store: a passkey it registered must not sign it in to {{STORE_ID}}. Customer, contact-backed, no organization; storeId = an EXISTING store picked LIVE by the seeder (not {{STORE_ID}}, not in its trustedGroups, does not trust it, Password + Passkey sign-in active; the earlier pick is kept while it qualifies; the seed aborts when no store qualifies) — read it as @td(PK_FOREIGN_STORE.storeId), never type a store id. Its password grant succeeds ONLY with storeId = @td(PK_FOREIGN_STORE.storeId); that own-store token is what lets a case register a real passkey on the storefront host (passkeyCreationOptions rp.id = the storefront host) and then assert grant_type=passkey with storeId={{STORE_ID}} answers user_cannot_login_in_store while the same key with its own storeId gets a token. Not OTP_FOREIGN_STORE_CONTACT: that account's store exists nowhere, so no grant ever gives it a token of its own. lockoutEnabled + emailConfirmed true. DISPOSABLE: one case per run, re-seed before the next run. Seeded by scripts/seed-data/auth/seed-passkey.mjs (npm run seed:passkey; idempotent — re-running RE-ARMS the account: unlock, accessFailedCount 0, flags re-asserted, password re-set, leftover passkeys deleted, store re-checked). Live shape check: npm run seed:passkey:verify (own-store grant 200, 0 passkeys, a grant on {{STORE_ID}} refused user_cannot_login_in_store, store still qualifies). Teardown: npm run seed:passkey:teardown (the account's passkeys go with it). Guard: npm run td:validate:passkey. Business keys here; runtime ids and the picked store ONLY in aliases.<env>.json.",
+    "email": "agent-test-pk-foreign-store@test-agent.com",
+    "userName": "agent-test-pk-foreign-store@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_rule": "live pick: an existing store that is not STORE_ID and has no trust with it in either direction (seed-passkey.mjs pickForeignStore)",
+    "userType": "Customer",
     "isAdministrator": false,
     "userId": "",
     "memberId": "",
@@ -10890,6 +11116,58 @@
     "partial_list_id": "agent_test_html_partial",
     "empty_favorites_title": "AGENT-TEST GA4 Favorites No Match"
   },
+  "WL_GA4_SELECT_ITEM": {
+    "_inline": true,
+    "seed": "seed:ga4-lists:wishlist",
+    "_comment": "VCST-6626 GA4 wishlist select_item subject: the run account ({{USER_EMAIL}}) holds exactly ONE Lists entry named AGENT-TEST-6626-GA4-WL with exactly 3 products at quantity 1, taken from the VCST-6017 pool group `wishlist` (disjoint from every cart / saved-for-later / recently-browsed / Page Builder list, distinct prices), so a select_item carrying another line or another list is visible. `seed:ga4-lists:wishlist` CONVERGES it from any state (extra lists of that name and foreign lines are removed). FIFTH RULE: the list is per-user state a run can edit, so re-run it right before the case. Teardown: `npm run seed:ga4-lists:teardown -- --only wishlist` (removes the list). Runtime id, product ids and url in aliases.<env>.json.",
+    "name": "AGENT-TEST-6626-GA4-WL",
+    "lists_url": "/account/lists",
+    "item_count": 3
+  },
+  "VCST6626_PROFILE_BUYER": {
+    "_inline": true,
+    "seed": "node scripts/seed-data/auth/mfa-fixtures.mjs --run vcst6626",
+    "_comment": "VCST-6626 disposable confirmed B2B-store buyer for the 033 profile / address field-error rows (safe to edit). Created per run by the MFA fixtures creator (kind customer-confirmed); runtime user_id/contact_id in aliases.<env>.json; teardown: node scripts/seed-data/auth/mfa-fixtures.mjs --teardown --run vcst6626.",
+    "store_id": "B2B-store",
+    "password_var": "TEST_USER_PASSWORD",
+    "run_id": "vcst6626",
+    "kind": "customer-confirmed",
+    "email": "agent-test-mfa-vcst6626-customer-confirmed@example.com",
+    "user_id": "",
+    "contact_id": ""
+  },
+  "VCST6626_MFA_PER_USER_2FA": {
+    "_inline": true,
+    "seed": "node scripts/seed-data/auth/mfa-fixtures.mjs --run vcst6626",
+    "_comment": "VCST-6626 B2B-store buyer with the per-user two-factor flag on, for the 111 per-user MFA rows (store MFA mode stays off). Created per run by the MFA fixtures creator (kind per-user-2fa); runtime user_id/contact_id in aliases.<env>.json; teardown: node scripts/seed-data/auth/mfa-fixtures.mjs --teardown --run vcst6626.",
+    "store_id": "B2B-store",
+    "password_var": "TEST_USER_PASSWORD",
+    "run_id": "vcst6626",
+    "kind": "per-user-2fa",
+    "email": "agent-test-mfa-vcst6626-per-user-2fa@example.com",
+    "user_id": "",
+    "contact_id": ""
+  },
+  "PB_LOGIN_SECTION": {
+    "_inline": true,
+    "seed": "seed:cms-pages",
+    "_comment": "VCST-6626 MFASF-014 static-page sign-in host: a Page Builder content page whose only functional block is the storefront `login` static-content block (login.vue renders LoginFormSection, the second host of the sign-in form). No personalization. Anonymous visitors reach it only while the store allows anonymous users (store setting Stores.AllowAnonymousUsers, read by the storefront as store.settings.anonymousUsersAllowed). Seed: `TEST_ENV=<env> node scripts/seed-data/cms/seed-pagebuilder-pages.mjs --only PB_LOGIN_SECTION`; archive with `--teardown --only PB_LOGIN_SECTION`. Runtime group_id in aliases.<env>.json.",
+    "name": "AGENT-TEST Login Section Page",
+    "permalink": "/agent-test-login-section",
+    "url": "/agent-test-login-section",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "PB_SINGLE_LANG_EN": {
+    "_inline": true,
+    "seed": "seed:cms-pages",
+    "_comment": "VCST-6626 single-language language-switch subject: ONE Page Builder page published in en-US ONLY, with NO sibling page in any other culture at its permalink (contrast PB_RETURN_POLICY, the multi-language subject). Plain title + text blocks only, because a category/product block rewrites the URL. No personalization, so a signed-in B2B-store buyer reaches it. Seed: `TEST_ENV=<env> node scripts/seed-data/cms/seed-pagebuilder-pages.mjs --only PB_SINGLE_LANG_EN`; teardown (archive) with `--teardown --only PB_SINGLE_LANG_EN`. Runtime group_id in aliases.<env>.json.",
+    "name": "AGENT-TEST Single Language EN Page",
+    "permalink": "/agent-test-single-language-en",
+    "url": "/agent-test-single-language-en",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
   "PUNCHOUT_CONFIG_0": {
     "_inline": true,
     "_notes": "VCST-5886 Punchout configuration 0 (Punchout:Configurations:0 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: happy path — every optional check ON (sender domain + return-URL allow-list), default-length lifetimes. sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_0_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_0_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_0 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
@@ -11462,5 +11740,98 @@
     "user_type": "Manager",
     "password_var": "DEFAULT_TEST_PASSWORD",
     "_notes": "VCST-6443: back-office (Manager, isAdministrator=false) account WITHOUT builder:create but WITH builder:read + builder:update, so POST /api/page-builder-pages/create-group-page returns 403 for it on a VALID permalink (verified at provision) — the case decides whether an INVALID permalink is rejected 400 before or 403 at the permission gate. Password is the {{DEFAULT_TEST_PASSWORD}} secret from .env.local (localhost-safe fallback via user-provision.mjs resolvePassword), never committed. Runtime user id lives only in aliases.<env>.json. Teardown: DELETE /api/platform/security/users?names=agent-test-6443-nocreate + DELETE /api/platform/security/roles?ids=AGENT-TEST-6443%20no-create."
+  },
+  "PROD_RANGE_LOW": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-001"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: lowest value of the numeric property N (AgentTest_Length_mm = 9). Below the case sub-range, so applying it must drop this product; its value is the slider minimum."
+  },
+  "PROD_RANGE_MID": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-002"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: the only product whose N (45) lies inside the sub-range 30..60 — the list after applying the sub-range must hold exactly this product."
+  },
+  "PROD_RANGE_HIGH": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-003"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: highest value of N (120, three digits, so numeric and text ordering disagree). Above the sub-range; its value is the slider maximum."
+  },
+  "PROD_RANGE_NONE": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-004"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet control: same category, priced, in stock, NO value for N. Must disappear once any range is applied."
+  },
+  "RANGE_FACET_N": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-002"
+    },
+    "fields": {
+      "property": "property_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "min": "range_min",
+      "max": "range_max",
+      "subFrom": "sub_range_from",
+      "subTo": "sub_range_to",
+      "subSkus": "sub_range_skus"
+    },
+    "notes": "SRCHA-047: the numeric product property N for a Range facet on the store (Number, category-level property of the AGENT-TEST Range Facet Fixtures category, linked into the store catalog). Three products carry DIFFERENT values (min != max, mixed digit counts so a text-typed index would order them wrongly) plus one control without N. property = the name to pick in Store > Search configuration > Facets; min/max = expected statistics and slider bounds; subFrom..subTo holds exactly subSkus. Seed: npm run seed:range-facet. The store facet itself is NOT configured by the seeder."
   }
 }

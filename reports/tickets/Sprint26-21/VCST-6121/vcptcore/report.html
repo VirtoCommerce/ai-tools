@@ -1,0 +1,155 @@
+<title>VCST-6121 PASS WITH NOTES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --paper: #f5f6f8; --surface: #ffffff; --ink: #1c2330; --muted: #596275; --rule: #dadee6;
+    --accent: #2f5d8a;
+    --pass: #1d7648; --pass-bg: #e3f3ea; --fail: #b3261e; --fail-bg: #fbe7e5;
+    --notes: #8a5d00; --notes-bg: #fbf1d9; --blocked: #4d5566; --blocked-bg: #e9ebef;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #12161c; --surface: #1a2029; --ink: #e5e8ee; --muted: #9ba4b3; --rule: #2d3541;
+      --accent: #86acd4;
+      --pass: #5cc995; --pass-bg: #153324; --fail: #f28b82; --fail-bg: #3a1a18;
+      --notes: #e3b650; --notes-bg: #372b10; --blocked: #aab2c0; --blocked-bg: #252c37;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #12161c; --surface: #1a2029; --ink: #e5e8ee; --muted: #9ba4b3; --rule: #2d3541;
+    --accent: #86acd4;
+    --pass: #5cc995; --pass-bg: #153324; --fail: #f28b82; --fail-bg: #3a1a18;
+    --notes: #e3b650; --notes-bg: #372b10; --blocked: #aab2c0; --blocked-bg: #252c37;
+  }
+
+  body { background: var(--paper); color: var(--ink); font: 15px/1.55 var(--sans); padding-inline: 16px; padding-block: 28px 48px; }
+  .report { max-width: 960px; margin: 0 auto; display: grid; gap: 28px; }
+  h1, h2 { text-wrap: balance; margin: 0; }
+  h2 { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  section { display: grid; gap: 12px; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .mono, code { font-family: var(--mono); font-size: .92em; }
+  .muted { color: var(--muted); }
+
+  /* Verdict band — the one bold element; its colour is the verdict. */
+  .band { --v: var(--blocked); --vbg: var(--blocked-bg);
+    background: var(--vbg); border: 1px solid var(--v); border-radius: 10px; padding: 20px 22px; display: grid; gap: 10px; }
+  [data-verdict="PASS"] .band { --v: var(--pass); --vbg: var(--pass-bg); }
+  [data-verdict="PASS_WITH_NOTES"] .band { --v: var(--notes); --vbg: var(--notes-bg); }
+  [data-verdict="FAIL"] .band { --v: var(--fail); --vbg: var(--fail-bg); }
+  .eyebrow { font: 500 13px var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .verdict-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
+  .verdict { font-size: clamp(28px, 6vw, 40px); font-weight: 700; letter-spacing: .01em; color: var(--v); line-height: 1.1; }
+  .title { font-size: 19px; font-weight: 600; }
+  .lede { margin: 0; max-width: 68ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 500; font-family: var(--mono); font-size: 12.5px; }
+
+  /* Counts — only because AC pass/fail totals ARE the question this page answers. */
+  .tally { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .chip { display: inline-block; font: 600 11.5px/1 var(--mono); letter-spacing: .04em; padding: 5px 8px; border-radius: 999px;
+    color: var(--blocked); background: var(--blocked-bg); white-space: nowrap; }
+  .chip[data-s="PASS"] { color: var(--pass); background: var(--pass-bg); }
+  .chip[data-s="FAIL"], .chip[data-sev="critical"], .chip[data-sev="high"] { color: var(--fail); background: var(--fail-bg); }
+  .chip[data-sev="medium"] { color: var(--notes); background: var(--notes-bg); }
+
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+  tr:last-child td { border-bottom: 0; }
+  td.id { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; color: var(--muted); }
+
+  ul.rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  ul.rows li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; padding: 10px 14px; background: var(--surface);
+    border: 1px solid var(--rule); border-radius: 8px; }
+  ul.rows li .grow { flex: 1 1 240px; }
+  .none { color: var(--muted); font-style: italic; margin: 0; }
+
+  .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .shots figure { margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+  .shots img { display: block; width: 100%; height: auto; }
+  .shots figcaption { font-size: 12.5px; padding: 8px 10px; color: var(--muted); }
+
+  dl.context { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: 13.5px; }
+  dl.context dt { color: var(--muted); }
+  dl.context dd { margin: 0; font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
+  @media (max-width: 520px) { dl.context { grid-template-columns: 1fr; } dl.context dd { margin-bottom: 6px; } }
+  .ba-before { color: var(--fail); }
+  .ba-after  { color: var(--pass); font-weight: 600; }
+  footer.foot { margin-top: 28px; font-size: 12.5px; }
+</style>
+
+<main class="report" data-verdict="PASS_WITH_NOTES">
+  <header class="band">
+    <div class="eyebrow"><span>VCST-6121</span><span>vcptcore</span><span>2026-10-28</span></div>
+    <div class="verdict-row"><span class="verdict">PASS WITH NOTES</span><span class="title">VCST-6121</span></div>
+    <p class="lede">Passkeys work end to end on storefront and both admins. Two server gaps stay open as separate bugs pending author answers: the store switch is not enforced at sign-in, and a storefront key delete keeps other sessions.</p>
+    <div class="meta"><span>Build <b>platform 3.1091.0-pr-3144-e637 · theme 2.61.0-pr-2601-8058-80583415</b></span><span>Passed <b>39/44</b></span><span>Bugs <b>6</b></span></div>
+  </header>
+
+  <section aria-labelledby="h-bugs">
+    <h2 id="h-bugs">Bugs filed</h2>
+    <ul class="rows">
+      <li><span class="chip" data-sev="medium">Medium</span><span class="mono">VCST-6598</span><span class="grow">Passkey sign-in ignores the store Passkey switch (already-open page still gets a token)</span><span class="muted"></span></li>
+      <li><span class="chip" data-sev="medium">Medium</span><span class="mono">VCST-6594</span><span class="grow">xAPI deleteSignInKey does not end other sessions (refresh tokens keep working)</span><span class="muted"></span></li>
+      <li><span class="chip" data-sev="high">High</span><span class="mono">VCST-6593</span><span class="grow">Admin Shell login: keyboard focus on passkey/Google not visible</span><span class="muted"></span></li>
+      <li><span class="chip" data-sev="high">High</span><span class="mono">VCST-6595</span><span class="grow">Classic admin Sign-in methods blade: no focus indicator, 2.44:1 icons, unlabeled rename input</span><span class="muted"></span></li>
+      <li><span class="chip" data-sev="medium">Medium</span><span class="mono">VCST-6599</span><span class="grow">Storefront Security page: passkey buttons named only Edit/Delete</span><span class="muted"></span></li>
+      <li><span class="chip" data-sev="medium">Medium</span><span class="mono">VCST-6600</span><span class="grow">Storefront Security page: focus drops to body after passkey add/delete</span><span class="muted"></span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-nf">
+    <h2 id="h-nf">Not filed (below the severity floor)</h2>
+    <ul class="rows">
+      <li><span class="chip" data-sev="low">Low</span><span class="grow">impersonated xAPI changePassword not refused + feeds target lockout counter (Low, pre-existing)</span><span class="mono muted"></span></li>
+      <li><span class="chip" data-sev="low">Low</span><span class="grow">AngularJS last-key delete enabled, 400: Bad request (Low)</span><span class="mono muted"></span></li>
+      <li><span class="chip" data-sev="low">Low</span><span class="grow">stale credential: Login attempt failed on /sign-in load (Low)</span><span class="mono muted"></span></li>
+      <li><span class="chip" data-sev="low">Low</span><span class="grow">challenge older than 300 s accepted (Low, question)</span><span class="mono muted"></span></li>
+      <li><span class="chip" data-sev="low">Low</span><span class="grow">passkey store refusal logged reason Unknown, user store (Low)</span><span class="mono muted"></span></li>
+      <li><span class="chip" data-sev="low">Low</span><span class="grow">rename does not update modifiedDate (Low)</span><span class="mono muted"></span></li>
+      <li><span class="chip" data-sev="low">Low</span><span class="grow">Admin Shell set password validateuserpassword 403 for Manager (Low)</span><span class="mono muted"></span></li>
+      <li><span class="chip" data-sev="low">Low</span><span class="grow">sign-in log Type filter has no Passkey option; failed rows drop storeId (Low)</span><span class="mono muted"></span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-q">
+    <h2 id="h-q">Open questions</h2>
+    <ul class="rows">
+      <li><span class="grow">Q2 Should the store Passkey switch also refuse the sign-in at the API? (VCST-6598)</span></li>
+      <li><span class="grow">Q3 Should deleting a key on the storefront end the other sessions, as REST does? (VCST-6594)</span></li>
+      <li><span class="grow">Q4 Does &quot;satisfies MFA&quot; mean user verification only, or a token claim (amr)?</span></li>
+      <li><span class="grow">Q1 Is deleting the password (passkey-only account) intended? It is reachable today.</span></li>
+      <li><span class="grow">Q5 Is username-first sign-in in scope? The API has none.</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-nt">
+    <h2 id="h-nt">Not tested, and why</h2>
+    <ul class="rows">
+      <li><span class="grow">Real devices: Windows Hello, Touch ID / Face ID, Android / phone (hybrid), FIDO2 key, Safari / Firefox</span><span class="muted">automation uses a virtual authenticator - manual check owed</span></li>
+      <li><span class="grow">Global Passkey:Enabled=false</span><span class="muted">appsettings + restart, not reachable on a shared stand</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-ctx">
+    <h2 id="h-ctx">Context used</h2>
+    <dl class="context">
+      <dt>Business rules</dt><dd>none</dd>
+      <dt>Resolved</dt><dd>VCST-6596 cancelled as by design; BL-AUTH-003 narrowed</dd>
+      <dt>Verdict</dt><dd>PASS WITH NOTES by operator decision (derived FAIL); VCST-6594 and VCST-6598 fixed separately</dd>
+      <dt>Stand</dt><dd>vcptcore-qa pins (vc-deploy-dev #7016, #7018) to revert after verification; B2B-store now holds a stored OtpSignIn.Enabled=false row</dd>
+    </dl>
+  </section>
+
+  <footer class="foot muted">Evidence folder <code></code></footer>
+</main>

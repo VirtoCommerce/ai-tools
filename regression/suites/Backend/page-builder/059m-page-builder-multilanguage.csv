@@ -1,0 +1,747 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CMS-ML-001,"[JOURNEY] Multilanguage Page — convert EN, link FR, create DE, publish all, switch FR to EN on the storefront",Page Builder > Multilanguage Pages,Critical,BL-SEO-001,ECL-12.1,"Admin signed in; storefront buyer @td(VCST4935_BUYER.email) (password @td(VCST4935_BUYER.password), Playwright secret key DEFAULT_TEST_PASSWORD) is an Approved purchasing agent on {{STORE_ID}}; the store has en-US as default language and fr-FR, de-DE among its languages; store setting VirtoPages.MissingTranslationBehavior unset. The B2B-store storefront redirects anonymous visitors to /sign-in, so storefront steps run signed in. Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts","store={{STORE_ID}}, buyer=@td(VCST4935_BUYER.email)","--- LAYER: API (two existing Landing Pages, the Bossard case) ---
+[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with {name:""AGENT-TEST-VCST4935-<unique>-faq-en"", permalink:""/agent-test-vcst4935-<unique>-faq"", cultureName:""en-US"", storeId:""{{STORE_ID}}"", visibility:true}; capture id as EN_ID
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with {name:""AGENT-TEST-VCST4935-<unique>-faq-fr"", permalink:""/agent-test-vcst4935-<unique>-questions"", cultureName:""fr-FR"", storeId:""{{STORE_ID}}"", visibility:true}; capture id as FR_ID
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/publishing/{EN_ID}?publish=true and the same for {FR_ID}
+--- SCREEN: Admin, Pages list ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the page AGENT-TEST-VCST4935-<unique>-faq-en
+[ACT] Click the toolbar action ""Convert to multilanguage""
+[WAIT] The Multilanguage Page blade opens
+[ASSERT] The language table lists en-US as the Default language row with the permalink shown as inherited
+--- SCREEN: Multilanguage Page blade, language table ---
+[ACT] On the fr-FR row choose ""Link existing""
+[ACT] Pick AGENT-TEST-VCST4935-<unique>-faq-fr
+[ASSERT] The fr-FR row shows permalink /agent-test-vcst4935-<unique>-questions with the badge ""custom""
+[ACT] On the de-DE row choose ""Create""
+[ASSERT] The de-DE row is Draft and its permalink equals the root permalink with the badge ""inherited""
+[ACT] Click ""Publish all""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] de-DE is Published; en-US and fr-FR are reported as skipped because they have no draft
+--- LAYER: GraphQL (poll up to 60 s for the Pages index) ---
+[GQL] query { slugInfo(permalink:""<EN permalink>"" storeId:""{{STORE_ID}}"" cultureName:""en-US"") { entityInfo { id } } } then pageDocument(id:<that id>) { cultureName alternates { id cultureName permalink } }
+[ASSERT] alternates lists exactly en-US, fr-FR and de-DE, each with its own permalink
+--- SCREEN: Storefront, signed in as the buyer ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Sign in as @td(VCST4935_BUYER.email)
+[NAV] The French localized URL of the page (the fr-FR language prefix of the store plus /agent-test-vcst4935-<unique>-questions)
+[ASSERT] The French page content renders (not a not-found view); the document head holds one <link rel=""alternate"" hreflang> per published translation (en-US, fr-FR, de-DE) plus x-default, every href absolute on the store URL
+[ACT] Open the storefront language selector
+[ACT] Choose English
+[ASSERT] The URL path is /agent-test-vcst4935-<unique>-faq (the English permalink, no French prefix, no French permalink) and the English content renders
+[ACT] Reload the page
+[ASSERT] The English URL and content persist after the reload","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, §3.2 Multi-language site, Convert / Link existing / Create / Publish all): Convert makes the English page the default version, Link existing keeps the French permalink (custom badge), Create makes a de-DE draft that inherits the permalink
+[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, §3.2 Publish all): Publish all publishes the de-DE draft and reports en-US and fr-FR as skipped
+[API] {SPEC} BL-SEO-001 (a permalink of one language resolves to the translation in the requested language) and dev comment §2 x-cms row: pageDocument.alternates lists the three published store-language versions, one per language
+[STATE] {SPEC} (VCST-4935 dev comment §3 Storefront 2): switching the language on a Page Builder page opens the translation's permalink; the head has hreflang for every translation plus x-default
+[FORMAT] {OBSERVED} (SBTM-VCST-4935-2026-10-23): hreflang values are full culture codes (en-US, fr-FR, de-DE) and x-default is the store-default version; the story example shows short codes (de, en) - the observed form is asserted, the difference is a PO question
+[STATE] {OBSERVED} (SBTM-VCST-4935-2026-10-23): no <link rel=""canonical""> is emitted","[API] errors[] is empty in every GraphQL response this flow issues
+[CONSOLE] no TypeError or JS error on any screen of the flow
+[NETWORK] no 4xx/5xx on /graphql or on the page-builder-multilanguage-pages calls
+[ADMIN] the root shows one row in the Pages list with a pill per language",Switching FR to EN keeps the French URL or French content; head lists no alternates or only some; fr-FR row loses its custom permalink after Link existing; Publish all fails the batch; Spinner visible >5s,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:PARITY · Technique:FLOW · Open question: story example hreflang short codes vs observed full cultures (PO),Draft
+CMS-ML-002,"Single-language store — Add opens the Landing Page blade, no Convert action, no hreflang",Page Builder > Multilanguage Pages,High,,,"Live-discover a store with exactly one language: POST {{BACK_URL}}/api/stores/search, keep a store whose languages array has one entry and whose setting VirtoPages.Enable is true (GET {{BACK_URL}}/api/platform/settings or the store settings), and whose storefront URL is set. No such store on the environment: the case is BLOCKED, never FAIL. Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts","store={{STORE_ID}}, back_url={{BACK_URL}}","--- SCREEN: Admin, Pages list of the single-language store ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=<SINGLE_STORE_ID> (the live-discovered store)
+[ACT] Click ""Add""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The Landing Page blade opens directly; no page-type chooser (Multilanguage Page / Landing Page) is shown
+--- SCREEN: Landing Page blade ---
+[ACT] Fill Name AGENT-TEST-VCST4935-<unique>-single, Permalink /agent-test-vcst4935-<unique>-single, the store language
+[ACT] Click ""Save""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The page is saved as Draft; the toolbar of the saved Landing Page blade has no ""Convert to multilanguage"" action
+[ACT] Publish the page
+--- SCREEN: Storefront of the single-language store ---
+[NAV] <the store URL>/agent-test-vcst4935-<unique>-single
+[ASSERT] The page renders; the document head holds no <link rel=""alternate"" hreflang>","[BLADE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, §3.1 Single-language site): in a single-language store Add opens the Landing Page blade directly, with no Multilanguage choice
+[BLADE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, §3.1 Single-language site): the Landing Page blade has no ""Convert to multilanguage"" action
+[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, §3.1 Single-language site): the storefront page renders and its head holds zero <link rel=""alternate"" hreflang> elements","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues
+[API] GET {{BACK_URL}}/api/page-builder-pages/grouped/{id} shows multilanguagePageId empty (a regular Landing Page)",A page-type chooser or Convert action appears in a one-language store; hreflang present on the storefront page; Blade does not open within 10s,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for the AGENT-TEST-VCST4935 page this case created
+[VERIFY] the storefront URL of the page returns the not-found view",VCST-4935 · Archetype:CONFIG · Technique:EP,Draft
+CMS-ML-003,"Create Multilanguage Page — language table lists every store language as Missing, default first",Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. Store languages are read from the store, never counted from a literal: GET {{BACK_URL}}/api/stores/{{STORE_ID}} (languages, default language).",store={{STORE_ID}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID}}; record STORE_LANGS (the languages array) and STORE_DEFAULT (defaultLanguage)
+--- SCREEN: Admin, Pages list ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Click ""Add""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] A page-type chooser offers Multilanguage Page and Landing Page
+[ACT] Choose ""Multilanguage Page""
+--- SCREEN: New Multilanguage Page blade ---
+[ASSERT] The blade has Name, Permalink, Default language (preset to STORE_DEFAULT) and Advanced options
+[ACT] Fill Name with AGENT-TEST-VCST4935-<unique>-table
+[ACT] Fill Permalink with /agent-test-vcst4935-<unique>-table
+[ACT] Click ""Save""
+[WAIT] The UI settles (no spinner, network idle)
+--- SCREEN: Multilanguage Page blade, language table ---
+[ASSERT] The language table has one row per STORE_LANGS entry, the Default language row first, every Status ""Missing""
+[ASSERT] The table columns are Language, Permalink, Status, Actions (no Slug column)
+[HTTP] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages; compare cultureName set with STORE_LANGS","[BLADE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 3 and §3.2 Create a Multilanguage Page from scratch): Add offers both page types; the blade has Name, Permalink, Default language (the store default unless changed) and Advanced options
+[GRID] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 5): after Save the table lists every store language, all Missing; columns Language, Permalink (with inherited / custom badge), Status, Actions - no Slug column
+[STATE] {SPEC} same rows: the GET languages response has exactly the store languages (count equals the count of STORE_LANGS), the isDefault entry is STORE_DEFAULT, every status is ""Missing""","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues
+[API] the root persisted: GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} returns defaultCultureName = STORE_DEFAULT",Table misses a store language or lists a non-store one; default row is not first or not the store default; Slug column present; Status other than Missing; Blade does not open within 10s,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} (the root has no versions) and verify GET returns 404",VCST-4935 · Archetype:FALLBACK · Technique:EP,Draft
+CMS-ML-004,Multilanguage Page required fields — Name and Permalink boundaries,Page Builder > Multilanguage Pages,Medium,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts","store={{STORE_ID}}, back_url={{BACK_URL}}","--- SCREEN: New Multilanguage Page blade ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Click ""Add""
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Choose ""Multilanguage Page""
+[ACT] Leave Name empty
+[ACT] Leave Permalink empty
+[ASSERT] ""Save"" is disabled or a required-field message is shown; no request is sent
+[ACT] Fill Name with only spaces
+[ACT] Fill Permalink with /agent-test-vcst4935-<unique>-req
+[ASSERT] ""Save"" is disabled or a required-field message is shown
+[ACT] Fill Name with AGENT-TEST-VCST4935-<unique>-req
+[ACT] Clear Permalink (empty)
+[ACT] Fill it with only spaces
+[ASSERT] ""Save"" is disabled or a required-field message is shown
+[ACT] Enter the permalink agent-test-vcst4935-<unique>-req (no leading slash)
+[ACT] Try ""Save""
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Enter a permalink of 2049 characters
+[ACT] Try ""Save""
+[WAIT] The UI settles (no spinner, network idle)
+--- LAYER: API (same boundaries without the UI) ---
+[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages with {storeId:""{{STORE_ID}}"", name:""   "", permalink:""/agent-test-vcst4935-<unique>-req"", defaultCultureName:""en-US""}
+[STATUS] Verify HTTP 400
+[HTTP] The same POST with a valid name and permalink ""   ""
+[STATUS] Verify HTTP 400
+[HTTP] The same POST with a 2049-character permalink and with a permalink without the leading slash
+[STATUS] Record the status of each; neither is 5xx","[FORM] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 3 (Name and Permalink are the blade's required fields)) and the server rule ""StoreId, Name and Permalink are required"": empty and whitespace-only Name or Permalink cannot be saved in the blade and return HTTP 400 on POST
+[STATUS] {SPEC} ECL-7.2 (boundary input never produces a 5xx): the slash-less and the 2049-character permalink return 2xx or 4xx, never 5xx; a rejected value stores nothing (search by the name prefix returns totalCount 0)","[NETWORK] no 5xx for any value
+[API] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/search for the name prefix AGENT-TEST-VCST4935-<unique>-req returns no root created by a rejected value
+[NOTE] The accepted-or-rejected outcome of the slash-less and over-long permalink is recorded in evidence; the Multilanguage Page permalink rule is not stated for these values in the dev comment, so no verdict is derived from it (PO question)",An empty or whitespace Name or Permalink is accepted (root created); HTTP 500 for the 2049-character permalink; Save enabled with the required field empty,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/search for the AGENT-TEST-VCST4935-<unique>-req prefix and DELETE every root found (none has versions)","VCST-4935 · Archetype:BOUNDARY · Technique:BVA · Open question: permalink rule (leading slash, max length) for the Multilanguage Page root (PO)",Draft
+CMS-ML-005,Create root via REST with a Default language that is not a store language is refused,Page Builder > Multilanguage Pages,Medium,,,"Admin Bearer token available; the store languages of {{STORE_ID}} are known (GET {{BACK_URL}}/api/stores/{{STORE_ID}}); the culture xx-XX is not one of them. Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID}}; confirm xx-XX is not among the languages
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages with {storeId:""{{STORE_ID}}"", name:""AGENT-TEST-VCST4935-<unique>-badlang"", permalink:""/agent-test-vcst4935-<unique>-badlang"", defaultCultureName:""xx-XX""}
+[STATUS] Verify the HTTP status
+[BODY] Read the response body
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/search filtered by the name prefix (storeId {{STORE_ID}})
+[COUNT] Read totalCount
+[HTTP] For comparison: create a valid root (defaultCultureName ""en-US""), then PUT {{BACK_URL}}/api/page-builder-multilanguage-pages with the same body and defaultCultureName changed to ""xx-XX""
+[STATUS] Read the HTTP status and message of the PUT","[STATUS] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 3, Default language: ""the store default language unless changed"" - the source language of the page) and the Update rule of the same endpoint: a Default language that is not a language of the store is refused with HTTP 400 on POST as it is on PUT
+[BODY] {OBSERVED} (SBTM-VCST-4935-2026-10-23): the PUT comparison returns 400 with the text ""'xx-XX' is not a language of store '<storeId>'.""; the POST is expected to return the same refusal
+[STATE] {SPEC} same rule: the refused POST stores nothing: search by the name prefix returns totalCount 0","[NETWORK] no 5xx on either call
+[API] GET .../{rootId}/languages for a root that was wrongly created must not list xx-XX with isStoreLanguage true (KB-988AA72D)",POST returns 200 and persists a root whose default language is not a store language (today's build); the languages table then reports xx-XX as a store language; a version for xx-XX can be created,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] For every AGENT-TEST-VCST4935 root found by the name prefix: archive-all if it has versions, else DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}; for the PUT comparison root DELETE it too","VCST-4935 · Archetype:LIFECYCLE · Technique:EG · Catches:VCST-4935 · Suspected defect N1 (POST accepts a non-store Default language, PUT refuses it), KB-988AA72D, SBTM-VCST-4935-2026-10-23 bug 1; held Draft: the build returns 200 today, the expectation stays the spec rule",Draft
+CMS-ML-006,Create language version — draft copy of source content with inherited permalink,Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root with an en-US default version exists whose designer content holds two blocks (built in the steps).","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages {storeId:""{{STORE_ID}}"", name:""AGENT-TEST-VCST4935-<unique>-create"", permalink:""/agent-test-vcst4935-<unique>-create"", defaultCultureName:""en-US""}; capture id as ROOT_ID
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{ROOT_ID}/languages/en-US; capture the response id as SRC_ID
+--- SCREEN: Admin, source version designer ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the root AGENT-TEST-VCST4935-<unique>-create, open the en-US row, click ""Open designer""
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Add a Title block with the text ""VCST-4935 source""
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Add a Simple Text block with the text ""second block""
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click ""Save""
+[WAIT] The UI settles (no spinner, network idle)
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{SRC_ID}/content; record SRC_BLOCKS (the block count, 2)
+--- SCREEN: Multilanguage Page blade, language table ---
+[ACT] On the de-DE row choose ""Create""
+[WAIT] The de-DE row changes from Missing to a version
+[ASSERT] The de-DE row Status is Draft and the permalink reads /agent-test-vcst4935-<unique>-create with the badge ""inherited""
+[HTTP] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{ROOT_ID}/languages; capture the de-DE version id as DE_ID
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{DE_ID}/content; read DE_BLOCKS","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 8, Create): Create makes a draft with a copy of the source language content that inherits the permalink
+[STATE] {SPEC} same row and probe VC-CMS-003 (content is not lost on create): DE_BLOCKS equals SRC_BLOCKS (2) and the block types and texts match the source
+[STATE] {SPEC} same row: the de-DE version has status Draft (not Published) and the source version still holds its own content","[CONSOLE] no TypeError or JS error
+[NETWORK] no 4xx/5xx on the languages and content calls
+[API] GET .../grouped/{DE_ID} shows multilanguagePageId = {ROOT_ID} and cultureName de-DE",The new version has fewer or empty blocks; it is Published instead of Draft; its permalink is empty or not inherited; the source content changes,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:SILENT · Technique:EP · Probe:VC-CMS-003,Draft
+CMS-ML-007,Link existing page — keeps its permalink and settings; duplicate language or already-linked page refused,Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. Two Landing Pages exist in fr-FR (built in the steps), one of them with Visibility off and a Start date in the past so that settings can be compared.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page for an en-US page (permalink /agent-test-vcst4935-<unique>-link-en) and capture EN_ID; for two fr-FR pages (permalinks /agent-test-vcst4935-<unique>-link-fr and /agent-test-vcst4935-<unique>-link-fr2) and capture FR_ID and FR2_ID
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{FR_ID}; record FR_BEFORE (permalink, visibility, startDate, userGroups)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/convert/{EN_ID}; capture the root id as ROOT_ID
+--- SCREEN: Multilanguage Page blade, language table ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the root, on the fr-FR row choose ""Link existing""
+[ACT] Pick AGENT-TEST-VCST4935-<unique>-link-fr
+[ASSERT] The fr-FR row shows /agent-test-vcst4935-<unique>-link-fr with the badge ""custom""
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{FR_ID}; compare with FR_BEFORE
+--- LAYER: API negatives ---
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{ROOT_ID}/link/{FR2_ID} (a second fr-FR page for the same root)
+[STATUS] Read the status
+[HTTP] Create a second root ROOT2_ID with its own en-US version and a fr-FR version linked to FR3_ID (a third fr-FR page); POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{ROOT_ID}/link/{FR3_ID} (a page that already belongs to another root)
+[STATUS] Read the status
+[HTTP] GET .../{ROOT_ID}/languages and GET .../grouped/{FR3_ID}","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 8, Link existing): the linked page becomes the fr-FR version and keeps its address and settings: permalink, visibility, startDate and userGroups equal FR_BEFORE; the table shows the ""custom"" badge
+[STATUS] {SPEC} (VCST-4935 dev comment, unique index (MultilanguagePageId, CultureName): one version per language): linking a second fr-FR page to the same root returns HTTP 400 and the existing fr-FR version is unchanged
+[STATUS] {SPEC} same unique-version model: linking a page that already belongs to another root is refused with a 4xx (400 expected) and that page keeps its original root","[CONSOLE] no TypeError or JS error
+[NETWORK] no 5xx on the refused calls
+[API] GET .../{ROOT_ID}/languages lists exactly one fr-FR version, the first one linked",Link overwrites the page permalink or settings; a second fr-FR page is accepted (duplicate version) or the first link is replaced; a page of another root is stolen from its root; 5xx on a refusal,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:LIFECYCLE · Technique:EG,Draft
+CMS-ML-008,Convert to multilanguage — refused for a non-store language or an existing version; storefront URL unchanged,Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A published en-US Landing Page with content (built in the steps); a Landing Page in a culture that is not a store language (xx-XX) and one with no culture are created through create-group-page.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page for en-US (permalink /agent-test-vcst4935-<unique>-conv; capture CONV_ID) and publish it via POST .../grouped/publishing/{CONV_ID}?publish=true
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{CONV_ID}/content; record CONV_BLOCKS
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-conv (signed in as @td(VCST4935_BUYER.email))
+[ASSERT] Record BEFORE: the page title and the HTTP status
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/search for the store; record ROOTS_BEFORE (totalCount)
+--- LAYER: refused converts ---
+[HTTP] create-group-page with cultureName ""xx-XX"" (capture BAD_ID); POST {{BACK_URL}}/api/page-builder-multilanguage-pages/convert/{BAD_ID}
+[STATUS] Read the status
+[HTTP] POST convert/{CONV_ID} once (success, see below), then POST convert/{CONV_ID} again (the page is now a version)
+[STATUS] Read the status of the second convert
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/search; read ROOTS_AFTER
+--- SCREEN: Storefront after the convert ---
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-conv
+[ASSERT] Record AFTER: the page title and the HTTP status
+[HTTP] GET .../grouped/{CONV_ID}/content; read the block count","[STATUS] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 13 and Convert rule): converting a page whose culture is not a store language is refused with HTTP 400 and no root is created
+[STATUS] {OBSERVED} (SBTM-VCST-4935-2026-10-23): converting a page that is already a language version is refused with 400; no orphan root: ROOTS_AFTER = ROOTS_BEFORE + 1 (only the one successful convert)
+[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 13: Nothing changes on the storefront): the converted published page keeps its URL, HTTP status 200 and title: AFTER equals BEFORE
+[STATE] {SPEC} probe VC-CMS-003 (content is not lost): the converted page holds CONV_BLOCKS blocks after the convert","[NETWORK] no 5xx on the refused converts
+[API] the converted page: multilanguagePageId is set, permalink unchanged
+[CONSOLE] no JS error on the storefront page","A non-store-language or already-linked page converts (200) or leaves a half root; the converted page changes URL, title or loses content; 5xx on a refusal","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:LIFECYCLE · Technique:EG · Probe:VC-CMS-003,Draft
+CMS-ML-009,Root advanced options change propagates to every inheriting version,Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root with en-US and fr-FR versions that both inherit every advanced field (no override).","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create a root (name AGENT-TEST-VCST4935-<unique>-prop, permalink /agent-test-vcst4935-<unique>-prop, defaultCultureName en-US) and its en-US and fr-FR versions via POST .../{rootId}/languages/{culture}; capture ROOT_ID, EN_ID, FR_ID
+--- SCREEN: Multilanguage Page blade, Advanced options ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the root
+[ACT] In Advanced options turn Visibility off
+[ACT] Set Start date to a value in the future
+[ACT] Click ""Save""
+[WAIT] The save completes; no conflict dialog opens (no version overrides a field)
+--- SCREEN: Version blade, en-US then fr-FR ---
+[ACT] Open the en-US version blade
+[ASSERT] Visibility is off and Start date equals the root value; the hint under each field says it is inherited from the Multilanguage Page
+[ACT] Open the fr-FR version blade
+[ACT] Repeat the assertions
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{EN_ID} and /{FR_ID}","[FORM] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 7 and §2 Inheritance): saving the root copies its values into every version field that is not in the override mask: both versions show Visibility off and the root Start date
+[BLADE] {SPEC} same row: the version blade shows a hint under every inheritable field (Permalink, Visibility, User groups, Organization, Start date, End date), ""inherited from the Multilanguage Page""
+[STATE] {SPEC} same row and probe VC-SEARCH-002 (a change made through a sub-entity reaches the stored version): GET grouped for both versions returns visibility false and startDate equal to the root value","[CONSOLE] no TypeError or JS error
+[NETWORK] no 4xx/5xx
+[API] GET .../{rootId} returns the saved visibility and startDate",A version keeps its old Visibility or Start date after the root save; the hint is missing or says custom; the root save fails silently,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:STALE · Technique:DT · Probe:VC-SEARCH-002,Draft
+CMS-ML-010,"Conflict dialog on root permalink change — Apply to all, inheriting only, Cancel",Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root whose fr-FR version was linked with its own permalink (custom) and whose en-US version inherits.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create a Landing Page fr-FR with permalink /agent-test-vcst4935-<unique>-conf-fr (FR_PAGE_ID); create a root with permalink /agent-test-vcst4935-<unique>-conf, defaultCultureName en-US; create its en-US version; link FR_PAGE_ID as fr-FR; capture ROOT_ID, EN_ID
+--- SCREEN: Multilanguage Page blade, root permalink change ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the root, change Permalink to /agent-test-vcst4935-<unique>-conf-2
+[ACT] Click ""Save""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] A dialog titled ""Some languages have their own values"" opens, lists ""fr-FR — Permalink"" and offers Cancel, Apply to all languages, Apply to inheriting languages only
+[ACT] Click ""Cancel""
+[WAIT] The UI settles (no spinner, network idle)
+[HTTP] GET .../{ROOT_ID} and GET .../grouped/{FR_PAGE_ID}
+[ACT] Save again
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click ""Apply to inheriting languages only""
+[WAIT] The UI settles (no spinner, network idle)
+[HTTP] GET .../{ROOT_ID}, .../grouped/{EN_ID}, .../grouped/{FR_PAGE_ID}
+[ACT] Change Permalink to /agent-test-vcst4935-<unique>-conf-3, Save, click ""Apply to all languages""
+[WAIT] The UI settles (no spinner, network idle)
+[HTTP] GET .../{ROOT_ID} and .../grouped/{FR_PAGE_ID}; read the fr-FR row badge in the language table","[BLADE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 10, Conflict dialog): changing the root permalink while fr-FR has its own value asks how to apply the change, with Apply to all languages / Apply to inheriting languages only / Cancel
+[BLADE] {OBSERVED} (SBTM-VCST-4935-2026-10-23): the dialog title is ""Some languages have their own values"" and lists ""fr-FR — Permalink""
+[STATE] {SPEC} same row: Cancel saves nothing (root permalink and fr-FR permalink are unchanged)
+[STATE] {SPEC} same row: Apply to inheriting languages only saves the new root permalink and en-US inherits it while fr-FR keeps /agent-test-vcst4935-<unique>-conf-fr (badge custom)
+[STATE] {SPEC} same row and ""no separate Reset action"": Apply to all languages resets fr-FR to the new root permalink and its badge becomes inherited","[CONSOLE] no TypeError or JS error
+[NETWORK] no 5xx; Cancel issues no PUT to the root
+[API] OverriddenFields of the fr-FR version drops Permalink after Apply to all",Cancel still saves; Apply to inheriting overwrites fr-FR; Apply to all leaves fr-FR custom; dialog does not open; fr-FR is missing from the list in the dialog,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:LIFECYCLE · Technique:DT,Draft
+CMS-ML-011,Version field set back to the root value becomes inherited; Name is read-only on a version,Page Builder > Multilanguage Pages,Medium,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root with a published en-US version and a fr-FR version whose permalink is custom (linked page).","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create the root (permalink /agent-test-vcst4935-<unique>-back), its en-US version, and link a fr-FR Landing Page with permalink /agent-test-vcst4935-<unique>-back-fr; capture ROOT_ID, FR_ID
+--- SCREEN: fr-FR version blade ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the root, open the fr-FR row
+[ASSERT] Name is read-only (disabled) on the version blade
+[ACT] Set Permalink to the root value /agent-test-vcst4935-<unique>-back
+[ACT] Click ""Save""
+[WAIT] The UI settles (no spinner, network idle)
+--- SCREEN: language table ---
+[ASSERT] The fr-FR row badge reads ""inherited""
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{FR_ID}","[FORM] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 7: There is no separate Reset action: setting the Multilanguage Page value back makes the field inherited again; Name is shared and read-only on a version)
+[STATE] {OBSERVED} (SBTM-VCST-4935-2026-10-23): a PUT of a version maintains OverriddenFields: after the value is set back, OverriddenFields no longer contains Permalink","[CONSOLE] no TypeError or JS error
+[NETWORK] no 5xx
+[API] version permalink equals the root permalink",Badge stays custom after the value is set back; Name is editable on a version; Save changes the shared Name,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:FALLBACK · Technique:ST,Draft
+CMS-ML-012,"Outdated lifecycle — source save, source publish, translation publish, Mark up to date, archived",Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root with four versions built in the steps: en-US (source), fr-FR, de-DE, es-ES, all published; the Outdated flag is read from GET .../languages (isOutdated) and from the language pills.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create the root (default en-US) and its four versions with POST .../{rootId}/languages/{culture}; save one content block into each; POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/publish-all; capture ROOT_ID and the version ids
+[HTTP] GET .../{ROOT_ID}/languages; record isOutdated of fr-FR, de-DE, es-ES
+--- SCREEN: source version designer ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the en-US version, change its content in the designer
+[ACT] Click ""Save"" (do not publish)
+[WAIT] The UI settles (no spinner, network idle)
+[HTTP] GET .../{ROOT_ID}/languages
+[ACT] Archive the de-DE version (version blade toolbar ""Archive"")
+[ACT] Publish the en-US version
+[HTTP] GET .../{ROOT_ID}/languages
+[ASSERT] fr-FR and es-ES show the Outdated marker; de-DE (Archived) does not
+[ACT] Publish the fr-FR version
+[HTTP] GET .../{ROOT_ID}/languages
+[ACT] On the es-ES row click ""Mark up to date""
+[WAIT] The UI settles (no spinner, network idle)
+[HTTP] GET .../{ROOT_ID}/languages","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 5.1.5 / 12, Outdated): after the first publish-all no language is Outdated
+[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 5.1.5 / 12): saving a source draft does not mark translations Outdated
+[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 5.1.5 / 12): publishing the source marks the published translations fr-FR and es-ES Outdated; an Archived translation (de-DE) is never Outdated
+[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 5.1.5 / 12): publishing a translation clears its Outdated (fr-FR); Mark up to date clears it without publishing (es-ES)","[CONSOLE] no TypeError or JS error
+[NETWORK] no 4xx/5xx
+[ADMIN] the language pills show Outdated as a distinct style (yellow dashed) while it is set",Outdated set on a draft save; Outdated missing after the source publish; Outdated set on Archived; publish or Mark up to date does not clear it,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:LIFECYCLE · Technique:ST,Draft
+CMS-ML-013,"Outdated edge cases — linked page without revision, Mark up to date on a never-published source",Page Builder > Multilanguage Pages,Medium,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root whose source language is en-US, and a published fr-FR Landing Page linked as a translation (no source revision recorded for it).","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create a root R1 (default en-US) with an en-US version that is NOT published; capture R1_ID and its en-US version id SRC1_ID
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/mark-up-to-date/{SRC1_ID} (the source was never published)
+[STATUS] Read the status
+[HTTP] GET .../grouped/{SRC1_ID}; read sourceRevisionDate
+[HTTP] POST .../mark-up-to-date/<a random unknown GUID>
+[STATUS] Read the status
+[HTTP] Create a root R2 (default en-US) with a published en-US source version and link a published fr-FR Landing Page (FR_LINK_ID); GET .../{R2_ID}/languages and record isOutdated of fr-FR
+[HTTP] Edit and publish the en-US source of R2 again (POST .../grouped/publishing/{SRC2_ID}?publish=true)
+[HTTP] GET .../{R2_ID}/languages","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 12: Outdated is set when the source language is published): after the source is published, the linked fr-FR translation (it has no recorded source revision) is Outdated
+[STATUS] {OBSERVED} (SBTM-VCST-4935-2026-10-23): Mark up to date on a source that was never published returns 200 and does not record a revision: sourceRevisionDate stays null; an unknown id returns 404; neither is a 5xx","[NETWORK] no 5xx
+[API] no state change on SRC1_ID after the mark-up call
+[NOTE] The user-visible message of Mark up to date on a source without a revision is NOT asserted: the dev comment does not state one (PO question); the action is reachable in the UI only on Outdated rows",A linked translation is not Outdated after the source publish; Mark up to date stamps a revision for a never-published source; 5xx for an unknown id,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink","VCST-4935 · Archetype:SILENT · Technique:EG · Open question: expected message when Mark up to date has nothing to compare (H2, PO); linked page without revision counted Outdated (code reading, H1)",Draft
+CMS-ML-014,"Publish all — source first, skipped languages reported, one failure does not abort the batch",Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root with en-US (published, with an unpublished draft change), fr-FR (published, no change) and de-DE (draft) versions built in the steps.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create the root (default en-US) and its en-US, fr-FR, de-DE versions; publish en-US and fr-FR (POST .../grouped/publishing/{id}?publish=true); change and save en-US content so it has a draft; leave de-DE a draft; capture ROOT_ID
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{ROOT_ID}/publish-all
+[STATUS] Verify HTTP 200
+[BODY] Read processedCultureNames and skipped[] (cultureName, reason)
+[HTTP] GET .../{ROOT_ID}/languages
+--- SCREEN: Multilanguage Page blade ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Edit
+[ACT] Save the fr-FR version so it has a draft
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Edit
+[ACT] Save the de-DE version so it has a draft
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click ""Publish all"" in the toolbar
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The result lists each language as published or skipped with a reason
+--- LAYER: one failing language (only if provokable) ---
+[SETUP] Add a version that cannot be published: link the legacy page @td(PB_6443_LEGACY_S6.id) (stored invalid permalink) as a translation. If the fixture is not present on the environment, skip this block and record INCONCLUSIVE for it
+[HTTP] POST .../{ROOT_ID}/publish-all and read the response","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 9, Publish All): Publish all publishes the source language first and reports a language that fails instead of failing the batch
+[BODY] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, §3.2 Publish all): a draft is published (de-DE processed); languages without a draft (fr-FR) are reported as skipped with a reason (NoDraft); processedCultureNames lists en-US before de-DE
+[STATE] {SPEC} same row: a version that fails is reported (reason Failed) and the other languages are still processed; the batch is not aborted and the HTTP status is not 5xx","[NETWORK] no 5xx on publish-all
+[API] resulting statuses match the report: every processed version is Published, every skipped one unchanged",The batch aborts on the first failure; a failed language is reported as published; the source is not first; a language without a draft is published or silently dropped from the report,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:SILENT · Technique:EG · Charter-from-gap G6 (publish-all with a failing version) not reached by discovery,Draft
+CMS-ML-015,Archive all and delete root — archived versions leave the storefront; delete refused while versions exist,Page Builder > Multilanguage Pages,High,BL-SEO-002,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. Two roots: R1 with published en-US and fr-FR versions, R2 with no versions. Storefront steps run signed in as @td(VCST4935_BUYER.email).","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create R1 (default en-US, permalink /agent-test-vcst4935-<unique>-arch) with en-US and fr-FR versions and publish-all; link-as-needed so fr-FR has permalink /agent-test-vcst4935-<unique>-arch-fr; capture R1_ID. Create R2 with no versions; capture R2_ID
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-arch (signed in as the buyer)
+[ACT] Record that the page renders
+[HTTP] DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{R1_ID} (R1 has versions)
+[STATUS] Read the status and message
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{R1_ID}/archive-all
+[HTTP] GET .../{R1_ID}/languages
+[WAIT] Poll slugInfo for the permalinks up to 30 s
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-arch
+[NAV] The French localized URL of the page
+[HTTP] DELETE .../{R2_ID} then GET .../{R2_ID}","[STATUS] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, Delete row): only a Multilanguage Page without language versions can be deleted: DELETE of R1 returns HTTP 400 and R1 still exists
+[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 9 and Delete row): Archive all archives every version: GET languages shows en-US and fr-FR Archived
+[STATE] {SPEC} BL-SEO-002 (an archived page is not served): both storefront URLs return the not-found view (no content of either language) once the index settled
+[STATUS] {SPEC} Delete row: DELETE of R2 (no versions) returns 2xx and a following GET returns 404","[NETWORK] no 5xx on the refused DELETE
+[API] slugInfo for the two permalinks returns an empty entityInfo after the index settles
+[CONSOLE] no JS error on the not-found view",DELETE removes a root that has versions (orphans) or is refused for an empty root; an archived version is still served; Archive all leaves a Published language,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] DELETE .../{R2_ID} if still present; archive-all on R1 if not already archived; R1 itself cannot be deleted (it has versions) and stays archived by design",VCST-4935 · Archetype:LIFECYCLE · Technique:ST,Draft
+CMS-ML-016,Unlink — version becomes a Landing Page and leaves the sibling alternates,Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root with published en-US and fr-FR versions (built in the steps).","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create the root (permalink /agent-test-vcst4935-<unique>-unl), en-US and fr-FR versions (fr-FR linked from a Landing Page with permalink /agent-test-vcst4935-<unique>-unl-fr), publish-all; capture ROOT_ID, EN_ID, FR_ID
+[GQL] slugInfo for the en-US permalink then pageDocument(id).alternates, polled up to 60 s until it lists en-US and fr-FR
+--- SCREEN: language table ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the root, on the fr-FR row choose ""Unlink""
+[ACT] Confirm
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The fr-FR row becomes Missing
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{FR_ID}
+[WAIT] Poll up to 60 s
+[GQL] the alternates query for the en-US page
+--- SCREEN: Storefront ---
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-unl-fr (signed in as @td(VCST4935_BUYER.email))
+[ASSERT] The unlinked page still renders at its own permalink
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-unl
+[ACT] Inspect the document head","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 8, Unlink): the version becomes a separate Landing Page: multilanguagePageId is empty, permalink and published status kept, still served at its own permalink
+[STATE] {SPEC} dev comment §2 (TranslationGroupId follows the root) and probe VC-SEARCH-002: after reindex the en-US alternates no longer list fr-FR (count 1, then only en-US) and the head has no fr-FR hreflang","[API] errors[] is empty in both GraphQL responses
+[CONSOLE] no JS error
+[ADMIN] the unlinked page appears in the Pages list as a Landing Page row",The unlinked page is still listed as an alternate or in hreflang after the index settled (stale TranslationGroupId); the unlinked page stops being served; the table keeps a fr-FR version,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:STALE · Technique:ST,Draft
+CMS-ML-017,"Clone Multilanguage Page — all languages as drafts with -copy permalinks, second clone does not collide",Page Builder > Multilanguage Pages,Medium,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root with en-US (published, two blocks), fr-FR (published) and de-DE (draft) versions.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create the root (permalink /agent-test-vcst4935-<unique>-clone) with the three versions, two blocks in en-US, publish en-US and fr-FR; capture SRC_ROOT_ID
+--- SCREEN: Multilanguage Page blade toolbar ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the root
+[ACT] Click ""Clone""
+[WAIT] The cloned root opens
+[HTTP] GET .../{CLONE1_ID}/languages; for each version GET .../grouped/{id} and its content
+[ACT] Clone the source root a second time
+[HTTP] GET .../{CLONE2_ID}/languages and each version permalink","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 9, Clone (added): copies every language as drafts)) and Clone row: the cloned root has the same languages and every version is a Draft (none Published), permalinks end with -copy
+[STATE] {SPEC} probe VC-CMS-003: each cloned version holds the same block count and types as its source
+[STATE] {SPEC} Clone row: a second clone does not collide: its permalinks differ from the first clone's and from the source, and the call is not 4xx/5xx
+[STATE] {SPEC} the source root and its versions are unchanged (statuses and permalinks)","[NETWORK] no 5xx on clone
+[CONSOLE] no JS error
+[API] source versions keep status Published/Published/Draft",A cloned version is Published; a clone shares a permalink with the source or the first clone; content blocks are lost; the second clone fails or overwrites the first,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:LIFECYCLE · Technique:EG · Probe:VC-CMS-003 · Open question: exact permalink suffix of a second clone (only distinctness is asserted),Draft
+CMS-ML-018,"Pages list — one row per Multilanguage Page, language pills, Filters including an empty result",Page Builder > Multilanguage Pages,High,,ECL-10.3,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root (en-US published, fr-FR published, es-ES missing) made Outdated by republishing the en-US source; a Landing Page named AGENT-TEST-VCST4935-<unique>-plain.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create the root AGENT-TEST-VCST4935-<unique>-list with en-US and fr-FR versions, publish-all, then edit and publish en-US again so fr-FR is Outdated; create one plain Landing Page AGENT-TEST-VCST4935-<unique>-plain; capture ROOT_ID
+--- SCREEN: Admin, Pages list ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Search for AGENT-TEST-VCST4935-<unique>-list
+[ASSERT] The Multilanguage Page is ONE row (not one row per version) with the type Multilanguage and a pill per language, each pill styled by status, the Outdated pill distinct
+[ACT] Open Filters
+[ACT] Set Page type = Multilanguage
+[ASSERT] The row is listed and the plain Landing Page is not
+[ACT] Set Page type = Landing Page
+[ASSERT] The plain Landing Page is listed and the Multilanguage row is not
+[ACT] Clear the type
+[ACT] Set Language = fr-FR
+[ASSERT] The Multilanguage row is listed
+[ACT] Set Translation status = Missing
+[ASSERT] The Multilanguage row is listed (languages without a version)
+[ACT] Set Translation status = Outdated
+[ASSERT] The Multilanguage row is listed
+[ACT] Clear the filters
+[ACT] Search for AGENT-TEST-VCST4935-<unique>-nomatch
+[ASSERT] An empty state (""No data"" / ""No items to display"") is shown; no blank grid, no error toast
+[NETWORK] Read the list request","[GRID] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 11, Language pills in the pages list: FAQ is one Multilanguage row with a pill per language): one row for the root, a pill per language styled by status (Outdated as a distinct yellow dashed pill)
+[GRID] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 11, plus the Filters panel: Page type, Language, Translation status (Missing / Outdated)): each filter returns the expected row set above
+[GRID] {OBSERVED} (SBTM-VCST-4935-2026-10-23): a filter with no match shows ""No data"" / ""No items to display"" (ECL-10.3: no blank grid or 500)","[CONSOLE] no TypeError or JS error
+[NETWORK] no 4xx/5xx on /list
+[API] POST .../page-builder-pages/list with the same filters returns the same rows as the grid
+[NOTE] The list loads through POST {{BACK_URL}}/api/page-builder-pages/list (2xx, no 5xx)
+[NOTE] The Status cell of a Multilanguage row and the pill label for two languages with the same short code (en-US/en-GB, nl-NL/nl-BL) are NOT asserted: the dev comment does not define them (PO question)",The root shows once per version; a filter returns the wrong row set; an empty result renders a blank grid or an error; Outdated pill not distinct,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink","VCST-4935 · Archetype:RENDER · Technique:EP · Open question: Status cell of a Multilanguage row (empty on the build); identical pill labels EN/EN, NL/NL; ""null: Draft"" badge on null-culture legacy pages (PO)",Draft
+CMS-ML-019,"Permalink usage warning — same language warns, other language and siblings do not",Page Builder > Multilanguage Pages,Medium,BL-SEO-001,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A published en-US Landing Page with permalink /agent-test-vcst4935-<unique>-use (USE_ID).","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create the en-US Landing Page USE_ID and publish it
+--- SCREEN: New Landing Page blade (same language) ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Add, choose ""Landing Page"", fill a new name, language en-US, Permalink /agent-test-vcst4935-<unique>-use
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click ""Save""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] A warning says the permalink is already used by another active page in the same language, and the page is saved (Save is not blocked)
+--- SCREEN: New Landing Page blade (other language) ---
+[ACT] Add, choose ""Landing Page"", language fr-FR, the same Permalink, ""Save""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] No permalink-usage warning; the page is saved
+--- SCREEN: Multilanguage Page blade (siblings) ---
+[ACT] Create a root with permalink /agent-test-vcst4935-<unique>-sib, Create en-US
+[ACT] Create de-DE (both inherit the root permalink)
+[ASSERT] No permalink-usage warning on either version or on the root save
+[NETWORK] Read POST {{BACK_URL}}/api/page-builder-pages/permalink-usage for each check","[BLADE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, New: permalink check): saving warns when the permalink is already used by another active page in the same language; the storefront serves one page per permalink and language
+[STATE] {SPEC} same row: the warning does not block the save
+[BLADE] {SPEC} same row (""in the same language"") and BL-SEO-001: the same permalink in another language gives no warning; sibling versions of one root sharing the inherited permalink give no warning","[CONSOLE] no TypeError or JS error
+[NETWORK] permalink-usage returns 2xx for every check
+[API] the saved pages exist",No warning for a same-language duplicate; a warning for another language or for siblings; Save blocked by the warning,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:PARITY · Technique:DT,Draft
+CMS-ML-020,"Missing translation, default behaviour — /es/ shows the store-default version, no es alternate",Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. Store setting VirtoPages.MissingTranslationBehavior is unset (DefaultLanguage). SERIALISE with CMS-ML-021 and CMS-ML-022: all three read or change this shared store setting. es-ES is a store language and has no version.",buyer=@td(VCST4935_BUYER.email),"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID}}; confirm the setting VirtoPages.MissingTranslationBehavior is unset or DefaultLanguage and es-ES is a store language
+[HTTP] Create a root (default en-US, permalink /agent-test-vcst4935-<unique>-miss) with published en-US and fr-FR versions; no es-ES version; capture ROOT_ID
+[GQL] slugInfo(permalink:""/agent-test-vcst4935-<unique>-miss"" storeId:""{{STORE_ID}}"" cultureName:""es-ES"") { entityInfo { id } } polled up to 60 s, then pageDocument(id) { cultureName }
+--- SCREEN: Storefront, signed in as the buyer ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Sign in as @td(VCST4935_BUYER.email)
+[NAV] The Spanish localized URL of the page (the es-ES prefix plus /agent-test-vcst4935-<unique>-miss)
+[ASSERT] The English (store default) version content renders, not a not-found view
+[ASSERT] The document head holds hreflang for en-US and fr-FR only: no es alternate","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, AC3 row: VirtoPages.MissingTranslationBehavior DefaultLanguage (default) shows the default language version): a visitor in a language with no version sees the store-default (en-US) version at the requested URL
+[API] {SPEC} same row and slugInfo resolution: slugInfo with cultureName es-ES resolves to the en-US version (pageDocument.cultureName = en-US)
+[STATE] {SPEC} dev comment §2 x-cms row (alternates are published store-language versions): no es-ES alternate and no es hreflang, and no draft version of es-ES is leaked","[API] errors[] is empty
+[CONSOLE] no JS error
+[NETWORK] no 4xx/5xx on /graphql",The visitor sees a not-found view or a random language; an es alternate or hreflang appears; a draft es-ES is served,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:FALLBACK · Technique:EP · Probe:VC-SEARCH-004 · Probe VC-SEARCH-004 is by design here (store-default fallback),Draft
+CMS-ML-021,"Missing translation, NotFound — /es/ shows not found, own-language URL still served",Page Builder > Multilanguage Pages,High,BL-SEO-002,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. SHARED STATE: this case changes the store setting VirtoPages.MissingTranslationBehavior on {{STORE_ID}}; never run it in parallel with CMS-ML-020 or CMS-ML-022 and restore the original value in Cleanup.",buyer=@td(VCST4935_BUYER.email),"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID}}; record ORIG (the value of VirtoPages.MissingTranslationBehavior, or absent)
+[HTTP] Create a root (default en-US, permalink /agent-test-vcst4935-<unique>-nf) with published en-US and fr-FR versions
+[HTTP] PUT {{BACK_URL}}/api/stores with the store object from the GET and the setting VirtoPages.MissingTranslationBehavior set to NotFound; verify with GET
+[WAIT] Allow the settings cache to refresh (poll up to 60 s until the not-found view appears below)
+--- SCREEN: Storefront, signed in as the buyer ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Sign in as @td(VCST4935_BUYER.email)
+[NAV] The Spanish localized URL of the page (the es-ES prefix plus /agent-test-vcst4935-<unique>-nf)
+[ASSERT] The storefront not-found view is shown
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-nf (the English URL in en-US)
+[ASSERT] The English page is still served
+[NAV] The French localized URL with its own permalink (the fr-FR version was published)
+[ASSERT] The French page is still served","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, AC3 row: NotFound returns page not found): with the setting NotFound a visitor in a language with no version gets the not-found view at /es/...
+[STATE] {SPEC} BL-SEO-002 (own-language URLs are not affected): the requested permalink in the language that has a version (en-US, fr-FR) is still served under NotFound
+[STATE] {SPEC} the setting is restored: after Cleanup GET store shows VirtoPages.MissingTranslationBehavior equal to ORIG","[CONSOLE] no JS error on the not-found view
+[NETWORK] no 5xx; the not-found view is returned with HTTP 200 (SPA), recorded not asserted
+[API] the stored setting reads NotFound during the case and ORIG after Cleanup",NotFound also removes the English or French own-language page; the Spanish URL still serves content; the setting is left on NotFound,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] PUT {{BACK_URL}}/api/stores with the store object and VirtoPages.MissingTranslationBehavior restored to ORIG (removed when it was absent); verify with GET
+[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:CONFIG · Technique:EP,Draft
+CMS-ML-022,"Root default language differs from store default — Outdated source, fallback and x-default",Page Builder > Multilanguage Pages,Medium,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. SHARED STATE: the store setting is read only (unset); serialise with CMS-ML-021. The store default is en-US; the root default is de-DE.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create a root with defaultCultureName ""de-DE"" (permalink /agent-test-vcst4935-<unique>-dd) and de-DE and fr-FR versions; publish-all; capture ROOT_ID, DE_ID, FR_ID
+[HTTP] GET .../{ROOT_ID}/languages; record isOutdated of fr-FR
+[HTTP] Edit and publish the de-DE version (POST .../grouped/publishing/{DE_ID}?publish=true) and GET languages again
+--- SCREEN: Storefront, signed in as the buyer ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Sign in as @td(VCST4935_BUYER.email)
+[NAV] The de-DE localized URL of the page
+[ASSERT] The de-DE content renders
+[NAV] The fr-FR localized URL of the page
+[ASSERT] Each renders its own language content
+[NAV] The es-ES localized URL of the page
+[ASSERT] Record what renders, the hreflang list in the head and whether an x-default link exists
+[HTTP] Create and publish an en-US version of the root; poll up to 60 s; record the es-ES URL result and the x-default link again","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, story item 3: Default language is the source language: Outdated is measured against it): after the de-DE source is republished, GET languages shows isOutdated of fr-FR = true and isOutdated of the de-DE source = false
+[STATE] {SPEC} BL-SEO-001: the de-DE and fr-FR versions render in their own languages at their own localized URLs","[CONSOLE] no JS error
+[NETWORK] no 5xx
+[API] errors[] is empty on the slugInfo calls
+[NOTE] When an x-default link is present its href is an absolute store URL of a Published version of this page
+[NOTE] What /es/ renders without a store-default version, and which version is the fallback and x-default once an en-US version exists, is recorded in evidence and NOT asserted: the dev comment says ""the default language version"" without saying root default or store default (PO question)",Outdated measured against the store default instead of the root default; a language renders another language at its own URL; x-default points at a draft or archived version,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink","VCST-4935 · Archetype:FALLBACK · Technique:EG · Open question PO: DefaultLanguage fallback and x-default follow the store default (observed, KB-AA9BFC82) or the root Default language (spec wording)",Draft
+CMS-ML-023,"hreflang output — full culture codes, store URL origin, no canonical, none for a single version or a PDP",Page Builder > Multilanguage Pages,High,BL-SEO-003,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. SERIALISE after CMS-ML-021 has restored the store setting. A published product detail page URL on the storefront is live-discovered (POST {{BACK_URL}}/graphql products query).",buyer=@td(VCST4935_BUYER.email),"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create a root (default en-US, permalink /agent-test-vcst4935-<unique>-hl) with published en-US, fr-FR, de-DE versions; a second root with a single published en-US version (permalink /agent-test-vcst4935-<unique>-hl1)
+--- SCREEN: Storefront, signed in as the buyer ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Sign in as @td(VCST4935_BUYER.email)
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-hl
+[ASSERT] Read every <link rel=""alternate""> in the head: hreflang value, href origin and path
+[ACT] Navigate client-side through an SPA link to the home page
+[ACT] Navigate client-side through an SPA link back to the page
+[ASSERT] Read the alternate links again
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-hl1
+[ASSERT] Count the alternate links
+[NAV] The live-discovered product detail page URL
+[ASSERT] Count the alternate links","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, §3 Storefront 2): a <link rel=""alternate"" hreflang> for every translation plus x-default; the hrefs are absolute on the store URL (host = the store URL setting)
+[FORMAT] {OBSERVED} (SBTM-VCST-4935-2026-10-23): hreflang values are full culture codes (de-DE, en-US, fr-FR); x-default is the store-default version; no <link rel=""canonical""> is present; default culture URLs are unprefixed
+[STATE] {SPEC} §3.1 and the single-version rule: a page with one published version carries no hreflang; a product detail page carries none","[CONSOLE] no TypeError or JS error, also on a store with an empty store URL
+[NETWORK] no 4xx/5xx
+[API] pageDocument.alternates count equals the hreflang count minus x-default
+[NOTE] No duplicate alternate links after a client-side navigation away and back (each hreflang value appears once)
+[NOTE] og:url is NOT asserted: the build emits none on the Multilanguage page while BL-SEO-003 lists it; compare with a PDP before treating it as Multilanguage specific (oracle surface to re-check)",Wrong or short culture codes; host other than the store URL; duplicated links after client-side navigation; hreflang on a single-version page or a PDP; x-default missing or pointing at a non-default version,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:RENDER · Technique:EP · BL-SEO-003 og:url oracle surface to re-check (SBTM oracle feedback),Draft
+CMS-ML-024,Translation restricted to a user group — not offered to a visitor outside the group,Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A user group the buyer is NOT a member of is live-discovered: GET {{BACK_URL}}/api/page-builder-pages/user-groups, then keep a group that does not appear in the buyer's groups (Admin > Customers > the buyer contact). No such group: the case is BLOCKED.",buyer=@td(VCST4935_BUYER.email),"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/user-groups; choose OTHER_GROUP the buyer does not belong to
+[HTTP] Create a root (default en-US, permalink /agent-test-vcst4935-<unique>-grp) with published en-US and fr-FR versions; capture ROOT_ID, FR_ID
+[HTTP] GET .../grouped/{FR_ID}; PUT {{BACK_URL}}/api/page-builder-pages/grouped with the fr-FR body, userGroups = [OTHER_GROUP], visibility true; publish it again
+--- SCREEN: Version blade ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ASSERT] The fr-FR version blade shows User groups = OTHER_GROUP as set for this language; the table keeps the version
+--- SCREEN: Storefront, signed in as the buyer ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Sign in as @td(VCST4935_BUYER.email)
+[GQL] pageDocument(id:<en-US doc id>) { alternates { cultureName permalink } } sent with the buyer token, polled up to 60 s
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-grp
+[ASSERT] Read the head hreflang list
+[NAV] The French localized URL with the fr-FR permalink
+[ASSERT] Record what renders","[API] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, §2 x-cms row: alternates are the published, visible translations) and domain map L4 (gating per language): the buyer's pageDocument.alternates has count of fr-FR entries = 0 and total length = 1 (en-US only) when the fr-FR version is restricted to a user group the buyer lacks
+[STATE] {SPEC} same: no fr-FR hreflang in the head for the buyer
+[STATE] {SPEC} gating (BL-SEO-002 spirit, restricted content is not served): the French content of the restricted version is NOT rendered to the buyer; which fallback is shown instead is not asserted","[API] errors[] is empty
+[CONSOLE] no JS error
+[NETWORK] no 4xx/5xx",The restricted translation leaks into alternates or hreflang for an out-of-scope visitor; its French content renders for the buyer,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:SCOPE · Technique:EP,Draft
+CMS-ML-025,Translation scheduled in the future — absent from alternates until its start date,Page Builder > Multilanguage Pages,Medium,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. The Pages index lag is measured, never asserted: the case polls up to 60 s.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create a root (default en-US, permalink /agent-test-vcst4935-<unique>-sch) with published en-US and fr-FR versions; capture EN_ID, FR_ID
+[HTTP] PUT {{BACK_URL}}/api/page-builder-pages/grouped with the fr-FR body and startDate = now + 1 day; publish it
+[GQL] slugInfo for the en-US permalink then pageDocument(id) { alternates { cultureName permalink } }, polled up to 60 s
+[GQL] slugInfo(permalink:<fr-FR permalink> storeId:""{{STORE_ID}}"" cultureName:""fr-FR"") { entityInfo { id } }
+[HTTP] PUT the fr-FR body with startDate = now - 1 day
+[GQL] the alternates query again, polled up to 60 s","[STATE] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, §2 x-cms row (published, visible) and domain map L4 scheduling): with a Start date in the future pageDocument.alternates length = 1 (en-US only) and no entry has cultureName = fr-FR
+[API] {SPEC} same: slugInfo for the fr-FR permalink does not resolve the not-yet-active version for a visitor
+[STATE] {SPEC} same: once the Start date is in the past pageDocument.alternates length = 2 (en-US and fr-FR)","[API] errors[] is empty in every response
+[NETWORK] no 4xx/5xx on /graphql",A scheduled translation appears in alternates before its start date; it never appears after the date passes,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:STALE · Technique:ST,Draft
+CMS-ML-026,"Language switch on non-page routes — product, category, search and static pages keep their localized URL",Page Builder > Multilanguage Pages,Critical,"BL-SEO-001, BL-SEO-002",,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. Storefront steps signed in as @td(VCST4935_BUYER.email). The product, category and search term are live-discovered (xAPI products and categories queries in en-US and fr-FR); a plain published en-US Landing Page AGENT-TEST-VCST4935-<unique>-static exists (no Multilanguage Page).",buyer=@td(VCST4935_BUYER.email),"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create and publish the plain en-US Landing Page /agent-test-vcst4935-<unique>-static
+[GQL] products and categories of {{STORE_ID}} with slug in en-US and fr-FR; capture PROD_URL_EN, PROD_URL_FR, CAT_URL_EN, CAT_URL_FR and a search term SEARCH_TERM that returns results
+--- SCREEN: Storefront, product detail page ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Sign in as @td(VCST4935_BUYER.email)
+[NAV] PROD_URL_EN
+[ACT] Switch the language to French in the selector
+[ASSERT] The URL is PROD_URL_FR (French prefix, French slug) and the product renders
+[ACT] Switch back to English
+[ASSERT] The URL is PROD_URL_EN
+--- SCREEN: Storefront, category ---
+[NAV] CAT_URL_EN
+[ACT] Switch the language to French in the selector
+[ASSERT] The URL is CAT_URL_FR and the category renders
+[ACT] Switch back to English
+[ASSERT] The URL is CAT_URL_EN
+--- SCREEN: Storefront, search ---
+[NAV] {{FRONT_URL}}/search?q=<SEARCH_TERM>
+[ACT] Switch the language to French in the selector
+[ACT] Switch back to English
+[ASSERT] The search page keeps the query string in both languages and renders results
+--- SCREEN: Storefront, plain static page ---
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-static
+[ACT] Switch the language to French in the selector
+[ACT] Switch back to English
+[ASSERT] No JS error, the page does not render blank, and the language prefix toggles","[STATE] {SPEC} BL-SEO-001 and BL-SEO-002 and {DOC} VirtoOZ Platform User Guide, ""Multilingual SEO URLs"" (a localized permalink resolves in its language): switching the language on a product and a category page lands on the localized URL of the same entity, never on the page-first resolver's result
+[STATE] {SPEC} (VCST-4935 dev comment §3 Storefront: the language selector change applies to all routes): the search page keeps ?q=<SEARCH_TERM> after the switch","[CONSOLE] no TypeError or JS error on any switch
+[NETWORK] no 4xx/5xx on /graphql slugInfo calls
+[API] slugInfo for PROD_URL_FR returns the same product id as for PROD_URL_EN
+[NOTE] The plain static page keeps rendering after the switch (not blank, no error); which URL it lands on is not asserted","The switch on a product, category or search page lands on a not-found view, strips the query, or keeps the old-language slug; JS error from the selector","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for the plain page",VCST-4935 · Archetype:PARITY · Technique:EP · Probe:VC-PLATFORM-002,Draft
+CMS-ML-027,"Plain Landing Page lifecycle unchanged — publish, unpublish, archive and storefront render",Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. Storefront steps signed in as @td(VCST4935_BUYER.email). A plain Landing Page (not part of any Multilanguage Page).","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page {name:""AGENT-TEST-VCST4935-<unique>-plain"", permalink:""/agent-test-vcst4935-<unique>-plain"", cultureName:""en-US"", storeId:""{{STORE_ID}}"", visibility:true}; capture ID
+--- SCREEN: Admin, version blade toolbar ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the page, click ""Publish""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] Status Published; toolbar shows ""Unpublish""
+[NAV] {{FRONT_URL}}/agent-test-vcst4935-<unique>-plain (signed in as the buyer
+[ACT] Poll up to 60 s)
+[ASSERT] HTTP 200 and the page renders
+[ACT] Click ""Unpublish""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] Status Draft
+[NAV] The storefront URL again (poll up to 60 s)
+[ASSERT] The not-found view
+[ACT] Publish again
+[ACT] Click ""Archive""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] Status Archived
+[NAV] The storefront URL (poll up to 60 s)
+[ASSERT] The not-found view
+[HTTP] GET .../grouped/publish-status/{ID}","[STATE] {SPEC} dev comment (""Existing pages, page versions, publishing and the designer are unchanged"") and domain map L5: a plain Landing Page publishes, unpublishes and archives as before: Draft to Published to Draft to Published to Archived
+[STATE] {SPEC} same row and BL-SEO-002: the storefront serves the page only while it is Published; Unpublished and Archived pages return the not-found view
+[STATE] {SPEC} same row: multilanguagePageId stays empty throughout and the publish-status endpoint agrees with the toolbar","[CONSOLE] no JS error
+[NETWORK] no 4xx/5xx on the publishing calls
+[API] the page never appears in a Multilanguage Page language table","Publish, unpublish or archive of a plain Landing Page fails after the GroupedPagePublishing refactor; an unpublished or archived page is still served","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={ID}",VCST-4935 · Archetype:LIFECYCLE · Technique:EP · Probe:VC-PLATFORM-002,Draft
+CMS-ML-028,Read-only Page Builder role — mutating controls hidden and REST mutations refused,Page Builder > Multilanguage Pages,High,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. The read-only editor @td(RESTRICTED_CMS_ADMIN.email) (role AGENT-TEST-Restricted-CMS-Viewer: builder:access + builder:read only, not an administrator); its password is the secret RESTRICTED_CMS_ADMIN_PASSWORD. REST part needs that secret in the environment; the UI part needs it in the Playwright --secrets file, otherwise that part is BLOCKED (never FAIL).",user=@td(RESTRICTED_CMS_ADMIN.email),"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] With the admin token create a root (permalink /agent-test-vcst4935-<unique>-rbac) with en-US and fr-FR versions; capture ROOT_ID, EN_ID, FR_ID, and a spare Landing Page SPARE_ID
+[AUTH] Obtain a Bearer token for @td(RESTRICTED_CMS_ADMIN.email) via POST {{BACK_URL}}/connect/token with the bare password grant (no client_id, no scope)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/search with {storeId:""{{STORE_ID}}""} using the restricted token; GET .../{ROOT_ID}
+[STATUS] Read both statuses
+[HTTP] With the restricted token send each mutation: POST .../page-builder-multilanguage-pages (create); PUT .../page-builder-multilanguage-pages (update); DELETE .../{ROOT_ID}; POST .../{ROOT_ID}/languages/de-DE; POST .../{ROOT_ID}/link/{SPARE_ID}; POST .../convert/{SPARE_ID}; POST .../unlink/{FR_ID}; POST .../mark-up-to-date/{FR_ID}; POST .../{ROOT_ID}/reset-overrides; POST .../{ROOT_ID}/clone; POST .../{ROOT_ID}/publish-all; POST .../{ROOT_ID}/archive-all
+[STATUS] Read each status
+[HTTP] With the admin token GET .../{ROOT_ID}/languages
+--- SCREEN: Admin, signed in as the read-only editor (BLOCKED without the secret) ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the root
+[ASSERT] Save, Publish all, Archive all, Clone, Create, Link existing and Unlink are hidden or disabled","[STATUS] {SPEC} domain map permissions (builder:create / update / delete / publish gate the controller): the read-only token can search and get (200)
+[STATUS] {SPEC} same and BSC-2 (Test Model Part 0r): every mutating endpoint listed returns HTTP 403 with the restricted token; none returns 2xx and none returns 5xx
+[STATE] {SPEC} same: after the refused calls the root and its versions are unchanged (admin GET shows the same languages, statuses and permalinks)
+[BLADE] {SPEC} BSC-2: the mutating controls are hidden or disabled in the UI (a server-side refusal above is the verdict; the UI part is secondary)","[NETWORK] no 5xx for any refused call
+[API] the 403 responses carry no entity data",A mutating endpoint returns 2xx for the read-only token (permission attribute missing); a control stays enabled in the UI; the state changed despite a 403,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:SCOPE · Technique:DT · Role:read-only-editor · fixture RESTRICTED_CMS_ADMIN on vcptcore (npm run seed:rbac),Draft
+CMS-ML-029,nl-NL and nl-BL versions — distinct localized URLs and correct switch between them,Page Builder > Multilanguage Pages,Medium,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. nl-NL and nl-BL are store languages of {{STORE_ID}}. Storefront steps signed in as @td(VCST4935_BUYER.email).",buyer=@td(VCST4935_BUYER.email),"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create a root (default en-US, permalink /agent-test-vcst4935-<unique>-nl) and published versions en-US, nl-NL and nl-BL; give nl-NL the permalink /agent-test-vcst4935-<unique>-nl-nl and nl-BL /agent-test-vcst4935-<unique>-nl-be through two linked Landing Pages
+--- SCREEN: Storefront ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Sign in as @td(VCST4935_BUYER.email)
+[NAV] The nl-NL localized URL (the /nl-NL/ prefix plus /agent-test-vcst4935-<unique>-nl-nl)
+[ASSERT] The nl-NL version renders
+[NAV] The nl-BL localized URL (the /nl-BL/ prefix plus /agent-test-vcst4935-<unique>-nl-be)
+[ASSERT] The nl-BL version renders
+[ACT] From the nl-NL page open the language selector
+[ACT] Choose the nl-BL entry (the selector shows two ""Nederlands"" entries: pick the one that leads to /nl-BL/)
+[ASSERT] The URL is the nl-BL localized URL and the nl-BL version renders
+[ACT] Switch back to nl-NL
+[ASSERT] The URL is the nl-NL localized URL and the nl-NL version renders","[FORMAT] {DOC} VirtoOZ Platform User Guide, Multilingual SEO URLs (the language prefix is /{xx}/ or /{xx-XX}/) and {OBSERVED} (SBTM-VCST-4935-2026-10-23): nl-NL and nl-BL use the full prefixes /nl-NL/ and /nl-BL/
+[STATE] {SPEC} BL-SEO-001 and probe VC-SEARCH-004: each URL renders its own version: slugInfo with cultureName nl-NL returns pageDocument.cultureName = nl-NL and with cultureName nl-BL returns pageDocument.cultureName = nl-BL; the nl-BL version is never served at the nl-NL URL or the reverse
+[STATE] {SPEC} §3 Storefront 2: switching between nl-NL and nl-BL opens the translation's localized permalink
+[URL] {OBSERVED} (SBTM-VCST-4935-2026-10-23): /nl/<permalink> returns the not-found view when both Dutch cultures exist (pre-existing, plain Landing control); recorded, not asserted","[CONSOLE] no JS error
+[NETWORK] no 4xx/5xx on /graphql
+[API] slugInfo for each permalink with its culture returns that version",The nl-BL URL serves the nl-NL version or the reverse; the switch lands on a not-found view; the prefix is /nl/,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink",VCST-4935 · Archetype:MONEY · Technique:EG · Probe:VC-SEARCH-004 · Probe VC-SEARCH-004,Draft
+CMS-ML-030,"Language removed from the store — version row flagged, Create and Link refused, no blade error",Page Builder > Multilanguage Pages,Low,,ECL-10.3,"Admin signed in; store {{STORE_ID_SECONDARY}} (Electronics) is admin-only and its language list is restored in Cleanup; coordinate with whoever uses the shared stand: the case edits store configuration. The ORIGINAL store object is captured first and the languages PUT back at the end. Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts",store={{STORE_ID_SECONDARY}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID_SECONDARY}}; save the full body as STORE_ORIG and the languages array as LANGS_ORIG
+[HTTP] Create a root (default = the store default, permalink /agent-test-vcst4935-<unique>-rm) in {{STORE_ID_SECONDARY}} with a version in a non-default language L chosen from LANGS_ORIG; capture ROOT_ID
+[HTTP] PUT {{BACK_URL}}/api/stores with STORE_ORIG minus L in the languages array
+--- SCREEN: Admin, root of {{STORE_ID_SECONDARY}} ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID_SECONDARY}}
+[ACT] Open the root
+[ASSERT] The blade opens without an error; the row for L is flagged as not a store language
+[HTTP] GET .../{ROOT_ID}/languages
+[ASSERT] Create and Link existing are not offered for L
+[HTTP] PUT {{BACK_URL}}/api/stores with STORE_ORIG (restores L); GET and compare","[BLADE] {OBSERVED} (SBTM-VCST-4935-2026-10-23): a version whose language is not a store language is labelled ""not a store language"" (isStoreLanguage false in GET languages); the blade opens with no error
+[STATE] {SPEC} ECL-10.3 (a blade must not fail silently): the version row for the removed language stays listed in GET languages and the blade shows no blank state or error toast
+[STATE] {OBSERVED} (this case restores what it changed): after Cleanup the store language list equals LANGS_ORIG","[CONSOLE] no TypeError or JS error when the blade opens
+[NETWORK] no 5xx
+[API] the version row still exists in GET languages
+[NOTE] The Create and Link existing actions for the removed language are recorded, not asserted as refused: the dev comment does not state it (code reading only)",The blade is blank or throws for a version whose language left the store; the version row disappears; the store language list is not restored,"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] PUT {{BACK_URL}}/api/stores with STORE_ORIG so the original languages return; verify with GET
+[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink","VCST-4935 · Archetype:FALLBACK · Technique:EG · Charter-from-gap: discovery did not reach this (time box, shared store config)",Draft
+CMS-ML-031,"Link existing refuses a page whose language is not a store language, like Convert does",Page Builder > Multilanguage Pages,Medium,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A Landing Page whose culture xx-XX is not a store language is created through create-group-page; a root with an en-US version exists.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page {name:""AGENT-TEST-VCST4935-<unique>-xx"", permalink:""/agent-test-vcst4935-<unique>-xx"", cultureName:""xx-XX"", storeId:""{{STORE_ID}}"", visibility:true}; capture XX_ID
+[HTTP] Create a root (default en-US, permalink /agent-test-vcst4935-<unique>-lnk) with an en-US version; capture ROOT_ID
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/convert/{XX_ID}
+[STATUS] Read the status and message
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{ROOT_ID}/link/{XX_ID}
+[STATUS] Read the status and message
+[HTTP] GET .../{ROOT_ID}/languages and GET .../grouped/{XX_ID}","[STATUS] {OBSERVED} (SBTM-VCST-4935-2026-10-23): Convert of the xx-XX page returns 400 (""must have a language of store"")
+[STATUS] {SPEC} (VCST-4935 dev comment 2026-10-21, B. Kotov, Convert / Link existing take a Landing Page in a store language (the Convert rule, the Update rule of the Default language)): Link existing of the same page is refused with HTTP 400 as Convert is
+[STATE] {SPEC} same: after the refused link the xx-XX page stays a standalone Landing Page and the root has no xx-XX version","[NETWORK] no 5xx
+[API] GET languages does not list xx-XX","Link existing returns 200 and adds a version for a language the store does not have (today's build), the languages table then shows a ""not a store language"" row","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink","VCST-4935 · Archetype:LIFECYCLE · Technique:EG · Catches:VCST-4935 · Suspected defect N2 (Link existing accepts a non-store language, Convert refuses), KB-988AA72D; held Draft: the build returns 200 today, the expectation is the Convert parity",Draft
+CMS-ML-032,Back after a language switch between locales sharing a short code returns to the previous localized URL,Page Builder > Multilanguage Pages,Low,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. The same Dutch fixture as CMS-ML-029 (nl-NL and nl-BL versions with distinct permalinks). Storefront steps signed in as @td(VCST4935_BUYER.email).",buyer=@td(VCST4935_BUYER.email),"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create the root and the nl-NL (/agent-test-vcst4935-<unique>-bk-nl) and nl-BL (/agent-test-vcst4935-<unique>-bk-be) published versions as in CMS-ML-029
+--- SCREEN: Storefront ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Sign in as @td(VCST4935_BUYER.email)
+[NAV] The nl-NL localized URL /nl-NL/agent-test-vcst4935-<unique>-bk-nl
+[ACT] Choose the nl-BL entry in the language selector
+[ASSERT] The URL is /nl-BL/agent-test-vcst4935-<unique>-bk-be
+[ACT] Press the browser Back button once
+[ASSERT] Read the URL and the rendered version","[URL] {SPEC} (VCST-4935 dev comment §3 Storefront 2: the language switch opens the translation's permalink) and UIP-BACK: after one Back the visitor is on the previous localized URL /nl-NL/agent-test-vcst4935-<unique>-bk-nl and the nl-NL version renders; not on /nl-BL/ with the nl-NL permalink
+[URL] {SPEC} same: right after the switch, before Back, the URL is /nl-BL/agent-test-vcst4935-<unique>-bk-be and the nl-BL version renders","[CONSOLE] no TypeError or JS error
+[NETWORK] no 4xx/5xx
+[NOTE] no not-found view appears at any step (recorded in evidence)","Back lands on /nl-BL/<nl-NL permalink> (this build), Back lands on a not-found view, the switch leaves an intermediate history entry, the nl-BL URL carries the nl-NL permalink","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink","VCST-4935 · Archetype:RENDER · Technique:EG · Catches:VCST-4935 · Suspected defect N4 (switch leaves an intermediate history entry), SBTM-VCST-4935-2026-10-23 bug 6; held Draft",Draft
+CMS-ML-033,Clone from a language-version blade creates a standalone Landing copy without a console error,Page Builder > Multilanguage Pages,Low,,,"Admin signed in to the Admin vc-shell app; PageBuilder, Pages, XCMS and theme builds include the VCST-4935 PRs (vc-module-pagebuilder#175, vc-module-pages#23, vc-module-x-cms#27, vc-frontend#2576); VirtoPages.Enable = true on {{STORE_ID}} (B2B-store, multi-language). Every fixture is created in the case through the product; names are AGENT-TEST-VCST4935-<unique>-<tag> and permalinks /agent-test-vcst4935-<unique>-<tag>, <unique> from scripts/lib/random-data.ts. A root with a published en-US version.","store={{STORE_ID}}, back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] Create the root (permalink /agent-test-vcst4935-<unique>-vclone) with an en-US version, one block, published; capture ROOT_ID, EN_ID
+[HTTP] GET .../{ROOT_ID}/languages; record the language set and the version ids as BEFORE
+--- SCREEN: en-US version blade ---
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId={{STORE_ID}}
+[ACT] Open the root, open the en-US version, open the browser console
+[ACT] Click ""Clone"" in the version blade toolbar
+[WAIT] The result opens or an error appears
+[ASSERT] Read the console for unhandled rejections
+[HTTP] Search the page list for the copy: POST {{BACK_URL}}/api/page-builder-pages/list with the name AGENT-TEST-VCST4935-<unique>-vclone
+[HTTP] GET .../{ROOT_ID}/languages","[STATE] {OBSERVED} (SBTM-VCST-4935-2026-10-23) and ECL-10.3 (a blade action must not fail silently): Clone from a language-version blade creates a standalone Landing Page copy (multilanguagePageId empty), the root's language set is unchanged versus BEFORE, and the console shows no unhandled rejection
+[STATE] {SPEC} story item 9 (Clone copies pages as drafts, never publishes): a copy that is created has status = Draft and the root language count after = the BEFORE count","[CONSOLE] no ""[BladeMessaging] Caller blade ... not found in stack"" or other unhandled rejection
+[NETWORK] no 5xx
+[NOTE] The expected shape of the copy (a standalone Landing Page rather than a new version) comes from the plan; the dev comment lists Clone only as a root action (PO question); the console and the unchanged root are the firm assertions","Console shows ""[BladeMessaging] Caller blade ... not found in stack"" (today's build); the copy joins the root as a version; the root changes","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (user {{ADMIN}}, password from the environment, never typed in the case)
+[HTTP] POST {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/archive-all for every AGENT-TEST-VCST4935 root this case created (a root with versions cannot be deleted, only archived; DELETE {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId} a root that has no versions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/archive?ids={groupId} for every AGENT-TEST-VCST4935 Landing Page this case created or unlinked
+[VERIFY] GET {{BACK_URL}}/api/page-builder-multilanguage-pages/{rootId}/languages shows no Published or Draft version, or the root is 404; the storefront no longer serves any AGENT-TEST-VCST4935 permalink","VCST-4935 · Archetype:SILENT · Technique:EG · Catches:VCST-4935 · Suspected defect N6, SBTM-VCST-4935-2026-10-23 bug 7; held Draft · Open question: intended result of Clone from a version blade (PO)",Draft

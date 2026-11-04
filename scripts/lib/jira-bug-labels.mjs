@@ -16,8 +16,8 @@
 // A bug a person described — even one Claude then reproduced — is `reported-by-human`, and so is
 // any bug whose origin is unclear.
 //
-// WHAT COUNTS AS A BUG. Issue type `Bug`, and a `Sub-task` that is one: /qa-test files an in-scope
-// bug as a Sub-task of the ticket (tracker-ops.md §5b), but /ba-analyze files story sub-tasks too, so
+// WHAT COUNTS AS A BUG. Issue type `Bug`, and a `Sub-task` that is one: /qa-test no longer files
+// in-scope bugs as Sub-tasks (tracker-ops.md §5b), but older runs and /ba-analyze story sub-tasks exist, so
 // a Sub-task is checked only when it carries a bug's marks — the `## Fix Routing` block every
 // /qa-bug report ends with, or an origin / auto-fix label.
 //

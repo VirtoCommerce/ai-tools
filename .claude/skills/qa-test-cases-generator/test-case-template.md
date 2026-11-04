@@ -278,7 +278,7 @@ as `{HYPOTHESIS}`).
 |-----|-----------------|--------------------------|
 | `{SPEC}` | the requirement / acceptance criterion in the **tracker ticket** (Jira **or** Azure Boards) | ✅ |
 | `{BL}` | a real `BL-*` / `BL-UI-*` invariant in the BL oracle | ✅ |
-| `{DOC}` | confirmed in VirtoOZ docs or product source (`/vc-docs`, `PlatformFrontendSourceCode`, an i18n file) | ✅ |
+| `{DOC}` | confirmed in VirtoOZ docs or product source (VirtoOZ, `PlatformFrontendSourceCode`, an i18n file) | ✅ |
 | `{OBSERVED}` | confirmed live this session against the deployed build (DOM snapshot / smoke exec) | ✅ |
 | `{HYPOTHESIS}` | a plausible-bug guess with **no** traceable source | ❌ — phrase as "verify whether…"; **cannot be promoted** |
 
@@ -329,7 +329,7 @@ API, console, and network verification. Each on its own line, prefixed with laye
 | `[CONSOLE]` | Browser console — errors, warnings |
 | `[NETWORK]` | Network tab — HTTP status codes, failed requests |
 | `[ADMIN]` | Verification in admin panel (VC back-office) |
-| `[EMAIL]` | Email notification sent (check via Hangfire or test email) |
+| `[EMAIL]` | Email notification sent (check via the background-job engine or test email) |
 
 Examples:
 ```

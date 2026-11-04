@@ -1,0 +1,50 @@
+{
+ "env": "vcptcore",
+ "endpoint": "POST {BACK_URL}/graphql",
+ "note": "Authorization header omitted; responses verbatim from server",
+ "calls": [
+  {
+   "at": "2026-10-26T23:33:17.229Z",
+   "request": {
+    "query": "mutation($command:InputUpdateContactType!){ updateContact(command:$command){ id firstName lastName } }",
+    "variables": {
+     "command": {
+      "id": "c387d3ed-3cf2-435a-9244-1b2f53b53a0a",
+      "firstName": "SmokeTest",
+      "lastName": "Tester2"
+     }
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "errors": [
+      {
+       "message": "'Last Name' contains invalid characters.",
+       "locations": [
+        {
+         "line": 1,
+         "column": 45
+        }
+       ],
+       "path": [
+        "updateContact"
+       ],
+       "extensions": {
+        "code": "VALIDATION",
+        "codes": [
+         "VALIDATION"
+        ],
+        "field": "lastName",
+        "errorCode": "InvalidCharacters"
+       }
+      }
+     ],
+     "data": {
+      "updateContact": null
+     }
+    }
+   }
+  }
+ ]
+}

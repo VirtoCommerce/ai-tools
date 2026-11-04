@@ -247,3 +247,13 @@ Docs grounding: VirtoOZ — no passkey / sign-in-methods page (new feature); "En
 (docs.virtocommerce.org/platform/user-guide/azure-ad/enabling-authentication-types); security-in-depth (cookie
 revalidation 5 min). Agents to dispatch: qa-frontend-expert (chrome), qa-backend-expert (edge), test-data-engineer,
 test-management-specialist, vc-test:ui-ux-expert; ceremony rows via the WebAuthn virtual authenticator (chrome/edge).
+
+## 3x amendments (2026-10-28, same round — applied before Artifact A; report: exploratory/SBTM-VCST-6121-2026-10-28.md)
+- CORRECTION: the 1r note (Admin Shell login has no passkey button) is WRONG — "Sign in with a passkey" is shown first and signs in (cookie 204). S17 keeps its row; its hypothesis is now AngularJS↔Admin Shell parity of the last-key gate (Admin Shell disables the control, AngularJS answers "400: Bad request").
+- NEW link L4a: /sign-in runs a conditional-mediation passkey get ON PAGE LOAD (not only on email focus) — valid credential → silent sign-in; stale credential → 400 login_failed + console error. New row S29 (N1).
+- L5 refined: the grant does NOT re-check the store scheme; a page loaded before the switch still gets a token (S15 grounded as a finding, N3). Lockout IS enforced for passkey (S19a/b PASS), but a passkey success does NOT reset accessFailedCount (S19c — candidate contradiction of BL-AUTH-003, N2).
+- L6 grounded: locked last-used org → passkey lands in the usable org (S2), same as OTP.
+- L9 grounded: xAPI delete keeps other access + refresh tokens (S23); REST delete revokes them and keeps the own cookie (S24). Admin revoking another user's key: ABSENT IN PRODUCT.
+- L2/L3 grounded: duplicate = client InvalidStateError message; rename blank→null, no length cap, markup escaped; no key-count limit (C-36 → nothing to assert); UV required enforced both ways (S28).
+- NEW rows from 3x: S29 conditional-mediation on load (RACE/EG) · S30 impersonated xAPI changePassword refused (SCOPE/DT, BL-AUTH-009 — may be pre-existing) · S31 impersonated /account/security content (RENDER/EP, Low) · S32 B2C first render of /account/security (FALLBACK/EG, Low) · S33 audit trail of key operations (SILENT/EP, Low). S13 (no-WebAuthn browser) remains {HYPOTHESIS}.
+- Matrix: V10×L3 now S22+S30; V3×L7 now S4+S32; V1×L4 adds S29; V4/V5×L8 adds S33. Reverse edge "store off → existing key refused": covered by S15 — observed NOT refused (finding).

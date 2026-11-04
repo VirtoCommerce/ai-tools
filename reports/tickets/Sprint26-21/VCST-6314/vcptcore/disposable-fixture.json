@@ -1,0 +1,132 @@
+{
+  "ticket": "VCST-6314",
+  "env": "vcptcore",
+  "backUrl": "https://vcptcore-qa.govirto.com",
+  "storeId": "B2B-store",
+  "createdAt": "2026-10-27T18:45:57.037Z",
+  "isolation": "per run (disposable) \u2014 nothing else reads these entities",
+  "rep": {
+    "contactId": "b4885cef-bae5-472f-b98e-09a0bd744e95",
+    "userId": "24ca0a8f-2af4-4a71-ab80-7d411e2b7d4e",
+    "userName": "agent-test-6314-rep@example.com",
+    "email": "agent-test-6314-rep@example.com",
+    "fullName": "AGENT-TEST-6314 Rep",
+    "passwordSecretKey": "SR_REP_PASSWORD",
+    "salesRepRole": {
+      "roleId": "f18edee1e788476cb0fed2ec534d024e",
+      "roleName": "Sales Representative",
+      "hasGlobalSalesRepRole": true,
+      "note": "same grant shape as SR_REP_PRIMARY: global role on the account + the role on each per-org membership (POST /api/sales-rep with roleId + organizations[])"
+    }
+  },
+  "orgs": {
+    "A": {
+      "name": "AGENT-TEST-6314-ORG-A",
+      "platformId": "f89f7c13-58d2-4999-abb0-276a6434e8f9",
+      "memberContactId": "9ab2ddd2-b901-4b0c-8de6-f20a9b5ea3a5",
+      "repMembershipId": "66f86d79-79e0-4bc9-a4a8-1d5f87108ff7"
+    },
+    "B": {
+      "name": "AGENT-TEST-6314-ORG-B",
+      "platformId": "ca0893c0-9a39-4bab-9d36-a3c55a7b94c0",
+      "memberContactId": "bbddb993-8401-4848-9680-5f290a9b910f",
+      "repMembershipId": "02d71788-4d56-4d1f-a5be-46e0abbc8a0d"
+    }
+  },
+  "task": {
+    "id": "1f3fdf62-861a-4b58-b50e-8624d1fdd29f",
+    "name": "AGENT-TEST-6314-linked-call",
+    "type": "Call",
+    "objectType": "CustomerOrder",
+    "objectId": "3f70696b-7732-4dd8-b9be-f88f7c351cd7",
+    "order": {
+      "id": "3f70696b-7732-4dd8-b9be-f88f7c351cd7",
+      "number": "AGENT-TEST-SRBULK-001229"
+    },
+    "dueDate": "2026-10-30T10:00:00Z",
+    "number": 223,
+    "responsibleId": "b4885cef-bae5-472f-b98e-09a0bd744e95",
+    "organizationId": "f89f7c13-58d2-4999-abb0-276a6434e8f9",
+    "storeId": "B2B-store"
+  },
+  "verification": {
+    "token": 200,
+    "salesRepCustomers": {
+      "totalCount": 2,
+      "items": [
+        {
+          "organizationId": "f89f7c13-58d2-4999-abb0-276a6434e8f9",
+          "organizationName": "AGENT-TEST-6314-ORG-A"
+        },
+        {
+          "organizationId": "ca0893c0-9a39-4bab-9d36-a3c55a7b94c0",
+          "organizationName": "AGENT-TEST-6314-ORG-B"
+        }
+      ],
+      "exactlyAB": true
+    },
+    "salesRepTaskTypes": {
+      "values": [
+        "Customer Support",
+        "Product Catalog Management",
+        "Order Processing",
+        "Order Review",
+        "Pricing and Promotions",
+        "Content Management",
+        "Registration Review",
+        "Other",
+        "Call"
+      ],
+      "includesCall": true
+    },
+    "salesRepTasks": {
+      "totalCountForKeyword": 1,
+      "linkedCall": {
+        "id": "1f3fdf62-861a-4b58-b50e-8624d1fdd29f",
+        "name": "AGENT-TEST-6314-linked-call",
+        "type": "Call",
+        "dueDate": "2026-10-30T10:00:00Z",
+        "completed": null,
+        "isActive": true,
+        "customerId": null,
+        "customerName": null
+      }
+    }
+  },
+  "removeOrgBFromServedSet": {
+    "method": "PUT",
+    "path": "/api/sales-rep",
+    "auth": "admin bearer token (Platform API)",
+    "recipe": "GET /api/sales-rep/b4885cef-bae5-472f-b98e-09a0bd744e95 -> take the WHOLE body, drop the organizations[] entry with organizationId ca0893c0-9a39-4bab-9d36-a3c55a7b94c0, PUT it back unchanged otherwise",
+    "bodyShape": {
+      "id": "b4885cef-bae5-472f-b98e-09a0bd744e95",
+      "userId": "24ca0a8f-2af4-4a71-ab80-7d411e2b7d4e",
+      "firstName": "AGENT-TEST-6314",
+      "lastName": "Rep",
+      "fullName": "AGENT-TEST-6314 Rep",
+      "emails": [
+        "agent-test-6314-rep@example.com"
+      ],
+      "storeId": "B2B-store",
+      "roleId": "f18edee1e788476cb0fed2ec534d024e",
+      "isLocked": false,
+      "organizations": [
+        {
+          "organizationId": "f89f7c13-58d2-4999-abb0-276a6434e8f9",
+          "organizationName": "AGENT-TEST-6314-ORG-A",
+          "membershipId": "66f86d79-79e0-4bc9-a4a8-1d5f87108ff7"
+        }
+      ],
+      "...": "every other field as returned by the GET"
+    },
+    "expectedEffect": "membership 02d71788-4d56-4d1f-a5be-46e0abbc8a0d is DELETED (KB-D173BBB8: a PUT dropping an org deletes the whole membership); salesRepCustomers -> totalCount 1 (ORG-A only). The rep holds no other memberships, so nothing else is collateral.",
+    "checkAfter": "POST /api/customer/organization-memberships/search {\"userId\":\"24ca0a8f-2af4-4a71-ab80-7d411e2b7d4e\"} -> only 66f86d79-...",
+    "restore": "same PUT with ORG-B re-added: {\"organizationId\":\"ca0893c0-9a39-4bab-9d36-a3c55a7b94c0\",\"organizationName\":\"AGENT-TEST-6314-ORG-B\"} (creates a NEW membership id)"
+  },
+  "teardown": {
+    "command": "TEST_ENV=vcptcore node --no-network-family-autoselection scripts/seed-data/sales-rep/seed-sales-rep-disposable-two-org.mjs --teardown",
+    "script": "scripts/seed-data/sales-rep/seed-sales-rep-disposable-two-org.mjs",
+    "deletes": "task -> rep (DELETE /api/sales-rep) -> login user -> both contacts -> both orgs; AGENT-TEST-6314-* only",
+    "notRunYet": true
+  }
+}

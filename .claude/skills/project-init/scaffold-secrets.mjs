@@ -133,7 +133,7 @@ const CATALOG = {
   CONTEXT7_API_KEY: {
     perEnv: false, optional: true, include: () => true,
     what: "Context7 API key (OPTIONAL).",
-    why: "Enables the `context7` MCP server — up-to-date library / framework / SDK docs lookup; the fallback docs source for /vc-docs (VirtoOZ MCP is primary).",
+    why: "Enables the `context7` MCP server — up-to-date library / framework / SDK docs lookup; the fallback docs source when the VirtoOZ connector has no answer.",
     where: "context7.com dashboard → API key.",
   },
 };

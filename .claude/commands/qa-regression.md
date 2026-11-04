@@ -13,7 +13,7 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 /qa-regression                             # Default: smoke
 /qa-regression smoke                       # the smoke selection (pre-deploy gate)
 /qa-regression critical                    # the P0 selection
-/qa-regression sprint                      # Reads docs/Sprint plans/ for the current sprint plan and runs ALL Section 5.1 suites (5.1.1 Frontend + 5.1.2 Backend); falls back to static group if no plan
+/qa-regression sprint                      # Reads docs/Sprint plans/ for the current sprint plan and runs ALL §5.1 suites (Frontend + Backend); static group if no plan; stops if the sprint has waves
 /qa-regression sprint --frontend           # Run only the plan's §5.1.1 Frontend suites (regression/suites/Frontend/)
 /qa-regression sprint --backend            # Run only the plan's §5.1.2 Backend suites (regression/suites/Backend/)
 /qa-regression sprint:XX-YY                # Pin to a specific sprint plan
@@ -82,7 +82,7 @@ There is **one** orchestrator: `regression-orchestrator`, dispatched via the Tas
 > A second `--autonomous` mode (Agent Teams, `results/{RUN_ID}/`) was removed 2026-08-26. It was a
 > parallel stack whose output no tooling read: no live dashboard, no `/qa-triage-results`, no
 > `history.json` flakiness feed, no `reap-stalled-run` backstop, no `compute-metrics` gate. Why: `docs/decisions/regression-history.md`. Its two genuinely useful pieces — the graduated rate-limit guard and the 30/60s backoff
-> ladder — were folded into `regression-orchestrator.md` Step 5. Its auto-JIRA filing was dropped
+> ladder — were folded into `regression-orchestrator.md` Step 5 (the ladder itself: `knowledge/agents/qa/regression-orchestrator-retry.md` §Step 5). Its auto-JIRA filing was dropped
 > deliberately: `/qa-triage-results` and `/qa-monitoring` both stop short of filing, and a
 > regression run should not be the one thing that does.
 
@@ -266,11 +266,11 @@ only makes the decision always visible.
 
 **This step does NOT harvest assertions.** A case still carrying `{HYPOTHESIS}` is held at `PR-007` —
 the row is linted at its **target** status — and that hold is the correct answer here. Resolving it needs
-`/qa-review-tests --verify --fix` plus a human, which is [`/qa-test-lifecycle`](qa-test-lifecycle.md)
-Phase 6P's job. **6.5 is the mechanical flip for cases already grounded; 6P is the full promoter.**
+`/qa-review-tests --verify --fix` plus a human, which is `qa-case-promotion`'s job.
+**6.5 is the mechanical flip for cases already grounded; that skill is the full promoter.**
 
 **No verifier dispatch.** 6.5's only write is `tc:promote:apply`'s — deterministic, re-derivable from
-the run, field-compared before it lands. The `verify:gate --gate 5g` ratification belongs to **6P**.
+the run, field-compared before it lands. The `verify:gate --gate 5g` ratification belongs to **`qa-case-promotion`**.
 
 **A DELEGATED run never promotes.** When another command invoked this one — `/qa-test` `4c` (the C1
 exact set) or `5-loop` — the caller passes `--no-promote` and this step is skipped. `/qa-test`'s own
@@ -361,7 +361,7 @@ count and predicted makespan.
 | `smoke` | manifest `include` list | Daily pre-deploy |
 | `critical` | manifest `include` list (P0) | P0 gate |
 | `sprint` | **Plan-driven** — reads `docs/Sprint plans/sprint-{XX-YY}-summary.json` → `suitesActivated[]`. Falls back to the static group when no plan exists or `--no-plan` is set | Sprint release |
-| `sprint:XX-YY` | Pinned to a specific sprint plan | Re-run a past sprint's regression scope |
+| `sprint:XX-YY` | Pinned to a sprint plan (stops on waves) | Re-run a past sprint's scope |
 | `full` | all suites minus the manifest's `exclude` list | Production release |
 | `frontend` | `where: {layer: frontend}` minus its excludes | Frontend only |
 | `backend` | `where: {layer: backend}` minus its excludes | Backend only |
@@ -379,7 +379,7 @@ count and predicted makespan.
 - Always write test-run-status.json (external tools + the live HTML dashboard monitor it — update it at each state change)
 - **Always auto-launch the live dashboard watcher (Step 3) — every run, every mode, without asking.** Spawn `npm run report:regression:watch -- --run-id {RUN_ID}` in the background immediately after writing `test-run-status.json` and before dispatching any suite agent. Never wait for the user to request it or ask whether to launch it — it applies to browser-pool runs and single runner-native suites (e.g. 050m) equally.
 - **Split the suite-by-suite results by layer.** The Step 6 report's results table is written as two subsections — `Frontend Suites` (`regression/suites/Frontend/`) and `Backend Suites` (`regression/suites/Backend/`) — classified by the layer directory each suite's CSV lives under in `config/test-suites.json`, each with its own pass/fail sub-total. Loyalty splits across layers (083/083b → Frontend; 075/075b/075c → Backend); admin/GraphQL suites (050*, 0XX admin) → Backend.
-- **Post-run promotion (Step 6.5) is surfaced on every direct run, written only on `--promote`.** The dry `tc:promote` is read-only and deterministic; the apply takes one human approval, and `Draft → Automated` is never automatic. A run delegated by `/qa-test` (`4c`, `5-loop`) passes `--no-promote` and skips it. 6.5 never harvests assertions — a `{HYPOTHESIS}` hold (`PR-007`) is routed to `/qa-test-lifecycle` 6P, not resolved here
+- **Post-run promotion (Step 6.5) is surfaced on every direct run, written only on `--promote`.** The dry `tc:promote` is read-only and deterministic; the apply takes one human approval, and `Draft → Automated` is never automatic. A run delegated by `/qa-test` (`4c`, `5-loop`) passes `--no-promote` and skips it. 6.5 never harvests assertions — a `{HYPOTHESIS}` hold (`PR-007`) is routed to `qa-case-promotion`, not resolved here
 - Read URLs from .env via `config.js`, never hardcode
 - If >50% suites fail, flag as critical_failure — suggest `/qa-triage-results latest` to classify the failures (real bug vs stale test), or `/qa-test-lifecycle diff` to sync against recent code changes
 - If a browser fails to launch, retry with fallback chain (see Browser Pool table above)

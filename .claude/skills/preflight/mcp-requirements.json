@@ -18,7 +18,7 @@
     "exploratory": { "atlassian": { "class": "OPT", "when": "ticket mode" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ_FALLBACK" } },
     "lifecycle":   { "github": { "class": "REQ_FALLBACK" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ_FALLBACK" } },
     "domain-map":  { "github": { "class": "REQ_FALLBACK" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ" }, "playwright-firefox": { "class": "REQ_FALLBACK" } },
-    "ba":          { "atlassian": { "class": "OPT", "when": "docs ticket mode" }, "github": { "class": "REQ_FALLBACK" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ" } },
+    "ba":          { "atlassian": { "class": "OPT", "when": "stories <TICKET> mode" }, "github": { "class": "REQ_FALLBACK" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ" } },
     "regression":  { "kb": { "class": "OPT" }, "azure": { "class": "OPT" } },
     "smoke":       { "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "OPT" }, "azure": { "class": "OPT" } }
   },

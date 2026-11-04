@@ -77,8 +77,9 @@ storefront fork) the customisation is not in these docs, so read an answer accor
 
 ## Rules
 
-> **Deliberate divergence from the `.claude/` copy — do NOT "fix" this by copying that file over.**
-> The project-scoped `.claude/skills/vc-docs/SKILL.md` carries a Step 0 that routes release /
+> **Deliberate divergence from the repository's rules — do NOT "fix" this by copying them over.**
+> The repository's own `/vc-docs` skill was removed 2026-10-30; its rules now live in
+> `.claude/knowledge/execution/doc-sources.md`, whose first table routes release /
 > version / what's-new questions to a generated `.claude/knowledge/domain/release-ledger.md`,
 > because VirtoOZ is ~9 months stale on releases. That routing is **absent here on purpose**:
 > `vc-fix` does not ship the ledger, and it ships no `scripts/maintenance/`, so it has no way to

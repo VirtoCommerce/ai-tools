@@ -40,6 +40,36 @@ scenarios** that way, because the carrier is the only axis on which no value col
 carriers are mandatory rows. The last one is the reason the rule earns a section — *"no carrier reachable"*
 is invisible to any component-shaped matrix, and it is a real defect class.
 
+## 1a. Scope = the page inventory
+
+**The storefront half of the blast radius is never hand-picked.** For this class and for any global
+style, token, theme-preset or Tailwind change, the page set is the derived inventory
+`config/storefront-pages.generated.json` — every route of vc-frontend's router, each with a `tier`, the
+session(s) to visit it in, the fixture a route param needs, and its known overlays. Its declared half
+(tiers, fixtures, overlays) is `config/storefront-pages.curation.json`; `npm run pages:check` gates it
+against the router.
+
+- **Every `core` page is in scope**, in every `auth` it lists, with its overlays. An `extended` page is in
+  scope when the change touches its area; otherwise it is out by a written decision, not by omission.
+- **A page left out is `WAIVED` with a reason** in the model's page axis (`test-model.md` §The gate,
+  clause 11b) and in the checklist — "needs a placed order", "store has no loyalty catalog". Silence is
+  not a waiver.
+- **Briefs cite the inventory, never a page list.** A checklist row or a visual-lane / `PIXEL` brief says
+  *"core tier of the page inventory, anonymous + signed-in + corporate, overlays included"* and names the
+  waived pages;
+  it does not enumerate paths. PIXEL's targets file is generated:
+  `npm run pages:targets -- --out <run>/targets.json --tier core --auth <state> --param <name>=<value>…`
+  (each `--param` resolved per the page's `fixtures` entry — `@td()` or live-discover, never a literal).
+  `signed-in` is a personal account and `corporate` an organization member, each with its own storage
+  state. A visit with `setup` (the checkout steps) is listed, not emitted: a browser lane covers it, or
+  it is `WAIVED`.
+- **Before the run, `npm run pages:sync -- --from <PR checkout>`** if the PR adds or removes a route; a new
+  route arrives `extended` and uncurated until someone tiers it.
+
+Provenance: VCST-6232 (PR #2600) checked a token change on six pages chosen from prior art; search, the
+checkout steps, most account pages, auth, B2B, 404 and every overlay were missing until the operator
+widened the set by hand.
+
 ## 2. Derive the oracle from source BEFORE any browser opens
 
 The whole of VCST-5653's contrast finding — 88 preset × mode × surface cells, **7 failing 3:1** — was

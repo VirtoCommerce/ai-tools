@@ -2,6 +2,8 @@
 
 **Env:** vcst-qa @ Platform 3.1043.0, Theme 2.53.0-pr-2368
 
+**Tracker update 2026-10-28:** the clear-collapses-dropdown part (SRCH-NEW-004) is filed as VCST-6613 (local: `BUG-search-clear-closes-dropdown-desktop-VCST-6613.md`). On theme 2.61.0-alpha.2605 the clear button now has the accessible name "Clear".
+
 ## Summary
 Three related accessibility/behavior defects in the storefront search bar autocomplete: Escape fails to close the hints dropdown, the clear (X) button exposes no accessible name, and clicking clear collapses the dropdown entirely instead of reverting to the Hints state. WCAG 2.4.4 and 4.1.2.
 

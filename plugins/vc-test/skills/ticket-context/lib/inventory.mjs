@@ -257,7 +257,8 @@ export function linkedOverCap(item, rank, cap) {
 // The ticket's own fields, for consumers that need the story as written and for the strategy's floors
 // (priority → F1, type → F2/F7). ticket.json is deleted with the run dir, so the bundle carries them. Plain
 // text only; untrusted data (S1).
-const ADF_BLOCKS = new Set(["paragraph", "heading", "listItem", "blockquote", "codeBlock", "rule", "tableRow", "panel"]);
+// A taskItem / decisionItem holds its text inline (no paragraph), so it ends its own line: ACs are often an action list.
+const ADF_BLOCKS = new Set(["paragraph", "heading", "listItem", "taskItem", "decisionItem", "blockquote", "codeBlock", "rule", "tableRow", "panel"]);
 export function adfText(node) {
   if (typeof node === "string") return node;
   if (Array.isArray(node)) return node.map(adfText).filter(Boolean).join("\n"); // a multi-select custom field
@@ -273,6 +274,10 @@ export function adfText(node) {
   }
   if (node.type === "hardBreak") return "\n";
   if (node.type === "mention") return "@mention"; // a person's name is not testing context
+  // Inline nodes whose meaning is in attrs: a date (ms since epoch), a status lozenge, an emoji.
+  if (node.type === "date") { const d = new Date(Number(node.attrs?.timestamp)); return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10); }
+  if (node.type === "status") return node.attrs?.text ? `[${node.attrs.text}]` : "";
+  if (node.type === "emoji") return node.attrs?.text ?? node.attrs?.shortName ?? "";
   const inner = (node.content ?? []).map(adfText).join(node.type === "tableRow" ? " | " : "");
   return ADF_BLOCKS.has(node.type) ? `${inner}\n` : inner;
 }

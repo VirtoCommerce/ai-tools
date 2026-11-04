@@ -27,7 +27,8 @@ deliver one conclusion — and left them to reconcile which version is current.
    report until close-out. If the operator explicitly says *post now*, that post becomes **the**
    comment for the run and everything later amends it.
 4. **A second comment *in the same round* requires the operator to ask for one**, for a reason they
-   state. Learning something new about the same build is an amend — a run always learns something new.
+   state. The one standing exception is the `/qa-docs` **documentation comment**, posted after one
+   confirmation with `tracker:comment --doc`, which keeps it out of the run's ledger entry. Learning something new about the same build is an amend — a run always learns something new.
 5. **A retest on an UPDATED artifact is a new round, and a new round is a NEW comment.** The developer
    shipped new builds, so the people waiting on them must be notified, and an edit notifies nobody. The
    earlier comment stays as that round's record. Name the build: `--artifact "<build under test>"`.
@@ -233,26 +234,27 @@ guessing custom-field ids.
 - **One carve-out, and only one:** a comment that must **display screenshots** cannot be Markdown —
   see §5c. Prose stays Markdown everywhere else.
 
-## 5b. Bug-filing relationship — Sub-task vs Link vs Standalone
+## 5b. Bug-filing relationship — To-fix row vs Link vs Standalone
 
-`/qa-test` Step 5-file files a confirmed bug with one of three relationships to the ticket under test, set by
+`/qa-test` Step 5-file handles a confirmed bug with one of three relationships to the ticket under test, set by
 that finding's **provenance** (5-triage). This is the contract `/qa-bug` follows when invoked with a relationship
-context (`sub-task-of:<ticket-key>` / `link-only:<existing-bug-key>`); a standalone `/qa-bug` call
-(no relationship context) is unaffected and keeps creating an ordinary Bug as today.
+context (`link-only:<existing-bug-key>`); a standalone `/qa-bug` call (no relationship context) is unaffected and
+keeps creating an ordinary Bug as today.
 
 | Relationship | Jira | Azure Boards |
 |---|---|---|
-| **IN-SCOPE → Sub-task of `<ticket-key>`** | `createJiraIssue` with `fields.issuetype.name = "Sub-task"` + `fields.parent = {key: <ticket-key>}`. **Probe first** via `getJiraIssueTypeMetaWithFields` on the project — some projects rename or disable the Sub-task type, and a parent whose own type is an Epic may not support one. On a miss, **fall back** to a standalone Bug + a "Relates" link and say so in the filing output — never silently drop the relationship. | Create the Bug work item normally, then `PATCH` its `relations` to add a link of type `System.LinkTypes.Hierarchy-Reverse` pointing at the parent. Azure Boards has no distinct "sub-task" issue type — the hierarchy link *is* the parent-child relationship. |
+| **IN-SCOPE → a row in the ticket's "To fix" table, no new tracker item** | **Never `createJiraIssue`** — no Sub-task, no Bug. The finding is the ticket's own unfinished work: it goes into `summary.json.to_fix[]`, and `/vc-fix:qa-report` renders it as the **To fix** table of the run's ONE result comment (§0) — what to fix, severity, the failing case or checklist item, and the draft in `{RUN_DIR}/bugs/<severity>/`. 5-status `REOPEN` hands that table to the developer. | Same — no work item, no `Hierarchy-Reverse` child; the table in the result comment is the record. |
 | **PRE-EXISTING → link only, no new ticket** | `createIssueLink` between the existing bug's key and `<ticket-key>` — resolve the link type id via `getIssueLinkTypes` first (use "Relates"/whatever that project calls it), never hardcode a link-type id. Nothing is filed. | `PATCH` the existing work item's `relations` to add a link of type `System.LinkTypes.Related` to `<ticket-key>`. Nothing is filed. |
-| **OUT-OF-SCOPE incidental → standalone + related link** *(unchanged from today)* | `createJiraIssue` (Bug) + `createIssueLink` "Relates" back to `<ticket-key>`. | Create the Bug work item + a `System.LinkTypes.Related` relation to `<ticket-key>`. |
+| **OUT-OF-SCOPE incidental → standalone + related link** | `createJiraIssue` (Bug) + `createIssueLink` "Relates" back to `<ticket-key>`. | Create the Bug work item + a `System.LinkTypes.Related` relation to `<ticket-key>`. |
 
-An incidental bug is never a sub-task — it wasn't caused by this ticket's change, so a parent-child
-relationship would misrepresent it; it gets its own standalone ticket with a plain "related" link, same as
-the in-scope case's fallback path.
+**Why a table, not a Sub-task (2026-11-03).** An in-scope defect is the ticket's own acceptance not yet met,
+and 5-status reopens the ticket for it anyway; a child issue per finding split one piece of work across N
+items, each needing its own status, labels and close-out. An incidental bug was not caused by this ticket's
+change, so it still gets its own standalone ticket with a plain "related" link.
 
 ### Labels on bugs Claude files
 
-Every Jira **Bug** Claude creates — and every **Sub-task** that is a bug (§5b in-scope filing) — says who found it
+Every Jira **Bug** Claude creates says who found it
 and, for an agent finding, during what.
 The PreToolUse hook `.claude/hooks/enforce-bug-labels.mjs` (logic: `scripts/lib/jira-bug-labels.mjs`)
 refuses the create call without a valid set and names what is missing.
@@ -345,7 +347,9 @@ That is the **QuickTime ActiveX / NPAPI** embed. ActiveX died with IE11 and NPAP
 in 2015, so the buyer-facing result in any current browser is an empty box. The file is still attached and
 downloadable from the attachments panel — but it is **not inline evidence**, and because it posts `200 OK`
 with zero `<span class="error">`, a run that stops at the status code will believe it worked. **Use an
-animated GIF** (`npm run gif`), which renders as a real media node and animates inline.
+animated GIF** (`npm run gif`), which renders as a real media node and animates inline. A video a reader
+should watch (the `/qa-docs` film) goes as a **linked attachment** — `npm run tracker:comment -- … --attach-video
+<file.mp4>` uploads it and links it, and Jira plays it from the attachment; `--attach` refuses a video.
 
 Raw Playwright video is impractical anyway: a short session records **~84 MB** of VP8 `.webm`
 (`test-results/<lane>/video/`) and Playwright exposes no bitrate control — `recordVideo.size` sets frame
@@ -355,15 +359,18 @@ dimensions only. Transcoding is not available on the QA machines (no `ffmpeg`).
 
 | Attached | Renders as | Verdict |
 |---|---|---|
-| `.png` | `<span class="image-wrap"><img src="…/attachment/content/<id>" width="700">` | inline image |
+| `.png` as `!name.png\|width=700!` | `<span class="image-wrap"><img src="…/attachment/content/<id>" width="700">` | inline image |
+| `.png` as `!name.png\|thumbnail!` | `<img src="…/attachment/thumbnail/<id>" data-attachment-name="name.png">` (measured 2026-11-02, VCST-6232) | rendered, but **not the house form** — legibility is judged at `\|width=700!` (`reports-policy.md` §5.1a); amend the embed |
 | `.gif` | same shape, animates | **the motion-evidence format** |
 | `.mp4` / `.webm` | `<div class="embeddedObject"><object classid="clsid:02BF25D5…">` | **dead — do not use** |
 
 **Read the `<img>`, never the filename.** The rendered `src` carries the numeric **attachment id**, not the
 file name, so "is the filename present in the HTML" is not a success test — it was wrong in the first cut of
 `scripts/tracker/comment.mjs` and reported two correctly-rendered images as failures. The reliable per-file
-signal is that no literal `!name!` survived. `npm run tracker:comment -- --attach <file>` performs the
-upload, the v2 embed and this whole check in one step.
+signal is that no literal `!name!` survived; only the `thumbnail` form also names the file, in
+`data-attachment-name`. `npm run tracker:comment -- --attach <file>` performs the upload, the v2 embed and
+this whole check in one step (`scripts/tracker/rendered-media.mjs`): it counts both embed forms in the table
+above as rendered, once per attachment id, and warns on a thumbnail.
 
 **Do not** hand-build an ADF `media` node with the numeric attachment id — Jira rejects it with
 `400 ATTACHMENT_VALIDATION_ERROR`. The `media.attrs.id` must be a media-service **UUID**, which the
@@ -389,7 +396,7 @@ the 2026-09-02 VCST-5319 measurement and it does **not** appear on a working wik
 `<span class="image-wrap"><img src=".../rest/api/3/attachment/content/<attachmentId>" width=…>` with
 **zero** `file-preview-id` occurrences. A check gated on that attribute would have called three correctly
 rendered images a failure. The three signals that did hold: one `<img src=…/attachment/content/…>` per
-image in `renderedBody`; via the v3 read below, one ADF `media` node per image whose `attrs.id` is a
+image in `renderedBody` (`…/attachment/thumbnail/…` for a `|thumbnail!` embed); via the v3 read below, one ADF `media` node per image whose `attrs.id` is a
 36-char UUID with `type: "file"`; and **zero** surviving literal `!…png!` in `renderedBody`, which proves
 the wiki markup was converted rather than printed.
 

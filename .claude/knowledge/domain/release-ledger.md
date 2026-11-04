@@ -3,7 +3,7 @@ applicability: universal
 rationale: |
   What shipped in the Virto Commerce product line and when. Upstream release history is
   deployment-independent, so every agent on every deployment reads the same ledger.
-generated: 2026-10-20
+generated: 2026-10-30
 rev: 2
 source: https://www.virtocommerce.org/c/news-digest/15.rss
 ledger_through: 3.1071.0
@@ -15,7 +15,7 @@ exhaustive: false
 
 # VC Release Ledger — what shipped, when
 
-**Generated** 2026-10-20 (rev 2) · **24** monthly digests · **258** features indexed · window 2024-12 → 2026-10
+**Generated** 2026-10-30 (rev 2) · **24** monthly digests · **258** features indexed · window 2024-12 → 2026-10
 
 > **GENERATED FILE — do not edit by hand.** Regenerate: `npm run releases:refresh`.
 > Drift guard: `npm run releases:check` + `scripts/unit/release-ledger.test.mjs` (runs in `npm test`).
@@ -30,7 +30,7 @@ exhaustive: false
 | Your question | Read | Not this |
 |---|---|---|
 | What shipped / which version introduced X / since when | **this file** | VirtoOZ (~9 months stale on releases) |
-| How does X work / where is it configured / API shape | VirtoOZ via `/vc-docs` | this file — it carries no behaviour |
+| How does X work / where is it configured / API shape | VirtoOZ (connector) | this file — it carries no behaviour |
 | Can I test it **on this env**? | `GET {{BACK_URL}}/api/platform/modules` | this file, nor the git-declared manifest |
 | Can the STOREFRONT see it (and is its flag on)? | `npm run store:caps` — anonymous, no token | the platform manifest: it answers "installed", not "visible" |
 

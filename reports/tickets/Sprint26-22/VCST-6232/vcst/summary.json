@@ -1,0 +1,392 @@
+{
+  "ticket": "VCST-6232",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "tracker": {
+    "kind": "jira",
+    "comment_id": "112589"
+  },
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "reason": "Task, priority High (P1) - ticket-routing.md §4 Task row: P0/P1 => FULL (raised from Medium during round 1; round 1 ran FAST)",
+    "escalated_reason": "operator first chose FAST, then chose the routing rule (FULL) when the P1 conflict was surfaced",
+    "technical_change": {
+      "value": false,
+      "surface_source": [
+        "diff exports net-new runtime surface: --vc-* scale/role tokens, font-base/font-heading utilities, designs/custom-fonts.ts; soft rendering changes"
+      ]
+    }
+  },
+  "layer": "storefront",
+  "domain_map": {
+    "value": "ABSENT",
+    "recommended": true,
+    "surface_source": [
+      "no .claude/knowledge/domain/*.md for the design system / theme tokens"
+    ],
+    "note": "FAST: recommend /qa-domain-map design-system; prior art: VCST-6231 run (same surface, Sprint26-21)"
+  },
+  "shape_class": {
+    "value": "ui-kit",
+    "surface_source": [
+      "diff: client-app/assets/styles/preflight.scss, .storybook/preview.ts, .storybook/preview-head.html, storybook-styles/preflight.scss, tailwind.config.ts (token scales)",
+      "ticket names design tokens (shape and typography)"
+    ]
+  },
+  "verdict": "FAIL",
+  "date": "2026-11-02",
+  "timing": {
+    "started_at": "2026-11-02T08:59:45Z",
+    "finished_at": "2026-11-02T12:45:48.828Z",
+    "test_window_start_utc": "2026-11-02T09:33:10Z",
+    "time_to_first_test_minutes": 33,
+    "first_evidence_minutes": 51,
+    "reachability_minutes": 1.6,
+    "agent_dispatches": 16,
+    "steps": {
+      "step1_context": 16,
+      "step1e_model": 8,
+      "step3x_discovery": 18,
+      "step3_checklist": 5,
+      "step4_execution": 60,
+      "step4_pixel": 150,
+      "step5_close": 70
+    },
+    "regression": {
+      "predicted_minutes": null,
+      "actual_minutes": null,
+      "note": "C1 skipped (ui-kit)"
+    }
+  },
+  "environment": "vcst",
+  "build": {
+    "declared": {
+      "theme": "vc-frontend#2600 @ a4f29534 (open, unmerged)"
+    },
+    "deployed": {
+      "platform": "3.1093.0-pr-3154-4607-vcst-6630-expired-password-46078a9c",
+      "theme": "2.62.0-pr-2600-a4f2-a4f29534"
+    },
+    "theme": "vc-frontend#2600 @ a4f29534",
+    "local_builds": {
+      "soft_pr": {
+        "url": "https://localhost:3000",
+        "sha": "a4f29534",
+        "settings_design": "soft",
+        "backend": "vcst BACK_URL (vite preview proxy)",
+        "authorised": "operator, 2026-11-02 (soft cannot be served on vcst: design is fixed at build time)"
+      },
+      "classic_base": {
+        "url": "https://localhost:3001",
+        "sha": "4ce61d0c (PR base, dev)",
+        "settings_design": "classic"
+      },
+      "storybook_pr": {
+        "url": "https://localhost:6006",
+        "sha": "a4f29534"
+      }
+    },
+    "env_notes": [
+      "vcst shows a version-mismatch notification on every page (XFrontend 3.1009.0 expected vs 3.1008.0-alpha installed; Store 3.1013.0 vs 3.1012.0-pr-190) that overlays the header and intercepts clicks",
+      "the QA env badge intercepts the header Theme toggle at 1280 px"
+    ],
+    "layer_source": [
+      "PR repo vc-frontend (theme)"
+    ]
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Ready for test",
+      "to": null,
+      "transition": null,
+      "confirmed": false,
+      "actor": "qa-lead",
+      "skipped": true,
+      "reason": "no In-testing transition offered from Ready for test (available: To do, Cancelled, On hold, Need fixes, Finish test)",
+      "at_utc": "2026-11-02T09:02:00Z"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert (1r, playwright-chrome)",
+    "ba-system-analyzer (1c)",
+    "ba-story-writer (1d)",
+    "qa-testing-expert (3x, playwright-firefox)",
+    "qa-frontend-expert (4a, playwright-chrome)",
+    "vc-test:ui-ux-expert (4v, playwright-edge; resumed for page set P)",
+    "general-purpose sonnet x2 (triage classifier)",
+    "qa-frontend-expert (C-14 cold rerun)",
+    "qa-testing-expert (qa-bug repro x2)",
+    "general-purpose (Jira create x2)"
+  ],
+  "ac_analysis": {
+    "story_acs": 5,
+    "impl_coverage": {
+      "satisfied": 4,
+      "drift": 0,
+      "contradicts": 0,
+      "not_found": 0,
+      "not_met_live": 1
+    },
+    "conditions_total": 30,
+    "conditions_with_evidence": 30,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 100,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "detail": {
+      "satisfied": [
+        "AC-1",
+        "AC-3",
+        "AC-4",
+        "AC-5"
+      ],
+      "not_met_live": [
+        "AC-2"
+      ],
+      "reasons": {
+        "AC-2": "soft sets --vc-radius, base and heading font family (+ footer title case) only; shadow, size+line-height, weight, letter spacing, italic/case and dark values stay classic - Firefox (3x), Chromium (4a), Edge (4v); ticket Blocked by (design)"
+      }
+    }
+  },
+  "total_cases": 30,
+  "passed": 20,
+  "failed": 9,
+  "blocked": 1,
+  "new_cases_authored": 0,
+  "regression": {
+    "c1": {
+      "suites": [],
+      "ids": [],
+      "run_id": null,
+      "pass_rate": null,
+      "skipped_reason": "no existing test was affected"
+    },
+    "feature_release_gate": "not-assessed"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6652",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "relationship": "relates",
+      "summary": "/company/members table sticks out of its card; page scrolls sideways at 1024-1106 px",
+      "title": "Members table overflows, page scrolls sideways at 1024 px (pre-existing)"
+    },
+    {
+      "key": "VCST-6653",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "relationship": "relates",
+      "summary": "/cart shipping-address pencil button has no accessible name",
+      "title": "Cart address button has no name for screen readers (pre-existing)"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Soft: 3-6px corners inside 16px boxes (cart coupons, card fields, account menu)",
+      "draft": "reports/tickets/Sprint26-22/VCST-6232/vcst/bugs/low/BUG-soft-uneven-radius-in-widgets-VCST-6232.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Soft: long email cut off with no \"…\" on /account/profile",
+      "draft": "reports/tickets/Sprint26-22/VCST-6232/vcst/bugs/low/BUG-soft-profile-email-silent-clip-VCST-6232.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Coloured shadows cannot take a design value (unused today)",
+      "draft": "reports/tickets/Sprint26-22/VCST-6232/vcst/bugs/low/BUG-coloured-shadow-ignores-design-tokens-VCST-6232.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "Home scrolls sideways at 1024 px: CMS content (pre-existing)"
+    }
+  ],
+  "visual": {
+    "route": "ui-kit",
+    "lane": "playwright-edge",
+    "preset": "red",
+    "presets_not_run": [
+      "coffee live on storefront (store preset switch = shared-config write); coffee covered by derivation + PIXEL Storybook"
+    ],
+    "axes": {
+      "bl_ui_invariants": {
+        "verdict": "FAIL",
+        "detail": "soft-only: /account/profile disabled email silently clipped (BL-UI-004, Low); pre-existing both builds: /company/members + home sideways scroll at 1024, header search decorator 32 vs 38 px"
+      },
+      "design_system": {
+        "verdict": "PASS_WITH_NOTES",
+        "detail": "soft sets exactly 3 tokens; 238 --color-* identical to classic-BASE; literal 3–6px radii not tokenised; non-h1–h6 heading-like text (widget titles) stays Inter; Builder CMS blocks stay Lato"
+      },
+      "classic_regression": {
+        "verdict": "PASS",
+        "detail": "classic-PR vs classic-BASE, 24 P pages, 1280+375, light+dark: 106,750 element pairs, 0 differences; negative control reports the known soft diffs"
+      },
+      "a11y": {
+        "verdict": "PASS",
+        "detail": "axe 4.10.2 home + /cart light/dark: 0 soft-only violations; pre-existing critical findings -> VCST-5711 (linked), VCST-6653 (filed)"
+      },
+      "vs_design": {
+        "verdict": "SKIPPED",
+        "skipped_reason": "no Claude Design prototype linked on VCST-6232"
+      },
+      "storybook": {
+        "verdict": "PASS",
+        "detail": "C-15 Classic→Soft→Classic via the Design toolbar"
+      },
+      "layout_cls": {
+        "verdict": "PASS_WITH_NOTES",
+        "detail": "font swap adds 0.0013–0.0019; total CLS breach is pre-existing (C-11)"
+      }
+    },
+    "surface": {
+      "value": true,
+      "ran": true,
+      "surface_source": [
+        ".scss/.storybook/tailwind.config.ts in diff",
+        "ui-kit class defaults visual ON"
+      ]
+    },
+    "pixel": {
+      "source": "storybook",
+      "scope": "ALL",
+      "sets": [
+        "coffee light",
+        "red light",
+        "red dark"
+      ],
+      "viewports": [
+        "1280x800",
+        "375x812"
+      ],
+      "compared": 4518,
+      "same": 4260,
+      "changed": 0,
+      "unrendered": 258,
+      "unrendered_reason": "7 components (VcDatePicker, VcDateRangePicker, VcDateRangeInput, VcIcon all-icons, VcInputDetails, VcPagination, VcQuantityStepper) never render in the static Storybook on either build, also with 1 worker",
+      "report": "reports/tickets/Sprint26-22/VCST-6232/vcst/visual/diff1/visual-diff.json"
+    },
+    "coverage": {
+      "page_set": "checklist P (operator-confirmed)",
+      "covered": 24,
+      "not_applicable": 6,
+      "blocked": 0
+    }
+  },
+  "contract": {
+    "value": false,
+    "ran": false,
+    "surface_source": [
+      "no .graphql / ExperienceApi / GraphType file; core-api/contract/index.d.ts makes SeoInfo id/objectId/objectType optional to match dev's generated types (no schema change)"
+    ]
+  },
+  "coverage_triage": {
+    "value": true,
+    "ran": true,
+    "surface_source": [
+      "ui-kit class defaults coverage ON",
+      "domainless change → corpus-wide scan"
+    ],
+    "invocation": "npm run tc:scope -- --domain catalog-search,customer-b2b,purchase-flow,platform-config,marketing,auth-security,cross-cutting,content-cms,communication,sales-rep,branding,observability,background-jobs,ucp --observable font-family --observable Lato --observable border-radius --observable vc-radius --observable box-shadow --observable uppercase --observable text-transform --observable font-weight --observable letter-spacing --observable line-height --observable font-size --observable fonts.googleapis --changed-files tailwind.config.ts,client-app/assets/styles/preflight.scss,client-app/designs/soft/blocks/footer-links.scss --json",
+    "hits": 31,
+    "suites": 21,
+    "confirmed": 31,
+    "repair": 0,
+    "rebase": 0,
+    "superseded": 0,
+    "extra_rows_confirmed": 7,
+    "unscannable": [
+      "056",
+      "061",
+      "062",
+      "063",
+      "064",
+      "065",
+      "066",
+      "069",
+      "074",
+      "076"
+    ],
+    "unmatchedObservables": [
+      "font-family",
+      "vc-radius",
+      "font-weight",
+      "fonts.googleapis"
+    ],
+    "edited_suites": []
+  },
+  "test_data": {
+    "value": false,
+    "surface_source": [
+      "anonymous pages + {{ORG_USER_EMAIL}} existing account",
+      "no new entity type, store, role, price or inventory shape"
+    ],
+    "left_behind": [
+      "1 × 'Holly Homestead Wine Glass Stemless Glass' in ORG_USER_EMAIL's server cart (added by the visual lane)",
+      "Theme toggle localStorage on vcst/localhost origins",
+      "local worktrees .fix-workspace/vc-frontend-2600 and vc-frontend-base-2600 (gitignored)"
+    ]
+  },
+  "business_rules_verified": [
+    "Page must not jump while web fonts load (BL-UI-001): font swap adds only 0.0013-0.0019; the total jump above 0.1 is pre-existing",
+    "Content must stay inside its box (BL-UI-004): FAIL, soft cuts off the profile email",
+    "Buttons in one row are the same height (BL-UI-005): PASS"
+  ],
+  "screenshots": "reports/tickets/Sprint26-22/VCST-6232/vcst/screenshots/",
+  "report": {
+    "checklist": "reports/tickets/Sprint26-22/VCST-6232/vcst/testing-checklist.md",
+    "design_report": "reports/tickets/Sprint26-22/VCST-6232/vcst/design-report.md",
+    "triage_report": "reports/tickets/Sprint26-22/VCST-6232/vcst/triage-report.md",
+    "test_model": "reports/tickets/Sprint26-22/VCST-6232/vcst/test-model.md",
+    "kb": {
+      "captured": [
+        "KB-9BCB34C7",
+        "KB-EBF47FCB",
+        "KB-7CAAD492",
+        "KB-605B159A",
+        "KB-E5C34501",
+        "KB-9045E101",
+        "KB-FAA9EF27",
+        "KB-261CE805",
+        "KB-DA64747C",
+        "KB-8D5D121F"
+      ],
+      "confirmed": [
+        "KB-6E8D796E",
+        "KB-F7D6C16B",
+        "KB-279E8887",
+        "KB-0AF3B0BB",
+        "KB-9BCB34C7"
+      ]
+    }
+  },
+  "discovery": {
+    "ran": true,
+    "lane": "playwright-firefox",
+    "box_minutes": 60,
+    "used_minutes": 25,
+    "report": "reports/tickets/Sprint26-22/VCST-6232/vcst/exploratory/SBTM-VCST-6232-2026-11-02.md",
+    "net_new": 4,
+    "promote": 3,
+    "decline": 1,
+    "findings": [
+      "B-1 uneven soft radius",
+      "B-2 CyberSource field radius",
+      "B-3 coloured shadow tokens"
+    ]
+  },
+  "release": {
+    "fragment": null,
+    "refusal": "verdict-not-pass"
+  }
+}

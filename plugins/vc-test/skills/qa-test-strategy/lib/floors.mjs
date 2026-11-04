@@ -1,8 +1,6 @@
 // plugins/vc-test/skills/qa-test-strategy/lib/floors.mjs — the floors F1–F12, computed from the /ticket-context bundle.
 // R2 of the /qa-test redesign: a floor is a gate rule, never a model judgment. This script reads signals; it
 // never chooses a risk. F9 (doubt ⇒ the floor applies) is built in: a signal that cannot be read fires its floor.
-// Specs: docs/superpowers/specs/2026-10-09-qa-test-strategy-redesign.md §6 (F1–F9),
-//        docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md §5, §5a (F10, F11).
 import { existsSync, readFileSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

@@ -106,7 +106,7 @@ One failing assertion = test FAIL. Business Rule override: BL-* violation = FAIL
 | `[CONSOLE]` | `browser_console_messages` — errors + warnings |
 | `[NETWORK]` | `browser_network_requests` — 4xx/5xx on primary API calls |
 | `[ADMIN]` | Navigate to admin panel, verify back-office state, return |
-| `[EMAIL]` | Wait up to 60s for Hangfire job before asserting delivery |
+| `[EMAIL]` | Wait up to 60s for the background job before asserting delivery |
 
 Cross-layer failures are test failures — record in bug report.
 

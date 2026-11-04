@@ -14,7 +14,7 @@ CMS-175,Overwrite warning — states the reference count and lists the affected 
 [ACT] Open the 'agent-test-5725-refs' folder
 [ACT] Click 'Upload', then 'Upload' inside the modal, and choose test-data/cms/uploads-5725/v1/AGENT-TEST-overwrite-5725.png
 [WAIT] Toast 'Assets uploaded successfully'; the grid shows AGENT-TEST-overwrite-5725.png at 390 bytes with a '0 refs' badge
-[ACT] Create a draft page 'AGENT-TEST-5725-refs' (Draft -> Add, permalink /agent-test-5725-refs, language en-US) and Save
+[ACT] Create a draft page 'AGENT-TEST-5725-refs' (Draft -> Add -> 'Landing Page' in the page-type chooser, permalink /agent-test-5725-refs, language en-US) and Save
 [ACT] Open designer -> Add block -> 'Image' -> click 'Choose from Asset Library or drag and drop here' -> open 'agent-test-5725-refs' -> select AGENT-TEST-overwrite-5725.png -> Select -> Save
 [NAV] Back to Assets Library -> 'agent-test-5725-refs'
 [ASSERT] The asset tile badge now reads '1 refs'
@@ -91,7 +91,7 @@ CMS-181,Overwrite warning — drag & drop raises the same confirmation as the Up
 [WAIT] Dialog 'File name conflict' opens
 [ASSERT] The dialog is identical to the Upload-button path — same title, same message, same three actions
 [ACT] Click Cancel",[DOM] a plain drop uploads the file (drop zone accepts real files); [BLADE] a colliding drop raises the same 'File name conflict' dialog as the Upload button; [DOM] the message and the Cancel / Replace / Upload as actions match the button path; [DOM] nothing written after Cancel,[CONSOLE] no JS errors during the confirmation flow; [NETWORK] no 4xx/5xx on /api/assets or /api/page-builder-assets/search or /api/page-builder-assets/references,The drop path bypasses the confirmation and overwrites silently; the drop is ignored; the dialog differs between the two entry points,Delete the 'agent-test-5725-dnd' folder (with its contents) from the Asset Library,"VCST-5725; Verified live 2026-09-10 (vcptcore-qa, VirtoCommerce.PageBuilderModule 3.1024.0-pr-162-2c28)",Draft
-CMS-182,Overwrite warning — Designer picker raises the confirmation with the affected page list,Asset Library Picker,Critical,,,"Admin logged in; Page Builder Asset Library reachable for @td(STORE_PRIMARY.id); fixtures generated once via 'npm run td:gen:cms-uploads' (writes test-data/cms/uploads-5725/); a fresh LOWERCASE working folder created for the case and removed in Cleanup; MANDATORY (2026-09-10): load the shell with a cache-busting query param, e.g. '?storeId=<id>&cb=<new value>'. The shell's index.html is served with NO Cache-Control, so a browser that visited before a deploy keeps executing the PRE-FIX bundle — no preflight request is issued and the file is overwritten silently, which reads exactly like the defect this feature prevents. Before judging any assertion, confirm a same-name upload issues 'GET /api/assets?folderUrl=...&keyword=<filename>' before any write; if that request is absent you are on a cached bundle, not a broken build.; the case folder must be created BEFORE opening the picker, in the shell Assets Library or (since VCST-5443) with the picker's own 'New folder' button","storeId=@td(STORE_PRIMARY.id); folder: agent-test-5725-picker; page: AGENT-TEST-5725-picker (draft, en-US)","[NAV] Create a draft page 'AGENT-TEST-5725-picker' and open the designer
+CMS-182,Overwrite warning — Designer picker raises the confirmation with the affected page list,Asset Library Picker,Critical,,,"Admin logged in; Page Builder Asset Library reachable for @td(STORE_PRIMARY.id); fixtures generated once via 'npm run td:gen:cms-uploads' (writes test-data/cms/uploads-5725/); a fresh LOWERCASE working folder created for the case and removed in Cleanup; MANDATORY (2026-09-10): load the shell with a cache-busting query param, e.g. '?storeId=<id>&cb=<new value>'. The shell's index.html is served with NO Cache-Control, so a browser that visited before a deploy keeps executing the PRE-FIX bundle — no preflight request is issued and the file is overwritten silently, which reads exactly like the defect this feature prevents. Before judging any assertion, confirm a same-name upload issues 'GET /api/assets?folderUrl=...&keyword=<filename>' before any write; if that request is absent you are on a cached bundle, not a broken build.; the case folder must be created BEFORE opening the picker, in the shell Assets Library or (since VCST-5443) with the picker's own 'New folder' button","storeId=@td(STORE_PRIMARY.id); folder: agent-test-5725-picker; page: AGENT-TEST-5725-picker (draft, en-US)","[NAV] Create a draft page 'AGENT-TEST-5725-picker' (Pages -> Add -> 'Landing Page' in the page-type chooser) and open the designer
 [ACT] Add block -> 'Image' -> click 'Choose from Asset Library or drag and drop here'
 [WAIT] Picker dialog 'Choose from asset library' opens
 [ACT] Open the 'agent-test-5725-picker' folder (created before opening the picker, per the preconditions; since VCST-5443 the picker toolbar also has 'New folder', so the folder may alternatively be created from the picker)
@@ -375,7 +375,7 @@ CMS-199,Asset Library — an image picked on a new page raises N refs and removi
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [CAPTURE] ASSET_X and its badge
 [ASSERT] The badge of ASSET_X reads 0 refs
-[ACT] Create a draft page: Pages -> Add, name 'AGENT-TEST-5726-reverse-<unique>', unique permalink, language en-US
+[ACT] Create a draft page: Pages -> Add -> 'Landing Page' in the page-type chooser, name 'AGENT-TEST-5726-reverse-<unique>', unique permalink, language en-US
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [ACT] Save
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
@@ -399,7 +399,7 @@ CMS-200,Asset Library — the picker-stored URL and the absolute URL of one asse
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [CAPTURE] the POST /api/page-builder-assets/search requests issued while opening it
 [ASSERT] The badge of @td(PB_ASSET_REF_1.rel) reads @td(PB_ASSET_REF_1.expectedRefs) refs
-[ACT] Create a draft page 'AGENT-TEST-5726-urlform-<unique>' (Pages -> Add, unique permalink, en-US)
+[ACT] Create a draft page 'AGENT-TEST-5726-urlform-<unique>' (Pages -> Add -> 'Landing Page' in the page-type chooser, unique permalink, en-US)
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [ACT] Save
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
@@ -551,7 +551,7 @@ Empty list after the breadcrumb
 Details panel stops opening after paging
 Known as of 3.1035.0-pr-171-61df: the search text is kept after entering a folder or going back via the breadcrumb (VCST-6381)",none - read-only,VCST-5726 · Archetype:STALE · Technique:ST · Purpose:FUNC,Draft
 CMS-207,Designer picker — image filter counts only images and pages them,Page Builder > Asset Library > Pagination & references,Critical,,,"Admin signed in as {{ADMIN}}; PageBuilderModule build includes PR #171 (POST /api/page-builder-assets/search); VCST-5726 fixtures seeded (npm run seed:cms-assets, drift guard td:validate:cms-assets); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; the case creates its own draft page 'AGENT-TEST-5726-picker-<unique>' and deletes it in Cleanup (nothing is saved onto a seeded page); folder @td(PB_ASSETS_MIXED.folder) holds @td(PB_ASSETS_MIXED.count) files, of which @td(PB_ASSETS_MIXED.imageCount) are images (the rest PDFs)",folder=@td(PB_ASSETS_MIXED.folderUrl),"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value>#/page-builder-assets (the Assets Library list)
-[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add, unique permalink, language en-US)
+[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add -> 'Landing Page' in the page-type chooser, unique permalink, language en-US)
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [ACT] Save
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
@@ -579,7 +579,7 @@ The picker total is 500 with PDFs mixed in
 Pages of fewer than 20 images
 All 500 files requested","Delete the page 'AGENT-TEST-5726-picker-<unique>' (Pages grid, Delete)",VCST-5726 · Archetype:PARITY · Technique:EP · Purpose:FUNC,Draft
 CMS-208,Designer picker — search and page size run on the server,Page Builder > Asset Library > Pagination & references,High,,,"Admin signed in as {{ADMIN}}; PageBuilderModule build includes PR #171 (POST /api/page-builder-assets/search); VCST-5726 fixtures seeded (npm run seed:cms-assets, drift guard td:validate:cms-assets); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; the case creates its own draft page 'AGENT-TEST-5726-picker-<unique>' and deletes it in Cleanup (nothing is saved onto a seeded page); folder @td(PB_ASSETS_MIXED.folder); asset-499.png is an image of that folder",folder=@td(PB_ASSETS_MIXED.folderUrl),"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value>#/page-builder-assets (the Assets Library list)
-[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add, unique permalink, language en-US)
+[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add -> 'Landing Page' in the page-type chooser, unique permalink, language en-US)
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [ACT] Save
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
@@ -607,7 +607,7 @@ Search filters only the loaded 20 rows
 Page-size change ignored","Delete the page 'AGENT-TEST-5726-picker-<unique>' (Pages grid, Delete)",VCST-5726 · Archetype:SCOPE · Technique:EP · Purpose:FUNC,Draft
 CMS-209,Designer picker — an image picked from page 2 is saved in the page,Page Builder > Asset Library > Pagination & references,High,,,"Admin signed in as {{ADMIN}}; PageBuilderModule build includes PR #171 (POST /api/page-builder-assets/search); VCST-5726 fixtures seeded (npm run seed:cms-assets, drift guard td:validate:cms-assets); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; the case creates its own draft page 'AGENT-TEST-5726-picker-<unique>' and deletes it in Cleanup (nothing is saved onto a seeded page); the asset @td(PB_ASSET_REF_3.rel) lies on page 2 of @td(PB_ASSETS_P500.folder) (Name A-Z) and is referenced by @td(PB_ASSET_REF_3.expectedRefs) pages","folder=@td(PB_ASSETS_P500.folderUrl)
 asset=@td(PB_ASSET_REF_3.assetUrl)","[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value>#/page-builder-assets (the Assets Library list)
-[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add, unique permalink, language en-US)
+[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add -> 'Landing Page' in the page-type chooser, unique permalink, language en-US)
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [ACT] Save
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
@@ -639,7 +639,7 @@ CMS-210,Designer picker — legacy GET descriptor is translated to the paged sea
 [ACT] Apply the legacy-descriptor override (fixture)
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [ACT] Load the Designer for a page
-[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add, unique permalink, language en-US)
+[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add -> 'Landing Page' in the page-type chooser, unique permalink, language en-US)
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [ACT] Save
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
@@ -672,7 +672,7 @@ CMS-211,Asset Library and picker — an older response never overwrites a newer 
 [ACT] Clear the search, hold the response of the request with skip 20 for 3 seconds, click 'Next' five times in quick succession
 [WAIT] 5 seconds
 [ASSERT] The paginator and the rows both show page 6 (skip 100); no earlier page replaced them
-[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add, unique permalink, language en-US)
+[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add -> 'Landing Page' in the page-type chooser, unique permalink, language en-US)
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [ACT] Save
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
@@ -702,7 +702,7 @@ CMS-212,"Asset Library and picker — template expressions in search, folder and
 [ASSERT] The request folderUrl carries the literal folder name; the breadcrumb and the tile show it as text
 [ACT] Evaluate window.__vcst5726 in the shell frame
 [ASSERT] It is undefined
-[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add, unique permalink, language en-US)
+[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add -> 'Landing Page' in the page-type chooser, unique permalink, language en-US)
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [ACT] Save
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
@@ -761,7 +761,7 @@ CMS-215,Asset Library and picker — an empty folder disables the paginator Next
 [ACT] Type a text that matches nothing (zzz-no-such-asset) into the 'Search' field
 [ACT] Read the paginator controls again
 [ASSERT] --- SCREEN: zero-hit search --- 'Next' and 'Last' are disabled
-[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add, unique permalink, language en-US)
+[ACT] Create a draft page 'AGENT-TEST-5726-picker-<unique>' (Pages -> Add -> 'Landing Page' in the page-type chooser, unique permalink, language en-US)
 [WAIT] The list, paginator and counters settle (no spinner, network idle)
 [ACT] Save
 [WAIT] The list, paginator and counters settle (no spinner, network idle)

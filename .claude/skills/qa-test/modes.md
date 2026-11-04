@@ -54,13 +54,13 @@ command's §Usage.
 
 Per round, once the 5-verdict verdict is in:
 
-1. **PASS / PASS WITH NOTES** → exit the loop → the **exit round's close-out** (5-report in full → 5-status → 5-docs → 5-docs-map,
+1. **PASS / PASS WITH NOTES** → exit the loop → the **exit round's close-out** (5-report in full → 5-status → 5-docs (FULL and the technical-change flow only, not on FAST) → 5-docs-map,
    §The exit round) → GO/NO-GO recommendation → **STOP for the human to merge + release** (never
    automated). Done.
 2. **BLOCKED** → **STOP.** A fix cannot clear an env/data/dependency blocker. The exit round's close-out
    still runs — a BLOCKED run that persisted nothing is indistinguishable from a run that never happened.
 3. **FAIL** → **Fix (auto):** for each **IN-SCOPE** bug 5-triage judged fixable, run `/vc-fix:qa-fix <ticket-key>`
-   (autonomous triage→fix→PR, G0–G7, **never merges**). A bug that G0 BAILs (not-auto-fixable / too-complex /
+   with its To-fix row's draft as the bug report (autonomous triage→fix→PR, G0–G7, **never merges**). A bug that G0 BAILs (not-auto-fixable / too-complex /
    multi-repo) → **STOP**, hand that bug to a human; the loop cannot fix it. If no in-scope fixable bug
    remains, fall back to the pointer close-out.
    - **Deploy the prerelease (confirm):** `/qa-deploy-pr <ticket-key>` deploys the fix PR's **prerelease**
@@ -68,7 +68,7 @@ Per round, once the 5-verdict verdict is in:
      the loop always re-tests an **unmerged prerelease**, so the never-auto-merge triple guard
      (`.claude/knowledge/execution/quality-gates.md` §2) is never touched.
    - **Probe the build, then re-read the board (`5-loop.0`):** record this round's own probed
-     `GET {{BACK_URL}}/api/platform/modules` value, then fetch the ticket's sub-tasks and linked bugs and
+     `GET {{BACK_URL}}/api/platform/modules` value, then fetch the ticket's linked bugs and
      verify each fix-ready one **before** re-running anything (§Round entry). The order is not cosmetic:
      the transition gate at round entry is evaluated against the probed build.
    - **Re-test (round N+1):** re-run **only the previously-FAILED cases (C1 / RED→GREEN)** at Step 4
@@ -79,8 +79,8 @@ Per round, once the 5-verdict verdict is in:
    round fixed, what still fails — read off `summary.json.iterations.per_round[]`, never narrated from
    memory) and hand to a human. **STOP at the cap is a success, not a failure.**
 
-**Below-floor findings are outside the loop.** `/vc-fix:qa-fix` needs a filed ticket, and 5-file does not file a `Low`,
-so 5-loop only ever fixes what 5-file filed.
+**Below-floor findings are outside the loop.** 5-file gives a `Low` no To-fix row, so 5-loop only ever fixes
+what the To-fix table holds.
 
 The loop's brakes: a hard **round cap**, a **confirm on every prerelease deploy**, a **G0 BAIL → STOP**, and
 the invariant that **merge + release are always the human's**. `/qa-test` still never merges and never
@@ -96,10 +96,10 @@ checklist items**, and the checklist is **appended to** per round, never overwri
 durable record, so rewriting a round-1 FAIL as a round-2 PASS deletes the proof the defect existed. The
 verifier re-ratification stays off, as at every other FAST gate.
 
-**`5-loop.0` round entry runs on FAST too — and it is the path that needs it most.** Every bug a FAST round
-files comes off a **checklist item**, so it carries no case id and nothing in the RED→GREEN set can ever
-speak for it; an inline `/vc-fix:qa-verify-fix` per fix-ready sub-task is the only way such a bug is ever
-verified or closed. It is not an exception to FAST's one-execution-agent promise for the same reason the
+**`5-loop.0` round entry runs on FAST too — and it is the path that needs it most.** Every finding a FAST round
+records comes off a **checklist item**, so it carries no case id and nothing in the RED→GREEN set can ever
+speak for it; re-running the checklist item its To-fix row names (and an inline `/vc-fix:qa-verify-fix` per
+fix-ready linked bug) is the only way such a finding is ever verified or closed. It is not an exception to FAST's one-execution-agent promise for the same reason the
 contract axis is not: the bugs are verified through the flow `1a` already runs inline, not by a new lane.
 
 **Verifier cadence inside the loop.** On `--iterate`, the **5-report** verifier dispatch fires **once, at
@@ -118,16 +118,16 @@ promotion. This table is the rest of the contract.
 | `1e` Test Model | **ONCE** (round 1), **amended** per round — **FULL only; a FAST loop has no model and no amendment (§Artifact refresh)** | The model is a fault model of the FEATURE. A fix changes which hypotheses are live, not what the feature can be wrong about — so append a `## Round N` amendment to the **same** file (§Artifact refresh between rounds), never re-derive, and never a second dated file. |
 | Step `3x` discovery lane | **ONCE** (round 1) | Its charter is derived from the fault model's own unknowns, and the model is amended rather than re-derived between rounds — so a round-2 session would explore a surface whose unknowns have not moved, on a build that only differs by the fix. The round's own re-test is what interrogates the fix ([`exploratory-lane.md`](exploratory-lane.md) §9). |
 | Step 4's in-testing hop | **ONCE** (round 1) | The ticket does not leave in-testing inside the loop — 5-status is at exit — so every later round already satisfies the precondition. If round 1 skipped the hop (no such transition, tracker unconfigured), the **exit** round does it before 5-status, exactly as [`reporting.md`](reporting.md) §5-status already says. |
-| **`5-loop.0` round entry** | **PER ROUND (≥2)** — a baseline read only on round 1 | The board is the source of truth for what this run filed and for what has since been fixed, and it **moves between rounds without the loop being told**: a human merges and deploys a sub-task fix, a developer links a new bug. Verification is a full inline `/vc-fix:qa-verify-fix` per fix-ready bug, which is also the only way a bug with **no covering case** — every bug a FAST round files — can be verified at all (§Round entry). Its own hops are recorded in `status_transitions[]` against the BUG key, never the ticket. |
+| **`5-loop.0` round entry** | **PER ROUND (≥2)** — a baseline read only on round 1 | The board is the source of truth for the linked bugs, and it **moves between rounds without the loop being told**: a human merges and deploys a fix, a developer links a new bug. Verification is a full inline `/vc-fix:qa-verify-fix` per fix-ready linked bug; a To-fix row is verified by re-running the case or checklist item it names, which is the only way a finding with **no covering case** — every finding a FAST round records — can be verified at all (§Round entry). Its own hops are recorded in `status_transitions[]` against the BUG key, never the ticket. |
 | `5-triage` · `5-verdict` | **PER ROUND** | Already in the enumeration: the verdict gate is what decides whether there is another round. `5-verdict`'s reconciliation and self-check re-run per round and cost no dispatch (the `5b` verifier that used to ratify them was folded away 2026-09-16). |
-| `5-file` file bugs | **PER ROUND**, new findings only | `/vc-fix:qa-fix` needs a filed ticket, so a round that files nothing cannot fix anything and the loop dead-ends at its own precondition. A finding this run already filed is **CARRIED**, not re-filed (§Three carve-outs). |
+| `5-file` file bugs | **PER ROUND**, new findings only | `/vc-fix:qa-fix <ticket-key>` fixes from the To-fix rows, so a round that records nothing new leaves the next fix nothing to start from. A finding this run already recorded is **CARRIED**, not re-recorded (§Three carve-outs). |
 | `5-report.1` Feature Release Gate | **AT LOOP EXIT** | There is one release, so there is one recommendation. A FAIL round is an automatic NO-GO the loop has *already acted on* by starting another round; ratifying per round emits N−1 recommendations about builds that no longer exist. |
 | `5-report.2` tracker comment | **PER ROUND, as amends of the run's ONE comment** (`tracker-ops.md` §0; the loop is rule 5's one exception, so it amends with `--same-round`) — a **round delta** in rounds 1…N−1, the **full template once**, at exit | The full template every round buries the ticket under near-identical comments. Nothing at all leaves a prerelease deployed to the shared test env with no trace on the ticket. The delta is the minimum that keeps a human able to see the env moved, and why. |
 | `5-report.3` persist `summary.json` | **PER ROUND** (rewritten in place; the round appended to `iterations.per_round[]`) | The loop can STOP at any round — G0 BAIL, BLOCKED, the cap, a dropped session — and a history persisted only on a clean exit is missing exactly when it is needed. It is also the only artifact that can support the cap-reached hand-off's per-round claims. |
 | `5-report.4` `testing-checklist.md` | **PER ROUND**, **append-only** | On FAST it is the run's ONLY durable record, and the RED→GREEN transition *is* the loop's deliverable: overwriting a round-1 FAIL with a round-2 PASS deletes the evidence that the defect was ever there. |
 | Evidence screenshots | **PER ROUND**, round-stamped | Round N+1 re-runs the same case IDs into the same folder, so an unstamped `{TC-ID}-FAIL-{description}.png` lets the round-2 PASS **overwrite the round-1 FAIL** — and the checklist row that cites it then points at a green image. Every round stamps `-r{N}`, round 1 included (`.claude/rules/reports.md` §7). |
 | `5-status` tracker transition | **AT LOOP EXIT** | REOPEN is the human-handoff signal, and a loop about to start another round is not handing off. A per-round REOPEN would also flap the ticket out of in-testing — the precondition both closing transitions need — and fire N−1 false handoff notifications. **Bug-level hops follow the same rule, with one exception:** a bug verified green on a **merged and deployed** fix hops to `TESTED` at round entry — that is monotonic, no later round can un-merge it — while a bug still failing keeps its in-testing state and takes its `REOPEN` at exit (§Which hop a verified bug takes). |
-| `5-docs` documentation | **AT LOOP EXIT, ONCE** | The loop only ever re-tests an **unmerged prerelease**. Documenting a build that the next round replaces publishes instructions for something nobody can use yet, and a per-round comment buries the ticket under near-identical guides. One documentation comment per run, whatever the round count — same reasoning as `5-status`. |
+| `5-docs` documentation (FULL and the technical-change flow only) | **AT LOOP EXIT, ONCE** | The loop only ever re-tests an **unmerged prerelease**. Documenting a build that the next round replaces publishes instructions for something nobody can use yet, and a per-round comment buries the ticket under near-identical guides. One documentation comment per run, whatever the round count — same reasoning as `5-status`. |
 
 #### Round entry (`5-loop.0`) — re-read the board before re-running anything
 
@@ -135,16 +135,17 @@ The loop's carried and fixed bug sets used to come from the run's own memory of 
 RED→GREEN set from the previously-failed cases. Both are claims about the **tracker**, derived from
 something that is not the tracker — the same failure the cap-reached hand-off rule already names one level
 up (*read off `summary.json`, never narrated from memory*). Three things the loop could not see: a
-sub-task a **human** fixed, merged and deployed between rounds (re-tested as *still failing*, or never
-re-verified at all); a bug a developer **linked** to the ticket mid-run; and any bug with **no covering
-case** — which is *every* bug a FAST round files, because a FAST finding comes off a checklist item and
-carries no case id, so nothing in `red_green` can ever speak for it.
+linked bug a **human** fixed, merged and deployed between rounds (re-tested as *still failing*, or never
+re-verified at all); a bug a developer **linked** to the ticket mid-run; and any finding with **no covering
+case** — which is *every* To-fix row a FAST round records, because a FAST finding comes off a checklist item
+and carries no case id, so nothing in `red_green` can ever speak for it. A To-fix row is re-verified by
+re-running the case or checklist item its `ref` names, in this round's re-test.
 
 So each round **≥2** opens by reading the tracker, in this order — **after** the deploy and **after** the
 build probe, because the transition gate below is evaluated against the probed build:
 
-1. **Fetch the bug universe from the board.** The ticket's **sub-tasks** (where 5-file files every IN-SCOPE
-   bug) *and* its **linked / related issues** (Jira: the issue links + `getJiraIssueRemoteIssueLinks`;
+1. **Fetch the bug universe from the board.** The ticket's **sub-tasks** (only ones a human made — 5-file
+   never creates one) *and* its **linked / related issues** (Jira: the issue links + `getJiraIssueRemoteIssueLinks`;
    Azure Boards: the work item's `Child` / `Related` links). This set — not the run's memory — is what the
    round reasons about; a key present here and absent from `bugs_filed` is a mid-run arrival, and saying so
    is the point.
@@ -197,7 +198,7 @@ no hop, and say which half.
 **Verify-fix's opening hop on the bug is allowed; its closing hops are not.** On Jira `TESTED` is reachable
 only from the in-testing status, so the inline run makes that (reversible, unconfirmed) move on the bug as
 it always does. Taking its `REOPEN` hop mid-loop would flap the bug *out* of in-testing every round and
-fire N−1 false handoff notifications — §5's reasoning for the ticket under test, applied to its sub-tasks.
+fire N−1 false handoff notifications — §5's reasoning for the ticket under test, applied to its linked bugs.
 A bug the loop therefore leaves in in-testing is the **BLOCKED shape** — in-testing plus a comment saying
 why nobody is closing it — and it gets its honest closing hop at **loop exit**: still failing ⇒ `REOPEN`
 with the failure list, which is the moment the loop actually hands off. Every such hop and skip appends to
@@ -210,7 +211,7 @@ with the failure list, which is the moment the loop actually hands off. Every su
 
 **The exit round behaves exactly like a close-out without the flag.** Whatever ends the loop — PASS, the
 cap, a G0 BAIL, BLOCKED — the final round runs 5-report in full (gate ratification · the full comment ·
-`summary.json` · the checklist), then 5-status, then 5-docs, then 5-docs-map. **A `--iterate` run posts ONE QA-Complete comment and
+`summary.json` · the checklist), then 5-status, then 5-docs (FULL and the technical-change flow only, not on FAST), then 5-docs-map. **A `--iterate` run posts ONE QA-Complete comment and
 makes ONE transition on the ticket under test**, the same as a run without it, whatever the round count.
 
 **5-status at exit also closes out the bugs the loop left open.** Every bug round entry moved into in-testing and
@@ -222,27 +223,22 @@ against the bug key, hops and skips alike.
 
 #### Three carve-outs
 
-**A bug this run already filed is CARRIED — not re-filed, and not PRE-EXISTING.** 5-triage item 6's dedup *will*
-match it (it is in `reports/bugs/` and on the tracker), and the PRE-EXISTING row then says "link, don't
-re-file, **don't fail this ticket**" — wrong twice over: the bug is this ticket's own Sub-task, and it is
-still failing. So a finding whose dedup match is a bug **this run filed in an earlier round** takes a third
+**A finding this run already recorded is CARRIED — not re-recorded, and not PRE-EXISTING.** 5-triage item 6's
+dedup *will* match it (its draft is in the run's `bugs/`), and the PRE-EXISTING row then says "link, don't
+re-file, **don't fail this ticket**" — wrong twice over: it is this ticket's own To-fix row, and it is still
+failing. So a finding whose dedup match is a `to_fix[]` row **from an earlier round** takes a third
 provenance, **CARRIED**: it keeps its original IN-SCOPE provenance and its original severity (so it still
-fails 5-verdict this round), files nothing, and gets **one** comment on its existing Sub-task naming the round it
-is still failing at. Recorded in `iterations.per_round[].bugs_carried`. Severity still never moves (5-triage
-item 5).
+fails 5-verdict this round), creates nothing, and its To-fix row is updated to name the round it is still
+failing at. Recorded in `iterations.per_round[].bugs_carried`. Severity still never moves (5-triage item 5).
 
-**A carried bug that goes GREEN is recorded and commented, and transitioned only when the fix has actually
-shipped to the env.** Its Sub-task gets `fixed in the round-N prerelease (<PR>) — cases <IDs> green
-(<RUN_ID>)`, and the round records it in `bugs_fixed`. It never reaches `Done` or `Cancelled` — forbidden to
-`/qa-test` at any round (§5-status) — and while it is green only on the loop's **unmerged prerelease** it does not
-reach `TESTED` either: nothing has shipped, so the only honest state is "green on a prerelease, awaiting
-merge", and the human who merges closes it. **The one case that does hop is a fix that got merged AND is
-present in this round's probed build** — round entry verifies it with an inline `/vc-fix:qa-verify-fix` and moves
-it to `TESTED` (§Which hop a verified bug takes). A green carried bug also stops failing 5-verdict from that round
-on; that is the whole point.
+**A carried finding that goes GREEN is marked in its To-fix row, never transitioned.** The row reads
+`fixed in the round-N prerelease (<PR>) — cases <IDs> green (<RUN_ID>)`, and the round records it in
+`bugs_fixed`. A To-fix row has no tracker item, so there is nothing to hop: the ticket under test takes its
+one closing transition at exit (§The exit round), and the human who merges closes the work. A green carried
+finding stops failing 5-verdict from that round on; that is the whole point.
 
 **Below-floor findings stay outside the loop, per round.** 5-file does not file a `Low` in round 2 either, so
-5-loop still only ever fixes what 5-file filed — and the round-delta comment carries the same mandatory
+5-loop still only ever fixes what the To-fix table holds — and the round-delta comment carries the same mandatory
 `Not filed` accounting in one line, `None` when there are none.
 
 #### Round N+1 is ONE track: C1 / RED→GREEN
@@ -274,7 +270,7 @@ that claim is unfalsifiable and a "still failing" round may be a deploy that nev
 
 ```
 QA re-test — round N of M. Prerelease: <fix PR> deployed to {ENV} (<module> <version>, probed).
-Round entry: [N] sub-tasks + [N] linked bugs read; verified [keys|None] → TESTED [keys|None] (merged+deployed); carried [keys|None].
+Round entry: [N] linked bugs read, [N] To-fix rows re-run; verified [keys|None] → TESTED [keys|None] (merged+deployed); carried [keys|None].
 RED-GREEN: [X] previously-failed cases re-run — [green]/[still red] (<RUN_ID>).
 Change-scoped regression (re-scoped to the fix): [suite IDs] — [pass rate] (<RUN_ID>).
 Round verdict: [verdict]. Bugs: filed [keys|None] · still failing [keys|None] · green this round [keys|None].

@@ -1904,34 +1904,7 @@ QUARANTINED: createConfiguredLineItem INVALID_OPERATION on vcst-qa — File fixt
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [COUNT label=add_item] data.addItem.validationErrors.length = 0
 [DATA label=add_item] data.addItem.itemsCount = 1","[EVIDENCE] Empty customText on optional Text section accepted — maxLength validator does NOT fire for empty string on non-required section.","validationErrors[] non-empty for empty customText on optional section","cleanup_post inline","xAPI; Mutation.addItem; VCST-4987; CFG_VARIATION_CAKE optional Text section; BL-CART-014","Quarantined"
-"CFG-GQL-046","[VCST-5053] mergeCart — configurable Product sections preserved after merge (ORG_USER ← USER2)","GraphQL > Configurable Products > Mutation","High","BL-GQL-001; BL-CART-012","ECL-2.1; ECL-14.1","Runner-native. VCST-5053 fix: cart merge MUST preserve configurable line item configuration. USER2 adds CFG_LAPTOP with UPGRADE RAM + UPGRADE Storage; ORG_USER calls mergeCart. Post-merge: configurationItems intact.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=USER2]
-[GQL-OP setup_user2]
-  query { me { id } }
-[GQL-EXEC setup_user2]
-[GQL-CAPTURE setup_user2.data.me.id → USER2_ID]
-[GQL-OP cleanup_user2_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" }) { id } }
-[GQL-EXEC cleanup_user2_pre]
-[GQL-OP get_def]
-  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
-[GQL-EXEC get_def]
-[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
-[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID]
-[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
-[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.1.product.id → OPT_STORAGE_UPGRADE_ID]
-[GQL-OP add_item_user2]
-[GQL-VARS add_item_user2] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_UPGRADE_ID}}"", ""quantity"": 1}}]}
-  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
-    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
-      id itemsCount items { id productId configurationItems { id sectionId productId selectedForCheckout } }
-    }
-  }
-[GQL-EXEC add_item_user2]
-[GQL-OP get_source_cart]
-  query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER2_ID}}"") { id } }
-[GQL-EXEC get_source_cart]
-[GQL-CAPTURE get_source_cart.data.cart.id → SOURCE_CART_ID]
-[AUTH role=ORG_USER]
+"CFG-GQL-046",[VCST-5053] mergeCart — configurable Product sections preserved after merge (own named cart into the default cart),"GraphQL > Configurable Products > Mutation","High","BL-GQL-001; BL-CART-012","ECL-2.1; ECL-14.1","Runner-native. VCST-5053 fix: cart merge MUST preserve configurable line item configuration. ORG_USER adds CFG_LAPTOP with UPGRADE RAM + UPGRADE Storage to a NAMED cart it owns, then merges that cart into its default cart (merging another customer's cart is refused since VCST-6185). Post-merge: configurationItems intact.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_org_user]
   query { me { id } }
 [GQL-EXEC setup_org_user]
@@ -1939,6 +1912,24 @@ QUARANTINED: createConfiguredLineItem INVALID_OPERATION on vcst-qa — File fixt
 [GQL-OP cleanup_org_pre]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_org_pre]
+[GQL-OP cleanup_src_pre]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-CFG046-SRC"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_src_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.1.product.id → OPT_STORAGE_UPGRADE_ID]
+[GQL-OP add_item_src]
+[GQL-VARS add_item_src] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_UPGRADE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { cartName: ""AGENT-TEST-CFG046-SRC"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) { id itemsCount items { id productId configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC add_item_src]
+[GQL-CAPTURE add_item_src.data.addItem.id → SOURCE_CART_ID]
 [GQL-OP merge]
   mutation {
     mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" secondCartId: ""{{SOURCE_CART_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) {
@@ -1952,37 +1943,16 @@ QUARANTINED: createConfiguredLineItem INVALID_OPERATION on vcst-qa — File fixt
 [GQL-OP cleanup_post]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]
-[AUTH role=USER2]
-[GQL-OP cleanup_user2_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" }) { id } }
-[GQL-EXEC cleanup_user2_post]","[ERRORS label=add_item_user2] errors[] empty
-[DATA label=add_item_user2] data.addItem.itemsCount = 1
+[GQL-OP cleanup_src]
+  mutation { removeCart(command: { cartId: ""{{SOURCE_CART_ID}}"" userId: ""{{USER_ID}}"" }) }
+[GQL-EXEC cleanup_src]","[ERRORS label=add_item_src] errors[] empty
+[DATA label=add_item_src] data.addItem.itemsCount = 1
 [ERRORS label=merge] errors[] empty
 [DATA label=merge] data.mergeCart.itemsCount >= 1
 [DATA label=merge] data.mergeCart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_UPGRADE_ID}}
-[DATA label=merge] data.mergeCart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_UPGRADE_ID}}","[EVIDENCE] Both UPGRADE configItems survive merge intact. Pre-fix VCST-5053 symptom: configurationItems[] is empty or reset to defaults after merge.","configurationItems[] empty after merge (pre-fix VCST-5053 regression); configItems present but pointing to BASE options; merge errors[] non-empty; HTTP 500","cleanup_post inline",xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012 | Behavior:cat.cfg.cart-line.merge,"Automated"
-"CFG-GQL-047","[VCST-5053] mergeCart — Text section customText preserved after merge","GraphQL > Configurable Products > Mutation","High","BL-GQL-001; BL-CART-012","ECL-2.1","Runner-native. VCST-5053 fix: cart merge MUST preserve Text-section customText. USER2 adds CFG_VARIATION_CAKE with non-empty customText in optional Text section; merge to ORG_USER; assert customText survives.
-QUARANTINED: addItem for CFG_VARIATION_CAKE with Text section returns itemsCount=0 — product not available in B2B store or Variation-section addItem fails for this product. CFG_VARIATION_CAKE._featureStatus: Variation-section frontend NOT yet implemented.","configurable_id=@td(CFG_VARIATION_CAKE.productId); text_section_id=@td(CFG_VARIATION_CAKE.textSectionId); custom_text=HelloMerge","[AUTH role=USER2]
-[GQL-OP setup_user2]
-  query { me { id } }
-[GQL-EXEC setup_user2]
-[GQL-CAPTURE setup_user2.data.me.id → USER2_ID]
-[GQL-OP cleanup_user2_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" }) { id } }
-[GQL-EXEC cleanup_user2_pre]
-[GQL-OP add_item_user2]
-[GQL-VARS add_item_user2] {""configurationSections"": [{""sectionId"": ""@td(CFG_VARIATION_CAKE.textSectionId)"", ""type"": ""Text"", ""customText"": ""HelloMerge""}]}
-  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
-    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" productId: ""@td(CFG_VARIATION_CAKE.productId)"" quantity: 1 configurationSections: $configurationSections }) {
-      id itemsCount items { id productId configurationItems { id sectionId customText } }
-    }
-  }
-[GQL-EXEC add_item_user2]
-[GQL-OP get_source_cart]
-  query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER2_ID}}"") { id } }
-[GQL-EXEC get_source_cart]
-[GQL-CAPTURE get_source_cart.data.cart.id → SOURCE_CART_ID]
-[AUTH role=ORG_USER]
+[DATA label=merge] data.mergeCart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_UPGRADE_ID}}","[EVIDENCE] Both UPGRADE configItems survive merge intact. Pre-fix VCST-5053 symptom: configurationItems[] is empty or reset to defaults after merge.","configurationItems[] empty after merge (pre-fix VCST-5053 regression); configItems present but pointing to BASE options; merge errors[] non-empty; HTTP 500","cleanup_post inline",xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012 | Behavior:cat.cfg.cart-line.merge | Corrected: 2026-11-03 caller merged USER2's cart; VCST-6185 makes that Forbidden — source is now the caller's own named cart (same VCST-5053 assertion) | Synced: VCST-6185 (2026-11-03),"Automated"
+"CFG-GQL-047",[VCST-5053] mergeCart — Text section customText preserved after merge,"GraphQL > Configurable Products > Mutation","High","BL-GQL-001; BL-CART-012","ECL-2.1","Runner-native. VCST-5053 fix: cart merge MUST preserve Text-section customText. ORG_USER adds CFG_VARIATION_CAKE with non-empty customText in the optional Text section to a NAMED cart it owns, merges that cart into its default cart; assert customText survives (merging another customer's cart is refused since VCST-6185).
+QUARANTINED: addItem for CFG_VARIATION_CAKE with Text section returns itemsCount=0 — product not available in B2B store or Variation-section addItem fails for this product. CFG_VARIATION_CAKE._featureStatus: Variation-section frontend NOT yet implemented.","configurable_id=@td(CFG_VARIATION_CAKE.productId); text_section_id=@td(CFG_VARIATION_CAKE.textSectionId); custom_text=HelloMerge","[AUTH role=ORG_USER]
 [GQL-OP setup_org_user]
   query { me { id } }
 [GQL-EXEC setup_org_user]
@@ -1990,6 +1960,17 @@ QUARANTINED: addItem for CFG_VARIATION_CAKE with Text section returns itemsCount
 [GQL-OP cleanup_org_pre]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_org_pre]
+[GQL-OP cleanup_src_pre]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-CFG047-SRC"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_src_pre]
+[GQL-OP add_item_src]
+[GQL-VARS add_item_src] {""configurationSections"": [{""sectionId"": ""@td(CFG_VARIATION_CAKE.textSectionId)"", ""type"": ""Text"", ""customText"": ""HelloMerge""}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { cartName: ""AGENT-TEST-CFG047-SRC"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_VARIATION_CAKE.productId)"" quantity: 1 configurationSections: $configurationSections }) { id itemsCount items { id productId configurationItems { id sectionId customText } }
+    }
+  }
+[GQL-EXEC add_item_src]
+[GQL-CAPTURE add_item_src.data.addItem.id → SOURCE_CART_ID]
 [GQL-OP merge]
   mutation {
     mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" secondCartId: ""{{SOURCE_CART_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) {
@@ -2003,15 +1984,14 @@ QUARANTINED: addItem for CFG_VARIATION_CAKE with Text section returns itemsCount
 [GQL-OP cleanup_post]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]
-[AUTH role=USER2]
-[GQL-OP cleanup_user2_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" }) { id } }
-[GQL-EXEC cleanup_user2_post]","[ERRORS label=add_item_user2] errors[] empty
-[DATA label=add_item_user2] data.addItem.itemsCount = 1
+[GQL-OP cleanup_src]
+  mutation { removeCart(command: { cartId: ""{{SOURCE_CART_ID}}"" userId: ""{{USER_ID}}"" }) }
+[GQL-EXEC cleanup_src]","[ERRORS label=add_item_src] errors[] empty
+[DATA label=add_item_src] data.addItem.itemsCount = 1
 [ERRORS label=merge] errors[] empty
 [DATA label=merge] data.mergeCart.itemsCount >= 1
 [ERRORS label=read_back] errors[] empty
-[DATA label=read_back] data.cart.items[?productId=@td(CFG_VARIATION_CAKE.productId)].configurationItems[?sectionId=@td(CFG_VARIATION_CAKE.textSectionId)].customText = HelloMerge","[EVIDENCE] customText survives merge. Pre-fix VCST-5053 symptom: customText null or absent from merged configItems.","customText null after merge; configurationItems[] empty; merge errors[] non-empty; item missing from merged cart","cleanup_post inline","xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012","Quarantined"
+[DATA label=read_back] data.cart.items[?productId=@td(CFG_VARIATION_CAKE.productId)].configurationItems[?sectionId=@td(CFG_VARIATION_CAKE.textSectionId)].customText = HelloMerge","[EVIDENCE] customText survives merge. Pre-fix VCST-5053 symptom: customText null or absent from merged configItems.","customText null after merge; configurationItems[] empty; merge errors[] non-empty; item missing from merged cart","cleanup_post inline",xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012 | Corrected: 2026-11-03 caller merged USER2's cart; VCST-6185 makes that Forbidden — source is now the caller's own named cart (same VCST-5053 assertion) | Synced: VCST-6185 (2026-11-03),"Quarantined"
 "CFG-GQL-VCST4961-A","changeCartConfiguredItem — selectedForCheckout=TRUE preserved across Edit-Configuration re-edit (VCST-4961)","GraphQL > Configurable Products > Mutation","Critical","BL-GQL-001; BL-CART-001; BL-PRICE-001","ECL-2.1; ECL-14.1","Runner-native. ORG_USER. VCST-4961 fix verification: addItem(CFG_LAPTOP, RAM=BASE + Storage=BASE) — both configurationItems default selectedForCheckout=true. Then changeCartConfiguredItem with RAM swapped to UPGRADE option (Storage unchanged) — simulates user Edit-Configuration → Update Cart flow. PR #119 adds PreserveSelectedForCheckoutFromOldConfiguration in ChangeCartConfiguredLineItemCommandHandler. Expected post-fix: both configurationItems still have selectedForCheckout=true (preserved) AND listPrice reflects the new RAM option pricing (> BASE_LIST_PRICE). Final nochange_short re-issues identical sections → BL-CART-013 no-change short-circuit, listPrice unchanged from reedit.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }

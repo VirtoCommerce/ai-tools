@@ -97,13 +97,13 @@ item is allowed: `compose` records it as `GAP: connector-unavailable`. Follow no
 Dispatch `vc-test:ticket-context-analyst` (this plugin's `agents/ticket-context-analyst.md`) in **one** message, no
 browser: TICKET, MATERIALS and CHANGE. When `prepare.json` `prs` holds **more than one product PR** (no
 `gap`, not `context_only`), CHANGE is split: one dispatch per product PR, in the same message, each brief
-with the line `PRS: <that PR's ref>` after `PREPARE:`.
+with the line `PRS: <that PR's ref>` after `PREPARE:`. Each analyst reads only `analyst-<mode>.json` beside
+`prepare_path` (prepare writes it: that mode's keys, the ticket as plain text, the mode's output schema).
 
 ```
 MODE: TICKET
 TICKET: <KEY>
 PREPARE: <prepare_path>
-OUTPUT_SCHEMA: <skill>/bundle.schema.json, $def: ticketOut
 ```
 
 ```
@@ -111,7 +111,6 @@ MODE: MATERIALS
 TICKET: <KEY>
 PREPARE: <prepare_path>
 ITEMS: <every inventory ref that has a local_path and no gap>
-OUTPUT_SCHEMA: <skill>/bundle.schema.json, $def: materialsOut
 DESIGN_RULES: <skill>/design-sources.md
 ```
 
@@ -119,7 +118,6 @@ DESIGN_RULES: <skill>/design-sources.md
 MODE: CHANGE
 TICKET: <KEY>
 PREPARE: <prepare_path>
-OUTPUT_SCHEMA: <skill>/bundle.schema.json, $def: changeOut
 ```
 
 Skip MATERIALS when `ITEMS` is empty and write `{"materials":[],"design":{"source":"none","conditions":[]},"gaps":[],"questions":[],"embedded_instructions":[]}`

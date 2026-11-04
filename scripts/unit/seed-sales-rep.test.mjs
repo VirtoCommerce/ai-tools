@@ -62,17 +62,17 @@ test('resetSecurityPassword is a no-op guard when userName or password is missin
   assert.equal(calls.length, 0, 'never calls the API without both a userName and a password');
 });
 
-test('SALES_REP and SALES_REP_NOCUSTOMERS are org-kind roles keyed to TEST_USER_PASSWORD', () => {
+test('SALES_REP and SALES_REP_NOCUSTOMERS are org-kind roles keyed to SR_REP_PASSWORD', () => {
   for (const key of ['SALES_REP', 'SALES_REP_NOCUSTOMERS']) {
     const def = roleByKey(key);
-    assert.equal(def.passwordVar, 'TEST_USER_PASSWORD', `${key} resolves its secret from TEST_USER_PASSWORD`);
+    assert.equal(def.passwordVar, 'SR_REP_PASSWORD', `${key} resolves its secret from SR_REP_PASSWORD (the password seed-sales-rep gives every rep)`);
     assert.equal(def.kind, 'org', `${key} is an org account (created by seed-sales-rep, not the generic user seeders)`);
     assert.equal(def.required, false, `${key} is optional (module deployed only on QA envs)`);
   }
-  const primary = resolveRole(roleByKey('SALES_REP'), { SALES_REP_EMAIL: 'p@ex.com', TEST_USER_PASSWORD: 'pw' });
+  const primary = resolveRole(roleByKey('SALES_REP'), { SALES_REP_EMAIL: 'p@ex.com', SR_REP_PASSWORD: 'pw' });
   assert.equal(primary.email, 'p@ex.com');
   assert.equal(primary.password, 'pw');
-  const nocust = resolveRole(roleByKey('SALES_REP_NOCUSTOMERS'), { SALES_REP_NOCUSTOMERS_EMAIL: 'n@ex.com', TEST_USER_PASSWORD: 'pw' });
+  const nocust = resolveRole(roleByKey('SALES_REP_NOCUSTOMERS'), { SALES_REP_NOCUSTOMERS_EMAIL: 'n@ex.com', SR_REP_PASSWORD: 'pw' });
   assert.equal(nocust.email, 'n@ex.com');
   assert.equal(nocust.password, 'pw');
 });

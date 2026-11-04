@@ -22,7 +22,7 @@
 4. The client's `SendCustomerCommunication` (message plus link, over 1000) is rejected. A warning toast shows, and the new customer is never notified.
 
 ## Evidence
-![600 of 250](../../screenshots/rep-share-message-limits-disagree/pm-B7-01-reopen-600-char-message-counter-600of250.png)
+![600 of 250](../../../screenshots/rep-share-message-limits-disagree/pm-B7-01-reopen-600-char-message-counter-600of250.png)
 - `…/rep-share-message-limits-disagree/pm-B7-02-add-recipient-share-enabled-over-limit.png`: Share is enabled with an over-cap message. It saved 600 and sent 689 characters (HAR `reports/tickets/Sprint26-19/VCST-5728/screenshots/pm-B-lane.har`).
 - `reports/tickets/Sprint26-19/VCST-5728/screenshots/pm-A8-graphql.json`: 1001 characters is rejected. `pm-A6-graphql.json`: 1024 is stored, 1025 is rejected with a generic `INVALID_OPERATION`.
 - `…/rep-share-message-limits-disagree/pm-X-04-send-failure-warning-toast.png`: send failure after save (send aborted in the session, EXP-05).

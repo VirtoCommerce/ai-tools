@@ -345,3 +345,7 @@ the design's §13) covered every recorded Medium-or-higher finding, and produced
 only on a High/Critical risk or P0/P1 (layers raise L×I instead, D8); 120 lines per round (D9); five method
 rules (D10); a staleness check before any regression run (D11); a per-risk "effort" distinct from the depth
 label (D12).
+
+## `/qa-test-lifecycle` changelog source (moved from the command, 2026-10-29)
+
+Step 1 of the `changelog <version>` input used to be "query Context7 for release notes for the specified version". That corpus does not carry them — its newest version page is Platform **3.917.1** while production is past **3.1050**. Hence the local release ledger first, GitHub Releases to confirm, Context7 only as a stale-ledger fallback (`.claude/skills/qa-test-lifecycle/change-sources.md`).

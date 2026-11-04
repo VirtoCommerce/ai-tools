@@ -187,9 +187,9 @@ The chain below is reconstructed from source + live and is **the first written s
 
 | Claim | Verdict |
 |---|---|
-| `store-settings.md` — "Verify `UseFirebaseCloudMessaging: false` disables all push functionality" | **DRIFT** (src) — it disables FCM (Firebase app, sender handler, receiver settings); in-app xAPI delivery continues (D4) |
+| `store-settings.md` — "Verify `UseFirebaseCloudMessaging: false` disables all push functionality" | **DRIFT** (src) — it disables FCM (Firebase app, sender handler, receiver settings); in-app xAPI delivery continues (D4). **Fixed in `store-settings.md` 2026-10-29** |
 | `store-settings.md` — "`fcmSettings` returns client-side FCM config (apiKey … vapidKey)" and "Admin UI settings (3 categories): General, Background jobs, FCM receiver options" | **CONFIRMED** live (REST groups `General`, `FCM Receiver Options`, `Background Jobs`; seven fields returned to any authenticated user). Its "`PrivateKey` never exposed" test point: `UNVERIFIED` here (sender options absent from settings and xAPI type; not exhaustively probed) |
-| `store-settings.md` — push config is appsettings-only | **DRIFT (partial)** — receiver options and `FCM.Enable` are also Admin/Store settings, seeded from configuration (D4) |
+| `store-settings.md` — push config is appsettings-only | **DRIFT (partial)** — receiver options and `FCM.Enable` are also Admin/Store settings, seeded from configuration (D4). **Fixed in `store-settings.md` 2026-10-29** (per-store overrides + `environments.yml`/Key Vault from VirtoOZ) |
 | `PUSH_MSG_SEED` note in `aliases.json`: targeting fields "memberIds[] / targetOrganizationIds[] / userGroups[] / cultureName verified live (PUSH-031)" | **DRIFT** — the current REST `PushMessage` model has only `memberIds` and `memberQuery`; the other three are not fields (unknown JSON properties would be silently dropped) (§2) |
 | 068 `PUSH-033` "Real-Time Delivery via SignalR" | **DRIFT** (wording) — the storefront's real-time channel is the xAPI `pushMessageCreated` subscription over `graphql-transport-ws`; the live console shows no SignalR (excluded platform toasts are SignalR) |
 | 068/050l cite `BL-NOTIF-001/003` | **DRIFT** — those are order-email invariants; no BL covers push (Domain 27 empty) |

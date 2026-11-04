@@ -113,7 +113,7 @@ Each generated case must satisfy:
 - [ ] Preconditions describe user state, data requirements, env requirements
 - [ ] `Failure_Signals` lists observable signals
 - [ ] `Cleanup` populated when entities are created
-- [ ] `Automation_Status` is `Draft` — and stays `Draft` through Cycle 3. The enforced vocabulary is `Draft | Reviewed | Automated | Manual | Semi-Automated` (`lint-test-cases.ts`, `S-006`); `pending` / `validated` / `needs-review` are not values and fail the lint on every row. Promotion is `/qa-test-lifecycle` 6P or `/qa-regression` 6.5, never this skill.
+- [ ] `Automation_Status` is `Draft` — and stays `Draft` through Cycle 3. The enforced vocabulary is `Draft | Reviewed | Automated | Manual | Semi-Automated` (`lint-test-cases.ts`, `S-006`); `pending` / `validated` / `needs-review` are not values and fail the lint on every row. Promotion is `qa-case-promotion` or `/qa-regression` 6.5, never this skill.
 - [ ] No semantic duplicate of an existing case in the target suite (matching `Title + Section` OR `Steps + Assertions`)
 
 ## Validation Protocol
@@ -212,7 +212,7 @@ reporting all consume `gap-inventory.json`; none of them re-reads the suites.
    - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__DeploymentGuide` — deployment, infra, Azure, Docker, Kubernetes
    - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__PlatformBackendSourceCode` / `…__PlatformFrontendSourceCode` / `…__FrontendSourceCode` — source-code lookup
    - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__VirtoCommerce` — general fallback (product/architecture/case-study questions)
-   - All tools accept `{ query, top_k: 3-5 }`. Query stems and full routing rules: `skills/vc-docs/SKILL.md`.
+   - All tools accept `{ query, top_k: 3-5 }`. Query stems and full routing rules: `knowledge/execution/doc-sources.md`.
    - **Context7 fallback** — if VirtoOZ returns thin/off-topic chunks: `mcp__context7__resolve-library-id { libraryName: "virtocommerce" }` → `/virtocommerce/vc-docs`, then `mcp__context7__query-docs { libraryId, query, tokens: 8000 }`.
    - Flag features documented in VC docs but absent from current regression coverage.
 

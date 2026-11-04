@@ -38,8 +38,8 @@ A visitor who is not a sales rep opens a Sales Rep Hub URL directly with an empt
 The visitor sees a loader and then the redirect. The 404 page never appears for a route the hub declares. This is what the built-in (non-federated) hub did.
 
 ## Evidence
-![404 frame, buyer, /company/dashboard](../../screenshots/SalesRep-Hub-Cold-Deep-Link-Transient-404/01-buyer-404-frame-company-dashboard.jpg)
-![After redirect, /account/dashboard](../../screenshots/SalesRep-Hub-Cold-Deep-Link-Transient-404/02-buyer-after-redirect-account-dashboard.jpg)
+![404 frame, buyer, /company/dashboard](../../../screenshots/SalesRep-Hub-Cold-Deep-Link-Transient-404/01-buyer-404-frame-company-dashboard.jpg)
+![After redirect, /account/dashboard](../../../screenshots/SalesRep-Hub-Cold-Deep-Link-Transient-404/02-buyer-after-redirect-account-dashboard.jpg)
 - Motion (§5.2): `reports/bugs/screenshots/SalesRep-Hub-Cold-Deep-Link-Transient-404/404-flash.gif`
 - Package: `reports/tickets/Sprint26-20/VCST-6015/evidence/D2-transient-404-before-redirect/` (`evidence-index.md`, `root-cause.md`, `network/observer-results.json`)
 - HAR: `test-results/edge/har/session.har` (shared lane, referenced)

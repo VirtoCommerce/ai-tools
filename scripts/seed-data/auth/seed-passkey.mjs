@@ -6,7 +6,11 @@
  *   2 organizations   AGENT-TEST-PK-Org-Main, AGENT-TEST-PK-Org-Lockable (only PK_BUYER_MULTI is in it)
  *   5 Customer accounts + contacts on STORE_ID (PK_BUYER, PK_BUYER_MULTI, PK_B2C, PK_LOCKOUT, PK_PASSKEY_ONLY),
  *     buyers with an org-scoped "Purchasing agent" OrganizationMembership per org
- *   3 Manager accounts, no contact (PK_BO_MANAGER, PK_BO_MANAGER_2 — existing least-privilege role by name;
+ *   1 Customer account + contact on a FOREIGN store (PK_FOREIGN_STORE), no organization. The store is
+ *     picked LIVE (pickForeignStore): existing, not STORE_ID, no trust either way, Password + Passkey
+ *     sign-in active; the overlay's earlier pick is kept while it qualifies; none qualifies = abort.
+ *     No store is ever created or changed for it.
+ *   3 Manager accounts, no contact (PK_BO_MANAGER, PK_BO_MANAGER_2 — our own role AGENT-TEST-PK-BackOffice, store:access + store:read;
  *     PK_OPERATOR — our own role AGENT-TEST-PK-Impersonator, platform:security:loginOnBehalf only)
  * All: lockoutEnabled, emailConfirmed, passwordExpired false, password {{DEFAULT_TEST_PASSWORD}}.
  *
@@ -23,12 +27,14 @@
  *   TEST_ENV=<env> node scripts/seed-data/auth/seed-passkey.mjs --teardown
  *
  * --verify: read-back of every flag, a password grant per account (Customers with storeId; Managers
- * without), /currentuser permissions for the Managers, the passkey count per account, and ONE
+ * without; PK_FOREIGN_STORE with its OWN store, plus one grant on STORE_ID that must answer
+ * user_cannot_login_in_store, and its store must still qualify), /currentuser permissions for the
+ * Managers, the passkey count per account, and ONE
  * impersonate grant PK_OPERATOR → PK_BUYER. It changes nothing but the sign-in log.
  *
  * Safety: assertSafeTarget (ENV_RISK=production aborts). Teardown removes only agent-test-pk-* accounts,
- * contacts/orgs carrying our outerId marker (or our exact email/name), their memberships, and our own
- * role; it ends on a zero-residue assert. No store and no store setting is ever written here.
+ * contacts/orgs carrying our outerId marker (or our exact email/name), their memberships, and our two
+ * roles; it ends on a zero-residue assert. No store and no store setting is ever written here.
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync } from 'node:fs';
@@ -38,8 +44,9 @@ import {
   DRY_RUN, TEARDOWN, ONLY, STORE_ID, BACK_URL, ROOT,
 } from '../../lib/seed-common.mjs';
 import {
-  SEED_PREFIX, PASSWORD_VAR, ACCOUNTS, ORGS, BUYER_ROLE_NAME, BO_ROLE_NAME, OPERATOR_ROLE,
+  SEED_PREFIX, PASSWORD_VAR, ACCOUNTS, ORGS, BUYER_ROLE_NAME, OWN_ROLES,
   orgBody, contactBody, accountBody, accountProblems, isSeededOuterId, seedOuterId, resolveStoreId,
+  FOREIGN_STORE_MARKER, pickForeignStore, foreignStoreRejection,
 } from './passkey-specs.mjs';
 
 const argv = process.argv.slice(2);
@@ -113,7 +120,8 @@ const passwordGrant = (spec, password, storeId) => token({
   grant_type: 'password', username: spec.email, password, scope: 'offline_access', ...(storeId ? { storeId } : {}),
 });
 /** The grant that signs this account in for real: Customers + operator with the store, BO managers without. */
-const signInStore = (spec) => (spec.kind === 'bo-manager' ? '' : resolveStoreId(spec, STORE_ID));
+let foreignStoreId = ''; // resolved live (resolveForeignStore) before any account needs it
+const signInStore = (spec) => (spec.kind === 'bo-manager' ? '' : resolveStoreId(spec, STORE_ID, foreignStoreId));
 
 async function asUser(accessToken, method, path) {
   const res = await fetch(`${BACK_URL}${path}`, { method, headers: { Authorization: `Bearer ${accessToken}` }, signal: AbortSignal.timeout(40000) });
@@ -141,24 +149,29 @@ async function passkeysOf(accessToken) {
 
 /* ── seed ────────────────────────────────────────────────────────────────────── */
 
-async function ensureRoles() {
-  const bo = await getRole(BO_ROLE_NAME);
-  if (!bo) throw new Error(`role "${BO_ROLE_NAME}" does not exist on ${TEST_ENV} — pick another least-privilege role in passkey-specs.mjs BO_ROLE_NAME`);
-  let op = await getRole(OPERATOR_ROLE.name);
-  const want = OPERATOR_ROLE.permissions;
-  const have = (op?.permissions || []).map((p) => p.name);
-  if (!op || want.some((p) => !have.includes(p)) || have.length !== want.length) {
+/** Upsert one of our own roles (pinned id) to exactly its declared permissions. GET by NAME carries them; search does not. */
+async function ensureOwnRole(spec) {
+  let role = await getRole(spec.name);
+  const want = spec.permissions;
+  const have = (role?.permissions || []).map((p) => p.name);
+  if (!role || want.some((p) => !have.includes(p)) || have.length !== want.length) {
     await api('PUT', '/api/platform/security/roles', {
-      id: OPERATOR_ROLE.id, name: OPERATOR_ROLE.name, description: OPERATOR_ROLE.description,
+      id: spec.id, name: spec.name, description: spec.description,
       permissions: want.map((name) => ({ name })),
     }, { expectStatus: [200, 204] });
-    log(`  ${op ? '↻ reconcile' : '✓ create'} role ${OPERATOR_ROLE.name} [${want.join(', ')}]`);
-    op = DRY_RUN ? { id: OPERATOR_ROLE.id, name: OPERATOR_ROLE.name } : await getRole(OPERATOR_ROLE.name);
-  }
+    log(`  ${role ? '↻ reconcile' : '✓ create'} role ${spec.name} [${want.join(', ')}]`);
+    role = DRY_RUN ? { id: spec.id, name: spec.name } : await getRole(spec.name);
+    if (!role) throw new Error(`PUT role ${spec.name} succeeded but GET roles/${spec.name} finds nothing`);
+  } else verbose(`reuse role ${spec.name} [${have.join(', ')}]`);
+  return { id: role.id, name: role.name };
+}
+
+async function ensureRoles() {
+  const out = {};
+  for (const spec of OWN_ROLES) out[spec.name] = await ensureOwnRole(spec);
   const buyerRole = await getRole(BUYER_ROLE_NAME);
   if (!buyerRole) throw new Error(`org role "${BUYER_ROLE_NAME}" does not exist on ${TEST_ENV}`);
-  log(`  role ${BO_ROLE_NAME} (${bo.id}) permissions LIVE: [${(bo.permissions || []).map((p) => p.name).join(', ')}]`);
-  return { [BO_ROLE_NAME]: { id: bo.id, name: bo.name }, [OPERATOR_ROLE.name]: { id: op.id, name: op.name }, buyer: buyerRole };
+  return { ...out, buyer: buyerRole };
 }
 
 async function ensureOrgs(overlay) {
@@ -252,7 +265,7 @@ async function ensureAccount(spec, ctx) {
   const orgIds = spec.orgs.map((k) => orgIdsByKey[k]);
   const memberId = spec.hasContact ? await ensureContact(spec, orgIds, overlay, user) : null;
   const roleRefs = spec.roles.map((n) => roles[n]);
-  const body = accountBody(spec, { envStoreId: STORE_ID, password, memberId, roles: roleRefs });
+  const body = accountBody(spec, { envStoreId: STORE_ID, foreignStoreId, password, memberId, roles: roleRefs });
 
   if (!user) {
     const res = await api('POST', '/api/platform/security/users/create', body, { expectStatus: [200, 201] });
@@ -285,7 +298,7 @@ async function ensureAccount(spec, ctx) {
   const mships = spec.orgs.length ? await ensureMemberships(spec, userId, orgIds, roles.buyer) : {};
   const wb = {
     userId: DRY_RUN ? '' : userId, memberId: DRY_RUN ? '' : (memberId || ''),
-    storeId: resolveStoreId(spec, STORE_ID), org_id: DRY_RUN ? '' : (orgIds[orgIds.length - 1] || ''),
+    storeId: resolveStoreId(spec, STORE_ID, foreignStoreId), org_id: DRY_RUN ? '' : (orgIds[orgIds.length - 1] || ''),
   };
   if (spec.kind === 'multi-org' && !DRY_RUN) {
     Object.assign(wb, { org_a_id: orgIds[0], org_b_id: orgIds[1], membership_a_id: mships[spec.orgs[0]] || '', membership_b_id: mships[spec.orgs[1]] || '' });
@@ -293,10 +306,41 @@ async function ensureAccount(spec, ctx) {
   return wb;
 }
 
+/* ── the foreign store (PK_FOREIGN_STORE) ───────────────────────────────────── */
+
+const needsForeignStore = () => ACCOUNTS.filter(inScope).some((s) => s.storeId === FOREIGN_STORE_MARKER);
+
+/** Every store of the env + the authentication schemes of each (GET by id carries trustedGroups). */
+async function liveStores() {
+  const r = await api('POST', '/api/stores/search', { take: 500 }, { expectStatus: [200] });
+  const stores = r?.results || r?.stores || [];
+  const schemesById = {};
+  for (const s of stores) {
+    const sc = await api('GET', `/api/store-authentication-schemes/${encodeURIComponent(s.id)}`, null, { expectStatus: [200, 204, 404] });
+    schemesById[s.id] = Array.isArray(sc) ? sc : [];
+  }
+  return { stores, schemesById };
+}
+
+/** Pick the foreign store live; keep the overlay's earlier pick while it still qualifies. Fails loudly when none does. */
+async function resolveForeignStore(overlay) {
+  const spec = ACCOUNTS.find((s) => s.storeId === FOREIGN_STORE_MARKER);
+  const { stores, schemesById } = await liveStores();
+  const { id, rejected } = pickForeignStore(stores, STORE_ID, { preferId: overlay[spec.alias]?.storeId || '', schemesById });
+  if (!id) {
+    throw new Error(`no foreign store on ${TEST_ENV} for ${spec.alias}: need an EXISTING store that is not ${STORE_ID}, is not in its `
+      + `trustedGroups, does not trust it, and has Password + Passkey sign-in active. Rejected: `
+      + `${rejected.map((r) => `${r.id} (${r.why})`).join('; ') || 'no other store exists'}. Create one by hand (no seeder writes stores).`);
+  }
+  log(`  foreign store for ${spec.alias}: ${id} (not ${STORE_ID}, no trust either way)`);
+  return id;
+}
+
 async function seed(roles) {
   const password = process.env[PASSWORD_VAR];
   if (!password && !DRY_RUN) throw new Error(`${PASSWORD_VAR} is not set (resolve through .env.local) — refusing to seed a fallback password`);
   const overlay = readOverlay();
+  if (needsForeignStore()) foreignStoreId = await resolveForeignStore(overlay);
   const orgIdsByKey = await ensureOrgs(overlay);
   const writeback = Object.fromEntries(ORGS.map((o) => [o.alias, { name: o.name, id: DRY_RUN ? '' : orgIdsByKey[o.key] }]));
   const ctx = { password, overlay, orgIdsByKey, roles };
@@ -319,11 +363,28 @@ async function verify(orgIdsByKey) {
   const password = process.env[PASSWORD_VAR];
   const problems = [];
   const tokens = {};
+  if (needsForeignStore()) {
+    // What the cases resolve is the OVERLAY's storeId, so that is the id checked — still existing, still untrusted both ways.
+    const spec = ACCOUNTS.find((s) => s.storeId === FOREIGN_STORE_MARKER);
+    foreignStoreId = readOverlay()[spec.alias]?.storeId || '';
+    const { stores, schemesById } = await liveStores();
+    const store = stores.find((s) => lc(s.id) === lc(foreignStoreId));
+    const runStore = stores.find((s) => lc(s.id) === lc(STORE_ID)) || { id: STORE_ID, trustedGroups: [] };
+    const why = foreignStoreId ? foreignStoreRejection(store, runStore, { schemes: store ? schemesById[store.id] : null }) : 'no storeId in the overlay';
+    if (why) problems.push(`${spec.alias}: foreign store "${foreignStoreId}" no longer qualifies (${why}) — re-seed to pick another`);
+  }
   for (const spec of ACCOUNTS.filter(inScope)) {
     const user = await findUser(spec.email);
     const member = user?.memberId ? await getMember(user.memberId) : null;
     const rows = await memberships(user?.id);
-    const p = accountProblems(spec, user, { member, memberships: rows, orgIdsByKey, envStoreId: STORE_ID });
+    const p = accountProblems(spec, user, { member, memberships: rows, orgIdsByKey, envStoreId: STORE_ID, foreignStoreId });
+    if (spec.storeId === FOREIGN_STORE_MARKER && user) {
+      // The discriminating half of PKA-015: the same password on the RUN store must hit the store rule.
+      const run = await passwordGrant(spec, password, STORE_ID);
+      const code = run.json?.code || run.json?.error_description || '';
+      if (!tokenError(run)) p.push(`${spec.alias}: password grant storeId=${STORE_ID} issued a token — the store is NOT foreign to the run store, PKA-015 would pass vacuously`);
+      else if (!/user_cannot_login_in_store/.test(code)) p.push(`${spec.alias}: password grant storeId=${STORE_ID} refused with ${tokenError(run)}, expected user_cannot_login_in_store`);
+    }
     const t = user ? await passwordGrant(spec, password, signInStore(spec)) : { status: 0 };
     if (tokenError(t)) p.push(`${spec.alias}: password grant ${signInStore(spec) ? `storeId=${signInStore(spec)}` : 'without storeId'} → ${tokenError(t)}`);
     else tokens[spec.alias] = t.json.access_token;
@@ -360,7 +421,7 @@ async function verify(orgIdsByKey) {
 /* ── teardown ────────────────────────────────────────────────────────────────── */
 
 async function teardown() {
-  log(`Teardown: removing ${SEED_PREFIX} accounts, their memberships + contacts, the orgs and ${OPERATOR_ROLE.name}`);
+  log(`Teardown: removing ${SEED_PREFIX} accounts, their memberships + contacts, the orgs and our roles ${OWN_ROLES.map((r) => r.name).join(', ')}`);
   const overlay = readOverlay();
   const snap = [];
   for (const spec of ACCOUNTS.filter(inScope)) {
@@ -385,8 +446,8 @@ async function teardown() {
     if (!DRY_RUN) await api('DELETE', `/api/members?ids=${encodeURIComponent(o.id)}`, null, { expectStatus: [200, 204, 404] });
     log(`  ✗ org ${o.id} (${o.name})`);
   }
-  const role = ONLY ? null : await getRole(OPERATOR_ROLE.name);
-  if (role) {
+  const roles = ONLY ? [] : (await Promise.all(OWN_ROLES.map((r) => getRole(r.name)))).filter(Boolean);
+  for (const role of roles) {
     if (!DRY_RUN) await api('DELETE', `/api/platform/security/roles?ids=${encodeURIComponent(role.id)}`, null, { expectStatus: [200, 204, 404] });
     log(`  ✗ role ${role.name}`);
   }
@@ -398,14 +459,18 @@ async function teardown() {
       if (s.user && (await memberships(s.user.id)).length) left.push(`membership(s) of ${s.spec.email}`);
     }
     for (const o of orgs) if (await getMember(o.id)) left.push(`org ${o.name}`);
-    if (role && await getRole(OPERATOR_ROLE.name)) left.push(`role ${OPERATOR_ROLE.name}`);
+    for (const role of roles) if (await getRole(role.name)) left.push(`role ${role.name}`);
     left.forEach((x) => log(`  residual ${x}`));
     return left;
   });
   const blank = { userId: '', memberId: '', org_id: '' };
+  const blankFor = (spec) => {
+    if (spec.kind === 'multi-org') return { ...blank, org_a_id: '', org_b_id: '', membership_a_id: '', membership_b_id: '' };
+    if (spec.storeId === FOREIGN_STORE_MARKER) return { ...blank, storeId: '' }; // a live pick, not env data: gone with the account
+    return blank;
+  };
   writeEnvAliasOverride({
-    ...Object.fromEntries(snap.map((s) => [s.spec.alias, s.spec.kind === 'multi-org'
-      ? { ...blank, org_a_id: '', org_b_id: '', membership_a_id: '', membership_b_id: '' } : blank])),
+    ...Object.fromEntries(snap.map((s) => [s.spec.alias, blankFor(s.spec)])),
     ...(ONLY ? {} : Object.fromEntries(ORGS.map((o) => [o.alias, { id: '' }]))),
   });
   log(residue === 0 ? 'Teardown complete — zero residue.' : `WARN: ${residue} residual entity/entities remain.`);

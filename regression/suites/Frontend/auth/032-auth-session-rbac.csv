@@ -123,6 +123,8 @@
 [STATE] Session-only cookies are cleared on browser close","[NETWORK] GET /account returns 302 redirect to login
 [CONSOLE] no TypeError or JS errors","User remains authenticated without Remember Me after browser restart; session cookie persists as permanent cookie; console TypeError","none",E2E-AUTH-006 | Behavior:auth.session.establish.remember-me | DataProfile:profile.auth.session-remember-me,"Semi-Automated"
 "AUTH-057","Token Replay After Logout - API Rejection","Session > Token Security","High","BL-AUTH-003","ECL-4.3","Valid user account; ability to capture network requests","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}};back_url={{BACK_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': {{USER_EMAIL}}
 [ACT] Fill 'Password': {{USER_PASSWORD}}
 [ACT] Click 'Sign In'
@@ -130,6 +132,7 @@
 [ACT] Capture the access_token from /connect/token response in network tab
 [ASSERT] access_token captured successfully
 [ACT] Click user name / avatar in top header to open account-menu popup (BL-AUTH-007 — no /sign-out page)
+[WAIT] the account menu popup is open
 [ACT] Click Logout button inside popup (data-testid=""main-layout.top-header.account-menu.sign-out-button"")
 [WAIT] Wait for logout to complete
 [ASSERT] User is redirected to login or home page
@@ -142,6 +145,8 @@
 [API] GraphQL response with old token returns authentication error
 [CONSOLE] no TypeError or JS errors","Old token still accepted after logout (token not revoked); API returns 200 with old token; logout does not call revocation endpoint; console TypeError","none",Behavior:auth.session.signout.token-revoked | DataProfile:profile.auth.signout-token-revoked,"Semi-Automated"
 "AUTH-058","RBAC - Customer Cannot Access Admin API","Authorization > RBAC","High","BL-AUTH-005","ECL-4.3","Valid customer (non-admin) account; backend URL accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};back_url={{BACK_URL}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': {{USER_EMAIL}}
 [ACT] Fill 'Password': {{USER_PASSWORD}}
 [ACT] Click 'Sign In'
@@ -279,6 +284,8 @@ WHY THE LOCKED-ORG CHECK IS A TOKEN-LAYER PROBE, NOT AN ORG-SWITCHER FLOW: the s
 --- SCREEN: Login to the usable org (Unblocked Org) ---
 [PRE:CLEAR_SESSION]
 [NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [ACT] Submit the sign-in form
@@ -321,6 +328,8 @@ NOTE [DEPLOY]: lockOrganizationContact returned MISSING_METHOD only on the stale
 are wired in pr-135-402e. REST endpoints remain a valid alternate path.
 Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; user_email=@td(MULTI_ORG_TF_BR.email); user_password=@td(MULTI_ORG_TF_BR.password); member_id=@td(MULTI_ORG_TF_BR.id); user_id=@td(MULTI_ORG_TF_BR.userId); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_buildright_id=@td(MULTI_ORG_TF_BR.org_buildright_id); techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id); buildright_membership_id=@td(MULTI_ORG_TF_BR.buildright_membership_id)","--- SCREEN: Login into TechFlow (Org A - Maintainer) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=email-input] with @td(MULTI_ORG_TF_BR.email)
 [ACT] Fill [data-test-id=password-input] with @td(MULTI_ORG_TF_BR.password)
 [ACT] Click [data-test-id=login-button]
@@ -418,6 +427,8 @@ AXIS DISAMBIGUATION — three different fields are called ""status""; every step
 [SETUP] GET both membership rows for @td(MULTI_ORG_TF_BR_ALT.email) and record the whole bodies as $TF_BASELINE and $BR_BASELINE
 [SETUP] PUT {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR_ALT.techflow_membership_id) with $TF_BASELINE merged so the per-org OrganizationMembership.Status (axis iii) = 'Invited', leaving BuildRight healthy
 [NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] fill 'Email': @td(MULTI_ORG_TF_BR_ALT.email)
 [ACT] fill 'Password': @td(MULTI_ORG_TF_BR_ALT.password)
 [ACT] click 'Sign in'
@@ -466,6 +477,8 @@ AXIS DISAMBIGUATION — three different fields are called ""status""; every step
 [SETUP] GET {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR_ALT.techflow_membership_id) and record the whole body as $TF_BASELINE
 [SETUP] PUT {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR_ALT.techflow_membership_id) with $TF_BASELINE merged so the per-org OrganizationMembership.Status (axis iii) = 'Invited', so the PINNED org is blocking while BuildRight stays healthy
 [NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] fill 'Email': @td(MULTI_ORG_TF_BR_ALT.email)
 [ACT] fill 'Password': @td(MULTI_ORG_TF_BR_ALT.password)
 [ACT] click 'Sign in'

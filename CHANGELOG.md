@@ -8,6 +8,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A `|thumbnail!` screenshot is no longer reported as not rendered — `vc-fix` `0.18.4` — 2026-11-02
+
+### Fixed
+
+- The Jira `renderedBody` check in `knowledge/execution/tracker-ops.md` and `.claude/rules/reports.md` §5.0 now
+  names the thumbnail form: `!name.png|thumbnail!` renders as `<img src=…/attachment/thumbnail/<id>>`, not
+  `…/attachment/content/<id>`. It rendered, but it is not the house form — amend the embed to `|width=700!`.
+  Observed on VCST-6232 comment 112573, where the old rule reported two rendered images as missing.
+- The repo's `npm run tracker:comment` check (`scripts/tracker/rendered-media.mjs`) counts both forms, once per
+  attachment id, and warns on a thumbnail.
+
+### Verified
+
+- Live read of VCST-6232 comment 112573: 2 images counted, 0 error spans, check passes, both flagged as thumbnails.
+- `npm test` 0 failures; `npm run context:check` exits 0.
+
+## ticket-context analysts read the ticket as plain text and only their mode's input — `vc-test` `0.13.0` — 2026-10-30
+
+### Changed
+
+- `prepare` writes `ticket.slim.json` (summary, status, description, AC fields and every comment as redacted plain
+  text) and writes each linked issue's file in the same shape. `ticket.json` stays raw on disk for `rounds.mjs`.
+- `prepare` writes one input per analyst mode beside `prepare.json`: `analyst-ticket.json`,
+  `analyst-materials.json`, `analyst-change.json`. Each holds only the keys that mode reads and its own output
+  schema (`schemaSlice`, every `$def` it reaches). `ticket-context-analyst` reads its own and never
+  `prepare.json` or `ticket.json`; the briefs drop `OUTPUT_SCHEMA`. VCST-6423.
+- Fixes `ui-ux-expert`: BL-CAT-002 → BL-CAT-001 for "Sold-out UI" (#581).
+
+### Verified
+
+- Live `prepare VCST-6121`: `ticket.json` 282,873 chars → `ticket.slim.json` 15,791. Analyst input per mode:
+  TICKET ~344K → 21K, MATERIALS 61K → 20K (before the items), CHANGE 61K → 33K. Linked issue files ~1–4K each.
+  Every schema slice resolves all its `$ref`s, and a sample `ticketOut` validates against the slice.
+- `npm test` 0 failures; `plugins/vc-test` tests pass; `claude plugin validate plugins/vc-test` passes.
+
 ## Parallel `/qa-bug` runs no longer share scratch files — `vc-fix` `0.18.2` — 2026-10-28
 
 ### Fixed

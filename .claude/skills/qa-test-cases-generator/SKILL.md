@@ -276,7 +276,7 @@ Generation is offline, so you tag by best-available source. For **each assertion
 1. **`{SPEC}`** — the expected behavior is stated in the **tracker ticket's** requirement/AC (Jira or
    Azure Boards). This is the workhorse for a new feature.
 2. **`{BL}`** — it restates a real `BL-*`/`BL-UI-*` invariant in the BL oracle.
-3. **`{DOC}`** — you confirmed it in VirtoOZ docs or product source (`/vc-docs`,
+3. **`{DOC}`** — you confirmed it in VirtoOZ docs or product source (VirtoOZ,
    `PlatformFrontendSourceCode`, an i18n file). Only tag `{DOC}` if you actually looked it up.
 4. **`{HYPOTHESIS}`** — none of the above; it is an educated guess of a plausible bug. **Phrase it as a
    question** ("verify whether…"), never as a fact. Do NOT invent literal message strings on these lines

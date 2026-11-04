@@ -255,13 +255,13 @@
   "MULTI_ORG_TF_BR": {
     "id": "3967e722-f075-4ebe-8810-d72fe03ca57c",
     "userId": "6e16b4ac-c0e4-41a6-831b-0998526f4873",
-    "techflow_membership_id": "0f3a36f6-cec7-45f4-9104-13286bbfd47e",
+    "techflow_membership_id": "3bc58731-3d74-43a9-9cc1-f0886dac44b9",
     "buildright_membership_id": "5e5026b3-4d0f-4455-84e0-b20c9a7b792c"
   },
   "MULTI_ORG_TF_BR_ALT": {
     "id": "daf1facf-32a3-4d16-a2f3-efb9f557d1fb",
     "userId": "c30f97bb-0f00-4b44-ba1b-a96149ca94ad",
-    "techflow_membership_id": "41d28a2c-118d-4248-91e9-d50a58f09327",
+    "techflow_membership_id": "e79cc863-ab0c-4ef6-a55c-8557ed17bf23",
     "buildright_membership_id": "62911b28-b832-44db-a625-9107d7c411bf"
   },
   "ORG_TF_ONLY_INVITEE": {
@@ -488,60 +488,60 @@
     "store_id": "Electronics"
   },
   "SR_TASK_FUTURE_YANKEE": {
-    "id": "8a5ca6aa-cc39-4477-8b31-e866aa9528f8",
-    "due_date": "2026-10-21T11:00:00.000Z"
+    "id": "1cd425d7-d849-4b6d-99ea-1a9dca9b0eb8",
+    "due_date": "2026-10-28T11:00:00.000Z"
   },
   "SR_TASK_OVERDUE_MIKE": {
-    "id": "259c626c-bf7c-461a-9b96-29f91f4ff479",
-    "due_date": "2026-10-19T09:00:00.000Z"
+    "id": "27f8b5fb-93f7-40ed-b558-3e872dba4473",
+    "due_date": "2026-10-26T09:00:00.000Z"
   },
   "SR_TASK_DONE_ECHO": {
-    "id": "742fdc1c-a0f4-42ef-87a6-844deda13882",
-    "due_date": "2026-10-11T16:00:00.000Z"
+    "id": "2a29ece8-ff27-4519-956d-db0bd3e1af83",
+    "due_date": "2026-10-18T16:00:00.000Z"
   },
   "SR_TASK_FUTURE_ROMEO": {
-    "id": "b2e9e918-46b0-46d3-bce6-6bd16d4a8875",
-    "due_date": "2026-10-27T09:00:00.000Z"
+    "id": "a86127fa-9190-481e-a036-7819f104193e",
+    "due_date": "2026-11-03T09:00:00.000Z"
   },
   "SR_TASK_TODAY_SIERRA": {
-    "id": "9c7509fd-2ac5-42e6-96ee-8dd34bcaf32e",
-    "due_date": "2026-10-20T12:00:00.000Z"
+    "id": "03c5fa9c-fc67-42ea-b037-78301dd1e38a",
+    "due_date": "2026-10-27T12:00:00.000Z"
   },
   "SR_TASK_FUTURE_OSCAR": {
-    "id": "fa2fa388-426d-4396-8658-99dfdfc0483a",
-    "due_date": "2026-11-03T13:00:00.000Z"
+    "id": "3455c6cb-e671-4505-bba8-3ba5c6f55de8",
+    "due_date": "2026-11-10T13:00:00.000Z"
   },
   "SR_TASK_OVERDUE_ZULU": {
-    "id": "00d03e65-73dd-42c4-8d52-4da50e22e218",
-    "due_date": "2026-10-15T10:00:00.000Z"
+    "id": "7d932f28-06ee-4a7a-9d3a-ab883a0dfdfd",
+    "due_date": "2026-10-22T10:00:00.000Z"
   },
   "SR_TASK_DONE_FOXTROT": {
-    "id": "24de2e83-bf0b-44bc-b05c-e7ccd22e57d6",
-    "due_date": "2026-10-25T10:00:00.000Z"
+    "id": "6a9f50e3-010b-4409-8d2c-74f4c870e982",
+    "due_date": "2026-11-01T10:00:00.000Z"
   },
   "SR_TASK_TODAY_DELTA": {
-    "id": "7e7d422c-3f42-4da8-87fc-2ec1953a4b02",
-    "due_date": "2026-10-20T20:00:00.000Z"
+    "id": "e4c3b1e0-730b-4a7e-b98a-13dd22375984",
+    "due_date": "2026-10-27T20:00:00.000Z"
   },
   "SR_TASK_FUTURE_CHARLIE": {
-    "id": "17b104a9-0747-4659-967f-24007976fbc4",
-    "due_date": "2026-10-27T17:00:00.000Z"
+    "id": "fbb62412-e7bb-414c-a604-a1f1ea6ca0b9",
+    "due_date": "2026-11-03T17:00:00.000Z"
   },
   "SR_TASK_DONE_NOVEMBER": {
-    "id": "8b53d816-4a21-4d6f-bb48-03d521b05b21",
-    "due_date": "2026-10-18T12:00:00.000Z"
+    "id": "3a46181b-07de-456b-a72d-2260a73b139c",
+    "due_date": "2026-10-25T12:00:00.000Z"
   },
   "SR_TASK_TODAY_ALPHA": {
-    "id": "e4067333-fff3-4a0f-9823-cd1f89184765",
-    "due_date": "2026-10-20T07:00:00.000Z"
+    "id": "cbee99cd-2924-4a1d-b0a3-09ea52ae2691",
+    "due_date": "2026-10-27T07:00:00.000Z"
   },
   "SR_TASK_FUTURE_BRAVO": {
-    "id": "0765f127-447a-4b6b-bdb5-f53aacca16b6",
-    "due_date": "2026-10-23T15:00:00.000Z"
+    "id": "d5e6f392-b33f-4aea-b4fe-0a36f00e5790",
+    "due_date": "2026-10-30T15:00:00.000Z"
   },
   "SR_TASK_DONE_TANGO": {
-    "id": "58d7f002-50b1-44c6-a500-953736e732bf",
-    "due_date": "2026-10-20T15:00:00.000Z"
+    "id": "92a22708-e769-4512-859c-720e700ffc8f",
+    "due_date": "2026-10-27T15:00:00.000Z"
   },
   "SR_TASK_GROUPS": {
     "open_overdue": "2",
@@ -549,8 +549,8 @@
     "open_future": "7",
     "completed": "4",
     "total": "22",
-    "seeded_at": "2026-10-20T05:40:09.497Z",
-    "decays_at_utc": "2026-10-20T21:00:00.000Z",
+    "seeded_at": "2026-10-27T19:58:37.896Z",
+    "decays_at_utc": "2026-10-27T21:00:00.000Z",
     "owner_rep_email": "agent-test-sr-primary@example.com",
     "canceled": "3",
     "dateless": "1",
@@ -1175,36 +1175,36 @@
     "name": "default"
   },
   "SR_TASK_EDGE_QUEBEC": {
-    "id": "1230b45f-94e7-4bb5-b89e-fcdb7e123146",
-    "due_date": "2026-10-21T03:30:00.000Z"
+    "id": "57d5e4ea-fd70-4c8e-9d1b-d3b35e797bac",
+    "due_date": "2026-10-28T03:30:00.000Z"
   },
   "SR_TASK_CANCELED_LIMA": {
-    "id": "f9fbdbf6-83d4-469c-aea3-07dec3e4aea9",
-    "due_date": "2026-10-20T10:00:00.000Z"
+    "id": "cdb25ef9-f98e-44f9-9e3c-3fb4d990dfc5",
+    "due_date": "2026-10-27T10:00:00.000Z"
   },
   "SR_TASK_EDGE_UNIFORM": {
-    "id": "9d2ad736-3213-4393-b115-ed9eb76667b9",
-    "due_date": "2026-12-19T10:00:00.000Z"
+    "id": "fbeb2475-192d-4e30-9282-4e9ec702a43c",
+    "due_date": "2026-12-26T10:00:00.000Z"
   },
   "SR_TASK_NODATE_INDIA": {
-    "id": "01a5c1d5-6f4f-4019-bb68-6b52caa88d39",
+    "id": "25df94fe-13aa-4c1e-96b3-c03bf6366ed5",
     "due_date": ""
   },
   "SR_TASK_CANCELED_KILO": {
-    "id": "756da2f3-117b-4b7a-be37-17586ab0a7c9",
-    "due_date": "2026-10-17T11:00:00.000Z"
+    "id": "942d79c4-71cf-4c5e-9ccf-1e931944b3ad",
+    "due_date": "2026-10-24T11:00:00.000Z"
   },
   "SR_TASK_EDGE_GOLF": {
-    "id": "b06b01a8-cd4d-419a-81fc-e630a987d60c",
-    "due_date": "2026-10-19T21:00:00.000Z"
+    "id": "cc0bfe55-1f05-472c-8da2-c3ce013d9f7f",
+    "due_date": "2026-10-26T21:00:00.000Z"
   },
   "SR_TASK_CANCELED_HOTEL": {
-    "id": "84f9e1f3-4c8f-4b73-b66a-f8f8dc4fa1b6",
-    "due_date": "2026-10-22T14:00:00.000Z"
+    "id": "c834b49f-5e88-4867-a1a9-5380c3475cae",
+    "due_date": "2026-10-29T14:00:00.000Z"
   },
   "SR_TASK_EDGE_PAPA": {
-    "id": "62140bcb-279d-4770-8102-745f8972b960",
-    "due_date": "2026-10-20T20:30:00.000Z"
+    "id": "68ab381a-afde-4d8c-9d0b-7cd007b8c98d",
+    "due_date": "2026-10-27T20:30:00.000Z"
   },
   "SR_TASK_GROUPS_NY": {
     "open_overdue": "3",
@@ -1221,8 +1221,8 @@
     "today_scope_excl_canceled": "6",
     "canceled_due_today": "1",
     "all_minus_tabs": "4",
-    "seeded_at": "2026-10-20T05:40:09.497Z",
-    "decays_at_utc": "2026-10-21T04:00:00.000Z"
+    "seeded_at": "2026-10-27T19:58:37.896Z",
+    "decays_at_utc": "2026-10-28T04:00:00.000Z"
   },
   "ORDER_UNSERVED_BUYER": {
     "id": "c4291a98-4eb2-4d9f-96ed-174c040030e5",
@@ -1350,5 +1350,242 @@
     "memberId": "",
     "storeId": "B2B-store",
     "org_id": ""
+  },
+  "RESTRICTED_CMS_ADMIN": {
+    "_inline": true,
+    "platform_id": "19284a70-f219-445f-89bb-e014405c3c99",
+    "user_id": "19284a70-f219-445f-89bb-e014405c3c99",
+    "role_id": "AGENT-TEST-Restricted-CMS-Viewer",
+    "userName": "AGENT-TEST-restricted-cms@test.virtocommerce.com"
+  },
+  "VCST4935_BUYER": {
+    "userId": "20b37c2a-bf9b-4d47-9afb-2849997d720c",
+    "contactId": "be2a3721-83b2-4118-94ca-a0f9c0d2c29d"
+  },
+  "PB_ASSETS_ROOT": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726",
+    "storeAssetRoot": "/stores/B2B-store/Page Builder"
+  },
+  "PB_ASSETS_P500": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/p500",
+    "count": 500,
+    "firstByName": "asset-000.png",
+    "lastByName": "asset-499.png",
+    "firstByUpload": "asset-411.png",
+    "lastByUpload": "asset-303.png"
+  },
+  "PB_ASSETS_MIXED": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/mixed",
+    "count": 500,
+    "imageCount": 480,
+    "firstImage": "asset-020.png"
+  },
+  "PB_ASSETS_FOLDERS": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/folders",
+    "totalCount": 55,
+    "fileCount": 30
+  },
+  "PB_ASSETS_DEEP": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/deep",
+    "leafUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5"
+  },
+  "PB_ASSETS_EMPTY": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/empty",
+    "totalCount": 1
+  },
+  "PB_ASSETS_TPL": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/tpl",
+    "file": "tpl-{{=window.__vcst5726=2}}.png",
+    "tplFolder": "tpl-{{=window.__vcst5726=1}}",
+    "tplFolderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/tpl-{{=window.__vcst5726=1}}"
+  },
+  "PB_ASSET_REF_1": {
+    "_inline": true,
+    "assetUrl": "https://qademovc3.blob.core.windows.net/stores/B2B-store/Page%20Builder/AGENT-TEST-VCST5726/p500/asset-007.png",
+    "expectedRefs": 1,
+    "observedPages": 1,
+    "observedSc": 0,
+    "observedTotal": 1,
+    "pageIds": [
+      "16a1bf7f-adcb-4c94-9e16-49da9fd8a988"
+    ]
+  },
+  "PB_ASSET_REF_3": {
+    "_inline": true,
+    "assetUrl": "https://qademovc3.blob.core.windows.net/stores/B2B-store/Page%20Builder/AGENT-TEST-VCST5726/p500/asset-025.png",
+    "expectedRefs": 3,
+    "observedPages": 3,
+    "observedSc": 0,
+    "observedTotal": 3,
+    "pageIds": [
+      "16a1bf7f-adcb-4c94-9e16-49da9fd8a988",
+      "1a433214-2264-42e7-92ee-85c34a02234b",
+      "9b2fb445-ea6d-4075-b398-2d1d7f741da5"
+    ]
+  },
+  "PB_ASSET_REF_2": {
+    "_inline": true,
+    "assetUrl": "https://qademovc3.blob.core.windows.net/stores/B2B-store/Page%20Builder/AGENT-TEST-VCST5726/p500/asset-499.png",
+    "expectedRefs": 4,
+    "observedPages": 2,
+    "observedSc": 2,
+    "observedTotal": 4,
+    "pageIds": [
+      "1a433214-2264-42e7-92ee-85c34a02234b",
+      "16a1bf7f-adcb-4c94-9e16-49da9fd8a988"
+    ]
+  },
+  "PB_ASSET_REF_DEEP": {
+    "_inline": true,
+    "assetUrl": "https://qademovc3.blob.core.windows.net/stores/B2B-store/Page%20Builder/AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5/d5-a.png",
+    "expectedRefs": 1,
+    "observedPages": 1,
+    "observedSc": 0,
+    "observedTotal": 1,
+    "pageIds": [
+      "c1a02747-7221-4db7-b002-9ea7e5f9aa9d"
+    ]
+  },
+  "PB_ASSET_REF_SC": {
+    "_inline": true,
+    "ids": [
+      "4b2210adb67c466c802016a4e6bf740e",
+      "feb2586052d349a2b539a3dedebc176c"
+    ],
+    "names": [
+      "AGENT-TEST-VCST5726-sc-1",
+      "AGENT-TEST-VCST5726-sc-2"
+    ]
+  },
+  "LOYALTY_VIP_USER": {
+    "_inline": true,
+    "memberId": "06cf3ec8-8c3f-4e04-94e0-145244a1464f",
+    "securityAccountId": "1dba59a3-7658-4b3f-9517-6549aebbf5b1",
+    "fields": {
+      "memberId": "memberId",
+      "securityAccountId": "securityAccountId"
+    },
+    "_notes": "Per-env runtime GUIDs for AGENT-TEST-vip@ on vcptcore (VCST-6442 3a, 2026-10-28) from GET /api/platform/security/users/email/{email} + GET /api/members/{memberId}: Customer, storeId B2B-store, contact groups=[VIP], organizations=[] — serves as both \"user-group member\" and \"signed-in visitor without organization\". Account created 2026-06-01; not minted by a seeder here, so refresh by this lookup if it is ever recreated."
+  },
+  "PB_LEGACY_ORG_MEMBER": {
+    "userId": "a92bb4f7-6ab1-40a5-b9f3-6bceb17804b2",
+    "contactId": "a83a10a8-bc40-4eae-8a8b-8cc4040cef2b",
+    "org_id": "31ef38db-cd64-4b1b-9947-f6a43ff4df42",
+    "membership_id": "a8c7f459-a2a0-4ab8-9da0-5526ad3184c1"
+  },
+  "PB_LEGACY_ORG2_MEMBER": {
+    "userId": "fdf91526-c560-4efb-917d-0771a50bde44",
+    "contactId": "e10d1fc7-a275-40b3-950f-cffedd3e891c",
+    "org_id": "cb7ed54a-9b3e-4235-b4d6-28be7e7fceb1",
+    "membership_id": "a62f83ae-7d45-4eaa-aef0-3f808a73d69a"
+  },
+  "PK_FOREIGN_STORE": {
+    "userId": "fff0e0a1-c3de-47ea-983c-9bb31b87b81d",
+    "memberId": "c85a9505-a395-482f-a7d9-00f249f477be",
+    "storeId": "123",
+    "org_id": ""
+  },
+  "VCST6626_MFA_PER_USER_2FA": {
+    "_inline": true,
+    "store_id": "B2B-store",
+    "password_var": "TEST_USER_PASSWORD",
+    "run_id": "vcst6626",
+    "teardown": "node scripts/seed-data/auth/mfa-fixtures.mjs --teardown --run vcst6626",
+    "email": "agent-test-mfa-vcst6626-per-user-2fa@example.com",
+    "user_id": "13f91277-1ed3-4a42-ba6e-ff434b44c59f",
+    "contact_id": "9868a375-e75b-4486-b91e-6ab1683ea98d",
+    "kind": "per-user-2fa"
+  },
+  "VCST6626_PROFILE_BUYER": {
+    "_inline": true,
+    "store_id": "B2B-store",
+    "password_var": "TEST_USER_PASSWORD",
+    "run_id": "vcst6626",
+    "teardown": "node scripts/seed-data/auth/mfa-fixtures.mjs --teardown --run vcst6626",
+    "email": "agent-test-mfa-vcst6626-customer-confirmed@example.com",
+    "user_id": "4958d8a5-24ae-4b5b-87a5-1520adce87f3",
+    "contact_id": "ef12b645-eac6-4990-883e-4969e86171ec",
+    "kind": "customer-confirmed"
+  },
+  "CATALOG_MIXED": {
+    "id": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "CATALOG_ELECTRONICS": {
+    "id": "6e5af387-8f15-4c9b-a2c5-897a87ecf378"
+  },
+  "PROD_GA4_RELATED_ANCHOR": {
+    "_inline": true,
+    "id": "09d0aa97-a02e-42b4-b1c2-80463f407a63",
+    "code": "AGENT-TEST-GA4-REL-ANCHOR",
+    "name": "AGENT-TEST GA4 Related Anchor",
+    "slug": "seed-test-fixtures/agent-test-ga4-related-anchor",
+    "url": "/seed-test-fixtures/agent-test-ga4-related-anchor",
+    "related_count": 10,
+    "related_codes": "0000645,0003414,02180584,100004616,100013885,107029,108141,108335,111553,111798",
+    "related_ids": "77ae9c2c-eb4c-4c79-b861-5cdea22c490c,de3cbe24-e29c-4347-b606-e38a80ea5c3e,66b4a922-7f10-4fb8-9c73-b9f8e955717a,1c9bd6e1-68de-40a4-aa36-8e1ef08e9676,36439f9c-e8b6-487a-9562-79ba833ee51e,776883dc-d967-4ab2-9f7e-578caeb8bd12,3aaac1cd-4508-4cda-a64b-5a59cdad17f8,6cf53adf-0d17-4a41-949b-0e5a7e700ac2,05d1d386-9931-4c90-b8b6-9400cbd2f968,59bd14a6-c4f0-4647-84a1-d9805c1c97fd"
+  },
+  "PROD_GA4_VARIATION_PARENT": {
+    "_inline": true,
+    "id": "7db85a7a-c1fa-43ab-8721-1b09dfde42a0",
+    "code": "AGENT-TEST-GA4-VAR-PARENT",
+    "name": "AGENT-TEST GA4 Variations Parent",
+    "slug": "seed-test-fixtures/agent-test-ga4-variations-parent",
+    "url": "/seed-test-fixtures/agent-test-ga4-variations-parent",
+    "variations_count": 60,
+    "family_total": 61,
+    "page_size": 50,
+    "pages": 2
+  },
+  "CART_GA4_SFL_RB": {
+    "_inline": true,
+    "account_env": "USER_EMAIL",
+    "cart_id": "669d58e8-0c4b-44a9-a2c9-1ec4ffd846c8",
+    "saved_for_later_list_id": "755c52f8-5382-4930-bb30-47221955274b",
+    "rb_session_id": "AGENT-TEST-GA4-RB-SEED",
+    "cart_line_codes": "121975",
+    "cart_line_ids": "68e85496-4281-47ab-9a32-2248e5326717",
+    "saved_for_later_codes": "122718,123109,1367,1507112554,152078,1521233,1649409025,AMZ-B0DC91H3JK",
+    "saved_for_later_ids": "e0a441cb-efe7-4d9a-927d-1dabf23db1ff,803c1a54-1be8-4ef1-8786-34c9e8259cf6,7111dfed-22b5-4700-914a-03395e21a7a8,8b7282ad-d318-42f4-9c19-e2d9b388e06f,16fae43e-8f5e-4b65-8de6-b0d5333ab15c,cc81104c-8528-490b-a7a8-d1fb53ca164b,9f54e199-c5e7-4e78-aee0-a429f78ef366,f5d550b5-5054-4554-bed5-37c3fcab1d4e",
+    "recently_browsed_codes": "14418465,1592321634,1653025775,176,200072336,201482",
+    "recently_browsed_ids": "b2db70a5-68f0-4356-9503-a7a18b08cad0,ffd1bc36-4756-4e6a-88ee-0d7ae70d539c,4afabf31-cdf2-4d3b-8d85-64b0256cfabc,f45b1494-b91c-44ac-9fbb-e06d6b3d356f,1e4b9c3f-18ee-4b9d-bffc-f81ae6dad51c,8d77666d-70d7-4b3c-a071-a2d0f376d63f",
+    "recently_browsed_order_newest_first": "201482,200072336,176,1653025775,1592321634,14418465",
+    "saved_for_later_count": 8,
+    "sfl_show_more_step": 6,
+    "url": "/cart"
+  },
+  "PB_SINGLE_LANG_EN": {
+    "_inline": true,
+    "group_id": "98308287-70a3-4531-a78b-f0c688b62907",
+    "permalink": "/agent-test-single-language-en"
+  },
+  "WL_GA4_SELECT_ITEM": {
+    "id": "6ea7d468-0bbc-4ead-bb75-9815bfe96e27",
+    "name": "AGENT-TEST-6626-GA4-WL",
+    "item_count": 3,
+    "product_codes": "ANK-A110AH11,ANK-A121D111,ANK-A1665011",
+    "product_ids": "322e8041-da02-45cf-8365-626febe79116,4deecfcb-8444-440d-9ce2-76f6ef209ec0,78eba076-af54-4a4c-8cd2-4e236970a97c",
+    "product_names": "Anker Prime Power Bank 26,250mAh 300W (2x USB-C, 1x USB-A), Smart Display|Anker Nano Charger 45W USB-C GaN, Smart Display, 180° Foldable, Black Stone|Anker Nano Power Bank 5,000mAh MagGo Slim, Qi2 15W, Black",
+    "url": "/account/lists/6ea7d468-0bbc-4ead-bb75-9815bfe96e27",
+    "lists_url": "/account/lists"
+  },
+  "AGENT_TEST_IMP_CUSTOMER": {
+    "_inline": true,
+    "platform_id": "87a9d06e-641d-4022-828f-29ca1d3c2e73",
+    "user_id": "87a9d06e-641d-4022-828f-29ca1d3c2e73",
+    "role_id": "AGENT-TEST-imp-role",
+    "userName": "agent-test-imp-customer@test-agent.com",
+    "contact_id": "2c27e57f-b45e-4b34-a493-98fbeb443a7c"
+  },
+  "PB_LOGIN_SECTION": {
+    "_inline": true,
+    "group_id": "506314d6-d876-413f-a8e1-63c40f331a65",
+    "permalink": "/agent-test-login-section"
   }
 }

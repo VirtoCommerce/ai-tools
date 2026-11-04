@@ -189,7 +189,7 @@ The base records what the platform DOES. A behaviour that should not happen is s
 bug shows itself is what whoever fixes or tests it needs — but it carries a **defect marker**
 (VCST-6317), or the next agent reads the bug as the expectation and writes a case that locks it in.
 
-- **Check before you mark.** Behaviour that looks wrong is checked against the docs (VirtoOZ, `/vc-docs`)
+- **Check before you mark.** Behaviour that looks wrong is checked against the docs (VirtoOZ)
   and the `BL-*` oracles first. They say it should not happen → mark it. They say nothing, or you only
   feel it is wrong → do not mark it; say what looked odd in the claim. An unexpected value that the docs
   explain (a setting, a by-design rule) is not a defect.
