@@ -49,7 +49,7 @@ node "$pluginRoot/skills/qa-report/render.mjs" --kind <kind> --source <path> --o
 ```
 
 `--dialect`: Jira ⇒ `markdown`; Jira **and** the model has screenshots (fix kind with
-`before_shot`/`after_shot`) ⇒ `wiki`; Azure Boards ⇒ `html` (tracker from `project-profile.json`; no profile ⇒ STOP and run `/project-init`).
+`before_shot`/`after_shot`; test kind with `--extra` `shots` — the run's FAIL screenshots for its UI claims) ⇒ `wiki`; Azure Boards ⇒ `html` (tracker from `project-profile.json`; no profile ⇒ STOP and run `/project-init`).
 Exit 2 ⇒ show the message, stop. Exit 3 ⇒ the comment cannot fit even fully collapsed: show it, stop —
 never shorten it by hand (the fix is the template, in a PR).
 

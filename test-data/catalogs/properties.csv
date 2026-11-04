@@ -1,7 +1,7 @@
 property_id,property_name,property_type,value_type,is_required,is_multivalue,is_dictionary,dictionary_values,applies_to,catalog_id,test_purpose
 PROP-001,Brand,PRODUCT,ShortText,Yes,No,Yes,"Dell,HP,Lenovo,Cisco,Meraki,Ubiquiti,Logitech,Microsoft,Samsung,LG,3M,DeWalt,Makita,Bosch,Steelcase,Herman Miller",All,All,Brand property — dictionary single-value
 PROP-002,Color,VARIATION,ShortText,No,No,Yes,"Black,White,Silver,Gray,Blue,Red,Green,Navy,Beige,Wood",All,All,Color variation property
-PROP-003,Size,VARIATION,ShortText,No,No,Yes,"XS,S,M,L,XL,XXL,24-inch,27-inch,32-inch,34-inch",All,All,Size variation property
+PROP-003,AgentTestSize,VARIATION,ShortText,No,No,Yes,"XS,S,M,L,XL,XXL,24-inch,27-inch,32-inch,34-inch",All,All,"Size variation property. Named AgentTestSize, not Size: the store virtual catalog already holds a Size property of type Integer and the shared Product index maps the field size as integer, so a ShortText Size value (L, 27-inch) is rejected by Elasticsearch on every Product build (REG-2026-11-03-2035). products-full.csv carries the same name"
 PROP-004,Material,PRODUCT,ShortText,No,No,Yes,"Aluminum,Steel,Plastic,Wood,Fabric,Leather,Carbon Fiber,Mesh,Glass",All,All,Material dictionary property
 PROP-005,Weight,PRODUCT,DecimalNumber,No,No,No,,All,All,Weight in kg — numeric property
 PROP-006,Warranty (months),PRODUCT,Integer,No,No,No,,All,All,Warranty period — integer property

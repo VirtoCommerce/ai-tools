@@ -23,6 +23,11 @@
  *      baseline is shared by ~40 cases in 050m/089/091/093);
  *  [7] the layout preference-name model has not drifted (SalesRepLayout.{scope}[.{storeId}] and the
  *      prefix matcher the seeder sweeps with).
+ *  [8] SR_UNSERVED_ORG stays decidable: an inline alias with BLANK id/platform_id in the committed file,
+ *      whose `name` is one of the paging orgs UNSERVED_ORG.servedBy actually gets (pagingOrgName(k),
+ *      1 <= k <= its PAGING:N), while UNSERVED_ORG.notServedBy serves only explicit org keys, never
+ *      paging orgs. If the two reps could serve the same org, the negative could not tell "unserved"
+ *      from "nonexistent" (the seeder re-checks the same contract live before writing the GUID).
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
@@ -32,7 +37,7 @@ import {
   LAYOUT_REP, MIN_SERVED_ORGS_FOR_LAYOUT, DISPOSABLE_LAYOUT_REP_KEYS, isDisposableLayoutRep,
   LAYOUT_PREF_PREFIX, LAYOUT_SCOPES, layoutPreferenceName, isLayoutPreference,
   parseServedOrgs, SALES_REPS_COLUMNS, RUNTIME_ID_COLUMNS, GUID_RE, REP_EMAIL_RE,
-  REQUIRED_ALIAS_FIELDS,
+  REQUIRED_ALIAS_FIELDS, PAGING_ORG_PREFIX, pagingOrgName, UNSERVED_ORG,
 } from './sales-rep-layout-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -173,6 +178,30 @@ for (const scope of LAYOUT_SCOPES) {
 }
 for (const foreign of ['SalesRepLayoutOther', 'Layout.dashboard', 'PersistedGridState', '']) {
   if (isLayoutPreference(foreign)) fail(`isLayoutPreference must NOT match "${foreign}" — teardown would delete an unrelated CustomerPreference`);
+}
+
+// [8] SR_UNSERVED_ORG — an existing org the primary rep does not serve
+{
+  const def = aliases[UNSERVED_ORG.alias];
+  if (!def) fail(`alias ${UNSERVED_ORG.alias} is missing from test-data/aliases.json`);
+  else {
+    if (def.file) fail(`alias ${UNSERVED_ORG.alias} must be inline (it is resolved by name, not from a CSV row)`);
+    for (const f of UNSERVED_ORG.idFields) {
+      if (!(f in def)) fail(`alias ${UNSERVED_ORG.alias} must declare ${f} (blank) so the seeder's write-back has a field to fill`);
+      else if (String(def[f]).trim() !== '') fail(`alias ${UNSERVED_ORG.alias}.${f} must be blank in the COMMITTED aliases.json — the GUID belongs in aliases.<env>.json (DV-021)`);
+    }
+    const servedRow = rows.find((r) => r.rep_key === UNSERVED_ORG.servedBy);
+    const notRow = rows.find((r) => r.rep_key === UNSERVED_ORG.notServedBy);
+    const n = servedRow ? parseServedOrgs(servedRow.served_orgs).pagingCount : 0;
+    const name = String(def.name || '').trim();
+    const k = name.startsWith(PAGING_ORG_PREFIX) ? parseInt(name.slice(PAGING_ORG_PREFIX.length), 10) : NaN;
+    if (!servedRow || !seeded.includes(servedRow)) fail(`${UNSERVED_ORG.servedBy} must be a seeded rep — it is what proves ${UNSERVED_ORG.alias} exists`);
+    else if (!n) fail(`${UNSERVED_ORG.servedBy} served_orgs "${servedRow.served_orgs}" is not PAGING:N — no paging org for ${UNSERVED_ORG.alias} to point at`);
+    else if (!(k >= 1 && k <= n) || pagingOrgName(k) !== name) fail(`${UNSERVED_ORG.alias}.name "${name}" is not one of ${UNSERVED_ORG.servedBy}'s paging orgs (${pagingOrgName(1)}..${pagingOrgName(n)})`);
+    if (!notRow) fail(`${UNSERVED_ORG.notServedBy} missing from ${CSV_REL}`);
+    else if (parseServedOrgs(notRow.served_orgs).pagingCount) fail(`${UNSERVED_ORG.notServedBy} serves paging orgs — ${UNSERVED_ORG.alias} would no longer be unserved`);
+    else notes.push(`${UNSERVED_ORG.alias} = ${name}: served by ${UNSERVED_ORG.servedBy} (PAGING:${n}), not by ${UNSERVED_ORG.notServedBy} (${parseServedOrgs(notRow.served_orgs).orgKeys.join(';')})`);
+  }
 }
 
 function csvBoolish(v) { return /^(true|yes|y|1)$/i.test(String(v || '').trim()); }

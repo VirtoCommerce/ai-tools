@@ -1,8 +1,8 @@
 ---
 kind: test
-budget: 1500
+budget: 3000
 lede_max: 240
-trim: "[NOT_FILED, AREAS, QUESTIONS, BUGS]"
+trim: "[AREAS, QUESTIONS, NOT_FILED, SUGGESTED, BUGS, TO_FIX]"
 ---
 ## {{ICON}} QA {{VERDICT_LABEL}} — {{TICKET}}
 {{LEDE}}
@@ -37,7 +37,20 @@ trim: "[NOT_FILED, AREAS, QUESTIONS, BUGS]"
 ### New regression coverage
 {{NEW_CASES}}
 
-### Findings
+### To fix in this ticket
+| # | What to fix | Severity | Found by | Status |
+|---|---|---|---|---|
+{{#TO_FIX}}
+| {{id}} | {{what}} | {{severity}} | {{ref}} | {{status}} |
+{{/TO_FIX}}
+{{#TO_FIX_MORE}}
+| | {{.}} | | | |
+{{/TO_FIX_MORE}}
+{{^TO_FIX}}
+| | Nothing to fix | | | |
+{{/TO_FIX}}
+
+### Separate tickets
 | What is wrong | Severity | Ticket |
 |---|---|---|
 {{#BUGS}}
@@ -47,8 +60,18 @@ trim: "[NOT_FILED, AREAS, QUESTIONS, BUGS]"
 | {{.}} | | |
 {{/BUGS_MORE}}
 {{^BUGS}}
-| Nothing filed | | |
+| None created | | |
 {{/BUGS}}
+{{#SUGGESTED}}
+| {{what}} | {{severity}} | suggested {{type}} — not created |
+{{/SUGGESTED}}
+{{#SUGGESTED_MORE}}
+| {{.}} | | |
+{{/SUGGESTED_MORE}}
+
+{{#SHOTS}}
+!{{.}}|width=700!
+{{/SHOTS}}
 
 **Not filed (below severity floor)**
 {{#NOT_FILED}}

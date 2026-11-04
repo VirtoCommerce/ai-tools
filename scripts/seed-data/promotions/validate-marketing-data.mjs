@@ -22,6 +22,11 @@
  *      contains a lowercase letter AND its all-uppercase form is not ANY OTHER
  *      coupon code in the fixture set (so uppercasing can never silently match a
  *      different coupon — the 'super'->'SUPER' confound CPN-062 avoids).
+ *   6. salesRepCoupons (VCST-6158) sr_* rows: each satisfies its SR_CONTRACTS non-vacuity contract
+ *      (distinct promotion/coupon ends on the right side, cap/uses arithmetic, past expiry, future
+ *      start, member binding, long code, one coupon per promotion, rolling dates only), has a
+ *      CSV-backed alias that declares coupon_guid/promotion_guid + a seed script, and its member_ref
+ *      resolves. Overlay ids for the env are informational (UNSEEDED is a warning, not a failure).
  *
  * The pure predicate helpers are exported (no side effects on import) so the unit
  * tests in scripts/unit/validate-marketing-data.test.mjs can exercise them without
@@ -34,6 +39,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
+import { srContractProblems, isSrRow, resolveMemberRef } from './promotions-specs.mjs';
 
 export const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
 export const COUPON_CODE_RE = /^[a-zA-Z0-9]+$/;
@@ -136,6 +142,37 @@ function run() {
       if (collision) fail(`COUPON_LC_CASEFIDELITY code "${code}" uppercases to "${code.toUpperCase()}" which collides with fixture coupon "${collision}"`);
       else ok(`uppercase form "${code.toUpperCase()}" is not another fixture coupon (collision-free in-fixture)`);
     }
+  }
+
+  // 6. salesRepCoupons (VCST-6158) fixtures — each sr_* row sits on the right side of the
+  //    distinction it exists to test (promotions-specs.mjs SR_CONTRACTS), has its alias, and its
+  //    member_ref resolves. Seeded state (the env overlay) is informational.
+  console.log('\n[6] salesRepCoupons sr_* fixtures — non-vacuity contract, aliases, member_ref');
+  const srProblems = srContractProblems(promotions, coupons);
+  srProblems.forEach((p) => fail(p));
+  const srRows = coupons.filter(isSrRow);
+  if (!srProblems.length) ok(`${srRows.length} sr_* coupon(s) satisfy their contracts (${srRows.map((c) => c.edge_case_type).join(', ')})`);
+  for (const c of srRows) {
+    const names = couponAliases.filter(([, def]) => def.filter?.coupon_id === c.coupon_id).map(([n]) => n);
+    if (!names.length) { fail(`${c.coupon_id} (${c.edge_case_type}) has no promotions/coupons alias — a case cannot @td() it`); continue; }
+    for (const n of names) {
+      for (const f of ['coupon_guid', 'promotion_guid']) if (!aliases[n].fields?.[f]) fail(`alias ${n} does not declare ${f} — the seeder's runtime ids would not reach aliases.<env>.json`);
+      if (!aliases[n].seed) fail(`alias ${n} has no "seed" script — td:validate cannot tell UNSEEDED from broken`);
+    }
+    if ((c.member_ref || '').trim()) {
+      const id = resolveMemberRef(c.member_ref, { aliases, loadCsvFn: (rel) => readCsv(rel) });
+      if (!id) fail(`${c.coupon_id} member_ref ${c.member_ref} resolves to no platform_id`);
+      else ok(`${c.coupon_id} member_ref ${c.member_ref} resolves`);
+    }
+  }
+  const env = process.env.TEST_ENV || 'vcst';
+  const overlayPath = join(ROOT, `test-data/aliases.${env}.json`);
+  if (existsSync(overlayPath)) {
+    const overlay = JSON.parse(readFileSync(overlayPath, 'utf8'));
+    const srAliases = couponAliases.filter(([, def]) => def.fields?.coupon_guid).map(([n]) => n);
+    const unseeded = srAliases.filter((n) => !overlay[n]?.coupon_guid);
+    if (unseeded.length) warn(`aliases.${env}.json has no coupon_guid for ${unseeded.join(', ')} — run TEST_ENV=${env} npm run seed:promotions:sales-rep-coupons`);
+    else ok(`aliases.${env}.json carries coupon_guid for all ${srAliases.length} SRCPN aliases`);
   }
 
   console.log('\n=== marketing (promotion/coupon) fixture validation ===');

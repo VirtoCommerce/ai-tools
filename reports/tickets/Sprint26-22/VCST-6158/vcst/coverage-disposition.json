@@ -1,0 +1,896 @@
+{
+ "ticket": "VCST-6158",
+ "phase": "2a",
+ "scanned": {
+  "suitesScoped": 20,
+  "rowsScanned": 804,
+  "hits": 204,
+  "willRun": 196,
+  "filteredOut": 0,
+  "notExecuting": 8,
+  "neverAudited": 203
+ },
+ "unscannable": [],
+ "unmatchedObservables": [
+  "Promotion coupons"
+ ],
+ "unmatchedNote": "Promotion coupons is the ticket/KB name; the deployed buyer page heading is All coupons & promotions (locales/en.json pages.account.promotion_coupons.title at theme e749b47), which the corpus asserts correctly: a naming difference, not a corpus gap",
+ "filteredOut": "not-yet-computable at wave B (scan shows 0 filtered, 8 not executing: Manual/Deprecated)",
+ "dispositionCounts": {
+  "CONFIRMED": 196,
+  "REPAIR": 4,
+  "RE-BASE": 4
+ },
+ "dispositions": {
+  "106:SR-TK-030": {
+   "disposition": "CONFIRMED",
+   "reason": "Schedule call / Tasks row on the customer-profile quick-actions tile: not the coupons block"
+  },
+  "106:SR-TK-031": {
+   "disposition": "CONFIRMED",
+   "reason": "Schedule call / Tasks row on the customer-profile quick-actions tile: not the coupons block"
+  },
+  "106:SR-TK-032": {
+   "disposition": "CONFIRMED",
+   "reason": "Schedule call / Tasks row on the customer-profile quick-actions tile: not the coupons block"
+  },
+  "106:SR-TK-033": {
+   "disposition": "CONFIRMED",
+   "reason": "Schedule call / Tasks row on the customer-profile quick-actions tile: not the coupons block"
+  },
+  "106:SR-TK-035": {
+   "disposition": "CONFIRMED",
+   "reason": "Schedule call / Tasks row on the customer-profile quick-actions tile: not the coupons block"
+  },
+  "106:SR-TK-036": {
+   "disposition": "CONFIRMED",
+   "reason": "Schedule call / Tasks row on the customer-profile quick-actions tile: not the coupons block"
+  },
+  "106:SR-TK-037": {
+   "disposition": "CONFIRMED",
+   "reason": "Schedule call / Tasks row on the customer-profile quick-actions tile: not the coupons block"
+  },
+  "106:SR-TK-039": {
+   "disposition": "CONFIRMED",
+   "reason": "Schedule call / Tasks row on the customer-profile quick-actions tile: not the coupons block"
+  },
+  "112:SR-ACT-001": {
+   "disposition": "CONFIRMED",
+   "reason": "activity journey with the analytics module on: the enabled branch of the guard is unchanged by guardCustomerModuleRoute; the module-off redirect is not asserted here (new SR-CP-082 covers the guard)"
+  },
+  "023:MKT-061": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "023:MKT-062": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "025:MKT-037": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "025:MKT-038": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "025:MKT-039": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "025:MKT-040": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "025:MKT-041": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "025:MKT-042": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "025:MKT-043": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "025:MKT-078": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "025:MKT-082": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "050j:MKT-GQL-001": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-002": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-003": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-004": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-005": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-006": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-007": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-008": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-009": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-010": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-011": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-012": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-013": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-014": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-015": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-016": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-017": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-018": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-019": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "050j:MKT-GQL-020": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "077:CPN-001": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-002": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-003": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-004": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-005": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-006": {
+   "disposition": "REPAIR",
+   "reason": "hard-coded totalCount = 14 (and a 14-coupon precondition and failure signal): the buyer list is 27 after the seed (19 before it), a data dependency; replaced by the relation card total = the page's own promotionCoupons totalCount"
+  },
+  "077:CPN-007": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-008": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-009": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-010": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-011": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-012": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-013": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-014": {
+   "disposition": "RE-BASE",
+   "reason": "expects only currently active/valid coupons on the page; the seeded AGENTTESTSREXPIRED (promotion active, coupon expired yesterday) is listed on the buyer page (buyer path filters at promotion level only, KB-50CD6A34), as are the used-up AGENTTESTSRCAP1 and the member-bound AGENTTESTSRMEMBER, and checkout refuses all three. Assertion kept as written, carried into C1 so the run decides whether the page or the row is wrong"
+  },
+  "077:CPN-015": {
+   "disposition": "CONFIRMED",
+   "reason": "CONFIRMED as is, flagged: expects the stored lowercase code on the card; the card uppercases through CSS (font-bold uppercase on .coupon-item__code-value, present before and after #2596; VCST-5233). Pre-existing disagreement between the row and the build, not this change. Draft; not rewritten",
+   "flag": true
+  },
+  "077:CPN-017": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-018": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-019": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-020": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-021": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-022": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "077:CPN-023": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it"
+  },
+  "077:CPN-024": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer promotionCoupons API contract row: asserts relations (>=, overlap, sort, errors), never a pinned total, so the list growing from 19 to 27 does not move it; the first:20 window still holds the translated promotion (position 14 of 27) but is the one to widen on next touch"
+  },
+  "077:CPN-025": {
+   "disposition": "REPAIR",
+   "reason": "hard-coded totalCount = 14 and a first:20 window: 27 coupons now, and EXCLUSIVE10 (a confirmed code) falls past item 20, data drift; window raised to first:100, count replaced by a floor and items.length = totalCount"
+  },
+  "077:CPN-026": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-027": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-028": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-029": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-030": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-031": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-032": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-033": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-034": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-035": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-036": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-037": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-038": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-039": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-040": {
+   "disposition": "CONFIRMED",
+   "reason": "CONFIRMED as is, flagged: Manual row expecting a coupon-level-expired code to vanish from the buyer page; live, the buyer path lists it (AGENTTESTSREXPIRED). Pre-existing, not this change; Manual so it cannot enter C1, surfaced for 5-triage with CPN-014",
+   "flag": true
+  },
+  "077:CPN-041": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-042": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-043": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-044": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-045": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-046": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-047": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-048": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "077:CPN-049": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-050": {
+   "disposition": "REPAIR",
+   "reason": "pinned 14 total across pages (and a 14-coupon precondition): two pages of 16 and 11 now, a data dependency; replaced by the page's own promotionCoupons totalCount"
+  },
+  "077:CPN-051": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-052": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count; the \"all 14 live coupons have label=null\" note is dated 2026-03-17 history and the step sets its own label"
+  },
+  "077:CPN-053": {
+   "disposition": "REPAIR",
+   "reason": "pinned \"all 14 coupons\" in the precondition and the layout assertion: the page lists 27 over 2 pages, a data dependency; reworded to every coupon on the first page"
+  },
+  "077:CPN-L01": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-016": {
+   "disposition": "CONFIRMED",
+   "reason": "buyer /account/coupons card asserted at the default desktop width: the regular layout is unchanged by vc-frontend#2596 (description hidden below lg as before, shadow kept through :shadow=\"!compact\", the code wrap only adds overflow-wrap), and no assertion reads layout below lg or a pinned count"
+  },
+  "077:CPN-054": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077:CPN-055": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077:CPN-056": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077:CPN-057": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077:CPN-058": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077:CPN-059": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077:CPN-060": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077:CPN-061": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077:CPN-062": {
+   "disposition": "CONFIRMED",
+   "reason": "CONFIRMED as is, flagged: the same pre-existing VCST-5233 disagreement as CPN-015 (the row itself records that it fails while VCST-5233 is unfixed). Draft; not rewritten",
+   "flag": true
+  },
+  "077:CPN-063": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077:CPN-065": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077b:CPN-SMK-054": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077b:CPN-SMK-055": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077b:CPN-SMK-056": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077b:CPN-SMK-057": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077b:CPN-SMK-058": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077b:CPN-SMK-059": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077b:CPN-SMK-060": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077b:CPN-SMK-065": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077b:CPN-SMK-063": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "077b:CPN-SMK-064": {
+   "disposition": "CONFIRMED",
+   "reason": "cart sidebar: coupons-section.vue renders CouponCard (coupon-card.vue), NOT the CouponItem that #2596 changed (verified at theme head e749b47); presets are discovered at runtime from promotionCoupons first:4, so the seeded coupons do not move the assertion (the 4th preset is now the seeded AGENTTESTSRCAP2, valid and applicable)"
+  },
+  "079:XMKT-005": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "079:XMKT-007": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "079:XMKT-008": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "079:XMKT-009": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "079:XMKT-010": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "079:XMKT-011": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "079:XMKT-018": {
+   "disposition": "CONFIRMED",
+   "reason": "admin SPA / REST / marketing data row: no surface of the change (buyer card, profile block set, activity guard); no pinned buyer-list count"
+  },
+  "089:SR-FE-023": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "091:SR-CP-001": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-002": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-003": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-004": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-005": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-006": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-007": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-008": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-009": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-010": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-011": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-012": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-013": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-014": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-015": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-016": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-017": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-018": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-019": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-020": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-021": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-022": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-023": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-024": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-025": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-026": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-027": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-028": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-029": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-030": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-031": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-032": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-033": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-034": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-035": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-036": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-037": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-038": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-039": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-040": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-041": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-042": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-043": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-044": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-045": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-046": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-047": {
+   "disposition": "RE-BASE",
+   "reason": "asserts the mainLeft registry defaults as exactly Recent orders and Top sellers; with the Marketing module the coupons block registers in mainLeft (order 30), so the default set is now three blocks"
+  },
+  "091:SR-CP-048": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-049": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands; \"Recent orders before Top sellers\" still holds"
+  },
+  "091:SR-CP-050": {
+   "disposition": "RE-BASE",
+   "reason": "asserts every block's settings equal the registry defaults, [{maxRows:5}] for orders, top_sellers and tasks and [] for every OTHER block; the coupons block carries a maxRows setting (default 5), so the \"every other block\" clause is contradicted and the save payload gains a block"
+  },
+  "091:SR-CP-051": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-052": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-053": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-054": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-055": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-056": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-057": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-058": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-068": {
+   "disposition": "RE-BASE",
+   "reason": "premise and title say the customer profile has TWO configurable widgets (orders, top_sellers, identical to the dashboard); the profile now has a third, coupons (maxRows 1-20), and the dashboard parity of AC #4 no longer holds. Its assertions name two widgets so they may still pass; the premise is what the run must settle"
+  },
+  "091:SR-CP-069": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-059": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-060": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-061": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-062": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-063": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-064": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-065": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-066": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "091:SR-CP-067": {
+   "disposition": "CONFIRMED",
+   "reason": "customer-profile row that matched the generic term Customer profile: asserts a section or widget the change does not touch (stats row, mainRight rail, Orders, Top sellers, layout mutation relations, scope/auth); the new coupons block sits in mainLeft at order 30, after Recent orders (10) and Top sellers (20), so every pairwise order relation stands"
+  },
+  "093:SR-HD-001": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "093:SR-HD-055": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "093:SR-HD-062": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "093b:SR-HD-100": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "093b:SR-HD-102": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "093b:SR-HD-103": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "093b:SR-HD-106": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "093b:SR-HD-107": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "097:SR-CO-001": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "097:SR-CO-004": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "097:SR-CO-005": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  },
+  "097:SR-CO-020": {
+   "disposition": "CONFIRMED",
+   "reason": "hub plugin / left-rail / dashboard / customer-orders row: asserts hub routes, rail or orders; the coupons route is a further customer sub-route covered by SR-CP-075, not by these rows"
+  }
+ },
+ "repairsApplied": [
+  "077:CPN-006",
+  "077:CPN-025",
+  "077:CPN-050",
+  "077:CPN-053"
+ ],
+ "c1": {
+  "050m": [
+   "SR-GQL-163",
+   "SR-GQL-164",
+   "SR-GQL-165",
+   "SR-GQL-166",
+   "SR-GQL-167",
+   "SR-GQL-168",
+   "SR-GQL-169",
+   "SR-GQL-170",
+   "SR-GQL-171",
+   "SR-GQL-172",
+   "SR-GQL-173",
+   "SR-GQL-174"
+  ],
+  "091": [
+   "SR-CP-070",
+   "SR-CP-071",
+   "SR-CP-072",
+   "SR-CP-073",
+   "SR-CP-074",
+   "SR-CP-075",
+   "SR-CP-076",
+   "SR-CP-077",
+   "SR-CP-078",
+   "SR-CP-079",
+   "SR-CP-080",
+   "SR-CP-081",
+   "SR-CP-082",
+   "SR-CP-083",
+   "SR-CP-084",
+   "SR-CP-047",
+   "SR-CP-050",
+   "SR-CP-068"
+  ],
+  "077": [
+   "CPN-066",
+   "CPN-067",
+   "CPN-006",
+   "CPN-025",
+   "CPN-050",
+   "CPN-053",
+   "CPN-014"
+  ]
+ }
+}
