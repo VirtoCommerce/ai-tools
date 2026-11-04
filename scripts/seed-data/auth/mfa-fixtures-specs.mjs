@@ -54,8 +54,11 @@ export const BACKOFFICE_PERMISSIONS = Object.freeze(['platform:security:read']);
  */
 export const RUN_ROLES = Object.freeze({
   Backoffice: BACKOFFICE_PERMISSIONS,
-  MfaRead: Object.freeze(['mfa:read']),
-  MfaManage: Object.freeze(['mfa:read', 'mfa:manage']),
+  // platform:security:access/read open Security > Users, where the user blade and its MFA widget live: an
+  // mfa-only Manager sees no Security menu (vcst 2026-11-04, KB-CED68DA3). Both roles carry them, so the pair
+  // still differs in mfa:manage only.
+  MfaRead: Object.freeze(['platform:security:access', 'platform:security:read', 'mfa:read']),
+  MfaManage: Object.freeze(['platform:security:access', 'platform:security:read', 'mfa:read', 'mfa:manage']),
   OrgMfa: null,
 });
 
@@ -127,6 +130,20 @@ export const KINDS = Object.freeze({
     purpose: 'Org member whose run org role adds xapi:my_organization:mfa:manage (data.auth.role.org-mfa-manage): Company › Info widget, updateMfaOrganizationMode accepted' },
   'org-mfa-member': { ...BASE, orgs: 1, sibling: 'org-mfa-maintainer', discriminates: 'orgRole',
     purpose: `Org employee in the maintainer's org: no company widget, mfa_organization_not_allowed — created BY org-mfa-maintainer (targetKind), never alone` },
+  // VCST-6530: a Disabled store skips the code only for its own customers that are not Backoffice accounts, and the
+  // default admin-UI access policy counts ANY permission — a back-office role or a storefront org role alike.
+  'customer-permission-role': { ...BASE, backofficeRole: true, sibling: 'customer-confirmed', discriminates: 'backofficeRole',
+    purpose: 'Own customer of a Disabled run store holding a run role with a permission: a Backoffice account, so the global setting applies (asked) where customer-confirmed passes' },
+  'org-member-own-store': { ...BASE, orgs: 1, sibling: 'customer-confirmed', discriminates: 'orgs',
+    purpose: 'Own customer of a Disabled run store in one run org as Organization employee (storefront permissions only): read against role-less customer-confirmed' },
+  'imp-operator-run-store': { ...BASE, orgs: 1, orgRole: ORG_ROLE_OPERATOR, targetKind: 'imp-target-run-store',
+    sibling: 'imp-target-run-store', discriminates: 'orgRole',
+    allowedConfounds: {
+      targetKind: `targetKind provisions the OTHER side of this pair: the operator's fixture creates its imp-target-run-store in the operator's own org on the run store, so both sides see the same accounts; it is not a property of either account's sign-in or MFA mode.`,
+    },
+    purpose: 'Org maintainer (loginOnBehalf) bound to the run store: an impersonated session on a CustomerChoice store, where the MFA change mutations must be refused' },
+  'imp-target-run-store': { ...BASE, orgs: 1, sibling: 'imp-operator-run-store', discriminates: 'orgRole',
+    purpose: `Org employee on the run store that imp-operator-run-store impersonates: created BY that kind (targetKind), never alone` },
 });
 export const KIND_NAMES = Object.freeze(Object.keys(KINDS));
 
@@ -289,6 +306,11 @@ export const refreshFileBody = (host, refreshToken) => `${JSON.stringify({ host,
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 /** A reason short enough to be a label is not a reason. */
 export const MIN_CONFOUND_REASON = 40;
+/**
+ * Emails of 66, 67 and 69 characters failed requestMfaChangeCode on vcst, 61 worked (2026-11-04, KB-4D018A86);
+ * 65 (customer-role-for-backoffice) is proven on the sign-in path only — keep a change-code kind shorter.
+ */
+export const MAX_EMAIL_LENGTH = 65;
 
 /**
  * STATIC non-vacuity contract (`td:validate:mfa`). Every kind must differ from its declared sibling in
@@ -336,5 +358,12 @@ export function specProblems(kinds = KINDS) {
   if (RUN_ROLES.MfaRead?.includes('mfa:manage')) out.push('RUN_ROLES.MfaRead must not carry mfa:manage — the read-only operator would decide nothing');
   if (!/^[a-z0-9.-]+$/.test(EMAIL_DOMAIN) || !/example\.(com|org|net)$/.test(EMAIL_DOMAIN)) out.push(`EMAIL_DOMAIN ${EMAIL_DOMAIN} is not an RFC 2606 reserved domain — a back-office code would reach a real inbox`);
   if (!PREFIX.startsWith('AGENT-TEST-')) out.push('PREFIX must start with AGENT-TEST-');
+  // vcst 2026-11-04 (KB-4D018A86): requestMfaChangeCode fails with DB_UPDATE for an account whose email is 66+
+  // characters — so every kind's email, at newRunId()'s length, stays at or under MAX_EMAIL_LENGTH.
+  const sampleRun = newRunId();
+  for (const name of Object.keys(kinds)) {
+    const e = `${runMarker(sampleRun)}${name}@${EMAIL_DOMAIN}`;
+    if (e.length > MAX_EMAIL_LENGTH) out.push(`${name}: its email is ${e.length} characters at a ${sampleRun.length}-character runId — over ${MAX_EMAIL_LENGTH}, the MFA change code cannot be requested for it; shorten the kind name`);
+  }
   return out;
 }

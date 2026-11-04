@@ -64,5 +64,22 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
 8. **Present to user** as Feature Test Matrix for approval before proceeding — the subagent returns the
    matrix in `pendingApprovals[]` and writes no generated case until the orchestrator re-dispatches the
    approved ones (`briefs.md`)
+9. **Author proof run (re-dispatch, before any append).** Every approved case that needs no shared window
+   — no global setting, no store setting on a shared store, no shared account state — is run **once** by
+   its author on the stand, before it is appended: an API case through the creator / a script on the run's
+   own disposable data, a UI case on the Playwright lane the brief names (`.claude/rules/vc-browser.md`).
+   Tear every run's data down. Per case, record one `proof`:
+   - `PASS` — every step ran and every assertion held → append;
+   - `CASE_DEFECT` — the case is wrong (step, field or claim name, a control that differs in two factors,
+     a claim wider than its source, a stand mechanic such as replicas or journal timing) → fix it, run it
+     again, then append; a mechanic belongs in the creator or a shared helper, never copied into each case;
+   - `REFUTED` — a `{SPEC}`/`{DOC}`/`{BL}`/`Catches:` assertion does not hold → append it unchanged and
+     return it in `bugCandidates[]` (`cases-that-catch-bugs.md` §2 — never rewrite the expectation);
+   - `NEEDS_WINDOW` — it needs a shared window → append without a run.
+   Run the case as written: a GraphQL document, header or cookie the row names but does not spell out is a
+   `CASE_DEFECT` (write it into the row), and a stand mechanic you need (an instance pin, journal reading) is
+   taken from the creator or the kb, never improvised silently.
+   The proof is evidence for the author, not the grounding: the row stays `Draft` and Phase 5 still checks it
+   independently. Why: VCST-6597, 4 of 27 cases came back from Phase 5 with defects a single author run finds.
 
 ---

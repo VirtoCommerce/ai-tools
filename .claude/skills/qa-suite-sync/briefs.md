@@ -19,6 +19,8 @@ Input:
   - approved: [items the user approved — pendingApprovals and 4a-bis DRIFT rewrites with their evidence; apply exactly
     these. Removals and deprecations are never here: the orchestrator writes them with retire.ts]   // second dispatch only
   - stampRefreshes: [4a-bis CONFIRMED cases — refresh their stamp, no approval needed]   // second dispatch only
+  - proofLane: the Playwright lane for the author proof run (generate.md 3c step 9) and the env;
+    the shared windows that are NOT open, so those cases are NEEDS_WINDOW   // second dispatch only
   - you cannot ask the user: anything this skill says to confirm or present for approval (2c remove/deprecate/rewrite,
     the 3c Feature Test Matrix, 4b manual items) → return it in pendingApprovals[]
     and do NOT write it.
@@ -63,6 +65,8 @@ Output: structured JSON with:
   - triangulationCandidates: [{caseId, suiteCsv, assertion, why}]   // 4a-bis — the orchestrator triangulates
   - nodesChanged: [{node, map, what changed, cases}]   // for /qa-test-mind-map update — the map is never edited here
   - stampsWritten: [{caseId, behavior, dataProfile}]
+  - proofResults: [{caseId, proof: PASS|CASE_DEFECT|REFUTED|NEEDS_WINDOW, fixed, runIds, teardown}]   // re-dispatch
+  - bugCandidates: [{caseId, assertion, observed}]   // REFUTED proofs — the orchestrator puts them to the user
   - kbEntries: {read: [ids], confirmed: [ids], disputed: [ids], captured: [ids]}
   - blProposals (candidates surfaced this run, fed to Phase 4c): {new: [{proposedId, severity, rule, verify, violationSignal, agents, source, triggeredByCases}], stale: [{id, observedBehavior, affectedCases, bug}]}
   - statistics: {totalCases, synced, generated, findings, autoFixed, manualRemaining}
