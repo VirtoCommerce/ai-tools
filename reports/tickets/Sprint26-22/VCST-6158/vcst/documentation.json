@@ -1,0 +1,15 @@
+{
+  "published": true,
+  "files": ["reports/ba/Sales-rep/vcst-6158-customer-coupons-guide.md"],
+  "film": {
+    "url": "https://claude.ai/artifact/LSMXE7RC8EdQQu9KbwyL9m",
+    "file": "VCST-6158-customer-coupons.mp4",
+    "exported": true
+  },
+  "comment_id": "112653",
+  "comment_posted": true,
+  "refusal": null,
+  "versions_source": "run",
+  "aggregated_into": null,
+  "existing": false
+}

@@ -63,9 +63,10 @@ without it `qa-bug` records the bug as a human's.
 
 **`--iterate`: 5-file runs PER ROUND, for new findings only.** A round that files nothing cannot fix
 anything — `/vc-fix:qa-fix` needs a filed ticket — so skipping 5-file in round 2 dead-ends the loop at its own
-precondition. A **CARRIED** finding (5-triage item 4) files nothing and gets one comment on its existing
-Sub-task; a carried bug that went green this round is commented and recorded, and deliberately **not**
-transitioned (the fix is an unmerged prerelease). The floor is unchanged per round: 5-file still does not
+precondition. An IN-SCOPE finding needs no ticket of its own: the loop fixes it as `/vc-fix:qa-fix <ticket-key>`
+from its To-fix row. A **CARRIED** finding (5-triage item 4) files nothing; its existing To-fix row is updated
+to the round it still fails at, and a carried finding that went green this round is marked so in its row and
+recorded (the fix is an unmerged prerelease). The floor is unchanged per round: 5-file still does not
 file a `Low` in round 2, which is why below-floor findings stay outside the loop.
 
 ### The floor: `Critical` / `High` / `Medium` only
@@ -77,7 +78,7 @@ file a `Low` in round 2, which is why below-floor findings stay outside the loop
 | `Medium` | P2 | **File** |
 | `Low` | P3 | **Do not file** — record it |
 
-It applies to **both** filing shapes: an IN-SCOPE `Low` gets no Sub-task, and an OUT-OF-SCOPE incidental
+It applies to **both** shapes: an IN-SCOPE `Low` gets no To-fix row, and an OUT-OF-SCOPE incidental
 `Low` gets no standalone ticket. Severity is 5-triage item 5's call, already settled at the 5-verdict gate — 5-file applies
 the floor, it does not re-grade to reach it. Nudging a P2 down to P3 to avoid filing, or a P3 up to P2 to
 force it, is the one move this rule must not cause.
@@ -102,10 +103,20 @@ Mechanics: `.claude/knowledge/execution/tracker-ops.md` §5b.
 
 | Provenance | Relationship |
 |---|---|
-| **IN-SCOPE** | **Sub-task of `<ticket-key>`** — `/vc-fix:qa-bug … sub-task-of:<ticket-key>` |
+| **IN-SCOPE** | **A row in the ticket's To-fix table — no tracker item, never a Sub-task.** No `/vc-fix:qa-bug` call: the draft stays in `{RUN_DIR}/bugs/<severity>/`, the finding is written to `summary.json.to_fix[]` (`id` `F-<n>`, `what`, `severity`, `ref` = the failing case / checklist item, `report` = the draft), and 5-report renders it as the comment's **To fix** table |
 | **PRE-EXISTING** | **Link only, no new ticket** — `/vc-fix:qa-bug … link-only:<existing-bug-key>`, linked to `<ticket-key>` |
 | **OUT-OF-SCOPE incidental** | Its **own standalone ticket** + a *related* link back to `<ticket-key>` |
-| **`BL-A11Y-*` on a functional / feature / E2E ticket** | Its **own standalone ticket** + a *related* link — the same shape as an OUT-OF-SCOPE incidental, and for the same reason. **Never a Sub-task**: a Sub-task asserts the parent caused it, and an inherited contrast or naming defect was not caused by this story. It keeps its **real severity** (never downgraded to look non-blocking) and does **not** fail 5-verdict ([`triage.md`](triage.md) §7a) |
+| **`BL-A11Y-*` on a functional / feature / E2E ticket** | Its **own standalone ticket** + a *related* link — the same shape as an OUT-OF-SCOPE incidental, and for the same reason. **Never a To-fix row**: that row asserts this ticket caused it, and an inherited contrast or naming defect was not caused by this story. It keeps its **real severity** (never downgraded to look non-blocking) and does **not** fail 5-verdict ([`triage.md`](triage.md) §7a) |
+
+### A separate ticket is suggested and asked, never created by default
+
+The To-fix row is the only shape 5-file produces without a question. **Anything that would become its own
+tracker item** — an OUT-OF-SCOPE or `BL-A11Y-*` bug, or a finding that looks like its own Task or Story (new
+scope, not this ticket's AC) — is **proposed to the operator, one line per item**: what, severity, the
+suggested type (`Bug` / `Task` / `Story`) and why it does not belong in the To-fix table. Ask once, as a
+list the operator answers per item (create · put in To fix · skip). Create only what they said yes to; an
+unanswered or skipped item stays a draft in `{RUN_DIR}/bugs/<severity>/` and is named in the 5-report
+comment under **Suggested separate tickets**. Never create a Sub-task, in any answer.
 
 **Every bug reaches `/vc-fix:qa-bug` already investigated.** 5-triage's two `/qa-triage-results` passes ran each
 confirmed bug through `vc-fix:qa-investigate` (its Phase 4). So the chain is always *triage → investigate →
@@ -117,7 +128,8 @@ confirmed bug through `vc-fix:qa-investigate` (its Phase 4). So the chain is alw
 Neither one is re-investigated. A bug that triage left `needs-review` is not filed. A test-defect still routes to
 `/qa-review-tests <suite> --fix`, never to the tracker.
 
-**Gate (inline self-check):** every IN-SCOPE bug **at or above the floor** is a Sub-task; every PRE-EXISTING
+**Gate (inline self-check):** every IN-SCOPE bug **at or above the floor** is a `to_fix[]` row and **none** was
+created in the tracker (no Sub-task, no Bug); every PRE-EXISTING
 match is linked, not re-filed; **every below-floor `Low` has a draft AND a line in the 5-report comment** (a `Low`
 in neither place was dropped, the one outcome the floor must not produce); no real bug was downgraded to a
 test-defect; and **no severity moved between 5-triage and here**.

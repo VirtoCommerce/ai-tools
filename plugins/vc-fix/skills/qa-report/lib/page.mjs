@@ -67,7 +67,13 @@ ${m.lede ? `    <p class="lede">${esc(m.lede)}</p>\n` : ""}    <div class="meta"
     parts.push(section("fail", "Failed and blocked", list(m.failures.map(f =>
       `      <li>${chip(f.result)}<span class="mono muted">${esc(f.suite)} · ${esc(f.id)}</span><span class="grow">${esc(f.title)}</span></li>`))));
   }
-  parts.push(section("bugs", "Bugs filed", list(m.bugs.map(b =>
+  if (m.kind === "test") {
+    parts.push(section("fix", "To fix in this ticket", table(["#", "What to fix", "Severity", "Found by", "Status"],
+      m.toFix.map(t => `        <tr><td class="id">${esc(t.id)}</td><td>${esc(t.what)}</td><td><span class="chip" data-sev="${esc(String(t.severity).toLowerCase())}">${esc(t.severity || "—")}</span></td><td class="mono">${esc(t.ref)}</td><td>${esc(t.status)}</td></tr>`))));
+    if (m.suggested.length) parts.push(section("sugg", "Suggested separate tickets (not created)", list(m.suggested.map(t =>
+      `      <li><span class="chip" data-sev="${esc(String(t.severity).toLowerCase())}">${esc(t.severity || "—")}</span><span class="mono">${esc(t.type)}</span><span class="grow">${esc(t.what)}</span></li>`))));
+  }
+  parts.push(section("bugs", m.kind === "test" ? "Separate tickets" : "Bugs filed", list(m.bugs.map(b =>
     `      <li><span class="chip" data-sev="${esc(String(b.severity).toLowerCase())}">${esc(b.severity || "—")}</span><span class="mono">${esc(b.key)}</span><span class="grow">${esc(b.what)}</span><span class="muted">${esc(b.relation)}</span></li>`))));
   if (m.kind === "test") {
     parts.push(section("nf", "Not filed (below the severity floor)", list(m.notFiled.map(b =>

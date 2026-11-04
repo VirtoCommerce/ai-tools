@@ -50,7 +50,7 @@ export function buildLine(build) {
   return parts.join(" · ") || "unknown";
 }
 
-const empty = () => ({ rows: [], areas: [], questions: [], notTested: [], context: [], shots: [], lede: "", issues: [], failures: null, beforeAfter: [], notFiled: [] });
+const empty = () => ({ rows: [], areas: [], questions: [], notTested: [], context: [], shots: [], lede: "", issues: [], failures: null, beforeAfter: [], notFiled: [], toFix: [], suggested: [] });
 
 export function fromQaTest(path) {
   const s = readJson(path);
@@ -89,6 +89,16 @@ export function fromQaTest(path) {
     // `title` is what the row is ABOUT; a key alone makes the reader open the ticket to find out.
     bugs: (s.bugs_filed ?? []).map(b => bugEntry(
       b.key, b.title ?? "", b.severity ?? "", (b.relationship ?? "").replace(/\s+(?:of\s+)?[A-Z]+-\d+$/, ""))),
+    // An in-scope finding is the ticket's own unfinished work, not a tracker item: one row each, and
+    // `status` only once an --iterate round has re-run it ("still failing at round 2", "green on <PR>").
+    toFix: (s.to_fix ?? []).map((t, i) => ({
+      id: t.id ?? `F-${i + 1}`, what: String(t.what ?? "").replace(/\s+/g, " ").trim() || "(untitled)",
+      severity: t.severity ?? "", ref: t.ref ?? "", status: t.status ?? "open", report: t.report ?? "",
+    })),
+    // Proposed to the operator and not created (unanswered or skipped): still named, never dropped.
+    suggested: (s.suggested_tickets ?? []).map(t => ({
+      type: t.type ?? "Bug", what: String(t.what ?? "").replace(/\s+/g, " ").trim() || "(untitled)", severity: t.severity ?? "",
+    })),
     // The schema says `summary`/`report`; live artifacts write `draft` and often no summary at all.
     // Read both and fall back to the file name, because a blank row is worse than a terse one.
     // One identifier per row, never two: with no `summary` the title WAS the file name, so printing
@@ -272,7 +282,7 @@ export function templateData(m, dialect = "markdown") {
     ENV: compact(m.env), BUILD: compact(m.build), DATE: m.date ?? "",
     TOTAL: m.counts.total, PASSED: m.counts.passed, FAILED: m.counts.failed, BLOCKED: m.counts.blocked, NOT_RUN: m.counts.notRun,
     ...m.lines,
-    AREAS: m.areas ?? [], QUESTIONS: m.questions ?? [], BUGS: m.bugs, NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
+    AREAS: m.areas ?? [], QUESTIONS: m.questions ?? [], BUGS: m.bugs, TO_FIX: m.toFix ?? [], SUGGESTED: m.suggested ?? [], NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
     // An empty side-effect table means "looked, found nothing" only when the run got that far.
     ISSUES_NONE: m.verdict === "BLOCKED" ? "Not checked — the verification was blocked" : "Nothing found nearby",
     SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],

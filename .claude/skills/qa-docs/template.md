@@ -3,7 +3,7 @@
 The one document `/qa-docs` writes per ticket, as the Markdown file
 `reports/ba/<Domain>/<ticket>-<slug>-guide.md`. The Jira comment is NOT this text: it is its wiki-markup
 rendering, `npm run tracker:wiki -- <guide.md> {RUN_DIR}/documentation.wiki.txt` (headings → `h2.`/`h3.`,
-image lines → `!<file>|width=700!`, admonitions → `{info}`/`{tip}`/`{warning}`; `SKILL.md` step 6). Rules
+image lines → `!<file>|width=700!`, admonitions → a titled `{panel}`; `SKILL.md` step 6). Rules
 for what may go into each placeholder: [`rules.md`](rules.md). Media lines: [`media.md`](media.md).
 
 ```markdown

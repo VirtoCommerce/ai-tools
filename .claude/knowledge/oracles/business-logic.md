@@ -260,6 +260,15 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-4205 (Done) — a configurable item moved back from Saved for Later lost its selected configuration; fixed
 - **Trust:** DECLARED
 
+### BL-CART-016: mergeCart authorizes the second cart `[P0-security]`
+- **Rule:** `mergeCart` may merge only a second cart (`secondCartId`) that the caller is allowed to use. The second cart must belong to the store named in the command — otherwise the call is refused for every caller, administrators included — and, unless it is a guest cart (`isAnonymous`, set by the server), the caller must be an administrator or the cart's owner. A refusal is the standard cart access error (`Forbidden` for a signed-in caller, `Unauthorized` for an anonymous one) and is raised before anything is merged or deleted: the second cart and the target cart are left unchanged. A `secondCartId` that matches no cart changes nothing. Merging the caller's own cart, and a guest cart into the signed-in user's cart (sign-in, UCP handoff, buyer linking), keeps working.
+- **Verify:** As customer B, call `mergeCart` with `secondCartId` = a named cart of customer A → `Forbidden`, `mergeCart` null, A's cart still holds its items, B's target unchanged. Repeat anonymously → `Unauthorized`. As A, merge A's own cart of another store → refused. Positive controls: A merges A's own same-store cart → merged and the source deleted; a guest cart merges into A's cart; a `secondCartId` matching no cart changes nothing.
+- **Violation signal:** `mergeCart` returns no error when the caller does not own the second cart (and is not an administrator) or the cart belongs to another store; another customer's items appear in the caller's cart; the other customer's cart is deleted; OR an own-cart or guest-cart merge is refused.
+- **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert
+- **Source:** VCST-6185 — the second cart had no authorization; proposed fix authorizes it (administrator, owner, or anonymous cart) and requires it to belong to the command's store, without breaking the guest-cart merge on sign-in
+- **Source:** VirtoCommerce/vc-module-x-cart#153 — `PurchaseSchema.CheckAuthBySecondCartAsync`: missing cart → no-op; other store → access denied; non-guest cart → the cart-access check
+- **Trust:** DECLARED
+
 ---
 
 ## Domain 3: Checkout (BL-CHK)
@@ -2566,7 +2575,7 @@ ticket or a docs page disputes (`status`).
 | Domain | ID Range | Total | P0 | P1 | P2 | DECLARED | SUSPECT |
 |--------|----------|-------|----|----|----|----------|---------|
 | Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
-| Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 2 |
+| Cart | BL-CART-001–016 | 16 | 6 | 10 | 0 | 8 | 2 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
 | Users & Authentication | BL-AUTH-001–018 | 18 | 6 | 11 | 1 | 11 | 6 |
@@ -2595,4 +2604,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **233** | **66** | **128** | **39** | **125** | **60** |
+| **Total** | | **234** | **67** | **128** | **39** | **126** | **60** |

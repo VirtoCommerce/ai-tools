@@ -100,9 +100,9 @@ VC-LIST-001: a refused add AT the limit is the guard working. Do NOT file it as 
 [WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
 [ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
 [WAIT] that control's aria-pressed attribute becomes 'true'
-[NAV] {{FRONT_URL}}/search?q=@td(PROD_PROP_PRICE.sku)
-[WAIT] the results grid renders a card for @td(PROD_PROP_PRICE.name)
-[ACT] click the 'Add to Compare' control on the card for @td(PROD_PROP_PRICE.name)
+[NAV] {{FRONT_URL}}@td(PROD_PROP_PRICE.url)
+[WAIT] the product page for @td(PROD_PROP_PRICE.sku) renders
+[ACT] click the 'Add to Compare' control on the product page
 [WAIT] that control's aria-pressed attribute becomes 'true'
 [NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
 [WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
@@ -120,7 +120,7 @@ VC-LIST-001: a refused add AT the limit is the guard working. Do NOT file it as 
 [DOM] the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_2.name) is NOT left in the pressed state — its aria-pressed attribute is 'false' {DOC}
 [MATH] entries in the localStorage key 'compareProducts' after the refused add = 5 {DOC}
 [REL] the site header's Compare badge count is unchanged by the refused add {DOC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","Sixth product is added anyway, control flips to the pressed state before the refusal, no notification at all, notification quotes a limit other than the theme's product_compare_limit",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:BOUNDARY · Technique:BVA,Draft
+[NETWORK] no 4xx/5xx on /graphql","Sixth product is added anyway, control flips to the pressed state before the refusal, no notification at all, notification quotes a limit other than the theme's product_compare_limit",Clear the localStorage key 'compareProducts',"VCST-5735 · Archetype:BOUNDARY · Technique:BVA | 2026-11-03: the CMP-003 product is opened by its URL, not search: its text property Price cannot be indexed beside the numeric price field, so a Delete and build drops it from the Product search index (KB-52EAADEE, REG-2026-11-03-2035)",Draft
 CMP-005,Clear all is confirmation gated and Restore returns the exact pre-clear list,Catalog > Product Compare v2,High,,ECL-7.3,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
 localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
 Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
@@ -189,9 +189,9 @@ Three entries in ONE tab ('Compare Fixtures > Group A'), added in this order so 
 [WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
 [ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
 [WAIT] that control's aria-pressed attribute becomes 'true'
-[NAV] {{FRONT_URL}}/search?q=@td(PROD_PROP_PRICE.sku)
-[WAIT] the results grid renders a card for @td(PROD_PROP_PRICE.name)
-[ACT] click the 'Add to Compare' control on the card for @td(PROD_PROP_PRICE.name)
+[NAV] {{FRONT_URL}}@td(PROD_PROP_PRICE.url)
+[WAIT] the product page for @td(PROD_PROP_PRICE.sku) renders
+[ACT] click the 'Add to Compare' control on the product page
 [WAIT] that control's aria-pressed attribute becomes 'true'
 [NAV] {{FRONT_URL}}/compare
 [WAIT] the compare table renders three product columns
@@ -201,7 +201,7 @@ Three entries in ONE tab ('Compare Fixtures > Group A'), added in this order so 
 [MATH] product columns rendered after the removal = 2 {SPEC}
 [REL] the entries left in the localStorage key 'compareProducts' are exactly the two remaining products' ids {DOC}
 [DOM] a removal notification naming @td(PROD_CMP_B.name) is present {DOC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","Wrong column disappears, two columns disappear, notification names a product that is still on screen, remaining columns re-order themselves, a neighbouring configured column loses its configuration row",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:LIFECYCLE · Technique:ST,Draft
+[NETWORK] no 4xx/5xx on /graphql","Wrong column disappears, two columns disappear, notification names a product that is still on screen, remaining columns re-order themselves, a neighbouring configured column loses its configuration row",Clear the localStorage key 'compareProducts',"VCST-5735 · Archetype:LIFECYCLE · Technique:ST | 2026-11-03: the CMP-003 product is opened by its URL, not search: its text property Price cannot be indexed beside the numeric price field, so a Delete and build drops it from the Product search index (KB-52EAADEE, REG-2026-11-03-2035)",Draft
 CMP-008,A pre-v2 compare list in localStorage resolves to a clean empty state,Catalog > Product Compare v2,High,,ECL-7.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
 localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
 Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
@@ -617,9 +617,9 @@ The design spec declares a '+ Add product' tile gated on count < limit; the impl
 [WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
 [ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
 [WAIT] that control's aria-pressed attribute becomes 'true'
-[NAV] {{FRONT_URL}}/search?q=@td(PROD_PROP_PRICE.sku)
-[WAIT] the results grid renders a card for @td(PROD_PROP_PRICE.name)
-[ACT] click the 'Add to Compare' control on the card for @td(PROD_PROP_PRICE.name)
+[NAV] {{FRONT_URL}}@td(PROD_PROP_PRICE.url)
+[WAIT] the product page for @td(PROD_PROP_PRICE.sku) renders
+[ACT] click the 'Add to Compare' control on the product page
 [WAIT] that control's aria-pressed attribute becomes 'true'
 [NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
 [WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
@@ -638,7 +638,7 @@ The design spec declares a '+ Add product' tile gated on count < limit; the impl
 [MATH] product columns rendered = 5 {DOC}
 [REL] all five columns are reachable through the table's own horizontal scroller while the row-label column stays at the start edge {SPEC}
 [DOM] verify whether an add-product affordance is offered from a table below its limit — the design spec declares a '+ Add' slot and the implementation renders none {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","Document scrolls sideways, header scroller and body scroller drift out of sync, columns of unequal height, the fifth column unreachable, long product name widens its own column",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:RENDER · Technique:EP,Draft
+[NETWORK] no 4xx/5xx on /graphql","Document scrolls sideways, header scroller and body scroller drift out of sync, columns of unequal height, the fifth column unreachable, long product name widens its own column",Clear the localStorage key 'compareProducts',"VCST-5735 · Archetype:RENDER · Technique:EP | 2026-11-03: the CMP-003 product is opened by its URL, not search: its text property Price cannot be indexed beside the numeric price field, so a Delete and build drops it from the Product search index (KB-52EAADEE, REG-2026-11-03-2035)",Draft
 CMP-025,Compare table — dark theme preset,Catalog > Product Compare v2,High,BL-A11Y-003,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
 localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
 Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
@@ -837,9 +837,9 @@ UIP-DATA sweep row: zero entries, exactly one, the five-per-category maximum, an
 [WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
 [ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
 [WAIT] that control's aria-pressed attribute becomes 'true'
-[NAV] {{FRONT_URL}}/search?q=@td(PROD_PROP_PRICE.sku)
-[WAIT] the results grid renders a card for @td(PROD_PROP_PRICE.name)
-[ACT] click the 'Add to Compare' control on the card for @td(PROD_PROP_PRICE.name)
+[NAV] {{FRONT_URL}}@td(PROD_PROP_PRICE.url)
+[WAIT] the product page for @td(PROD_PROP_PRICE.sku) renders
+[ACT] click the 'Add to Compare' control on the product page
 [WAIT] that control's aria-pressed attribute becomes 'true'
 [NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
 [WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
@@ -856,7 +856,7 @@ UIP-DATA sweep row: zero entries, exactly one, the five-per-category maximum, an
 [MATH] with the category filled to its limit product columns rendered = 5 {DOC}
 [REL] the zero-breadcrumb product @td(PROD_CMP_NOCAT.name) is rendered under its own tab and is not dropped from the list {DOC}
 [OVERFLOW] horizontal == false {BL}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","Zero-category product silently dropped, its tab rendered with an empty label, grid breaks at one column, fifth column unreachable, long name widens its column, table renders with zero rows",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:BOUNDARY · Technique:EG,Draft
+[NETWORK] no 4xx/5xx on /graphql","Zero-category product silently dropped, its tab rendered with an empty label, grid breaks at one column, fifth column unreachable, long name widens its column, table renders with zero rows",Clear the localStorage key 'compareProducts',"VCST-5735 · Archetype:BOUNDARY · Technique:EG | 2026-11-03: the CMP-003 product is opened by its URL, not search: its text property Price cannot be indexed beside the numeric price field, so a Delete and build drops it from the Product search index (KB-52EAADEE, REG-2026-11-03-2035)",Draft
 CMP-033,Two different configurations of one parent render as two distinct columns,Catalog > Product Compare v2,Critical,BL-CAT-006,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
 The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts' and is shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK'. A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction here cannot be followed.
 Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Two entries of one parent consume two of that category's five slots.
