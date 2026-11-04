@@ -99,6 +99,8 @@ Syncs test cases with code changes, validates them, then runs regression.
 | 3. Regression | the remainder | Execute affected suites via `run-regression.ts` |
 | 4. BL freshness | — (no agent) | `bl-fresh.ts --results <run dir> --rerun` — clears or confirms SUSPECT rules from the run |
 
+**Phases 1–2 are broken until `run-full-cycle.ts` is updated:** `/qa-test-lifecycle` is now a router over `qa-suite-sync` + `qa-case-promotion` with no flags, and refuses the `--ci --skip-*` arguments this script passes (it prints its usage block), so those phases sync and review nothing.
+
 `SKIP_SYNC` / `SKIP_REGRESSION` / `SKIP_BL_FRESH` skip their phase. `SKIP_LIFECYCLE` skips only the **standalone** review
 pass (Phase 2) — a change-driven Phase 1 always reviews, because `/qa-test-lifecycle`'s Review phase
 always runs. Neither model phase generates cases or opens a browser, so CI cannot ground a

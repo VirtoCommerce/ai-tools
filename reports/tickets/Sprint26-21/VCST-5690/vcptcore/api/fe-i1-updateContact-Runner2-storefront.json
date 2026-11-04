@@ -1,0 +1,6 @@
+{
+  "_note": "Captured from the storefront (/account/profile, Update click) via playwright-chrome, vcptcore-qa, theme pr-2597-372a, 2026-10-27 07:18 UTC. Authorization header omitted.",
+  "request": {"operationName":"updateContact","variables":{"command":{"firstName":"SmokeTest","lastName":"Runner2","defaultLanguage":"en-US","currencyCode":"USD","selectedAddressId":"<address-id>","id":"<contact-id>"}}},
+  "status": 200,
+  "response": {"errors":[{"message":"'Last Name' contains invalid characters.","locations":[{"line":2,"column":3}],"path":["updateContact"],"extensions":{"code":"VALIDATION","codes":["VALIDATION"],"field":"lastName","errorCode":"InvalidCharacters"}}],"data":{"updateContact":null}}
+}

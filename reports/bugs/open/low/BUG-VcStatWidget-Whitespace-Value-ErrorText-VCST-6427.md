@@ -29,9 +29,9 @@ does for `errorText = ""`.
   92px); the screen-reader status reads "Active carts:".
 - Controls: `""` shows the dash, `"0"` shows 0 — both correct. Reproduced 4/4. Console: no errors; no network request.
 
-![Whitespace value — blank figure row](../../screenshots/VcStatWidget-Whitespace-Value-ErrorText/A3-03-value-space-blank-figure-FAIL.png)
-![Whitespace value with suffix — unit only](../../screenshots/VcStatWidget-Whitespace-Value-ErrorText/A3-05-withsuffix-value-space-unit-only-FAIL.png)
-![Whitespace errorText — empty error state](../../screenshots/VcStatWidget-Whitespace-Value-ErrorText/A3-07-errortext-space-blank-error-FAIL.png)
+![Whitespace value — blank figure row](../../../screenshots/VcStatWidget-Whitespace-Value-ErrorText/A3-03-value-space-blank-figure-FAIL.png)
+![Whitespace value with suffix — unit only](../../../screenshots/VcStatWidget-Whitespace-Value-ErrorText/A3-05-withsuffix-value-space-unit-only-FAIL.png)
+![Whitespace errorText — empty error state](../../../screenshots/VcStatWidget-Whitespace-Value-ErrorText/A3-07-errortext-space-blank-error-FAIL.png)
 
 ## Environment & versions
 vcst · QA Storybook image `2.61.0-alpha.2594-vcst-5903-vc-stat-widget-3f8af63a` · storefront theme

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * sign-webhook.mjs — send ONE Sanity webhook notification to ${BACK_URL}/api/pages/sanity, signed the
- * way Sanity signs it, for a suite-114 (VCST-6475) case step. Prints `HTTP <status>` then the body.
+ * way Sanity signs it, for a suite-117 (VCST-6475) case step. Prints `HTTP <status>` then the body.
  * It never prints a secret (only which secret slot was used).
  *
  * Signature: header `sanity-webhook-signature: t=<unix ms>,v1=<base64url HMAC-SHA256(secret, "<t>.<raw body>")>`.

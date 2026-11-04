@@ -2,12 +2,13 @@
   "$schema": "../../templates/mind-map.schema.json",
   "schema_version": "1.0",
   "domain_slug": "auth",
-  "domain_map_rev": 2,
+  "domain_map_rev": 3,
   "generated": "2026-10-21",
+  "amended": "2026-10-28",
   "metadata": {
-    "scope": "Storefront and Admin sign-in (password, emailed code, MFA second factor, external IdP, punchout as a method), organization resolution at sign-in, lockout, Admin entry restriction, API challenge, impersonation, sign-out and session termination, password reset, sign-in log. Registration, password policy and org membership mechanics are out, as in the domain map.",
-    "built_from": "auth.md rev 2 (§1-§6), BL-AUTH-001..017 (bl:extract --domain auth), suites 031/032/033/082/101/104/105 titles + References + Automation_Status, test models VCST-5748-2026-09-29 and VCST-6132-2026-10-20 Part 0, scripts/seed-data/auth/otp-signin-specs.mjs header, vc-module-mfa#1 / vc-module-otp#3 / vc-frontend#2570 as read for the domain map",
-    "kb_read": "2026-10-21 - impersonate grant self/nested: miss; sign-out /connect/logout: hit KB-761B2013; plus the domain-map pass hits KB-06FE6C8D KB-08CC76A3 KB-3CBA0D5F KB-9AF5645D KB-0080ED6D KB-4E1FD1E8 KB-83483C4E KB-262ADDFB KB-8646A9CB KB-C196A782 KB-CC18E96D KB-3466E783 KB-1D5CC609 KB-D42D6CAA KB-6B10CB0E KB-A3E16349 KB-12E99BF8 KB-EF3CB7FB KB-7A4C260E KB-444EF3F4 KB-CA2AE929 KB-675F86C2 KB-9D80EE6B KB-33B89BDD",
+    "scope": "Storefront and Admin sign-in (password, emailed code, MFA second factor, passkeys, external IdP, punchout as a method), organization resolution at sign-in, lockout, Admin entry restriction, API challenge, impersonation, managing one's own sign-in methods (passkey keys, password), sign-out and session termination, password reset, sign-in log. Registration, password policy and org membership mechanics are out, as in the domain map.",
+    "built_from": "auth.md rev 2 (§1-§6), BL-AUTH-001..017 (bl:extract --domain auth), suites 031/032/033/082/101/104/105 titles + References + Automation_Status, test models VCST-5748-2026-09-29 and VCST-6132-2026-10-20 Part 0, scripts/seed-data/auth/otp-signin-specs.mjs header, vc-module-mfa#1 / vc-module-otp#3 / vc-frontend#2570 as read for the domain map · UPDATE 2026-10-28 from auth.md rev 3 (Changed since rev 2, §1 links 1-9, §2, §3 D5-D25, §5 G10-G28), suites 110/111 Automated rows with their promoting runs (REG-2026-10-26-1422/1503/1652/1715/1726, all vcst), VCST-5904 round 1 verdict + round 2 checklist/summary + BUG VCST-6506, VCST-6121 vcptcore test-model.md (incl. 3x amendments) + exploratory/SBTM-VCST-6121-2026-10-28.md (run in progress)",
+    "kb_read": "2026-10-21 - impersonate grant self/nested: miss; sign-out /connect/logout: hit KB-761B2013; plus the domain-map pass hits KB-06FE6C8D KB-08CC76A3 KB-3CBA0D5F KB-9AF5645D KB-0080ED6D KB-4E1FD1E8 KB-83483C4E KB-262ADDFB KB-8646A9CB KB-C196A782 KB-CC18E96D KB-3466E783 KB-1D5CC609 KB-D42D6CAA KB-6B10CB0E KB-A3E16349 KB-12E99BF8 KB-EF3CB7FB KB-7A4C260E KB-444EF3F4 KB-CA2AE929 KB-675F86C2 KB-9D80EE6B KB-33B89BDD · 2026-10-28 update: opened KB-7EFFA0AD KB-3BF84A5E KB-12E99BF8 KB-CD356AF4 KB-CA7DBAD0 KB-4E12E506 (verify reads, no capture — no live observation in this pass)",
     "not_modelled": "No auth data model exists yet, so requires/produces are omitted; the requirement ids are listed in the build result for /qa-test-data-model build. Suite 101 rows are Draft and decide sign-in-log details below the behaviour level; only rows that decide a node are stamped."
   },
   "nodes": [
@@ -23,9 +24,15 @@
           "ref": "domain-map:auth@rev2 §1",
           "note": "purpose reconstructed from source + live, both stands",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §1",
+          "note": "purpose carried; links 8 (manage sign-in methods) and 9 (taking a key away takes access away) added; vcptcore live",
+          "date": "2026-10-28"
         }
       ],
-      "notes": "integrates with: b2b — organization membership status and lock (BL-B2B-013; b2b-organizations.md); integrates with: store settings — OtpSignIn.Enabled, MultiFactorAuthentication.StoreMode, trustedGroups, authentication types; integrates with: notifications — OtpSignInEmailNotification, MfaSignInEmailNotification; integrates with: ucp — OAuth for agents (ucp.md); integrates with: punchout — the punchout grant (suites 107/108)"
+      "notes": "integrates with: b2b — organization membership status and lock (BL-B2B-013; b2b-organizations.md); integrates with: store settings — OtpSignIn.Enabled, MultiFactorAuthentication.StoreMode, trustedGroups, authentication types; integrates with: notifications — OtpSignInEmailNotification, MfaSignInEmailNotification; integrates with: ucp — OAuth for agents (ucp.md); integrates with: punchout — the punchout grant (suites 107/108); integrates with: store — per-store authentication schemes, Passkey default on (vc-module-store#190, no mapped domain)"
     },
     {
       "id": "auth.state.account.unlocked",
@@ -126,16 +133,27 @@
       "id": "auth.state.session.awaiting-second-factor",
       "type": "state",
       "name": "Session: password accepted, second factor pending",
-      "status": "UNVERIFIED",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
           "ref": "vc-module-mfa#1",
           "note": "password grant answers two_factor_required with a twoFactorToken",
           "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-001: password → code step, no session yet (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 checklist C1/C2 (vcst-2026-10-23): storefront code step; Backoffice #!/sign-in-code with no session before the code",
+          "date": "2026-10-23"
         }
-      ],
-      "maturity": "new"
+      ]
     },
     {
       "id": "auth.state.otp-code.issued",
@@ -183,48 +201,70 @@
       "id": "auth.state.mfa-ticket.issued",
       "type": "state",
       "name": "MFA two-factor token: issued, awaiting a code",
-      "status": "UNVERIFIED",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
           "ref": "vc-module-mfa#1",
           "note": "DataProtection ticket with user, store, security stamp and provider",
           "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-031, MFA-032: the challenge issues a ticket and one code email (vcst)",
+          "date": "2026-10-26"
         }
-      ],
-      "maturity": "new"
+      ]
     },
     {
       "id": "auth.state.mfa-ticket.redeemed",
       "type": "state",
       "name": "MFA two-factor token: redeemed for tokens",
-      "status": "UNVERIFIED",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
           "ref": "vc-module-mfa#1",
           "note": "single redemption; a used-code store refuses the same code",
           "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-007: a redeemed ticket is refused invalid_two_factor_token on replay (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3BF84A5E",
+          "note": "a right code redeems the ticket even when the store rule then refuses the sign-in",
+          "date": "2026-10-23"
         }
       ],
-      "maturity": "new",
       "terminal": true
     },
     {
       "id": "auth.state.mfa-ticket.expired",
       "type": "state",
       "name": "MFA two-factor token: expired unredeemed",
-      "status": "UNVERIFIED",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
           "ref": "vc-module-mfa#1",
           "note": "expires after MultiFactorAuthentication:TwoFactorTokenLifetime",
           "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-029: alive at 9 min, expired after 10, a resend does not extend it; MFA-022: an admin password reset mid-challenge kills the ticket (vcst)",
+          "date": "2026-10-26"
         }
       ],
-      "maturity": "new",
-      "terminal": true
+      "terminal": true,
+      "notes": "The CODE dies before the ticket: valid at 8.5 min, invalid_code at 9:01, indistinguishable from a wrong code (VCST-5904 round 2 C15; kb:KB-F57D86E8). A password reset ends the ticket the same way (MFA-022)."
     },
     {
       "id": "auth.signin.method-choice",
@@ -241,7 +281,7 @@
         "anonymous visitor",
         "back-office user"
       ],
-      "description": "Storefront /sign-in opens on the emailed-code form when OTP is on, with password one link behind and IdP buttons; the Admin login offers password and IdPs, no OTP.",
+      "description": "Storefront /sign-in opens on the emailed-code form only when the store's OtpSignIn.Enabled is on, otherwise on the password form; IdP and Passkey buttons sit under \"Or\". Back office: AngularJS #!/login offers password, Google and Passkey; the Admin Shell login offers a passkey first, then Google, then the password form. No OTP in the back office.",
       "evidence": [
         {
           "class": "OBSERVED",
@@ -254,12 +294,19 @@
           "ref": "REG-2026-10-15-1115",
           "note": "OTP-001 starts from the code form",
           "date": "2026-10-15"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §1 link 1",
+          "note": "storefront and both back-office logins, vcptcore, anonymous",
+          "date": "2026-10-28"
         }
       ],
       "requires": [
         "data.auth.store.otp-enabled",
         "data.auth.store.auth-types"
-      ]
+      ],
+      "notes": "Stand variant (domain-map:auth@rev3 §3 D14): vcst and vcptcore_qa1 B2B-store have OTP on; vcptcore has OtpSignIn.Enabled null on all 12 stores, so the OTP default view does not exist there (2026-10-28)."
     },
     {
       "type": "branch",
@@ -281,6 +328,12 @@
           "ref": "domain-map:auth@rev2 §2 API",
           "note": "OtpSignIn.Enabled is public; xAPI store settings expose it",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 Storefront",
+          "note": "vcptcore B2B-store with OTP off: Email, Password, Sign in; Google and Passkey under Or; no OTP link",
+          "date": "2026-10-28"
         }
       ],
       "requires": [
@@ -328,14 +381,20 @@
           "ref": "https://docs.virtocommerce.org/platform/user-guide/azure-ad/enabling-authentication-types",
           "note": "\"Enable/ disable one or all available authentication types.\"",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §3 D7",
+          "note": "Passkey now follows the blade model (listed by store-authentication-schemes, active by default); OTP and MFA still do not",
+          "date": "2026-10-28"
         }
       ],
       "drift": {
         "expected": "PlatformUserGuide Enable Authentication Types: the Authentication widget enables or disables all available types",
-        "observed": "OTP is enabled under Settings → OTP Sign-In and MFA under Platform/Store → Security; the blade has no OTP or MFA row (domain-map:auth@rev2 §3 D7, qa1 2026-10-21)",
+        "observed": "OTP is enabled under Settings → OTP Sign-In and MFA under Platform/Store → Security; the blade has no OTP or MFA row (domain-map:auth@rev2 §3 D7, qa1 2026-10-21); rev 3 (vcptcore 2026-10-28) NARROWED: Passkey is a store authentication scheme and follows the blade; OTP (Settings → OTP Sign-In) and MFA (Platform/Store → Security) still do not (domain-map:auth@rev3 §3 D7)",
         "route": "vc-module-otp#2"
       },
-      "notes": "vc-module-otp#2 with vc-module-store#189 would put OTP into the blade; open, not deployed on either stand."
+      "notes": "Narrowed in rev 3 — only OTP and MFA diverge now. vc-module-otp#2 with vc-module-store#189 would put OTP into the blade; both open and deployed on no stand (2026-10-28)."
     },
     {
       "id": "auth.signin.password",
@@ -889,14 +948,13 @@
       "type": "behavior",
       "name": "A password sign-in asks for an emailed second-factor code",
       "chain_link": "2",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "interfaces": [
         "storefront",
         "admin-ui",
         "rest"
       ],
-      "description": "VCST-5904. Password grant answers two_factor_required; the code is exchanged at grant_type=mfa. Required by MultiFactorAuthentication.Enabled or the store StoreMode. Deployed on vcst, switched off.",
+      "description": "VCST-5904. With MFA required, the password grant answers 400 two_factor_required with a twoFactorToken; the emailed code is exchanged at grant_type=mfa and the token carries amr=mfa. Backoffice: /api/mfa/signin/send|verify and #!/sign-in-code. Required by MultiFactorAuthentication.Enabled or the named store's StoreMode. Released as VirtoCommerce.MFA 3.1000.1.",
       "evidence": [
         {
           "class": "SPEC",
@@ -913,9 +971,27 @@
           "ref": "kb:KB-C196A782",
           "note": "mfa grant and /api/mfa endpoints exist; error shape with a bogus token",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-001: storefront password → emailed code → signed in (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 (vcst-2026-10-23) PASS WITH NOTES: C1 storefront journey, C2 Backoffice journey",
+          "date": "2026-10-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "mfa grant and /api/mfa endpoints routed on both vcptcore hosts; global MFA off there",
+          "date": "2026-10-28"
         }
       ],
-      "notes": "PR-stage: vc-platform#3133, vc-module-mfa#1, vc-module-otp#3, vc-frontend#2570 are open and deployed on vcst only (domain-map D14). Re-read after they merge."
+      "notes": "Merged 2026-10-26 (vc-module-mfa#1, vc-platform#3133, vc-module-otp#3, vc-frontend#2570). Every observation of the real challenge is from vcst; on vcptcore the module is installed (3.1000.1) and off (domain-map:auth@rev3 §5 G10)."
     },
     {
       "type": "branch",
@@ -924,7 +1000,6 @@
       "branch_kind": "state",
       "technique": "DT",
       "status": "CONFIRMED",
-      "maturity": "new",
       "description": "Feature switch off: the pre-MFA sign-in every existing store relies on.",
       "evidence": [
         {
@@ -938,6 +1013,24 @@
           "ref": "domain-map:auth@rev2 §1 link 4",
           "note": "storefront password sign-in to the account area on vcst with MFA installed",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1503",
+          "note": "MFA-023: global off — Backoffice and store-less sign-in are one step again (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1726",
+          "note": "MFASF-010: StoreMode off — the next storefront sign-in is one step (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §1 Actors",
+          "note": "vcptcore admin password grant answered a token with no challenge (global null)",
+          "date": "2026-10-28"
         }
       ],
       "requires": [
@@ -951,8 +1044,7 @@
       "name": "With MFA required, a correct password returns a two-factor challenge instead of tokens",
       "branch_kind": "happy",
       "technique": "FLOW",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "state_before": "auth.state.session.anonymous",
       "state_after": "auth.state.session.awaiting-second-factor",
       "evidence": [
@@ -967,6 +1059,18 @@
           "ref": "domain-map:auth@rev2 §5 G10",
           "note": "needs the setting flipped",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-031 (code email per store tenant), MFA-032 (journal codes need notification read permission) (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 C1: 400 two_factor_required → the code step (vcst)",
+          "date": "2026-10-23"
         }
       ],
       "requires": [
@@ -983,8 +1087,7 @@
       "name": "The emailed code exchanged at the mfa grant signs the user in",
       "branch_kind": "happy",
       "technique": "FLOW",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "state_before": "auth.state.session.awaiting-second-factor",
       "state_after": "auth.state.session.signed-in",
       "evidence": [
@@ -993,6 +1096,18 @@
           "ref": "vc-module-mfa#1",
           "note": "tokens carry amr=mfa, kept on refresh",
           "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-002 wrong code keeps the step and clears the input; MFASF-013 digits-only input submits on the sixth digit (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 C1/C2: the right code → tokens with amr=mfa / the Backoffice home (vcst)",
+          "date": "2026-10-23"
         }
       ],
       "requires": [
@@ -1005,8 +1120,7 @@
       "name": "An unredeemed two-factor token expires",
       "branch_kind": "state",
       "technique": "ST",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "state_before": "auth.state.mfa-ticket.issued",
       "state_after": "auth.state.mfa-ticket.expired",
       "evidence": [
@@ -1015,6 +1129,12 @@
           "ref": "vc-module-mfa#1",
           "note": "TwoFactorTokenLifetime",
           "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-029: alive at 9 min, expired after 10, a resend does not extend it (vcst)",
+          "date": "2026-10-26"
         }
       ],
       "requires": [
@@ -1027,8 +1147,7 @@
       "name": "Global setting and store mode decide who needs a second factor",
       "branch_kind": "state",
       "technique": "DT",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
@@ -1041,11 +1160,36 @@
           "ref": "kb:KB-CC18E96D",
           "note": "settings exist: global Boolean, store dropdown, not exposed by xAPI",
           "date": "2026-10-21"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5904",
+          "note": "comment 112278: the named store decides for every user (MfaRequirementService)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1503",
+          "note": "MFA-002 (Use global follows global), MFA-005 (Enabled challenges with global off), MFA-027 (setting descriptions) (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-003 (Disabled overrides global on for every user), MFA-026 (a Manager naming a Disabled store gets tokens) (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 C3 PASS: global × StoreMode × caller decision table; C31 descriptions reworded to match",
+          "date": "2026-10-23"
         }
       ],
       "requires": [
         "data.auth.store.mfa-required"
-      ]
+      ],
+      "description": "The store NAMED in the request decides for every user: Use global (or unset) follows the global setting, Enabled challenges, Disabled lets the sign-in through — customers and Managers alike. A request with no or an unknown storeId follows the global setting; the Backoffice follows the global setting only. The user's own store is not consulted.",
+      "notes": "Reconciled 2026-10-28 (DRIFT raised by the VCST-5904 test model): the rev-2 SPEC note above, from the vc-module-mfa#1 PR body, said a store relaxes the global setting only for its own customers and that the user's own store is also consulted. Comment 112278, MfaRequirementService and the promoted cases say the named store decides for every user. The deployed StoreMode description said otherwise (VCST-6530) and was reworded on the final build (round 2 C31)."
     },
     {
       "type": "branch",
@@ -1054,13 +1198,24 @@
       "branch_kind": "negative",
       "technique": "EG",
       "status": "CONFIRMED",
-      "maturity": "new",
       "evidence": [
         {
           "class": "OBSERVED",
           "ref": "kb:KB-C196A782",
           "note": "invalid_two_factor_token on grant_type=mfa, /api/mfa/resend and /api/mfa/signin/send",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-009: tampered ticket and another storeId → invalid_two_factor_token; missing code or ticket → 400 missing_parameter, never 500 (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "same refusal shape on both vcptcore hosts, anonymous",
+          "date": "2026-10-28"
         }
       ],
       "requires": [
@@ -1073,19 +1228,31 @@
       "name": "Wrong codes count toward a code limit and the account lockout",
       "branch_kind": "boundary",
       "technique": "BVA",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
           "ref": "vc-module-mfa#1",
           "note": "MaxCodeAttempts, code_attempts_exceeded; failures count toward lockout",
           "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-008 wrong codes count toward the account lockout; MFA-012 three wrong codes end the Backoffice attempt (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-012: the third wrong code and the refusal after it show code-specific messages (vcst)",
+          "date": "2026-10-26"
         }
       ],
       "requires": [
         "data.auth.mfa-ticket.issued"
-      ]
+      ],
+      "notes": "The cap (MaxCodeAttempts 3) is held per platform instance — auth.signin.mfa.wrong-code-limit.per-instance (VCST-6506). The shared account lockout is the backstop."
     },
     {
       "type": "branch",
@@ -1093,8 +1260,7 @@
       "name": "Resend sends a new code after a cooldown",
       "branch_kind": "happy",
       "technique": "EP",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
@@ -1107,11 +1273,18 @@
           "ref": "vc-frontend#2570",
           "note": "MfaVerifyForm counts down resendSecondsRemaining",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-003 Resend held 30 s then a new code; MFASF-004 the first code is refused after a resend (vcst)",
+          "date": "2026-10-26"
         }
       ],
       "requires": [
         "data.auth.mfa-ticket.issued"
-      ]
+      ],
+      "notes": "A second password step inside 30 s sends no email while the step says one was sent (VCST-5904 round 2 C8, Low, not filed). The code belongs to the user, not to the ticket (C8, MFA-024 Draft)."
     },
     {
       "type": "branch",
@@ -1119,8 +1292,7 @@
       "name": "Resend from the storefront reaches the platform",
       "branch_kind": "integration",
       "technique": "EG",
-      "status": "DRIFT",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "OBSERVED",
@@ -1133,14 +1305,27 @@
           "ref": "vc-frontend#2570",
           "note": "useMfaSignIn calls the relative path /api/mfa/resend",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 C7: Resend → POST {storefront}/api/mfa/resend 200, \"New code sent.\", a new journal row (vcst)",
+          "date": "2026-10-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-003 resends through the storefront origin (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §3 D5",
+          "note": "the vcptcore storefront host routes /api/mfa (anonymous POST 200, invalid_two_factor_token)",
+          "date": "2026-10-28"
         }
       ],
-      "drift": {
-        "expected": "vc-frontend#2570 calls /api/mfa/resend relative to the storefront origin and expects the platform to answer",
-        "observed": "the vcst storefront origin answers nginx 405 for /api/mfa/resend while /connect/token and /api/otp/request on the same host reach the platform (domain-map:auth@rev2 §3 D8)",
-        "route": "vc-frontend#2570"
-      },
-      "notes": "Same class as rev 1 D5 for /api/otp. Not driven through the UI because MFA is off.",
+      "notes": "Was DRIFT (rev 2 D8) — expected: vc-frontend#2570 calls /api/mfa/resend relative to the storefront origin and expects the platform to answer; observed then: the vcst storefront origin answers nginx 405 for /api/mfa/resend while /connect/token and /api/otp/request on the same host reach the platform (domain-map:auth@rev2 §3 D8); route was vc-frontend#2570. Resolved in rev 3 (domain-map:auth@rev3 Changed since rev 2, D8): routed on vcst by 2026-10-23 and on vcptcore, so the 405 was per-stand ingress, not a build property. kb:KB-12E99BF8 still carries its suspected-defect label and is contested on two later builds — its owner decides a kb dispute. Same class as rev 1 D5 for /api/otp.",
       "requires": [
         "data.auth.mfa-ticket.issued"
       ]
@@ -1151,8 +1336,7 @@
       "name": "A code sign-in does not ask for a second factor",
       "branch_kind": "integration",
       "technique": "DT",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
@@ -1165,9 +1349,21 @@
           "ref": "domain-map:auth@rev2 §5 G11",
           "note": "needs MFA required + an OTP-eligible user",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-007: otp_email on an MFA store signs in with the OTP code alone (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 1 recorded door C-34 and round 2 C22: tokens issued with no amr (vcst)",
+          "date": "2026-10-23"
         }
       ],
-      "notes": "External sign-in opts out the same way per vc-module-mfa#1.",
+      "notes": "External sign-in opts out the same way (bypassTwoFactor: true in ExternalSignInService, source; not observed — no IdP credentials). Whether a code sign-in should satisfy an MFA store is a PO decision (VCST-5904 S-1).",
       "requires": [
         "data.auth.store.mfa-required",
         "data.auth.account.mfa-eligible",
@@ -1180,14 +1376,31 @@
       "name": "The Admin login asks for the code in its own dialog step",
       "branch_kind": "integration",
       "technique": "FLOW",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
           "ref": "vc-module-mfa#1",
           "note": "POST /api/mfa/signin/send + /signin/verify, TwoFactorSignInAsync",
           "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1715",
+          "note": "MFA-001: Manager password → #!/sign-in-code → right code → Backoffice home (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-011: wrong code stays on the code screen, resend countdown, Back to sign in (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1503",
+          "note": "MFA-014: a customer-type account with a back-office role gets the same code screen (vcst)",
+          "date": "2026-10-26"
         }
       ],
       "requires": [
@@ -1201,8 +1414,7 @@
       "name": "An account the email provider cannot serve is refused with mfa_provider_not_available",
       "branch_kind": "negative",
       "technique": "EP",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
@@ -1215,8 +1427,21 @@
           "ref": "domain-map:auth@rev2 §5 G12",
           "note": "which existing accounts this would block",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-006: unconfirmed email → mfa_provider_not_available after the password, no email sent (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 C20: log reason ProviderNotAvailable on both doors (vcst)",
+          "date": "2026-10-23"
         }
-      ]
+      ],
+      "notes": "lockout_disabled is not testable: lockoutEnabled=false cannot be set through the API (kb:KB-87EC0A28; MFA-017 BLOCKED, a deliberate fixture gap)."
     },
     {
       "id": "auth.signin.external",
@@ -1353,11 +1578,24 @@
           "ref": "REG-2026-10-20-0125",
           "note": "OTP-029..033, OTP-042, OTP-047",
           "date": "2026-10-20"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-005: the mfa leg falls back like password (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:auth@rev3 §3 D25",
+          "note": "vc-module-customer#324 (OPEN, deployed on vcptcore as Customer 3.1032.0-pr-324-b30b): credential grants keep falling back",
+          "date": "2026-10-28"
         }
       ],
       "requires": [
         "data.auth.membership.one-unusable"
-      ]
+      ],
+      "notes": "Credential grants keep falling back under vc-module-customer#324. What #324 adds is a fallback for every other grant — auth.org.resolve.fallback-any-grant (DRIFT against BL-AUTH-016). Re-read when #324 merges or reverts."
     },
     {
       "type": "branch",
@@ -1528,14 +1766,25 @@
       "name": "The organization fallback also applies to the mfa grant",
       "branch_kind": "integration",
       "technique": "DT",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "DOC",
           "ref": "vc-module-customer#321",
           "note": "release note: Fall back to an accessible organization on OTP and MFA sign-in",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-005: last-used organization locked → password + code lands in another accessible organization, written back (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 C19 PASS: the storefront sends organization_id on the mfa request; locked A → token B (vcst)",
+          "date": "2026-10-23"
         }
       ],
       "requires": [
@@ -1857,6 +2106,12 @@
           "ref": "kb:KB-262ADDFB",
           "note": "user_is_temporary_locked_out",
           "date": "2026-10-21"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-platform#3144",
+          "note": "OPEN, deployed on vcptcore: the lockout check moved into GrantTypeHandlerBase.ValidateLockoutAsync, so every grant (passkey included) is refused while locked (domain-map:auth@rev3 §1 link 5)",
+          "date": "2026-10-28"
         }
       ],
       "requires": [
@@ -1879,9 +2134,15 @@
           "ref": "domain-map:auth@rev2 §1 link 5",
           "note": "one counter shared by password and OTP grants; OTP calls AccessFailedAsync",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-008: wrong MFA codes increment the same accessFailedCount; 2 wrong passwords + wrong codes → user_is_temporary_locked_out (vcst)",
+          "date": "2026-10-26"
         }
       ],
-      "notes": "Live observation of the shared counter is OTP-020 (Draft).",
+      "notes": "Live for MFA codes (MFA-008). The OTP leg's live observation is OTP-020 (Draft). A passkey failure counts too, but a passkey SUCCESS does not reset the counter — auth.signin.passkey.counter-reset.",
       "requires": [
         "data.auth.account.lockout-shared-counter",
         "data.auth.store.otp-enabled"
@@ -2466,7 +2727,8 @@
       "requires": [
         "data.auth.membership.one-unusable",
         "data.auth.account.admin"
-      ]
+      ],
+      "notes": "Under vc-module-customer#324 (OPEN, deployed on vcptcore only) the impersonate grant falls back instead of refusing (source) — live UNVERIFIED (domain-map:auth@rev3 §5 G25). Holds on stands without #324."
     },
     {
       "type": "branch",
@@ -2474,19 +2736,26 @@
       "name": "The impersonation dialog asks for the second-factor code when MFA applies",
       "branch_kind": "integration",
       "technique": "FLOW",
-      "status": "UNVERIFIED",
-      "maturity": "new",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "DOC",
           "ref": "vc-frontend#2570",
           "note": "impersonation dialog uses the same code step",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1652",
+          "note": "MFASF-008 operator's own code starts impersonation, Back to operator restores; MFASF-009 a wrong code starts nothing (vcst)",
+          "date": "2026-10-26"
         }
       ],
       "requires": [
         "data.auth.store.mfa-required"
-      ]
+      ],
+      "description": "On the signed-out impersonation form (/account/impersonate/<id>) with MFA required for the operator, the operator enters their own emailed code inside the dialog before impersonation starts; a wrong code starts nothing.",
+      "notes": "A signed-in operator is not asked — auth.impersonate.mfa-signed-in-operator. Whether that is intended is VCST-5904 Q1, open by decision."
     },
     {
       "id": "auth.session.signout",
@@ -2544,7 +2813,8 @@
       "chain_link": "7",
       "status": "UNVERIFIED",
       "interfaces": [
-        "admin-ui"
+        "admin-ui",
+        "rest"
       ],
       "state_before": "auth.state.session.signed-in",
       "state_after": "auth.state.session.anonymous",
@@ -2566,12 +2836,19 @@
           "ref": "https://docs.virtocommerce.org/platform/user-guide/contacts/managing-contacts",
           "note": "View active sessions. Terminate a single session. Terminate all sessions.",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "swagger lists DELETE /api/platform/security/users/{userId}/sessions/{id} and …/sessions (existence only)",
+          "date": "2026-10-28"
         }
       ],
       "requires": [
         "data.auth.session.signed-in",
         "data.auth.account.admin"
-      ]
+      ],
+      "notes": "Effect still unverified (domain-map:auth@rev3 §5 G16). A REST key delete ends the user's other sessions through the same termination — auth.signin-methods.revoke-access.rest. Suites 114/115 stamp key-delete cases here (PKS-011, PKA-007); auth.signin-methods.revoke-access.* decides them more closely."
     },
     {
       "id": "auth.password-reset",
@@ -2692,11 +2969,24 @@
           "ref": "kb:KB-D42D6CAA",
           "note": "Password, OTP, Impersonation, ImpersonationRevert, Logout; MFA on vcst; punchout on qa1",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "vcptcore signInType: Password, Passkey, MFA (failures only), External, Impersonation, ImpersonationRevert, Logout; failureReason adds InvalidPasskey, NotAllowed, InvalidTwoFactorToken, MissingParameter",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-84366C59",
+          "note": "a passkey success row carries host, storeId, memberId; provider and sessionId null",
+          "date": "2026-10-28"
         }
       ],
       "requires": [
         "data.auth.account.store-contact"
-      ]
+      ],
+      "notes": "No OTP row exists on vcptcore (OTP never used there). Conditional mediation on /sign-in can leave phantom Passkey rows (VCST-6121 SBTM). LockedOut does not split a temporary from an admin lock."
     },
     {
       "type": "branch",
@@ -2705,13 +2995,18 @@
       "branch_kind": "state",
       "technique": "EP",
       "status": "CONFIRMED",
-      "maturity": "new",
       "evidence": [
         {
           "class": "OBSERVED",
           "ref": "domain-map:auth@rev2 §2 Admin",
           "note": "Outcome \"Awaiting second factor\" on vcst",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1715",
+          "note": "MFA-016 (unconfirmed email: Password RequiresTwoFactor + MFA ProviderNotAvailable), MFA-020 (Backoffice MFA rows) (vcst)",
+          "date": "2026-10-26"
         }
       ],
       "requires": [
@@ -2725,20 +3020,32 @@
       "branch_kind": "integration",
       "technique": "EP",
       "status": "DRIFT",
-      "maturity": "new",
       "evidence": [
         {
           "class": "OBSERVED",
           "ref": "kb:KB-D42D6CAA",
           "note": "filter offers \"Sign-in code\" which lists MFA rows; no OTP option",
           "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 C25: signInTypes [MFA] filters over the API; the filter label \"Multi-factor authentication\" and dashboard counting accepted by decision (Q3) (vcst)",
+          "date": "2026-10-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §3 D6",
+          "note": "later build (platform 3.1090, kb:KB-D42D6CAA contested note): the filter reads \"Multi-factor authentication\", no \"Sign-in code\", still no OTP option; a Passkey option is unseen (G21)",
+          "date": "2026-10-28"
         }
       ],
       "drift": {
         "expected": "vc-module-mfa#1 QA step 7: \"The type filter of the log list has MFA\"; OTP rows exist, so OTP should be selectable",
-        "observed": "vcst filter offers \"Sign-in code\" (selecting it lists MFA rows), no MFA option and no OTP option (domain-map:auth@rev2 §3 D6)",
-        "route": "vc-module-mfa#1"
-      }
+        "observed": "rev 2 (vcst): the filter offered \"Sign-in code\" listing MFA rows, with no MFA and no OTP option (domain-map:auth@rev2 §3 D6). Rev 3: on platform 3.1090 the filter reads \"Multi-factor authentication\" and has no \"Sign-in code\"; still no OTP option; whether it offers Passkey is unseen (domain-map:auth@rev3 §3 D6, G21)",
+        "route": "UNFILED — no OTP option in the sign-in log Type filter on any build seen; vc-module-mfa#1 merged 2026-10-26 without it; Passkey option unseen (G21)"
+      },
+      "notes": "MFA half resolved by the later build and the Q3 decision; the remaining conflict is the OTP option. Was routed to vc-module-mfa#1, now merged."
     },
     {
       "type": "branch",
@@ -2783,6 +3090,1339 @@
       "requires": [
         "data.auth.account.no-signin-log-permission"
       ]
+    },
+    {
+      "id": "auth.signin.method-choice.passkey-button",
+      "type": "branch",
+      "name": "Passkey sign-in is offered on the storefront and on both back-office logins",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "maturity": "new",
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2",
+          "note": "storefront \"Sign in with Passkey\" under Or; AngularJS #!/login \"Passkey\" link; Admin Shell \"Sign in with a passkey\" first (vcptcore, anonymous)",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §3 D24",
+          "note": "the two back-office logins differ: the Admin Shell puts passkey and Google above the password form, AngularJS puts them below it as links",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "The VCST-6121 1r note that the Admin Shell has no passkey button was wrong; its 3x amendment corrects it."
+    },
+    {
+      "id": "auth.signin.method-choice.passkey-scheme-default",
+      "type": "branch",
+      "name": "A newly installed method is active on every store until the store saves its schemes",
+      "branch_kind": "state",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "maturity": "new",
+      "interfaces": [
+        "admin-ui",
+        "rest",
+        "graphql"
+      ],
+      "requires": [
+        "data.auth.store.auth-types"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §3 D17",
+          "note": "Passkey isActive true with id null on Clothing, Electronics, B2B-loyalty; B2B-store persisted by an admin save at 13:12Z",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/storefront/developer-guide/authentication/adding-sso-provider",
+          "note": "\"By default, all registered authentication types are enabled.\"",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-2338B876",
+          "note": "xAPI store.settings.authenticationTypes mirrors the store schemes",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "An admin save writes every row. Read a store's Passkey state from GET /api/store-authentication-schemes/{storeId}; never assume it."
+    },
+    {
+      "id": "auth.signin.method-choice.passkey-off",
+      "type": "branch",
+      "name": "Store Passkey scheme off: a freshly loaded sign-in page shows no Passkey button",
+      "description": "Feature switch off: the pre-passkey sign-in page a store that disables passkeys relies on.",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM S14 (vcptcore): after the store scheme was switched off, a fresh load hides the button",
+          "date": "2026-10-28"
+        }
+      ],
+      "requires": [
+        "data.auth.store.passkey-scheme-off"
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass. The token endpoint does not re-check the scheme — auth.signin.passkey.scheme-not-rechecked."
+    },
+    {
+      "id": "auth.signin.mfa.user-flag",
+      "type": "branch",
+      "name": "A user's own two-factor flag asks for a code even with every MFA setting off",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1503",
+          "note": "MFA-021: per-user TwoFactorEnabled, global off → two_factor_required (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 C26: a store set to Disabled does not override the per-user flag (vcst)",
+          "date": "2026-10-23"
+        }
+      ],
+      "requires": [
+        "data.auth.account.mfa-user-flag"
+      ],
+      "notes": "VCST-5904 test model H-35. MFA-021 is stamped on auth.signin.mfa.off; this node decides it more closely."
+    },
+    {
+      "id": "auth.signin.mfa.basic-door",
+      "type": "branch",
+      "name": "A Basic-auth API sign-in follows the global setting only, never a store's mode",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 1 verdict, recorded doors C-29 and C-35: Basic and Backoffice follow the global setting only (vcst)",
+          "date": "2026-10-22"
+        }
+      ],
+      "notes": "VCST-5904 test model H-39. Recorded as a door, never graded; whether Basic auth should honour a store's mode is not decided anywhere."
+    },
+    {
+      "id": "auth.signin.mfa.trusted-store-door",
+      "type": "branch",
+      "name": "A request naming a store that trusts the user's store is not challenged",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "rest"
+      ],
+      "requires": [
+        "data.auth.store.trusted-pair",
+        "data.auth.store.mfa-required"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 1 verdict, recorded door C-32: a trusted-store request skips the code (vcst)",
+          "date": "2026-10-22"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 C4: with global off a no or unknown storeId is refused user_cannot_login_in_store; a store-bound request is still challenged (vcst)",
+          "date": "2026-10-23"
+        }
+      ],
+      "notes": "Known issue VCST-6495 (internal). VCST-5904 test model H-22."
+    },
+    {
+      "id": "auth.signin.mfa.pre-switch-sessions",
+      "type": "branch",
+      "name": "Sessions minted before MFA is switched on keep working",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-26-1422",
+          "note": "MFA-018: a refresh token minted before global on still refreshes; a refresh of an mfa token keeps amr=mfa (vcst)",
+          "date": "2026-10-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 1 C-38 recorded: also, a twoFactorToken pending when global goes off still redeems (vcst)",
+          "date": "2026-10-22"
+        }
+      ],
+      "notes": "Recorded door, ABSENT-IN-PRODUCT candidate: switching the requirement on revokes nothing (domain-map:auth@rev3 §1 reverse edges)."
+    },
+    {
+      "id": "auth.signin.mfa.challenge-before-store-rule",
+      "type": "branch",
+      "name": "A store-refused customer is challenged and emailed before the store rule refuses",
+      "description": "With MFA required, a customer naming no store or a store they cannot sign in to gets two_factor_required and a code email first; a right code is redeemed and only then refused user_cannot_login_in_store.",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "DRIFT",
+      "interfaces": [
+        "rest",
+        "storefront"
+      ],
+      "requires": [
+        "data.auth.account.foreign-store-contact",
+        "data.auth.platform.mfa-global-on"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-7EFFA0AD",
+          "note": "corroborated (2 confirmations): global on, no storeId → two_factor_required + email; global off → user_cannot_login_in_store (vcst)",
+          "date": "2026-10-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3BF84A5E",
+          "note": "right code → user_cannot_login_in_store; the ticket is spent, a retry answers invalid_two_factor_token; log reason Unknown with the account's own store (vcst)",
+          "date": "2026-10-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 C18 PASS — H1 confirmed (vcst)",
+          "date": "2026-10-23"
+        },
+        {
+          "class": "SPEC",
+          "ref": "vc-platform#3133",
+          "note": "documents the challenge before the validators"
+        }
+      ],
+      "drift": {
+        "expected": "VCST-6353: responses stay the same — a customer naming no or a foreign store is refused user_cannot_login_in_store, with no code sent (PlatformDeveloperGuide issuing-and-using-access-token: \"Without it, the grant fails with `400 invalid_grant`.\")",
+        "observed": "with MFA required the password step answers two_factor_required and emails a code first; a right code is redeemed and then refused by the store rule, the ticket is spent and the log reason is Unknown (kb:KB-7EFFA0AD, kb:KB-3BF84A5E, vcst 2026-10-22/23; domain-map:auth@rev3 §3 D22)",
+        "route": "VCST-6353"
+      },
+      "notes": "Suspected product defect or an open PO question (VCST-5904 round 1 C-33/C-66; vc-platform#3133 documents the order). MFA-028 (110, Draft) decides this node but is stamped auth.signin.mfa.verify-code."
+    },
+    {
+      "id": "auth.signin.mfa.wrong-code-limit.per-instance",
+      "type": "branch",
+      "name": "The wrong-code cap is counted per platform instance",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "status": "DRIFT",
+      "interfaces": [
+        "rest"
+      ],
+      "requires": [
+        "data.auth.mfa-ticket.issued"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa#1",
+          "note": "MfaCodeAttemptLimiter keeps the count in IMemoryCache, registered as a singleton; the module README declares it per instance (source at cf830c0, BUG VCST-6506)",
+          "date": "2026-10-22"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 1 C-8: codes 1-4 answered invalid_code, the 5th user_is_temporary_locked_out; round 2 C9 PASS-accepted as known issue (vcst)",
+          "date": "2026-10-23"
+        }
+      ],
+      "drift": {
+        "expected": "VCST-5904 AC-15 / MaxCodeAttempts 3: after three wrong codes the next submit is refused code_attempts_exceeded",
+        "observed": "more than three wrong codes keep answering invalid_code until the shared account lockout trips; the cap binds per platform instance (VCST-6506, High, accepted; domain-map:auth@rev3 §3 D23)",
+        "route": "VCST-6506"
+      }
+    },
+    {
+      "id": "auth.signin.mfa.backoffice.long-username",
+      "type": "branch",
+      "name": "A 65-character user name on the Backoffice code step answers HTTP 500",
+      "branch_kind": "negative",
+      "technique": "BVA",
+      "status": "DRIFT",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 checklist C17: 65-char username → 500 on /api/mfa/signin/verify, session still issued, logout 500 too (vcst)",
+          "date": "2026-10-23"
+        }
+      ],
+      "requires": [
+        "data.auth.account.long-username-65"
+      ],
+      "drift": {
+        "expected": "a refused or over-long sign-in answers a 4xx, never a server error (BL-AUTH-017 class; MFA-030)",
+        "observed": "Customer-type account with a back-office role and a 65-char user name: HTTP 500 on /api/mfa/signin/verify, a session is still issued and logout answers 500 (VCST-5904 round 2 C17; domain-map:auth@rev3 §3 D23)",
+        "route": "VCST-6528"
+      },
+      "notes": "MFA-030 (110) is re-opened Draft for this boundary and stamped auth.signin.mfa.backoffice."
+    },
+    {
+      "id": "auth.signin.mfa.admin-shell",
+      "type": "branch",
+      "name": "The Admin Shell and VC-Shell apps have no second-factor code step",
+      "branch_kind": "integration",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "requires": [
+        "data.auth.platform.mfa-global-on"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6533",
+          "note": "follow-up story from VCST-5904 round 2: VC-Shell apps have no code step when Backoffice MFA is on"
+        }
+      ],
+      "notes": "domain-map:auth@rev3 §5 G27 — needs the global MFA window. The Admin Shell login offers a passkey, which skips the second factor (auth.signin.passkey.skips-mfa)."
+    },
+    {
+      "id": "auth.org.resolve.fallback-any-grant",
+      "type": "branch",
+      "name": "Every grant except an explicit refresh-token switch falls back to an accessible organization",
+      "description": "vc-module-customer#324: the fallback is allowed for every request except a refresh_token carrying organization_id — impersonate, passkey and external sign-in now fall back too; the organization claim is rewritten on fallback; a refused request logs NotAllowed.",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "DRIFT",
+      "maturity": "new",
+      "interfaces": [
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-AUTH-016"
+      ],
+      "requires": [
+        "data.auth.membership.one-unusable"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-016",
+          "note": "only credential sign-ins fall back; refresh_token, impersonation and external are refused (verified 2026-10-20, Customer 3.1030.0-pr-321)"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:auth@rev3 §3 D25",
+          "note": "gh diff of vc-module-customer#324 IsOrganizationFallbackAllowed; kb:KB-6F34216D (source)",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "test-model 3x amendment L6 / S2 (vcptcore): a locked last-used organization → the passkey sign-in lands in the usable one",
+          "date": "2026-10-28"
+        }
+      ],
+      "drift": {
+        "expected": "BL-AUTH-016: the fallback applies to credential sign-ins only (password, otp_email, mfa); an explicit refresh_token switch, impersonation and external sign-in naming a blocked organization are refused with one org code",
+        "observed": "vc-module-customer#324 (OPEN, deployed on vcptcore only): every request except a refresh_token with organization_id falls back, the claim is rewritten, a refusal logs NotAllowed (source, domain-map:auth@rev3 §3 D25); live on vcptcore for the passkey grant only (VCST-6121 run, in progress); impersonate and external UNVERIFIED (G25)",
+        "route": "vc-module-customer#324"
+      },
+      "notes": "Stand-scoped: vcst (Customer 3.1030.0) and vcptcore_qa1 still run the BL-AUTH-016 rule. When #324 merges, BL-AUTH-016 needs /qa-review-oracles."
+    },
+    {
+      "id": "auth.org.resolve.passkey-leg",
+      "type": "branch",
+      "name": "The organization fallback applies to the passkey grant",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "requires": [
+        "data.auth.membership.one-unusable",
+        "data.auth.account.passkey-registered"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "test-model 3x amendment L6 / SBTM S2 (vcptcore): locked last-used organization → passkey lands in the usable organization, same as OTP",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass. Rests on vc-module-customer#324 — auth.org.resolve.fallback-any-grant."
+    },
+    {
+      "id": "auth.impersonate.mfa-signed-in-operator",
+      "type": "branch",
+      "name": "A signed-in operator starts impersonation with no code step",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront"
+      ],
+      "requires": [
+        "data.auth.store.mfa-required",
+        "data.auth.operator.login-on-behalf"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5904",
+          "note": "round 2 checklist C24 (vcst): the dialog impersonates without a code step (canSkipVerification); the code step appears only on the signed-out form",
+          "date": "2026-10-23"
+        }
+      ],
+      "notes": "Open by decision: VCST-5904 Q1 (domain-map:auth@rev3 §3 D20b). If the PO requires the operator's code here, this node becomes DRIFT."
+    },
+    {
+      "id": "auth.signin.passkey",
+      "type": "behavior",
+      "name": "A user signs in with a passkey",
+      "chain_link": "2",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "actors": [
+        "anonymous visitor",
+        "back-office user"
+      ],
+      "state_before": "auth.state.session.anonymous",
+      "state_after": "auth.state.session.signed-in",
+      "description": "VCST-6121 (VirtoCommerce.Passkeys). Storefront: passkeyRequestOptions → navigator.credentials.get → POST /connect/token grant_type=passkey with credential and storeId. Back office: POST /api/platform/security/sign-in (cookie). Lockout, store rule and account type are checked; the second factor is never asked.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "passkey grant in the vcptcore discovery document; grant and request options answer",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-passkeys#1",
+          "note": "PasskeyGrantTypeHandler, sign-in type Passkey (OPEN, deployed on vcptcore)",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CA7DBAD0",
+          "note": "storefront Sign in with Passkey → /connect/token passkey 200, log Passkey ok (vcptcore, VCST-6121 run)",
+          "date": "2026-10-28"
+        }
+      ],
+      "requires": [
+        "data.auth.account.passkey-registered"
+      ],
+      "notes": "Success is not observed by this pass: the WebAuthn ceremony needs a virtual authenticator (domain-map:auth@rev3 §5 G20). VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass. Platform half still OPEN (vc-platform#3144, vc-module-passkeys#1, vc-module-store#190, vc-module-x-frontend#13, vc-module-admin-shell#4); storefront half merged (vc-frontend#2601, 2026-10-28). integrates with: store — authentication schemes (no mapped domain)."
+    },
+    {
+      "id": "auth.signin.passkey.request-options",
+      "type": "branch",
+      "maturity": "new",
+      "name": "Request options are anonymous, usernameless, host-bound and require user verification",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "graphql",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "Query.passkeyRequestOptions anonymous → challenge, timeout 300000, rpId = the storefront host, allowCredentials [], userVerification required",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "No username-first flow exists: the options take no user (VCST-6121 SBTM C-11)."
+    },
+    {
+      "id": "auth.signin.passkey.missing-credential",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A passkey grant without a credential is refused with missing_parameters",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-AUTH-017"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "POST /connect/token grant_type=passkey, no credential → 400 invalid_request / missing_parameters on both vcptcore hosts",
+          "date": "2026-10-28"
+        }
+      ]
+    },
+    {
+      "id": "auth.signin.passkey.invalid-credential",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A forged, replayed or deleted credential is refused and logged InvalidPasskey",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM S12 (vcptcore): replay → 400 invalid_grant on the token grant, login_failed on the cookie door",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "sign-in log failureReason InvalidPasskey present (74 failed Passkey rows)",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin.passkey.user-verification",
+      "type": "branch",
+      "maturity": "new",
+      "name": "An authenticator that does not verify the user cannot sign in",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM S28 (vcptcore): uv=false → no token",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "request options say userVerification required",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin.passkey.host-bound",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A key created for one host does not sign in on another",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6121",
+          "note": "\"credentials are bound to the domain\" (test model S11)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "rpId is the request host",
+          "date": "2026-10-28"
+        }
+      ]
+    },
+    {
+      "id": "auth.signin.passkey.backoffice",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A back-office user signs in with a passkey through the cookie door",
+      "branch_kind": "integration",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "test-model 3x amendment: the Admin Shell \"Sign in with a passkey\" signs in (cookie, 204) (vcptcore)",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "POST /api/platform/security/sign-in {}: back-office host 400 unsupported_grant_type, storefront host nginx 405 (kb:KB-416B0E02)",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass. The storefront-host 405 is by design: the cookie door is the back office's (domain-map:auth@rev3 §3 D5)."
+    },
+    {
+      "id": "auth.signin.passkey.backoffice.customer-refused",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A customer account cannot enter the back office with a passkey",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-platform#3144",
+          "note": "the cookie sign-in refuses a Customer-type account (VCST-6121 test model L5, source)",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "domain-map:auth@rev3 §1 link 5(f). Related: auth.access.admin-entry."
+    },
+    {
+      "id": "auth.signin.passkey.conditional-mediation",
+      "type": "branch",
+      "maturity": "new",
+      "name": "Opening /sign-in starts a passkey request without a click",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CD356AF4",
+          "note": "Chromium, vcptcore: a valid resident credential signs in silently; a stale one → 400 login_failed + a console error on the public page",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §3 D21",
+          "note": "Firefox with no resident credential: no token request fired on load",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6121",
+          "note": "ticket text: autofill"
+        }
+      ],
+      "notes": "Suspected product defect, no ticket yet (VCST-6121 SBTM N1, bug 7). The run notes that the virtual authenticator's presence simulation also re-signs in after logout and leaves phantom Passkey log rows. Latent risk for [PRE:SIGNIN_AS] in Chromium (domain-map:auth@rev3 §4)."
+    },
+    {
+      "id": "auth.signin.passkey.scheme-not-rechecked",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A page loaded before the store's Passkey scheme was switched off still obtains a token",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM N3 / S15 (vcptcore): a cached /sign-in tab → passkey grant 200 after the scheme went off",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-passkeys#1",
+          "note": "the grant handler checks lockout, store rule and account type, not the store scheme (domain-map:auth@rev3 §3 D18)",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/azure-ad/enabling-authentication-types",
+          "note": "\"Enable/ disable one or all available authentication types.\"",
+          "date": "2026-10-28"
+        }
+      ],
+      "requires": [
+        "data.auth.store.passkey-scheme-off"
+      ],
+      "notes": "Suspected product defect, no ticket yet (VCST-6121 SBTM bug 2, author question Q2). A DRIFT against the docs once the run's triage confirms it (domain-map:auth@rev3 §5 G22). VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin.passkey.locked-out",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A locked-out account is refused at the passkey grant",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-AUTH-003"
+      ],
+      "requires": [
+        "data.auth.account.temporarily-locked",
+        "data.auth.account.admin-locked"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CA7DBAD0",
+          "note": "temporary lock → user_is_temporary_locked_out; admin lock → user_is_locked_out; both logged Passkey / LockedOut with user and store (vcptcore, VCST-6121 run)",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-platform#3144",
+          "note": "lockout check moved into GrantTypeHandlerBase.ValidateLockoutAsync",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin.passkey.counter-reset",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A passkey success leaves the failed-attempt counter where it was",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "DRIFT",
+      "interfaces": [
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-AUTH-003"
+      ],
+      "requires": [
+        "data.auth.account.lockout-disposable"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-003",
+          "note": "\"Successful login resets the failure counter.\""
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CA7DBAD0",
+          "note": "4 wrong passwords → passkey OK → accessFailedCount still 4 → one wrong password locks; a password-success control resets to 0 (vcptcore, VCST-6121 run)",
+          "date": "2026-10-28"
+        }
+      ],
+      "drift": {
+        "expected": "BL-AUTH-003: a successful login resets the failure counter",
+        "observed": "a successful passkey sign-in leaves accessFailedCount unchanged, so the next single wrong password locks the account (kb:KB-CA7DBAD0, VCST-6121 SBTM N2, vcptcore 2026-10-28; domain-map:auth@rev3 §3 D20)",
+        "route": "/qa-review-oracles"
+      },
+      "notes": "Also a product-bug candidate (VCST-6121 SBTM bug 1, not filed). VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin.passkey.skips-mfa",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A passkey sign-in is never asked for a second factor",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "rest"
+      ],
+      "requires": [
+        "data.auth.store.mfa-required"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-passkeys#1",
+          "note": "IsTwoFactorRequiredAsync returns false, \"as SignInManager.PasskeySignInAsync does\" (domain-map:auth@rev3 §1 link 2)",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "Open: whether a passkey satisfies an MFA store and sets amr (domain-map:auth@rev3 §5 G23; VCST-6121 author question Q4) — needs an MFA-required window and a passkey ceremony. PKS-012 (114a, Draft) decides this node but is stamped auth.signin.mfa."
+    },
+    {
+      "id": "auth.signin.passkey.store-rule",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A passkey sign-in naming a store the user cannot use is refused",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "rest"
+      ],
+      "requires": [
+        "data.auth.account.foreign-store-contact"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:auth@rev3 §1 link 5",
+          "note": "the grant base applies the store rule; the passkey grant refuses a foreign store structurally (VCST-6121, not re-driven; G6)",
+          "date": "2026-10-28"
+        }
+      ]
+    },
+    {
+      "id": "auth.signin.passkey.off",
+      "type": "branch",
+      "maturity": "new",
+      "name": "Without the Passkeys module a stand offers no passkey grant and no Passkey button",
+      "description": "Feature switch off: the pre-passkey sign-in every stand without the module relies on.",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §3 D14",
+          "note": "vcst and vcptcore_qa1 have no Passkeys module; their discovery lists no passkey grant and their pages no Passkey button (rev 2 values, not re-checked)",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-passkeys#1",
+          "note": "the global Passkey:Enabled is an appsettings value, default true, no runtime switch",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "The appsettings switch needs a restart and cannot be reached from a test on a shared stand (VCST-6121 test model G¹)."
+    },
+    {
+      "id": "auth.state.signin-key.none",
+      "type": "state",
+      "name": "Sign-in keys: password only, no passkey",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6121",
+          "note": "test-model state diagram: NoKey"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.signin-key.registered",
+      "type": "state",
+      "name": "Sign-in keys: at least one passkey",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6121",
+          "note": "test-model state diagram: Registered"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM: 12 keys on one account, no cap",
+          "date": "2026-10-28"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.signin-key.passkey-only",
+      "type": "state",
+      "name": "Sign-in keys: passkeys only, the password deleted",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6121",
+          "note": "test-model state diagram: PasskeyOnly (out of the ticket's scope)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM S7: password deletion allowed in both back-office UIs and xAPI",
+          "date": "2026-10-28"
+        }
+      ]
+    },
+    {
+      "id": "auth.signin-methods",
+      "type": "behavior",
+      "name": "A signed-in user manages their own sign-in methods",
+      "chain_link": "8",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "actors": [
+        "buyer",
+        "back-office user"
+      ],
+      "description": "Storefront /account/security (vc-frontend#2601); xAPI signInMethods, passkeyCreationOptions, createPasskey, renameSignInKey, deleteSignInKey (vc-module-x-frontend#13); back office Sign-in methods blade over REST currentuser/sign-in-methods (vc-platform#3144, vc-module-admin-shell#4). No permission guards it: any authenticated user manages their own keys.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "xAPI operations in the vcptcore schema; REST routes in swagger; no passkey or sign-in-methods permission among 354",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-platform#3144",
+          "note": "ISignInMethodService, currentuser/sign-in-methods PUT/DELETE (OPEN, deployed on vcptcore)",
+          "date": "2026-10-28"
+        }
+      ],
+      "requires": [
+        "data.auth.account.passkey-persona"
+      ],
+      "notes": "Global REST GET /api/platform/security/sign-in-methods: GoogleSSO (External), Passkey (create/rename/delete key), Password (delete). A Customer token gets 403 on the REST route; xAPI serves it (kb:KB-4E40858D). Mutations stay out of the domain map: VCST-6121 owns them. Rev-2 suite rows 031 AUTH-025/026 and 033 AUTH-030/032/033 are contradicted by the new surface (domain-map:auth@rev3 §4)."
+    },
+    {
+      "id": "auth.signin-methods.anonymous-refused",
+      "type": "branch",
+      "maturity": "new",
+      "name": "Anonymous key management is refused: the page redirects to sign-in, the API answers Unauthorized",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "graphql",
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-AUTH-014"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §1 link 8",
+          "note": "/account/security → /sign-in?returnUrl=/account/security; xAPI signInMethods Unauthorized; REST passkeys/creation-options and currentuser/sign-in-methods 401",
+          "date": "2026-10-28"
+        }
+      ]
+    },
+    {
+      "id": "auth.signin-methods.add-passkey",
+      "type": "branch",
+      "maturity": "new",
+      "name": "Adding a passkey registers a key on the account",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "state_before": "auth.state.signin-key.none",
+      "state_after": "auth.state.signin-key.registered",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-passkeys#1",
+          "note": "PasskeyService.CreateAsync: disabled, non-editable, impersonated and duplicate checks",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM: keys registered on storefront and both back-office UIs; no key-count cap (N8 declined)",
+          "date": "2026-10-28"
+        }
+      ],
+      "produces": [
+        "data.auth.account.passkey-registered"
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin-methods.add-passkey.duplicate",
+      "type": "branch",
+      "maturity": "new",
+      "name": "The same authenticator cannot be added twice",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM S3: client InvalidStateError — \"This device already has a passkey for your account.\"; a different authenticator may add a second key",
+          "date": "2026-10-28"
+        }
+      ],
+      "requires": [
+        "data.auth.account.passkey-registered"
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin-methods.add-passkey.user-verification",
+      "type": "branch",
+      "maturity": "new",
+      "name": "Registration requires user verification",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM S28: uv=false → no key registered",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin-methods.rename",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A key is renamed; a blank name falls back to the authenticator name",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM S5: blank, whitespace or null → stored null (\"Unnamed key\"); 300 chars accepted; markup shown as literal text",
+          "date": "2026-10-28"
+        }
+      ],
+      "requires": [
+        "data.auth.account.passkey-registered"
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin-methods.delete",
+      "type": "branch",
+      "maturity": "new",
+      "name": "Deleting a passkey removes only that key",
+      "description": "Deleting the account's last passkey while the password stays returns the account to password only.",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "state_before": "auth.state.signin-key.registered",
+      "state_after": "auth.state.signin-key.none",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-platform#3144",
+          "note": "SignInMethodService.DeleteKeyAsync",
+          "date": "2026-10-28"
+        }
+      ],
+      "requires": [
+        "data.auth.account.passkey-registered"
+      ],
+      "notes": "Which sessions end depends on the door — auth.signin-methods.revoke-access."
+    },
+    {
+      "id": "auth.signin-methods.delete.last-key-refused",
+      "type": "branch",
+      "maturity": "new",
+      "name": "The last remaining sign-in key cannot be removed",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "state_before": "auth.state.signin-key.passkey-only",
+      "state_after": "auth.state.signin-key.passkey-only",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM S7: last_sign_in_key \"The last sign-in key cannot be removed.\"",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-platform#3144",
+          "note": "DeleteKeyAsync counts keys across all methods; the password counts",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-5B5D8A99",
+          "note": "the AngularJS blade keeps the control enabled and answers \"400: Bad request\"; the Admin Shell disables it",
+          "date": "2026-10-28"
+        }
+      ],
+      "requires": [
+        "data.auth.account.passkey-only"
+      ],
+      "notes": "VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin-methods.delete.password",
+      "type": "branch",
+      "maturity": "new",
+      "name": "The password can be deleted, leaving a passkey-only account",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "state_before": "auth.state.signin-key.registered",
+      "state_after": "auth.state.signin-key.passkey-only",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM S7: password DELETE allowed in both back-office UIs and xAPI",
+          "date": "2026-10-28"
+        }
+      ],
+      "produces": [
+        "data.auth.account.passkey-only"
+      ],
+      "notes": "Passkey-only accounts are out of VCST-6121's scope yet reachable; author question Q1 open. A password delete is logged in the user change history as \"Password changed\"; key operations leave no audit record (SBTM bug 6). VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin-methods.impersonated-refused",
+      "type": "branch",
+      "maturity": "new",
+      "name": "An impersonated session cannot add, rename or delete the target's keys",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "graphql",
+        "rest"
+      ],
+      "requires": [
+        "data.auth.session.impersonating",
+        "data.auth.account.passkey-registered"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-passkeys#1",
+          "note": "PasskeyService.CreateAsync refuses an impersonated session",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "xAPI changePassword is NOT refused for an impersonated session (VCST-6121 SBTM N4, kb:KB-B93A97C4; may be pre-existing); an impersonated /account/security shows only the heading (N6). An operator managing a target's keys is follow-up VCST-6522."
+    },
+    {
+      "id": "auth.signin-methods.no-admin-revoke",
+      "type": "branch",
+      "maturity": "new",
+      "name": "An administrator cannot remove another user's passkey",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM reverse edge: no UI and no endpoint for revoking another user's key",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev3 §2 API",
+          "note": "swagger has key routes under currentuser only",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6522"
+        }
+      ],
+      "requires": [
+        "data.auth.account.passkey-registered",
+        "data.auth.account.admin"
+      ],
+      "notes": "ABSENT IN PRODUCT; follow-up VCST-6522."
+    },
+    {
+      "id": "auth.signin-methods.revoke-access",
+      "type": "behavior",
+      "name": "Deleting a key ends the user's other sessions",
+      "chain_link": "9",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-platform#3144",
+          "note": "SecurityController currentuser key DELETE → TryTerminateUserSessions",
+          "date": "2026-10-28"
+        }
+      ],
+      "requires": [
+        "data.auth.account.passkey-registered",
+        "data.auth.session.second-token"
+      ],
+      "notes": "The two delete doors behave differently (domain-map:auth@rev3 §3 D19)."
+    },
+    {
+      "id": "auth.signin-methods.revoke-access.rest",
+      "type": "branch",
+      "name": "A key deleted over REST ends the other token sessions and keeps the caller's",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "maturity": "new",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:auth@rev3 §3 D19",
+          "note": "source: TryTerminateUserSessions in vc-platform#3144",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4E12E506",
+          "note": "both admin UIs: another bearer → 401, refresh → invalid_grant, the deleting browser stays signed in (vcptcore)",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "A second COOKIE session still answered 10 s after the delete (kb:KB-4E12E506 note) — cookie sessions other than the caller's are not ended at once."
+    },
+    {
+      "id": "auth.signin-methods.revoke-access.xapi",
+      "type": "branch",
+      "name": "A key deleted on the storefront leaves the other sessions valid",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6121",
+          "note": "SBTM S23 (vcptcore): the old access token and refresh token still work after deleteSignInKey",
+          "date": "2026-10-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-x-frontend#13",
+          "note": "DeleteSignInKeyCommandHandler terminates no session",
+          "date": "2026-10-28"
+        }
+      ],
+      "notes": "Suspected product defect, no ticket yet: the rule holds on one surface only (VC-AUTH-004 class; VCST-6121 SBTM bug 3, author question Q3; domain-map:auth@rev3 §3 D19). VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
     }
   ],
   "edges": [
@@ -3438,6 +5078,316 @@
       "to": "sr.access.lock-membership",
       "type": "affected_by",
       "note": "a membership locked from the Contacts side removes that org from resolution"
+    },
+    {
+      "from": "auth.signin.method-choice",
+      "to": "auth.signin.method-choice.passkey-button",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.method-choice",
+      "to": "auth.signin.method-choice.passkey-scheme-default",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.method-choice",
+      "to": "auth.signin.method-choice.passkey-off",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.user-flag",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.basic-door",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.trusted-store-door",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.pre-switch-sessions",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.challenge-before-store-rule",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.admin-shell",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa.wrong-code-limit",
+      "to": "auth.signin.mfa.wrong-code-limit.per-instance",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa.backoffice",
+      "to": "auth.signin.mfa.backoffice.long-username",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.mfa-signed-in-operator",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.fallback-any-grant",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.passkey-leg",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.signin.passkey",
+      "type": "contains"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.request-options",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.missing-credential",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.invalid-credential",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.user-verification",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.host-bound",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.backoffice",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.conditional-mediation",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.scheme-not-rechecked",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.locked-out",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.counter-reset",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.skips-mfa",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.store-rule",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.signin.passkey.off",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.passkey.backoffice",
+      "to": "auth.signin.passkey.backoffice.customer-refused",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.signin-methods",
+      "type": "contains"
+    },
+    {
+      "from": "auth.signin-methods",
+      "to": "auth.signin-methods.anonymous-refused",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin-methods",
+      "to": "auth.signin-methods.add-passkey",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin-methods",
+      "to": "auth.signin-methods.rename",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin-methods",
+      "to": "auth.signin-methods.delete",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin-methods",
+      "to": "auth.signin-methods.impersonated-refused",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin-methods",
+      "to": "auth.signin-methods.no-admin-revoke",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin-methods.add-passkey",
+      "to": "auth.signin-methods.add-passkey.duplicate",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin-methods.add-passkey",
+      "to": "auth.signin-methods.add-passkey.user-verification",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin-methods.delete",
+      "to": "auth.signin-methods.delete.last-key-refused",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin-methods.delete",
+      "to": "auth.signin-methods.delete.password",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.signin-methods.revoke-access",
+      "type": "contains"
+    },
+    {
+      "from": "auth.signin-methods.revoke-access",
+      "to": "auth.signin-methods.revoke-access.rest",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin-methods.revoke-access",
+      "to": "auth.signin-methods.revoke-access.xapi",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.state.session.anonymous",
+      "to": "auth.state.session.signed-in",
+      "type": "transitions_to",
+      "via": "auth.signin.passkey"
+    },
+    {
+      "from": "auth.state.signin-key.none",
+      "to": "auth.state.signin-key.registered",
+      "type": "transitions_to",
+      "via": "auth.signin-methods.add-passkey"
+    },
+    {
+      "from": "auth.state.signin-key.registered",
+      "to": "auth.state.signin-key.none",
+      "type": "transitions_to",
+      "via": "auth.signin-methods.delete",
+      "note": "the last passkey of an account that keeps its password"
+    },
+    {
+      "from": "auth.state.signin-key.registered",
+      "to": "auth.state.signin-key.passkey-only",
+      "type": "transitions_to",
+      "via": "auth.signin-methods.delete.password"
+    },
+    {
+      "from": "auth.state.signin-key.passkey-only",
+      "to": "auth.state.signin-key.passkey-only",
+      "type": "transitions_to",
+      "via": "auth.signin-methods.delete.last-key-refused",
+      "note": "refused: the last key stays"
+    },
+    {
+      "from": "auth.signin.passkey",
+      "to": "auth.org.resolve",
+      "type": "depends_on",
+      "note": "passkey leg of organization resolution (vc-module-customer#324)"
+    },
+    {
+      "from": "auth.signin.passkey.locked-out",
+      "to": "auth.lockout.temporary",
+      "type": "affected_by",
+      "note": "lockout check in the platform base grant handler (vc-platform#3144)"
+    },
+    {
+      "from": "auth.signin.passkey.locked-out",
+      "to": "auth.lockout.admin-lock",
+      "type": "affected_by"
+    },
+    {
+      "from": "auth.lockout.temporary.shared-counter",
+      "to": "auth.signin.passkey.counter-reset",
+      "type": "affected_by",
+      "note": "a passkey success does not reset the shared counter (D20)"
+    },
+    {
+      "from": "auth.signin.passkey.skips-mfa",
+      "to": "auth.signin.mfa.store-mode",
+      "type": "affected_by",
+      "note": "an MFA-required store does not challenge a passkey (G23 open)"
+    },
+    {
+      "from": "auth.signin.passkey.scheme-not-rechecked",
+      "to": "auth.signin.method-choice.passkey-off",
+      "type": "affected_by"
+    },
+    {
+      "from": "auth.impersonate.mfa-code",
+      "to": "auth.signin.mfa.verify-code",
+      "type": "depends_on",
+      "note": "the operator's own code at the mfa grant"
+    },
+    {
+      "from": "auth.impersonate.locked-org-refused",
+      "to": "auth.org.resolve.fallback-any-grant",
+      "type": "affected_by",
+      "note": "customer#324 makes impersonate fall back (G25)"
+    },
+    {
+      "from": "auth.signin-methods.impersonated-refused",
+      "to": "auth.impersonate",
+      "type": "affected_by"
+    },
+    {
+      "from": "auth.signin-methods.revoke-access",
+      "to": "auth.session.terminate",
+      "type": "depends_on",
+      "note": "REST delete terminates through TryTerminateUserSessions"
+    },
+    {
+      "from": "auth.signin.password",
+      "to": "auth.signin-methods.delete.password",
+      "type": "affected_by",
+      "note": "a deleted password leaves no password sign-in"
     }
   ]
 }

@@ -260,6 +260,15 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-4205 (Done) — a configurable item moved back from Saved for Later lost its selected configuration; fixed
 - **Trust:** DECLARED
 
+### BL-CART-016: mergeCart authorizes the second cart `[P0-security]`
+- **Rule:** `mergeCart` may merge only a second cart (`secondCartId`) that the caller is allowed to use. The second cart must belong to the store named in the command — otherwise the call is refused for every caller, administrators included — and, unless it is a guest cart (`isAnonymous`, set by the server), the caller must be an administrator or the cart's owner. A refusal is the standard cart access error (`Forbidden` for a signed-in caller, `Unauthorized` for an anonymous one) and is raised before anything is merged or deleted: the second cart and the target cart are left unchanged. A `secondCartId` that matches no cart changes nothing. Merging the caller's own cart, and a guest cart into the signed-in user's cart (sign-in, UCP handoff, buyer linking), keeps working.
+- **Verify:** As customer B, call `mergeCart` with `secondCartId` = a named cart of customer A → `Forbidden`, `mergeCart` null, A's cart still holds its items, B's target unchanged. Repeat anonymously → `Unauthorized`. As A, merge A's own cart of another store → refused. Positive controls: A merges A's own same-store cart → merged and the source deleted; a guest cart merges into A's cart; a `secondCartId` matching no cart changes nothing.
+- **Violation signal:** `mergeCart` returns no error when the caller does not own the second cart (and is not an administrator) or the cart belongs to another store; another customer's items appear in the caller's cart; the other customer's cart is deleted; OR an own-cart or guest-cart merge is refused.
+- **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert
+- **Source:** VCST-6185 — the second cart had no authorization; proposed fix authorizes it (administrator, owner, or anonymous cart) and requires it to belong to the command's store, without breaking the guest-cart merge on sign-in
+- **Source:** VirtoCommerce/vc-module-x-cart#153 — `PurchaseSchema.CheckAuthBySecondCartAsync`: missing cart → no-op; other store → access denied; non-guest cart → the cart-access check
+- **Trust:** DECLARED
+
 ---
 
 ## Domain 3: Checkout (BL-CHK)
@@ -458,6 +467,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Cart emptied after session expiry; user redirected to homepage instead of checkout; items lost.
 - **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-002, BSM-016, BSM-025, BSM-067 failed in REG-2026-10-27-SR-SWEEP
 
 ### BL-AUTH-002: Email verification gate `[P1-data]`
 - **Rule:** When `emailVerificationRequired = true` in store settings, newly registered users cannot access protected features (checkout, order history, account management) until they verify their email via the confirmation link. They can still browse the catalog and add items to cart. The verification link must expire after a configurable period.
@@ -467,19 +477,22 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/user-email-verification.md (published) — email verification is a per-store toggle, disabled by default, checked on registration.
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/confirmEmail.md (published) — confirming the email completes verification, allowing the customer to sign in.
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [code] vc-module-profile-experience-api@42213c4:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/RegisterRequestCommandHandler.cs#LockAccount - when email verification is required the account is locked until the email is confirmed, so the user cannot sign in at all; the rule describes a signed-in unverified user (browse, cart allowed, checkout blocked, 'Please verify' message) and expiring links - re-run the check
 
 ### BL-AUTH-003: Account lockout after N failed attempts `[P1-data]`
-- **Rule:** After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. Successful login resets the failure counter.
-- **Verify:** Enter wrong password 5 times → 6th attempt (even with correct password) → "Account locked" message. Wait for lockout expiry → successful login. Verify 4 failures + 1 success → counter resets (next failure starts from 1).
-- **Violation signal:** No lockout after many failures; lockout message reveals account existence ("Account locked" vs "No such user"); lockout doesn't expire; counter not reset after success.
+- **Rule:** After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. A successful password sign-in, or a successful second-factor completion, resets the failure counter. A successful passkey sign-in does not reset it (a passkey is not a password sign-in), but lockout still applies to it: a locked account cannot sign in with a passkey.
+- **Verify:** Enter wrong password 5 times → 6th attempt (even with correct password) → "Account locked" message. Wait for lockout expiry → successful login. Verify 4 failures + 1 successful password sign-in → counter resets (next failure starts from 1). With 4 failures + 1 successful passkey sign-in the counter stays at 4. A locked account's passkey sign-in is refused with the lockout code.
+- **Violation signal:** No lockout after many failures; lockout message reveals account existence ("Account locked" vs "No such user"); lockout doesn't expire; counter not reset after a successful password sign-in; a locked account signs in with a passkey.
 - **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
 - **Docs:** platform/developer-guide/docs/Fundamentals/Security/passwords-management.md (published) — Lockout node locks accounts after repeated failed logins; DefaultLockoutTimeSpan sets duration.
 - **Source:** vc-platform `AuthorizationController.Exchange()` password branch — `CheckPasswordSignInAsync(..., lockoutOnFailure: true)`.
 - **Source:** VCST-4999 (Done) — fixed lockout policy not enforced on back-office login after 5 wrong passwords, as it already was on storefront.
 - **Source:** VCST-5374 (Done) — fixed org members getting a permanent-lockout code for a temporary failed-attempt lockout.
 - **Source:** KB-8646A9CB (corroborated) — five failed storefront sign-ins return user_is_temporary_locked_out with about 15-minute lockoutEnd.
+- **Source:** VCST-6596 (Cancelled, not a bug) — developer decision — a passkey sign-in is not a password sign-in, so it does not reset the failed sign-in counter; lockout still blocks a passkey sign-in.
+- **Source:** ASP.NET Core Identity (release/10.0) `SignInManager.PasskeySignInAsync` runs `PreSignInCheck` but never `ResetLockout`; the counter is reset only by `CheckPasswordSignInAsync` (password success) and `DoTwoFactorSignInAsync` (second-factor success).
+- **Source:** KB-CA7DBAD0 — passkey success leaves the counter unchanged; a temporarily or admin-locked account is refused for passkey (user_is_temporary_locked_out / user_is_locked_out).
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-068 failed in REG-2026-10-27-SR-SWEEP
 
 ### BL-AUTH-004: Returning vs new customer defaults `[P2-ux]`
 - **Rule:** Shipping-address pre-fill at checkout is **config-gated and off by default.** The store's shipping-address policy setting has exactly two values — a disabled value (the **default**) and a previous-order value. Only under the previous-order value does checkout pre-fill the shipping address, and it then copies the **shipping (or billing-and-shipping) address of the customer's most recent order** — not the customer's saved address book — and only when the cart's shipment has **no** delivery address yet. Under the disabled value a returning customer sees **no** pre-filled shipping address, exactly like a first-time customer, and must select one; that is by design, not a defect. A new customer (first order) always sees empty address forms and no saved payment methods. Saved payment methods are a separate per-customer store of tokenized cards, offered only by card processors that support saving, and are **not** governed by the shipping-address policy. In every configuration the system must not show addresses or payment methods belonging to another account, even if the email was reused across organizations.
@@ -507,6 +520,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/user-guide/docs/security/roles-and-permissions.md (published) — effective permissions are the union of global, organization and membership roles, re-evaluated at sign-in.
 - **Source:** Platform docs "Authorization in Virto Commerce" (authorization is by permission claim; a role is a collection of permissions grouped for assignment — no inheritance described) + `vc-platform` `PlatformConstants.cs:46-51` (the three reserved system roles) and `ClaimsPrincipalExtensions.cs:61-71` (`HasGlobalPermission` short-circuits for the administrator system role, else requires the claim). Live-confirmed on the environment: the role search returns role objects with no parent/base/extends/child field, and of the five names previously listed as tiers only the store-manager role existed as a data role.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SR-GQL-157 failed in REG-2026-10-27-SR-SWEEP
 
 ### BL-AUTH-007: Storefront logout UX — popup-only `[P1-ux]`
 - **Rule:** The storefront exposes logout **only** inside the account-menu popup in the top header. There is no `/sign-out` page, no `/logout` page, and no standalone logout icon in the header. Correct sequence: (1) click the account button `data-test-id="account-button"` in the top-right header — opens the account-menu popup (`data-test-id="account-menu"`); (2) click the logout button **inside that popup**, selector `data-test-id="sign-out-button"`. Note the storefront test attribute is `data-test-id` (hyphenated) with the **flat** value `sign-out-button` — `data-testid` is not used in vc-frontend and there is no dotted-path value. (vc-frontend source: `client-app/shared/layout/components/header/_internal/top-header.vue`; composable `useSignMeOut`; routes `client-app/router/routes/main.ts` + `constants.ts` confirm no `/sign-out` or `/logout` route — logout calls `signMeOut` which clears the session and reloads through the auth guard.)
@@ -647,6 +661,28 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** vc-platform `src/VirtoCommerce.Platform.Web/Controllers/Api/SecurityController.cs` — `Login([FromBody] LoginRequest request)` guards `if (request?.UserName == null || request.Password == null) { return BadRequest(); }` before any user lookup. The source evidence is this one endpoint; the Rule generalizes it on the strength of the documented platform-wide convention.
 - **Source:** VCST-5623 (Done) — fixed POST /api/platform/security/login returning 500 instead of 400 on null/empty credential fields or body.
 - **Trust:** DECLARED
+
+### BL-AUTH-018: An expired password is enforced only on a password sign-in `[P0-security]`
+- **Rule:** The password-expiry state (`passwordExpired`, set when `User:MaxPasswordAge` runs out or an admin forces a change on next sign-in) is a property of the **password**, so it is enforced only on a session that was signed in **with that password**.
+  - **Password sign-in** (`password` grant): the session is treated as expired. `me.passwordExpired` is `true`, the gated xAPI operations answer with `errors[].code` `PasswordExpired`, and the storefront sends the user to Change Password before anything else.
+  - **Any other sign-in** — external SSO (Entra ID, Google), passkey, email code (OTP), impersonation: the expiry is **not** enforced for that session. `me.passwordExpired` is `false`, no operation fails with `PasswordExpired`, and the storefront opens normally.
+
+The rule is a whitelist of the one method that uses the password, never a list of exempt methods: a sign-in method added later is exempt unless it authenticates with the password.
+- **Verify:** Take an account whose password is expired (admin reset with "change on next sign-in", or `MaxPasswordAge` passed).
+  - **Password sign-in** → the storefront opens Change Password; `me.passwordExpired` is `true`; a gated xAPI operation answers `PasswordExpired`.
+  - **SSO sign-in** (an account linked to Entra ID or Google) → the storefront opens normally; `me.passwordExpired` is `false`.
+  - **Passkey sign-in** (add a passkey on Account → Security first) → opens normally; `me.passwordExpired` is `false`.
+  - **Email-code sign-in** → opens normally; `me.passwordExpired` is `false`.
+Read `passwordExpired` from `me` in the same session as the sign-in, never from the admin user record: the stored flag stays `true` on every path.
+- **Violation signal:** - A passkey, email-code or SSO sign-in sends the user to Change Password, or `me.passwordExpired` is `true` in that session.
+- A password sign-in with an expired password opens the storefront without forcing a change, or `me.passwordExpired` is `false`.
+- A new sign-in method ships and is treated as a password sign-in.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** PlatformDeveloperGuide, Passwords Management — `User:MaxPasswordAge` is the number of days a password remains valid, after which the user must set a new one. The page does not say which sign-in methods the expiry applies to.
+- **Source:** VCST-6630 — Expected result records the product owner's decision (2026-10-29): the expired password is checked only for a sign-in with a password; passkey and email-code sign-in must not force a password change. Added before the bug is resolved, at the QA lead's request; replace with the Jira resolution when VCST-6630 closes.
+- **Source:** `vc-module-x-api` `src/VirtoCommerce.Xapi.Data/Services/UserManagerCore.cs` `CheckUserState` — `user.PasswordExpired && !isExternalSignIn && !isImpersonated` → `AuthorizationError.PasswordExpired()`; `vc-module-profile-experience-api` `Schemas/UserType.cs` `GetPasswordExpired` and `Schemas/ProfileSchema.cs` use the same condition. Only SSO and impersonation are exempt, so passkey and OTP sign-in violate the rule (VCST-6630).
+- **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [bug] VCST-6630 — passkey and email-code sign-in force a password change: the code exempts SSO and impersonation only.
 
 ---
 
@@ -879,7 +915,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Source:** VP-7347 (Done) — a child of a hidden category was still returned as visible; fixed: subcategories inherit hidden
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [code] vc-module-catalog@f3b31c3:src/VirtoCommerce.CatalogModule.Data/Search/Indexing/ProductDocumentBuilder.cs#IsVisible (:369-374) indexes a product as status 'hidden' unless product.IsActive && ParentCategoryIsActive (CatalogProduct.cs:465, category and all ancestors active), commented 'Product must inherit hidden flag from parent categories'; this contradicts the clause 'products within a hidden category remain accessible via ... search'. No human source decides it (VP-7347 covers only child categories inheriting hidden), re-run the check
 
 ### BL-CAT-005: Product requires virtual catalog assignment for storefront `[P1-data]`
 - **Rule:** A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the single catalog assigned to the store, which may be a physical catalog directly or a virtual catalog built over one or more physical catalogs. Products must be in a category within the store's assigned catalog (or its linked physical catalog) to be visible.
@@ -1071,6 +1106,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Source:** vc-module-x-catalog `ChildCategoriesQueryHandler` — server-side `TermFacetResult` term counts (`term_facets.terms.count`).
 - **Source:** VCST-1926 (Done) — a facet said 21 and 16 products came back; fixed. Also VCST-5324, VCST-3993 (Done)
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SRCH-NEW-104 failed in REG-2026-10-28-1915
 
 ### BL-SRCH-002: Zero-result query shows an intact empty state `[P2-ux]`
 - **Rule:** When a search query returns zero results, the search-results page (rendered by `category.vue` → `category-products.vue`) must render an intact empty state and never a blank grid, broken layout, or error. It must display (1) a clear no-results message via a `VcEmptyView` (variant `search`, icon `outline-stock`) using i18n key `pages.catalog.no_products_filtered_message` when a keyword/filters are active (else `pages.catalog.no_products_message`), with the searched term echoed in the page heading via i18n key `pages.search.header_empty`; and (2) a recovery action — a reset button (i18n key `pages.catalog.no_products_button`) that clears the keyword/filters (emits `resetFilterKeyword`). NOTE: vc-frontend does **NOT** implement spelling "Did you mean…" suggestions nor a popular-products/categories fallback — do not assert them.
@@ -1081,6 +1117,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Source:** VCST-4121 (Done) — the Reset search button was missing when filters returned no products; fixed
 - **Source:** kb KB-71011C1F (well attested) — zero hits show an empty state with Reset search (barcode route)
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SRCH-NEW-104 failed in REG-2026-10-28-1915
 
 ### BL-SRCH-003: Search index consistency after catalog change `[P1-data]`
 - **Rule:** After a product is created, updated, or deleted in Admin, the search index must reflect the change within the consistency window (BL-CROSS-009: 120s). Specifically: new product appears in search, updated product name/description changes in results, deleted product disappears from search. No ghost results for deleted products.
@@ -1364,6 +1401,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Source:** VP-7983 (Done) — two products sharing a slug both returned 404; expected both to work or save to be refused
 - **Source:** VCST-1399 (Done) — incorrect redirect for same-named categories; resolver used only last slug segment
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] CMS-GQL-133, CMS-GQL-135, CMS-ML-001 failed in REG-2026-10-23-1303
 
 ### BL-SEO-002: Deleted product returns proper HTTP status `[P2-ux]`
 - **Rule:** When a product is deleted, its slug returns an empty `slugInfo` from xAPI and the Vue-SPA storefront renders its client-side NotFound page. Because VC Frontend is served via a catch-all route, the document HTTP status is **200 by default (a documented "soft 404")** — a real HTTP 404/410 is produced only via load-balancer/CDN rules. The missing slug is logged as a broken link where an admin can assign a 301 redirect (surfaced as `slugInfo.redirectUrl`). The page must never show the deleted product's old content, blank/broken content, or a 500.
@@ -1373,6 +1411,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Docs:** storefront/developer-guide/docs/spa-architecture-for-seo-and-404-handling.md (docs) — SPA serves index.html so missing pages return 200 (soft 404); true 404 via load-balancer rules or broken-link tooling
 - **Docs:** platform/user-guide/docs/seo/managing-broken-links.md (docs) — frontend-reported missing slugs are logged as broken links and admins can configure redirects
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] CMS-GQL-135 failed in REG-2026-10-23-1303
 
 ### BL-SEO-003: Canonical URL set on all pages `[P2-ux]`
 - **Rule:** Every storefront page must expose its preferred URL to crawlers. Virto Commerce's storefront (vc-frontend, `@unhead/vue`) emits this as an Open Graph `<meta property="og:url">` set to the page's own resolved SEO URL — it does **NOT** render a `<link rel="canonical">` element (verified live 2026-07-15: zero canonical tags on PDP or category pages). A product resolves to one preferred URL (whatever format `seoLinkType` yields — see BL-SEO-004), so `og:url` points to that single URL regardless of the category path taken to reach it. (A true `rel="canonical"` link would be a stronger de-dup signal than `og:url`; its absence is a documented SEO consideration, not a per-page bug — treat canonical-link emission as a separate feature-gap decision.)
@@ -1381,6 +1420,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Agents:** qa-backend-expert, qa-frontend-expert, ui-ux-expert
 - **Docs:** storefront/developer-guide/docs/spa-architecture-for-seo-and-404-handling.md (docs) — default storefront renders no rel=canonical link; Open Graph tags are described for the home page
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] CAT-040 failed in REG-2026-10-28-1915
 
 ### BL-SEO-004: SEO link type controls URL format `[P1-data]`
 - **Rule:** The store setting `seoLinkType` controls how product and category URLs are generated. When changed, all storefront URLs must update to the new format. Old-format URLs should either redirect (301) to the new format or return 404 — never serve content at both old and new URLs simultaneously (duplicate content penalty).
@@ -1442,6 +1482,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Source:** VCST-4597 (Done) — PDP shipment options content overflowed its widget container
 - **Source:** VCST-5124 (Done) — cart save-for-later control overflowed its card by 27px on mobile
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-ACT-016 failed in REG-2026-10-28-1915
 
 ### BL-UI-005: Alignment in horizontal groups `[P2-ux]`
 - **Rule:** Elements in a horizontal group share a baseline: text baselines align, vertical centers align within 1 px, buttons in the same row share `height` exactly, and an icon adjacent to text vertically centers with that text (within 1 px). Product-grid cells share height per row; table-row cells share height per row.
@@ -1846,6 +1887,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerOrderStatistics.md (published) — currencyCode argument is the reporting currency; response example echoes currencyCode with localized formattedAmount
 - **Source:** module README (Money "converted to `currencyCode` → store default → platform primary"); live probe 2026-07-23.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SR-GQL-062, SR-GQL-095 failed in REG-2026-10-27-SR-SWEEP
 
 ### BL-SR-005: Statistics scope excludes flag-cancelled / prototype orders unconditionally `[P1-data]`
 - **Rule:** The statistics scope (`salesRepCustomerOrderStatistics` / `salesRepCustomerCartStatistics`) excludes orders and carts flagged prototype or cancelled **at the entity level** (`IsPrototype` / `IsCancelled`) — unconditionally, and this does NOT loosen under any named filter. This differs from the order-*list* scope, which deliberately includes cancelled orders so that `Cancelled` is a real list filter (BL-SR-009). An order whose `Status` field merely reads a cancelled-like value **without** the `IsCancelled` flag (e.g. written directly by an external/ERP integration bypassing the platform cancel workflow) is NOT excluded by this scope and correctly counts toward every statistics figure, including the baseline/all-status one.
@@ -1854,6 +1896,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Agents:** qa-backend-expert, qa-frontend-expert
 - **Source:** vc-module-sales-rep `RepOrderScopeQueryExtensions.ApplyRepScope` (default `includeCancelled=false` → filters `!IsPrototype && !IsCancelled`); `CustomerOrderStatisticsService.BuildQuery` calls it with no `includeCancelled` argument, so the exclusion is unconditional regardless of any status filter. Contrast `SalesRepOrderStatusService.BuildQuery`, which passes `includeCancelled: true` for the list scope (BL-SR-009).
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SR-GQL-063 failed in REG-2026-10-27-SR-SWEEP
 
 ### BL-SR-006: Cart statistics are currency-scoped; item quantity is the shipped primary metric `[P1-data]`
 - **Rule:** `salesRepCustomerCartStatistics` uses a cart-*kind* filter whose built-in default `"active-carts"` = non-empty carts that are **not** wishlists. `count` / `total` / `average` remain schema fields, but the shipped Active-carts widget surfaces **summed line-item quantity** (selected vs not-selected-for-checkout) as its primary figures, with `count` demoted to an internal denominator for `average`. Cart statistics are scoped to **exactly the requested `currencyCode`** — a customer's carts in other currencies are excluded outright, never folded or converted (unlike order-statistics Money, BL-SR-004). Gift line items are included in the item-quantity figures but excluded from the money total/count and from the storefront's own cart-page counter — a known, currently-unresolved inconsistency. Same `period`/`comparison` shape as order statistics; same creator+membership scope (BL-SR-002).
@@ -1875,6 +1918,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerCounts.md (published) — returns how many customers the rep is assigned plus ordering/new customers over requested date ranges, scoped to the rep
 - **Source:** module README §My customers; live probe 2026-07-23.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-HD-007 failed in REG-2026-10-27-SR-SWEEP
 
 ### BL-SR-008: Top sellers ranked by named sort over a period; `take` clamps at 10 (never errors); rows are a line-item snapshot `[P1-data]`
 - **Rule:** `salesRepTopSellers` ranks products by `sort` (`by-units` default, `by-revenue`) over an optional `period`, returning the top `take` (default 5, **max 10**). `take` above 10 is **clamped** (never a validation error). Each row's `name`/`sku`/`imageUrl`/category come from the **order line-item snapshot** — no live catalog read; `revenue` is Money. Optional category `filter` restricts to that category's subtree. Creator+membership scoped (BL-SR-002); omit `organizationId` for the cross-customer dashboard.
@@ -1884,6 +1928,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepTopSellers.md (published) — ranks best sellers by units (default) or revenue over a period; omit organizationId for cross-customer; filter restricts to category subtree
 - **Source:** module README §Top sellers; live probe 2026-07-23.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-GQL-076, SR-GQL-084, SR-CP-034 failed in REG-2026-10-27-SR-SWEEP
 
 ### BL-SR-009: One named filter rule per axis; omit → baseline; unknown name fails CLOSED (no data, no error) `[P1-data]`
 - **Rule:** Lists and statistics blocks are filtered by a single **named filter rule** (not raw statuses), discovered per axis via `salesRepOrderFilterRules` / `salesRepCartFilterRules` / `salesRepCustomerFilterRules` / `salesRepTopSellerFilterRules` (`{name, localizedName}`). Omit `filter` → baseline; an **unrecognized name fails CLOSED** (returns zero data, never "return everything"), no error. Rule sets are overridable per project; a rule may be composite. `salesRepCustomerFilterRules` ships a single `All` baseline; `salesRepTopSellerFilterRules` names are category ids. **This invariant governs exactly those four axes and does not extend to the index-backed "every order of a served customer" surface** (`salesRepCustomerOrders`): its `filter` argument is a raw search-phrase / field:value expression in the order-search index's own grammar, not a named-rule lookup — it ships no filter-rule discovery query, and it correctly **narrows** on a raw field:value term rather than failing closed on it. That is the surface working as designed, not a violation of this rule.
@@ -1894,6 +1939,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerFilterRules.md (published) — customer filter rules ship a single 'all' rule
 - **Source:** module README §Filter rules + its new §Customer orders ("Unlike the rule-based lists above, these two follow **X-Order's** shape: `filter` is a search phrase, `facet` names index fields, and `sort` takes index field expressions. They read the order **index**, not the database"); `SalesRepOrdersQueryHandler.Handle` resolves via `_filterRuleResolver.ApplyListFilterAsync(...)`, whereas `SalesRepCustomerOrdersQueryHandler.BuildSearchCriteria` assigns `criteria.Keyword = request.Filter` with no rule-resolver call and no discovery-query type in existence for it; live probe 2026-07-23; re-triangulated 2026-09-03.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SR-GQL-076, SR-GQL-084 failed in REG-2026-10-27-SR-SWEEP
 
 ### BL-SR-010: One named sort rule per axis; unknown name → default ordering; unsupported direction → ERROR; `customerSalesReps` exempt `[P1-data]`
 - **Rule:** Lists are ordered by a single **named sort rule** discovered via `salesRepOrderSortRules` (`recent` default, `total`) / `salesRepCustomerSortRules` (`my-last-orders` default, `ytd-purchases`, `name`) / `salesRepTopSellerSortRules` (`by-units` default, `by-revenue`). A sort **never fails closed on the name** — an unknown/omitted rule name falls back to the domain default (no error). An optional `:asc`/`:desc` direction suffix reverses a rule **where meaningful** (`total:asc`, `name:desc`, `ytd-purchases:asc`); an **unsupported direction is rejected with an error** (`recent:asc`, `by-units:asc` → `extensions.code=ARGUMENT`). `customerSalesReps` accepts a plain member `sort` (e.g. `name:asc`) but is **exempt from the named rep sort-rule vocabulary** (no discovery query). The customers-list direction applies uniformly to member-column and order-derived (`my-last-orders`/`ytd-purchases`) rankings. **This invariant governs exactly those three axes (plus the stated `customerSalesReps` exemption) and does not extend to the index-backed "every order of a served customer" surface** (`salesRepCustomerOrders`): its `sort` takes a raw X-Order **field expression** (`<indexField>:asc|desc`), ships no sort-rule discovery query, performs **no direction validation** — an unsupported direction is accepted silently rather than rejected — and an unrecognized token does **NOT** fall back to the domain default but yields a third, undefined ordering. All of that is that surface working as designed, not a violation of this rule.
@@ -1903,6 +1949,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepTopSellerSortRules.md (published) — ranking options by-units and by-revenue discovered with localizedName
 - **Source:** module README §Sort rules, which scopes itself in its own opening words — "The **orders, customers and top-sellers** lists are ordered by a single, optional named sort rule" — plus its §Customer orders ("Unlike the rule-based lists above, these two follow **X-Order's** shape … `sort` takes index field expressions"); `SalesRepOrdersQueryHandler` resolves via `_sortRuleResolver.ApplySortAsync(...)`, whereas `SalesRepCustomerOrdersQueryHandler.BuildSearchCriteria` assigns `criteria.Sort = request.Sort.EmptyToNull() ?? DefaultSort` with no resolver call and no discovery-query type in existence for it; live probe 2026-07-23; re-triangulated 2026-09-03.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SR-GQL-152, SR-GQL-153 failed in REG-2026-10-27-SR-SWEEP
 
 ### BL-SR-011: Sales-rep storefront UI requires permission + module enabled; org membership is gated per-route, not uniformly `[P0-security]`
 - **Rule:** The storefront Sales Rep area is gated on `sales-rep:access` AND the store's `SalesRep.Enabled` setting — both required for any Sales Rep surface to appear: a non-rep buyer is gated/redirected and no `salesRep*` widget or query fires, and with the module disabled the "Sales Rep hub" rail section and routes are absent even for a permissioned rep. **Org membership is NOT a uniform third requirement:** the **rep-facing** hub pages (`/company/dashboard`, `/company/my-customers`, `/company/my-customers/{orgId}`) are reachable regardless of the rep's own organization membership — a rep's customers are the organizations they *serve*, independent of any org the rep belongs to (fix `VCST-5494`, vc-frontend PR #2391, clears the inherited `meta.requiresOrganization` on the three rep-facing routes). Only the **buyer-facing** `/company/sales-reps` contact page still requires org membership.
@@ -2041,6 +2088,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Agents:** qa-backend-expert, qa-frontend-expert
 - **Source:** module load-path reconciliation logic (pure function reconciling persisted blocks against the registry). Live-confirmed: two unregistered block types received by the client rendered nowhere; two registered blocks missing from a planted document were appended after the document's survivors; blocks planted in the wrong region were re-homed to their registry region (leaving that region empty); a subsequent save purged the unknown types and reset every block to its registry region, and reload showed no oscillation.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SR-HD-040, SR-HD-045 failed in REG-2026-10-27-SR-SWEEP
 
 ### BL-SR-026: A layout key that was never saved (`null`) is not a failure — registry defaults render with editing enabled `[P1-data]`
 - **Rule:** `null` from the layout query (a never-saved key, BL-SR-015) is a normal, expected state, not an error condition — the surface renders the registry's default arrangement and leaves editing enabled, with no error alert.
@@ -2089,7 +2137,6 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Agents:** qa-backend-expert, qa-frontend-expert
 - **Source:** module layout-surface component (mounts a block's component only when currently visible) and the shared page-level statistics composable feeding every stat card regardless of hidden state. Live-confirmed: hiding and saving a widget dropped exactly that widget's own operations from the reload trace against a positive control; hiding and saving a stat card left the page-level statistics query firing with an unchanged request shape.
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [code] vc-frontend@203908b:client-app/modules/sales-rep/composables/useStatDataNeeds.ts#useStatDataNeeds (:46-54) outside edit mode returns statDataNeeds(scope, current.visible), and layout/stat-data-needs.ts#orderStatisticsFlags turns those needs into @include flags on the statistics query, so hiding a stat card does shrink the query; this contradicts the clause 'hiding a card does not shrink that query's scope or omit it' (the queries are also held until the layout has settled). No human source decides it (the in-code comment cites VCST-5647, which only asks that unrendered fields not be requested), re-run the check
 
 ### BL-SR-032: The rail region mounts only while it holds at least one visible block, and unmounts structurally (not just visually) when empty `[P2-ux]`
 - **Rule:** The narrow rail column is not rendered at all when it has no visible blocks — the main column then runs full width — and mounts as soon as at least one block becomes visible in it. This is a structural mount/unmount, not a visual collapse; the unmounted state persists across a reload.
@@ -2528,26 +2575,26 @@ ticket or a docs page disputes (`status`).
 | Domain | ID Range | Total | P0 | P1 | P2 | DECLARED | SUSPECT |
 |--------|----------|-------|----|----|----|----------|---------|
 | Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
-| Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 2 |
+| Cart | BL-CART-001–016 | 16 | 6 | 10 | 0 | 8 | 2 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
-| Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 10 | 3 |
+| Users & Authentication | BL-AUTH-001–018 | 18 | 6 | 11 | 1 | 11 | 6 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
-| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 5 |
+| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
-| Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 1 |
+| Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 3 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
 | BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 0 |
 | Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 3 |
 | Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 | 1 | 0 |
-| SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 0 |
+| SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 3 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
-| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 3 |
+| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 4 |
 | GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 2 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
-| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 5 |
+| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 11 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
@@ -2557,4 +2604,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **232** | **65** | **128** | **39** | **124** | **46** |
+| **Total** | | **234** | **67** | **128** | **39** | **126** | **60** |

@@ -100,10 +100,17 @@ rows fire only when the trigger applies.
 | 10 | **App Insights trace** for the op ID | any REST/xAPI/Admin/job layer | Azure MCP `applicationinsights` KQL (flow §9) → save result | `network/appinsights-<opId>.json` | **M\*** |
 | 11 | **Hangfire** Failed/Scheduled state | "didn't happen" symptom (P8) | `{BACK_URL}/hangfire` screenshot | `screenshots/hangfire-*.png` | C |
 | 12 | **Deployed versions** (platform + modules + theme) | always (header + P1 + §8C) | per `profile.buildVerify.source` (`tracker-ops.md` §5): native → **`vc-deploy-dev` `backend/packages.json` + `theme/artifact.json`** via GitHub MCP (branch = `TEST_ENV`: `vcst-qa`/`vcptcore`/`virtostart`); client → `{BACK_URL}/api/platform/modules`. `{BACK_URL}/#!/workspace/systeminfo` is a live cross-check | manifest header | **M** |
-| 13 | **Source evidence** (file path + line + quote) | browser/logs don't explain it | GitHub MCP `search_code` / `get_file_contents` (flow §8) | `source/findings.md` | C |
+| 13 | **Source evidence** (file path + line + quote) | browser/logs don't explain it | GitHub MCP `search_code` / `get_file_contents` (flow §8) | `source/findings.md` — **run as a subagent: return the findings text in the hand-back; the calling session writes the file** (below) | C |
 | 14 | **Reproduction rate** (X/10) | intermittent | note in manifest | `evidence-index.md` | C |
 | 15 | **Steps to reproduce** — numbered, as the reproducing run took them | always | write them as you go | `evidence-index.md` `## Steps to reproduce` | **M** |
 
+> **Row 13 from a subagent.** Claude Code refuses a subagent's `Write` of a report-like file, and
+> `source/findings.md` is one. So a subagent never writes it — and never routes around the refusal through a
+> shell heredoc: it returns the findings (file path + line + quote, per claim) in its hand-back under a
+> `## source/findings.md` heading, and the calling session writes that text verbatim to
+> `<package>/source/findings.md` before the package is handed to `/qa-bug --evidence`. Run inline, write it
+> yourself as before.
+>
 > **M\*** — mandatory *whenever a server-side layer is involved*. A storefront-only CSS bug needs no trace
 > ID or App Insights; anything touching REST/xAPI/Admin/jobs does. When in doubt, capture it.
 > **An env that cannot give one is stated, not skipped:** a stand that sends no `Request-Id` / `traceparent` ⇒

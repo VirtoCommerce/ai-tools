@@ -134,7 +134,8 @@ markup). Azure Boards: `ado.mjs upload-attachment --file <path>` → `{ url }`, 
 
 **Verification is part of the posting step; a status code is not verification.** For Jira, read
 `GET /rest/api/3/issue/<KEY>/comment/<id>?expand=renderedBody` and require one
-`<img src=…/attachment/content/<id>>` per image, **zero** surviving literal `!….png!`, and **zero**
+`<img src=…/attachment/content/<id>>` per image (a `|thumbnail!` embed renders `…/attachment/thumbnail/<id>`:
+rendered, but not the house form — amend it to `|width=700!`), **zero** surviving literal `!….png!`, and **zero**
 `<span class="error">`. Do not gate on `file-preview-id` — it is absent from a working wiki render.
 
 **A claim with no capturable screenshot says so explicitly**, so a reader can tell *"nothing to show"*
@@ -205,6 +206,11 @@ into a ticket. The GIF proves *the sequence happened*; the stills carry *the val
 
 **Budget:** at most **1** GIF per bug, ≤ 8 frames, ≥ 1.5 s per frame, width ≤ 960, ≤ 5 MB — counting
 as one item against the screenshot budget above. A second GIF usually means it is two bugs.
+
+**Documentation is the exception — there a GIF is mandatory.** A published guide carries one
+walkthrough GIF per user-facing flow it documents (shopper and administrator sections; none for
+developers), built from per-step stills of `PASS` states, ≤ 12 frames, plus the success-state still. A
+flow that could not be captured is named on the guide's `Not documented` line.
 
 **Mechanism — nothing new.** An animated GIF attaches and embeds exactly like a PNG: same attachment
 upload, same `!filename.gif|width=700!` through the v2 comment API, same three-signal `renderedBody`

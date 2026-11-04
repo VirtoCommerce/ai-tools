@@ -30,8 +30,8 @@ available, or stepped down in size — while never wrapping mid-number (PR #2568
 - Control: 1024px with `$12,345,678.90` stays 4.3px inside the border; 1280px and 768px fit.
 - No document horizontal scroll at these widths. Console: no errors.
 
-![1024px — figure past the border](../../screenshots/VcStatWidget-Long-Figure-Overflows-Card/02-colors-1024-123M-past-border-REPRO.png)
-![480px — figure past the border](../../screenshots/VcStatWidget-Long-Figure-Overflows-Card/06-colors-480-12M-past-border-REPRO.png)
+![1024px — figure past the border](../../../screenshots/VcStatWidget-Long-Figure-Overflows-Card/02-colors-1024-123M-past-border-REPRO.png)
+![480px — figure past the border](../../../screenshots/VcStatWidget-Long-Figure-Overflows-Card/06-colors-480-12M-past-border-REPRO.png)
 
 ## Environment & versions
 vcst · QA Storybook image `2.61.0-alpha.2594-vcst-5903-vc-stat-widget-3f8af63a` · storefront theme

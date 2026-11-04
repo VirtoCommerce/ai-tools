@@ -1,6 +1,6 @@
 ---
-description: "Run business analysis: system architecture, user flows, API audit, documentation, per-ticket documentation published to the tracker, and layer-routed release notes. Coordinates 4 BA specialist agents."
-argument-hint: "[full|flows|api|docs|docs ticket <TICKET> [--publish]|docs release <TICKET|--sprint S|--version V>|stories [<flow>|<TICKET>|--review <TICKET>]|module <name>]"
+description: "Run business analysis: system architecture, user flows, API audit, user stories and UX improvement specs. Coordinates 4 BA specialist agents. Product documentation of a tested ticket is /qa-docs, not this command."
+argument-hint: "[full|flows|api|stories [<flow>|<TICKET>|--review <TICKET>]|module <name>|ui]"
 
 ---
 
@@ -17,24 +17,10 @@ You are the **BA Orchestrator** for a Virto Commerce project. When invoked, you 
 - `/ba-analyze` — Full system analysis (default)
 - `/ba-analyze flows` — User flow analysis only (includes live UI exploration)
 - `/ba-analyze api` — API analysis and docs only (includes Swagger UI + GitHub search)
-- `/ba-analyze docs [audience]` — Generate/update documentation. `audience` ∈ `customer | admin | developer | sales | all` (default `all`). Customer = shopper storefront how-tos; admin = back-office guides; developer = API/integration docs; **sales = benefit-led marketing one-pagers**.
-- `/ba-analyze docs ticket <TICKET> [--publish]` — **Ticket documentation.** The ordinary product
-  guides (§3/§4/§5) a tested ticket earns, written for the surface it moved, saved to
-  `reports/ba/<ticket>-<slug>-<audience>-guide.md`, and — with `--publish` — posted as **ONE tracker
-  comment with a section per audience**. Audiences come from `summary.json.layer` via the **§9.1**
-  layer→audience row (a floor, not a ceiling); shape, caps and the four refusals are
-  `knowledge/ba/virto-doc-style.md` **§10**. **This is not a release note** — no version literals, and it
-  may legitimately serve more than one audience. Pointed at by `/qa-test` **5h**.
-- `/ba-analyze docs release <TICKET>` — **Release note, per-ticket fragment.** Reads the tested
-  ticket’s `summary.json` in its run folder (`npm run --silent run:dir -- --ticket <TICKET>`) and writes
-  `reports/ba/release-notes/<ticket>-<layer>-release-note.md`. The layer comes from that file and
-  **picks the audience** (`knowledge/ba/virto-doc-style.md` §9.1). `release` occupies the audience slot
-  but is a **mode, not an audience**. Pointed at by `/qa-test` 5f.
-- `/ba-analyze docs release --sprint <SprintXX-XX>` (or `--version <X.Y.Z>`) — **the aggregate.**
-  Globs every fragment in the window and writes `reports/ba/release-notes/release-<label>.md`.
-  `--audience sales` is legal **here only**.
 - `/ba-analyze module <name>` — Analyze a specific VC module (searches GitHub repos + live UI)
 - `/ba-analyze ui` — Live UI-only analysis (storefront + admin panel exploration)
+
+Documentation of a tested ticket — what's new, how to set it up, how it works — is [`/qa-docs`](../skills/qa-docs/SKILL.md), not a scope of this command.
 
 ---
 
@@ -47,23 +33,9 @@ You coordinate three specialist subagents in sequence, then synthesize their fin
 1. **`/preflight ba --components <scope>`** ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md))
    — MCP availability (VirtoOZ is `REQ`: with neither VirtoOZ nor Context7 there is nothing to ground in)
    and kb → VirtoOZ grounding. Then query the topic-scoped VirtoOZ tool for the target scope
-   (`PlatformUserGuide` / `StorefrontUserGuide` / `PlatformDeveloperGuide` / `VirtoCommerce` for sales)
+   (`PlatformUserGuide` / `StorefrontUserGuide` / `PlatformDeveloperGuide`)
    to build Virto's published terminology and voice before analyzing code.
-2. **If the run will produce docs** (scope `docs`, `full`, or anything that reaches `ba-doc-writer`): read `knowledge/ba/virto-doc-style.md` so you can verify each generated doc matches its audience skeleton. The BA team framework is `knowledge/agents/ba/shared-instructions.md`.
-2a. **On `docs release`, read `summary.json` FIRST — before any MCP call.** If
-   `release.refusal` is non-null, or `layer` is null, **stop and report the refusal**: there is no
-   document to write, and grounding terminology for a note that will not exist is wasted work. A
-   refusal is a legitimate outcome (`verdict-not-pass` · `layer-unresolved` · `not-deployed` ·
-   `not-user-visible` · `no-version`), not a failure.
-2b. **On `docs ticket`, read `summary.json` FIRST — before any MCP call**, exactly as 2a does. Refuse
-   and stop on `layer-unresolved` (`layer` is null — never guess, never default to `storefront`),
-   `not-deployed`, or `not-user-visible` (no `PASS` row in `testing-checklist.md` a shopper, operator
-   or integrator can act on). A refusal is a legitimate outcome, not a failure — and `not-user-visible`
-   is the **expected** one for most FAST-path tickets.
-   **A non-`PASS` verdict is NOT a refusal here** — unlike 2a's release note, it *scopes* the guide:
-   document the run's passing paths, omit the failing ones, and carry the mandatory `Not documented`
-   line and the verbatim verdict (`virto-doc-style.md` §10.4). There is likewise **no `no-version`
-   refusal** in this mode: a how-to does not quote a build number (`virto-doc-style.md` §10).
+2. **The BA team framework** is `knowledge/agents/ba/shared-instructions.md`.
 3. **`npm run bl:extract -- --domain <d>`**: its `Included:` line lists existing `BL-DOMAIN-NNN` IDs. You will pass this list to `ba-system-analyzer` as `existing_bl_ids` so it can (a) avoid re-proposing known invariants and (b) pick the next available number per domain when drafting new ones.
 
 ### Step 1 — Greet & Confirm Scope
@@ -84,7 +56,7 @@ Use the Task tool to run specialist agents. Agent types match the `agents/` defi
 1. **ba-system-analyzer** (Task tool, `subagent_type: ba-system-analyzer`) — Pass: repo structure, VC docs URL, module scope
 2. **ba-api-specialist** (Task tool, `subagent_type: ba-api-specialist`) — Pass: Postman collection path/ID, API base URL
 3. **ba-story-writer** (Task tool, `subagent_type: ba-story-writer`) — Pass: pain_points[] from system-analyzer output, flow_name, actor (run after analyzer)
-4. **ba-doc-writer** (Task tool, `subagent_type: ba-doc-writer`) — Pass: results from all three agents above (run last)
+4. **ba-doc-writer** (Task tool, `subagent_type: ba-doc-writer`) — Pass: results from agents 1 and 2 (run last); it writes the UX improvement specs
 
 Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 3 runs after 1 completes. Agent 4 runs last.
 
@@ -95,27 +67,11 @@ Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 
 - If scope is `api`: run **ba-api-specialist** only (with GitHub search + Swagger UI)
 - If scope is `ui`: run **ba-system-analyzer** with UI analysis only (skip code/GitHub analysis)
 - If scope is `module <name>`: run **ba-system-analyzer** (focused GitHub search for that module) + **ba-api-specialist** (module API surface)
-- If scope is `docs release …`: run **`ba-doc-writer` ALONE** — no other agent, in either mode. A
-  release note describes **one shipped change**, and there is no per-ticket `system_analysis` or
-  `api_analysis` to have (`ba-doc-writer` §6). Pass `doc_scope: release`, `release_mode`
-  (`fragment` for a ticket, `aggregate` for `--sprint`/`--version`), and the `summary_json_path` /
-  `window`. **Do not pass an `audience` in fragment mode** — it is derived from the layer.
-- If scope is `docs ticket <TICKET>`: run **`ba-doc-writer` ALONE** — same reason as `docs release`:
-  the scope is one shipped change, and there is no per-ticket `system_analysis` or `api_analysis` to
-  have. Pass `doc_scope: ticket-doc`, `ticket_key`, `summary_json_path`, `evidence_dir`, and
-  `publish_target` when `--publish` was given. **Do not pass an `audience`** unless the operator named
-  one — it is derived from the layer via §9.1, and an explicit one narrows rather than replaces.
-  **`--publish` posts to the tracker, so ASK before posting**; the subagent composes the body and never
-  posts it itself. Mechanics are `knowledge/execution/tracker-ops.md`'s — **§2** for the endpoint, **§5d**
-  for what a delivery is (the guides in full, in ONE comment however long — never split; never a
-  repo path in place of content), **§5a** for the body dialect and **§5c** for the screenshot carve-out.
-- If scope is `docs`: run all agents (docs need full context), then `ba-doc-writer` with the requested `audience`. For `sales`, the system analysis is still required — Sales claims must map to observed features (see `ba-doc-writer` Truth guardrail).
 - Default (full): run all four agents
 
 **Pass these env vars to subagents:**
 - `front_url` = `FRONT_URL` from `.env` (for storefront UI analysis)
 - `back_url` = `BACK_URL` from `.env` (for admin panel UI analysis)
-- `audience` = the doc audience(s) from `docs [audience]` (default `all`) — pass to `ba-doc-writer`
 - `module_scope` = module name (when scope is `module <name>`)
 - `existing_bl_ids` = list gathered in Step 0 (pass to `ba-system-analyzer` only)
 
@@ -141,13 +97,6 @@ After synthesis and before writing the final report. **No `bl-proposals-*` file 
 Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions.
 
 Produce a Markdown report saved as `reports/ba/ba-report-{date}.md`, and also print a summary to the terminal.
-
-**Exception — `docs ticket` writes NO `ba-report-{date}.md` either.** Its deliverable is the guides plus
-the tracker comment (or the refusal). Print the guide paths, the composed comment body for approval, and
-the post result — then stop.
-
-**Exception — `docs release` writes NO `ba-report-{date}.md`.** It is not an analysis: its entire
-deliverable is the release note (or the refusal). Print the fragment path (or the refusal reason) to the terminal and stop.
 
 ```markdown
 # BA Analysis Report — Virto Commerce
@@ -188,8 +137,8 @@ deliverable is the release note (or the refusal). Print the fragment path (or th
 ### Recommended API Improvements
 [Specific suggestions]
 
-## 5. User Documentation
-[Full user-facing docs for the analyzed scope — ready to publish]
+## 5. UX Improvement Specs
+[ba-doc-writer's specs for the pain points above — link the file]
 
 ---
 
@@ -217,7 +166,7 @@ deliverable is the release note (or the refusal). Print the fragment path (or th
 - Use Virto Commerce terminology correctly (catalogs, price lists, fulfillment centers, dynamic properties, etc.)
 - If a data source is unavailable, note it clearly and work with what you have
 - Flag any security concerns (exposed sensitive endpoints, missing auth, etc.) immediately
-- Write each document for its declared **audience** (`customer | admin | developer | sales`) in the matching Virto style — `knowledge/ba/virto-doc-style.md` is the single source of truth for skeletons and voice. Do not collapse audiences (a Sales one-pager is benefit-led, not a how-to; a Customer guide has no GUIDs/code)
+- Product documentation (guides, release notes, sales one-pagers) is not produced here — point at `/qa-docs` for a tested ticket
 - Browser assignments: `ba-system-analyzer` → `playwright-firefox` (fallback: `playwright-edge`), `ba-api-specialist` → `playwright-edge` (fallback: `playwright-firefox`)
 - Ground in Step 0 via `/preflight` (kb → VirtoOZ; Context7 only as VirtoOZ's fallback) before launching sub-agents
 - **BA never edits the BL oracle and writes no proposals file** — Step 4.5 routes each candidate (human source → `/qa-review-bl`; observation → `kb`; contradiction → finding). Every candidate cites a source; drop unsourced ones rather than guess.

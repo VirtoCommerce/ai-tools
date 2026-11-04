@@ -33,9 +33,9 @@ The impact path always runs one way: change → domain node → behaviour → da
 3. Update `domain_map_rev` and `amended`. Leave `generated` alone: it dates the last full derivation.
 4. `npm run models:check`. `TM-030` is checked against `HEAD` by default; use `--base origin/main`
    before a PR. The `suspects` array now lists every case linked to a changed, DRIFT or OBSOLETE node.
-5. Hand each suspect's suite to `/qa-test-lifecycle suite <ID>`; its Phase 2 re-syncs it, and the
-   lifecycle does not read `suspects` itself. **Do not edit those cases here.** Deciding whether a case
-   is stale is the lifecycle's job.
+5. Hand each suspect's suite to `/qa-test-lifecycle suite <ID>`: `qa-suite-sync` reads `suspects` itself
+   and runs its sync on them even for a `suite` input. **Do not edit those cases here.** Deciding whether
+   a case is stale is the lifecycle's job.
 6. If a data requirement changed (`requires` / `produces`), run `/qa-test-data-model update` for it.
 7. Close out with the kb write step from [`build.md`](build.md) step 9, for anything observed live.
 

@@ -149,7 +149,7 @@ sequenceDiagram
     Orch->>Orch: inline self-check, both paths (verify:gate --gate 5-verdict --run-id; the 5b verifier dispatch was folded away 2026-09-16)
     Orch->>Orch: 5-verdict.2 verdict (keyed off 5-triage provenance + 5-verdict.1 reconciliation)
 
-    note over Orch,TR: Step 5-file · File bugs — sub-task (in-scope) / link-only (pre-existing) / standalone (incidental)
+    note over Orch,TR: Step 5-file · File bugs — To-fix row (in-scope, no ticket) / link-only (pre-existing) / suggest + ask (separate ticket)
     opt Confirmed non-duplicate bugs
         Orch->>TR: 5-file file via /qa-bug (confirm, with Fix Routing + relationship)
     end
@@ -204,8 +204,8 @@ sequenceDiagram
         Orch-->>User: Resolve env/data/dependency, re-run /qa-test
     end
     opt Step 3 authored new cases (new_cases_authored > 0)
-        note over Orch,User: They stay Draft. /qa-test STOPPED PROMOTING 2026-09-10 — the flip is a later /qa-test-lifecycle 6P pass, or a direct /qa-regression run's Step 6.5 (procedure: knowledge/execution/regression-promotion.md)
-        Orch-->>User: Next step = /qa-test-lifecycle VCST-XXXX --promote-only
+        note over Orch,User: They stay Draft. /qa-test STOPPED PROMOTING 2026-09-10 — the flip is a later qa-case-promotion pass, or a direct /qa-regression run's Step 6.5 (procedure: knowledge/execution/regression-promotion.md)
+        Orch-->>User: Next step = /qa-test-lifecycle promote VCST-XXXX
     end
 ```
 
@@ -280,7 +280,7 @@ sequenceDiagram
   *existing* suites, flakiness-history feed) instead of ad hoc re-derivation; findings without a RUN_ID
   (failed ACs, checklist-track bugs, App-Insights signals) use the same taxonomy inline. Every finding is
   classified (real bug / test-defect / by-design), given a **provenance** (**PRE-EXISTING** → link, don't
-  re-file · **IN-SCOPE** → fails this ticket, files as a tracker **Sub-task** · **OUT-OF-SCOPE incidental**
+  re-file · **IN-SCOPE** → fails this ticket, becomes a row of the comment's **To fix** table (no tracker item) · **OUT-OF-SCOPE incidental**
   → own standalone ticket, doesn't fail this one), given a severity, and **deduped across all sprints + the
   tracker** — all before `5-file` files anything via `/qa-bug`. A test-defect routes to `/qa-review-tests
   --fix`, never a ticket. Only an in-scope P0/P1 (or an out-of-scope P0 revenue break) fails the verdict.
@@ -290,22 +290,22 @@ sequenceDiagram
   metric, so this is a simple deterministic ratio in `qa-metrics`' own style, not a repurposed
   regression-pass-rate number. **Self-checked inline on both paths** since 2026-09-16, against the criteria
   the removed FULL-path verifier used to reject on.
-- **Step 5-file filing — relationship by provenance.** **IN-SCOPE → filed as a tracker Sub-task of the ticket**
-  (parent-child; `.claude/knowledge/execution/tracker-ops.md` §5b), replacing a plain link — it *is* this
+- **Step 5-file filing — relationship by provenance.** **IN-SCOPE → a row of the ticket's To-fix table, no tracker item (no Sub-task since 2026-11-03)**
+  (`.claude/knowledge/execution/tracker-ops.md` §5b; rendered by `/vc-fix:qa-report`) — it *is* this
   ticket's defect. **PRE-EXISTING → linked only, never re-filed.** **OUT-OF-SCOPE incidental → its own
-  standalone ticket + a related link (unchanged)**, since it wasn't caused by this ticket's change.
+  standalone ticket + a related link, suggested and created only on the operator's yes**, since it wasn't caused by this ticket's change.
 - **Step 5-report Report, before Step 5-status status change.** The tracker comment (rendered by /vc-fix:qa-report from summary.json, incl. the
   AC/DoD estimate, the regression pass rate, and the release-gate line) is posted **before**
   the TESTED/REOPEN transition — two distinct actions, not bundled.
 - **Close-out loop (pointer, not auto-trigger — the default)** — FAIL/REOPEN → `/qa-fix` → human
   merge/deploy → `/qa-verify-fix` (RED→GREEN re-test) → TESTED/DONE; BLOCKED → resolve → re-run `/qa-test`.
   `/qa-test` states the next command and stops; it never fixes. **Promotion is not part of the close-out** —
-  cases authored at Step 3 stay `Draft` and a later `/qa-test-lifecycle --promote-only` pass flips them.
+  cases authored at Step 3 stay `Draft` and a later `/qa-test-lifecycle promote VCST-XXXX` pass flips them.
 - **`--iterate` — the bounded test → fix → re-test loop (opt-in, Step 5-loop)** — with `--iterate` (default
   `--max-rounds 2`) a FAIL is *driven*, not pointed: per round `/qa-test` runs `/qa-fix` for each IN-SCOPE
   fixable bug (G0–G7, **never merges**; a G0 BAIL STOPs to a human) → `/qa-deploy-pr` deploys the fix's
   **prerelease** to the test env (**confirm each deploy**; no merge, so the §2 guard is never touched) →
-  **`5-loop.0` round entry: probes the deployed build, then re-reads the board** — the ticket’s sub-tasks and
+  **`5-loop.0` round entry: probes the deployed build, then re-reads the board** — the ticket’s
   linked bugs, each fix-ready one verified by an **inline `/qa-verify-fix`**, a VERIFIED one hopping to
   `TESTED` **only when its fix is merged AND in that probed build** (prerelease-green is comment-only;
   every other verdict stays CARRIED and defers its `REOPEN` to loop exit) →
@@ -320,7 +320,7 @@ sequenceDiagram
   `summary.json` with the round appended to `iterations.per_round[]`, and **appends** a section to the
   checklist; the release gate, the full QA-Complete comment, the tracker transition and `5-docs`/`5-docs-map` all
   happen **once, at loop exit** — so a `--iterate` run makes one transition **on the ticket under test**
-  and posts one QA-Complete comment whatever the round count (a bug sub-task verified at round entry takes
+  and posts one QA-Complete comment whatever the round count (a linked bug verified at round entry takes
   its own hop, capped at `TESTED`). Per-round table with the reason for each row:
   [`skills/qa-test/modes.md`](../.claude/skills/qa-test/modes.md) §5-loop.
 - **Promotion is append-Draft → execute → STOP; the flip is a different command.** Cases are appended
@@ -329,11 +329,11 @@ sequenceDiagram
   of `{OBSERVED}` and needs a live browser, so promoting before execution is impossible. **`/qa-test`'s own
   `5g` step was REMOVED 2026-09-10**: it was a corpus-wide write sitting at the tail of a ticket run as a
   hard-STOP gate that fired *after* the close-out had been delivered, so it could neither block nor be
-  skipped cleanly — and it made two promoters for one corpus. **`/qa-test-lifecycle` Phase 6P is the FULL
+  skipped cleanly — and it made two promoters for one corpus. **`qa-case-promotion` is the FULL
   promoter**, for these cases as for handoff, re-promotion and legacy sources — and a **direct**
   `/qa-regression` run flips already-grounded cases at its **Step 6.5**, from the `RUN_ID` it just made
   (same `tc:promote`, no assertion harvest, suppressed with `--no-promote` on the C1 run `/qa-test`
-  delegates). 6P harvests the run's
+  delegates). `qa-case-promotion` harvests the run's
   `RUN_ID`, flips each eligible case `Draft → Automated` (green under the automated runner) or
   `Reviewed`/`Manual` (checklist-only), **reverts non-promotable rows**, and leaves a case that failed on a
   real in-scope bug at `Draft` with a reason — ratified by a fresh `qa-lead` verifier + user confirmation,
@@ -442,7 +442,7 @@ flowchart TB
 | `ba-system-analyzer` | L2 | 1c (full path) | ticket fields + PR diff + comment/attachment signals | affected surface, flows, `VC-*` risk, docs grounding | firefox (RO) |
 | `ba-story-writer` (B) | L2 | 1d (full path) | existing ACs + PR diff | AC scorecard, gap-ACs, AC↔impl (static), DoD checklist | none |
 | `test-management-specialist` | L2 | 3 | Test Model (scenarios + user-flow diagram) | Artifact A (cases → suite as Draft), B (checklist), C (selection) | chrome (seq) |
-| `/qa-review-tests` | L2 | 3 (and later, in `/qa-test-lifecycle` 6P) | authored cases | fixed cases / unshippable flag; `--verify` upgrades to `{OBSERVED}` | — |
+| `/qa-review-tests` | L2 | 3 (and later, in `qa-case-promotion`) | authored cases | fixed cases / unshippable flag; `--verify` upgrades to `{OBSERVED}` | — |
 | `test-data-engineer` | L2 | 3 (cond.) | gap fixtures needed | seeded data, `@td()` aliases, green `td:validate` | none |
 | `qa-frontend-expert` | L3 | 4 | checklist + A + `@td()` + BL/ECL | pass/fail + evidence + bugs | chrome |
 | `qa-backend-expert` | L3 | 4, 5-triage | same; triage oracle at 5-triage | same; App-Insights classification | edge |
@@ -472,7 +472,7 @@ flowchart TB
 | **4** Execution | every condition has PASS/FAIL evidence **and says which pass produced it (4a or 4b)**; regression `RUN_ID`+rate exist (the run also executed the new Draft cases) | inline self-check | inline |
 | **5-triage** Triage | Artifact-C `RUN_ID`'s FAILs triaged via `/qa-triage-results --fix` (not ad hoc); every other finding classified + provenance + severity + deduped | folded into the Step 5-verdict gate below | inline (no separate dispatch) |
 | **5-verdict.1** AC & DoD vs implementation | every AC condition reconciled; every DoD item resolved MET/NOT-MET/N-A; AC-coverage % + DoD % computed from actual counts | inline self-check, both paths — re-derive from the Step-4 evidence, `verify:gate --gate 5-verdict --run-id <ID>` for the deterministic half | **gates 5-verdict.2** |
-| **5-file** File bugs | IN-SCOPE → Sub-task of the ticket; PRE-EXISTING → linked, not re-filed; incidental → standalone + related link | inline self-check (mechanical — 5-triage graded the provenance/severity calls and 5-verdict settled them) | inline |
+| **5-file** File bugs | IN-SCOPE → To-fix row, no ticket; PRE-EXISTING → linked, not re-filed; incidental → suggested standalone + related link, on the operator's yes | inline self-check (mechanical — 5-triage graded the provenance/severity calls and 5-verdict settled them) | inline |
 | **5-report** Report → release gate | §1a criteria → GO/CONDITIONAL/NO-GO | **FULL:** V re-evaluates `compute-metrics.ts --gate feature --run-id <RUN_ID>` (scope required; exit 2 = CANNOT EVALUATE, not a failure) + open-bug ledger (now current, post-5-file) | ratify/downgrade |
 | **5-docs** Publish documentation | audiences derived from `layer`; size caps honoured; a refusal (`layer-unresolved` / `not-deployed` / `not-user-visible`) is STATED, never a silent skip | inline self-check | inline |
 | **5-docs-map** Domain-map write-back *(FULL, only when a map exists)* | every appended claim is live-`CONFIRMED` with the ticket id; no row deleted, no id renumbered; `amended` moves and `generated`/`rev` do not | inline self-check + `domain:check` + `context:check` | inline, non-blocking |
@@ -487,7 +487,7 @@ A `/qa-test` run is **Done** when all hold:
 2. **Every atomic condition** (story ACs + gap-ACs) carries PASS/FAIL evidence and is reconciled live, and
    every DoD item is resolved MET/NOT-MET/N-A, with the AC-coverage/DoD percentages computed (5-verdict.1).
 3. **Every finding triaged** (class + provenance + severity + dedup, 5-triage); confirmed bugs filed with
-   confirmation, the right tracker relationship (Sub-task / link / standalone), and `## Fix Routing` (5-file).
+   confirmation, the right tracker relationship (To-fix row / link / suggested standalone), and `## Fix Routing` (5-file).
 4. A **verdict** (5-verdict) issued, consistent with the triage + AC/DoD tables.
 5. **`summary.json`** persisted (schema at [`.claude/templates/qa-test-summary.schema.json`](../.claude/templates/qa-test-summary.schema.json))
    with `path`, the `ac_dod_estimate` block, the `regression` (C1 only) + `regression_triage` blocks,
@@ -499,7 +499,7 @@ A `/qa-test` run is **Done** when all hold:
 7. **Feature Release Gate fed** (5-report) and independently ratified GO/CONDITIONAL/NO-GO.
 8. **Documentation published (5-docs)** — or its refusal stated — and, on FULL with an existing domain map,
    **`5-docs-map` has written back what the run verified** (or recorded `NOTHING_TO_AMEND`). New cases remain
-   `Draft`, with `/qa-test-lifecycle VCST-XXXX --promote-only` named as the next step: promotion is **not**
+   `Draft`, with `/qa-test-lifecycle promote VCST-XXXX` named as the next step: promotion is **not**
    part of this run's DoD.
 9. **Close-out pointers stated**, never auto-triggered: FAIL/REOPEN → `/qa-fix` → human merge/deploy →
    `/qa-verify-fix`; BLOCKED → resolve → re-run `/qa-test`.

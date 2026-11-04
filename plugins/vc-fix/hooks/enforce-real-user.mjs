@@ -89,6 +89,18 @@ const ALLOWED_PATTERNS = [
   /@exploratory\b/,
 ];
 
+// WebAuthn virtual authenticator — passkey testing (VCST-6121). A passkey ceremony
+// needs an authenticator, and the only one a browser lane can have is Chrome's
+// virtual one, set up over CDP (`page.context().newCDPSession(page)` →
+// `WebAuthn.addVirtualAuthenticator`). That emulates the DEVICE, not the user: the
+// ceremony itself is still driven by real clicks on the page. So the payload passes
+// only when it sends WebAuthn domain commands AND touches the page in no other way —
+// a pattern in ALLOWED_PATTERNS would let any payload that merely mentions one through.
+const WEBAUTHN_CDP =
+  /['"]WebAuthn\.(?:enable|disable|addVirtualAuthenticator|removeVirtualAuthenticator|addCredential|getCredential|getCredentials|removeCredential|clearCredentials|setUserVerified|setAutomaticPresenceSimulation|setResponseOverrideBits|setCredentialProperties)['"]/;
+const PAGE_ACTION =
+  /\.(?:click|dblclick|fill|type|press|pressSequentially|check|uncheck|selectOption|setInputFiles|dispatchEvent|tap|hover|focus|evaluate|evaluateHandle|\$eval|\$\$eval|goto|reload|setContent|route|addInitScript|exposeFunction|exposeBinding)\s*\(|\b(?:removeAttribute|setAttribute|innerHTML|outerHTML)\b|\.disabled\s*=|['"](?:Runtime|DOM|Input|Page|Network|Fetch|Emulation)\./;
+
 const BLOCK_MESSAGE = [
   "BLOCKED by real-user interaction rule.",
   "",
@@ -118,6 +130,8 @@ const BLOCK_MESSAGE = [
   "                               — explicit opt-in for an exploratory / SBTM probe",
   "                                 (DevTools-as-attack-tool, tampered replay). Findings are",
   "                                 server/API-layer only, never a UI defect. NOT for test runs.",
+  "  - CDP 'WebAuthn.*' commands only (virtual authenticator for passkey tests) —",
+  "                                 allowed when the payload does nothing else to the page.",
   "",
   "If your case fits an exception but was blocked, refine the regex in",
   "hooks/enforce-real-user.mjs (do not bypass — extend the allowlist).",
@@ -161,6 +175,9 @@ try {
   }
 
   const jsCode = extractJs(event.tool_input);
+  if (WEBAUTHN_CDP.test(jsCode) && !PAGE_ACTION.test(jsCode)) {
+    process.exit(0);
+  }
   for (const pat of ALLOWED_PATTERNS) {
     if (pat.test(jsCode)) {
       process.exit(0);

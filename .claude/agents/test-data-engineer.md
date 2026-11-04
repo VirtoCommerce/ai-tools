@@ -5,6 +5,7 @@ model: opus
 color: cyan
 applicability: universal
 applicability_rationale: "Test-data provisioning craft — design combinations, then author idempotent, env-aware seeders + validators. Universal QA-run-prep discipline; entities are storefront but the seeder pattern is general."
+disallowedTools: Artifact, ArtifactComments, ArtifactData, PowerShell, CronCreate, CronDelete, RemoteTrigger, PushNotification, DesignSync, mcp__Claude_Browser__*, mcp__claude-in-chrome__*, mcp__Chrome_DevTools__*, mcp__chrome-devtools__*, mcp__plugin_playwright_playwright__*, mcp__figma-remote-mcp__*, mcp__ucp-qa__*, mcp__mcp-registry__*, mcp__scheduled-tasks__*, mcp__terminal__*, mcp__visualize__*, mcp__ccd_session__*, mcp__ccd_session_mgmt__*, mcp__ccd_sidebar__*, mcp__ccd_window__*, mcp__ccd_view__*, mcp__ccd_settings__*, mcp__ccd_host__*, mcp__ccd_pr__*, mcp__azure-mcp__*, mcp__playwright-chrome__*, mcp__playwright-edge__*, mcp__playwright-firefox__*, mcp__playwright-mobile__*
 ---
 
 # Test-Data Engineer — Virto Commerce Test-Data Provisioning
@@ -90,7 +91,7 @@ tear down first). This is `seed-bootstrap.mjs` `priority` order — new seeders 
 | Canonical test-data rule (single source of truth) | `.claude/rules/test-data.md` |
 | Live-discovery decision tree + recipes | `knowledge/execution/live-discovery.md` |
 | Deep provisioning reference (entity graph, endpoints, bodies) | `skills/qa-seed-data/test-data-generation.md` |
-| Order creation flow matrix | `knowledge/order-creation-matrix.md` |
+| Order creation flow matrix | `knowledge/api/order-creation-matrix.md` |
 | Business invariants | `npm run bl:extract -- --domain <d>` |
 | Historical failure patterns | `knowledge/oracles/vc-bug-catalog.md` |
 
@@ -103,7 +104,7 @@ You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/
 
 1. **Consult the guides first.** `.claude/rules/test-data.md` (canon) · `knowledge/execution/test-data-authoring.md`
    (how-to) · `knowledge/execution/live-discovery.md` · `skills/qa-seed-data/test-data-generation.md` ·
-   `npm run bl:extract -- --domain <d>` (BL-* to preserve) · `knowledge/order-creation-matrix.md` (if
+   `npm run bl:extract -- --domain <d>` (BL-* to preserve) · `knowledge/api/order-creation-matrix.md` (if
    orders) · `.claude/rules/reports.md` (output discipline).
 2. **Author to the pattern.** Build on `scripts/lib/seed-common.mjs` (`assertSafeTarget` prod guard,
    OAuth `api()`, dry-run, `writeEnvAliasOverride`/`syncEnvAliases`, `verifyRemoved`). Extract a

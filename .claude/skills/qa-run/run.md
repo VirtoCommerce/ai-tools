@@ -8,9 +8,9 @@ calls this file for its execution step.
 | Argument | Scope | Where the suites come from | Ledger |
 |---|---|---|---|
 | `smoke`, `critical`, `full`, `frontend`, `backend`, a manifest selection group, `042,078` | a one-off run | `config/test-suites.json` `selections`, or the ids given | no — the triage report of the run is the record |
-| `sprint`, `sprint:XX-YY` | the sprint plan | `docs/Sprint plans/sprint-{XX-YY}-summary.json` `suitesActivated[]` (resolution order: `regression-selection.md` §Plan-driven selection) | not yet — a sprint plan writes no release folder |
-| `stable:<N> <wave>` · `stable:<N> status` | one wave of a stable-bundle regression | `regression/releases/stable-<N>/release.json` — that wave's `suites`, its `tier` as `--cases` (`rest` → `medium,low`), minus every other wave's `exclusive` | yes — [`waves.md`](waves.md) |
-| bare `stable:<N>` | — | refused: a release runs wave by wave, so claims, tier order and the ledger hold. Show `npm run release:status -- stable-<N>` | — |
+| `stable:<N> <wave>` · `stable:<N> status` · `sprint:<XX-YY> <wave>` · `sprint:<XX-YY> status` · `stable:<N> all` · `sprint:<XX-YY> all` | one wave of a stable-bundle or sprint regression | `regression/releases/<release>/release.json` (`stable-<N>`, `sprint-<XX-YY>`) — that wave's `suites`, all priorities in one run (`--by-priority`: three passes), minus every other wave's `exclusive` | yes — [`waves.md`](waves.md) |
+| bare `stable:<N>`; bare `sprint` / `sprint:XX-YY` when `regression/releases/sprint-<XX-YY>/` exists | — | refused: a release runs wave by wave, so claims, W0 first and the ledger hold. Show `npm run release:status -- <release>` | — |
+| bare `sprint` / `sprint:XX-YY` with no release folder (planned with `--no-waves`, or before sprint plans had waves) | the whole sprint plan as one run | `docs/Sprint plans/sprint-{XX-YY}-summary.json` `suitesActivated[]` (resolution order: `regression-selection.md` §Plan-driven selection). Say that it runs as one person's run, and that `/qa-test-plan <XX-YY>` without `--no-waves` would split it | no — the triage report of the run is the record |
 
 `--cases`, `--ids`, `--also-ids`, `--seed`, `--teardown`, `--promote`, `--run-blocked` and the layer flags pass
 through to the execution pipeline unchanged (`--run-blocked` lands on its `regression:plan` call).
@@ -33,7 +33,7 @@ the automatic triage and the GitHub question around a pipeline that already work
    (`waves.md` Step 5).
 2. **"Put it in GitHub?"** — always asked after triage, and after a clean run (nothing to triage) too. What goes in
    depends on the scope:
-   - one-off or sprint run: the case and fixture repairs the triage found, as one PR (repairs in their own commit),
+   - one-off run, or a sprint plan run whole: the case and fixture repairs the triage found, as one PR (repairs in their own commit),
      plus `reports/regression/history.json` if the run updated it;
    - release wave: the wave's `state.json`, `ledger.csv`, `report.md`, the regenerated `PROGRESS.md`, and the repairs
      ([`waves.md`](waves.md) Step 7).

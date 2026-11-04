@@ -57,7 +57,7 @@ is always under `reports/tickets/`. A `/qa-test-lifecycle` run summary is termin
 | Ticket evidence (sprint) | `tickets/SprintXX-YY/VCST-XXXX/` | `/qa-test` writes `summary.json` + `testing-checklist.md` + screenshots; other skills may add their own report |
 | Ticket evidence (ad-hoc) | `tickets/VCST-XXXX/` | Directory with test-report.md + screenshots (no sprint context) |
 | Test Model | `ba/test-models/<TICKET>-<date>.md` | `VCST-6077-2026-10-07.md` |
-| Release note | `ba/release-notes/<ticket>-<layer>-release-note.md` · `release-<label>.md` | — |
+| Ticket document · release aggregate (`/qa-docs`) | `ba/<Domain>/<ticket>-<slug>-guide.md` · `ba/release-notes/release-<label>.md` | — |
 | BA report | `ba/[<domain>/]{topic}-YYYY-MM-DD.md` | `ba-report-2026-03-04.md` |
 | BL audit report | `knowledge/BL-AUDIT-YYYY-MM-DD.md` | `BL-AUDIT-2026-07-22.md` |
 | Exploratory session | `exploratory/SBTM-{charter}-YYYY-MM-DD.md` | `SBTM-VCST-6077-2026-10-07.md` |

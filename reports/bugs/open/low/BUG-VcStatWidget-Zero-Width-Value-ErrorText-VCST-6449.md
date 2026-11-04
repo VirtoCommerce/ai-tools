@@ -27,9 +27,9 @@ The same as for `""` or `"   "`: the dash in the figure row and an empty status;
 - `errorText` U+200B: figures hidden, alert icon with a blank message; the status reads "Revenue this week: " + U+200B.
 - Control: `value` = three spaces shows the dash (the VCST-6427 fix is deployed). Console: no errors.
 
-![value U+200B — blank figure row, no dash](../../screenshots/VcStatWidget-Zero-Width-Value-ErrorText/X5-01-value-zwsp-blank-row-run1.png)
-![errorText U+200B — error state with a blank message](../../screenshots/VcStatWidget-Zero-Width-Value-ErrorText/X5-02-errortext-zwsp-pasted-blank-error-run1.png)
-![With Suffix — unit only](../../screenshots/VcStatWidget-Zero-Width-Value-ErrorText/X5-03-withsuffix-value-sp-zwsp-sp-run2.png)
+![value U+200B — blank figure row, no dash](../../../screenshots/VcStatWidget-Zero-Width-Value-ErrorText/X5-01-value-zwsp-blank-row-run1.png)
+![errorText U+200B — error state with a blank message](../../../screenshots/VcStatWidget-Zero-Width-Value-ErrorText/X5-02-errortext-zwsp-pasted-blank-error-run1.png)
+![With Suffix — unit only](../../../screenshots/VcStatWidget-Zero-Width-Value-ErrorText/X5-03-withsuffix-value-sp-zwsp-sp-run2.png)
 
 ## Environment & versions
 vcst · QA Storybook image `2.61.0-alpha.2597-vcst-5903-vc-stat-widget-a6255676` (source `vc-frontend@bfe0b259` + a CI-only

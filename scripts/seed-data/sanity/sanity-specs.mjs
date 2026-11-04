@@ -1,5 +1,5 @@
 /**
- * sanity-specs.mjs — the single source of truth for the VCST-6475 Sanity fixture (suite 114,
+ * sanity-specs.mjs — the single source of truth for the VCST-6475 Sanity fixture (suite 117,
  * vc-module-sanity: several document types, several datasets, a signed webhook).
  *
  * SIDE-EFFECT-FREE: no env load, no network, no main(). Imported by seed-sanity.mjs (provision),

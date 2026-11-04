@@ -317,7 +317,7 @@ CMS-077,Designer — Context menu full interaction,Designer Sections,High,,,Page
 [ASSERT] Verify 'Paste before' and 'Paste after' are now active/enabled
 [ACT] Click 'Paste before'
 [ASSERT] Verify copied section appears above the first section","Context menu appears on right-click for any section; all 6 options visible (Hide, Copy, Paste before, Paste after, Duplicate, Delete); Copy enables Paste options; Paste before inserts above target; Paste after inserts below target; menu dismisses on click-away",,Context menu not appearing; options missing or disabled; Paste not working after Copy; wrong insertion position; menu not dismissing,none,Coverage Gap Analysis COV-2026-03-25-1630,generated
-CMS-078,E2E — Create promotional landing page and publish,E2E Flow,Critical,PROPOSED-BL-CMS-001,,Admin logged in; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft,pageName=Summer Sale 2026; permalink=/summer-sale-2026; language=en-US,"[ACT] Click Add button in Draft tab toolbar
+CMS-078,E2E — Create promotional landing page and publish,E2E Flow,Critical,PROPOSED-BL-CMS-001,,Admin logged in; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft,pageName=Summer Sale 2026; permalink=/summer-sale-2026; language=en-US,"[ACT] Click Add button in Draft tab toolbar (if the page-type chooser opens in a multi-language store (VCST-4935) — choose 'Landing Page')
 [ACT] Enter page name 'Summer Sale 2026' and permalink '/summer-sale-2026'
 [ACT] Select language 'en-US'
 [ACT] Click Save — verify page appears in Draft list
@@ -362,13 +362,13 @@ CMS-080,E2E — Archive page and verify storefront 404,E2E Flow,High,PROPOSED-BL
 [NAV] Navigate to ${FRONT_URL}/<permalink>
 [ASSERT] Verify page returns 404 / not found",Published page accessible before archive; Archive action moves page to Archived tab; storefront returns 404 after archive; page content not accessible to any user,"ADMIN: Page counter decreases in Active tab, increases in Archived tab",Archive button not working; page still accessible on storefront after archive; page stuck in Active tab; 404 not shown,none,Coverage Gap Analysis COV-2026-03-25-1630,generated
 CMS-081,"Multi-language — Create page in EN, add DE translation",Multi-Language,High,PROPOSED-BL-CMS-004,,Admin logged in; store has en-US and de-DE languages configured,pageName=ML Test Page; permalink=/ml-test,"[NAV] Navigate to PageBuilder shell Draft tab
-[ACT] Click Add — create page with name 'ML Test Page', language 'en-US', permalink '/ml-test'
+[ACT] Click Add (if the page-type chooser opens in a multi-language store (VCST-4935) — choose 'Landing Page') — create page with name 'ML Test Page', language 'en-US', permalink '/ml-test'
 [ACT] Click Save
 [NAV] Open the page and click Open Designer
 [ACT] Add a Title block with text 'Welcome to Our Store'
 [ACT] Save and Publish
 [ASSERT] Verify ${FRONT_URL}/ml-test shows 'Welcome to Our Store'
-[ACT] Go back to PageBuilder shell — click Add again
+[ACT] Go back to PageBuilder shell — click Add again (if the page-type chooser opens in a multi-language store (VCST-4935) — choose 'Landing Page' again)
 [ACT] Create page with name 'ML Test Seite', language 'de-DE', permalink '/ml-test'
 [NAV] Open designer, add Title block with text 'Willkommen in unserem Shop'
 [ACT] Save and Publish

@@ -271,6 +271,18 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Cross-ref:** Jira VCST-5618, VCST-5598, VCST-5847, VCST-5688 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
 - **Archetype:** `FALLBACK`
 
+### VC-AUTH-006 — A sign-in rule keyed to an exemption list misses each new sign-in method
+- **Pattern:** A rule that should apply to one sign-in method is written as "everyone except X", so each new method falls into the default branch. The expired-password check exempts SSO only (`!isExternalSignIn`), so passkey and email-code sign-in are sent to Change Password and `me.passwordExpired` is `true`; the rule is "check the expiry only on a password sign-in".
+- **Detection probe:** When a sign-in method ships, sign in with it on an account in each special state (password expired, locked, blocked org, impersonated) and compare with password and SSO sign-in.
+- **Cross-ref:** Jira VCST-6630 (passkey / OTP), VCST-6121, VCST-5748 · BL-AUTH-018 (the rule) · BL-AUTH-016 (the same "which grants count as credential sign-in" question for the org fallback)
+- **Archetype:** `FALLBACK`
+
+### VC-AUTH-007 — A field moved inside `ng-if` binds to a model the submit never reads
+- **Pattern:** In the AngularJS admin, `ng-if` gives its content a child scope. If the controller never creates the model object up front, `ng-model="postData.x"` creates a second `postData` on the child scope, and the value typed there is never sent. The field is visible and filled, so nothing on screen shows the loss. VCST-6669: VCST-6121 wrapped "Current password" in `ng-if="requireCurrentPassword"` so the change-password dialog could also set a first password on passkey-only accounts; the forced change of an expired password (the default `admin` on a fresh environment) then posts `{ newPassword }` only, and `POST /api/platform/security/currentuser/changepassword` answers 500 (`providedPassword` is null).
+- **Detection probe:** When a shared dialog or form gains a variant or a conditional wrapper, re-run the ORIGINAL variant and compare the request body keys with the fields on screen. To reach the forced-change dialog, expire a disposable account's password with `POST /api/platform/security/users/{name}/resetpassword` and `forcePasswordChangeOnNextSignIn: true`, then sign in to the admin.
+- **Cross-ref:** Jira VCST-6669, VCST-6121 (vc-platform#3144), VCST-6338 (moved the code to vc-module-admin-angular-js) · fix: vc-module-admin-angular-js#2 (3.1094.0), vc-platform#3155 (400 instead of 500) · VC-API-010 (the server half) · VC-AUTH-006 (same passkey rollout)
+- **Archetype:** `SILENT`
+
 ---
 
 ## VC-CHECKOUT — Checkout & Payment

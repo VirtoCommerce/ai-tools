@@ -2,7 +2,7 @@
  * Deterministic `Draft → Automated` promoter, driven by a completed regression run.
  *
  * THE GAP THIS CLOSES. The promotion rule was written down in three places
- * (`/qa-test` 5g, `/qa-test-lifecycle` 6P, `test-case-template.md` §Automation_Status) and
+ * (`/qa-test` 5g, `qa-case-promotion`, `test-case-template.md` §Automation_Status) and
  * performed by hand: an agent re-read a run report, decided which cases "ran green", and
  * edited the `Automation_Status` cell. Nothing verified that decision against the run's own
  * evidence, so a case could be promoted on a PASS it never earned — and once at `Automated`

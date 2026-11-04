@@ -8,6 +8,8 @@
  *   1. RESTRICTED_CMS_ADMIN (CMS-123/124, suite 059): read-only Page Builder, LACKS `builder:update`.
  *   2. CATALOG_LINK_RESTRICTED (VCST-5318): products-only catalog Map/Link linker, LACKS
  *      `catalog:categories:link` (can link products/items, cannot link categories).
+ *   ...and one STOREFRONT fixture: AGENT_TEST_IMP_CUSTOMER (IMP-038, suite 082) -- a Customer with a
+ *   personal Contact whose only loginOnBehalf source is the global role AGENT-TEST-imp-role.
  *
  * Idempotent find-or-create per fixture; writes each runtime platform user id + role id to
  * aliases.<env>.json; ships a reverse --teardown (AGENT-TEST only, zero-residue) and a per-fixture
@@ -62,6 +64,7 @@ import {
   SHELL_SEARCH_READ_ROLE, SHELL_SEARCH_READ_ACCOUNT, SHELL_SEARCH_READ_EXCLUDED_PERMISSION,
   SHELL_SEARCH_READ_REQUIRED_PERMISSIONS, SHELL_SEARCH_READ_EXCLUDED_PERMISSIONS, assertShellSearchReadRolePermissions,
   SETTINGS_SCHEMA_ENDPOINT, USERS_SEARCH_ENDPOINT, ROLES_SEARCH_ENDPOINT, SHELL_SEARCH_EXPECTED_STATUS,
+  IMP_OPERATOR_ROLE, IMP_OPERATOR_ACCOUNT, IMP_OPERATOR_REQUIRED_PERMISSIONS, assertImpOperatorRolePermissions, contactBodyFor,
 } from './backoffice-rbac-specs.mjs';
 import { STORE as BARCODE_STORE } from '../catalog/barcode-specs.mjs';
 
@@ -100,6 +103,25 @@ async function ensureRole(role, assertPerms, excluded) {
   return role.role_id;
 }
 
+// A storefront fixture (account.contact) needs a personal Contact linked through memberId. Reuse the
+// one already linked to the account, else the one carrying the account's email, else create it.
+async function findContactByEmail(email) {
+  const r = await api('POST', '/api/members/search', { keyword: email, memberType: 'Contact', take: 20 }, { expectStatus: [200, 201] });
+  return (r?.results || []).find((m) => (m.emails || []).some((e) => (e || '').toLowerCase() === email.toLowerCase())) || null;
+}
+async function ensureContact(account, linkedMemberId) {
+  if (!account.contact) return null;
+  if (linkedMemberId) return linkedMemberId;
+  const found = await findContactByEmail(account.email);
+  if (found?.id) { verbose(`↻ reuse contact ${found.id} (${account.email})`); return found.id; }
+  const created = await api('POST', '/api/members', contactBodyFor(account), { expectStatus: [200, 201, 204] });
+  if (DRY_RUN) { log(`✓ create contact (dry) ${account.email}`); return `dry-contact-${account.email}`; }
+  const id = created?.id || (await findContactByEmail(account.email))?.id;
+  if (!id) throw new Error(`created contact for ${account.email} but could not resolve its id`);
+  log(`✓ create contact ${id} (${account.email}) — personal, no organization`);
+  return id;
+}
+
 async function ensureAccount(account, role, roleId) {
   const email = account.email;
   const password = resolvePassword(account);
@@ -112,17 +134,19 @@ async function ensureAccount(account, role, roleId) {
       const hasRole = (full.roles || []).some((r) => r.id === roleId || r.name === role.role_name);
       if (!hasRole) { full.roles = [{ id: roleId, name: role.role_name }]; dirty = true; }
       if (full.isAdministrator) { full.isAdministrator = false; dirty = true; }
+      if (account.contact && !full.memberId) { full.memberId = await ensureContact(account, null); dirty = true; }
       if (dirty) { await api('PUT', '/api/platform/security/users', full, { expectStatus: [200, 204] }); log(`↻ reconciled account ${email} (role + isAdministrator=false)`); }
       else verbose(`↻ reuse account ${email} (${existing.id})`);
     }
     return existing.id;
   }
-  const res = await api('POST', '/api/platform/security/users/create', accountBody({ email, password, roleId, roleName: role.role_name, storeId: STORE_ID, account }));
+  const memberId = await ensureContact(account, null);
+  const res = await api('POST', '/api/platform/security/users/create', accountBody({ email, password, roleId, roleName: role.role_name, storeId: STORE_ID, account, memberId }));
   if (res && res.succeeded === false) throw new Error(`create ${email}: ${JSON.stringify(res.errors)}`);
   if (DRY_RUN) { log(`✓ create account (dry) ${email}`); return `dry-${email}`; }
   const fresh = await findUser(email);
   if (!fresh?.id) throw new Error(`created ${email} but could not resolve its id`);
-  log(`✓ create account ${fresh.id} (${email}) — Manager, isAdministrator=false, role ${role.role_name}`);
+  log(`✓ create account ${fresh.id} (${email}) — ${account.userType}, isAdministrator=false, role ${role.role_name}`);
   return fresh.id;
 }
 
@@ -419,6 +443,33 @@ async function verifyShellSearch(account, required, excluded) {
   return ok1 && ok2;
 }
 
+// IMP-038: the operator signs in on the STOREFRONT (bare password grant + storeId — some stands 401
+// a correct password when client_id/scope are sent) and its token carries loginOnBehalf from the
+// one global role, with isAdministrator=false.
+async function verifyImpOperator() {
+  const { email } = IMP_OPERATOR_ACCOUNT;
+  log(`\n  [verify] IMP-038 — ${email}: storefront sign-in (storeId ${STORE_ID}) + loginOnBehalf from ${IMP_OPERATOR_ROLE.role_name} only`);
+  const res = await fetch(`${BACK_URL}/connect/token`, {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'password', username: email, password: resolvePassword(IMP_OPERATOR_ACCOUNT), storeId: STORE_ID }),
+  });
+  if (!res.ok) { log(`  ✗ storefront /connect/token → ${res.status} (expected 200)`); return false; }
+  log('  ✓ storefront /connect/token 200');
+  const tok = (await res.json()).access_token;
+  const me = await (await fetch(`${BACK_URL}${CURRENTUSER_ENDPOINT}`, { headers: { Authorization: `Bearer ${tok}` } })).json().catch(() => null);
+  const perms = new Set(me?.permissions || []);
+  // currentuser carries no roles[] — read the assignment from the admin users SEARCH (GET-by-id is cache-flaky).
+  const roles = ((await findUser(email))?.roles || []).map((r) => r.name || r.id);
+  const missing = IMP_OPERATOR_REQUIRED_PERMISSIONS.filter((p) => !perms.has(p));
+  const onlyRole = roles.length === 1 && roles[0] === IMP_OPERATOR_ROLE.role_name;
+  if (!missing.length && me?.isAdministrator === false && onlyRole) {
+    log(`  ✓ currentuser: ${IMP_OPERATOR_REQUIRED_PERMISSIONS.join(', ')} present, roles [${roles.join(', ')}], isAdministrator=false`);
+    return true;
+  }
+  log(`  ✗ currentuser mismatch — missing:[${missing.join(', ')}] roles:[${roles.join(', ')}] isAdministrator:${me?.isAdministrator}`);
+  return false;
+}
+
 async function loginToken(email, password) {
   try {
     const res = await fetch(`${BACK_URL}/connect/token`, {
@@ -440,6 +491,15 @@ async function teardownFixture(role, account) {
     log(`✗ deleted account ${email}`);
   } else verbose(`account ${email} already gone`);
 
+  // Storefront fixtures own a personal Contact: delete the linked one, or the one carrying the email.
+  if (account.contact) {
+    const contactId = user?.memberId || (await findContactByEmail(email))?.id;
+    if (contactId) {
+      await api('DELETE', `/api/members?ids=${encodeURIComponent(contactId)}`, null, { expectStatus: [200, 204, 404] });
+      log(`✗ deleted contact ${email}`);
+    } else verbose(`contact ${email} already gone`);
+  }
+
   const found = await findRole(role);
   if (found?.id) {
     // Role delete accepts the repeated ids= query form; tolerate either 200/204/404.
@@ -450,8 +510,11 @@ async function teardownFixture(role, account) {
   if (!DRY_RUN) {
     const acctLeft = await findUser(email);
     const roleLeft = await findRole(role);
-    if (acctLeft?.id || roleLeft?.id) log(`⚠ residue: ${acctLeft ? 'account ' : ''}${roleLeft ? 'role' : ''} still present for ${role.role_name}`);
-    else log(`✓ teardown zero-residue for ${role.role_name} (account + role removed)`);
+    const contactLeft = account.contact ? await findContactByEmail(email) : null;
+    if (acctLeft?.id || roleLeft?.id || contactLeft?.id) {
+      log(`⚠ residue: ${acctLeft ? 'account ' : ''}${contactLeft ? 'contact ' : ''}${roleLeft ? 'role' : ''} still present for ${role.role_name}`);
+      process.exitCode = 1;
+    } else log(`✓ teardown zero-residue for ${role.role_name} (account${account.contact ? ' + contact' : ''} + role removed)`);
   }
 }
 
@@ -509,6 +572,10 @@ const FIXTURES = [
     assertPerms: assertShellSearchReadRolePermissions, excluded: SHELL_SEARCH_READ_EXCLUDED_PERMISSIONS.join(', '),
     verify: () => verifyShellSearch(SHELL_SEARCH_READ_ACCOUNT, SHELL_SEARCH_READ_REQUIRED_PERMISSIONS, SHELL_SEARCH_READ_EXCLUDED_PERMISSIONS),
   },
+  {
+    role: IMP_OPERATOR_ROLE, account: IMP_OPERATOR_ACCOUNT,
+    assertPerms: assertImpOperatorRolePermissions, excluded: '(none — positive operator; IMP-038 removes loginOnBehalf itself)', verify: verifyImpOperator,
+  },
 ];
 
 // --only <ALIAS[,ALIAS]> scopes seed / teardown / --verify to those accounts
@@ -540,7 +607,10 @@ async function main() {
 
     if (!DRY_RUN && userId && !String(userId).startsWith('dry-')) {
       writeEnvAliasOverride({
-        [account.aliasName]: { _inline: true, platform_id: userId, user_id: userId, role_id: roleId, userName: account.email },
+        [account.aliasName]: {
+          _inline: true, platform_id: userId, user_id: userId, role_id: roleId, userName: account.email,
+          ...(account.contact ? { contact_id: (await findUser(account.email))?.memberId || null } : {}),
+        },
       });
       log(`✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: wrote ${account.aliasName}.platform_id`);
     }

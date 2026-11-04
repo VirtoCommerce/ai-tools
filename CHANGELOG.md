@@ -8,6 +8,63 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A `|thumbnail!` screenshot is no longer reported as not rendered — `vc-fix` `0.18.4` — 2026-11-02
+
+### Fixed
+
+- The Jira `renderedBody` check in `knowledge/execution/tracker-ops.md` and `.claude/rules/reports.md` §5.0 now
+  names the thumbnail form: `!name.png|thumbnail!` renders as `<img src=…/attachment/thumbnail/<id>>`, not
+  `…/attachment/content/<id>`. It rendered, but it is not the house form — amend the embed to `|width=700!`.
+  Observed on VCST-6232 comment 112573, where the old rule reported two rendered images as missing.
+- The repo's `npm run tracker:comment` check (`scripts/tracker/rendered-media.mjs`) counts both forms, once per
+  attachment id, and warns on a thumbnail.
+
+### Verified
+
+- Live read of VCST-6232 comment 112573: 2 images counted, 0 error spans, check passes, both flagged as thumbnails.
+- `npm test` 0 failures; `npm run context:check` exits 0.
+
+## ticket-context analysts read the ticket as plain text and only their mode's input — `vc-test` `0.13.0` — 2026-10-30
+
+### Changed
+
+- `prepare` writes `ticket.slim.json` (summary, status, description, AC fields and every comment as redacted plain
+  text) and writes each linked issue's file in the same shape. `ticket.json` stays raw on disk for `rounds.mjs`.
+- `prepare` writes one input per analyst mode beside `prepare.json`: `analyst-ticket.json`,
+  `analyst-materials.json`, `analyst-change.json`. Each holds only the keys that mode reads and its own output
+  schema (`schemaSlice`, every `$def` it reaches). `ticket-context-analyst` reads its own and never
+  `prepare.json` or `ticket.json`; the briefs drop `OUTPUT_SCHEMA`. VCST-6423.
+- Fixes `ui-ux-expert`: BL-CAT-002 → BL-CAT-001 for "Sold-out UI" (#581).
+
+### Verified
+
+- Live `prepare VCST-6121`: `ticket.json` 282,873 chars → `ticket.slim.json` 15,791. Analyst input per mode:
+  TICKET ~344K → 21K, MATERIALS 61K → 20K (before the items), CHANGE 61K → 33K. Linked issue files ~1–4K each.
+  Every schema slice resolves all its `$ref`s, and a sample `ticketOut` validates against the slice.
+- `npm test` 0 failures; `plugins/vc-test` tests pass; `claude plugin validate plugins/vc-test` passes.
+
+## Parallel `/qa-bug` runs no longer share scratch files — `vc-fix` `0.18.2` — 2026-10-28
+
+### Fixed
+
+- `/qa-bug` gives every run its own work folder (`$WORK`, `knowledge/execution/jira-bug-fields.md` §0) and writes
+  every Jira/Azure payload (`fields.json`, `issue.json`, `link.json`, readbacks) there by absolute path. Before, the
+  recipe named bare `fields.json` / `issue.json`, so two runs filed in parallel from one session wrote the same files
+  in the shared temp dir — observed when VCST-6594 and VCST-6595 were filed at the same minute.
+- Before each write to an existing issue, `--key` must equal `$WORK/KEY` and the payload must be this bug's; a
+  mismatch stops the run instead of sending.
+
+## `qa-investigate` from a subagent: the caller writes `source/findings.md` — `vc-fix` `0.18.1` — 2026-10-28
+
+### Fixed — a subagent's evidence package could not be completed without bypassing a refusal
+
+Claude Code refuses a subagent's `Write` of a report-like file, and Part A row 13's `source/findings.md` is
+one. During VCST-6121 a subagent building packages hit that refusal and wrote the file through a shell
+heredoc instead — the package was complete, the rule was not. `evidence-and-root-cause.md` row 13 now says
+how it works from a subagent: the findings come back in the hand-back under a `## source/findings.md`
+heading and the calling session writes them verbatim to `<package>/source/findings.md` before
+`/qa-bug --evidence`. Inline runs are unchanged.
+
 ## The visual lane runs from the plugin — `vc-test` `0.12.0` — 2026-10-27
 
 P2-5c of the `vc-test` plan (`docs/superpowers/plans/2026-10-27-vc-test-p2-5c-design.md`).

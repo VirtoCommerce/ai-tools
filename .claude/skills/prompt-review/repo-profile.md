@@ -236,7 +236,7 @@ deploy, Teams, the public `kb`.
 ## G8 — Grounding
 
 The order and the trigger are `CLAUDE.md` §Essential Rules → *Product context*: a step that writes
-a claim about platform or storefront behaviour asks the `kb` first, then VirtoOZ (`/vc-docs`), and
+a claim about platform or storefront behaviour asks the `kb` first, then VirtoOZ, and
 only then live or source.
 
 - Product claims a step acts on are sourced (`{DOC}`, `{BL}`, `{OBSERVED}`, `{SPEC}`) or cite a

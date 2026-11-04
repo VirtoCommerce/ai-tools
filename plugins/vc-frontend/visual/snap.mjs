@@ -15,8 +15,8 @@
  * are both shot in one run, never against a baseline captured somewhere else (fonts and anti-aliasing
  * differ between machines).
  *
- * WHY THESE SETTINGS — measured on vc-frontend master, 750 stories, 2026-10-23/26
- * (ai-tools `docs/superpowers/plans/2026-10-26-visual-regression.md` §Evidence). Each removes one noise source:
+ * WHY THESE SETTINGS — measured on vc-frontend master, 750 stories, 2026-10-23/26.
+ * Each removes one noise source:
  *   DPR 1, fixed viewport ........ one raster per target
  *   reducedMotion + animations ... no mid-transition frames
  *   disabled, caret hidden

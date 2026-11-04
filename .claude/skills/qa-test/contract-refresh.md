@@ -11,7 +11,7 @@ per-layer authoring pack Step 3b compiles — and **refreshed it at none of them
 did exist was advisory and unowned: `ba-system-analyzer` and `ba-api-specialist` were told to *"refresh
 via `npm run schema:refresh` if stale"* — a judgment call handed to an agent with no way to make it. Both
 definitions have since been corrected to the opposite rule (**"never judge its staleness yourself"**,
-`ba-system-analyzer.md` line 42 / `ba-api-specialist.md` line 93), and they now say what to do when no rev
+`knowledge/agents/ba/ba-system-analyzer-knowledge-files.md` (the `graphql-schema.md` row) / `ba-api-specialist.md` line 93), and they now say what to do when no rev
 arrives: treat the snapshot as UNKNOWN age and report every field name taken from it as **unverified**.
 That is correct and it is also the cost — an unrefreshed run loses its GraphQL grounding rather than
 guessing at it, which is precisely why the refresh belongs to the caller. The

@@ -5,15 +5,15 @@ applicability_rationale: "Full storefront URL map. Customer's sitemap differs by
 
 # Sitemap: FRONT_URL
 
-**Generated:** October 14, 2026 (rev 11 — deterministic axis refreshed at the Sprint 26-20 boundary; body carried from rev 5, July 20 2026)
+**Generated:** October 28, 2026 (rev 12 — deterministic axis refreshed for the Sprint 26-21 plan; body carried from rev 5, July 20 2026)
 **Base URL:** FRONT_URL (from `FRONT_URL` env var) — vcst-qa
 **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver.") *(was 2.49.0 in May)*
-**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1078.0**; 87 modules loaded) *(was 3.1073.0 at rev 10; rev 9, 2026-09-18: was `3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow`, a pre-release build pinned to VCST-5378 — the QA env is back on a stable-numbered line)*
-**Store total products:** 4,615 *(was 4,567 at rev 10, 4,550 at rev 9; treat product counts and slugs as drift candidates)* · nav categories 53 *(count unchanged; Carriage Bolts re-parented `bolts/` → `destinations/` at rev 11)* · `/products-with-options` subcategories 7 *(unchanged)*
+**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1090.0**; 89 modules loaded) *(was 3.1078.0 / 87 at rev 11, 3.1073.0 at rev 10; rev 9, 2026-09-18: was `3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow`, a pre-release build pinned to VCST-5378 — the QA env is back on a stable-numbered line)*
+**Store total products:** 4,655 *(was 4,615 at rev 11, 4,567 at rev 10, 4,550 at rev 9; treat product counts and slugs as drift candidates)* · nav categories 52 *(53 at rev 11 counted `seed-loyalty-fixtures` twice; Carriage Bolts re-parented back `destinations/` → `bolts/` at rev 12)* · `/products-with-options` subcategories 7 *(unchanged)*
 
 > **Note on the version fields:** the storefront footer "Ver." (`2.54.0-pr-2382`) is the **vc-frontend theme** version — earlier revs of this doc mislabeled it "Platform version". The actual VirtoCommerce **platform** runs on the `3.10xx` assembly line (resolved from `/api/platform/modules`).
 
-> **Route-map freshness (rev 11):** the rev-11 crawl again reported the local `vc-frontend` checkout as **BEHIND `origin/dev`** (local `48a9759c` @ 2026-09-24 — not pulled since rev 10 — vs remote `3d463fb6`; rev 10's remote was `5ad8ba8d`, rev 9's local `17c99c7c` @ 2026-08-26). Even from that partial checkout the route axis already shows 4 added / 4 removed literals (see the rev-10 changelog), so the route sections below are known-stale. Routes added upstream since then are therefore **missing** from the route sections below, so revs 9, 10 and 11 deliberately refreshed **only** the deterministic axis (platform line, product/category counts) rather than rewriting the route map from a stale source. Pull `vc-frontend` and re-run `npm run sitemap:refresh` before trusting the route lists. Sprint 26-18 lands route-affecting work (VCST-5159 sales-rep-as-plugin, VCST-4386 Skyflow module split), so this is a live risk, not a formality.
+> **Route-map freshness (rev 12):** the rev-12 crawl (2026-10-28) still reports the same local checkout `48a9759c` @ 2026-09-24, now behind remote `5a5e6a4f`. The rev-11 crawl had reported the local `vc-frontend` checkout as **BEHIND `origin/dev`** (local `48a9759c` @ 2026-09-24 — not pulled since rev 10 — vs remote `3d463fb6`; rev 10's remote was `5ad8ba8d`, rev 9's local `17c99c7c` @ 2026-08-26). Even from that partial checkout the route axis already shows 4 added / 4 removed literals (see the rev-10 changelog), so the route sections below are known-stale. Routes added upstream since then are therefore **missing** from the route sections below, so revs 9, 10, 11 and 12 deliberately refreshed **only** the deterministic axis (platform line, product/category counts) rather than rewriting the route map from a stale source. Pull `vc-frontend` and re-run `npm run sitemap:refresh` before trusting the route lists. Sprint 26-18 lands route-affecting work (VCST-5159 sales-rep-as-plugin, VCST-4386 Skyflow module split), so this is a live risk, not a formality.
 
 ## Overview
 
@@ -192,7 +192,7 @@ Counts are live product totals from the `/catalog` category grid as of **2026-07
 
 | Subcategory | URL | Parent |
 |-------------|-----|--------|
-| Carriage Bolts | `/destinations/carriage-bolts` | destinations *(rev 11, xAPI nav tree 2026-10-14: moved from `/bolts/carriage-bolts`; not re-verified on the grid)* |
+| Carriage Bolts | `/bolts/carriage-bolts` | bolts *(rev 12, xAPI nav tree 2026-10-28: moved back from `/destinations/carriage-bolts`, where rev 11 saw it; not re-verified on the grid)* |
 | Ever green sports | `/evergreen-wholesale/ev-green-sports` | Evergreen Wholesale |
 | Seasonal | `/evergreen-wholesale/seasonal` | Evergreen Wholesale |
 | Everything for Kitchen | `/kitchen-supplies/everything-for-kitchen` | Home supplies |
@@ -518,7 +518,7 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 ## 13. Technical Information
 
 ### Platform
-- **Platform:** Virto Commerce (ASP.NET) — assembly line **3.10xx** (max module-required `platformVersion` 3.1078.0; 87 modules loaded — as of rev 11, 2026-10-14)
+- **Platform:** Virto Commerce (ASP.NET) — assembly line **3.10xx** (max module-required `platformVersion` 3.1090.0; 89 modules loaded — as of rev 12, 2026-10-28)
 - **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver."; a PR-preview theme build) *(was 2.49.0 in May)*
 - **Environment:** QA (vcst-qa)
 - **Storefront:** vc-frontend (Coffee theme)
@@ -579,6 +579,17 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 10. **Storefront is an SPA** — every path returns the 200 shell and renders 404s client-side, so HTTP status can't confirm a category/product exists; judge existence from the `/catalog` grid or live discovery
 
 ---
+
+## Changelog (vs. October 14, 2026 rev 11)
+
+| Area | Delta |
+|------|-------|
+| Platform assembly line | max module-required `platformVersion` 3.1078.0 → **3.1090.0**; modules loaded 87 → **89** |
+| Store total products | 4,615 → **4,655** (+40) |
+| Nav categories | 53 → **52**. Not a removal: rev 11 listed `seed-loyalty-fixtures` twice. Carriage Bolts moved back `destinations/carriage-bolts` → `bolts/carriage-bolts` (§3 row updated) |
+| `/products-with-options` | 7 subcategories — **unchanged** |
+| Route axis | No route literal ADDED/REMOVED (same local checkout `48a9759c` @ 2026-09-24); remote `origin/dev` moved `3d463fb6` → `5a5e6a4f`, so the route map stays known-stale. §2 **not** rewritten — pull and re-run |
+| Scope of this rev | Deterministic xAPI crawl only (`npm run sitemap:refresh`, 2026-10-28, `/qa-test-plan 26-21` Step 0). Touched: header, route-freshness note, §3 Carriage Bolts row, §13 platform line. Theme "Ver." not resolved (no browser pass). §§2–9 otherwise carried forward, **not** re-verified |
 
 ## Changelog (vs. October 2, 2026 rev 10)
 
@@ -676,6 +687,6 @@ See git history of this file for prior revisions.
 
 ---
 
-**Last Updated:** October 14, 2026 (rev 11)
+**Last Updated:** October 28, 2026 (rev 12)
 **Tool Used:** Playwright (Chrome) MCP — live crawl (guest) + `/api/platform/modules` (authed) for platform version
 **Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Re-derived from source at rev 8:** §2 Account + Corporate + Sales Rep hub routes (vc-frontend `router/routes/` + `modules/*/index.ts`). **Carried forward from rev 4 (not re-verified):** §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.

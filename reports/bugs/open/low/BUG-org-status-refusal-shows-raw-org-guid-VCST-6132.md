@@ -1,8 +1,8 @@
 # A buyer refused by membership status sees a raw English server message with the internal organization ID — **P3**
 
-## Status: CONFIRMED (live: 3x chrome, 4a chrome row 10, C1 REG-2026-10-20-0125 OTP-036)
+## Status: READY_TO_SUBMIT (filed; live: 3x chrome, 4a chrome row 10, C1 REG-2026-10-20-0125 OTP-036; re-verified vcst 2026-10-28)
 **Found by:** agent, testing VCST-6132 (`/qa-test` FULL, 2026-10-20)
-**Tracker:** not filed. It is below the severity floor (Low) and is named in the VCST-6132 QA comment.
+**Tracker:** VCST-6610 (filed 2026-10-28 from regression REG-2026-10-28-1013 OTP-036, re-verified live on vcst Chromium; linked Relates VCST-6417). Package: `reports/regression/REG-2026-10-28-1013/evidence/OTP-036/`.
 **Archetype:** `FALLBACK` · **Provenance:** PRE-EXISTING. The sign-in forms have no locale key for this code. PR #321 only changes when this refusal is reached.
 
 **Env:** vcptcore_qa1 · theme `2.61.0-pr-2575` · Customer `3.1030.0-pr-321-c54f`.

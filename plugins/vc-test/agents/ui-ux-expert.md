@@ -42,7 +42,7 @@ In the skill's base directory unless marked `<plugin>/knowledge/`.
 > **Reference:** `<plugin>/knowledge/bl-ui.md` (in this repository: `npm run bl:extract -- --domain ui`)
 
 - **BL-PRICE-003** Rounding display: prices must display consistently rounded (2 decimal places) — $10.00 not $10, $9.99 not $9.994
-- **BL-CAT-002** Sold-out UI: when `availableQuantity = 0`, show "Out of Stock" and disable "Add to Cart" — silent availability = bug
+- **BL-CAT-001** Sold-out UI: when `availableQuantity = 0`, show "Out of Stock" and disable "Add to Cart" — silent availability = bug
 - **BL-CHK-001** Guest vs authenticated checkout: guest must not show saved addresses/payment; authenticated must pre-fill from profile
 
 ### UI-Specific Invariants (always applicable, regardless of feature spec)

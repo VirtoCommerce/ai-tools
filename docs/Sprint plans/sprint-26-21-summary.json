@@ -1,0 +1,334 @@
+{
+  "sprint": "Sprint26-21",
+  "jiraSprintName": "VCST Sprint 26-21",
+  "jiraSprintId": 2718,
+  "jiraBoardId": 126,
+  "startDate": "2026-10-19",
+  "endDate": "2026-11-02",
+  "datesInferred": false,
+  "sprintOpenAtPlanTime": true,
+  "planCreated": "2026-10-28",
+  "doneCounts": {
+    "stories": 11,
+    "bugs": 19,
+    "tasks": 13,
+    "reviewTasks": 2,
+    "spikes": 1,
+    "total": 46
+  },
+  "sprintIssueTotal": 211,
+  "testRelevantCount": 35,
+  "outOfScopeCount": 11,
+  "mergedFrontendPRs": 16,
+  "mergedFrontendPRsOnDev": 15,
+  "mergedModulePRs": 80,
+  "mergedModuleRepos": 63,
+  "adminShellModulePRs": 51,
+  "excludedCiSweepPRs": 30,
+  "environment": {
+    "platform": "3.1090.0",
+    "storefrontTheme": "2.61.0-alpha.2605 (vc-frontend dev @ d4edbe94; includes #2607, excludes #2601)",
+    "sitemapRev": 12,
+    "modulesReadAt": "2026-10-28T08:40:26Z",
+    "declaredEqualsDeployed": true,
+    "notInstalled": [
+      "vc-module-punchout (VCST-5887)"
+    ],
+    "themeCiOnDevRedSince": "2026-10-27T14:53Z (a9de7833)"
+  },
+  "domains": [
+    {
+      "name": "Authentication — MFA & OTP fallback",
+      "likelihood": 5,
+      "impact": 5,
+      "score": 25,
+      "level": "Critical"
+    },
+    {
+      "name": "Sales Rep hub",
+      "likelihood": 5,
+      "impact": 4,
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Search & catalog indexing",
+      "likelihood": 4,
+      "impact": 5,
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Back office shell — Admin Shell & Classic theme",
+      "likelihood": 5,
+      "impact": 3,
+      "score": 15,
+      "level": "High"
+    },
+    {
+      "name": "GraphQL xAPI core",
+      "likelihood": 3,
+      "impact": 5,
+      "score": 15,
+      "level": "High"
+    },
+    {
+      "name": "Storefront UI kit, a11y & i18n",
+      "likelihood": 3,
+      "impact": 5,
+      "score": 15,
+      "level": "High"
+    },
+    {
+      "name": "Customer profile & contacts",
+      "likelihood": 3,
+      "impact": 4,
+      "score": 12,
+      "level": "High"
+    },
+    {
+      "name": "Punchout (cXML)",
+      "likelihood": 3,
+      "impact": 4,
+      "score": 12,
+      "level": "High"
+    },
+    {
+      "name": "Page Builder",
+      "likelihood": 5,
+      "impact": 2,
+      "score": 10,
+      "level": "High"
+    },
+    {
+      "name": "Pricing API validation",
+      "likelihood": 2,
+      "impact": 5,
+      "score": 10,
+      "level": "High"
+    },
+    {
+      "name": "Platform admin — settings, sign-in log, module loading",
+      "likelihood": 3,
+      "impact": 3,
+      "score": 9,
+      "level": "Medium"
+    },
+    {
+      "name": "Storefront analytics (GA4)",
+      "likelihood": 3,
+      "impact": 2,
+      "score": 6,
+      "level": "Medium"
+    },
+    {
+      "name": "Image Tools",
+      "likelihood": 2,
+      "impact": 2,
+      "score": 4,
+      "level": "Low"
+    }
+  ],
+  "suitesActivated": [
+    "001",
+    "002",
+    "004",
+    "005",
+    "006",
+    "008",
+    "010",
+    "011",
+    "013",
+    "014",
+    "015",
+    "028",
+    "031",
+    "032",
+    "037",
+    "042",
+    "043",
+    "044",
+    "045",
+    "046",
+    "072",
+    "082",
+    "089",
+    "090",
+    "091",
+    "093",
+    "093b",
+    "097",
+    "104",
+    "106",
+    "107",
+    "109",
+    "111",
+    "112",
+    "017",
+    "020",
+    "020b",
+    "026",
+    "049",
+    "050a",
+    "050b1",
+    "050b2",
+    "050b3",
+    "050b4",
+    "050b5",
+    "050c",
+    "050d",
+    "050e",
+    "050f",
+    "050g",
+    "050h",
+    "050i",
+    "050j",
+    "050k",
+    "050l",
+    "050m",
+    "050m2",
+    "050m3",
+    "050n",
+    "050o",
+    "051",
+    "054",
+    "055",
+    "059",
+    "059b",
+    "060",
+    "060b",
+    "060c",
+    "061",
+    "061b",
+    "063",
+    "064",
+    "069",
+    "078",
+    "078b",
+    "078c",
+    "078d",
+    "092",
+    "092b",
+    "095",
+    "101",
+    "105",
+    "108",
+    "110",
+    "113"
+  ],
+  "newCasesEstimate": "77-100",
+  "gapCount": 23,
+  "proposedNewSuites": [
+    "114 (Admin Shell host, VCST-6327/6533/6567)"
+  ],
+  "exploratoryCharters": [
+    {
+      "id": "EXP-01",
+      "domain": "Back office shell — Admin Shell & Classic theme",
+      "signals": [
+        "C1",
+        "C2"
+      ],
+      "mission": "Discover seams between native Module Federation screens, framed AngularJS screens and the server-built menu on the Admin Shell host, which has no suite",
+      "candidateScenarios": [
+        "Module whose vcst version predates its admin-shell UI: menu, deep link, refresh, Back",
+        "Restricted role: menu entries vs deep link to a hidden screen; sign out inside a frame",
+        "Session expiry while a framed screen is dirty"
+      ],
+      "technique": "Feature-pair matrix",
+      "lane": "playwright-edge",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-02",
+      "domain": "Authentication — MFA & OTP fallback",
+      "signals": [
+        "C2",
+        "C3"
+      ],
+      "mission": "Discover client x grant x organization-state combinations that refuse a legitimate sign-in or let one through once MFA is on, including the uncharted VC-Shell sign-in",
+      "candidateScenarios": [
+        "OTP-only and password customers on a store whose StoreMode differs from global across storefront, Classic admin and Admin Shell",
+        "MFA sign-in with locked or removed last-used organization, then explicit org switch",
+        "Impersonation chain with MFA, second tab signs out, Stop impersonation"
+      ],
+      "technique": "Feature-pair matrix, Saboteur",
+      "lane": "playwright-chrome",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-03",
+      "domain": "Sales Rep hub",
+      "signals": [
+        "C2",
+        "C3"
+      ],
+      "mission": "Discover what a rep sees when the plugin-delivered hub, scheduled calls, GA4 activity and the task module change together",
+      "candidateScenarios": [
+        "Dashboard to customer to Schedule call to Tasks to activity feed",
+        "Rep of two organizations switching organization mid-journey; non-rep teammate on the same routes",
+        "Cold deep link under slow network, delayed plugin chunk, language switch"
+      ],
+      "technique": "Soap opera",
+      "lane": "playwright-chrome",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-04",
+      "domain": "Search & catalog indexing",
+      "signals": [
+        "C2",
+        "C3"
+      ],
+      "mission": "Discover stale or wrong results across product cache, IndexationJob lock, Azure SDK swap and keyword parser changes that return 200 with plausible data",
+      "candidateScenarios": [
+        "Edit product B, reindex, read A and B from storefront, xAPI and admin",
+        "Apostrophe, ampersand, OR and quotes keywords while a reindex runs",
+        "Back-to-back Build and Delete and build during a paginated storefront search"
+      ],
+      "technique": "Saboteur, Boundary-of-features",
+      "lane": "playwright-edge",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-05",
+      "domain": "GraphQL xAPI core",
+      "signals": [
+        "C4"
+      ],
+      "mission": "Discover fields silently dropped or nulled by the AutoMapper removal by walking storefront journeys against suites that carry no full-field case",
+      "candidateScenarios": [
+        "Cart to checkout to order to profile, every GraphQL response against introspection",
+        "xCMS, pageContext, wishlist and pickup pages in an unusual store, culture and currency",
+        "Same query as anonymous, B2C and org buyer: computed fields agree"
+      ],
+      "technique": "Galumphing, Saboteur",
+      "lane": "playwright-edge",
+      "timeboxMin": 30
+    }
+  ],
+  "criticalTickets": [
+    "VCST-5904",
+    "VCST-6132",
+    "VCST-5337",
+    "VCST-5731",
+    "VCST-6314",
+    "VCST-6532",
+    "VCST-6167",
+    "VCST-6429",
+    "VCST-6425"
+  ],
+  "outsideSprintDeployed": [
+    "VCST-6536",
+    "VCST-6477"
+  ],
+  "noQaRecorded": [
+    "VCST-6181",
+    "VCST-6425",
+    "VCST-6479",
+    "VCST-6533",
+    "VCST-6567",
+    "VCST-6480"
+  ],
+  "artifacts": "docs/Sprint plans/"
+}

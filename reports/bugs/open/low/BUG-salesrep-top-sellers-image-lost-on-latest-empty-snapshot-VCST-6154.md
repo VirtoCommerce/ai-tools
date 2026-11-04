@@ -27,8 +27,8 @@ store `B2B-store` · customer Contoso Manufacturing (`3af19e5f-…`), rep `agent
 | + REST order without image | `null` | **cube**, name from the REST line |
 | REST order deleted | image (`CO261002-00020`) | **image** again |
 
-![After REST order — cube](../../screenshots/BUG-salesrep-top-sellers-image-1-after-rest-order.png)
-![After cart order is the newest — image](../../screenshots/BUG-salesrep-top-sellers-image-2-after-cart-order.png)
+![After REST order — cube](../../../screenshots/BUG-salesrep-top-sellers-image-1-after-rest-order.png)
+![After cart order is the newest — image](../../../screenshots/BUG-salesrep-top-sellers-image-2-after-cart-order.png)
 
 ## Layer Validation
 

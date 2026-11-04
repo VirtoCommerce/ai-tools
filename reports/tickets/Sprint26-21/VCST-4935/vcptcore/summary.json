@@ -1,0 +1,187 @@
+{
+  "ticket": "VCST-4935",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": "jira",
+  "path": "FULL",
+  "date": "2026-10-27",
+  "verdict": "PASS WITH NOTES",
+  "environment": "vcptcore (vcptcore-qa)",
+  "build": {
+    "platform": "3.1085.0",
+    "PageBuilderModule": "3.1039.0-pr-175-3d2f",
+    "Pages": "3.1011.0-pr-23-e50f",
+    "XCMS": "3.1009.0-pr-27-a8d6",
+    "theme": "2.61.0-pr-2576-be2c-be2c7cc0"
+  },
+  "iterations": {
+    "per_round": [
+      {
+        "round": 1,
+        "dates": "2026-10-23..2026-10-26",
+        "build": {
+          "PageBuilderModule": "3.1036.0-pr-175-a3bc",
+          "Pages": "3.1011.0-pr-23-4bcd",
+          "XCMS": "3.1009.0-pr-27-bb4c",
+          "theme": "2.61.0-pr-2576-211e3e15"
+        },
+        "verdict": "FAIL",
+        "comment": "posted 2026-10-27 10:11 (D1 High, D3 Medium, D4, Lows)"
+      },
+      {
+        "round": 2,
+        "date": "2026-10-27",
+        "trigger": "dev reply 2026-10-27 11:39",
+        "verdict": "PASS WITH NOTES",
+        "checklist_rows": "R2-01..R2-30",
+        "pass": 21,
+        "fail": 1,
+        "partial": 1,
+        "fail_note": "R2-23 Back after language switch — pre-existing, out of ticket by dev decision",
+        "c1": {
+          "run_id": "REG-2026-10-27-2202-r2",
+          "pass": [
+            "CMS-ML-005",
+            "CMS-GQL-133"
+          ],
+          "test_defect": [
+            "CMS-GQL-134"
+          ],
+          "blocked": {
+            "tooling (REST fixture scripts denied by the auto-mode permission classifier)": [
+              "CMS-ML-001",
+              "CMS-ML-004",
+              "CMS-ML-007",
+              "CMS-ML-017",
+              "CMS-ML-023",
+              "CMS-ML-031",
+              "CMS-ML-032",
+              "CMS-ML-033"
+            ],
+            "env (RESTRICTED_CMS_ADMIN_PASSWORD absent)": [
+              "CMS-ML-028"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "agents_dispatched": [
+    {
+      "step": "4a",
+      "agent": "qa-backend-expert",
+      "browser": "playwright-edge",
+      "rows": "R2-01..R2-15"
+    },
+    {
+      "step": "4a",
+      "agent": "qa-frontend-expert",
+      "browser": "playwright-firefox",
+      "rows": "R2-20..R2-24"
+    },
+    {
+      "step": "4c",
+      "agent": "regression-orchestrator",
+      "browser": "playwright-firefox",
+      "run_id": "REG-2026-10-27-2202-r2"
+    }
+  ],
+  "verifier": {
+    "5-report": "not dispatched in round 2 — stated in the close-out"
+  },
+  "promotion": "none (--no-promote; C1 not grounded)",
+  "bugs_filed": [
+    {
+      "key": "VCST-6589",
+      "severity": "Low",
+      "title": "Multilanguage page: \"Link existing\" row pushes Cancel / Link out of a narrow blade",
+      "found_by": "tester (reported-by-human)",
+      "assignee": "Basil Kotov",
+      "sprint": "VCST Sprint 26-21",
+      "link": "relates VCST-4935",
+      "report": "reports/bugs/fixed/BUG-PageBuilder-Link-Existing-Row-Overflows-Narrow-Blade-VCST-4935.md"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "id": "R2-23",
+      "title": "Back after language switch → 404",
+      "severity": "Medium",
+      "reason": "pre-existing (round-1 vcst control), dev routes to a separate vc-frontend ticket"
+    },
+    {
+      "id": "R2-F1",
+      "title": "Scheduled translation gets no fallback",
+      "reason": "PO question"
+    },
+    {
+      "id": "R2-F6",
+      "title": "Version-less ML root: no permalink-usage warning",
+      "reason": "dev question"
+    },
+    {
+      "id": "R2-F5",
+      "title": "create-group-page accepts non-store cultureName",
+      "severity": "Low",
+      "reason": "below floor, pre-existing"
+    },
+    {
+      "id": "R2-F2",
+      "title": "/nl/<slug> with nl-BL → /nl-BL/nl/<slug> 404",
+      "severity": "Low",
+      "reason": "below floor, pre-existing"
+    },
+    {
+      "id": "R2-F4/B46",
+      "title": "Switcher duplicate English/Nederlands",
+      "severity": "Low",
+      "reason": "out of ticket by dev decision"
+    },
+    {
+      "id": "B42",
+      "title": "Contrast < 4.5:1 on ML tag / pills",
+      "severity": "Low",
+      "reason": "dev: vc-shell tokens, left as is"
+    }
+  ],
+  "test_defects": [
+    {
+      "case": "CMS-GQL-134",
+      "fix": "assertion path alternates[*?cultureName=fr-FR].permalink reads undefined — index or flatten"
+    },
+    {
+      "case": "CMS-ML-031",
+      "fix": "create-group-page body needs content field (400 StoreId, Name and Content are required)"
+    }
+  ],
+  "status_transitions": [
+    {
+      "at": "1a",
+      "action": "skip",
+      "from": "Testing",
+      "to": null,
+      "reason": "already in the in-testing status (round 2)"
+    },
+    {
+      "at": "5-status",
+      "action": "transition",
+      "from": "Testing",
+      "to": "Tested",
+      "transition_id": "8",
+      "confirmed_by": "operator (AskUserQuestion)",
+      "at_time": "2026-10-27T23:41:12.819Z"
+    }
+  ],
+  "fixtures_left": "FE lane R2-FE roots archived (d4debe20…, 179ab807…, 1f5f814d…, 77298451… — roots with versions cannot be deleted); ~45 round-1 AGENT-TEST-VCST4935-* roots from 2026-10-23 not swept",
+  "report": {
+    "checklist": "testing-checklist.md (Round 2 section)",
+    "test_model": "test-model.md (Round 2 amendment)",
+    "comment": {
+      "id": "112447",
+      "posted": "2026-10-27",
+      "round": 2,
+      "inline_screenshots": 3,
+      "rendered_verified": true
+    }
+  }
+}

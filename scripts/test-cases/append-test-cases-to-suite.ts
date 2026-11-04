@@ -34,7 +34,7 @@
  * ANY suite under <root> (default `regression/suites`), not just the target — the
  * collision that silently overwrites another suite's per-case evidence. Opt-in,
  * because the committed corpus still carries legacy cross-suite duplicates.
- * /qa-test-lifecycle Phase 6P (gate G12) passes it when promoting.
+ * qa-case-promotion (gate G12) passes it when promoting.
  *
  * Exit code 0 = appended (or dry-run clean); 1 = validation/verify failure (nothing written).
  */
@@ -615,7 +615,7 @@ function main(): void {
 
   // Cross-suite ID collision check (opt-in): the in-suite check above cannot see
   // an ID that already lives in a DIFFERENT suite, which is the collision that
-  // destroys the other suite's evidence. Required by /qa-test-lifecycle Phase 6P
+  // destroys the other suite's evidence. Required by qa-case-promotion
   // (gate G12) when promoting a /qa-test run's cases into regression/suites/.
   if (args.globalIdRoot) {
     const corpus = collectCorpusIds(args.globalIdRoot, args.target);

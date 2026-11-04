@@ -22,7 +22,8 @@
  *   3. Block SR_REP_BLOCKED's account; lock SR_REP_LOCKED's ACME membership;
  *      wipe the DISPOSABLE-layout rep's persisted SalesRepLayout.* preferences (VCST-5367).
  *   4. Orders per org across stores + statuses (POST /api/order/customerOrders).
- *   5. Write-back: contact/user/membership/owner GUIDs -> aliases.<env>.json.
+ *   5. Write-back: contact/user/membership/owner GUIDs -> aliases.<env>.json, and SR_UNSERVED_ORG (the
+ *      first paging org, written only after checking it exists, SR_REP_PAGING serves it, SR_REP_PRIMARY does not).
  *
  * VCST-5367 saved layout: `salesRepLayout`/`saveSalesRepLayout` persist a Customer-module
  * CustomerPreference named `SalesRepLayout.{scope}[.{storeId}]` on the CALLER'S OWN user id. Only
@@ -30,7 +31,8 @@
  * never-saved on every reseed so the "never saved => query returns null" precondition is reproducible,
  * and SR_REP_PRIMARY's null baseline (relied on by ~40 cases) is never written.
  *
- * Flags: --dry-run (reads only), --verbose, --teardown (delete only what this seeder created), --only <rep_key|order_key>.
+ * Flags: --dry-run (reads only), --verbose, --teardown (delete only what this seeder created), --only <rep_key|order_key>,
+ *        --writeback-only (Phase-5 SR_UNSERVED_ORG write-back from what is already on the env; reads only, creates nothing).
  */
 import {
   assertSafeTarget, auth, api, log, verbose, loadCsv, loadAliases,
@@ -39,7 +41,7 @@ import {
 } from '../../lib/seed-common.mjs';
 import {
   parseServedOrgs, isDisposableLayoutRep, isLayoutPreference, LAYOUT_PREF_PREFIX, LAYOUT_SCOPES,
-  repFixtureStatus,
+  repFixtureStatus, PAGING_ORG_PREFIX, pagingOrgName, UNSERVED_ORG,
 } from './sales-rep-layout-specs.mjs';
 // The rolling-window + recency rules for test-data/sales-rep/sales-rep-orders.csv. `windowDaysFor` /
 // `isFresh` / `CSV_KEY` were USED below (the freshness idempotency term, the alias write-back) but
@@ -59,6 +61,7 @@ const OWNER_PHONE = '+1-206-555-0142';
 const REP_PASSWORD = process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD || 'Password1!';
 // Restricted admin (Manager) users for the 092 admin-suite permission-negative cases.
 const ADMIN_USER_PASSWORD = process.env.SR_ADMIN_PASSWORD || REP_PASSWORD;
+const WRITEBACK_ONLY = process.argv.includes('--writeback-only');
 
 // ---- helpers ---------------------------------------------------------------
 
@@ -100,7 +103,7 @@ async function memberExists(id) {
   return res && res.id === id; // VC returns 200 + empty body for a missing member
 }
 
-const PAGING_PREFIX = 'AGENT-TEST-SR-Paging-';
+// Paging-org names come from sales-rep-layout-specs.mjs (PAGING_ORG_PREFIX / pagingOrgName) — shared with the validator.
 
 /** Resolve a rep's ApplicationUser (login/security-account) id by email — the id GetCurrentUserId()
  *  returns from the JWT, which salesRepOrders/lastOrder match order.CustomerId against (NOT the
@@ -197,7 +200,7 @@ async function resetLayoutPreferences(userId, label) {
 async function ensurePagingOrgs(n) {
   const served = [];
   for (let i = 1; i <= n; i++) {
-    const name = `${PAGING_PREFIX}${String(i).padStart(2, '0')}`;
+    const name = pagingOrgName(i);
     let m = await findMemberByName(name);
     if (!m) {
       const body = {
@@ -210,6 +213,55 @@ async function ensurePagingOrgs(n) {
     if (m?.id) served.push({ organizationId: m.id, organizationName: name });
   }
   return served;
+}
+
+/**
+ * SR_UNSERVED_ORG write-back (READS ONLY — creates nothing). The org is one of SR_REP_PAGING's paging
+ * orgs (named by the alias's committed `name`), so it exists exactly when that rep's fixture does.
+ * Returns `{ id }` only when all three hold, else `{ id: null, reason }`:
+ *   - the org exists: member search by exact name finds ONE Organization, and GET /api/members/{id}
+ *     echoes the id. The rep record alone is not proof: a deleted org stays in the rep's
+ *     organizations[] (kb KB-843D0515);
+ *   - UNSERVED_ORG.servedBy serves it;
+ *   - UNSERVED_ORG.notServedBy does not. Equal answers on both sides would make the
+ *     "unserved, not nonexistent" negative undecidable.
+ */
+async function resolveUnservedOrg() {
+  const def = loadAliases()[UNSERVED_ORG.alias];
+  const name = String(def?.name || '').trim();
+  if (!name.startsWith(PAGING_ORG_PREFIX)) {
+    return { id: null, reason: `alias ${UNSERVED_ORG.alias}.name "${name}" is not a ${PAGING_ORG_PREFIX}NN org` };
+  }
+  const res = await api('POST', '/api/members/search', { keyword: name, take: 20, deep: true });
+  const hits = (res?.results || []).filter((m) => m.name === name && m.memberType === 'Organization');
+  if (hits.length !== 1) return { id: null, reason: `${hits.length} Organization(s) named "${name}" (need exactly 1)` };
+  const id = hits[0].id;
+  const member = await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] });
+  if (member?.id !== id) return { id: null, reason: `GET /api/members/${id} does not return the org` };
+  const reps = loadCsv('test-data/sales-rep/sales-reps.csv');
+  const servedIds = async (repKey) => {
+    const row = reps.find((r) => r.rep_key === repKey);
+    const hit = row && await findRepByFullName(row.full_name);
+    if (!hit?.id) return null;
+    const rep = await api('GET', `/api/sales-rep/${hit.id}`);
+    return new Set((rep?.organizations || []).map((o) => o.organizationId));
+  };
+  const servedBy = await servedIds(UNSERVED_ORG.servedBy);
+  if (!servedBy) return { id: null, reason: `rep ${UNSERVED_ORG.servedBy} not found` };
+  if (!servedBy.has(id)) return { id: null, reason: `${UNSERVED_ORG.servedBy} does not serve ${name} (${id})` };
+  const notServedBy = await servedIds(UNSERVED_ORG.notServedBy);
+  if (!notServedBy) return { id: null, reason: `rep ${UNSERVED_ORG.notServedBy} not found` };
+  if (notServedBy.has(id)) return { id: null, reason: `${UNSERVED_ORG.notServedBy} SERVES ${name} (${id}); the org is not unserved` };
+  return { id, name };
+}
+
+/** Phase 5 / --writeback-only: write SR_UNSERVED_ORG's GUID to aliases.<env>.json when it resolves. */
+async function writeBackUnservedOrg() {
+  const r = await resolveUnservedOrg();
+  if (!r.id) { log(`WARN: ${UNSERVED_ORG.alias} not written back: ${r.reason}`); return false; }
+  writeEnvAliasOverride({ [UNSERVED_ORG.alias]: Object.fromEntries(UNSERVED_ORG.idFields.map((f) => [f, r.id])) });
+  log(`${UNSERVED_ORG.alias} -> ${r.name} (${r.id}): served by ${UNSERVED_ORG.servedBy}, not by ${UNSERVED_ORG.notServedBy}${DRY_RUN ? ' [dry run, not written]' : ''}`);
+  return true;
 }
 
 async function ensureServedOrgs(orgs, repRows) {
@@ -564,10 +616,13 @@ async function teardown(orgs) {
   if (scoped) { log('Teardown complete (scoped — shared paging orgs + ACME owner contact left intact).'); return; }
   // Paging orgs (AGENT-TEST-SR-Paging-NN) created for SR_REP_PAGING
   for (let i = 1; i <= 20; i++) {
-    const name = `${PAGING_PREFIX}${String(i).padStart(2, '0')}`;
+    const name = pagingOrgName(i);
     const m = await findMemberByName(name);
     if (m?.id) { await api('DELETE', `/api/members?ids=${m.id}`, null, { expectStatus: [200, 204] }); log(`  deleted paging org ${name}`); }
   }
+  // SR_UNSERVED_ORG is one of those paging orgs: blank its overlay ids so @td resolves to "" (a clear
+  // miss), never to a deleted org.
+  writeEnvAliasOverride({ [UNSERVED_ORG.alias]: Object.fromEntries(UNSERVED_ORG.idFields.map((f) => [f, ''])) });
   // Owner contact + ACME de-enrichment (only the owner link)
   const owner = await findMemberByName(OWNER_NAME);
   if (owner?.id) {
@@ -587,6 +642,16 @@ async function main() {
   const orgs = orgMap();
 
   if (TEARDOWN) { await teardown(orgs); return; }
+
+  // --writeback-only: resolve and write the aliases derived from entities ALREADY on the env
+  // (SR_UNSERVED_ORG). Reads only; no create, no password reset, no lock change. Use it on a shared
+  // stand where a full reseed would touch reps other runs depend on. Exit 1 when it cannot resolve.
+  if (WRITEBACK_ONLY) {
+    const ok = await writeBackUnservedOrg();
+    if (!ok) { log('Nothing written. Run the full seed (npm run seed:sales-rep) if SR_REP_PAGING or its paging orgs are missing.'); process.exit(1); }
+    log(DRY_RUN ? 'DRY RUN complete (no writes).' : 'Write-back complete.');
+    return;
+  }
 
   const reps = loadCsv('test-data/sales-rep/sales-reps.csv').filter((r) => csvBool(r.seeded, true) && (!ONLY || r.rep_key === ONLY));
   const orders = loadCsv('test-data/sales-rep/sales-rep-orders.csv').filter((r) => csvBool(r.seeded, true) && (!ONLY || r.order_key === ONLY));
@@ -738,6 +803,7 @@ async function main() {
   syncEnvAliases('sales-rep/sales-reps', repWriteback);
   syncEnvAliases(ORDERS_CSV_KEY, orderWriteback);
   if (ownerId) writeEnvAliasOverride({ SR_OWNER_ACME: { id: ownerId } });
+  await writeBackUnservedOrg();
 
   log(DRY_RUN ? 'DRY RUN complete (no writes).' : 'Seed complete. Runtime GUIDs written to aliases.<env>.json.');
 

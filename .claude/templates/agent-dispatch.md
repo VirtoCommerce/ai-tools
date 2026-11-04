@@ -44,6 +44,21 @@ recipient asks for its own surface ([`../skills/qa-test/dispatch-pack.md`](../sk
 Omit it only for a Mechanic dispatch (release plumbing, diff review) per
 [`../knowledge/agents/authoring-standard.md`](../knowledge/agents/authoring-standard.md) §5.2.
 
+## Model Choice
+
+A named agent brings its own `model` (its frontmatter) — leave it. A `general-purpose` dispatch, or any
+brief you improvise, **names `model` explicitly**; left out, it inherits the session model, which is
+usually Opus. Pick by what the subagent does:
+
+| The subagent… | `model` |
+|---|---|
+| fetches or collects (Jira/GitHub reads, file inventory, a list to compile) | `haiku` |
+| triages, investigates a failure or root cause, classifies, implements to a spec, reviews against a checklist | `sonnet` (`haiku` when the triage is mechanical: dedup, known-issue match) |
+| makes a judgment no checklist settles (a release verdict, a design call) | omit (inherit) |
+
+Measured 2026-10-30 (VCST-6423): improvised data-gathering and triage dispatches ran on the inherited
+Opus model until a skill named `sonnet` for them; `qa-triage-results` already does.
+
 ## Browser Assignment & Fallback Chain
 
 Each agent MUST be assigned an explicit browser server. If the primary browser fails (launch error, user data dir conflict, timeout), retry with the next browser in the fallback chain. Max 1 retry.

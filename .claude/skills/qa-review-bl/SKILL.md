@@ -1,6 +1,6 @@
 ---
 name: qa-review-bl
-description: "[QA Method] Pipeline entry point for the BL sync — ALIAS of /qa-review-oracles bl. Called automatically by /qa-test-lifecycle Phase 4c on the BL-* a run contradicted or surfaced (mark SUSPECT, resolve from the Jira decision, sync from the ticket's AC or docs; edits bl/<slug>.yaml only from a human source; reconcile test-case citations). For a manual oracle review, use /qa-review-oracles."
+description: "[QA Method] Pipeline entry point for the BL sync — ALIAS of /qa-review-oracles bl. Called automatically by qa-suite-sync Phase 4c (reached through /qa-test-lifecycle) on the BL-* a run contradicted or surfaced (mark SUSPECT, resolve from the Jira decision, sync from the ticket's AC or docs; edits bl/<slug>.yaml only from a human source; reconcile test-case citations). For a manual oracle review, use /qa-review-oracles."
 argument-hint: "all | domain <name> | BL-<ID> | suspect | inferred | diff [--dry-run]"
 ---
 
@@ -13,7 +13,7 @@ argument-hint: "all | domain <name> | BL-<ID> | suspect | inferred | diff [--dry
 axis fixed to **`bl`** — every `bl`-specific file, script, rule code and output path is in that
 skill's **Axis contract** table, the `bl` column. Read the file rather than invoking
 `/qa-review-oracles`: that skill is `disable-model-invocation: true` (a manual audit stays
-user-invoked). This alias is model-invocable only so that `/qa-test-lifecycle` Phase 4c can reach
+user-invoked). This alias is model-invocable only so that `qa-suite-sync` Phase 4c (reached through `/qa-test-lifecycle`) can reach
 it — **when a model invokes it, the scope is the `BL-<ID>` candidates Phase 4c passes.** A broader
 scope (`all`, `domain <name>`, `suspect`, `inferred`, `diff`) runs only when the user asked for it, because
 it writes `.claude/knowledge/oracles/bl/<slug>.yaml` (rules: `../qa-review-oracles/bl-audit-criteria.md`).
@@ -30,7 +30,7 @@ it writes `.claude/knowledge/oracles/bl/<slug>.yaml` (rules: `../qa-review-oracl
 
 ## Why the alias exists rather than a rename
 
-`/qa-review-bl` is invoked by name from `/qa-test-lifecycle` **Phase 4c** (automatically — a
+`/qa-review-bl` is invoked by name from `qa-suite-sync` **Phase 4c** (reached through `/qa-test-lifecycle`) (automatically — a
 silent break there would be invisible) and cited from other prompts and agent definitions
 (`grep -rn "qa-review-bl" .claude` lists them). Keeping the name working was cheaper and safer
 than editing every call site. New manual work should call `/qa-review-oracles` directly; both

@@ -54,7 +54,7 @@ dispatches, exactly as a FAST run omits them. Do not trim it:
   claims (VCST-4717 has five), `5-verdict.1` is what reconciles them; where it carries none, it resolves in a line
   and costs nothing.
 - **`5-docs` refuses on its own.** Its `not-user-visible` refusal is the *expected* outcome for most runs here,
-  and `virto-doc-style.md` §10 already says so — but a migration with integrator-facing consequences is
+  and [`/qa-docs`](../qa-docs/SKILL.md) already says so — but a migration with integrator-facing consequences is
   exactly the case that refusal is not meant to swallow. Let the step decide; do not pre-empt it.
 
 Every step is cited, never restated. **Do not invent a variant of any cited step** — the reason this flow is

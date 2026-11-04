@@ -68,13 +68,18 @@ const expandVars = (s) =>
 
 /** The `--secrets` path in the nearest `.mcp.json` that declares one, from ROOT upwards —
  *  the servers may be declared by a parent workspace's `.mcp.json`, not only the repo's.
+ *  `server` (the lane the call goes to, e.g. `playwright-edge`) wins when its own entry declares one: lanes may
+ *  read different files (one on `.env.playwright.all` while the others stay on a single-env file), and checking a
+ *  lane against another lane's file blocks a correct name and passes a wrong one.
  *  (scripts/lib/browser-secrets.mjs `declaredSecretsFile` is the same rule; this copy needs no node_modules.) */
-function declaredSecretsFile() {
+function declaredSecretsFile(server) {
   for (let dir = ROOT, prev = null; dir !== prev; prev = dir, dir = dirname(dir)) {
     try {
       const mcp = JSON.parse(readFileSync(resolve(dir, ".mcp.json"), "utf8"));
-      for (const server of Object.values(mcp.mcpServers ?? {})) {
-        const args = server.args ?? [];
+      const servers = mcp.mcpServers ?? {};
+      const own = server && servers[server] ? [servers[server]] : [];
+      for (const entry of [...own, ...Object.values(servers)]) {
+        const args = entry.args ?? [];
         const i = args.indexOf("--secrets");
         if (i !== -1 && args[i + 1]) {
           const file = expandVars(args[i + 1]);
@@ -90,8 +95,8 @@ function declaredSecretsFile() {
 
 /** Read the secrets dotenv the Playwright MCP servers were actually started with. With dotenv
  *  available its values are parsed as the MCP parses them (quotes removed); without it, line by line. */
-async function loadSecrets() {
-  const file = declaredSecretsFile() ?? resolve(ROOT, ".env.playwright.local");
+async function loadSecrets(server) {
+  const file = declaredSecretsFile(server) ?? resolve(ROOT, ".env.playwright.local");
   const text = readFileSync(file, "utf8");
   let map = null;
   try {
@@ -373,7 +378,7 @@ try {
     /* no such directory: resolve from the cwd */
   }
 
-  const { file, text, map: secrets } = await loadSecrets();
+  const { file, text, map: secrets } = await loadSecrets(toolName.split("__")[1]);
   if (!secrets.size) process.exit(0);
 
   // The combined-file and master-stand helpers; without them (no node_modules yet) a combined file is checked as a

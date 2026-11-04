@@ -1,0 +1,104 @@
+{
+  "$comment": "DECLARED half of the storefront page inventory — what the router cannot say. Keys are vc-frontend route NAMES; a key the router no longer has fails `npm run pages:check`. A route absent here is `extended` with derived defaults. tier: core = always in scope for a global style/token/theme/ui-kit change; extended = in scope when the change touches its area, or by a WAIVED-with-reason decision otherwise. auth: the session(s) to visit it in — anonymous, signed-in (a personal account) or corporate (an organization member; the default for a route that requiresOrganization). fixtures: how a route param is acquired (never a literal — @td() alias or live-discover). visits: concrete visits when one route renders several pages (the catch-all) or a query variant matters; {name} placeholders are fixtures too; a visit with `setup` cannot be reached by a direct goto (a guard redirects), so pages:targets leaves it out of PIXEL and lists it for a browser lane or a WAIVE. Seeded from VCST-6232's widened Page set P (2026-11-02). Generator: scripts/maintenance/sync-storefront-pages.mjs.",
+  "pages": {
+    "Matcher": {
+      "tier": "core",
+      "auth": ["anonymous", "signed-in"],
+      "visits": [
+        { "id": "home", "path": "/" },
+        { "id": "builder-page", "path": "{builderPagePath}", "auth": ["signed-in"] }
+      ],
+      "fixtures": { "builderPagePath": "live-discover: a published Builder.io page path of the store (e.g. the predefined-products page)" },
+      "overlays": ["mobile menu (375)", "account menu", "add-to-cart notification"],
+      "note": "The catch-all renders home, SEO-routed category/product pages and Builder pages."
+    },
+    "Search": {
+      "tier": "core",
+      "visits": [
+        { "id": "search", "path": "/search?q={searchTerm}" },
+        { "id": "search-empty", "path": "/search?q={noResultTerm}" }
+      ],
+      "fixtures": { "searchTerm": "live-discover: a term that returns catalog products", "noResultTerm": "random-data: an AGENT-TEST- string that matches nothing" },
+      "overlays": ["filters drawer (375)", "product quick view"]
+    },
+    "Catalog": { "tier": "core", "overlays": ["filters drawer (375)"] },
+    "Category": {
+      "tier": "core",
+      "fixtures": { "categoryId": "live-discover: a category with products" },
+      "overlays": ["filters drawer (375)", "product quick view", "add-to-cart notification"]
+    },
+    "Product": {
+      "tier": "core",
+      "fixtures": { "productId": "live-discover: an in-stock product with images and variations" },
+      "overlays": ["image gallery", "add-to-list modal", "add-to-cart notification"]
+    },
+    "CompareProducts": { "tier": "core", "note": "Add 2+ products to compare first, or it renders the empty state." },
+    "SignIn": { "tier": "core" },
+    "SignUp": { "tier": "core" },
+    "ForgotPassword": { "tier": "core" },
+    "NotFound": { "tier": "core" },
+    "Cart": {
+      "tier": "core",
+      "auth": ["anonymous", "signed-in"],
+      "fixtures": { "cartLine": "live-discover: add one in-stock product before the visit (an empty cart is the anonymous visit)" },
+      "overlays": ["coupon / discounts widget", "clear-cart confirmation modal"]
+    },
+    "Shipping": {
+      "tier": "core",
+      "auth": ["signed-in"],
+      "visits": [{ "id": "checkout-shipping", "path": "/checkout/shipping", "setup": "a cart line, entered from /cart" }],
+      "fixtures": { "cartLine": "a cart line; enter from /cart (the route guard redirects a direct visit back to the cart)" },
+      "overlays": ["address picker modal"]
+    },
+    "Billing": {
+      "tier": "core",
+      "auth": ["signed-in"],
+      "visits": [{ "id": "checkout-billing", "path": "/checkout/billing", "setup": "a cart line, entered from /cart" }],
+      "fixtures": { "cartLine": "a cart line; enter from /cart" },
+      "overlays": ["address picker modal"]
+    },
+    "Review": {
+      "tier": "core",
+      "auth": ["signed-in"],
+      "visits": [{ "id": "checkout-review", "path": "/checkout/review", "setup": "a cart line, entered from /cart" }],
+      "fixtures": { "cartLine": "a cart line; enter from /cart — never place the order" }
+    },
+    "CheckoutPayment": {
+      "tier": "core",
+      "auth": ["signed-in"],
+      "visits": [{ "id": "checkout-payment", "path": "/checkout/payment", "setup": "a cart line, entered from /cart" }],
+      "fixtures": { "cartLine": "a cart line; enter from /cart — never submit payment" }
+    },
+    "CheckoutCompleted": {
+      "tier": "extended",
+      "auth": ["signed-in"],
+      "note": "Needs a just-placed order; out of scope for a run that creates no order."
+    },
+    "Dashboard": { "tier": "core" },
+    "Orders": { "tier": "core", "overlays": ["orders filter panel"] },
+    "OrderDetails": {
+      "tier": "core",
+      "fixtures": { "orderId": "@td() completed order of the signed-in user (test-data/aliases.json orders/*), or live-discover the newest order" }
+    },
+    "Addresses": { "tier": "core", "overlays": ["address edit modal"], "note": "Guard: a corporate member is redirected to the dashboard — visit as a personal account, or company addresses instead." },
+    "Profile": { "tier": "core" },
+    "Lists": { "tier": "core", "overlays": ["create-list modal"] },
+    "ListDetails": { "tier": "extended", "fixtures": { "listId": "live-discover: a list of the signed-in user with items" } },
+    "SavedForLater": { "tier": "core" },
+    "CompanyMembers": { "tier": "core", "overlays": ["invite member modal"] },
+    "CompanyInfo": { "tier": "core", "overlays": ["address edit modal"] },
+    "BulkOrder": { "tier": "core" },
+    "OrderPayment": { "tier": "extended", "fixtures": { "orderId": "live-discover: an unpaid order of the signed-in user" } },
+    "BranchPage": { "tier": "extended", "fixtures": { "branchId": "live-discover: a fulfillment center id (BOPIS)" } },
+    "SharedList": { "tier": "extended", "fixtures": { "sharingKey": "live-discover: a shared list's sharing key" } },
+    "CartId": { "tier": "extended", "fixtures": { "cartId": "live-discover: a cart id (UCP hand-off)" } },
+    "LoyaltyProduct": { "tier": "extended", "fixtures": { "productId": "live-discover: a loyalty-catalog product (store must have the loyalty catalog on)" } },
+    "LoyaltyCategory": { "tier": "extended", "fixtures": { "categoryId": "live-discover: a loyalty-catalog category" } },
+    "Impersonate": { "tier": "extended", "fixtures": { "userId": "live-discover: a user an operator may impersonate" } },
+    "CheckoutPaymentResult": {
+      "tier": "extended",
+      "visits": [{ "id": "payment-success", "path": "/checkout/payment/success" }, { "id": "payment-failure", "path": "/checkout/payment/failure" }]
+    },
+    "LoyaltyCatalogMatcher": { "tier": "extended", "visits": [] }
+  }
+}

@@ -10,7 +10,7 @@ disable-model-invocation: true
 Keep the QA pipeline's **shared oracles** true, then reconcile the test-case citations that point at what changed. The two axes now differ in **method** (BL 2.0, `docs/bug-detection-requirements.md` §7.3a):
 
 - **`bl`** — **sync, not triangulation.** A rule changes only from a **human source** (ticket AC, a docs page, a Jira bug resolution); a run that contradicts a rule makes it `SUSPECT` and files a bug; `SUSPECT` rules are resolved from the Jira decision or a re-run of their check. Code + live agreeing never edits a rule. Records live in `bl/<slug>.yaml`; `business-logic.md` is their render. Rules: **bl-audit-criteria.md**.
-- **`ecl`** — **three-axis triangulation** (docs via `/vc-docs`, live via playwright, source via GitHub MCP), verdict, auto-apply what is confirmed. Rules: **ecl-audit-criteria.md**.
+- **`ecl`** — **three-axis triangulation** (docs via VirtoOZ, live via playwright, source via GitHub MCP), verdict, auto-apply what is confirmed. Rules: **ecl-audit-criteria.md**.
 
 Shared once, here: the single writer, the stable-ID contract, the deterministic lint core, the value gate on growth, and the citation reconciliation into `regression/suites/**`.
 
@@ -53,7 +53,7 @@ Omitting the axis means `all`. **`/qa-review-bl` is a retained alias** for `/qa-
 | Product value (what leans on it) | citing-case demand + a `BL-CROSS` level | citing-case demand + `[OBSERVED]` share + a High-`Frequency` level (exposure, not cost) |
 | Promotion queue | `npm run oracles:rank -- --axis=bl` | `npm run oracles:rank -- --axis=ecl` |
 | Proposals file | **none** | `reports/ba/ecl-proposals-<date>.md` |
-| Audit report | `reports/knowledge/BL-AUDIT-<date>.md` | `reports/knowledge/ECL-AUDIT-<date>.md` |
+| Audit report | chat (`reports/knowledge/BL-AUDIT-<date>.md` on request) | chat (`reports/knowledge/ECL-AUDIT-<date>.md` on request) |
 
 Everything below applies to **both** axes unless a row above says otherwise.
 
@@ -113,7 +113,7 @@ Evidence gathering is read-only and per-entry, so **run it in parallel**. Split 
 
 ECL: each agent captures the three axes with concrete evidence, never a bare opinion (per-domain/chapter source map is in the criteria file):
 
-- **Docs axis** — `/vc-docs` (VirtoOZ MCP), topic-scoped tool by domain (`StorefrontUserGuide`/`StorefrontDeveloperGuide` for cart/checkout UX, `PlatformDeveloperGuide` for platform/admin, `*SourceCode` for "where is this implemented"). Capture a **quote + doc reference**.
+- **Docs axis** — VirtoOZ (connector), topic-scoped tool by domain (`StorefrontUserGuide`/`StorefrontDeveloperGuide` for cart/checkout UX, `PlatformDeveloperGuide` for platform/admin, `*SourceCode` for "where is this implemented"). Capture a **quote + doc reference**.
 - **Source axis** — GitHub MCP `search_code` / `get_file_contents` on `org:VirtoCommerce` (read-only; QA never clones). Capture a **`file:line` anchor** and the relevant code shape.
 - **Live axis** — OBSERVE the behavior via the real UI/API. Capture an **`{OBSERVED}` result + screenshot**. Honors the REAL-USER rule — no `browser_evaluate` / `run_code_unsafe` bypass.
   > **In parallel mode (the default) each batch agent does its OWN live observation on its assigned slot — do NOT sub-delegate to `qa-testing-expert`.** Three batch agents already occupy the three browser slots; a sub-delegated fourth blows the cap. `qa-testing-expert` is reserved for a *sequential* single-entry deep-dive after the batches finish. (Only in a single-batch run is delegating the live axis to `qa-testing-expert` on `playwright-firefox` the right call.)
@@ -151,7 +151,7 @@ Collect the verdicts from all parallel agents, then apply **serially, one entry 
 - **BL edits** follow bl-audit-criteria §3: the YAML record only, then `npm run bl:render` and `npm run bl:convert:check`.
 - **ECL edits:**
   - Edit the **entry body only** — **Appendix D is updated deliberately, as its own coherent edit**, never incidentally.
-  - Stamp `Amended: <date> (auto-applied, triangulated — ECL-AUDIT-<date>)` and refresh the `Source:` anchor.
+  - Stamp `Amended: <date> (auto-applied, triangulated)` and refresh the `Source:` anchor.
   - For MISSING, assign the next free ID under the correct heading; **never renumber survivors**.
   - Keep evidence **env-agnostic** — no env names, URLs or slugs; say "the environment".
 - **ECL CONTRADICTORY / UNGROUNDED / STALE-RETIRE, BL RETIRE** → audit report (ECL: also its proposals file). Do NOT edit the oracle.
@@ -163,9 +163,9 @@ Feed the audit back into the test-case review flow:
 - **Dangling / renamed / newly-added IDs** → run `/qa-review-tests suite <ID> --fix` (or `file <path> --fix`) on the affected suites so the `Business_Rule` / `Edge_Case_Refs` cells follow. **`test-management-specialist` owns that write**; this skill never edits a CSV.
 - **Uncovered entries** → note as a coverage gap for `/qa-test-lifecycle` Phase 3 (generation). Do not fabricate cases here.
 
-### Step 5: Re-run the gate, then write the audit report
+### Step 5: Re-run the gate, then report the audit
 
-Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for your own edits**, and its High count belongs in the report. Then write the audit report (`.claude/rules/reports.md` — knowledge-maintenance artifact, target 15–40 / cap ~100 lines): per-entry verdict (ECL) or operation (BL) table with evidence refs and a **Value** column (`business · product → label`, from `oracles:rank`) · **Applied** (one line before→after each; the full diff is in `git diff`) · **Held** (confirmed but not valuable enough — id, both axes, citing-case count, and which half is missing) · **Excluded** (non-invariant class + the redirect) · **Not applied** (link the proposals file) · citation reconciliation summary · the gate's before/after counts.
+Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for your own edits**, and its High count belongs in the report. Then give the audit report in chat, a file only on request (`.claude/rules/reports.md` §1; 15–40, cap 100 lines): per-entry verdict (ECL) or operation (BL) table with evidence refs and a **Value** column (`business · product → label`, from `oracles:rank`) · **Applied** (one line before→after each; the full diff is in `git diff`) · **Held** (confirmed but not valuable enough — id, both axes, citing-case count, and which half is missing) · **Excluded** (non-invariant class + the redirect) · **Not applied** (link the proposals file) · citation reconciliation summary · the gate's before/after counts.
 
 ## Rules
 
@@ -190,7 +190,7 @@ Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm r
 - **Body-only edits.** Never rewrite a meta table as a side effect.
 - **Env-agnostic** and data-agnostic — no hardcoded IDs/SKUs/prices/emails/URLs in any applied entry, even inside an evidence note.
 - **Never edit a CSV from this skill.** Citation remaps are `/qa-review-tests --fix`'s write, under `test-management-specialist`.
-- **Reversible.** Every applied edit is recorded in the audit report and lives in a git-tracked file; keep edits minimal and per-entry so one can be reverted alone.
+- **Reversible.** Every applied edit is named in the audit report and lives in a git-tracked file; keep edits minimal and per-entry so one can be reverted alone.
 - **Retiring is destructive** → never auto-applied.
 - **P0-security invariants** clear the *same* evidence bar — but given blast radius, if the live axis cannot safely be observed (e.g. a real privilege-escalation probe), treat the axis as absent ⇒ UNGROUNDED ⇒ not applied.
 

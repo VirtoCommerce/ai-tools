@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * seed-sanity.mjs — provision the VCST-6475 Sanity fixture (spec: sanity-specs.mjs) for suite 114.
+ * seed-sanity.mjs — provision the VCST-6475 Sanity fixture (spec: sanity-specs.mjs) for suite 117.
  *
  * WHAT IT DOES
  *   - Uploads the two AGENT-TEST-6475 assets (a 4x3 PNG, a text file) into the PRIMARY dataset via
@@ -201,7 +201,7 @@ async function teardown() {
     const who = others.map((m) => m.env || m._id).join(', ');
     if (DRY_RUN) { log(`  (dry) delete marker ${markerId(TEST_ENV)}; fixture KEPT — still seeded for ${who}`); return; }
     await mutate(DATASETS.primary, deleteBody([markerId(TEST_ENV)]));
-    log(`  · fixture KEPT — the project is still seeded for ${who} (their suite 114 uses it). Removed only ${markerId(TEST_ENV)}; --all-envs deletes regardless.`);
+    log(`  · fixture KEPT — the project is still seeded for ${who} (their suite 117 uses it). Removed only ${markerId(TEST_ENV)}; --all-envs deletes regardless.`);
     return;
   }
   // Documents first (secondary, then primary — the footer's strong refs go with their targets in

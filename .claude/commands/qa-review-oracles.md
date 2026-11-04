@@ -75,7 +75,7 @@ Evidence gathering is read-only and per-entry, so **run it in parallel** — but
 - gets its **own isolated browser slot** — distinct servers across the batch (`playwright-firefox` / `playwright-chrome` / `playwright-edge`); never share a session;
 - uses a **distinct test/org user** if the live axis needs auth (a shared org cart contaminates);
 - **BL:** reads the human sources for each record (Jira AC and resolutions for the tickets in `source`/`suspect_reason`, the docs), re-runs its `check` on its slot, and returns **one operation** (SYNC / SYNC-UPDATE / NEW / MARK-SUSPECT / RESOLVE / RE-RUN / RETIRE-proposed / UNCHANGED, bl-audit-criteria §1) + the proposed YAML change;
-- **ECL:** gathers all three axes (docs `/vc-docs` + source GitHub MCP — no browser; live observation on its assigned slot) and assigns a verdict (CONFIRMED / DRIFT / MISSING / DUPLICATE / CONTRADICTORY / UNGROUNDED / STALE-RETIRE) with its evidence tuple and proposed edit;
+- **ECL:** gathers all three axes (docs VirtoOZ + source GitHub MCP — no browser; live observation on its assigned slot) and assigns a verdict (CONFIRMED / DRIFT / MISSING / DUPLICATE / CONTRADICTORY / UNGROUNDED / STALE-RETIRE) with its evidence tuple and proposed edit;
 - it does **NOT** write the oracle itself.
 
 **3b — Fan-in (single writer, serialized):** the orchestrator collects all batches' verdicts, then applies edits **sequentially, one entry at a time, in one process** — concurrent writes to the same file race and corrupt it. **BL:** edit the YAML record (bl-audit-criteria §3 — one record per edit, NEW reads the max id fresh, no `Amended:` stamps), then `npm run bl:render` + `npm run bl:convert:check`; RETIRE is only proposed. **ECL:** auto-apply CONFIRMED/DRIFT/MISSING/DUPLICATE (body-only, `Amended:` + `Source:` stamp, env-agnostic; MISSING reads the current max id fresh before each insert). Unconfirmed → the audit report (ECL: also its proposals file).
@@ -103,7 +103,7 @@ Full rules: [SKILL.md](../skills/qa-review-oracles/SKILL.md) + the axis's criter
 
 ### Step 5 — Re-run the gate, then report
 
-Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for this run's own edits**; a run that raises the High count has broken something. Then write `reports/knowledge/BL-AUDIT-<date>.md` or `ECL-AUDIT-<date>.md` (verdict or operation table with a **Value** column — `business · product → label`, from `oracles:rank` — + Applied + **Held** (confirmed but not valuable enough, with which axis is missing) + **Excluded** (non-invariant class + redirect) + Not-applied + citation reconciliation + the gate's before/after counts), per [.claude/rules/reports.md](../rules/reports.md).
+Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for this run's own edits**; a run that raises the High count has broken something. Then give the audit report **in chat** — write `reports/knowledge/BL-AUDIT-<date>.md` or `ECL-AUDIT-<date>.md` only when the operator asks for a file (verdict or operation table with a **Value** column — `business · product → label`, from `oracles:rank` — + Applied + **Held** (confirmed but not valuable enough, with which axis is missing) + **Excluded** (non-invariant class + redirect) + Not-applied + citation reconciliation + the gate's before/after counts), per [.claude/rules/reports.md](../rules/reports.md).
 
 ---
 

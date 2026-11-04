@@ -54,7 +54,7 @@ npm run suites:lint          # suite + case totals, corpus-wide unique-ID check
    - `skills/qa-plan/e2e-scenario-catalog.md` — E2E scenario catalog (its own header derives the count; never quote one)
    - `skills/qa-checklist/domain-checklists.md`, `backend-admin-checklists.md`, `graphql-checklist.md`
    - `skills/qa-api/xapi-query-ref.md`, `test-cases-api-graphql.md`
-4. **Product documentation — VirtoOZ first, Context7 as fallback.** Per `CLAUDE.md` §Essential Rules, when what the platform is *supposed* to do is unclear, query VirtoOZ (`/vc-docs`) before acting on it; fall back to Context7 `/virtocommerce/vc-docs` only when VirtoOZ returns thin or off-topic chunks. Grounding order is **repo knowledge → VirtoOZ → live/source**. Flag features documented upstream but absent from coverage; a *released* behaviour VirtoOZ does not document is itself a finding. What VirtoOZ had to tell you that the repo should have known goes back into the domain map.
+4. **Product documentation — VirtoOZ first, Context7 as fallback.** Per `CLAUDE.md` §Essential Rules, when what the platform is *supposed* to do is unclear, query VirtoOZ before acting on it; fall back to Context7 `/virtocommerce/vc-docs` only when VirtoOZ returns thin or off-topic chunks. Grounding order is **repo knowledge → VirtoOZ → live/source**. Flag features documented upstream but absent from coverage; a *released* behaviour VirtoOZ does not document is itself a finding. What VirtoOZ had to tell you that the repo should have known goes back into the domain map.
 5. **Map every test case** to its manifest domain via the manifest's `domain` field; supplement with the `Section` column and title keywords only when the manifest is ambiguous.
 6. **Identify gaps** per `coverage-gap-methodology.md` categories (`ZERO_COVERAGE`, `SHALLOW_HAPPY`, `MISSING_NEGATIVE`, `MISSING_INTEGRATION`, `MISSING_CROSS_DOMAIN`, `STALE_COVERAGE`).
 7. **Score gaps** using the 4-factor matrix in `coverage-gap-methodology.md` §3:
@@ -97,7 +97,7 @@ Definition of Done: every generated case conforms to the template, references at
 
 1. Execute each new **P0 case** against QA via the assigned browser (default: `playwright-chrome`; fallback per `defaults.fallbackChain` in `config/test-suites.json`).
 2. If the steps don't work (element not found, flow changed), revise the case once; if still broken, leave it `Draft` with an explicit `Failure_Signals` note and list it in the report.
-3. **`Automation_Status` stays `Draft`.** The enforced vocabulary is `Draft | Reviewed | Automated | Manual | Semi-Automated` (`scripts/test-cases/lint-test-cases.ts`, finding `S-006`); any other value is a High finding on every row. **This skill never promotes.** A green live pass here upgrades the case's assertions to `{OBSERVED}` — that is all it earns. `Draft → Reviewed/Automated` is owned by `/qa-test-lifecycle` **6P** and `/qa-regression` **6.5** (`knowledge/execution/regression-promotion.md`), is never automatic, and needs `/qa-review-tests` ≥ PASS WITH WARNINGS plus explicit approval.
+3. **`Automation_Status` stays `Draft`.** The enforced vocabulary is `Draft | Reviewed | Automated | Manual | Semi-Automated` (`scripts/test-cases/lint-test-cases.ts`, finding `S-006`); any other value is a High finding on every row. **This skill never promotes.** A green live pass here upgrades the case's assertions to `{OBSERVED}` — that is all it earns. `Draft → Reviewed/Automated` is owned by **`qa-case-promotion`** and `/qa-regression` **6.5** (`knowledge/execution/regression-promotion.md`), is never automatic, and needs `/qa-review-tests` ≥ PASS WITH WARNINGS plus explicit approval.
 4. Clean up created test data using the `AGENT-TEST-` prefix (see `knowledge/execution/live-discovery.md` § Cleanup).
 
 Definition of Done: ≥80% of new P0 cases execute green and reach `{OBSERVED}` grounding; the remainder are flagged in the report with explicit failure signals, never silently skipped.
@@ -166,7 +166,7 @@ Never hardcode suite IDs in this skill — query the manifest.
 | Upstream | `knowledge/api/graphql-schema.md` | Schema verification before authoring GraphQL cases |
 | Downstream | `/qa-test-cases-generator` | Receives `--layer` invocations to author cases |
 | Downstream | `/qa-review-tests` | Reviews generated cases on 11 dimensions; `--fix` owns stale-row repair |
-| Downstream | `/qa-test-lifecycle` | **Owns promotion** of this skill's `Draft` cases (step 6P) |
+| Downstream | `/qa-test-lifecycle` | **Owns promotion** of this skill's `Draft` cases (step `qa-case-promotion`) |
 | Downstream | `/qa-test` | Generated cases can be executed by qa-testing-expert |
 | Downstream | `/qa-regression` | Updated suites feed into regression runs; step 6.5 promotes |
 | Downstream | `/qa-metrics` | Coverage metrics updated post-generation |
@@ -196,12 +196,12 @@ Never hardcode suite IDs in this skill — query the manifest.
 
 **Validation & gates:**
 - P0 validation requires actual browser execution, not just review.
-- This skill never sets `Automation_Status` past `Draft`. Promotion belongs to `/qa-test-lifecycle` 6P or `/qa-regression` 6.5.
+- This skill never sets `Automation_Status` past `Draft`. Promotion belongs to `qa-case-promotion` or `/qa-regression` 6.5.
 - Quality gate (Cycle 4): `td:validate` + `suites:lint` + `suites:review` + `scope:validate` (when applicable) + ≥80% P0 execution rate — all must pass before commit.
 
 **Knowledge sources:**
 - Gap analysis must reference `BL-*` invariants for priority scoring and case authoring.
-- Query VirtoOZ (`/vc-docs`) during Cycle 1 for any unclear product behaviour; Context7 `/virtocommerce/vc-docs` is the fallback, not the primary. Never rely solely on local knowledge files.
+- Query VirtoOZ during Cycle 1 for any unclear product behaviour; Context7 `/virtocommerce/vc-docs` is the fallback, not the primary. Never rely solely on local knowledge files.
 - For GraphQL cases, consult `graphql-schema.md` (live introspection) before authoring queries/mutations.
 
 **Output:**

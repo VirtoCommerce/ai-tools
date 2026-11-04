@@ -5,6 +5,7 @@ model: opus
 color: green
 applicability: universal
 applicability_rationale: "Interactive testing methodology — exploratory, Claude Design spec comparison, console/network debug. Cross-surface, universal QA discipline."
+disallowedTools: Artifact, ArtifactComments, ArtifactData, PowerShell, CronCreate, CronDelete, RemoteTrigger, PushNotification, DesignSync, mcp__Claude_Browser__*, mcp__claude-in-chrome__*, mcp__Chrome_DevTools__*, mcp__chrome-devtools__*, mcp__plugin_playwright_playwright__*, mcp__figma-remote-mcp__*, mcp__ucp-qa__*, mcp__mcp-registry__*, mcp__scheduled-tasks__*, mcp__terminal__*, mcp__visualize__*, mcp__ccd_session__*, mcp__ccd_session_mgmt__*, mcp__ccd_sidebar__*, mcp__ccd_window__*, mcp__ccd_view__*, mcp__ccd_settings__*, mcp__ccd_host__*, mcp__ccd_pr__*, mcp__azure-mcp__*
 ---
 
 # QA Testing Expert — Interactive Test Execution & Debugging
@@ -19,14 +20,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ## LAYER 1 — BUSINESS LOGIC: Key Interactive Testing Invariants
 
-> **Reference:** `npm run bl:extract -- --domain <d>`.
-
-- **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
-- **BL-CART-002** Out-of-stock mid-session: if stock drops to 0 while item is in cart, next refresh must show warning — silent checkout with 0-stock = P0
-- **BL-CROSS-004** Currency switch chain: must update price list → cart → shipping → tax → total atomically
-- **BL-B2B-001** Approval workflow gate: if org requires approval, "Place Order" must create pending approval, not confirmed order
-- **BL-CHK-003** Double-submit prevention: "Place Order" must disable after first click — duplicate orders = P0
-- **BL-CROSS-002** Search index lag: newly created/updated products may not appear on storefront for 30-60s — this is expected, not a bug
+Pull the invariants for the domains in scope with `npm run bl:extract -- --domain <d>` (or use the extract your brief carries). Checkout, cart, the cross-module chains and B2B are the interactive-testing priorities.
 
 ---
 
@@ -167,7 +161,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 | **Runner-native GraphQL test cases** | — | **`knowledge/api/graphql-test-cases-runner.md`** — read before writing, reviewing or migrating any GraphQL case: the `Steps`/`Assertions`/`Cleanup` grammar `scripts/graphql/graphql-runner.ts` consumes. |
 | **Live discovery + random inputs** | — | **`knowledge/execution/live-discovery.md`** — decision tree (`{{VAR}}` / `@td()` / `live-discover` / `random-data`), JS + CSV-runner recipes, agent-user-pool isolation, `AGENT-TEST-` cleanup prefix. Consult before authoring any test that resolves an entity at runtime. |
 | Live xAPI schema | — | `knowledge/api/graphql-schema.md` |
-| VC documentation | `/vc-docs` | Context7 MCP |
+| VC documentation | VirtoOZ | Context7 MCP |
 
 ---
 

@@ -4,6 +4,18 @@ Read by `/qa-bug` Step 5 on the **Jira** path (`tracker.kind = jira`). The Azure
 path has its own discovered contract (`skills/qa-fix-routing/bug-contract.mjs`); a Jira collector for
 that contract is still a follow-up, so on Jira the fields are **discovered live, per create**, as below.
 
+## 0. One work folder per `/qa-bug` run — Jira and Azure alike
+
+Before the first file is written, create one folder for THIS invocation and keep every scratch file of the run in it:
+`$WORK = <session temp dir>/qa-bug/<slug>-<UTC yyyyMMddTHHmmssZ>-<4 random hex>/` (`mkdir -p`; the suffix keeps two
+calls in the same second apart). Every payload — `fields.json`, `issue.json`, `link.json`, `get.json`, `desc.html`,
+`sysinfo.html`, ADF and readback dumps — is `$WORK/<name>`, passed to the bridge as an **absolute** path. Once the
+ticket exists, write its key to `$WORK/KEY`.
+
+**Never a fixed-name file in the shared temp-dir root.** All subagents of one session share that dir, so two parallel
+`/qa-bug` runs overwrite each other's `fields.json` and one bug's fields can be sent to the other's issue — observed
+2026-10-28 when VCST-6594 and VCST-6595 were filed in parallel (caught by a re-read, not by a gate).
+
 ## 1. Discover the Bug's fields — never transcribe an id
 
 A Jira project's Bug type carries its own custom fields, and their ids differ per site. **No field id is
@@ -55,11 +67,15 @@ A rich-text field takes **ADF** on the v3 API, not Markdown. Recognise it by its
 createmeta reports it as `type: "string"` (VCST's Steps to reproduce does), with `custom` ending in `:textarea`
 or `system` = `description` / `environment`. The MCP's Markdown→ADF conversion covers the Description only.
 Create with the MCP `createJiraIssue`, then set the other fields
-with one `node "$VC_RUN" jira update --key <KEY> --fields-file fields.json` carrying ADF for every
+with one `node "$VC_RUN" jira update --key <KEY> --fields-file "$WORK/fields.json"` carrying ADF for every
 rich-text field, shaped as above (`orderedList` / `bulletList`, `strong` and `code` marks). Create through
-`jira request --method POST --path /rest/api/3/issue --body-file issue.json` **only when the Atlassian MCP is not
+`jira request --method POST --path /rest/api/3/issue --body-file "$WORK/issue.json"` **only when the Atlassian MCP is not
 connected**: the origin-label hook (`tracker-ops.md` §2a) checks the MCP create, never a bridge POST, so the bridge
 body carries the labels itself. Either way, read `labels` back after the create and add a missing one with `jira update`.
+
+**Every payload lives in this run's `$WORK`** (§0) — never a bare `fields.json` in a shared folder. **Before each write to an existing issue** (update, attach, link, re-send), check that `--key` equals
+`$WORK/KEY` and that the payload's summary or lead sentence is this bug's; a mismatch ⇒ STOP, send nothing, and report
+it. Read back (`get`) into `$WORK` too, and judge the readback of `$WORK/KEY` only.
 
 ## 2. Links
 

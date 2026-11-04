@@ -515,8 +515,8 @@ Storefront accessible at {{FRONT_URL}}; at least two supported locales available
 [DOM] Language indicator shows COLLISION_LOCALE as active","[NETWORK] GET for SUT_URL returns HTTP 200
 [CONSOLE] No TypeError or routing errors in browser console during direct navigation
 [API] GraphQL response errors[] is empty",SUT_URL shows eaten slug chars (e.g. '/de/stinations'); 404 page shown; different category displayed compared to control nav; console TypeError on load,Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage,VCST-5144;VCST-5144 residual | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
-L10N-ROUTE-003,Cross-Locale Explicit Deep-Link Does Not Stack Prefixes — Incoming /{locale}/ Switches Active Locale Instead of Prepending,Localization > Routing > Cross-Locale Deep Link,High,PROPOSED-BL-L10N-001,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes available (e.g. de and en or en-US); four route types accessible: home, a PDP, a category listing, and search",url={{FRONT_URL}};active_locale=de;incoming_locale=en,"[NOTE] --- SETUP: establish a non-default active locale ---
+"L10N-ROUTE-003","Cross-Locale Explicit Deep-Link Does Not Stack Prefixes — Incoming /{locale}/ Switches Active Locale Instead of Prepending","Localization > Routing > Cross-Locale Deep Link","High","PROPOSED-BL-L10N-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes available (de and en-US — a bare /en/ is not a locale prefix, KB-E9471929); four route types accessible: home, a PDP, a category listing, and search","url={{FRONT_URL}};active_locale=de;incoming_locale=en-US","[NOTE] --- SETUP: establish a non-default active locale ---
 [ACT] Open language switcher in the header or footer
 [ACT] Click the language switcher to open the locale list
 [WAIT] Locale list is open
@@ -524,12 +524,12 @@ Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes avail
 [WAIT] Page reloads; language indicator shows 'de' / 'Deutsch'
 [ASSERT] Verify active locale is now de (language indicator confirms)
 [NOTE] --- SUB-FLOW A: explicit /{incoming_locale}/ home deep link ---
-[NAV] Navigate directly to {{FRONT_URL}}/en/ in the address bar
+[NAV] Navigate directly to {{FRONT_URL}}/en-US/ in the address bar
 [WAIT] Page loads; wait for main content to settle
 [ASSERT] Capture URL as URL_A and page heading/language-indicator as LOCALE_A
-[ASSERT] Verify URL_A does NOT contain '/de/en/' (prefix-stack pattern)
+[ASSERT] Verify URL_A does NOT contain '/de/en-US/' (prefix-stack pattern)
 [ASSERT] Verify page is not a 404
-[ASSERT] Verify language indicator shows 'en' or English as the now-active locale (locale switched, not stacked)
+[ASSERT] Verify language indicator shows 'English (United States)' as the now-active locale (locale switched, not stacked)
 [NOTE] --- SUB-FLOW B: explicit /{incoming_locale}/ + category deep link ---
 [NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Category page loads
@@ -537,24 +537,24 @@ Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes avail
 [WAIT] Category page loads; URL settles
 [ACT] Capture the slug portion of the URL (the path after the locale prefix, e.g. '/accessories') as CAT_SLUG
 [NAV] Set active locale back to de: open language switcher → select Deutsch → wait for reload
-[NAV] Navigate directly to {{FRONT_URL}}/en/<CAT_SLUG> in the address bar (explicit en prefix)
+[NAV] Navigate directly to {{FRONT_URL}}/en-US/<CAT_SLUG> in the address bar (explicit en-US prefix)
 [WAIT] Page loads; wait for heading or error state to settle
 [ASSERT] Capture URL as URL_B
-[ASSERT] Verify URL_B does NOT contain '/de/en/' (prefix-stack pattern)
+[ASSERT] Verify URL_B does NOT contain '/de/en-US/' (prefix-stack pattern)
 [ASSERT] Verify page is not a 404
-[ASSERT] Verify language indicator shows 'en' or English (locale switched to en, not stacked)
+[ASSERT] Verify language indicator shows 'English (United States)' (locale switched to en-US, not stacked)
 [NOTE] --- SUB-FLOW C: explicit /{incoming_locale}/ + search query deep link ---
 [NAV] Set active locale back to de: open language switcher → select Deutsch → wait for reload
-[NAV] Navigate directly to {{FRONT_URL}}/en/search?q=laptop in the address bar
+[NAV] Navigate directly to {{FRONT_URL}}/en-US/search?q=laptop in the address bar
 [WAIT] Page loads; wait for search results heading to settle
 [ASSERT] Capture URL as URL_C
-[ASSERT] Verify URL_C does NOT contain '/de/en/' prefix-stack pattern
+[ASSERT] Verify URL_C does NOT contain '/de/en-US/' prefix-stack pattern
 [ASSERT] Verify page is not a 404
-[ASSERT] Verify language indicator shows 'en' or English as active locale","[NAV] None of URL_A, URL_B, URL_C contain a double-prefix stacking pattern (e.g. '/de/en/', '/fr/de/', or any /{localeA}/{localeB}/ pattern)
+[ASSERT] Verify language indicator shows 'English (United States)' as active locale","[NAV] None of URL_A, URL_B, URL_C contain a double-prefix stacking pattern (e.g. '/de/en-US/', '/fr/de/', or any /{localeA}/{localeB}/ pattern)
 [DOM] Pages for sub-flows A, B, and C render valid content — not a 404 for any sub-flow
-[DOM] Language indicator shows the incoming locale ('en') as active after each explicit deep-link navigation — confirming locale switch occurred rather than stacking
+[DOM] Language indicator shows the incoming locale ('English (United States)', en-US) as active after each explicit deep-link navigation — confirming locale switch occurred rather than stacking
 [STATE] Active locale changed to the incoming locale on all three sub-flows","[NETWORK] HTTP responses for URL_A, URL_B, URL_C are all HTTP 200
-[CONSOLE] No TypeError or routing errors in browser console during any of the three sub-flow navigations",URL contains double-prefix stacking (e.g. '/de/en/'); 404 page shown on any sub-flow; language indicator still shows 'de' after navigating to an explicit '/en/' URL (no switch occurred); console TypeError on any sub-flow load,Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage to restore default locale,VCST-5144;VCST-5144 residual,Draft
+[CONSOLE] No TypeError or routing errors in browser console during any of the three sub-flow navigations","URL contains double-prefix stacking (e.g. '/de/en-US/'); 404 page shown on any sub-flow; language indicator still shows 'de' after navigating to an explicit '/en-US/' URL (no switch occurred); console TypeError on any sub-flow load","Open language switcher and select English (en-US) or en-GB; navigate to {{FRONT_URL}} homepage to restore default locale","VCST-5144;VCST-5144 residual; Re-aligned 2026-10-28 (REG-2026-10-28-1013 triage): a bare /en/ is not a locale prefix, en-US is (KB-E9471929)","Draft"
 L10N-ROUTE-004,"Post-Prefix Boundary Fuzz — Trailing Slash, Percent-Encoded Slash, Fragment, and Double Slash After Locale Prefix Are Handled Gracefully",Localization > Routing > Boundary Chars,Medium,PROPOSED-BL-L10N-001,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Storefront accessible at {{FRONT_URL}}; DE locale is available; a valid category slug is resolvable at runtime",url={{FRONT_URL}};test_locale=de,"[NOTE] --- SETUP: capture a valid category slug ---
 [NAV] Navigate to {{FRONT_URL}}/catalog
@@ -597,3 +597,160 @@ Storefront accessible at {{FRONT_URL}}; DE locale is available; a valid category
 [DOM] Variant 3 (#fragment): correct category renders; fragment does not corrupt the path
 [DOM] Variant 4 (double slash): either renders the category page OR shows the storefront graceful 404 component — not a blank page or JS exception","[NETWORK] No 5xx responses for any of the four variant navigations
 [CONSOLE] No TypeError or unhandled promise rejection in browser console for any variant",Any variant URL shows chars eaten from VALID_SLUG; blank white page (SPA crash) on any variant; HTTP 5xx for any variant; unhandled TypeError logged to console for any variant,Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage,VCST-5144;VCST-5144 residual | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
+L10N-001,Language switch — PDP and category to Deutsch and back keep the page and toggle the /de/ prefix,Localization > Language switch > Fallback,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+The store offers at least en-US and de-DE. A category and a product are discovered in the case; the product used here has the SAME slug in both cultures (a per-culture slug is L10N-006).","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[GQL] xAPI products(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 20) and the same with cultureName: ""de-DE"" on {{FRONT_URL}}/graphql: CAT_URL = a category page; PDP_SLUG = a product whose slug is identical in both cultures (if none exists the PDP leg is SKIPPED)
+--- SCREEN: Category ---
+[NAV] {{FRONT_URL}}CAT_URL
+[WAIT] the category page has rendered
+[KEY] record the H1 as CAT_H1_EN
+[ACT] open the language selector in the top header
+[ACT] choose 'Deutsch'
+[WAIT] the page reloads or re-renders
+[KEY] record the URL path as CAT_URL_DE, the H1 as CAT_H1_DE
+[ACT] open the language selector
+[ACT] choose 'English'
+[WAIT] the page re-renders
+[KEY] record the URL path as CAT_URL_EN2 and the H1 as CAT_H1_EN2
+--- SCREEN: Product page ---
+[NAV] {{FRONT_URL}}/PDP_SLUG
+[WAIT] the product page has rendered; record the product code (PDP_CODE) and name
+[ACT] open the language selector
+[ACT] choose 'Deutsch'
+[WAIT] the page has re-rendered
+[KEY] record the URL path as PDP_URL_DE and the product code shown as PDP_CODE_DE
+[ACT] open the language selector
+[ACT] choose 'English'
+[WAIT] the page has re-rendered
+[KEY] record the URL path as PDP_URL_EN2 and the product code as PDP_CODE_EN2","[STATE] CAT_URL_DE starts with /de/ and the page is not a 404 {SPEC} (AC-1, #2576)
+[STATE] CAT_H1_DE is the German title of the same category (non-empty, not 'Not found') {SPEC} (AC-1)
+[STATE] CAT_URL_EN2 equals the original CAT_URL (the /de/ prefix is removed) and CAT_H1_EN2 equals CAT_H1_EN {SPEC} (AC-2)
+[STATE] PDP_URL_DE starts with /de/ and PDP_CODE_DE equals PDP_CODE; PDP_URL_EN2 has no /de/ prefix and PDP_CODE_EN2 equals PDP_CODE {SPEC} (AC-1, AC-2)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",404 or the home page after switching; the prefix not added or not removed (getSlugInfo still receives the locale-prefixed permalink),Switch the language back to English,VCST-6626 · Archetype:FALLBACK · Technique:ST,Draft
+L10N-002,"Language switch — page published in one language only shows the fallback page, not 404",Localization > Language switch > Fallback,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+A CMS page published in ONE culture only (en-US), found in the case: slugInfo for the page permalink answers in en-US and does not in de-DE. On vcptcore-qa this is the page at /new-page; any page that fits is accepted, none = BLOCKED (fixture drift).","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[GQL] xAPI slugInfo(permalink: ""<candidate>"", storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") and cultureName: ""de-DE"" on {{FRONT_URL}}/graphql for the candidate page permalinks, starting with /new-page
+[CAPTURE] ONE_LANG_URL = a permalink that resolves in en-US and does not resolve in de-DE
+[NAV] {{FRONT_URL}}ONE_LANG_URL
+[WAIT] the page has rendered
+[KEY] record its H1 as H1_EN and the main text length as LEN_EN
+[ACT] open the language selector in the top header
+[ACT] choose 'Deutsch'
+[WAIT] the page has re-rendered (up to 10s)
+[KEY] record the URL path as URL_DE, the H1 as H1_DE, the main text length as LEN_DE, and the HTTP status of the document request
+[ASSERT] read whether a 'not found' heading or an error page is shown","[STATE] no 'not found' heading or error page is shown after the switch {SPEC} (AC-3)
+[STATE] H1_DE equals H1_EN and LEN_DE equals LEN_EN: the single-language page is shown through the fallback, not replaced {SPEC} (AC-3)
+[STATE] the document status is 200 {SPEC} (AC-3; {OBSERVED} KB-2BA242BB pending a developer confirmation for CMS pages)
+[STATE] the language selector shows 'Deutsch' as the active language {SPEC} (AC-3)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",404 after choosing another language on a page that exists in one language only; the fallback slug lost by the reload,Switch the language back to English,VCST-6626 · Archetype:FALLBACK · Technique:EP,Draft
+L10N-003,Language switch — second hop to a third language on a single-language page still shows the page,Localization > Language switch > Fallback,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+The same single-language page as L10N-002 (published only in en-US). The store offers at least three cultures (de-DE, fr-FR and a second English: en-GB or en-US); with fewer the case is BLOCKED.","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[GQL] find ONE_LANG_URL as in L10N-002
+[NAV] {{FRONT_URL}}ONE_LANG_URL
+[WAIT] the page has rendered
+[KEY] record its H1 as H1_0
+[ACT] open the language selector
+[KEY] record every offered language as LANGS
+--- SCREEN: Hop 1 ---
+[ACT] choose 'Deutsch'
+[WAIT] the page has re-rendered
+[KEY] record H1_1 and whether a 'not found' heading is shown
+--- SCREEN: Hop 2 ---
+[ACT] open the language selector
+[ACT] choose 'Francais' (the French entry of LANGS)
+[WAIT] the page has re-rendered
+[KEY] record H1_2 and whether a 'not found' heading is shown
+--- SCREEN: Hop 3 ---
+[ACT] open the language selector
+[ACT] choose the English entry of LANGS that differs from the page's own culture
+[WAIT] the page has re-rendered
+[KEY] record H1_3 and whether a 'not found' heading is shown
+--- SCREEN: Hop 4 ---
+[ACT] open the language selector
+[ACT] choose the page's own culture again
+[WAIT] the page has re-rendered
+[KEY] record H1_4 and whether a 'not found' heading is shown","[STATE] H1_1, H1_2, H1_3 and H1_4 each equal H1_0 {SPEC} (AC-4, #2604)
+[STATE] no hop shows a 'not found' heading or an error page {SPEC} (AC-4)
+[STATE] the page shown after hop 2 (a second hop away from the owning culture) is the same page: the owning culture is kept across hops {SPEC} (AC-4: previousCultureSlug / isShownThroughFallback)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",page disappears (404) on the second language change; the owning culture lost after the first fallback,Switch the language back to the original one,VCST-6626 · Archetype:STALE · Technique:ST,Draft
+L10N-004,Language switch — mobile menu language selector behaves like the desktop menu (375 px),Localization > Language switch > Fallback,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Viewport 375x812: the language selector is the one in the mobile menu. The fork split the header preferences menu (desktop) from the mobile wrapper, so the wiring to the same language-switch logic is what this case reads. The category and the single-language page are the ones of L10N-001 and L10N-002.","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[SETUP] set the browser viewport to 375x812
+[GQL] find CAT_URL and ONE_LANG_URL as in L10N-001 and L10N-002
+[NAV] {{FRONT_URL}}CAT_URL
+[WAIT] the category page has rendered
+[KEY] record its H1 as CAT_H1_EN
+[ACT] open the mobile header navigation from its hamburger entry
+[ACT] open the language selector inside it
+[ACT] choose 'Deutsch'
+[WAIT] the page has re-rendered
+[KEY] record the URL path as CAT_URL_DE and the H1 as CAT_H1_DE
+[NAV] {{FRONT_URL}}ONE_LANG_URL
+[WAIT] the page has rendered
+[KEY] record its H1 as H1_0
+[ACT] open the mobile header navigation from its hamburger entry
+[ACT] open the language selector inside it
+[ACT] choose 'Deutsch'
+[WAIT] the page has re-rendered (up to 10s)
+[KEY] record the URL path as URL_DE, the H1 as H1_DE and whether a 'not found' heading is shown","[STATE] CAT_URL_DE starts with /de/ and CAT_H1_DE is non-empty and not a 'not found' page {SPEC} (AC-5)
+[STATE] the single-language page shows through the fallback after the mobile switch: H1_DE equals H1_0 and no 'not found' heading {SPEC} (AC-5, same as AC-3 on desktop)
+[STATE] the mobile selector behaves like the desktop one: same URL shape (/de/ prefix on a translated page) {SPEC} (AC-5)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",the mobile selector changes the language but loses the page; the mobile selector is not wired to the switch logic,Switch the language back to English; restore the desktop viewport (1920x1080),VCST-6626 · Archetype:PARITY · Technique:EP,Draft
+L10N-005,Language switch — browser Back after returning to the default language restores the previous page,Localization > Language switch > Fallback,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+The expected result of Back after a language switch is not specified yet (KB-912B0774 records a suspected 404 and waits for a developer decision): this case asserts only what no build may do and RECORDS the rest; it is not a verdict on the Back behaviour.","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[GQL] find CAT_URL as in L10N-001
+[NAV] {{FRONT_URL}}CAT_URL
+[WAIT] the category page has rendered
+[KEY] record its H1 as H1_EN
+[ACT] open the language selector
+[ACT] choose 'Deutsch'
+[WAIT] the page has re-rendered
+[KEY] record the URL as URL_DE
+[ACT] open the language selector
+[ACT] choose 'English'
+[WAIT] the page has re-rendered
+[KEY] record the URL as URL_EN
+[ACT] press the browser Back button once
+[WAIT] the page settles (up to 10s)
+[KEY] record the URL as URL_BACK, whether a 'not found' heading is shown (NOT_FOUND_BACK), the H1 as H1_BACK, and whether the console shows an uncaught error
+[ACT] press the browser Forward button once
+[WAIT] the page settles
+[KEY] record the URL as URL_FWD and the H1 as H1_FWD","[STATE] after Back the page is not blank and the console shows no uncaught JS error {SPEC} (UIP-BACK probe)
+[STATE] URL_BACK is one of URL_DE or the original category URL: the history entry is a page of this site, not a loop to the switch itself {SPEC} (UIP-BACK probe)
+[EVIDENCE] RECORD, not a verdict: URL_BACK, NOT_FOUND_BACK, H1_BACK and H1_FWD, to be compared with the developer's decision on KB-912B0774 {SPEC} (KB-912B0774 is a suspected 404 awaiting that decision)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",blank page or uncaught error after Back; Back stuck in a loop between two URLs,Switch the language back to English,VCST-6626 · Archetype:STALE · Technique:EG,Draft
+L10N-006,Language switch — PDP with a per-language slug opens the same product in the new language,Localization > Language switch > Fallback,Critical,BL-SEO-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+The store offers en-US and de-DE. The product is DISCOVERED in the case by the dimension the feature is sensitive to: its German slug differs from its English slug (the 3x discovery used Affligem Dubbel 24x30cl Bottle, de slug ending -bottle-de; any product with a per-culture slug fits, none = BLOCKED, fixture drift). Never a hardcoded id.","url={{FRONT_URL}}, store={{STORE_ID}}","--- SCREEN: Discover a product with a per-culture slug ---
+[GQL] xAPI products(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 50) { items { id code name slug } } on {{FRONT_URL}}/graphql
+[GQL] for each candidate: xAPI product(id: ID, storeId: ""{{STORE_ID}}"", cultureName: ""de-DE"") { code name slug }
+[CAPTURE] PRODUCT_ID, CODE, NAME_EN, SLUG_EN (en slug) and NAME_DE, SLUG_DE (de slug) of the first candidate whose SLUG_DE differs from SLUG_EN; if none differs the case is BLOCKED (fixture drift), never FAIL
+--- SCREEN: English product page ---
+[NAV] {{FRONT_URL}}/SLUG_EN
+[WAIT] the product page has rendered
+[KEY] record the product code shown on the page as CODE_PAGE_EN and the title as TITLE_EN
+--- SCREEN: Switch to Deutsch ---
+[ACT] open the language selector in the top header
+[ACT] choose 'Deutsch'
+[WAIT] the page has re-rendered (up to 10s)
+[KEY] record the URL path as URL_DE, the product code shown as CODE_PAGE_DE and the title as TITLE_DE
+[ACT] reload the page
+[WAIT] the page has rendered
+[KEY] record the product code shown as CODE_PAGE_DE2
+--- SCREEN: Back to English ---
+[ACT] open the language selector
+[ACT] choose 'English'
+[WAIT] the page has re-rendered
+[KEY] record the URL path as URL_EN2 and the product code shown as CODE_PAGE_EN2","[STATE] CODE_PAGE_EN equals CODE {SPEC} (AC-1: the page is the product that was discovered)
+[STATE] URL_DE equals /de/SLUG_DE: the German URL carries the product's German slug, not its English one {SPEC} (AC-1, #2576)
+[STATE] CODE_PAGE_DE equals CODE and CODE_PAGE_DE2 equals CODE: the same product, after the switch and after a reload {SPEC} (AC-1: the page shows the same entity)
+[STATE] TITLE_DE equals NAME_DE {SPEC} (AC-1)
+[STATE] URL_EN2 equals /SLUG_EN and CODE_PAGE_EN2 equals CODE {SPEC} (AC-2)
+[STATE] the 3x discovery observed a different product (a 30L Keg) under the English slug with a /de/ prefix; that outcome is the failure this case exists to catch {OBSERVED} (3x exploratory 2026-11-02)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",URL keeps the English slug under /de/; a different product renders after the switch; the reload resolves another product,Switch the language back to English,VCST-6626 · Archetype:PARITY · Technique:EP,Draft

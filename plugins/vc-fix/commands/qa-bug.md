@@ -45,6 +45,8 @@ Create a structured bug report from a description, screenshot, or observed issue
 
 ## Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
+0. **Own work folder first:** every scratch file of this run goes in its own `$WORK` — [`jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) §0.
+
 1. **Build & version verification** — fetch deployed versions. **The source branches on `profile.buildVerify.source`** (same as `/qa-fix` Phase 0; `tracker-ops.md` §5 — `vc-deploy-dev` is VirtoCommerce-internal, a client deployment has no access):
    - **`vc-deploy-dev`** (native platform; also the default when the source is `""`/absent) — use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
    - **`modules-endpoint`** (client) — `GET {BACK_URL}/api/platform/modules` with an admin token; the deployment reports its own module/Platform versions. (Theme/storefront version comes from the storefront or the ticket.)
@@ -329,10 +331,8 @@ and go straight to the create. Otherwise:
 
 **Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
 **"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:
-a prose question ENDS THE TURN, which lets an end-of-turn hook (the self-diagnostics tail-trigger)
-resume the agent and push the question out of view — exactly what happened on a client deployment
-(VCST-5582 D). `AskUserQuestion` blocks inside the turn, so nothing can bury it. This is the same
-mechanism the parent-link question below already uses.
+a prose question ends the turn and an end-of-turn hook can bury it (VCST-5582 D); `AskUserQuestion` blocks
+inside the turn, as the parent-link question below does.
 
 If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), Type = Bug:
 - **Jira** (`tracker.kind = jira`) → **follow [`knowledge/execution/jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) in its order:** field metadata → create (MCP `createJiraIssue`; the bridge POST only without it) → `jira update` the rich-text fields as ADF lists → attach and embed screenshots → verify; **Need hotfixes** §4. Create in project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`; customer sets their own). Description = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
@@ -443,7 +443,7 @@ ls -1 *.png *.har *.zip *.webm 2>/dev/null   # also catches an already-ignored f
   (VCST-5582 C). Report it as an observation, not a failure — the run still succeeded.
 
 Never create anything at the project root yourself: reports go under `reports/bugs/` (or the caller's run
-folder's `bugs/`), browser captures under `reports/bugs/screenshots/`, scratch files under the session temp dir.
+folder's `bugs/`), browser captures under `reports/bugs/screenshots/`, scratch files under this run's `$WORK`.
 
 ## Signal completion (self-diagnostics — the LAST action)
 

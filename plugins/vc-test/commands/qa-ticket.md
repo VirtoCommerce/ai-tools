@@ -7,7 +7,6 @@ disable-model-invocation: true
 # /vc-test:qa-ticket — one ticket, the bugs a checklist misses
 
 You orchestrate **inline** and hold only paths: every hand-off is a file, never a summary.
-Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3, U60–U68.
 `<plugin>` is this plugin's folder (`plugins/vc-test` here). Run every command from the project root. `WORK` is
 `.vc-fix/vc-test/<TICKET>/<env>/`.
 **Dispatch `<x>` (`vc-test:<agent>` or `<model>`) with P** = that subagent type on the model in its own frontmatter, or a
@@ -162,3 +161,5 @@ question decides filing; each one filed ⇒ at once `node <plugin>/lib/rounds.mj
 `node <plugin>/lib/rounds.mjs close --key <TICKET> --run-dir <RUN_DIR> --bundle <BUNDLE>`. Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and
 its `manual`, `unknown`, `foreign` lists; 3 ⇒ the stand is not writable: all manual. Print `verdict.md`'s first two
 lines and path.
+
+Ticket in Tested or Done? Run `/qa-docs <TICKET>` for its documentation, where that skill is installed.

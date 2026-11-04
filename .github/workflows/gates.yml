@@ -131,6 +131,9 @@ jobs:
       - name: selectors:check — data-test-id surface vs vc-frontend
         run: npm run selectors:check
         continue-on-error: true
+      - name: pages:check — storefront page inventory vs vc-frontend router
+        run: npm run pages:check
+        continue-on-error: true
       - name: presets:check — theme preset names vs vc-frontend
         run: npm run presets:check
         continue-on-error: true

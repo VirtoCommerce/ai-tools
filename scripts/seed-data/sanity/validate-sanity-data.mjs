@@ -2,7 +2,7 @@
 /**
  * scripts/seed-data/sanity/validate-sanity-data.mjs  (td:validate:sanity)
  *
- * STATIC drift guard for the VCST-6475 Sanity fixture (suite 114). No network. Owns the fixture's
+ * STATIC drift guard for the VCST-6475 Sanity fixture (suite 117). No network. Owns the fixture's
  * NON-VACUITY contract — each check fails when a divergence a case relies on collapses:
  *   1. CONFLICT: one id in BOTH datasets, titles AND permalinks differ (priority rule observable);
  *   2. TYPE FILTER: LANDING_IN_PROD's type is NOT in the primary type list but IS in the secondary

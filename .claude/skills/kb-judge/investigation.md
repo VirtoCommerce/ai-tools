@@ -43,7 +43,7 @@ never substituted by inference.
 |---|---|---|
 | Live storefront | `qa-frontend-expert`, `playwright-chrome` | what a buyer sees and which GraphQL operation the page sends |
 | Live Admin SPA + REST | `qa-backend-expert`, `playwright-edge` (or Chrome DevTools MCP) | what the back office shows and stores; the REST payload, not only the screen |
-| Docs | `/vc-docs` (VirtoOZ) | the documented MECHANISM. A doc never decides a UI string, a count or a layout — those are observed (`.claude/knowledge/agents/qa/shared-instructions.md` §What VirtoOZ is authoritative FOR) |
+| Docs | VirtoOZ (connector) | the documented MECHANISM. A doc never decides a UI string, a count or a layout — those are observed (`.claude/knowledge/agents/qa/shared-instructions.md` §What VirtoOZ is authoritative FOR) |
 | Source code | GitHub, at the **deployed** version of each stand, not `main` | the mechanism, and — through the history of the file — WHEN it changed and in which PR. A behaviour change between two stands' builds is proven here |
 | The base | `mcp__kb__kb_ask` on the clause's coordinates | other entries at the same coordinates — a sibling that already states the other half, or an entry this one duplicates |
 | Oracles | the judge: `.claude/knowledge/oracles/bl/*.yaml` and `e-commerce-edge-cases-library.md`, searched by the cluster's coordinates and concepts | what the platform SHOULD do, from human sources (AC, docs, Jira). A hypothesis for the specialists' brief, never a verdict |

@@ -176,6 +176,13 @@ playwright-report/
 # Playwright .spec output in a ticket run folder (<RUN_DIR>/specs/) — never committed.
 reports/tickets/**/specs/
 
+# /qa-investigate evidence packages in a ticket run folder (<RUN_DIR>/evidence[-<stamp>]/) — never committed.
+reports/tickets/**/evidence*/
+
+# Visual regression run output in a ticket run folder (<RUN_DIR>/visual/, ad-hoc <RUN_DIR>/pixel/) — never committed.
+reports/tickets/**/visual/
+reports/tickets/**/pixel/
+
 # === vc-init (/project-init) — generated local config, never commit ===
 # Per-machine onboarding output: the profile, env files (.env.local holds test-user passwords),
 # the MCP config and the vc-secrets declarations. Tokens live in vc-secrets, not here. Never commit.

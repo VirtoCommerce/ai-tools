@@ -1,6 +1,5 @@
 // scripts/lib/env-facts.ts — the pre-flight FACT CORE. Read-only, no policy: it never says
 // OK/WARN/BLOCK. Every source can be UNKNOWN on its own without failing the others.
-// Spec: docs/superpowers/specs/2026-10-08-preflight-skill-design.md §4.
 import { basename } from "node:path";
 import { CORE_REQUIRED_VARS } from "./env-core.js";
 import { selectTestEnv } from "./load-env.mjs";
