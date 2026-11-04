@@ -1949,3 +1949,152 @@ The stored dueDate differs from the instant sent (zone shift or lost seconds)
 customerId or customerName is null after a create that carried them
 The list and the by-id read disagree on the customer
 Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql",none (cleanup_call deletes the call inline),VCST-6314 · Archetype:PARITY · Technique:EP · Catches: the call's time or customer is stored differently from what the popup sent · Observed: SBTM-VCST-6314-2026-10-27,Draft
+SR-GQL-164,salesRepCoupons — a coupon whose own expiry has passed is hidden while its promotion is still active,Sales Rep xAPI > Coupons > salesRepCoupons,High,BL-GQL-003,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. SRCPN_COUPON_EXPIRED: an active public single-coupon promotion that runs about 30 days more, whose only coupon expired yesterday, so only the coupon-level filter can hide it. SRCPN_CAP_PARTIAL is its listed sibling from the same seed. Seeded by `npm run seed:promotions:sales-rep-coupons` (alias family SRCPN_*; dates are rolling, so the case asserts relations between the dates the API returns, never a literal date).",COUPON=@td(SRCPN_COUPON_EXPIRED.code); SIBLING=@td(SRCPN_CAP_PARTIAL.code),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP list]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC list]","[ERRORS label=list] errors[] empty {SPEC}
+[COUNT label=list] data.salesRepCoupons.totalCount > 0 {OBSERVED}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{SIBLING}}] is non-null {OBSERVED}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{COUPON}}] is null {SPEC}","[API] the buyer promotionCoupons list DOES contain this code (it filters at promotion level only), which is why the rep list must filter the coupon itself
+[STATE] checkout refuses the code for any buyer (observed 2026-11-03)","the expired coupon is listed (coupon-level ExpirationDate ignored)
+the sibling coupon is missing too, so the seed did not run
+errors[] non-empty on the list",none (read-only),VCST-6158 · AC-07 · Archetype:PARITY · Technique:EP · Catches: the rep hands a buyer an expired code that checkout rejects · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-GQL-165,salesRepCoupons — endDate is the coupon expiry when it is earlier than the promotion end,Sales Rep xAPI > Coupons > salesRepCoupons,High,BL-GQL-003,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. SRCPN_COUPON_END_EARLIER: the coupon expires about 10 days out and its promotion ends about 60 days out (DISTINCT dates, so the two answers differ). Seeded by `npm run seed:promotions:sales-rep-coupons` (alias family SRCPN_*; dates are rolling, so the case asserts relations between the dates the API returns, never a literal date).",COUPON=@td(SRCPN_COUPON_END_EARLIER.code),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP list]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC list]
+[GQL-CAPTURE list.data.salesRepCoupons.items[?couponCode=@td(SRCPN_COUPON_END_EARLIER.code)].expirationDate → COUPON_EXP]
+[GQL-CAPTURE list.data.salesRepCoupons.items[?couponCode=@td(SRCPN_COUPON_END_EARLIER.code)].promotionEndDate → PROMO_END]","[ERRORS label=list] errors[] empty {SPEC}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{COUPON}}].endDate = {{COUPON_EXP}} {SPEC}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{COUPON}}].endDate matches /^(?!{{PROMO_END}}$)/ {SPEC}","[UI] the card on the rep page and the widget shows the Expires date of this endDate, not the promotion end the buyer page shows for the same code","endDate equals promotionEndDate (the buyer-path value) while the coupon expires earlier
+endDate null although both dates exist
+errors[] non-empty on the list",none (read-only),VCST-6158 · AC-09 · Archetype:PARITY · Technique:DT · Catches: the card shows a date after which the code no longer works · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-GQL-166,salesRepCoupons — endDate is the promotion end when it is earlier than the coupon expiry,Sales Rep xAPI > Coupons > salesRepCoupons,High,BL-GQL-003,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. SRCPN_PROMO_END_EARLIER: the promotion ends about 20 days out and its coupon expires about 40 days out (DISTINCT dates, the mirror of SR-GQL-165). Seeded by `npm run seed:promotions:sales-rep-coupons` (alias family SRCPN_*; dates are rolling, so the case asserts relations between the dates the API returns, never a literal date).",COUPON=@td(SRCPN_PROMO_END_EARLIER.code),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP list]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC list]
+[GQL-CAPTURE list.data.salesRepCoupons.items[?couponCode=@td(SRCPN_PROMO_END_EARLIER.code)].expirationDate → COUPON_EXP]
+[GQL-CAPTURE list.data.salesRepCoupons.items[?couponCode=@td(SRCPN_PROMO_END_EARLIER.code)].promotionEndDate → PROMO_END]","[ERRORS label=list] errors[] empty {SPEC}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{COUPON}}].endDate = {{PROMO_END}} {SPEC}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{COUPON}}].endDate matches /^(?!{{COUPON_EXP}}$)/ {SPEC}","[UI] the card shows the promotion end as Expires, the same date the buyer page shows for this code","endDate equals the coupon expiry although the promotion ends first (the card promises more than the promotion backs)
+endDate null although both dates exist
+errors[] non-empty on the list",none (read-only),VCST-6158 · AC-09 · Archetype:BOUNDARY · Technique:DT · Catches: min() with a null fallback swaps the two sides · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-GQL-167,salesRepCoupons — a coupon registered to a member is not listed,Sales Rep xAPI > Coupons > salesRepCoupons,High,BL-GQL-004,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. SRCPN_MEMBER_BOUND: an active public single-coupon promotion whose coupon has MemberId = the TechFlow organization. SR_REP_PRIMARY serves several organizations; SR_REP_EXCLUSIVE_TECHFLOW serves only TechFlow, so it is the rep for whom the bound organization IS the customer. The list is store-wide, so the answer is the same for both. Whether the bound organization's own coupons page SHOULD list it is a PO question (see References); the SPEC reading used here is that account-issued coupons are not shown. Seeded by `npm run seed:promotions:sales-rep-coupons` (alias family SRCPN_*; dates are rolling, so the case asserts relations between the dates the API returns, never a literal date).",COUPON=@td(SRCPN_MEMBER_BOUND.code); SIBLING=@td(SRCPN_CAP_PARTIAL.code); ORG=@td(ORG_TECHFLOW.platform_id),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP list_primary]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC list_primary]
+[AUTH role=SR_REP_EXCLUSIVE_TECHFLOW]
+[GQL-OP list_techflow]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC list_techflow]","[ERRORS label=list_primary] errors[] empty {SPEC}
+[DATA label=list_primary] data.salesRepCoupons.items[?couponCode={{SIBLING}}] is non-null {OBSERVED}
+[DATA label=list_primary] data.salesRepCoupons.items[?couponCode={{COUPON}}] is null {SPEC}
+[ERRORS label=list_techflow] errors[] empty {SPEC}
+[DATA label=list_techflow] data.salesRepCoupons.items[?couponCode={{SIBLING}}] is non-null {OBSERVED}
+[DATA label=list_techflow] data.salesRepCoupons.items[?couponCode={{COUPON}}] is null {SPEC}","[UI] the TechFlow customer page and widget do not list the code (SR-CP-083 walks it with the bound organization's buyer)
+[API] the buyer promotionCoupons list DOES contain the code (no MemberId filter on the buyer path)","the member-bound coupon appears for either rep
+the sibling is missing, so the absence is vacuous
+errors[] non-empty on a list",none (read-only),"VCST-6158 · AC-11 · PO-QUESTION: should the page under a customer's name list that customer's own bound coupons? the expectation kept here is the SPEC reading, hidden · Archetype:SCOPE · Technique:EP · Catches: one customer's personal code is offered to every customer · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
+SR-GQL-168,"salesRepCoupons — multi-coupon, private, inactive and future-start promotions are not listed",Sales Rep xAPI > Coupons > salesRepCoupons,Medium,BL-GQL-003,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Four promotions the eligibility search must exclude, one code each: SRCPN_FUTURE_START (starts in the future), COUPON_PRIVATE (isPublic false), COUPON_EXPIRED (isActive false) and VALIDCODE123 (one of the six coupons of the multi-coupon promotion 'QA Usage Limit Test'; the query lists only promotions with exactly one coupon). SRCPN_CAP_PARTIAL is a listed sibling. Seeded by `npm run seed:promotions:sales-rep-coupons` (alias family SRCPN_*; dates are rolling, so the case asserts relations between the dates the API returns, never a literal date).","FUTURE=@td(SRCPN_FUTURE_START.code); PRIVATE=@td(COUPON_PRIVATE.code); INACTIVE=@td(COUPON_EXPIRED.code); MULTI=@td(promotions/coupons, coupon_id=COU-014, code); SIBLING=@td(SRCPN_CAP_PARTIAL.code)","[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP list]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC list]","[ERRORS label=list] errors[] empty {SPEC}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{SIBLING}}] is non-null {OBSERVED}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{FUTURE}}] is null {SPEC}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{PRIVATE}}] is null {SPEC}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{INACTIVE}}] is null {SPEC}
+[DATA label=list] data.salesRepCoupons.items[?couponCode={{MULTI}}] is null {OBSERVED}","[API] the buyer promotionCoupons list excludes the first three for the same reasons (OnlyActive, IsPublic) and also excludes the multi-coupon promotion (CouponCount = 1)","any of the four codes is listed (the criteria were widened)
+the sibling is missing, so the absences are vacuous
+errors[] non-empty on the list",none (read-only),"VCST-6158 · AC-11 · Archetype:SCOPE · Technique:EP · Catches: eligibility widened beyond OnlyActive, IsPublic and exactly one coupon · AC-11 CONTRADICTS the buyer page for multi-coupon promotions: the rep list never shows them · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
+SR-GQL-170,salesRepCoupons — page 2 continues page 1 without repeating or skipping a coupon,Sales Rep xAPI > Coupons > salesRepCoupons,High,BL-GQL-003,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. The store lists more than 20 coupons (24 on 2026-11-03), so three pages of ten exist and the boundary between page 1 and page 2 falls inside the tie group of equal end dates. Paging is offset-as-cursor: after:""10"" is the offset of the second page.",none,"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP full]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC full]
+[GQL-CAPTURE full.data.salesRepCoupons.items.9.couponCode → F9]
+[GQL-CAPTURE full.data.salesRepCoupons.items.10.couponCode → F10]
+[GQL-CAPTURE full.data.salesRepCoupons.items.19.couponCode → F19]
+[GQL-CAPTURE full.data.salesRepCoupons.items.20.couponCode → F20]
+[GQL-CAPTURE full.data.salesRepCoupons.totalCount → TOTAL]
+[GQL-OP page1]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 10, after: ""0"") { totalCount items { couponCode } } }
+[GQL-EXEC page1]
+[GQL-OP page2]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 10, after: ""10"") { totalCount items { couponCode } } }
+[GQL-EXEC page2]
+[GQL-OP page3]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 10, after: ""20"") { totalCount items { couponCode } } }
+[GQL-EXEC page3]","[ERRORS label=page1] errors[] empty {SPEC}
+[ERRORS label=page2] errors[] empty {SPEC}
+[ERRORS label=page3] errors[] empty {SPEC}
+[COUNT label=full] data.salesRepCoupons.totalCount > 20 {OBSERVED}
+[DATA label=page1] data.salesRepCoupons.totalCount = {{TOTAL}} {SPEC}
+[DATA label=page2] data.salesRepCoupons.totalCount = {{TOTAL}} {SPEC}
+[DATA label=page1] data.salesRepCoupons.items.9.couponCode = {{F9}} {SPEC}
+[DATA label=page2] data.salesRepCoupons.items.0.couponCode = {{F10}} {SPEC}
+[DATA label=page2] data.salesRepCoupons.items.9.couponCode = {{F19}} {SPEC}
+[DATA label=page3] data.salesRepCoupons.items.0.couponCode = {{F20}} {SPEC}",[UI] the page under a customer shows ten coupons per page and the pager reaches the same pages (SR-CP-070),"the first item of a page repeats the last item of the previous page
+an item of the full list appears on no page
+totalCount differs between pages
+errors[] non-empty on a page",none (read-only),"VCST-6158 · AC-03 · Archetype:BOUNDARY · Technique:BVA · Catches: a coupon is never shown to the rep, or shown twice, across pages · cursors: after beyond the total and negative values are platform paging, observed identical on promotionCoupons, and are not asserted · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03",Draft
+SR-GQL-171,"salesRepCoupons — name, label and description follow cultureName with fallback to the invariant values",Sales Rep xAPI > Coupons > salesRepCoupons,Medium,BL-SR-013,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. COUPON_10PCT (QA10OFF) carries admin-set de-DE and en-US name, label and description (the storefront coupons suite sets them in Admin); SRCPN_CAP_PARTIAL carries none for de-DE, so its German answer must fall back to the invariant one. The case reads values and compares them with each other, so renaming the QA10OFF promotion in Admin (the storefront coupons suite does) cannot break it.",TRANSLATED=@td(COUPON_10PCT.code); FALLBACK=@td(SRCPN_CAP_PARTIAL.code),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP list_en]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC list_en]
+[GQL-OP list_de]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""de-DE"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC list_de]
+[GQL-OP list_none]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC list_none]
+[GQL-CAPTURE list_none.data.salesRepCoupons.items[?couponCode=@td(SRCPN_CAP_PARTIAL.code)].name → NAME_INVARIANT]
+[GQL-CAPTURE list_none.data.salesRepCoupons.items[?couponCode=@td(SRCPN_CAP_PARTIAL.code)].description → DESC_INVARIANT]","[ERRORS label=list_en] errors[] empty {SPEC}
+[ERRORS label=list_de] errors[] empty {SPEC}
+[ERRORS label=list_none] errors[] empty {SPEC}
+[DATA label=list_de] data.salesRepCoupons.items[?couponCode={{TRANSLATED}}].name is non-null {SPEC}
+[DATA label=list_de] data.salesRepCoupons.items[?couponCode={{TRANSLATED}}].name matches /Gutschein/i {OBSERVED}
+[DATA label=list_en] data.salesRepCoupons.items[?couponCode={{TRANSLATED}}].name matches /^((?!Gutschein).)*$/i {OBSERVED}
+[DATA label=list_de] data.salesRepCoupons.items[?couponCode={{FALLBACK}}].name = {{NAME_INVARIANT}} {BL}
+[DATA label=list_de] data.salesRepCoupons.items[?couponCode={{FALLBACK}}].description = {{DESC_INVARIANT}} {BL}
+[DATA label=list_none] data.salesRepCoupons.items[?couponCode={{TRANSLATED}}].name is non-null {OBSERVED}",[UI] the rep page card shows the name for the storefront culture the rep selected,"a German request returns the English name for a coupon that has a German name
+name or description is null or blank for a coupon without a translation
+errors[] non-empty for any culture",none (read-only),VCST-6158 · BL-SR-013 · Archetype:MONEY · Technique:EP · Catches: a German rep sees English or blank coupon names · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-GQL-172,"salesRepCoupons — an empty or unknown storeId returns an empty list, never another store's coupons",Sales Rep xAPI > Coupons > salesRepCoupons,Critical,BL-GQL-004,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. The rep serves {{STORE_ID}}. An empty storeId would mean every store in the promotion search, so the handler must refuse it; the buyer promotionCoupons refuses an unknown store with Forbidden, the rep query answers an empty list (observed 2026-11-03).",none,"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP empty_store]
+query { salesRepCoupons(storeId: """", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { couponCode } } }
+[GQL-EXEC empty_store]
+[GQL-OP unknown_store]
+query { salesRepCoupons(storeId: ""STORE_DOES_NOT_EXIST"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { couponCode } } }
+[GQL-EXEC unknown_store]
+[GQL-OP own_store]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { id couponCode promotionId name label description startDate endDate promotionEndDate expirationDate maxUsesNumber maxUsesPerUser totalUsesCount } } }
+[GQL-EXEC own_store]","[COUNT label=own_store] data.salesRepCoupons.totalCount > 0 {OBSERVED}
+[DATA label=empty_store] data.salesRepCoupons.totalCount = 0 {SPEC}
+[DATA label=empty_store] data.salesRepCoupons.items.0 is null {SPEC}
+[DATA label=unknown_store] data.salesRepCoupons.totalCount = 0 {SPEC}
+[DATA label=unknown_store] data.salesRepCoupons.items.0 is null {SPEC}",[API] the buyer promotionCoupons answers Forbidden for the unknown store; the two contracts differ and neither returns another store's data,"totalCount above 0 for an empty or unknown storeId (another store's coupons leak)
+an internal stack trace or SQL fragment in errors[0].message
+the control list is empty, so the empty answers prove nothing",none (read-only),VCST-6158 · BL-GQL-004 · Archetype:SCOPE · Technique:EP · Catches: a rep sees promotions of stores they do not serve · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-GQL-173,salesRepCoupons — a non-rep buyer gets an empty list and an anonymous caller is refused,Sales Rep xAPI > Coupons > salesRepCoupons,High,"BL-SR-011, BL-GQL-004",,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. The anonymous operation runs FIRST because an [AUTH] step keeps its token for every later operation. ACME_BUYER is a plain corporate member with no sales-rep access. Observed 2026-11-03: a non-rep gets HTTP 200 with an empty list, an anonymous caller gets errors[0].extensions.code = Unauthorized.",buyer=@td(ACME_BUYER.email),"[GQL-ENDPOINT /graphql/sales-rep]
+[GQL-OP anon]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { couponCode } } }
+[GQL-EXEC anon]
+[AUTH role=ACME_BUYER]
+[GQL-OP buyer]
+query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 100, after: ""0"") { totalCount items { couponCode } } }
+[GQL-EXEC buyer]","[ERRORS label=anon] errors[] non-empty {BL}
+[DATA label=anon] errors.0.extensions.code = Unauthorized {BL}
+[DATA label=anon] data.salesRepCoupons is null {BL}
+[DATA label=anon] errors.0.message matches /^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i {BL}
+[ERRORS label=buyer] errors[] empty {OBSERVED}
+[DATA label=buyer] data.salesRepCoupons.totalCount = 0 {BL}
+[DATA label=buyer] data.salesRepCoupons.items.0 is null {BL}",[UI] a buyer who opens the coupons URL is sent out of the rep area (SR-CP-075),"the anonymous call returns data or a 5xx
+the buyer receives coupons
+the buyer call crashes with a server error instead of an empty answer",none (read-only),VCST-6158 · BL-SR-011 · Archetype:SCOPE · Technique:DT · KB-3F3D3C6B (the scoped schema answers 200 for non-reps) · Catches: a buyer reads the rep tool's coupon list · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft

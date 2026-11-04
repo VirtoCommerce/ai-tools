@@ -39,16 +39,47 @@
  * promotion name) — persistent fixtures, NOT AGENT-TEST-* ephemerals — so the /qa-seed-data
  * teardown sweep leaves them alone. Use `--teardown` here for deliberate cleanup of these rows.
  *
+ * salesRepCoupons fixtures (VCST-6158, coupons.csv rows with an `sr_*` edge_case_type, promos P22+):
+ *   - Rolling dates: a `+Nd`/`-Nd` start/end/expiry is N UTC days from the seed day and is RE-ANCHORED
+ *     on every seed (promotion PUT + coupon upsert by id), unlike the legacy yesterday/tomorrow tokens.
+ *   - `max_uses_number` sets the coupon's total cap explicitly; `member_ref` (an alias NAME) binds the
+ *     coupon to that member's platform id (Coupon.MemberId).
+ *   - `recorded_uses` N: there is NO REST endpoint that writes a promotion usage (the Marketing API has
+ *     none). Usages are written ONLY by the Marketing module's CouponUsageRecordHandler, which, on an
+ *     OrderChangedEvent for an ADDED order, records one usage per (promotionId, coupon) discount on the
+ *     order, through a background job. So the seeder POSTs minimal orders AGENT-TEST-SRCPN-<coupon_id>-U<k>
+ *     (no items, no organization, a sentinel customer id → in no buyer's or rep's order list) carrying
+ *     that discount, then polls the coupon's usage count until it reaches N. Deleting or cancelling an
+ *     order never releases a use (the handler only adds); deleting the PROMOTION cascades its usages.
+ *   - Runtime coupon/promotion ids → aliases.<env>.json (SRCPN_* aliases: coupon_guid, promotion_guid).
+ *   - `--verify` reads salesRepCoupons AS THE REP (SALES_REP_EMAIL / SR_REP_PASSWORD) and judges every
+ *     sr_* row against its contract (promotions-specs.mjs SR_CONTRACTS).
+ *
  * USAGE:
- *   node scripts/seed-promotions.mjs [--dry-run] [--verbose] [--only P01] [--teardown] [--skip-rewards]
+ *   node scripts/seed-promotions.mjs [--dry-run] [--verbose] [--only P01[,P02…]] [--family <name-prefix>]
+ *                                    [--teardown] [--skip-rewards] [--verify]
  * Safety: ENV_RISK gate (blocks ENV_RISK=production unless --allow-admin-writes-on-prod); idempotent by promotion name + coupon code.
  * No _seed-results report (VCST-5406) — COUPON_* resolve by static business key.
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 import {
-  assertSafeTarget, auth, api, loadCsv, log, verbose,
-  csvBool, STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
+  assertSafeTarget, auth, api, loadCsv, loadAliases, log, verbose, syncEnvAliases, verifyRemoved, idsParam,
+  csvBool, STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL, ROOT,
 } from '../../lib/seed-common.mjs';
+import {
+  isRollingDate, rollingDateIso, sameInstant, couponMaxUses, couponRecordedUses, usageOrderNumber,
+  USAGE_ORDER_PREFIX, usageOrderPrefix, resolveMemberRef, isSrRow, judgeSalesRepView,
+} from './promotions-specs.mjs';
+
+const VERIFY = process.argv.includes('--verify');
+const FAMILY = process.argv.includes('--family') ? process.argv[process.argv.indexOf('--family') + 1] : null;
+const ONLY_SET = ONLY ? new Set(ONLY.split(',').map((s) => s.trim()).filter(Boolean)) : null;
+// Sentinel customer for the usage-recording orders: no account, no organization → the orders sit in
+// no buyer's history and in no rep's served-org order list. The usage's UserId is this string.
+const USAGE_CUSTOMER_ID = 'AGENT-TEST-SRCPN-USAGE-RECORDER';
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Reward auto-config is ON by default (verified working — array-shaped tree). --skip-rewards opts out.
 const SKIP_REWARDS = process.argv.includes('--skip-rewards');
@@ -64,6 +95,7 @@ const CULTURES = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'it-IT', 'pt-PT', 'ru-RU',
 const toIso = (s, endOfDay = false) => {
   const v = (s || '').trim();
   if (!v) return null;
+  if (isRollingDate(v)) return rollingDateIso(v, { endOfDay });
   const day = 86400000;
   switch (v.toLowerCase()) {
     case 'yesterday': return new Date(Date.now() - day).toISOString();
@@ -130,7 +162,7 @@ function buildRewardNode(rewardType, rewardValue) {
 function couponLimits(c) {
   const t = (c.edge_case_type || '').toLowerCase();
   return {
-    maxUsesNumber: /max_total|maxed/.test(t) ? 1 : 0,
+    maxUsesNumber: couponMaxUses(c),
     maxUsesPerUser: /per_customer/.test(t) ? 1 : 0,
   };
 }
@@ -148,7 +180,7 @@ function couponExpiry(c) {
 // (.claude/rules/test-data.md FIFTH RULE).
 const RELATIVE_DATE = /^(yesterday|today|tomorrow)$/i;
 const isRelativeDated = (edgeCaseType, endDate) =>
-  /expiry_/i.test(edgeCaseType || '') || RELATIVE_DATE.test(String(endDate || '').trim());
+  /expiry_/i.test(edgeCaseType || '') || RELATIVE_DATE.test(String(endDate || '').trim()) || isRollingDate(endDate);
 
 /** Expired live while the CSV declares it valid (blank or a future absolute end date)? (pure) */
 const expiredButDeclaredValid = (liveEnd, wantEnd, now = Date.now()) =>
@@ -332,14 +364,33 @@ async function completePromotion(promo, row) {
     flags.warnings.push(`endDate healed: expired live (${full.endDate}) → ${wantEnd || 'none'} per CSV`);
     full.endDate = wantEnd || null;
   }
+  // Rolling (+Nd/-Nd) dates are re-anchored on EVERY seed, so a fixture that must stay N days away
+  // never lapses on the stand. Snapped to whole UTC days, so a same-day re-seed writes the same value.
+  if (isRollingDate(row.start_date)) full.startDate = toIso(row.start_date);
+  if (isRollingDate(row.end_date)) full.endDate = toIso(row.end_date, true);
 
   await api('PUT', '/api/marketing/promotions', full, { expectStatus: [200, 204] });
   return flags;
 }
 
-async function teardown(promoRows) {
+/** Every AGENT-TEST-SRCPN usage-recording order (one keyword search; filtered to the exact prefix). */
+async function listUsageOrders() {
+  const r = await api('POST', '/api/order/customerOrders/search', { keyword: USAGE_ORDER_PREFIX, take: 500 });
+  return (r?.results || []).filter((o) => String(o?.number || '').startsWith(USAGE_ORDER_PREFIX));
+}
+
+async function teardown(promoRows, couponRows) {
   log(`Teardown — deleting ${promoRows.length} promotion(s) by name (coupons included)...`);
   let deleted = 0, couponsDeleted = 0;
+  // Usage-recording orders first (bottom-up: they reference the coupons). Deleting them releases no
+  // use — the usages go with the promotion below (PromotionUsage → Promotion FK is ON DELETE CASCADE).
+  const inScope = new Set(promoRows.map((p) => p.promo_id));
+  const prefixes = couponRows.filter((c) => inScope.has(c.promo_id)).map((c) => usageOrderPrefix(c.coupon_id));
+  const ourOrders = (await listUsageOrders()).filter((o) => prefixes.some((p) => o.number.startsWith(p)));
+  if (ourOrders.length) {
+    await api('DELETE', `/api/order/customerOrders?${idsParam(ourOrders.map((o) => o.id))}`, null, { expectStatus: [200, 204, 404] });
+    log(`  ✓ Deleted ${ourOrders.length} usage-recording order(s): ${ourOrders.map((o) => o.number).join(', ')}`);
+  }
   for (const row of promoRows) {
     // Delete ALL exact-name matches (stray duplicates from prior runs get swept too).
     const r = await api('POST', '/api/marketing/promotions/search', { keyword: row.promo_name, take: 50 });
@@ -358,6 +409,96 @@ async function teardown(promoRows) {
     }
   }
   log(`Teardown complete — ${deleted} promotion(s), ${couponsDeleted} coupon(s) deleted.`);
+  // Zero-residue: no promotion of the scope by exact name, no usage order of its coupons.
+  const residue = await verifyRemoved(async () => {
+    const left = [];
+    for (const row of promoRows) {
+      const r = await api('POST', '/api/marketing/promotions/search', { keyword: row.promo_name, take: 50 });
+      left.push(...(r?.results || []).filter((p) => p.name === row.promo_name));
+    }
+    left.push(...(await listUsageOrders()).filter((o) => prefixes.some((p) => o.number.startsWith(p))));
+    return left;
+  });
+  if (residue) throw new Error(`teardown left ${residue} promotion(s)/usage order(s) behind`);
+  if (!DRY_RUN) log('  ✓ zero residue (promotions by exact name + usage-recording orders)');
+}
+
+/** Live coupon of a promotion by code, with a FRESH use count (the REST controller recounts usages). */
+async function liveCoupon(promotionId, code) {
+  return (await listCoupons(promotionId)).find((c) => c.code === code) || null;
+}
+
+/**
+ * Bring a coupon's recorded uses up to `want` by POSTing minimal orders that carry a (promotionId,
+ * coupon) discount — the only path that writes a promotion usage (CouponUsageRecordHandler, async job).
+ * Polls until the count reaches `want`. Returns { before, after, created }.
+ */
+async function ensureRecordedUses(promo, couponRow, coupon, want) {
+  const before = Number(coupon.totalUsesCount || 0);
+  const out = { before, after: before, created: [] };
+  if (before >= want) {
+    if (before > want) log(`    ⚠ ${couponRow.code}: ${before} uses recorded, fixture wants ${want} — uses cannot be released; re-create with --teardown --only ${couponRow.promo_id} then re-seed`);
+    return out;
+  }
+  const existing = new Set((await listUsageOrders()).map((o) => o.number));
+  for (let k = before + 1; k <= want; k++) {
+    const number = usageOrderNumber(couponRow.coupon_id, coupon.id, k);
+    if (existing.has(number)) { verbose(`usage order ${number} exists — waiting for its usage job`); continue; }
+    const body = {
+      number, storeId: STORE_ID, currency: 'USD', status: 'New',
+      customerId: USAGE_CUSTOMER_ID, customerName: 'AGENT-TEST SRCPN usage recorder',
+      comment: `Records use ${k} of coupon ${couponRow.code} (VCST-6158 fixture ${couponRow.coupon_id}). Not a real purchase.`,
+      items: [],
+      discounts: [{ promotionId: promo.id, coupon: couponRow.code, currency: 'USD', discountAmount: 0, description: `AGENT-TEST usage ${k}` }],
+    };
+    const created = await api('POST', '/api/order/customerOrders', body, { expectStatus: [200, 201] });
+    out.created.push(number);
+    verbose(`usage order ${number} → ${created?.id}`);
+  }
+  if (DRY_RUN) return out;
+  for (let i = 0; i < 30; i++) {
+    const c = await liveCoupon(promo.id, couponRow.code);
+    out.after = Number(c?.totalUsesCount || 0);
+    if (out.after >= want) break;
+    await sleep(3000);
+  }
+  if (out.after < want) throw new Error(`${couponRow.code}: usage count ${out.after} after 90 s, want ${want} — is the background-job server processing CouponUsageRecordJob?`);
+  return out;
+}
+
+/** The env overlay (aliases.<env>.json), for resolving member_ref ids that live only there. */
+function envOverlay() {
+  const p = join(ROOT, `test-data/aliases.${process.env.TEST_ENV || 'vcst'}.json`);
+  try { return existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : {}; } catch { return {}; }
+}
+
+/** salesRepCoupons AS THE REP, judged against every seeded sr_* row's contract. */
+async function verifySalesRep(seeded) {
+  const email = process.env.SALES_REP_EMAIL;
+  const password = process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD;
+  if (!email || !password) { log('⚠ --verify skipped: SALES_REP_EMAIL / SR_REP_PASSWORD not set for this env'); return 0; }
+  const t = await fetch(`${BACK_URL}/connect/token`, {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'password', username: email, password, scope: 'offline_access', storeId: STORE_ID }),
+  });
+  if (!t.ok) throw new Error(`rep token failed: ${t.status}`);
+  const token = (await t.json()).access_token;
+  const query = `query($s:String!){ salesRepCoupons(storeId:$s, cultureName:"en-US", first:100) { totalCount items { id couponCode promotionId name endDate promotionEndDate expirationDate maxUsesNumber totalUsesCount } } }`;
+  const r = await fetch(`${BACK_URL}/graphql/sales-rep`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ query, variables: { s: STORE_ID } }),
+  });
+  const body = await r.json();
+  if (body.errors) throw new Error(`salesRepCoupons errors: ${JSON.stringify(body.errors).slice(0, 300)}`);
+  const items = body.data?.salesRepCoupons?.items || [];
+  const { rows, problems } = judgeSalesRepView(items, seeded);
+  log(`\nsalesRepCoupons(${STORE_ID}) as ${email}: totalCount=${body.data?.salesRepCoupons?.totalCount}`);
+  for (const x of rows) {
+    log(`  ${x.coupon_id} ${x.type.padEnd(22)} expect=${x.expect.padEnd(6)} ${x.listed ? 'LISTED' : 'hidden'}  endDate=${x.endDate ?? '-'}  max=${x.maxUsesNumber ?? '-'}  uses=${x.totalUsesCount ?? '-'}`);
+  }
+  for (const p of problems) log(`  ✗ ${p}`);
+  if (!problems.length) log('  ✓ every sr_* fixture listed/hidden as its contract says');
+  return problems.length;
 }
 
 async function main() {
@@ -368,10 +509,17 @@ async function main() {
 
   const promos = loadCsv('test-data/promotions/promotions.csv');
   const coupons = loadCsv('test-data/promotions/coupons.csv');
-  const rows = ONLY ? promos.filter((p) => p.promo_id === ONLY) : promos;
-  if (!rows.length) { console.error(`ABORT: --only ${ONLY} matched no promotions`); process.exit(2); }
+  const rows = promos
+    .filter((p) => !ONLY_SET || ONLY_SET.has(p.promo_id))
+    .filter((p) => !FAMILY || (p.promo_name || '').startsWith(FAMILY));
+  if (!rows.length) { console.error(`ABORT: --only ${ONLY || '-'} / --family ${FAMILY || '-'} matched no promotions`); process.exit(2); }
 
-  if (TEARDOWN) { await teardown(rows); return; }
+  if (TEARDOWN) { await teardown(rows, coupons); return; }
+
+  const aliases = loadAliases();
+  const overlay = envOverlay();
+  const writeback = {}; // coupon_id → { coupon_guid, promotion_guid }
+  const srSeeded = [];  // for --verify
 
   const results = [];
   for (const row of rows) {
@@ -444,14 +592,43 @@ async function main() {
         }
         for (const c of promoCoupons) {
           const code = c.code.trim();
-          if (present.has(code)) { verbose(`↻ coupon: ${code}`); }
-          else {
+          const memberRef = (c.member_ref || '').trim();
+          const memberId = memberRef ? resolveMemberRef(memberRef, { aliases, overlay, loadCsvFn: loadCsv }) : null;
+          if (memberRef && !memberId) throw new Error(`coupon ${c.coupon_id}: member_ref ${memberRef} resolves to no platform_id`);
+          if (present.has(code)) {
+            verbose(`↻ coupon: ${code}`);
+            // Columns the legacy rows never set are reconciled IN PLACE (upsert by id keeps the usages):
+            // a rolling expiry is re-anchored, an explicit cap and a member binding are healed on drift.
+            const liveC = existing.find((x) => x.code === code);
+            const patch = {};
+            if (isRollingDate(c.end_date) && !sameInstant(liveC.expirationDate, couponExpiry(c))) patch.expirationDate = couponExpiry(c);
+            if (String(c.max_uses_number || '').trim() !== '' && liveC.maxUsesNumber !== couponMaxUses(c)) patch.maxUsesNumber = couponMaxUses(c);
+            if (memberRef && liveC.memberId !== memberId) patch.memberId = memberId;
+            if (Object.keys(patch).length) {
+              await api('POST', '/api/marketing/promotions/coupons/add', [{ ...liveC, ...patch }], { expectStatus: [200, 204] });
+              log(`    ↻ coupon ${code}: ${Object.entries(patch).map(([k, v]) => `${k}=${v}`).join(', ')} (same id)`);
+            }
+          } else {
             await api('POST', '/api/marketing/promotions/coupons/add', [{
               promotionId: promo.id, code, ...couponLimits(c), expirationDate: couponExpiry(c),
+              ...(memberId ? { memberId } : {}),
             }], { expectStatus: [200, 204] });
-            log(`    ✓ coupon: ${code}`);
+            log(`    ✓ coupon: ${code}${memberId ? ` (memberId ← ${memberRef})` : ''}`);
           }
           couponCodes.push(code);
+
+          let liveNow = await liveCoupon(promo.id, code);
+          const wantUses = couponRecordedUses(c);
+          if (wantUses > 0 && liveNow) {
+            const u = await ensureRecordedUses(promo, c, liveNow, wantUses);
+            log(`    ✓ uses ${code}: ${u.before} → ${u.after}/${couponMaxUses(c)}${u.created.length ? ` (orders ${u.created.join(', ')})` : ''}`);
+            liveNow = await liveCoupon(promo.id, code);
+          }
+          if (liveNow?.id) writeback[c.coupon_id] = { coupon_guid: liveNow.id, promotion_guid: promo.id };
+          if (isSrRow(c)) {
+            const livePromotion = await api('GET', `/api/marketing/promotions/${promo.id}`);
+            srSeeded.push({ couponRow: c, promoRow: row, liveCoupon: liveNow, livePromotion });
+          }
         }
       } else {
         promoCoupons.forEach((c) => couponCodes.push(c.code.trim()));
@@ -464,8 +641,10 @@ async function main() {
     }
   }
 
-  // No _seed-results report: COUPON_* aliases resolve by static business key
-  // (coupon_id) and coupons apply by `code` — no runtime GUID to persist here.
+  // No _seed-results report: COUPON_* aliases resolve by static business key (coupon_id) and coupons
+  // apply by `code`. Aliases that DECLARE coupon_guid / promotion_guid (SRCPN_*) get the runtime ids
+  // in aliases.<env>.json; syncEnvAliases writes only the fields an alias declares.
+  syncEnvAliases('promotions/coupons', writeback);
   const failed = results.filter((r) => r.error);
   const ok = results.filter((r) => !r.error);
   const couponCount = ok.reduce((n, r) => n + (r.couponCodes?.length || 0), 0);
@@ -477,6 +656,10 @@ async function main() {
   else console.log(`   ℹ rewards skipped (--skip-rewards) — discount amounts not set.`);
   if (manual.length) console.log(`   ⚠ needs manual Admin config (catalog-dependent): ${manual.join(', ')}`);
   if (failed.length) console.log(`   ⚠ ${failed.length} promotion(s) failed (reported, run is resilient): ${failed.map((r) => r.promoId).join(', ')}`);
+  if (VERIFY && !DRY_RUN && srSeeded.length) {
+    const bad = await verifySalesRep(srSeeded);
+    if (bad) process.exit(1);
+  }
 }
 
 main().catch((err) => { console.error(`\n❌ Promotions seed failed: ${err.message}`); process.exit(1); });

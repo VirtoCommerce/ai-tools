@@ -465,6 +465,7 @@ rules:
     verified:
       date: 2026-10-27
       by: REG-2026-10-27-SR-SWEEP
+    suspect_reason: "[case] SR-CP-050 failed in REG-2026-11-03-1732"
   - id: BL-SR-024
     title: Configurable-layout changes persist only on explicit Save, are scoped to the rep's account, and survive reload and re-authentication
     rule: "No drag, hide, or reorder action is persisted on its own — each is a draft-only change until the rep explicitly saves, and one Save issues exactly one full-document replace (BL-SR-016), never more. The persisted arrangement is scoped to the rep's account rather than a device or browser session: reloading, signing out and back in, or opening an independent browser session all resolve the same saved arrangement. Cancel and Reset discard the in-progress draft without issuing any save."
@@ -607,8 +608,8 @@ rules:
     violation_signal: A hidden widget's query still fires; a hidden stat card causes the page-level statistics query to change scope, drop a parameter, or stop firing.
     status: ACTIVE
     verified:
-      date: 2026-10-29
-      by: REG-2026-10-28-1915
+      date: 2026-11-03
+      by: REG-2026-11-03-1732
   - id: BL-SR-032
     title: The rail region mounts only while it holds at least one visible block, and unmounts structurally (not just visually) when empty
     rule: The narrow rail column is not rendered at all when it has no visible blocks — the main column then runs full width — and mounts as soon as at least one block becomes visible in it. This is a structural mount/unmount, not a visual collapse; the unmounted state persists across a reload.

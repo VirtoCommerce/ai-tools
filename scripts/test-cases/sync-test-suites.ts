@@ -518,7 +518,7 @@ const XREF_BASELINE: Record<string, number> = {
   "regression/suites/Frontend/payment/040a-payment-skyflow.csv": 2,
   "regression/suites/Frontend/sales-rep/089-sales-rep-my-customers-storefront.csv": 7,
   "regression/suites/Frontend/sales-rep/090-sales-rep-my-sales-reps-storefront.csv": 1,
-  "regression/suites/Frontend/sales-rep/091-sales-rep-customer-profile-storefront.csv": 28,
+  "regression/suites/Frontend/sales-rep/091-sales-rep-customer-profile-storefront.csv": 27,
   "regression/suites/Frontend/sales-rep/093-sales-rep-hub-dashboard-storefront.csv": 7,
   "regression/suites/Frontend/search/004-search-core.csv": 1,
   "regression/suites/Frontend/smoke/042-smoke-tests.csv": 2,

@@ -108,10 +108,10 @@ is not handing off; and on Jira a per-round `REOPEN` would flap the ticket *out*
 the precondition both closing transitions need. If round 1 skipped the opening hop, the exit round does
 it first (§7).
 
-### 5a. The two-hop rule counts hops on the TICKET UNDER TEST — a bug sub-task is its own ticket
+### 5a. The two-hop rule counts hops on the TICKET UNDER TEST — a linked bug is its own ticket
 
 "At most two moves" is per ticket, not per run. A `--iterate` round entry re-reads the ticket's
-**sub-tasks and linked bugs** and verifies each fix-ready one by running `/qa-verify-fix` inline
+**linked bugs** (a To-fix row has no ticket, so it never hops) and verifies each fix-ready one by running `/qa-verify-fix` inline
 (`.claude/skills/qa-test/modes.md` §Round entry) — and that inline run owns those bugs' hops, exactly as
 §6 already says for the `verify-fix` flow. It changes nothing above: the ticket under test still gets one
 opening hop and one closing hop, and `qa-lead` is still the only actor (§9.1).
@@ -124,12 +124,12 @@ Three constraints on a bug's hop, and the first is the one that makes it safe:
    which half. §9.5 is untouched — `Done`/`Cancelled`/`Closed` remain forbidden on a bug as on anything
    else.
 2. **Only the VERIFIED row hops mid-loop.** `FIX_INCOMPLETE` / `INTERMITTENT` / `NEW_REGRESSION` /
-   `BLOCKED` defer to **loop exit** (`REOPEN` + the failure list). A per-round `REOPEN` on a sub-task
+   `BLOCKED` defer to **loop exit** (`REOPEN` + the failure list). A per-round `REOPEN` on a linked bug
    flaps it out of in-testing and fires N−1 false handoff notifications — this section's own reasoning,
    one level down. A bug left in in-testing meanwhile is the §4 `BLOCKED` shape: in-testing **plus the
    mandatory comment** saying why nobody is closing it.
 3. **Recorded against the bug key.** Each hop and skip appends to `status_transitions[]` (§8) with the
-   bug's key, so "the sub-task was never moved" and "it was moved and the note was lost" stay
+   bug's key, so "the bug was never moved" and "it was moved and the note was lost" stay
    distinguishable there too.
 
 ## 6. Per-flow ownership — three flows, three answers

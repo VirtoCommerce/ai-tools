@@ -3430,6 +3430,58 @@
     "storeId": "QA-STORE",
     "org_id": ""
   },
+  "SRCPN_PROMO_END_EARLIER": {
+    "coupon_guid": "81d3092b-3818-44a1-89a4-a46c7837889e",
+    "promotion_guid": "081d47a9-4abd-4c89-b3c6-67a14b22f938"
+  },
+  "SRCPN_COUPON_END_EARLIER": {
+    "coupon_guid": "aa2e8aa4-3b4f-4e99-84b5-caa065105ea1",
+    "promotion_guid": "b4d66538-973d-420d-a815-f971caacb678"
+  },
+  "SRCPN_COUPON_EXPIRED": {
+    "coupon_guid": "7c075b86-f28e-4f25-b459-8b9b9739ed78",
+    "promotion_guid": "8e6e3d9b-5618-40e0-8d3d-436689d830c6"
+  },
+  "SRCPN_CAP_PARTIAL": {
+    "coupon_guid": "02b414b5-2dd2-43f6-940a-a9ae8602471a",
+    "promotion_guid": "7a181e2c-2042-4db6-a947-a17e15bcfdd8"
+  },
+  "SRCPN_CAP_ONE_LEFT": {
+    "coupon_guid": "4809e47b-8a95-4f9f-ab79-a4a0da89166a",
+    "promotion_guid": "57a39936-47e9-4508-89df-95b654170472"
+  },
+  "SRCPN_CAP_USED_UP": {
+    "coupon_guid": "697ead9d-89e1-4982-9dce-abf736795d24",
+    "promotion_guid": "91e7c2df-c0b5-4a3d-abd6-72fe24af56b4"
+  },
+  "SRCPN_MEMBER_BOUND": {
+    "coupon_guid": "484d8b44-fab9-4e6f-86bc-d9ccdf989dee",
+    "promotion_guid": "e27803da-befa-4217-bf04-4208256dbeeb"
+  },
+  "SRCPN_FUTURE_START": {
+    "coupon_guid": "67d31911-652e-46ab-a4dc-33a9563e0faa",
+    "promotion_guid": "2c9ded7b-71b2-4395-ac66-859d9e8b9a58"
+  },
+  "SRCPN_LONG_CODE": {
+    "coupon_guid": "4f392cf9-f817-4c93-9122-923c261daf1f",
+    "promotion_guid": "a5107611-af86-4aa4-bcdb-6a7415f3312e"
+  },
+  "SR_UNSERVED_ORG": {
+    "id": "8ec0e02f-ab23-4464-b0e1-7c7920175a66",
+    "platform_id": "8ec0e02f-ab23-4464-b0e1-7c7920175a66"
+  },
+  "PROD_RANGE_LOW": {
+    "id": "77a6f17a-3bc1-4388-8957-c8f4c105ef0b"
+  },
+  "PROD_RANGE_MID": {
+    "id": "a28052d6-6c81-4a62-b759-d2355ec6eeec"
+  },
+  "PROD_RANGE_HIGH": {
+    "id": "304d3bcb-8c12-43e7-85e4-6502e2771ff2"
+  },
+  "PROD_RANGE_NONE": {
+    "id": "d266a936-b64e-497f-838b-449ad4d2f3fd"
+  },
   "REVIEW_PRODUCT": {
     "id": "8a39420b-1c52-444b-bf98-83b0f203878a",
     "name": "Fast HDPE NIJ IIIA High Cut Trajectory Helmet UHMW-PE Trajectory 3A Bulletproof Helmet",

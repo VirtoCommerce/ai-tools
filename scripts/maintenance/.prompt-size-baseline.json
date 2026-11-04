@@ -1,8 +1,8 @@
 {
-  ".claude/agents/qa-testing-expert.md": 19222,
+  ".claude/agents/qa-testing-expert.md": 19205,
   ".claude/commands/qa-exploratory.md": 24984,
   ".claude/commands/qa-regression.md": 35861,
-  ".claude/commands/qa-test.md": 54807,
+  ".claude/commands/qa-test.md": 54804,
   ".claude/skills/project-init/SKILL.md": 27244,
   ".claude/skills/qa-hotfix-check/SKILL.md": 22678,
   ".claude/skills/qa-local-env/SKILL.md": 25190,

@@ -934,6 +934,159 @@
     },
     "_notes": "COU-027 (promo P21 'AGENT-TEST Lowercase Coupon Case Fidelity', 5% off cart subtotal, public + active, no endDate, no threshold). Dedicated collision-free lowercase coupon for the CPN-062 VCST-5233 apply/validate case-fidelity guard. code='agenttestlc062' satisfies /[a-z]/; its all-uppercase form 'AGENTTESTLC062' is NOT a valid/existing coupon on the env (probed vcst-qa 2026-07-21: 0 matches), so uppercasing (VCST-5233 bug) => ValidateCoupon false => 'This code is not valid' (clean fail signal while unfixed); lowercase preserved (once fixed) => applies. Unlike COUPON_SUPER('super'), uppercasing does NOT hit the unrelated 'SUPER'/'Super Discount' coupon. Seeded by seed-promotions.mjs; teardown: npm run seed:promotions:teardown -- --only P21. No runtime GUID here — resolves by static business key (coupon_id/code)."
   },
+  "SRCPN_PROMO_END_EARLIER": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-028"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S7 — promotion ends +20d, coupon expires +40d (DISTINCT): salesRepCoupons endDate must equal the PROMOTION end. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_COUPON_END_EARLIER": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-029"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S6 — coupon expires +10d, promotion ends +60d (DISTINCT): endDate must equal the COUPON expiry. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_COUPON_EXPIRED": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-030"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S5 — promotion runs to +30d, coupon expired -1d (yesterday 23:59:59Z): HIDDEN by the coupon-level expiry filter (the buyer path ignores coupon expiry). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_PARTIAL": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-031"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S2 — cap 5, 2 REAL promotion-usage records (orders AGENT-TEST-SRCPN-COU-031-*): \"3 uses left out of 5\". LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_ONE_LEFT": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-032"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S4 — cap 2, 1 recorded use: singular \"1 use left out of 2\". LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_USED_UP": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-033"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S3 static half — cap 1, 1 recorded use: HIDDEN (used-up, counted fresh from usage records). The dynamic half (last use recorded by an order inside the case) is created IN the case, never seeded (FIFTH RULE). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_MEMBER_BOUND": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-034"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S8 — Coupon.MemberId = @td(ORG_TECHFLOW.platform_id) (resolved at seed time from member_ref ORG_TECHFLOW): HIDDEN for every rep. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_FUTURE_START": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-035"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S9 — promotion starts +10d (not active yet): NOT LISTED (excluded at the promotion search, OnlyActive). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_LONG_CODE": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-036"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S24 — 46-char code, no whitespace: card wrap on the rep page, buyer /account/coupons and cart sidebar. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_LOWERCASE": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-027"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id"
+    },
+    "_notes": "VCST-6158 S15 (copy / case fidelity on the rep coupon card) — REUSES COU-027 agenttestlc062 (P21, lowercase-stored, no end date, uncapped; LISTED by salesRepCoupons on vcst 2026-11-03). Same row as COUPON_LC_CASEFIDELITY: its uppercase form AGENTTESTLC062 is no coupon, so an uppercasing copy is detectable. Seeded by seed-promotions.mjs --only P21."
+  },
   "LOYALTY_SETTINGS": {
     "_inline": true,
     "currency_code": "PTS",
@@ -4327,10 +4480,11 @@
   },
   "SR_UNSERVED_ORG": {
     "_inline": true,
-    "_notes": "An organization that PROVABLY EXISTS but is NOT served by SR_REP_PRIMARY — the target for the 'rep adds an unserved org to a Customer-scope share' negative (VCST-5707 / vc-module-sales-rep PR #21: adds must be served by the rep, else 'Access denied.' and nothing written). Deliberately the first SR_REP_PAGING org (AGENT-TEST-SR-Paging-01, created by scripts/seed-data/sales-rep/seed-sales-rep.mjs from the PAGING:12 cell in sales-rep/sales-reps.csv) rather than ORG-005 (b2b/organizations.csv, seeded=false): an unserved id and a NONEXISTENT id both return salesRepCustomer=null / organization 'Access denied.' to the rep, so an org whose existence nobody proved makes the negative undecidable — a 'denied' could be not-found. Existence is proven without admin rights: SR_REP_PAGING's own salesRepCustomers lists it. The negative writes nothing when correct, so it does not disturb SR_REP_PAGING's 15-org paging count. Business key = the name below; the runtime GUID lives ONLY in aliases.<env>.json — never in this committed file.",
+    "_notes": "An organization that PROVABLY EXISTS but is NOT served by SR_REP_PRIMARY — the target for the 'rep adds an unserved org to a Customer-scope share' negative (VCST-5707 / vc-module-sales-rep PR #21: adds must be served by the rep, else 'Access denied.' and nothing written). Deliberately the first SR_REP_PAGING org (AGENT-TEST-SR-Paging-01, created by scripts/seed-data/sales-rep/seed-sales-rep.mjs from the PAGING:12 cell in sales-rep/sales-reps.csv) rather than ORG-005 (b2b/organizations.csv, seeded=false): an unserved id and a NONEXISTENT id both return salesRepCustomer=null / organization 'Access denied.' to the rep, so an org whose existence nobody proved makes the negative undecidable — a 'denied' could be not-found. Existence is proven without admin rights: SR_REP_PAGING's own salesRepCustomers lists it. The negative writes nothing when correct, so it does not disturb SR_REP_PAGING's 15-org paging count. Business key = the name below; the runtime GUID lives ONLY in aliases.<env>.json — never in this committed file. Written back by seed-sales-rep.mjs (Phase 5 of npm run seed:sales-rep, or reads-only `npm run seed:sales-rep:writeback` when the paging orgs already exist) only after it checks live that the org exists (GET /api/members/{id}), SR_REP_PAGING serves it and SR_REP_PRIMARY does not; a full teardown blanks it. Static contract: td:validate:sales-rep [8].",
     "name": "AGENT-TEST-SR-Paging-01",
     "id": "",
-    "platform_id": ""
+    "platform_id": "",
+    "seed": "seed:sales-rep"
   },
   "SR_ADMIN_CUSTOMER_ONLY": {
     "file": "sales-rep/admin-users",
@@ -11539,5 +11693,98 @@
     "user_type": "Manager",
     "password_var": "DEFAULT_TEST_PASSWORD",
     "_notes": "VCST-6443: back-office (Manager, isAdministrator=false) account WITHOUT builder:create but WITH builder:read + builder:update, so POST /api/page-builder-pages/create-group-page returns 403 for it on a VALID permalink (verified at provision) — the case decides whether an INVALID permalink is rejected 400 before or 403 at the permission gate. Password is the {{DEFAULT_TEST_PASSWORD}} secret from .env.local (localhost-safe fallback via user-provision.mjs resolvePassword), never committed. Runtime user id lives only in aliases.<env>.json. Teardown: DELETE /api/platform/security/users?names=agent-test-6443-nocreate + DELETE /api/platform/security/roles?ids=AGENT-TEST-6443%20no-create."
+  },
+  "PROD_RANGE_LOW": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-001"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: lowest value of the numeric property N (AgentTest_Length_mm = 9). Below the case sub-range, so applying it must drop this product; its value is the slider minimum."
+  },
+  "PROD_RANGE_MID": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-002"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: the only product whose N (45) lies inside the sub-range 30..60 — the list after applying the sub-range must hold exactly this product."
+  },
+  "PROD_RANGE_HIGH": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-003"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: highest value of N (120, three digits, so numeric and text ordering disagree). Above the sub-range; its value is the slider maximum."
+  },
+  "PROD_RANGE_NONE": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-004"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet control: same category, priced, in stock, NO value for N. Must disappear once any range is applied."
+  },
+  "RANGE_FACET_N": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-002"
+    },
+    "fields": {
+      "property": "property_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "min": "range_min",
+      "max": "range_max",
+      "subFrom": "sub_range_from",
+      "subTo": "sub_range_to",
+      "subSkus": "sub_range_skus"
+    },
+    "notes": "SRCHA-047: the numeric product property N for a Range facet on the store (Number, category-level property of the AGENT-TEST Range Facet Fixtures category, linked into the store catalog). Three products carry DIFFERENT values (min != max, mixed digit counts so a text-typed index would order them wrongly) plus one control without N. property = the name to pick in Store > Search configuration > Facets; min/max = expected statistics and slider bounds; subFrom..subTo holds exactly subSkus. Seed: npm run seed:range-facet. The store facet itself is NOT configured by the seeder."
   }
 }

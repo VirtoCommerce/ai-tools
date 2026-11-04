@@ -45,7 +45,7 @@ template.
 
 | Kind | Machine record | Fields read |
 |---|---|---|
-| `test` | `summary.json` | ticket, verdict, environment, build, date, case totals, `ac_analysis.ac_dod_estimate` (AC / DoD), the regression block, business rules verified, `bugs_filed`, `bugs_not_filed`, `release`, `report.page_url`, `screenshots` |
+| `test` | `summary.json` | ticket, verdict, environment, build, date, case totals, `ac_analysis.ac_dod_estimate` (AC / DoD), the regression block, business rules verified, `to_fix` (the **To fix** table: `id`, `what`, `severity`, `ref`, `status`), `bugs_filed`, `suggested_tickets` (`type`, `what`, `severity`), `bugs_not_filed`, `release`, `report.page_url`, `screenshots` |
 | `fix` | `verification-summary.json` | ticket, verdict, environment, build, date, checklist totals, STR and baseline results, `before_after[]`, regression / side-effect issues, `bugs_filed`, `evidence_artifact` |
 | `regression`, `smoke` | the run folder `suite-*-results*.json` | per suite: id, name, environment, start / completion, each case's status, id and title. A suite with no `completedAt` is an unconsolidated run — refused |
 

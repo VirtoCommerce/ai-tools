@@ -29,8 +29,8 @@ rules:
     violation_signal: HTTP 5xx on schema-validation error; `errors[]` empty on an obviously-invalid query; stack trace or SQL fragment exposed in `errors[0].message`; thrown exception bubbles to transport layer.
     status: SUSPECT
     verified:
-      date: 2026-10-12
-      by: REG-2026-10-12-1119
+      date: 2026-11-03
+      by: REG-2026-11-03-1717
     suspect_reason: "[case] WISH-006 failed in REG-2026-11-04-1022"
   - id: BL-GQL-002
     title: GraphQL query performance thresholds
