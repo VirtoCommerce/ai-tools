@@ -12,6 +12,8 @@ Build under test: deployed theme 2.61.0-pr-2570 with VirtoCommerce.MFA and vc-pl
 [SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
 --- SCREEN: Sign in (password) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with account.email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
@@ -50,6 +52,8 @@ State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-ema
 [SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
 --- SCREEN: Sign in (password) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with account.email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
@@ -81,6 +85,8 @@ State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-ema
 [SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
 --- SCREEN: Sign in (password) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with account.email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
@@ -120,6 +126,8 @@ State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-ema
 [SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
 --- SCREEN: Sign in (password) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with account.email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
@@ -159,6 +167,8 @@ The storefront resends the last-used organization on the mfa grant (vc-frontend 
 [SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
 --- SCREEN: Sign in by code (0), make Org A the last-used organization ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with account.email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
@@ -218,6 +228,8 @@ State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; the account is 
 [SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
 --- SCREEN: Sign in (password) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with account.email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
@@ -346,6 +358,8 @@ State under test: the operator holds window W2 (StoreMode=Enabled) for the first
 [SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
 --- LAYER: Window open: the code step appears ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with account.email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
@@ -384,6 +398,8 @@ State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-ema
 [SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
 --- SCREEN: First password step ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with account.email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
@@ -422,6 +438,8 @@ State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-ema
 [SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
 --- SCREEN: Sign in (password) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with account.email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
@@ -462,6 +480,8 @@ State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-ema
 [SETUP] READ ONLY: GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer; read its settings[] entry MultiFactorAuthentication.StoreMode (absent = unset) as modeWindow and require Enabled (operator window W2 is open from here); if it is not Enabled the case is BLOCKED (needs operator window W2: B2B-store StoreMode=Enabled), never FAIL; the case never writes the store
 --- SCREEN: Sign in (password) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill [data-test-id=""email-input""] with account.email
 [ACT] Fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [CAPTURE] T0 = current UTC time, taken immediately before the request that should send the code
@@ -496,3 +516,30 @@ State under test: StoreMode=Enabled on {{STORE_ID}}, global OFF; a confirmed-ema
 [CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 5xx on /connect/token",a letter or a space reaches the server as part of the code; five digits are submitted; the sixth digit submits twice and the second request burns a wrong-code attempt or refuses the right code; more than six digits are kept; spinner >5s,"Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
 Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:BOUNDARY · Technique:EP · Behavior:auth.signin.mfa.verify-code | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+MFASF-014,MFA — static-page sign-in section shows the code step after a correct password,Auth > MFA > Storefront code step,Critical,BL-AUTH-018,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Fixture @td(VCST6626_MFA_PER_USER_2FA.email) (a confirmed B2B-store buyer with the per-user two-factor flag on; password key TEST_USER_PASSWORD): the challenge comes from the user's own flag, so no store setting is written and no operator window is needed. B2B-store sign-in is code-first (OTP on), so the password path is behind 'Sign in with a password instead'. The sign-in codes are read from the notification journal (MfaSignInEmailNotification), SMTP is not relied on; no code within 90s is BLOCKED. The static-page host: the fork renders the sign-in through login-form-section.vue, a second host of the sign-in form, on a content page; if the content page has no sign-in section the case is BLOCKED for the page, never FAIL.","url={{FRONT_URL}}, mfa_buyer=@td(VCST6626_MFA_PER_USER_2FA.email), password={{TEST_USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+--- SCREEN: Static-page sign-in section ---
+[NAV] {{FRONT_URL}}/ in an anonymous browser session (the content page that hosts the sign-in section)
+[WAIT] the sign-in section of the page has rendered
+[CAPTURE] T0 = current UTC time, taken immediately before the sign-in click
+[ACT] If the one-time-code form is shown, click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown inside the section
+[ACT] Fill 'Email' with @td(VCST6626_MFA_PER_USER_2FA.email)
+[ACT] Fill 'Password' with TEST_USER_PASSWORD (the lane secret name - the Playwright lane types the value)
+[ACT] Click 'Sign in'
+[WAIT] the code step is shown inside the same section (up to 15s)
+[ASSERT] read the header of the step, the code input, and whether the section left the page or the page navigated away
+--- SCREEN: Right code ---
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(VCST6626_MFA_PER_USER_2FA.email)"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an MfaSignInEmailNotification message to the fixture created after T0 appears
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code into the code input
+[WAIT] the page signs the buyer in
+[ASSERT] read the account menu and the URL","[DOM] after the correct password the section shows the code step with the header ""Enter the sign-in code"" and a code input {SPEC} (AC-19; vc-frontend#2570 locales: mfa_verify_form header)
+[STATE] the section stays on its page: no bypass to a signed-in state and no stuck password form before the code step {SPEC} (AC-19, VC-AUTH-004)
+[STATE] the right code signs the buyer in: the account menu names the fixture's customer {SPEC} (AC-21)
+[STATE] the password path is reached from the code-first form only through 'Sign in with a password instead' {OBSERVED} (3x M8, 2026-11-02)
+[STATE] the header of the code step reads exactly 'Enter the sign-in code' {SPEC} (AC-19)
+[STATE] after the correct password the password form is not shown again and the buyer is not signed in before the code {SPEC} (AC-19)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",the static-page section skips the code step (protected buyer signs in with the password alone) or sticks on the password form; the section renders the code step without a code input,Sign out through the account menu; the fixture is removed with its teardown command at the end of the run,VCST-6626 · Archetype:PARITY · Technique:EP · Probe:VC-AUTH-004 · Behavior:auth.signin.mfa.required-challenge,Draft

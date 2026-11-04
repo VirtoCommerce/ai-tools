@@ -77,6 +77,17 @@ export const CANONICAL_PAGES = [
     ownedContent: true },
   { alias: 'PB_GA4_HTML_LISTS',    name: 'AGENT-TEST GA4 HTML Product Lists', permalink: '/agent-test-ga4-html-product-lists', culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none', cases: 'VCST-6017 #17 empty / #18 / #19',
     ownedContent: true },
+  // VCST-6626 single-language language switch: ONE en-US page and NO sibling in any other culture — the
+  // absence of a de-DE/fr-FR page at this permalink is the point (contrast PB_RETURN_POLICY, which is the
+  // multi-language subject). Plain title + text only: a category/product block rewrites the URL, which
+  // is exactly what made /new-page unusable for this check. Unrestricted, so a signed-in B2B buyer sees it.
+  { alias: 'PB_SINGLE_LANG_EN', name: 'AGENT-TEST Single Language EN Page', permalink: '/agent-test-single-language-en', culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none', cases: 'VCST-6626 single-language language switch',
+    ownedContent: true },
+  // VCST-6626 MFASF-014 static-page sign-in host: a content page whose only block is the storefront's
+  // `login` static-content block (login.vue -> LoginFormSection), the second host of the sign-in form.
+  // Reachable anonymously only while the store allows anonymous users (Stores.AllowAnonymousUsers).
+  { alias: 'PB_LOGIN_SECTION', name: 'AGENT-TEST Login Section Page', permalink: '/agent-test-login-section', culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none', cases: 'VCST-6626 MFASF-014 static-page sign-in',
+    ownedContent: true },
 ];
 
 const norm = (s) => String(s || '').trim().toLowerCase();
