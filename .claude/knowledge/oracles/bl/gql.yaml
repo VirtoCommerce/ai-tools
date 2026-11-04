@@ -72,3 +72,21 @@ rules:
     violation_signal: Anonymous `orders()` returns real data; `me()` returns another user's `memberId` or `contact`; `extensions.code` missing or wrong on rejected op; HTTP 401/403 returned instead of structured GraphQL error.
     status: SUSPECT
     suspect_reason: The Violation signal treats HTTP 401/403 as a violation, but troubleshooting.md lists 401 for a missing/invalid token and VP-7417 (Done) expected 401 for an expired token; the transport-vs-resolver split for invalid/expired tokens needs re-checking.
+  - id: BL-GQL-005
+    title: xAPI list-query filters narrow the result, never widen the server-enforced scope
+    rule: "On xAPI list queries (`carts`, `quotes`, `backInStockSubscriptions`, `customerReviews`, `properties`), caller-supplied `filter` / `keyword` terms may narrow the result but never widen the server-enforced scope — the caller's own user, organization, store, catalog, and the moderation status (storefront reviews are Approved-only). A term that names a scope field (an owner or customer id, an organization id, a catalog id, a review status) or a scope mode flag must not change which records are returned. Terms that name a legitimate filter field (a cart name, a cart status, a product id) still narrow."
+    priority: P0-security
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/queries/carts.md (docs) — `filter` is "a filter condition to narrow down the carts based on specific criteria"
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Reviews/Queries/customerReviews.md (docs) — `filter` is "additional filters to narrow down the reviews based on specific criteria"
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Queries/SearchCartQueryHandler.cs
+    check:
+      kind: manual
+      ref: "Per query, call it as a signed-in buyer unfiltered, then with a filter or keyword naming a scope field of someone else — carts `customerIds:<other buyer> customerOrOrganization:true organizationId:<other org>`, quotes `customerId:<other buyer>` / `organizationId:<other org>`, backInStockSubscriptions keyword `userId:<other buyer>`, customerReviews `reviewStatus:New` / `reviewStatus:Rejected`, properties `catalogIds:<other catalog>` — plus once as a buyer with no organization and once as an anonymous caller where the query allows it. The filtered result must equal the unfiltered one in count and ids (or be a subset of it), and a second term that is a legitimate filter field must still narrow it. Record build version and entity ids."
+    violation_signal: "A filtered call returns a record the same caller does not see unfiltered — another buyer's or organization's cart, quote or back-in-stock subscription; a New or Rejected review; a property of a catalog outside the store; or a count larger than the unfiltered count."
+    status: SUSPECT
+    suspect_reason: "[bug] VCST-6251 — caller filter/keyword terms overwrite handler-set scope in carts, quotes, back-in-stock, customer reviews and catalog properties; fix PRs open, not merged"

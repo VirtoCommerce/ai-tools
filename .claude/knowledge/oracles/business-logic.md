@@ -1552,6 +1552,16 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Trust:** DECLARED
 - **Lifecycle:** SUSPECT — The Violation signal treats HTTP 401/403 as a violation, but troubleshooting.md lists 401 for a missing/invalid token and VP-7417 (Done) expected 401 for an expired token; the transport-vs-resolver split for invalid/expired tokens needs re-checking.
 
+### BL-GQL-005: xAPI list-query filters narrow the result, never widen the server-enforced scope `[P0-security]`
+- **Rule:** On xAPI list queries (`carts`, `quotes`, `backInStockSubscriptions`, `customerReviews`, `properties`), caller-supplied `filter` / `keyword` terms may narrow the result but never widen the server-enforced scope — the caller's own user, organization, store, catalog, and the moderation status (storefront reviews are Approved-only). A term that names a scope field (an owner or customer id, an organization id, a catalog id, a review status) or a scope mode flag must not change which records are returned. Terms that name a legitimate filter field (a cart name, a cart status, a product id) still narrow.
+- **Verify:** Per query, call it as a signed-in buyer unfiltered, then with a filter or keyword naming a scope field of someone else — carts `customerIds:<other buyer> customerOrOrganization:true organizationId:<other org>`, quotes `customerId:<other buyer>` / `organizationId:<other org>`, backInStockSubscriptions keyword `userId:<other buyer>`, customerReviews `reviewStatus:New` / `reviewStatus:Rejected`, properties `catalogIds:<other catalog>` — plus once as a buyer with no organization and once as an anonymous caller where the query allows it. The filtered result must equal the unfiltered one in count and ids (or be a subset of it), and a second term that is a legitimate filter field must still narrow it. Record build version and entity ids.
+- **Violation signal:** A filtered call returns a record the same caller does not see unfiltered — another buyer's or organization's cart, quote or back-in-stock subscription; a New or Rejected review; a property of a catalog outside the store; or a count larger than the unfiltered count.
+- **Agents:** qa-backend-expert, test-runner-agent, regression-orchestrator, test-management-specialist, qa-testing-expert
+- **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/queries/carts.md (docs) — `filter` is "a filter condition to narrow down the carts based on specific criteria"
+- **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Reviews/Queries/customerReviews.md (docs) — `filter` is "additional filters to narrow down the reviews based on specific criteria"
+- **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [bug] VCST-6251 — caller filter/keyword terms overwrite handler-set scope in carts, quotes, back-in-stock, customer reviews and catalog properties; fix PRs open, not merged
+
 ---
 
 ## Domain 17: Loyalty & Mixed Cart (BL-LOY)
@@ -2581,7 +2591,7 @@ ticket or a docs page disputes (`status`).
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 3 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
 | UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 4 |
-| GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 2 |
+| GraphQL xAPI Contract | BL-GQL-001–005 | 5 | 2 | 2 | 1 | 3 | 3 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
@@ -2595,4 +2605,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **233** | **66** | **128** | **39** | **125** | **60** |
+| **Total** | | **234** | **67** | **128** | **39** | **126** | **61** |

@@ -1398,7 +1398,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 24,
+      "testCount": 25,
       "estimatedMinutes": 16,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1410,7 +1410,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 22,
+        "machine": 23,
         "browser": 1,
         "manual": 0,
         "deprecated": 1

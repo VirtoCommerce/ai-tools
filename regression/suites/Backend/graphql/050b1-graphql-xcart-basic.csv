@@ -559,7 +559,7 @@ query { me { id } }
 query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{UID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id name } }
 [GQL-EXEC cart_read]","[ERRORS label=cart_read] errors[] empty
 [DATA label=cart_read] data.cart is null OR data.cart.id is non-null","","N/A — NOT EXECUTED as a divergence test. The read/write cart-resolution premise was accepted as not-a-bug when VCST-5811 was cancelled; the single cart read above is a placeholder, not a replacement scenario.","","VCST-5811 (CANCELLED); Deprecated: 2026-08-26 — consolidated cart read/write divergence bug cancelled, case retained for traceability. Prior analysis: reports/bugs/closed/BUG-multi-cart-users-cannot-set-checkout-shipping-address-VCST-5811.md; proposed invariants in reports/ba/bl-proposals-2026-08-26.md (BL-CART-019/020) left unapplied.","Deprecated"
-CRB-GQL-134,xCart — carts filter customerIds / customerOrOrganization:true naming another organization's buyer does not widen the caller scope,GraphQL > xCart > carts,Critical,BL-GQL-004; BL-AUTH-006; BL-CART-005,,"Runner-native. Two storefront buyers in DIFFERENT organizations: caller ACME_BUYER (org AcmeCorp) and victim TECHFLOW_BUYER (org TechFlow). The victim's named cart is created IN the case (the environment, not the tests, can drain or reset a cart) and the victim must see it for himself before the caller's widened query runs — otherwise ""caller does not see it"" proves nothing. VCST-6251 fix build: XCart >= 3.1043.0-pr-151 (pre-fix 3.1044.0 returns other buyers'/colleagues' carts for these terms).",product_id=@td(BUYABLE_PRICED_PRODUCT.id); org_b=@td(ORG_TECHFLOW.platform_id),"[AUTH role=TECHFLOW_BUYER]
+CRB-GQL-134,xCart — carts filter customerOrOrganization:true / customerIds naming another buyer's PERSONAL cart (no organization) does not widen the caller scope,GraphQL > xCart > carts,Critical,BL-GQL-005; BL-GQL-004; BL-CART-005,,"Runner-native. Victim USER2 is a personal account with NO organization; its named cart is created IN the case (the environment, not the tests, can drain or reset a cart), has organizationId null (guarded) and the victim must see it for himself before the caller's widened query runs — otherwise ""caller does not see it"" proves nothing. Caller ACME_BUYER (org AcmeCorp). Pre-fix BuildQuery (ticket): CustomerOrOrganization = OrganizationId == org OR (CustomerId == me AND no org) OR (CustomerIds contains id AND no org) — the customerIds branch leaked exactly a personal cart with no organization, so the victim has to be one; a victim stamped with an organization would pass on the pre-fix build too. The same-organization branch is CRB-GQL-137, the no-organization caller is CRB-GQL-135. VCST-6251 fix build: XCart >= 3.1043.0-pr-151. Only widened_org is shown, by the ticket's pre-fix BuildQuery, to fail on the pre-fix build; widened_ids (customerIds without customerOrOrganization) is a guard whose behaviour before the fix is unproven. RED is NOT proven on a pre-fix stand: vcptcore (pre-fix XCart 3.1044.0) holds no fixtures and its logins fail, so the case's discrimination rests on the pre-fix ShoppingCartSearchService.BuildQuery given in the VCST-6251 ticket and on KB-9CEB8BBE (which records the pre-fix leak); the first real RED is a run of this case on a pre-fix build.",product_id=@td(BUYABLE_PRICED_PRODUCT.id),"[AUTH role=USER2]
 [GQL-OP setup_victim_me]
   query { me { id } }
 [GQL-EXEC setup_victim_me]
@@ -587,25 +587,25 @@ CRB-GQL-134,xCart — carts filter customerIds / customerOrOrganization:true nam
 [GQL-OP widened_ids]
   query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100 filter: ""customerIds:{{B_ID}}"") { totalCount items { id name customerId organizationId } } }
 [GQL-EXEC widened_ids]
-[AUTH role=TECHFLOW_BUYER]
+[AUTH role=USER2]
 [GQL-OP cleanup_victim]
   mutation { removeCart(command: { cartId: ""{{VICTIM_CART_ID}}"" userId: ""{{B_ID}}"" }) }
 [GQL-EXEC cleanup_victim]","[ERRORS label=create_victim_cart] errors[] empty {OBSERVED}
 [COUNT label=create_victim_cart] data.addItem.validationErrors = 0 {OBSERVED}
-[DATA label=create_victim_cart] data.addItem.organizationId = {{org_b}} {OBSERVED}
+[NULL label=create_victim_cart] data.addItem.organizationId {OBSERVED}
 [COUNT label=victim_sees_own] data.carts.totalCount = 1 {OBSERVED}
-[ERRORS label=widened_org] errors[] empty {SPEC}
-[COUNT label=widened_org] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {SPEC}
-[COUNT label=widened_org] data.carts.items[*?customerId={{B_ID}}].length = 0 {SPEC}
-[COUNT label=widened_org] data.carts.items[*?organizationId={{org_b}}].length = 0 {SPEC}
-[DATA label=widened_org] data.carts.totalCount = {{OWN_TOTAL}} {SPEC}
-[ERRORS label=widened_ids] errors[] empty {SPEC}
-[COUNT label=widened_ids] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {SPEC}
-[COUNT label=widened_ids] data.carts.items[*?customerId={{B_ID}}].length = 0 {SPEC}
-[COUNT label=widened_ids] data.carts.items[*?organizationId={{org_b}}].length = 0 {SPEC}
-[DATA label=widened_ids] data.carts.totalCount = {{OWN_TOTAL}} {SPEC}
-[ERRORS label=cleanup_victim] errors[] empty {OBSERVED}","[ROUNDTRIP label=own] the unfiltered own-cart total is captured first; both widened queries must return exactly that total (a filter can narrow, never add)","Caller's carts list contains the victim cart id, a cart with customerId = victim, or a cart stamped with the victim's organization; totalCount differs from the unfiltered total; errors[] non-empty",none — removeCart inline (cleanup_victim),VCST-6251; xAPI; graphql-schema.md — Query.carts; KB-9CEB8BBE; vc-module-x-cart#151; Archetype:SCOPE; Technique:EG,Draft
-CRB-GQL-135,xCart — carts filter customerOrOrganization:true + organizationId of another organization does not widen a buyer with no organization,GraphQL > xCart > carts,Critical,BL-GQL-004; BL-AUTH-006; BL-CART-005,,"Runner-native. Caller USER2 is a personal account with NO organization membership (the branch where the pre-fix handler had no organization scope to protect); victim TECHFLOW_BUYER owns a named cart stamped with organization TechFlow, created in the case and confirmed visible to its owner first. VCST-6251 fix build: XCart >= 3.1043.0-pr-151.",product_id=@td(BUYABLE_PRICED_PRODUCT.id); org_b=@td(ORG_TECHFLOW.platform_id),"[AUTH role=TECHFLOW_BUYER]
+[COUNT label=own] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {OBSERVED}
+[ERRORS label=widened_org] errors[] empty {OBSERVED}
+[COUNT label=widened_org] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {OBSERVED}
+[COUNT label=widened_org] data.carts.items[*?customerId={{B_ID}}].length = 0 {OBSERVED}
+[DATA label=widened_org] data.carts.totalCount = {{OWN_TOTAL}} {OBSERVED}
+[ERRORS label=widened_ids] errors[] empty {OBSERVED}
+[COUNT label=widened_ids] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {OBSERVED}
+[COUNT label=widened_ids] data.carts.items[*?customerId={{B_ID}}].length = 0 {OBSERVED}
+[DATA label=widened_ids] data.carts.totalCount = {{OWN_TOTAL}} {OBSERVED}
+[ERRORS label=cleanup_victim] errors[] empty {OBSERVED}","[ROUNDTRIP label=own] the unfiltered own-cart total is captured first; both widened queries must return exactly that total (a filter can narrow, never add); the victim cart is a personal cart (organizationId null), the only cart class the pre-fix customerIds branch matched",Caller's carts list contains the victim cart id or a cart with customerId = victim; totalCount differs from the unfiltered total; the victim cart carries an organizationId (wrong fixture — the case then proves nothing about the customerIds branch); errors[] non-empty,"[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/carts?ids={{VICTIM_CART_ID}}]",VCST-6251; xAPI; graphql-schema.md — Query.carts; KB-9CEB8BBE; vc-module-x-cart#151; Archetype:SCOPE; pre-fix customerIds branch per ticket; Technique:EG | Promoted: VCST-6251 (2026-11-04),Reviewed
+CRB-GQL-135,xCart — carts filter customerOrOrganization:true + organizationId of another organization does not widen a buyer with no organization,GraphQL > xCart > carts,Critical,BL-GQL-005; BL-GQL-004; BL-CART-005,,"Runner-native. Caller USER2 is a personal account with NO organization membership (the branch where the pre-fix handler had no organization scope to protect); victim TECHFLOW_BUYER owns a named cart stamped with organization TechFlow, created in the case and confirmed visible to its owner first. VCST-6251 fix build: XCart >= 3.1043.0-pr-151. RED is NOT proven on a pre-fix stand: vcptcore (pre-fix XCart 3.1044.0) holds no fixtures and its logins fail, so the case's discrimination rests on the pre-fix ShoppingCartSearchService.BuildQuery given in the VCST-6251 ticket and on KB-9CEB8BBE (which records the pre-fix leak); the first real RED is a run of this case on a pre-fix build.",product_id=@td(BUYABLE_PRICED_PRODUCT.id); org_b=@td(ORG_TECHFLOW.platform_id),"[AUTH role=TECHFLOW_BUYER]
 [GQL-OP setup_victim_me]
   query { me { id } }
 [GQL-EXEC setup_victim_me]
@@ -637,13 +637,14 @@ CRB-GQL-135,xCart — carts filter customerOrOrganization:true + organizationId 
 [COUNT label=create_victim_cart] data.addItem.validationErrors = 0 {OBSERVED}
 [DATA label=create_victim_cart] data.addItem.organizationId = {{org_b}} {OBSERVED}
 [COUNT label=victim_sees_own] data.carts.totalCount = 1 {OBSERVED}
-[ERRORS label=widened_org] errors[] empty {SPEC}
-[COUNT label=widened_org] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {SPEC}
-[COUNT label=widened_org] data.carts.items[*?customerId={{B_ID}}].length = 0 {SPEC}
-[COUNT label=widened_org] data.carts.items[*?organizationId={{org_b}}].length = 0 {SPEC}
-[DATA label=widened_org] data.carts.totalCount = {{OWN_TOTAL}} {SPEC}
-[ERRORS label=cleanup_victim] errors[] empty {OBSERVED}",[ROUNDTRIP label=own] unfiltered own-cart total captured first and compared to the widened total,The no-organization caller receives carts of organization TechFlow; totalCount grows against the unfiltered baseline; errors[] non-empty,none — removeCart inline (cleanup_victim),VCST-6251; xAPI; graphql-schema.md — Query.carts; KB-9CEB8BBE; vc-module-x-cart#151; Archetype:SCOPE; Technique:EG,Draft
-CRB-GQL-136,xCart — carts legitimate name filter still narrows the caller's own carts (fix does not over-narrow),GraphQL > xCart > carts,High,BL-GQL-004; BL-AUTH-006,,Runner-native. Regression guard for VCST-6251: forcing the scope after mapping caller terms must keep every term that only narrows. The caller creates a named cart in the case (nothing seeded can be drained by the environment). Positive control for the narrowed result is the freshly created cart.,product_id=@td(BUYABLE_PRICED_PRODUCT.id),"[AUTH role=ACME_BUYER]
+[ERRORS label=widened_org] errors[] empty {OBSERVED}
+[COUNT label=widened_org] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {OBSERVED}
+[COUNT label=widened_org] data.carts.items[*?customerId={{B_ID}}].length = 0 {OBSERVED}
+[COUNT label=widened_org] data.carts.items[*?organizationId={{org_b}}].length = 0 {OBSERVED}
+[DATA label=widened_org] data.carts.totalCount = {{OWN_TOTAL}} {OBSERVED}
+[ERRORS label=cleanup_victim] errors[] empty {OBSERVED}",[ROUNDTRIP label=own] unfiltered own-cart total captured first and compared to the widened total,The no-organization caller receives carts of organization TechFlow; totalCount grows against the unfiltered baseline; errors[] non-empty,"[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/carts?ids={{VICTIM_CART_ID}}]",VCST-6251; xAPI; graphql-schema.md — Query.carts; KB-9CEB8BBE; vc-module-x-cart#151; Archetype:SCOPE; Technique:EG | Promoted: VCST-6251 (2026-11-04),Reviewed
+CRB-GQL-136,xCart — carts legitimate name filter still narrows the caller's own carts (fix does not over-narrow),GraphQL > xCart > carts,High,BL-GQL-005; BL-GQL-004; BL-AUTH-006,,Runner-native. Regression guard for VCST-6251: forcing the scope after mapping caller terms must keep every term that only narrows. The caller creates a named cart in the case (nothing seeded can be drained by the environment). Positive control for the narrowed result is the freshly created cart.,product_id=@td(BUYABLE_PRICED_PRODUCT.id),"[AUTH role=ACME_BUYER]
 [GQL-OP setup_caller_me]
   query { me { id } }
 [GQL-EXEC setup_caller_me]
@@ -669,4 +670,54 @@ CRB-GQL-136,xCart — carts legitimate name filter still narrows the caller's ow
 [DATA label=by_name] data.carts.items.0.customerId = {{CALLER_ID}} {OBSERVED}
 [ERRORS label=no_match] errors[] empty {OBSERVED}
 [COUNT label=no_match] data.carts.totalCount = 0 {OBSERVED}
-[ERRORS label=cleanup_own] errors[] empty {OBSERVED}",[ROUNDTRIP label=by_name] the cart created by addItem is the only cart the name filter returns; it is removed again in cleanup_own,by_name returns 0 or more than the one named cart (scope forcing dropped or ignored the name term); no_match returns carts; errors[] non-empty,none — removeCart inline (cleanup_own),VCST-6251; xAPI; graphql-schema.md — Query.carts; KB-9CEB8BBE; vc-module-x-cart#151; Archetype:SCOPE; Technique:EP,Draft
+[ERRORS label=cleanup_own] errors[] empty {OBSERVED}",[ROUNDTRIP label=by_name] the cart created by addItem is the only cart the name filter returns; it is removed again in cleanup_own,by_name returns 0 or more than the one named cart (scope forcing dropped or ignored the name term); no_match returns carts; errors[] non-empty,"[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/carts?ids={{OWN_CART_ID}}]",VCST-6251; xAPI; graphql-schema.md — Query.carts; KB-9CEB8BBE; vc-module-x-cart#151; Archetype:SCOPE; Technique:EP | Promoted: VCST-6251 (2026-11-04),Reviewed
+CRB-GQL-137,xCart — carts filter customerOrOrganization:true / organizationId does not widen a buyer to a same-organization colleague's cart,GraphQL > xCart > carts,Critical,BL-GQL-005; BL-GQL-004; BL-CART-005,,"Runner-native. Same-organization branch of the VCST-6251 cart leak, sibling of CRB-GQL-134 (customerIds / personal cart). Victim ACME_BUYER2 and caller ACME_BUYER are two DISTINCT AcmeCorp logins (b2b/users USR-004 and USR-002, both with contact organization AcmeCorp; guarded: different login ids, and the victim cart's organizationId equals the caller's). The victim's named cart is created IN the case (the environment, not the tests, can drain or reset a cart) and the victim must see it for himself before the caller's widened query runs — otherwise ""caller does not see it"" proves nothing. Pre-fix BuildQuery (ticket): CustomerOrOrganization = OrganizationId == org OR …, so a same-organization colleague's cart matched; KB-9CEB8BBE records that pre-fix XCart 3.1044.0 returned it for customerOrOrganization:true. VCST-6251 fix build: XCart >= 3.1043.0-pr-151. RED is NOT proven on a pre-fix stand: vcptcore (pre-fix XCart 3.1044.0) holds no fixtures and its logins fail, so the case's discrimination rests on the pre-fix BuildQuery given in the ticket and on KB-9CEB8BBE; the first real RED is a run of this case on a pre-fix build.",product_id=@td(BUYABLE_PRICED_PRODUCT.id),"[AUTH role=ACME_BUYER2]
+[GQL-OP setup_victim_me]
+  query { me { id contact { organizationId } } }
+[GQL-EXEC setup_victim_me]
+[GQL-CAPTURE setup_victim_me.data.me.id → B_ID]
+[GQL-CAPTURE setup_victim_me.data.me.contact.organizationId → B_ORG_ID]
+[GQL-OP create_victim_cart]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-6251-VICTIM"" storeId: ""{{STORE_ID}}"" userId: ""{{B_ID}}"" productId: ""{{product_id}}"" quantity: 1 }) { id organizationId itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC create_victim_cart]
+[GQL-CAPTURE create_victim_cart.data.addItem.id → VICTIM_CART_ID]
+[GQL-OP victim_sees_own]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{B_ID}}"" first: 100 filter: ""name:AGENT-TEST-6251-VICTIM"") { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC victim_sees_own]
+[WAIT until=victim_sees_own timeout=30 interval=3] data.carts.totalCount >= 1
+[AUTH role=ACME_BUYER]
+[GQL-OP setup_caller_me]
+  query { me { id contact { organizationId } } }
+[GQL-EXEC setup_caller_me]
+[GQL-CAPTURE setup_caller_me.data.me.id → CALLER_ID]
+[GQL-CAPTURE setup_caller_me.data.me.contact.organizationId → CALLER_ORG_ID]
+[GQL-OP own]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100) { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC own]
+[GQL-CAPTURE own.data.carts.totalCount → OWN_TOTAL]
+[GQL-OP widened_org]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100 filter: ""customerOrOrganization:true"") { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC widened_org]
+[GQL-OP widened_org_id]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100 filter: ""customerOrOrganization:true organizationId:{{CALLER_ORG_ID}}"") { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC widened_org_id]
+[AUTH role=ACME_BUYER2]
+[GQL-OP cleanup_victim]
+  mutation { removeCart(command: { cartId: ""{{VICTIM_CART_ID}}"" userId: ""{{B_ID}}"" }) }
+[GQL-EXEC cleanup_victim]","[ERRORS label=create_victim_cart] errors[] empty {OBSERVED}
+[COUNT label=create_victim_cart] data.addItem.validationErrors = 0 {OBSERVED}
+[DATA label=create_victim_cart] data.addItem.organizationId = {{CALLER_ORG_ID}} {OBSERVED}
+[DATA label=setup_victim_me] data.me.id matches /^(?!{{CALLER_ID}}$).+/ {OBSERVED}
+[COUNT label=victim_sees_own] data.carts.totalCount = 1 {OBSERVED}
+[COUNT label=own] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {OBSERVED}
+[ERRORS label=widened_org] errors[] empty {OBSERVED}
+[COUNT label=widened_org] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {OBSERVED}
+[COUNT label=widened_org] data.carts.items[*?customerId={{B_ID}}].length = 0 {OBSERVED}
+[DATA label=widened_org] data.carts.totalCount = {{OWN_TOTAL}} {OBSERVED}
+[ERRORS label=widened_org_id] errors[] empty {OBSERVED}
+[COUNT label=widened_org_id] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {OBSERVED}
+[COUNT label=widened_org_id] data.carts.items[*?customerId={{B_ID}}].length = 0 {OBSERVED}
+[DATA label=widened_org_id] data.carts.totalCount = {{OWN_TOTAL}} {OBSERVED}
+[ERRORS label=cleanup_victim] errors[] empty {OBSERVED}","[ROUNDTRIP label=own] the unfiltered own-cart total is captured first; both widened queries must return exactly that total (a filter can narrow, never add); the victim cart carries the CALLER'S organizationId (guard) — the same-organization case the pre-fix OrganizationId == org branch leaked","Caller's carts list contains the victim cart id or a cart with customerId = the colleague; totalCount differs from the unfiltered total; the victim cart's organizationId differs from the caller's, or the two logins are the same (wrong fixture — the case then proves nothing about colleagues, report BLOCKED); errors[] non-empty","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/carts?ids={{VICTIM_CART_ID}}]",VCST-6251; xAPI; graphql-schema.md — Query.carts; KB-9CEB8BBE; vc-module-x-cart#151; pre-fix same-organization branch per ticket; Archetype:SCOPE; Technique:EG | Promoted: VCST-6251 (2026-11-04),Reviewed
