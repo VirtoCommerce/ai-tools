@@ -1595,5 +1595,41 @@
     "_inline": true,
     "group_id": "506314d6-d876-413f-a8e1-63c40f331a65",
     "permalink": "/agent-test-login-section"
+  },
+  "SR_MTD_ORDER_WEST_1": {
+    "id": "bbc33e27-d937-4cb7-8c7b-d7fdc66e205b",
+    "number": "AGENT-TEST-SRO-MTD-WEST-1",
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "createdDate": "2026-11-03T23:14:53.0914805Z"
+  },
+  "SR_MTD_ORDER_WEST_2": {
+    "id": "d164bde0-7666-4434-9675-846bca59a72a",
+    "number": "AGENT-TEST-SRO-MTD-WEST-2",
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "createdDate": "2026-11-03T23:14:59.1220932Z"
+  },
+  "SR_MTD_ORDER_TECH_1": {
+    "id": "86092e88-5260-402c-87dc-2305a2d24fcf",
+    "number": "AGENT-TEST-SRO-MTD-TECH-1",
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "createdDate": "2026-11-03T23:15:02.0523798Z"
+  },
+  "SR_MTD_ORDER_FLAG_CANCELLED": {
+    "id": "77b34488-0afa-4db2-a342-0c022ec15742",
+    "number": "AGENT-TEST-SRO-MTD-XCANCEL",
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "createdDate": "2026-11-03T23:15:04.0807232Z"
+  },
+  "SR_MTD_ORDER_STATUS_CANCELLED": {
+    "id": "c676da2b-ea38-42bf-895d-e0fd21ef4584",
+    "number": "AGENT-TEST-SRO-MTD-SCANCEL",
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "createdDate": "2026-11-03T23:15:05.4112145Z"
+  },
+  "SR_MTD_ORDER_OTHER_CREATOR": {
+    "id": "2e04c8be-fcc6-44a3-814c-850d3bb9e85c",
+    "number": "AGENT-TEST-SRO-MTD-BUYER",
+    "customerId": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b",
+    "createdDate": "2026-11-03T23:15:08.3703168Z"
   }
 }

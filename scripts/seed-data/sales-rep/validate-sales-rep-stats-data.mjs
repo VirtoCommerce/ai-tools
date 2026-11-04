@@ -36,6 +36,9 @@ import {
   rowcapOrdersForOrg, rowcapStatuses, rowcapTopSellerSlots,
 } from './sales-rep-rowcap-specs.mjs';
 import { isDisposableLayoutRep } from './sales-rep-layout-specs.mjs';
+import {
+  MTD_ORDERS, MTD_ALIASES, MTD_REP_KEY, MTD_STORE, mtdOrderNumber, mtdShortfalls, expectedRepDelta,
+} from './sales-rep-mtd-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const problems = [];
@@ -209,6 +212,44 @@ if (w.lastYear.to !== '2025-08-03T23:59:59.999Z') fail(`lastYear end drifted: ${
   if (!shortfalls.length) {
     notes.push(`row-cap: ${ROWCAP_ORDERS.length} order(s) for ${ROWCAP_REP_KEY}, ${rowcapOrdersForOrg(ROWCAP_PROFILE_ORG_KEY).length} in ${ROWCAP_PROFILE_ORG_KEY}, statuses [${rowcapStatuses().join(', ')}], ${rowcapTopSellerSlots().length} distinct non-cancelled product slot(s)`);
   }
+}
+
+// ---- VCST-6255 current-month projection orders (sales-rep-mtd-specs.mjs) ----
+// The non-vacuity contract lives HERE: a set whose totals collide, whose cancel fixture also carries
+// status "Cancelled", or whose two served orgs share an AOV, would let a wrong implementation pass.
+{
+  for (const s of mtdShortfalls()) fail(`MTD fixture set: ${s}`);
+  const seen = new Set();
+  for (const o of MTD_ORDERS) {
+    if (seen.has(o.key)) fail(`MTD order key ${o.key} duplicated — the order number is the idempotency key`);
+    seen.add(o.key);
+    if (!mtdOrderNumber(o.key).startsWith('AGENT-TEST-')) fail(`MTD order ${o.key} is not AGENT-TEST- prefixed`);
+  }
+  const repRow = readCsv('test-data/sales-rep/sales-reps.csv').find((r) => r.rep_key === MTD_REP_KEY);
+  if (!repRow) fail(`MTD rep ${MTD_REP_KEY} missing from sales-reps.csv`);
+  else {
+    if (repRow.store !== MTD_STORE) fail(`MTD rep store "${repRow.store}" != "${MTD_STORE}"`);
+    const served = new Set(String(repRow.served_orgs || '').split(';').map((x) => x.trim()));
+    for (const o of MTD_ORDERS) if (!served.has(o.orgKey)) fail(`MTD order ${o.key} targets ${o.orgKey}, which ${MTD_REP_KEY} does not serve — its exclusion would prove nothing`);
+  }
+  const users = readCsv('test-data/b2b/users.csv');
+  for (const o of MTD_ORDERS.filter((x) => x.creator !== 'rep')) {
+    const u = users.find((r) => r.user_id === o.creator);
+    if (!u) { fail(`MTD order ${o.key} creator ${o.creator} missing from b2b/users.csv`); continue; }
+    if (u.org_id !== o.orgKey) fail(`MTD order ${o.key}: creator ${o.creator} belongs to ${u.org_id}, not ${o.orgKey} — the order must be a buyer's order IN the served org`);
+  }
+  for (const [alias, key] of Object.entries(MTD_ALIASES)) {
+    if (!MTD_ORDERS.some((o) => o.key === key)) { fail(`alias ${alias} points at unknown MTD key ${key}`); continue; }
+    const entry = aliases[alias];
+    if (!entry) { fail(`alias ${alias} missing from committed test-data/aliases.json`); continue; }
+    if (entry.number !== mtdOrderNumber(key)) fail(`alias ${alias}.number = "${entry.number}" but the spec says "${mtdOrderNumber(key)}"`);
+    if (entry.id !== '') fail(`alias ${alias}.id must be "" in the committed base — the runtime id comes from the env overlay`);
+    for (const [k, v] of Object.entries(entry)) {
+      if (typeof v === 'string' && GUID_RE.test(v.trim())) fail(`alias ${alias}.${k} carries a runtime GUID in the COMMITTED aliases.json (DV-021)`);
+    }
+  }
+  const sp = expectedRepDelta('spec'); const cd = expectedRepDelta('code');
+  notes.push(`MTD: ${MTD_ORDERS.length} order(s); rep delta spec +${sp.count}/$${sp.total}, code +${cd.count}/$${cd.total}`);
 }
 
 // ---- report ----------------------------------------------------------------

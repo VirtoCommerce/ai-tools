@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-11-03",
-    "totalSuites": 176,
+    "generated": "2026-11-04",
+    "totalSuites": 177,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1778,7 +1778,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 170,
+      "testCount": 173,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1793,7 +1793,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 166,
+        "machine": 169,
         "browser": 1,
         "manual": 0,
         "deprecated": 3
@@ -4323,6 +4323,31 @@
       "clickDriven": true,
       "preferredBrowser": "playwright-edge",
       "browserRequirementReason": "WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol (WebAuthn.addVirtualAuthenticator): Chromium lanes only. Firefox has no CDP and cannot run the ceremony."
+    },
+    {
+      "id": "116",
+      "name": "Sales Rep — Reporting (customer sales report, storefront)",
+      "file": "regression/suites/Frontend/sales-rep/116-sales-rep-reporting-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 30,
+      "estimatedMinutes": 0,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "reporting",
+        "charts",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "117",
