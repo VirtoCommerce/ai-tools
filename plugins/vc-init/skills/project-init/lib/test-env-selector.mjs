@@ -28,7 +28,9 @@ export const SELECTOR_FILE = ".env.test-env";
 export function parseSelector(text) {
   const lines = [...String(text ?? "").replace(/^﻿/, "").matchAll(/^[ \t]*(export[ \t]+)?TEST_ENV[ \t]*=[ \t]*["']?([^"'\s#]*)/gm)];
   const m = lines[lines.length - 1];
-  return { env: m?.[2] || null, exported: !!m?.[1] };
+  // lib/passwords.mjs currentEnv() takes the FIRST line, so two different values split commands and lanes.
+  const conflict = new Set(lines.map((l) => l[2])).size > 1;
+  return { env: m?.[2] || null, exported: !!m?.[1], conflict };
 }
 
 /** true inside a git work tree whose ignore rules cover `file`; false when it is in a work tree and NOT
@@ -62,12 +64,13 @@ function inspectSelector(root, path) {
   try { raw = readFileSync(path); } catch { return { env: null, problem: "unreadable" }; }
   // UTF-16 (Windows PowerShell 5.1's `>`): a BOM or NUL bytes. dotenv reads no key from it.
   if ((raw[0] === 0xff && raw[1] === 0xfe) || (raw[0] === 0xfe && raw[1] === 0xff) || raw.includes(0)) return { env: null, problem: "utf16" };
-  const { env, exported } = parseSelector(raw.toString("utf-8"));
+  const { env, exported, conflict } = parseSelector(raw.toString("utf-8"));
   if (!env) return { env: null, problem: "no-env" };
   // An env may live in a QA_ENV_PATH folder instead, so this one is a warning, not a verdict. Checked before
   // `export`: that message says commands use the env, which is false when its file is missing.
   if (!existsSync(join(root, `.env.${env}`))) return { env, problem: "no-env-file" };
   if (exported) return { env, problem: "exported" };
+  if (conflict) return { env, problem: "conflict" };
   return { env };
 }
 
@@ -109,6 +112,7 @@ export function describeSelector(result, env) {
         unreadable: `it cannot be read — ${fix}`,
         utf16: `it is UTF-16 (Windows PowerShell 5.1's >), which no resolver reads, so commands fall back to vcst — ${fix}`,
         "no-env": `it names no TEST_ENV, so commands fall back to vcst — ${fix}`,
+        conflict: `it has several TEST_ENV lines with different values: commands use the last (${result.env}), the Playwright lanes the first — ${fix}`,
         exported: `its line starts with "export": commands use ${result.env}, but the Playwright lanes do not read it (they take the only declared env, else vcst) — drop "export"`,
         "no-env-file": `there is no .env.${result.env} here — fine if it is in a QA_ENV_PATH folder, else ${fix}`,
       }[result.problem];
