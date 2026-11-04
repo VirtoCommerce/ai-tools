@@ -1525,6 +1525,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/best-practices.md (docs) — responses typically return HTTP 200 even when errors occur; inspect errors[] in the body
 - **Source:** VP-6664 (Done) — unauthorized user query returned an unhandled error instead of a structured Access denied error; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] WISH-006 failed in REG-2026-11-04-1022
 
 ### BL-GQL-002: GraphQL query performance thresholds `[P2-ux]`
 - **Rule:** Happy-path GraphQL operations against the xAPI complete within target wall-clock thresholds measured from request-send to response-received: simple single-resolver queries (`me`, `categories(first:1)`, flat `orders(first:10)`) **< 500 ms**; deep nested queries (`orders { items addresses inPayments shipments }`) **< 1000 ms**; introspection (`__schema { types }`) **< 1000 ms**. Thresholds are environment-specific — these are baselines for one deployment; other environments may differ.
@@ -2214,6 +2215,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Docs:** platform/user-guide/docs/rating-reviews/managing-reviews.md (docs) — moderation: approve to publish and include in rating, reject to exclude, reset status, delete
 - **Source:** vc-module-customer-review `CustomerReviewStatus.cs` (`New = 0` — the C# default enum value) + `CreateReviewCommandHandler.cs` (persists the mapped review without setting a status, so it lands on the default) + `ReviewValidator.cs` (purchase-eligibility gate runs before persistence).
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] REV-GQL-001 failed in REG-2026-11-04-1022
 
 ### BL-CR-008: Anonymous visitors cannot access the review-submission control `[P1-data]`
 - **Rule:** The storefront never offers the "leave feedback" control (button or inline form) to an unauthenticated visitor — feedback eligibility is computed only after authentication, so it defaults to unavailable for anonymous sessions. This is reinforced server-side: a review requires a completed order tied to the requesting user's id, which an anonymous session structurally cannot have.
@@ -2231,6 +2233,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Reviews/Queries/canLeaveFeedback.md (docs) — boolean eligibility check per store/entity/entityType
 - **Source:** vc-module-customer-review `CanLeaveFeedbackQueryHandler.cs` (`IsProductReview(request) && await OrderExists(request) && !await ReviewExists(request)`) + vc-frontend `product-reviews.vue` (`feedbackAvailable = await canLeaveFeedback(...)`).
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] REV-GQL-009, REV-GQL-011 failed in REG-2026-11-04-1022
 
 ### BL-CR-010: The storefront review surface exposes only Approved reviews `[P1-data]`
 - **Rule:** Every storefront-facing review read (the reviews list and its total count) is scoped server-side to `ReviewStatus = Approved` — New and Rejected reviews are never included, regardless of any client-supplied filter. The surface supports pagination and sorting by creation date.
@@ -2591,13 +2594,13 @@ ticket or a docs page disputes (`status`).
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 3 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
 | UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 4 |
-| GraphQL xAPI Contract | BL-GQL-001–005 | 5 | 2 | 2 | 1 | 3 | 3 |
+| GraphQL xAPI Contract | BL-GQL-001–005 | 5 | 2 | 2 | 1 | 3 | 4 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
 | Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 11 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
-| Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
+| Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 2 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
 | Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 0 |
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
@@ -2605,4 +2608,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **234** | **67** | **128** | **39** | **126** | **61** |
+| **Total** | | **234** | **67** | **128** | **39** | **126** | **64** |

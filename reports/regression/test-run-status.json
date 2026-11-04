@@ -1,6 +1,6 @@
 {
   "runId": "REG-2026-11-04-1022",
-  "status": "in_progress",
+  "status": "completed",
   "startedAt": "2026-11-04T10:22:45.185Z",
   "windowStart": "2026-11-04T10:22:45.185Z",
   "selection": "086,050h,015",
@@ -10,19 +10,38 @@
   "plan": "reports/regression/REG-2026-11-04-1022/preflight.json",
   "suites": {
     "015": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-04T10:24:30.551Z"
+      "startedAt": "2026-11-04T10:24:30.551Z",
+      "pass": 10,
+      "fail": 11,
+      "blocked": 5,
+      "skipped": 6,
+      "total": 32,
+      "finishedAt": "2026-11-04T10:59:22.443Z"
     },
     "050h": {
-      "status": "running",
+      "status": "done",
       "lane": "fastpath",
-      "note": "0 browser cases; 47 machine, 1 manual, 1 preflight-skipped (WISH-037)"
+      "note": "0 browser cases; 47 machine, 1 manual, 1 preflight-skipped (WISH-037)",
+      "pass": 40,
+      "fail": 7,
+      "blocked": 1,
+      "skipped": 1,
+      "total": 49,
+      "finishedAt": "2026-11-04T10:59:22.444Z"
     },
     "086": {
-      "status": "running",
-      "lane": "fastpath"
+      "status": "done",
+      "lane": "fastpath",
+      "pass": 9,
+      "fail": 9,
+      "blocked": 0,
+      "skipped": 0,
+      "total": 18,
+      "finishedAt": "2026-11-04T10:59:22.444Z"
     }
-  }
+  },
+  "finishedAt": "2026-11-04T11:00:30.682Z"
 }

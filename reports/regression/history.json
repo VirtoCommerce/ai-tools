@@ -4491,5 +4491,51 @@
     "pass_rate": 100,
     "duration_minutes": 9.08,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-04-1022",
+    "date": "2026-11-04",
+    "suiteId": "015",
+    "suiteName": "Quotes",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 32,
+    "passed": 10,
+    "failed": 11,
+    "blocked": 5,
+    "skipped": 6,
+    "pass_rate": 47.62,
+    "duration_minutes": 28.17,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-04-1022",
+    "date": "2026-11-04",
+    "suiteId": "050h",
+    "suiteName": "GraphQL Wishlist",
+    "environment": "vcst",
+    "total": 49,
+    "passed": 40,
+    "failed": 7,
+    "blocked": 1,
+    "skipped": 1,
+    "pass_rate": 85.11,
+    "duration_minutes": 2.9,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-04-1022",
+    "date": "2026-11-04",
+    "suiteId": "086",
+    "suiteName": "Customer Reviews GraphQL (xAPI)",
+    "environment": "vcst",
+    "total": 18,
+    "passed": 9,
+    "failed": 9,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 50,
+    "duration_minutes": 0.56,
+    "mode": "interactive"
   }
 ]
