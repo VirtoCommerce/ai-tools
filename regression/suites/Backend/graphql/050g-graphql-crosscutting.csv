@@ -113,3 +113,172 @@ XCC-GQL-020,"GraphQL Introspection — Schema Access Returns Valid Response","Gr
 [DATA label=introspect] data.__schema.queryType.name = Query
 [PERF label=introspect] elapsed_ms < 1000","[EVIDENCE] Scan data.__schema.types[].name for sensitive substrings ""internal"", ""debug"", ""admin"", ""secret"", ""password"" — manual evidence review (runner path filter does not support regex; tracked as separate runner enhancement)
 [EVIDENCE] Rate-limiting spec (runner-v2): 10 rapid introspection queries — expected to throttle or return uniform data; not asserted in MVP","Introspection response missing __schema block; errors[] non-empty on plain introspection; sensitive internal types exposed; 5xx on introspection",none — read-only,xAPI; graphql-schema.md — __schema introspection contract,Automated
+XCC-GQL-021,xAPI quotes — filter customerId + organizationId of another organization's buyer does not widen the caller scope,GraphQL > Quotes > Query,Critical,BL-GQL-004; BL-AUTH-006,,"Runner-native, read-only. Victim quote = QUOTE_TO_ACCEPT slot 3 from the quote seeder (scripts/seed-data/orders/seed-quotes.mjs), owned by a BuildRight buyer; the victim's customerId / organizationId / number are READ from that quote through the admin API, not typed. Caller TECHFLOW_BUYER (org TechFlow) is a different login. Seeded quotes carry languageCode, so Query.quotes does not hit the missing-languageCode NULL_REFERENCE (KB-97C03EB4). VCST-6251 fix build: Quote >= 3.1006.0-pr-168 (pre-fix 3.1005.0 returned the other buyer's quote for these terms).",victim_quote_id=@td(QUOTE_TO_ACCEPT.id_slot3),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP victim_quote]
+  GET {{BACK_URL}}/api/quote/requests/{{victim_quote_id}}
+[REST-EXEC victim_quote]
+[REST-CAPTURE victim_quote.body.customerId → VICTIM_ID]
+[REST-CAPTURE victim_quote.body.organizationId → VICTIM_ORG_ID]
+[REST-CAPTURE victim_quote.body.number → VICTIM_QUOTE_NO]
+[AUTH role=TECHFLOW_BUYER]
+[GQL-OP setup_me]
+  query { me { id contact { organizationId } } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → CALLER_ID]
+[GQL-OP own]
+  query { quotes(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"" first: 100) { totalCount items { id number status customerId organizationId } } }
+[GQL-EXEC own]
+[GQL-CAPTURE own.data.quotes.totalCount → OWN_TOTAL]
+[GQL-OP widened]
+  query { quotes(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"" first: 100 filter: ""customerId:{{VICTIM_ID}} organizationId:{{VICTIM_ORG_ID}}"") { totalCount items { id number status customerId organizationId } } }
+[GQL-EXEC widened]","[ERRORS label=victim_quote] HTTP 200 {OBSERVED}
+[ERRORS label=own] errors[] empty {OBSERVED}
+[DATA label=setup_me] data.me.id matches /^(?!{{VICTIM_ID}}$).+/ {OBSERVED}
+[DATA label=setup_me] data.me.contact.organizationId matches /^(?!{{VICTIM_ORG_ID}}$).+/ {OBSERVED}
+[DATA label=victim_quote] body.id = {{victim_quote_id}} {OBSERVED}
+[ERRORS label=widened] errors[] empty {SPEC}
+[COUNT label=widened] data.quotes.items[*?customerId={{VICTIM_ID}}].length = 0 {SPEC}
+[COUNT label=widened] data.quotes.items[*?number={{VICTIM_QUOTE_NO}}].length = 0 {SPEC}
+[DATA label=widened] data.quotes.totalCount = {{OWN_TOTAL}} {SPEC}","[ADMIN] the victim quote exists (admin GET 200) and belongs to the victim, in an organization other than the caller's own (me.contact.organizationId differs from the victim's organizationId) — so its absence from the widened list is the fix, not a missing fixture or a same-organization victim","The caller's quote list contains the victim's quote number or any quote whose customerId is the victim's; totalCount differs from the unfiltered total; errors[] non-empty (NULL_REFERENCE here means a quote without languageCode, not this defect)",none — read-only,VCST-6251; xAPI; graphql-schema.md — Query.quotes; KB-874B24DD; vc-module-quote#168; Archetype:SCOPE; Technique:EG,Draft
+XCC-GQL-022,xAPI quotes — filter customerId of a same-organization (TechFlow) colleague does not widen the caller scope,GraphQL > Quotes > Query,Critical,BL-GQL-004; BL-AUTH-006,,"Runner-native, read-only. Victim quote = QUOTE_TO_ACCEPT slot 2 from the quote seeder (scripts/seed-data/orders/seed-quotes.mjs), owned by a TechFlow buyer — a colleague in the caller's own organization (slot 1 is NOT: on vcst it belongs to an AcmeCorp buyer, the pool CSV's b2b_org for slot 1 is wrong, so the organization is verified live, never taken from the pool CSV); the victim's customerId / organizationId / number are READ from that quote through the admin API, not typed, and the victim's organizationId is asserted equal to the caller's own (me.contact.organizationId) — a victim in another organization would turn this case into a copy of XCC-GQL-021. Caller TECHFLOW_BUYER (org TechFlow) is a different login. Seeded quotes carry languageCode, so Query.quotes does not hit the missing-languageCode NULL_REFERENCE (KB-97C03EB4). VCST-6251 fix build: Quote >= 3.1006.0-pr-168 (pre-fix 3.1005.0 returned the other buyer's quote for these terms).",victim_quote_id=@td(QUOTE_TO_ACCEPT.id_slot2),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP victim_quote]
+  GET {{BACK_URL}}/api/quote/requests/{{victim_quote_id}}
+[REST-EXEC victim_quote]
+[REST-CAPTURE victim_quote.body.customerId → VICTIM_ID]
+[REST-CAPTURE victim_quote.body.organizationId → VICTIM_ORG_ID]
+[REST-CAPTURE victim_quote.body.number → VICTIM_QUOTE_NO]
+[AUTH role=TECHFLOW_BUYER]
+[GQL-OP setup_me]
+  query { me { id contact { organizationId } } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → CALLER_ID]
+[GQL-CAPTURE setup_me.data.me.contact.organizationId → CALLER_ORG_ID]
+[GQL-OP own]
+  query { quotes(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"" first: 100) { totalCount items { id number status customerId organizationId } } }
+[GQL-EXEC own]
+[GQL-CAPTURE own.data.quotes.totalCount → OWN_TOTAL]
+[GQL-OP widened]
+  query { quotes(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"" first: 100 filter: ""customerId:{{VICTIM_ID}}"") { totalCount items { id number status customerId organizationId } } }
+[GQL-EXEC widened]","[ERRORS label=victim_quote] HTTP 200 {OBSERVED}
+[ERRORS label=own] errors[] empty {OBSERVED}
+[DATA label=setup_me] data.me.id matches /^(?!{{VICTIM_ID}}$).+/ {OBSERVED}
+[DATA label=victim_quote] body.id = {{victim_quote_id}} {OBSERVED}
+[DATA label=victim_quote] body.organizationId = {{CALLER_ORG_ID}} {OBSERVED}
+[ERRORS label=widened] errors[] empty {SPEC}
+[COUNT label=widened] data.quotes.items[*?customerId={{VICTIM_ID}}].length = 0 {SPEC}
+[COUNT label=widened] data.quotes.items[*?number={{VICTIM_QUOTE_NO}}].length = 0 {SPEC}
+[DATA label=widened] data.quotes.totalCount = {{OWN_TOTAL}} {SPEC}","[ADMIN] the victim quote exists (admin GET 200), belongs to another login of the CALLER'S OWN organization (organizationId equals the caller's) — so its absence from the widened list is the fix (colleague isolation), not a missing fixture or a cross-organization victim","The caller's quote list contains the victim's quote number or any quote whose customerId is the victim's; totalCount differs from the unfiltered total; errors[] non-empty; the victim's organizationId differs from the caller's (wrong fixture — report BLOCKED, the case then proves nothing about colleagues) (NULL_REFERENCE here means a quote without languageCode, not this defect)",none — read-only,VCST-6251; xAPI; graphql-schema.md — Query.quotes; KB-874B24DD; QUOTE_TO_ACCEPT.id_slot2; vc-module-quote#168; Archetype:SCOPE; Technique:EG,Draft
+XCC-GQL-023,xAPI backInStockSubscriptions — keyword userId:<other buyer> does not widen the caller scope,GraphQL > Back In Stock > Query,Critical,BL-GQL-004; BL-AUTH-006,,"Runner-native. Both buyers (ACME_BUYER caller, TECHFLOW_BUYER victim) subscribe to the SAME product inside the case — a subscription is state the environment can reset on restock, so it is created here, not seeded — which leaves the owner's login id as the only thing a widened keyword could change. The victim must see his own subscription first (positive control). VCST-6251 fix build: BackInStock >= 3.1004.0-pr-13 (pre-fix 3.1003.0 returned exactly the other buyer's subscription).",product_id=@td(BUYABLE_PRICED_PRODUCT.id),"[AUTH role=TECHFLOW_BUYER]
+[GQL-OP setup_victim_me]
+  query { me { id } }
+[GQL-EXEC setup_victim_me]
+[GQL-CAPTURE setup_victim_me.data.me.id → B_ID]
+[GQL-OP victim_subscribe]
+  mutation { activateBackInStockSubscription(command: { storeId: ""{{STORE_ID}}"" productId: ""{{product_id}}"" }) { id userId productId isActive } }
+[GQL-EXEC victim_subscribe]
+[GQL-CAPTURE victim_subscribe.data.activateBackInStockSubscription.id → VICTIM_SUB_ID]
+[GQL-OP victim_sees_own]
+  query { backInStockSubscriptions(storeId: ""{{STORE_ID}}"" first: 100 productIds: [""{{product_id}}""]) { totalCount items { id userId productId isActive } } }
+[GQL-EXEC victim_sees_own]
+[WAIT until=victim_sees_own timeout=30 interval=3] data.backInStockSubscriptions.totalCount >= 1
+[AUTH role=ACME_BUYER]
+[GQL-OP setup_caller_me]
+  query { me { id } }
+[GQL-EXEC setup_caller_me]
+[GQL-CAPTURE setup_caller_me.data.me.id → A_ID]
+[GQL-OP caller_subscribe]
+  mutation { activateBackInStockSubscription(command: { storeId: ""{{STORE_ID}}"" productId: ""{{product_id}}"" }) { id userId productId isActive } }
+[GQL-EXEC caller_subscribe]
+[GQL-CAPTURE caller_subscribe.data.activateBackInStockSubscription.id → CALLER_SUB_ID]
+[GQL-OP widened]
+  query { backInStockSubscriptions(storeId: ""{{STORE_ID}}"" first: 100 keyword: ""userId:{{B_ID}}"") { totalCount items { id userId productId isActive } } }
+[GQL-EXEC widened]
+[GQL-OP cleanup_caller]
+  mutation { deactivateBackInStockSubscription(command: { storeId: ""{{STORE_ID}}"" productId: ""{{product_id}}"" }) { id isActive } }
+[GQL-EXEC cleanup_caller]
+[AUTH role=TECHFLOW_BUYER]
+[GQL-OP cleanup_victim]
+  mutation { deactivateBackInStockSubscription(command: { storeId: ""{{STORE_ID}}"" productId: ""{{product_id}}"" }) { id isActive } }
+[GQL-EXEC cleanup_victim]","[ERRORS label=victim_subscribe] errors[] empty {OBSERVED}
+[DATA label=victim_subscribe] data.activateBackInStockSubscription.isActive = true {OBSERVED}
+[ERRORS label=caller_subscribe] errors[] empty {OBSERVED}
+[DATA label=caller_subscribe] data.activateBackInStockSubscription.isActive = true {OBSERVED}
+[COUNT label=victim_sees_own] data.backInStockSubscriptions.items[*?id={{VICTIM_SUB_ID}}].length = 1 {OBSERVED}
+[ERRORS label=widened] errors[] empty {SPEC}
+[COUNT label=widened] data.backInStockSubscriptions.items[*?id={{VICTIM_SUB_ID}}].length = 0 {SPEC}
+[COUNT label=widened] data.backInStockSubscriptions.items[*?userId={{B_ID}}].length = 0 {SPEC}
+[COUNT label=widened] data.backInStockSubscriptions.items[*?id={{CALLER_SUB_ID}}].length = 1 {SPEC}
+[ERRORS label=cleanup_caller] errors[] empty {OBSERVED}
+[ERRORS label=cleanup_victim] errors[] empty {OBSERVED}","[ROUNDTRIP label=widened] every returned item's userId is the caller's (the caller's own subscription is present, the victim's is not)",The list contains the victim's subscription id or a subscription with the victim's userId; the caller's own subscription is missing (scope dropped altogether); errors[] non-empty,"none — deactivate inline (cleanup_caller, cleanup_victim)",VCST-6251; xAPI; graphql-schema.md — Query.backInStockSubscriptions; KB-6C2EEDB8; vc-module-back-in-stock#13; Archetype:SCOPE; Technique:EG,Draft
+XCC-GQL-024,xAPI backInStockSubscriptions — productIds and product-code keyword still narrow the caller's own subscriptions,GraphQL > Back In Stock > Query,High,BL-GQL-004; BL-AUTH-006,,"Runner-native. Regression guard for VCST-6251: the scope is forced after the caller terms are mapped, but terms that only narrow must keep working. The caller subscribes to two products discovered live (first two store products) inside the case; a subscription created through activateBackInStockSubscription stores productCode, so a product-code keyword matches it (subscriptions created through admin REST without productCode do not — KB-6C2EEDB8).",,"[AUTH role=ACME_BUYER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → A_ID]
+[GQL-OP find_products]
+  query { products(storeId: ""{{STORE_ID}}"" first: 2) { items { id code } } }
+[GQL-EXEC find_products]
+[GQL-CAPTURE find_products.data.products.items.0.id → P1_ID]
+[GQL-CAPTURE find_products.data.products.items.1.id → P2_ID]
+[GQL-CAPTURE find_products.data.products.items.1.code → P2_CODE]
+[GQL-OP subscribe_p1]
+  mutation { activateBackInStockSubscription(command: { storeId: ""{{STORE_ID}}"" productId: ""{{P1_ID}}"" }) { id userId productId isActive } }
+[GQL-EXEC subscribe_p1]
+[GQL-CAPTURE subscribe_p1.data.activateBackInStockSubscription.id → SUB1_ID]
+[GQL-OP subscribe_p2]
+  mutation { activateBackInStockSubscription(command: { storeId: ""{{STORE_ID}}"" productId: ""{{P2_ID}}"" }) { id userId productId isActive } }
+[GQL-EXEC subscribe_p2]
+[GQL-CAPTURE subscribe_p2.data.activateBackInStockSubscription.id → SUB2_ID]
+[GQL-OP by_product]
+  query { backInStockSubscriptions(storeId: ""{{STORE_ID}}"" first: 100 productIds: [""{{P1_ID}}""]) { totalCount items { id userId productId } } }
+[GQL-EXEC by_product]
+[GQL-OP by_code]
+  query { backInStockSubscriptions(storeId: ""{{STORE_ID}}"" first: 100 keyword: ""{{P2_CODE}}"") { totalCount items { id userId productId } } }
+[GQL-EXEC by_code]
+[GQL-OP cleanup_p1]
+  mutation { deactivateBackInStockSubscription(command: { storeId: ""{{STORE_ID}}"" productId: ""{{P1_ID}}"" }) { id isActive } }
+[GQL-EXEC cleanup_p1]
+[GQL-OP cleanup_p2]
+  mutation { deactivateBackInStockSubscription(command: { storeId: ""{{STORE_ID}}"" productId: ""{{P2_ID}}"" }) { id isActive } }
+[GQL-EXEC cleanup_p2]","[ERRORS label=subscribe_p1] errors[] empty {OBSERVED}
+[ERRORS label=subscribe_p2] errors[] empty {OBSERVED}
+[ERRORS label=by_product] errors[] empty {OBSERVED}
+[COUNT label=by_product] data.backInStockSubscriptions.items[*?id={{SUB1_ID}}].length = 1 {OBSERVED}
+[COUNT label=by_product] data.backInStockSubscriptions.items[*?id={{SUB2_ID}}].length = 0 {OBSERVED}
+[ERRORS label=by_code] errors[] empty {OBSERVED}
+[COUNT label=by_code] data.backInStockSubscriptions.items[*?id={{SUB2_ID}}].length = 1 {OBSERVED}
+[COUNT label=by_code] data.backInStockSubscriptions.items[*?id={{SUB1_ID}}].length = 0 {OBSERVED}
+[ERRORS label=cleanup_p1] errors[] empty {OBSERVED}
+[ERRORS label=cleanup_p2] errors[] empty {OBSERVED}",,by_product returns the other product subscription or none; by_code returns none (code not matched) or both; errors[] non-empty,"none — deactivate inline (cleanup_p1, cleanup_p2)",VCST-6251; xAPI; graphql-schema.md — Query.backInStockSubscriptions; KB-6C2EEDB8; vc-module-back-in-stock#13; Archetype:SCOPE; Technique:EP,Draft
+XCC-GQL-025,xAPI quotes — legitimate status filter still returns the caller's own quote; a status the caller does not carry returns none (fix does not over-narrow),GraphQL > Quotes > Query,High,BL-GQL-004; BL-AUTH-006,,"Runner-native, read-only. Control for XCC-GQL-021/022: a fix that forces the caller scope must keep every filter term that only narrows. Caller AGENT_POOL_B2B_SLOT_3 (a BuildRight B2B pool buyer, languageCode en-US) OWNS QUOTE_TO_ACCEPT slot 3 (and the other <QUOTE_ALIAS>.id_slot3 quotes — the quote seeder stamps slot n with that buyer's login id + live organization, KB-874B24DD). The quote's status is READ from the admin API at run time (the quote is disposable and its status moves when a case consumes it), never typed. A status value containing a space (""Proposal sent"") must be quoted inside the filter. This case catches over-narrowing — a broken scope that returns nothing, which the cross-user cases above cannot tell from a correct one. VCST-6251 fix build: Quote >= 3.1006.0-pr-168.",own_quote_id=@td(QUOTE_TO_ACCEPT.id_slot3),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP own_quote]
+  GET {{BACK_URL}}/api/quote/requests/{{own_quote_id}}
+[REST-EXEC own_quote]
+[REST-CAPTURE own_quote.body.status → OWN_QUOTE_STATUS]
+[AUTH role=AGENT_POOL_B2B_SLOT_3]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → CALLER_ID]
+[GQL-OP unfiltered]
+  query { quotes(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"" first: 100) { totalCount items { id number status customerId } } }
+[GQL-EXEC unfiltered]
+[GQL-CAPTURE unfiltered.data.quotes.totalCount → OWN_TOTAL]
+[GQL-OP by_status]
+  query { quotes(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"" first: 100 filter: ""status:\""{{OWN_QUOTE_STATUS}}\"""") { totalCount items { id number status customerId } } }
+[GQL-EXEC by_status]
+[GQL-OP other_status]
+  query { quotes(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"" first: 100 filter: ""status:AGENT-TEST-NO-SUCH-STATUS"") { totalCount items { id } } }
+[GQL-EXEC other_status]","[ERRORS label=own_quote] HTTP 200 {OBSERVED}
+[DATA label=own_quote] body.id = {{own_quote_id}} {OBSERVED}
+[DATA label=own_quote] body.status is non-null {OBSERVED}
+[ERRORS label=unfiltered] errors[] empty {OBSERVED}
+[COUNT label=unfiltered] data.quotes.items[*?id={{own_quote_id}}].length = 1 {OBSERVED}
+[ERRORS label=by_status] errors[] empty {OBSERVED}
+[COUNT label=by_status] data.quotes.items[*?id={{own_quote_id}}].length = 1 {OBSERVED}
+[COUNT label=by_status] data.quotes.items[*?status!={{OWN_QUOTE_STATUS}}].length = 0 {OBSERVED}
+[COUNT label=by_status] data.quotes.items[*?customerId!={{CALLER_ID}}].length = 0 {OBSERVED}
+[DATA label=by_status] data.quotes.totalCount <= {{OWN_TOTAL}} {OBSERVED}
+[ERRORS label=other_status] errors[] empty {OBSERVED}
+[COUNT label=other_status] data.quotes.items[*?id={{own_quote_id}}].length = 0 {OBSERVED}
+[DATA label=other_status] data.quotes.totalCount = 0 {OBSERVED}",[ADMIN] admin GET /api/quote/requests/{id} gives the quote's status: the status filter is built from it; the quote's presence in the caller's unfiltered list (same case) proves it is the caller's own,"by_status does not contain the caller's own quote (over-narrowing: scope forcing dropped or ignored the status term, or the caller scope returns nothing); by_status contains a quote of another status or another owner; other_status returns any quote; errors[] non-empty (NULL_REFERENCE here means a quote without languageCode or tier price, not this defect — KB-97C03EB4, KB-8E282E4F)",none — read-only,VCST-6251; xAPI; graphql-schema.md — Query.quotes; KB-874B24DD; vc-module-quote#168; QUOTE_TO_ACCEPT.id_slot3; Archetype:SCOPE; Technique:EP,Draft

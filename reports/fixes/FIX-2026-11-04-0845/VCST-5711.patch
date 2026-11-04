@@ -1,0 +1,278 @@
+diff --git a/client-app/shared/checkout/components/__tests__/method-select-images.test.ts b/client-app/shared/checkout/components/__tests__/method-select-images.test.ts
+new file mode 100644
+index 0000000..63df8d7
+--- /dev/null
++++ b/client-app/shared/checkout/components/__tests__/method-select-images.test.ts
+@@ -0,0 +1,140 @@
++import { mount } from "@vue/test-utils";
++import { describe, expect, it, vi } from "vitest";
++import { computed, defineComponent, h, ref } from "vue";
++import BillingDetailsSection from "../billing-details-section.vue";
++import ShippingDetailsSection from "../shipping-details-section.vue";
++
++const { SHIPPING_METHOD, PAYMENT_METHOD } = vi.hoisted(() => ({
++  SHIPPING_METHOD: { id: "FixedRate_Ground", code: "FixedRate", optionName: "Ground", logoUrl: "ground.svg" },
++  PAYMENT_METHOD: { code: "CyberSourcePaymentMethod", name: "CyberSource", logoUrl: "cybersource.svg" },
++}));
++
++vi.mock("@/shared/account", () => ({ useUser: () => ({ isAuthenticated: ref(true) }) }));
++vi.mock("@/shared/account/composables/useUser", () => ({ useUser: () => ({ isAuthenticated: ref(true) }) }));
++
++vi.mock("@/shared/cart", () => ({
++  useFullCart: () => ({
++    cart: ref({}),
++    allItemsAreDigital: ref(false),
++    availableShippingMethods: ref([SHIPPING_METHOD]),
++    availablePaymentMethods: ref([PAYMENT_METHOD]),
++    updateShipment: vi.fn(),
++    shipment: ref(undefined),
++    changing: ref(false),
++  }),
++}));
++
++vi.mock("@/shared/checkout/composables/useCheckout", () => ({
++  useCheckout: () => ({
++    deliveryAddress: ref(undefined),
++    shipmentMethod: ref(undefined),
++    onDeliveryAddressChange: vi.fn(),
++    billingAddressEqualsShipping: ref(true),
++    billingAddress: ref(undefined),
++    paymentMethod: ref(undefined),
++    canPayFromCart: ref(false),
++    onBillingAddressChange: vi.fn(),
++    setPaymentMethod: vi.fn(),
++    isPurchaseOrderNumberEnabled: ref(false),
++    purchaseOrderNumber: ref(""),
++    initialized: ref(false),
++  }),
++}));
++
++vi.mock("@/shared/checkout/composables/useBopis", () => ({
++  BOPIS_CODE: "BuyOnlinePickupInStore",
++  useBopis: () => ({
++    hasBOPIS: computed(() => false),
++    openSelectAddressModal: vi.fn(),
++    loading: ref(false),
++    modalOpening: ref(false),
++    bopisMethod: computed(() => undefined),
++  }),
++}));
++
++vi.mock("@/shared/ship-to-location/composables/useShipToLocation", () => ({
++  useShipToLocation: () => ({ selectedAddress: ref(undefined) }),
++}));
++
++vi.mock("@/shared/x-pickup/composables/useXPickup", () => ({
++  useXPickup: () => ({ xPickupEnabled: ref(false) }),
++}));
++
++vi.mock("@/shared/common/components", async () => {
++  const vue = await import("vue");
++  return { AddressSelection: vue.defineComponent({ setup: () => () => vue.h("div") }) };
++});
++
++vi.mock("@/shared/common", async () => {
++  const vue = await import("vue");
++  return { AddressSelection: vue.defineComponent({ setup: () => () => vue.h("div") }) };
++});
++
++vi.mock("@/shared/payment/components/payment.vue", async () => {
++  const vue = await import("vue");
++  return { default: vue.defineComponent({ setup: () => () => null }) };
++});
++
++// Renders every slot VcSelect exposes, so the placeholder, the selected item and the list item are all in the DOM.
++const VcSelectStub = defineComponent({
++  name: "VcSelect",
++  props: { items: { type: Array, default: () => [] } },
++
++  setup(props, { slots }) {
++    return () =>
++      h("div", [
++        slots.placeholder?.({ error: false }),
++        ...props.items.map((item) => slots.selected?.({ item, error: false })),
++        ...props.items.map((item) => slots.item?.({ item })),
++      ]);
++  },
++});
++
++// Mirrors VcImage: alt is rendered only when the consumer passes it.
++const VcImageStub = defineComponent({
++  name: "VcImage",
++  props: { src: { type: String, default: "" }, alt: { type: String, default: undefined } },
++
++  setup(props) {
++    return () => h("img", { src: props.src, alt: props.alt });
++  },
++});
++
++const PassThrough = defineComponent({
++  setup:
++    (_, { slots }) =>
++    () =>
++      h("div", slots.default?.()),
++});
++
++function mountSection(component: typeof ShippingDetailsSection) {
++  return mount(component, {
++    global: {
++      mocks: { $t: (key: string) => key },
++      stubs: {
++        VcSelect: VcSelectStub,
++        VcImage: VcImageStub,
++        VcWidget: PassThrough,
++        VcLabel: PassThrough,
++        VcTabSwitch: true,
++        VcCheckbox: true,
++        VcInput: true,
++        VcButton: true,
++        VcAlert: true,
++        VcIcon: true,
++      },
++    },
++  });
++}
++
++describe("checkout method selectors", () => {
++  it.each([
++    ["shipping", ShippingDetailsSection],
++    ["billing", BillingDetailsSection],
++  ])("give every %s method image an alt attribute", (_, component) => {
++    const images = mountSection(component).findAll("img");
++
++    expect(images.length).toBeGreaterThanOrEqual(3);
++    images.forEach((image) => expect(image.attributes()).toHaveProperty("alt"));
++  });
++});
+diff --git a/client-app/shared/checkout/components/billing-details-section.vue b/client-app/shared/checkout/components/billing-details-section.vue
+index 9d886e3..6f73f6a 100644
+--- a/client-app/shared/checkout/components/billing-details-section.vue
++++ b/client-app/shared/checkout/components/billing-details-section.vue
+@@ -52,7 +52,7 @@
+         >
+           <template #placeholder>
+             <div class="flex items-center gap-3 p-3 text-sm">
+-              <VcImage class="size-12 rounded bg-neutral-100" src="select-payment.svg" />
++              <VcImage class="size-12 rounded bg-neutral-100" src="select-payment.svg" alt="" />
+ 
+               {{ $t("common.placeholders.select_payment_method") }}
+             </div>
+@@ -60,14 +60,14 @@
+ 
+           <template #selected="{ item }">
+             <div class="flex items-center gap-3 p-3 text-sm" :data-selected-payment-method-id="item.code">
+-              <VcImage class="size-12 rounded" :src="item.logoUrl" />
++              <VcImage class="size-12 rounded" :src="item.logoUrl" alt="" />
+ 
+               {{ item.name }}
+             </div>
+           </template>
+ 
+           <template #item="{ item }">
+-            <VcImage class="size-12 rounded" :src="item.logoUrl" />
++            <VcImage class="size-12 rounded" :src="item.logoUrl" alt="" />
+ 
+             <span :data-payment-method-id="item.code">{{ item.name }}</span>
+           </template>
+diff --git a/client-app/shared/checkout/components/shipping-details-section.vue b/client-app/shared/checkout/components/shipping-details-section.vue
+index ba3d212..4e5959e 100644
+--- a/client-app/shared/checkout/components/shipping-details-section.vue
++++ b/client-app/shared/checkout/components/shipping-details-section.vue
+@@ -78,6 +78,7 @@
+               <VcImage
+                 class="shipping-details-section__method-image shipping-details-section__method-image--placeholder"
+                 src="select-shipping.svg"
++                alt=""
+               />
+ 
+               {{ $t("common.placeholders.select_delivery_method") }}
+@@ -86,14 +87,14 @@
+ 
+           <template #selected="{ item }">
+             <div class="shipping-details-section__method-item" :data-selected-shipping-method-id="item.id">
+-              <VcImage class="shipping-details-section__method-image" :src="item.logoUrl" />
++              <VcImage class="shipping-details-section__method-image" :src="item.logoUrl" alt="" />
+ 
+               {{ $t(`common.methods.delivery_by_id.${item.id}`) }}
+             </div>
+           </template>
+ 
+           <template #item="{ item }">
+-            <VcImage class="shipping-details-section__method-image" :src="item.logoUrl" />
++            <VcImage class="shipping-details-section__method-image" :src="item.logoUrl" alt="" />
+ 
+             <span :data-shipping-method-id="item.id">{{ $t(`common.methods.delivery_by_id.${item.id}`) }}</span>
+           </template>
+diff --git a/client-app/ui-kit/components/molecules/select/vc-select.test.ts b/client-app/ui-kit/components/molecules/select/vc-select.test.ts
+index f445661..1ce3a79 100644
+--- a/client-app/ui-kit/components/molecules/select/vc-select.test.ts
++++ b/client-app/ui-kit/components/molecules/select/vc-select.test.ts
+@@ -423,3 +423,56 @@ describe("VcSelect inside a dialog popover", () => {
+     },
+   );
+ });
++
++describe("VcSelect required trigger ARIA", () => {
++  const RequiredHost = defineComponent({
++    components: { VcSelect },
++
++    props: {
++      slotted: { type: Boolean, default: false },
++    },
++
++    setup() {
++      return { items: ["Standard", "Express"] };
++    },
++
++    template: `
++      <VcSelect :items="items" label="Delivery method" required>
++        <template v-if="slotted" #placeholder>Select a delivery method</template>
++      </VcSelect>
++    `,
++  });
++
++  const createRequiredWrapper = createWrapperFactory(mount, RequiredHost, {
++    attachTo: document.body,
++    global: {
++      components: {
++        VcButton,
++        VcCheckbox,
++        VcDropdownMenu,
++        VcIcon,
++        VcInput,
++        VcInputDetails,
++        VcLabel,
++        VcMenuItem,
++        VcPopover,
++        VcScrollbar,
++        VcTooltip,
++      },
++    },
++  });
++
++  // aria-required is not allowed on role="button" (axe aria-allowed-attr).
++  it("keeps aria-required off the slotted role=button trigger", () => {
++    const wrapper = createRequiredWrapper({ props: { slotted: true } });
++    const trigger = wrapper.get('.vc-select__button[role="button"]');
++
++    expect(trigger.attributes()).not.toHaveProperty("aria-required");
++  });
++
++  it("keeps aria-required on the combobox trigger", () => {
++    const wrapper = createRequiredWrapper();
++
++    expect(wrapper.get('[role="combobox"]').attributes("aria-required")).toBe("true");
++  });
++});
+diff --git a/client-app/ui-kit/components/molecules/select/vc-select.vue b/client-app/ui-kit/components/molecules/select/vc-select.vue
+index bf31a36..cd7c1c4 100644
+--- a/client-app/ui-kit/components/molecules/select/vc-select.vue
++++ b/client-app/ui-kit/components/molecules/select/vc-select.vue
+@@ -42,7 +42,6 @@
+           :aria-controls="isShown ? listboxId : undefined"
+           :aria-activedescendant="activeDescendantId"
+           :aria-invalid="error || undefined"
+-          :aria-required="required || undefined"
+           :aria-disabled="disabled || undefined"
+           :aria-describedby="detailsId"
+           class="vc-select__button"

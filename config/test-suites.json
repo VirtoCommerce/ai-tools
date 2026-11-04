@@ -3,7 +3,7 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-11-02",
+    "generated": "2026-11-04",
     "totalSuites": 174,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
@@ -1372,7 +1372,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 67,
+      "testCount": 69,
       "estimatedMinutes": 32,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1385,7 +1385,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 66,
+        "machine": 68,
         "browser": 1,
         "manual": 0
       }
@@ -1398,7 +1398,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 21,
+      "testCount": 24,
       "estimatedMinutes": 16,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1410,7 +1410,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 19,
+        "machine": 22,
         "browser": 1,
         "manual": 0,
         "deprecated": 1
@@ -1624,7 +1624,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 4,
+      "testCount": 9,
       "estimatedMinutes": 4,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1635,7 +1635,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 4,
+        "machine": 9,
         "browser": 0,
         "manual": 0
       }
@@ -3422,7 +3422,7 @@
       "layer": "backend",
       "concern": "graphql",
       "priority": "P2",
-      "testCount": 16,
+      "testCount": 18,
       "estimatedMinutes": 12,
       "agent": "qa-backend-expert",
       "tags": [
@@ -3436,7 +3436,7 @@
       "envRiskGate": "staging",
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 16,
+        "machine": 18,
         "browser": 0,
         "manual": 0
       }

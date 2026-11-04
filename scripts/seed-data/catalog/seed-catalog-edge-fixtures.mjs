@@ -2,7 +2,8 @@
 /**
  * seed-catalog-edge-fixtures.mjs — the three catalog "discrimination" fixtures REG-2026-08-25-1128
  * found missing: an EMPTY category (CAT-043), an ORG-EXCLUDED product (CAT-038), and an
- * SEO-CONFIGURED product (CAT-040).
+ * SEO-CONFIGURED product (CAT-040) — plus, on CAT-038's unlinked catalog, the properties the store's
+ * catalog does not have (CAT-GQL-153, alias CATALOG_OTHER_WITH_PROPERTIES).
  *
  * Rules + shapes live in ./catalog-edge-specs.mjs (side-effect-free, shared with the guard + unit
  * tests); this file is the thin resolve → find-or-create → verify → write-back layer.
@@ -32,14 +33,15 @@ import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  ROOT, STORE_ID, DRY_RUN, VERBOSE, TEARDOWN,
+  ROOT, STORE_ID, BACK_URL, DRY_RUN, VERBOSE, TEARDOWN,
   log, verbose, assertSafeTarget, auth, api,
   ensureVirtualCatalog, ensureCategoryPath, ensureFulfillmentCenter,
   writeEnvAliasOverride, verifyRemoved, idsParam,
 } from '../../lib/seed-common.mjs';
 import {
-  SEED_PREFIX, EXCLUDED_CATALOG, EMPTY_CATEGORY, EXCLUDED_PRODUCT, SEO_PRODUCT,
+  SEED_PREFIX, EXCLUDED_CATALOG, EMPTY_CATEGORY, EXCLUDED_PRODUCT, SEO_PRODUCT, OTHER_CATALOG,
   buildSeoInfo, buildCategoryBody, buildProductBody, validateFixtureShape,
+  buildOtherCatalogPropertyBody, otherCatalogDivergence,
 } from './catalog-edge-specs.mjs';
 
 const PRICELIST_NAME = 'AGENT-TEST-CatalogEdge-USD';
@@ -57,9 +59,25 @@ let STORE_CATALOG_ID = null;
 
 /* ── lookups ──────────────────────────────────────────────────────────────────── */
 
+// `POST /api/catalog/catalogs/search`, NOT `/api/catalog/search`: the latter answers with no body on
+// vcst (observed 2026-11-04), so the old lookup never found this catalog — every seed without an
+// overlay created another copy and teardown deleted none (two copies were left on vcst).
+async function findCatalogsByName(name) {
+  const r = await api('POST', '/api/catalog/catalogs/search', { keyword: name, take: 50 }, { expectStatus: [200, 201, 404] });
+  return (r?.results || r?.catalogs || []).filter((c) => c.name === name);
+}
 async function findCatalogByName(name) {
-  const r = await api('POST', '/api/catalog/search', { keyword: name, take: 50, searchInChildren: false }, { expectStatus: [200, 201, 404] });
-  return (r?.results || r?.catalogs || []).find((c) => c.name === name) || null;
+  return (await findCatalogsByName(name))[0] || null;
+}
+
+/** The catalog id the last seed recorded for CAT-038 / CAT-GQL-153 in the per-env overlay, if any. */
+function recordedExcludedCatalogId() {
+  const overlayPath = join(ROOT, 'test-data', `aliases.${process.env.TEST_ENV || 'vcst'}.json`);
+  if (!existsSync(overlayPath)) return null;
+  try {
+    const o = JSON.parse(readFileSync(overlayPath, 'utf8'));
+    return o?.[OTHER_CATALOG.aliasName]?.id || o?.[EXCLUDED_PRODUCT.aliasName]?.catalogId || null;
+  } catch { return null; }
 }
 
 async function findProductByCode(code, catalogId = null) {
@@ -109,6 +127,15 @@ async function resolveEmptyCategory() {
 /* ── the physical, deliberately-unlinked catalog (CAT-038) ────────────────────── */
 
 async function ensureExcludedCatalog() {
+  // Prefer the catalog the overlay recorded: an earlier run left TWO catalogs with this exact name,
+  // and the search returns them in no stable order, so "first by name" can switch catalogs between
+  // runs and strand the excluded product and the properties in different ones.
+  const recorded = recordedExcludedCatalogId();
+  if (recorded) {
+    const c = await api('GET', `/api/catalog/catalogs/${recorded}`, null, { expectStatus: [200, 404] }).catch(() => null);
+    if (c?.id && c.name === EXCLUDED_CATALOG.name && !c.isVirtual) { verbose(`↻ catalog ${EXCLUDED_CATALOG.name} (${c.id}, from overlay)`); return c.id; }
+    verbose(`overlay catalog ${recorded} is not ${EXCLUDED_CATALOG.name} any more — searching by name`);
+  }
   const existing = await findCatalogByName(EXCLUDED_CATALOG.name);
   if (existing?.id) { verbose(`↻ catalog ${EXCLUDED_CATALOG.name} (${existing.id})`); return existing.id; }
   const created = await api('POST', '/api/catalog/catalogs', {
@@ -117,6 +144,40 @@ async function ensureExcludedCatalog() {
   }, { expectStatus: [200, 201] });
   log(`✓ physical catalog ${EXCLUDED_CATALOG.name} → ${created?.id}`);
   return created?.id;
+}
+
+/* ── CAT-GQL-153: properties the store's catalog does not have ────────────────── */
+
+async function catalogProperties(catalogId) {
+  const c = await api('GET', `/api/catalog/catalogs/${catalogId}?responseGroup=Full`, null, { expectStatus: [200, 404] });
+  return (c?.properties || []).filter((p) => p.catalogId === catalogId || !p.catalogId);
+}
+
+/** Find-or-create each OTHER_CATALOG property by name + type (POST returns 204, so re-read for ids). */
+async function ensureOtherCatalogProperties(catalogId) {
+  const have = await catalogProperties(catalogId);
+  for (const def of OTHER_CATALOG.properties) {
+    if (have.some((p) => p.name === def.name && p.type === def.type)) { verbose(`↻ property ${def.name}`); continue; }
+    await api('POST', '/api/catalog/properties', buildOtherCatalogPropertyBody(def, catalogId), { expectStatus: [200, 201, 204] });
+    log(`✓ property ${def.name} (${def.type}) on ${EXCLUDED_CATALOG.name}`);
+  }
+  return DRY_RUN ? OTHER_CATALOG.properties : catalogProperties(catalogId);
+}
+
+/** The store's own Query.properties names, the oracle CAT-GQL-153 compares against. */
+async function storePropertyNames() {
+  const q = `{ properties(storeId: "${STORE_ID}" first: 100 types: [CATALOG, CATEGORY, PRODUCT, VARIATION] cultureName: "en-US") { totalCount items { name } } }`;
+  const res = await fetch(`${BACK_URL}/graphql`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q }) });
+  const j = await res.json().catch(() => ({}));
+  if (j?.errors?.length) throw new Error(`Query.properties errored: ${JSON.stringify(j.errors.map((e) => e.message)).slice(0, 200)}`);
+  return (j?.data?.properties?.items || []).map((p) => p.name);
+}
+
+async function verifyOtherCatalogDiverges(props) {
+  const storeNames = await storePropertyNames();
+  const problems = otherCatalogDivergence(storeNames, props);
+  if (problems.length) throw new Error(problems.join(' | '));
+  log(`✓ ${OTHER_CATALOG.aliasName}: ${OTHER_CATALOG.properties.map((p) => p.name).join(', ')} on the other catalog, none in the store's ${storeNames.length} properties`);
 }
 
 /* ── fixtures ─────────────────────────────────────────────────────────────────── */
@@ -267,6 +328,9 @@ async function main() {
     // NOTE: deliberately NO linkIntoStoreCatalog() here. That omission IS the fixture.
   }
 
+  // CAT-GQL-153 — the same unlinked catalog, with properties the store's catalog does not have.
+  const otherProps = await ensureOtherCatalogProperties(excludedCatalogId);
+
   // CAT-040 — SEO-configured product, browsable in the store.
   const seoProduct = await ensureProduct(SEO_PRODUCT, { catalogId: loc.catalogId, categoryId: loc.categoryId });
   if (!DRY_RUN && seoProduct.id) {
@@ -286,15 +350,17 @@ async function main() {
   await verifyEmptyCategoryIsEmpty(emptyCategoryId);
   await verifyExcludedFromStoreCatalog(excluded.id);
   await verifySeoServed(seoProduct.id);
+  await verifyOtherCatalogDiverges(otherProps);
 
   writeEnvAliasOverride({
     [EMPTY_CATEGORY.aliasName]: { id: emptyCategoryId, catalogId: STORE_CATALOG_ID },
     [EXCLUDED_PRODUCT.aliasName]: { id: excluded.id, catalogId: excludedCatalogId },
     [SEO_PRODUCT.aliasName]: { id: seoProduct.id, catalogId: loc.catalogId, categoryId: loc.categoryId, url: SEO_PRODUCT.url },
+    [OTHER_CATALOG.aliasName]: { id: excludedCatalogId },
   });
-  log(`✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: wrote runtime ids for 3 fixture(s)`);
+  log(`✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: wrote runtime ids for 4 fixture(s)`);
 
-  console.log('\n✅ Catalog edge fixtures seeded — CAT-038 / CAT-040 / CAT-043 unblocked');
+  console.log('\n✅ Catalog edge fixtures seeded — CAT-038 / CAT-040 / CAT-043 / CAT-GQL-153 unblocked');
 }
 
 /* ── teardown (products → category → catalog → pricelist) ─────────────────────── */
@@ -342,11 +408,17 @@ async function teardown() {
     }
   } else log('– no seeded empty category found');
 
-  // 3. The physical catalog this seeder created.
-  const physical = await findCatalogByName(EXCLUDED_CATALOG.name);
-  if (physical?.id && !DRY_RUN) {
+  // 3. The physical catalog(s) this seeder created — EVERY exact-name copy (an earlier run left two),
+  //    each after its CAT-GQL-153 properties, which are deleted explicitly rather than trusted to cascade.
+  for (const physical of await findCatalogsByName(EXCLUDED_CATALOG.name)) {
+    if (DRY_RUN) { log(`– would delete catalog ${physical.id}`); continue; }
+    for (const p of await catalogProperties(physical.id)) {
+      if (!OTHER_CATALOG.properties.some((d) => d.name === p.name) || !p.name.startsWith(OTHER_CATALOG.propertyPrefix)) continue;
+      await api('DELETE', `/api/catalog/properties?id=${encodeURIComponent(p.id)}&doDeleteValues=true`, null, { expectStatus: [200, 204, 404] })
+        .catch((e) => log(`⚠ property delete ${p.name}: ${e.message.slice(0, 120)}`));
+    }
     await api('DELETE', `/api/catalog/catalogs/${physical.id}`, null, { expectStatus: [200, 204, 404] }).catch((e) => log(`⚠ catalog delete: ${e.message.slice(0, 120)}`));
-    log(`✗ deleted catalog ${EXCLUDED_CATALOG.name}`);
+    log(`✗ deleted catalog ${EXCLUDED_CATALOG.name} (${physical.id})`);
   }
 
   // 4. The pricelist this seeder created.
@@ -371,8 +443,7 @@ async function teardown() {
     }
     const c = await resolveEmptyCategory();
     if (c?.id && c.name?.startsWith(SEED_PREFIX)) left.push(c.id);
-    const cat2 = await findCatalogByName(EXCLUDED_CATALOG.name);
-    if (cat2?.id) left.push(cat2.id);
+    for (const cat2 of await findCatalogsByName(EXCLUDED_CATALOG.name)) left.push(cat2.id);
     return left;
   });
   console.log(residual === 0

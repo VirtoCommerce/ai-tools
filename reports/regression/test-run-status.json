@@ -1,76 +1,40 @@
 {
-  "runId": "REG-2026-11-02-2307",
-  "status": "stalled",
-  "startedAt": "2026-11-02T20:12:34.199Z",
-  "env": "vcptcore",
-  "selection": "C1 VCST-6626: 028,031,032,033,043,046,082,089,093b,111,114 --ids (65)",
+  "runId": "REG-2026-11-04-0952",
+  "status": "completed",
+  "startedAt": "2026-11-04T08:53:03.698Z",
+  "windowStart": "2026-11-04T08:53:03.698Z",
+  "selection": "061,098",
+  "env": "vcst",
+  "scoped": true,
+  "cases": "ids",
+  "ids": [
+    "SRCHA-007",
+    "CMP-004",
+    "CMP-007",
+    "CMP-024",
+    "CMP-032"
+  ],
+  "purpose": "Verify CMP-003 numeric Price probe: 098 cases back on search, 061 SRCHA-007 strict Errors 0 (cases from branch test/wide-test-03-nov worktree)",
+  "plan": "reports/regression/REG-2026-11-04-0952/preflight.json",
   "suites": {
-    "111": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-chrome"
-    },
-    "114": {
+    "061": {
       "status": "done",
       "lane": "browser",
-      "browser": "none (all cases pre-flight blocked)",
-      "pass": 0,
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-04T08:54:20Z",
+      "pass": 1,
       "fail": 0,
-      "blocked": 2
+      "blocked": 0
     },
-    "082": {
-      "status": "running",
-      "lane": "browser",
-      "browser": "playwright-chrome"
-    },
-    "028": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-chrome"
-    },
-    "031": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-chrome"
-    },
-    "043": {
-      "status": "running",
-      "lane": "browser",
-      "browser": "playwright-edge"
-    },
-    "046": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-edge"
-    },
-    "032": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-edge"
-    },
-    "033": {
-      "status": "pending",
-      "lane": "browser",
-      "browser": "playwright-edge"
-    },
-    "089": {
+    "098": {
       "status": "done",
       "lane": "browser",
-      "browser": "none (all cases pre-flight blocked)",
-      "pass": 0,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-04T08:59:57Z",
+      "pass": 4,
       "fail": 0,
-      "blocked": 1
-    },
-    "093b": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "none (all cases pre-flight blocked)",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 1
+      "blocked": 0
     }
   },
-  "stalledAt": "2026-11-02T20:59:33.632Z",
-  "stalledReason": "no progress for 45 min (REG-2026-11-02-2307:in_progress:5:24:4)",
-  "finishedAt": "2026-11-02T20:59:33.632Z"
+  "finishedAt": "2026-11-04T09:10:14.245Z"
 }
