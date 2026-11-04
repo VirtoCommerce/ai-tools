@@ -3469,5 +3469,17 @@
   "SR_UNSERVED_ORG": {
     "id": "8ec0e02f-ab23-4464-b0e1-7c7920175a66",
     "platform_id": "8ec0e02f-ab23-4464-b0e1-7c7920175a66"
+  },
+  "PROD_RANGE_LOW": {
+    "id": "77a6f17a-3bc1-4388-8957-c8f4c105ef0b"
+  },
+  "PROD_RANGE_MID": {
+    "id": "a28052d6-6c81-4a62-b759-d2355ec6eeec"
+  },
+  "PROD_RANGE_HIGH": {
+    "id": "304d3bcb-8c12-43e7-85e4-6502e2771ff2"
+  },
+  "PROD_RANGE_NONE": {
+    "id": "d266a936-b64e-497f-838b-449ad4d2f3fd"
   }
 }

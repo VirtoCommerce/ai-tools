@@ -11614,5 +11614,98 @@
     "user_type": "Manager",
     "password_var": "DEFAULT_TEST_PASSWORD",
     "_notes": "VCST-6443: back-office (Manager, isAdministrator=false) account WITHOUT builder:create but WITH builder:read + builder:update, so POST /api/page-builder-pages/create-group-page returns 403 for it on a VALID permalink (verified at provision) — the case decides whether an INVALID permalink is rejected 400 before or 403 at the permission gate. Password is the {{DEFAULT_TEST_PASSWORD}} secret from .env.local (localhost-safe fallback via user-provision.mjs resolvePassword), never committed. Runtime user id lives only in aliases.<env>.json. Teardown: DELETE /api/platform/security/users?names=agent-test-6443-nocreate + DELETE /api/platform/security/roles?ids=AGENT-TEST-6443%20no-create."
+  },
+  "PROD_RANGE_LOW": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-001"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: lowest value of the numeric property N (AgentTest_Length_mm = 9). Below the case sub-range, so applying it must drop this product; its value is the slider minimum."
+  },
+  "PROD_RANGE_MID": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-002"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: the only product whose N (45) lies inside the sub-range 30..60 — the list after applying the sub-range must hold exactly this product."
+  },
+  "PROD_RANGE_HIGH": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-003"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: highest value of N (120, three digits, so numeric and text ordering disagree). Above the sub-range; its value is the slider maximum."
+  },
+  "PROD_RANGE_NONE": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-004"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet control: same category, priced, in stock, NO value for N. Must disappear once any range is applied."
+  },
+  "RANGE_FACET_N": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-002"
+    },
+    "fields": {
+      "property": "property_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "min": "range_min",
+      "max": "range_max",
+      "subFrom": "sub_range_from",
+      "subTo": "sub_range_to",
+      "subSkus": "sub_range_skus"
+    },
+    "notes": "SRCHA-047: the numeric product property N for a Range facet on the store (Number, category-level property of the AGENT-TEST Range Facet Fixtures category, linked into the store catalog). Three products carry DIFFERENT values (min != max, mixed digit counts so a text-typed index would order them wrongly) plus one control without N. property = the name to pick in Store > Search configuration > Facets; min/max = expected statistics and slider bounds; subFrom..subTo holds exactly subSkus. Seed: npm run seed:range-facet. The store facet itself is NOT configured by the seeder."
   }
 }

@@ -1,87 +1,37 @@
 {
-  "runId": "REG-2026-11-03-1732",
-  "status": "completed",
-  "startedAt": "2026-11-03T17:32:50.323Z",
-  "windowStart": "2026-11-03T17:32:50.323Z",
-  "selection": "050m,091,077",
+  "runId": "REG-2026-11-04-0827",
+  "status": "in_progress",
+  "startedAt": "2026-11-04T07:28:00.250Z",
+  "windowStart": "2026-11-04T07:28:00.250Z",
+  "selection": "061,098",
   "env": "vcst",
   "scoped": true,
   "cases": "ids",
   "ids": [
-    "SR-GQL-163",
-    "SR-GQL-164",
-    "SR-GQL-165",
-    "SR-GQL-166",
-    "SR-GQL-167",
-    "SR-GQL-168",
-    "SR-GQL-169",
-    "SR-GQL-170",
-    "SR-GQL-171",
-    "SR-GQL-172",
-    "SR-GQL-173",
-    "SR-GQL-174",
-    "SR-CP-070",
-    "SR-CP-071",
-    "SR-CP-072",
-    "SR-CP-073",
-    "SR-CP-074",
-    "SR-CP-075",
-    "SR-CP-076",
-    "SR-CP-077",
-    "SR-CP-078",
-    "SR-CP-079",
-    "SR-CP-080",
-    "SR-CP-081",
-    "SR-CP-082",
-    "SR-CP-083",
-    "SR-CP-084",
-    "SR-CP-047",
-    "SR-CP-050",
-    "SR-CP-068",
-    "CPN-066",
-    "CPN-067",
-    "CPN-006",
-    "CPN-025",
-    "CPN-050",
-    "CPN-053",
-    "CPN-014"
+    "SRCHA-006",
+    "SRCHA-007",
+    "SRCHA-012",
+    "SRCHA-019",
+    "SRCHA-047",
+    "CMP-004",
+    "CMP-007",
+    "CMP-024",
+    "CMP-032"
   ],
-  "purpose": "/qa-test VCST-6158 C1 — exact set (29 new Draft + 4 REPAIR + 4 RE-BASE), --no-promote",
-  "plan": "reports/regression/REG-2026-11-03-1732/preflight.json",
+  "purpose": "Re-run of the 061 cases fixed by REG-2026-11-03-2035 triage + seed fix, and the 098 cases re-pointed off search (CMP-003 probe)",
+  "plan": "reports/regression/REG-2026-11-04-0827/preflight.json",
   "suites": {
-    "050m": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "startedAt": "2026-11-03T17:34:50Z",
-      "machine": {
-        "pass": 9,
-        "fail": 0,
-        "blocked": 0
-      },
-      "pass": 12,
-      "fail": 0,
-      "blocked": 0
-    },
-    "091": {
-      "status": "done",
+    "061": {
+      "status": "running",
       "lane": "browser",
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-03T17:34:50Z",
-      "pass": 13,
-      "fail": 2,
-      "blocked": 3,
-      "retries": 1
+      "startedAt": "2026-11-04T07:29:29.000Z",
+      "total": 5,
+      "note": "attempt1_SRCHA-019_FAIL_retrying_case_alone"
     },
-    "077": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-firefox",
-      "startedAt": "2026-11-03T17:34:50Z",
-      "pass": 3,
-      "fail": 1,
-      "blocked": 3
+    "098": {
+      "status": "pending",
+      "lane": "browser"
     }
-  },
-  "finishedAt": "2026-11-03T18:04:09.966Z"
+  }
 }
