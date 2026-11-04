@@ -4667,5 +4667,36 @@
     "pass_rate": 87.8,
     "duration_minutes": 43,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-04-1130",
+    "date": "2026-11-04",
+    "suiteId": "050m",
+    "suiteName": "GraphQL xAPI — Sales Rep (scoped /graphql/sales-rep)",
+    "environment": "vcptcore",
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 0.14,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-04-1130",
+    "date": "2026-11-04",
+    "suiteId": "116",
+    "suiteName": "Sales Rep — Reporting (customer sales report, storefront)",
+    "environment": "vcptcore",
+    "browser": "playwright-chrome",
+    "total": 30,
+    "passed": 24,
+    "failed": 4,
+    "blocked": 2,
+    "skipped": 0,
+    "pass_rate": 85.71,
+    "duration_minutes": 13.76,
+    "mode": "interactive"
   }
 ]

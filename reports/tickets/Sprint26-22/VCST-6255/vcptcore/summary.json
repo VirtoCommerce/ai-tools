@@ -1,0 +1,249 @@
+{
+  "ticket": "VCST-6255",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": {
+    "system": "jira",
+    "comment_id": "112678"
+  },
+  "path": "FULL",
+  "path_route": {
+    "provisional_1a": "FULL",
+    "confirmed_1b": "FULL",
+    "reason": "Story, new page, cross-layer (plugin + statistics contract), 10 ACs — not narrow on any axis (ticket-routing.md §5b)"
+  },
+  "layer": "storefront",
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "rev": 3,
+    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json",
+    "built_in_run": false,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "unmapped_surfaces": [
+      "/company/customer-sales (Reporting page) + ?period/?customer",
+      "Sales Rep hub menu item 'Reporting' (2nd)",
+      "SalesRepMonthlyOrderStatistics operation (POST /graphql)",
+      "per-browser Last-year switch storage"
+    ]
+  },
+  "shape_class": {
+    "value": "feature",
+    "surface_source": [
+      "no ui-kit/token/preset files in the diff"
+    ]
+  },
+  "verdict": "FAIL",
+  "date": "2026-11-04",
+  "timing": {
+    "run_start": "2026-11-03T22:50:00Z",
+    "reachability_minutes": 5,
+    "time_to_first_test_minutes": null,
+    "test_window": {
+      "from": "2026-11-03T22:58:00Z",
+      "to": "2026-11-04T08:50:00Z"
+    },
+    "notes": "3x interrupted ~9h by an API network error and resumed; time_to_first_test not meaningful for this run"
+  },
+  "environment": "vcptcore",
+  "build": {
+    "declared": {
+      "platform": "3.1093.0",
+      "relevant_modules": {
+        "VirtoCommerce.SalesRep": "3.1017.0-pr-28-9f00"
+      },
+      "theme": "2.62.0-pr-2624-0539-0539704a"
+    },
+    "deployed": {
+      "platform": "3.1093.0",
+      "relevant_modules": {
+        "VirtoCommerce.SalesRep": "3.1017.0-pr-28-9f00"
+      },
+      "theme": "2.62.0-pr-2624-0539-0539704a"
+    },
+    "theme": "2.62.0-pr-2624-0539-0539704a",
+    "releasedThrough": "fresh (preflight ledger)",
+    "deploy_pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7030"
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "by": "qa-lead (orchestrator)",
+      "when": "2026-11-03T22:53:29Z",
+      "confirmed": false
+    },
+    {
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Reopen",
+      "by": "operator (Aleksandra Mitricheva), by hand in Jira",
+      "when": "2026-11-04T12:08:45.313Z",
+      "confirmed": true,
+      "reason": "verdict FAIL (AC4)"
+    }
+  ],
+  "agents_dispatched": [
+    "1r qa-frontend-expert (playwright-chrome) — BLOCKED by stale CDN plugin variant for Chromium; reachability established via 1c on firefox",
+    "1c ba-system-analyzer (playwright-firefox)",
+    "1d ba-story-writer (Mode B)",
+    "3x qa-testing-expert via /qa-exploratory ticket (playwright-firefox)",
+    "3a test-data-engineer",
+    "4a qa-frontend-expert (playwright-chrome)",
+    "4v qa-testing-expert (playwright-edge) — FALLBACK: vc-test:ui-ux-expert not installed at dispatch time",
+    "A test-management-specialist",
+    "3-cases verifier qa-lead-orchestrator — APPROVE",
+    "4c regression-orchestrator"
+  ],
+  "ac_analysis": {
+    "AC1": "SATISFIED (menu 2nd, guard) — ticket text stale: route is /company/customer-sales",
+    "AC2": "SATISFIED",
+    "AC3": "SATISFIED",
+    "AC4": "CONTRADICTS (status-only Cancelled counted)",
+    "AC5": "SATISFIED",
+    "AC6": "SATISFIED for the visual + projection; badge vs last year untestable (no LY data)",
+    "AC7": "SATISFIED",
+    "AC8": "SATISFIED (line is all-zero)",
+    "AC9": "SATISFIED",
+    "AC10": "desktop/mobile/light/dark SATISFIED; theme presets not testable (no storefront switcher)"
+  },
+  "total_cases": 40,
+  "passed": 29,
+  "failed": 5,
+  "blocked": 3,
+  "new_cases_authored": 33,
+  "coverage_triage": {
+    "hits": 259,
+    "suites": 27,
+    "dispositions": {
+      "CONFIRMED": 259,
+      "REPAIR": 0,
+      "RE-BASE": 0,
+      "SUPERSEDED": 0
+    },
+    "unscannable": [],
+    "unmatchedObservables": [
+      "/company/reporting — stale ticket route; no case navigates it"
+    ]
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-11-04-1130",
+      "ids": 33,
+      "passed": 27,
+      "failed": 4,
+      "blocked": 2,
+      "pass_rate": 0.818,
+      "report": "reports/regression/REG-2026-11-04-1130/regression-2026-11-04.md",
+      "authored": {
+        "suites": {
+          "116": "SR-RPT-001..030",
+          "050m": "SR-GQL-177..179"
+        },
+        "status": "Draft",
+        "held": [
+          "SR-RPT-004",
+          "SR-RPT-012"
+        ],
+        "case_defects": [
+          "SR-RPT-026: 'Show as table' is a native <details>; the role/expanded half of the case is wrong"
+        ]
+      },
+      "id_note": "C1 ran these three 050m rows as SR-GQL-163..165; renumbered to SR-GQL-177..179 on rebase (#596 took 163..173)"
+    }
+  },
+  "discovery": {
+    "report": "reports/tickets/Sprint26-22/VCST-6255/vcptcore/exploratory/SBTM-VCST-6255-reporting-2026-11-04.md",
+    "box_minutes": 35,
+    "net_new": 6,
+    "promoted": 4
+  },
+  "visual": {
+    "executor": "qa-testing-expert (fallback)",
+    "report": "reports/tickets/Sprint26-22/VCST-6255/vcptcore/design-report.md",
+    "axes": {
+      "vs_design": "SKIPPED — no prototype link",
+      "design_system": "SKIPPED — fallback lane",
+      "bl_ui": "PASS (advisory: 'Dec ·')",
+      "a11y": "FAIL (non-blocking, §7a)",
+      "state_stress": "PASS"
+    },
+    "a11y_findings": [
+      "VcSwitch no on/off state (VCST-6684)",
+      "hover tooltip not dismissible with Escape (shared VcTooltip)"
+    ]
+  },
+  "contract": {
+    "contract_surface": true,
+    "surface_source": [
+      "salesRepMonthlyOrderStatistics.graphql in the diff"
+    ],
+    "schema": "REFRESHED 2026-11-03 (run copy)",
+    "fixtures": "86/86 PASS"
+  },
+  "test_data": {
+    "data_surface": true,
+    "seeded": [
+      "SR_MTD_ORDER_WEST_1",
+      "SR_MTD_ORDER_WEST_2",
+      "SR_MTD_ORDER_TECH_1",
+      "SR_MTD_ORDER_FLAG_CANCELLED",
+      "SR_MTD_ORDER_STATUS_CANCELLED",
+      "SR_MTD_ORDER_OTHER_CREATOR"
+    ],
+    "teardown": "TEST_ENV=vcptcore node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only MTD",
+    "teardown_done": true,
+    "probe_order": "AGENT-TEST-STATUS-PROBE created and deleted 2026-11-04",
+    "teardown_at": "2026-11-04T12:08:45.313Z"
+  },
+  "business_rules_verified": [
+    "BL-SR-001",
+    "BL-SR-002",
+    "BL-SR-003",
+    "BL-SR-004",
+    "BL-SR-005",
+    "BL-SR-011",
+    "BL-SR-012",
+    "BL-SR-013"
+  ],
+  "bugs_filed": [
+    {
+      "key": "VCST-6683",
+      "type": "Sub-task",
+      "severity": "Medium",
+      "provenance": "IN-SCOPE",
+      "summary": "Order set to Cancelled via the admin Status dropdown is still counted in Sales, Orders and AOV"
+    },
+    {
+      "key": "VCST-6684",
+      "type": "Bug",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING (ui-kit VcSwitch)",
+      "summary": "VcSwitch does not expose its on/off state to assistive technology",
+      "assignee": "Aleksandra Mitricheva",
+      "sprint": "VCST Sprint 26-22"
+    }
+  ],
+  "bugs_not_filed": [
+    "KPI tile number format mixed (compact vs full; $400.8; de uncompacted)",
+    "footnote double period in de, fr, no, pt, ru, sv",
+    "AOV chart has no projection outline (design shows it)",
+    "card title 'Sales statistics' vs 'My sales'",
+    "'All orders →' drops customer and period",
+    "no empty state for zero-customer / zero-order report",
+    "chart tooltip under the sticky header (isolate + no teleport)",
+    "legend badges: text sits on the bottom edge",
+    "low contrast of chart marks (1.4.11)",
+    "wasted statistics call with unvalidated ?customer=",
+    "hover tooltip not dismissible with Escape (shared VcTooltip, pre-existing)",
+    "OUT-OF-SCOPE, not in ticket by operator decision: Cloudflare caches the unhashed SalesRep remoteEntry.js per Accept-Encoding for 4h — Chromium users get the pre-deploy plugin after a module deploy"
+  ],
+  "screenshots": "reports/tickets/Sprint26-22/VCST-6255/vcptcore/screenshots/",
+  "report": {
+    "tracker_comment": "https://virtocommerce.atlassian.net/browse/VCST-6255?focusedCommentId=112678",
+    "checklist": "reports/tickets/Sprint26-22/VCST-6255/vcptcore/testing-checklist.md",
+    "test_model": "reports/tickets/Sprint26-22/VCST-6255/vcptcore/test-model.md",
+    "verifier_5_report": "SKIPPED — not dispatched (non-blocking gate); stated here"
+  }
+}

@@ -2098,3 +2098,40 @@ query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first
 [DATA label=buyer] data.salesRepCoupons.items.0 is null {BL}",[UI] a buyer who opens the coupons URL is sent out of the rep area (SR-CP-075),"the anonymous call returns data or a 5xx
 the buyer receives coupons
 the buyer call crashes with a server error instead of an empty answer",none (read-only),VCST-6158 · BL-SR-011 · Archetype:SCOPE · Technique:DT · KB-3F3D3C6B (the scoped schema answers 200 for non-reps) · Catches: a buyer reads the rep tool's coupon list · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-GQL-177,salesRepCustomerOrderStatistics — Statistics Exclude An Order A Buyer Placed In A Served Organization (Count Below The Creator-Agnostic Order List),GraphQL > Sales Rep > Statistics,Critical,BL-SR-002,ECL-7.2,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Caller is SALES_REP (= SR_REP_PRIMARY), a member of @td(ORG_TECHFLOW.id). TechFlow holds ORDER_REP_PLACED (created by the rep) and ORDER_BUYER_PLACED (created by TechFlow buyer USR-007), equal in every field but authorship (VCST-5733 authorship matrix; SR-GQL-121 proves the list is creator-agnostic). salesRepCustomerOrderStatistics pins CustomerId to the rep (BL-SR-002 half b), so its count must be strictly below the list's totalCount. Server half of the Reporting buyer-created case. Shapes follow SR-GQL-057/121; confirm both root fields in one operation at C1.","store={{STORE_ID}}, org=@td(ORG_TECHFLOW.platform_id), buyer_order=@td(ORDER_BUYER_PLACED.number), rep_order=@td(ORDER_REP_PLACED.number)","[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP main]
+query {
+  salesRepCustomerOrderStatistics(storeId: ""{{store}}"", organizationId: ""{{org}}"") {
+    allTime: period { count }
+  }
+  salesRepCustomerOrders(storeId: ""{{store}}"", organizationId: ""{{org}}"", first: 50) {
+    totalCount
+    items { number customerId }
+  }
+}
+[GQL-EXEC main]","[ERRORS label=main] errors[] empty {OBSERVED}
+[DATA label=main] data.salesRepCustomerOrders.items[?number={{buyer_order}}] is non-null {OBSERVED}
+[DATA label=main] data.salesRepCustomerOrderStatistics.allTime.count < data.salesRepCustomerOrders.totalCount {BL}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","salesRepCustomerOrderStatistics count equals or exceeds the creator-agnostic list totalCount
+errors[] non-empty in GraphQL response",none (read-only),VCST-6255 · Archetype:SCOPE · Technique:DT,Draft
+SR-GQL-178,"SalesRepMonthlyOrderStatistics Shape On The Main /graphql Endpoint — An Unserved Organization Resolves To Null, Never Another Organization's Totals",GraphQL > Sales Rep > Statistics,Critical,BL-SR-002,ECL-7.2,"Runner-native via the main /graphql endpoint (no [GQL-ENDPOINT] line): the Reporting plugin sends SalesRepMonthlyOrderStatistics to POST /graphql, not the scoped /graphql/sales-rep (3x observation A1), and SR-GQL-059 covers only the scoped endpoint. Caller is SALES_REP (= SR_REP_PRIMARY), who does NOT serve @td(ORG_SUSPENDED.id) and does serve @td(ORG_TECHFLOW.id). Operation mirrors the plugin's variables (organizationId, storeId, currencyCode) with a single aliased month window. Confirm the field is exposed on the main schema at C1; if it is not, the case is BLOCKED and the finding is that the plugin reaches it another way.","store={{STORE_ID}}, unserved_org=@td(ORG_SUSPENDED.platform_id), served_org=@td(ORG_TECHFLOW.platform_id)","[AUTH role=SALES_REP]
+[GQL-OP unserved]
+query { salesRepCustomerOrderStatistics(storeId: ""{{store}}"", organizationId: ""{{unserved_org}}"") { currencyCode allTime: period { count total { amount } } } }
+[GQL-EXEC unserved]
+[GQL-OP served]
+query { salesRepCustomerOrderStatistics(storeId: ""{{store}}"", organizationId: ""{{served_org}}"") { currencyCode allTime: period { count total { amount } } } }
+[GQL-EXEC served]","[ERRORS label=unserved] errors[] empty {OBSERVED}
+[NULL label=unserved] data.salesRepCustomerOrderStatistics {BL}
+[ERRORS label=served] errors[] empty {OBSERVED}
+[DATA label=served] data.salesRepCustomerOrderStatistics.allTime.count >= 0 {BL}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","unserved organization returns a non-null statistics object
+errors[] non-empty in GraphQL response",none (read-only),VCST-6255 · Archetype:SCOPE · Technique:EG · Role:sales-rep,Draft
+SR-GQL-179,"salesRepCustomerOrderStatistics — A Non-Rep Token Receives No Figures (data Is Null, Asserted On The Data, Not Only On errors[])",GraphQL > Sales Rep > Statistics,Critical,"BL-SR-002, BL-SR-011",ECL-7.2,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Caller is TECHFLOW_BUYER, a non-rep member of @td(ORG_TECHFLOW.id), which SR_REP_PRIMARY serves. The statistics resolver gates on the sales-rep permission through the rep's served-organization list; for a non-rep the visible list is empty, so the result is a clean null (HTTP 200, errors[] empty). Assert data, not only errors[]: an empty errors[] alone passes both the correct null and a leak. If the account cannot sign in on the stand the case is BLOCKED. Server half of the Reporting non-rep refusal.","store={{STORE_ID}}, org=@td(ORG_TECHFLOW.platform_id)","[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=TECHFLOW_BUYER]
+[GQL-OP main]
+query { salesRepCustomerOrderStatistics(storeId: ""{{store}}"", organizationId: ""{{org}}"") { currencyCode allTime: period { count total { amount } } } }
+[GQL-EXEC main]","[ERRORS label=main] errors[] empty {OBSERVED}
+[NULL label=main] data.salesRepCustomerOrderStatistics {BL}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","data.salesRepCustomerOrderStatistics is non-null for a non-rep caller
+errors[] non-empty in GraphQL response",none (read-only),VCST-6255 · Archetype:SCOPE · Technique:DT · Role:non-rep-buyer,Draft
