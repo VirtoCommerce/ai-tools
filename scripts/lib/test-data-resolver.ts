@@ -198,7 +198,9 @@ export class TestDataResolver {
     const seededOn: string[] = [];
     for (const [env, reg] of this.loadOtherOverrides()) {
       const ov = reg[alias];
-      if (ov && typeof ov === "object" && this.tryResolveObjectField(ov as Record<string, unknown>, field) !== undefined) {
+      // "" is the repo's "not seeded" placeholder, not a value — the pre-flight treats it as a miss too.
+      const v = ov && typeof ov === "object" ? this.tryResolveObjectField(ov as Record<string, unknown>, field) : undefined;
+      if (v !== undefined && v !== "") {
         seededOn.push(env);
       }
     }
