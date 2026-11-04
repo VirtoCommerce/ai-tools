@@ -4,6 +4,8 @@ ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,S
 Valid user account; DevTools Console open","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] fill email field with {{USER_EMAIL}}
 [ACT] fill password field with {{USER_PASSWORD}}
 [ACT] click Sign In button
@@ -619,6 +621,8 @@ password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
 [ACT] in the console read the visible title text of each of its cards in DOM order as guest_cards
 [ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === 'products_block' as guest_events
 [NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [WAIT] the sign-in form is visible
 [ACT] fill 'Email': {{USER_EMAIL}}
 [ACT] fill 'Password': {{USER_PASSWORD}}
@@ -659,6 +663,8 @@ cart_url=@td(CART_GA4_SFL_RB.url)","[NAV] {{FRONT_URL}}{{anchor_url}}
 [ACT] read the block heading text as rec_title
 [SETUP] run TEST_ENV=<env> npm run seed:ga4-lists:cart (cart state for {{USER_EMAIL}}); it exits 0
 [NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] fill 'Email': {{USER_EMAIL}}
 [ACT] fill 'Password': {{USER_PASSWORD}}
 [ACT] click 'Sign in'
@@ -1189,6 +1195,8 @@ GA-058,Markup analytics — Customize on a configurable product card opens a new
 Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The configurable card with a 'Customize' link exists only in the signed-in home block (the guest home has none: AGENT-TEST-CFG-019 sits in the signed-in products_block on the vcst store), so the case signs in first; no such card -> BLOCKED. 'Customize' opens a new browser tab. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [WAIT] the sign-in form is visible
 [ACT] fill 'Email': {{USER_EMAIL}}
 [ACT] fill 'Password': {{USER_PASSWORD}}
@@ -1260,3 +1268,155 @@ Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] ===
 [MATH] the number of v_page = 1 (loading another page is a different argument: exactly one new impression, not none and not two) {SPEC}
 [STATE] ids_page is not equal to ids_first as a set (the new event carries the changed list) {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","a viewport resize re-sends the variations list (binding lost, the rendered-card walk is back); the next page of variations sends nothing (new set masked) or sends twice; the second event carries the same item_id set as the first",Resize the browser back to 1920x1080,VCST-6017 · Archetype:REPLAY · Technique:ST,Draft
+GA-061,GA4 — category infinite scroll sends page-2 view_item_list with only the new items,Analytics > GA4 lists,High,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params); ev(name) = the entries with e[1] === name; n0 = window.dataLayer.length read immediately before an action, and ""from n0"" = window.dataLayer.slice(n0).
+The category used is discovered: a category whose product count is greater than one page (infinite scroll loads a second page).","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[GQL] xAPI searchProducts / products with the category filter on {{FRONT_URL}}/graphql: find a category with totalCount greater than the page size
+[CAPTURE] CATEGORY_URL = the storefront URL of that category; PAGE_SIZE = the number of cards the first page renders
+[NAV] {{FRONT_URL}}CATEGORY_URL
+[WAIT] the first page of product cards has rendered
+[KEY] record ev('view_item_list') as LISTS_P1 and the item_id values of its items as IDS_P1, and n1 = window.dataLayer.length
+[ACT] scroll to the bottom of the product list until the second page is appended
+[WAIT] the card count exceeds PAGE_SIZE and the network is idle
+[KEY] record ev('view_item_list') from n1 as LISTS_P2 and the item_id values of its items as IDS_P2; record the item_list_id of each entry of LISTS_P1 and LISTS_P2
+[ASSERT] read the number of cards appended by the scroll as NEW_CARDS","[COUNT] LISTS_P2 holds exactly one entry for the appended page {BL} (BL-GA4-001)
+[STATE] IDS_P2 and IDS_P1 share no item_id: page 2 carries only the new items {BL} (BL-GA4-001; VCST-6453)
+[COUNT] the number of items in the page-2 list equals NEW_CARDS {SPEC} (AC-12)
+[STATE] the item_list_id of the page-2 list differs from the page-1 list and ends with _page_2 {SPEC} (AC-12)
+[COUNT] the number of page-1 view_item_list entries after the scroll is still LISTS_P1.length: page 1 is not re-sent {BL} (BL-GA4-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",page-2 impression repeats the page-1 products; page 1 re-sent on scroll; the same list id used for both pages,none,VCST-6626 · Archetype:REPLAY · Technique:ST · Probe:VC-ANALYTICS-001,Draft
+GA-062,GA4 — select_item on a page-2 product carries that page’s list id and its index,Analytics > GA4 lists,Medium,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params); ev(name) = the entries with e[1] === name; n0 = window.dataLayer.length read immediately before an action, and ""from n0"" = window.dataLayer.slice(n0).
+Same discovered category as GA-061 (more than one page). Two clicks are made: the first and the last card of the second page (BVA on the page boundary). A click leaves the list, so the case returns to it in between.","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[GQL] find a category with totalCount greater than one page (as in GA-061); CATEGORY_URL = its storefront URL
+[NAV] {{FRONT_URL}}CATEGORY_URL
+[WAIT] the first page has rendered
+[CAPTURE] n_s = window.dataLayer.length
+[ACT] scroll to the bottom until the second page is appended
+[WAIT] the network is idle
+[KEY] record ev('view_item_list') from n_s as LISTS_P2 and the item_id of every item of the page-2 list as IDS_P2
+[CAPTURE] n0 = window.dataLayer.length; FIRST_P2 = the first card of the second page, LAST_P2 = the last card of the second page (their product codes)
+[ACT] click the card title text of FIRST_P2
+[WAIT] the product page is open
+[KEY] record ev('select_item') from n0 as SEL_FIRST (its item_list_id and items[0].item_id and items[0].index)
+[ACT] navigate Back
+[WAIT] the category page is rendered; scroll again until the second page is appended
+[WAIT] network idle
+[CAPTURE] n1 = window.dataLayer.length
+[ACT] click the card title text of LAST_P2
+[WAIT] the product page is open
+[KEY] record ev('select_item') from n1 as SEL_LAST","[STATE] SEL_FIRST.item_list_id equals the item_list_id of the page-2 list and its item_id is FIRST_P2 {SPEC} (AC-13)
+[MATH] SEL_FIRST.items[0].index = the position of FIRST_P2 in IDS_P2 (0 for the first card) {SPEC} (AC-13: select_item items carry index)
+[STATE] SEL_LAST.item_list_id equals the page-2 list id and its item_id is LAST_P2 {SPEC} (AC-13)
+[MATH] SEL_LAST.items[0].index = the position of LAST_P2 in IDS_P2 (IDS_P2.length - 1) {SPEC} (AC-13)
+[COUNT] each click sends exactly one select_item {BL} (BL-GA4-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",index or list id taken from page 1 for a page-2 product; index missing; two select_item per click,none,VCST-6626 · Archetype:SILENT · Technique:BVA,Draft
+GA-063,GA4 — after a sort change select_item uses the new positions,Analytics > GA4 lists,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params); ev(name) = the entries with e[1] === name; n0 = window.dataLayer.length read immediately before an action, and ""from n0"" = window.dataLayer.slice(n0).
+A category with at least 3 products and at least two sort options that give different orders.","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[GQL] find a category with at least 3 products; CATEGORY_URL = its storefront URL
+[NAV] {{FRONT_URL}}CATEGORY_URL
+[WAIT] the product cards have rendered
+[KEY] record the product codes of the first 3 cards in order as ORDER_BEFORE
+[ACT] open the sort-order selector of the product list
+[ACT] choose a sort option that changes the order of the first 3 cards, trying each option in turn until ORDER_AFTER differs from ORDER_BEFORE (if none differs the case is BLOCKED, fixture drift)
+[WAIT] the list has re-rendered and the network is idle
+[KEY] record the product codes of the first 3 cards as ORDER_AFTER
+[CAPTURE] n0 = window.dataLayer.length
+[ACT] click the card title text of the third card
+[WAIT] the product page is open
+[KEY] record ev('select_item') from n0 as SEL","[STATE] SEL.items[0].item_id equals ORDER_AFTER[2] (the third card of the NEW order), and is not ORDER_BEFORE[2] when the two differ {SPEC} (T-19, S17)
+[MATH] SEL.items[0].index = 2 {SPEC} (AC-13: index from the new order)
+[COUNT] exactly one select_item is sent for the click {BL} (BL-GA4-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",index or item taken from the pre-sort positions (stale reportedPositions); two events,none,VCST-6626 · Archetype:STALE · Technique:ST,Draft
+GA-064,GA4 — saved-for-later click sends select_item with list saved_for_later and its index,Analytics > GA4 lists,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params); ev(name) = the entries with e[1] === name; n0 = window.dataLayer.length read immediately before an action, and ""from n0"" = window.dataLayer.slice(n0).
+Signed-in buyer. The cart is prepared in the case by the buyer's own UI actions (FIFTH RULE: a saved-for-later item is a state the environment can take away): one cart line and one saved-for-later item.","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[GQL] xAPI products(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 20, filter: ""productType:Physical"") { items { id code name slug productType minQuantity maxQuantity } } on {{FRONT_URL}}/graphql with the signed-in buyer token
+[CAPTURE] LINE_CODE = the first item that is purchasable without a configuration step (a physical product)
+[CAPTURE] SFL_CODE = a second purchasable physical item that is not LINE_CODE
+[SETUP] empty the cart and the saved-for-later list of the buyer; add LINE_CODE once and SFL_CODE once through their product cards '+' (Increase quantity)
+[NAV] {{FRONT_URL}}/cart
+[ACT] on the SFL_CODE line click 'Save for later'
+[WAIT] the saved-for-later block shows SFL_CODE
+[CAPTURE] n0 = window.dataLayer.length
+[KEY] record ev('view_item_list') from n0 whose items contain SFL_CODE as SFL_LISTS (item_list_id of each)
+[CAPTURE] n1 = window.dataLayer.length
+[ACT] click the card title text of SFL_CODE inside the saved-for-later block
+[WAIT] the product page is open
+[KEY] record ev('select_item') from n1 as SEL (item_list_id, items[0].item_id, items[0].index)","[STATE] SEL.item_list_id is saved_for_later {SPEC} (AC-14, GAP-16: the list id is no longer recently_browsed_products)
+[STATE] SEL.items[0].item_id is SFL_CODE and SEL.items[0].index is its position in the saved-for-later block (0 for the only item) {SPEC} (AC-14)
+[COUNT] SFL_LISTS holds at most one entry per rendering of the block and none carries the id recently_browsed_products {SPEC} (AC-14)
+[COUNT] the click sends exactly one select_item {BL} (BL-GA4-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",saved-for-later click still reported under recently_browsed_products; index missing; impression sent twice,Move the item back to the cart and remove both products from the cart,VCST-6626 · Archetype:SILENT · Technique:EP,Draft
+GA-065,GA4 — compare page click sends select_item with the column index,Analytics > GA4 lists,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params); ev(name) = the entries with e[1] === name; n0 = window.dataLayer.length read immediately before an action, and ""from n0"" = window.dataLayer.slice(n0).
+Three products are added to compare in the case (the compare list is a per-session state the case builds itself).","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[GQL] find a category with at least 3 purchasable products; CATEGORY_URL = its storefront URL
+[NAV] {{FRONT_URL}}CATEGORY_URL
+[WAIT] the product cards have rendered
+[ACT] click 'Add to Compare' on the first three product cards
+[WAIT] the compare badge shows 3
+[CAPTURE] CMP_CODES = their product codes in the order added
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page shows 3 product columns
+[CAPTURE] n0 = window.dataLayer.length
+[ACT] click the product name text in the THIRD column
+[WAIT] the product page is open
+[KEY] record ev('select_item') from n0 as SEL3
+[ACT] navigate Back
+[WAIT] the compare page shows 3 columns
+[CAPTURE] n1 = window.dataLayer.length
+[ACT] click the product name text in the FIRST column
+[WAIT] the product page is open
+[KEY] record ev('select_item') from n1 as SEL1","[MATH] SEL3.items[0].index = 2 {SPEC} (AC-15, T-19: index is the column position)
+[MATH] SEL1.items[0].index = 0 {SPEC} (AC-15)
+[STATE] SEL3.items[0].item_id equals the code shown in the third column and SEL1's the first column {SPEC} (AC-15)
+[COUNT] each click sends exactly one select_item {BL} (BL-GA4-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",index 0 for every column; item taken from the wrong column; select_item missing on the compare page,Clear the compare list,VCST-6626 · Archetype:SILENT · Technique:BVA,Draft
+GA-066,GA4 — opening a product from a category fires view_item once (compare with the pre-merge build),Analytics > GA4 lists,Medium,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params); ev(name) = the entries with e[1] === name; n0 = window.dataLayer.length read immediately before an action, and ""from n0"" = window.dataLayer.slice(n0).
+The dev checklist says ""view_item twice after a category click - check against dev"". The case asserts the specified count (one per visit); a count of 2 is first compared with the pre-merge build before it is filed (a count that is also 2 there is pre-existing).","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[GQL] find a category with at least one purchasable product; CATEGORY_URL = its storefront URL
+[NAV] {{FRONT_URL}}CATEGORY_URL
+[WAIT] the product cards have rendered
+[CAPTURE] n0 = window.dataLayer.length
+[ACT] click the card title text of the first product card
+[WAIT] the product page has rendered with its price
+[KEY] record ev('view_item') from n0 as VIEW_FROM_CATEGORY (count and each entry's items[0].item_id)
+[CAPTURE] PDP_URL = the current URL, n1 = window.dataLayer.length
+[NAV] PDP_URL as a hard reload (deep link, no in-app navigation)
+[WAIT] the product page has rendered
+[KEY] record ev('view_item') from n1 as VIEW_DIRECT","[COUNT] VIEW_FROM_CATEGORY holds exactly 1 entry: one view_item per visit after a category click {SPEC} (AC-16)
+[STATE] its items[0].item_id is the product opened {BL} (BL-GA4-001)
+[COUNT] VIEW_DIRECT holds exactly 1 entry after the hard reload {SPEC} (AC-16)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",view_item fires twice after an in-app click (the dev-reported symptom); zero on a direct load,none,VCST-6626 · Archetype:REPLAY · Technique:EG,Draft
+GA-067,GA4 — a successful sign-in sends one login event and sets user properties,Analytics > GA4 lists,Medium,BL-GA4-004,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend-next PR #19 (the 2.61.0 merge, VCST-6626); on a stand without it the case is BLOCKED for the build, never FAIL, and is never re-based to the pre-merge behaviour.
+Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params); ev(name) = the entries with e[1] === name; n0 = window.dataLayer.length read immediately before an action, and ""from n0"" = window.dataLayer.slice(n0).
+The login event is sent from the landing page after the sign-in (deferred by the merge), once per attempt. {BL} BL-GA4-004 may predate that deferral; the {SPEC} below is the module README plus the test model (S21).","login={{USER_EMAIL}}, password={{USER_PASSWORD}}, url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in in an anonymous browser session
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
+[ACT] Fill 'Email' with {{USER_EMAIL}}
+[ACT] Fill 'Password' with USER_PASSWORD (the lane secret name - the Playwright lane types the value)
+[ACT] Click 'Sign in'
+[WAIT] the page leaves /sign-in (up to 15s)
+[WAIT] the landing page has rendered and the network is idle
+[KEY] record ev('login') over the whole window.dataLayer as LOGINS (count and the URL the page was on when it was sent if the entry carries one)
+[KEY] record the entries with e[0] === 'set' && e[1] === 'user_properties' as USER_PROPS
+[ASSERT] read the URL of the page after the sign-in (LANDING_URL)
+[ACT] click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the header shows the anonymous 'Sign in' link
+[KEY] record ev('login') as LOGINS_AFTER_OUT","[COUNT] LOGINS holds exactly 1 entry for the one successful sign-in {SPEC} (S21; BL-GA4-004 possibly stale)
+[STATE] LANDING_URL is not /sign-in: the event is sent from the landing page and is not lost by the redirect {SPEC} (S21)
+[STATE] USER_PROPS holds at least one entry whose object is non-empty {SPEC} (S21, module README: user_properties set)
+[COUNT] LOGINS_AFTER_OUT holds the same single entry: signing out does not send a second login {SPEC} (S21)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","login event lost by the deferral, or sent twice; user properties not set after sign-in",none,VCST-6626 · Archetype:RACE · Technique:ST,Draft

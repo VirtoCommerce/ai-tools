@@ -149,6 +149,8 @@ SUPPORT_AGENT has StorefrontPermissions.CanImpersonate. IMPERSONATE_TARGET is an
 "IMP-009","Silent Flow — Loading Overlay Displayed During Transition","LoginOnBehalf > Silent Flow > UI","Medium","BL-AUTH-006",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 SUPPORT_AGENT authenticated; the role assigned to SUPPORT_AGENT includes StorefrontPermissions.CanImpersonate (granted via Admin SPA > Security > Roles, NOT directly on the user). IMPERSONATE_TARGET is an active customer.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
@@ -258,6 +260,8 @@ Admin authenticated in platform SPA. Target customer user exists with known user
 "IMP-015","Company Members Page — No 'Login on behalf' Option When Operator Lacks CanImpersonate","LoginOnBehalf > Storefront Entry Point > Absence","High","BL-AUTH-005",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:NO_IMPERSONATE_OPERATOR]
 NO_IMPERSONATE_OPERATOR (USR-023 Nora Manager, role 'Organization manager') is logged in — full member management (Edit role / Block / Delete) but their role does NOT include StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf). Negative branch — the absence test for PR #2280 members-dropdown-menu.vue which gates 'Login on behalf' by CanImpersonate. NOTE: org-maintainer now HAS loginOnBehalf, so SUPPORT_AGENT can no longer be the no-impersonate operator — this case uses the dedicated NO_IMPERSONATE_OPERATOR. /company/members page accessible. Positive counterpart (operator WITH CanImpersonate): IMP-039.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': @td(NO_IMPERSONATE_OPERATOR.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(NO_IMPERSONATE_OPERATOR.password)
@@ -287,6 +291,8 @@ SUPPORT_AGENT is logged in and visible in the company members list.","front_url=
 "IMP-017","Self-Impersonation via URL — Harmless No-Op (by design)","LoginOnBehalf > Edge Cases > Self-Impersonation","Low","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 SUPPORT_AGENT authenticated. Operator's own platform userId known via @td(SUPPORT_AGENT.userId). State: authenticated as SUPPORT_AGENT → self-impersonation attempt → defined outcome.","front_url={{FRONT_URL}}, own_user_id=@td(SUPPORT_AGENT.userId)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
@@ -641,6 +647,8 @@ Unauthenticated user. IMPERSONATE_TARGET (USR-007 David Kim) is assigned a viewe
 [CONSOLE] No unhandled JS TypeError (a single info-level 'Failed to load resource ... /connect/token' line from the storefront propagating the 403 is acceptable and NOT a TypeError)","Both /connect/token calls return 200 (privilege escalation — impersonation succeeds without the permission); silent failure with NEITHER branch (a) NOR branch (b) firing (no alert, no /403 redirect — page hangs in indeterminate state); redirect into target session despite missing permission (JWT sub becomes @td(OTHER_ORG_USER.userId) — security regression); console TypeError","[NAV] Navigate to {{FRONT_URL}} to clear page state","VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006, BL-AUTH-009; RBAC gate negative test. UX implementation verified live 2026-05-12 — vcst-qa storefront does hard /403 redirect (branch b); branch (a) inline VcAlert kept in CSV for forward-compat if storefront rewrites the rejection UX; Re-verified PASS-CLEAN 2026-05-12 v2 via qa-frontend-expert — all 7 assertions matched, JWT sub stayed USR-007 (no privilege escalation), 200→403 token sequence confirmed (evidence: reports/test-lifecycle/IMP-036-reverify-20260512.md). Path to Automated: requires runner-native JWT-decode + sub-claim inequality assertion | Behavior:auth.impersonate.no-permission","Reviewed"
 "IMP-037","RBAC Negative — Operator Without loginOnBehalf: Silent Flow Does NOT Fire","LoginOnBehalf > Authorization > Permission Gate (Silent Flow)","High","BL-AUTH-005, BL-AUTH-006, BL-AUTH-009","ECL-14.1","[PRE:CLEAR_SESSION]
 Authenticated as IMPERSONATE_TARGET (USR-007), whose role lacks platform:security:loginOnBehalf. State: authenticated but lacking impersonation permission → silent flow must NOT auto-execute on impersonate route.","front_url={{FRONT_URL}}, no_perm_operator_email=@td(IMPERSONATE_TARGET.email), no_perm_operator_password=@td(IMPERSONATE_TARGET.password), target_user_id=@td(OTHER_ORG_USER.userId)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': @td(IMPERSONATE_TARGET.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(IMPERSONATE_TARGET.password)
@@ -660,6 +668,8 @@ Authenticated as IMPERSONATE_TARGET (USR-007), whose role lacks platform:securit
 [CONSOLE] No unhandled JS exceptions","Silent flow fires: VcLoaderOverlay persists past 10s OR impersonation banner mounts OR account menu switches to OTHER_ORG_USER identity; neither Branch (a) nor Branch (b) anchors visible after 10s (page hangs in indeterminate state); console TypeError","[NAV] Navigate to {{FRONT_URL}}; sign out IMPERSONATE_TARGET","VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006, BL-AUTH-009; RBAC silent-flow gate negative test; Executed PASS 2026-05-12 via qa-frontend-expert — Branch (a) ImpersonateForm rendered with David Kim header, 0 /connect/token POSTs during silent-flow window, no banner, no loader, JWT sub stayed USR-007 (evidence: reports/test-lifecycle/IMP-036-037-evidence-20260512/IMP-037-branch-a-form-rendered-no-banner.png) | Behavior:auth.impersonate.no-permission","Reviewed"
 "IMP-038","RBAC Propagation — Removing loginOnBehalf from Role Stops Subsequent Impersonations","LoginOnBehalf > Authorization > Permission Propagation","Medium","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
 Required state (independent of execution order): (1) Role '@td(AGENT_TEST_IMP_ROLE.name)' exists with platform:security:loginOnBehalf assigned. (2) Customer user '@td(AGENT_TEST_IMP_CUSTOMER.email)' has '@td(AGENT_TEST_IMP_ROLE.name)' assigned and a known storefront password. **Two-browser-context setup REQUIRED — do NOT share a single context:** STOREFRONT context = playwright-chrome (handles all `[STOREFRONT]`-prefixed steps: /sign-in + /account/impersonate). ADMIN context = playwright-edge (handles all `[ADMIN]`-prefixed steps: /workspace/security role mutations). Each context maintains its own cookies/session; an admin permission change in the ADMIN context must propagate via re-signin in the STOREFRONT context (fresh token claims) — verifying that propagation is the point of this test. State: assign permission → silent flow works → remove permission + fresh signin → silent flow no longer works.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, test_operator_email=@td(AGENT_TEST_IMP_CUSTOMER.email), test_operator_password=@td(AGENT_TEST_IMP_CUSTOMER.password), target_user_id=@td(IMPERSONATE_TARGET.userId), test_role_name=@td(AGENT_TEST_IMP_ROLE.name)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': @td(AGENT_TEST_IMP_CUSTOMER.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(AGENT_TEST_IMP_CUSTOMER.password)
@@ -694,6 +704,8 @@ Required state (independent of execution order): (1) Role '@td(AGENT_TEST_IMP_RO
 "IMP-039","Company Members — 'Login on behalf' Action Visible When Operator Has CanImpersonate and Target Has Security Account","LoginOnBehalf > Storefront Entry Point > Presence","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 SUPPORT_AGENT's assigned role includes StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf). IMPERSONATE_TARGET is an active org member with a security account (has a login). This is the positive counterpart to IMP-015 (absence case). PR #2280 members-dropdown-menu.vue gates the 'Login on behalf' action by CanImpersonate AND target having a security account.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_name=@td(IMPERSONATE_TARGET.name)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
@@ -724,6 +736,8 @@ SUPPORT_AGENT has CanImpersonate in their role. A target org member who has NO l
 "IMP-041","Company Members — Confirmation Modal Cancel Dismisses Without Navigation or Session Change","LoginOnBehalf > Storefront Entry Point > Confirmation Modal Cancel","Medium","BL-AUTH-007","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 SUPPORT_AGENT has CanImpersonate. IMPERSONATE_TARGET has a security account. Operator is on /company/members, actions dropdown is accessible.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_name=@td(IMPERSONATE_TARGET.name)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
@@ -763,6 +777,8 @@ Silent impersonation of IMPERSONATE_TARGET completed (banner visible). Viewport 
 "IMP-043","Mobile Menu — 'Back to {operator}' Item Visible During Impersonation","LoginOnBehalf > Exit > Revert UI Presence > Mobile","High","BL-AUTH-006, BL-AUTH-007","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 Silent impersonation of IMPERSONATE_TARGET completed (banner visible). Viewport is mobile (375px wide). PR #2280 main-menu.vue adds a revert action in the mobile menu during active impersonation.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), viewport=375x812","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Set browser viewport to 375x812 pixels
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
@@ -844,6 +860,8 @@ SUPPORT_AGENT impersonates IMPERSONATE_TARGET via silent flow. The impersonation
 "IMP-047","i18n Smoke — Revert Action and Loader Text Localized in Non-English Locale","LoginOnBehalf > i18n > Revert Localization","Low",,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 PR #2280 adds 7 new i18n strings × 13 locales (revert action text + loader text). This test verifies the revert UI text is translated in a non-English locale. Store language switched to German (de) or Japanese (ja) for verification.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
@@ -924,6 +942,8 @@ LOCKED CONTRACT (observed 2026-05-14, platform 3.1026.0, theme vc-theme-b2b-vue-
 SECURITY: The platform OAuth endpoint has NO status-based gate. Direct REST callers with platform:security:loginOnBehalf can mint a usable 30-min Bearer for Blocked OR Invited targets, bypassing the storefront UI's /blocked redirect entirely. See tests/Sprint-current/VCST-4906/test-execution-report-imp-049.md for the full security analysis.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), blocked_user_id=@td(IMPERSONATE_TARGET_BLOCKED.userId), invited_user_id=@td(IMPERSONATE_TARGET_INVITED.userId)","[NOTE] --- PART A: Blocked User ---
 [PRE:CLEAR_SESSION]
 [NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")
+[WAIT] the password form is shown (the Password field is visible)
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(SUPPORT_AGENT.password)

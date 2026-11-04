@@ -72,7 +72,7 @@ for (const r of refs) {
 }
 const shared = [...byKey].filter(([, b]) => b.length > 1);
 shared.forEach(([k, b]) => fail(`pool group "${k}" feeds ${b.length} blocks (${b.join(', ')}) — their view_item_list items[] would not be attributable`));
-const reserved = ['related', 'cartLine', 'savedForLater', 'savedForLaterTail', 'recentlyBrowsed'].filter((k) => byKey.has(k));
+const reserved = ['related', 'cartLine', 'savedForLater', 'savedForLaterTail', 'recentlyBrowsed', 'wishlist'].filter((k) => byKey.has(k));
 reserved.forEach((k) => fail(`pool group "${k}" belongs to a non-page list but a page block uses it`));
 if (refs.length && !shared.length && !reserved.length) ok(`${refs.length} pool references, each group feeds exactly one block`);
 

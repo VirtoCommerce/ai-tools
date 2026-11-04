@@ -1,0 +1,176 @@
+- generic [ref=f113e1]:
+  - generic [ref=f113e2]:
+    - generic [ref=f113e3]:
+      - list:
+        - listitem:
+          - link "Skip to main content":
+            - /url: "#main-content"
+        - listitem:
+          - link "Skip to footer":
+            - /url: "#footer"
+      - generic [ref=f113e4]:
+        - navigation "Main menu" [ref=f113e5]:
+          - link [ref=f113e6] [cursor=pointer]:
+            - /url: /
+            - img "B2B-store" [ref=f113e7]
+          - generic [ref=f113e10]:
+            - searchbox "Search products and parts" [ref=f113e11]
+            - generic [ref=f113e12]:
+              - button "Barcode scan" [ref=f113e13] [cursor=pointer]
+              - button "Search" [ref=f113e16] [cursor=pointer]
+          - list [ref=f113e19]:
+            - listitem [ref=f113e20]:
+              - link "Bulk order" [ref=f113e21] [cursor=pointer]:
+                - /url: /bulk-order
+            - listitem [ref=f113e230]:
+              - link "Compare" [ref=f113e231] [cursor=pointer]:
+                - /url: /compare
+            - listitem [ref=f113e25]:
+              - link "Lists" [ref=f113e26] [cursor=pointer]:
+                - /url: /account/lists
+            - listitem [ref=f113e30]:
+              - link "Orders" [ref=f113e31] [cursor=pointer]:
+                - /url: /account/orders
+            - listitem [ref=f113e247]:
+              - button "1 Alerts" [ref=f113e250] [cursor=pointer]:
+                - generic [ref=f113e251]: "1"
+                - generic [ref=f113e260]: Alerts
+            - listitem [ref=f113e261]:
+              - link "1 Cart" [ref=f113e262] [cursor=pointer]:
+                - /url: /cart
+                - generic [ref=f113e263]: "1"
+                - generic [ref=f113e271]: Cart
+          - generic [ref=f113e35]:
+            - button "USD · EN" [ref=f113e38] [cursor=pointer]
+            - button "Account menu" [ref=f113e43] [cursor=pointer]: SR
+        - navigation "Main navigation" [ref=f113e44]:
+          - button "All products" [ref=f113e47] [cursor=pointer]
+          - menubar "Navigation" [ref=f113e286]:
+            - menuitem "Christmas" [ref=f113e287] [cursor=pointer]
+            - menuitem "Easter" [ref=f113e288] [cursor=pointer]
+            - menuitem "Sports" [ref=f113e289] [cursor=pointer]
+      - main [ref=f113e50]:
+        - generic [ref=f113e55]:
+          - complementary "Sidebar" [ref=f113e56]:
+            - generic [ref=f113e58]:
+              - generic [ref=f113e59]:
+                - generic [ref=f113e60]: Purchasing
+                - generic [ref=f113e64]:
+                  - link "Dashboard" [ref=f113e66] [cursor=pointer]:
+                    - /url: /account/dashboard
+                  - link "Orders" [ref=f113e296] [cursor=pointer]:
+                    - /url: /account/orders
+                  - link "Lists" [ref=f113e305] [cursor=pointer]:
+                    - /url: /account/lists
+                  - link "Quote requests" [ref=f113e72] [cursor=pointer]:
+                    - /url: /account/quotes
+                  - link "Purchase requests" [ref=f113e78] [cursor=pointer]:
+                    - /url: /account/purchase-requests
+                  - link "Saved for later" [ref=f113e84] [cursor=pointer]:
+                    - /url: /account/saved-for-later
+                  - link "Back-in-stock list" [ref=f113e90] [cursor=pointer]:
+                    - /url: /account/back-in-stock
+              - generic [ref=f113e95]:
+                - generic [ref=f113e96]: Marketing
+                - generic [ref=f113e100]:
+                  - link "Coupons & promotions" [ref=f113e102] [cursor=pointer]:
+                    - /url: /account/coupons
+                  - link "Notifications" [ref=f113e108] [cursor=pointer]:
+                    - /url: /account/notifications
+                  - link "Points history" [ref=f113e114] [cursor=pointer]:
+                    - /url: /account/points-history
+              - generic [ref=f113e119]:
+                - generic [ref=f113e120]: User
+                - generic [ref=f113e124]:
+                  - link "Profile" [ref=f113e126] [cursor=pointer]:
+                    - /url: /account/profile
+                  - link "Addresses" [ref=f113e132] [cursor=pointer]:
+                    - /url: /account/addresses
+                  - link "Change password" [ref=f113e138] [cursor=pointer]:
+                    - /url: /account/change-password
+                  - link "Saved credit cards" [ref=f113e144] [cursor=pointer]:
+                    - /url: /account/saved-credit-cards
+          - generic [ref=f113e151]:
+            - heading "Profile" [level=1] [ref=f113e152]
+            - generic [ref=f113e156]:
+              - generic [ref=f113e157]:
+                - generic [ref=f113e158]: First name*
+                - textbox "First name" [ref=f113e160]:
+                  - /placeholder: Enter your first name
+                  - text: SmokeTest
+              - generic [ref=f113e161]:
+                - generic [ref=f113e162]: Last name*
+                - textbox "Last name" [ref=f113e164]:
+                  - /placeholder: Enter your first name
+                  - text: Runner
+              - generic [ref=f113e165]:
+                - generic [ref=f113e166]: Email
+                - textbox "Email" [disabled] [ref=f113e168]:
+                  - /placeholder: Enter your first name
+                  - text: agent-test-shopper-vcpt@test-agent.com
+              - generic [ref=f113e169]:
+                - generic [ref=f113e171]:
+                  - generic [ref=f113e172]: Default language
+                  - generic [ref=f113e177] [cursor=pointer]:
+                    - combobox "Default language" [ref=f113e178]: English (United States)
+                    - button "Toggle dropdown" [ref=f113e180]
+                - generic [ref=f113e185]:
+                  - generic [ref=f113e186]: Default currency
+                  - generic [ref=f113e191] [cursor=pointer]:
+                    - combobox "Default currency" [ref=f113e192]: USD
+                    - button "Toggle dropdown" [ref=f113e194]
+              - button "Update" [disabled] [ref=f113e199]
+      - contentinfo "Footer" [ref=f113e202]:
+        - generic [ref=f113e203]:
+          - generic [ref=f113e204]:
+            - img "B2B-store" [ref=f113e206]
+            - navigation [ref=f113e207]:
+              - generic [ref=f113e354]:
+                - generic [ref=f113e355]: Account Details
+                - generic [ref=f113e359]:
+                  - link "Orders1" [ref=f113e361] [cursor=pointer]:
+                    - /url: /account/orders
+                  - link "Organization lists" [ref=f113e363] [cursor=pointer]:
+                    - /url: /account/lists
+                  - link "Quote requests" [ref=f113e365] [cursor=pointer]:
+                    - /url: /account/quotes
+                  - link "Notifications" [ref=f113e367] [cursor=pointer]:
+                    - /url: /account/notifications
+                  - link "Checkout defaults" [ref=f113e369] [cursor=pointer]:
+                    - /url: /account/checkout-defaults
+              - generic [ref=f113e370]:
+                - generic [ref=f113e371]: Customer Support
+                - generic [ref=f113e375]:
+                  - link "Catalog" [ref=f113e377] [cursor=pointer]:
+                    - /url: /catalog
+                  - link "Contact Us" [ref=f113e379] [cursor=pointer]:
+                    - /url: /contacts
+                  - link "Find a Branch" [ref=f113e381] [cursor=pointer]:
+                    - /url: /branch/vendor-fulfillment
+              - generic [ref=f113e382]:
+                - generic [ref=f113e383]: Online Resources
+                - generic [ref=f113e387]:
+                  - link "Sign up" [ref=f113e389] [cursor=pointer]:
+                    - /url: /sign-up
+                  - link "Catalog" [ref=f113e391] [cursor=pointer]:
+                    - /url: /catalog
+                  - link "Demo landing" [ref=f113e393] [cursor=pointer]:
+                    - /url: /demo-landing
+                  - link "Builder.IO Page" [ref=f113e395] [cursor=pointer]:
+                    - /url: /builder-io-page
+              - generic [ref=f113e396]:
+                - generic [ref=f113e397]: Brands
+                - link "All popular brands" [ref=f113e403] [cursor=pointer]:
+                  - /url: /brands
+          - generic [ref=f113e208]:
+            - generic [ref=f113e209]:
+              - text: Ver. 3.2.0. © 2026
+              - strong [ref=f113e210]: Virto Commerce
+              - text: . All rights reserved
+            - generic [ref=f113e211]:
+              - text: ASP.NET ecommerce platform
+              - link "Virto Commerce" [ref=f113e212] [cursor=pointer]:
+                - /url: https://virtocommerce.com
+    - 'complementary "Environment indicator: QA-audit-test" [ref=f113e213]':
+      - generic [ref=f113e214]: QA-audit-test
+  - region "Notifications"
