@@ -1,40 +1,28 @@
 {
-  "runId": "REG-2026-11-04-0952",
-  "status": "completed",
-  "startedAt": "2026-11-04T08:53:03.698Z",
-  "windowStart": "2026-11-04T08:53:03.698Z",
-  "selection": "061,098",
+  "runId": "REG-2026-11-04-1022",
+  "status": "in_progress",
+  "startedAt": "2026-11-04T10:22:45.185Z",
+  "windowStart": "2026-11-04T10:22:45.185Z",
+  "selection": "086,050h,015",
   "env": "vcst",
   "scoped": true,
-  "cases": "ids",
-  "ids": [
-    "SRCHA-007",
-    "CMP-004",
-    "CMP-007",
-    "CMP-024",
-    "CMP-032"
-  ],
-  "purpose": "Verify CMP-003 numeric Price probe: 098 cases back on search, 061 SRCHA-007 strict Errors 0 (cases from branch test/wide-test-03-nov worktree)",
-  "plan": "reports/regression/REG-2026-11-04-0952/preflight.json",
+  "purpose": "VCST-6251 small-scope regression: reviews / lists (carts) / quotes after the 5 fix PRs",
+  "plan": "reports/regression/REG-2026-11-04-1022/preflight.json",
   "suites": {
-    "061": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "startedAt": "2026-11-04T08:54:20Z",
-      "pass": 1,
-      "fail": 0,
-      "blocked": 0
-    },
-    "098": {
-      "status": "done",
+    "015": {
+      "status": "running",
       "lane": "browser",
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-04T08:59:57Z",
-      "pass": 4,
-      "fail": 0,
-      "blocked": 0
+      "startedAt": "2026-11-04T10:24:30.551Z"
+    },
+    "050h": {
+      "status": "running",
+      "lane": "fastpath",
+      "note": "0 browser cases; 47 machine, 1 manual, 1 preflight-skipped (WISH-037)"
+    },
+    "086": {
+      "status": "running",
+      "lane": "fastpath"
     }
-  },
-  "finishedAt": "2026-11-04T09:10:14.245Z"
+  }
 }
