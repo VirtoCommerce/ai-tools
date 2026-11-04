@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-11-03",
-    "totalSuites": 175,
+    "totalSuites": 176,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -4323,6 +4323,33 @@
       "clickDriven": true,
       "preferredBrowser": "playwright-edge",
       "browserRequirementReason": "WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol (WebAuthn.addVirtualAuthenticator): Chromium lanes only. Firefox has no CDP and cannot run the ceremony."
+    },
+    {
+      "id": "117",
+      "name": "Sanity — multi-source indexing and signed webhook",
+      "file": "regression/suites/Backend/sanity/117-sanity-multi-source.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 21,
+      "estimatedMinutes": 35,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "sanity",
+        "cms",
+        "pages",
+        "webhook",
+        "indexing",
+        "journey"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Sanity"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-6475 (vc-module-sanity PR #4, build 3.1004.0-pr-4-f7a8). Sanity content feeds Virto Pages through a full index rebuild or a signed webhook (POST /api/pages/sanity). SAN-001 is the [JOURNEY] case. REST/xAPI only: the Admin SPA settings blade was not exercised (SAN-004 emulates its save through the settings API). Env-scoped by requiresModules; select it by id (`117`). Shares exclusiveGroup search-index:IndexationJob with 061/061b because every rebuild case starts a full Pages IndexationJob. Data: npm run seed:sanity / seed:sanity:teardown, guard npm run td:validate:sanity; the signed webhook helper is scripts/seed-data/sanity/sign-webhook.mjs. Needs Sanity:WebhookSecrets and a Sanity:Secrets entry qaToken on the stand (without them the webhook cases are BLOCKED, never FAIL). Every rebuild case has a precondition: the Pages module caches the full-rebuild change list for 10 min (VCST-6586), so publish a page through the webhook first or wait. Settings are written with POST /api/platform/settings (clear with \"\", null does not clear) and restored in Cleanup. No BL-* invariant exists for the sanity domain yet. Promoted from runs REG-2026-10-28-1005/-1018/-1031 on vcptcore; SAN-021 (platform log) stays Manual.",
+      "exclusiveGroup": "search-index:IndexationJob"
     }
   ],
   "selections": {
