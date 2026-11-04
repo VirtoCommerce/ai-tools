@@ -29,16 +29,35 @@ export const EMAIL_DOMAIN = 'example.com';
 /** The ONLY password source — an env var NAME, never a value (VCST-5406). */
 export const PASSWORD_VAR = 'DEFAULT_TEST_PASSWORD';
 export const STORE_MODE_SETTING = 'MultiFactorAuthentication.StoreMode';
-/** Allowed values read live on vcst 2026-10-23 (setting allowedValues); null = no store override. */
-export const STORE_MODES = Object.freeze(['Use global setting', 'Enabled', 'Disabled']);
+// No list of StoreMode values lives here: the creator reads the setting's allowedValues from the stand
+// (GOLDEN RULE). A transcribed list of the three 3.1000.x values made the creator refuse the VCST-6597
+// modes AdminManaged / CustomerChoice the moment they shipped.
 export const MFA_NOTIFICATION_TYPE = 'MfaSignInEmailNotification';
 /** OrganizationMembership.Status values (Customer.OrganizationMembershipStatuses, KB-A241C915). */
 export const MEMBERSHIP_STATUSES = Object.freeze(['Approved', 'Invited', 'Rejected', 'Deleted']);
 /** Org-scoped roles (VCST-5028 — org roles live on the membership, never global). */
 export const ORG_ROLE_MEMBER = 'org-employee';
 export const ORG_ROLE_OPERATOR = 'org-maintainer'; // carries platform:security:loginOnBehalf (live 2026-10-23)
+/**
+ * The run's own org role for the VCST-6597 company MFA switch: the permissions of ORG_ROLE_MEMBER read live,
+ * plus ORG_MFA_PERMISSION. No stock org role carries that permission (domain-map auth rev 4 D28), and a
+ * stock role is never edited for a run — so the maintainer/member pair differs in that permission only.
+ */
+export const ORG_ROLE_MFA_MANAGER = 'run:OrgMfa';
+export const ORG_MFA_PERMISSION = 'xapi:my_organization:mfa:manage';
 /** A back-office role we create per run, read-only, so the Manager/Customer pair differs only by userType. */
 export const BACKOFFICE_PERMISSIONS = Object.freeze(['platform:security:read']);
+/**
+ * Every run role, by tag → the permissions it holds (null = derived live, see ORG_ROLE_MFA_MANAGER). The
+ * ids are roleNameFor(runId, tag): teardown deletes exactly these and nothing else. The MFA permission
+ * names are checked against the stand's permission list before a role is written (fail loud, never assumed).
+ */
+export const RUN_ROLES = Object.freeze({
+  Backoffice: BACKOFFICE_PERMISSIONS,
+  MfaRead: Object.freeze(['mfa:read']),
+  MfaManage: Object.freeze(['mfa:read', 'mfa:manage']),
+  OrgMfa: null,
+});
 
 /**
  * The account kinds. Every field a kind does not set takes the baseline: Customer, contact, store =
@@ -55,7 +74,7 @@ export const BACKOFFICE_PERMISSIONS = Object.freeze(['platform:security:read']);
  */
 const BASE = Object.freeze({
   userType: 'Customer', hasContact: true, emailConfirmed: true, lockoutEnabled: true,
-  twoFactorEnabled: false, backofficeRole: false, orgs: 0, orgRole: ORG_ROLE_MEMBER, storeScope: 'mfa', targetKind: null,
+  twoFactorEnabled: false, backofficeRole: false, backofficeRoleTag: 'Backoffice', orgs: 0, orgRole: ORG_ROLE_MEMBER, storeScope: 'mfa', targetKind: null,
 });
 /** Contract fields, not account data: never compared between siblings. */
 export const META_FIELDS = Object.freeze(['sibling', 'discriminates', 'allowedConfounds', 'purpose']);
@@ -94,6 +113,20 @@ export const KINDS = Object.freeze({
     purpose: 'lockoutEnabled false (data.auth.account.lockout-disabled): what MFA does with an account it cannot lock' },
   'per-user-2fa': { ...BASE, twoFactorEnabled: true, sibling: 'customer-confirmed', discriminates: 'twoFactorEnabled',
     purpose: 'Identity twoFactorEnabled true: per-user 2FA flag against store/global MFA' },
+  'manager-mfa-read': { ...BASE, userType: 'Manager', hasContact: false, backofficeRole: true, backofficeRoleTag: 'MfaRead', storeScope: 'none',
+    sibling: 'manager-mfa-manage', discriminates: 'backofficeRoleTag',
+    purpose: 'Back-office Manager with mfa:read only (data.auth.operator.mfa-read-only): sees the MFA widget and blade, cannot Save, PUT 403' },
+  'manager-mfa-manage': { ...BASE, userType: 'Manager', hasContact: false, backofficeRole: true, backofficeRoleTag: 'MfaManage', storeScope: 'none',
+    sibling: 'manager-mfa-read', discriminates: 'backofficeRoleTag',
+    purpose: 'The same Manager with mfa:read + mfa:manage: the mode can be changed and saved, PUT 200' },
+  'org-mfa-maintainer': { ...BASE, orgs: 1, orgRole: ORG_ROLE_MFA_MANAGER, targetKind: 'org-mfa-member',
+    sibling: 'org-mfa-member', discriminates: 'orgRole',
+    allowedConfounds: {
+      targetKind: `targetKind provisions the OTHER side of this pair: the maintainer's fixture creates its org-mfa-member in the maintainer's own org on the same store, so both sides see the same organization; it is not a property of either account's sign-in or of the company MFA switch.`,
+    },
+    purpose: 'Org member whose run org role adds xapi:my_organization:mfa:manage (data.auth.role.org-mfa-manage): Company › Info widget, updateMfaOrganizationMode accepted' },
+  'org-mfa-member': { ...BASE, orgs: 1, sibling: 'org-mfa-maintainer', discriminates: 'orgRole',
+    purpose: `Org employee in the maintainer's org: no company widget, mfa_organization_not_allowed — created BY org-mfa-maintainer (targetKind), never alone` },
 });
 export const KIND_NAMES = Object.freeze(Object.keys(KINDS));
 
@@ -108,7 +141,12 @@ export const storeIdFor = (runId) => `${PREFIX}-${assertRunId(runId)}`;
 export const invalidUrlFor = (runId) => `https://agent-test-mfa-${assertRunId(runId)}.invalid`;
 /** Storefront-binding fields a cloned store must never share with its source. */
 export const STOREFRONT_BINDING_FIELDS = Object.freeze(['url', 'secureUrl']);
-export const roleNameFor =(runId) => `${PREFIX}-${assertRunId(runId)}-Backoffice`;
+export const roleNameFor = (runId, tag = 'Backoffice') => {
+  if (!(tag in RUN_ROLES)) throw new Error(`unknown run role tag ${tag} (one of ${Object.keys(RUN_ROLES).join(', ')})`);
+  return `${PREFIX}-${assertRunId(runId)}-${tag}`;
+};
+/** Every role id a run may own — the only role ids teardown ever deletes. */
+export const roleIdsFor = (runId) => Object.keys(RUN_ROLES).map((tag) => roleNameFor(runId, tag));
 export const orgNameFor = (runId, tag) => `${PREFIX}-${assertRunId(runId)}-${tag}`;
 /** Every entity of a run carries this marker — the teardown sweep key. */
 export const runMarker = (runId) => `${EMAIL_PREFIX}${assertRunId(runId)}-`;
@@ -123,9 +161,16 @@ export const isRunName = (name, runId) => {
   return n === base || n.startsWith(`${base}-`);
 };
 
+/** A mode must be one the stand's setting allows; `allowedModes` is that list, read live by the creator. */
+export function assertStoreMode(mode, allowedModes) {
+  if (mode === null || mode === undefined) return;
+  if (!Array.isArray(allowedModes) || !allowedModes.length) throw new Error(`StoreMode "${mode}": no allowedValues read from the stand to check it against`);
+  if (!allowedModes.includes(mode)) throw new Error(`StoreMode "${mode}" not in the stand's ${allowedModes.join(' / ')}`);
+}
+
 /** POST /api/stores body: the minimum cloned from a source store + our mode. */
-export function storeBody(runId, source, mode) {
-  if (mode !== null && mode !== undefined && !STORE_MODES.includes(mode)) throw new Error(`StoreMode "${mode}" not in ${STORE_MODES.join(' / ')}`);
+export function storeBody(runId, source, mode, allowedModes) {
+  assertStoreMode(mode, allowedModes);
   const id = storeIdFor(runId);
   return {
     id, name: id, storeState: 'Open', timeZone: source.timeZone || 'UTC',
@@ -284,6 +329,11 @@ export function specProblems(kinds = KINDS) {
   if (kinds['per-user-2fa']?.twoFactorEnabled !== true) out.push('per-user-2fa has twoFactorEnabled !== true');
   if (kinds['b2b-two-org']?.orgs !== 2) out.push('b2b-two-org must sit in exactly 2 orgs');
   if (kinds['impersonation-operator']?.orgRole !== ORG_ROLE_OPERATOR) out.push('impersonation-operator must hold the operator org role');
+  if (kinds['org-mfa-maintainer']?.orgRole !== ORG_ROLE_MFA_MANAGER) out.push('org-mfa-maintainer must hold the run org role that carries the company MFA permission');
+  for (const [name, k] of Object.entries(kinds)) {
+    if (k.backofficeRole && !(k.backofficeRoleTag in RUN_ROLES)) out.push(`${name}: backofficeRoleTag "${k.backofficeRoleTag}" is not a run role`);
+  }
+  if (RUN_ROLES.MfaRead?.includes('mfa:manage')) out.push('RUN_ROLES.MfaRead must not carry mfa:manage — the read-only operator would decide nothing');
   if (!/^[a-z0-9.-]+$/.test(EMAIL_DOMAIN) || !/example\.(com|org|net)$/.test(EMAIL_DOMAIN)) out.push(`EMAIL_DOMAIN ${EMAIL_DOMAIN} is not an RFC 2606 reserved domain — a back-office code would reach a real inbox`);
   if (!PREFIX.startsWith('AGENT-TEST-')) out.push('PREFIX must start with AGENT-TEST-');
   return out;
