@@ -4551,5 +4551,21 @@
     "pass_rate": 100,
     "duration_minutes": 23.93,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-05-1740",
+    "date": "2026-11-05",
+    "suiteId": "106",
+    "suiteName": "Sales Rep — Tasks (storefront)",
+    "environment": "vcst",
+    "browser": "playwright-firefox",
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 14.75,
+    "mode": "interactive"
   }
 ]

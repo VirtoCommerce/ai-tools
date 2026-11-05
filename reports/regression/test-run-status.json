@@ -1,6 +1,6 @@
 {
   "runId": "REG-2026-11-05-1740",
-  "status": "in_progress",
+  "status": "completed",
   "startedAt": "2026-11-05T16:41:03.321Z",
   "windowStart": "2026-11-05T16:41:03.321Z",
   "selection": "106",
@@ -17,11 +17,16 @@
   "plan": "reports/regression/REG-2026-11-05-1740/preflight.json",
   "suites": {
     "106": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "browser": "playwright-firefox",
       "total": 4,
-      "startedAt": "2026-11-05T16:41:57.130Z"
+      "startedAt": "2026-11-05T16:41:57.130Z",
+      "pass": 4,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-05T16:58:21.182Z"
     }
-  }
+  },
+  "finishedAt": "2026-11-05T16:58:38.177Z"
 }
