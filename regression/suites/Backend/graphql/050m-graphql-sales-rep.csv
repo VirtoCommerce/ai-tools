@@ -2098,3 +2098,299 @@ query { salesRepCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first
 [DATA label=buyer] data.salesRepCoupons.items.0 is null {BL}",[UI] a buyer who opens the coupons URL is sent out of the rep area (SR-CP-075),"the anonymous call returns data or a 5xx
 the buyer receives coupons
 the buyer call crashes with a server error instead of an empty answer",none (read-only),VCST-6158 · BL-SR-011 · Archetype:SCOPE · Technique:DT · KB-3F3D3C6B (the scoped schema answers 200 for non-reps) · Catches: a buyer reads the rep tool's coupon list · Behavior:sr.coupons · Observed: SBTM-VCST-6158-2026-11-03,Draft
+SR-GQL-175,"salesRepTasks priorities: names match case-insensitively and exactly (High never pulls in Highest), picks union, an empty list is no filter, any unknown, numeric or comma-joined name fails closed with no error",GraphQL > Sales Rep > Tasks > Filters,High,BL-SR-009,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. FIFTH RULE: creates its own three tasks (priorities High, Highest and Low) far in the future (2030) so they never mix with the seeded task groups, isolates them with the run keyword and deletes them in the last steps. Grounding: the argument document of SalesRepTasksQuery, vc-module-sales-rep#33 (""priorities fails closed, any case"") and the run folder of VCST-6157 (round 1 C-6, C-7, C-14, scenarios SC-10.1 to SC-10.4: case-insensitive, unknown name 0, numeric and comma names 0, [""""] 0, [] unfiltered 26 of 26).",run=AGENT-TEST-6157-GQL-175; due=2030-06-15T10:00:00Z,"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP t_high]
+mutation CreateTask($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name priority customerId customerName dueDate } }
+[GQL-VARS t_high] {""command"": {""name"": ""{{run}} high"", ""type"": ""Other"", ""dueDate"": ""{{due}}"", ""priority"": ""High""}}
+[GQL-EXEC t_high]
+[GQL-CAPTURE t_high.data.createSalesRepTask.id → T_HIGH]
+[GQL-OP t_highest]
+mutation CreateTask($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name priority customerId customerName dueDate } }
+[GQL-VARS t_highest] {""command"": {""name"": ""{{run}} highest"", ""type"": ""Other"", ""dueDate"": ""{{due}}"", ""priority"": ""Highest""}}
+[GQL-EXEC t_highest]
+[GQL-CAPTURE t_highest.data.createSalesRepTask.id → T_HIGHEST]
+[GQL-OP t_low]
+mutation CreateTask($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name priority customerId customerName dueDate } }
+[GQL-VARS t_low] {""command"": {""name"": ""{{run}} low"", ""type"": ""Other"", ""dueDate"": ""{{due}}"", ""priority"": ""Low""}}
+[GQL-EXEC t_low]
+[GQL-CAPTURE t_low.data.createSalesRepTask.id → T_LOW]
+[GQL-OP q_base]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_base] {""kw"":""{{run}}""}
+[GQL-EXEC q_base]
+[GQL-OP q_high]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_high] {""kw"":""{{run}}"",""p"":[""High""]}
+[GQL-EXEC q_high]
+[GQL-OP q_case]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_case] {""kw"":""{{run}}"",""p"":[""hIgH""]}
+[GQL-EXEC q_case]
+[GQL-OP q_union]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_union] {""kw"":""{{run}}"",""p"":[""High"",""Highest""]}
+[GQL-EXEC q_union]
+[GQL-OP q_all]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_all] {""kw"":""{{run}}"",""p"":[""Lowest"",""Low"",""Normal"",""High"",""Highest""]}
+[GQL-EXEC q_all]
+[GQL-OP q_empty]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_empty] {""kw"":""{{run}}"",""p"":[]}
+[GQL-EXEC q_empty]
+[GQL-OP q_bad]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_bad] {""kw"":""{{run}}"",""p"":[""High"",""nope""]}
+[GQL-EXEC q_bad]
+[GQL-OP q_odd]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_odd] {""kw"":""{{run}}"",""p"":[""3"",""Low,High"",""""]}
+[GQL-EXEC q_odd]
+[GQL-OP d_high]
+mutation DeleteTask($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS d_high] {""command"": {""id"": ""{{T_HIGH}}""}}
+[GQL-EXEC d_high]
+[GQL-OP d_highest]
+mutation DeleteTask($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS d_highest] {""command"": {""id"": ""{{T_HIGHEST}}""}}
+[GQL-EXEC d_highest]
+[GQL-OP d_low]
+mutation DeleteTask($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS d_low] {""command"": {""id"": ""{{T_LOW}}""}}
+[GQL-EXEC d_low]","[ERRORS label=t_high] errors[] empty {SPEC}
+[ERRORS label=t_highest] errors[] empty {SPEC}
+[ERRORS label=t_low] errors[] empty {SPEC}
+[ERRORS label=q_base] errors[] empty {SPEC}
+[DATA label=q_base] data.salesRepTasks.totalCount = 3 {SPEC}
+[ERRORS label=q_high] errors[] empty {SPEC}
+[DATA label=q_high] data.salesRepTasks.totalCount = 1 {SPEC}
+[DATA label=q_high] data.salesRepTasks.items.0.id = {{T_HIGH}} {SPEC}
+[ERRORS label=q_case] errors[] empty {OBSERVED}
+[DATA label=q_case] data.salesRepTasks.totalCount = 1 {OBSERVED}
+[DATA label=q_case] data.salesRepTasks.items.0.id = {{T_HIGH}} {OBSERVED}
+[ERRORS label=q_union] errors[] empty {SPEC}
+[DATA label=q_union] data.salesRepTasks.totalCount = 2 {SPEC}
+[ERRORS label=q_all] errors[] empty {OBSERVED}
+[DATA label=q_all] data.salesRepTasks.totalCount = 3 {OBSERVED}
+[ERRORS label=q_empty] errors[] empty {OBSERVED}
+[DATA label=q_empty] data.salesRepTasks.totalCount = 3 {OBSERVED}
+[ERRORS label=q_bad] errors[] empty {SPEC}
+[DATA label=q_bad] data.salesRepTasks.totalCount = 0 {SPEC}
+[ERRORS label=q_odd] errors[] empty {OBSERVED}
+[DATA label=q_odd] data.salesRepTasks.totalCount = 0 {OBSERVED}
+[DATA label=d_high] data.deleteSalesRepTask = true {SPEC}","[API] errors[] is empty in every GraphQL response {SPEC}
+[NETWORK] no 4xx/5xx on /graphql/sales-rep","""High"" returns the Highest task as well (prefix or substring match)
+""hIgH"" returns nothing or a different task from ""High""
+A list with one unknown name returns the unfiltered tasks (fail open) or an error
+A numeric or comma-joined name is read as a priority
+An empty priorities list returns nothing instead of every task
+errors[] non-empty, 4xx/5xx on /graphql","none (d_high, d_highest and d_low delete the three tasks inline; a leftover AGENT-TEST-6157-GQL-175 task is swept by the AGENT-TEST- teardown)","VCST-6157 · Archetype:SCOPE · Technique:EP · Catches: a priority filter that matches by prefix, fails open on one bad name, or reads a numeric or comma-joined string as a priority · Observed: KB-55D54B4A · Source: vc-module-sales-rep#33 head 8d4a30bd (SalesRepTasksQueryHandler)",Draft
+SR-GQL-176,"salesRepTasks customerIds: only the rep's served customers match, an unserved or all-zero id matches nothing without an error, unlinked tasks never match, an empty list is no filter",GraphQL > Sales Rep > Tasks > Filters,High,BL-SR-002; BL-SR-009,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. FIFTH RULE: creates its own three tasks (linked to ORG_ACME, linked to ORG_TECHFLOW, linked to nobody), far in the future, isolated by the run keyword, deleted in the last steps; the seeded SR_TASK_* tasks carry no customer link, so only these can tell a working filter from a vacuous one. SR_REP_PRIMARY serves ORG_ACME and ORG_TECHFLOW and does not serve SR_UNSERVED_ORG. Grounding: argument document of SalesRepTasksQuery, KB-55D54B4A (customerIds never returns unlinked or order-linked tasks) and the VCST-6157 run folder (round 2 C-32, SC-5.1: mixed served, unserved and unknown ids return the served ones only).",run=AGENT-TEST-6157-GQL-176; due=2030-06-15T10:00:00Z; org_a_id=@td(ORG_ACME.platform_id); org_a_name=@td(ORG_ACME.name); org_b_id=@td(ORG_TECHFLOW.platform_id); unserved_id=@td(SR_UNSERVED_ORG.platform_id); zero_id=00000000-0000-0000-0000-000000000000,"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP t_a]
+mutation CreateTask($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name priority customerId customerName dueDate } }
+[GQL-VARS t_a] {""command"": {""name"": ""{{run}} a"", ""type"": ""Other"", ""dueDate"": ""{{due}}"", ""priority"": ""Normal"", ""customerId"": ""{{org_a_id}}""}}
+[GQL-EXEC t_a]
+[GQL-CAPTURE t_a.data.createSalesRepTask.id → T_A]
+[GQL-OP t_b]
+mutation CreateTask($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name priority customerId customerName dueDate } }
+[GQL-VARS t_b] {""command"": {""name"": ""{{run}} b"", ""type"": ""Other"", ""dueDate"": ""{{due}}"", ""priority"": ""Normal"", ""customerId"": ""{{org_b_id}}""}}
+[GQL-EXEC t_b]
+[GQL-CAPTURE t_b.data.createSalesRepTask.id → T_B]
+[GQL-OP t_n]
+mutation CreateTask($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name priority customerId customerName dueDate } }
+[GQL-VARS t_n] {""command"": {""name"": ""{{run}} n"", ""type"": ""Other"", ""dueDate"": ""{{due}}"", ""priority"": ""Normal""}}
+[GQL-EXEC t_n]
+[GQL-CAPTURE t_n.data.createSalesRepTask.id → T_N]
+[GQL-OP q_base]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_base] {""kw"":""{{run}}""}
+[GQL-EXEC q_base]
+[GQL-OP q_a]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_a] {""kw"":""{{run}}"",""c"":[""{{org_a_id}}""]}
+[GQL-EXEC q_a]
+[GQL-OP q_ab]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_ab] {""kw"":""{{run}}"",""c"":[""{{org_a_id}}"",""{{org_b_id}}""]}
+[GQL-EXEC q_ab]
+[GQL-OP q_mixed]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_mixed] {""kw"":""{{run}}"",""c"":[""{{org_a_id}}"",""{{unserved_id}}"",""{{zero_id}}""]}
+[GQL-EXEC q_mixed]
+[GQL-OP q_unserved]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_unserved] {""kw"":""{{run}}"",""c"":[""{{unserved_id}}""]}
+[GQL-EXEC q_unserved]
+[GQL-OP q_zero]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_zero] {""kw"":""{{run}}"",""c"":[""{{zero_id}}""]}
+[GQL-EXEC q_zero]
+[GQL-OP q_empty]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS q_empty] {""kw"":""{{run}}"",""c"":[]}
+[GQL-EXEC q_empty]
+[GQL-OP d_a]
+mutation DeleteTask($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS d_a] {""command"": {""id"": ""{{T_A}}""}}
+[GQL-EXEC d_a]
+[GQL-OP d_b]
+mutation DeleteTask($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS d_b] {""command"": {""id"": ""{{T_B}}""}}
+[GQL-EXEC d_b]
+[GQL-OP d_n]
+mutation DeleteTask($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS d_n] {""command"": {""id"": ""{{T_N}}""}}
+[GQL-EXEC d_n]","[ERRORS label=t_a] errors[] empty {SPEC}
+[ERRORS label=t_b] errors[] empty {SPEC}
+[ERRORS label=t_n] errors[] empty {SPEC}
+[DATA label=q_base] data.salesRepTasks.totalCount = 3 {SPEC}
+[ERRORS label=q_a] errors[] empty {SPEC}
+[DATA label=q_a] data.salesRepTasks.totalCount = 1 {SPEC}
+[DATA label=q_a] data.salesRepTasks.items.0.id = {{T_A}} {SPEC}
+[DATA label=q_a] data.salesRepTasks.items.0.customerName = {{org_a_name}} {SPEC}
+[ERRORS label=q_ab] errors[] empty {SPEC}
+[DATA label=q_ab] data.salesRepTasks.totalCount = 2 {SPEC}
+[ERRORS label=q_mixed] errors[] empty {OBSERVED}
+[DATA label=q_mixed] data.salesRepTasks.totalCount = 1 {OBSERVED}
+[DATA label=q_mixed] data.salesRepTasks.items.0.id = {{T_A}} {OBSERVED}
+[ERRORS label=q_unserved] errors[] empty {BL}
+[DATA label=q_unserved] data.salesRepTasks.totalCount = 0 {BL}
+[ERRORS label=q_zero] errors[] empty {OBSERVED}
+[DATA label=q_zero] data.salesRepTasks.totalCount = 0 {OBSERVED}
+[ERRORS label=q_empty] errors[] empty {OBSERVED}
+[DATA label=q_empty] data.salesRepTasks.totalCount = 3 {OBSERVED}
+[DATA label=d_a] data.deleteSalesRepTask = true {SPEC}","[API] errors[] is empty in every GraphQL response {SPEC}
+[NETWORK] no 4xx/5xx on /graphql/sales-rep","A served customer id returns the unlinked task as well
+An id of an organization the rep does not serve returns tasks (a leak) or an error instead of nothing
+A list mixing served and unserved ids returns nothing or everything
+An empty customerIds list returns nothing instead of every task
+errors[] non-empty, 4xx/5xx on /graphql","none (d_a, d_b and d_n delete the three tasks inline; a leftover AGENT-TEST-6157-GQL-176 task is swept by the AGENT-TEST- teardown)","VCST-6157 · Archetype:SCOPE · Technique:EP · Catches: a customer filter that leaks another organization's tasks, includes unlinked tasks or fails open on an unknown id · Observed: KB-55D54B4A · Source: vc-module-sales-rep#33 head 8d4a30bd (SalesRepTasksQueryHandler)",Draft
+SR-GQL-177,"salesRepTasks filters intersect: status rule, priorities and customerIds each narrow the others, never replace them; the status rules stay upcoming, overdue and completed",GraphQL > Sales Rep > Tasks > Filters,High,BL-SR-009,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. FIFTH RULE: creates four tasks whose priority, customer and status DISAGREE pairwise: T1 High + ORG_ACME + upcoming, T2 Low + ORG_ACME + overdue (due 2020), T3 High + ORG_TECHFLOW + completed, T4 Low + ORG_TECHFLOW + upcoming; every expected total below is the intersection of two or three single-axis answers, so a filter that REPLACES another (instead of narrowing it) gives a different total. Isolated by the run keyword, deleted at the end. Grounding: KB-55D54B4A (intersection held in 33 combinations; no rule restricts priority or linked type) and the VCST-6157 run folder (round 2 SC-6.2 to SC-6.5).",run=AGENT-TEST-6157-GQL-177; future=2030-06-15T10:00:00Z; past=2020-01-15T10:00:00Z; org_a_id=@td(ORG_ACME.platform_id); org_b_id=@td(ORG_TECHFLOW.platform_id),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP t1]
+mutation CreateTask($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name priority customerId customerName dueDate } }
+[GQL-VARS t1] {""command"": {""name"": ""{{run}} t1"", ""type"": ""Other"", ""dueDate"": ""{{future}}"", ""priority"": ""High"", ""customerId"": ""{{org_a_id}}""}}
+[GQL-EXEC t1]
+[GQL-CAPTURE t1.data.createSalesRepTask.id → T1]
+[GQL-OP t2]
+mutation CreateTask($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name priority customerId customerName dueDate } }
+[GQL-VARS t2] {""command"": {""name"": ""{{run}} t2"", ""type"": ""Other"", ""dueDate"": ""{{past}}"", ""priority"": ""Low"", ""customerId"": ""{{org_a_id}}""}}
+[GQL-EXEC t2]
+[GQL-CAPTURE t2.data.createSalesRepTask.id → T2]
+[GQL-OP t3]
+mutation CreateTask($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name priority customerId customerName dueDate } }
+[GQL-VARS t3] {""command"": {""name"": ""{{run}} t3"", ""type"": ""Other"", ""dueDate"": ""{{future}}"", ""priority"": ""High"", ""customerId"": ""{{org_b_id}}""}}
+[GQL-EXEC t3]
+[GQL-CAPTURE t3.data.createSalesRepTask.id → T3]
+[GQL-OP t4]
+mutation CreateTask($command: InputCreateSalesRepTask!) { createSalesRepTask(command: $command) { id name priority customerId customerName dueDate } }
+[GQL-VARS t4] {""command"": {""name"": ""{{run}} t4"", ""type"": ""Other"", ""dueDate"": ""{{future}}"", ""priority"": ""Low"", ""customerId"": ""{{org_b_id}}""}}
+[GQL-EXEC t4]
+[GQL-CAPTURE t4.data.createSalesRepTask.id → T4]
+[GQL-OP done_t3]
+mutation Complete($command: InputChangeSalesRepTaskStatus!) { changeSalesRepTaskStatus(command: $command) { id completed } }
+[GQL-VARS done_t3] {""command"": {""id"": ""{{T3}}"", ""completed"": true}}
+[GQL-EXEC done_t3]
+[GQL-OP rules]
+query Rules { salesRepTaskFilterRules(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") { name localizedName } }
+[GQL-EXEC rules]
+[GQL-OP f_up]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS f_up] {""kw"":""{{run}}"",""f"":""upcoming""}
+[GQL-EXEC f_up]
+[GQL-OP f_od]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS f_od] {""kw"":""{{run}}"",""f"":""overdue""}
+[GQL-EXEC f_od]
+[GQL-OP f_done]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS f_done] {""kw"":""{{run}}"",""f"":""completed""}
+[GQL-EXEC f_done]
+[GQL-OP up_high]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS up_high] {""kw"":""{{run}}"",""f"":""upcoming"",""p"":[""High""]}
+[GQL-EXEC up_high]
+[GQL-OP od_high]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS od_high] {""kw"":""{{run}}"",""f"":""overdue"",""p"":[""High""]}
+[GQL-EXEC od_high]
+[GQL-OP up_a]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS up_a] {""kw"":""{{run}}"",""f"":""upcoming"",""c"":[""{{org_a_id}}""]}
+[GQL-EXEC up_a]
+[GQL-OP up_low_a]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS up_low_a] {""kw"":""{{run}}"",""f"":""upcoming"",""p"":[""Low""],""c"":[""{{org_a_id}}""]}
+[GQL-EXEC up_low_a]
+[GQL-OP high_b]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS high_b] {""kw"":""{{run}}"",""p"":[""High""],""c"":[""{{org_b_id}}""]}
+[GQL-EXEC high_b]
+[GQL-OP done_high_b]
+query ListTasks($kw: String, $f: String, $p: [String!], $c: [String!]) { salesRepTasks(first: 20, keyword: $kw, filter: $f, priorities: $p, customerIds: $c, storeId: ""{{STORE_ID}}"") { totalCount items { id name priority customerId customerName completed } } }
+[GQL-VARS done_high_b] {""kw"":""{{run}}"",""f"":""completed"",""p"":[""High""],""c"":[""{{org_b_id}}""]}
+[GQL-EXEC done_high_b]
+[GQL-OP d1]
+mutation DeleteTask($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS d1] {""command"": {""id"": ""{{T1}}""}}
+[GQL-EXEC d1]
+[GQL-OP d2]
+mutation DeleteTask($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS d2] {""command"": {""id"": ""{{T2}}""}}
+[GQL-EXEC d2]
+[GQL-OP d3]
+mutation DeleteTask($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS d3] {""command"": {""id"": ""{{T3}}""}}
+[GQL-EXEC d3]
+[GQL-OP d4]
+mutation DeleteTask($command: InputDeleteSalesRepTask!) { deleteSalesRepTask(command: $command) }
+[GQL-VARS d4] {""command"": {""id"": ""{{T4}}""}}
+[GQL-EXEC d4]","[ERRORS label=t1] errors[] empty {SPEC}
+[ERRORS label=t4] errors[] empty {SPEC}
+[ERRORS label=done_t3] errors[] empty {SPEC}
+[ERRORS label=rules] errors[] empty {OBSERVED}
+[COUNT label=rules] data.salesRepTaskFilterRules.length = 3 {OBSERVED}
+[DATA label=rules] data.salesRepTaskFilterRules.0.name = upcoming {OBSERVED}
+[DATA label=rules] data.salesRepTaskFilterRules.1.name = overdue {OBSERVED}
+[DATA label=rules] data.salesRepTaskFilterRules.2.name = completed {OBSERVED}
+[DATA label=f_up] data.salesRepTasks.totalCount = 2 {SPEC}
+[DATA label=f_od] data.salesRepTasks.totalCount = 1 {SPEC}
+[DATA label=f_done] data.salesRepTasks.totalCount = 1 {SPEC}
+[ERRORS label=up_high] errors[] empty {SPEC}
+[DATA label=up_high] data.salesRepTasks.totalCount = 1 {SPEC}
+[DATA label=up_high] data.salesRepTasks.items.0.id = {{T1}} {SPEC}
+[DATA label=od_high] data.salesRepTasks.totalCount = 0 {SPEC}
+[DATA label=up_a] data.salesRepTasks.totalCount = 1 {SPEC}
+[DATA label=up_a] data.salesRepTasks.items.0.id = {{T1}} {SPEC}
+[DATA label=up_low_a] data.salesRepTasks.totalCount = 0 {SPEC}
+[DATA label=high_b] data.salesRepTasks.totalCount = 1 {SPEC}
+[DATA label=high_b] data.salesRepTasks.items.0.id = {{T3}} {SPEC}
+[ERRORS label=done_high_b] errors[] empty {SPEC}
+[DATA label=done_high_b] data.salesRepTasks.totalCount = 1 {SPEC}
+[DATA label=done_high_b] data.salesRepTasks.items.0.id = {{T3}} {SPEC}
+[DATA label=d1] data.deleteSalesRepTask = true {SPEC}","[API] errors[] is empty in every GraphQL response {SPEC}
+[NETWORK] no 4xx/5xx on /graphql/sales-rep","Adding priorities to a status rule returns that priority across every status (replace instead of narrow)
+Adding customerIds drops the status rule
+up_low_a returns a task (the Low upcoming task of the OTHER customer or the Low overdue task of this one)
+A fourth filter rule appears or one of the three is missing
+errors[] non-empty, 4xx/5xx on /graphql",none (d1 to d4 delete the four tasks inline; a leftover AGENT-TEST-6157-GQL-177 task is swept by the AGENT-TEST- teardown),"VCST-6157 · Archetype:PARITY · Technique:PW · Catches: a filter that replaces another instead of narrowing it, so the Tasks page shows more than the chips promise · Observed: KB-55D54B4A · Source: vc-module-sales-rep#33 head 8d4a30bd (SalesRepTasksQueryHandler)",Draft
+SR-GQL-178,"salesRepTasks with customerIds and priorities is rep-only: an anonymous caller is refused, a non-rep buyer gets an empty list even when naming a served organization",GraphQL > Sales Rep > Tasks > Security,Medium,BL-SR-002; BL-SR-011,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. The anonymous operation runs FIRST because an [AUTH] step keeps its token for every later operation. ACME_BUYER is a plain corporate member with no sales-rep access. Grounding: the VCST-6157 round 2 verdict (zero-served and non-rep callers get an empty list), SR-GQL-173 for the same pair on salesRepCoupons (anonymous: errors[0].extensions.code Unauthorized). Here the refusal is asserted only as errors non-empty with data null and no leaked internals; the exact code is left to SR-GQL-173.",buyer=@td(ACME_BUYER.email); org_a_id=@td(ORG_ACME.platform_id),"[GQL-ENDPOINT /graphql/sales-rep]
+[GQL-OP anon]
+query Anon($c: [String!], $p: [String!]) { salesRepTasks(first: 5, customerIds: $c, priorities: $p, storeId: ""{{STORE_ID}}"") { totalCount items { id } } }
+[GQL-VARS anon] {""c"": [""{{org_a_id}}""], ""p"": [""High""]}
+[GQL-EXEC anon]
+[AUTH role=ACME_BUYER]
+[GQL-OP buyer]
+query Buyer($c: [String!], $p: [String!]) { salesRepTasks(first: 5, customerIds: $c, priorities: $p, storeId: ""{{STORE_ID}}"") { totalCount items { id } } }
+[GQL-VARS buyer] {""c"": [""{{org_a_id}}""], ""p"": [""High""]}
+[GQL-EXEC buyer]","[ERRORS label=anon] errors[] non-empty {BL}
+[DATA label=anon] data.salesRepTasks is null {BL}
+[DATA label=anon] errors.0.message matches /^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i {BL}
+[ERRORS label=buyer] errors[] empty {OBSERVED}
+[DATA label=buyer] data.salesRepTasks.totalCount = 0 {BL}
+[DATA label=buyer] data.salesRepTasks.items.0 is null {BL}",[API] no stack trace or SQL text in any error message {BL},"An anonymous caller receives tasks
+A non-rep buyer receives a rep's tasks by naming a served organization
+An error message leaks a stack trace or SQL text
+HTTP 500 on /graphql/sales-rep",none (read-only),"VCST-6157 · Archetype:SCOPE · Technique:EG · Catches: a customerIds argument that lets a non-rep or anonymous caller read tasks by naming an organization · Observed: VCST-6157 round 2 verdict (SC-5.3, SC-5.4) · Source: vc-module-sales-rep#33 head 8d4a30bd (SalesRepTasksQueryHandler)",Draft

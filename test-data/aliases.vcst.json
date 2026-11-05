@@ -2075,60 +2075,60 @@
     ]
   },
   "SR_TASK_FUTURE_YANKEE": {
-    "id": "ab4b3f59-22fe-45c5-8676-8a39ec78e880",
-    "due_date": "2026-10-30T11:00:00.000Z"
+    "id": "41a3e5bf-df05-41ee-8954-0ca3478f869e",
+    "due_date": "2026-11-06T11:00:00.000Z"
   },
   "SR_TASK_OVERDUE_MIKE": {
-    "id": "aa1d6195-a9ca-4bf7-a9f8-bf6a31ad7cc8",
-    "due_date": "2026-10-28T09:00:00.000Z"
+    "id": "a6a6ec68-73d2-4ebe-9642-99965b682c01",
+    "due_date": "2026-11-04T09:00:00.000Z"
   },
   "SR_TASK_DONE_ECHO": {
-    "id": "146cd5bf-ff74-438b-893a-a4d39819196b",
-    "due_date": "2026-10-20T16:00:00.000Z"
+    "id": "e2c11861-f202-4c61-ba22-f3c2cb1d8e38",
+    "due_date": "2026-10-27T16:00:00.000Z"
   },
   "SR_TASK_FUTURE_ROMEO": {
-    "id": "4cd359e2-cc9c-44dd-9d03-101f9a0cc9e7",
-    "due_date": "2026-11-05T09:00:00.000Z"
+    "id": "0737f420-f1ed-4bfd-869b-0b6bcf3c3d2f",
+    "due_date": "2026-11-12T09:00:00.000Z"
   },
   "SR_TASK_TODAY_SIERRA": {
-    "id": "cc315773-704a-4eaa-8ad6-bdac1cd624c8",
-    "due_date": "2026-10-29T12:00:00.000Z"
+    "id": "913c2c8d-e148-4251-89b8-bd49958bebd4",
+    "due_date": "2026-11-05T12:00:00.000Z"
   },
   "SR_TASK_FUTURE_OSCAR": {
-    "id": "98dba53b-a9b8-4dab-8dc7-82ca051977b5",
-    "due_date": "2026-11-12T13:00:00.000Z"
+    "id": "1e3b8e19-a422-421b-bf90-63768a1f72e0",
+    "due_date": "2026-11-19T13:00:00.000Z"
   },
   "SR_TASK_OVERDUE_ZULU": {
-    "id": "3370a48c-4cf0-4446-8e76-e1732f7d79c5",
-    "due_date": "2026-10-24T10:00:00.000Z"
+    "id": "04cdd8e6-2992-4278-946c-ecf072db5df8",
+    "due_date": "2026-10-31T10:00:00.000Z"
   },
   "SR_TASK_DONE_FOXTROT": {
-    "id": "96861e0e-43ea-4053-83ec-a5c8247a6f94",
-    "due_date": "2026-11-03T10:00:00.000Z"
+    "id": "6c399dc5-ecb0-4b3b-bb8b-0ace68732891",
+    "due_date": "2026-11-10T10:00:00.000Z"
   },
   "SR_TASK_TODAY_DELTA": {
-    "id": "b8a3e3a9-677a-4063-94df-e50cbba2ec39",
-    "due_date": "2026-10-29T20:00:00.000Z"
+    "id": "e25b8dba-3713-404a-bce5-e2be8b7cb5d2",
+    "due_date": "2026-11-05T20:00:00.000Z"
   },
   "SR_TASK_FUTURE_CHARLIE": {
-    "id": "0e826481-e27e-494c-b6de-d28aa5450efc",
-    "due_date": "2026-11-05T17:00:00.000Z"
+    "id": "3ad5b591-0a86-48ed-b074-ac665398b090",
+    "due_date": "2026-11-12T17:00:00.000Z"
   },
   "SR_TASK_DONE_NOVEMBER": {
-    "id": "578a6e38-757b-4964-b454-e20101cd5117",
-    "due_date": "2026-10-27T12:00:00.000Z"
+    "id": "c9ccdad9-c433-4453-aa9e-264ead0000a5",
+    "due_date": "2026-11-03T12:00:00.000Z"
   },
   "SR_TASK_TODAY_ALPHA": {
-    "id": "07f0301d-dd93-4b86-914a-1cb1544878a2",
-    "due_date": "2026-10-29T07:00:00.000Z"
+    "id": "8a0044fb-07a2-4321-8391-aaa18496904a",
+    "due_date": "2026-11-05T07:00:00.000Z"
   },
   "SR_TASK_FUTURE_BRAVO": {
-    "id": "0f672ee6-1be7-4503-a541-a51a96b6eb5d",
-    "due_date": "2026-11-01T15:00:00.000Z"
+    "id": "0bd39eb5-82c2-41d6-8ccf-cfb4c0405d9a",
+    "due_date": "2026-11-08T15:00:00.000Z"
   },
   "SR_TASK_DONE_TANGO": {
-    "id": "c4937cd6-6a57-405c-94c9-0888a2dd8209",
-    "due_date": "2026-10-29T15:00:00.000Z"
+    "id": "3a8935c7-9dcc-49ea-8713-281aaf98b197",
+    "due_date": "2026-11-05T15:00:00.000Z"
   },
   "SR_TASK_GROUPS": {
     "open_overdue": "2",
@@ -2136,8 +2136,8 @@
     "open_future": "7",
     "completed": "4",
     "total": "22",
-    "seeded_at": "2026-10-29T04:35:46.570Z",
-    "decays_at_utc": "2026-10-29T21:00:00.000Z",
+    "seeded_at": "2026-11-05T14:59:29.205Z",
+    "decays_at_utc": "2026-11-05T23:00:00.000Z",
     "owner_rep_email": "agent-test-sr-primary@example.com",
     "canceled": "3",
     "dateless": "1",
@@ -2148,39 +2148,39 @@
     "today_scope_excl_canceled": "6",
     "canceled_due_today": "1",
     "all_minus_tabs": "4",
-    "browser_tz": "Europe/Moscow"
+    "browser_tz": "Europe/Budapest"
   },
   "SR_TASK_EDGE_QUEBEC": {
-    "id": "dea38142-8cb5-44e0-997b-57c0420be62e",
-    "due_date": "2026-10-30T03:30:00.000Z"
+    "id": "118840c5-803e-4030-99d7-0bd88d673187",
+    "due_date": "2026-11-06T04:30:00.000Z"
   },
   "SR_TASK_CANCELED_LIMA": {
-    "id": "131e01f0-cc51-4e1e-9f83-461c3c6c5aaa",
-    "due_date": "2026-10-29T10:00:00.000Z"
+    "id": "1a76f521-3919-4244-b1f9-25f64c75f4ca",
+    "due_date": "2026-11-05T10:00:00.000Z"
   },
   "SR_TASK_EDGE_UNIFORM": {
-    "id": "137a6b62-5f56-4bc9-829c-468e9877bb4b",
-    "due_date": "2026-12-28T10:00:00.000Z"
+    "id": "a1a35965-be6e-43f6-9b93-980178a5afbe",
+    "due_date": "2027-01-04T10:00:00.000Z"
   },
   "SR_TASK_NODATE_INDIA": {
-    "id": "1757fa5c-aa08-48c8-aec9-a0c2e150dd98",
+    "id": "5baf230c-80b4-44d0-9e5e-0a177565084e",
     "due_date": ""
   },
   "SR_TASK_CANCELED_KILO": {
-    "id": "781f246b-6a23-4149-ac7e-19aa32fdcf04",
-    "due_date": "2026-10-26T11:00:00.000Z"
+    "id": "d191f8ec-b8c2-4ccc-b4bd-e74eb6452940",
+    "due_date": "2026-11-02T11:00:00.000Z"
   },
   "SR_TASK_EDGE_GOLF": {
-    "id": "84d875e3-0321-4826-86cf-33e25278a606",
-    "due_date": "2026-10-28T21:00:00.000Z"
+    "id": "9fe832d6-caa7-4cc1-b33e-82947b1b3d90",
+    "due_date": "2026-11-04T23:00:00.000Z"
   },
   "SR_TASK_CANCELED_HOTEL": {
-    "id": "1a33b4b0-6b8c-4f3f-8dfd-8b90c43ad56d",
-    "due_date": "2026-10-31T14:00:00.000Z"
+    "id": "3fb2af0d-c70b-4ec8-96ed-90151774879e",
+    "due_date": "2026-11-07T14:00:00.000Z"
   },
   "SR_TASK_EDGE_PAPA": {
-    "id": "e4f1a028-206d-416b-b6b6-73f6b496b74a",
-    "due_date": "2026-10-29T20:30:00.000Z"
+    "id": "1cb19d85-9fdd-4035-8c37-db24d2fdfb75",
+    "due_date": "2026-11-05T22:30:00.000Z"
   },
   "SR_TASK_GROUPS_NY": {
     "open_overdue": "3",
@@ -2197,8 +2197,8 @@
     "today_scope_excl_canceled": "6",
     "canceled_due_today": "1",
     "all_minus_tabs": "4",
-    "seeded_at": "2026-10-29T04:35:46.570Z",
-    "decays_at_utc": "2026-10-30T04:00:00.000Z"
+    "seeded_at": "2026-11-05T14:59:29.205Z",
+    "decays_at_utc": "2026-11-06T05:00:00.000Z"
   },
   "ORG_RET_VIEWER_ORG": {
     "id": "180022db-2ef9-44ad-8999-6fd6e7ca7d09"

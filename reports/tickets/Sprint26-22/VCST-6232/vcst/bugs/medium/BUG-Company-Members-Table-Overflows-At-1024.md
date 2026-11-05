@@ -1,6 +1,12 @@
 # `/company/members`: the members table sticks out of its card and the whole page scrolls sideways at 1024–1106 px `[Medium]`
 
-## Status: READY_TO_SUBMIT
+## Status: FIXED
+## Resolution
+- **Fixed in:** VirtoCommerce/vc-frontend#2638 (theme build 2.62.0-pr-2638-1dba-1dbab4e2; not yet merged into dev)
+- **Tracker:** VCST-6652 (Tested)
+- **Verified:** 2026-11-05
+- **Verification method:** /qa-verify-fix VCST-6652 on vcst — desktop 1024/1100/1120/1280 and mobile 320/375/390, 3/3 runs (reports/tickets/Sprint26-22/VCST-6652/vcst/verification-report.md)
+
 **Found by:** agent — testing VCST-6232
 **Severity:** Medium (P2) · **Oracle:** BL-UI-004 · **Provenance:** pre-existing, NOT caused by VCST-6232 (same on base and PR)
 **Tracker:** VCST-6652

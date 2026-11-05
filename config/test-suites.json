@@ -1778,7 +1778,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 170,
+      "testCount": 174,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1793,7 +1793,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 166,
+        "machine": 170,
         "browser": 1,
         "manual": 0,
         "deprecated": 3
@@ -3399,7 +3399,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P2",
-      "testCount": 26,
+      "testCount": 29,
       "estimatedMinutes": 35,
       "agent": "qa-backend-expert",
       "tags": [
@@ -4002,7 +4002,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 47,
+      "testCount": 58,
       "estimatedMinutes": 45,
       "agent": "qa-frontend-expert",
       "tags": [

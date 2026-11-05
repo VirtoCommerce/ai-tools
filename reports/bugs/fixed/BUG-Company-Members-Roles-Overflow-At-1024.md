@@ -1,6 +1,12 @@
 # `/company/members`: a member with two roles pushes the members table out of its card and the page scrolls sideways at 1024 px `[Medium]`
 
-## Status: CONFIRMED
+## Status: FIXED
+## Resolution
+- **Fixed in:** VirtoCommerce/vc-frontend#2638 (theme build 2.62.0-pr-2638-1dba-1dbab4e2; not yet merged into dev)
+- **Tracker:** VCST-6652 (Tested)
+- **Verified:** 2026-11-05
+- **Verification method:** /qa-verify-fix VCST-6652 on vcst — desktop 1024/1100/1120/1280 and mobile 320/375/390, 3/3 runs (reports/tickets/Sprint26-22/VCST-6652/vcst/verification-report.md)
+
 **Found by:** agent — testing VCST-6652
 **Severity:** Medium (P2) · **Oracle:** BL-UI-004 (content stays in its box; the page never scrolls sideways)
 **Tracker:** no separate ticket — by the operator's decision (2026-11-05) this is fixed under **VCST-6652** in VirtoCommerce/vc-frontend#2638 (commit `45068bb83`: Roles cell `max-w-xs` → `max-w-52`). Move to `fixed/` once `/qa-verify-fix VCST-6652` confirms it on a deployment.
@@ -35,7 +41,7 @@ Measured on real data (no DOM changes), unfiltered page 3, 1024 px:
 - Simulating the VCST-6652 Name cap (`max-width: 10rem` on Name cells, in the DOM) does not remove the overflow: Name is not the widest contributor here.
 - DOM-simulated widths: a three-role text overflows from 1024 to 1139 px; every two-role string tried overflows at 1024 px; every single role fits.
 
-![Members table at 1024 px: actions column outside the card (emails blurred)](../../screenshots/Company-Members-Roles-Overflow-At-1024/BUG-company-members-roles-overflow-1024-page.png)
+![Members table at 1024 px: actions column outside the card (emails blurred)](../screenshots/Company-Members-Roles-Overflow-At-1024/BUG-company-members-roles-overflow-1024-page.png)
 
 Console: no errors.
 
