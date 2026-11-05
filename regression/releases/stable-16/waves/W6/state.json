@@ -1,10 +1,29 @@
 {
  "wave": "W6",
  "owner": "Aleksandra Mitricheva",
- "status": "CLAIMED",
- "runIds": [],
- "notRun": [],
+ "status": "TRIAGED",
+ "runIds": [
+  "REG-2026-11-04-1505-W6",
+  "REG-2026-11-05-0023-W6R"
+ ],
  "handovers": [],
- "updatedAt": "2026-11-04",
- "personas": "config.js personas USER_DEFAULT and TECHFLOW_BUYER as the committed .env.vcptcore_regression defaults (no .env.local override) — shared with W0-W3 by the owner's decision: W6 is read-only storefront checks (no cart/order state); lockout case SEC-AUTH-003 uses its dedicated LOCKOUT_TEST_EMAIL"
+ "updatedAt": "2026-11-05",
+ "personas": "Lane accounts qa-agent-slot1/2/3 (agent-user-pool.csv, one per browser lane: 044 slot1, 045 slot2, 046 slot3) plus USER for 048c; the USER_DEFAULT/TECHFLOW_BUYER persona passwords are not declared for vcptcore_regression, so no case signed in as them. Read-only storefront checks; 045 created 2 addresses, 1 list and 1 cart line on slot2 and removed them",
+ "totals": {
+  "planned": 144,
+  "executed": 144,
+  "pass": 42,
+  "fail": 14,
+  "blocked": 38,
+  "skipped": 50,
+  "ambiguous": 0
+ },
+ "untriaged": 0,
+ "evidence": "owner machine: reports/regression/REG-2026-11-04-1505-W6 and REG-2026-11-05-0023-W6R (gitignored)",
+ "reports": {
+  "W6": {
+   "subtask": "112749",
+   "release": "112750"
+  }
+ }
 }
