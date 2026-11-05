@@ -1,6 +1,6 @@
 {
   "ticket": "VCST-6593",
-  "verdict": "VERIFIED_WITH_NOTES",
+  "verdict": "VERIFIED",
   "date": "2026-11-05",
   "environment": "https://vcst-qa.govirto.com",
   "env": "vcst",
@@ -8,9 +8,9 @@
     "platform": "3.1094.0",
     "theme": "n/a (admin)",
     "relevant_modules": {
-      "VirtoCommerce.AdminShell": "3.1094.0-pr-8-3275"
+      "VirtoCommerce.AdminShell": "3.1094.0-pr-8-9ba2"
     },
-    "pr_build": "VirtoCommerce.AdminShell_3.1094.0-pr-8-3275 (vc-module-admin-shell#8 @ 32752f89)"
+    "pr_build": "VirtoCommerce.AdminShell_3.1094.0-pr-8-9ba2 (vc-module-admin-shell#8 @ 9ba24979)"
   },
   "agent_used": "inline (built-in browser)",
   "str_result": "3/3",
@@ -35,18 +35,18 @@
       "before": "not measured live (fix comment 112707: 1.16:1)",
       "after": "2px solid #319ED4, 3.01:1",
       "after_shot": "screenshots/GREEN-03-google-focus-light.jpg"
+    },
+    {
+      "check": "Sign in :focus-visible",
+      "before": "25% halo only, outline none ≈1.7:1 (dark)",
+      "after": "2px solid ring offset 2px: 10.06:1 dark, 3.01:1 light",
+      "after_shot": "screenshots/R2-GREEN-signin-focus-dark.jpg"
     }
   ],
   "checklist_total": 10,
-  "checklist_passed": 9,
+  "checklist_passed": 10,
   "checklist_failed": 0,
-  "regression_issues": [
-    {
-      "summary": "Sign in button focus is still a 25% halo only (≈1.7:1 on dark)",
-      "severity": "Low",
-      "why": "pre-existing, declared out of scope in fix comment 112707; not filed by this unattended-follow-up run — operator to decide"
-    }
-  ],
+  "regression_issues": [],
   "side_effects": [],
   "bugs_filed": [],
   "business_rules_verified": [
@@ -65,6 +65,8 @@
     "Step 2 live /api/platform/modules — built-in browser signed out of admin; deploy confirmed by branch pin + deploy workflow + served CSS",
     "Step 5 agent dispatch — agents have no built-in browser; run inline",
     "Step 6 /vc-fix:qa-report — skill not available in this session; comment written by hand",
-    "Step 6 inline screenshots — Jira media upload host blocked; stated in comment"
-  ]
+    "Step 6 inline screenshots — Jira media upload host blocked; stated in comment",
+    "Round 2 Step 3 transition/starting comment — ticket already Tested; Jira offers no transition back to Testing"
+  ],
+  "round": 2
 }
