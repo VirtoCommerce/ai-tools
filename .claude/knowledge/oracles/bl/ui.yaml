@@ -55,7 +55,7 @@ rules:
       by: REG-2026-10-15-1115
   - id: BL-UI-004
     title: Content boundary
-    rule: "Text and child elements MUST stay inside their container at every supported viewport. Long content must wrap, truncate with ellipsis, or scroll — never overflow silently and never be clipped by `overflow: hidden` without an explicit ellipsis indicator. Horizontal scrolling on the document at any tested viewport (375 / 768 / 1024 / 1280 / 1920) is a bug unless the scrolling element is itself an intentional horizontal scroller (e.g., a data table)."
+    rule: "Text and child elements MUST stay inside their container at every supported viewport. Long content must wrap, truncate with ellipsis, or scroll — never overflow silently and never be clipped by `overflow: hidden` without an explicit ellipsis indicator. Horizontal scrolling on the document at any tested viewport (the derived `AUDIT_VIEWPORTS_PX` sweep, never a hand-picked list) is a bug unless the scrolling element is itself an intentional horizontal scroller (e.g., a data table)."
     priority: P2-ux
     trust: DECLARED
     source:

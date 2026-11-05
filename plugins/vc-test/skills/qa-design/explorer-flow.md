@@ -56,7 +56,7 @@ A supporting file of [`SKILL.md`](SKILL.md): Step 3 Phase B for a **component** 
 3. **Audit each context** — for each enumerated URL:
    - Navigate via real-user interaction (click nav, follow links — NOT direct deep-link unless that IS the natural entry path).
    - Wait for the component to mount + paint (no skeletons, no FOUC).
-   - Run the resolved invariant audits at 375 / 768 / 1280.
+   - Run the resolved invariant audits across the derived sweep ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure).
    - Capture rect snapshot + computed-style sample per invariant; screenshot only on FAIL.
 
 4. **Cross-context analysis** — after all contexts are audited, compute per-invariant outcome across contexts:

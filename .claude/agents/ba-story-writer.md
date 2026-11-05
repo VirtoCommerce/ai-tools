@@ -133,7 +133,7 @@ Standard DoD that every story must meet — customize per project:
 
 ```
 - [ ] Feature works in supported browsers: Chrome, Firefox, Edge (WebKit/Safari is NOT supported on Windows in this QA environment — see CLAUDE.md)
-- [ ] Responsive: works on mobile (375px), tablet (768px), desktop (1920px) — match the QA viewport set
+- [ ] Responsive: works on mobile and desktop, no layout break at any width of the QA viewport sweep (`AUDIT_VIEWPORTS_PX`, `scripts/lib/design-tokens.generated.ts`)
 - [ ] Unit tests cover derivation logic, not literals (§7a)
 - [ ] Integration/E2E test added for primary happy path; GraphQL operations covered by runner-native test in `regression/suites/Backend/graphql/`
 - [ ] Code reviewed and approved by 1+ team member

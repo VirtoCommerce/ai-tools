@@ -39,7 +39,7 @@ Pull the invariants for the domains in scope with `npm run bl:extract -- --domai
 
 > Primary source is a **Claude Design** project's local files, parsed by `npm run design:extract` (never call `DesignSync`) — protocol in `plugins/vc-test/skills/qa-design/claude-design-verification.md`, differ in [`scripts/lib/verify-design-spec.ts`](../../scripts/lib/verify-design-spec.ts). Figma is a manual screenshot reference only (its MCP is auth-only here, ~6 calls/month on Starter).
 
-**Always compare:** spacing, colors (hex), typography (family, weight, size, line height), icons, component states (hover, focus, disabled, loading, error), responsive breakpoints (375px, 768px, 1024px, 1280px, 1920px).
+**Always compare:** spacing, colors (hex), typography (family, weight, size, line height), icons, component states (hover, focus, disabled, loading, error), responsive layout (§Action Space → Viewport).
 
 **Common discrepancies (not always bugs):**
 - Developer used closest design token instead of exact pixel — acceptable if within 2px
@@ -93,7 +93,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 1. Resolve the source — the spec JSON the brief hands you, else the local copy of the ticket's named project (`.design-source/<uuid>/`, in-scope artboards only)
 2. `npm run design:extract` → tokens / geometry / icon map / `unresolved[]` (the extractor never guesses; unparsable input is recorded with a reason, not defaulted)
-3. Navigate to the page, match viewport to the artboard (375 / 768 / 1280) and set the preset under audit
+3. Navigate to the page, match viewport to the artboard's width and set the preset under audit
 4. Measure live with `designTokenAuditSnippet` / `iconParityAuditSnippet` / `componentGeometryAuditSnippet` / `propertyAuditSnippet`, then the matching `classify*` — measured values come from the browser, never from the spec
 5. Report `CONFIRMED / DRIFT / MISSING / UNSPEC` per item plus the `unresolved` count; `summarizeDesignFindings` gives the header line
 6. Document with side-by-side evidence
@@ -183,7 +183,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 ### Action Space
 
 - **Browser**: navigate, click, type, hover, scroll, select, keys, evaluate JS
-- **Viewport**: mobile (375px), tablet (768px), desktop (1920px)
+- **Viewport**: `AUDIT_VIEWPORTS_PX` for layout, lanes for flows
 - **Browsers**: `playwright-firefox` (primary — click-capable once the MCP server was restarted after the occlusion pref landed in `config/mcp-playwright-firefox.config.json`; `.claude/rules/agents.md` §Parallel Execution), `playwright-chrome`, `playwright-edge`
 - **Storefront** (`FRONT_URL`) + **Admin SPA** (`BACK_URL`)
 - **NOT available**: WebKit on Windows — use Edge as fallback

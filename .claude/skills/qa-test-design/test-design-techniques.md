@@ -403,7 +403,7 @@ where full coverage is infeasible.
 | Parameter | Values | Count |
 |---|---|---|
 | Browser | Chrome, Firefox, Edge | 3 |
-| Viewport | Desktop (1920px), Tablet (768px), Mobile (375px) | 3 |
+| Viewport | Desktop lane, mobile lane, the `BREAKPOINTS_PX` edge the page switches at (flow depth, [`responsive-component-testing.md`](../qa-storybook/responsive-component-testing.md) §Where the widths come from) | 3 |
 | User Role | Admin, B2B Customer, B2C Customer, Guest | 4 |
 | Payment | Card, Invoice, Purchase Order | 3 |
 

@@ -91,7 +91,7 @@ Use **`playwright-firefox`** browser to explore the live storefront and map actu
    - Company member management
 
 4. **UI Quality Assessment**
-   - Responsive behavior (resize viewport: 375px mobile, 768px tablet, 1920px desktop)
+   - Responsive behavior (mobile lane vs desktop lane, then the `BREAKPOINTS_PX` edges where the layout switches — `.claude/skills/qa-storybook/responsive-component-testing.md` §Where the widths come from)
    - Loading states: are there skeleton screens or spinners?
    - Empty states: what shows when cart is empty, search has no results, etc.?
    - Error states: trigger validation errors on forms, check messaging
