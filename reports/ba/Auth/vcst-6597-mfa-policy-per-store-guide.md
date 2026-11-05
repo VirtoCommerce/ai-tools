@@ -83,7 +83,7 @@ In the Admin Shell the same page opens from the **MFA:** button of the user or o
     A changed mode applies at the next password sign-in. Sessions already open, and their refresh tokens,
     keep working. OTP sign-in, passkeys and API keys are not affected.
 
-Video: VCST-6597-mfa-policy-per-store.mp4 — being exported, will be attached to this ticket.
+Video: VCST-6597-mfa-policy-per-store.mp4 (attached to this ticket).
 
 Not documented: the open notes of this run — a member of a company that requires MFA can still set their own mode Off through the API (VCST-6687), the Admin Shell sign-in mails an unrequested code (VCST-6694), the widget after an administrator turns MFA on for an unconfirmed email, the wording of the change-code email, and keyboard focus in the code step · AdminManaged storefront texts (read-only, with copy notes) · the store-setting and administrator scenarios have no walkthrough GIF (one step each) · the global-on behaviour of a Disabled store (verified in the regression run, not walked here)
 Verified on vcst · run REG-2026-11-04-1531 · verdict PASS WITH NOTES · captured 2026-11-04 · versions run
