@@ -1,9 +1,10 @@
 {
  "wave": "W7",
- "owner": null,
- "status": "NOT_STARTED",
+ "owner": "Aleksandra Mitricheva",
+ "status": "CLAIMED",
  "runIds": [],
  "notRun": [],
  "handovers": [],
- "updatedAt": "2026-10-16"
+ "updatedAt": "2026-11-05",
+ "personas": "Lane accounts qa-agent-slot1/2/3 (agent-user-pool.csv, one per browser lane) plus USER (test-john.mitchell-20260310@test-agent.com) from Aleksandra Mitricheva's .env.local; loyalty/quote suites use their own AGENT-TEST seeded personas (ORG_LOY_*, LOY_PERSONAL_NOORG, LOYALTY_VIP_USER, MSN_*), not shared with other waves"
 }

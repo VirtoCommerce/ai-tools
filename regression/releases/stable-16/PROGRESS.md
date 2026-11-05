@@ -15,7 +15,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W7 | virto-start modules (autotests only) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | CLAIMED | — | — | — | — | — | — | 0 | — |
 | WX | Exclusive window (env-wide cases) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
 ## Triage verdicts
