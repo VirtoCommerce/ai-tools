@@ -1001,8 +1001,10 @@ Numbered `D1..Dn`; never renumber — a citation contract.
 
 - **Movement since rev 4's 595:** `050m` +9, `050m2` +3, `091` +1, `106` +5, `091c` +15. **Automated stays 241** — nothing new was automated.
 - **The rev-4 selection defect is fixed:** `sales-rep` is `{"where":{"tag":"sales-rep"}}` and resolves all 14. `smoke` / `critical` hold none.
-- **Selection defects (orchestrator re-read `config/test-suites.json`):** `sprint` and `full` exclude 13 of the 14 by name but **not `091c`**, so both run
-  15 coupon cases against an absent surface; `frontend` excludes `089`/`090`/`091` only; `backend` excludes `050m`/`050m2`/`092`/`092b` but **not `050m3`**.
+- **Selection defects (orchestrator re-read `config/test-suites.json`):** `sprint` and `full` excluded 13 of the 14 by name but **not `091c`**, so both ran
+  15 coupon cases against an absent surface; `frontend` excluded `089`/`090`/`091` only; `backend` excluded `050m`/`050m2`/`092`/`092b` but **not `050m3`**.
+  **FIXED 2026-11-05** (same day; hand-edited `selections`, validated by `suites:sync`): `091c` added to the `sprint`, `full` and `frontend` excludes and `050m3` to `backend`;
+  `regression:plan` confirms neither runs there, and `sales-rep` still resolves 14 / 628. `frontend` still runs `093`, `093b`, `097`, `106`, `112` — deliberate or not is undecided.
 - **Cases on a surface that is not on the stand (deliberate — all Draft/Manual):** coupons **27** (`091c` 15 + `050m` 9 + `050m2` 3) — rev 4's
   "coupons 0 cases" is superseded. `106`: ~34 rows name the Today/All chips and ~12 a status tab (suite-text line matches, not row readings) — the
   release layout; the `PR-33` filters have **0** cases (Priorities, Search tasks, `customerIds`, `priorities`, Priority / Customer columns), the
