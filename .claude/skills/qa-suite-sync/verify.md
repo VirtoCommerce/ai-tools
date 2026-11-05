@@ -11,6 +11,9 @@ the round did not reach comes back `UNCHECKED` and is never counted as verified:
 unconfirmed `{SPEC}` stay ungrounded and the case stays `Draft`. UNCHECKED cases go to the next round
 (SKILL.md step 7); whatever is still UNCHECKED after the last round is listed by ID in the report.
 
+**Author proofs** (`generate.md` 3c step 9) do not replace this phase: run every target anyway. Put the
+author's `proofResults[]` in the brief so the checker knows which cases never ran (`NEEDS_WINDOW`).
+
 **Pre-flight:** re-run `/preflight lifecycle --domain <scope>` — a `health` row that is not OK (a WARN for lifecycle) ⇒ skip with warning.
 Seed the approved data profiles of `DataProfile:`-stamped targets first (`models.md` §Phase 5).
 

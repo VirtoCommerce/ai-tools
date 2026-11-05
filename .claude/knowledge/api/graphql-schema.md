@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-10-29)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-11-04)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -26,16 +26,16 @@
 12. **Pass the ambient context — `cultureName`, `storeId`, `userId`, `organizationId` — on almost every query and mutation.**
     Most xAPI operations resolve against an implied context, and **omitting a context arg is not an error**:
     the server substitutes a default and returns `200` with data that is wrong, empty, or `null`. There is no
-    message to notice. Measured on this schema (126 queries, derived at refresh):
+    message to notice. Measured on this schema (128 queries, derived at refresh):
 
     | Context arg | Queries accepting it | Required | Optional |
     |---|---|---|---|
-    | `cultureName` | 68 (54%) | 3 | 65 |
-    | `storeId` | 75 (60%) | 38 | 37 |
-    | `userId` | 31 (25%) | 2 | 29 |
-    | `organizationId` | 18 (14%) | 4 | 14 |
+    | `cultureName` | 69 (54%) | 3 | 66 |
+    | `storeId` | 77 (60%) | 40 | 37 |
+    | `userId` | 31 (24%) | 2 | 29 |
+    | `organizationId` | 19 (15%) | 4 | 15 |
 
-    **95 of 126 queries (75%) accept at least one; 82 (65%) accept one OPTIONALLY** —
+    **97 of 128 queries (76%) accept at least one; 84 (66%) accept one OPTIONALLY** —
     that last figure is the exposure, because those are the calls that can quietly answer for a context you
     never chose. Mutations take the same fields inside the `command:` wrapper (see Rule 1), so the same rule applies.
 
@@ -98,6 +98,7 @@ getSavedForLater(storeId: String!, userId: String!, organizationId: String, curr
 pickupLocations(after: String, first: Int, keyword: String, sort: String, storeId: String)
 carts(after: String, first: Int, sort: String, storeId: String, userId: String, currencyCode: String, cultureName: String, cartType: String, filter: String)
 salesRepCartFilterRules(storeId: String, cultureName: String)
+salesRepCoupons(after: String, first: Int, storeId: String!, cultureName: String)
 salesRepCustomerCartStatistics(organizationId: String, storeId: String, currencyCode: String, cultureName: String)
 ```
 
@@ -166,6 +167,7 @@ store(storeId: String, cultureName: String, domain: String)
 slugInfo(slug: String, permalink: String, storeId: String, userId: String, cultureName: String)
 contract(id: String)
 fileUploadOptions(scope: String)
+mfaSettings(storeId: String!, organizationId: String)
 newsArticleAuthor(authorId: String!)
 newsArticle(id: String!, storeId: String!, languageCode: String!)
 newsArticles(after: String, first: Int, keyword: String, sort: String, storeId: String!, languageCode: String!, userId: String, authorId: String, tags: [String])
@@ -378,6 +380,7 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 | Mutation | Command Type |
 |----------|-------------|
+| `requestMfaChangeCode` | `InputRequestMfaChangeCodeType` |
 | `activateBackInStockSubscription` | `ActivateBackInStockSubscriptionCommandType` |
 | `deactivateBackInStockSubscription` | `DeactivateBackInStockSubscriptionCommandType` |
 | `saveSearchQuery` | `InputSaveSearchQueryType` |
@@ -402,6 +405,8 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 | Mutation | Command Type |
 |----------|-------------|
+| `updateMfaUserMode` | `InputUpdateMfaUserModeType` |
+| `updateMfaOrganizationMode` | `InputUpdateMfaOrganizationModeType` |
 | `changeOrganizationLogo` | `InputChangeOrganizationLogoCommandType` |
 | `updateMemberAddresses` | `InputUpdateMemberAddressType` |
 | `deleteMemberAddresses` | `InputDeleteMemberAddressType` |
