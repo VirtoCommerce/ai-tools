@@ -9,7 +9,8 @@
     "scope": "Sales Rep: rep provisioning, served-org membership, store toggle, storefront hub (dashboard, my customers, customer profile, customer orders, document library, calendar), buyer-facing rep directory, scoped GraphQL contract, layout persistence, account access removal. Impersonation (suite 082) is out, as in the domain map.",
     "built_from": "sales-rep.md rev 3 (sections 1-8, 10), business-logic.md Domain 20 (BL-SR-001..032), suites 050m/050m2/089/090/091/093/097 titles + References, kb KB-EA467E9B / KB-1144B33E / KB-7DA9B0B7 / KB-5A0C4200; re-cited against sales-rep.md rev 4 (2026-11-03) for the tasks, schedule-call, activity, hub and coupons nodes; older rev-3 citations kept as dated evidence; updated against sales-rep.md rev 5 and VCST-6157 / vc-module-sales-rep#33 (2026-11-05)",
     "kb_read": "2026-09-28 - 8 questions (customerSalesReps storeId scoping, GET /api/sales-rep/search, salesRepDocuments permission, /company/my-customers, sendCustomerCommunication, saveSalesRepLayout, salesRepCustomerOrderStatistics, /company/sales-reps): hits KB-EA467E9B, KB-1144B33E, KB-7DA9B0B7, KB-5A0C4200; /company/sales-reps: miss; 2026-11-03 update — 3 questions (/company/tasks chips, createSalesRepTask call, salesRepActivities): opened and cited KB-7052E6CD, KB-6693247D, KB-866853C8, KB-EE2E1EC4, KB-8B4E880C",
-    "not_modelled": "No sr data model exists yet, so requires/produces are omitted. Admin suites 092/092b are owned by another change and carry no stamps from this build."
+    "not_modelled": "Admin suites 092/092b are owned by another change and carry no stamps from this build. The perf (SR_REP_PERF) and bulk (SR_BULK_DATASET) volume datasets are not modelled: no node decides on them.",
+    "data_model": "test-data/models/sales-rep.data-model.json (built 2026-11-05)"
   },
   "nodes": [
     {
@@ -58,6 +59,9 @@
           "ref": "domain-map:sr@rev3 section 5b",
           "note": "SalesRepController.cs endpoints matched 1:1"
         }
+      ],
+      "requires": [
+        "data.sr.contact.rep-candidate"
       ]
     },
     {
@@ -130,6 +134,9 @@
           "class": "DOC",
           "ref": "domain-map:sr@rev3 section 5b"
         }
+      ],
+      "requires": [
+        "data.sr.admin.restricted-managers"
       ]
     },
     {
@@ -207,6 +214,9 @@
           "ref": "kb:KB-EA467E9B",
           "note": "membership is the served-customer relationship itself"
         }
+      ],
+      "requires": [
+        "data.sr.rep.primary"
       ]
     },
     {
@@ -252,6 +262,9 @@
           "note": "organizationsCount, badge, My-customers rows, switcher radios all 5",
           "date": "2026-09-18"
         }
+      ],
+      "requires": [
+        "data.sr.rep.paging"
       ]
     },
     {
@@ -280,6 +293,9 @@
           "ref": "domain-map:sr@rev3 section 10 A5",
           "note": "read nowhere in the backend; storefront consumer only"
         }
+      ],
+      "requires": [
+        "data.sr.rep.primary"
       ]
     },
     {
@@ -306,6 +322,9 @@
           "ref": "REG-2026-09-07-1342",
           "note": "promoting run of SR-FE-001"
         }
+      ],
+      "requires": [
+        "data.sr.store.enabled"
       ]
     },
     {
@@ -333,7 +352,10 @@
           "note": "all four covering cases are Draft, none executed"
         }
       ],
-      "notes": "UNVERIFIED on purpose: the BL entry is triangulated but every covering case is still Draft, so no run has observed it on the current build."
+      "notes": "UNVERIFIED on purpose: the BL entry is triangulated but every covering case is still Draft, so no run has observed it on the current build.",
+      "requires": [
+        "data.sr.store.disabled"
+      ]
     },
     {
       "id": "sr.store-toggle.off-api-still-answers",
@@ -356,6 +378,9 @@
           "ref": "SR-GQL-035",
           "note": "Automated case asserting the toggle changes UI only"
         }
+      ],
+      "requires": [
+        "data.sr.store.disabled"
       ]
     },
     {
@@ -455,7 +480,11 @@
         }
       ],
       "notes": "integrates with: storefront plugin host (vc-frontend Module Federation loader) — no domain map",
-      "last_verified": "2026-11-05"
+      "last_verified": "2026-11-05",
+      "requires": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary"
+      ]
     },
     {
       "id": "sr.hub.basic-rep",
@@ -504,6 +533,9 @@
           "note": "widget absent for a plain rep",
           "date": "2026-09-18"
         }
+      ],
+      "requires": [
+        "data.sr.rep.docs-reader"
       ]
     },
     {
@@ -536,6 +568,9 @@
           "ref": "REG-2026-08-25-1128",
           "note": "promoting run of SR-HD-002"
         }
+      ],
+      "requires": [
+        "data.sr.buyer.acme"
       ]
     },
     {
@@ -573,6 +608,9 @@
           "ref": "REG-2026-08-25-1128",
           "note": "promoting run of SR-CP-002"
         }
+      ],
+      "requires": [
+        "data.sr.buyer.acme"
       ]
     },
     {
@@ -599,6 +637,9 @@
           "ref": "REG-2026-09-07-1342",
           "note": "promoting run of SR-FE-055, SR-HD-063"
         }
+      ],
+      "requires": [
+        "data.sr.buyer.org-maintainer"
       ]
     },
     {
@@ -630,7 +671,10 @@
         "expected": "BL-SR-011 + suite 089 SR-FE-013 (VCST-5494, vc-frontend PR #2391): a rep with the permission and zero org memberships is ADMITTED to /company/my-customers",
         "observed": "kb:KB-EA467E9B (vcst_qa, 2026-09-25, single observation): the guard resolves the permission in an organization context; a global-only rep has none and is redirected to /account/dashboard",
         "route": "/qa-review-oracles bl BL-SR-011 to triangulate against the deployed frontend build (VCST-5494); then kb dispute KB-EA467E9B or amend the BL"
-      }
+      },
+      "requires": [
+        "data.sr.rep.zero-served"
+      ]
     },
     {
       "id": "sr.hub.admin-ui-over-empty-data",
@@ -677,7 +721,10 @@
         }
       ],
       "last_verified": "2026-11-05",
-      "notes": "Added in the plugin's init(), not declared in plugin.json menu (domain map D35). Not in any published guide (D23). Mobile and click-through on a healthy build: G27."
+      "notes": "Added in the plugin's init(), not declared in plugin.json menu (domain map D35). Not in any published guide (D23). Mobile and click-through on a healthy build: G27.",
+      "requires": [
+        "data.sr.buyer.acme"
+      ]
     },
     {
       "id": "sr.hub.stale-plugin-entry",
@@ -736,6 +783,10 @@
           "ref": "domain-map:sr@rev3 section 10 A3",
           "note": "only the three document builders authorize on a permission"
         }
+      ],
+      "requires": [
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
       ]
     },
     {
@@ -763,6 +814,9 @@
           "ref": "REG-2026-09-02-2055",
           "note": "promoting run of SR-GQL-123, SR-GQL-129"
         }
+      ],
+      "requires": [
+        "data.sr.org.unserved"
       ]
     },
     {
@@ -795,6 +849,9 @@
           "ref": "REG-2026-09-02-2055",
           "note": "promoting run of SR-GQL-124, SR-GQL-130"
         }
+      ],
+      "requires": [
+        "data.sr.rep.membership-locked"
       ]
     },
     {
@@ -819,6 +876,9 @@
           "ref": "REG-2026-09-07-1342",
           "note": "promoting run of SR-FE-054, SR-FE-051"
         }
+      ],
+      "requires": [
+        "data.sr.rep.zero-served"
       ]
     },
     {
@@ -867,6 +927,9 @@
           "class": "DOC",
           "ref": "domain-map:sr@rev3 section 10 A3"
         }
+      ],
+      "requires": [
+        "data.sr.buyer.acme"
       ]
     },
     {
@@ -894,6 +957,9 @@
           "note": "buyer-owned carts moved the Active-carts tile by 0",
           "date": "2026-09-24"
         }
+      ],
+      "requires": [
+        "data.sr.orders.authorship"
       ]
     },
     {
@@ -931,6 +997,9 @@
           "ref": "REG-2026-09-04-1015",
           "note": "promoting run of SR-CO-028"
         }
+      ],
+      "requires": [
+        "data.sr.orders.authorship"
       ]
     },
     {
@@ -951,6 +1020,11 @@
           "note": "columns and five-row list re-observed 2026-09-18",
           "date": "2026-09-18"
         }
+      ],
+      "requires": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
       ]
     },
     {
@@ -999,6 +1073,9 @@
           "ref": "REG-2026-09-07-1342",
           "note": "promoting run of SR-FE-005"
         }
+      ],
+      "requires": [
+        "data.sr.rep.paging"
       ]
     },
     {
@@ -1097,6 +1174,9 @@
           "ref": "REG-2026-09-07-1342",
           "note": "promoting run of SR-FE-017, SR-FE-019"
         }
+      ],
+      "requires": [
+        "data.sr.rep.paging"
       ]
     },
     {
@@ -1147,6 +1227,9 @@
           "ref": "REG-2026-09-07-1342",
           "note": "promoting run of SR-FE-020, SR-FE-021, SR-FE-029"
         }
+      ],
+      "requires": [
+        "data.sr.rep.zero-served"
       ]
     },
     {
@@ -1221,6 +1304,11 @@
           "note": "AC-1, D-5/24/25/26 Customer activity widget — vcptcore-qa, SalesRep 3.1015.0-pr-15-e5bc + GA 4.1005.0-pr-61 (vc-module-sales-rep #15 and vc-frontend #2458, merged 2026-10-21)",
           "date": "2026-10-20"
         }
+      ],
+      "requires": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
       ]
     },
     {
@@ -1313,6 +1401,9 @@
           "ref": "REG-2026-08-25-1128",
           "note": "promoting run of SR-CP-013, SR-CP-054"
         }
+      ],
+      "requires": [
+        "data.sr.rep.paging"
       ]
     },
     {
@@ -1370,6 +1461,9 @@
           "ref": "REG-2026-08-25-1128",
           "note": "promoting run of SR-CP-031, SR-CP-032, SR-CP-034"
         }
+      ],
+      "requires": [
+        "data.sr.orders.top-seller-shaped"
       ]
     },
     {
@@ -1455,6 +1549,10 @@
           "ref": "domain-map:sr@rev3 section 5a",
           "note": "21 queries + 2 mutations, matched 1:1 to source handlers"
         }
+      ],
+      "requires": [
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
       ]
     },
     {
@@ -1541,6 +1639,9 @@
           "class": "BL",
           "ref": "BL-SR-005"
         }
+      ],
+      "requires": [
+        "data.sr.orders.cancel-flag-pair"
       ]
     },
     {
@@ -1573,6 +1674,9 @@
           "ref": "REG-2026-08-25-1128",
           "note": "promoting run of SR-HD-016"
         }
+      ],
+      "requires": [
+        "data.sr.carts.active"
       ]
     },
     {
@@ -1618,6 +1722,9 @@
           "class": "BL",
           "ref": "BL-SR-008"
         }
+      ],
+      "requires": [
+        "data.sr.orders.top-seller-shaped"
       ]
     },
     {
@@ -1701,6 +1808,10 @@
           "ref": "https://docs.virtocommerce.org/platform/user-guide/sales-rep/overview",
           "note": "guide: orders a rep created for their customers"
         }
+      ],
+      "requires": [
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
       ]
     },
     {
@@ -1755,6 +1866,9 @@
           "ref": "SR-GQL-027",
           "note": "Automated backend case"
         }
+      ],
+      "requires": [
+        "data.sr.orders.store-recency"
       ]
     },
     {
@@ -1800,6 +1914,11 @@
           "note": "D-6 My activity widget — vcptcore-qa, SalesRep 3.1015.0-pr-15-e5bc + GA 4.1005.0-pr-61 (vc-module-sales-rep #15 and vc-frontend #2458, merged 2026-10-21)",
           "date": "2026-10-20"
         }
+      ],
+      "requires": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.rolling-window"
       ]
     },
     {
@@ -1848,6 +1967,9 @@
           "ref": "REG-2026-08-25-1128",
           "note": "promoting run of SR-HD-053, SR-HD-054"
         }
+      ],
+      "requires": [
+        "data.sr.rep.zero-served"
       ]
     },
     {
@@ -1870,6 +1992,9 @@
           "note": "tile reconciled exactly against seeded cart contents",
           "date": "2026-09-24"
         }
+      ],
+      "requires": [
+        "data.sr.carts.active"
       ]
     },
     {
@@ -1895,6 +2020,9 @@
           "ref": "REG-2026-08-25-1128",
           "note": "promoting run of SR-HD-008, SR-HD-009, SR-HD-010, SR-HD-011 +2"
         }
+      ],
+      "requires": [
+        "data.sr.orders.top-seller-shaped"
       ]
     },
     {
@@ -1950,6 +2078,9 @@
           "ref": "VCST-5304",
           "note": "case is Reviewed, not executed"
         }
+      ],
+      "requires": [
+        "data.sr.orders.status-flip"
       ]
     },
     {
@@ -1998,6 +2129,9 @@
           "ref": "domain-map:sr@rev3 section 5c",
           "note": "layout persistence is GraphQL-only"
         }
+      ],
+      "requires": [
+        "data.sr.rep.layout"
       ]
     },
     {
@@ -2020,6 +2154,9 @@
           "class": "BL",
           "ref": "BL-SR-026"
         }
+      ],
+      "requires": [
+        "data.sr.layout.never-saved"
       ]
     },
     {
@@ -2082,6 +2219,9 @@
           "class": "BL",
           "ref": "BL-SR-015"
         }
+      ],
+      "requires": [
+        "data.sr.rep.primary"
       ]
     },
     {
@@ -2333,6 +2473,9 @@
           "ref": "VCST-5367",
           "note": "covering cases are Draft or Automated without a recorded run"
         }
+      ],
+      "requires": [
+        "data.sr.orders.rowcap"
       ]
     },
     {
@@ -2358,6 +2501,10 @@
           "note": "Actions column entry point",
           "date": "2026-09-18"
         }
+      ],
+      "requires": [
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
       ]
     },
     {
@@ -2435,6 +2582,9 @@
           "class": "BL",
           "ref": "BL-SR-002"
         }
+      ],
+      "requires": [
+        "data.sr.org.unserved"
       ]
     },
     {
@@ -2453,6 +2603,9 @@
           "ref": "SR-GQL-052",
           "note": "Automated backend case"
         }
+      ],
+      "requires": [
+        "data.sr.org.rep-only"
       ]
     },
     {
@@ -2471,6 +2624,9 @@
           "ref": "SR-GQL-054",
           "note": "Automated backend case"
         }
+      ],
+      "requires": [
+        "data.sr.org.rep-only"
       ]
     },
     {
@@ -2531,6 +2687,9 @@
           "class": "OBSERVED",
           "ref": "kb:KB-EA467E9B"
         }
+      ],
+      "requires": [
+        "data.sr.rep.primary"
       ]
     },
     {
@@ -2569,6 +2728,9 @@
           "note": "agent-test-sr-docs: name and Logout only",
           "date": "2026-09-18"
         }
+      ],
+      "requires": [
+        "data.sr.rep.techflow-only"
       ]
     },
     {
@@ -2610,6 +2772,10 @@
           "note": "verified end to end on Env-A: 21 documents through REST, GraphQL, Admin, storefront",
           "date": "2026-09-18"
         }
+      ],
+      "requires": [
+        "data.sr.rep.docs-reader",
+        "data.sr.docs.library"
       ]
     },
     {
@@ -2630,7 +2796,10 @@
           "note": "result characterised; write mechanics unverified"
         }
       ],
-      "notes": "Needs sales-rep-documents:write and a real upload."
+      "notes": "Needs sales-rep-documents:write and a real upload.",
+      "requires": [
+        "data.sr.docs.case-registered"
+      ]
     },
     {
       "id": "sr.documents.pinned-first",
@@ -2703,7 +2872,10 @@
           "date": "2026-11-05"
         }
       ],
-      "last_verified": "2026-11-05"
+      "last_verified": "2026-11-05",
+      "requires": [
+        "data.sr.rep.primary"
+      ]
     },
     {
       "id": "sr.documents.write-only-rep",
@@ -2733,7 +2905,10 @@
         "expected": "Suite cases SR-GQL-137 / SR-HD-091 (Automated): the read gate accepts :write alone, the widget stays absent",
         "observed": "domain-map:sr@rev3 section 6 D12: on Env-B a Documents-Manager role drifted to [access, write] and was refused; on Env-A the fixture holds two roles so it cannot isolate what write grants alone",
         "route": "UNFILED - needs a single-role Documents-Manager fixture from test-data-engineer; then /qa-review-oracles to settle the seeded mapping"
-      }
+      },
+      "requires": [
+        "data.sr.rep.docs-write-only"
+      ]
     },
     {
       "id": "sr.documents.library-page",
@@ -2986,6 +3161,9 @@
           "ref": "SR-GQL-143",
           "note": "Automated backend case"
         }
+      ],
+      "requires": [
+        "data.sr.docs.case-registered"
       ]
     },
     {
@@ -3026,6 +3204,9 @@
           "note": "block confirmed live; membership lock rev-2; delete doc-stated",
           "date": "2026-09-18"
         }
+      ],
+      "requires": [
+        "data.sr.rep.lockable"
       ]
     },
     {
@@ -3161,6 +3342,9 @@
           "ref": "domain-map:sr@rev3 section 5d",
           "note": "no mutation on the scoped schema"
         }
+      ],
+      "requires": [
+        "data.sr.rep.membership-locked"
       ]
     },
     {
@@ -3183,6 +3367,9 @@
           "note": "Lock <-> Unlock is one reversible toggle",
           "date": "2026-09-10"
         }
+      ],
+      "requires": [
+        "data.sr.rep.membership-locked"
       ]
     },
     {
@@ -3204,6 +3391,9 @@
           "ref": "https://docs.virtocommerce.org/platform/user-guide/sales-rep/overview",
           "note": "doc-stated, destructive, not actuated"
         }
+      ],
+      "requires": [
+        "data.sr.contact.rep-candidate"
       ]
     },
     {
@@ -3260,6 +3450,12 @@
           "ref": "https://docs.virtocommerce.org/storefront/user-guide/account/sales-reps",
           "note": "page reflects the currently active organization"
         }
+      ],
+      "requires": [
+        "data.sr.store.enabled",
+        "data.sr.buyer.acme",
+        "data.sr.rep.primary",
+        "data.sr.rep.acme-peers"
       ]
     },
     {
@@ -3280,6 +3476,10 @@
           "note": "matches customerSalesReps for the same session exactly",
           "date": "2026-09-18"
         }
+      ],
+      "requires": [
+        "data.sr.rep.techflow-only",
+        "data.sr.buyer.techflow"
       ]
     },
     {
@@ -3300,6 +3500,10 @@
           "note": "Lena Park, Blake Barr, Sam Store correctly absent",
           "date": "2026-09-18"
         }
+      ],
+      "requires": [
+        "data.sr.rep.blocked",
+        "data.sr.rep.membership-locked"
       ]
     },
     {
@@ -3319,6 +3523,9 @@
           "note": "paired control per fixture",
           "date": "2026-09-18"
         }
+      ],
+      "requires": [
+        "data.sr.rep.second-store"
       ]
     },
     {
@@ -3349,7 +3556,10 @@
         "observed": "Without storeId, agent-test-sr-docs sees 7 reps against 6 with it (Sam Store, other store); agent-test-sr-primary sees no difference (domain-map:sr@rev3 section 6 D10)",
         "route": "UNFILED - no ticket exists; resolve via /qa-review-oracles (add or amend the BL entry), then file a VCST bug; the 8 storeId-less cases are a test-management action via /qa-review-tests --fix (domain map section 7, G10)"
       },
-      "notes": "Which of SR-GQL-001..007 and 091 can pass for the wrong reason depends on the caller active org; none is stamped here."
+      "notes": "Which of SR-GQL-001..007 and 091 can pass for the wrong reason depends on the caller active org; none is stamped here.",
+      "requires": [
+        "data.sr.rep.second-store"
+      ]
     },
     {
       "id": "sr.directory.search-sort-paging",
@@ -3462,6 +3672,11 @@
           "class": "BL",
           "ref": "BL-SR-002"
         }
+      ],
+      "requires": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
       ]
     },
     {
@@ -3638,6 +3853,9 @@
           "ref": "REG-2026-09-02-2055",
           "note": "promoting run of SR-CO-010"
         }
+      ],
+      "requires": [
+        "data.sr.orders.authorship"
       ]
     },
     {
@@ -3703,6 +3921,9 @@
           "class": "BL",
           "ref": "BL-SR-013"
         }
+      ],
+      "requires": [
+        "data.sr.rep.primary"
       ]
     },
     {
@@ -3739,6 +3960,9 @@
           "ref": "REG-2026-09-02-2055",
           "note": "promoting run of SR-CO-013"
         }
+      ],
+      "requires": [
+        "data.sr.orders.i18n-singular"
       ]
     },
     {
@@ -3823,7 +4047,12 @@
         }
       ],
       "last_verified": "2026-11-05",
-      "notes": "integrates with: task-management — TaskManagement module (task store, TaskManagement.TaskTypes, WorkTaskSearchCriteria Priorities / LinkedObjectType / LinkedObjectIds; an empty Priority no longer filters, domain map D36; without the module the Schedule call tile is disabled per VCST-6399, not reached live) — no domain map. Layout note: vc-module-sales-rep#33 + vc-module-task-management#33 (VCST-6157), deployed on vcst as SalesRep 3.1018.0-pr-33-8d4a, UNMERGED on 2026-11-05; a release build (3.1016.0 / 3.1017.0) still renders the scope-chip layout."
+      "notes": "integrates with: task-management — TaskManagement module (task store, TaskManagement.TaskTypes, WorkTaskSearchCriteria Priorities / LinkedObjectType / LinkedObjectIds; an empty Priority no longer filters, domain map D36; without the module the Schedule call tile is disabled per VCST-6399, not reached live) — no domain map. Layout note: vc-module-sales-rep#33 + vc-module-task-management#33 (VCST-6157), deployed on vcst as SalesRep 3.1018.0-pr-33-8d4a, UNMERGED on 2026-11-05; a release build (3.1016.0 / 3.1017.0) still renders the scope-chip layout.",
+      "requires": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.tasks.groups"
+      ]
     },
     {
       "id": "sr.tasks.calendar-tabs",
@@ -3977,6 +4206,9 @@
           "ref": "kb:KB-1144B33E",
           "note": "scoped schema under /graphql/sales-rep"
         }
+      ],
+      "requires": [
+        "data.sr.rep.primary"
       ]
     },
     {
@@ -4085,7 +4317,11 @@
           "date": "2026-09-29"
         }
       ],
-      "notes": "integrates with: lists domain (no mind map) - wishlist ownership and the customer own lists view; notifications domain (no mind map) - push and email. Legacy sharedWithId replaces the whole set. All BE PRs still OPEN."
+      "notes": "integrates with: lists domain (no mind map) - wishlist ownership and the customer own lists view; notifications domain (no mind map) - push and email. Legacy sharedWithId replaces the whole set. All BE PRs still OPEN.",
+      "requires": [
+        "data.sr.rep.primary",
+        "data.sr.list.rep-owned"
+      ]
     },
     {
       "id": "sr.list-share.targets-delta",
@@ -4112,7 +4348,10 @@
           "date": "2026-09-29"
         }
       ],
-      "notes": "Targets load only when selected; legacy sharedWithId replaces the whole set; migration of pre-existing single-customer shares is unobserved."
+      "notes": "Targets load only when selected; legacy sharedWithId replaces the whole set; migration of pre-existing single-customer shares is unobserved.",
+      "requires": [
+        "data.sr.org.unserved"
+      ]
     },
     {
       "id": "sr.list-share.message-persisted",
@@ -4256,7 +4495,10 @@
         "observed": "buyer wishlists returned no items and reading the list returned Access denied (x-cart 3.1030, before the target-set PRs); not re-observed on the deployed PR builds",
         "route": "UNFILED - reports/bugs/open/critical-high/BUG-rep-shared-wishlist-grants-customer-no-access.md"
       },
-      "notes": "The deployed builds replace SharedWithId with a target table, so the defect may have changed shape. Re-observe before trusting either side."
+      "notes": "The deployed builds replace SharedWithId with a target table, so the defect may have changed shape. Re-observe before trusting either side.",
+      "requires": [
+        "data.sr.buyer.techflow"
+      ]
     },
     {
       "id": "sr.list-share.notify-separate",
@@ -4593,6 +4835,12 @@
           "note": "dialog opened, not saved: Title Call, Time 9:00 AM, Notes 0/1000, Add to calendar",
           "date": "2026-11-03"
         }
+      ],
+      "requires": [
+        "data.sr.org.served-set"
+      ],
+      "produces": [
+        "data.sr.tasks.scheduled-call"
       ]
     },
     {
@@ -4682,6 +4930,10 @@
           "note": "SR-GQL-159, SR-GQL-160 PASS — C-17, C-28a..c",
           "date": "2026-10-27"
         }
+      ],
+      "requires": [
+        "data.sr.tasks.scheduled-call",
+        "data.sr.rep.techflow-only"
       ]
     },
     {
@@ -4856,7 +5108,10 @@
           "date": "2026-11-05"
         }
       ],
-      "notes": "Low, pre-existing (VCST-5732), not filed by VCST-6314. Same scope rule as the filter rules (kb:KB-7052E6CD). The empty Customer select is PR-33 source (sales-rep-task-modal.vue), not yet seen live. vc-module-sales-rep#33 + vc-module-task-management#33 (VCST-6157), deployed on vcst as SalesRep 3.1018.0-pr-33-8d4a, UNMERGED on 2026-11-05; a release build (3.1016.0 / 3.1017.0) still renders the scope-chip layout."
+      "notes": "Low, pre-existing (VCST-5732), not filed by VCST-6314. Same scope rule as the filter rules (kb:KB-7052E6CD). The empty Customer select is PR-33 source (sales-rep-task-modal.vue), not yet seen live. vc-module-sales-rep#33 + vc-module-task-management#33 (VCST-6157), deployed on vcst as SalesRep 3.1018.0-pr-33-8d4a, UNMERGED on 2026-11-05; a release build (3.1016.0 / 3.1017.0) still renders the scope-chip layout.",
+      "requires": [
+        "data.sr.rep.zero-served"
+      ]
     },
     {
       "id": "sr.tasks.filters",
@@ -4919,7 +5174,10 @@
         }
       ],
       "last_verified": "2026-11-05",
-      "notes": "Options capped at the first 1000 served customers, searched in the browser; the list-sharing picker shares the cap (was 100). Past 1000: VCST-5923 / VCST-6273. vc-module-sales-rep#33 + vc-module-task-management#33 (VCST-6157), deployed on vcst as SalesRep 3.1018.0-pr-33-8d4a, UNMERGED on 2026-11-05; a release build (3.1016.0 / 3.1017.0) still renders the scope-chip layout."
+      "notes": "Options capped at the first 1000 served customers, searched in the browser; the list-sharing picker shares the cap (was 100). Past 1000: VCST-5923 / VCST-6273. vc-module-sales-rep#33 + vc-module-task-management#33 (VCST-6157), deployed on vcst as SalesRep 3.1018.0-pr-33-8d4a, UNMERGED on 2026-11-05; a release build (3.1016.0 / 3.1017.0) still renders the scope-chip layout.",
+      "requires": [
+        "data.sr.org.unserved"
+      ]
     },
     {
       "id": "sr.tasks.filters.priorities-fail-closed",
@@ -5074,7 +5332,12 @@
           "date": "2026-11-03"
         }
       ],
-      "notes": "integrates with: google-ecommerce-analytics — GA4 Data API, an optional module dependency (no domain map). GA rows surface with a lag (most <20 h, slowest ~37 h). Low, in scope, unfiled: salesRepCustomerInsights lastSearchedDate / lastViewedDate always null."
+      "notes": "integrates with: google-ecommerce-analytics — GA4 Data API, an optional module dependency (no domain map). GA rows surface with a lag (most <20 h, slowest ~37 h). Low, in scope, unfiled: salesRepCustomerInsights lastSearchedDate / lastViewedDate always null.",
+      "requires": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.activity.member-search"
+      ]
     },
     {
       "id": "sr.activity.searches",
@@ -5238,6 +5501,9 @@
           "note": "D-23, N-14 — vcptcore-qa, SalesRep 3.1015.0-pr-15-e5bc + GA 4.1005.0-pr-61 (vc-module-sales-rep #15 and vc-frontend #2458, merged 2026-10-21)",
           "date": "2026-10-20"
         }
+      ],
+      "requires": [
+        "data.sr.rep.zero-served"
       ]
     },
     {
@@ -5320,7 +5586,11 @@
           "date": "2026-11-05"
         }
       ],
-      "notes": "Observed only on an UNMERGED build (vc-module-sales-rep #30, head now 36a2801d; vc-frontend #2596 merged 2026-11-05). Absent on the 2026-11-05 vcst build, which runs PR #33 instead; re-read when #30 is deployed again (domain map G18). Open: D32 (empty storeId answers an empty 200, the PR text says refused) and whether the list is per customer at all. integrates with: marketing — promotions and coupons (no mind map)"
+      "notes": "Observed only on an UNMERGED build (vc-module-sales-rep #30, head now 36a2801d; vc-frontend #2596 merged 2026-11-05). Absent on the 2026-11-05 vcst build, which runs PR #33 instead; re-read when #30 is deployed again (domain map G18). Open: D32 (empty storeId answers an empty 200, the PR text says refused) and whether the list is per customer at all. integrates with: marketing — promotions and coupons (no mind map)",
+      "requires": [
+        "data.sr.rep.primary",
+        "data.sr.coupons.family"
+      ]
     }
   ],
   "edges": [
