@@ -136,7 +136,8 @@ The verdict is advisory: the user makes the go/no-go.
 - **Deduplicate** — before generating, check the target suite and related suites for semantic duplicates.
 - **The domain models are read-only here** — the stamps on the run's own cases are the only model links it
   writes; a behaviour it found changed is listed for `/qa-test-mind-map update`, never edited (`models.md`).
-- **One browser at a time** — Phase 5 uses `playwright-firefox` via `qa-testing-expert`.
+- **One browser at a time** — the author proof run (`generate.md` 3c step 9) uses `playwright-chrome` via
+  `test-management-specialist`, Phase 5 uses `playwright-firefox` via `qa-testing-expert`; they run in sequence.
 - **URLs come from the env loader** (`config.js` → `process.env`), never hardcoded.
 - **Every write shows a diff summary**; updated cases record `Synced: {source} ({date})` in References.
 - **Module dependencies matter** — when module X changes, check downstream modules too.

@@ -352,7 +352,7 @@ hold affirmatively; the third corroborates:
 
 | Signal | Resolves affirmatively when |
 |---|---|
-| user-facing contract | **unchanged** — GraphQL schema, REST routes and payloads, rendered surfaces, and any other surface a user or integrator can reach |
+| user-facing contract | **unchanged** — GraphQL schema, REST routes and payloads, the set of rendered surfaces (pages, routes, menu entries), and any other surface a user or integrator can reach. How an EXISTING component renders may change inside a mechanical replacement: that is the change's visible delta, not a new surface (worked widening VCST-4857, below) |
 | diff shape | one recognisable technical shape: a move / rename / extract / re-export · a dependency, SDK, framework or runtime swap · a build-target, config or tooling change. Typically a manifest change plus call-site churn following **one mechanical pattern** |
 | **exported surface** — *runtime*, not compile-time | **nothing net-new is exported on a surface someone can EXERCISE at runtime, and nothing so exported is removed without an equivalent re-export.** A new page, route, component, extension point or GraphQL/REST operation is net-new capability however technical the ticket sounds — and unlike the row above it is *mechanically checkable*, so check it first. **A breaking change to a compile-time .NET/TS API — a changed public constructor, a removed interface — does NOT contradict this row**: no user or integrator exercises it at runtime, a compiler catches it, and no storefront suite can see it either way. It becomes a **machinery claim for §3's checklist** (*do the dependent modules still build and start?*), which is where it belongs |
 | the ticket | declares no new user capability. ACs, where present, are about the machinery (*does it still emit, still build, still start*) |
@@ -396,6 +396,22 @@ class does not resolve and the ticket routes `feature-test` FULL — which is wh
 2026-09-15, finding VCST-5986 (**High**: a guest is offered Skyflow, the card form never mounts, the order
 cannot be completed, and the console stays clean). **A classifier keyed on the ticket would have skipped
 that feature test.** Read the diff; the title is not evidence.
+
+**Worked widening — VCST-4857, the line between a delta and a new surface.** *"Remove deprecated
+useOrganizationAddresses and useUserAddresses, migrate to new composables"* (`Task`; vc-frontend PR #2424, one
+storefront layer). One mechanical pattern: two deprecated composables replaced by their paged successors and their
+consumers migrated. It adds no page, route, menu entry, extension point or GraphQL operation (the queries it
+calls already existed on the server), and changes no schema, REST contract, migration or flag. What it does change
+is how two existing components render: the header Ship to selector searches and pages on the server instead of
+*See more*, and the quote address modal pages. **That resolves this flow**: the delta lives inside components
+users already reach, so the regression over them is the right instrument, `2a` `REPAIR`s the rows the delta made
+stale (a pager where a row expected *See more*), and the delta is the run's machinery claim — the checklist runs
+for it ([`technical-change.md`](../../skills/qa-test/technical-change.md) §3). VCST-4386 stays refused: a net-new
+page is a surface, a new control inside an existing one is a delta. Measured 2026-11-04: routed to the full
+`/vc-test:qa-ticket` scenario hunt instead, it cost 347M tokens and 127 min and found no defect from the PR.
+`/vc-test:qa-ticket` applies the same signals mechanically (`plugins/vc-test/lib/route.mjs` `shapeOf`) and STOPs
+naming `/qa-test <KEY>`. The escape hatch below still holds: a pattern of `RE-BASE` dispositions means the
+delta was wider than it looked.
 
 **It fails CLOSED — any signal unresolved ⇒ NOT `technical-change` ⇒ route by type as normal.** This is
 §5c's inversion and it is sharper here, because this classifier subtracts more than any other in this file:
