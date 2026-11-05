@@ -38,8 +38,19 @@
 [BODY] the authorizePayment GraphQL mutation parameters array carries only the opaque token entry - no cardNumber/cvv/expiry field
 [STATUS] authorizePayment returns its documented success shape with no 4xx/5xx","[API] any order created references only a processor transaction id, never a raw PAN
 [CONSOLE] no JS error logs the raw card data","Raw card number or CVV appears in any request body captured during the flow; authorizePayment parameters carry a raw card field instead of an opaque token","Cancel/void the order via admin if one was created","VCST-4576 (payment security family). Grounded in vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue (createToken() then authorizePayment with a token-only parameters array), source fetched live 2026-09-19. Business_Rule corrected from the nonexistent BL-SEC-001 to BL-PAY-003 (business-logic.md:1473) - PARTIAL-FIT: cites only its ""raw PAN never appears in storefront network payloads (SDK tokenization)"" clause; the invariant primary subject is order/transaction creation.","Draft"
-"SEC-PCI-005","No Card Data in Browser Storage","PCI Compliance > Storage","Critical","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- Payment form interaction complete",,,,,,,,
+"SEC-PCI-005","No Card Data in Browser Storage","PCI Compliance > Storage","Critical",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- CyberSource payment method is active for the store (BLOCKED, never FAIL, when /api/payment/search offers no CyberSource method for it - KB-535FF3AC)
+- A line item is in the cart (live-discover an in-stock product)","front_url={{FRONT_URL}}, card_number=@td(CYBERSOURCE_VISA.number), cvv=@td(CYBERSOURCE_VISA.cvv), expiry=@td(CYBERSOURCE_VISA.expiry), cardholder=@td(CYBERSOURCE_VISA.cardholder)","[NAV] {{FRONT_URL}}/cart - confirm the CyberSource card-payment form is displayed
+[ACT] fill the Card Number iframe field with @td(CYBERSOURCE_VISA.number), Cardholder Name with @td(CYBERSOURCE_VISA.cardholder), the expiry fields with @td(CYBERSOURCE_VISA.expiry) and the CVV iframe field with @td(CYBERSOURCE_VISA.cvv)
+[KEY] snapshot localStorage, sessionStorage, IndexedDB and cookies of the {{FRONT_URL}} origin (storage state of the context) BEFORE submitting
+[ACT] submit payment
+[WAIT] the authorizePayment GraphQL response is received
+[KEY] snapshot the same four stores AFTER submitting, then reload {{FRONT_URL}}/cart and snapshot them a third time","[STATE] none of the three snapshots contains the typed card number, the typed CVV, or the card number without separators - in any key or value, in any of the four stores {SPEC} PCI DSS: sensitive authentication data (CVV) is never retained; the PAN is not stored by the merchant page under SAQ A
+[STATE] any card-related value that IS stored is limited to the last four digits / masked PAN or an opaque processor token {SPEC}
+[STATE] the card token JWT is not persisted after authorizePayment returns {SPEC}","[NETWORK] no request after the reload carries the typed card number or CVV
+[CONSOLE] no JS error while the Flex Microform mounts and unmounts","Typed card number or CVV found in localStorage, sessionStorage, IndexedDB or a cookie, before or after submit or after reload; a full PAN persisted instead of last four; the card token JWT persisted after authorizePayment","Cancel/void any order created by the submit via admin; remove the cart line","PCI-DSS SAQ A client-side storage. NOT GROUNDED LIVE: CyberSourcePaymentMethod is isActive=false on B2B-store of vcptcore_regression (REG-2026-11-05-0023-W6R triage, KB-535FF3AC), so the form never renders there; assertions are {SPEC} pending a stand with CyberSource active.
+Catches: a storefront or SDK change that persists the card form state (autofill/draft, debug logging into storage) - mutant: card field value copied to a storage key.
+Authored 2026-11-05 (stable-16 W6 repair) from an unauthored stub. Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
 "SEC-PCI-006","HTTPS Enforcement","PCI Compliance > Transport","Critical","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Payment page loaded","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart - confirm the CyberSource card-payment form is displayed
 [WAIT] the dynamically-injected CyberSource client script finishes loading (useDynamicScript())
@@ -47,72 +58,317 @@
 [CAPTURE] every network request made while the payment form is active","[STATE] {{FRONT_URL}} itself, the injected CyberSource script src and every payment-related network request use https - no mixed-content request
 [DOM] the injected CyberSource script tag carries a non-empty integrity attribute and crossorigin=anonymous whenever the initializeCartPayment/initializePayment response supplies clientLibraryIntegrity - Subresource Integrity is enforced
 [CONSOLE] no mixed-content or SRI-mismatch warning or error","[NETWORK] no plain-http request observed for any payment-related resource","Any payment-related request or the CyberSource script itself loads over http; the injected script tag has no integrity/crossorigin attributes when the mutation response supplied clientLibraryIntegrity; console shows an SRI or mixed-content warning","none","Grounded in vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue useDynamicScript() (integrity + crossOrigin anonymous set from publicParameters.clientLibraryIntegrity), source fetched live 2026-09-19. Business_Rule cleared: BL-SEC-00N does not exist (no BL-SEC-* family in the oracle) and no promoted invariant covers this behaviour - oracle gap, candidate for /qa-review-oracles. A platform-wide HTTPS/SRI invariant would belong under a new BL-SEC or BL-PLAT family, not fabricated here.","Draft"
-"SEC-PCI-007","JWT Token Authentication","PCI Compliance > Auth","High","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- CyberSource payment selected",,,,,,,,
-"SEC-AUTH-001","Session Token Security","Authentication > Tokens","High","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- User logged in
-- DevTools open",,,,,,,,
-"SEC-AUTH-002","Logout Token Revocation","Authentication > Logout","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
-User is logged in to the storefront","front_url={{FRONT_URL}}","[ACT] Log out from the storefront
+"SEC-PCI-007","Invalid Or Tampered Card Token Is Never Authorized","PCI Compliance > Auth","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- CyberSource payment method is active for the store (BLOCKED, never FAIL, otherwise - KB-535FF3AC)
+- Cart with a line item and the CyberSource method selected","front_url={{FRONT_URL}}, card_number=@td(CYBERSOURCE_VISA.number), cvv=@td(CYBERSOURCE_VISA.cvv), expiry=@td(CYBERSOURCE_VISA.expiry), cardholder=@td(CYBERSOURCE_VISA.cardholder)","[NAV] {{FRONT_URL}}/cart - confirm the CyberSource card-payment form is displayed
+[ACT] fill the card iframe fields with the CYBERSOURCE_VISA data but do NOT submit
+[WAIT] the form shows the fields as filled and valid
+[KEY] read the cart and its payment (id, status) as the baseline
+[CAPTURE] arm capture of the authorizePayment request, then submit payment once and record the token JWT from its parameters array
+[GQL] replay authorizePayment against {{FRONT_URL}}/graphql with the same variables [AUTH] role=USER_DEFAULT, changing ONLY the token value: (a) the payload segment edited (masked PAN changed), (b) the signature segment replaced, (c) the literal string not-a-jwt, (d) an empty string
+[GQL] read the payment status of the cart after each replay","[ERRORS] each of (a)-(d) is refused: the response carries a non-empty errors[] OR an explicit unsuccessful result, and no payment reaches an authorized/paid state for the replayed token {SPEC} an invalid processor token must never authorize a payment
+[STATUS] each replay answers without a 5xx {SPEC}
+[BODY] no response body echoes the submitted token or a stack trace {SPEC}","[API] the cart payment status after (a)-(d) equals the baseline (no authorization recorded for a tampered token)
+[ADMIN] no new order or payment transaction exists for the tampered replays","Any tampered, unsigned, malformed or empty token yields an authorized payment or an order; 500 on a malformed token; the token or a stack trace is echoed in the error","Cancel/void any order created by the legitimate submit via admin; remove the cart line","NOT GROUNDED LIVE: CyberSource is inactive on B2B-store of vcptcore_regression (KB-535FF3AC) so the authorizePayment response for an invalid token has not been observed; the assertions are deliberately shape-agnostic ({SPEC} negative invariant only) - tighten to the observed errors[] code on the first stand with CyberSource active.
+Authored 2026-11-05 (stable-16 W6 repair) from the stub titled ""JWT Token Authentication""; reframed to the one falsifiable security property (the token is the authority). The JWT contents (masked PAN, empty securityCode) are already asserted by SEC-PCI-003.
+Catches: authorizePayment trusting the client-supplied token without verifying it - mutant: signature check skipped.
+Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
+"SEC-AUTH-001","Session Token Security - Signed, Short-Lived, No Secrets In Claims","Authentication > Tokens","High",,"ECL-4.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+- The storefront token is requested through the endpoint the sign-in form uses (POST /connect/token, KB-0407F36E)","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, store_id={{STORE_ID}}","[AUTH] role=USER_DEFAULT: POST {{FRONT_URL}}/connect/token (password grant, scope offline_access, storeId={{STORE_ID}}) and keep access_token, refresh_token, expires_in
+[KEY] decode (do not verify) the access_token header and payload
+[GQL] query { me { userName } } on {{FRONT_URL}}/graphql with the valid access_token (baseline)
+[GQL] the same query with (a) the payload segment edited (role and sub changed, signature kept), (b) alg=none and an empty signature, (c) the exp claim edited into the past with the signature kept, (d) the literal Bearer abc.def.ghi
+[HTTP] GET {{BACK_URL}}/api/platform/security/users with the valid storefront token, then with (a)","[BODY] token header: alg=RS256, typ=at+jwt {OBSERVED}
+[BODY] payload aud=resource_server, scope=offline_access, role=__customer; exp minus iat equals 1800 and expires_in is within 2 s of it {OBSERVED}
+[BODY] the payload claim set contains none of: password, passwordHash, securityStamp, phone, card or address data; it carries only iss, exp, iat, aud, scope, jti, sub, name, email, role, memberId, oi_au_id, oi_tkn_id {OBSERVED}
+[DATA] the baseline query returns the signed-in userName; every one of (a)-(d) answers 200 with userName=Anonymous - never the original user and never an elevated identity {OBSERVED}
+[STATUS] GET /api/platform/security/users answers 401 for the valid storefront token and for the tampered token {OBSERVED}
+[BODY] refresh_token is an opaque string, not a decodable JWT {OBSERVED}","[NETWORK] on the storefront the token travels in the Authorization header of /graphql requests, never in a query string {OBSERVED}
+[CONSOLE] no token or password is logged","Edited-payload, alg=none, expired or garbage token still resolves to the original or an elevated identity; a secret claim (password hash, security stamp) in the payload; token lifetime far above 1800 s; refresh token decodable as a JWT; token present in a URL","none - read-only; the minted token expires by itself","Authored 2026-11-05 (stable-16 W6 repair), grounded live on vcptcore_regression (Platform 3.1076.8, theme 2.59.0) with the lane-1 account: token decode, four forged variants, platform-API audience. KB-7DA9B0B7 (storefront-scoped token refused by platform REST with 401) is DISPUTED - not every REST route refuses it - so the case asserts only /api/platform/security/users.
+Where the browser keeps the token (storage vs memory) is NOT asserted - no storage inspection on the MCP lane; see SEC-PCI-005 for the storage method.
+Catches: signature or expiry validation bypass - mutants: skip signature check, accept alg=none, ignore exp.
+Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
+"SEC-AUTH-002","Logout Token Revocation - Refresh Token Dies At Logout","Authentication > Logout","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+User is logged in to the storefront
+- The session under test is THIS browser session only: never use a ""sign out everywhere"" action
+- Whether persistent token validation is on is NOT assumed: it is not a registered platform setting (GET /api/platform/settings/... answers 500 ""not registered"", KB-7564A9BF) so it is inferred from the last step","front_url={{FRONT_URL}}","[KEY] from the sign-in POST /connect/token response capture access_token, refresh_token and expires_in
+[ACT] Log out from the storefront (account menu popup, BL-AUTH-007)
 [WAIT] Wait for logout to complete and redirect to home or /sign-in
-[KEY] Capture the token-revocation request fired on logout and the now-revoked storefront access token
-[ACT] Reuse the captured (revoked) storefront token as the Authorization header on an authenticated storefront GraphQL query against {{FRONT_URL}}/graphql
-[WAIT] Receive the GraphQL response","[NETWORK] a token-revocation request is sent on logout
-[STATUS] the reused (revoked) storefront token is rejected by the GraphQL endpoint (401, or a GraphQL errors[] entry carrying an authentication code) rather than returning the authenticated payload","[CONSOLE] no TypeError or JS errors
-[NETWORK] no unexpected 5xx","Revoked token still returns authenticated GraphQL data; no revocation request observed on logout; 500 instead of 401/errors[]","none","Row re-split 2026-09-19 (REG-2026-09-19-1035): a stray trailing quote had swallowed Steps/Assertions into Preconditions, leaving 0 assertions and 0 Failure_Signals. Retargeted at {{FRONT_URL}}/graphql because the captured token is storefront-issued (iss=...-storefront, role=__customer), so asserting it against the platform BACK_URL endpoint was the wrong audience. Business_Rule cleared: BL-SEC-004 does not exist (there are no BL-SEC-* entries at all) and no promoted invariant covers storefront logout revocation - oracle gap, candidate for /qa-review-oracles.",""
-"SEC-AUTH-003","Account Lockout Protection","Authentication > Brute Force","High","","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Dedicated lockout-test user exists (LOCKOUT_TEST_EMAIL) isolated from agent pool slot accounts",,,,,,,,
-"SEC-INPUT-001","XSS Prevention - Search","Input Validation > XSS","High","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Search functionality available",,,,,,,,
-"SEC-INPUT-002","XSS Prevention - Forms (Server-Side Validation)","Input Validation > XSS","High","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Registration or profile form accessible",,,,,,,,
-"SEC-INPUT-003","SQL Injection Prevention","Input Validation > SQLi","High","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Search functionality available",,,,,,,,
-"SEC-INPUT-004","Path Traversal Prevention","Input Validation > Path","Medium","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Application with URL parameters or file upload accessible",,,,,,,,
-"SEC-CSRF-001","CSRF Token Validation","CSRF Protection","High","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- Any form submission available
-- DevTools open",,,,,,,,
-"SEC-CORS-001","CORS Configuration","API Security > CORS","Medium","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- DevTools Network tab open",,,,,,,,
-"SEC-SENSITIVE-001","No Credentials in Logs","Data Protection > Logging","Critical","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- Various operations performed including login",,,,,,,,
-"SEC-SENSITIVE-002","Error Message Safety","Data Protection > Errors","Medium","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- Application accessible for error triggering",,,,,,,,
-"SEC-SESSION-001","Session expiry during checkout — re-auth preserves cart","Authentication > Session Expiry","High","","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CAPTURE] the token-revocation request fired on logout
+[HTTP] POST {{FRONT_URL}}/connect/token with grant_type=refresh_token and the captured (revoked) refresh_token
+[GQL] Reuse the captured access token as the Authorization header on query { me { userName } } against {{FRONT_URL}}/graphql and record userName; this reading decides PERSISTENT_VALIDATION_ENABLED (Anonymous = enabled, the original user = disabled)","[NETWORK] a token-revocation request is sent on logout {SPEC} - NOT yet observed: the logout was not exercised on 2026-11-05 (would have touched the lane account while another wave runs)
+[STATUS] the refresh-token grant with the revoked refresh token answers 400 error=invalid_grant {OBSERVED} (POST /revoke/token then refresh grant on 2026-11-05; KB-7564A9BF)
+[DATA] IF the access-token reading is Anonymous (persistent validation enabled): the revoked access token is rejected - userName=Anonymous; IF it is the original user (the stand default): this assertion is BLOCKED - the access token legitimately lives to its expiry (about 1800 s) and the default is NOT reported as a pass of a security property {OBSERVED}","[CONSOLE] no TypeError or JS errors
+[NETWORK] no unexpected 5xx","Refresh grant succeeds after logout (the refresh token survived - real defect, a stolen refresh token would mint new access tokens forever); no revocation request observed on logout; 500 instead of 400 invalid_grant","none","Rewritten 2026-11-05 (stable-16 W6 repair, REG-2026-11-05-0023-W6R FAIL triage): the old assertion 2 expected the revoked ACCESS token to be rejected. The platform validates access tokens statelessly by default - logout and /revoke/token end the refresh token only (KB-7564A9BF, well attested, re-confirmed on vcptcore_regression 2026-11-05: revoke 200, refresh 400 invalid_grant, access token still 200). The security property that holds by default is refresh-token revocation; access-token rejection is asserted only when persistent validation is on.
+Row re-split 2026-09-19 (REG-2026-09-19-1035): a stray trailing quote had swallowed Steps/Assertions into Preconditions. The captured token is storefront-issued (iss=...-storefront, role=__customer) so it is asserted against {{FRONT_URL}}/graphql, not the platform BACK_URL.
+Catches: logout that leaves the refresh token valid - mutants: revocation call dropped from logout; revoke endpoint a no-op. Do NOT re-add ""revoked access token is rejected"" as an unconditional assertion (it asserts a setting, not the product).
+Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
+"SEC-AUTH-003","Account Lockout Protection - Dedicated Account Only","Authentication > Brute Force","High","BL-AUTH-003","ECL-4.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Dedicated lockout-test user exists (LOCKOUT_TEST_EMAIL) isolated from agent pool slot accounts
+- BLOCKED, never FAIL, when LOCKOUT_TEST_EMAIL or LOCKOUT_TEST_PASSWORD is empty for the environment (empty on vcptcore and vcptcore_regression on 2026-11-05) - NEVER substitute a shared persona
+- The lockout threshold is read from the failed-attempt responses, not assumed","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, lockout_email={{LOCKOUT_TEST_EMAIL}}, lockout_password={{LOCKOUT_TEST_PASSWORD}}, wrong_password=random-data(AGENT-TEST- prefixed), store_id={{STORE_ID}}","[HTTP] POST {{FRONT_URL}}/connect/token (password grant, storeId={{STORE_ID}}) for {{LOCKOUT_TEST_EMAIL}} with the CORRECT password - baseline, expect a token
+[HTTP] POST the same grant with a wrong password 5 times in a row, record the response of each
+[HTTP] POST the same grant with the CORRECT password (6th attempt)
+[KEY] record code and lockoutEnd / lockoutSecondsRemaining of the 6th response
+[NAV] {{FRONT_URL}}/sign-in - sign in as {{LOCKOUT_TEST_EMAIL}} with the correct password and record the visible text of the error
+[SETUP] unlock the account: POST {{BACK_URL}}/api/platform/security/users/{id}/unlock with an administrator token
+[HTTP] POST the grant with the CORRECT password again","[STATUS] attempts 1-5 with the wrong password answer 400 invalid_grant with code login_failed and a generic description {DOC} KB-0407F36E (observed on vcst_qa and vcptcore_qa 2026-10-29)
+[STATUS] the 6th attempt, with the CORRECT password, is still refused: 400 with code user_is_temporary_locked_out and a lockoutEnd about 15 minutes ahead {DOC} KB-8646A9CB, BL-AUTH-003 (threshold 5 is the platform default; read from the stand, not assumed)
+[DOM] the sign-in page shows its generic failure text, not a text that confirms the account exists or says it is locked {DOC} KB-8646A9CB
+[STATUS] after the unlock the correct password returns 200 and an access_token {DOC} KB-8646A9CB","[API] GET {{BACK_URL}}/api/platform/security/users/{id}/locked reports locked=true before the unlock and locked=false after {DOC} alias LOCKOUT_TEST_USERS contract (aliases.json changelog 1.5.9)
+[NETWORK] no 5xx on any attempt","No lockout after 5 wrong passwords; the correct password signs in while locked; the lockout response reveals account existence; the account stays locked after the unlock; a shared persona gets locked","Unlock the dedicated account (always, also on failure) via POST {{BACK_URL}}/api/platform/security/users/{id}/unlock","NOT RUN on vcptcore_regression (REG-2026-11-05-0023-W6R authoring): LOCKOUT_TEST_EMAIL is empty on this environment and a lockout attempt on any shared account is forbidden while another wave runs. Expectations come from KB-8646A9CB and KB-0407F36E (observed on other builds, platform 3.1073-3.1090) and BL-AUTH-003, not from this stand - ground on the first run with the dedicated account (vcst has agent-test-lockout-20260729@test-agent.com).
+Catches: lockout not enforced on the storefront token endpoint (VCST-4999 family); org members receiving the permanent lockout code (VCST-5374).
+Edge_Case_Refs corrected from ECL-3.1 (No Results) to ECL-4.3 (Account Takeover).","Draft"
+"SEC-INPUT-001","XSS Prevention - Search (merged into SEC-XSS-003)","Input Validation > XSS","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]",,"[WAIT] N/A - NOT EXECUTED: merged into SEC-XSS-003. The header Search box only navigates to /search?q=<text>, so typing the payload and loading the URL are one reflection surface (verified live: both render identically); SEC-XSS-003 drives both entries.","[STATE] N/A - see SEC-XSS-003
+[DOM] N/A - covered by SEC-XSS-003","N/A - see SEC-XSS-003","N/A - see SEC-XSS-003
+N/A - merged, never executed on its own","none","Deprecated: 2026-11-05 (stable-16 W6 repair) - merged into SEC-XSS-003. The header Search box only navigates to /search?q=<text>, so typing the payload and loading the URL are one reflection surface (verified live: both render identically); SEC-XSS-003 drives both entries.","Deprecated"
+"SEC-INPUT-002","XSS Prevention - Forms (Server-Side Validation) (merged into SEC-XSS-004 / SEC-VALIDATION-001)","Input Validation > XSS","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]",,"[WAIT] N/A - NOT EXECUTED: merged into SEC-XSS-004 / SEC-VALIDATION-001. Script payload in the profile and sign-up name fields is SEC-XSS-004; what the name rule accepts and refuses is SEC-VALIDATION-001. The checkout address form (SEC-XSS-001) and the free-text matrix (SEC-VALIDATION-002) stay separate surfaces.","[STATE] N/A - see SEC-XSS-004 / SEC-VALIDATION-001
+[DOM] N/A - covered by SEC-XSS-004 / SEC-VALIDATION-001","N/A - see SEC-XSS-004 / SEC-VALIDATION-001","N/A - see SEC-XSS-004 / SEC-VALIDATION-001
+N/A - merged, never executed on its own","none","Deprecated: 2026-11-05 (stable-16 W6 repair) - merged into SEC-XSS-004 / SEC-VALIDATION-001. Script payload in the profile and sign-up name fields is SEC-XSS-004; what the name rule accepts and refuses is SEC-VALIDATION-001. The checkout address form (SEC-XSS-001) and the free-text matrix (SEC-VALIDATION-002) stay separate surfaces.","Deprecated"
+"SEC-INPUT-003","SQL Injection Prevention - Catalog Search","Input Validation > SQLi","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Search functionality available
+- The unfiltered catalog total T is read in Steps, never hardcoded","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, payloads=[' OR '1'='1' --] [1; DROP TABLE Product--] ["" OR 1=1 --] [') UNION SELECT NULL,NULL--] [bolt' AND SLEEP(5)--], neutral_term=live-discover (a word from an in-stock product name)","[GQL] query products(storeId:{{STORE_ID}}, first:3, query:<neutral_term>) { totalCount } on {{FRONT_URL}}/graphql - record totalCount and elapsed ms (baseline)
+[GQL] query products(storeId:{{STORE_ID}}, first:3) { totalCount } with no query - record the unfiltered total T
+[GQL] repeat the first query once per payload, recording status, errors[], totalCount and elapsed ms
+[NAV] {{FRONT_URL}}/search?q=<tautology payload> and load it
+[WAIT] the results heading or the empty-state heading renders","[STATUS] every payload answers 200 with no errors[] and no 5xx {OBSERVED}
+[BODY] no response contains SQL error vocabulary (syntax, SqlException, ORA-, unclosed quotation) or a stack trace {OBSERVED}
+[COUNT] the tautology payloads return totalCount strictly below T - the injected OR does not turn the query into match-all (observed 3 of 375 via xAPI) {OBSERVED}
+[MATH] elapsed(SLEEP payload) minus elapsed(baseline) is below 3000 ms - an injected 5 s delay would show {OBSERVED}
+[DOM] the /search page renders its results heading with the payload as text, N below T, and no error alert {OBSERVED}","[CONSOLE] no TypeError or Apollo error on the search page {OBSERVED}
+[NETWORK] no 4xx/5xx on the search requests","A tautology returns the whole catalog; SQL or exception text in any response; a delay proportional to the injected sleep; 500 on a quote or semicolon; the search page shows an error alert","none","Authored 2026-11-05 (stable-16 W6 repair), grounded live on vcptcore_regression, anonymous xAPI calls and one read-only slot-1 page load. The search backend is an index (Lucene-style query), so the SQL payloads are absorbed as text tokens; the property under test is ""input never changes the query structure or errors"", not ""SQL is parsed"".
+Catches: string-concatenated query building - mutant: search term interpolated into a filter expression (tautology widens the result set).
+Edge_Case_Refs cleared (ECL-5.1 is Rapid & Repetitive Actions). Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
+"SEC-INPUT-004","Path Traversal Prevention - URL Paths And Search Parameter","Input Validation > Path","Medium",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Anonymous GETs only; no file upload is exercised (see GAP in References)","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, paths=[/assets/..%2f..%2f..%2fappsettings.json] [/%2e%2e/%2e%2e/appsettings.json] [/assets/../../../../etc/passwd] [/..%5c..%5cwindows/win.ini] [/%252e%252e/%252e%252e/web.config] [/api/platform/assets?folderUrl=../../]","[HTTP] GET {{FRONT_URL}}/ and record the status, content-type and body length of the app shell
+[HTTP] GET each path against {{FRONT_URL}} without following redirects, recording status, content-type, body length and whether the body equals the shell
+[HTTP] GET each path against {{BACK_URL}} the same way
+[GQL] query products(storeId:{{STORE_ID}}, first:3, query:""../../../etc/passwd"") on {{FRONT_URL}}/graphql","[STATUS] no path answers 200 with a body that is not the app shell {OBSERVED}
+[BODY] no response contains root:, [boot loader], ConnectionStrings, Exception or a stack trace {OBSERVED}
+[STATUS] on {{BACK_URL}} every path answers 404 or 400 with an empty or HTML-error body {OBSERVED}
+[STATUS] on {{FRONT_URL}} each path answers 400/404 or 200 text/html whose length equals the app shell (the SPA fallback) {OBSERVED}
+[ERRORS] the traversal search term answers 200 with no errors[] and totalCount 0 {OBSERVED}","[NETWORK] no 5xx","Any path returns file content (appsettings, passwd, win.ini, web.config); a 5xx or stack trace for an encoded or double-encoded path; the traversal search term is interpreted as a path","none","Authored 2026-11-05 (stable-16 W6 repair), grounded live on vcptcore_regression. The storefront answers unknown paths with the SPA shell at 200 (same body length observed on every fallback path), which is why the assertion compares to the shell rather than expecting 404.
+GAP: file-name traversal in uploads (configurable-product File sections) is not covered - needs a write on a product/cart.
+Catches: static-file middleware serving outside its root - mutant: path normalisation removed.
+Edge_Case_Refs cleared (ECL-5.1 is Rapid & Repetitive Actions).","Draft"
+"SEC-CSRF-001","CSRF Token Validation (merged into SEC-CSRF-002)","CSRF Protection","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]",,"[WAIT] N/A - NOT EXECUTED: merged into SEC-CSRF-002. The storefront has no form CSRF tokens: every mutation is a bearer-authenticated /graphql POST (Authorization header observed on every request) and the endpoint enforces a preflight-header rule, which is what SEC-CSRF-002 asserts.","[STATE] N/A - see SEC-CSRF-002
+[DOM] N/A - covered by SEC-CSRF-002","N/A - see SEC-CSRF-002","N/A - see SEC-CSRF-002
+N/A - merged, never executed on its own","none","Deprecated: 2026-11-05 (stable-16 W6 repair) - merged into SEC-CSRF-002. The storefront has no form CSRF tokens: every mutation is a bearer-authenticated /graphql POST (Authorization header observed on every request) and the endpoint enforces a preflight-header rule, which is what SEC-CSRF-002 asserts.","Deprecated"
+"SEC-CORS-001","CORS Configuration - No Foreign Origin Is Allowed","API Security > CORS","Medium",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Requests are issued from a script or HTTP client with a foreign Origin header (a browser cannot forge Origin)","evil_origin=https://csrf-probe.invalid, front_url={{FRONT_URL}}, back_url={{BACK_URL}}","[HTTP] for each host H in {{FRONT_URL}} and {{BACK_URL}}: OPTIONS H/graphql with Origin, Access-Control-Request-Method: POST and Access-Control-Request-Headers: authorization,content-type
+[HTTP] OPTIONS H/connect/token with the foreign Origin and Access-Control-Request-Method: POST
+[HTTP] POST H/graphql { me { userName } } with the foreign Origin and no Authorization
+[HTTP] GET H/api/platform/security/currentuser with the foreign Origin
+[KEY] for every response record status, content-type, Access-Control-Allow-Origin and Access-Control-Allow-Credentials","[HEADER] no response to /graphql or /connect/token (either host) carries Access-Control-Allow-Origin equal to the foreign origin or *, and none carries Access-Control-Allow-Credentials: true {OBSERVED}
+[STATUS] the /graphql preflight answers 404 and the /connect/token preflight answers 400 invalid_request, neither with CORS headers {OBSERVED}
+[HEADER] {{BACK_URL}}/api/platform/security/currentuser carries no Access-Control-Allow-Origin {OBSERVED}
+[HEADER] where Access-Control-Allow-Origin is * (observed only on {{FRONT_URL}} routes that return the SPA shell, content-type text/html) the body is the static app shell and holds no user data {OBSERVED}","[NETWORK] no 5xx","A foreign origin is echoed or allowed (* or reflected) on /graphql, /connect/token or an /api route; Allow-Credentials true together with a wildcard or reflected origin; an API route answers a foreign preflight with 200","none","DV-002-OK: csrf-probe.invalid is a deliberate foreign origin (reserved .invalid TLD), not a product URL.
+Authored 2026-11-05 (stable-16 W6 repair), grounded live on vcptcore_regression. Watch: {{FRONT_URL}} returns Access-Control-Allow-Origin * on its SPA-shell fallback (including /api/... paths that do not exist there) - harmless static HTML today, would matter if an API ever sat behind that fallback. The deployment CORS settings were not readable (administrator-only) and VirtoOZ returned no page for the CORS options.
+Catches: AllowAnyOrigin + AllowCredentials policy on the platform - mutant: policy set to reflect Origin.
+Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
+"SEC-SENSITIVE-001","No Credentials In Client-Side Logs, URLs Or Error Bodies","Data Protection > Logging","Critical",,,"[PRE:CLEAR_SESSION]
+- The server-side half needs Application Insights access (APPINSIGHTS_APP_ID_BACKEND / _STOREFRONT): BLOCKED, never PASS, when unset (unset on vcptcore_regression 2026-11-05)","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, unknown_user=random-data(AGENT-TEST- prefixed email), probe_password=random-data(AGENT-TEST- prefixed)","[NAV] {{FRONT_URL}}/sign-in
+[KEY] arm console and network capture
+[ACT] sign in as USER_DEFAULT (password typed by its secret name) and wait for the home page
+[ACT] navigate Dashboard, /account/profile and /cart
+[KEY] dump the console log and the list of request URLs of the whole sequence
+[HTTP] POST {{FRONT_URL}}/connect/token (password grant) for <unknown_user> with <probe_password> and record the response body
+[APP-INSIGHTS] query traces/requests for the sequence window for the probe_password, ""Bearer "" and ""refresh_token""","[CONSOLE] the dumped console log contains no password, no Bearer value, no access_token or refresh_token value {OBSERVED}
+[NETWORK] no request URL of the sequence has a query string containing password, token or secret; the password travels only in the body of POST /connect/token {OBSERVED}
+[BODY] the failed-login response (400, code login_failed) does not echo the submitted password and shows the generic description {OBSERVED}
+[STATE] the server-side traces/requests for the window contain neither probe_password nor a Bearer value {SPEC} credentials are never logged - BLOCKED without App Insights access","[API] App Insights customDimensions of the window carry no Authorization header value
+[NETWORK] no 5xx","Password, Bearer value or refresh token appears in the console, a URL, an error body or a server trace","none - the probe user does not exist and nothing is created","Authored 2026-11-05 (stable-16 W6 repair). Client-side half grounded live (console log of a lane-1 sign-in and browse: no credential strings; the /connect/token URL has no query; a failed login for an unknown user does not echo the password). The server-log assertion is {SPEC} and BLOCKED until App Insights access is configured.
+Catches: debug logging of the sign-in payload or request headers - mutant: console.log of the token response.
+Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
+"SEC-SENSITIVE-002","Error Message Safety - No Stack Traces Or Internals","Data Protection > Errors","Medium",,,"[PRE:CLEAR_SESSION]
+- Error responses are provoked with a script; nothing is written","front_url={{FRONT_URL}}, back_url={{BACK_URL}}","[HTTP] POST {{FRONT_URL}}/graphql with the syntactically broken query ""{me{"" , Content-Type application/json and the header GraphQL-Require-Preflight: 1
+[HTTP] POST {{FRONT_URL}}/graphql with the body {not json
+[HTTP] POST {{FRONT_URL}}/graphql with Authorization Bearer abc.def.ghi and the query { me { userName } }
+[HTTP] GET {{BACK_URL}}/api/platform/nonexistent-zzz
+[HTTP] GET {{BACK_URL}}/api/platform/security/users with no Authorization header, then with Bearer abc.def.ghi
+[NAV] {{FRONT_URL}}/nonexistent-zzz-path","[STATUS] the broken query answers 400 with a syntax-class errors[0].extensions.code; malformed JSON answers 400 with code JSON_INVALID; both application/graphql-response+json {OBSERVED}
+[STATUS] the garbage Bearer on /graphql answers 200 with userName=Anonymous {OBSERVED}
+[STATUS] the unknown /api route answers 404 with an empty body; /users answers 401 with no body, with and without the garbage token {OBSERVED}
+[BODY] no response body contains a stack trace (""   at ""), a file system path, a connection string, or the words Exception / StackTrace {OBSERVED}
+[DOM] the unknown storefront path renders the app shell (its not-found view), not a server error page {OBSERVED}","[NETWORK] no 5xx on any request
+[HEADER] no Server / X-Powered-By header names a framework version {SPEC} - not read on 2026-11-05","Stack trace, path, connection string or exception type name in an error body; 500 for malformed input; the 404 page is a framework error page","none","Authored 2026-11-05 (stable-16 W6 repair), grounded live. Informational, not asserted: the JSON_INVALID message quotes the parser position (""Path, line, position"") - parser detail, no secret.
+Catches: developer exception page or detailed errors enabled outside development - mutant: UseDeveloperExceptionPage.
+Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
+"SEC-SESSION-001","Session expiry during checkout - re-auth keeps the cart and resumes checkout","Authentication > Session Expiry","High","BL-AUTH-001","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-- Customer logged in with items in cart
-- Checkout flow started (shipping address entered)
-- Token expiry mechanism available",,,,,,,,
-"SEC-SESSION-002","Session re-auth during checkout — resume from last step","Authentication > Session Expiry","High","","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Customer signed in with a line item (live-discover an in-stock product) in the cart
+- Checkout started with the shipping address entered
+- The session is expired by the run, not assumed: capture the refresh token of THIS browser session, revoke it, then wait out the access-token lifetime (1800 s on the stand default)","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, product=live-discover (in-stock product)","[NAV] {{FRONT_URL}}/cart and read the line items and quantities (baseline)
+[NAV] {{FRONT_URL}}/checkout, enter the shipping address and advance to the next step
+[KEY] from the sign-in POST /connect/token response capture refresh_token and expires_in
+[HTTP] POST {{FRONT_URL}}/revoke/token with token=<refresh_token>, token_type_hint=refresh_token
+[WAIT] expires_in + 30 s with no activity
+[HTTP] POST {{FRONT_URL}}/connect/token (refresh_token grant) with the revoked refresh token
+[ACT] in the open checkout click the control that advances the step
+[WAIT] the page reacts (redirect, prompt or error) or 10 s pass
+[KEY] record the resulting URL and the visible state
+[ACT] sign in again as the same user from the page the app shows
+[NAV] {{FRONT_URL}}/cart then {{FRONT_URL}}/checkout","[STATUS] /revoke/token answers 200 with an empty body; the refresh-token grant answers 400 error=invalid_grant {OBSERVED}
+[ERRORS] a mutation sent with an expired/invalid token returns errors[0].extensions.code=Unauthorized with data null; a query with it resolves me as Anonymous {OBSERVED} (for an invalid token)
+[STATE] the open checkout step is NOT silently completed as a guest: the user is sent to /sign-in (with the page as returnUrl) or shown a sign-in prompt {BL} BL-AUTH-001, BL-AUTH-007 - UI behaviour not yet observed
+[STATE] after re-sign-in /cart holds exactly the baseline lines and quantities - the cart is server-side per user {BL} BL-AUTH-001
+[STATE] /checkout is reachable from the cart and the shipping address entered before expiry is either restored or asked for again, never an empty or errored page {BL} BL-AUTH-001","[API] Query.cart for the user after re-sign-in: itemsQuantity equals the baseline
+[CONSOLE] no unhandled Apollo error loop after the 401 (one redirect, not a retry storm)","Cart emptied after re-auth; the user stays on a dead checkout with no prompt; guest checkout continues with the expired identity; redirect to the home page instead of sign-in/checkout; refresh grant works after revoke","Remove the cart lines; sign out","Merged: SEC-SESSION-002 (resume from the last step) is deprecated into this case - one journey (cart kept AND checkout resumable) instead of two cases sharing one 30-minute expiry setup.
+Grounded: the server contract is {OBSERVED} on vcptcore_regression 2026-11-05 (revoke 200, refresh invalid_grant, Unauthorized/Anonymous for an invalid token; KB-7564A9BF). The UI behaviour is {BL} only - NOT observed: it needs a 30 min wait and cart/checkout writes on the lane account, deferred until wave W7 ends. BL-AUTH-001 is itself SUSPECT after BSM-002/016/025/067 failed in REG-2026-10-27-SR-SWEEP - hold the expectation, do not weaken it.
+Edge_Case_Refs corrected from ECL-6.1 (Stock Sync) to ECL-1.2 (Session & Timeout Issues). Technique: state transition + FLOW.
+Catches: BL-AUTH-001 violation signals (cart emptied after expiry, redirect to the homepage).","Draft"
+"SEC-SESSION-002","Session re-auth during checkout (merged into SEC-SESSION-001)","Authentication > Session Expiry","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]",,"[WAIT] N/A - NOT EXECUTED: merged into SEC-SESSION-001. Same expiry setup, same re-auth, one journey: SEC-SESSION-001 now asserts both cart preservation and checkout resumption.","[STATE] N/A - see SEC-SESSION-001
+[DOM] N/A - covered by SEC-SESSION-001","N/A - see SEC-SESSION-001","N/A - see SEC-SESSION-001
+N/A - merged, never executed on its own","none","Deprecated: 2026-11-05 (stable-16 W6 repair) - merged into SEC-SESSION-001. Same expiry setup, same re-auth, one journey: SEC-SESSION-001 now asserts both cart preservation and checkout resumption.","Deprecated"
+"SEC-SESSION-003","Session expiry does not create a partial or orphan order","Authentication > Session Expiry","Critical","BL-AUTH-001","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-- Customer logged in with items in cart
-- Checkout flow in progress (shipping address and method selected)
-- Token expiry mechanism available",,,,,,,,
-"SEC-SESSION-003","Session expiry does not create partial or orphan order","Authentication > Session Expiry","Critical","","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Customer logged in with items in cart
-- Checkout flow started with all required information entered
+- Customer signed in with a line item (live-discover an in-stock product) in the cart
+- Checkout reached the final review step with all required information entered
 - xAPI access available for order verification
-- Token expiry mechanism available",,,,,,,,
-"SEC-XSS-001","XSS Prevention - Address Field During Checkout (Server-Side Rejection)","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Session expired by the run: refresh token captured and revoked, then expires_in + 30 s waited (as SEC-SESSION-001)","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, product=live-discover (in-stock product)","[GQL] query me { orders { totalCount } } on {{FRONT_URL}}/graphql [AUTH] role=USER_DEFAULT - record the order count (baseline) and the cart id
+[NAV] {{FRONT_URL}}/checkout and advance to the final review step
+[KEY] capture the refresh token from the sign-in response, revoke it via POST {{FRONT_URL}}/revoke/token and wait expires_in + 30 s
+[ACT] click the place-order control with the expired session
+[WAIT] the createOrderFromCart response or the redirect arrives
+[KEY] record the visible outcome and the createOrderFromCart response
+[ACT] sign in again as the same user
+[GQL] query me { orders { totalCount } } again and read the cart","[ERRORS] createOrderFromCart with the expired identity answers errors[0].extensions.code=Unauthorized and data.createOrderFromCart null {OBSERVED} (on an anonymous / invalid-token call)
+[COUNT] the order count after re-sign-in equals the baseline - the rejected placement created no order, partial or complete {BL} BL-AUTH-001
+[STATE] the cart still holds its lines and the same cart id after re-sign-in - neither consumed nor duplicated {BL} BL-AUTH-001
+[DOM] the user is told to sign in again or is routed to /sign-in; no order-confirmation page and no order number is shown {BL} BL-AUTH-001","[ADMIN] Orders list shows no new order for the account in the window
+[NETWORK] no 5xx","An order exists after a rejected placement; an order confirmation is shown to an expired session; the cart is consumed or emptied; createOrderFromCart succeeds with an expired token","Remove the cart lines; cancel any order that was created (also record it as a defect)","Server half {OBSERVED} 2026-11-05 on vcptcore_regression: createOrderFromCart without a valid token (anonymous, and with a foreign Origin) answers Unauthorized, data null. The expiry-driven UI path is {BL} - NOT observed (30 min wait + cart/checkout writes deferred until wave W7 ends).
+Edge_Case_Refs corrected from ECL-6.1 (Stock Sync) to ECL-1.2.
+Catches: the order-created-on-timeout class in ECL-1.2 - mutant: order creation not gated by a valid token.","Draft"
+"SEC-XSS-001","XSS Prevention - Address Field During Checkout (Server-Side Rejection)","Input Validation > XSS","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-- User logged in; - Checkout flow accessible; - Shipping address form visible",,,,,,,,
-"SEC-XSS-002","XSS Prevention - Order Notes Field","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- User logged in; - Checkout flow accessible; - Order notes or comments field available",,,,,,,,
-"SEC-XSS-003","XSS Prevention - Reflected XSS via URL Search Parameter","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Search functionality available via URL parameter",,,,,,,,
-"SEC-XSS-004","XSS Prevention - Stored XSS via Profile Display Name (Server-Side Rejection)","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- User logged in; - Profile edit accessible",,,,,,,,
-"SEC-CSRF-002","CSRF Protection - Cart Mutation Cross-Origin","CSRF Protection","High","BL-CHK-002","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Customer signed in; checkout accessible; the shipping address form visible
+- Writes only on the lane account; the addresses are removed in Cleanup","front_url={{FRONT_URL}}, line1_payload=<script>alert(1)</script>, line1_payload_b=<img src=x onerror=alert(1)>, city_payload=<script>alert(1)</script>, line2_payload=""><svg onload=alert(1)>, benign_line1=5 O'Brien & Sons Rd, Apt #4","[NAV] {{FRONT_URL}}/account/addresses and click the control that adds an address
+[ACT] fill a valid US address with benign_line1 as Address line 1 (negative control) and save
+[WAIT] the updateMemberAddresses response arrives
+[ACT] add a second address with line1_payload as Address line 1 (all other fields valid) and save
+[WAIT] the updateMemberAddresses response arrives
+[ACT] repeat with line1_payload_b, then with city_payload as City, then with line2_payload as Address line 2
+[KEY] after each save capture the updateMemberAddresses response and the address list
+[NAV] {{FRONT_URL}}/checkout and open the shipping address form; enter line1_payload as Address line 1 and continue
+[KEY] capture the response of the cart-address mutation and the rendered address block","[ERRORS] updateMemberAddresses with a script payload in line1, city, line2, firstName or description answers errors[0].extensions.code=VALIDATION and data.updateMemberAddresses null {OBSERVED} (via xAPI, 2026-11-05)
+[COUNT] the address list does not contain any payload address after the rejected saves {OBSERVED}
+[STATE] the benign address with an apostrophe, ampersand and # is accepted and listed verbatim {OBSERVED} (negative control: punctuation is not what is blocked)
+[DOM] a payload typed in the checkout address form never reaches the page as HTML: it is rejected with a visible failure or rendered as plain text; document.title is unchanged and no <script>/<img onerror>/<svg onload> element appears {SPEC} - the checkout cart-address path and the UI failure message NOT yet observed","[API] Query.me.contact.addresses holds only the benign address
+[CONSOLE] no script execution, no JS error from rendering","A payload address is saved or echoed unescaped; the benign punctuation address is rejected (over-blocking); a dialog or title change after the save; 500","Delete every address created on the lane account (deleteMemberAddresses - the delete input needs the complete address) and verify the list is empty","Grounded: the xAPI address-book rejection and the benign-control acceptance are {OBSERVED} on vcptcore_regression 2026-11-05 (probe addresses deleted afterwards). The UI/checkout path is NOT grounded - deferred until wave W7 ends (no writes on the shared lane account meanwhile).
+Which setting produces the rejection is unconfirmed: EnableScriptInjectionValidation could not be read (administrator-only) and VirtoOZ has no page for it. Distinct from SEC-VALIDATION-002 (xAPI field matrix) by being the UI/checkout journey.
+Business_Rule cleared (BL-CHK-003 is address validation by country, not XSS); Edge_Case_Refs cleared (ECL-4.1 is Email & Identity Variations).
+Catches: unescaped address rendering at checkout/order confirmation - mutant: v-html on address lines.","Draft"
+"SEC-XSS-002","XSS Prevention - Order Notes Field (Output Encoding)","Input Validation > XSS","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-- User logged in with items available; - DevTools Network tab open",,,,,,,,
-"SEC-CSRF-003","CSRF Protection - Checkout Order Placement","CSRF Protection","Critical","BL-CHK-002","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Customer signed in with a line item (live-discover an in-stock product) in the cart
+- The order comment field is available on the cart or checkout page (locate it from a snapshot; do not assume its label)
+- Writes only on the lane account; the comment is cleared in Cleanup","front_url={{FRONT_URL}}, comment_payload=<img src=x onerror=document.title='XSSFIRED'><script>document.title='XSSFIRED'</script>, comment_benign=Please leave at <b>back</b> door","[NAV] {{FRONT_URL}}/cart
+[ACT] type comment_payload into the order comment field and let it save (blur or the control the page offers)
+[WAIT] the changeComment response arrives
+[KEY] capture the changeComment request and response
+[NAV] reload {{FRONT_URL}}/cart and open the checkout review step
+[KEY] for each page where the comment is displayed, read the document title and look for an <img>, <script> or <b> element inside the comment area
+[ACT] repeat once with comment_benign","[BODY] changeComment accepts the text and returns it verbatim - the server stores free text raw and does not sanitize it {OBSERVED} (via xAPI, 2026-11-05)
+[DOM] on every page that echoes the comment the payload is visible as literal text (the characters < and > shown), no <img>, <script> or <b> element exists inside the comment area {SPEC} - UI rendering NOT yet observed
+[STATE] document.title never becomes XSSFIRED and no dialog opens {SPEC}
+[DOM] comment_benign shows the characters <b>back</b> as text, not bold text {SPEC}","[API] Query.cart.comment returns the exact string typed
+[CONSOLE] no script execution or JS error","The payload is executed or turned into DOM elements on the cart, checkout or order page; <b> renders as bold; document.title changes; a dialog opens","Clear the comment (changeComment with an empty string); remove the cart line","Why this case exists: the server does NOT reject a script payload in the cart comment (accepted and echoed verbatim 2026-11-05, while the same payload is rejected in address and name fields - see SEC-VALIDATION-002), so output encoding is the only defence for this field. The UI half is {SPEC} - NOT observed, deferred until wave W7 ends (it writes to the shared lane account cart). Open question for the product owner: is raw storage of the comment intended? Not asserted either way.
+Order page (/account/orders/<n>) and the Admin order Comment field are the downstream surfaces: extend the steps once an order is placed by a case that already exists.
+Business_Rule cleared (BL-CHK-003 is address validation by country, not XSS); Edge_Case_Refs cleared (ECL-4.1 is Email & Identity Variations).
+Catches: v-html on a customer-supplied string - mutant: comment rendered through v-html.","Draft"
+"SEC-XSS-003","XSS Prevention - Reflected XSS via the Search Parameter (box and URL)","Input Validation > XSS","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Search available through the header Search box and through /search?q=
+- Read-only: nothing is written","front_url={{FRONT_URL}}, payload_1=<img src=x onerror=document.title='XSSFIRED'><script>document.title='XSSFIRED'</script>, payload_2=""><svg onload=document.title='XSSFIRED'>';-->","[NAV] {{FRONT_URL}}
+[ACT] type payload_1 into the header Search box and press Enter
+[WAIT] the ""didn't return any results"" heading renders
+[KEY] read document.title and look inside the results heading and main area for <img>, <script> and <svg> elements
+[NAV] {{FRONT_URL}}/search?q=<payload_2 URL-encoded> (direct load - the reflected-GET vector)
+[WAIT] the same heading renders
+[KEY] repeat the title and element check","[DOM] the heading reads: Sorry, your search for ""<payload>"" didn't return any results, with the payload inside a <strong> element as literal text (the characters < and > are visible) {OBSERVED}
+[DOM] the Search box holds the payload text; no <img>, <script> or <svg> element exists in the heading, the main area or the box {OBSERVED}
+[STATE] document.title stays the store catalog title (not XSSFIRED) for both payloads and no dialog opens {OBSERVED}
+[CONSOLE] zero errors and zero warnings on both loads {OBSERVED}
+[DOM] typing the payload (entry 1) and loading the URL (entry 2) end on the same /search?q= route and render identically {OBSERVED} - this is why SEC-INPUT-001 was merged here","[API] the products query for the payload answers 200, no errors[], totalCount 0 {OBSERVED}
+[NETWORK] no 4xx/5xx","The payload is executed, turned into a DOM element, or changes the title; the heading shows it as bold/markup instead of text; a dialog opens; console error","none","Survivor of the SEC-INPUT-001 / SEC-XSS-003 merge. Authored 2026-11-05 (stable-16 W6 repair), grounded live on vcptcore_regression (theme 2.59.0), lane-1 session, read-only.
+Business_Rule cleared (BL-CHK-003 is address validation by country, not XSS); Edge_Case_Refs cleared (ECL-4.1 is Email & Identity Variations).
+Catches: unescaped reflection of the search term - mutant: heading rendered with v-html.","Draft"
+"SEC-XSS-004","XSS Prevention - Stored XSS via Profile Name (Server-Side Rejection)","Input Validation > XSS","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Customer signed in; /account/profile accessible
+- Writes only on the lane account; the original names are restored in Cleanup","front_url={{FRONT_URL}}, first_name_payload=<img src=x onerror=document.title='XSSFIRED'>, last_name_payload=<img src=x>, original_first_name=read in Steps, original_last_name=read in Steps","[NAV] {{FRONT_URL}}/account/profile
+[KEY] record the current First name and Last name values
+[ACT] clear First name, type first_name_payload and click Update
+[WAIT] the updateContact response arrives and the alert shows
+[KEY] capture the updateContact request and response and the visible alert
+[NAV] reload {{FRONT_URL}}/account/profile and read both name fields and the Account menu name in the header
+[ACT] repeat with Last name = last_name_payload (First name original)
+[GQL] query me { contact { firstName lastName } } [AUTH] role=USER_DEFAULT
+[NAV] guest {{FRONT_URL}}/sign-up: enter first_name_payload as First name with an AGENT-TEST- prefixed email (random-data) and submit (the registration surface of the merged SEC-INPUT-002)","[ERRORS] updateContact answers errors[0].extensions.code=VALIDATION and data.updateContact null for the payload {OBSERVED} (for first name; last name via xAPI see SEC-VALIDATION-001)
+[DOM] an error alert is shown and the form stays on the page; the alert is the generic ""Something went wrong. Please try again later."" with no field-level message {OBSERVED} (UX note: the user is not told the name is invalid)
+[STATE] after the rejected save the stored names are unchanged: Query.me.contact still returns the original first and last name {OBSERVED} (for first name)
+[DOM] the payload is never displayed as HTML anywhere (header Account menu, profile form, dashboard) and document.title is unchanged {OBSERVED} (for the profile form and title)
+[ERRORS] the sign-up form either rejects the payload or no account carrying it shows as markup; any account created is removed in Cleanup {SPEC} - sign-up path NOT yet observed (it would create an account)","[API] Query.me.contact.firstName equals original_first_name
+[CONSOLE] one ApolloError for the rejected mutation is expected; no script execution {OBSERVED}","The payload is saved or rendered as HTML; the form reports success; document.title changes; names changed after a rejected save","Restore First name and Last name to the originals via updateContact; delete any account created by the sign-up probe","Survivor of the SEC-INPUT-002 / SEC-XSS-004 merge (SEC-INPUT-002 ""forms"" = profile + registration; its name-rule half lives in SEC-VALIDATION-001, script payloads in free text in SEC-VALIDATION-002).
+Grounded: the profile path is {OBSERVED} on vcptcore_regression 2026-11-05 via the UI (alert, console ApolloError) and the updateContact response; names were restored afterwards. Sign-up path NOT grounded (it would create an account on a stand another wave is using); re-run after W7.
+The profile has no display-name or ""about"" field - only first name, last name, language and currency; the stub wording ""display name"" is mapped to the name fields.
+Business_Rule cleared (BL-CHK-003 is address validation by country, not XSS); Edge_Case_Refs cleared (ECL-4.1 is Email & Identity Variations).
+Catches: stored XSS via contact name - mutant: NameValidationPattern accepts angle brackets.","Draft"
+"SEC-CSRF-002","CSRF Protection - Cross-Site Cart Mutation Is Refused (also the merged SEC-CSRF-001)","CSRF Protection","High",,"ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+- A cart exists for the user; its quantity is read in Steps
+- Requests are sent from a script with a foreign Origin (a browser cannot forge Origin); nothing in the cart changes when the case passes","evil_origin=https://csrf-probe.invalid, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, product=live-discover (in-stock product id)","[NAV] {{FRONT_URL}}/cart and [CAPTURE] one storefront /graphql request to read how it authenticates (Authorization header vs cookie)
+[GQL] query cart(storeId:{{STORE_ID}}, userId:<me.id>) { id itemsQuantity } [AUTH] role=USER_DEFAULT - baseline itemsQuantity and cart id
+[HTTP] POST {{FRONT_URL}}/graphql addItem(command:{cartId, storeId, userId, productId, quantity:5}) with Origin and NO Authorization, Content-Type text/plain
+[HTTP] the same with Content-Type application/x-www-form-urlencoded (query and variables form-encoded)
+[HTTP] the same with Content-Type application/json and no Authorization
+[GQL] read the cart again","[DOM] the storefront authenticates /graphql with an Authorization: Bearer header, not a cookie - a foreign page cannot make the browser attach it {OBSERVED}
+[STATUS] the text/plain and form-urlencoded requests answer 400 with errors[0].extensions.code=CSRF_PROTECTION (the GraphQL-Require-Preflight header rule) and execute nothing {OBSERVED}
+[ERRORS] the JSON request without a token answers 200 with errors[0].extensions.code=Unauthorized and data.addItem null {OBSERVED}
+[COUNT] itemsQuantity and cart id after the three requests equal the baseline {OBSERVED}
+[HEADER] no response carries Access-Control-Allow-Origin for the foreign origin (the answer cannot be read cross-site) {OBSERVED}","[NETWORK] no 5xx on any request","A cross-site simple request (text/plain, form-encoded) executes the mutation; the unauthenticated JSON call changes the user cart; the cart quantity differs from the baseline; a cookie alone authenticates /graphql","If the cart changed (a defect), remove the added line with removeCartItem; otherwise none","DV-002-OK: csrf-probe.invalid is a deliberate foreign origin (reserved .invalid TLD), not a product URL.
+Survivor of the SEC-CSRF-001 / 002 merge. Authored 2026-11-05 (stable-16 W6 repair), grounded live on vcptcore_regression against the lane-1 cart (the probe left the cart at its baseline). Message strings are deliberately not asserted - the extensions.code values are the contract.
+Catches: dropping the GraphQL CSRF-prevention middleware or accepting cookie auth - mutants: CSRF_PROTECTION off; Bearer-or-cookie authentication.
+Business_Rule cleared (BL-CHK-002 is double-submit prevention, not CSRF). The cart mutation is distinct from SEC-CSRF-003 (order placement: the money-moving mutation, with its own order-count check).","Draft"
+"SEC-CSRF-003","CSRF Protection - Cross-Site Order Placement Is Refused","CSRF Protection","Critical",,"ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-- User logged in with cart ready for checkout; - DevTools open",,,,,,,,
-"SEC-VALIDATION-001","Server-Side Name Field Validation (NameValidationPattern)","Input Validation > Server-Side","Critical","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Registration or profile edit form accessible",,,,,,,,
-"SEC-VALIDATION-002","Script Injection Validation in Free-Text Fields (EnableScriptInjectionValidation)","Input Validation > Server-Side","Critical","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- User logged in; - Profile with description/about field accessible",,,,,,,,
+- A cart for the user (id read in Steps); a line item is NOT required for the refusal to be observable
+- Requests are sent from a script with a foreign Origin","evil_origin=https://csrf-probe.invalid, front_url={{FRONT_URL}}, store_id={{STORE_ID}}","[GQL] query me { orders { totalCount } } [AUTH] role=USER_DEFAULT - baseline order count; read the cart id
+[HTTP] POST {{FRONT_URL}}/graphql createOrderFromCart(command:{cartId:<cart id>}) with Origin and Content-Type text/plain
+[HTTP] the same with application/x-www-form-urlencoded and with multipart/form-data
+[HTTP] the same with Content-Type application/json, the header GraphQL-Require-Preflight: 1 and NO Authorization
+[GQL] query me { orders { totalCount } } again","[STATUS] text/plain, form-urlencoded and multipart requests answer 400 with errors[0].extensions.code=CSRF_PROTECTION {OBSERVED}
+[ERRORS] the JSON request with the preflight header but no token answers errors[0].extensions.code=Unauthorized and data.createOrderFromCart null {OBSERVED}
+[COUNT] the order count after equals the baseline - none of the four requests created an order {OBSERVED} (for the refused variants)","[ADMIN] Orders list shows no new order for the account
+[NETWORK] no 5xx","Any of the four requests creates an order; an order count increase; a non-error response to a simple-content-type request","Cancel any order created (also a Critical defect)","DV-002-OK: csrf-probe.invalid is a deliberate foreign origin (reserved .invalid TLD), not a product URL.
+Authored 2026-11-05 (stable-16 W6 repair), grounded live on vcptcore_regression against the lane-1 cart id (the cart was empty, so the observation is the guard order: the refusal happens before the mutation runs; the order count was not re-read because nothing could be created).
+Not covered here: double-click idempotency of Place Order (BL-CHK-002, checkout suites).
+Catches: createOrderFromCart reachable without proof of the caller - mutants: Authorize attribute removed; CSRF middleware off.
+Business_Rule cleared (BL-CHK-002 is double-submit prevention, not CSRF).","Draft"
+"SEC-VALIDATION-001","Server-Side Name Field Validation (NameValidationPattern)","Input Validation > Server-Side","Critical",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Customer signed in; the contact id is read in Steps
+- Writes only on the lane account; first and last name are restored in Cleanup","front_url={{FRONT_URL}}, accepted_first=[Agent] [O'Brien] [Anne-Marie] [Zoë], rejected_first=[John2] [<b>x</b>] [a&b] [javascript:alert(1)] [x"" onmouseover=""y] [Agent%3Cb%3E] [Agent{{7*7}}] [Agent;DROP TABLE] [Ag<ent] [Agent>], accepted_last=[O'Neil], rejected_last=[<img src=x>]","[GQL] query me { contact { id firstName lastName } } [AUTH] role=USER_DEFAULT - record the originals
+[GQL] mutation updateContact(command:{id, firstName:<value>, lastName:<original>, defaultLanguage, currencyCode}) once per value of accepted_first and rejected_first, recording errors[] and data
+[GQL] updateContact with lastName = each accepted_last / rejected_last value (firstName original)
+[NAV] {{FRONT_URL}}/account/profile - type one rejected value (John2) into First name and click Update, record the alert
+[GQL] updateContact back to the originals","[DATA] each accepted_first and accepted_last value is saved and returned verbatim - letters (including non-ASCII), apostrophe and hyphen pass {OBSERVED}
+[ERRORS] each rejected_first and rejected_last value answers errors[0].extensions.code=VALIDATION with data.updateContact null - digits, & : ; < > "" % { } and markup are refused {OBSERVED}
+[DOM] the profile form shows an error alert and stays on the page for John2 {SPEC} - the markup payload was observed in the UI, John2 was not
+[STATE] after the run the names equal the originals {OBSERVED}","[API] no 5xx on any request
+[CONSOLE] one ApolloError per rejected value is expected","A rejected value is saved; an accepted real-world name (O'Brien, Anne-Marie, a non-ASCII name) is refused (over-blocking breaks real customers); 500 on a special character","Restore firstName and lastName to the originals via updateContact","Grounded: the full value matrix is {OBSERVED} on vcptcore_regression 2026-11-05 through xAPI (names restored afterwards). The effective NameValidationPattern value was not readable (administrator-only) and VirtoOZ (PlatformDeveloperGuide / PlatformUserGuide) returned no page for it - a released setting with no documented default is itself a finding; the assertions describe the observed boundary, to be re-checked against the setting once documented.
+Distinct from SEC-XSS-004 (script safety of the stored value and its rendering) - this is the boundary of what a real name may contain. Technique: equivalence partitions + error guessing; the over-blocking side (apostrophe, hyphen, non-ASCII) is the regression that hurts customers.
+Catches: a tightened or loosened NameValidationPattern - mutants: pattern without apostrophe/hyphen; pattern allowing < and >.
+Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
+"SEC-VALIDATION-002","Script Injection Validation in Free-Text Fields (EnableScriptInjectionValidation)","Input Validation > Server-Side","Critical",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Customer signed in; the contact id is read in Steps
+- The profile has no description / about field: the free-text fields on the storefront are the address-book fields (line1, line2, city, firstName, description) - the stub wording is mapped to them
+- Writes only on the lane account; created addresses are deleted in Cleanup","front_url={{FRONT_URL}}, payloads=[<script>alert(1)</script>] [<img src=x onerror=alert(1)>] [""><svg onload=alert(1)>], fields=[line1] [line2] [city] [firstName] [description], benign_line1=5 O'Brien & Sons Rd, Apt #4","[GQL] query me { contact { id addresses { items { key } } } } [AUTH] role=USER_DEFAULT - record the id and the starting address count
+[GQL] mutation updateMemberAddresses(command:{memberId, addresses:[<valid US address with benign_line1>]}) - negative control
+[GQL] updateMemberAddresses with each payload placed in each field of fields, all other address fields valid, recording errors[] and data
+[GQL] query the address list","[DATA] the benign address is saved and returned verbatim, apostrophe, ampersand and # intact {OBSERVED}
+[ERRORS] every payload in every one of the five fields answers errors[0].extensions.code=VALIDATION with data.updateMemberAddresses null {OBSERVED} (for line1 (two payloads), line2, city, firstName and description with one payload each)
+[COUNT] the address list gains only the benign address {OBSERVED}","[API] no 5xx
+[CONSOLE] n/a (API-level)","A payload is saved in any listed field; the benign punctuation address is refused; 500; a payload saved in one field but rejected in another (inconsistent coverage)","Delete the created addresses with deleteMemberAddresses (the delete input needs the complete address object) and confirm the list is back to the starting count","Grounded: {OBSERVED} on vcptcore_regression 2026-11-05 through xAPI (probe addresses deleted afterwards). EnableScriptInjectionValidation was not readable (administrator-only) and VirtoOZ returned no page for it, so which setting produces the rejection is UNCONFIRMED - the case asserts the behaviour only.
+Finding recorded, deliberately not asserted: the cart comment (changeComment) accepts the same payload verbatim, so script-injection validation is not applied to every free-text field - see SEC-XSS-002 for the output-encoding check that compensates, and decide with the product owner whether the asymmetry is intended.
+Distinct from SEC-XSS-001: that is the UI/checkout journey for one field; this is the xAPI field matrix.
+Catches: script validation covering only some free-text fields or being switched off - mutant: EnableScriptInjectionValidation=false.","Draft"
 "SEC-PAT-001","Persistent Access Token — Active Token Authorizes API Request","Security > Token Validation > State: Active","High","BL-AUTH-005, BL-AUTH-006","ECL-3.1","[PRE:CLEAR_SESSION]
 - Platform has Authorization__EnablePersistentStorageTokenValidation=true configured
 - Admin user account available

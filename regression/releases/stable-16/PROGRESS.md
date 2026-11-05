@@ -4,7 +4,7 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 1997 · PASS 1481 · FAIL 171 · BLOCKED 296** · ledger 345 rows
+**Executed 2141 · PASS 1523 · FAIL 185 · BLOCKED 334** · ledger 400 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -14,7 +14,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W3 | Purchase flow | Elena Kutasina | TRIAGED | 840 | 757 | 500 | 95 | 159 | 0 | 256 | REG-2026-10-15-W3 REG-2026-10-26-1847-W3R REG-2026-10-26-2010-W3R2 REG-2026-10-26-2044-W3R3 |
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W6 | Theme cross-cutting + gap sessions | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W6 | Theme cross-cutting + gap sessions | Aleksandra Mitricheva | TRIAGED | 144 | 144 | 42 | 14 | 38 | 0 | 55 | REG-2026-11-04-1505-W6 REG-2026-11-05-0023-W6R |
 | W7 | virto-start modules (autotests only) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | WX | Exclusive window (env-wide cases) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
@@ -22,15 +22,15 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 42 |
+| REAL_BUG | 48 |
 | BY_DESIGN | 7 |
-| TEST_DEFECT | 70 |
-| DATA | 95 |
-| ENV_CONFIG | 101 |
+| TEST_DEFECT | 97 |
+| DATA | 105 |
+| ENV_CONFIG | 109 |
 | NOT_TESTABLE | 23 |
-| DUPLICATE | 4 |
+| DUPLICATE | 7 |
 | FLAKY | 1 |
-| PENDING_DECISION | 2 |
+| PENDING_DECISION | 3 |
 
 ## Not run yet
 
@@ -62,5 +62,6 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 |---|---|---|---|
 | W1 | STORE-069 | Verification link still confirms the email after store email verification is turned off: intended? | product owner |
 | W2 | SRCH-009 | SRCH-009 and SRCH-010 assert behaviour this bundle deprecates: deprecate the cases or retarget them? | Elena Kutasina |
+| W6 | SEC-AUTH-005 | /account/change-password shows no notice that other sessions will be signed out | Aleksandra Mitricheva |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

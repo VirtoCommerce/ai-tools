@@ -208,21 +208,21 @@
 [DOM] Each option has an accessible name matching the variant label","[CONSOLE] no ARIA state errors on picker interaction","states not visually distinguishable; selected state not reflected in aria-checked/aria-selected; accessible name missing on option","—","VCST-4373","Automated"
 "A11Y-SORT-001","Address Popup Column Sort - aria-sort Ascending Transition","ARIA > Sort","Critical","BL-A11Y-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - User has at least 2 saved addresses
-- Address selection popup is accessible (checkout shipping step or ship-to widget)","store={{FRONT_URL}}","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} and open the address selection popup
+- Cart holds at least 1 item, so the Shipping section is shown on /cart","store={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart, in the Shipping section change the shipping address to open the Select address popup (the storefront has one-page checkout: the popup opens from the cart page, not a separate checkout step)
 [ASSERT] browser_snapshot to capture initial state of the address table header row
 [ASSERT] Verify no column header has aria-sort set to ""ascending"" or ""descending"" initially (all headers have aria-sort=""none"" or attribute absent)
-[ACT] browser_click on the ""Name"" (or first sortable) column header
+[ACT] browser_click on the ""Address"" column header (the sortable one)
 [ASSERT] browser_snapshot to capture post-click header state
 [ASSERT] Inspect the clicked column header element: confirm aria-sort=""ascending""
 [ASSERT] Verify cursor style on the header is ""pointer"" (via computed styles or DevTools)
 [ASSERT] Verify all other column headers have aria-sort=""none"" or no aria-sort attribute","[DOM] aria-sort=""ascending"" is present on the clicked column header after first click
 [DOM] All other column headers do NOT have aria-sort=""ascending"" or ""descending"" — only one active sort indicator at a time
 [STATE] Column header cursor is ""pointer"" on hover, indicating interactivity
-[STATE] WCAG 4.1.2: The sort state change is programmatically determinable","[CONSOLE] no axe aria-sort violations after sort interaction","aria-sort attribute remains unchanged after click (not wired — VCST-4992 regression); multiple headers show aria-sort=""ascending"" simultaneously; cursor remains ""default"" on header hover; aria-sort absent on all headers (attribute not rendered)","Close address popup; no address changes were made","VCST-4992; WCAG 4.1.2 (Name, Role, Value)","Reviewed"
+[STATE] WCAG 4.1.2: The sort state change is programmatically determinable","[CONSOLE] no axe aria-sort violations after sort interaction","aria-sort attribute remains unchanged after click (not wired — VCST-4992 regression); multiple headers show aria-sort=""ascending"" simultaneously; cursor remains ""default"" on header hover; aria-sort absent on all headers (attribute not rendered)","Close address popup; no address changes were made","VCST-4992; VCST-6606 (open: first click sets descending — this case fails until it is fixed); WCAG 4.1.2 (Name, Role, Value)","Reviewed"
 "A11Y-SORT-002","Address Popup Column Sort - aria-sort Descending Transition","ARIA > Sort","Critical","BL-A11Y-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - User has at least 2 saved addresses
-- Address selection popup is accessible (checkout shipping step or ship-to widget)","store={{FRONT_URL}}","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} and open the address selection popup
-[ACT] browser_click on a sortable column header (e.g., ""Name"") to sort ascending
+- Cart holds at least 1 item, so the Shipping section is shown on /cart","store={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart, in the Shipping section change the shipping address to open the Select address popup (the storefront has one-page checkout: the popup opens from the cart page, not a separate checkout step)
+[ACT] browser_click on the ""Address"" column header (the sortable one) to sort ascending
 [ASSERT] Verify aria-sort=""ascending"" is set on that header
 [ACT] browser_click the same column header a second time to reverse sort direction
 [ASSERT] browser_snapshot to capture post-second-click header state
@@ -230,10 +230,10 @@
 [ASSERT] Verify all other column headers still have aria-sort=""none"" or no aria-sort","[DOM] aria-sort=""descending"" is set on the column header after second click
 [DOM] aria-sort transitions: none → ascending → descending (correct ARIA 1.2 cycle)
 [DOM] Only one column header has an active aria-sort value at any point
-[STATE] Sort direction visually reflected in the table row order (rows reorder accordingly)","[CONSOLE] no axe aria-sort violations; [NETWORK] no 4xx/5xx on address re-fetch after sort","aria-sort stays ""ascending"" after second click (toggle not implemented); aria-sort flips to ""none"" instead of ""descending""; table rows do not reorder on second click; multiple headers become active simultaneously","Close address popup; no address changes were made","VCST-4992; WCAG 4.1.2 (Name, Role, Value); ARIA 1.2 §6.27 aria-sort","Reviewed"
+[STATE] Sort direction visually reflected in the table row order (rows reorder accordingly)","[CONSOLE] no axe aria-sort violations; [NETWORK] no 4xx/5xx on address re-fetch after sort","aria-sort stays ""ascending"" after second click (toggle not implemented); aria-sort flips to ""none"" instead of ""descending""; table rows do not reorder on second click; multiple headers become active simultaneously","Close address popup; no address changes were made","VCST-4992; VCST-6606 (open: the cycle runs descending then ascending — this case fails until it is fixed); WCAG 4.1.2 (Name, Role, Value); ARIA 1.2 §6.27 aria-sort","Reviewed"
 "A11Y-SORT-003","Address Popup Column Sort - Unsorted Columns aria-sort=none","ARIA > Sort","Critical","BL-A11Y-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - User has at least 2 saved addresses
-- Address selection popup is open at checkout shipping step or ship-to widget","store={{FRONT_URL}}","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} and open the address selection popup
+- Cart holds at least 1 item, so the Shipping section is shown on /cart","store={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart, in the Shipping section change the shipping address to open the Select address popup (the storefront has one-page checkout: the popup opens from the cart page, not a separate checkout step)
 [ASSERT] browser_snapshot to capture the address table at default/unsorted state
 [ACT] browser_click on one column header to activate a sort on that column
 [ASSERT] Verify that the CLICKED column header now has aria-sort=""ascending"" or ""descending""
@@ -241,7 +241,7 @@
 [ASSERT] Verify non-sortable headers (if any) have no aria-sort attribute at all","[DOM] Only the active sort column has aria-sort set to ""ascending"" or ""descending""
 [DOM] All non-active sortable columns have aria-sort=""none"" explicitly
 [DOM] Non-sortable headers do not carry an aria-sort attribute
-[STATE] WCAG 4.1.2 compliance: each column sort state uniquely and correctly conveyed to assistive technologies","[CONSOLE] no axe aria-allowed-attr violations on column headers","multiple headers simultaneously show aria-sort=""ascending"" (single-active-indicator rule broken); unsorted columns have no aria-sort attribute when they should have aria-sort=""none""; aria-sort present on non-sortable header","Close address popup; no address changes were made","VCST-4992; WCAG 4.1.2 (Name, Role, Value); ARIA 1.2 §6.27 aria-sort","Reviewed"
+[STATE] WCAG 4.1.2 compliance: each column sort state uniquely and correctly conveyed to assistive technologies","[CONSOLE] no axe aria-allowed-attr violations on column headers","multiple headers simultaneously show aria-sort=""ascending"" (single-active-indicator rule broken); unsorted columns have no aria-sort attribute when they should have aria-sort=""none""; aria-sort present on non-sortable header","Close address popup; no address changes were made","VCST-4992; VCST-6606 (open: non-sortable headers carry aria-sort=none — this case fails until it is fixed); WCAG 4.1.2 (Name, Role, Value); ARIA 1.2 §6.27 aria-sort","Reviewed"
 "A11Y-CPN-001","Coupon Sidebar — Invalid-Coupon Error Element Has role=""alert"" (WCAG 3.3.1 / 4.1.3)","Accessibility > Cart > Coupon Sidebar > Error Announcement","High","BL-A11Y-004","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - At least 1 product added to cart.
@@ -258,7 +258,7 @@
 [DOM] the error <p> element has attribute role=""alert"" — asserting the fix from PR #2303: screen-reader users receive an audible announcement when the error appears (WCAG 4.1.3 Status Messages, Level AA)
 [DOM] the error element is not hidden by CSS (display is not none; visibility is not hidden)
 [STATE] error message text is non-empty — SR has meaningful content to announce","[CONSOLE] zero JS errors during coupon apply attempt; specifically no UnhandledPromiseRejection
-[NETWORK] addCoupon mutation response received (HTTP 200); errors[] is empty; isAppliedSuccessfully=false","role attribute absent from error <p> (VCST-5018 regression — SR silent on error); error <p> not rendered after invalid code (v-if gate failure); role is set to a non-live value (e.g. role=""paragraph"") instead of role=""alert"" or aria-live=""assertive""; console TypeError during apply","none — invalid coupon was not applied",VCST-5018; WCAG 3.3.1; WCAG 4.1.3 | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
+[NETWORK] validateCoupon query response received (HTTP 200); errors[] is empty; it returns false and no addCoupon mutation is sent for the invalid code (KB-A5287384)","role attribute absent from error <p> (VCST-5018 regression — SR silent on error); error <p> not rendered after invalid code (v-if gate failure); role is set to a non-live value (e.g. role=""paragraph"") instead of role=""alert"" or aria-live=""assertive""; console TypeError during apply","none — invalid coupon was not applied",VCST-5018; WCAG 3.3.1; WCAG 4.1.3 | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 "A11Y-CPN-002","Coupon Sidebar — Apply and Trash Buttons Have Descriptive aria-label (WCAG 4.1.2)","Accessibility > Cart > Coupon Sidebar > Button Names","High","BL-A11Y-002","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - At least 1 product added to cart.

@@ -23,7 +23,7 @@ On a cold page load the header "All products" popover trigger (`DIV.vc-popover`)
 ## Related
 - This is the co-movement VCST-5817's description attributed to the search bar; `/qa-test VCST-5817` showed the nav is constant across SPA transitions and only moves on first load.
 - `reports/bugs/rejected/BUG-account-missions-cls-0219-from-shared-chrome.md` (VCST-5837, rejected) — read before filing.
-- `reports/bugs/open/**/BUG-layout-cls-images-missing-dimensions.md` lists `ul.mega-menu__nav` as a contributor.
+- `reports/bugs/open/medium/BUG-Home-CLS-Matcher-Loader-Footer-Jump-VCST-6710.md` lists `ul.mega-menu__nav` as a contributor.
 - Evidence: checklist row B12 in `reports/tickets/Sprint26-20/VCST-5817/testing-checklist.md` (numeric layout-shift entry; no screenshot — a settled screenshot shows nothing).
 
 ## Fix Routing
