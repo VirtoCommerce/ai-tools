@@ -1,37 +1,27 @@
 {
-  "runId": "REG-2026-11-04-0827",
+  "runId": "REG-2026-11-05-1740",
   "status": "in_progress",
-  "startedAt": "2026-11-04T07:28:00.250Z",
-  "windowStart": "2026-11-04T07:28:00.250Z",
-  "selection": "061,098",
+  "startedAt": "2026-11-05T16:41:03.321Z",
+  "windowStart": "2026-11-05T16:41:03.321Z",
+  "selection": "106",
   "env": "vcst",
   "scoped": true,
   "cases": "ids",
   "ids": [
-    "SRCHA-006",
-    "SRCHA-007",
-    "SRCHA-012",
-    "SRCHA-019",
-    "SRCHA-047",
-    "CMP-004",
-    "CMP-007",
-    "CMP-024",
-    "CMP-032"
+    "SR-TK-043",
+    "SR-TK-044",
+    "SR-TK-048",
+    "SR-TK-057"
   ],
-  "purpose": "Re-run of the 061 cases fixed by REG-2026-11-03-2035 triage + seed fix, and the 098 cases re-pointed off search (CMP-003 probe)",
-  "plan": "reports/regression/REG-2026-11-04-0827/preflight.json",
+  "purpose": "VCST-6157 re-run on ff13 of the cases REG-2026-11-05-1651 blocked on the stale edge bundle (VCST-6676) + SR-TK-057 rewritten for the ff13 container-query toolbar",
+  "plan": "reports/regression/REG-2026-11-05-1740/preflight.json",
   "suites": {
-    "061": {
+    "106": {
       "status": "running",
       "lane": "browser",
-      "browser": "playwright-chrome",
-      "startedAt": "2026-11-04T07:29:29.000Z",
-      "total": 5,
-      "note": "attempt1_SRCHA-019_FAIL_retrying_case_alone"
-    },
-    "098": {
-      "status": "pending",
-      "lane": "browser"
+      "browser": "playwright-firefox",
+      "total": 4,
+      "startedAt": "2026-11-05T16:41:57.130Z"
     }
   }
 }
