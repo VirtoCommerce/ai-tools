@@ -4,18 +4,18 @@
 [NAV] {{FRONT_URL}}/
 [WAIT] networkidle
 [REFLOW]
-[PROBE:CLS]","[CLS] <= 0.1","console errors and 4xx/5xx are captured automatically into the FAIL trace","Hero .slider-block images without width/height or aspect-ratio; webfont swap reflowing .vc-typography; product grid resolving late","none (context is destroyed after the case)","business-logic.md#bl-ui-001; replaces 048b LAYOUT-CLS-001","Automated"
+[PROBE:CLS]","[CLS] <= 0.1","console errors and 4xx/5xx are captured automatically into the FAIL trace","Hero .slider-block images without width/height or aspect-ratio; webfont swap reflowing .vc-typography; product grid resolving late","none (context is destroyed after the case)","business-logic.md#bl-ui-001; replaces 048b LAYOUT-CLS-001; fails on VCST-6710 (open, home footer jump under the Matcher loader)","Automated"
 "LAYOUT-CLS-002","CLS on catalog listing","CLS > Initial render","P2","BL-UI-001","ECL-1.2","Catalog has at least one indexed product.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
 [THROTTLE] fast3g
 [NAV] {{FRONT_URL}}/catalog
 [WAIT] .vc-product-card >= 4
 [WAIT] networkidle
 [REFLOW]
-[PROBE:CLS]","[CLS] <= 0.1","auto-captured","Product-card images resolving after grid layout; facet rail widening on load","none","business-logic.md#bl-ui-001; replaces 048b LAYOUT-CLS-002","Automated"
+[PROBE:CLS]","[CLS] <= 0.1","auto-captured","Product-card images resolving after grid layout; facet rail widening on load","none","business-logic.md#bl-ui-001; replaces 048b LAYOUT-CLS-002; fails on VCST-6712 (open, Sort by wraps when the scrollbar appears)","Automated"
 "LAYOUT-IMG-001","Home images reserve space before load (CLS root cause)","CLS > Reserved space","P1","BL-UI-001","ECL-1.2","Root-causes the CLS number: every image must carry width+height attrs, a CSS aspect-ratio, or an explicitly sized box.","{{FRONT_URL}}","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/
 [WAIT] networkidle
-[PROBE:IMGDIMS] img","[IMGDIMS] missingDims == 0","auto-captured","Hero slides and content-block images with aspect-ratio:auto and no width/height attributes","none","business-logic.md#bl-ui-001; root cause behind 048b LAYOUT-CLS-001/002/003 + VCCAROUSEL-001","Automated"
+[PROBE:IMGDIMS] img","[IMGDIMS] missingDims == 0","auto-captured","Hero slides and content-block images with aspect-ratio:auto and no width/height attributes","none","business-logic.md#bl-ui-001; root cause behind 048b LAYOUT-CLS-001/002/003 + VCCAROUSEL-001; fails on VCST-6709 (open, header logo has no reserved width; it is white-label configurable, so a sized slot also passes)","Automated"
 "LAYOUT-IMG-002","Catalog product-card images reserve space","CLS > Reserved space","P1","BL-UI-001","ECL-1.2","Catalog renders product cards.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/catalog
 [WAIT] .vc-product-card >= 4
@@ -269,7 +269,7 @@ Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL o
 [WAIT] networkidle
 [STRESS:TEXT] x2 body
 [PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","A label, button or title that does not wrap and pushes the page wider than the viewport","none: currency and theme live in the case's own fresh browser context","Archetype:RENDER · Technique:PW · Purpose:VISUAL
-Fails on vcst 2026-10-27 on a real defect: the catalog's results count is white-space: nowrap with no ellipsis, so twice-as-long text widens the page to 353 px (reports/bugs/open/low/BUG-catalog-results-count-nowrap-overflows-on-long-text-VCST-6534.md, kb KB-06A3A50F). Stays Draft until that is fixed.","Draft"
+Fails on vcst 2026-10-27 on a real defect: the catalog's results count is white-space: nowrap with no ellipsis, so twice-as-long text widens the page to 353 px (reports/bugs/open/low/BUG-catalog-results-count-nowrap-overflows-on-long-text-VCST-6708.md, VCST-6708, kb KB-06A3A50F). Stays Draft until that is fixed.","Draft"
 "LAYOUT-STR-002","PDP with ×2 Portuguese text has no horizontal page scroll (pt, ×2, 375)","Overflow > Stress matrix","P1","BL-UI-004","ECL-1.6; ECL-12.1","[STRESS:TEXT] x2 repeats every visible text to twice its length after the page settles: a translation twice as long as English, the way de and pt run long. BL-UI-004: long content wraps, truncates with an ellipsis or scrolls inside its own container; the document never scrolls sideways (a data table that scrolls by itself is allowed). The PDP is reached by clicking the first catalog card, never by a composed URL: a product's slug is per language, and /de/ or /pt/ in front of the English slug is a 404 (seen 2026-10-27). The price guard ends the case BLOCKED when no priced PDP renders.","{{FRONT_URL}}; the first catalog card","[VIEWPORT] 375x812
 [NAV] {{FRONT_URL}}/pt/catalog
 [WAIT] networkidle
