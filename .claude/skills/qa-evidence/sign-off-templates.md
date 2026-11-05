@@ -18,9 +18,9 @@
 ## Results Summary
 | Area | Status | Issues |
 |------|--------|--------|
-| Desktop Flow (1920px) | pass/warn/fail | [count] |
-| Mobile Flow (375px) | pass/warn/fail | [count] |
-| Tablet Flow (768px) | pass/warn/fail | [count] |
+| Desktop Flow (desktop lane) | pass/warn/fail | [count] |
+| Mobile Flow (mobile lane) | pass/warn/fail | [count] |
+| Layout sweep (`AUDIT_VIEWPORTS_PX`, failing widths in px) | pass/warn/fail | [count] |
 | Cross-Browser | pass/warn/fail | [count] |
 | Checkout (Critical) | pass/warn/fail | [count] |
 | Performance | pass/warn/fail | [count] |
@@ -64,8 +64,8 @@
 | Payment form (all gateways) | pass/fail | [CRITICAL] |
 | Order confirmation | pass/fail | |
 | Email notifications | pass/fail | |
-| Mobile responsive (375-428px) | pass/fail | |
-| Tablet responsive (768-1024px) | pass/fail | |
+| Mobile flow (mobile lane) | pass/fail | |
+| Layout sweep (`AUDIT_VIEWPORTS_PX`) | pass/fail | [failing widths, px] |
 | iOS Safari compatibility | pass/fail | [CRITICAL] |
 | Performance (LCP < 2.5s) | pass/fail | [metrics] |
 | No console errors | pass/fail | [count] |

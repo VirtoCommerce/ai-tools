@@ -1,0 +1,27 @@
+{
+  "pass": 2,
+  "env": "vcst",
+  "prUnderTest": "VirtoCommerce/vc-module-admin-shell#8",
+  "prBuild": "VirtoCommerce.AdminShell_3.1094.0-pr-8-3275",
+  "runningBuild": "VirtoCommerce.AdminShell_3.1094.0-pr-8-3275",
+  "deployPR": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7037 (merged 2026-11-05 11:32 UTC)",
+  "baseline": "live RED on vcst dark theme 2026-11-05: reports/tickets/Sprint26-22/VCST-6593/baseline/",
+  "jiraComments": {
+    "pass1": "112727",
+    "starting": "112730",
+    "result": "112731"
+  },
+  "skipped": [
+    "Step 0.0 run-folder.mjs use — not in a Claude Code session (no CLAUDE_CODE_SESSION_ID); run folder = reports/tickets/Sprint26-22/<KEY>/",
+    "Step 0.2 /qa-env-check endpoints — device VM cannot reach the stand (egress, curl 000); reachability checked in the built-in browser instead",
+    "Step 2A inline screenshots — Jira media upload host (api.media.atlassian.com) blocked from cloud and device; stated in comment",
+    "Step 2A light theme baseline — not captured (theme toggle is a persisted preference); ticket fix comment 112707 has light-theme numbers",
+    "Step 2 live /api/platform/modules — built-in browser signed out of admin; deploy confirmed by branch pin + deploy workflow + served CSS",
+    "Step 5 agent dispatch — agents have no built-in browser; run inline",
+    "Step 6 /vc-fix:qa-report — skill not available; comment written by hand",
+    "Step 6 inline screenshots — Jira media upload host blocked; stated in comment"
+  ],
+  "updated": "2026-11-05",
+  "result": "VERIFIED_WITH_NOTES",
+  "jiraStatus": "Tested"
+}

@@ -3,7 +3,7 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-11-04",
+    "generated": "2026-11-05",
     "totalSuites": 177,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
@@ -1778,7 +1778,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 170,
+      "testCount": 174,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1793,7 +1793,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 166,
+        "machine": 170,
         "browser": 1,
         "manual": 0,
         "deprecated": 3
@@ -3399,7 +3399,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P2",
-      "testCount": 26,
+      "testCount": 29,
       "estimatedMinutes": 35,
       "agent": "qa-backend-expert",
       "tags": [
@@ -4002,7 +4002,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 47,
+      "testCount": 58,
       "estimatedMinutes": 45,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -4511,6 +4511,7 @@
         "089",
         "090",
         "091",
+        "091c",
         "107",
         "111"
       ]
@@ -4522,6 +4523,7 @@
       "exclude": [
         "050m",
         "050m2",
+        "050m3",
         "092",
         "092b",
         "094",
@@ -4548,6 +4550,7 @@
         "089",
         "090",
         "091",
+        "091c",
         "092",
         "092b",
         "093",
@@ -4569,6 +4572,7 @@
         "089",
         "090",
         "091",
+        "091c",
         "092",
         "092b",
         "093",

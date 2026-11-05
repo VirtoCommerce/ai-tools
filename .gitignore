@@ -153,6 +153,13 @@ test-data/b2b/.seed-fingerprint.json
 # session context; kept local, never committed to the public upstream (§2a containment).
 reports/vc-fix-plugin-diagnosis.md
 
+# /qa-fix run folders (FIX-*/, RUN-*.md) — local working state; the PR body and the tracker
+# comment are the durable record.
+reports/fixes/
+
+# Per-scenario run rows (vc-test scenarios/, incl. rounds/round-N/scenarios/) — run working state.
+reports/**/scenarios/
+
 # Serena (semantic code navigation): the shared .serena/project.yml + .serena/.gitignore
 # ARE committed so every teammate gets the same project config. The machine-specific parts
 # (cache/, logs/, project.local.yml) are excluded by .serena/.gitignore itself.
@@ -183,8 +190,14 @@ reports/tickets/**/evidence*/
 reports/tickets/**/visual/
 reports/tickets/**/pixel/
 
-# Investigation scratch in a ticket run folder (<RUN_DIR>/investigations/) — never committed.
+# Investigation notes in a ticket run folder (<RUN_DIR>/investigations/) — never committed.
 reports/tickets/**/investigations/
+
+# Other ticket run-folder working state — never committed: pre-verify baselines, captured network
+# traffic, and API captures / per-run schema dumps (<RUN_DIR>/api/, <RUN_DIR>/knowledge/api/).
+reports/tickets/**/baseline/
+reports/tickets/**/network/
+reports/tickets/**/api/
 
 # Scenario scripts and fixtures in a ticket run folder (<RUN_DIR>/scenarios/, rounds/<n>/scenarios/) — never committed.
 reports/tickets/**/scenarios/

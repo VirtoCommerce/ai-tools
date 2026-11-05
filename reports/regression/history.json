@@ -1,20 +1,5 @@
 [
   {
-    "runId": "REG-2026-08-06-0937",
-    "date": "2026-08-06",
-    "suiteId": "002",
-    "suiteName": "Product Detail",
-    "environment": "vcst",
-    "browser": "playwright-chrome",
-    "total": 31,
-    "passed": 27,
-    "failed": 4,
-    "blocked": 0,
-    "skipped": 0,
-    "pass_rate": 87.1,
-    "mode": "interactive"
-  },
-  {
     "runId": "REG-2026-08-26-0943",
     "date": "2026-08-26",
     "suiteId": "011b",
@@ -4582,6 +4567,53 @@
     "skipped": 0,
     "pass_rate": 100,
     "duration_minutes": 152.11,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-05-1651",
+    "date": "2026-11-05",
+    "suiteId": "050m",
+    "suiteName": "GraphQL xAPI — Sales Rep (scoped /graphql/sales-rep)",
+    "environment": "vcst",
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 0.36,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-05-1651",
+    "date": "2026-11-05",
+    "suiteId": "106",
+    "suiteName": "Sales Rep — Tasks (storefront)",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 13,
+    "passed": 9,
+    "failed": 0,
+    "blocked": 4,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 23.93,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-05-1740",
+    "date": "2026-11-05",
+    "suiteId": "106",
+    "suiteName": "Sales Rep — Tasks (storefront)",
+    "environment": "vcst",
+    "browser": "playwright-firefox",
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 14.75,
     "mode": "interactive"
   }
 ]

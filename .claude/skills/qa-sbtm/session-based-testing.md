@@ -154,7 +154,7 @@ SFDPOT evaluates system dimensions: Structure, Function, Data, Platform, Operati
 ### Platform
 
 1. Does the feature work on all supported browsers?
-2. Does it work on mobile viewports (375px, 768px)?
+2. Does it work on the mobile lane, and does the layout hold across the `AUDIT_VIEWPORTS_PX` sweep ([`responsive-component-testing.md`](../qa-storybook/responsive-component-testing.md) §Where the widths come from)?
 3. Does it work with slow network conditions (3G throttle)?
 4. Does it work with JavaScript disabled (graceful degradation)?
 5. Does it interact correctly with browser extensions (ad blockers, password managers)?

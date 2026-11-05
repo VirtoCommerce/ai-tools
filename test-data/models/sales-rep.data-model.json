@@ -1,0 +1,2307 @@
+{
+  "$schema": "../../.claude/templates/test-data-model.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "sr",
+  "generated": "2026-11-05",
+  "metadata": {
+    "scope": "The data states the sales-rep mind map needs: reps by role, account and membership state, served and unserved organizations, buyers, the order and cart fixtures behind statistics and dashboards, documents, tasks, layout, and the case-created states (store switch, new rep, cancellation pair, activity, shared list).",
+    "built_from": "sales-rep.mind-map.json (domain map rev 5); scripts/seed-data/sales-rep/* headers and specs; test-data/sales-rep/*.csv; test-data/aliases.json + aliases.vcst.json; kb 2026-11-05",
+    "kb_read": "2026-11-05 - 5 questions (POST /api/sales-rep memberships, createSalesRepTask privacy and day classification, salesRepCustomerOrderStatistics attribution, sales-rep documents intake and read gate, saveSalesRepLayout storage): opened KB-D173BBB8, KB-954877C5, KB-C2AD28C1, KB-90635C64, KB-F57FC873",
+    "not_modelled": "Volume datasets (seed:sales-rep-perf, seed:sales-rep-bulk), the demo profile (seed:sales-rep-demo) and the retired SR_REP_NOCUSTOMERS_ORGCTX. Environment credentials ({{VAR}} admin and storefront logins) stay in the env layer."
+  },
+  "requirements": [
+    {
+      "id": "data.sr.store.enabled",
+      "entity": "StoreSetting",
+      "purpose": "The rep's store has the Sales Rep feature switched on, so the storefront hub, its routes and widgets render.",
+      "required_state": {
+        "store": "B2B-store",
+        "SalesRep.Enabled": true
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "SalesRep.Enabled": "any"
+        },
+        "transition": "the case reads Stores > B2B-store > Settings > Sales Rep > General and stops BLOCKED if it is off"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "limits": "Gates the storefront UI only, never a permission (BL-SR-011): an API case does not need it. The module-level value is null with default true; the store value is what the plugin manifest reads.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev5 §2c",
+          "note": "store toggle Sales Rep Enabled browsed live, ON; the only Sales Rep setting at store level"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.sr.store.disabled",
+      "entity": "StoreSetting",
+      "purpose": "The switch turned off for one step, to show the storefront hides the hub while the scoped API still answers.",
+      "required_state": {
+        "store": "B2B-store",
+        "SalesRep.Enabled": false
+      },
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "SalesRep.Enabled": true
+        },
+        "transition": "the case switches Sales Rep Enabled off in the store settings and saves"
+      },
+      "relationships": [
+        {
+          "requirement": "data.sr.store.enabled",
+          "required": true
+        }
+      ],
+      "cleanup": {
+        "required": true,
+        "via": "the case Cleanup switches Sales Rep Enabled back on and saves"
+      },
+      "discriminates": "ON vs OFF on the same rep and the same token: the hub is present ON and absent OFF (store-toggle.off-hides-ui) while /graphql/sales-rep returns data in both (off-api-still-answers), which separates a UI switch from a permission.",
+      "limits": "Store-wide: while it is off every storefront sales-rep suite on B2B-store (089, 090, 091, 093, 097, 106) fails or blocks. Never run it beside them.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev5 §2c",
+          "note": "the store-level toggle exists and is editable"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false,
+        "via": "seed:b2b owns them; never torn down by a sales-rep teardown"
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.org.served-set",
+      "entity": "Organization",
+      "purpose": "The four customer organizations the primary rep serves, with buyers and an owner contact on ACME.",
+      "required_state": {
+        "orgs": "ORG-001 ACME, ORG-002 TechFlow, ORG-003 BuildRight, ORG-004 AcmeWest",
+        "status": "Active",
+        "acme_enriched": "ownerId, businessCategory, address"
+      },
+      "shared_state": "Membership lists and addresses. A case that adds a member or edits ACME's address changes the profile Information block and comms recipients for every later case.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "ORG_ACME.name",
+      "discriminates": "Four served orgs with different order histories make per-org figures distinguishable from the cross-customer aggregate; AcmeWest is ACME's child, so a parent figure that wrongly includes the child shows (KB-C2AD28C1: it does not).",
+      "limits": "seed:sales-rep phase 1 adds the ACME owner contact and address on top; profile.information needs both seeders.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json ORG_ACME",
+          "note": "runtime ids written back by seed:b2b on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.org.unserved",
+      "entity": "Organization",
+      "purpose": "An organization that provably exists but that the primary rep does not serve.",
+      "required_state": {
+        "name": "AGENT-TEST-SR-Paging-01",
+        "served_by_primary": false,
+        "served_by_paging_rep": true
+      },
+      "shared_state": "Who serves it. Adding it to the primary rep (a list-share or comms positive) would turn every negative on it into a pass.",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.paging",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_UNSERVED_ORG.name",
+      "discriminates": "Existing but unserved, not nonexistent: an unserved id and a missing id both answer null / Access denied, so only an org whose existence the seeder proved separates the scope check from a lookup miss.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_UNSERVED_ORG",
+          "note": "runtime ids written back by seed:sales-rep on vcst; written only after checking it exists, SR_REP_PAGING serves it and SR_REP_PRIMARY does not"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false,
+        "via": "seed:rep-only-org:teardown detaches the serve relationship before deleting the org"
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.org.rep-only",
+      "entity": "Organization",
+      "purpose": "A served organization whose only member is the primary rep.",
+      "required_state": {
+        "name": "AGENT-TEST-Org-RepOnly-Primary",
+        "members": "SR_REP_PRIMARY only",
+        "buyers": 0
+      },
+      "shared_state": "Its member list. One added buyer gives it a recipient and the no-recipients case passes on the wrong path.",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.primary",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:rep-only-org",
+      "td_alias": "ORG_REP_ONLY.name",
+      "discriminates": "Served but with zero effective recipients once the sending rep is excluded: sendCustomerCommunication returns false here and true on ACME, so initiator exclusion is decidable.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json ORG_REP_ONLY",
+          "note": "runtime ids written back by seed:rep-only-org on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.buyer.acme",
+      "entity": "User",
+      "purpose": "A plain ACME buyer with no sales-rep permission.",
+      "required_state": {
+        "org": "ORG-001",
+        "role": "Purchasing agent",
+        "sales_rep_access": false
+      },
+      "shared_state": "Its session and storefront activity: searches made as this buyer feed the primary rep's activity page.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "ACME_BUYER.email",
+      "discriminates": "Same org as the reps, no permission: the hub, its link and badge are absent for this buyer and present for SR_REP_PRIMARY, and the directory lists ACME's active reps for it.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json ACME_BUYER",
+          "note": "runtime ids written back by seed:b2b on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.buyer.org-maintainer",
+      "entity": "User",
+      "purpose": "A privileged ACME member (organization maintainer) who is not a rep.",
+      "required_state": {
+        "org": "ORG-001",
+        "role": "Organization maintainer",
+        "sales_rep_access": false
+      },
+      "shared_state": "Its organization roles; the auth suites use the same account.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "ACME_ADMIN.email",
+      "discriminates": "Most organization permissions but no sales-rep:access: it must get no hub and issue no salesRep query, which a plain buyer cannot show (a missing hub there may be any missing permission).",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json ACME_ADMIN",
+          "note": "runtime ids written back by seed:b2b on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.buyer.techflow",
+      "entity": "User",
+      "purpose": "A TechFlow buyer: a member of a target organization and the author of the buyer-placed order.",
+      "required_state": {
+        "org": "ORG-002",
+        "role": "Purchasing agent",
+        "sales_rep_access": false
+      },
+      "shared_state": "Its orders and wishlists; ORDER_BUYER_PLACED carries its user id as customerId.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "TECHFLOW_BUYER.email",
+      "discriminates": "A member of TechFlow and not of ACME: a list shared with TechFlow is visible to it and not to ACME_BUYER, and the TechFlow-only rep is listed for it and not for an ACME buyer.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json TECHFLOW_BUYER",
+          "note": "runtime ids written back by seed:b2b on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false,
+        "via": "seed:sales-rep:teardown"
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.primary",
+      "entity": "SalesRep",
+      "purpose": "The primary rep: active, Sales Representative role, serving the four customer organizations.",
+      "required_state": {
+        "role": "Sales Representative",
+        "account": "active",
+        "served_orgs": "ORG-001..ORG-004 (+ rep-only and bulk orgs when those seeders ran)",
+        "store": "B2B-store"
+      },
+      "shared_state": "Its served-org list (seed:rep-only-org and seed:sales-rep-bulk append to it), its tasks, carts and storefront sessions. Never assert the served-org count as 4 without reading it; never save its layout (only SR_REP_LAYOUT is disposable).",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_REP_PRIMARY.email",
+      "discriminates": "Several served orgs with different data, so a per-org answer differs from the aggregate, and every scope negative has a positive twin on the same token.",
+      "limits": "PUT /api/sales-rep rewrites the contact's organizations to the served list and deletes any membership outside it (KB-D173BBB8); a seeder that edits the served list can drop a buyer membership the rep also held.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_PRIMARY",
+          "note": "runtime ids written back by seed:sales-rep on vcst"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D173BBB8",
+          "note": "serving an org creates or extends the membership; dropping it deletes the whole membership"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.acme-peers",
+      "entity": "SalesRep",
+      "purpose": "Two more active ACME reps on B2B-store, so ACME has three listable reps.",
+      "required_state": {
+        "reps": "SR_REP_ACME2, SR_REP_ACME3",
+        "served_orgs": "ORG-001",
+        "account": "active",
+        "store": "B2B-store"
+      },
+      "shared_state": "SR_REP_ACME3 also owns the i18n singular fixture; an order or cart created as ACME3 breaks the exactly-one counts.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_REP_ACME2.email",
+      "discriminates": "Three qualifying reps for an ACME caller: first:2 gives hasNextPage=true. With only PRIMARY + ACME2 the paging case cannot pass on data grounds.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_ACME2",
+          "note": "runtime ids written back by seed:sales-rep on vcst"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_ACME3",
+          "note": "runtime ids written back by seed:sales-rep on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.second-store",
+      "entity": "SalesRep",
+      "purpose": "A rep serving ACME whose account is bound to the Electronics store.",
+      "required_state": {
+        "store": "Electronics",
+        "served_orgs": "ORG-001",
+        "account": "active"
+      },
+      "shared_state": "Its store binding; rebinding it to B2B-store removes the only store-scope discriminator.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_REP_SECOND_STORE.email",
+      "discriminates": "Same org, other store: listed with storeId omitted or Electronics, absent with storeId B2B-store, which is what store scoping and the storeId-omitted drift decide.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_SECOND_STORE",
+          "note": "runtime ids written back by seed:sales-rep on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.blocked",
+      "entity": "SalesRep",
+      "purpose": "A rep serving ACME whose platform account is blocked at rest.",
+      "required_state": {
+        "account": "blocked (LockoutEnd set)",
+        "served_orgs": "ORG-001"
+      },
+      "shared_state": "The block itself; unblocking it in a case turns every exclusion case into a listing.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_REP_BLOCKED.email",
+      "discriminates": "Serves ACME like the listed reps but is blocked, so its absence from the ACME directory is the exclusion, not a missing membership.",
+      "limits": "Blocked at rest: the token endpoint refuses it (400), so it cannot reach the query-time account-state gate. That needs data.sr.rep.lockable.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_BLOCKED",
+          "note": "runtime ids written back by seed:sales-rep on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.membership-locked",
+      "entity": "SalesRep",
+      "purpose": "A rep serving TechFlow and ACME whose ACME membership alone is locked.",
+      "required_state": {
+        "account": "active",
+        "served_orgs": "ORG-002 unlocked, ORG-001 membership locked"
+      },
+      "shared_state": "The per-org lock; unlocking it in a case makes ACME resolve for this rep.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_REP_LOCKED.email",
+      "discriminates": "One locked and one unlocked org on the same active account: ACME is excluded while TechFlow still resolves, which separates a membership lock from an account block.",
+      "limits": "A plain sign-in uses the default org ACME and returns 400 user_is_locked_in_organization; cases sign in under TechFlow (SR_REP_LOCKED_TFCTX).",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_LOCKED",
+          "note": "runtime ids written back by seed:sales-rep on vcst; membership_locked_id written"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.techflow-only",
+      "entity": "SalesRep",
+      "purpose": "A rep serving only TechFlow.",
+      "required_state": {
+        "served_orgs": "ORG-002",
+        "account": "active",
+        "org_count": 1
+      },
+      "shared_state": "Its served-org list: a second org would bring the org switcher back.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_REP_EXCLUSIVE_TECHFLOW.email",
+      "discriminates": "Listed for a TechFlow caller and absent for an ACME caller (cross-org exclusion); its single org is the no-switcher case; as a second rep it is the one that cannot read the primary rep's calls.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_EXCLUSIVE_TECHFLOW",
+          "note": "runtime ids written back by seed:sales-rep on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.zero-served",
+      "entity": "SalesRep",
+      "purpose": "A rep holding sales-rep:access globally with no organization membership.",
+      "required_state": {
+        "permission": "sales-rep:access (global role)",
+        "served_orgs": 0
+      },
+      "shared_state": "Its empty served list; serving any org ends every zero-customer case.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_REP_NOCUSTOMERS.email",
+      "discriminates": "Permission without customers: the scoped API answers 200 with totalCount 0 and no error, KPI cards show zeros, the badge hides and New task offers no type. A non-rep cannot stand in, because it is refused for the missing permission.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_NOCUSTOMERS",
+          "note": "runtime ids written back by seed:sales-rep on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.paging",
+      "entity": "SalesRep",
+      "purpose": "A rep serving twelve generated organizations that have no orders.",
+      "required_state": {
+        "served_orgs": "12 x AGENT-TEST-SR-Paging-NN",
+        "orders": 0
+      },
+      "constraints": {
+        "served_orgs": "> page size (10)"
+      },
+      "shared_state": "Its served list; serving or dropping one org changes the page count.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_REP_PAGING.email",
+      "discriminates": "12 against a page size of 10 makes page 2 reachable and non-empty; zero orders on every org makes the Last-order dash and the empty profile decidable.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_PAGING",
+          "note": "runtime ids written back by seed:sales-rep on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.layout",
+      "entity": "SalesRep",
+      "purpose": "The only rep whose saved hub layout cases may change.",
+      "required_state": {
+        "served_orgs": "ORG-001, ORG-002",
+        "layout": "disposable (allowlisted in sales-rep-layout-specs.mjs)"
+      },
+      "shared_state": "Its SalesRepLayout.* preferences: 091 and 093 drag, hide and save them. Never read a layout from it without the never-saved reset or a save in the same case.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_REP_LAYOUT.email",
+      "discriminates": "A dedicated account keeps layout writes off every other rep, so per-user isolation is checked against a rep whose layout nobody saved.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_LAYOUT",
+          "note": "runtime ids written back by seed:sales-rep on vcst"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F57FC873",
+          "note": "layout is a CustomerPreference on the caller's user id, SalesRepLayout.<scope>[.<storeId>]",
+          "date": "2026-10-19"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.lockable",
+      "entity": "SalesRep",
+      "purpose": "A rep that cases may block and unblock: the account-state gate fixture.",
+      "required_state": {
+        "served_orgs": "ORG-002",
+        "account": "active at rest"
+      },
+      "shared_state": "Its lockout state. npm run sr:lock / sr:unlock are allowlisted to this rep only; a run that stops between them leaves it locked.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_REP_LOCKABLE.email",
+      "discriminates": "Active when its token is issued and locked before the next request: only that transition reaches the query-time account-state check; a rep blocked at rest never gets a token.",
+      "limits": "The verdict is cached per request (x-api PR #84), so the lock shows on the NEXT request. Check sr:lock:verify before relying on the resting state.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_LOCKABLE",
+          "note": "runtime ids written back by seed:sales-rep on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.rep.docs-reader",
+      "entity": "SalesRep",
+      "purpose": "An Advanced rep with documents read access.",
+      "required_state": {
+        "role": "Advanced Sales Representative",
+        "permissions": "sales-rep:access, sales-rep-documents:read",
+        "served_orgs": "ORG-001"
+      },
+      "shared_state": "Its role; re-roling it removes the only positive documents caller.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep-docs",
+      "td_alias": "SR_REP_DOCS.email",
+      "discriminates": "Differs from SR_REP_PRIMARY only in sales-rep-documents:read: the Document library link, widget and route appear for it and not for the plain rep, so the hub size is decided by role.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_REP_DOCS",
+          "note": "runtime ids written back by seed:sales-rep-docs on vcst"
+        }
+      ]
+    },
+    {
+      "id": "data.sr.rep.docs-write-only",
+      "entity": "SalesRep",
+      "purpose": "A rep with documents write permission and no read permission.",
+      "required_state": {
+        "permissions": "sales-rep:access, sales-rep-documents:write",
+        "sales-rep-documents:read": false
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Its role composition; editing the Sales Rep Documents Manager role changes every case signing in as this rep.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep-docs",
+      "td_alias": "SR_REP_DOCS_WRITER.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Must differ from data.sr.rep.docs-reader in exactly one permission (read): only then does documents.write-only-rep decide whether :write alone opens the read gate.",
+      "limits": "NOT REACHED. The seeded SR_REP_DOCS_WRITER holds Sales Representative + Sales Rep Documents Manager, and that composition carries sales-rep-documents:read as well as :write (KB-90635C64, three observations on vcst), so it sees the library and cannot decide the branch. Seeder gap: a role with write and no read is needed (/qa-generate-data).",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-90635C64",
+          "note": "the two-role docs-writer fixture's token carries read, write and access; widget and nav visible",
+          "date": "2026-10-29"
+        }
+      ],
+      "status": "DRIFT",
+      "notes": "document-reps.csv still describes this rep as write-only; the kb entry contradicts it."
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.admin.restricted-managers",
+      "entity": "User",
+      "purpose": "Non-administrator back-office managers with partial customer and security permissions.",
+      "required_state": {
+        "accounts": "SR_ADMIN_CUSTOMER_ONLY (customer:* only), SR_ADMIN_NO_READ (catalog:read only), RESTRICTED_ADMIN_SALESREP_* (permission matrix)",
+        "is_administrator": false
+      },
+      "shared_state": "Their roles; adding platform:security:* to the customer-only role makes the create negative pass as a positive.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_ADMIN_CUSTOMER_ONLY.email",
+      "discriminates": "customer:* without platform:security:create is refused rep creation while the FULL control (both halves, still non-admin) is allowed, so the permission check is tested rather than the admin bypass.",
+      "limits": "RESTRICTED_ADMIN_SALESREP_* are seeded by seed:rbac, not seed:sales-rep; the permission-matrix branch needs both.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json RESTRICTED_ADMIN_SALESREP_FULL",
+          "note": "runtime ids written back by seed:rbac on vcst"
+        }
+      ]
+    },
+    {
+      "id": "data.sr.contact.rep-candidate",
+      "entity": "Contact",
+      "purpose": "A fresh contact with a login that the case turns into a rep, edits and deletes.",
+      "required_state": {
+        "name": "AGENT-TEST- prefixed, generated (uniqueEmail)",
+        "sales_rep": false,
+        "served_orgs": 0
+      },
+      "lifecycle": "STEP",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case Cleanup deletes the rep (DELETE /api/sales-rep), which removes contact and login; seed:sales-rep:teardown sweeps the AGENT-TEST- prefix"
+      },
+      "discriminates": "A contact nothing else uses: create, role choice, serve and delete each change only this record, so the Admin flow is observed without disturbing a fixture rep.",
+      "limits": "Deletion cannot be undone; a saved layout preference survives the rep (KB-F57FC873) and is not swept.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-B02031AD",
+          "note": "POST /api/sales-rep and PUT /api/sales-rep answered 200 from the embedded Admin app"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false,
+        "via": "seed:sales-rep:teardown"
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.orders.served-mix",
+      "entity": "CustomerOrder",
+      "purpose": "Orders across the four served orgs in several statuses, one with a keyword customer name.",
+      "required_state": {
+        "orgs": "ORG-001..ORG-004",
+        "statuses": "New, Cancelled, Payment required, Processing",
+        "keyword_row": "customerName token Beacon"
+      },
+      "shared_state": "Order statuses: an Admin status change in a case moves the New-orders KPI and the status facets for every later case.",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.primary",
+          "required": true
+        },
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "discriminates": "Different statuses in one org make status chips, union filters and facet counts decidable; orders in four orgs make the cross-customer list differ from any one org's.",
+      "limits": "Resolved by order number (no runtime id is written back for these rows). Statistics count only orders whose customerId is the rep's user id (KB-C2AD28C1); these flat rows are not the creator-scoped set, use data.sr.orders.authorship for that.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json ORDER_REP_PLACED",
+          "note": "runtime ids written back by seed:sales-rep phase 4 on vcst; same order phase that creates every sales-rep-orders.csv row"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:sales-rep -- --dry-run (vcst)",
+          "note": "every order row resolved; only the aged rolling-window rows planned for rebuild",
+          "date": "2026-11-05"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.orders.store-recency",
+      "entity": "CustomerOrder",
+      "purpose": "ACME's newest order, placed on the Electronics store.",
+      "required_state": {
+        "org": "ORG-001",
+        "store": "Electronics",
+        "recency": "newest order in ORG-001"
+      },
+      "shared_state": "Recency: any newer ACME order (a case placing one) ends the newest-in-org contract until re-seed.",
+      "relationships": [
+        {
+          "requirement": "data.sr.orders.served-mix",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_ORDER_ACME_ELEC.number",
+      "discriminates": "The global lastOrder (this one) differs from the B2B-store lastOrder, so a store argument that is ignored is visible.",
+      "limits": "createdDate is server-assigned; the seeder re-creates the row when another ACME order is newer.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_ORDER_ACME_ELEC",
+          "note": "runtime ids written back by seed:sales-rep on vcst; createdDate 2026-10-28"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.orders.rolling-window",
+      "entity": "CustomerOrder",
+      "purpose": "Two ACME orders inside the 7-day dashboard window, one New and one Processing.",
+      "required_state": {
+        "org": "ORG-001",
+        "statuses": "New, Processing",
+        "age_days": "< 7"
+      },
+      "shared_state": "The New order's status (a case flipping it is data.sr.orders.status-flip) and the window itself, which the orders age out of.",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.primary",
+          "required": true
+        },
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "SR_ORDER_ACME_WIN_NEW.number",
+      "discriminates": "A New and a non-New order in the same window: the New-orders card counts one while its all-status delta counts two, so a card that counts every status shows.",
+      "limits": "Ages out 7 days after creation; the seeder rebuilds aged rows. On vcst both were created 2026-10-28T14:31Z, so they left the window on 2026-11-04: re-seed before any dashboard case.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_ORDER_ACME_WIN_NEW",
+          "note": "runtime ids written back by seed:sales-rep on vcst; createdDate 2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_ORDER_ACME_WIN_PROC",
+          "note": "runtime ids written back by seed:sales-rep on vcst; createdDate 2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:sales-rep -- --dry-run (vcst)",
+          "note": "the dry run planned to rebuild AGENT-TEST-SRO-ACME-WIN-PROC: aged out of the window",
+          "date": "2026-11-05"
+        }
+      ]
+    },
+    {
+      "id": "data.sr.orders.status-flip",
+      "entity": "CustomerOrder",
+      "purpose": "The in-window New order moved to Processing by an administrator during the case.",
+      "required_state": {
+        "order": "SR_ORDER_ACME_WIN_NEW",
+        "status": "Processing"
+      },
+      "lifecycle": "SCENARIO",
+      "relationships": [
+        {
+          "requirement": "data.sr.orders.rolling-window",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "status": "New"
+        },
+        "transition": "an administrator changes the order status in the Admin order blade and saves"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "npm run seed:sales-rep rebuilds the rolling-window rows; run it after the case"
+      },
+      "discriminates": "Before and after on the same order: the New-orders KPI and Recent orders change by one, which shows the dashboard reads live status.",
+      "limits": "Mutates the shared rolling-window fixture; run last among dashboard cases or re-seed after it.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "domain-map:sr@rev5 §3c",
+          "note": "dashboard KPIs and recent orders"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.orders.authorship",
+      "entity": "CustomerOrder",
+      "purpose": "The authorship matrix: served or unserved org, placed by the rep or by a buyer.",
+      "required_state": {
+        "rep_in_served": "ORDER_REP_PLACED (TechFlow, customerId = SR_REP_PRIMARY user id)",
+        "buyer_in_served": "ORDER_BUYER_PLACED (TechFlow, customerId = TECHFLOW_BUYER)",
+        "rep_in_unserved": "ORDER_NOT_SERVED (ORG-005)",
+        "buyer_in_unserved": "ORDER_UNSERVED_BUYER (ORG-005)"
+      },
+      "shared_state": "Order ids and customerIds; a case that cancels one of them changes statistics and open-order behaviour until re-seed.",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.primary",
+          "required": true
+        },
+        {
+          "requirement": "data.sr.buyer.techflow",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep",
+      "td_alias": "ORDER_REP_PLACED.id",
+      "discriminates": "Four cells that disagree: the rep-placed served order counts in statistics and opens the buyer page; the buyer-placed one is listed in customer orders but opens read-only and is not counted; the two unserved ones never resolve. Statistics attribute by customerId, not org (KB-C2AD28C1).",
+      "limits": "ORG-005 is not created by seed:b2b (seeded=false); the unserved cells need it to exist on the stand.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json ORDER_REP_PLACED",
+          "note": "runtime ids written back by seed:sales-rep on vcst; 2026-10-13"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json ORDER_UNSERVED_BUYER",
+          "note": "runtime ids written back by seed:sales-rep on vcst; 2026-10-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C2AD28C1",
+          "note": "a buyer-created order in a served org is not counted",
+          "date": "2026-11-03"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.orders.top-seller-shaped",
+      "entity": "CustomerOrder",
+      "purpose": "A multi-line TechFlow order shaped so the units and revenue rankings disagree.",
+      "required_state": {
+        "org": "ORG-002",
+        "lines": "per-line product x quantity x unit price from sales-rep-stats-specs.mjs TOP_SELLER_LINES"
+      },
+      "shared_state": "Its lines; a case that edits the order collapses the two rankings.",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.primary",
+          "required": true
+        },
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep-stats",
+      "td_alias": "SR_STATS_TOPSELLER_ORDER.number",
+      "discriminates": "The top product by units is not the top by revenue, so by-units and by-revenue orderings must differ; a flat order split evenly at quantity 1 makes them identical.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_STATS_TOPSELLER_ORDER",
+          "note": "runtime ids written back by seed:sales-rep-stats on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.carts.active",
+      "entity": "ShoppingCart",
+      "purpose": "Active carts created by the primary rep in served orgs, one split by checkout selection.",
+      "required_state": {
+        "carts": "AGENT-TEST-SR-CART-ACME (ORG-001), AGENT-TEST-SR-CART-WEST (ORG-004), the rep default cart in ORG-003 with selected and unselected lines (SPLIT, borrowed: the seeder sets its lines only)",
+        "organizationId": "stamped (org-scoped grant)",
+        "empty": false
+      },
+      "shared_state": "Cart contents; the rep checking out or emptying one changes the Active carts tile for every later case.",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.primary",
+          "required": true
+        },
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep-stats",
+      "td_alias": "SR_STATS_CART_ACME.name",
+      "discriminates": "Carts in two orgs plus one with mixed selected lines: the tile counts item quantities split by selection, and per-org figures differ from the aggregate.",
+      "limits": "No cart REST API exists; carts are created through the storefront xAPI as the rep. Wishlists are not carts.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_STATS_CART_ACME",
+          "note": "runtime ids written back by seed:sales-rep-stats on vcst"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_STATS_CART_SPLIT",
+          "note": "runtime ids written back by seed:sales-rep-stats on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false,
+        "via": "seed:sales-rep-rowcap:teardown (scoped to the ROWCAP family)"
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.orders.rowcap",
+      "entity": "CustomerOrder",
+      "purpose": "Fourteen orders attributed to the layout rep, more than any widget row cap.",
+      "required_state": {
+        "rep": "SR_REP_LAYOUT",
+        "orders": 14,
+        "in_org_001": 8,
+        "statuses": "New, Processing, Completed, Cancelled, Payment required"
+      },
+      "constraints": {
+        "orders": "> max rows setting"
+      },
+      "shared_state": "Order statuses; a status change moves rows between widget tabs.",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.layout",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep-rowcap",
+      "td_alias": "SR_ROWCAP_ORDER_ACME_NEW.number",
+      "discriminates": "More orders than the cap, so a max-rows setting visibly truncates; with fewer rows than the cap every setting renders the same list.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_ROWCAP_ORDER_ACME_NEW",
+          "note": "runtime ids written back by seed:sales-rep-rowcap on vcst"
+        }
+      ]
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false,
+        "via": "seed:sales-rep-i18n:teardown"
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.orders.i18n-singular",
+      "entity": "CustomerOrder",
+      "purpose": "Exactly one order and one cart created today by SR_REP_ACME3, who serves one org.",
+      "required_state": {
+        "rep": "SR_REP_ACME3",
+        "orders_today": 1,
+        "carts_today": 1,
+        "served_orgs": 1
+      },
+      "shared_state": "The exactly-one counts: any order or cart created as SR_REP_ACME3 today turns the singular case plural.",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.acme-peers",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep-i18n",
+      "discriminates": "Counters that read exactly 1 render the singular label; every other fixture reads 0 or several and only reaches the plural branch.",
+      "limits": "Dated today: tomorrow placed_today reads 0. Re-seed on the day of the run.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_I18N_SINGULAR_ORDER",
+          "note": "runtime ids written back by seed:sales-rep-i18n on vcst"
+        }
+      ]
+    },
+    {
+      "id": "data.sr.orders.cancel-flag-pair",
+      "entity": "CustomerOrder",
+      "purpose": "Two rep-authored orders in a served org this month: one with status Cancelled only, one with IsCancelled=true.",
+      "required_state": {
+        "status_only_cancelled": {
+          "status": "Cancelled",
+          "isCancelled": false
+        },
+        "flag_cancelled": {
+          "status": "Processing",
+          "isCancelled": true
+        },
+        "customerId": "SR_REP_PRIMARY user id"
+      },
+      "lifecycle": "STEP",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.primary",
+          "required": true
+        },
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case Cleanup deletes both orders (DELETE /api/order/customerOrders?ids=)"
+      },
+      "discriminates": "Same month, same rep, same org, different cancellation: statistics count the status-only one and exclude the flagged one, so an exclusion by status is distinguishable from an exclusion by flag.",
+      "limits": "Raises the primary rep's month figures while it exists; read statistics as a before/after delta.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C2AD28C1",
+          "note": "status-only Cancelled counted, IsCancelled excluded; created by POST /api/order/customerOrders",
+          "date": "2026-11-03"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.sr.layout.never-saved",
+      "entity": "CustomerPreference",
+      "purpose": "The layout rep has no SalesRepLayout preference in any scope.",
+      "required_state": {
+        "rep": "SR_REP_LAYOUT",
+        "SalesRepLayout.*": "absent",
+        "salesRepLayout": null
+      },
+      "lifecycle": "SCENARIO",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.layout",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "from_state": {
+          "SalesRepLayout.*": "any"
+        },
+        "transition": "seed:sales-rep phase 3 deletes the layout rep's SalesRepLayout.* preferences"
+      },
+      "seed_capability": "seed:sales-rep",
+      "cleanup": {
+        "required": true,
+        "via": "re-run seed:sales-rep after a case saves a layout"
+      },
+      "discriminates": "null on read, so the registry defaults render with editing on; any earlier save returns a document and the defaults case passes on stored data.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F57FC873",
+          "note": "deleting the matching preference row makes salesRepLayout return null immediately",
+          "date": "2026-10-19"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false,
+        "via": "seed:sales-rep-docs:teardown"
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.docs.library",
+      "entity": "SalesRepDocument",
+      "purpose": "Sixteen registered documents in the shared library (nine typed fixtures and seven fillers): mixed types, a Unicode name, a ~3 MB file, an unknown extension, three categories, two pinned.",
+      "required_state": {
+        "documents": 16,
+        "pinned": 2,
+        "categories": 3,
+        "types": "pdf, docx, xlsx, txt, png, jpg, unknown extension",
+        "unicode_name": true,
+        "large_file": "~3 MB"
+      },
+      "constraints": {
+        "documents": "> 10 and page sizes 5 and 10 have a page+1"
+      },
+      "shared_state": "One global library for every rep and for the demo profile; pin flags (documents.pinned-first toggles them) and any registration change counts. Assert counts within the AGENT-TEST categories only.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep-docs",
+      "td_alias": "SR_DOC_PDF.fileName",
+      "discriminates": "Pinned and unpinned rows with different dates make pinned-first differ from newest-first; inline and non-inline types make the Open action decidable; three categories make category counts and filters non-trivial.",
+      "limits": "Needs sales-rep-documents in the deployment's FileUpload:Scopes; the seeder reports it precisely. IsPinned is forced false on create, so pinning is a second call.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_DOC_PDF",
+          "note": "runtime ids written back by seed:sales-rep-docs on vcst"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_DOC_UNICODE",
+          "note": "runtime ids written back by seed:sales-rep-docs on vcst"
+        }
+      ]
+    },
+    {
+      "id": "data.sr.docs.case-registered",
+      "entity": "SalesRepDocument",
+      "purpose": "A document the case uploads and registers itself, then deletes.",
+      "required_state": {
+        "fileName": "AGENT-TEST- prefixed, generated",
+        "category": "set (required by the validator)",
+        "registered": true
+      },
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case Cleanup deletes the document in the Admin Documents blade"
+      },
+      "discriminates": "Absent before the step and present right after it, so the library shows new registrations without cache lag; a seeded document cannot show a change.",
+      "limits": "Raises the library total while it exists; run it apart from count assertions. Upload refusals come back as 200 with succeeded:false (KB-6F18B42D).",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6F18B42D",
+          "note": "upload then register; 0-byte refused only at registration"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.sr.tasks.groups",
+      "entity": "SalesRepTask",
+      "purpose": "Twenty-two tasks owned by the primary rep in six groups of different sizes.",
+      "required_state": {
+        "owner": "SR_REP_PRIMARY",
+        "overdue": 2,
+        "today": 5,
+        "future": 7,
+        "completed": 4,
+        "canceled": 3,
+        "dateless": 1
+      },
+      "constraints": {
+        "group_sizes": "all different",
+        "today": "relative to the browser's local day"
+      },
+      "lifecycle": "SCENARIO",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.primary",
+          "required": true
+        },
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:sales-rep-tasks",
+      "td_alias": "SR_TASK_GROUPS.total",
+      "cleanup": {
+        "required": true,
+        "via": "seed:sales-rep-tasks deletes every AGENT-TEST-TASK row the rep owns and recreates the set; seed:sales-rep-tasks:teardown removes it"
+      },
+      "discriminates": "Six different group sizes mean no chip or tab can be mistaken for another; dueOffset 0 rows sit on the local-day boundary that decides Overdue vs Upcoming (KB-954877C5).",
+      "limits": "Decays at the browser's local midnight (SR_TASK_GROUPS.decays_at_utc): re-seed in the same day as the run. Private per rep account, so two suites on SR_REP_PRIMARY see each other's edits. Seeded on vcst 2026-11-05T16:09Z, decays 2026-11-05T23:00Z.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SR_TASK_GROUPS",
+          "note": "runtime ids written back by seed:sales-rep-tasks on vcst; seeded_at 2026-11-05T16:09Z"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-954877C5",
+          "note": "Overdue is decided by local day, not due time",
+          "date": "2026-10-27"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.sr.tasks.scheduled-call",
+      "entity": "SalesRepTask",
+      "purpose": "The Call task a schedule-call step just saved for a served customer.",
+      "required_state": {
+        "type": "Call",
+        "customer": "a served org",
+        "due": "the picked local date and time"
+      },
+      "lifecycle": "DERIVED",
+      "source": {
+        "produced_by": "sr.tasks.schedule-call",
+        "field": "createSalesRepTask.id"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case Cleanup deletes the task (deleteSalesRepTask)"
+      },
+      "discriminates": "A call the owner can read and another rep cannot (totalCount 0), on the local day of its due instant, which may be the previous UTC day.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-954877C5",
+          "note": "a Call created with createSalesRepTask lists by local day",
+          "date": "2026-10-27"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.sr.activity.member-search",
+      "entity": "SearchActivity",
+      "purpose": "A header search made in this run by a member of a served org, with a unique term.",
+      "required_state": {
+        "actor": "ACME_BUYER",
+        "term": "generated, unique per run",
+        "when": "inside the current hour"
+      },
+      "lifecycle": "STEP",
+      "relationships": [
+        {
+          "requirement": "data.sr.buyer.acme",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "cannot be undone (the search is logged); isolated by the run-unique term"
+      },
+      "discriminates": "The term appears for the rep under Searches; the same term searched by the rep or a signed-out visitor does not, so the source exclusions are decidable.",
+      "limits": "Web activity comes from GA when the module is present; a slow or absent GA shows the unavailable notice instead.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "domain-map:sr@rev5 §3m",
+          "note": "My activity sources"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.sr.list.rep-owned",
+      "entity": "Wishlist",
+      "purpose": "A list owned by the primary rep that the case shares with served organizations.",
+      "required_state": {
+        "owner": "SR_REP_PRIMARY",
+        "scope": "Private before the case",
+        "name": "generated, AGENT-TEST- prefixed"
+      },
+      "lifecycle": "STEP",
+      "relationships": [
+        {
+          "requirement": "data.sr.rep.primary",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case Cleanup deletes the list"
+      },
+      "discriminates": "Private before, shared after: the targets, message and recipients are observed on a list nobody else shares, so a stale share from another run cannot answer.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "domain-map:sr@rev5 §3j",
+          "note": "lists sharing (VCST-5707)"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "lifecycle": "FIXTURE",
+      "cleanup": {
+        "required": false,
+        "via": "seed:promotions:sales-rep-coupons:teardown"
+      },
+      "status": "CONFIRMED",
+      "id": "data.sr.coupons.family",
+      "entity": "Coupon",
+      "purpose": "Promotion coupons in the edge states the customer-profile coupons block lists.",
+      "required_state": {
+        "coupons": "end earlier than promo, expired, usage cap partial / one left / used up, member-bound, future start, long code, lowercase"
+      },
+      "shared_state": "Recorded uses; redeeming a capped coupon in a case moves it to the next cap state.",
+      "relationships": [
+        {
+          "requirement": "data.sr.org.served-set",
+          "required": true
+        }
+      ],
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:promotions:sales-rep-coupons",
+      "td_alias": "SRCPN_CAP_PARTIAL.code",
+      "discriminates": "Each coupon differs from the next in one dimension (date, cap, binding, code shape), so the block's filtering and labels are decided one dimension at a time.",
+      "limits": "The coupons block is in vc-module-sales-rep PR-30, unmerged; the data exists but the behaviour is not on the stand.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.vcst.json SRCPN_CAP_PARTIAL",
+          "note": "runtime ids written back by seed:promotions:sales-rep-coupons on vcst"
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "id": "profile.sr.provision",
+      "behavior": "sr.provision",
+      "purpose": "Admin turns a Contact plus login into a sales rep",
+      "requirements": [
+        "data.sr.contact.rep-candidate"
+      ]
+    },
+    {
+      "id": "profile.sr.provision.permission-matrix",
+      "behavior": "sr.provision.permission-matrix",
+      "purpose": "Create and update need the customer AND platform-security permission halves",
+      "requirements": [
+        "data.sr.admin.restricted-managers",
+        "data.sr.contact.rep-candidate"
+      ]
+    },
+    {
+      "id": "profile.sr.serve-orgs",
+      "behavior": "sr.serve-orgs",
+      "purpose": "Serving an organization creates a real membership",
+      "requirements": [
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.serve-orgs.count-agrees",
+      "behavior": "sr.serve-orgs.count-agrees",
+      "purpose": "Served-org count agrees across Admin, sidebar badge, table and switcher",
+      "requirements": [
+        "data.sr.rep.paging",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.store-toggle",
+      "behavior": "sr.store-toggle",
+      "purpose": "The store switch shows or hides the storefront Sales Rep UI",
+      "requirements": [
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.store-toggle.on-shows-hub",
+      "behavior": "sr.store-toggle.on-shows-hub",
+      "purpose": "Switch on and rep permission: hub and routes render",
+      "requirements": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.store-toggle.off-hides-ui",
+      "behavior": "sr.store-toggle.off-hides-ui",
+      "purpose": "Switch off: hub, list, profile and widgets are absent even for a permissioned rep",
+      "requirements": [
+        "data.sr.store.disabled",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.store-toggle.off-api-still-answers",
+      "behavior": "sr.store-toggle.off-api-still-answers",
+      "purpose": "Switch off does not revoke API access: /graphql/sales-rep still serves the rep",
+      "requirements": [
+        "data.sr.store.disabled",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.hub",
+      "behavior": "sr.hub",
+      "purpose": "The rep signs in and sees a hub sized by their role",
+      "requirements": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.hub.advanced-rep",
+      "behavior": "sr.hub.advanced-rep",
+      "purpose": "An Advanced rep also gets the Document library link and dashboard widget",
+      "requirements": [
+        "data.sr.rep.docs-reader",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.hub.non-rep-sees-nothing",
+      "behavior": "sr.hub.non-rep-sees-nothing",
+      "purpose": "A non-rep buyer never sees the hub, its link or its badge",
+      "requirements": [
+        "data.sr.buyer.acme",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.hub.non-rep-direct-url",
+      "behavior": "sr.hub.non-rep-direct-url",
+      "purpose": "A non-rep hitting a rep route is redirected silently to the account dashboard",
+      "requirements": [
+        "data.sr.buyer.acme",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.hub.privileged-non-rep",
+      "behavior": "sr.hub.privileged-non-rep",
+      "purpose": "A privileged non-rep (org maintainer) gets no hub and issues no salesRep query",
+      "requirements": [
+        "data.sr.buyer.org-maintainer",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.hub.global-only-rep",
+      "behavior": "sr.hub.global-only-rep",
+      "purpose": "A rep holding the permission globally with no org membership: admitted or redirected",
+      "requirements": [
+        "data.sr.rep.zero-served",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.hub.header-link",
+      "behavior": "sr.hub.header-link",
+      "purpose": "A rep sees a \"Sales Rep Hub\" link first in the storefront header; a non-rep does not",
+      "requirements": [
+        "data.sr.buyer.acme",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.scope",
+      "behavior": "sr.scope",
+      "purpose": "Every rep read is confined to the organizations the rep serves",
+      "requirements": [
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.scope.unserved-org",
+      "behavior": "sr.scope.unserved-org",
+      "purpose": "An unserved organization resolves null or empty, never data",
+      "requirements": [
+        "data.sr.org.unserved",
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.scope.locked-membership",
+      "behavior": "sr.scope.locked-membership",
+      "purpose": "A per-org locked membership excludes that org while unlocked orgs still resolve",
+      "requirements": [
+        "data.sr.rep.membership-locked",
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.scope.zero-served",
+      "behavior": "sr.scope.zero-served",
+      "purpose": "A permissioned rep serving zero customers gets an empty result, not an error",
+      "requirements": [
+        "data.sr.rep.zero-served",
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.scope.authentication-only",
+      "behavior": "sr.scope.authentication-only",
+      "purpose": "sales-rep:access is not an API check: any signed-in buyer gets 200 with an empty scope",
+      "requirements": [
+        "data.sr.buyer.acme",
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.scope.creator-only-statistics",
+      "behavior": "sr.scope.creator-only-statistics",
+      "purpose": "Statistics and rankings count only what the calling rep created",
+      "requirements": [
+        "data.sr.orders.authorship",
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.scope.customer-orders-creator-agnostic",
+      "behavior": "sr.scope.customer-orders-creator-agnostic",
+      "purpose": "The customer-orders family deliberately shows every order of a served org",
+      "requirements": [
+        "data.sr.orders.authorship",
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.customers",
+      "behavior": "sr.customers",
+      "purpose": "My customers lists the served organizations with purchase totals",
+      "requirements": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.customers.no-order-dash",
+      "behavior": "sr.customers.no-order-dash",
+      "purpose": "An org with no orders shows a dash in Last order, not an error",
+      "requirements": [
+        "data.sr.rep.paging",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.customers.paging",
+      "behavior": "sr.customers.paging",
+      "purpose": "Ten per page, count-only when first is 0, page clamps when the set shrinks",
+      "requirements": [
+        "data.sr.rep.paging",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.customers.badge",
+      "behavior": "sr.customers.badge",
+      "purpose": "The hub badge is the unfiltered served-org count and hides at zero",
+      "requirements": [
+        "data.sr.rep.zero-served",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.profile",
+      "behavior": "sr.profile",
+      "purpose": "A customer profile shows one served organization in depth",
+      "requirements": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.profile.orders-empty",
+      "behavior": "sr.profile.orders-empty",
+      "purpose": "An org with zero orders shows the empty state and zero metrics",
+      "requirements": [
+        "data.sr.rep.paging",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.profile.top-products",
+      "behavior": "sr.profile.top-products",
+      "purpose": "Top products rank by units by default, re-rank by revenue and link to the PDP",
+      "requirements": [
+        "data.sr.orders.top-seller-shaped",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.stats",
+      "behavior": "sr.stats",
+      "purpose": "Statistics and rankings answer over a period, per rep",
+      "requirements": [
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.stats.excluded-orders",
+      "behavior": "sr.stats.excluded-orders",
+      "purpose": "Flag-cancelled and prototype orders are excluded; status-only cancelled is not",
+      "requirements": [
+        "data.sr.orders.cancel-flag-pair",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.stats.cart-statistics",
+      "behavior": "sr.stats.cart-statistics",
+      "purpose": "Active carts is a currency-scoped quantity; gift lines count in the tile, not the badge",
+      "requirements": [
+        "data.sr.carts.active",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.stats.top-sellers",
+      "behavior": "sr.stats.top-sellers",
+      "purpose": "Top sellers rank by units or revenue and take clamps at 10",
+      "requirements": [
+        "data.sr.orders.top-seller-shaped",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.orders-list",
+      "behavior": "sr.orders-list",
+      "purpose": "The rep lists the orders they created",
+      "requirements": [
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.orders-list.store-scoped",
+      "behavior": "sr.orders-list.store-scoped",
+      "purpose": "A store argument scopes orders; null means all stores",
+      "requirements": [
+        "data.sr.orders.store-recency",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.dashboard",
+      "behavior": "sr.dashboard",
+      "purpose": "The hub dashboard summarises the rep activity",
+      "requirements": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.rolling-window"
+      ]
+    },
+    {
+      "id": "profile.sr.dashboard.kpi-no-data",
+      "behavior": "sr.dashboard.kpi-no-data",
+      "purpose": "A rep with no data sees zeros, not blanks, and populated cards co-render",
+      "requirements": [
+        "data.sr.rep.zero-served",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.rolling-window"
+      ]
+    },
+    {
+      "id": "profile.sr.dashboard.active-carts-tile",
+      "behavior": "sr.dashboard.active-carts-tile",
+      "purpose": "Active carts shows item quantities of the rep own carts, split by checkout selection",
+      "requirements": [
+        "data.sr.carts.active",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.rolling-window"
+      ]
+    },
+    {
+      "id": "profile.sr.dashboard.top-sellers-widget",
+      "behavior": "sr.dashboard.top-sellers-widget",
+      "purpose": "Top sellers widget: top 5 by units, by-revenue re-rank, category chips",
+      "requirements": [
+        "data.sr.orders.top-seller-shaped",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.rolling-window"
+      ]
+    },
+    {
+      "id": "profile.sr.dashboard.status-change-reflected",
+      "behavior": "sr.dashboard.status-change-reflected",
+      "purpose": "An admin order-status change shows in the New-orders KPI and Recent orders",
+      "requirements": [
+        "data.sr.orders.status-flip",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.rolling-window"
+      ]
+    },
+    {
+      "id": "profile.sr.layout",
+      "behavior": "sr.layout",
+      "purpose": "The rep arranges their pages and the arrangement persists",
+      "requirements": [
+        "data.sr.rep.layout"
+      ]
+    },
+    {
+      "id": "profile.sr.layout.never-saved-defaults",
+      "behavior": "sr.layout.never-saved-defaults",
+      "purpose": "A never-saved key is null and renders registry defaults with editing enabled",
+      "requirements": [
+        "data.sr.layout.never-saved",
+        "data.sr.rep.layout"
+      ]
+    },
+    {
+      "id": "profile.sr.layout.per-user-isolation",
+      "behavior": "sr.layout.per-user-isolation",
+      "purpose": "One rep saved layout is invisible to another rep",
+      "requirements": [
+        "data.sr.rep.primary",
+        "data.sr.rep.layout"
+      ]
+    },
+    {
+      "id": "profile.sr.layout.widget-settings",
+      "behavior": "sr.layout.widget-settings",
+      "purpose": "Max rows and status tabs are scope-wide, range-checked and applied on save",
+      "requirements": [
+        "data.sr.orders.rowcap",
+        "data.sr.rep.layout"
+      ]
+    },
+    {
+      "id": "profile.sr.comms",
+      "behavior": "sr.comms",
+      "purpose": "The rep sends a message to a served customer",
+      "requirements": [
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.comms.not-served-refused",
+      "behavior": "sr.comms.not-served-refused",
+      "purpose": "A rep that does not serve the org is refused",
+      "requirements": [
+        "data.sr.org.unserved",
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.comms.no-recipients",
+      "behavior": "sr.comms.no-recipients",
+      "purpose": "An org with no effective recipient returns a no-recipients result",
+      "requirements": [
+        "data.sr.org.rep-only",
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.comms.initiator-excluded",
+      "behavior": "sr.comms.initiator-excluded",
+      "purpose": "The sending rep is excluded from recipients",
+      "requirements": [
+        "data.sr.org.rep-only",
+        "data.sr.rep.primary",
+        "data.sr.org.served-set"
+      ]
+    },
+    {
+      "id": "profile.sr.rep-as-buyer",
+      "behavior": "sr.rep-as-buyer",
+      "purpose": "The rep is structurally a full buyer-member of every served org",
+      "requirements": [
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.rep-as-buyer.single-org-no-switcher",
+      "behavior": "sr.rep-as-buyer.single-org-no-switcher",
+      "purpose": "A single-org rep gets no Organizations block in the popover",
+      "requirements": [
+        "data.sr.rep.techflow-only",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.documents",
+      "behavior": "sr.documents",
+      "purpose": "Sales materials reach Advanced reps through a shared document library",
+      "requirements": [
+        "data.sr.rep.docs-reader",
+        "data.sr.docs.library"
+      ]
+    },
+    {
+      "id": "profile.sr.documents.register",
+      "behavior": "sr.documents.register",
+      "purpose": "The two-step upload then register flow publishes a file with category and metadata",
+      "requirements": [
+        "data.sr.docs.case-registered",
+        "data.sr.rep.docs-reader",
+        "data.sr.docs.library"
+      ]
+    },
+    {
+      "id": "profile.sr.documents.live-mutable",
+      "behavior": "sr.documents.live-mutable",
+      "purpose": "The result set reflects new registrations without a cache lag",
+      "requirements": [
+        "data.sr.docs.case-registered",
+        "data.sr.rep.docs-reader",
+        "data.sr.docs.library"
+      ]
+    },
+    {
+      "id": "profile.sr.documents.read-gate",
+      "behavior": "sr.documents.read-gate",
+      "purpose": "A rep with no documents permission is forbidden and sees no link, widget or route",
+      "requirements": [
+        "data.sr.rep.primary",
+        "data.sr.rep.docs-reader",
+        "data.sr.docs.library"
+      ]
+    },
+    {
+      "id": "profile.sr.documents.write-only-rep",
+      "behavior": "sr.documents.write-only-rep",
+      "purpose": "A write-only rep: does :write alone open the read gate?",
+      "requirements": [
+        "data.sr.rep.docs-write-only",
+        "data.sr.rep.docs-reader",
+        "data.sr.docs.library"
+      ]
+    },
+    {
+      "id": "profile.sr.access",
+      "behavior": "sr.access",
+      "purpose": "Access is taken away on three independent axes",
+      "requirements": [
+        "data.sr.rep.lockable"
+      ]
+    },
+    {
+      "id": "profile.sr.access.lock-membership",
+      "behavior": "sr.access.lock-membership",
+      "purpose": "Locking one membership excludes only that org, from the Contacts side",
+      "requirements": [
+        "data.sr.rep.membership-locked",
+        "data.sr.rep.lockable"
+      ]
+    },
+    {
+      "id": "profile.sr.access.unlock-membership",
+      "behavior": "sr.access.unlock-membership",
+      "purpose": "Unlocking a membership restores the org",
+      "requirements": [
+        "data.sr.rep.membership-locked",
+        "data.sr.rep.lockable"
+      ]
+    },
+    {
+      "id": "profile.sr.access.delete",
+      "behavior": "sr.access.delete",
+      "purpose": "Delete removes Contact and login together and cannot be undone",
+      "requirements": [
+        "data.sr.contact.rep-candidate",
+        "data.sr.rep.lockable"
+      ]
+    },
+    {
+      "id": "profile.sr.directory",
+      "behavior": "sr.directory",
+      "purpose": "A buyer sees who serves their own organization",
+      "requirements": [
+        "data.sr.store.enabled",
+        "data.sr.buyer.acme",
+        "data.sr.rep.primary",
+        "data.sr.rep.acme-peers"
+      ]
+    },
+    {
+      "id": "profile.sr.directory.active-org",
+      "behavior": "sr.directory.active-org",
+      "purpose": "The list follows the active organization; a cross-org rep is excluded",
+      "requirements": [
+        "data.sr.rep.techflow-only",
+        "data.sr.buyer.techflow",
+        "data.sr.store.enabled",
+        "data.sr.buyer.acme",
+        "data.sr.rep.primary",
+        "data.sr.rep.acme-peers"
+      ]
+    },
+    {
+      "id": "profile.sr.directory.exclusions",
+      "behavior": "sr.directory.exclusions",
+      "purpose": "Blocked reps and per-org locked reps are excluded",
+      "requirements": [
+        "data.sr.rep.blocked",
+        "data.sr.rep.membership-locked",
+        "data.sr.store.enabled",
+        "data.sr.buyer.acme",
+        "data.sr.rep.primary",
+        "data.sr.rep.acme-peers"
+      ]
+    },
+    {
+      "id": "profile.sr.directory.store-scope",
+      "behavior": "sr.directory.store-scope",
+      "purpose": "A specific store scopes the list; null means all stores",
+      "requirements": [
+        "data.sr.rep.second-store",
+        "data.sr.store.enabled",
+        "data.sr.buyer.acme",
+        "data.sr.rep.primary",
+        "data.sr.rep.acme-peers"
+      ]
+    },
+    {
+      "id": "profile.sr.directory.storeid-omitted",
+      "behavior": "sr.directory.storeid-omitted",
+      "purpose": "Omitting storeId silently disables store scoping",
+      "requirements": [
+        "data.sr.rep.second-store",
+        "data.sr.store.enabled",
+        "data.sr.buyer.acme",
+        "data.sr.rep.primary",
+        "data.sr.rep.acme-peers"
+      ]
+    },
+    {
+      "id": "profile.sr.customer-orders",
+      "behavior": "sr.customer-orders",
+      "purpose": "The rep browses every order of the customers they serve",
+      "requirements": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.customer-orders.open-order",
+      "behavior": "sr.customer-orders.open-order",
+      "purpose": "An order the rep did not place opens read-only; one they placed opens the buyer page; a typed buyer URL is refused",
+      "requirements": [
+        "data.sr.orders.authorship",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.orders.served-mix"
+      ]
+    },
+    {
+      "id": "profile.sr.localization",
+      "behavior": "sr.localization",
+      "purpose": "Rep-facing vocabulary localizes and never shows a raw key",
+      "requirements": [
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.localization.labels-localize",
+      "behavior": "sr.localization.labels-localize",
+      "purpose": "Titles, rule labels, statuses and money localize by culture",
+      "requirements": [
+        "data.sr.orders.i18n-singular",
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.tasks",
+      "behavior": "sr.tasks",
+      "purpose": "The rep manages tasks and follow-ups on the Tasks page",
+      "requirements": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.tasks.groups"
+      ]
+    },
+    {
+      "id": "profile.sr.tasks.schedule-call",
+      "behavior": "sr.tasks.schedule-call",
+      "purpose": "A call scheduled from a customer page is saved as a Call task at the picked local date and time",
+      "requirements": [
+        "data.sr.org.served-set",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.tasks.groups"
+      ]
+    },
+    {
+      "id": "profile.sr.tasks.schedule-call.served-only",
+      "behavior": "sr.tasks.schedule-call.served-only",
+      "purpose": "A call can link only a served customer, and another rep cannot read or change it",
+      "requirements": [
+        "data.sr.tasks.scheduled-call",
+        "data.sr.rep.techflow-only",
+        "data.sr.org.served-set",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.tasks.groups"
+      ]
+    },
+    {
+      "id": "profile.sr.tasks.no-customers-no-type",
+      "behavior": "sr.tasks.no-customers-no-type",
+      "purpose": "A rep with no served customers has no task types or status rules: New task shows no Type select (an empty Customer select stays), and the Status filter offers only \"No options available\"",
+      "requirements": [
+        "data.sr.rep.zero-served",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.tasks.groups"
+      ]
+    },
+    {
+      "id": "profile.sr.tasks.filters.customers-served-only",
+      "behavior": "sr.tasks.filters.customers-served-only",
+      "purpose": "The Customers filter offers and matches only organizations the rep serves; an unserved id matches nothing",
+      "requirements": [
+        "data.sr.org.unserved",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.tasks.groups"
+      ]
+    },
+    {
+      "id": "profile.sr.contract",
+      "behavior": "sr.contract",
+      "purpose": "The scoped schema is a separate GraphQL endpoint with open introspection",
+      "requirements": [
+        "data.sr.rep.primary"
+      ]
+    },
+    {
+      "id": "profile.sr.list-share",
+      "behavior": "sr.list-share",
+      "purpose": "The rep shares a list with customer organizations, with an optional message",
+      "requirements": [
+        "data.sr.rep.primary",
+        "data.sr.list.rep-owned"
+      ]
+    },
+    {
+      "id": "profile.sr.list-share.targets-delta",
+      "behavior": "sr.list-share.targets-delta",
+      "purpose": "Targets are edited by add and remove deltas; the rep must serve every added org",
+      "requirements": [
+        "data.sr.org.unserved",
+        "data.sr.rep.primary",
+        "data.sr.list.rep-owned"
+      ]
+    },
+    {
+      "id": "profile.sr.list-share.customer-access",
+      "behavior": "sr.list-share.customer-access",
+      "purpose": "A member of a target organization can see and read the shared list",
+      "requirements": [
+        "data.sr.buyer.techflow",
+        "data.sr.rep.primary",
+        "data.sr.list.rep-owned"
+      ]
+    },
+    {
+      "id": "profile.sr.activity",
+      "behavior": "sr.activity",
+      "purpose": "The rep sees what the members of served customers did on the storefront",
+      "requirements": [
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.activity.member-search"
+      ]
+    },
+    {
+      "id": "profile.sr.activity.no-customers",
+      "behavior": "sr.activity.no-customers",
+      "purpose": "A rep with no customers sees \"No customers assigned to you yet\"",
+      "requirements": [
+        "data.sr.rep.zero-served",
+        "data.sr.store.enabled",
+        "data.sr.rep.primary",
+        "data.sr.activity.member-search"
+      ]
+    },
+    {
+      "id": "profile.sr.coupons",
+      "behavior": "sr.coupons",
+      "purpose": "The rep sees the promotion coupons available to a served customer",
+      "requirements": [
+        "data.sr.rep.primary",
+        "data.sr.coupons.family"
+      ]
+    }
+  ],
+  "amended": "2026-11-05"
+}
