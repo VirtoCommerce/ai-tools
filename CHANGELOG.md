@@ -8,23 +8,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## The triage collector reads PASS_WITH_NOTES and KNOWN_DIVERGENCE — `vc-test` `0.13.2` — 2026-11-06
+## The triage collector reads the visual lane's verdict words — `vc-test` `0.13.2` — 2026-11-06
 
 ### Fixed
 
 - `checklistVerdict()` in `plugins/vc-test/lib/triage-collect.mjs` stripped every `_` before matching a
-  checklist verdict, so `PASS_WITH_NOTES` became `PASSWITHNOTES` and `KNOWN_DIVERGENCE` became
-  `KNOWNDIVERGENCE` — two words of the visual lane's own vocabulary (`skills/qa-design/visual-axis.md`) that
-  ticket-mode triage then left in `unresulted[]`. It now strips only emphasis underscores around a word
-  (`_x_`, `__x__`) and reads `PASS_WITH_NOTES` as a pass and `KNOWN_DIVERGENCE` as advisory.
-  Observed on the VCST-6289 run, where 11 of 40 checklist rows were unreadable until the verdicts were reworded.
+  checklist verdict, so `KNOWN_DIVERGENCE` (`skills/qa-design/visual-axis.md`) became `KNOWNDIVERGENCE`, and
+  `NOT_RUN` / `NOT_BUILT` / `PASS_WITH_NOTES` were unreadable too; ticket-mode triage left those rows in
+  `unresulted[]`. An underscore now reads as a space (as `lib/rounds.mjs` already does) and a markdown `\`
+  escape is dropped. Also read now: `CONFIRMED` and `MET` as a pass, `NOT-MET` as a fail, `AMBIGUOUS` as
+  blocked (it escalates). `vs. DESIGN` `MISSING` moves from FAIL to advisory, where visual-axis.md puts it with
+  `DRIFT`. Observed on the VCST-6289 run, where 11 of 40 checklist rows were unreadable until the verdicts
+  were reworded.
 
 ### Verified
 
-- A temporary `node --test` over 34 verdict cells (plain, bold, code, `_x_` / `__x__` emphasis, every accepted
-  verdict word, and non-verdicts such as `CONTRADICTS` and `PASSWORD reset`): 34 pass; deleted before commit.
-- The fixed collector on a copy of the VCST-6289 checklist written with the original verdict words: unreadable rows
-  11 → 4, the remaining four carrying words outside the vocabulary (`CONTRADICTS`, `NOT-MET`, `REPAIR applied`).
+- A temporary `node --test` over the verdict cells (plain, bold, code, `_x_` / `__x__` emphasis, `\_` escapes,
+  every accepted verdict word, and non-verdicts such as `CONTRADICTS` and `PASSWORD reset`), deleted before commit.
 
 ## A `|thumbnail!` screenshot is no longer reported as not rendered — `vc-fix` `0.18.4` — 2026-11-02
 

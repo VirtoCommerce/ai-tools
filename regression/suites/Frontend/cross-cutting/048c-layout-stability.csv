@@ -106,7 +106,7 @@
 [NAV] {{FRONT_URL}}/catalog
 [WAIT] .vc-product-card >= 2
 [WAIT] .facet-filter-widget >= 2
-[PROBE:SPACING] .facet-filter-widget, .facet-filter-widget .vc-widget__header-container","[SPACING] offGrid == 0","auto-captured","Off-scale panel padding","none","business-logic.md#bl-ui-002; critical-ui-scope.md VcExpansionPanels x BL-UI-002","Automated"
+[PROBE:SPACING] .facet-filter-widget, .facet-filter-widget .vc-widget__header-container","[SPACING] offGrid == 0","auto-captured","Off-scale panel padding","none","business-logic.md#bl-ui-002; critical-ui-scope.md VcWidget x BL-UI-002","Automated"
 "LAYOUT-COMP-VCEXPANSION-004","Facet panel headers touch targets at 375px","Components > VcWidget (facet filters)","P1","BL-UI-006","ECL-1.8","048b failed all 15 facet headers against the flat 44px bar; only a sub-24px header is a real defect. At 375 the facets render only inside the Filters drawer (opened with the toolbar filter button) as xs collapsible VcWidgets (.facet-filter-widget); /catalog holds no .vc-expansion-panels, so the old probe matched nothing and passed on nothing (re-targeted VCST-6289 2a, 2026-11-06). The probe scope is the first facet widget in the drawer, not the whole facet container: the container also holds the in-stock / purchased-before switches, whose visually-hidden native inputs are 1x1 (the label is the real target) and fail belowAA although they are not facet headers (C1 run 2026-11-06). The audit takes ONE root (document.querySelector), so only that first facet header is measured; all facets are the same xs collapsible VcWidget.","{{FRONT_URL}}/catalog","[VIEWPORT] 375x812
 [NAV] {{FRONT_URL}}/catalog
 [WAIT] .vc-product-card >= 2
@@ -115,7 +115,7 @@
 [WAIT] 500ms
 [PROBE:TOUCH] .filters-popup-sidebar .facet-filter-widget","[TOUCH] belowAA == 0
 [TOUCH] belowAAA == 0
-[TOUCH] tooClose == 0","auto-captured","A facet header below the 24x24 AA floor","none","business-logic.md#bl-ui-006; critical-ui-scope.md VcExpansionPanels x BL-UI-006","Automated"
+[TOUCH] tooClose == 0","auto-captured","A facet header below the 24x24 AA floor","none","business-logic.md#bl-ui-006; critical-ui-scope.md VcWidget x BL-UI-006","Automated"
 "LAYOUT-COMP-VCTABSWITCH-001","Catalog view-switcher tab alignment","Components > VcTabSwitch","P2","BL-UI-005","ECL-1.7","Grid/list tabs sit in one row and must share a baseline.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/catalog
 [WAIT] [data-test-id=""view-switcher""]
