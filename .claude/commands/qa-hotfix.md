@@ -60,6 +60,9 @@ anything (the operator names them — e.g. "v12 and v14").
      confirm it isn't breaking before proceeding.
    - `support/X.Y` missing for a bundle → **not** a hand-off — proceed to step 5 to create it
      (gated), unless the fix-shape gate above already STOPped.
+   - A `⚠` in the **Release CI** block (stale NuGet publishing, an audit gap this repo already had to fix; `ℹ` is a heads-up only) → fix it in
+     step 6 in the same push as the cherry-pick, **before** the first release — never learn it from a
+     red run ([`support-line-ci.md`](../skills/qa-hotfix/support-line-ci.md)).
    - `--dry-run` ends here.
 5. **Step 0 — create a missing `support/X.Y` branch (gated write).** Only when the fix-shape gate is
    clear. Branch from the line's **base tag** — the highest released `X.Y.*` tag, or the
@@ -77,13 +80,17 @@ anything (the operator names them — e.g. "v12 and v14").
    1. `git fetch && git checkout support/X.Y`
    2. `git cherry-pick <fixSha>` — on conflict, resolve only if trivially mechanical; otherwise
       **STOP + hand off** (do not force a risky resolution).
+      2b. Every Release-CI `⚠` from step 4 → its fix as a separate commit (the table in
+      [`support-line-ci.md`](../skills/qa-hotfix/support-line-ci.md)).
    3. Show the diff → **confirm** → `git push origin support/X.Y`.
    4. **confirm** → trigger + verify the release:
       ```bash
       npm run hotfix:release -- --repo=<name> --branch=support/X.Y --expect-commit=<fixSha> --poll
       ```
       This dispatches the repo's "Release hotfix" workflow (module/platform/theme variant,
-      discovered by name), waits for it, and verifies the published patch contains the fix commit.
+      discovered by name), waits for it, and verifies the published patch contains the fix commit
+      and that its NuGet packages reached nuget.org. A `⚠ GitHub release … WAS created` line means a
+      release without packages — recover per `support-line-ci.md` §When it already happened.
 7. **Verify + report.** Re-run the precheck (the bundle should now read `already-applied`), report
    the new patch versions + release URLs per bundle. After ONE explicit yes covering the comment, the
    "Need hotfixes" flag and the status change, comment the outcome on the JIRA task
