@@ -420,9 +420,12 @@ Report categories don't accumulate forever — each has a lifecycle:
 - **Ephemeral run folders** (`reports/regression/{REG-*,SMOKE-*}`, `reports/test-lifecycle/TLC-*`,
   `reports/coverage/COV-*`, `reports/monitoring/MONITOR-*`) are **already gitignored** (`.gitignore`
   `reports/regression/*` + the repo-wide evidence-extension rules) — they only ever exist as local disk usage on whoever ran them, never
-  in git history. They age out locally via `npm run reports:prune -- --apply` (default 30 days; the run
+  in git history. They age out locally via `npm run reports:prune -- --apply` (default 14 days; the run
   date is parsed from the `RUN-YYYY-MM-DD-HHMM` folder name).
-- **Git-tracked report folders** (`reports/tickets/<Sprint>/<TICKET>/`) age out the same way via
+- **Local `.vc-fix/` state** (`context/`, `session-env/`, `session-run/`, `vc-test/` — one entry per ticket
+  or session) ages out with the same local run, by the newest mtime inside each entry. `.vc-fix/diagnostics/`
+  is not touched: the self-diagnostics collector owns its lifecycle.
+- **Git-tracked report folders** (`reports/tickets/<Sprint>/<TICKET>/`, `reports/fixes/FIX-*`) age out the same way via
   `npm run reports:prune -- --target=tracked --apply` — `git rm` + one commit, gated by the last commit
   date on that path (not filesystem mtime). The current sprint is always skipped regardless of age. A run folder that `QA_OUTPUT_DIR` puts outside the repo is never
   pruned: it is the operator's. Only the folder's markdown/JSON is tracked; its screenshots never were
