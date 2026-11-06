@@ -3883,6 +3883,19 @@
     },
     "_notes": "Agent pool slot 3 (Edge / qa-backend-expert). Same pattern as AGENT_POOL_SLOT_1/2; customer-editable via test-data/users/agent-user-pool.csv."
   },
+  "AGENT_POOL_B2B_SLOT_3": {
+    "file": "users/agent-user-pool",
+    "filter": {
+      "slot": "3"
+    },
+    "fields": {
+      "email": "b2b_email",
+      "password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "browser": "server_name"
+    },
+    "_notes": "Signable B2B persona of agent-pool slot 3 — use as [AUTH role=AGENT_POOL_B2B_SLOT_3]. AGENT_POOL_SLOT_3.email/.password is the PERSONAL no-org account; this alias maps email/password to the slot's b2b_email/b2b_password columns, so the GraphQL runner (graphql-auth.ts resolveRole, CSV-backed branch) signs in as the B2B buyer. It is the OWNER of every seeded quote's <QUOTE_ALIAS>.id_slot3 (e.g. @td(QUOTE_TO_ACCEPT.id_slot3)): seed-quotes.mjs stamps slot n's quotes with that buyer's login id + LIVE organization (quote-buyers.mjs) and a languageCode (KB-97C03EB4), and td:reconcile [16] re-checks both. Password stays a {{VAR}} token in the CSV. No organization_id: the buyer has one organization, which the token takes; the b2b_org column is informational only — on vcst slot 1's CSV org was wrong (quote-buyers.mjs header), so never pin an org from it."
+  },
   "ADMIN_ROLE_TESTER": {
     "_inline": true,
     "_comment": "Customer's admin role assigned to the test admin user (ADMIN env var). The BL-RBAC invariants reference role CAPABILITIES, not names — so this alias absorbs naming differences. Customer's actual role name goes here; agents read this instead of assuming 'admin'. Update name + id per customer Admin SPA > Security > Roles.",
@@ -4343,11 +4356,15 @@
     "id": "",
     "name": "",
     "approved_count": "",
-    "notes": "Product carrying the seeded Approved reviews (>=6, for pagination/sort/approved-only). Runtime id/name/count written to aliases.<env>.json by seed:reviews; empty on an unseeded env.",
+    "new_count": "",
+    "rejected_count": "",
+    "notes": "Product carrying the seeded moderation corpus: >=6 Approved (pagination/sort/approved-only) + >=1 New + >=1 Rejected, and NO other review (the approved-only cases assert served total = approved_count, so the host is a product no other review touches and no REV_* fixture owns). Runtime id/name/slug/counts written to aliases.<env>.json by seed:reviews; empty on an unseeded env. Corpus + host rule: scripts/seed-data/products/reviews-specs.mjs; guard: npm run td:validate:reviews.",
     "fields": {
       "id": "id",
       "name": "name",
       "approved_count": "approved_count",
+      "new_count": "new_count",
+      "rejected_count": "rejected_count",
       "slug": "slug"
     },
     "slug": ""
@@ -5581,6 +5598,16 @@
     "currency": "USD",
     "id": "",
     "catalogId": ""
+  },
+  "CATALOG_OTHER_WITH_PROPERTIES": {
+    "_inline": true,
+    "_notes": "CAT-GQL-153 (VCST-6251) — a physical catalog OUTSIDE the store (CAT-038's deliberately unlinked AGENT-TEST-Physical-Excluded) that owns properties the store's catalog does not have: AGENT_TEST_OTHER_CATALOG_SCOPE (type Catalog) and AGENT_TEST_OTHER_PRODUCT_SCOPE (type Product), declared in catalog-edge-specs.mjs OTHER_CATALOG. The case passes filter catalogIds:<this id> to Query.properties and asserts the store's own answer comes back; a build that honours the caller's catalogIds returns THESE properties instead, so the two sets must differ — the seeder proves live that the store's Query.properties returns none of them. Not CATALOG_ELECTRONICS (the store's physical source) and not an unmanaged env catalog. Seeded by npm run seed:catalog-edge; guarded by npm run td:validate:catalog-edge. Runtime id lives in aliases.<env>.json only.",
+    "name": "AGENT-TEST-Physical-Excluded",
+    "id": "",
+    "fields": {
+      "id": "id",
+      "name": "name"
+    }
   },
   "PROD_SEO_CONFIGURED": {
     "_inline": true,

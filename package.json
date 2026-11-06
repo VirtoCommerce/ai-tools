@@ -322,6 +322,7 @@
     "local:health": "node skills/qa-local-env/healthcheck.mjs",
     "seed:reviews": "node scripts/seed-data/products/seed-reviews.mjs",
     "seed:reviews:teardown": "node scripts/seed-data/products/seed-reviews.mjs --teardown",
+    "td:validate:reviews": "node scripts/seed-data/products/validate-reviews-data.mjs",
     "seed:rbac": "node scripts/seed-data/platform/seed-backoffice-rbac.mjs",
     "seed:rbac:teardown": "node scripts/seed-data/platform/seed-backoffice-rbac.mjs --teardown",
     "td:validate:rbac": "node scripts/seed-data/platform/validate-backoffice-rbac-data.mjs",
