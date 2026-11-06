@@ -8,6 +8,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A client project gets its default env at onboarding — `vc-init` `0.5.4` — 2026-11-03
+
+### Fixed
+
+- `/project-init` writes `.env.test-env` (`TEST_ENV=<env>`) after it creates the first `.env.<env>`. Before, a
+  client project had only `.env.<its env>`, so every command run without an env (`run-folder.mjs use <TICKET>`,
+  the first step of `/vc-test:qa-ticket`) fell back to the built-in `vcst` and stopped on `unknown env "vcst"`.
+  The file is written only when it does not exist, the env is the project's only one (or `scaffold-env.mjs
+  --primary`) and git ignores it. An existing file is never overwritten. `--add-env` leaves it as it is and says
+  how to switch; the Playwright lanes need a Claude Code restart after a switch. The output reports
+  `written` / `kept (TEST_ENV=<x>)` / `skipped`.
+- A project onboarded before 0.5.4 gets the file from `/project-init --check`: its `normalize-env` step adds the
+  `.gitignore` entry and writes `.env.test-env` by the same rules (`--check` of normalize-env alone writes nothing).
+- The `skipped` line says what to do for its reason: create the one-line file saved as UTF-8 (never `echo … >`, which
+  Windows PowerShell 5.1 writes as UTF-16 that no resolver reads), add it to `.gitignore` first, or restore / untrack
+  a tracked one. It never suggests re-running `scaffold-env`, which without the project's `--tracker` would add Jira placeholders.
+- An existing `.env.test-env` is checked, never rewritten: UTF-16, no `TEST_ENV` line, or an env with no
+  `.env.<env>` beside it is reported as `kept, but …` (by `normalize-env` too), so `--check` says why a project still
+  falls back to `vcst`.
+- An `export TEST_ENV=<env>` line is reported as such: the resolvers read it, the Playwright lanes do not. An empty
+  `TEST_ENV=` no longer takes its value from the next line. A UTF-8 BOM is dropped and, of several `TEST_ENV` lines,
+  the last wins — both as dotenv reads them. Lines with different values are reported: the Playwright lanes take the first.
+- Only an `.env.<x>` holding `BACK_URL` counts as an environment, so a Vite / Next repo's `.env.development` /
+  `.env.production` does not turn a one-env project into `several-envs`.
+- `normalize-env` adds only the `.env.test-env` entry to `.gitignore` (its own block), never the whole onboarding list
+  a team may have trimmed on purpose.
+- `.env.test-env` joins the `.gitignore` block `/project-init` writes. The resolvers and their `vcst` default are unchanged.
+
 ## A `|thumbnail!` screenshot is no longer reported as not rendered — `vc-fix` `0.18.4` — 2026-11-02
 
 ### Fixed

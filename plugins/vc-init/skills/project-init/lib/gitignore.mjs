@@ -42,6 +42,8 @@ export const SECRET_IGNORES = [
   ".claude/vc-secrets.local.json",
   ".env.local",
   ".env.*.local",
+  // This checkout's default TEST_ENV (lib/test-env-selector.mjs) — a per-developer choice, not a team one.
+  ".env.test-env",
   "project-profile.json",
   ".vc-fix/",
 ];
@@ -133,6 +135,22 @@ export function ensureGitignoreEntries(root, entries, opts = {}) {
   ].join("");
   writeFileSync(path, existing + block);
   return missing;
+}
+
+/**
+ * Only the `.env.test-env` entry, for normalize-env: it runs on every `--check`, where re-adding the whole
+ * SECRET_IGNORES list would bring back entries a team removed on purpose. Same never-throw contract.
+ */
+export function ensureSelectorIgnore(projectRoot) {
+  try {
+    return ensureGitignoreEntries(projectRoot, [".env.test-env"], {
+      title: "vc-init (/project-init) — default env selector",
+      notes: ["This checkout's default TEST_ENV (.env.test-env), written by /project-init. Never commit."],
+    });
+  } catch (e) {
+    console.warn(`[project-init] ⚠ could not update ${join(projectRoot, ".gitignore")} (${e.message}) — add .env.test-env by hand.`);
+    return [];
+  }
 }
 
 /**
