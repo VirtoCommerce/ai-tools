@@ -1,0 +1,93 @@
+{
+  "ticket": "VCST-6475",
+  "env": "vcptcore",
+  "date": "2026-10-28",
+  "flow": "feature-test",
+  "type": "Story",
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "reason": "Story, priority High, net-new chain links (multi-source, signed webhook)"
+  },
+  "shape_class": "none",
+  "build": {
+    "VirtoCommerce.Sanity": "3.1004.0-pr-4-f7a8",
+    "VirtoCommerce.Pages": "3.1011.0-pr-23-e50f",
+    "deploy_pr": "VirtoCommerce/vc-deploy-dev#7012",
+    "config_pr": "VirtoCommerce/vc-deploy-dev#7014"
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "confirmed": false
+    },
+    {
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test",
+      "confirmed": true
+    }
+  ],
+  "domain_map": "ABSENT",
+  "surface_purpose": "UNDECLARED",
+  "results": {
+    "pass": 63,
+    "fail": 0,
+    "blocked": 0,
+    "not_covered": 5
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "status": "not-this-pr",
+      "summary": "Pages module caches the full-rebuild change list for 10 min (date-only key, not invalidated by store setting changes); rebuild right after a Sanity settings change skips newly configured types/sources",
+      "owner": "vc-module-pages (existing, since bc18fdee)"
+    }
+  ],
+  "bugs_not_filed": [],
+  "deviations_from_full": [
+    "context wave (1c/1d), Test Model file, 3x discovery, Artifact A authoring and verifier dispatches not run — executed inline via API harness; no regression cases authored"
+  ],
+  "fixture": {
+    "sanity_project": "ryu3mu0u",
+    "datasets": [
+      "production",
+      "qa-secondary"
+    ],
+    "torn_down": true
+  },
+  "pending_cleanup": [
+    "revert vc-deploy-dev PR #7014",
+    "revoke Sanity token qa-platform-read",
+    "revert Sanity pin of PR #7012 after sign-off"
+  ],
+  "kb": [
+    "KB-D66309A7"
+  ],
+  "log_window": {
+    "start": "2026-10-28T08:48:47Z",
+    "end": "2026-10-28T08:59:46Z"
+  },
+  "bugs_filed": [
+    "VCST-6586 (vc-module-pages change-list cache, relates to VCST-6475)"
+  ],
+  "tracker_comment": "112465",
+  "layer": "backend",
+  "verdict": "PASS",
+  "ticket_doc": {
+    "comment": "112468",
+    "audiences": [
+      "admin",
+      "developer"
+    ],
+    "guides": [
+      "reports/ba/vcst-6475-sanity-document-types-admin-guide.md",
+      "reports/ba/vcst-6475-sanity-document-types-developer-guide.md"
+    ]
+  }
+}
