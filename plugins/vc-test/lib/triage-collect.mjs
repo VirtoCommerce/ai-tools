@@ -122,12 +122,18 @@ function harPathForBrowser(browser) {
  * @returns {"FAIL"|"BLOCKED"|"SKIPPED"|"PASS"|"ADVISORY"|null}
  */
 export function checklistVerdict(cell) {
-  const u = String(cell ?? "").replace(/[*_`]/g, "").trim().toUpperCase();
+  // Strip `*`/backtick emphasis and only the underscores that wrap a word (`_x_`, `__x__`): the ones inside a token
+  // belong to the verdict (PASS_WITH_NOTES, KNOWN_DIVERGENCE), and removing them made both unreadable.
+  const u = String(cell ?? "")
+    .replace(/[*`]/g, "")
+    .replace(/(^|[^A-Za-z0-9_])_+|_+(?=[^A-Za-z0-9_]|$)/g, "$1")
+    .trim()
+    .toUpperCase();
   if (!u) return null;
   if (/^(FAIL(ED)?|NOT[- ]BUILT|MISSING)\b/.test(u)) return "FAIL";
   if (/^(BLOCKED|INCONCLUSIVE)\b/.test(u)) return "BLOCKED";
   if (/^(NOT[- ]RUN|SKIP(PED)?)\b/.test(u)) return "SKIPPED";
-  if (/^PASS(ED)?\b/.test(u)) return "PASS";
+  if (/^PASS(ED)?(_WITH_NOTES)?\b/.test(u)) return "PASS";
   if (/^(DRIFT|ADVISORY|UNSPEC|KNOWN_DIVERGENCE|WAIVED|N\/A)\b/.test(u)) return "ADVISORY";
   return null;
 }
