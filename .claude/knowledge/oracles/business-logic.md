@@ -684,6 +684,83 @@ Read `passwordExpired` from `me` in the same session as the sign-in, never from 
 - **Trust:** DECLARED
 - **Lifecycle:** SUSPECT — [bug] VCST-6630 — passkey and email-code sign-in force a password change: the code exempts SSO and impersonation only.
 
+### BL-AUTH-019: A store set to Disabled skips the MFA code only for its own non-Backoffice customers `[P0-security]`
+- **Rule:** A password sign-in to the token endpoint that names a store whose `MultiFactorAuthentication.StoreMode` is `Disabled` goes through without the emailed code **only** when the user is that store's own customer (`ApplicationUser.StoreId` is the store) **and** is not a Backoffice account.
+  - Everyone else follows the global `MultiFactorAuthentication.Enabled` there: administrators, users of type `Administrator` or `Manager`, users the platform admin-UI access policy admits to the Backoffice, users of other stores and users without a store.
+  - A `Disabled` store never relaxes the code for an account it does not own.
+- **Verify:** Global MFA on (a whole-stand window), a disposable store in StoreMode Disabled (mfa-fixtures creator).
+  - The store's own role-less customer naming the store → tokens in one step.
+  - A Manager, and a customer of another store, naming the same store → `two_factor_required`.
+Cases MFA-033 and MFA-062 (suite 110a).
+- **Violation signal:** - A Manager, an administrator or a customer of another store gets tokens without the code by naming a Disabled store while global MFA is on.
+- The Disabled store's own role-less customer is asked for the code.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — Configuration, MultiFactorAuthentication.StoreMode: Disabled: the code is not required from the store's own customers; Backoffice accounts and the users of other stores or without a store follow MultiFactorAuthentication.Enabled there. No VirtoOZ page describes MFA yet.
+- **Source:** VCST-6597 comment 112620 (VCST-6530 merged into the story) — the Disabled store mode skips the code only for the store's own customers that are not Backoffice accounts; administrators, managers, Backoffice users and users of other stores follow the global setting there. A Backoffice account is IsAdministrator, the Administrator / Manager user type, or the platform IAdminUIAccessPolicy.
+- **Source:** Open product question VCST-6686: under the default access policy a customer holding any organization role (storefront permissions) counts as a Backoffice account, so it is asked in its own Disabled store.
+- **Trust:** DECLARED
+
+### BL-AUTH-020: The user's own store applies to every password sign-in, whatever store the request names `[P0-security]`
+- **Rule:** Tokens are not bound to the store named in the token request, so a password sign-in also requires the emailed code when the **user's own store** (`ApplicationUser.StoreId`) requires it — by its store mode, or by the user's or organization's MFA mode in an `AdminManaged` / `CustomerChoice` store.
+  - Omitting `storeId`, naming another store, or naming an unknown store never skips a code the user's own store requires.
+- **Verify:** A customer of a store in StoreMode Enabled (global MFA off): password grants with no `storeId`, with another store's id and with an unknown id → each answers `two_factor_required`. Case MFA-036 (and MFA-037 for the user / organization modes of the own store), suite 110a.
+- **Violation signal:** - A customer of a store that requires the code gets tokens in one step by omitting `storeId` or naming another or an unknown store.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — Configuration: the user's own store (ApplicationUser.StoreId) applies too; a user whose own store requires the code can't skip it by signing in without a store, or by naming another store that doesn't require it.
+- **Source:** VCST-6597 comment 112608 (VCST-6495 fixed in the story) — a password sign-in requires the code when the store named in the request requires it, or when the user's own store requires it; a user can no longer skip the code by leaving storeId out or naming another store.
+- **Trust:** DECLARED
+
+### BL-AUTH-021: An organization that requires MFA covers every member, and outranks the member's own mode `[P0-security]`
+- **Rule:** In a store whose `MultiFactorAuthentication.StoreMode` is `AdminManaged` or `CustomerChoice`, a user needs the emailed code when **any** organization of the user's contact requires it (mode `Required`, or `Enabled` in a `CustomerChoice` store), whatever the user's own mode is.
+  - While an organization requires the code, the member cannot turn it off for themselves.
+- **Verify:** A CustomerChoice / AdminManaged store, an organization set to Required by the administrator, two members whose own mode is Off → both members' password sign-ins answer `two_factor_required` and `mfaSettings.requiredBy` is `Organization`; the organization set back to Off → one step again. Case MFA-040 (suite 110a), MFASF-018 (suite 111).
+- **Violation signal:** - A member of an organization that requires the code signs in without it.
+- A member's own mode Off overrides the organization's requirement.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — User and organization modes: a user needs the code when their own mode or the mode of any of their contact's organizations requires it; the organization comes first.
+- **Source:** VCST-6597 description — Modes of a user and an organization: the organization requirement comes first: a member can't turn it off with their own switch.
+- **Source:** VCST-6687: the xAPI accepts updateMfaUserMode from such a member (the stored user mode changes) although the sign-in is still asked — the requirement holds, the API guard is missing.
+- **Trust:** DECLARED
+
+### BL-AUTH-022: Every storefront change of an MFA mode is confirmed with an emailed code, and a change code never signs in `[P0-security]`
+- **Rule:** A customer or organization maintainer changes an MFA mode in the storefront only with a fresh emailed code: `requestMfaChangeCode` issues a change ticket, and the change mutation needs that ticket and its code.
+  - A change ticket cannot be redeemed for a sign-in, and a sign-in ticket cannot confirm a change.
+  - A ticket issued to another user is refused.
+- **Verify:** A CustomerChoice store, a confirmed customer: a change ticket at `grant_type=mfa`, a sign-in ticket at `updateMfaUserMode`, and another user's change ticket → each refused `invalid_two_factor_token`; the same-purpose control succeeds. Cases MFA-047, MFA-053 (suite 110a).
+- **Violation signal:** - A mode changes without a valid change code.
+- A change ticket and its code produce tokens at `grant_type=mfa`, or a sign-in ticket confirms a change.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — Storefront (xAPI): every change is confirmed with a code, so a stolen session can't turn MFA off; a token issued to confirm a mode change can't be redeemed for a sign-in.
+- **Source:** VCST-6597 description — Rules: every storefront change is confirmed with an email code (step-up): requestMfaChangeCode, then the change mutation with the two-factor token and the code. The change token can't be used to sign in, and a sign-in token can't confirm a change.
+- **Trust:** DECLARED
+
+### BL-AUTH-023: An MFA mode set to Required by the administrator cannot be changed from the storefront `[P0-security]`
+- **Rule:** When the administrator sets a user's or an organization's MFA mode to `Required`, the storefront shows it read-only and the change mutations are refused (`mfa_locked_by_administrator`); only the Backoffice can lift it.
+- **Verify:** A CustomerChoice store, a customer set to Required in the Backoffice → `mfaSettings.canChangeUserMode` is `false` and `updateMfaUserMode` answers `mfa_locked_by_administrator` with the mode unchanged; the same for an organization with `updateMfaOrganizationMode`. Cases MFA-049 (suite 110a), MFASF-017 (suite 111).
+- **Violation signal:** - A storefront mutation changes a mode the administrator set to Required.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — User and organization modes table: Required is set by the administrator only, and the storefront can't turn it off.
+- **Source:** VCST-6597 description — Modes: Required (set by the administrator; can't be turned off in the storefront).
+- **Trust:** DECLARED
+
+### BL-AUTH-024: An impersonated session cannot change MFA `[P0-security]`
+- **Rule:** A session obtained through Login on behalf cannot change the impersonated user's or organization's MFA mode: the change mutations are refused and the storefront shows no switch.
+- **Verify:** A CustomerChoice store, an operator with Login on behalf and a target in the same organization: with the impersonated token, `updateMfaUserMode` and `updateMfaOrganizationMode` answer `Forbidden` and the target's mode is unchanged; the target's own session can change it. Case MFA-056 (suite 110a).
+- **Violation signal:** - An impersonated token turns the target's (or its organization's) MFA off or on.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Source:** VCST-6597 description — Rules: impersonated sessions can't change MFA.
+- **Trust:** DECLARED
+
+### BL-AUTH-025: The Backoffice sign-in follows only the global MFA setting `[P0-security]`
+- **Rule:** Whether the Backoffice sign-in asks for the emailed code is decided by the global `MultiFactorAuthentication.Enabled` alone, for every user. Store modes and user / organization MFA modes never relax or add the code on the Backoffice sign-in.
+- **Verify:** Global MFA off, a user set to Required and own store Enabled → the Backoffice sign-in completes without a code; global MFA on, the user's own store Disabled → the Backoffice sign-in asks for the code. Suite 110 (MFA-001 / MFA-016 family).
+- **Violation signal:** - A store mode or a user / organization mode changes whether the Backoffice sign-in asks for the code.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — the Backoffice sign-in has no token request and follows only the global setting, for every user.
+- **Source:** VCST-6597 description — Rules: the Backoffice sign-in still follows only the global setting.
+- **Source:** VCST-5904 comment 112278 — Backoffice sign-in: the global setting only.
+- **Trust:** DECLARED
+
 ---
 
 ## Domain 6: B2B / Organization (BL-B2B)
@@ -2589,7 +2666,7 @@ ticket or a docs page disputes (`status`).
 | Cart | BL-CART-001–016 | 16 | 6 | 10 | 0 | 8 | 2 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
-| Users & Authentication | BL-AUTH-001–018 | 18 | 6 | 11 | 1 | 11 | 6 |
+| Users & Authentication | BL-AUTH-001–025 | 25 | 13 | 11 | 1 | 18 | 6 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
@@ -2615,4 +2692,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **235** | **68** | **128** | **39** | **127** | **62** |
+| **Total** | | **242** | **75** | **128** | **39** | **134** | **62** |

@@ -26,16 +26,16 @@
 12. **Pass the ambient context — `cultureName`, `storeId`, `userId`, `organizationId` — on almost every query and mutation.**
     Most xAPI operations resolve against an implied context, and **omitting a context arg is not an error**:
     the server substitutes a default and returns `200` with data that is wrong, empty, or `null`. There is no
-    message to notice. Measured on this schema (127 queries, derived at refresh):
+    message to notice. Measured on this schema (128 queries, derived at refresh):
 
     | Context arg | Queries accepting it | Required | Optional |
     |---|---|---|---|
     | `cultureName` | 69 (54%) | 3 | 66 |
-    | `storeId` | 76 (60%) | 39 | 37 |
+    | `storeId` | 77 (60%) | 40 | 37 |
     | `userId` | 31 (24%) | 2 | 29 |
-    | `organizationId` | 18 (14%) | 4 | 14 |
+    | `organizationId` | 19 (15%) | 4 | 15 |
 
-    **96 of 127 queries (76%) accept at least one; 83 (65%) accept one OPTIONALLY** —
+    **97 of 128 queries (76%) accept at least one; 84 (66%) accept one OPTIONALLY** —
     that last figure is the exposure, because those are the calls that can quietly answer for a context you
     never chose. Mutations take the same fields inside the `command:` wrapper (see Rule 1), so the same rule applies.
 
@@ -167,6 +167,7 @@ store(storeId: String, cultureName: String, domain: String)
 slugInfo(slug: String, permalink: String, storeId: String, userId: String, cultureName: String)
 contract(id: String)
 fileUploadOptions(scope: String)
+mfaSettings(storeId: String!, organizationId: String)
 newsArticleAuthor(authorId: String!)
 newsArticle(id: String!, storeId: String!, languageCode: String!)
 newsArticles(after: String, first: Int, keyword: String, sort: String, storeId: String!, languageCode: String!, userId: String, authorId: String, tags: [String])
@@ -379,6 +380,7 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 | Mutation | Command Type |
 |----------|-------------|
+| `requestMfaChangeCode` | `InputRequestMfaChangeCodeType` |
 | `activateBackInStockSubscription` | `ActivateBackInStockSubscriptionCommandType` |
 | `deactivateBackInStockSubscription` | `DeactivateBackInStockSubscriptionCommandType` |
 | `saveSearchQuery` | `InputSaveSearchQueryType` |
@@ -403,6 +405,8 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 | Mutation | Command Type |
 |----------|-------------|
+| `updateMfaUserMode` | `InputUpdateMfaUserModeType` |
+| `updateMfaOrganizationMode` | `InputUpdateMfaOrganizationModeType` |
 | `changeOrganizationLogo` | `InputChangeOrganizationLogoCommandType` |
 | `updateMemberAddresses` | `InputUpdateMemberAddressType` |
 | `deleteMemberAddresses` | `InputDeleteMemberAddressType` |

@@ -3,14 +3,14 @@
   "schema_version": "1.0",
   "domain_slug": "auth",
   "generated": "2026-10-21",
-  "amended": "2026-10-28",
+  "amended": "2026-11-04",
   "metadata": {
     "scope": "The data states the auth mind map behaviours require: run personas, the OTP sign-in fixtures, disposable lockout and block accounts, the VCST-6132 case-created buyer and its membership states, the impersonation personas, and the store and platform switches (OTP, MFA, sign-in log).",
     "mind_map": ".claude/knowledge/domain/auth.mind-map.json",
-    "domain_map": ".claude/knowledge/domain/auth.md rev 3",
+    "domain_map": ".claude/knowledge/domain/auth.md rev 4",
     "built_from": "/qa-test-data-model build auth, 2026-10-21 — no live observation; seeders and aliases read at source, suite Preconditions read for the informal contract",
     "known_limit": "MFA requirements are PR-stage (vc-module-mfa#1) and every MFA state is a SEEDER GAP: there is no dedicated MFA store or account, and the switches are shared by every suite that signs in.",
-    "amended_from": "/qa-test-data-model update auth, 2026-10-28 — the rev-3 mind-map followups (passkey sign-in and key management, the per-user MFA flag, the 65-character Backoffice boundary); no live observation, seeders read at source, kb read"
+    "amended_from": "/qa-test-data-model update auth, 2026-10-28 — the rev-3 mind-map followups (passkey sign-in and key management, the per-user MFA flag, the 65-character Backoffice boundary); no live observation, seeders read at source, kb read · /qa-test-data-model update auth, 2026-11-04 — the VCST-6597 mind-map followups (StoreMode AdminManaged / CustomerChoice / Disabled, user and organization modes, the organization MFA permission, a read-only MFA operator); no live write, the MFA creator read at source, kb asked (miss) · 2026-11-04 creator gaps closed by /qa-generate-data: StoreMode read from the stand, run roles MfaRead / MfaManage / OrgMfa, kinds manager-mfa-read / manager-mfa-manage / org-mfa-maintainer / org-mfa-member"
   },
   "requirements": [
     {
@@ -243,13 +243,19 @@
         "via": "the case's Cleanup sets Multi-factor authentication back to Use global setting and reads it back"
       },
       "discriminates": "Same account, same password: the store mode on returns 400 two_factor_required with a twoFactorToken, off returns tokens. A store mode on while the global switch stays off separates the per-store rule from the platform-wide one.",
-      "limits": "SEEDER GAP and PR-stage (vc-module-mfa#1, deployed on vcst only). On {{STORE_ID}} the toggle would put every [PRE:SIGNIN_AS] suite (75 suite files) into BLOCKED for its duration, so it needs a store no other suite signs in to — none is seeded. Never the global switch for this (data.auth.platform.mfa-global-on).",
+      "limits": "SEEDER GAP and PR-stage (vc-module-mfa#1, deployed on vcst only). On {{STORE_ID}} the toggle would put every [PRE:SIGNIN_AS] suite (75 suite files) into BLOCKED for its duration, so it needs a store no other suite signs in to — none is seeded. Never the global switch for this (data.auth.platform.mfa-global-on). 2026-11-04: vc-module-mfa#1 is merged; VCST-6597 (#3, OPEN) is deployed on vcst and leaves Enabled unchanged.",
       "evidence": [
         {
           "class": "DOC",
           "ref": "vc-module-mfa#1 README (gh, 2026-10-21)",
           "note": "MultiFactorAuthentication.StoreMode: Use global setting / Enabled / Disabled; the rules also read the user's own store",
           "date": "2026-10-21"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "StoreMode now has five values (adds AdminManaged, CustomerChoice); Enabled still requires the code from everyone",
+          "date": "2026-11-04"
         }
       ],
       "status": "UNVERIFIED"
@@ -1955,6 +1961,433 @@
         }
       ],
       "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.store.mfa-disabled",
+      "purpose": "A store whose mode turns the code off, read against a global setting that is on.",
+      "entity": "Store",
+      "required_state": {
+        "MultiFactorAuthentication.StoreMode": "Disabled",
+        "store": "the run's own AGENT-TEST-MFA-<runId> store"
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "npm run td:mfa:teardown -- --run <runId> deletes the run store with its accounts (zero-residue assert)"
+      },
+      "discriminates": "With the global switch on, the store's own customer passes without a code while an administrator, a Manager, a Backoffice-permission user and a customer of another store naming this store are asked (VCST-6530). On 3.1000.x every one of them passed, so this store is what separates the two builds.",
+      "seed_capability": "scripts/seed-data/auth/mfa-fixtures-specs.mjs#storeBody",
+      "limits": "storeBody() already accepts Disabled. Decides nothing with the global switch off (both builds answer \"not required\"), so it is always read together with data.auth.platform.mfa-global-on. The run store has no url (creator design), so it is reachable by API grants that name its storeId, not by a storefront host; a storefront-widget case needs {{STORE_ID}} in that mode inside an operator window. vcst B2B-store is itself Disabled (point-in-time, domain-map:auth@rev4 §2) — never rely on that.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/mfa-fixtures-specs.mjs",
+          "note": "STORE_MODES includes Disabled; storeBody(runId, source, mode)",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 Admin",
+          "note": "StoreMode Disabled on vcst B2B-store; global MFA false",
+          "date": "2026-11-04"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.store.mfa-admin-managed",
+      "purpose": "A store where only the users and organizations an administrator set to Required are asked for the code.",
+      "entity": "Store",
+      "required_state": {
+        "MultiFactorAuthentication.StoreMode": "AdminManaged",
+        "store": "the run's own AGENT-TEST-MFA-<runId> store"
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "npm run td:mfa:teardown -- --run <runId> deletes the run store with its accounts (zero-residue assert)"
+      },
+      "discriminates": "Read against data.auth.store.mfa-customer-choice with the same account in mode Enabled: AdminManaged does not ask it, CustomerChoice does. Mode Required is asked in both, so the Enabled account is the one that separates the two store modes.",
+      "limits": "Reached live on vcst: setMfaStoreMode(runId, \"AdminManaged\") on the run store, read back (allowedValues listed all five modes). The run store has no url (creator design), so it is reachable by API grants that name its storeId, not by a storefront host; a storefront-widget case needs {{STORE_ID}} in that mode inside an operator window.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "Store policy table: Admin managed",
+          "date": "2026-10-30"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaRequirementService.cs",
+          "note": "GetChosenRequirement(…, mode == Required)",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/mfa-fixtures-specs.mjs",
+          "note": "storeBody(runId, source, mode, allowedModes) + creator allowedStoreModes(): any value the stand allows",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "td:mfa run p6597a (vcst)",
+          "note": "run store flipped to AdminManaged and read back; torn down with zero residue",
+          "date": "2026-11-04"
+        }
+      ],
+      "status": "CONFIRMED",
+      "seed_capability": "scripts/seed-data/auth/mfa-fixtures-specs.mjs#storeBody"
+    },
+    {
+      "id": "data.auth.store.mfa-customer-choice",
+      "purpose": "A store where customers and organization maintainers turn the code on and off themselves.",
+      "entity": "Store",
+      "required_state": {
+        "MultiFactorAuthentication.StoreMode": "CustomerChoice",
+        "store": "the run's own AGENT-TEST-MFA-<runId> store"
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "npm run td:mfa:teardown -- --run <runId> deletes the run store with its accounts (zero-residue assert)"
+      },
+      "discriminates": "The only store mode in which requestMfaChangeCode sends a code and the update mutations are accepted; every other mode refuses them with mfa_self_service_not_allowed before any code is sent. Against AdminManaged it also separates mode Enabled (asked here, not there).",
+      "limits": "Reached live on vcst: setMfaStoreMode(runId, \"CustomerChoice\") on the run store, read back (allowedValues listed all five modes). The run store has no url (creator design), so it is reachable by API grants that name its storeId, not by a storefront host; a storefront-widget case needs {{STORE_ID}} in that mode inside an operator window.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "Store policy table: Customer choice; off by default",
+          "date": "2026-10-30"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaSelfService.cs",
+          "note": "SendChangeCodeCoreAsync refuses outside CustomerChoice",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/mfa-fixtures-specs.mjs",
+          "note": "storeBody(runId, source, mode, allowedModes) + creator allowedStoreModes(): any value the stand allows",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "td:mfa run p6597a (vcst)",
+          "note": "run store flipped to CustomerChoice and read back; torn down with zero residue",
+          "date": "2026-11-04"
+        }
+      ],
+      "status": "CONFIRMED",
+      "seed_capability": "scripts/seed-data/auth/mfa-fixtures-specs.mjs#storeBody"
+    },
+    {
+      "id": "data.auth.account.mfa-run-store-customer",
+      "entity": "User",
+      "purpose": "A customer whose own store is the run's AGENT-TEST-MFA store (in whatever mode the profile sets), at the default mode Off.",
+      "required_state": {
+        "userType": "Customer",
+        "emailConfirmed": true,
+        "lockoutEnabled": true,
+        "MultiFactorAuthentication.UserMode": "Off (no stored row)",
+        "store": "the run's own store",
+        "sibling": "customer-unconfirmed on the same store"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.store.mfa-customer-choice",
+          "required": false,
+          "note": "or data.auth.store.mfa-admin-managed / data.auth.store.mfa-disabled — the profile names the mode of the run store"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "seed_capability": "scripts/seed-data/auth/mfa-fixtures-specs.mjs#KINDS",
+      "cleanup": {
+        "required": true,
+        "via": "npm run td:mfa:teardown -- --run <runId>"
+      },
+      "discriminates": "Kind customer-confirmed against its sibling customer-unconfirmed (the creator's existing pair): the confirmed one is offered the switch and receives the change code, the unconfirmed one gets isProviderAvailable false and mfa_provider_not_available. Its own store is the run store, so the own-store rule (auth.signin.mfa.own-store) cannot ask it for a code from another store.",
+      "limits": "The change code is read from the notification journal (MfaSignInEmailNotification), so it needs an admin token. One account per run: the change step spends the code, the resend slot and the wrong-code window.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/mfa-fixtures-specs.mjs",
+          "note": "KINDS customer-confirmed / customer-unconfirmed, sibling contract enforced by td:validate:mfa",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "td:mfa run p6597a (vcst)",
+          "note": "customer-confirmed and customer-unconfirmed created on the run store; customer-confirmed: password grant 400 two_factor_required → journal code → mfa grant 200 amr=mfa (store Enabled)",
+          "date": "2026-11-04"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.mfa-mode-enabled",
+      "entity": "User",
+      "purpose": "The run customer with its MFA mode set to Enabled.",
+      "required_state": {
+        "MultiFactorAuthentication.UserMode": "Enabled",
+        "account": "data.auth.account.mfa-run-store-customer"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.account.mfa-run-store-customer",
+          "required": true,
+          "note": "reached from mode Off"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "MultiFactorAuthentication.UserMode": "Off"
+        },
+        "transition": "as the administrator, PUT /api/mfa/modes/users/{id} {\"mode\":\"Enabled\"} and read it back with GET (or the storefront step-up when the case is about the switch itself)"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the run teardown deletes the account; its object-setting row goes with it only if the module cleans it up (domain-map G40) — read GET /api/mfa/modes/users/{id} for a deleted id once"
+      },
+      "discriminates": "Enabled is asked in a CustomerChoice store and NOT in an AdminManaged one, and the storefront can switch it off; Required (data.auth.account.mfa-mode-required) is asked in both and locks the switch. Equal modes on both store modes would decide nothing.",
+      "limits": "Set immediately before the sign-in step: nothing else changes a run account's mode, but a mode set long before the step would outlive a failed case. Object setting, so it is invisible in the settings blades (isHidden).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "Backoffice and REST API: PUT /api/mfa/modes/users/{userId}",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 API",
+          "note": "GET /api/mfa/modes/users/{id} → {\"mode\":\"Off\"}; ?mode=Bogus → 400 (vcst)",
+          "date": "2026-11-04"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.account.mfa-mode-required",
+      "entity": "User",
+      "purpose": "The run customer with its MFA mode set to Required.",
+      "required_state": {
+        "MultiFactorAuthentication.UserMode": "Required",
+        "account": "data.auth.account.mfa-run-store-customer"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.account.mfa-run-store-customer",
+          "required": true,
+          "note": "reached from mode Off"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "MultiFactorAuthentication.UserMode": "Off"
+        },
+        "transition": "as the administrator, PUT /api/mfa/modes/users/{id} {\"mode\":\"Required\"} and read it back with GET"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the run teardown deletes the account; its object-setting row goes with it only if the module cleans it up (domain-map G40) — read GET /api/mfa/modes/users/{id} for a deleted id once"
+      },
+      "discriminates": "Required is asked in AdminManaged and CustomerChoice stores alike and is refused with mfa_locked_by_administrator in the storefront; in a Use global setting / Enabled / Disabled store it changes nothing (auth.signin.mfa.store-mode.modes-ignored).",
+      "limits": "Set immediately before the sign-in step: nothing else changes a run account's mode, but a mode set long before the step would outlive a failed case. Object setting, so it is invisible in the settings blades (isHidden).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "Backoffice and REST API: PUT /api/mfa/modes/users/{userId}",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 API",
+          "note": "GET /api/mfa/modes/users/{id} → {\"mode\":\"Off\"}; ?mode=Bogus → 400 (vcst)",
+          "date": "2026-11-04"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.organization.mfa-mode-required",
+      "entity": "Organization",
+      "purpose": "A run organization with its MFA mode Required and two members whose own modes stay Off.",
+      "required_state": {
+        "MultiFactorAuthentication.OrganizationMode": "Required",
+        "members": "two run customers of the run store, both UserMode Off",
+        "store": "the run's own chosen-mode store"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.account.mfa-run-store-customer",
+          "required": true,
+          "note": "the members are run customers"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "MultiFactorAuthentication.OrganizationMode": "Off"
+        },
+        "transition": "as the administrator, PUT /api/mfa/modes/organizations/{id} {\"mode\":\"Required\"} and read it back"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the run teardown deletes the run organizations (orgNameFor prefix) and their members"
+      },
+      "discriminates": "Both members have UserMode Off, so a code asked of them is the organization's (requiredBy Organization); the same members with the organization at Off are not asked. A member whose own mode were Enabled could not tell the two sources apart.",
+      "limits": "The creator makes run organizations (orgNameFor) but sets no MFA mode; the mode is the case's TRANSITION. Organizations of the contact count whatever the membership status (UNVERIFIED for a locked membership).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaRequirementService.cs",
+          "note": "GetChosenRequirement checks organization modes first",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/mfa-fixtures-specs.mjs",
+          "note": "orgNameFor, orgs per kind",
+          "date": "2026-11-04"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.role.org-mfa-manage",
+      "entity": "Role",
+      "purpose": "An organization maintainer whose organization role carries xapi:my_organization:mfa:manage, and a member of the same organization without it.",
+      "required_state": {
+        "maintainer": "kind org-mfa-maintainer: run role roleNameFor(runId, \"OrgMfa\") = org-employee permissions read live + xapi:my_organization:mfa:manage",
+        "member": "kind org-mfa-member (org-employee), created by the maintainer kind in the same run organization",
+        "store": "the run's own CustomerChoice store"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.store.mfa-customer-choice",
+          "required": true
+        },
+        {
+          "requirement": "data.auth.account.mfa-run-store-customer",
+          "required": true,
+          "note": "both accounts are run customers"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the run teardown deletes the run role, organization and accounts; a stock role must never be edited for this"
+      },
+      "discriminates": "Same organization, same store, same mode: the maintainer sees the Company › Info widget and is accepted, the member gets no widget and mfa_organization_not_allowed — only the permission differs.",
+      "limits": "No stock organization role holds the permission on vcst (domain-map:auth@rev4 §3 D28), so the run creates its own role and never edits a stock one; a role change shows only after a new sign-in. A membership accepts the run role: read back on the maintainer membership (vcst 2026-11-04). GET /api/platform/security/roles/{x} resolves a NAME, and GET /permissions lists no storefront:* permission, so the creator copies org-employee by name and checks only the permission it adds.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 API",
+          "note": "permission registered; none of the four stock organization roles holds it (vcst)",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "Permissions: add it to an organization role",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/mfa-fixtures-specs.mjs",
+          "note": "KINDS org-mfa-maintainer / org-mfa-member, sibling contract enforced by td:validate:mfa",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "td:mfa run p6597a (vcst)",
+          "note": "run role OrgMfa = storefront:organization:view, storefront:user:view + xapi:my_organization:mfa:manage; maintainer membership read back with it, member with org-employee, same organization",
+          "date": "2026-11-04"
+        }
+      ],
+      "status": "CONFIRMED",
+      "seed_capability": "scripts/seed-data/auth/mfa-fixtures-specs.mjs#KINDS"
+    },
+    {
+      "id": "data.auth.operator.mfa-read-only",
+      "entity": "User",
+      "purpose": "A Backoffice user whose role holds mfa:read but not mfa:manage.",
+      "required_state": {
+        "userType": "Manager",
+        "role": "run role roleNameFor(runId, \"MfaRead\") holding mfa:read only",
+        "sibling": "kind manager-mfa-manage: the same Manager with run role MfaManage (mfa:read + mfa:manage)"
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the run teardown deletes the run role and account"
+      },
+      "discriminates": "Kind manager-mfa-read against its sibling manager-mfa-manage, which differ in the run role only (td:validate:mfa): the same blade shows a locked Mode select and no Save, and PUT /api/mfa/modes/* answers 403 instead of 200.",
+      "limits": "The creator checks mfa:read / mfa:manage against the stand permission list before writing the role (fails loud without VirtoCommerce.MFA). The Backoffice sign-in of this user follows the global switch, so keep it off for this case. Created live on vcst 2026-11-04 (the Backoffice view and the 403 are what the case observes, not this requirement).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "mfa:read / mfa:manage",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenario 10: no real read-only role was tested",
+          "date": "2026-10-30"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/mfa-fixtures-specs.mjs",
+          "note": "RUN_ROLES MfaRead / MfaManage, KINDS manager-mfa-read / manager-mfa-manage",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "td:mfa run p6597a (vcst)",
+          "note": "manager-mfa-read and manager-mfa-manage created, each holding its run role (MfaRead / MfaManage)",
+          "date": "2026-11-04"
+        }
+      ],
+      "status": "CONFIRMED",
+      "seed_capability": "scripts/seed-data/auth/mfa-fixtures-specs.mjs#KINDS"
     }
   ],
   "profiles": [
@@ -2695,6 +3128,163 @@
         "data.auth.store.mfa-required",
         "data.auth.operator.login-on-behalf",
         "data.auth.target.with-security-account"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-store-mode-disabled-own-customers",
+      "behavior": "auth.signin.mfa.store-mode.disabled-own-customers",
+      "purpose": "Global switch on, a Disabled run store: its own customer passes, the administrator and a foreign-store customer are asked.",
+      "requirements": [
+        "data.auth.platform.mfa-global-on",
+        "data.auth.store.mfa-disabled",
+        "data.auth.account.admin",
+        "data.auth.account.mfa-run-store-customer",
+        "data.auth.account.store-contact"
+      ],
+      "notes": "The run customer is the store's OWN customer (passes); data.auth.account.store-contact belongs to {{STORE_ID}} and names the run store, so it is the other-store user (asked), as is the administrator."
+    },
+    {
+      "id": "profile.auth.mfa-store-mode-admin-managed",
+      "behavior": "auth.signin.mfa.store-mode.admin-managed",
+      "purpose": "An AdminManaged run store with one customer in mode Enabled (not asked) and one in Required (asked).",
+      "requirements": [
+        "data.auth.store.mfa-admin-managed",
+        "data.auth.account.mfa-mode-enabled",
+        "data.auth.account.mfa-mode-required"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-store-mode-customer-choice",
+      "behavior": "auth.signin.mfa.store-mode.customer-choice",
+      "purpose": "A CustomerChoice run store with a customer in mode Enabled (asked) against the default Off.",
+      "requirements": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-mode-enabled"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-store-mode-modes-ignored",
+      "behavior": "auth.signin.mfa.store-mode.modes-ignored",
+      "purpose": "A Disabled run store whose own customer is in mode Required and still passes without a code.",
+      "requirements": [
+        "data.auth.store.mfa-disabled",
+        "data.auth.account.mfa-run-store-customer",
+        "data.auth.account.mfa-mode-required"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-organization-mode",
+      "behavior": "auth.signin.mfa.organization-mode",
+      "purpose": "A CustomerChoice run store whose organization is Required while both members stay Off.",
+      "requirements": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.organization.mfa-mode-required"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-customer-change",
+      "behavior": "auth.mfa-mode.customer-change",
+      "purpose": "The run customer turns MFA on and off with a step-up code in a CustomerChoice store.",
+      "requirements": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-run-store-customer"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-self-service-not-allowed",
+      "behavior": "auth.mfa-mode.self-service-not-allowed",
+      "purpose": "A signed-in customer of a store that is not CustomerChoice asks for a change code.",
+      "requirements": [
+        "data.auth.session.signed-in"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-locked-by-administrator",
+      "behavior": "auth.mfa-mode.locked-by-administrator",
+      "purpose": "A CustomerChoice run store and a customer the administrator set to Required.",
+      "requirements": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-mode-required"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-organization-change",
+      "behavior": "auth.mfa-mode.organization-change",
+      "purpose": "A maintainer with the organization MFA permission changes the company mode.",
+      "requirements": [
+        "data.auth.role.org-mfa-manage"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-organization-not-allowed",
+      "behavior": "auth.mfa-mode.organization-not-allowed",
+      "purpose": "A member without the permission, and a customer with no organization, are refused.",
+      "requirements": [
+        "data.auth.role.org-mfa-manage",
+        "data.auth.account.no-permission-customer"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-organization-required-member",
+      "behavior": "auth.mfa-mode.organization-required-member",
+      "purpose": "A member of a Required organization calls updateMfaUserMode directly.",
+      "requirements": [
+        "data.auth.organization.mfa-mode-required"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-change-ticket-purpose",
+      "behavior": "auth.mfa-mode.change-ticket-purpose",
+      "purpose": "A change ticket at grant_type=mfa and a sign-in ticket at updateMfaUserMode.",
+      "requirements": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-run-store-customer",
+        "data.auth.mfa-ticket.issued"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-wrong-change-code",
+      "behavior": "auth.mfa-mode.wrong-change-code",
+      "purpose": "Wrong change codes against the shared limiter and lockout.",
+      "requirements": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-run-store-customer"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-confirmed-email-needed",
+      "behavior": "auth.mfa-mode.confirmed-email-needed",
+      "purpose": "The confirmed / unconfirmed pair of run customers asks to turn MFA on.",
+      "requirements": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-run-store-customer"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-admin-set",
+      "behavior": "auth.mfa-mode.admin-set",
+      "purpose": "The administrator sets the run customer to Required and back.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.account.mfa-run-store-customer"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-admin-read-only",
+      "behavior": "auth.mfa-mode.admin-read-only",
+      "purpose": "A Backoffice user with mfa:read only opens the Mode blade and calls PUT.",
+      "requirements": [
+        "data.auth.operator.mfa-read-only"
+      ]
+    },
+    {
+      "id": "profile.auth.mfa-mode-status-preview",
+      "behavior": "auth.mfa-mode.status-preview",
+      "purpose": "The administrator previews Required for the run customer while an AdminManaged run store exists.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.store.mfa-admin-managed",
+        "data.auth.account.mfa-run-store-customer"
       ]
     }
   ]

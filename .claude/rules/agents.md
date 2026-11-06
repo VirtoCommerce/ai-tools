@@ -100,7 +100,7 @@ Each agent MUST use its own separate browser session. Agents sharing a browser w
 | **qa-backend-expert** | `playwright-edge` | |
 | **qa-testing-expert** | `playwright-firefox` | click-capable again since 2026-09-08 — see the box above for the one prerequisite and the rollback |
 | **vc-test:ui-ux-expert** | a Playwright lane (the run assigns it) | (no webkit on Windows) |
-| **test-management-specialist** | `playwright-chrome` (sequential, not parallel with frontend) | |
+| **test-management-specialist** | `playwright-chrome` (sequential, not parallel with frontend) — also for the author proof run of `qa-suite-sync` | |
 | **test-data-engineer** | none — authors AND runs seeders live (Node + Platform-API); delegates only browser-based storefront/suite verification to qa-backend/frontend-expert | |
 
 ### BA Team Browsers

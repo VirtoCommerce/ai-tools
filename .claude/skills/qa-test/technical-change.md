@@ -140,6 +140,7 @@ a FAST `feature-test` — [`authoring.md`](authoring.md) owns the artifact and i
 | a **pure** module move — no new page, route or export | none. Nothing new is exercisable; the move either broke callers or it did not, and `RG` answers that | **skipped, stated** |
 | VCST-4717 — telemetry SDK swapped | *does telemetry still arrive, and with which properties?* No storefront suite asserts on Application Insights, so `RG` is structurally blind to it | **runs** |
 | VCST-4328 — runtime bumped | *does it still build, start and serve?* | **runs** |
+| VCST-4857 — composables replaced; an existing selector now searches and pages on the server | *the visible delta*: search, pager and the selected address per user type. `RG`'s rows asserted the old *See more* list, and `2a` repairs them, but no row yet proves the new controls | **runs, scoped to the delta** |
 
 **The test is whether `RG` is blind to the claim, not whether the ticket has an AC field.** VCST-4717's five
 ACs include *"Doc: Migration Plan"*, which is not a QA claim at all; a ticket with no AC field can still
