@@ -38,7 +38,11 @@
       { "kind": "paymentMethod", "name": "SkyflowPaymentMethod", "equals": true, "cases": ["PAY-UX-001", "PAY-UX-002", "PAY-PERF-001", "PAY-DECLINE-001", "PAY-DECLINE-002", "PAY-DECLINE-003", "PAY-DECLINE-004", "PAY-DECLINE-005", "PAY-XLAY-001", "PAY-DECLINE-006", "PAY-DECLINE-007", "PAY-SWITCH-001", "PAY-DECLINE-008"], "why": "card payment through Skyflow" }
     ],
     "044": [
-      { "kind": "paymentMethod", "name": "CyberSourcePaymentMethod", "equals": true, "cases": ["SEC-PCI-001", "SEC-PCI-002", "SEC-PCI-003", "SEC-PCI-004", "SEC-PCI-006"], "why": "the CyberSource card form whose PCI handling these cases inspect (inactive on vcptcore_regression B2B-store, stable-16 W6)" }
+      { "kind": "paymentMethod", "name": "CyberSourcePaymentMethod", "equals": true, "cases": ["SEC-PCI-001", "SEC-PCI-002", "SEC-PCI-003", "SEC-PCI-004", "SEC-PCI-006"], "why": "the CyberSource card form whose PCI handling these cases inspect (inactive on vcptcore_regression B2B-store, stable-16 W6)" },
+      { "kind": "deployConfig", "name": "platform.secretConfig.Payments__CyberSource__MerchantId", "nonEmpty": true, "cases": ["SEC-PCI-001", "SEC-PCI-002", "SEC-PCI-003", "SEC-PCI-004", "SEC-PCI-006"], "why": "without merchant credentials the CyberSource card form cannot get its capture context (absent on vcptcore-regression, stable-16 W6)" },
+      { "kind": "deployConfig", "name": "platform.secretConfig.Payments__CyberSource__MerchantKeyId", "nonEmpty": true, "cases": ["SEC-PCI-001", "SEC-PCI-002", "SEC-PCI-003", "SEC-PCI-004", "SEC-PCI-006"], "why": "CyberSource merchant credentials, as on vcst-qa and vcptcore-qa" },
+      { "kind": "deployConfig", "name": "platform.secretConfig.Payments__CyberSource__MerchantSecretKey", "nonEmpty": true, "cases": ["SEC-PCI-001", "SEC-PCI-002", "SEC-PCI-003", "SEC-PCI-004", "SEC-PCI-006"], "why": "CyberSource merchant credentials, as on vcst-qa and vcptcore-qa" },
+      { "kind": "deployConfig", "name": "platform.config.Authorization__EnablePersistentStorageTokenValidation", "equals": true, "cases": ["SEC-AUTH-004"], "why": "a password change revokes existing access tokens only when they are validated against storage (stateless by default, KB-7564A9BF)" }
     ],
     "048c": [
       { "kind": "storeLanguage", "name": "pt", "cases": ["LAYOUT-STR-002", "LAYOUT-STR-004", "LAYOUT-STR-007", "LAYOUT-CNT-005", "LAYOUT-CNT-006"], "why": "the /pt/… pages these cases open; without the language they render the 404 page (stable-16 W6: STR-004 measured the 404, the rest timed out)" },
