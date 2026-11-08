@@ -64,7 +64,7 @@ else {
   // Storefront block types the fixture may use (vc-frontend static-content/components/index.ts templateBlocks
   // + block-mapping.ts aliases). The product-rendering ones beyond predefined-product-list serve the VCST-6017
   // GA4 pages, whose `@pool…` markers td:validate:ga4-lists guards.
-  const KNOWN = new Set(['title', 'text', 'image', 'predefined-product-list', 'products', 'products-carousel', 'favorite-products', 'demo-product-list', 'product-info']);
+  const KNOWN = new Set(['title', 'text', 'image', 'predefined-product-list', 'products', 'products-carousel', 'favorite-products', 'demo-product-list', 'product-info', 'login']);
   let blocks = 0, bad = 0;
   for (const spec of CANONICAL_PAGES) {
     const cultures = spec.multiLang ? ['en-US', 'de-DE', ...(spec.frName ? ['fr-FR'] : [])] : [spec.culture];

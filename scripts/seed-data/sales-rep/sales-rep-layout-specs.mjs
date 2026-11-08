@@ -84,6 +84,25 @@ export function parseServedOrgs(raw) {
   return { orgKeys: value.split(';').map((s) => s.trim()).filter(Boolean), pagingCount: 0 };
 }
 
+/** Name prefix of the `PAGING:N` orgs; the i-th (1-based) is `${PAGING_ORG_PREFIX}${i padded to 2}`. */
+export const PAGING_ORG_PREFIX = 'AGENT-TEST-SR-Paging-';
+export const pagingOrgName = (i) => `${PAGING_ORG_PREFIX}${String(i).padStart(2, '0')}`;
+
+/**
+ * SR_UNSERVED_ORG — an org that PROVABLY exists but that SR_REP_PRIMARY does not serve (VCST-5707
+ * negative). It is not created on its own: it is one of SR_REP_PAGING's paging orgs, so its existence
+ * is proven by `servedBy`'s own customer list. The seeder resolves it by the alias's committed `name`
+ * and writes the runtime GUID to aliases.<env>.json only after checking that the org exists, that
+ * `servedBy` serves it and that `notServedBy` does not. td:validate:sales-rep [8] checks the same
+ * contract against the committed CSV.
+ */
+export const UNSERVED_ORG = Object.freeze({
+  alias: 'SR_UNSERVED_ORG',
+  servedBy: 'SR_REP_PAGING',
+  notServedBy: 'SR_REP_PRIMARY',
+  idFields: Object.freeze(['id', 'platform_id']),
+});
+
 /**
  * The account status a rep row DECLARES, in the same vocabulary `user-provision.mjs`
  * `hasStaleLockout()` / `statusFlags()` speak ('Locked' | 'Approved').

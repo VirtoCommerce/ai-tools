@@ -1,0 +1,112 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+"CRB-GQL-134","xCart — carts filter customerIds / customerOrOrganization:true naming another organization's buyer does not widen the caller scope","GraphQL > xCart > carts","Critical","BL-GQL-004; BL-AUTH-006; BL-CART-005","","Runner-native. Two storefront buyers in DIFFERENT organizations: caller ACME_BUYER (org AcmeCorp) and victim TECHFLOW_BUYER (org TechFlow). The victim's named cart is created IN the case (the environment, not the tests, can drain or reset a cart) and the victim must see it for himself before the caller's widened query runs — otherwise ""caller does not see it"" proves nothing. VCST-6251 fix build: XCart >= 3.1043.0-pr-151 (pre-fix 3.1044.0 returns other buyers'/colleagues' carts for these terms).","product_id=@td(BUYABLE_PRICED_PRODUCT.id); org_b=@td(ORG_TECHFLOW.platform_id)","[AUTH role=TECHFLOW_BUYER]
+[GQL-OP setup_victim_me]
+  query { me { id } }
+[GQL-EXEC setup_victim_me]
+[GQL-CAPTURE setup_victim_me.data.me.id → B_ID]
+[GQL-OP create_victim_cart]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-6251-VICTIM"" storeId: ""{{STORE_ID}}"" userId: ""{{B_ID}}"" productId: ""{{product_id}}"" quantity: 1 }) { id organizationId itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC create_victim_cart]
+[GQL-CAPTURE create_victim_cart.data.addItem.id → VICTIM_CART_ID]
+[GQL-OP victim_sees_own]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{B_ID}}"" first: 100 filter: ""name:AGENT-TEST-6251-VICTIM"") { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC victim_sees_own]
+[WAIT until=victim_sees_own timeout=30 interval=3] data.carts.totalCount >= 1
+[AUTH role=ACME_BUYER]
+[GQL-OP setup_caller_me]
+  query { me { id } }
+[GQL-EXEC setup_caller_me]
+[GQL-CAPTURE setup_caller_me.data.me.id → CALLER_ID]
+[GQL-OP own]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100) { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC own]
+[GQL-CAPTURE own.data.carts.totalCount → OWN_TOTAL]
+[GQL-OP widened_org]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100 filter: ""customerOrOrganization:true customerIds:{{B_ID}}"") { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC widened_org]
+[GQL-OP widened_ids]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100 filter: ""customerIds:{{B_ID}}"") { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC widened_ids]
+[AUTH role=TECHFLOW_BUYER]
+[GQL-OP cleanup_victim]
+  mutation { removeCart(command: { cartId: ""{{VICTIM_CART_ID}}"" userId: ""{{B_ID}}"" }) }
+[GQL-EXEC cleanup_victim]","[ERRORS label=create_victim_cart] errors[] empty {OBSERVED}
+[COUNT label=create_victim_cart] data.addItem.validationErrors = 0 {OBSERVED}
+[DATA label=create_victim_cart] data.addItem.organizationId = {{org_b}} {OBSERVED}
+[COUNT label=victim_sees_own] data.carts.totalCount = 1 {OBSERVED}
+[ERRORS label=widened_org] errors[] empty {SPEC}
+[COUNT label=widened_org] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {SPEC}
+[COUNT label=widened_org] data.carts.items[*?customerId={{B_ID}}].length = 0 {SPEC}
+[COUNT label=widened_org] data.carts.items[*?organizationId={{org_b}}].length = 0 {SPEC}
+[DATA label=widened_org] data.carts.totalCount = {{OWN_TOTAL}} {SPEC}
+[ERRORS label=widened_ids] errors[] empty {SPEC}
+[COUNT label=widened_ids] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {SPEC}
+[COUNT label=widened_ids] data.carts.items[*?customerId={{B_ID}}].length = 0 {SPEC}
+[COUNT label=widened_ids] data.carts.items[*?organizationId={{org_b}}].length = 0 {SPEC}
+[DATA label=widened_ids] data.carts.totalCount = {{OWN_TOTAL}} {SPEC}
+[ERRORS label=cleanup_victim] errors[] empty {OBSERVED}","[ROUNDTRIP label=own] the unfiltered own-cart total is captured first; both widened queries must return exactly that total (a filter can narrow, never add)","Caller's carts list contains the victim cart id, a cart with customerId = victim, or a cart stamped with the victim's organization; totalCount differs from the unfiltered total; errors[] non-empty","none — removeCart inline (cleanup_victim)","VCST-6251; xAPI; graphql-schema.md — Query.carts; KB-9CEB8BBE; vc-module-x-cart#151; Archetype:SCOPE; Technique:EG","Draft"
+"CRB-GQL-135","xCart — carts filter customerOrOrganization:true + organizationId of another organization does not widen a buyer with no organization","GraphQL > xCart > carts","Critical","BL-GQL-004; BL-AUTH-006; BL-CART-005","","Runner-native. Caller USER2 is a personal account with NO organization membership (the branch where the pre-fix handler had no organization scope to protect); victim TECHFLOW_BUYER owns a named cart stamped with organization TechFlow, created in the case and confirmed visible to its owner first. VCST-6251 fix build: XCart >= 3.1043.0-pr-151.","product_id=@td(BUYABLE_PRICED_PRODUCT.id); org_b=@td(ORG_TECHFLOW.platform_id)","[AUTH role=TECHFLOW_BUYER]
+[GQL-OP setup_victim_me]
+  query { me { id } }
+[GQL-EXEC setup_victim_me]
+[GQL-CAPTURE setup_victim_me.data.me.id → B_ID]
+[GQL-OP create_victim_cart]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-6251-VICTIM"" storeId: ""{{STORE_ID}}"" userId: ""{{B_ID}}"" productId: ""{{product_id}}"" quantity: 1 }) { id organizationId itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC create_victim_cart]
+[GQL-CAPTURE create_victim_cart.data.addItem.id → VICTIM_CART_ID]
+[GQL-OP victim_sees_own]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{B_ID}}"" first: 100 filter: ""name:AGENT-TEST-6251-VICTIM"") { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC victim_sees_own]
+[WAIT until=victim_sees_own timeout=30 interval=3] data.carts.totalCount >= 1
+[AUTH role=USER2]
+[GQL-OP setup_caller_me]
+  query { me { id } }
+[GQL-EXEC setup_caller_me]
+[GQL-CAPTURE setup_caller_me.data.me.id → CALLER_ID]
+[GQL-OP own]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100) { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC own]
+[GQL-CAPTURE own.data.carts.totalCount → OWN_TOTAL]
+[GQL-OP widened_org]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100 filter: ""customerOrOrganization:true organizationId:{{org_b}}"") { totalCount items { id name customerId organizationId } } }
+[GQL-EXEC widened_org]
+[AUTH role=TECHFLOW_BUYER]
+[GQL-OP cleanup_victim]
+  mutation { removeCart(command: { cartId: ""{{VICTIM_CART_ID}}"" userId: ""{{B_ID}}"" }) }
+[GQL-EXEC cleanup_victim]","[ERRORS label=create_victim_cart] errors[] empty {OBSERVED}
+[COUNT label=create_victim_cart] data.addItem.validationErrors = 0 {OBSERVED}
+[DATA label=create_victim_cart] data.addItem.organizationId = {{org_b}} {OBSERVED}
+[COUNT label=victim_sees_own] data.carts.totalCount = 1 {OBSERVED}
+[ERRORS label=widened_org] errors[] empty {SPEC}
+[COUNT label=widened_org] data.carts.items[*?id={{VICTIM_CART_ID}}].length = 0 {SPEC}
+[COUNT label=widened_org] data.carts.items[*?customerId={{B_ID}}].length = 0 {SPEC}
+[COUNT label=widened_org] data.carts.items[*?organizationId={{org_b}}].length = 0 {SPEC}
+[DATA label=widened_org] data.carts.totalCount = {{OWN_TOTAL}} {SPEC}
+[ERRORS label=cleanup_victim] errors[] empty {OBSERVED}","[ROUNDTRIP label=own] unfiltered own-cart total captured first and compared to the widened total","The no-organization caller receives carts of organization TechFlow; totalCount grows against the unfiltered baseline; errors[] non-empty","none — removeCart inline (cleanup_victim)","VCST-6251; xAPI; graphql-schema.md — Query.carts; KB-9CEB8BBE; vc-module-x-cart#151; Archetype:SCOPE; Technique:EG","Draft"
+"CRB-GQL-136","xCart — carts legitimate name filter still narrows the caller's own carts (fix does not over-narrow)","GraphQL > xCart > carts","High","BL-GQL-004; BL-AUTH-006","","Runner-native. Regression guard for VCST-6251: forcing the scope after mapping caller terms must keep every term that only narrows. The caller creates a named cart in the case (nothing seeded can be drained by the environment). Positive control for the narrowed result is the freshly created cart.","product_id=@td(BUYABLE_PRICED_PRODUCT.id)","[AUTH role=ACME_BUYER]
+[GQL-OP setup_caller_me]
+  query { me { id } }
+[GQL-EXEC setup_caller_me]
+[GQL-CAPTURE setup_caller_me.data.me.id → CALLER_ID]
+[GQL-OP create_own_cart]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-6251-OWN"" storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" productId: ""{{product_id}}"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC create_own_cart]
+[GQL-CAPTURE create_own_cart.data.addItem.id → OWN_CART_ID]
+[GQL-OP by_name]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100 filter: ""name:AGENT-TEST-6251-OWN"") { totalCount items { id name customerId } } }
+[GQL-EXEC by_name]
+[WAIT until=by_name timeout=30 interval=3] data.carts.totalCount >= 1
+[GQL-OP no_match]
+  query { carts(storeId: ""{{STORE_ID}}"" userId: ""{{CALLER_ID}}"" first: 100 filter: ""name:AGENT-TEST-6251-NO-SUCH-CART"") { totalCount items { id } } }
+[GQL-EXEC no_match]
+[GQL-OP cleanup_own]
+  mutation { removeCart(command: { cartId: ""{{OWN_CART_ID}}"" userId: ""{{CALLER_ID}}"" }) }
+[GQL-EXEC cleanup_own]","[ERRORS label=create_own_cart] errors[] empty {OBSERVED}
+[COUNT label=create_own_cart] data.addItem.validationErrors = 0 {OBSERVED}
+[ERRORS label=by_name] errors[] empty {OBSERVED}
+[COUNT label=by_name] data.carts.totalCount = 1 {OBSERVED}
+[DATA label=by_name] data.carts.items.0.id = {{OWN_CART_ID}} {OBSERVED}
+[DATA label=by_name] data.carts.items.0.customerId = {{CALLER_ID}} {OBSERVED}
+[ERRORS label=no_match] errors[] empty {OBSERVED}
+[COUNT label=no_match] data.carts.totalCount = 0 {OBSERVED}
+[ERRORS label=cleanup_own] errors[] empty {OBSERVED}","[ROUNDTRIP label=by_name] the cart created by addItem is the only cart the name filter returns; it is removed again in cleanup_own","by_name returns 0 or more than the one named cart (scope forcing dropped or ignored the name term); no_match returns carts; errors[] non-empty","none — removeCart inline (cleanup_own)","VCST-6251; xAPI; graphql-schema.md — Query.carts; KB-9CEB8BBE; vc-module-x-cart#151; Archetype:SCOPE; Technique:EP","Draft"

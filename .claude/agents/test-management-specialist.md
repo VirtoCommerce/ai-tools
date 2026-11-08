@@ -124,7 +124,7 @@ Which agent and browser lane each layer goes to: [`knowledge/agents/qa/test-mana
 | Requirements | the tracker (Atlassian MCP / Jira), GitHub MCP (PRs) |
 | API contracts | GraphiQL, the GraphQL runner, Swagger; Postman MCP when configured |
 
-Browser lane: the one your brief names; `playwright-chrome` by default, never another browser tool (`.claude/rules/vc-browser.md`). No WebKit on Windows. You explore and validate — you don't execute full test runs.
+Browser lane: the one your brief names; `playwright-chrome` by default, never another browser tool (`.claude/rules/vc-browser.md`). No WebKit on Windows. No full test runs — only a one-run proof of each case you author when your brief asks.
 
 ### Additional References (load on-demand)
 

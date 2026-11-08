@@ -1,0 +1,46 @@
+{
+  "ticket": "VCST-6251",
+  "verdict": "VERIFIED",
+  "date": "2026-11-04",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1093.0-pr-3154-4607 (vcst-qa, vc-deploy-dev#7031)",
+    "theme": "unchanged",
+    "relevant_modules": {
+      "VirtoCommerce.XCart": "3.1043.0-pr-151-07b3",
+      "VirtoCommerce.Quote": "3.1006.0-pr-168-9b3f",
+      "VirtoCommerce.BackInStock": "3.1004.0-pr-13-6f41",
+      "VirtoCommerce.CustomerReviews": "3.1008.0-pr-86-6eca",
+      "VirtoCommerce.XCatalog": "3.1024.0-pr-115-8339"
+    },
+    "pr_build": "x-cart#151, quote#168, back-in-stock#13, customer-review#86, x-catalog#115 — all LIVE (deploy:pr --verify)"
+  },
+  "agent_used": "qa-backend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED on vcptcore (released pre-fix modules: XCart 3.1044.0, Quote 3.1005.0, BackInStock 3.1003.0, CustomerReviews 3.1008.0, XCatalog 3.1023.0), same queries",
+  "before_after": [
+    {"check": "carts(filter: customerOrOrganization:true organizationId:<other org>) as a buyer with no organization", "before": "3 carts: own 1 + 2 of the other organization's buyer", "after": "1 cart: own only (3/3)"},
+    {"check": "carts(filter: customerOrOrganization:true [customerIds|organizationId]) as an org buyer", "before": "3 carts: own 2 + 1 personal cart of a colleague", "after": "2 carts: own only (3/3)"},
+    {"check": "quotes(filter: customerId:<other user> [organizationId:<other org>])", "before": "the other buyer's quote returned", "after": "own 2 quotes only (3/3)"},
+    {"check": "backInStockSubscriptions(keyword: userId:<other user>)", "before": "the other user's subscription returned", "after": "own 2 subscriptions only (3/3)"},
+    {"check": "customerReviews(filter: reviewStatus:New | Rejected), anonymous and signed in", "before": "the New / Rejected review returned", "after": "10 reviews, all Approved (3/3)"},
+    {"check": "properties(filter: catalogIds:<another catalog>)", "before": "14 properties of the other catalog", "after": "19 properties of the store catalog, same as unfiltered (3/3)"}
+  ],
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    {"summary": "POST /api/customerReviews returns 500 instead of a validation error (missing images; duplicate review leaks the SQL unique-index text)", "severity": "Medium", "ticket": "VCST-6681"},
+    {"summary": "A REST-created quote item with no selected tier price breaks the buyer's xAPI quotes list, quote(id) and the admin GET by id", "severity": "Medium", "ticket": "VCST-6682"},
+    {"summary": "customerReviews ignores keyword when filter is non-empty", "severity": "Low", "why": "below the filing floor; pre-existing on both envs; recorded as kb KB-3EEBFFF9"}
+  ],
+  "bugs_filed": ["VCST-6681", "VCST-6682"],
+  "business_rules_verified": ["BL-CART-005", "BL-AUTH-006"],
+  "not_verified": "mergeCart / BL-CART-016 — the x-cart #151 build replaced the VCST-6185 build (#153) on vcst",
+  "regression": {"run_id": "REG-2026-11-04-1022", "suites": ["086", "050h", "015"], "status": "running"},
+  "tracker_transition": {"role": "testing", "state": "Testing"},
+  "evidence": "reports/tickets/Sprint26-22/VCST-6251/vcst/evidence/",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-22/VCST-6251/vcst/"
+}

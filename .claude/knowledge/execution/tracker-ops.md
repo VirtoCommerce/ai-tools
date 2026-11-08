@@ -234,26 +234,27 @@ guessing custom-field ids.
 - **One carve-out, and only one:** a comment that must **display screenshots** cannot be Markdown —
   see §5c. Prose stays Markdown everywhere else.
 
-## 5b. Bug-filing relationship — Sub-task vs Link vs Standalone
+## 5b. Bug-filing relationship — To-fix row vs Link vs Standalone
 
-`/qa-test` Step 5-file files a confirmed bug with one of three relationships to the ticket under test, set by
+`/qa-test` Step 5-file handles a confirmed bug with one of three relationships to the ticket under test, set by
 that finding's **provenance** (5-triage). This is the contract `/qa-bug` follows when invoked with a relationship
-context (`sub-task-of:<ticket-key>` / `link-only:<existing-bug-key>`); a standalone `/qa-bug` call
-(no relationship context) is unaffected and keeps creating an ordinary Bug as today.
+context (`link-only:<existing-bug-key>`); a standalone `/qa-bug` call (no relationship context) is unaffected and
+keeps creating an ordinary Bug as today.
 
 | Relationship | Jira | Azure Boards |
 |---|---|---|
-| **IN-SCOPE → Sub-task of `<ticket-key>`** | `createJiraIssue` with `fields.issuetype.name = "Sub-task"` + `fields.parent = {key: <ticket-key>}`. **Probe first** via `getJiraIssueTypeMetaWithFields` on the project — some projects rename or disable the Sub-task type, and a parent whose own type is an Epic may not support one. On a miss, **fall back** to a standalone Bug + a "Relates" link and say so in the filing output — never silently drop the relationship. | Create the Bug work item normally, then `PATCH` its `relations` to add a link of type `System.LinkTypes.Hierarchy-Reverse` pointing at the parent. Azure Boards has no distinct "sub-task" issue type — the hierarchy link *is* the parent-child relationship. |
+| **IN-SCOPE → a row in the ticket's "To fix" table, no new tracker item** | **Never `createJiraIssue`** — no Sub-task, no Bug. The finding is the ticket's own unfinished work: it goes into `summary.json.to_fix[]`, and `/vc-fix:qa-report` renders it as the **To fix** table of the run's ONE result comment (§0) — what to fix, severity, the failing case or checklist item, and the draft in `{RUN_DIR}/bugs/<severity>/`. 5-status `REOPEN` hands that table to the developer. | Same — no work item, no `Hierarchy-Reverse` child; the table in the result comment is the record. |
 | **PRE-EXISTING → link only, no new ticket** | `createIssueLink` between the existing bug's key and `<ticket-key>` — resolve the link type id via `getIssueLinkTypes` first (use "Relates"/whatever that project calls it), never hardcode a link-type id. Nothing is filed. | `PATCH` the existing work item's `relations` to add a link of type `System.LinkTypes.Related` to `<ticket-key>`. Nothing is filed. |
-| **OUT-OF-SCOPE incidental → standalone + related link** *(unchanged from today)* | `createJiraIssue` (Bug) + `createIssueLink` "Relates" back to `<ticket-key>`. | Create the Bug work item + a `System.LinkTypes.Related` relation to `<ticket-key>`. |
+| **OUT-OF-SCOPE incidental → standalone + related link** | `createJiraIssue` (Bug) + `createIssueLink` "Relates" back to `<ticket-key>`. | Create the Bug work item + a `System.LinkTypes.Related` relation to `<ticket-key>`. |
 
-An incidental bug is never a sub-task — it wasn't caused by this ticket's change, so a parent-child
-relationship would misrepresent it; it gets its own standalone ticket with a plain "related" link, same as
-the in-scope case's fallback path.
+**Why a table, not a Sub-task (2026-11-03).** An in-scope defect is the ticket's own acceptance not yet met,
+and 5-status reopens the ticket for it anyway; a child issue per finding split one piece of work across N
+items, each needing its own status, labels and close-out. An incidental bug was not caused by this ticket's
+change, so it still gets its own standalone ticket with a plain "related" link.
 
 ### Labels on bugs Claude files
 
-Every Jira **Bug** Claude creates — and every **Sub-task** that is a bug (§5b in-scope filing) — says who found it
+Every Jira **Bug** Claude creates says who found it
 and, for an agent finding, during what.
 The PreToolUse hook `.claude/hooks/enforce-bug-labels.mjs` (logic: `scripts/lib/jira-bug-labels.mjs`)
 refuses the create call without a valid set and names what is missing.

@@ -1,0 +1,240 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CRL-GQL-130,"[VCST-6185] mergeCart — another customer's named cart is refused with Forbidden; victim cart intact, target unchanged",GraphQL > xCart > mergeCart > Authorization,Critical,BL-GQL-004; BL-GQL-001,ECL-10.2,"Runner-native, two identities: USER2 owns the victim cart, ORG_USER is the caller. Only named AGENT-TEST- carts are used — no default cart is touched. Catches: VCST-6185 (mergeCart merged and deleted a cart the caller does not own). Fix: vc-module-x-cart PR #153 (XCart 3.1045.0-pr-153-ec03).",victim_cart=AGENT-TEST-MERGEAUTH-VICTIM; target_cart=AGENT-TEST-MERGEAUTH-TARGET,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → ACTOR_ID]
+[GQL-OP setup_prods]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prods]
+[GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
+[GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
+[GQL-OP pre_clear_target]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" }) { id } }
+[GQL-EXEC pre_clear_target]
+[GQL-OP add_target]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" productId: ""{{PRODUCT_2}}"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_target]
+[GQL-CAPTURE add_target.data.addItem.id → TARGET_CART_ID]
+[AUTH role=USER2]
+[GQL-OP setup_victim_me]
+  query { me { id } }
+[GQL-EXEC setup_victim_me]
+[GQL-CAPTURE setup_victim_me.data.me.id → VICTIM_ID]
+[GQL-OP pre_clear_victim]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-VICTIM"" storeId: ""{{STORE_ID}}"" userId: ""{{VICTIM_ID}}"" }) { id } }
+[GQL-EXEC pre_clear_victim]
+[GQL-OP add_victim]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-VICTIM"" storeId: ""{{STORE_ID}}"" userId: ""{{VICTIM_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_victim]
+[GQL-CAPTURE add_victim.data.addItem.id → VICTIM_CART_ID]
+[AUTH role=ORG_USER]
+[GQL-OP merge]
+  mutation { mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" secondCartId: ""{{VICTIM_CART_ID}}"" deleteAfterMerge: true }) { id itemsCount items { productId } } }
+[GQL-EXEC merge]
+[GQL-OP merge_keep]
+  mutation { mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" secondCartId: ""{{VICTIM_CART_ID}}"" deleteAfterMerge: false }) { id itemsCount } }
+[GQL-EXEC merge_keep]
+[GQL-OP read_target]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" currencyCode: ""USD"" cartName: ""AGENT-TEST-MERGEAUTH-TARGET"") { id itemsCount items { productId } } }
+[GQL-EXEC read_target]
+[GQL-OP cleanup_target]
+  mutation { removeCart(command: { cartId: ""{{TARGET_CART_ID}}"" userId: ""{{ACTOR_ID}}"" }) }
+[GQL-EXEC cleanup_target]
+[AUTH role=USER2]
+[GQL-OP read_victim]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{VICTIM_ID}}"" currencyCode: ""USD"" cartName: ""AGENT-TEST-MERGEAUTH-VICTIM"") { id itemsCount items { productId quantity } } }
+[GQL-EXEC read_victim]
+[GQL-OP cleanup_victim]
+  mutation { removeCart(command: { cartId: ""{{VICTIM_CART_ID}}"" userId: ""{{VICTIM_ID}}"" }) }
+[GQL-EXEC cleanup_victim]","[ERRORS label=merge] errors[] non-empty {SPEC} (VCST-6185)
+[DATA label=merge] errors[0].extensions.code = Forbidden {SPEC} (VCST-6185)
+[NULL label=merge] data.mergeCart {SPEC} (VCST-6185)
+[ERRORS label=merge_keep] errors[] non-empty {SPEC} (VCST-6185)
+[DATA label=merge_keep] errors[0].extensions.code = Forbidden {SPEC} (VCST-6185)
+[ERRORS label=read_victim] errors[] empty {SPEC} (VCST-6185)
+[DATA label=read_victim] data.cart.id = {{VICTIM_CART_ID}} {SPEC} (VCST-6185)
+[DATA label=read_victim] data.cart.itemsCount = 1 {SPEC} (VCST-6185)
+[DATA label=read_victim] data.cart.items[?productId={{PRODUCT_1}}].quantity = 1 {SPEC} (VCST-6185)
+[ERRORS label=read_target] errors[] empty {SPEC} (VCST-6185)
+[DATA label=read_target] data.cart.id = {{TARGET_CART_ID}} {SPEC} (VCST-6185)
+[DATA label=read_target] data.cart.itemsCount = 1 {SPEC} (VCST-6185)
+[COUNT label=read_target] data.cart.items[*?productId={{PRODUCT_1}}].length = 0 {SPEC} (VCST-6185)","[EVIDENCE] errors[0].message is a generic access-denied text with no cart contents, owner id or stack trace (BL-GQL-001 leak check). HTTP 200 with errors[] is the xAPI contract, not a 4xx.",errors[] empty on merge (another customer's cart was merged — the VCST-6185 bug); victim cart missing or its item gone after the call (deleted by the merge); the victim's product appears in the caller's target cart; any 5xx or stack trace in errors[0].message; error code other than Forbidden for a signed-in caller,Inline removeCart for both named carts; pre_clear_* steps make a rerun after an aborted run idempotent. Never touches either user's default cart.,VCST-6185; vc-module-x-cart#153; Mutation.mergeCart; KB-EB4DECDC; KB-9139A1A3 | Archetype:SCOPE · Technique:EG · Catches:VCST-6185 | Observed: VF-VCST-6185 vcst 2026-11-03 XCart 3.1045.0-pr-153-ec03 (USER merging USER2 — Forbidden 3/3 with deleteAfterMerge omitted and false); red: vcptcore XCart 3.1044.0 merged and deleted the victim cart; first runner run 2026-11-03 vcst: PASS 13/13,Draft
+CRL-GQL-131,"[VCST-6185] mergeCart — the caller's own cart of another store is refused with Forbidden; source stays, target unchanged",GraphQL > xCart > mergeCart > Authorization,High,BL-GQL-004; BL-GQL-001,ECL-10.2,"Runner-native, single identity USER2 who owns BOTH carts, so ownership passes and only the store check can refuse. Needs a second store (STORE_ID_SECONDARY, Electronics on vcst). Catches: VCST-6185 (mergeCart merged and deleted a cart the caller does not own).",target_cart=AGENT-TEST-MERGEAUTH-TARGET; other_store_cart=AGENT-TEST-MERGEAUTH-STORE2; other_store={{STORE_ID_SECONDARY}},"[AUTH role=USER2]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → ACTOR_ID]
+[GQL-OP setup_prods]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prods]
+[GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
+[GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
+[GQL-OP pre_clear_target]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" }) { id } }
+[GQL-EXEC pre_clear_target]
+[GQL-OP add_target]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_target]
+[GQL-CAPTURE add_target.data.addItem.id → TARGET_CART_ID]
+[GQL-OP pre_clear_other_store]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-STORE2"" storeId: ""{{STORE_ID_SECONDARY}}"" userId: ""{{ACTOR_ID}}"" }) { id } }
+[GQL-EXEC pre_clear_other_store]
+[GQL-OP get_other_store_cart]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-STORE2"" storeId: ""{{STORE_ID_SECONDARY}}"" userId: ""{{ACTOR_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id storeId } }
+[GQL-EXEC get_other_store_cart]
+[GQL-CAPTURE get_other_store_cart.data.addItem.id → OTHER_STORE_CART_ID]
+[GQL-OP merge]
+  mutation { mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" secondCartId: ""{{OTHER_STORE_CART_ID}}"" deleteAfterMerge: true }) { id itemsCount } }
+[GQL-EXEC merge]
+[GQL-OP read_source]
+  query { cart(storeId: ""{{STORE_ID_SECONDARY}}"" userId: ""{{ACTOR_ID}}"" currencyCode: ""USD"" cartName: ""AGENT-TEST-MERGEAUTH-STORE2"") { id storeId } }
+[GQL-EXEC read_source]
+[GQL-OP read_target]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" currencyCode: ""USD"" cartName: ""AGENT-TEST-MERGEAUTH-TARGET"") { id itemsCount items { productId } } }
+[GQL-EXEC read_target]
+[GQL-OP cleanup_target]
+  mutation { removeCart(command: { cartId: ""{{TARGET_CART_ID}}"" userId: ""{{ACTOR_ID}}"" }) }
+[GQL-EXEC cleanup_target]
+[GQL-OP cleanup_other_store]
+  mutation { removeCart(command: { cartId: ""{{OTHER_STORE_CART_ID}}"" userId: ""{{ACTOR_ID}}"" }) }
+[GQL-EXEC cleanup_other_store]","[ERRORS label=merge] errors[] non-empty {SPEC} (VCST-6185)
+[DATA label=merge] errors[0].extensions.code = Forbidden {SPEC} (VCST-6185)
+[NULL label=merge] data.mergeCart {SPEC} (VCST-6185)
+[ERRORS label=read_source] errors[] empty {SPEC} (VCST-6185)
+[DATA label=read_source] data.cart.id = {{OTHER_STORE_CART_ID}} {SPEC} (VCST-6185)
+[DATA label=read_source] data.cart.storeId = {{STORE_ID_SECONDARY}} {SPEC} (VCST-6185)
+[ERRORS label=read_target] errors[] empty {SPEC} (VCST-6185)
+[DATA label=read_target] data.cart.itemsCount = 1 {SPEC} (VCST-6185)","[EVIDENCE] The refusal does not depend on the source cart's content (an empty Electronics cart is refused too) — it is the store boundary, not an item rule.",errors[] empty on merge (a cart of another store was merged into the target); the other-store cart deleted after the call; target cart changed; error code other than Forbidden,Inline removeCart for both named carts; pre_clear makes a rerun idempotent. Never touches the default cart.,"VCST-6185; vc-module-x-cart#153; Mutation.mergeCart; KB-EB4DECDC | Archetype:SCOPE · Technique:EG · Catches:VCST-6185 | Observed: VF-VCST-6185 vcst 2026-11-03 (USER2's own Electronics cart into a B2B-store target — Forbidden, source and target unchanged); first runner run 2026-11-03 vcst: PASS 8/8 (source cart created by addItem into the Electronics store: the B2B product yields an empty cart, which is enough)",Draft
+CRL-GQL-132,[VCST-6185] mergeCart — a secondCartId that matches no cart is not an error and changes nothing,GraphQL > xCart > mergeCart > Authorization,High,BL-GQL-001; BL-GQL-004,ECL-10.2,"Runner-native, ORG_USER only. The 'missing' id is a real cart id whose cart was removed inside the case — no literal GUID. Guards against the fix over-reaching (throwing for a missing source) — the ticket states that an unmatched secondCartId changes nothing. Catches: VCST-6185 (mergeCart merged and deleted a cart the caller does not own).",target_cart=AGENT-TEST-MERGEAUTH-TARGET; gone_cart=AGENT-TEST-MERGEAUTH-GONE,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → ACTOR_ID]
+[GQL-OP setup_prods]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prods]
+[GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
+[GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
+[GQL-OP pre_clear_target]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" }) { id } }
+[GQL-EXEC pre_clear_target]
+[GQL-OP add_target]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_target]
+[GQL-CAPTURE add_target.data.addItem.id → TARGET_CART_ID]
+[GQL-OP pre_clear_gone]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-GONE"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" }) { id } }
+[GQL-EXEC pre_clear_gone]
+[GQL-OP add_gone]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-GONE"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" productId: ""{{PRODUCT_2}}"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_gone]
+[GQL-CAPTURE add_gone.data.addItem.id → GONE_CART_ID]
+[GQL-OP remove_gone]
+  mutation { removeCart(command: { cartId: ""{{GONE_CART_ID}}"" userId: ""{{ACTOR_ID}}"" }) }
+[GQL-EXEC remove_gone]
+[GQL-OP merge]
+  mutation { mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" secondCartId: ""{{GONE_CART_ID}}"" deleteAfterMerge: true }) { id itemsCount items { productId } } }
+[GQL-EXEC merge]
+[GQL-OP cleanup_target]
+  mutation { removeCart(command: { cartId: ""{{TARGET_CART_ID}}"" userId: ""{{ACTOR_ID}}"" }) }
+[GQL-EXEC cleanup_target]","[ERRORS label=merge] errors[] empty {SPEC} (VCST-6185)
+[DATA label=merge] data.mergeCart.id = {{TARGET_CART_ID}} {SPEC} (VCST-6185)
+[DATA label=merge] data.mergeCart.itemsCount = 1 {SPEC} (VCST-6185)
+[COUNT label=merge] data.mergeCart.items[*?productId={{PRODUCT_2}}].length = 0 {SPEC} (VCST-6185)",[EVIDENCE] The target is returned as it was before the call.,errors[] non-empty for a source cart that does not exist (Forbidden / Unauthorized / 5xx — the authorization check was run on a null cart); target changed; mergeCart = null,Inline removeCart of the target; the gone cart is already removed. Never touches the default cart.,"VCST-6185; vc-module-x-cart#153; Mutation.mergeCart | Archetype:SCOPE · Technique:EG · Catches:VCST-6185 | Observed: VF-VCST-6185 vcst 2026-11-03 (random-GUID secondCartId — no error, target unchanged); first runner run 2026-11-03 vcst: PASS 4/4",Draft
+CRL-GQL-133,[VCST-6185] mergeCart — an administrator may merge a customer's cart of the same store,GraphQL > xCart > mergeCart > Authorization,High,BL-GQL-004,ECL-10.2,"Runner-native, two identities: USER2 owns the source cart, ADMIN is the caller. The administrator rule is from the ticket and PR (the cart-access check lets an administrator through) — it was NOT observed in the original verification. Named AGENT-TEST- carts only.",source_cart=AGENT-TEST-MERGEAUTH-VICTIM; target_cart=AGENT-TEST-MERGEAUTH-TARGET,"[AUTH role=ADMIN]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → ACTOR_ID]
+[GQL-OP setup_prods]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prods]
+[GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
+[GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
+[GQL-OP pre_clear_target]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" }) { id } }
+[GQL-EXEC pre_clear_target]
+[GQL-OP add_target]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" productId: ""{{PRODUCT_2}}"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_target]
+[GQL-CAPTURE add_target.data.addItem.id → TARGET_CART_ID]
+[AUTH role=USER2]
+[GQL-OP setup_victim_me]
+  query { me { id } }
+[GQL-EXEC setup_victim_me]
+[GQL-CAPTURE setup_victim_me.data.me.id → VICTIM_ID]
+[GQL-OP pre_clear_victim]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-VICTIM"" storeId: ""{{STORE_ID}}"" userId: ""{{VICTIM_ID}}"" }) { id } }
+[GQL-EXEC pre_clear_victim]
+[GQL-OP add_victim]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-VICTIM"" storeId: ""{{STORE_ID}}"" userId: ""{{VICTIM_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_victim]
+[GQL-CAPTURE add_victim.data.addItem.id → VICTIM_CART_ID]
+[AUTH role=ADMIN]
+[GQL-OP merge]
+  mutation { mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" secondCartId: ""{{VICTIM_CART_ID}}"" deleteAfterMerge: true }) { id itemsCount items { productId } } }
+[GQL-EXEC merge]
+[GQL-OP cleanup_target]
+  mutation { removeCart(command: { cartId: ""{{TARGET_CART_ID}}"" userId: ""{{ACTOR_ID}}"" }) }
+[GQL-EXEC cleanup_target]
+[AUTH role=USER2]
+[GQL-OP read_victim]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{VICTIM_ID}}"" currencyCode: ""USD"" cartName: ""AGENT-TEST-MERGEAUTH-VICTIM"") { id } }
+[GQL-EXEC read_victim]
+[GQL-OP cleanup_victim_if_left]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-VICTIM"" storeId: ""{{STORE_ID}}"" userId: ""{{VICTIM_ID}}"" }) { id } }
+[GQL-EXEC cleanup_victim_if_left]","[ERRORS label=merge] errors[] empty {SPEC} (VCST-6185)
+[COUNT label=merge] data.mergeCart.items[*?productId={{PRODUCT_1}}].length = 1 {SPEC} (VCST-6185)
+[COUNT label=merge] data.mergeCart.items[*?productId={{PRODUCT_2}}].length = 1 {SPEC} (VCST-6185)
+[NULL label=read_victim] data.cart {SPEC} (VCST-6185)",[EVIDENCE] The source cart is deleted after the merge (deleteAfterMerge true).,Forbidden for an administrator on a same-store cart (the fix over-reaches and also locks out the administrator); items from the source missing in the merged cart; source cart still present,Inline removeCart of the target; the source is consumed by the merge (clearCart as a guard). Never touches a default cart.,"VCST-6185; vc-module-x-cart#153; Mutation.mergeCart | Archetype:SCOPE · Technique:DT · Catches:VCST-6185 | Not observed in VF-VCST-6185 (administrator path); first run of this case, qa-suite-sync VCST-6185 2026-11-03 vcst XCart 3.1045.0-pr-153-ec03: PASS — administrator merged USER2's same-store named cart, items arrived, source deleted",Draft
+CRL-GQL-134,[VCST-6185] mergeCart — a cart of another store is refused for an administrator too,GraphQL > xCart > mergeCart > Authorization,High,BL-GQL-004,ECL-10.2,"Runner-native, two identities: USER2 owns an Electronics cart, ADMIN is the caller merging it into a B2B-store target. The ticket states the store check denies every caller, administrators included — NOT observed in the original verification.",target_cart=AGENT-TEST-MERGEAUTH-TARGET; other_store_cart=AGENT-TEST-MERGEAUTH-STORE2; other_store={{STORE_ID_SECONDARY}},"[AUTH role=ADMIN]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → ACTOR_ID]
+[GQL-OP setup_prods]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prods]
+[GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
+[GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
+[GQL-OP pre_clear_target]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" }) { id } }
+[GQL-EXEC pre_clear_target]
+[GQL-OP add_target]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_target]
+[GQL-CAPTURE add_target.data.addItem.id → TARGET_CART_ID]
+[AUTH role=USER2]
+[GQL-OP setup_victim_me]
+  query { me { id } }
+[GQL-EXEC setup_victim_me]
+[GQL-CAPTURE setup_victim_me.data.me.id → VICTIM_ID]
+[GQL-OP pre_clear_other_store]
+  mutation { clearCart(command: { cartName: ""AGENT-TEST-MERGEAUTH-STORE2"" storeId: ""{{STORE_ID_SECONDARY}}"" userId: ""{{VICTIM_ID}}"" }) { id } }
+[GQL-EXEC pre_clear_other_store]
+[GQL-OP get_other_store_cart]
+  mutation { addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-STORE2"" storeId: ""{{STORE_ID_SECONDARY}}"" userId: ""{{VICTIM_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id storeId } }
+[GQL-EXEC get_other_store_cart]
+[GQL-CAPTURE get_other_store_cart.data.addItem.id → OTHER_STORE_CART_ID]
+[AUTH role=ADMIN]
+[GQL-OP merge]
+  mutation { mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" cartName: ""AGENT-TEST-MERGEAUTH-TARGET"" secondCartId: ""{{OTHER_STORE_CART_ID}}"" deleteAfterMerge: true }) { id itemsCount } }
+[GQL-EXEC merge]
+[GQL-OP read_target]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{ACTOR_ID}}"" currencyCode: ""USD"" cartName: ""AGENT-TEST-MERGEAUTH-TARGET"") { id itemsCount } }
+[GQL-EXEC read_target]
+[GQL-OP cleanup_target]
+  mutation { removeCart(command: { cartId: ""{{TARGET_CART_ID}}"" userId: ""{{ACTOR_ID}}"" }) }
+[GQL-EXEC cleanup_target]
+[AUTH role=USER2]
+[GQL-OP read_source]
+  query { cart(storeId: ""{{STORE_ID_SECONDARY}}"" userId: ""{{VICTIM_ID}}"" currencyCode: ""USD"" cartName: ""AGENT-TEST-MERGEAUTH-STORE2"") { id } }
+[GQL-EXEC read_source]
+[GQL-OP cleanup_other_store]
+  mutation { removeCart(command: { cartId: ""{{OTHER_STORE_CART_ID}}"" userId: ""{{VICTIM_ID}}"" }) }
+[GQL-EXEC cleanup_other_store]","[ERRORS label=merge] errors[] non-empty {SPEC} (VCST-6185)
+[DATA label=merge] errors[0].extensions.code = Forbidden {SPEC} (VCST-6185)
+[NULL label=merge] data.mergeCart {SPEC} (VCST-6185)
+[DATA label=read_source] data.cart.id = {{OTHER_STORE_CART_ID}} {SPEC} (VCST-6185)
+[DATA label=read_target] data.cart.itemsCount = 1 {SPEC} (VCST-6185)",[EVIDENCE] Same refusal as the non-admin store boundary (CRL-GQL-131) — administrators are not exempt.,errors[] empty (administrator merged a cart across the store boundary); the other-store cart deleted; target changed,Inline removeCart for both named carts; pre_clear makes a rerun idempotent.,"VCST-6185; vc-module-x-cart#153; Mutation.mergeCart | Archetype:SCOPE · Technique:DT · Catches:VCST-6185 | Not observed in VF-VCST-6185 (administrator path); first run of this case, qa-suite-sync VCST-6185 2026-11-03 vcst XCart 3.1045.0-pr-153-ec03: PASS — Forbidden, USER2's Electronics cart and the admin's target unchanged",Draft

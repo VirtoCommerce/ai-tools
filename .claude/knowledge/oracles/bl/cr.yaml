@@ -43,6 +43,9 @@ rules:
       ref: As an anonymous visitor, open a product page that has approved reviews → the reviews are readable, but no "leave feedback" button or review form is present anywhere in the widget.
     violation_signal: An anonymous visitor sees a "leave feedback" button or an open review form; a review is created client-side without the user ever authenticating.
     status: ACTIVE
+    verified:
+      date: 2026-11-04
+      by: REG-2026-11-04-1022
   - id: BL-CR-009
     title: Leave-feedback eligibility is a three-part AND
     rule: "The `canLeaveFeedback` query — and therefore the storefront's decision to show the leave-feedback control — is true only when ALL of: the target is a Product entity, the requesting user has a completed order for it, and the user has not already reviewed it. Any single failing condition suppresses the control."
@@ -81,6 +84,9 @@ rules:
       ref: Seed a product with a mix of Approved, New, and Rejected reviews → the public query's total count and item list equal the Approved subset only. With more reviews than one page, navigate pages → each page returns the expected slice, total count stable across pages. Switch sort direction → item order reverses.
     violation_signal: A New or Rejected review appears in the public review list or inflates its total count; pagination returns duplicate or missing items across pages; sort direction has no effect.
     status: ACTIVE
+    verified:
+      date: 2026-11-04
+      by: REG-2026-11-04-1022
   - id: BL-CR-012
     title: Admin review search filters by status, entity type, rating range, and keyword
     rule: The admin review search accepts an array of review statuses, an entity type, a rating range (start/end), and a keyword, narrowing the result set to exactly the matching rows; every visible column (Title, Rating, Created date, Status, Created by) is independently sortable.

@@ -167,6 +167,8 @@ reports/bugs/screenshots/_incoming/
 # Session scratch (ad-hoc probes, staged CSV drafts, one-off scripts) — never committed
 .scratch/
 
+reports/tickets/
+
 # Tracker attachments downloaded as run INPUT (not a report category, reports.md 1) — kept local
 reports/tickets/**/attachments/
 
@@ -182,6 +184,15 @@ reports/tickets/**/evidence*/
 # Visual regression run output in a ticket run folder (<RUN_DIR>/visual/, ad-hoc <RUN_DIR>/pixel/) — never committed.
 reports/tickets/**/visual/
 reports/tickets/**/pixel/
+
+# Investigation scratch in a ticket run folder (<RUN_DIR>/investigations/) — never committed.
+reports/tickets/**/investigations/
+
+# Scenario scripts and fixtures in a ticket run folder (<RUN_DIR>/scenarios/, rounds/<n>/scenarios/) — never committed.
+reports/tickets/**/scenarios/
+
+# Per-check AC results in a ticket run folder (<RUN_DIR>/ac-checks/) — never committed.
+reports/tickets/**/ac-checks/
 
 # === vc-init (/project-init) — generated local config, never commit ===
 # Per-machine onboarding output: the profile, env files (.env.local holds test-user passwords),

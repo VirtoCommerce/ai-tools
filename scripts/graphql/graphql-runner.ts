@@ -851,7 +851,19 @@ async function runCase(
         () => currentToken
       );
     } catch (err) {
-      console.log(`\n❌ Step failed: [${block.kind}] — ${(err as Error).message}`);
+      const cause = `[${block.kind}] — ${(err as Error).message}`;
+      console.log(`\n❌ Step failed: ${cause}`);
+      // A case that creates stand data in its Steps removes it in Cleanup, so an abort that
+      // skipped Cleanup leaked AGENT-TEST-* residue on every thrown step (VCST-6251: a victim
+      // cart survived an [AUTH] failure, admin REST DELETE fallback and all). Run it with the
+      // variables captured so far. It is best-effort and must never mask the step's error or
+      // turn exit 3 into anything else, so even a throw from the cleanup pass itself is swallowed.
+      try {
+        await runCleanup(row, resolver, variables, tokenCache, backUrl);
+      } catch (cleanupErr) {
+        console.log(`  • cleanup pass failed (suppressed): ${(cleanupErr as Error).message}`);
+      }
+      console.log(`\n=== Aborted (exit 3) — cause: step ${cause} ===`);
       return 3;
     }
   }
@@ -934,58 +946,13 @@ async function runCase(
 
   // 7. Cleanup — best-effort runner-native [REST]/[AUTH] execution.
   // Failures are recorded in evidence but never alter the verdict.
-  // `?? ""` because a CSV without the optional Cleanup column must not abort a run that has
-  // already produced its verdict — the crash lands AFTER the result is printed, so it reads as a
-  // runner failure on a case that actually passed.
-  const cleanupRaw = resolver.resolve(row.Cleanup ?? "");
-  const cleanupSubstituted = substituteEnv(substituteVars(cleanupRaw, variables));
-  const cleanupBlocks =
-    cleanupSubstituted && cleanupSubstituted.trim().toLowerCase() !== "none"
-      ? parseSteps(cleanupSubstituted)
-      : [];
-  const cleanupResults: CleanupResult[] = [];
-  if (cleanupBlocks.length > 0) {
-    console.log(`\nCleanup (${cleanupBlocks.length} block(s), best-effort):`);
-    let cleanupToken: string | undefined;
-    for (const block of cleanupBlocks) {
-      try {
-        if (block.kind === "AUTH") {
-          if (!block.role) {
-            throw new Error("[AUTH] missing role");
-          }
-          cleanupToken = await tokenCache.getToken(block.role, block.org);
-          cleanupResults.push({
-            kind: "AUTH",
-            role: block.role,
-            org: block.org,
-            ok: true,
-          });
-          console.log(
-            `  • [AUTH role=${block.role}${block.org ? ` org=${block.org}` : ""}] token acquired`
-          );
-        } else if (block.kind === "REST") {
-          const result = await executeRest(block, backUrl, cleanupToken);
-          cleanupResults.push({
-            kind: "REST",
-            method: block.method,
-            path: block.path,
-            status: result.status,
-            ok: result.ok,
-          });
-          console.log(
-            `  • [REST ${block.method} ${block.path}] → ${result.status} ${result.ok ? "OK" : "ERR"}`
-          );
-        } else {
-          // Skip GQL-* / UNKNOWN inside Cleanup — out of scope for best-effort cleanup
-          console.log(`  • (skipped non-cleanup block: [${block.kind}])`);
-        }
-      } catch (err) {
-        const message = (err as Error).message;
-        cleanupResults.push({ kind: block.kind, ok: false, error: message });
-        console.log(`  • cleanup block [${block.kind}] failed (suppressed): ${message}`);
-      }
-    }
-  }
+  const { cleanupRaw, cleanupResults } = await runCleanup(
+    row,
+    resolver,
+    variables,
+    tokenCache,
+    backUrl
+  );
 
   // 8. Write evidence
   const evidence = {
@@ -1028,6 +995,79 @@ async function runCase(
   console.log(`EVIDENCE_FILE=${evidencePath.split(/[\\/]/).pop()}`);
 
   return verdict === "PASS" ? 0 : 1;
+}
+
+/**
+ * Run a case's Cleanup column: [AUTH] and [REST] blocks only, each best-effort — a failed block
+ * is recorded and the next one still runs. Called after the verdict on a completed case and
+ * after the thrown step on an aborted one, so `variables` holds only what was captured so far.
+ */
+async function runCleanup(
+  row: CaseRow,
+  resolver: TestDataResolver,
+  variables: Record<string, string>,
+  tokenCache: TokenCache,
+  backUrl: string
+): Promise<{ cleanupRaw: string; cleanupResults: CleanupResult[] }> {
+  // `?? ""` because a CSV without the optional Cleanup column must not abort a run that has
+  // already produced its verdict — the crash lands AFTER the result is printed, so it reads as a
+  // runner failure on a case that actually passed.
+  const cleanupRaw = resolver.resolve(row.Cleanup ?? "");
+  const cleanupSubstituted = substituteEnv(substituteVars(cleanupRaw, variables));
+  const cleanupBlocks =
+    cleanupSubstituted && cleanupSubstituted.trim().toLowerCase() !== "none"
+      ? parseSteps(cleanupSubstituted)
+      : [];
+  const cleanupResults: CleanupResult[] = [];
+  if (cleanupBlocks.length > 0) {
+    console.log(`\nCleanup (${cleanupBlocks.length} block(s), best-effort):`);
+    let cleanupToken: string | undefined;
+    for (const block of cleanupBlocks) {
+      try {
+        if (block.kind === "AUTH") {
+          if (!block.role) {
+            throw new Error("[AUTH] missing role");
+          }
+          cleanupToken = await tokenCache.getToken(block.role, block.org);
+          cleanupResults.push({
+            kind: "AUTH",
+            role: block.role,
+            org: block.org,
+            ok: true,
+          });
+          console.log(
+            `  • [AUTH role=${block.role}${block.org ? ` org=${block.org}` : ""}] token acquired`
+          );
+        } else if (block.kind === "REST") {
+          // An aborted case reaches here before its later captures exist, so a block may still
+          // name `{{VAR}}`. Sending the literal token only produces a misleading 4xx; skip it.
+          const unresolved = `${block.path} ${block.body ?? ""}`.match(/\{\{\w+\}\}/);
+          if (unresolved) {
+            throw new Error(`${unresolved[0]} was never captured — block skipped`);
+          }
+          const result = await executeRest(block, backUrl, cleanupToken);
+          cleanupResults.push({
+            kind: "REST",
+            method: block.method,
+            path: block.path,
+            status: result.status,
+            ok: result.ok,
+          });
+          console.log(
+            `  • [REST ${block.method} ${block.path}] → ${result.status} ${result.ok ? "OK" : "ERR"}`
+          );
+        } else {
+          // Skip GQL-* / UNKNOWN inside Cleanup — out of scope for best-effort cleanup
+          console.log(`  • (skipped non-cleanup block: [${block.kind}])`);
+        }
+      } catch (err) {
+        const message = (err as Error).message;
+        cleanupResults.push({ kind: block.kind, ok: false, error: message });
+        console.log(`  • cleanup block [${block.kind}] failed (suppressed): ${message}`);
+      }
+    }
+  }
+  return { cleanupRaw, cleanupResults };
 }
 
 interface SchemaRef {

@@ -87,15 +87,15 @@ Ambiguous → **real bug / LOW**, never relabelled as a test-defect. A test-defe
 | Provenance | Means | Effect |
 |---|---|---|
 | **PRE-EXISTING** | dedup match, or reproduces pre-change | link, don't re-file, don't fail this ticket |
-| **IN-SCOPE** | in what this ticket changed | fails this ticket; files as a Sub-task at 5-file |
-| **OUT-OF-SCOPE incidental** | unrelated defect found opportunistically | files as its own standalone ticket + a *related* link; doesn't fail this ticket unless a P0 revenue-flow break |
-| **CARRIED** (`--iterate` only) | dedup match is a bug **this run filed in an earlier round** | keeps its original IN-SCOPE provenance **and** severity, so it still fails this ticket; files nothing; one comment on its existing Sub-task. **The match set comes from `5-loop.0`'s live read of the ticket's sub-tasks + linked bugs, not from the run's memory of what it filed** — a sub-task someone fixed, merged and deployed mid-run was verified there and is `bugs_fixed`, not CARRIED ([`modes.md`](modes.md) §Round entry) |
+| **IN-SCOPE** | in what this ticket changed | fails this ticket; becomes a row of the ticket's To-fix table at 5-file (no tracker item) |
+| **OUT-OF-SCOPE incidental** | unrelated defect found opportunistically | suggested to the operator as its own ticket + a *related* link, created only on their yes; doesn't fail this ticket unless a P0 revenue-flow break |
+| **CARRIED** (`--iterate` only) | dedup match is a finding **this run recorded in an earlier round** (a `to_fix[]` row) | keeps its original IN-SCOPE provenance **and** severity, so it still fails this ticket; files nothing; its To-fix row is updated to the round it still fails at |
 
 Unclear → treat **IN-SCOPE** (fail-safe).
 
-**`--iterate`:** without the CARRIED row, item 6's dedup matches this run's own round-1 Sub-task and
+**`--iterate`:** without the CARRIED row, item 6's dedup matches this run's own round-1 To-fix row and
 the PRE-EXISTING row then says *don't re-file, don't fail this ticket* — wrong twice, since it is this
-ticket’s own Sub-task and it is still failing. Rationale, plus what happens when a carried bug goes
+ticket’s own unfinished work and it is still failing. Rationale, plus what happens when a carried bug goes
 green: [`modes.md`](modes.md) §5-loop §Three carve-outs.
 
 ### 5. Severity + priority
@@ -109,10 +109,10 @@ Glob `reports/bugs/**` + all `reports/tickets/Sprint*/` + the ticket's run folde
 still needs this tracker-wide check before 5-file can file it.
 
 **`--iterate` — the one exception, and it matters because this item runs AFTER item 4.** A match on a
-bug **this run filed in an earlier round** is **CARRIED**, never PRE-EXISTING. Dedup re-emits
+finding **this run recorded in an earlier round** is **CARRIED**, never PRE-EXISTING. Dedup re-emits
 `provenance` for every finding, so without this line the item-4 CARRIED call is overwritten one step
 later: the bug stops failing 5-verdict, and the round reports PASS on a defect this same run filed and that is
-still red. Match on the bug key, not on the symptom — it is this ticket’s own Sub-task.
+still red. Match on the `to_fix[]` row id, not on the symptom — it is this ticket’s own To-fix row.
 
 ### 7. Visual-lane findings — three classes, and only one of them can fail the ticket
 
@@ -149,8 +149,9 @@ severity ladder for everything else.
 
 **The rules:**
 
-- **File it standalone**, with a *related* link back to the ticket under test — the same 5-file shape as an
-  OUT-OF-SCOPE incidental, and for the same reason. Never a Sub-task: a Sub-task asserts the parent caused it.
+- **Suggest it as a standalone ticket**, with a *related* link back to the ticket under test — the same 5-file
+  shape as an OUT-OF-SCOPE incidental (asked, created only on the operator's yes), and for the same reason.
+  Never a To-fix row: that row asserts this ticket caused it.
 - **It keeps its real severity.** Do **not** downgrade a P1 contrast failure to make it look non-blocking —
   the whole point is that severity and blocking are now separate questions. Severity is still graded once,
   at 5-triage, and never re-graded (item 5).

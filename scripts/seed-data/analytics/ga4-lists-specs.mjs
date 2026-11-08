@@ -99,7 +99,14 @@ export const POOL_PLAN = Object.freeze([
   // SFL converges to exactly 8 SEEDED items (two "Show more" reveals' worth past the step of 6) instead of
   // depending on whatever foreign item happens to sit there.
   { key: 'savedForLaterTail', size: 1, orderable: true },
+  // VCST-6626: the run account's wishlist (Lists) for the select_item check — appended LAST for the same
+  // reason as savedForLaterTail. 3 products, disjoint from every other list, so a select_item carrying
+  // another list's item (or another line's name/price) is visible.
+  { key: 'wishlist', size: 3 },
 ]);
+
+/** The seeded wishlist of the run account (`--only wishlist`). Name is the business key; id is runtime. */
+export const WISHLIST_NAME = 'AGENT-TEST-6626-GA4-WL';
 
 /** The SFL target set: both saved-for-later groups. */
 export const savedForLaterTarget = (groups) => [...(groups.savedForLater || []), ...(groups.savedForLaterTail || [])];
@@ -305,6 +312,7 @@ export const ALIASES = Object.freeze({
   cart: 'CART_GA4_SFL_RB',
   listsPage: 'PB_GA4_PRODUCT_LISTS',
   htmlPage: 'PB_GA4_HTML_LISTS',
+  wishlist: 'WL_GA4_SELECT_ITEM',
 });
 
 /**

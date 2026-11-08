@@ -255,13 +255,13 @@
   "MULTI_ORG_TF_BR": {
     "id": "3967e722-f075-4ebe-8810-d72fe03ca57c",
     "userId": "6e16b4ac-c0e4-41a6-831b-0998526f4873",
-    "techflow_membership_id": "0f3a36f6-cec7-45f4-9104-13286bbfd47e",
+    "techflow_membership_id": "3bc58731-3d74-43a9-9cc1-f0886dac44b9",
     "buildright_membership_id": "5e5026b3-4d0f-4455-84e0-b20c9a7b792c"
   },
   "MULTI_ORG_TF_BR_ALT": {
     "id": "daf1facf-32a3-4d16-a2f3-efb9f557d1fb",
     "userId": "c30f97bb-0f00-4b44-ba1b-a96149ca94ad",
-    "techflow_membership_id": "41d28a2c-118d-4248-91e9-d50a58f09327",
+    "techflow_membership_id": "e79cc863-ab0c-4ef6-a55c-8557ed17bf23",
     "buildright_membership_id": "62911b28-b832-44db-a625-9107d7c411bf"
   },
   "ORG_TF_ONLY_INVITEE": {
@@ -1291,6 +1291,14 @@
     "role": "AGENT-TEST-6443 no-create",
     "password_var": "DEFAULT_TEST_PASSWORD"
   },
+  "SANITY_ASSET_IMAGE": {
+    "id": "image-3dce9c2d4b39489ad1752e692cb4950c68417479-4x3-png",
+    "url": "https://cdn.sanity.io/images/ryu3mu0u/production/3dce9c2d4b39489ad1752e692cb4950c68417479-4x3.png"
+  },
+  "SANITY_ASSET_FILE": {
+    "id": "file-033708323ba3b75b5b354f0d14c827798a6bc763-txt",
+    "url": "https://cdn.sanity.io/files/ryu3mu0u/production/033708323ba3b75b5b354f0d14c827798a6bc763.txt"
+  },
   "PK_ORG_MAIN": {
     "name": "AGENT-TEST-PK-Org-Main",
     "id": "cfa5c62c-30fc-4380-8aba-da94e6246c85"
@@ -1491,5 +1499,101 @@
     "memberId": "c85a9505-a395-482f-a7d9-00f249f477be",
     "storeId": "123",
     "org_id": ""
+  },
+  "VCST6626_MFA_PER_USER_2FA": {
+    "_inline": true,
+    "store_id": "B2B-store",
+    "password_var": "TEST_USER_PASSWORD",
+    "run_id": "vcst6626",
+    "teardown": "node scripts/seed-data/auth/mfa-fixtures.mjs --teardown --run vcst6626",
+    "email": "agent-test-mfa-vcst6626-per-user-2fa@example.com",
+    "user_id": "13f91277-1ed3-4a42-ba6e-ff434b44c59f",
+    "contact_id": "9868a375-e75b-4486-b91e-6ab1683ea98d",
+    "kind": "per-user-2fa"
+  },
+  "VCST6626_PROFILE_BUYER": {
+    "_inline": true,
+    "store_id": "B2B-store",
+    "password_var": "TEST_USER_PASSWORD",
+    "run_id": "vcst6626",
+    "teardown": "node scripts/seed-data/auth/mfa-fixtures.mjs --teardown --run vcst6626",
+    "email": "agent-test-mfa-vcst6626-customer-confirmed@example.com",
+    "user_id": "4958d8a5-24ae-4b5b-87a5-1520adce87f3",
+    "contact_id": "ef12b645-eac6-4990-883e-4969e86171ec",
+    "kind": "customer-confirmed"
+  },
+  "CATALOG_MIXED": {
+    "id": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "CATALOG_ELECTRONICS": {
+    "id": "6e5af387-8f15-4c9b-a2c5-897a87ecf378"
+  },
+  "PROD_GA4_RELATED_ANCHOR": {
+    "_inline": true,
+    "id": "09d0aa97-a02e-42b4-b1c2-80463f407a63",
+    "code": "AGENT-TEST-GA4-REL-ANCHOR",
+    "name": "AGENT-TEST GA4 Related Anchor",
+    "slug": "seed-test-fixtures/agent-test-ga4-related-anchor",
+    "url": "/seed-test-fixtures/agent-test-ga4-related-anchor",
+    "related_count": 10,
+    "related_codes": "0000645,0003414,02180584,100004616,100013885,107029,108141,108335,111553,111798",
+    "related_ids": "77ae9c2c-eb4c-4c79-b861-5cdea22c490c,de3cbe24-e29c-4347-b606-e38a80ea5c3e,66b4a922-7f10-4fb8-9c73-b9f8e955717a,1c9bd6e1-68de-40a4-aa36-8e1ef08e9676,36439f9c-e8b6-487a-9562-79ba833ee51e,776883dc-d967-4ab2-9f7e-578caeb8bd12,3aaac1cd-4508-4cda-a64b-5a59cdad17f8,6cf53adf-0d17-4a41-949b-0e5a7e700ac2,05d1d386-9931-4c90-b8b6-9400cbd2f968,59bd14a6-c4f0-4647-84a1-d9805c1c97fd"
+  },
+  "PROD_GA4_VARIATION_PARENT": {
+    "_inline": true,
+    "id": "7db85a7a-c1fa-43ab-8721-1b09dfde42a0",
+    "code": "AGENT-TEST-GA4-VAR-PARENT",
+    "name": "AGENT-TEST GA4 Variations Parent",
+    "slug": "seed-test-fixtures/agent-test-ga4-variations-parent",
+    "url": "/seed-test-fixtures/agent-test-ga4-variations-parent",
+    "variations_count": 60,
+    "family_total": 61,
+    "page_size": 50,
+    "pages": 2
+  },
+  "CART_GA4_SFL_RB": {
+    "_inline": true,
+    "account_env": "USER_EMAIL",
+    "cart_id": "669d58e8-0c4b-44a9-a2c9-1ec4ffd846c8",
+    "saved_for_later_list_id": "755c52f8-5382-4930-bb30-47221955274b",
+    "rb_session_id": "AGENT-TEST-GA4-RB-SEED",
+    "cart_line_codes": "121975",
+    "cart_line_ids": "68e85496-4281-47ab-9a32-2248e5326717",
+    "saved_for_later_codes": "122718,123109,1367,1507112554,152078,1521233,1649409025,AMZ-B0DC91H3JK",
+    "saved_for_later_ids": "e0a441cb-efe7-4d9a-927d-1dabf23db1ff,803c1a54-1be8-4ef1-8786-34c9e8259cf6,7111dfed-22b5-4700-914a-03395e21a7a8,8b7282ad-d318-42f4-9c19-e2d9b388e06f,16fae43e-8f5e-4b65-8de6-b0d5333ab15c,cc81104c-8528-490b-a7a8-d1fb53ca164b,9f54e199-c5e7-4e78-aee0-a429f78ef366,f5d550b5-5054-4554-bed5-37c3fcab1d4e",
+    "recently_browsed_codes": "14418465,1592321634,1653025775,176,200072336,201482",
+    "recently_browsed_ids": "b2db70a5-68f0-4356-9503-a7a18b08cad0,ffd1bc36-4756-4e6a-88ee-0d7ae70d539c,4afabf31-cdf2-4d3b-8d85-64b0256cfabc,f45b1494-b91c-44ac-9fbb-e06d6b3d356f,1e4b9c3f-18ee-4b9d-bffc-f81ae6dad51c,8d77666d-70d7-4b3c-a071-a2d0f376d63f",
+    "recently_browsed_order_newest_first": "201482,200072336,176,1653025775,1592321634,14418465",
+    "saved_for_later_count": 8,
+    "sfl_show_more_step": 6,
+    "url": "/cart"
+  },
+  "PB_SINGLE_LANG_EN": {
+    "_inline": true,
+    "group_id": "98308287-70a3-4531-a78b-f0c688b62907",
+    "permalink": "/agent-test-single-language-en"
+  },
+  "WL_GA4_SELECT_ITEM": {
+    "id": "6ea7d468-0bbc-4ead-bb75-9815bfe96e27",
+    "name": "AGENT-TEST-6626-GA4-WL",
+    "item_count": 3,
+    "product_codes": "ANK-A110AH11,ANK-A121D111,ANK-A1665011",
+    "product_ids": "322e8041-da02-45cf-8365-626febe79116,4deecfcb-8444-440d-9ce2-76f6ef209ec0,78eba076-af54-4a4c-8cd2-4e236970a97c",
+    "product_names": "Anker Prime Power Bank 26,250mAh 300W (2x USB-C, 1x USB-A), Smart Display|Anker Nano Charger 45W USB-C GaN, Smart Display, 180° Foldable, Black Stone|Anker Nano Power Bank 5,000mAh MagGo Slim, Qi2 15W, Black",
+    "url": "/account/lists/6ea7d468-0bbc-4ead-bb75-9815bfe96e27",
+    "lists_url": "/account/lists"
+  },
+  "AGENT_TEST_IMP_CUSTOMER": {
+    "_inline": true,
+    "platform_id": "87a9d06e-641d-4022-828f-29ca1d3c2e73",
+    "user_id": "87a9d06e-641d-4022-828f-29ca1d3c2e73",
+    "role_id": "AGENT-TEST-imp-role",
+    "userName": "agent-test-imp-customer@test-agent.com",
+    "contact_id": "2c27e57f-b45e-4b34-a493-98fbeb443a7c"
+  },
+  "PB_LOGIN_SECTION": {
+    "_inline": true,
+    "group_id": "506314d6-d876-413f-a8e1-63c40f331a65",
+    "permalink": "/agent-test-login-section"
   }
 }
