@@ -719,3 +719,40 @@ Viewport 1440, locale en-US. SR_REP_PRIMARY serves @td(ORG_ACME.id), which has a
 Mid-journey: Avg order value is not the YTD total divided by the YTD count
 Mid-journey: All orders opens for another organization
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-5308 · Archetype:PARITY · Technique:FLOW · Behavior:sr.profile · Behavior:sr.profile.stat-widgets · Catches: the profile shows other YTD figures than the row the rep opened it from, or an average order value that is not total divided by count · Observed: live vcst 2026-11-03, AcmeCorp row $875.00 / 7 orders, cards 7 / $875.00 / $125.00 · verified live vcst 2026-11-03",Draft
+SR-CP-086,Customer profile — Phone row is a tel: link to the default number; dropdown only when several,Sales Rep Hub > Customer profile > Phone,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call) serving exactly the 11 ORG_SR_CALL_* organizations. @td(ORG_SR_CALL_MULTI.name) has several numbers (default = primaryContact.phones[0] as returned, @td(ORG_SR_CALL_MULTI.default_href)); @td(ORG_SR_CALL_ORGONLY.name) has one (organization-level) number.",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name); @td(ORG_SR_CALL_MULTI.default_href); @td(ORG_SR_CALL_ORGONLY.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] click the organization name @td(ORG_SR_CALL_MULTI.name) in its row to open the profile
+[WAIT] the Customer information card is rendered
+[ASSERT] record the Phone link text and href and whether a call control sits beside it
+[ACT] click the call control beside the 'Phone' row
+[WAIT] the dropdown is open
+[ASSERT] record the entries
+[NAV] {{FRONT_URL}}/company/my-customers
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] click the organization name @td(ORG_SR_CALL_ORGONLY.name) in its row to open the profile
+[WAIT] the Customer information card is rendered
+[ASSERT] record the Phone link text and href and whether a call control sits beside it","[DOM] on the @td(ORG_SR_CALL_MULTI.name) profile the 'Phone' row value is a link with href ""@td(ORG_SR_CALL_MULTI.default_href)"" and visible text equal to that number as stored {SPEC} (VCST-6256 AC7)
+[DOM] a 'Call customer' control is visible beside the Phone link and opens a dropdown of @td(ORG_SR_CALL_MULTI.expected_phone_count) entries (set ""@td(ORG_SR_CALL_MULTI.expected_hrefs)"") {SPEC} (VCST-6256 AC7)
+[DOM] on the @td(ORG_SR_CALL_ORGONLY.name) profile the 'Phone' row is a link with href ""@td(ORG_SR_CALL_ORGONLY.expected_hrefs)"" and no 'Call customer' control is present beside it {SPEC} (VCST-6256 AC7)","[API] salesRepCustomer(organizationId).primaryContact.phones[0] equals the Phone link number
+[CONSOLE] no application-origin TypeError or JS error on the page under test",the profile Phone value is plain text or a link to a number other than the default; a one-number profile gets a dropdown; the several-number profile offers no way to reach the other numbers,none (read-only),VCST-6256 · Archetype:FALLBACK · Technique:EP · Purpose:FUNC,Draft
+SR-CP-087,Customer profile — no number hides the Phone row as before,Sales Rep Hub > Customer profile > Phone,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call) serving exactly the 11 ORG_SR_CALL_* organizations. @td(ORG_SR_CALL_NONE.name): the owner contact exists but no number is stored anywhere (contact, organization, address).",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_NONE.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] click the organization name @td(ORG_SR_CALL_NONE.name) in its row to open the profile
+[WAIT] the Customer information card is rendered
+[ASSERT] record the labels of all rows in the Customer information card","[DOM] the Customer information card has no 'Phone' row: the label is absent, with no empty value and no dead link {SPEC} (VCST-6256 AC3)
+[DOM] the 'Primary contact' row is visible and reads ""@td(ORG_SR_CALL_NONE.expected_primary_contact)"" {SPEC} (VCST-6256 AC3)","[API] salesRepCustomer(organizationId).phone is null
+[CONSOLE] no application-origin TypeError or JS error on the page under test",an empty Phone label or a dead link renders; blank-row dropping now also hides the Primary contact row,none (read-only),VCST-6256 · Archetype:RENDER · Technique:EP · Purpose:FUNC,Draft
+SR-CP-088,Customer profile — Primary contact row reflects the non-rep primary contact of an ownerless org,Sales Rep Hub > Customer profile > Phone,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call) serving exactly the 11 ORG_SR_CALL_* organizations. @td(ORG_SR_CALL_OWNERLESS.name) has no owner; its contacts are the rep's own (older) and a later non-rep buyer ""@td(ORG_SR_CALL_OWNERLESS.expected_primary_contact)"". The shared resolver change also feeds the profile's Primary contact row (previously the oldest contact, which here is the rep itself).",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_OWNERLESS.name); @td(ORG_SR_CALL_OWNERLESS.expected_primary_contact),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] click the organization name @td(ORG_SR_CALL_OWNERLESS.name) in its row to open the profile
+[WAIT] the Customer information card is rendered
+[ASSERT] record the 'Primary contact' row value","[DOM] the 'Primary contact' row is visible and reads ""@td(ORG_SR_CALL_OWNERLESS.expected_primary_contact)"" {SPEC} (VCST-6256 PR #37 body)
+[DOM] the 'Primary contact' row does not read ""@td(SR_REP_CALL.fullName)"" {SPEC} (VCST-6256 PR #37 body)","[API] salesRepCustomer(organizationId).primaryContact.fullName is the same name
+[CONSOLE] no application-origin TypeError or JS error on the page under test",the profile names the rep as the customer primary contact; the Primary contact row is missing for an ownerless organization that has a buyer contact,none (read-only),VCST-6256 · Archetype:RENDER · Technique:EG · Purpose:FUNC,Draft
