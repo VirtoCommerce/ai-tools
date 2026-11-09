@@ -4,7 +4,7 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 1997 · PASS 1481 · FAIL 171 · BLOCKED 296** · ledger 345 rows
+**Executed 2425 · PASS 1650 · FAIL 215 · BLOCKED 489** · ledger 869 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -15,22 +15,22 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | CLAIMED | — | — | — | — | — | — | 0 | — |
+| W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | TRIAGED | 428 | 428 | 169 | 44 | 193 | 0 | 524 | REG-2026-11-05-1645-W7 REG-2026-11-06-1424-W7C |
 | WX | Exclusive window (env-wide cases) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
 ## Triage verdicts
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 42 |
-| BY_DESIGN | 7 |
-| TEST_DEFECT | 70 |
-| DATA | 95 |
-| ENV_CONFIG | 101 |
-| NOT_TESTABLE | 23 |
-| DUPLICATE | 4 |
-| FLAKY | 1 |
-| PENDING_DECISION | 2 |
+| REAL_BUG | 48 |
+| BY_DESIGN | 20 |
+| TEST_DEFECT | 135 |
+| DATA | 162 |
+| ENV_CONFIG | 445 |
+| NOT_TESTABLE | 42 |
+| DUPLICATE | 9 |
+| FLAKY | 3 |
+| PENDING_DECISION | 5 |
 
 ## Not run yet
 
@@ -62,5 +62,8 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 |---|---|---|---|
 | W1 | STORE-069 | Verification link still confirms the email after store email verification is turned off: intended? | product owner |
 | W2 | SRCH-009 | SRCH-009 and SRCH-010 assert behaviour this bundle deprecates: deprecate the cases or retarget them? | Elena Kutasina |
+| W7 | MSN-003 | Mission create accepts and stores Periodicity Monthly; only None is processed, nothing rejects the rest | Loyalty product owner |
+| W7 | MSNF-068 | fr: untranslated mission returns the internal Name and null description — no default-language fallback; no source says it should | Loyalty product owner |
+| W7 | MSN-003 | Mission create accepts and stores Periodicity Monthly; only None is processed, nothing rejects the rest | Loyalty product owner |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

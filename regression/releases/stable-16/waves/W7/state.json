@@ -1,10 +1,29 @@
 {
  "wave": "W7",
  "owner": "Aleksandra Mitricheva",
- "status": "CLAIMED",
- "runIds": [],
- "notRun": [],
+ "status": "TRIAGED",
+ "runIds": [
+  "REG-2026-11-05-1645-W7",
+  "REG-2026-11-06-1424-W7C"
+ ],
  "handovers": [],
- "updatedAt": "2026-11-05",
- "personas": "Lane accounts qa-agent-slot1/2/3 (agent-user-pool.csv, one per browser lane) plus USER (test-john.mitchell-20260310@test-agent.com) from Aleksandra Mitricheva's .env.local; loyalty/quote suites use their own AGENT-TEST seeded personas (ORG_LOY_*, LOY_PERSONAL_NOORG, LOYALTY_VIP_USER, MSN_*), not shared with other waves"
+ "updatedAt": "2026-11-09",
+ "personas": "Lane accounts qa-agent-slot1/2/3 (agent-user-pool.csv, one per browser lane) plus USER (test-john.mitchell-20260310@test-agent.com) from Aleksandra Mitricheva's .env.local; loyalty/quote suites use their own AGENT-TEST seeded personas (ORG_LOY_*, LOY_PERSONAL_NOORG, LOYALTY_VIP_USER, MSN_*), not shared with other waves",
+ "totals": {
+  "planned": 428,
+  "executed": 428,
+  "pass": 169,
+  "fail": 44,
+  "blocked": 193,
+  "skipped": 20,
+  "ambiguous": 2
+ },
+ "untriaged": 0,
+ "evidence": "owner machine: reports/regression/REG-2026-11-05-1645-W7 (gitignored)",
+ "reports": {
+  "W7": {
+   "subtask": "112837",
+   "release": "112838"
+  }
+ }
 }
