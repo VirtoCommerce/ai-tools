@@ -4,7 +4,7 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 2569 · PASS 1782 · FAIL 244 · BLOCKED 424** · ledger 1006 rows
+**Executed 2569 · PASS 1794 · FAIL 243 · BLOCKED 413** · ledger 1009 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -15,17 +15,17 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | Aleksandra Mitricheva | TRIAGED | 144 | 144 | 72 | 14 | 6 | 0 | 68 | REG-2026-11-04-1505-W6 REG-2026-11-05-0023-W6R REG-2026-11-06-1345-W6R2 REG-2026-11-06-1410-W6R3 REG-2026-11-09-W6R4 REG-2026-11-09-W6R5 |
-| W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | TRIAGED | 428 | 428 | 229 | 59 | 122 | 0 | 593 | REG-2026-11-05-1645-W7 REG-2026-11-06-1424-W7C REG-2026-11-09-0950-W7U |
+| W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | TRIAGED | 428 | 428 | 241 | 58 | 111 | 0 | 596 | REG-2026-11-05-1645-W7 REG-2026-11-06-1424-W7C REG-2026-11-09-0950-W7U REG-2026-11-09-1545-W7M |
 | WX | Exclusive window (env-wide cases) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
 ## Triage verdicts
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 58 |
+| REAL_BUG | 59 |
 | BY_DESIGN | 26 |
-| TEST_DEFECT | 176 |
-| DATA | 194 |
+| TEST_DEFECT | 177 |
+| DATA | 195 |
 | ENV_CONFIG | 475 |
 | NOT_TESTABLE | 42 |
 | DUPLICATE | 17 |
@@ -58,6 +58,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W7 | MSNF-099 | SKU-NOAVAIL mission modal shows the deleted product's raw GUID as its title, as a link | no | local report BUG-missions-sku-modal-degraded-target-states.md, below the filing floor (Low) |
 | W7 | MSNF-102 | A mission ~1.5 h past its end still listed with '0 days left' and an enabled Open mission | no | local report BUG-missions-ended-mission-zero-days-live-cta.md, below the filing floor (Low) |
 | W7 | MSNF-056 | The zero-days card is the ended DUE-00 mission — same defect as MSNF-102 | no | same defect as MSNF-102, file once |
+| W7 | TASK-016 | Admin Tasks shows an enabled Create button to a user with task:access + task:read only; it opens the Create new task blade, which cannot be… | no |  |
 
 ## Decisions pending
 

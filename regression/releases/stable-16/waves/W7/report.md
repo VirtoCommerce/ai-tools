@@ -1,14 +1,14 @@
 # Stable 16 · W7 — virto-start modules (autotests only)
 
-**Owner:** Aleksandra Mitricheva · **Runs:** REG-2026-11-05-1645-W7 (first run), REG-2026-11-06-1424-W7C (re-run of every case no longer blocked), REG-2026-11-09-0950-W7U (re-run after the suite repairs and re-seed) · **Env:** vcptcore_regression (platform 3.1076.8, theme 2.59.0) · **Sub-task:** VCST-6411
+**Owner:** Aleksandra Mitricheva · **Runs:** REG-2026-11-05-1645-W7 (first run), REG-2026-11-06-1424-W7C (re-run of every case no longer blocked), REG-2026-11-09-0950-W7U (re-run after the suite repairs and re-seed), REG-2026-11-09-1545-W7M (re-run after the balance mode was restored) · **Env:** vcptcore_regression (platform 3.1076.8 → 3.1076.13 on 2026-11-09, theme 2.59.0) · **Sub-task:** VCST-6411
 
 Modules under test, all installed on the stand: Loyalty 3.1009.0, Quote 3.1003.0, News 3.1005.0, TaskManagement 3.1005.0, Skyflow 3.1005.0, CyberSource 3.1002.0, Datatrans 3.1002.0. No suite was gated as not deployed.
 
 ## Totals (final status per case)
 
-428 planned and executed over three runs. **229 PASS, 59 FAIL, 122 BLOCKED, 16 SKIPPED, 2 other.**
+428 planned and executed over four runs. **241 PASS, 58 FAIL, 111 BLOCKED, 16 SKIPPED, 2 other.**
 
-The first run blocked 321 cases on missing persona credentials. W7C re-ran 173 once they were declared; W7U (2026-11-09) re-ran 129 after the suite repairs, the re-seed and the 040a/040c requirements below.
+The first run blocked 321 cases on missing persona credentials. W7C re-ran 173 once they were declared; W7U (2026-11-09) re-ran 129 after the suite repairs, the re-seed and the 040a/040c requirements below; W7M re-ran 17 once the Customer balance mode took effect.
 
 | Suite | Pass | Fail | Blocked | Skipped |
 |---|---|---|---|---|
@@ -23,25 +23,25 @@ The first run blocked 321 cases on missing persona credentials. W7C re-ran 173 o
 | 075e Missions Admin | 20 | 3 | 0 | 0 |
 | 075f Org balance | 8 | 14 | 0 | 0 |
 | 083 Loyalty catalog | 18 | 0 | 8 | 0 |
-| 083b Mixed cart (SF) | 7 | 1 | 0 | 0 |
-| 083c Missions storefront | 50 | 8 | 40 | 1 |
-| 083d Missions E2E | 0 | 1 | 5 | 1 |
+| 083b Mixed cart (SF) | 8 | 0 | 0 | 0 |
+| 083c Missions storefront | 57 | 8 | 33 | 1 |
+| 083d Missions E2E | 4 | 0 | 2 | 1 |
 | 083e Org balance (SF) | 0 | 0 | 8 | 0 |
 | 084 News | 27 | 3 | 4 | 0 |
-| 085 Tasks | 14 | 7 | 5 | 0 |
+| 085 Tasks | 14 | 8 | 4 | 0 |
 
-**Verdicts on the 199 non-passing cases (latest run per case):**
+**Verdicts on the 187 non-passing cases (latest run per case):**
 
 | Verdict | Count |
 |---|---|
-| ENV_CONFIG | 85 |
-| DATA | 37 |
+| ENV_CONFIG | 83 |
+| DATA | 25 |
+| BY_DESIGN | 19 |
 | NOT_TESTABLE | 19 |
-| BY_DESIGN | 18 |
-| TEST_DEFECT | 17 |
-| REAL_BUG | 13 |
-| DUPLICATE | 5 |
-| PENDING_DECISION | 5 |
+| TEST_DEFECT | 18 |
+| REAL_BUG | 11 |
+| DUPLICATE | 6 |
+| PENDING_DECISION | 6 |
 
 ## Re-run W7U (2026-11-09) — what changed and what it found
 
@@ -79,11 +79,19 @@ Known local reports below the filing floor reproduced again:
 - **TASK-020/021/018, NEWS-017, MCO-GQL-003:** test defects: finish needs a JSON body, `isActive` has no server default, doubled quotes, a gift line.
 
 **Still blocked, by cause:**
-- **test-john mission progress reads 0%** (9 cases in 083c), because the store is in Organization mode.
-- **missions-e2e accounts not re-seeded:** their seeder fails in Organization mode.
+- ~~test-john progress 0% / missions-e2e not seeded~~ — fixed in W7M (below).
 - **LOYALTY_NOBAL_USER / LOYALTY_WHOLESALE_USER not provisioned on this env** (4 cases).
 - **0 news articles on the stand** (NEWS-020/022).
 - **075f:** see Environment changes.
+
+## Re-run W7M (2026-11-09) — after the balance mode took effect
+
+- **The Customer mode needed a store save.** The settings-API write read back Customer, but accruals stayed organization-scoped until the store was saved in Admin (Stores > B2B-store > Save); the effective mode follows the store cache, not the setting write (KB-0761662A, suspected defect).
+- Re-seeded `seed:missions-e2e` (run 20261109153618-6c4c); mission progress already matched. One stale empty cart on the progress owner removed (`carts:sweep`).
+- **17 cases: 14 PASS, 1 FAIL, 2 BLOCKED.** 083c 9/11, 083d 4/4, MCO-E2E-002 PASS.
+- **TASK-016 FAIL — real bug, not filed yet:** a read-only task user sees an enabled Create button that opens an unsavable blade (`BaseWorkTasksList.vue` L216-223 has no permission check; server answers 401). Low, vc-module-task-management.
+- MSNF-075: TEST_DEFECT — missions are listed per session currency by design (`loyaltyMissionProgress` passes `currencyCode` to the search). MSNF-080: DATA — the fresh msne2e account has no points history.
+- Orders CO261109-00017…00022 cancelled.
 
 ## Real bugs — filed
 
@@ -141,7 +149,7 @@ All six are pre-existing, not regressions of this bundle. Each was re-verified l
   - **Effect:** the store has been in Organization mode since then. That mode pools mission progress and points to the organization, which caused the 0% progress, the missions-e2e seed failure and MCO-E2E-002.
   - **Within 075f:** its cases also interfered with each other on the machine lane (LOYORG-009 read the pool as 0 before and 64232 after).
   - **Fix:** list 075f in WX `exclusive`, and make its teardown restore the mode it found.
-  - **Current state:** set back to **Customer** on 2026-11-09 (owner's decision, verified by read-back).
+  - **Current state:** **Customer**, effective since the Admin store save on 2026-11-09 ~15:35Z (verified: new accruals land on the user).
 - **vc-deploy-dev #7050 was merged 2026-11-08 23:35Z.** It restarted the platform: runs active at that moment may show a burst of 5xx or timeouts.
 
 ## Data created and removed
@@ -157,9 +165,7 @@ All six are pre-existing, not regressions of this bundle. Each was re-verified l
 
 ## Before the next owner continues
 
-1. **The B2B-store balance mode is Customer again** (2026-11-09). Then:
-   - re-seed mission progress and `seed:missions-e2e`;
-   - re-run 083c (9 progress cases), 083d and MCO-E2E-002.
+1. **Changing the balance mode:** write it, then **save the store in Admin**, or it does not take effect (KB-0761662A).
 2. **Run 075f only in WX**, alone on the stand. Repair LOYORG-019 (assert 2xx).
 3. **Provision LOYALTY_NOBAL_USER / LOYALTY_WHOLESALE_USER** on vcptcore_regression, declare their keys, then re-run MCO-GQL-005/009/013 and LOY-033.
 4. **Repair the remaining test defects** (`/qa-review-tests --fix`):
@@ -173,7 +179,7 @@ All six are pre-existing, not regressions of this bundle. Each was re-verified l
    - QUOTE-031/032: retire or move to the orders suites;
    - NEWS-023: split into an API half and a UI half;
    - the quote-expiry rule (PENDING_DECISION).
-6. **TASK-016:** reconnect the Playwright lanes (`/mcp`) so they load the RESTRICTED_USER key, then run it.
+6. **TASK-016:** decide on filing (DRAFT). **MSNF-075** ARM 1 and **MSNF-080** data need repair.
 7. **The 19 NOT_TESTABLE 083c cases** move to Playwright specs; 5 pilots come first.
 
 Raw evidence (screenshots, traces, results JSON) is on the owner's machine under `reports/regression/REG-2026-11-05-1645-W7/`, `REG-2026-11-06-1424-W7C/` and `REG-2026-11-09-0950-W7U/` (the last in the worktree run folder).
