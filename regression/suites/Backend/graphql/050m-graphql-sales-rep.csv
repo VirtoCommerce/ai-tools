@@ -2394,3 +2394,53 @@ query Buyer($c: [String!], $p: [String!]) { salesRepTasks(first: 5, customerIds:
 A non-rep buyer receives a rep's tasks by naming a served organization
 An error message leaks a stack trace or SQL text
 HTTP 500 on /graphql/sales-rep",none (read-only),"VCST-6157 · Archetype:SCOPE · Technique:EG · Catches: a customerIds argument that lets a non-rep or anonymous caller read tasks by naming an organization · Observed: VCST-6157 round 2 verdict (SC-5.3, SC-5.4) · Source: vc-module-sales-rep#33 head 8d4a30bd (SalesRepTasksQueryHandler) · verified live vcst 2026-11-05 (Phase 5 r1; backend SalesRep 3.1018.0-pr-33-ff13, browser plugin bundle 12:23/pr-33-8d4a)",Draft
+SR-GQL-179,"salesRepCustomers — items return phone, address.phone and primaryContact.phones for served orgs",Sales Rep > GraphQL > Customer phones,High,BL-SR-011,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires the Sales Rep module with VCST-6256 (vc-module-sales-rep PR #37) deployed. Caller is SR_REP_CALL, who serves exactly the 11 ORG_SR_CALL_* organizations (11 <= first:20, so one page holds them all). org_multi: owner with three phones; org_orgonly: no contact except the rep itself, organization phone only; org_none: owner without phones, no other number; org_addr: owner phone plus a distinct address phone.",multi_count=@td(ORG_SR_CALL_MULTI.expected_phone_count); org_multi=@td(ORG_SR_CALL_MULTI.platform_id); org_orgonly=@td(ORG_SR_CALL_ORGONLY.platform_id); org_none=@td(ORG_SR_CALL_NONE.platform_id); org_addr=@td(ORG_SR_CALL_ADDR.platform_id),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SR_REP_CALL]
+[GQL-OP main]
+query { salesRepCustomers(first: 20, storeId: ""{{STORE_ID}}"", sort: ""name:asc"") { totalCount items { organizationId organizationName phone address { phone } primaryContact { id fullName phones } } } }
+[GQL-EXEC main]
+[GQL-CAPTURE main.data.salesRepCustomers.items[?organizationId={{org_multi}}].primaryContact.phones.0 → MULTI_FIRST]","[ERRORS label=main] errors[] empty {SPEC} (VCST-6256)
+[DATA label=main] data.salesRepCustomers.items[?organizationId={{org_multi}}].phone = {{MULTI_FIRST}} {SPEC} (VCST-6256)
+[COUNT label=main] data.salesRepCustomers.items[?organizationId={{org_multi}}].primaryContact.phones.length = {{multi_count}} {SPEC} (VCST-6256)
+[NULL label=main] data.salesRepCustomers.items[?organizationId={{org_orgonly}}].primaryContact {SPEC} (VCST-6256)
+[DATA label=main] data.salesRepCustomers.items[?organizationId={{org_orgonly}}].phone matches /\d/ {SPEC} (VCST-6256)
+[NULL label=main] data.salesRepCustomers.items[?organizationId={{org_none}}].phone {SPEC} (VCST-6256)
+[COUNT label=main] data.salesRepCustomers.items[?organizationId={{org_none}}].primaryContact.phones.length = 0 {SPEC} (VCST-6256)
+[DATA label=main] data.salesRepCustomers.items[?organizationId={{org_addr}}].address.phone matches /\d/ {SPEC} (VCST-6256)",none (read-only),items return null phone or empty primaryContact.phones for customers that have numbers; phone is not the contact's first phone; the organization-only customer returns a contact; address.phone missing while stored; errors[] non-empty,none (read-only),VCST-6256 · Archetype:PARITY · Technique:EP · Purpose:FUNC,Draft
+SR-GQL-180,salesRepCustomers — ownerless org primaryContact excludes the org own sales reps (list and detail agree),Sales Rep > GraphQL > Customer phones,High,BL-SR-011,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires the Sales Rep module with VCST-6256 (vc-module-sales-rep PR #37) deployed. Caller is SR_REP_CALL. org_ownerless has NO owner; its contact members are the rep's own contact (older) and a later non-rep buyer, whose contact id is exp_pc_id. After PR #37 the fallback excludes the organization's own reps; the strict ""is not the rep"" form is covered by equality to exp_pc_id, because the DATA grammar has no top-level != predicate (see SR-GQL-019). org_orgonly has only the rep as contact, so primaryContact is null on both operations.",org_ownerless=@td(ORG_SR_CALL_OWNERLESS.platform_id); exp_pc_id=@td(ORG_SR_CALL_OWNERLESS.primary_contact_id); org_orgonly=@td(ORG_SR_CALL_ORGONLY.platform_id),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SR_REP_CALL]
+[GQL-OP list]
+query { salesRepCustomers(first: 20, storeId: ""{{STORE_ID}}"", sort: ""name:asc"") { items { organizationId primaryContact { id fullName phones } } } }
+[GQL-EXEC list]
+[GQL-CAPTURE list.data.salesRepCustomers.items[?organizationId={{org_ownerless}}].primaryContact.id → LIST_PC]
+[GQL-OP detail]
+query { salesRepCustomer(organizationId: ""{{org_ownerless}}"") { primaryContact { id fullName phones } } }
+[GQL-EXEC detail]
+[GQL-OP detail_orgonly]
+query { salesRepCustomer(organizationId: ""{{org_orgonly}}"") { phone primaryContact { id } } }
+[GQL-EXEC detail_orgonly]","[ERRORS label=list] errors[] empty {SPEC} (VCST-6256)
+[DATA label=list] data.salesRepCustomers.items[?organizationId={{org_ownerless}}].primaryContact.id = {{exp_pc_id}} {SPEC} (VCST-6256 PR #37 body)
+[ERRORS label=detail] errors[] empty {SPEC} (VCST-6256)
+[DATA label=detail] data.salesRepCustomer.primaryContact.id = {{LIST_PC}} {SPEC} (VCST-6256)
+[DATA label=detail] data.salesRepCustomer.primaryContact.id = {{exp_pc_id}} {SPEC} (VCST-6256 PR #37 body)
+[DATA label=detail] data.salesRepCustomer.primaryContact.phones.0 matches /\d/ {SPEC} (VCST-6256)
+[NULL label=list] data.salesRepCustomers.items[?organizationId={{org_orgonly}}].primaryContact {SPEC} (VCST-6256 PR #37 body)
+[NULL label=detail_orgonly] data.salesRepCustomer.primaryContact {SPEC} (VCST-6256 PR #37 body)
+[DATA label=detail_orgonly] data.salesRepCustomer.phone matches /\d/ {SPEC} (VCST-6256)",none (read-only),the list and the detail return different primary contacts for the same organization (batch and single resolver disagree); the rep's own contact is returned as the customer contact; an organization with only reps returns a contact instead of null,none (read-only),VCST-6256 · Archetype:FALLBACK · Technique:DT · Purpose:FUNC,Draft
+SR-GQL-181,salesRepCustomer — an unserved organization returns no phone data to a rep,Sales Rep > GraphQL > Customer phones,High,BL-SR-011,,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires the Sales Rep module with VCST-6256 (vc-module-sales-rep PR #37) deployed. Caller is SR_REP_CALL. org_served is a served organization with several numbers (positive control, so a null below is not a broken query); org_unserved is an organization that exists but SR_REP_CALL does not serve. KB-789D47BE: an unserved id returns data null with no errors on this endpoint.",org_served=@td(ORG_SR_CALL_MULTI.platform_id); org_unserved=@td(SR_UNSERVED_ORG.platform_id),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SR_REP_CALL]
+[GQL-OP served]
+query { salesRepCustomer(organizationId: ""{{org_served}}"") { organizationId phone primaryContact { id phones } } }
+[GQL-EXEC served]
+[GQL-OP unserved]
+query { salesRepCustomer(organizationId: ""{{org_unserved}}"") { organizationId phone address { phone } primaryContact { id phones } } }
+[GQL-EXEC unserved]","[ERRORS label=served] errors[] empty {SPEC} (VCST-6256)
+[DATA label=served] data.salesRepCustomer.organizationId = {{org_served}} {SPEC} (VCST-6256)
+[COUNT label=served] data.salesRepCustomer.primaryContact.phones.length > 0 {SPEC} (VCST-6256)
+[NULL label=unserved] data.salesRepCustomer {OBSERVED} (KB-789D47BE)",none (read-only),a rep reads the phone numbers of an organization it does not serve; the served positive control returns no phones so the null proves nothing; errors[] non-empty on the served read,none (read-only),VCST-6256 · Archetype:SCOPE · Technique:EG · Purpose:FUNC,Draft
+SR-GQL-182,salesRepCustomers — a member without sales-rep:access gets no customer phone data,Sales Rep > GraphQL > Customer phones,High,BL-SR-011,,Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires the Sales Rep module with VCST-6256 (vc-module-sales-rep PR #37) deployed. Caller is ACME_BUYER: an organization member without sales-rep:access (cf. KB-51E1CD74; that entry is contested on another build — the buyer got INVALID_OPERATION with null on one build and an empty list on another — so the assertions accept either and forbid only data). Passes when the buyer receives no customer item and no phone.,buyer=@td(ACME_BUYER.email),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=ACME_BUYER]
+[GQL-OP main]
+query { salesRepCustomers(first: 20, storeId: ""{{STORE_ID}}"") { totalCount items { organizationId phone address { phone } primaryContact { id phones } } } }
+[GQL-EXEC main]","[DATA label=main] data.salesRepCustomers is null OR data.salesRepCustomers.totalCount = 0 {OBSERVED} (KB-51E1CD74)
+[DATA label=main] data.salesRepCustomers.items.0 is null {OBSERVED} (KB-51E1CD74)",none (read-only),a buyer token receives customer items with phone numbers; a non-rep member reads another organization's primary contact phones,none (read-only),VCST-6256 · Archetype:SCOPE · Technique:DT · Purpose:FUNC,Draft
