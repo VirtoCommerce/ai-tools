@@ -1,0 +1,21 @@
+{
+  "_comment": "A11Y-VCP-001 (suite 045) - a PDP that renders the storefront VcVariantPicker (vc-frontend shared/catalog/components/product/options.vue). Rules + non-vacuity contract: scripts/seed-data/products/variant-picker-specs.mjs. Seeder: npm run seed:variant-picker. Guard: npm run td:validate:variant-picker. Runtime ids (master + variations) live ONLY in aliases.<env>.json.",
+  "fixtureKey": "VARIANT_PICKER",
+  "categoryPath": "Test Fixtures > Variant Picker",
+  "currency": "USD",
+  "layoutProperty": { "name": "VirtoFrontend_UI_Layout", "value": "B2C" },
+  "variationProperties": ["Color", "Size"],
+  "master": {
+    "sku": "QA-VPICK-M-001",
+    "name": "AGENT-TEST-Variant-Picker-Tee",
+    "slug": "agent-test-variant-picker-tee",
+    "url": "/seed-test-fixtures/seed-test-fixtures-variant-picker/agent-test-variant-picker-tee",
+    "listPrice": 20
+  },
+  "variations": [
+    { "sku": "QA-VPICK-V-001", "name": "AGENT-TEST-Variant-Picker-Tee-Black-S", "properties": { "Color": "Black", "Size": "S" }, "listPrice": 21, "stock": 11 },
+    { "sku": "QA-VPICK-V-002", "name": "AGENT-TEST-Variant-Picker-Tee-Black-M", "properties": { "Color": "Black", "Size": "M" }, "listPrice": 22, "stock": 12 },
+    { "sku": "QA-VPICK-V-003", "name": "AGENT-TEST-Variant-Picker-Tee-White-M", "properties": { "Color": "White", "Size": "M" }, "listPrice": 23, "stock": 13 },
+    { "sku": "QA-VPICK-V-004", "name": "AGENT-TEST-Variant-Picker-Tee-Red-L", "properties": { "Color": "Red", "Size": "L" }, "listPrice": 24, "stock": 14 }
+  ]
+}
