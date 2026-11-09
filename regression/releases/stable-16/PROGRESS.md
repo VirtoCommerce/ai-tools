@@ -4,7 +4,7 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 2141 · PASS 1553 · FAIL 185 · BLOCKED 302** · ledger 413 rows
+**Executed 2569 · PASS 1722 · FAIL 229 · BLOCKED 495** · ledger 937 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -15,22 +15,22 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | Aleksandra Mitricheva | TRIAGED | 144 | 144 | 72 | 14 | 6 | 0 | 68 | REG-2026-11-04-1505-W6 REG-2026-11-05-0023-W6R REG-2026-11-06-1345-W6R2 REG-2026-11-06-1410-W6R3 REG-2026-11-09-W6R4 REG-2026-11-09-W6R5 |
-| W7 | virto-start modules (autotests only) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | TRIAGED | 428 | 428 | 169 | 44 | 193 | 0 | 524 | REG-2026-11-05-1645-W7 REG-2026-11-06-1424-W7C |
 | WX | Exclusive window (env-wide cases) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
 ## Triage verdicts
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 48 |
-| BY_DESIGN | 7 |
-| TEST_DEFECT | 98 |
-| DATA | 106 |
-| ENV_CONFIG | 111 |
-| NOT_TESTABLE | 23 |
-| DUPLICATE | 11 |
-| FLAKY | 1 |
-| PENDING_DECISION | 8 |
+| REAL_BUG | 54 |
+| BY_DESIGN | 20 |
+| TEST_DEFECT | 163 |
+| DATA | 173 |
+| ENV_CONFIG | 455 |
+| NOT_TESTABLE | 42 |
+| DUPLICATE | 16 |
+| FLAKY | 3 |
+| PENDING_DECISION | 11 |
 
 ## Not run yet
 
@@ -68,5 +68,8 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W6 | OBS-PCI-AUTHORIZE-NULLREF | authorizePayment with a tampered, re-signed, non-JWT or empty CyberSource token answers errors[] code NULL_REFERENCE | Aleksandra Mitricheva |
 | W6 | OBS-CART-ADDRESS-SCRIPT | Cart shipping address stores <script>alert(1)</script> verbatim, while the member address book rejects it | Aleksandra Mitricheva |
 | W6 | OBS-PROFILE-REJECTED-NAME | After a rejected profile-name save, the header and the profile form keep showing the rejected name across reloads (as text) | Aleksandra Mitricheva |
+| W7 | MSN-003 | Mission create accepts and stores Periodicity Monthly; only None is processed, nothing rejects the rest | Loyalty product owner |
+| W7 | MSNF-068 | fr: untranslated mission returns the internal Name and null description — no default-language fallback; no source says it should | Loyalty product owner |
+| W7 | MSN-003 | Mission create accepts and stores Periodicity Monthly; only None is processed, nothing rejects the rest | Loyalty product owner |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
