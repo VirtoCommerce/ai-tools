@@ -54,12 +54,10 @@ The first run blocked 321 cases on missing persona credentials. W7C re-ran 173 o
 - Re-seeded: loyalty CRUD programs, mission fixtures, deadline ladder 202611090936, ORGLOY missions, RESTRICTED_USER. Slot-2 carts were swept.
 - The mission seeder no longer deletes other seeders' missions (it removed 44 before the fix; all but missions-e2e were restored).
 
-**New real bugs (not filed yet, all pre-existing):**
+**Bug candidates (not filed; under a deeper check before filing):**
 
 | Case | Defect | Repo | Severity |
 |---|---|---|---|
-| QUOTE-026 | Approve on a quote with an out-of-stock tracked product places the order; stock goes to -1 (`ApproveQuoteCommandHandler.cs:38-45`, no inventory check) | vc-module-quote | High (proposed) |
-| QUOTE-005 | Quote "Price per item" shows the list price while the line total uses the proposed price (`quote-line-items.vue` passes no `show-placed-price`) | vc-frontend | Medium |
 | TASK-025 | `POST /api/task-management` with `{}` answers 200 and saves a nameless task (no validator) | vc-module-task-management | Low |
 | NEWS-026 | News article: after Reset the "Has unsaved changes" banner stays and closing prompts (snapshot taken before the watcher re-adds empty SEO entries) | vc-module-news | Low |
 
@@ -68,6 +66,8 @@ Known local reports below the filing floor reproduced again:
 - MSNF-102 / MSNF-056: "0 days left" on an ended mission.
 
 **Not bugs:**
+- **QUOTE-026 (BY_DESIGN, owner decision):** approving a quote does not re-check stock; the platform allows it. Order CO261109-00009 was cancelled and the stock is back to 0.
+- **QUOTE-005 (DUPLICATE VCST-6375):** "Price per item" shows the list price. vc-frontend PR #2588 adds `show-placed-price` to `quote-line-items.vue`.
 - **QUOTE-004/025:** the Quote module sends no proposal notification by design.
 - **QUOTE-011/022/023:** quote expiry is not implemented anywhere. This is PENDING_DECISION for the Quote product owner, and oracle BL-B2B-003 is INFERRED.
 - **QUOTE-013:** the stand has no `quote-attachments` upload scope (ENV_CONFIG).

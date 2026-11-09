@@ -1121,9 +1121,9 @@
     "store_id": "B2B-store"
   },
   "LOYALTY_ZERO_USER": {
-    "memberId": "c3c63d6d-6dc7-4dc4-9975-07f948b0bff4",
-    "securityAccountId": "3ea2663f-b15f-4b6d-a0af-ec6ff4b0e53b",
-    "email": "AGENT-TEST-loyzero-20261109093711-a556@test-agent.com"
+    "memberId": "",
+    "securityAccountId": "",
+    "email": ""
   },
   "MSN_E2E_RUN": {
     "run_id": "20261016150733-bb26",
@@ -1425,7 +1425,7 @@
     "id": "550d5646-4705-4100-94e2-c583c6362c0b"
   },
   "QUOTE_WITH_ADMIN_RESPONSE": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "b4e317dc-6085-490e-a433-c4b052b7f589",
     "number_slot1": "AGENT-TEST-QTE-ADMIN-RESPONSE",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1444,7 +1444,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_PROCESSING": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "07eeb370-3546-44c1-9553-750e794e6b4e",
     "number_slot1": "AGENT-TEST-QTE-PROCESSING",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1463,7 +1463,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_ON_HOLD": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "ce86d362-8785-49a2-b1c1-dbf40a30d347",
     "number_slot1": "AGENT-TEST-QTE-ON-HOLD",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1482,7 +1482,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_DECLINED": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "95af3f0e-29e0-419e-baa3-6061a169247b",
     "number_slot1": "AGENT-TEST-QTE-DECLINED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1501,7 +1501,7 @@
     "expiration_date_slot3": ""
   },
   "ACCEPTED_QUOTE": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "92d6f60e-46cc-430d-9aa6-72be9c889ee1",
     "number_slot1": "AGENT-TEST-QTE-ACCEPTED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1520,7 +1520,7 @@
     "expiration_date_slot3": ""
   },
   "EXPIRED_QUOTE": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "22d1ce8f-99e8-4cf3-8a6f-c3481aa2cc43",
     "number_slot1": "AGENT-TEST-QTE-EXPIRED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1539,7 +1539,7 @@
     "expiration_date_slot3": "2026-10-17T18:28:22.471Z"
   },
   "QUOTE_FUTURE_EXPIRY": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "e7561a46-6733-4f28-8a16-425d09ca1168",
     "number_slot1": "AGENT-TEST-QTE-FUTURE-EXPIRY",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1558,7 +1558,7 @@
     "expiration_date_slot3": "2026-11-19T18:30:28.471Z"
   },
   "QUOTE_TO_ACCEPT": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "6f8a8431-c03e-4c73-9d20-b04bf9e1ddd3",
     "number_slot1": "AGENT-TEST-QTE-TO-ACCEPT",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1567,7 +1567,7 @@
     "number": "AGENT-TEST-QTE-TO-ACCEPT",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "87a5b920-4129-4ff9-a5b2-68658a8c431c",
+    "id_slot2": "ddfe5c71-5182-47dc-b958-4ea128f84ef0",
     "number_slot2": "AGENT-TEST-QTE-TO-ACCEPT-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",
@@ -1577,7 +1577,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_DECLINE": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "1769fc7b-897f-4c55-9ae4-b48d1796b01f",
     "number_slot1": "AGENT-TEST-QTE-TO-DECLINE",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1586,7 +1586,7 @@
     "number": "AGENT-TEST-QTE-TO-DECLINE",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "0f424ea3-a9ba-4ed9-b216-b817f95e061b",
+    "id_slot2": "451ed025-3b0b-4ad4-9ad9-d1d9272f02ec",
     "number_slot2": "AGENT-TEST-QTE-TO-DECLINE-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",
@@ -1596,7 +1596,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "3f288e76-8f1c-4be1-8ec2-74c4033dda01",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1615,7 +1615,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT_REPRICED": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "775b639e-94a5-4047-af88-b719eef3b796",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-REPRICED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1624,7 +1624,7 @@
     "number": "AGENT-TEST-QTE-TO-CONVERT-REPRICED",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "014e59a0-b2e8-4f1d-8e9e-4c94ccf636e8",
+    "id_slot2": "b2ecb476-2641-44d9-8ac7-9fe25adbe3ec",
     "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-REPRICED-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",
@@ -1634,7 +1634,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT_MULTILINE": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "60885dfc-da0b-4a56-a30a-72aad835e8c5",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1643,7 +1643,7 @@
     "number": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "5eb9ced2-6acb-448c-900a-05c391d4a128",
+    "id_slot2": "fcdae692-83f7-4e0f-93a5-d99bed7fc671",
     "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",
@@ -1653,7 +1653,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT_STATUS": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "83648e89-89c7-440f-a870-c631c6701b7b",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-STATUS",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1662,7 +1662,7 @@
     "number": "AGENT-TEST-QTE-TO-CONVERT-STATUS",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "8df0dd16-9293-4bca-a9b9-ad194547134e",
+    "id_slot2": "843ae793-da2d-46b8-9d8d-d84fe165ea82",
     "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-STATUS-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",
@@ -1672,7 +1672,7 @@
     "expiration_date_slot3": ""
   },
   "EXPIRED_QUOTE_TO_ACCEPT": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "1fa3b5d8-7c0a-442c-9681-74d123cc0c04",
     "number_slot1": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1691,7 +1691,7 @@
     "expiration_date_slot3": "2026-10-17T18:31:39.411Z"
   },
   "QUOTE_PROPOSAL_OOS": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "c7dfb3a9-2e3a-4396-b930-332851a1a25a",
     "number_slot1": "AGENT-TEST-QTE-OOS",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1700,7 +1700,7 @@
     "number": "AGENT-TEST-QTE-OOS",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "7b0df73e-323b-46fa-971e-b36bf023788b",
+    "id_slot2": "d79ce405-e00a-470e-b754-90a2e2090906",
     "number_slot2": "AGENT-TEST-QTE-OOS-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",

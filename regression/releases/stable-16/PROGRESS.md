@@ -22,13 +22,13 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 61 |
-| BY_DESIGN | 25 |
+| REAL_BUG | 59 |
+| BY_DESIGN | 26 |
 | TEST_DEFECT | 176 |
 | DATA | 194 |
 | ENV_CONFIG | 475 |
 | NOT_TESTABLE | 42 |
-| DUPLICATE | 16 |
+| DUPLICATE | 17 |
 | FLAKY | 3 |
 | PENDING_DECISION | 14 |
 
@@ -55,8 +55,6 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W2 | IMGTL-024 | JPEG 50% vs 95% comparison impossible: no JPEG thumbnail is produced from .jpg sources | no | same defect as IMGTL-007, file once |
 | W2 | IMGTL-025 | Task over 5 .jpg images and 1 .png: thumbnails only for the .png, success notification with 0 errors | no | same defect as IMGTL-007, file once |
 | W2 | CHAN-008 | Channel completeness stays 0% after an evaluation that scored the products 62/25/25% | no | pre-existing, not filed yet |
-| W7 | QUOTE-005 | Quote detail 'Price per item' shows the list price while the line total uses the proposed price (22.00 x2 vs 39.60) | no |  |
-| W7 | QUOTE-026 | Approve on a quote with an out-of-stock tracked product places the order and drives stock to -1 (CO261109-00009) | no |  |
 | W7 | MSNF-099 | SKU-NOAVAIL mission modal shows the deleted product's raw GUID as its title, as a link | no | local report BUG-missions-sku-modal-degraded-target-states.md, below the filing floor (Low) |
 | W7 | MSNF-102 | A mission ~1.5 h past its end still listed with '0 days left' and an enabled Open mission | no | local report BUG-missions-ended-mission-zero-days-live-cta.md, below the filing floor (Low) |
 | W7 | MSNF-056 | The zero-days card is the ended DUE-00 mission — same defect as MSNF-102 | no | same defect as MSNF-102, file once |
