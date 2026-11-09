@@ -198,25 +198,26 @@ Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
 [PRE:RESET_CART]
 - Customer signed in with a line item (live-discover an in-stock product) in the cart
 - Checkout started with the shipping address entered
-- The session is expired by the run, not assumed: capture the refresh token of THIS browser session, revoke it, then wait out the access-token lifetime (1800 s on the stand default)","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, product=live-discover (in-stock product)","[NAV] {{FRONT_URL}}/cart and read the line items and quantities (baseline)
+- The session is ended by the run, not assumed, WITHOUT reading the browser refresh token (not readable through real-user tools; an unauthenticated POST /revoke/token answers 200 and revokes nothing): the admin terminates the browser session through the platform session API (DELETE /api/platform/security/users/{userId}/sessions/{sessionId}, scope platform:security:revokeToken). With PERSISTENT_VALIDATION_ENABLED=true the access token is then rejected at once; with false it stays valid for expires_in (1800 s), so the run waits it out (KB-7564A9BF)","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, product=live-discover (in-stock product)","[NAV] {{FRONT_URL}}/cart and read the line items and quantities (baseline)
 [NAV] {{FRONT_URL}}/checkout, enter the shipping address and advance to the next step
-[KEY] from the sign-in POST /connect/token response capture refresh_token and expires_in
-[HTTP] POST {{FRONT_URL}}/revoke/token with token=<refresh_token>, token_type_hint=refresh_token
-[WAIT] expires_in + 30 s with no activity
-[HTTP] POST {{FRONT_URL}}/connect/token (refresh_token grant) with the revoked refresh token
-[ACT] in the open checkout click the control that advances the step
+[KEY] record SIGN_IN_TIME (UTC, the moment of the browser sign-in) and PERSISTENT_VALIDATION_ENABLED (read the deploy config: GET https://api.github.com/repos/VirtoCommerce/vc-deploy-dev/contents/infra/environments.yml?ref=vcptcore-regression with Authorization: Bearer <GIT_TOKEN from .env.local> and Accept: application/vnd.github.raw; in the block - name: vcptcore-regression read platform.config Authorization__EnablePersistentStorageTokenValidation (absent = false, the platform default) and record PERSISTENT_VALIDATION_ENABLED)
+[HTTP] [AUTH] role=ADMIN: POST {{BACK_URL}}/connect/token; GET {{BACK_URL}}/api/platform/security/users/<lane user login> to get USER_ID; POST {{BACK_URL}}/api/platform/security/users/{USER_ID}/sessions/search with take=10 and pick SESSION_ID = the newest session created at or after SIGN_IN_TIME whose userAgent is the browser (never any other session of the account)
+[HTTP] DELETE {{BACK_URL}}/api/platform/security/users/{USER_ID}/sessions/{SESSION_ID}, then search again
+[WAIT] PERSISTENT_VALIDATION_ENABLED=true: no wait; false: until SIGN_IN_TIME + 1800 s + 30 s with no browser activity (run it as node/shell sleeps of at most 9 minutes)
+[NAV] reload {{FRONT_URL}}/checkout in the same browser and, if it still shows the checkout, click the control that advances the step
 [WAIT] the page reacts (redirect, prompt or error) or 10 s pass
 [KEY] record the resulting URL and the visible state
 [ACT] sign in again as the same user from the page the app shows
-[NAV] {{FRONT_URL}}/cart then {{FRONT_URL}}/checkout","[STATUS] /revoke/token answers 200 with an empty body; the refresh-token grant answers 400 error=invalid_grant {OBSERVED}
-[ERRORS] a mutation sent with an expired/invalid token returns errors[0].extensions.code=Unauthorized with data null; a query with it resolves me as Anonymous {OBSERVED} (for an invalid token)
+[NAV] {{FRONT_URL}}/cart then {{FRONT_URL}}/checkout","[STATUS] the session DELETE answers 204 and the session is gone from sessions/search {OBSERVED} 2026-11-09
+[ERRORS] server half, measured with a separate node-minted session of the same user terminated the same way: a mutation with its access token returns errors[0].extensions.code=Unauthorized with data null, me resolves Anonymous, its refresh grant answers 400 invalid_grant {OBSERVED} 2026-11-09, persistent validation on; with it off the access token works until expires_in
 [STATE] the open checkout step is NOT silently completed as a guest: the user is sent to /sign-in (with the page as returnUrl) or shown a sign-in prompt {BL} BL-AUTH-001, BL-AUTH-007 - UI behaviour not yet observed
 [STATE] after re-sign-in /cart holds exactly the baseline lines and quantities - the cart is server-side per user {BL} BL-AUTH-001
 [STATE] /checkout is reachable from the cart and the shipping address entered before expiry is either restored or asked for again, never an empty or errored page {BL} BL-AUTH-001","[API] Query.cart for the user after re-sign-in: itemsQuantity equals the baseline
-[CONSOLE] no unhandled Apollo error loop after the 401 (one redirect, not a retry storm)","Cart emptied after re-auth; the user stays on a dead checkout with no prompt; guest checkout continues with the expired identity; redirect to the home page instead of sign-in/checkout; refresh grant works after revoke","Remove the cart lines; sign out","Merged: SEC-SESSION-002 (resume from the last step) is deprecated into this case - one journey (cart kept AND checkout resumable) instead of two cases sharing one 30-minute expiry setup.
+[CONSOLE] no unhandled Apollo error loop after the 401 (one redirect, not a retry storm)","Cart emptied after re-auth; the user stays on a dead checkout with no prompt; guest checkout continues with the expired identity; redirect to the home page instead of sign-in/checkout; the terminated session still works after the wait","Remove the cart lines; sign out","Merged: SEC-SESSION-002 (resume from the last step) is deprecated into this case - one journey (cart kept AND checkout resumable) instead of two cases sharing one 30-minute expiry setup.
 Grounded: the server contract is {OBSERVED} on vcptcore_regression 2026-11-05 (revoke 200, refresh invalid_grant, Unauthorized/Anonymous for an invalid token; KB-7564A9BF). The UI behaviour is {BL} only - NOT observed: it needs a 30 min wait and cart/checkout writes on the lane account, deferred until wave W7 ends. BL-AUTH-001 is itself SUSPECT after BSM-002/016/025/067 failed in REG-2026-10-27-SR-SWEEP - hold the expectation, do not weaken it.
 Edge_Case_Refs corrected from ECL-6.1 (Stock Sync) to ECL-1.2 (Session & Timeout Issues). Technique: state transition + FLOW.
-Catches: BL-AUTH-001 violation signals (cart emptied after expiry, redirect to the homepage).","Draft"
+Catches: BL-AUTH-001 violation signals (cart emptied after expiry, redirect to the homepage).
+DV-002-OK: api.github.com is the deploy-config source (vc-deploy-dev), a deliberate third-party origin. Rewritten 2026-11-09 so the session end is run-driven and executable. Measured 2026-11-09 (persistent mode, vcptcore_regression): after the browser session was terminated, reload of /checkout landed on /cart as a signed-out guest with an empty guest cart and NO sign-in prompt or returnUrl (the STATE assertion on the prompt fails - kept, not weakened); after re-sign-in /cart held the baseline line.","Draft"
 "SEC-SESSION-002","Session re-auth during checkout (merged into SEC-SESSION-001)","Authentication > Session Expiry","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]",,"[WAIT] N/A - NOT EXECUTED: merged into SEC-SESSION-001. Same expiry setup, same re-auth, one journey: SEC-SESSION-001 now asserts both cart preservation and checkout resumption.","[STATE] N/A - see SEC-SESSION-001
 [DOM] N/A - covered by SEC-SESSION-001","N/A - see SEC-SESSION-001","N/A - see SEC-SESSION-001
 N/A - merged, never executed on its own","none","Deprecated: 2026-11-05 (stable-16 W6 repair) - merged into SEC-SESSION-001. Same expiry setup, same re-auth, one journey: SEC-SESSION-001 now asserts both cart preservation and checkout resumption.","Deprecated"
@@ -225,14 +226,15 @@ N/A - merged, never executed on its own","none","Deprecated: 2026-11-05 (stable-
 - Customer signed in with a line item (live-discover an in-stock product) in the cart
 - Checkout reached the final review step with all required information entered
 - xAPI access available for order verification
-- Session expired by the run: refresh token captured and revoked, then expires_in + 30 s waited (as SEC-SESSION-001)","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, product=live-discover (in-stock product)","[GQL] query me { orders { totalCount } } on {{FRONT_URL}}/graphql [AUTH] role=USER_DEFAULT - record the order count (baseline) and the cart id
+- Session ended by the run through the admin session API, no refresh token needed, and waited out when PERSISTENT_VALIDATION_ENABLED=false (as SEC-SESSION-001)","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, product=live-discover (in-stock product)","[GQL] query me { orders { totalCount } } on {{FRONT_URL}}/graphql [AUTH] role=USER_DEFAULT - record the order count (baseline); query the user cart and record its id as CART_ID (a made-up cart id answers ARGUMENT even for an anonymous caller, so never use one)
 [NAV] {{FRONT_URL}}/checkout and advance to the final review step
-[KEY] capture the refresh token from the sign-in response, revoke it via POST {{FRONT_URL}}/revoke/token and wait expires_in + 30 s
+[KEY] end the session as SEC-SESSION-001 steps 2-5 (record SIGN_IN_TIME and PERSISTENT_VALIDATION_ENABLED, admin DELETE of the browser session via /api/platform/security/users/{USER_ID}/sessions/{SESSION_ID}, wait until SIGN_IN_TIME + 1830 s when PERSISTENT_VALIDATION_ENABLED=false)
 [ACT] click the place-order control with the expired session
 [WAIT] the createOrderFromCart response or the redirect arrives
+[GQL] server half: mutation createOrderFromCart(command:{cartId: CART_ID}) with the terminated session access token (a node-minted session of the same user terminated the same way)
 [KEY] record the visible outcome and the createOrderFromCart response
 [ACT] sign in again as the same user
-[GQL] query me { orders { totalCount } } again and read the cart","[ERRORS] createOrderFromCart with the expired identity answers errors[0].extensions.code=Unauthorized and data.createOrderFromCart null {OBSERVED} (on an anonymous / invalid-token call)
+[GQL] query me { orders { totalCount } } again and read the cart","[ERRORS] createOrderFromCart with the expired identity answers errors[0].extensions.code=Unauthorized and data.createOrderFromCart null {OBSERVED} 2026-11-09 with the real CART_ID and a session terminated via the session API, persistent validation on
 [COUNT] the order count after re-sign-in equals the baseline - the rejected placement created no order, partial or complete {BL} BL-AUTH-001
 [STATE] the cart still holds its lines and the same cart id after re-sign-in - neither consumed nor duplicated {BL} BL-AUTH-001
 [DOM] the user is told to sign in again or is routed to /sign-in; no order-confirmation page and no order number is shown {BL} BL-AUTH-001","[ADMIN] Orders list shows no new order for the account in the window
@@ -383,7 +385,7 @@ Catches: script validation covering only some free-text fields or being switched
 "SEC-PAT-002","Persistent Access Token — Revoked Token Returns 401 (State Transition: Active → Revoked)","Security > Token Validation > State: Revoked","Critical","BL-AUTH-005, BL-AUTH-006","ECL-3.1, ECL-4.3","[PRE:CLEAR_SESSION]
 - Admin credentials available
 - Two contexts/tokens can be obtained independently
-- The actual value of Authorization__EnablePersistentStorageTokenValidation is VERIFIED LIVE in Steps, never assumed","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[HTTP] GET {{BACK_URL}}/api/platform/settings?names=Authorization.EnablePersistentStorageTokenValidation and record PERSISTENT_VALIDATION_ENABLED
+- The value of Authorization__EnablePersistentStorageTokenValidation is READ from the env deploy config in Steps (it is application configuration, not a platform setting: GET /api/platform/settings does not return it), never assumed and never inferred from the behaviour the case is judging","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, deploy_config_token=<GIT_TOKEN from .env.local>","[HTTP] read the deploy config: GET https://api.github.com/repos/VirtoCommerce/vc-deploy-dev/contents/infra/environments.yml?ref=vcptcore-regression with Authorization: Bearer <GIT_TOKEN from .env.local> and Accept: application/vnd.github.raw; in the block - name: vcptcore-regression read platform.config Authorization__EnablePersistentStorageTokenValidation (absent = false, the platform default) and record PERSISTENT_VALIDATION_ENABLED; also GET .../commits/vcptcore-regression for DEPLOY_SHA and GET .../actions/runs?head_sha=<DEPLOY_SHA> and {{BACK_URL}}/health - if the run for the commit that carries the setting is not completed/success or /health is not 200, the setting is declared but not rolled out: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/connect/token credentials to obtain Token A (access_token + refresh_token)
 [WAIT] Receive Token A
 [HTTP] POST {{BACK_URL}}/connect/token again with same credentials to obtain Token B
@@ -397,7 +399,7 @@ Catches: script validation covering only some free-text fields or being switched
 [STATUS] IF PERSISTENT_VALIDATION_ENABLED=true: GET /api/platform/security/users with revoked Token A returns HTTP 401; IF false: Token A remains valid until its documented TTL elapses - assert that TTL behaviour, NOT a 401
 [BODY] the 401 response (when asserted) does not leak user data or internal paths
 [STATUS] GET /api/platform/security/users with active Token B returns HTTP 200 (revocation is scoped to Token A only)","[API] Token A rejected after revocation; Token B unaffected
-[NETWORK] No 5xx errors on any request","POST /revoke/token returns non-200; PERSISTENT_VALIDATION_ENABLED=true but revoked Token A still authorizes (real defect); PERSISTENT_VALIDATION_ENABLED=false but Token A is rejected before its TTL elapses (real defect); Token B also rejected after Token A revocation (over-broad invalidation); 500 errors","Obtain new token and use to clean up any test state","VCST-4576; Corrected 2026-09-19 (REG-2026-09-19-1035): /connect/revocation does not exist - its 404 is a non-endpoint, not a defect - replaced with /revoke/token. The 401 check also moved off /currentuser, which is [Authorize]+[AllowAnonymous] and can never 401. The precondition required EnablePersistentStorageTokenValidation=true but never verified it; it is now read live and the assertion branches on it (platform default is false - see BUG_032_057, config-gated by design).","Draft"
+[NETWORK] No 5xx errors on any request","POST /revoke/token returns non-200; PERSISTENT_VALIDATION_ENABLED=true but revoked Token A still authorizes (real defect); PERSISTENT_VALIDATION_ENABLED=false but Token A is rejected before its TTL elapses (real defect); Token B also rejected after Token A revocation (over-broad invalidation); 500 errors","Obtain new token and use to clean up any test state","VCST-4576; DV-002-OK: api.github.com is the deploy-config source (vc-deploy-dev), a deliberate third-party origin. Corrected 2026-11-09: GET /api/platform/settings?names=Authorization.EnablePersistentStorageTokenValidation answers 200 without the setting (it is app configuration), so the value now comes from vc-deploy-dev infra/environments.yml (vcptcore-regression block; set true by vc-deploy-dev PR 7050, merged 2026-11-08) and the behavioural branch is the thing judged against it. Corrected 2026-09-19 (REG-2026-09-19-1035): /connect/revocation does not exist - its 404 is a non-endpoint, not a defect - replaced with /revoke/token. The 401 check also moved off /currentuser, which is [Authorize]+[AllowAnonymous] and can never 401. The precondition required EnablePersistentStorageTokenValidation=true but never verified it; it is now read live and the assertion branches on it (platform default is false - see BUG_032_057, config-gated by design).","Draft"
 "SEC-PAT-003","Persistent Access Token — Never-Issued Token Returns 401","Security > Token Validation > Boundary: Never-Issued","High","BL-AUTH-005, BL-AUTH-006","ECL-4.3","[PRE:CLEAR_SESSION]
 - Platform accessible
 - Authorization__EnablePersistentStorageTokenValidation=true configured","back_url={{BACK_URL}}","[HTTP] GET {{BACK_URL}}/api/platform/security/users with Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlIn0.invalidsignature
@@ -418,19 +420,19 @@ Catches: script validation covering only some free-text fields or being switched
 [WAIT] Receive Token-A
 [HTTP] POST {{BACK_URL}}/connect/token for @td(ACME_BUYER.email) again — obtain Token-B (Device B session)
 [WAIT] Receive Token-B
-[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Token-A (Device B still active — verify pre-change)
-[ASSERT] Both tokens return 200 before password change
-[HTTP] POST {{BACK_URL}}/api/platform/security/users/changepassword (or changePassword mutation via xAPI) using Token-A with currentPassword=@td(ACME_BUYER.password) and new password
-[WAIT] Password change returns HTTP 200
-[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Token-B (Device B token — expect 401 after change)
+[HTTP] GET {{BACK_URL}}/api/platform/security/users with Token-A, then with Token-B (an [Authorize] endpoint a customer is not permitted to use: an accepted customer token answers 403, a rejected one 401 — /api/platform/security/currentuser is [AllowAnonymous] and can never 401, so it is NOT a probe)
+[ASSERT] Both tokens return 403 (authenticated, not permitted) before password change
+[HTTP] POST {{BACK_URL}}/graphql changePassword mutation (command: userId, oldPassword=@td(ACME_BUYER.password), newPassword) with Token-A — the platform REST currentuser/changepassword answers 403 for a customer
+[WAIT] Mutation returns HTTP 200 with succeeded=true
+[HTTP] GET {{BACK_URL}}/api/platform/security/users with Token-B (Device B token — expect 401 after change)
 [WAIT] Receive response
-[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Token-A (Device A token — should survive)
+[HTTP] GET {{BACK_URL}}/api/platform/security/users with Token-A (Device A token)
 [WAIT] Receive response","[STATUS] Password change returns HTTP 200
-[STATUS] Token-B returns HTTP 401 after password change (other-device session invalidated)
+[STATUS] Token-B returns HTTP 401 after password change on /api/platform/security/users (other-device session invalidated; it answered 403 before the change)
 [BODY] Token-B 401 response contains no user data
-[STATUS] Token-A continues to return HTTP 200 OR returns 401 (either is acceptable — behavior depends on platform implementation; the initiating-session-survives behavior is documented in VCST-4531 comment)","[API] Token-B revoked after password change
+[STATUS] Token-A answers 403 (session kept) OR 401 (either is acceptable: the xAPI changePassword handler terminates every session of the user except the SessionGroupId the caller passes; with none passed, Token-A is terminated too — vc-module-profile-experience-api ChangePasswordCommandHandler, VCST-4576)","[API] Token-B revoked after password change
 [NETWORK] No 5xx errors
-[ADMIN] Security > Users panel for the account shows no active authorizations for Token-B","Token-B still returns 200 after password change (invalidation not working); 500 errors on password change endpoint; Password change endpoint returns 4xx","Restore original password via admin API; clean up AGENT-TEST- sessions","VCST-4531","Draft"
+[ADMIN] Security > Users panel for the account shows no active authorizations for Token-B","Token-B still answers 403 (accepted) on /api/platform/security/users after password change (invalidation not working); 500 errors on password change endpoint; Password change endpoint returns 4xx; a 200 from /currentuser is NOT a failure signal (AllowAnonymous)","Restore original password via admin API; clean up AGENT-TEST- sessions","VCST-4531","Draft"
 "SEC-AUTH-005","Session Invalidation After Password Change — Storefront UX Warning Displayed","Security > Session Management > Password Change > UX","High","BL-AUTH-003","ECL-3.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_BUYER]
 - Storefront accessible; Change Password page available at /account

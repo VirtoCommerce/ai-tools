@@ -1417,5 +1417,11 @@
       "MSG": "8c978054-24c1-4d4a-b89a-85794f1ce401",
       "ART": "c4a3833a-0c76-4271-95c2-52813f385e1a"
     }
+  },
+  "VARIANT_PICKER_MASTER": {
+    "id": "4bfaebf5-522b-4973-a329-378f41b441ca"
+  },
+  "L10N_COLLISION_CATEGORY": {
+    "id": "550d5646-4705-4100-94e2-c583c6362c0b"
   }
 }

@@ -4,26 +4,31 @@
  "status": "TRIAGED",
  "runIds": [
   "REG-2026-11-04-1505-W6",
-  "REG-2026-11-05-0023-W6R"
+  "REG-2026-11-05-0023-W6R",
+  "REG-2026-11-06-1345-W6R2",
+  "REG-2026-11-06-1410-W6R3",
+  "REG-2026-11-09-W6R4",
+  "REG-2026-11-09-W6R5"
  ],
  "handovers": [],
- "updatedAt": "2026-11-05",
- "personas": "Lane accounts qa-agent-slot1/2/3 (agent-user-pool.csv, one per browser lane: 044 slot1, 045 slot2, 046 slot3) plus USER for 048c; the USER_DEFAULT/TECHFLOW_BUYER persona passwords are not declared for vcptcore_regression, so no case signed in as them. Read-only storefront checks; 045 created 2 addresses, 1 list and 1 cart line on slot2 and removed them",
+ "updatedAt": "2026-11-09",
+ "personas": "Lane accounts qa-agent-slot1/2/3 (agent-user-pool.csv, one per browser lane: 044 slot1, 045 slot2, 046 slot3) plus USER for 048c; the USER_DEFAULT/TECHFLOW_BUYER persona passwords are not declared for vcptcore_regression, so no case signed in as them. Read-only storefront checks; 045 created 2 addresses, 1 list and 1 cart line on slot2 and removed them. Re-runs 2026-11-06..09: lane accounts slot1/2/3 again; SEC-AUTH-004 changed and restored the ACME_BUYER password (verified sign-in); SEC-PCI-007 created orders CO261108-00003/-00005 on slot3, both Cancelled; every other account change was restored",
  "totals": {
   "planned": 144,
   "executed": 144,
-  "pass": 42,
+  "pass": 72,
   "fail": 14,
-  "blocked": 38,
-  "skipped": 50,
+  "blocked": 6,
+  "skipped": 52,
   "ambiguous": 0
  },
  "untriaged": 0,
- "evidence": "owner machine: reports/regression/REG-2026-11-04-1505-W6 and REG-2026-11-05-0023-W6R (gitignored)",
+ "evidence": "owner machine: reports/regression/REG-2026-11-04-1505-W6, REG-2026-11-05-0023-W6R, REG-2026-11-06-1345-W6R2, REG-2026-11-06-1410-W6R3, REG-2026-11-09-W6R4, REG-2026-11-09-W6R5 (gitignored)",
  "reports": {
   "W6": {
    "subtask": "112749",
    "release": "112750"
   }
- }
+ },
+ "note": "Totals are the latest status per case across the runs (a re-run replaces the earlier result of the same case). Env changes made for the re-runs: B2B-store languages += pt-PT, currencies += PTS, CZK, CyberSource active (Sandbox); vc-deploy-dev#7050 (CyberSource merchant secrets + EnablePersistentStorageTokenValidation) merged by the owner and deployed 2026-11-09"
 }

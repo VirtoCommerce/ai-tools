@@ -1,84 +1,79 @@
 # W6 — Theme cross-cutting · Stable 16
 
-**Runs:** REG-2026-11-04-1505-W6 (cut short: the owner's machine slept, network errors), REG-2026-11-05-0023-W6R (complete; it replaces the first run case by case) · **Owner:** Aleksandra Mitricheva · **Env:** vcptcore_regression (Platform **3.1076.8**, Theme 2.59.0) · **Plan:** [../../PLAN.md](../../PLAN.md)
-**Status:** TRIAGED — every FAIL and BLOCKED case has a ledger row ([ledger.csv](ledger.csv)). Repairs and bug filing are still open.
+**Runs:** REG-2026-11-04-1505-W6 (cut short), REG-2026-11-05-0023-W6R (full wave), then re-runs of the cases the first triage left blocked or repaired: REG-2026-11-06-1345-W6R2 (044 + 045), REG-2026-11-06-1410-W6R3 (048c), REG-2026-11-09-W6R4 (repointed and rewritten cases), REG-2026-11-09-W6R5 (after the env-config deploy) · **Owner:** Aleksandra Mitricheva · **Env:** vcptcore_regression (Platform **3.1076.8**, Theme 2.59.0) · **Plan:** [../../PLAN.md](../../PLAN.md)
+**Status:** TRIAGED — every FAIL and BLOCKED case has a ledger row ([ledger.csv](ledger.csv)). A re-run adds its own rows; the first run's rows stay as history.
 
-**Hotfix on the stand:** `release.json` records Platform 3.1076.1. The stand ran **3.1076.8** for both runs. No W6 finding depends on the platform version: every real bug is in the storefront theme.
+**Hotfix on the stand:** `release.json` records Platform 3.1076.1; the stand ran **3.1076.8** throughout. No W6 finding depends on the platform version.
 
 **Scope:** suites 044, 045, 046 and 048c. The PLAN.md §6 gap sessions are **not** in this wave (the owner's claim note on VCST-6410).
 
 ## Result
-All 144 planned cases executed: **42 PASS · 14 FAIL · 38 BLOCKED · 50 SKIPPED**.
-48 of the SKIPPED cases are `Automation_Status=Manual`, which the runner does not execute by design. The other 2 skipped themselves through the case's own guard.
+All 144 planned cases executed. Latest status per case: **72 PASS · 14 FAIL · 6 BLOCKED · 52 SKIPPED** (first run: 42 · 14 · 38 · 50).
+48 SKIPPED are `Automation_Status=Manual`; 4 are 044 rows deprecated as merges (not run).
 
 | Suite | PASS | FAIL | BLOCKED | SKIPPED |
 |---|---|---|---|---|
-| 044 Security | 3 | 2 | 29 | 0 |
-| 045 Accessibility | 4 | 3 | 1 | 22 (manual) |
-| 046 Localization | 3 | 0 | 0 | 28 (26 manual, 2 guard) |
-| 048c Layout stability (machine lane) | 32 | 9 | 8 | 0 |
+| 044 Security | 24 | 2 | 4 | 4 (deprecated) |
+| 045 Accessibility | 4 | 4 | 0 | 22 (manual) |
+| 046 Localization | 5 | 0 | 0 | 26 (manual) |
+| 048c Layout stability | 39 | 8 | 2 | 0 |
 
-**Sign-in:** no case signed in as USER_DEFAULT or TECHFLOW_BUYER. Their passwords are not declared for vcptcore_regression, and a hook blocks typing another env's key. The browser cases ran as the lane accounts `qa-agent-slot1/2/3` instead.
+**Sign-in:** browser cases ran as the lane accounts `qa-agent-slot1/2/3` (USER_DEFAULT / TECHFLOW_BUYER passwords are not declared for this env). SEC-AUTH-004 used ACME_BUYER as its row says; its password was changed and restored, and sign-in was verified after.
 
-## Real bugs — all in the storefront theme (vc-frontend 2.59.0), filed 2026-11-05 and assigned to the owner
-**VCST-6710** (1, home CLS, related VCST-6659) · **VCST-6712** (2, catalog CLS) · **VCST-6713** (3, VcInput forms, related VCST-6467) · **VCST-6709** (4, logo) · **VCST-6708** (5, results count) · **VCST-6711** (6, category title). Each one Relates VCST-6042, is labelled `found-by-agent` and `found-in-regression`, and has Need hotfixes set. VCST-6708, 6711 and 6712 also carry `vc-fix` and `qa-autofix`.
-All of these were re-checked live on 2026-11-05 on the deployed build. Each has an evidence package with screenshots under the owner's `reports/regression/REG-2026-11-05-0023-W6R/evidence/`. `new_in_release` is `unknown`: most were already seen on themes 2.53–2.61, and there is no stable-15 stand or ledger to compare against.
-1. **Home CLS** — P2 (LAYOUT-CLS-001). The value is 0.173 at 1280 and 0.279 at 375. `/` resolves through the Matcher route with a loader and a lazily loaded `home.vue`, and only `min-h-[60vh]` is reserved. About 1,470px of content then pushes the footer down by 718px.
-2. **Catalog CLS** — P2 (LAYOUT-CLS-002). The value is 0.176. When the scrollbar appears (there is no `scrollbar-gutter`), the filters row is narrower than its 954px of content, so "Sort by" wraps and the chips and grid move 50px.
-3. **Sign-in and sign-up forms move as validation messages appear** — low, UX (COMP-VCINPUT-002). Each message adds 16px, so the Sign in button moves 32px. The forms do not set `show-empty-details` on VcInput. No doc requires the space; this may overlap VCST-6467.
-4. **Header logo has no reserved width** — low (IMG-001). On a cold desktop load the search bar and the header links jump 182px to the right; at 375 nothing moves. The logo is white-label configurable, so the fix is a sized slot rather than width and height attributes.
-5. **Results count is `nowrap`** — low, robustness (STR-001). The page overflows at 320 only with the synthetic ×2 text; with real German text it fits. Local report: `BUG-catalog-results-count-nowrap-overflows-on-long-text-VCST-6708.md`.
-6. **Category title does not break long words** — low (OBS-CATEGORY-H1-NOWRAP, found during the re-check of 5). A category name with an unbroken word makes the page 887px wide at 320, with real data.
+## Real bugs — storefront theme (vc-frontend 2.59.0), filed 2026-11-05, assigned to the owner
+**VCST-6710** (home CLS, related VCST-6659) · **VCST-6712** (catalog CLS) · **VCST-6713** (VcInput forms, related VCST-6467) · **VCST-6709** (logo) · **VCST-6708** (results count) · **VCST-6711** (category title). Each Relates VCST-6042, labelled `found-by-agent` + `found-in-regression`, Need hotfixes set. Evidence: owner's `reports/regression/REG-2026-11-05-0023-W6R/evidence/`. `new_in_release` is `unknown` (no stable-15 baseline).
+No new product bug came out of the re-runs.
 
-**Not a bug — rejected by the live re-check:**
-- **Touch targets (TGT-001, COMP-HEADER-003).** All 19 elements meet WCAG 2.5.8 through its exceptions, and the 5px pair are both 24px or larger. The oracle (`touchTargetAudit`, BL-UI-006) is stricter than the criterion it cites, which makes these a TEST_DEFECT. The theme-2.53 report `BUG-layout-undersized-touch-targets-mobile.md` grades the 44px AAA level as AA and must not be filed as written.
-
-**Known issue:** A11Y-SORT-001…003 are **VCST-6606**, the VcTable sort direction inverted on first click.
-
-## What the FAILs and BLOCKED were
-| Verdict | Cases | Cause / fix |
+## Still FAIL / BLOCKED
+| Verdict | Cases | Cause / next step |
 |---|---|---|
-| TEST_DEFECT | 23 × 044 BLOCKED | The rows are unauthored: Steps and Assertions are empty in the CSV. Author them or retire them |
-| TEST_DEFECT | SEC-AUTH-002 | The case expects logout to kill the access token. Access-token validation is stateless by default (KB-7564A9BF), so assertion 2 needs rewriting |
-| TEST_DEFECT | LAYOUT-TGT-002 | A probe artifact: the visually-hidden native checkbox and the password eye toggle. Fix `touchTargetAudit` in `measure-layout.ts` |
-| ENV_CONFIG | SEC-PCI-001…004, 006 | CyberSource is inactive on B2B-store. Enabling it is a store write, so it belongs in an exclusive window |
-| ENV_CONFIG | SEC-AUTH-004 | It would change a shared persona's password, and it needs persistent token validation, which is off here |
-| ENV_CONFIG | LAYOUT-COMP-VCBUTTON-005/006 | There is no Storybook host for vcptcore_regression |
-| DATA | LAYOUT-STR-002/004/007, CNT-005 | The stand has no `pt` locale (en, fr and de only), so `/pt/` is a 404 |
-| DATA | LAYOUT-CNT-005/008 | There is no PTS and no CZK currency (EUR, GHS, USD, XPT only) |
-| DATA | LAYOUT-CNT-006, STR-003 | The USER cart is empty, so the case must create its own cart line |
-| DATA | A11Y-VCP-001, L10N-ROUTE-001/002 | There is no variant-picker product (KB-4C17EE4B) and no locale-prefixed top-level category |
-| PENDING_DECISION | SEC-AUTH-005 | No "other sessions will be signed out" notice on change-password (KB-4BDF14A7). Product ticket, or case rewrite? Owner decides |
-| DUPLICATE | A11Y-SORT-001…003 | VCST-6606. The case also needs a step fix: the popup opens from the cart's Shipping section |
+| REAL_BUG | LAYOUT-CLS-001/002, IMG-001, COMP-VCINPUT-002, STR-001 | the five filed bugs above |
+| DUPLICATE | A11Y-SORT-001…003 | VCST-6606 (sort cycle inverted; aria-sort=none on non-sortable headers) |
+| DUPLICATE | A11Y-VCP-001 | VCST-6174 — selected variant option exposes no aria-checked/selected/pressed |
+| TEST_DEFECT | LAYOUT-TGT-001/002, COMP-HEADER-003 | after the `touchTargetAudit` repair `belowAA`=0; only BL-UI-006's own 8 px gap rule fails, stricter than WCAG 2.5.8 — `/qa-review-oracles bl` |
+| PENDING_DECISION | SEC-AUTH-005 | no "other sessions will be signed out" notice; with persistent validation on, a password change really does end every session (KB-E493006D). Ticket or case rewrite — owner decides |
+| PENDING_DECISION | SEC-SESSION-001 | after an admin ends the session, `/checkout` lands on `/cart` as a guest with no sign-in prompt; theme `broadcast.ts:97-107` intends a sign-in redirect. Unconfirmed — reproduce with `/vc-fix:qa-investigate` before filing |
+| TEST_DEFECT | SEC-PCI-005 | reading browser storage needs `browser_evaluate`, which the real-user hook blocks; needs an allowed probe |
+| ENV_CONFIG | SEC-AUTH-003 | no dedicated lockout account (`LOCKOUT_TEST_*`) for this env |
+| ENV_CONFIG | SEC-SENSITIVE-001 | browser half PASS; App Insights half has no access on this env |
+| DATA | SEC-SESSION-003 | server half PASS; the UI Place-order half needs a persona with complete checkout data |
+| ENV_CONFIG | LAYOUT-COMP-VCBUTTON-005/006 | no Storybook host for vcptcore_regression |
 
-## Repairs on this branch (separate commit from the wave record)
-- **`scripts/lib/measure-layout.ts`:**
-  - `touchTargetAudit` now models the WCAG 2.2 SC 2.5.8 exceptions. Disabled controls are not targets. A visually hidden native input is measured by its `<label>`. The spacing exception applies.
-  - The two copies of the audit (document-wide and scoped) are one generator now.
-  - Re-run on the stand: `belowAA` is 0 in LAYOUT-TGT-001, TGT-002 and COMP-HEADER-003.
-  - What still fails is only BL-UI-006's own 8 px gap rule (`tooClose`: stepper input+button 1 px, the password eye toggle, Ship-to vs hamburger 5 px). That rule is stricter than the WCAG criterion it cites, and its wording changes only through `/qa-review-oracles bl` (a human source), so the rows stay TEST_DEFECT / OPEN.
-- **Pre-flight:**
-  - `scripts/regression/requirements.ts` (with its linter) gains the requirement kinds `storeLanguage` and `storeCurrency`.
-  - `config/suite-requirements.json` gains four entries:
-    - 044: CyberSource active;
-    - 048c: `pt`, PTS and CZK.
-  - On vcptcore_regression the pre-flight now reports these 12 cases as WARN rows, and the run records them BLOCKED without running. On vcst the rows pass.
-- **045:**
-  - A11Y-SORT-001…003 open the popup from `/cart` › Shipping, click "Address", and cite VCST-6606.
-  - A11Y-CPN-001's network check names `validateCoupon` (KB-A5287384).
-- **048c:**
-  - CLS-001, CLS-002, IMG-001 and STR-001 cite VCST-6710, 6712, 6709 and 6708.
-  - STR-001's link points at the renamed local report.
-- **044 (test-management-specialist, one writer):**
-  - **Authored:** the 23 stubs, grounded live where it needed no account write. Four rows are deprecated as merges: SEC-INPUT-001 into XSS-003, CSRF-001 into CSRF-002, SESSION-002 into SESSION-001, and INPUT-002 into XSS-004 and VALIDATION-001.
-  - **SEC-AUTH-002:** now asserts the refresh token is refused after revoke.
-  - **Citations:** wrong ECL/BL refs on the old stubs are corrected.
-  - **Gates:** lint went from 180 to 105 findings, with no new Critical; `td:validate` is green.
-  - **Possible defects, not filed:** the cart comment (`changeComment`) stores `<script>` verbatim while address and name fields reject it (KB-239C93B9, how it renders is unchecked); a rejected profile save shows only a generic error.
-  - **Side effect on a shared account:** while grounding, the author wrote to `qa-agent-slot1`, which W7 was using at the same time, before it was told to stop. It created and removed addresses, a cart line and a profile name change. Everything was restored except the cart comment, which went from `null` to `""`.
+**Observed, unconfirmed, not filed** (ledger `OBS-*`, owner decides): `authorizePayment` answers `NULL_REFERENCE` to a tampered CyberSource token (SEC-PCI-007 itself PASS); the cart shipping address stores `<script>` verbatim while the address book rejects it; a rejected profile-name save keeps showing the rejected name.
+
+## What changed between the first run and the re-runs
+- **Env (owner-approved):**
+  - B2B-store gained `pt-PT`, `PTS` and `CZK`, and CyberSource is active in Sandbox mode. The before-state was saved for rollback.
+  - vc-deploy-dev [#7050](https://github.com/VirtoCommerce/vc-deploy-dev/pull/7050) added the CyberSource merchant secrets as Key Vault references and `EnablePersistentStorageTokenValidation: true`. Before opening it, the three secrets were checked to exist in the vault the stand reads. The owner merged it, and it was verified live: a revoked token gets 401.
+- **Data:**
+  - New seeders, both idempotent, each with a teardown:
+    - `seed:variant-picker`: a master product with 4 variations whose Color and Size are real Variation properties, plus `VirtoFrontend_UI_Layout=B2C`. The picker renders.
+    - `seed:locale-slug`: a top-level category with the same slug in en, de, fr and pt. `/de/destinations-agent-test` renders.
+  - The aliases are `VARIANT_PICKER_MASTER` and `L10N_COLLISION_CATEGORY`. `td:validate:variant-picker` and `td:validate:locale-slug` act as the drift guards.
+- **Cases:**
+  - **048c:**
+    - CNT-006 and STR-003 now add their own cart line and clear the cart afterwards. The runner has no cleanup-on-error, so a step error leaves the line in the cart.
+    - All 7 pt/PTS/CZK and cart cases PASS.
+  - **045 and 046:**
+    - A11Y-VCP-001 now points at the seeded product.
+    - L10N-ROUTE-001/002 use the seeded slug and keep discovery as a fallback. Both PASS.
+  - **044:**
+    - SEC-SESSION-001/003 now end the session through the platform session API instead of reading a token.
+    - SEC-PAT-002 now reads the flag from the deploy config. The settings API does not expose it.
+    - **SEC-AUTH-004:** the first FAIL was a probe defect. `/currentuser` is `[AllowAnonymous]`, and xAPI `me` returns an id for a rejected token too. The case now probes `/api/platform/security/users`, which answers 403 when the token is accepted and 401 when it is rejected. Result: PASS, and both tokens end at once.
+- **Pre-flight:** `config/suite-requirements.json` now records CyberSource active, the three merchant secrets and persistent token validation (044), and `pt`, `PTS` and `CZK` (048c).
+
+## Repairs from the first triage (commit b1d3a29c1, unchanged)
+- `touchTargetAudit` models the WCAG 2.2 SC 2.5.8 exceptions, and its two copies are one generator.
+- The `storeLanguage` / `storeCurrency` requirement kinds were added.
+- 23 stub rows of 044 were authored, 4 of them deprecated as merges.
+- 045 SORT steps and the CPN network check were fixed.
+- 048c bug citations were added.
+- Side effect: while grounding the 044 rows, the author wrote to `qa-agent-slot1`, which W7 was using at the same time. All of it was restored except the cart comment, which went from `null` to `""`.
 
 ## Before the next owner continues
-- **Deferred (shared accounts in use):** LAYOUT-CNT-006 and STR-003 need the case to create its own cart line. They sign in as USER, which wave W7 was using on this stand at the same time (W7 `personas`). The layout runner has no cleanup step on failure. Do it after W7, or give the cases their own account.
-- **Live re-run still owed:** the repaired 045 rows and the UI halves of 044 XSS-001/002/004, VALIDATION-001 and SESSION-001/003. SEC-AUTH-003 also needs `LOCKOUT_TEST_EMAIL` for this env. They need a signed-in lane account, and W7 was using those accounts. Run them after W7 closes.
-- **To re-run in WX or on a reconfigured stand:** SEC-PCI-*, once CyberSource is active, and the pt/PTS/CZK cases of 048c.
-- **Still open:** Storybook for vcptcore_regression (VCBUTTON-005/006). Fixtures for A11Y-VCP-001 (variant picker) and L10N-ROUTE-001/002 (a locale-prefixed category). SEC-AUTH-005 is PENDING_DECISION.
+- Decide SEC-AUTH-005 and SEC-SESSION-001. The SEC-SESSION-001 decision needs a reproduction first.
+- Provide a lockout account for SEC-AUTH-003 and a Storybook for VCBUTTON-005/006.
+- Give SEC-PCI-005 an allowed probe for browser storage.
+- Decide the three `OBS-*` rows.
+- The seeded fixtures stay on the stand. Teardown: `TEST_ENV=vcptcore_regression npm run seed:variant-picker:teardown` and `npm run seed:locale-slug:teardown`.

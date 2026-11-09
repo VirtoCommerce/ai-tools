@@ -194,7 +194,8 @@
 [ASSERT] Verify adequate spacing between adjacent touch targets to prevent mis-taps","[DOM] All interactive touch targets ≥ 24×24px (width and height in computed styles)
 [STATE] Adjacent targets have sufficient spacing — no targets overlapping or directly adjacent with less than 8px gap
 [STATE] Elements easy to tap accurately without activating neighbouring elements","[CONSOLE] no layout errors at mobile viewport","touch target measures below 24×24px; targets too close causing mis-taps; overflow or clipping at mobile viewport","Restore desktop viewport after test","WCAG 2.5.8","Manual"
-"A11Y-VCP-001","VcVariantPicker - States","Component > Picker","High","BL-A11Y-002",,"- Product page with variant picker (VcVariantPicker component) loaded","store={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}} that has variant options (size, color, etc.)
+"A11Y-VCP-001","VcVariantPicker - States","Component > Picker","High","BL-A11Y-002",,"- Seeded master with a variant picker: run `npm run seed:variant-picker` (alias VARIANT_PICKER_MASTER; options Color Black/White/Red x Size S/M/L, a non-full matrix so picking Black makes Size L unavailable)
+- The PDP shows heading ""Options"" and a radiogroup ""Variant options"" with option buttons","store={{FRONT_URL}}, product_url=@td(VARIANT_PICKER_MASTER.url)","[NAV] {{FRONT_URL}}@td(VARIANT_PICKER_MASTER.url) (the seeded master; the Options section lists Color and Size)
 [ACT] browser_snapshot to inspect VcVariantPicker DOM at rest (default state)
 [ASSERT] Verify unselected options are visible and distinguishable
 [ACT] browser_hover over an option to trigger hover state
@@ -205,7 +206,7 @@
 [ASSERT] Inspect selected state: visual highlight + aria-checked or aria-selected = ""true""","[DOM] Default, hover, focus, and selected states are visually distinguishable
 [DOM] Selected state reflected programmatically: aria-checked=""true"" or aria-selected=""true"" on the chosen option
 [STATE] Screen reader can distinguish selected from unselected options
-[DOM] Each option has an accessible name matching the variant label","[CONSOLE] no ARIA state errors on picker interaction","states not visually distinguishable; selected state not reflected in aria-checked/aria-selected; accessible name missing on option","—","VCST-4373","Automated"
+[DOM] Each option has an accessible name matching the variant label","[CONSOLE] no ARIA state errors on picker interaction","states not visually distinguishable; selected state not reflected in aria-checked/aria-selected; accessible name missing on option","—","VCST-4373; VCST-6174 (open: option buttons carry no aria-checked/aria-selected/aria-pressed after selection, KB-E9C45473 - the selected-state assertion fails until it is fixed; keep it)","Automated"
 "A11Y-SORT-001","Address Popup Column Sort - aria-sort Ascending Transition","ARIA > Sort","Critical","BL-A11Y-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - User has at least 2 saved addresses
 - Cart holds at least 1 item, so the Shipping section is shown on /cart","store={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart, in the Shipping section change the shipping address to open the Select address popup (the storefront has one-page checkout: the popup opens from the cart page, not a separate checkout step)

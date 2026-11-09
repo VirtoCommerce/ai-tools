@@ -4,7 +4,7 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 2141 · PASS 1523 · FAIL 185 · BLOCKED 334** · ledger 400 rows
+**Executed 2141 · PASS 1553 · FAIL 185 · BLOCKED 302** · ledger 413 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -14,7 +14,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W3 | Purchase flow | Elena Kutasina | TRIAGED | 840 | 757 | 500 | 95 | 159 | 0 | 256 | REG-2026-10-15-W3 REG-2026-10-26-1847-W3R REG-2026-10-26-2010-W3R2 REG-2026-10-26-2044-W3R3 |
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W6 | Theme cross-cutting + gap sessions | Aleksandra Mitricheva | TRIAGED | 144 | 144 | 42 | 14 | 38 | 0 | 55 | REG-2026-11-04-1505-W6 REG-2026-11-05-0023-W6R |
+| W6 | Theme cross-cutting + gap sessions | Aleksandra Mitricheva | TRIAGED | 144 | 144 | 72 | 14 | 6 | 0 | 68 | REG-2026-11-04-1505-W6 REG-2026-11-05-0023-W6R REG-2026-11-06-1345-W6R2 REG-2026-11-06-1410-W6R3 REG-2026-11-09-W6R4 REG-2026-11-09-W6R5 |
 | W7 | virto-start modules (autotests only) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | WX | Exclusive window (env-wide cases) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
@@ -24,13 +24,13 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 |---|---|
 | REAL_BUG | 48 |
 | BY_DESIGN | 7 |
-| TEST_DEFECT | 97 |
-| DATA | 105 |
-| ENV_CONFIG | 109 |
+| TEST_DEFECT | 98 |
+| DATA | 106 |
+| ENV_CONFIG | 111 |
 | NOT_TESTABLE | 23 |
-| DUPLICATE | 7 |
+| DUPLICATE | 11 |
 | FLAKY | 1 |
-| PENDING_DECISION | 3 |
+| PENDING_DECISION | 8 |
 
 ## Not run yet
 
@@ -63,5 +63,10 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W1 | STORE-069 | Verification link still confirms the email after store email verification is turned off: intended? | product owner |
 | W2 | SRCH-009 | SRCH-009 and SRCH-010 assert behaviour this bundle deprecates: deprecate the cases or retarget them? | Elena Kutasina |
 | W6 | SEC-AUTH-005 | /account/change-password shows no notice that other sessions will be signed out | Aleksandra Mitricheva |
+| W6 | SEC-SESSION-001 | After an admin ends the browser session, reloading /checkout lands on /cart as a signed-out guest with no sign-in prompt and no returnUrl | Aleksandra Mitricheva |
+| W6 | SEC-AUTH-005 | Re-run: /account/change-password still shows no notice that other sessions will be signed out | Aleksandra Mitricheva |
+| W6 | OBS-PCI-AUTHORIZE-NULLREF | authorizePayment with a tampered, re-signed, non-JWT or empty CyberSource token answers errors[] code NULL_REFERENCE | Aleksandra Mitricheva |
+| W6 | OBS-CART-ADDRESS-SCRIPT | Cart shipping address stores <script>alert(1)</script> verbatim, while the member address book rejects it | Aleksandra Mitricheva |
+| W6 | OBS-PROFILE-REJECTED-NAME | After a rejected profile-name save, the header and the profile form keep showing the rejected name across reloads (as text) | Aleksandra Mitricheva |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

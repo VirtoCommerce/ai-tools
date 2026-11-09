@@ -11984,5 +11984,34 @@
       "subSkus": "sub_range_skus"
     },
     "notes": "SRCHA-047: the numeric product property N for a Range facet on the store (Number, category-level property of the AGENT-TEST Range Facet Fixtures category, linked into the store catalog). Three products carry DIFFERENT values (min != max, mixed digit counts so a text-typed index would order them wrongly) plus one control without N. property = the name to pick in Store > Search configuration > Facets; min/max = expected statistics and slider bounds; subFrom..subTo holds exactly subSkus. Seed: npm run seed:range-facet. The store facet itself is NOT configured by the seeder."
+  },
+  "VARIANT_PICKER_MASTER": {
+    "json": "products/variant-picker",
+    "fields": {
+      "id": "id",
+      "sku": "master.sku",
+      "name": "master.name",
+      "slug": "master.slug",
+      "url": "master.url",
+      "layoutProperty": "layoutProperty.name",
+      "layoutValue": "layoutProperty.value"
+    },
+    "notes": "A11Y-VCP-001 (suite 045): the master whose PDP renders the storefront VcVariantPicker (vc-frontend options.vue on the B2C product template). Carries VirtoFrontend_UI_Layout=B2C (exact case - the theme compares with ===); 4 stocked, distinctly priced variations over Color x Size with a deliberately NON-full matrix, so picking Black makes Size L unavailable (the disabled state is reachable). Open {{FRONT_URL}}@td(VARIANT_PICKER_MASTER.url). Seeded by scripts/seed-data/products/seed-variant-picker.mjs (npm run seed:variant-picker); guard npm run td:validate:variant-picker; runtime id only in aliases.<env>.json."
+  },
+  "L10N_COLLISION_CATEGORY": {
+    "file": "catalogs/locale-slug-categories",
+    "filter": {
+      "fixture_key": "L10N_COLLISION_DE"
+    },
+    "fields": {
+      "id": "category_id",
+      "name": "category_name",
+      "code": "category_code",
+      "slug": "slug",
+      "url": "url",
+      "collisionLocale": "collision_locale",
+      "seoLanguages": "seo_languages"
+    },
+    "notes": "L10N-ROUTE-001/002 (suite 046): a TOP-LEVEL storefront category whose slug starts with a supported 2-letter locale code (de), with the SAME slug in every store language so a language switch keeps the slug and only the prefix changes - the slug-eating defect (VCST-5144) is then the only way the URL can differ. Seeded by scripts/seed-data/catalog/seed-locale-slug-category.mjs (npm run seed:locale-slug); guard npm run td:validate:locale-slug; category_id only in aliases.<env>.json."
   }
 }
