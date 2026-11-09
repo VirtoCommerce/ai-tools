@@ -30,8 +30,8 @@
  * rail before anything git-tracked is touched.
  *
  * Usage:
- *   node scripts/maintenance/prune-old-artifacts.mjs                          # dry-run, local, 30d
- *   node scripts/maintenance/prune-old-artifacts.mjs --apply                  # apply, local, 30d
+ *   node scripts/maintenance/prune-old-artifacts.mjs                          # dry-run, local, 14d
+ *   node scripts/maintenance/prune-old-artifacts.mjs --apply                  # apply, local, 14d
  *   node scripts/maintenance/prune-old-artifacts.mjs --days=14                # dry-run, local, 14d
  *   node scripts/maintenance/prune-old-artifacts.mjs --target=tracked         # dry-run, tracked
  *   node scripts/maintenance/prune-old-artifacts.mjs --target=tracked --apply # apply, tracked (git rm + commit)
@@ -56,7 +56,7 @@ const args = process.argv.slice(2);
 const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.split('=').slice(1).join('=');
 const has = (name) => args.includes(`--${name}`);
 
-const DAYS = Number(flag('days') ?? 30);
+const DAYS = Number(flag('days') ?? 14);
 const APPLY = has('apply');
 const TARGET = flag('target') ?? 'local';
 
