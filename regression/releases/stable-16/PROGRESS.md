@@ -22,7 +22,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 59 |
+| REAL_BUG | 58 |
 | BY_DESIGN | 26 |
 | TEST_DEFECT | 176 |
 | DATA | 194 |
@@ -30,7 +30,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | NOT_TESTABLE | 42 |
 | DUPLICATE | 17 |
 | FLAKY | 3 |
-| PENDING_DECISION | 14 |
+| PENDING_DECISION | 15 |
 
 ## Not run yet
 
@@ -58,8 +58,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W7 | MSNF-099 | SKU-NOAVAIL mission modal shows the deleted product's raw GUID as its title, as a link | no | local report BUG-missions-sku-modal-degraded-target-states.md, below the filing floor (Low) |
 | W7 | MSNF-102 | A mission ~1.5 h past its end still listed with '0 days left' and an enabled Open mission | no | local report BUG-missions-ended-mission-zero-days-live-cta.md, below the filing floor (Low) |
 | W7 | MSNF-056 | The zero-days card is the ended DUE-00 mission — same defect as MSNF-102 | no | same defect as MSNF-102, file once |
-| W7 | TASK-025 | POST /api/task-management with an empty body answers 200 and saves a nameless task (the case note's 500 is outdated) | no |  |
-| W7 | NEWS-026 | Admin news article: after Reset the 'Has unsaved changes' banner and header dot stay and closing prompts 'unsaved changes' (article without… | no |  |
+| W7 | NEWS-026 | Admin news article blade: "Has unsaved changes" banner, dirty dot and close prompt stick (Save/Reset disabled) after Reset, or after switch… | no |  |
 
 ## Decisions pending
 
@@ -79,5 +78,6 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W7 | QUOTE-011 | Expired quote shows 'Proposal sent', no expiry date, Approve offered; expiry is not implemented anywhere (no Expired status in docs or code) | Quote product owner |
 | W7 | QUOTE-022 | Expired quote can still be approved — same question as QUOTE-011 | Quote product owner |
 | W7 | QUOTE-023 | No Expired badge or expiry date on an expired quote — same question as QUOTE-011 | Quote product owner |
+| W7 | TASK-025 | POST /api/task-management accepts {} / empty name / unknown type / nonexistent assignee and saves them (200); the Admin app requires Type a… | TaskManagement product owner |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

@@ -54,12 +54,13 @@ The first run blocked 321 cases on missing persona credentials. W7C re-ran 173 o
 - Re-seeded: loyalty CRUD programs, mission fixtures, deadline ladder 202611090936, ORGLOY missions, RESTRICTED_USER. Slot-2 carts were swept.
 - The mission seeder no longer deletes other seeders' missions (it removed 44 before the fix; all but missions-e2e were restored).
 
-**Bug candidates (not filed; under a deeper check before filing):**
+**Bug candidates (deep-checked; not filed yet):**
 
 | Case | Defect | Repo | Severity |
 |---|---|---|---|
-| TASK-025 | `POST /api/task-management` with `{}` answers 200 and saves a nameless task (no validator) | vc-module-task-management | Low |
-| NEWS-026 | News article: after Reset the "Has unsaved changes" banner stays and closing prompts (snapshot taken before the watcher re-adds empty SEO entries) | vc-module-news | Low |
+| TASK-025 (side findings) | `POST /api/task-management`: a name over 256 chars answers 500 with the raw SQL truncation message (database and table names leak); an unknown `priority` answers 500 NullReference. The empty-body create itself is PENDING_DECISION (API vs Admin-form rules) | vc-module-task-management | Low–Medium |
+| NEWS (side finding) | `PUT /api/news` with `publishScope: null` answers 500 with the SQL NOT NULL message (POST accepts null and stores Anonymous) | vc-module-news | Low |
+| NEWS-026 | Admin news article: "Has unsaved changes" banner + close prompt stick (Save/Reset disabled) after Reset or a language switch whenever the article lacks a content or SEO entry for that language. `news-article-details.vue` takes the baseline before the placeholder watcher runs; unfixed through `dev` | vc-module-news | Medium (proposed) |
 
 Known local reports below the filing floor reproduced again:
 - MSNF-099: raw GUID title for a deleted product;
