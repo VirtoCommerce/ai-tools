@@ -54,13 +54,16 @@ The first run blocked 321 cases on missing persona credentials. W7C re-ran 173 o
 - Re-seeded: loyalty CRUD programs, mission fixtures, deadline ladder 202611090936, ORGLOY missions, RESTRICTED_USER. Slot-2 carts were swept.
 - The mission seeder no longer deletes other seeders' missions (it removed 44 before the fix; all but missions-e2e were restored).
 
-**Bug candidates (deep-checked; not filed yet):**
+**Bugs filed from W7U** (each reproduced live 2026-11-09, root cause in source, no duplicate in Jira):
 
-| Case | Defect | Repo | Severity |
-|---|---|---|---|
-| TASK-025 (side findings) | `POST /api/task-management`: a name over 256 chars answers 500 with the raw SQL truncation message (database and table names leak); an unknown `priority` answers 500 NullReference. The empty-body create itself is PENDING_DECISION (API vs Admin-form rules) | vc-module-task-management | Low–Medium |
-| NEWS (side finding) | `PUT /api/news` with `publishScope: null` answers 500 with the SQL NOT NULL message (POST accepts null and stores Anonymous) | vc-module-news | Low |
-| NEWS-026 | Admin news article: "Has unsaved changes" banner + close prompt stick (Save/Reset disabled) after Reset or a language switch whenever the article lacks a content or SEO entry for that language. `news-article-details.vue` takes the baseline before the placeholder watcher runs; unfixed through `dev` | vc-module-news | Medium (proposed) |
+| Jira | Case | Defect | Repo | Severity |
+|---|---|---|---|---|
+| VCST-6757 | NEWS-026 | Admin news article: "Has unsaved changes" banner + close prompt stick after Reset or a language switch whenever the article lacks a content or SEO entry for that language | vc-module-news | Medium |
+| VCST-6758 | TASK-025 (side finding) | `POST /api/task-management` with a name over 256 chars: 500 with the raw SQL truncation message (database and table names) | vc-module-task-management | Medium |
+| VCST-6759 | TASK-025 (side finding) | `POST /api/task-management` with an unknown `priority`: 500 NullReference | vc-module-task-management | Low |
+| VCST-6760 | NEWS (side finding) | `PUT /api/news` with `publishScope: null`: 500 with the SQL NOT NULL message (POST accepts null) | vc-module-news | Low |
+
+TASK-025 itself (the empty-body create) stays PENDING_DECISION: API and Admin-form rules differ.
 
 Known local reports below the filing floor reproduced again:
 - MSNF-099: raw GUID title for a deleted product;
@@ -111,7 +114,7 @@ All six are pre-existing, not regressions of this bundle. Each was re-verified l
   - MSNA-012: read-only is enforced.
 - **DATA:** MSN-E2E-005, which ran in Organization mode.
 - **ENV_CONFIG:** MCO-GQL-007 (Mixed Cart mode); MCO-GQL-011 (LoyaltyPaymentMethod is inactive).
-- **FLAKY:** NEWS-026, 7/7 passes on re-check.
+- **NEWS-026:** first classed FLAKY (the re-check used articles with both language entries); W7U found the condition — VCST-6757.
 
 ## Waiting for a product decision (Loyalty product owner)
 
@@ -121,44 +124,14 @@ All six are pre-existing, not regressions of this bundle. Each was re-verified l
 - **MSNF-068.** In French, an untranslated mission shows its internal Name with an empty description: there is no default-language fallback, while the catalog does fall back. Decision: should missions fall back?
 - **Docs gap.** VirtoOZ, vc-docs and the module README say nothing about missions, although they ship in Stable 16. Filed as **VCST-6743** (task), linked to VCST-6042 and VCST-5957.
 
-## Still BLOCKED — causes
+## Still open from the first two runs
 
-- **Skyflow is not configured on the stand** (29 cases: 040a and saved cards). The payment card stays on Loading, and the deploy config has no `Payments__Skyflow__*` keys. Fix in vc-deploy-dev, then add a suite-requirements entry.
-- **Datatrans is not configured or offered on B2B-store** (8 cases: 040c).
-- **Deferred to WX by the parallel-run rule** (28 cases). These need env-wide loyalty writes:
-  - `Loyalty.Enable` and missions toggles;
-  - the balance calculation mode (LOYORG-*, 083e);
-  - activating LoyaltyPaymentMethod (MCO-GQL-011).
-- **Persona credentials still missing** (6 cases): RESTRICTED_USER, MULTI_ORG_TF_BR_ALT, and `DEFAULT_TEST_PASSWORD` for two personas.
-- **MULTI_ORG_LOY_POOLS** is reserved for WX and was not seeded, because its seeder writes the store.
-
-## Test defects (repairs not made here; one author per suite)
-
-- **015 — 17 cases.** The quote fixtures belong to the slot-1 buyer, but the cases ran on slot 2. Pin the persona, or seed the fixtures per slot.
-- **Lane routing.** HTTP, GraphQL and bearer rows are routed to the browser lane. They need runner-native steps:
-  - 085: TASK-017..025
-  - 075b: MCO-GQL-001/003/004, MCO-ADM-001
-  - 075: LOY-021/024/025
-  - 084: NEWS-017/023
-- **083c — 5 cases.** The progress owner has no password name visible to the lane, so the runner signed in as a different user.
-- **075f.** LOYORG-006/007/014 assert 200 on a settings write that answers 204.
-- **084.** NEWS-013/032/033: the datepicker needs a gridcell recipe (`dp-YYYY-MM-DD`).
-- **085.** The route is stale: `/apps/tasks` → `/#!/workspace/embedded-app/tasks`.
-- **Stale literals:**
-  - MSNA-009: 250.00 vs the seeded 109.50.
-  - LOY-016: 10 languages expected, the store has 3.
-  - MCO-GQL-009: a guest query on a store that refuses anonymous access.
-- **083c — 19 cases are NOT_TESTABLE on the browser-agent lane.** They need evaluate, fault injection or interception. Move them to a Playwright spec.
-
-## Data
-
-- **Missing on this env:**
-  - AGENT-TEST loyalty CRUD programs (14 cases in 075: `seed:loyalty`);
-  - zero-mission, EUR order-value and PerSku mission fixtures (083c);
-  - ProductPoints factor programs (075c).
-- **Expired:** the mission deadline ladder from run 202611051339 was valid until 2026-11-06 01:39Z, so 7 cases in 083c need a fresh run.
-- **Slot-2 buyer has 3 competing carts.** Affects MSNF-032..038 and QUOTE-004/025.
+- **Skyflow / Datatrans are not configured on the stand** (37 cases): now skipped by `config/suite-requirements.json`; configure them in vc-deploy-dev to run 040a/040c.
+- **Deferred to WX** (28 cases): env-wide loyalty writes (`Loyalty.Enable`, missions toggles, balance mode for LOYORG-*/083e, LoyaltyPaymentMethod for MCO-GQL-011). MULTI_ORG_LOY_POOLS is reserved for WX.
+- **Persona credentials still missing:** MULTI_ORG_TF_BR_ALT, and `DEFAULT_TEST_PASSWORD` for two personas.
+- **083c — 19 cases NOT_TESTABLE on the browser-agent lane** (evaluate, fault injection, interception): move to Playwright specs.
 - **Discovery picks a product with stock of about 3** for qty-20 checkouts (MSN-021..023).
+- The W7C test defects and missing fixtures were repaired or re-seeded for W7U (above).
 
 ## Environment changes during the wave (all waves on this stand)
 
@@ -168,7 +141,7 @@ All six are pre-existing, not regressions of this bundle. Each was re-verified l
   - **Effect:** the store has been in Organization mode since then. That mode pools mission progress and points to the organization, which caused the 0% progress, the missions-e2e seed failure and MCO-E2E-002.
   - **Within 075f:** its cases also interfered with each other on the machine lane (LOYORG-009 read the pool as 0 before and 64232 after).
   - **Fix:** list 075f in WX `exclusive`, and make its teardown restore the mode it found.
-  - **Current state:** the store is left in Organization until the owner decides.
+  - **Current state:** set back to **Customer** on 2026-11-09 (owner's decision, verified by read-back).
 - **vc-deploy-dev #7050 was merged 2026-11-08 23:35Z.** It restarted the platform: runs active at that moment may show a burst of 5xx or timeouts.
 
 ## Data created and removed
@@ -184,7 +157,7 @@ All six are pre-existing, not regressions of this bundle. Each was re-verified l
 
 ## Before the next owner continues
 
-1. **Decide the B2B-store balance mode** (Customer, as before W7C). Then:
+1. **The B2B-store balance mode is Customer again** (2026-11-09). Then:
    - re-seed mission progress and `seed:missions-e2e`;
    - re-run 083c (9 progress cases), 083d and MCO-E2E-002.
 2. **Run 075f only in WX**, alone on the stand. Repair LOYORG-019 (assert 2xx).
