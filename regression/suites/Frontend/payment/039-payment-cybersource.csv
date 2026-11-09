@@ -259,13 +259,14 @@ PAY-SEC-006,CyberSource - JWT Token Authentication in Iframe,CyberSource > Secur
 - Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart
-- DevTools Elements and Network panels open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; locate CyberSource payment iframe(s) in DevTools Elements panel
-[ACT] Examine iframe src URL attribute(s) in Elements panel
-[ASSERT] iframe src URL contains a JWT token parameter (three-part format: header.payload.signature separated by dots)
-[ACT] Copy the JWT value and verify it has exactly three dot-separated segments
+- DevTools Elements and Network panels open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; locate the CyberSource Flex Microform iframe(s) in DevTools Elements panel
+[ACT] read the 'src' attribute of the Flex Microform iframe
+[KEY] note the 'keyId' query parameter of that src as KEY_ID
+[ACT] In the Network panel find the request whose response body is the Flex capture context (a JWT) and note its URL as CAPTURE_CONTEXT_REQUEST
+[ASSERT] the capture-context value has exactly three dot-separated segments (header.payload.signature)
 [ASSERT] JWT format valid: three segments of base64url-encoded data
-[ACT] Reload the page and inspect iframe src again
-[ASSERT] JWT token value is different from the previous session token (dynamic per session)","[FORMAT] JWT token in iframe src has exactly three dot-separated base64url-encoded segments
+[ACT] Reload the page and inspect the Network panel again for CAPTURE_CONTEXT_REQUEST
+[ASSERT] the capture-context JWT value differs from the one before the reload (dynamic per page load)","[FORMAT] capture-context JWT in the CAPTURE_CONTEXT_REQUEST response has exactly three dot-separated base64url-encoded segments
 [STATE] JWT is unique per page load — not reused across sessions
-[DOM] Token present in iframe src attribute before any user interaction","[NETWORK] JWT token sent in authorization-related requests
-[CONSOLE] No JWT decode errors in console",JWT token absent from iframe src; token present but reused across multiple sessions (static value); token format incorrect (fewer or more than three segments),none — no order placed,VCST-3387 TC-INT-002,Automated
+[DOM] the Flex Microform iframe 'src' attribute contains a non-empty 'keyId' query parameter before any user interaction","[NETWORK] JWT token sent in authorization-related requests
+[CONSOLE] No JWT decode errors in console",capture-context JWT absent from the network exchange or no keyId on the iframe src; token present but reused across multiple sessions (static value); token format incorrect (fewer or more than three segments),none — no order placed,VCST-3387 TC-INT-002,Automated
