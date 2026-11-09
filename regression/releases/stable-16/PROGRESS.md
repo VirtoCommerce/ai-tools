@@ -4,7 +4,7 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 2569 · PASS 1722 · FAIL 229 · BLOCKED 495** · ledger 937 rows
+**Executed 2569 · PASS 1782 · FAIL 244 · BLOCKED 424** · ledger 1006 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -15,22 +15,22 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | Aleksandra Mitricheva | TRIAGED | 144 | 144 | 72 | 14 | 6 | 0 | 68 | REG-2026-11-04-1505-W6 REG-2026-11-05-0023-W6R REG-2026-11-06-1345-W6R2 REG-2026-11-06-1410-W6R3 REG-2026-11-09-W6R4 REG-2026-11-09-W6R5 |
-| W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | TRIAGED | 428 | 428 | 169 | 44 | 193 | 0 | 524 | REG-2026-11-05-1645-W7 REG-2026-11-06-1424-W7C |
+| W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | TRIAGED | 428 | 428 | 229 | 59 | 122 | 0 | 593 | REG-2026-11-05-1645-W7 REG-2026-11-06-1424-W7C REG-2026-11-09-0950-W7U |
 | WX | Exclusive window (env-wide cases) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
 ## Triage verdicts
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 54 |
-| BY_DESIGN | 20 |
-| TEST_DEFECT | 163 |
-| DATA | 173 |
-| ENV_CONFIG | 455 |
+| REAL_BUG | 61 |
+| BY_DESIGN | 25 |
+| TEST_DEFECT | 176 |
+| DATA | 194 |
+| ENV_CONFIG | 475 |
 | NOT_TESTABLE | 42 |
 | DUPLICATE | 16 |
 | FLAKY | 3 |
-| PENDING_DECISION | 11 |
+| PENDING_DECISION | 14 |
 
 ## Not run yet
 
@@ -55,6 +55,13 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W2 | IMGTL-024 | JPEG 50% vs 95% comparison impossible: no JPEG thumbnail is produced from .jpg sources | no | same defect as IMGTL-007, file once |
 | W2 | IMGTL-025 | Task over 5 .jpg images and 1 .png: thumbnails only for the .png, success notification with 0 errors | no | same defect as IMGTL-007, file once |
 | W2 | CHAN-008 | Channel completeness stays 0% after an evaluation that scored the products 62/25/25% | no | pre-existing, not filed yet |
+| W7 | QUOTE-005 | Quote detail 'Price per item' shows the list price while the line total uses the proposed price (22.00 x2 vs 39.60) | no |  |
+| W7 | QUOTE-026 | Approve on a quote with an out-of-stock tracked product places the order and drives stock to -1 (CO261109-00009) | no |  |
+| W7 | MSNF-099 | SKU-NOAVAIL mission modal shows the deleted product's raw GUID as its title, as a link | no | local report BUG-missions-sku-modal-degraded-target-states.md, below the filing floor (Low) |
+| W7 | MSNF-102 | A mission ~1.5 h past its end still listed with '0 days left' and an enabled Open mission | no | local report BUG-missions-ended-mission-zero-days-live-cta.md, below the filing floor (Low) |
+| W7 | MSNF-056 | The zero-days card is the ended DUE-00 mission — same defect as MSNF-102 | no | same defect as MSNF-102, file once |
+| W7 | TASK-025 | POST /api/task-management with an empty body answers 200 and saves a nameless task (the case note's 500 is outdated) | no |  |
+| W7 | NEWS-026 | Admin news article: after Reset the 'Has unsaved changes' banner and header dot stay and closing prompts 'unsaved changes' (article without… | no |  |
 
 ## Decisions pending
 
@@ -71,5 +78,8 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W7 | MSN-003 | Mission create accepts and stores Periodicity Monthly; only None is processed, nothing rejects the rest | Loyalty product owner |
 | W7 | MSNF-068 | fr: untranslated mission returns the internal Name and null description — no default-language fallback; no source says it should | Loyalty product owner |
 | W7 | MSN-003 | Mission create accepts and stores Periodicity Monthly; only None is processed, nothing rejects the rest | Loyalty product owner |
+| W7 | QUOTE-011 | Expired quote shows 'Proposal sent', no expiry date, Approve offered; expiry is not implemented anywhere (no Expired status in docs or code) | Quote product owner |
+| W7 | QUOTE-022 | Expired quote can still be approved — same question as QUOTE-011 | Quote product owner |
+| W7 | QUOTE-023 | No Expired badge or expiry date on an expired quote — same question as QUOTE-011 | Quote product owner |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

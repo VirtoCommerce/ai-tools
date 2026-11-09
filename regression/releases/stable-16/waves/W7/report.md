@@ -1,47 +1,85 @@
 # Stable 16 · W7 — virto-start modules (autotests only)
 
-**Owner:** Aleksandra Mitricheva · **Runs:** REG-2026-11-05-1645-W7 (first run), REG-2026-11-06-1424-W7C (re-run of every case no longer blocked) · **Env:** vcptcore_regression (platform 3.1076.8, theme 2.59.0) · **Sub-task:** VCST-6411
+**Owner:** Aleksandra Mitricheva · **Runs:** REG-2026-11-05-1645-W7 (first run), REG-2026-11-06-1424-W7C (re-run of every case no longer blocked), REG-2026-11-09-0950-W7U (re-run after the suite repairs and re-seed) · **Env:** vcptcore_regression (platform 3.1076.8, theme 2.59.0) · **Sub-task:** VCST-6411
 
 Modules under test, all installed on the stand: Loyalty 3.1009.0, Quote 3.1003.0, News 3.1005.0, TaskManagement 3.1005.0, Skyflow 3.1005.0, CyberSource 3.1002.0, Datatrans 3.1002.0. No suite was gated as not deployed.
 
 ## Totals (final status per case)
 
-428 planned and executed. **169 PASS, 44 FAIL, 193 BLOCKED, 20 SKIPPED, 2 other.**
+428 planned and executed over three runs. **229 PASS, 59 FAIL, 122 BLOCKED, 16 SKIPPED, 2 other.**
 
-The first run blocked 321 cases, almost all on persona credentials missing for this env. The credentials were then declared (`*_VCPTCORE_REGRESSION` keys). The pre-flight dropped from 180 predicted BLOCKED to 3, and W7C re-ran 173 cases.
+The first run blocked 321 cases on missing persona credentials. W7C re-ran 173 once they were declared; W7U (2026-11-09) re-ran 129 after the suite repairs, the re-seed and the 040a/040c requirements below.
 
 | Suite | Pass | Fail | Blocked | Skipped |
 |---|---|---|---|---|
-| 015 Quotes | 3 | 2 | 23 | 4 |
-| 039 CyberSource | 17 | 0 | 0 | 1 |
+| 015 Quotes | 12 | 8 | 5 | 7 |
+| 039 CyberSource | 18 | 0 | 0 | 0 |
 | 040a Skyflow | 0 | 2 | 27 | 0 |
 | 040c Datatrans | 0 | 0 | 8 | 0 |
-| 075 Loyalty | 5 | 0 | 24 | 0 |
-| 075b Mixed cart (API) | 3 | 3 | 6 | 1 |
-| 075c Product points | 6 | 3 | 1 | 0 |
-| 075d Missions (API) | 19 | 7 | 2 | 6 |
-| 075e Missions Admin | 18 | 3 | 2 | 0 |
-| 075f Org balance | 5 | 13 | 4 | 0 |
+| 075 Loyalty | 22 | 1 | 6 | 0 |
+| 075b Mixed cart (API) | 5 | 3 | 4 | 1 |
+| 075c Product points | 8 | 1 | 1 | 0 |
+| 075d Missions (API) | 20 | 7 | 1 | 6 |
+| 075e Missions Admin | 20 | 3 | 0 | 0 |
+| 075f Org balance | 8 | 14 | 0 | 0 |
 | 083 Loyalty catalog | 18 | 0 | 8 | 0 |
-| 083b Mixed cart (SF) | 7 | 0 | 1 | 0 |
-| 083c Missions storefront | 38 | 6 | 54 | 1 |
+| 083b Mixed cart (SF) | 7 | 1 | 0 | 0 |
+| 083c Missions storefront | 50 | 8 | 40 | 1 |
 | 083d Missions E2E | 0 | 1 | 5 | 1 |
 | 083e Org balance (SF) | 0 | 0 | 8 | 0 |
-| 084 News | 21 | 2 | 5 | 6 |
-| 085 Tasks | 9 | 2 | 15 | 0 |
+| 084 News | 27 | 3 | 4 | 0 |
+| 085 Tasks | 14 | 7 | 5 | 0 |
 
-**Verdicts on the 259 non-passing cases:**
+**Verdicts on the 199 non-passing cases (latest run per case):**
 
 | Verdict | Count |
 |---|---|
-| ENV_CONFIG | 82 |
-| DATA | 67 |
-| TEST_DEFECT | 65 |
+| ENV_CONFIG | 85 |
+| DATA | 37 |
 | NOT_TESTABLE | 19 |
-| BY_DESIGN | 13 |
-| REAL_BUG | 6 |
+| BY_DESIGN | 18 |
+| TEST_DEFECT | 17 |
+| REAL_BUG | 13 |
 | DUPLICATE | 5 |
-| PENDING_DECISION | 2 |
+| PENDING_DECISION | 5 |
+
+## Re-run W7U (2026-11-09) — what changed and what it found
+
+**Unblocked before the run:**
+- 040a/040c: `config/suite-requirements.json` now skips them when `Payments__Skyflow__vaultId` / `Payments__Datatrans__MerchantId` are absent from the stand config.
+- 60 TEST_DEFECT cases repaired in 10 suites, one author per suite:
+  - HTTP/GraphQL rows moved to the machine lane;
+  - 015 uses the slot-2 quote aliases;
+  - the new tasks route, gridcell date pick, and lane secret names.
+- Re-seeded: loyalty CRUD programs, mission fixtures, deadline ladder 202611090936, ORGLOY missions, RESTRICTED_USER. Slot-2 carts were swept.
+- The mission seeder no longer deletes other seeders' missions (it removed 44 before the fix; all but missions-e2e were restored).
+
+**New real bugs (not filed yet, all pre-existing):**
+
+| Case | Defect | Repo | Severity |
+|---|---|---|---|
+| QUOTE-026 | Approve on a quote with an out-of-stock tracked product places the order; stock goes to -1 (`ApproveQuoteCommandHandler.cs:38-45`, no inventory check) | vc-module-quote | High (proposed) |
+| QUOTE-005 | Quote "Price per item" shows the list price while the line total uses the proposed price (`quote-line-items.vue` passes no `show-placed-price`) | vc-frontend | Medium |
+| TASK-025 | `POST /api/task-management` with `{}` answers 200 and saves a nameless task (no validator) | vc-module-task-management | Low |
+| NEWS-026 | News article: after Reset the "Has unsaved changes" banner stays and closing prompts (snapshot taken before the watcher re-adds empty SEO entries) | vc-module-news | Low |
+
+Known local reports below the filing floor reproduced again:
+- MSNF-099: raw GUID title for a deleted product;
+- MSNF-102 / MSNF-056: "0 days left" on an ended mission.
+
+**Not bugs:**
+- **QUOTE-004/025:** the Quote module sends no proposal notification by design.
+- **QUOTE-011/022/023:** quote expiry is not implemented anywhere. This is PENDING_DECISION for the Quote product owner, and oracle BL-B2B-003 is INFERRED.
+- **QUOTE-013:** the stand has no `quote-attachments` upload scope (ENV_CONFIG).
+- **MCO-E2E-002:** the stand is in Organization mode, so the validator checks the organization pool (ENV_CONFIG).
+- **TASK-020/021/018, NEWS-017, MCO-GQL-003:** test defects: finish needs a JSON body, `isActive` has no server default, doubled quotes, a gift line.
+
+**Still blocked, by cause:**
+- **test-john mission progress reads 0%** (9 cases in 083c), because the store is in Organization mode.
+- **missions-e2e accounts not re-seeded:** their seeder fails in Organization mode.
+- **LOYALTY_NOBAL_USER / LOYALTY_WHOLESALE_USER not provisioned on this env** (4 cases).
+- **0 news articles on the stand** (NEWS-020/022).
+- **075f:** see Environment changes.
 
 ## Real bugs — filed
 
@@ -123,7 +161,13 @@ All six are pre-existing, not regressions of this bundle. Each was re-verified l
 
 ## Environment changes during the wave (all waves on this stand)
 
-- **B2B-store `Loyalty.LoyaltyBalanceCalculationMode`.** It was Customer on 2026-11-06 and was Organization by 2026-11-09. Who changed it is unknown, and it was not this wave. It was left as found: Customer-mode cases from other waves may now fail.
+- **B2B-store `Loyalty.LoyaltyBalanceCalculationMode` was switched by this wave.**
+  - **Before:** the store was in Customer mode.
+  - **What happened:** suite 075f's LOYORG-006/007/014/019 write the mode themselves, and their Cleanup always writes `Organization`. W7C ran them on 2026-11-06 11:35Z, and they ran again in W7U.
+  - **Effect:** the store has been in Organization mode since then. That mode pools mission progress and points to the organization, which caused the 0% progress, the missions-e2e seed failure and MCO-E2E-002.
+  - **Within 075f:** its cases also interfered with each other on the machine lane (LOYORG-009 read the pool as 0 before and 64232 after).
+  - **Fix:** list 075f in WX `exclusive`, and make its teardown restore the mode it found.
+  - **Current state:** the store is left in Organization until the owner decides.
 - **vc-deploy-dev #7050 was merged 2026-11-08 23:35Z.** It restarted the platform: runs active at that moment may show a burst of 5xx or timeouts.
 
 ## Data created and removed
@@ -139,9 +183,23 @@ All six are pre-existing, not regressions of this bundle. Each was re-verified l
 
 ## Before the next owner continues
 
-1. Configure Skyflow and Datatrans on the stand (vc-deploy-dev), or record them as not deployed in suite-requirements.
-2. Run the WX cases after the env-wide loyalty writes, and confirm the balance mode first.
-3. Seed `seed:loyalty` and a fresh mission ladder, then run `/qa-run stable:16 W7 --continue`.
-4. Re-run the pre-flight before step 3.
+1. **Decide the B2B-store balance mode** (Customer, as before W7C). Then:
+   - re-seed mission progress and `seed:missions-e2e`;
+   - re-run 083c (9 progress cases), 083d and MCO-E2E-002.
+2. **Run 075f only in WX**, alone on the stand. Repair LOYORG-019 (assert 2xx).
+3. **Provision LOYALTY_NOBAL_USER / LOYALTY_WHOLESALE_USER** on vcptcore_regression, declare their keys, then re-run MCO-GQL-005/009/013 and LOY-033.
+4. **Repair the remaining test defects** (`/qa-review-tests --fix`):
+   - TASK-017/018/020/021 (finish body, `isActive`, DELETE cleanup);
+   - NEWS-017;
+   - MCO-GQL-003;
+   - MSNA-022;
+   - LOY-016;
+   - QUOTE-004/007/025.
+5. **Decisions still open:**
+   - QUOTE-031/032: retire or move to the orders suites;
+   - NEWS-023: split into an API half and a UI half;
+   - the quote-expiry rule (PENDING_DECISION).
+6. **TASK-016:** reconnect the Playwright lanes (`/mcp`) so they load the RESTRICTED_USER key, then run it.
+7. **The 19 NOT_TESTABLE 083c cases** move to Playwright specs; 5 pilots come first.
 
-Raw evidence (screenshots, traces, results JSON) is on the owner's machine under `reports/regression/REG-2026-11-05-1645-W7/` and `reports/regression/REG-2026-11-06-1424-W7C/`.
+Raw evidence (screenshots, traces, results JSON) is on the owner's machine under `reports/regression/REG-2026-11-05-1645-W7/`, `REG-2026-11-06-1424-W7C/` and `REG-2026-11-09-0950-W7U/` (the last in the worktree run folder).
