@@ -145,7 +145,7 @@ Your browser is the **Playwright lane your brief names** (`playwright-edge`, `pl
 ### Action Space
 
 - **Storybook**: Navigate stories, Controls, Accessibility tab, Actions
-- **Viewports**: 375px (mobile), 768px (tablet), 1024px, 1280px (desktop) — `browser_resize`; `browser_emulate_media` for `prefers-reduced-motion` and colour scheme
+- **Viewports**: the derived `AUDIT_VIEWPORTS_PX` sweep (`skills/qa-design/layout-defects.md` §Viewport sweep procedure) — `browser_resize`; `browser_emulate_media` for `prefers-reduced-motion` and colour scheme
 - **Browser**: the one Playwright lane your brief names — never a second one at the same time
 - **NOT available**: WebKit on Windows — use Edge
 

@@ -80,7 +80,7 @@ Insights resource pair all differ per env.** A bug confirmed on the wrong env is
 3. **Test variables** — Systematically change one variable at a time:
    - User role (admin, customer, guest)
    - Browser (Chrome, Firefox, Edge)
-   - Viewport (desktop 1920px, tablet 768px, mobile 375px)
+   - Viewport (desktop lane vs mobile lane, then each `BREAKPOINTS_PX` edge and the width 1 px below it — [`responsive-component-testing.md`](../qa-storybook/responsive-component-testing.md) §Where the widths come from)
    - Store / language / currency
    - Cart state (empty, with items, mixed pickup/delivery)
    - Authentication state (fresh login vs. long-lived session)
@@ -93,7 +93,7 @@ Insights resource pair all differ per env.** A bug confirmed on the wrong env is
 |---|---|
 | Works on Chrome | Test Firefox, Edge — check for browser-specific CSS/JS |
 | Works for admin user | Test with customer role, different org, guest user |
-| Works on desktop | Test mobile viewport (375px), tablet (768px) |
+| Works on desktop | Test the mobile lane, then the `AUDIT_VIEWPORTS_PX` sweep — a layout bug often lives in one fluid band only |
 | Works with fresh cart | Test with items in cart, saved-for-later items, mixed pickup/delivery |
 | Works after fresh login | Test with stale session, expired token, incognito |
 | Only fails sometimes | Check for race conditions, stale cache, ES index lag (wait 5s, retry) |
