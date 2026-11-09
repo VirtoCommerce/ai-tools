@@ -1418,6 +1418,12 @@
       "ART": "c4a3833a-0c76-4271-95c2-52813f385e1a"
     }
   },
+  "VARIANT_PICKER_MASTER": {
+    "id": "4bfaebf5-522b-4973-a329-378f41b441ca"
+  },
+  "L10N_COLLISION_CATEGORY": {
+    "id": "550d5646-4705-4100-94e2-c583c6362c0b"
+  },
   "QUOTE_WITH_ADMIN_RESPONSE": {
     "seeded_at": "2026-11-05T13:38:44.112Z",
     "id_slot1": "b4e317dc-6085-490e-a433-c4b052b7f589",

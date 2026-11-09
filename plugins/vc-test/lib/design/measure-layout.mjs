@@ -377,57 +377,89 @@ var LAYOUT_SNIPPETS = {
    * Scope: audits document-wide. For scoped audits (e.g. main content only,
    * excluding header/footer chrome), use `touchTargetAuditSnippet(scope)` instead.
    */
-  touchTargetAudit: `
+  touchTargetAudit: touchTargetAuditBody("document")
+};
+function touchTargetAuditBody(rootExpr) {
+  return `
 (() => {
   const SEL = 'button, a[href], input:not([type=hidden]), select, textarea, [role=button], [role=link], [role=checkbox], [role=radio], [role=tab], [role=menuitem]';
-  const els = Array.from(document.querySelectorAll(SEL)).filter(el => {
+  const root = ${rootExpr};
+  if (!root) return { viewport: window.innerWidth, evaluated: 0, undersized: [], tooClose: [], scopeMatched: false };
+  const AA = ${TOUCH_TARGET_AA_MIN_PX}, AAA = ${TOUCH_TARGET_AAA_MIN_PX}, GAP = ${TOUCH_TARGET_GAP_PX};
+  const disabled = (el) => el.disabled === true || el.getAttribute('aria-disabled') === 'true';
+  // A visually hidden native input is operated through its label: measure that box instead.
+  const hitBox = (el) => {
+    const r = el.getBoundingClientRect();
+    if (el.tagName === 'INPUT' && r.width <= 2 && r.height <= 2) {
+      const label = (el.labels && el.labels[0]) || el.closest('label');
+      if (label) { const lr = label.getBoundingClientRect(); if (lr.width > 0 && lr.height > 0) return { box: lr, via: 'label' }; }
+    }
+    return { box: r, via: null };
+  };
+  const targets = Array.from(root.querySelectorAll(SEL)).filter(el => {
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) return false;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') return false;
+    return !disabled(el);
+  }).map(el => ({ el, ...hitBox(el) }));
+  const small = (b) => b.width < AA || b.height < AA;
+  const centre = (b) => ({ x: b.left + b.width / 2, y: b.top + b.height / 2 });
+  const distToRect = (p, b) => {
+    const dx = Math.max(b.left - p.x, 0, p.x - b.right), dy = Math.max(b.top - p.y, 0, p.y - b.bottom);
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+  // SC 2.5.8 Spacing exception: the 24 px circle on an undersized target touches no other target
+  // and no other undersized target's circle.
+  const spaced = (t) => {
+    const c = centre(t.box), R = AA / 2;
+    for (const o of targets) {
+      if (o === t || o.el.contains(t.el) || t.el.contains(o.el)) continue;
+      if (small(o.box)) { const oc = centre(o.box); if (Math.hypot(c.x - oc.x, c.y - oc.y) < AA) return false; }
+      else if (distToRect(c, o.box) < R) return false;
+    }
     return true;
-  });
-  const AA = ${TOUCH_TARGET_AA_MIN_PX}, AAA = ${TOUCH_TARGET_AAA_MIN_PX};
+  };
   const undersized = [];
-  for (const el of els) {
-    const r = el.getBoundingClientRect();
-    if (r.width < AAA || r.height < AAA) {
+  for (const t of targets) {
+    const b = t.box;
+    if (b.width < AAA || b.height < AAA) {
+      const below = small(b);
+      const exempt = below && spaced(t);
       undersized.push({
-        tag: el.tagName.toLowerCase(),
-        role: el.getAttribute('role'),
-        width: Math.round(r.width * 10) / 10,
-        height: Math.round(r.height * 10) / 10,
-        text: (el.textContent || '').trim().slice(0, 40),
-        // WCAG 2.2 AA (2.5.8) floor breached \u2014 a real defect, not a design-system tradeoff
-        belowAA: r.width < AA || r.height < AA,
+        tag: t.el.tagName.toLowerCase(),
+        role: t.el.getAttribute('role'),
+        width: Math.round(b.width * 10) / 10,
+        height: Math.round(b.height * 10) / 10,
+        text: (t.el.textContent || '').trim().slice(0, 40),
+        // WCAG 2.2 AA (2.5.8) floor breached with no exception \u2014 a real defect
+        belowAA: below && !exempt,
+        ...(exempt ? { exemption: 'spacing' } : {}),
+        ...(t.via ? { measuredVia: t.via } : {}),
       });
     }
   }
-  // Pairwise spacing \u2014 O(n^2), cap at 200 elements to stay snappy
-  const rects = els.slice(0, 200).map(el => ({ el, r: el.getBoundingClientRect() }));
+  // Pairwise spacing (BL-UI-006 gap rule) \u2014 O(n^2), cap at 200 elements to stay snappy
+  const rects = targets.slice(0, 200);
   const tooClose = [];
   for (let i = 0; i < rects.length; i++) {
     for (let j = i + 1; j < rects.length; j++) {
-      const a = rects[i].r, b = rects[j].r;
-      // Closest edge distance (Manhattan-ish), zero if rects overlap
+      const a = rects[i].box, b = rects[j].box;
+      // Closest edge distance, zero if rects overlap
       const dx = Math.max(0, Math.max(a.left - b.right, b.left - a.right));
       const dy = Math.max(0, Math.max(a.top - b.bottom, b.top - a.bottom));
       const d = Math.sqrt(dx * dx + dy * dy);
-      if (d > 0 && d < 8) {
-        tooClose.push({
-          aTag: rects[i].el.tagName.toLowerCase(),
-          bTag: rects[j].el.tagName.toLowerCase(),
-          distancePx: Math.round(d * 10) / 10,
-        });
+      if (d > 0 && d < GAP) {
+        tooClose.push({ aTag: rects[i].el.tagName.toLowerCase(), bTag: rects[j].el.tagName.toLowerCase(), distancePx: Math.round(d * 10) / 10 });
         if (tooClose.length >= 30) break;
       }
     }
     if (tooClose.length >= 30) break;
   }
-  return { viewport: window.innerWidth, evaluated: els.length, undersized, tooClose };
+  return { viewport: window.innerWidth, evaluated: targets.length, undersized, tooClose, scopeMatched: true };
 })()
-`.trim()
-};
+`.trim();
+}
 var COLOR_MATH_JS = String.raw`
 function parseColor(s) {
   if (!s) return null;
@@ -582,51 +614,7 @@ function alignmentAuditSnippet(selector) {
 `.trim();
 }
 function touchTargetAuditSnippet(scope) {
-  return `
-(() => {
-  const SEL = 'button, a[href], input:not([type=hidden]), select, textarea, [role=button], [role=link], [role=checkbox], [role=radio], [role=tab], [role=menuitem]';
-  const root = document.querySelector(${JSON.stringify(scope)});
-  if (!root) return { viewport: window.innerWidth, evaluated: 0, undersized: [], tooClose: [], scopeMatched: false };
-  const els = Array.from(root.querySelectorAll(SEL)).filter(el => {
-    const r = el.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0) return false;
-    const cs = getComputedStyle(el);
-    if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') return false;
-    return true;
-  });
-  const AA = ${TOUCH_TARGET_AA_MIN_PX}, AAA = ${TOUCH_TARGET_AAA_MIN_PX};
-  const undersized = [];
-  for (const el of els) {
-    const r = el.getBoundingClientRect();
-    if (r.width < AAA || r.height < AAA) {
-      undersized.push({
-        tag: el.tagName.toLowerCase(),
-        role: el.getAttribute('role'),
-        width: Math.round(r.width * 10) / 10,
-        height: Math.round(r.height * 10) / 10,
-        text: (el.textContent || '').trim().slice(0, 40),
-        belowAA: r.width < AA || r.height < AA,
-      });
-    }
-  }
-  const rects = els.slice(0, 200).map(el => ({ el, r: el.getBoundingClientRect() }));
-  const tooClose = [];
-  for (let i = 0; i < rects.length; i++) {
-    for (let j = i + 1; j < rects.length; j++) {
-      const a = rects[i].r, b = rects[j].r;
-      const dx = Math.max(0, Math.max(a.left - b.right, b.left - a.right));
-      const dy = Math.max(0, Math.max(a.top - b.bottom, b.top - a.bottom));
-      const d = Math.sqrt(dx * dx + dy * dy);
-      if (d > 0 && d < 8) {
-        tooClose.push({ aTag: rects[i].el.tagName.toLowerCase(), bTag: rects[j].el.tagName.toLowerCase(), distancePx: Math.round(d * 10) / 10 });
-        if (tooClose.length >= 30) break;
-      }
-    }
-    if (tooClose.length >= 30) break;
-  }
-  return { viewport: window.innerWidth, evaluated: els.length, undersized, tooClose, scopeMatched: true };
-})()
-`.trim();
+  return touchTargetAuditBody(`document.querySelector(${JSON.stringify(scope)})`);
 }
 var FOUC_SNIPPET = `
 (() => {

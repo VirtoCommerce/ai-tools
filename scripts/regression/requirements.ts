@@ -34,10 +34,14 @@ import { probeAdminToken, type AdminAuth } from "../deploy/lib/live.ts";
 import { ghJson, setToken } from "../deploy/lib/github.ts";
 import type { Check } from "../preflight/policy.ts";
 
-export type ReqKind = "storeSetting" | "platformSetting" | "paymentMethod" | "deployConfig" | "uploadScope";
+export type ReqKind = "storeSetting" | "platformSetting" | "paymentMethod" | "deployConfig" | "uploadScope" | "storeLanguage" | "storeCurrency";
 export interface Requirement {
   kind: ReqKind;
-  /** Setting name · payment method code · yml path (`storefront.headers.X`, `platform.config.KEY`) · upload scope name. */
+  /**
+   * Setting name · payment method code · yml path (`storefront.headers.X`, `platform.config.KEY`) · upload scope name ·
+   * storeLanguage: a culture (`pt-PT`) or a bare language (`pt`, any `pt-*` satisfies it) the store must offer ·
+   * storeCurrency: a currency code (`PTS`) the store must offer.
+   */
   name: string;
   /** The value the cases need. Omitted with `nonEmpty` / `notEquals` / `prefix`. */
   equals?: unknown;
@@ -339,7 +343,8 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
     try { const r = await fetch(`${c.backUrl}/api/platform/settings/${encodeURIComponent(name)}`, { headers: auth }); return { status: r.status, body: r.status === 200 ? await r.json().catch(() => null) : null }; } catch { return { status: -1, body: null }; }
   };
   const kinds = new Set(reqs.map((x) => x.r.kind));
-  const store = kinds.has("storeSetting") ? await getJson(`/api/stores/${encodeURIComponent(storeId)}`) : null;
+  const store = kinds.has("storeSetting") || kinds.has("storeLanguage") || kinds.has("storeCurrency")
+    ? await getJson(`/api/stores/${encodeURIComponent(storeId)}`) : null;
   const payments = kinds.has("paymentMethod") ? await getJson(`/api/payment/search`, { method: "POST", body: JSON.stringify({ storeId, take: 100 }) }) : null;
   const yml = kinds.has("deployConfig") || kinds.has("uploadScope") ? await readDeployYml(c) : null;
   const platform = new Map<string, unknown>();
@@ -361,6 +366,17 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
     if (r.kind === "storeSetting") {
       if (!store) unknown = `store ${storeId} not readable (admin token?)`;
       else { const s = (store.settings ?? []).find((x: any) => x.name === r.name); present = !!s; value = s ? s.value ?? s.defaultValue : undefined; where = `store ${storeId}`; }
+    } else if (r.kind === "storeLanguage" || r.kind === "storeCurrency") {
+      // The store's own lists: a case that opens /pt/… or picks PTS in the currency selector needs them offered,
+      // or it waits on a 404 page / a missing menu item and times out (stable-16 W6: LAYOUT-STR-002, CNT-005).
+      if (!store) unknown = `store ${storeId} not readable (admin token?)`;
+      else {
+        const list: string[] = (r.kind === "storeLanguage" ? store.languages : store.currencies) ?? [];
+        const target = r.name.toLowerCase();
+        present = list.some((x) => { const v = String(x).toLowerCase(); return v === target || (r.kind === "storeLanguage" && !target.includes("-") && v.split("-")[0] === target); });
+        value = list.join(", ") || "(none)";
+        where = `store ${storeId} ${r.kind === "storeLanguage" ? "languages" : "currencies"}`;
+      }
     } else if (r.kind === "platformSetting") {
       if (!platform.has(r.name)) platform.set(r.name, await getSetting(r.name));
       const got: any = platform.get(r.name), s = got?.body ?? null;
@@ -386,16 +402,26 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
     const dup = [...groups.values()].filter((x) => x.r.kind === r.kind && x.r.name === r.name).length > 1;
     const id = `req:${r.kind}:${r.name}${dup ? `:${want(r)}` : ""}`;
     if (unknown) { out.push({ id, status: "UNKNOWN", found: `${r.name}: not checked (${unknown})${cases}`, who: "you", do: "make it readable (admin credentials / GIT_TOKEN) and re-run", diagnose: [] }); continue; }
-    const ok = r.kind === "uploadScope" ? present : meets(r, value, present);
-    const shown = r.kind === "uploadScope" ? `scopes: ${value}` : present ? `${r.name} = ${JSON.stringify(value)}` : `${r.name} not set`;
+    const listKind = r.kind === "uploadScope" || r.kind === "storeLanguage" || r.kind === "storeCurrency";
+    const ok = listKind ? present : meets(r, value, present);
+    const shown = r.kind === "uploadScope" ? `scopes: ${value}`
+      : r.kind === "storeLanguage" ? `languages: ${value}`
+      : r.kind === "storeCurrency" ? `currencies: ${value}`
+      : present ? `${r.name} = ${JSON.stringify(value)}` : `${r.name} not set`;
+    const needs = r.kind === "uploadScope" ? `scope "${r.name}"`
+      : r.kind === "storeLanguage" ? `language "${r.name}"`
+      : r.kind === "storeCurrency" ? `currency "${r.name}"`
+      : want(r);
     const absent = r.allowedIncludes && Array.isArray(value) ? r.allowedIncludes.filter((v) => !(value as unknown[]).map(norm).includes(norm(v))) : [];
     if (ok) { out.push({ id, status: "OK", found: `${shown} (${where})${cases}`, who: null, do: null, diagnose: [] }); continue; }
     const fix = r.kind === "storeSetting" ? `set ${r.name} ${want(r)} on store ${storeId} (Admin › Stores › ${storeId} › Settings) — a shared-env write`
       : r.kind === "platformSetting" && absent.length ? `add ${absent.map((v) => JSON.stringify(v)).join(", ")} to the allowed values of ${r.name} (Admin › Settings, or PUT /api/platform/settings with the full list) — a shared-env write`
       : r.kind === "platformSetting" ? `set ${r.name} ${want(r)} (Admin › Settings) — a shared-env write`
       : r.kind === "paymentMethod" ? `activate ${r.name} on store ${storeId} (Admin › Stores › ${storeId} › Payment methods), with a working sandbox configuration`
+      : r.kind === "storeLanguage" ? `add ${r.name} to the languages of store ${storeId} (Admin › Stores › ${storeId}) — a shared-env write; the storefront needs its locale bundle too`
+      : r.kind === "storeCurrency" ? `add ${r.name} to the currencies of store ${storeId} (Admin › Stores › ${storeId}) and give it a price list — a shared-env write`
       : `TEST_ENV=${env} npm run deploy:env-config -- --env ${env} --apply — opens ONE vc-deploy-dev PR to ${c.branch} with the value copied from vcst-qa / vcptcore-qa; you merge it (merging deploys)`;
-    out.push({ id, status: r.level === "block" ? "BLOCK" : "WARN", found: `${shown}, needs ${r.kind === "uploadScope" ? `scope "${r.name}"` : want(r)} (${where}): ${r.why}${cases}`,
+    out.push({ id, status: r.level === "block" ? "BLOCK" : "WARN", found: `${shown}, needs ${needs} (${where}): ${r.why}${cases}`,
       who: "me, with OK", do: fix, diagnose: [], cases: [...g.cases] });
   }
   return out;
