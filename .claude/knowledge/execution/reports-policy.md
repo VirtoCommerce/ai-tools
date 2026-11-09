@@ -420,7 +420,7 @@ Report categories don't accumulate forever — each has a lifecycle:
 - **Ephemeral run folders** (`reports/regression/{REG-*,SMOKE-*}`, `reports/test-lifecycle/TLC-*`,
   `reports/coverage/COV-*`, `reports/monitoring/MONITOR-*`) are **already gitignored** (`.gitignore`
   `reports/regression/*` + the repo-wide evidence-extension rules) — they only ever exist as local disk usage on whoever ran them, never
-  in git history. They age out locally via `npm run reports:prune -- --apply` (default 30 days; the run
+  in git history. They age out locally via `npm run reports:prune -- --apply` (default 14 days; the run
   date is parsed from the `RUN-YYYY-MM-DD-HHMM` folder name).
 - **Git-tracked report folders** (`reports/tickets/<Sprint>/<TICKET>/`) age out the same way via
   `npm run reports:prune -- --target=tracked --apply` — `git rm` + one commit, gated by the last commit

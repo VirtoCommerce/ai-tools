@@ -4,7 +4,7 @@
   "date": "2026-11-04",
   "environment": "https://vcst-qa.govirto.com",
   "build": {
-    "platform": "vcst-qa (vc-deploy-dev#7031)",
+    "platform": "3.1093.0-pr-3154-4607 (vcst-qa, vc-deploy-dev#7031)",
     "theme": "unchanged",
     "relevant_modules": {
       "VirtoCommerce.XCart": "3.1043.0-pr-151-07b3",
@@ -31,13 +31,14 @@
   "checklist_failed": 0,
   "regression_issues": [],
   "side_effects": [
-    {"summary": "customerReviews ignores keyword when filter is non-empty", "severity": "Low", "why": "pre-existing (same on pre-fix vcptcore); not caused by the fix; filing pending operator decision"},
-    {"summary": "Query.quotes returns errors[] NULL_REFERENCE for a buyer owning a quote with items created via POST /api/quote/requests", "severity": "Medium", "why": "pre-existing on both envs; root cause not isolated; filing pending operator decision"},
-    {"summary": "POST /api/customerReviews returns 500 (null images; duplicate review exposes SQL unique-index name) instead of a validation error", "severity": "Medium", "why": "pre-existing on both envs; admin REST; filing pending operator decision"}
+    {"summary": "POST /api/customerReviews returns 500 instead of a validation error (missing images; duplicate review leaks the SQL unique-index text)", "severity": "Medium", "ticket": "VCST-6681"},
+    {"summary": "A REST-created quote item with no selected tier price breaks the buyer's xAPI quotes list, quote(id) and the admin GET by id", "severity": "Medium", "ticket": "VCST-6682"},
+    {"summary": "customerReviews ignores keyword when filter is non-empty", "severity": "Low", "why": "below the filing floor; pre-existing on both envs; recorded as kb KB-3EEBFFF9"}
   ],
-  "bugs_filed": [],
+  "bugs_filed": ["VCST-6681", "VCST-6682"],
   "business_rules_verified": ["BL-CART-005", "BL-AUTH-006"],
   "not_verified": "mergeCart / BL-CART-016 — the x-cart #151 build replaced the VCST-6185 build (#153) on vcst",
+  "regression": {"run_id": "REG-2026-11-04-1022", "suites": ["086", "050h", "015"], "status": "running"},
   "tracker_transition": {"role": "testing", "state": "Testing"},
   "evidence": "reports/tickets/Sprint26-22/VCST-6251/vcst/evidence/",
   "evidence_artifact": null,

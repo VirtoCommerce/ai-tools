@@ -3481,5 +3481,16 @@
   },
   "PROD_RANGE_NONE": {
     "id": "d266a936-b64e-497f-838b-449ad4d2f3fd"
+  },
+  "REVIEW_PRODUCT": {
+    "id": "8a39420b-1c52-444b-bf98-83b0f203878a",
+    "name": "Fast HDPE NIJ IIIA High Cut Trajectory Helmet UHMW-PE Trajectory 3A Bulletproof Helmet",
+    "slug": "accessories/aliexpress/security-and-protection/bulletproof-protection/helmet-fast-bulletproof",
+    "approved_count": 6,
+    "new_count": 1,
+    "rejected_count": 1
+  },
+  "CATALOG_OTHER_WITH_PROPERTIES": {
+    "id": "8a55771b-16d6-41f9-8dcd-329099233c8f"
   }
 }

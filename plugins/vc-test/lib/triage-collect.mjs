@@ -117,18 +117,21 @@ function harPathForBrowser(browser) {
 
 /**
  * Leading verdict word of a Result/Verdict cell → the issue status it triages as, or null when the row is not an
- * issue. Advisory outcomes (`vs. DESIGN` DRIFT / UNSPEC / KNOWN_DIVERGENCE, WAIVED) never block, so they are not triaged.
+ * issue. Advisory outcomes (`vs. DESIGN` DRIFT / MISSING / UNSPEC / KNOWN_DIVERGENCE, WAIVED) never block
+ * (`skills/qa-design/visual-axis.md`), so they are not triaged; an AMBIGUOUS design row escalates, so it triages as BLOCKED.
  * @param {string} cell
  * @returns {"FAIL"|"BLOCKED"|"SKIPPED"|"PASS"|"ADVISORY"|null}
  */
 export function checklistVerdict(cell) {
-  const u = String(cell ?? "").replace(/[*_`]/g, "").trim().toUpperCase();
+  // Markdown emphasis and escapes (`*`, backticks, `\`) go, and an underscore reads as a space, as in rounds.mjs
+  // verdictWord: `_PASS_`, PASS_WITH_NOTES, KNOWN\_DIVERGENCE and NOT_RUN all read as their words.
+  const u = String(cell ?? "").replace(/[*`\\]/g, "").replace(/_+/g, " ").trim().toUpperCase();
   if (!u) return null;
-  if (/^(FAIL(ED)?|NOT[- ]BUILT|MISSING)\b/.test(u)) return "FAIL";
-  if (/^(BLOCKED|INCONCLUSIVE)\b/.test(u)) return "BLOCKED";
+  if (/^(FAIL(ED)?|NOT[- ]BUILT|NOT[- ]MET)\b/.test(u)) return "FAIL";
+  if (/^(BLOCKED|INCONCLUSIVE|AMBIGUOUS)\b/.test(u)) return "BLOCKED";
   if (/^(NOT[- ]RUN|SKIP(PED)?)\b/.test(u)) return "SKIPPED";
-  if (/^PASS(ED)?\b/.test(u)) return "PASS";
-  if (/^(DRIFT|ADVISORY|UNSPEC|KNOWN_DIVERGENCE|WAIVED|N\/A)\b/.test(u)) return "ADVISORY";
+  if (/^(PASS(ED)?|CONFIRMED|MET)\b/.test(u)) return "PASS";
+  if (/^(DRIFT|MISSING|ADVISORY|UNSPEC|KNOWN DIVERGENCE|WAIVED|N\/A)\b/.test(u)) return "ADVISORY";
   return null;
 }
 
