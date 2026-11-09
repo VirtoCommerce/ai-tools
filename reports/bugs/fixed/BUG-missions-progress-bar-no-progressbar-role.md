@@ -1,6 +1,6 @@
 # Mission progress bars expose no `progressbar` role or value to assistive tech — **P2**
 
-## Status: CONFIRMED (live, two lanes)
+## Status: FIXED
 **Found by:** agent — testing VCST-5957 (`/qa-test` 3x + 4v, 2026-10-01)
 **Tracker:** **VCST-6143** (Bug, Medium) · Relates VCST-5957 (standalone, BL-A11Y on a feature ticket)
 **Archetype:** `RENDER` · **Oracle:** `BL-A11Y-002` / `BL-A11Y-004` (WCAG 2.2 SC 4.1.2 Name, Role, Value; 1.3.1 Info and Relationships)
@@ -26,3 +26,10 @@ The mission card bar (`.mission-card__track` / `__bar`) and the order-modal bar 
 ## Fix Routing
 - **Repo:** `VirtoCommerce/vc-frontend` · `client-app/modules/loyalty/components/mission-card.vue`, `order-mission-modal.vue`
 - **Hint:** add `role="progressbar"`, `aria-valuenow="{percent}"`, `aria-valuemin="0"`, `aria-valuemax="100"` and `aria-labelledby` the mission title, or use the UI kit's progress primitive if one exists.
+
+## Resolution
+- **Fixed in:** vc-frontend PR #2591 (head `5b34e46c`, theme build `2.62.0-pr-2591-5b34-5b34e46c`) — PR still OPEN at verification time, not deployed to a shared env
+- **Tracker:** VCST-6143 → Tested (2026-11-09), comment 112834
+- **Verified:** 2026-11-09 by `/qa-verify-fix` — localhost frontend-only (PR theme, API proxied to vcst-qa); RED on vcst-qa storefront, GREEN 3/3, checklist 10/10, axe unchanged
+- **Method:** native sr-only `<progress>` named by the mission title (`aria-labelledby` on the card, `aria-label` in the modal); drawn track and N% `aria-hidden`
+- **Evidence:** `reports/tickets/Sprint26-22/VCST-6143/vcst/verification-report.md`

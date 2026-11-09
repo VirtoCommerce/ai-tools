@@ -86,7 +86,7 @@ Snippets measure numeric thresholds. Some defects are obvious in a screenshot bu
 
 After running all invariant snippets, the agent must:
 
-1. **Take a baseline screenshot per viewport** (375 / 768 / 1280) of the page at default state — even when all snippets PASS.
+1. **Take the baseline screenshots** the sweep names ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure) of the page at default state — even when all snippets PASS.
 2. **Take a state-stress screenshot per non-default state** entered in the State-Stress Pass.
 3. **Visually review each screenshot before exiting** — flag any defect not covered by an invariant snippet under a "Visual Findings" section in the report, severity-tagged by judgment with cross-reference to the closest BL-* or `PROPOSED-BL-*` if one applies.
 
@@ -137,8 +137,8 @@ do not hand-roll the snippets, same rule as `measure-layout.mjs` (`node <plugin>
    (`@dsCard group`), and `unresolved[]`. The extractor **never guesses**: a `var()` indirection, an
    unreadable table header, a prose row, a partially-parsing size scale each become an `unresolved`
    entry with a reason and contribute no expectation.
-3. **Diff against measured live values** (from the browser, never from the spec) at 375 / 768 / 1280
-   and on the Coffee + Red presets — `designTokenAuditSnippet` / `iconParityAuditSnippet` /
+3. **Diff against measured live values** (from the browser, never from the spec) at each width the spec's
+   artboards were drawn at, and on the Coffee + Red presets — `designTokenAuditSnippet` / `iconParityAuditSnippet` /
    `componentGeometryAuditSnippet` / `propertyAuditSnippet` (change-table rows: you name the selector +
    metric per row), then the matching `classify*`, then `summarizeDesignFindings`.
 
@@ -199,7 +199,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 
 - **Read live tokens, never hardcode** — Coffee is multi-preset (6 light + 3 dark variants); a token's resolved value varies per preset. Hardcoded hex values in this skill or in audits will be wrong half the time.
 - **Cite the BL / WCAG / ECL ID** for every finding where one applies. Findings without citations decay into vague design debate. For proposed-but-not-promoted invariants, cite as `PROPOSED-BL-UI-NNN`; their audit logic lives in `<plugin>/lib/design/measure-layout.mjs` (in this repository: `scripts/lib/measure-layout.ts`, the canonical TypeScript it is generated from) until promoted into the BL oracle (`ui`).
-- **Audit at multiple viewports** — 375 / 768 / 1280 minimum; some tokens override at breakpoint boundaries.
+- **Audit across the derived viewport sweep** ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure), never a hand-listed set; some tokens override at breakpoint boundaries.
 - **Audit at multiple states** — run the State-Stress Pass; default-only audits miss state-specific defects (F-CART-006 was missed precisely because the default state had no disabled product visible).
 - **Always run the Visual-Review Screenshot Pass** before exiting — invariant snippets are necessary but not sufficient.
 - **For any sized control, assert token equality + aspect ratio, never a threshold** — a dimension that clears "≥ / no-overflow" gates can still be the wrong size or shape (VCST-5413: 34×28 oval slider handle vs 18×18 circle). Use `sizedControlAuditSnippet(selector, {tokenVar\|expectedPx, square\|ratio})` + `classifySizedControl()`: assert `rendered === token` **and** `width === height` (or the intended ratio); cross-check Storybook vs storefront (size drift between the two = cascade-override red flag); and capture one confirmation screenshot of the integrated control even on PASS.

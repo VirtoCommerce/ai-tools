@@ -191,7 +191,8 @@ Two consequences of the same fact, pointing the other way:
 
 ## 3. Diff protocol
 
-Measured values come **from the browser, never from the spec**. Run at 375 / 768 / 1280 and on
+Measured values come **from the browser, never from the spec**. Run at each width the spec's
+artboards were drawn at (the layout invariants keep the full sweep, `layout-defects.md`) and on
 the WCAG-gated presets (Coffee, Red) — a token diff is preset-dependent.
 
 1. `browser_evaluate(designTokenAuditSnippet(spec))` → `classifyDesignToken(result, { unresolved })`

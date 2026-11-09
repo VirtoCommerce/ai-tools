@@ -1,0 +1,50 @@
+{
+  "round": 1,
+  "env": "vcst",
+  "closedAt": "2026-11-05T11:04:43.616Z",
+  "verdict": "BLOCKED",
+  "build": [
+    {
+      "repo": "vc-module-sales-rep",
+      "number": 33,
+      "sha": "04e4def7"
+    },
+    {
+      "repo": "vc-module-task-management",
+      "number": 33,
+      "sha": "4865c9ca"
+    }
+  ],
+  "bugs": [
+    {
+      "id": "B-1",
+      "severity": "High",
+      "scope": "in",
+      "title": "Customer column cut to ~64 px of text at 1280 px: every customer reads \"AGENT-TEST-…\" and similar names are indistinguishable (BL-UI-004, AC-1, AC-5)",
+      "rows": [
+        "VIS-1"
+      ],
+      "package": "reports/tickets/Sprint26-22/VCST-6157/vcst/investigations/VIS-1",
+      "spec": null,
+      "key": "VCST-6701"
+    },
+    {
+      "id": "B-2",
+      "severity": "Medium",
+      "scope": "in",
+      "title": "At 768 px the Customers, Status and Priorities filters do not wrap: Priorities is cut off and the page scrolls sideways (BL-UI-004, AC-4, AC-6)",
+      "rows": [
+        "VIS-2"
+      ],
+      "package": "reports/tickets/Sprint26-22/VCST-6157/vcst/investigations/VIS-2",
+      "spec": null,
+      "key": "VCST-6702"
+    }
+  ],
+  "unresulted": [
+    "R6",
+    "R7",
+    "R12"
+  ],
+  "bundle": "reports/tickets/Sprint26-22/VCST-6157/vcst/rounds/round-1.bundle.json"
+}

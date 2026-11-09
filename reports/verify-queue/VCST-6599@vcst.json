@@ -1,0 +1,26 @@
+{
+  "pass": 1,
+  "env": "vcst",
+  "prUnderTest": "VirtoCommerce/vc-frontend#2637",
+  "prBuild": "vc-theme-b2b-vue-2.62.0-pr-2637-02f2-02f26436.zip",
+  "runningBuild": "vc-theme-b2b-vue-2.62.0-pr-2613-e3fc-e3fce9a9.zip",
+  "deployPR": null,
+  "local": {
+    "themeUrl": "https://vc3prerelease.blob.core.windows.net/packages/vc-theme-b2b-vue-2.62.0-pr-2637-02f2-02f26436.zip",
+    "marker": "fe-13dc17e4fc0c",
+    "observedMarker": "fe-19851517b377",
+    "boundTo": "vcst",
+    "running": false,
+    "checkedAt": "2026-11-05"
+  },
+  "blocker": "no deploy PR this run (one-per-run limit used by VCST-6593); local env runs another build",
+  "baseline": "cited: ticket Actual result (vcptcore, 3/3); live repro BLOCKED \u2014 built-in browser signed out of vcst storefront, and repro needs adding passkeys (write)",
+  "jiraComments": {},
+  "skipped": [
+    "Step 0.0 run-folder.mjs use \u2014 not in a Claude Code session (no CLAUDE_CODE_SESSION_ID); run folder = reports/tickets/Sprint26-22/<KEY>/",
+    "Step 0.2 /qa-env-check endpoints \u2014 device VM cannot reach the stand (egress, curl 000); reachability checked in the built-in browser instead",
+    "Step 3-7 \u2014 not reached: Step 2 deploy gate = NOT deployed",
+    "Step 2A Phase A live repro \u2014 built-in browser signed out of vcst-qa-storefront; adding passkeys is a write"
+  ],
+  "updated": "2026-11-05"
+}
