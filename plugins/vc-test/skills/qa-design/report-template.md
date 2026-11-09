@@ -13,7 +13,7 @@ A supporting file of [`SKILL.md`](SKILL.md): the templates of its Step 4, moved 
 **Matrix scope:** {covering test IDs from critical-ui-scope.md, or "off-matrix — heuristic scope"}
 **Storybook story:** {URL or "not found — storefront-only"}
 **Storefront URL:** {URL}
-**Viewports:** 375 / 768 / 1280
+**Viewports:** {`AUDIT_VIEWPORTS_PX` — full sweep, or the widths a scoped run audited, in px}
 
 ## Invariant Results
 

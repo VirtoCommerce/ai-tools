@@ -1,6 +1,6 @@
 # Compare v2 — Compare page freezes and sometimes becomes unresponsive — P2
 
-## Status: FILED — [VCST-5938](https://virtocommerce.atlassian.net/browse/VCST-5938) (screenshots attached AND embedded inline, verified via renderedFields)
+## Status: FIXED
 **Severity:** Medium/P2 · **Type:** Performance / unbounded fetch · **Archetype:** `SCALE`
 **Found by:** `/qa-bug`, 2026-09-10 — user report: *"Compare page became frozen when too many categories with products different types, configurations"*
 **Env:** vcst-qa · theme `2.58.0-pr-2469-83d6-83d6e5d5` · Platform `3.1064.0` · Chrome 152, desktop, no throttling.
@@ -153,3 +153,8 @@ Not verified: signed-in B2B (Chrome DevTools MCP has no `--secrets` channel — 
 
 **Fix shape (suggestion):** scope both fetches to `selectedCategoryKey` so work is bounded by what renders, add
 a global cap (or paginate the id list), and abort the in-flight wave on cleanup.
+
+## Resolution
+- Fixed in: vc-frontend PR #2613 (theme 2.62.0-pr-2613-e3fc-e3fce9a9), still open; verified on its PR build
+- Tracker: VCST-5938 → Tested (2026-11-05)
+- Method: /qa-verify-fix on vcst — the 2026-10-13 reproduction 3/3 GREEN, plus long-page control and compare regression

@@ -1,0 +1,88 @@
+{
+  "ticket": "VCST-5938",
+  "verdict": "VERIFIED",
+  "date": "2026-11-05",
+  "env": "vcst",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "theme": "vc-theme-b2b-vue-2.62.0-pr-2613-e3fc-e3fce9a9",
+    "pr_build": "vc-frontend#2613 @ e3fce9a9",
+    "deploy_pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7036"
+  },
+  "agent_used": "inline (Step 5 run inline \u2014 agent has no built-in browser)",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug: Jira comment 111932 (2026-10-13 measured repro)",
+  "before_after": [
+    {
+      "check": "Short page (max scroll 300): one-page scroll from top",
+      "before": "stops ~240 px; ~230 --stuck toggles/s; tab OOM",
+      "after": "reaches 300; row full height 251 px, pinned, stuck styling; 1 class change; 60 fps; heap 33 MB flat",
+      "after_shot": "screenshots/VCST-5938-after-pr2613-bottom.jpg"
+    },
+    {
+      "check": "Long page (max scroll 903): cross threshold both ways",
+      "before": "n/a",
+      "after": "compact on at 240, off below 240; 2 class changes total"
+    }
+  ],
+  "checklist_total": 8,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "checklist": [
+    [
+      "Reproduce original STR 3x",
+      "PASS"
+    ],
+    [
+      "Fix resolves freeze",
+      "PASS"
+    ],
+    [
+      "Root cause (anchor measure + room check)",
+      "PASS"
+    ],
+    [
+      "Long-page compact on/off at threshold",
+      "PASS"
+    ],
+    [
+      "Category tabs switch",
+      "PASS"
+    ],
+    [
+      "All/Differences filter",
+      "PASS"
+    ],
+    [
+      "Clear all + confirm",
+      "PASS"
+    ],
+    [
+      "No new console errors",
+      "PASS"
+    ]
+  ],
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested"
+  },
+  "tracker_comments": {
+    "pass1": "112717",
+    "starting": "112722",
+    "result": "112723 (amended with qa-report render)"
+  },
+  "evidence": "reports/tickets/Sprint26-22/VCST-5938/vcst/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-22/VCST-5938/vcst/",
+  "skipped_steps": [
+    "Step 0.2 /qa-env-check endpoints \u2014 device VM and cloud cannot reach the stand (egress); reachability confirmed in the built-in browser, admin /connect/token not run (no sign-in from automation)",
+    "Step 5 agent dispatch \u2014 dispatched agents have no built-in browser; Step 5 run inline",
+    "Step 6 inline screenshots \u2014 Jira media upload host blocked from cloud and device network; screenshot kept locally, stated in the comment",
+    "Step 6 /vc-fix:qa-report via Skill tool \u2014 vc-fix plugin did not load (unmet dependency); render.mjs run directly, comment 112723 amended with its output",
+    "Step 6A publish \u2014 page kept local pending operator consent"
+  ]
+}

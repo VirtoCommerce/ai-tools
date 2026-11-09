@@ -137,7 +137,7 @@ Reliability order: `data-testid` > `aria-label` > semantic HTML > text content >
 | Performance | Chrome DevTools `performance_*` (Core Web Vitals) |
 
 **Browsers:** `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`. No WebKit on Windows — use Edge.
-**Viewports:** mobile (375px), tablet (768px), desktop (1920px).
+**Viewports:** mobile + desktop lane for a flow; for a layout claim, the theme's breakpoint sweep (every Tailwind `screens` edge it declares, the width 1 px below it, the midpoints between edges).
 **MCP Servers:** Chrome DevTools (debugging, perf), the configured tracker (Atlassian/Jira or Azure Boards, per `project-profile.json`), Figma (design comparison), the configured code host (GitHub or Azure Repos), context7 (VC docs).
 **Admin SPA** (`BACK_URL`): create test data, verify storefront ↔ admin consistency, cleanup.
 

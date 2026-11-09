@@ -83,6 +83,16 @@ this skill was missed in that pass.
 When a finding is viewport-specific, cite the **width in px**, not a tier name — "overflow at 1500" is
 reproducible, "overflow on desktop" is not.
 
+**Two depths — every viewport list in this repo cites this paragraph instead of naming widths.**
+
+- **A layout claim** — overflow, clipping, wrap, alignment, touch targets, a design compare, any `BL-UI-*` —
+  runs the whole `AUDIT_VIEWPORTS_PX` sweep. Fewer widths is a scoped run, and the report says which ones.
+- **A flow check** — does the feature work on mobile and on desktop, a bug repro, a sign-off row — runs the
+  lane viewports (`playwright-mobile` for touch, a desktop lane; sizes in
+  `config/mcp-playwright-*.config.json`), plus a `BREAKPOINTS_PX` edge and the width just below it when the
+  claim is about the layout switching there (the storefront header swaps at `lg`). A flow check that finds
+  a layout defect hands it to the sweep before it is filed.
+
 ## Testing Methods
 
 ```markdown
