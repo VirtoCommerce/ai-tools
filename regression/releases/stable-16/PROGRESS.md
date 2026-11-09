@@ -12,7 +12,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W1 | Platform & infrastructure | Elena Kutasina | RUN_DONE | 538 | 538 | 436 | 19 | 67 | 72 | 26 | REG-2026-10-13-0035 REG-2026-10-13-1241-UCP |
 | W2 | Catalog & search | Elena Kutasina | RUN_DONE | 611 | 553 | 445 | 53 | 51 | 49 | 58 | REG-2026-10-13-W2 |
 | W3 | Purchase flow | Elena Kutasina | TRIAGED | 840 | 757 | 500 | 95 | 159 | 0 | 256 | REG-2026-10-15-W3 REG-2026-10-26-1847-W3R REG-2026-10-26-2010-W3R2 REG-2026-10-26-2044-W3R3 |
-| W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W4 | Returns, B2B, accounts | Aleksandra Mitricheva | CLAIMED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | Aleksandra Mitricheva | TRIAGED | 144 | 144 | 72 | 14 | 6 | 0 | 68 | REG-2026-11-04-1505-W6 REG-2026-11-05-0023-W6R REG-2026-11-06-1345-W6R2 REG-2026-11-06-1410-W6R3 REG-2026-11-09-W6R4 REG-2026-11-09-W6R5 |
 | W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | TRIAGED | 428 | 428 | 169 | 44 | 193 | 0 | 524 | REG-2026-11-05-1645-W7 REG-2026-11-06-1424-W7C |
