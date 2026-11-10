@@ -156,7 +156,7 @@ export function describeSelector(result, env, { hostGoverned = false } = {}) {
       if (problem) return [`${SELECTOR_FILE}: kept, but ${problem}`];
       return [
         `${SELECTOR_FILE}: kept (TEST_ENV=${result.env})`,
-        ...(result.env === env ? [] : [`  ${env} is not the default — ${switchHow}`]),
+        ...(!env || result.env === env ? [] : [`  ${env} is not the default — ${switchHow}`]),
       ];
     }
     default: {

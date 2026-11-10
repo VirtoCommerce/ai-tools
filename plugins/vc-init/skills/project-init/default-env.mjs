@@ -9,12 +9,15 @@
  *
  *   { status: "written" | "kept" | "ask" | "skipped", env, problem?, reason?, options?, recommended?, lines }
  *
- *   written — the project's only env became the default (or `--choose` named one);
+ *   written — the project's only env became the default (or `--choose` named one; a production-looking
+ *             one gets a warning line);
  *   kept    — `.env.test-env` exists: never rewritten; `problem` says when it names nothing usable;
  *   ask     — several envs, none the default: ask ONE AskUserQuestion "Which environment is the default?"
- *             with `options` (the project's envs), `recommended` first (lib/test-env-selector.mjs
- *             recommendDefault — never a production-looking env; on a host-governed project one the host
- *             keeps test-user slots for), then re-run with `--choose <answer>`;
+ *             with `options` (the project's envs — exactly what `--choose` accepts), `recommended` first and
+ *             marked Recommended (lib/test-env-selector.mjs recommendDefault — never a production-looking env;
+ *             on a host-governed project one the host keeps test-user slots for); `recommended: null` (every
+ *             env looks like production) ⇒ mark none. Then re-run with `--choose <answer>`. An answer that
+ *             names no env of the project comes back as `ask` again with `error` — ask again;
  *   skipped — git tracks the file or does not ignore it, or the write failed: relay `lines`.
  *
  * `lines` are the operator-facing lines to relay. Writes only `.env.test-env` and, first, its `.gitignore`
@@ -29,8 +32,7 @@ import { ensureSelectorIgnore } from "./lib/gitignore.mjs";
 import { hostInstallPath, isHostGoverned } from "./lib/governance.mjs";
 import { hostState } from "./lib/host-adapter.mjs";
 import { hostEnvFor } from "./lib/test-users.mjs";
-import { ENV_NAME_RE } from "./lib/passwords.mjs";
-import { describeSelector, ensureTestEnvSelector, ourEnvs, recommendDefault } from "./lib/test-env-selector.mjs";
+import { SELECTOR_FILE, describeSelector, ensureTestEnvSelector, looksProduction, ourEnvs, recommendDefault } from "./lib/test-env-selector.mjs";
 
 function arg(name) {
   const argv = process.argv.slice(2);
@@ -47,24 +49,19 @@ function main() {
   let profile = null;
   try { profile = JSON.parse(readFileSync(process.env.PROJECT_PROFILE_PATH || join(root, "project-profile.json"), "utf-8")); } catch { /* not written yet */ }
   const hostGoverned = isHostGoverned(profile);
+  const named = arg("--env");
   const choose = arg("--choose");
   const envs = ourEnvs(root);
-
-  if (choose !== null && (!ENV_NAME_RE.test(choose) || !envs.includes(choose))) {
-    console.error(`[default-env] --choose ${choose}: not an environment of this project (${envs.join(", ") || "none"})`);
-    process.exit(1);
-  }
-  const env = choose || arg("--env") || envs[0];
-  if (!env) {
+  if (!envs.length) {
     out({ status: "skipped", env: null, reason: "no-envs", lines: ["no .env.<env> with BACK_URL here yet — scaffold one first"] });
     return;
   }
 
   const ignored = ensureSelectorIgnore(root);
-  const result = ensureTestEnvSelector(root, env, { primary: choose !== null });
-  const lines = [...(ignored.length ? [`.gitignore += ${ignored.join(", ")}`] : []), ...describeSelector(result, env, { hostGoverned })];
-
-  if (result.status === "skipped" && result.reason === "several-envs") {
+  const gitLines = ignored.length ? [`.gitignore += ${ignored.join(", ")}`] : [];
+  // The question: the project's envs (the same list --choose accepts), the recommended one first. The skill
+  // asks instead of relaying the stand-alone "create the file by hand" line.
+  const ask = (error) => {
     // The host's test-user slots, mapped through the profile's env map — read-only; no host, no preference.
     let withSlots = () => false;
     const g = profile?.governance;
@@ -75,11 +72,23 @@ function main() {
         withSlots = (e) => hostEnvFor(e, g, hostEnvs) !== null;
       } catch { /* the host could not be read: recommend by name only */ }
     }
-    // The skill asks instead of relaying the stand-alone "create the file by hand" line.
-    const recommended = recommendDefault(result.envs, { withSlots });
-    const options = recommended ? [recommended, ...result.envs.filter((e) => e !== recommended)] : result.envs;
-    out({ status: "ask", env: null, options, recommended, lines: lines.filter((l) => l.startsWith(".gitignore")) });
-    return;
+    const recommended = recommendDefault(envs, { withSlots });
+    const options = recommended ? [recommended, ...envs.filter((e) => e !== recommended)] : envs;
+    out({ status: "ask", env: null, options, recommended, ...(error ? { error } : {}), lines: gitLines });
+  };
+
+  // A free-text answer that names no env of the project is asked again, never written.
+  if (choose !== null && !envs.includes(choose)) return ask(`"${choose}" is not an environment of this project — ask again`);
+  // The env a write is for: the choice, else the env just scaffolded when it is one of the project's, else the first.
+  const target = choose || (envs.includes(named) ? named : envs[0]);
+  const result = ensureTestEnvSelector(root, target, { primary: choose !== null });
+  if (result.status === "skipped" && result.reason === "several-envs") return ask();
+
+  // "<env> is not the default" only for an env this run scaffolded or added (--env): without one there is
+  // nothing to compare, and a deliberate default must not be second-guessed on every --check.
+  const lines = [...gitLines, ...describeSelector(result, named, { hostGoverned })];
+  if (result.status === "written" && looksProduction(result.env)) {
+    lines.push(`  ⚠ ${result.env} looks like production: every command run without an env now targets it — edit ${SELECTOR_FILE} if that was not meant`);
   }
   out({ ...result, lines });
 }

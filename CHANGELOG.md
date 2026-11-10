@@ -21,6 +21,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
     one first — never a production-looking one (`prod`, `production`, `prd`, `live`); qa / test / dev / staging
     before uat; on a host-governed project, one the host keeps test-user slots for;
   - **an existing file** — kept, never rewritten, no question.
+  An answer that names no env of the project is asked again; choosing a production-looking env is written with a
+  warning; with every env production-looking, none is recommended.
 - The step is the new `default-env.mjs`, run once every env of the run exists (`scaffold-env --no-default`), in
   §3a, `--add-env` and `--check` Step C — so a project onboarded before 0.5.4 gets the file, or the question, from
   `/project-init --check`. The host-governed flow scaffolds all its envs first and then takes the same step.
