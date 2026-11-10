@@ -642,6 +642,8 @@ Runner parses `Cleanup` AFTER computing the verdict and runs only `[AUTH]` and `
 
 If Cleanup is empty or literally `none`, runner skips this phase silently.
 
+**It also runs when a step throws** (an `[AUTH]` failure, a network error): the runner runs `Cleanup` with the variables captured up to the failed step, then still exits `3` with that step's error as the cause — a cleanup failure never masks it. A `[REST]` block that still names a `{{VAR}}` the aborted case never captured is skipped and recorded as failed, not sent. Inline `cleanup_post` in Steps does **not** run on an abort, so a resource a case creates in its Steps needs a `Cleanup` block as well (an admin `[REST DELETE …]` by its captured id).
+
 **Don't rely on `Cleanup` for cart state** — use inline `cleanup_post` in Steps. Use `Cleanup` for resources that survive a verdict-fail (orgs, files, dynamic-property definitions).
 
 ---

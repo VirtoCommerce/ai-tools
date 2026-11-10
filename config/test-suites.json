@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-11-02",
-    "totalSuites": 174,
+    "generated": "2026-11-09",
+    "totalSuites": 177,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -796,7 +796,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 57,
+      "testCount": 61,
       "estimatedMinutes": 41,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -838,7 +838,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 19,
+      "testCount": 21,
       "estimatedMinutes": 13,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1372,7 +1372,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 67,
+      "testCount": 69,
       "estimatedMinutes": 32,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1385,7 +1385,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 66,
+        "machine": 68,
         "browser": 1,
         "manual": 0
       }
@@ -1398,7 +1398,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 21,
+      "testCount": 25,
       "estimatedMinutes": 16,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1410,7 +1410,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 19,
+        "machine": 23,
         "browser": 1,
         "manual": 0,
         "deprecated": 1
@@ -1449,7 +1449,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 23,
+      "testCount": 28,
       "estimatedMinutes": 20,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1461,7 +1461,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 22,
+        "machine": 27,
         "browser": 1,
         "manual": 0
       }
@@ -1624,7 +1624,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 4,
+      "testCount": 9,
       "estimatedMinutes": 4,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1635,7 +1635,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 4,
+        "machine": 9,
         "browser": 0,
         "manual": 0
       }
@@ -1778,7 +1778,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 161,
+      "testCount": 178,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1793,7 +1793,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 157,
+        "machine": 174,
         "browser": 1,
         "manual": 0,
         "deprecated": 3
@@ -1807,7 +1807,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 1,
+      "testCount": 4,
       "estimatedMinutes": 8,
       "agent": "qa-backend-expert",
       "tags": [
@@ -3051,7 +3051,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 65,
+      "testCount": 67,
       "estimatedMinutes": 37,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3399,7 +3399,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P2",
-      "testCount": 26,
+      "testCount": 29,
       "estimatedMinutes": 35,
       "agent": "qa-backend-expert",
       "tags": [
@@ -3422,7 +3422,7 @@
       "layer": "backend",
       "concern": "graphql",
       "priority": "P2",
-      "testCount": 16,
+      "testCount": 18,
       "estimatedMinutes": 12,
       "agent": "qa-backend-expert",
       "tags": [
@@ -3436,7 +3436,7 @@
       "envRiskGate": "staging",
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 16,
+        "machine": 18,
         "browser": 0,
         "manual": 0
       }
@@ -3500,7 +3500,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 55,
+      "testCount": 75,
       "estimatedMinutes": 84,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3548,7 +3548,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 69,
+      "testCount": 73,
       "estimatedMinutes": 71,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3560,6 +3560,32 @@
       ],
       "requiresModules": [
         "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "091c",
+      "name": "Sales Rep — Available Coupons (customer profile widget + page, storefront)",
+      "file": "regression/suites/Frontend/sales-rep/091c-sales-rep-customer-coupons-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 15,
+      "estimatedMinutes": 13,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "coupons",
+        "customer-profile",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep",
+        "marketing"
       ],
       "customerApplicability": "reference",
       "clickDriven": true
@@ -3939,7 +3965,7 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
-      "notes": "VCST-5748. Storefront half of OTP email sign-in (API half: 105). OTP-007 flips the store-wide OtpSignIn.Enabled setting, shared with 105 OTP-022 — exclusiveGroup keeps the two suites from running at the same time. Reads the code from the notification journal (SMTP may be off). Cases stay Draft until a run promotes them.",
+      "notes": "VCST-5748. Storefront half of OTP email sign-in (API half: 105). OTP-007 flips the store-wide OtpSignIn.Enabled setting, shared with 105 OTP-022 — exclusiveGroup keeps the two suites from running at the same time. Reads the code from the notification journal (SMTP may be off). Each case stays Draft until a run passes it and promotes it.",
       "exclusiveGroup": "store-setting:OtpSignIn.Enabled",
       "clickDriven": true
     },
@@ -3976,7 +4002,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 42,
+      "testCount": 58,
       "estimatedMinutes": 45,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -4103,7 +4129,33 @@
       "customerApplicability": "reference",
       "exclusiveGroup": "platform-setting:MultiFactorAuthentication",
       "clickDriven": true,
-      "notes": "VCST-5904 (MFA by email: vc-module-mfa#1, vc-platform#3133). Token-endpoint and Backoffice half (storefront half: 111). EXCLUDED from the selections full, backend, sprint, domain:auth-security and concern:api (Draft, and shared-setting windows) - name 110 explicitly and run it ALONE. Every account, disposable store and flag is created IN THE CASE by scripts/seed-data/auth/mfa-fixtures.mjs and removed with teardown(runId) (FIFTH RULE; `npm run td:validate:mfa` guards the creator). SHARED-IMPACT: MFA-001, 002, 003, 004, 011, 012, 013, 014, 016, 020, 023, 026, 030 and 031 flip the GLOBAL MultiFactorAuthentication.Enabled setting and restore it in Cleanup; while it is on every store-less password sign-in on the stand needs a code (about 63% of the stand accounts cannot get one). The exclusiveGroup serialises only suites that declare it (110 and 111), not 031/032/082/104. The admin Bearer is minted BEFORE each window; the Backoffice rows (001, 011, 012, 013, 014, 016, 020, 023, 025, 027, 030) are browser-lane. Codes are read from the notification journal (SMTP may be off). FIXTURE-GAP: the creator cannot produce a lockout-disabled account (the platform keeps lockoutEnabled true), so MFA-017 is BLOCKED until it can. MFA-029 takes about 11 minutes of real time. Expected to FAIL on the current build: MFA-006, MFA-010, MFA-013 and MFA-024 (left Draft for a product bug, VCST-6506; MFA-006 is also non-deterministic across platform instances) and MFA-025 (raw translation key on a direct #!/sign-in-code visit, decision pending). MFA-028 (log reason Unknown after a store refusal) failed in REG-2026-10-26-1422 and has not been re-run (SPEC held). MFA-004 passed (REG-2026-10-26-1715 + -2004); MFA-017 stays BLOCKED (fixture gap) and MFA-015 awaits a run - neither is a product failure. Everything else is expected to pass; MFA-027 and MFA-030 passed in REG-2026-10-26-1422/1503 (MFA-030 is Draft again after PR #547 review: the 65-character boundary on /api/mfa/signin/verify was added and needs a run, VCST-6528). MFA-026 documents decided behaviour (StoreMode=Disabled applies to every user; VCST-6530). MFA-024: the API half reads the per-user code - its verdict depends on the reading of the spec (kept as the SPEC expectation). MFA-005 records Known_Issue VCST-6495 in References and asserts only the store-bound challenge; MFA-015 carries one {HYPOTHESIS} pending a developer answer."
+      "notes": "VCST-5904 (MFA by email: vc-module-mfa#1, vc-platform#3133). Token-endpoint and Backoffice half (storefront half: 111). EXCLUDED from the selections full, backend, sprint, domain:auth-security and concern:api (Draft, and shared-setting windows) - name 110 explicitly and run it ALONE. Every account, disposable store and flag is created IN THE CASE by scripts/seed-data/auth/mfa-fixtures.mjs and removed with teardown(runId) (FIFTH RULE; `npm run td:validate:mfa` guards the creator). SHARED-IMPACT: MFA-001, 002, 003, 004, 011, 012, 013, 014, 016, 020, 023, 026, 030 and 031 flip the GLOBAL MultiFactorAuthentication.Enabled setting and restore it in Cleanup; while it is on every store-less password sign-in on the stand needs a code (about 63% of the stand accounts cannot get one). The exclusiveGroup serialises only suites that declare it (110 and 111), not 031/032/082/104. The admin Bearer is minted BEFORE each window; the Backoffice rows (001, 011, 012, 013, 014, 016, 020, 023, 025, 027, 030) are browser-lane. Codes are read from the notification journal (SMTP may be off). FIXTURE-GAP: the creator cannot produce a lockout-disabled account (the platform keeps lockoutEnabled true), so MFA-017 is BLOCKED until it can. MFA-029 takes about 11 minutes of real time. Expected to FAIL on the current build: MFA-006, MFA-010, MFA-013 and MFA-024 (left Draft for a product bug, VCST-6506; MFA-006 is also non-deterministic across platform instances) and MFA-025 (raw translation key on a direct #!/sign-in-code visit, decision pending). MFA-028 (log reason Unknown after a store refusal) failed in REG-2026-10-26-1422 and has not been re-run (SPEC held). MFA-004 passed (REG-2026-10-26-1715 + -2004); MFA-017 stays BLOCKED (fixture gap) and MFA-015 awaits a run - neither is a product failure. Everything else is expected to pass; MFA-027 and MFA-030 passed in REG-2026-10-26-1422/1503 (MFA-030 is Draft again after PR #547 review: the 65-character boundary on /api/mfa/signin/verify was added and needs a run, VCST-6528). MFA-026 is Deprecated (2026-11-04): VCST-6530, shipped in VCST-6597, narrows StoreMode=Disabled to the store's own non-Backoffice customers; MFA-062 in suite 110a replaces it. MFA-024: the API half reads the per-user code - its verdict depends on the reading of the spec (kept as the SPEC expectation). MFA-005 records Known_Issue VCST-6495 in References and asserts only the store-bound challenge; MFA-015 carries one {HYPOTHESIS} pending a developer answer. VCST-6597: the modes, own-store and xAPI cases live in suite 110a (MFA-033..062); MFA-062 replaces MFA-026 (VCST-6530)."
+    },
+    {
+      "id": "110a",
+      "name": "MFA modes: REST, xAPI and Backoffice",
+      "file": "regression/suites/Backend/api/110a-mfa-modes-api-backoffice.csv",
+      "layer": "backend",
+      "concern": "api",
+      "testCount": 40,
+      "estimatedMinutes": 200,
+      "agent": "qa-backend-expert",
+      "domain": "auth-security",
+      "priority": "P1",
+      "tags": [
+        "auth",
+        "mfa",
+        "modes",
+        "xapi"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.MFA"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "exclusiveGroup": "platform-setting:MultiFactorAuthentication",
+      "clickDriven": true,
+      "notes": "VCST-6597 (MFA policy per store: vc-module-mfa#3 REST/xAPI/Backoffice, vc-frontend#2622 storefront; the storefront half is MFASF-015..020 in suite 111). Split from 110 so the sign-in suite stays reviewable. EXCLUDED from the selections full, backend, sprint, domain:auth-security and concern:api (all Draft, and shared-setting windows) - name 110a explicitly and run it ALONE; it holds the exclusiveGroup of 110 and 111. Every account, disposable store (one or two or three per case, each with its own runId) and flag is created IN THE CASE by scripts/seed-data/auth/mfa-fixtures.mjs and removed with teardown(runId) (FIFTH RULE; `npm run td:validate:mfa` guards the creator). SHARED-IMPACT: only MFA-033, 034, 035 and 062 flip the GLOBAL MultiFactorAuthentication.Enabled setting and restore it in Cleanup (the admin Bearer is minted BEFORE the window); every other case runs with the global setting OFF, READS it first (BLOCKED if it is on) and writes no shared setting. User and organization modes are written through PUT /api/mfa/modes/* as admin and reset to Off in Cleanup. The Backoffice rows (057..061) are browser-lane (playwright-edge); the xAPI rows (046..056) call POST /graphql with raw documents and read the change codes from the notification journal (SMTP may be off). MFA-062 REPLACES MFA-026 (VCST-6530: a Disabled store skips the code only for its own non-Backoffice customers). MFA-034 and MFA-035 hold what the source and the README say about the permission-based Backoffice-account rule (a customer with any role is asked in its own Disabled store) and carry a PO question: they are re-based to the PO decision, never left asserting a value nobody wants. MFA-049 records (does not assert) the answer of requestMfaChangeCode for a Required mode (live 2026-11-04: succeeded and 1 email, the README claim that it is refused is wrong); MFA-052 records (does not assert) the API answer for a member of a Required organization (live: the change succeeds and the stored mode becomes Off, the organization still requires the code: domain map D30). FIXTURE-GAP candidates: MFA-056 needs imp-operator-run-store and the impersonate grant for the operator (BLOCKED otherwise); MFA-054 assumes the module defaults MaxCodeAttempts 3 and CodeResendInterval 30 s and sends the ingress affinity cookie (INGRESSCOOKIE) on every call, because the cap and the resend interval are kept per platform instance and vcst runs replicas (calls that split across instances: BLOCKED, never FAIL). Codes are read by excluding the journal row ids already seen, never by time."
     },
     {
       "id": "111",
@@ -4111,7 +4163,7 @@
       "file": "regression/suites/Frontend/auth/111-auth-mfa-sign-in.csv",
       "layer": "frontend",
       "concern": "functional",
-      "testCount": 14,
+      "testCount": 22,
       "estimatedMinutes": 90,
       "agent": "qa-frontend-expert",
       "domain": "auth-security",
@@ -4128,7 +4180,7 @@
       "customerApplicability": "reference",
       "exclusiveGroup": "platform-setting:MultiFactorAuthentication",
       "clickDriven": true,
-      "notes": "VCST-5904 (storefront half of MFA by email: vc-frontend#2570; API and Backoffice half: 110). EXCLUDED from the selections full, frontend, sprint, domain:auth-security and concern:functional (Draft, and a shared-setting window) - name 111 explicitly and run it ALONE. Every case needs OPERATOR WINDOW W2: the operator sets MultiFactorAuthentication.StoreMode = Enabled on {{STORE_ID}} (the shared B2B-store) in Admin before the run and restores it after; the cases only READ the store to assert the window state and never write a setting of {{STORE_ID}}, and without the window a case is BLOCKED (needs operator window W2), never FAIL. MFASF-010 needs the operator to switch StoreMode off on {{STORE_ID}} in the middle of the case. While the window is open every storefront password sign-in on that store is challenged, so never run it beside 031, 032, 082 or 104 (the exclusiveGroup serialises only 110 and 111). MFASF-007 depends on OtpSignIn.Enabled on {{STORE_ID}} owned by suite 104 (a suite carries one exclusiveGroup): do not run it beside 104 OTP-007. Accounts are created in the case by scripts/seed-data/auth/mfa-fixtures.mjs; codes are read from the notification journal (SMTP may be off). Expected to pass on the current build: all 13 cases (MFASF-008, 009, 011 and 012 passed in REG-2026-10-26-1652, MFASF-010 in 1726; MFASF-011 is still Draft only because its promotion is pending)."
+      "notes": "VCST-5904 (storefront half of MFA by email: vc-frontend#2570; API and Backoffice half: 110). EXCLUDED from the selections full, frontend, sprint, domain:auth-security and concern:functional (Draft, and a shared-setting window) - name 111 explicitly and run it ALONE. MFASF-001..014 and MFASF-020 need OPERATOR WINDOW W2: the operator sets MultiFactorAuthentication.StoreMode = Enabled on {{STORE_ID}} (the shared B2B-store) in Admin before the run and restores it after; the cases only READ the store to assert the window state and never write a setting of {{STORE_ID}}, and without the window a case is BLOCKED (needs operator window W2), never FAIL. MFASF-010 needs the operator to switch StoreMode off on {{STORE_ID}} in the middle of the case. While the window is open every storefront password sign-in on that store is challenged, so never run it beside 031, 032, 082 or 104 (the exclusiveGroup serialises only 110 and 111). MFASF-007 depends on OtpSignIn.Enabled on {{STORE_ID}} owned by suite 104 (a suite carries one exclusiveGroup): do not run it beside 104 OTP-007. Accounts are created in the case by scripts/seed-data/auth/mfa-fixtures.mjs; codes are read from the notification journal (SMTP may be off). Expected to pass on the current build: all 13 cases (MFASF-008, 009, 011 and 012 passed in REG-2026-10-26-1652, MFASF-010 in 1726; MFASF-011 is still Draft only because its promotion is pending). VCST-6597 (vc-frontend#2622): MFASF-015..019 are Draft and need NEW operator windows on {{STORE_ID}}, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it: W3 = MultiFactorAuthentication.StoreMode CustomerChoice (MFASF-015, 017, 018, 019) and W4 = AdminManaged (MFASF-016), next to the existing W2 (Enabled; MFASF-020 uses it). The cases only READ the store to assert the window state and never write a setting of {{STORE_ID}}; outside its own window a case is BLOCKED (needs operator window W3 / W4), never FAIL. W2, W3 and W4 are different modes of the same store: never open two at once, never run a case of one window inside another. The widgets are registered by the theme only when the platform lists a VirtoCommerce.MFA version with the mfa schema (3.1000.2+, 3.1002.0+): on an older module the cases are BLOCKED for the build."
     },
     {
       "id": "112",
@@ -4163,7 +4215,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 46,
+      "testCount": 51,
       "estimatedMinutes": 150,
       "agent": "qa-backend-expert",
       "tags": [
@@ -4178,7 +4230,7 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
-      "notes": "VCST-5888 (Epic VCST-5154). The ERP posts a signed cXML OrderRequest to /api/punchout/cxml and the platform turns the returned cart lines into a customer order (vc-module-punchout PR #6, x-cart #150, cart #199). PNCO-001 is the [JOURNEY] case, PNCO-034 the storefront observation. Env-scoped by requiresModules, so select it with `punchout`. Three configurations decide the data: configuration 0 (no default method codes, T17a), qa1-punchout-defaults (PUNCHOUT_CONFIG_DEFAULTS, codes of active store methods: PNCO-002, -005, -041) and qa1-punchout-badcodes (PUNCHOUT_CONFIG_BADCODES, codes that exist nowhere: PNCO-025); configuration 2 (nonexistent store) is PNCO-038. Every cart-touching case uses the dedicated buyer PUNCHOUT_MAPPING_REQUISITION and resets its carts in Setup and Cleanup (npm run seed:punchout:reset-carts), so it shares that buyer with 109 and is serialised with it by the exclusiveGroup. PNCO-023 flips the store-wide Punchout.Enabled of the configuration-0 store, PNCO-022 deactivates the buyer mapping, PNCO-027, -028 and -042 lower the stock of the plain product: all restored in Cleanup and re-read. The cXML answers need XML parsing, so the rows run on the agent lane. The stored PunchoutOrderRequest row has no REST read and no SQL on this stand: those clauses are NOT-OBSERVABLE notes, not assertions. Several expectations are the developer plan's (a 400 for a checkout validation failure, a payment sum equal to the order total on a partial order) and are known to differ from the build (PNCO-027, -028, -041); PNCO-029, -030, -032 and -043 only RECORD. Cases stay Draft until a run promotes them.",
+      "notes": "VCST-5888 (Epic VCST-5154). The ERP posts a signed cXML OrderRequest to /api/punchout/cxml and the platform turns the returned cart lines into a customer order (vc-module-punchout PR #6, x-cart #150, cart #199). PNCO-001 is the [JOURNEY] case, PNCO-034 the storefront observation. Env-scoped by requiresModules, so select it with `punchout`. Three configurations decide the data: configuration 0 (no default method codes, T17a), qa1-punchout-defaults (PUNCHOUT_CONFIG_DEFAULTS, codes of active store methods: PNCO-002, -005, -041) and qa1-punchout-badcodes (PUNCHOUT_CONFIG_BADCODES, codes that exist nowhere: PNCO-025); configuration 2 (nonexistent store) is PNCO-038. Every cart-touching case uses the dedicated buyer PUNCHOUT_MAPPING_REQUISITION and resets its carts in Setup and Cleanup (npm run seed:punchout:reset-carts), so it shares that buyer with 109 and is serialised with it by the exclusiveGroup. PNCO-050 and PNCO-052 also use a second dedicated buyer, PUNCHOUT_MAPPING_SECOND, which only this suite owns (reset with npm run seed:punchout:second:reset-carts). PNCO-052 Setup runs npm run seed:punchout:second:renew, which DELETES and recreates that account (new user id), because a Returned punchout session cannot be deleted. So never run PNCO-050 and PNCO-052 in parallel with each other, and never run PNCO-052 after PNCO-050 without that renew. PNCO-023 flips the store-wide Punchout.Enabled of the configuration-0 store, PNCO-022 deactivates the buyer mapping, PNCO-027, -028 and -042 lower the stock of the plain product: all restored in Cleanup and re-read. The cXML answers need XML parsing, so the rows run on the agent lane. The stored PunchoutOrderRequest row has no REST read and no SQL on this stand: those clauses are NOT-OBSERVABLE notes, not assertions. Several expectations are the developer plan's (a 400 for a checkout validation failure, a payment sum equal to the order total on a partial order) and are known to differ from the build (PNCO-027, -028, -041); PNCO-029, -030, -032 and -043 only RECORD. Cases stay Draft until a run promotes them.",
       "exclusiveGroup": "store-setting:Punchout.Enabled",
       "clickDriven": true
     },
@@ -4297,6 +4349,33 @@
       "clickDriven": true,
       "preferredBrowser": "playwright-edge",
       "browserRequirementReason": "WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol (WebAuthn.addVirtualAuthenticator): Chromium lanes only. Firefox has no CDP and cannot run the ceremony."
+    },
+    {
+      "id": "117",
+      "name": "Sanity — multi-source indexing and signed webhook",
+      "file": "regression/suites/Backend/sanity/117-sanity-multi-source.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 21,
+      "estimatedMinutes": 35,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "sanity",
+        "cms",
+        "pages",
+        "webhook",
+        "indexing",
+        "journey"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Sanity"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-6475 (vc-module-sanity PR #4, build 3.1004.0-pr-4-f7a8). Sanity content feeds Virto Pages through a full index rebuild or a signed webhook (POST /api/pages/sanity). SAN-001 is the [JOURNEY] case. REST/xAPI only: the Admin SPA settings blade was not exercised (SAN-004 emulates its save through the settings API). Env-scoped by requiresModules; select it by id (`117`). Shares exclusiveGroup search-index:IndexationJob with 061/061b because every rebuild case starts a full Pages IndexationJob. Data: npm run seed:sanity / seed:sanity:teardown, guard npm run td:validate:sanity; the signed webhook helper is scripts/seed-data/sanity/sign-webhook.mjs. Needs Sanity:WebhookSecrets and a Sanity:Secrets entry qaToken on the stand (without them the webhook cases are BLOCKED, never FAIL). Every rebuild case has a precondition: the Pages module caches the full-rebuild change list for 10 min (VCST-6586), so publish a page through the webhook first or wait. Settings are written with POST /api/platform/settings (clear with \"\", null does not clear) and restored in Cleanup. No BL-* invariant exists for the sanity domain yet. Promoted from runs REG-2026-10-28-1005/-1018/-1031 on vcptcore; SAN-021 (platform log) stays Manual.",
+      "exclusiveGroup": "search-index:IndexationJob"
     }
   ],
   "selections": {
@@ -4432,6 +4511,7 @@
         "089",
         "090",
         "091",
+        "091c",
         "107",
         "111"
       ]
@@ -4443,12 +4523,14 @@
       "exclude": [
         "050m",
         "050m2",
+        "050m3",
         "092",
         "092b",
         "094",
         "102",
         "108",
-        "110"
+        "110",
+        "110a"
       ]
     },
     "sprint": {
@@ -4460,6 +4542,7 @@
         "047",
         "050m",
         "050m2",
+        "050m3",
         "063",
         "068",
         "069",
@@ -4467,13 +4550,17 @@
         "089",
         "090",
         "091",
+        "091c",
         "092",
         "092b",
         "093",
         "093b",
         "097",
+        "106",
         "110",
-        "111"
+        "110a",
+        "111",
+        "112"
       ]
     },
     "full": {
@@ -4481,32 +4568,28 @@
       "exclude": [
         "050m",
         "050m2",
+        "050m3",
         "089",
         "090",
         "091",
+        "091c",
         "092",
         "092b",
         "093",
         "093b",
         "096",
         "097",
+        "106",
         "110",
-        "111"
+        "110a",
+        "111",
+        "112"
       ]
     },
     "sales-rep": {
-      "include": [
-        "050m",
-        "050m2",
-        "089",
-        "090",
-        "091",
-        "092",
-        "092b",
-        "093",
-        "093b",
-        "097"
-      ]
+      "where": {
+        "tag": "sales-rep"
+      }
     },
     "domain:purchase-flow": {
       "where": {
@@ -4524,6 +4607,7 @@
       },
       "exclude": [
         "110",
+        "110a",
         "111"
       ]
     },
@@ -4582,7 +4666,8 @@
       "exclude": [
         "050m",
         "050m2",
-        "110"
+        "110",
+        "110a"
       ]
     },
     "concern:admin": {

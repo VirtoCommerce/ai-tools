@@ -97,12 +97,12 @@ For **component targets**, Phase B uses an **explorer approach** — components 
 
 For **page or flow targets**, the page IS the context — skip the explorer enumeration and audit the page directly (the viewport sweep + invariant audits ARE the exploration at that level).
 
-**Component explorer flow (Phase B for components):** [`explorer-flow.md`](explorer-flow.md) — find where the component is used, audit at most 3 contexts at 375 / 768 / 1280, then the cross-context analysis (stable PASS / stable FAIL / context-specific FAIL).
+**Component explorer flow (Phase B for components):** [`explorer-flow.md`](explorer-flow.md) — find where the component is used, audit at most 3 contexts across the derived viewport sweep, then the cross-context analysis (stable PASS / stable FAIL / context-specific FAIL).
 
 **Page or flow target (Phase B simplified):**
 
 - Navigate to the resolved URL via real-user interaction.
-- For each viewport (375 / 768 / 1280), run the invariant audits on the live page.
+- At each width of the derived sweep ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure), run the invariant audits on the live page.
 - Output: `reports/tickets/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storefront/` — screenshots only for FAIL.
 
 **Phase C — Design spec diff (default; skipped only when the source is unreachable):**
@@ -125,7 +125,7 @@ Runs alongside Phase B against the same live contexts, per [`methodology.md`](me
   - `node <plugin>/lib/design/snippet.mjs <name> …` — prints `LAYOUT_SNIPPETS.<key>`, `spacingAuditSnippet`, `alignmentAuditSnippet`, `rectSnapshotSnippet` (`--list` names them all); the classifiers are exports of [`measure-layout.mjs`](../../lib/design/measure-layout.mjs) (in this repository the TypeScript at `scripts/lib/measure-layout.ts` is canonical; the plugin file is generated from it).
   - [storefront-selectors.md](../../knowledge/storefront-selectors.md) — verified DOM selectors.
   - [`methodology.md`](methodology.md) — methodology (live-token extraction, audit order, Findings → Filings tree).
-- Audit at three viewports: 375 / 768 / 1280 (skip a viewport only if the target is verifiably desktop-only).
+- Audit across the derived `AUDIT_VIEWPORTS_PX` sweep ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure); drop the widths below `BREAKPOINTS_PX.lg` only if the target is verifiably desktop-only.
 - Evidence capture per `<plugin>/knowledge/reports.md` §5 (in this repository: the `qa-evidence` skill's `evidence-capture-policy.md`) — screenshots for FAIL states only.
 - Briefs carry the `Observed behaviour` line (`agent-dispatch.md`) (in this repository: `.claude/templates/agent-dispatch.md`).
 
@@ -158,7 +158,7 @@ Never auto-file. Explicit `y` required.
 - **Default mode is dual eval** for component targets (Storybook + Storefront). Use `--storefront-only` to skip the Storybook phase. Page and flow targets always run storefront-only — Storybook hosts components, not pages.
 - Storybook story discovery uses convention (`{STORYBOOK_URL}/?path=/story/{atomic}-{component-kebab}--default`) first, then GitHub MCP `search_code` for `{Component}.stories.ts` fallback. If neither resolves, skip the Storybook phase with a note — never fail the audit.
 - Cite the BL-UI / WCAG / ECL ID for every finding — findings without citations decay into subjective debate.
-- Audit at 375 / 768 / 1280 viewports unless the target is verifiably desktop-only.
+- Audit across the derived viewport sweep, never a hand-listed set ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure).
 - Never hardcode design tokens — read live `:root` custom properties (per [`methodology.md`](methodology.md) §Rules "Read live tokens, never hardcode").
 - `STORYBOOK_URL` and `FRONT_URL` come from env / `config.js` — never hardcode URLs.
 - Ask before filing bugs (explicit user yes required).

@@ -10,7 +10,7 @@
 // (nested by any indent of 2+ spaces, mixed `#*` markers, a step's indented screenshot kept inside its item —
 // a blank line ends a Jira list), image lines and inline images (→ `!<file>|width=700!` / `!<file>!`, the file
 // attached by name), fenced code (→ `{code:<lang>}` / `{noformat}`, verbatim), tables (→ `||h||` / `|c|`),
-// MkDocs admonitions (→ {info}/{tip}/{warning}/{panel}), blockquotes and rules. Wiki-special `{ } [ ]` in text
+// MkDocs admonitions (→ a titled, tinted {panel} — Jira Cloud has no {info}/{tip}/{warning}), blockquotes and rules. Wiki-special `{ } [ ]` in text
 // and code spans are escaped, so `{{VAR}}` and `[optional]` stay literal.
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -18,7 +18,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PANEL = { note: "info", info: "info", tip: "tip", success: "tip", warning: "warning", danger: "warning", example: "panel" };
+// Jira Cloud renders only {panel}: {info}/{tip}/{warning} are Confluence macros and show as literal text in a comment.
+const NOTE = { title: "Note", bg: "#DEEBFF" }, TIP = { title: "Tip", bg: "#E3FCEF" }, WARN = { title: "Warning", bg: "#FFFAE6" };
+const PANEL = { note: NOTE, info: NOTE, tip: TIP, success: TIP, warning: WARN, danger: WARN, example: { title: "Example", bg: "#F4F5F7" } };
 const IMG = String.raw`!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)`;
 const fileOf = (p) => p.split(/[\\/]/).pop();
 const esc = (s) => s.replace(/[{}[\]]/g, "\\$&");
@@ -86,15 +88,15 @@ export function mdToWiki(md) {
 
     const adm = line.match(/^\s*!!!\s+(\w+)(?:\s+"([^"]*)")?\s*$/);
     if (adm) {
-      const macro = PANEL[adm[1].toLowerCase()] ?? "panel";
-      const title = adm[2]?.replace(/[|}{]/g, " ").replace(/\s+/g, " ").trim();
-      out.push(title ? `{${macro}:title=${title}}` : `{${macro}}`);
+      const kind = PANEL[adm[1].toLowerCase()] ?? { title: adm[1], bg: "#F4F5F7" };
+      const title = adm[2]?.replace(/[|}{=]/g, " ").replace(/\s+/g, " ").trim() || kind.title;
+      out.push(`{panel:title=${title}|bgColor=${kind.bg}}`);
       const body = indentOf(line) + 4;
       while (i + 1 < lines.length && (indentOf(lines[i + 1]) >= body && lines[i + 1].trim() || (!lines[i + 1].trim() && nextText(i + 1) !== undefined && indentOf(nextText(i + 1)) >= body))) {
         const l = lines[++i];
         if (l.trim()) out.push(inline(l.trim()));
       }
-      out.push(`{${macro}}`);
+      out.push("{panel}");
       continue;
     }
 

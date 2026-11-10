@@ -12,7 +12,10 @@ import { join } from "node:path";
 import { parse as parseCsv } from "csv-parse/sync";
 import type { RequirementsFile } from "./requirements.ts";
 
-const KINDS = ["storeSetting", "platformSetting", "paymentMethod", "deployConfig", "uploadScope"];
+// Keep in step with ReqKind in requirements.ts (a type there, so it cannot be imported as a value).
+const KINDS = ["storeSetting", "platformSetting", "paymentMethod", "deployConfig", "uploadScope", "storeLanguage", "storeCurrency"];
+/** Kinds whose check is membership in a list the store or stand offers: a matcher has nothing to compare. */
+const LIST_KINDS = ["uploadScope", "storeLanguage", "storeCurrency"];
 const MATCHERS = ["equals", "notEquals", "nonEmpty", "allowedIncludes"] as const;
 
 export function lintRequirements(root: string, suites: { id: string; file: string }[]): string[] {
@@ -43,6 +46,7 @@ export function lintRequirements(root: string, suites: { id: string; file: strin
       if (r.level !== undefined && r.level !== "warn" && r.level !== "block") errors.push(`${where}: level must be warn or block`);
       const matchers = MATCHERS.filter((m) => r[m] !== undefined);
       if (matchers.length > 1) errors.push(`${where}: one matcher at most (has ${matchers.join(", ")})`);
+      if (LIST_KINDS.includes(r.kind) && r.kind !== "uploadScope" && matchers.length) errors.push(`${where}: ${r.kind} takes no matcher — name is the value the store must offer`);
       if (r.prefix && r.kind !== "deployConfig") errors.push(`${where}: prefix applies to deployConfig only`);
       if (r.allowedIncludes && r.kind !== "platformSetting") errors.push(`${where}: allowedIncludes applies to platformSetting only`);
       if (r.cases !== undefined && !Array.isArray(r.cases)) errors.push(`${where}: cases must be an array of case ids`);

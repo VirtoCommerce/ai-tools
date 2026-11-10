@@ -1291,6 +1291,14 @@
     "role": "AGENT-TEST-6443 no-create",
     "password_var": "DEFAULT_TEST_PASSWORD"
   },
+  "SANITY_ASSET_IMAGE": {
+    "id": "image-3dce9c2d4b39489ad1752e692cb4950c68417479-4x3-png",
+    "url": "https://cdn.sanity.io/images/ryu3mu0u/production/3dce9c2d4b39489ad1752e692cb4950c68417479-4x3.png"
+  },
+  "SANITY_ASSET_FILE": {
+    "id": "file-033708323ba3b75b5b354f0d14c827798a6bc763-txt",
+    "url": "https://cdn.sanity.io/files/ryu3mu0u/production/033708323ba3b75b5b354f0d14c827798a6bc763.txt"
+  },
   "PK_ORG_MAIN": {
     "name": "AGENT-TEST-PK-Org-Main",
     "id": "cfa5c62c-30fc-4380-8aba-da94e6246c85"
@@ -1587,5 +1595,83 @@
     "_inline": true,
     "group_id": "506314d6-d876-413f-a8e1-63c40f331a65",
     "permalink": "/agent-test-login-section"
+  },
+  "SR_REP_CALL": {
+    "id": "42a224d3-979a-4ec9-bad3-a4fe68b9fff7",
+    "user_id": "ae43a317-0efb-4eb0-8f89-07316c2ca1f8"
+  },
+  "ORG_SR_CALL_MULTI": {
+    "id": "d88f4a68-cad1-4f50-96a0-a208eca73d86",
+    "platform_id": "d88f4a68-cad1-4f50-96a0-a208eca73d86",
+    "primary_contact_id": "8aace3a6-b520-40b8-bf1a-ea58228db0c9",
+    "contact_V1C": "8aace3a6-b520-40b8-bf1a-ea58228db0c9",
+    "default_href": "tel:+15550102031"
+  },
+  "ORG_SR_CALL_DUP": {
+    "id": "b0eae86d-87cd-4865-9204-3d976246beda",
+    "platform_id": "b0eae86d-87cd-4865-9204-3d976246beda",
+    "primary_contact_id": "cf5a4632-a59f-4b36-ba81-a2d305bb5e14",
+    "contact_V2C": "cf5a4632-a59f-4b36-ba81-a2d305bb5e14",
+    "default_href": "tel:+15550203040"
+  },
+  "ORG_SR_CALL_ORGONLY": {
+    "id": "8b5055cc-7913-4a18-a91a-d5462048589b",
+    "platform_id": "8b5055cc-7913-4a18-a91a-d5462048589b",
+    "primary_contact_id": "",
+    "default_href": "tel:+15550304050"
+  },
+  "ORG_SR_CALL_OWNERLESS": {
+    "id": "a5983636-b408-4a40-95ad-87a68ad9f156",
+    "platform_id": "a5983636-b408-4a40-95ad-87a68ad9f156",
+    "primary_contact_id": "7a400871-8917-4746-b9f0-4feadeec8cd7",
+    "contact_V4C": "7a400871-8917-4746-b9f0-4feadeec8cd7",
+    "default_href": "tel:+15550410002"
+  },
+  "ORG_SR_CALL_NONE": {
+    "id": "f9e8190a-6f1b-4267-a23a-759322bb5f91",
+    "platform_id": "f9e8190a-6f1b-4267-a23a-759322bb5f91",
+    "primary_contact_id": "4aaceb20-0520-41ef-90a0-8c5ce60632af",
+    "contact_V5C": "4aaceb20-0520-41ef-90a0-8c5ce60632af",
+    "default_href": ""
+  },
+  "ORG_SR_CALL_EXT": {
+    "id": "83d6380d-c0c4-45e1-8b89-f7e24110a624",
+    "platform_id": "83d6380d-c0c4-45e1-8b89-f7e24110a624",
+    "primary_contact_id": "36f463e3-4250-417c-bdf6-747c4d7c43ad",
+    "contact_V6C": "36f463e3-4250-417c-bdf6-747c4d7c43ad",
+    "default_href": "tel:+1555040506045"
+  },
+  "ORG_SR_CALL_ADDR": {
+    "id": "1ccced7b-3058-4da9-be67-2432fae8e20a",
+    "platform_id": "1ccced7b-3058-4da9-be67-2432fae8e20a",
+    "primary_contact_id": "e17fba52-9fb5-43d7-b694-c3a8a5585db4",
+    "contact_V7C": "e17fba52-9fb5-43d7-b694-c3a8a5585db4",
+    "default_href": "tel:+15550506070"
+  },
+  "ORG_SR_CALL_ORGADDR": {
+    "id": "abc328a0-d3aa-4b09-b521-1538d0c2c74b",
+    "platform_id": "abc328a0-d3aa-4b09-b521-1538d0c2c74b",
+    "primary_contact_id": "1c92c0a9-5a57-4882-a952-5d3208a26a66",
+    "contact_V8C": "1c92c0a9-5a57-4882-a952-5d3208a26a66",
+    "default_href": "tel:+15550809010"
+  },
+  "ORG_SR_CALL_FILL09": {
+    "id": "60f13169-d895-4911-bde3-5982f48d55da",
+    "platform_id": "60f13169-d895-4911-bde3-5982f48d55da",
+    "primary_contact_id": "",
+    "default_href": ""
+  },
+  "ORG_SR_CALL_FILL10": {
+    "id": "5a316b67-20b0-4859-9240-e93a3ef4f539",
+    "platform_id": "5a316b67-20b0-4859-9240-e93a3ef4f539",
+    "primary_contact_id": "",
+    "default_href": ""
+  },
+  "ORG_SR_CALL_PAGE2": {
+    "id": "2f241ad4-18db-4985-8288-bb36f8ec5715",
+    "platform_id": "2f241ad4-18db-4985-8288-bb36f8ec5715",
+    "primary_contact_id": "5f96db02-d81a-4ed4-91a2-24138ca5a54e",
+    "contact_P2C": "5f96db02-d81a-4ed4-91a2-24138ca5a54e",
+    "default_href": "tel:+15551101100"
   }
 }

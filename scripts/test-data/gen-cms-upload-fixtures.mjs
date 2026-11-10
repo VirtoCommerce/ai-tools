@@ -24,46 +24,16 @@
  *   v1/AGENT-TEST-batch-a-5725.png      red   — batch member, no conflict
  *   v1/AGENT-TEST-unsupported-5725.txt        — not an image, for the type guard
  */
-import zlib from 'node:zlib';
+import { makePng } from '../lib/png.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const OUT = path.resolve('test-data/cms/uploads-5725');
 const W = 200, H = 120;
 
-const crcTable = (() => {
-  const t = [];
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c >>> 0;
-  }
-  return t;
-})();
-const crc32 = buf => {
-  let c = 0xFFFFFFFF;
-  for (const b of buf) c = crcTable[(c ^ b) & 0xFF] ^ (c >>> 8);
-  return (c ^ 0xFFFFFFFF) >>> 0;
-};
-const chunk = (type, data) => {
-  const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
-  const t = Buffer.from(type, 'ascii');
-  const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(Buffer.concat([t, data])));
-  return Buffer.concat([len, t, data, crc]);
-};
-
 /** Solid-colour 8-bit truecolour PNG. */
-function png([r, g, b], w = W, h = H) {
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4);
-  ihdr[8] = 8; ihdr[9] = 2;                       // bit depth 8, colour type 2 (RGB)
-  const row = Buffer.alloc(1 + w * 3);            // leading filter byte per scanline
-  for (let x = 0; x < w; x++) { row[1 + x * 3] = r; row[2 + x * 3] = g; row[3 + x * 3] = b; }
-  const raw = Buffer.concat(Array.from({ length: h }, () => row));
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
-    chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0)),
-  ]);
+function png(rgb, w = W, h = H) {
+  return makePng(w, h, rgb);
 }
 
 /**

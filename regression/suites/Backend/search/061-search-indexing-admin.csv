@@ -32,22 +32,20 @@ SRCHA-004,Search with incorrect value - no results,Elastic Search,Negative,Mediu
 - Empty-state wording is a storefront UI concern and is not asserted here",C139045 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): Admin search field does not exist; retargeted to API surfaces {OBSERVED}: totalCount 0 on both,Not Automated
 SRCHA-005,Lucene search by full product name,Lucene Search,Functional,Medium,3m,Lucene search provider configured,"1. Configure Lucene search provider
 2. Search by full product name","Product found using Lucene search",C180636,Not Automated
-SRCHA-006,Lucene search by partial input,Lucene Search,Functional,Medium,3m,Lucene search provider configured and set as active; products indexed including a product named 'Bolt'; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search
-2. Verify that Lucene is the active search provider (check Settings > Search if needed)
-3. Select the Products index tab or entity type in the Lucene search view
-4. Enter the partial text 'Bol' in the search field
-5. Click Search or press Enter
-6. Inspect the returned results list
-7. Verify result count and relevance of returned products","- Lucene search provider is confirmed active before executing the search
-- Search field accepts partial input 'Bol' without errors
-- Results are returned within 3 seconds
-- At least one product with name starting with or containing 'Bol' (e.g. 'Bolt') is present in results
-- Result count is greater than 0
-- Lucene-specific partial text matching is applied (wildcard or prefix matching)
-- Results are consistent with what Elastic Search returns for the same partial input",C180637,Not Automated
+SRCHA-006,Lucene search by partial input,Lucene Search,Functional,Medium,3m,"Lucene is the active search provider for Product (GET {{BACK_URL}}/api/search/indexes reports the Lucene provider for the Product rows; on an ElasticSearch8 stand this case is BLOCKED, not FAIL); Product index built; a product P exists whose name has a token of at least 4 chars (discovered live); Product search surfaces: admin indexed search POST {{BACK_URL}}/api/catalog/search/products (body searchPhrase) and anonymous xAPI products(storeId: {{STORE_ID}}, query:). The Admin > Search > Search index blade has NO free-text search field - it only builds/swaps indexes.","1. GET {{BACK_URL}}/api/search/indexes and read the provider of the Product rows; if it is not Lucene, stop and record BLOCKED (precondition)
+2. Discover product P (live-discover) whose FIRST name token has at least 4 letters, and take the first 3 characters of that token as prefix X
+3. Run anonymous xAPI products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}, query: X) and read totalCount, items[].name
+4. POST {{BACK_URL}}/api/catalog/search/products with searchPhrase = X and read totalCount
+5. Record the unfiltered store total","- The Product index provider is Lucene
+- Both surfaces return no error within 3 seconds and totalCount > 0
+- P is among the returned items (Lucene prefix/wildcard matching)
+- totalCount is less than the store total
+- Fails if: partial input returns 0 hits under Lucene, or the whole catalog (filter ignored)","C180637 | Repaired 2026-11-03 (REG-2026-11-03-2035 triage, STALE_TEST): the Search index blade has no free-text field (toolbar Refresh / Build index / Show backup indices, KB-CF3D4DCD); retargeted to xAPI/Catalog search as SRCHA-002; the ES-parity assertion dropped (one provider per stand)",Not Automated
 SRCHA-007,Run index build,Index Management,Functional,Critical,5m,Search module installed; products exist,"1. Navigate to Search > Index
 2. Click Build/Run Index
-3. Wait for completion","Index built successfully; status shows completed",C327396,Katalon
+3. Wait for completion","- Indexation completes for Product (Indexation completed in the notification) and the Product active index document count is > 0
+- Errors: the only allowed error is the documented CMP-003 rejection of @td(PROD_PROP_PRICE.sku) ('failed to parse field [price] of type [double]', its text property Price cannot be indexed beside the numeric price field, KB-52EAADEE) plus its one 'Elasticsearch8 Server' batch row; any other error line is a FAIL
+- Fails if: the build does not complete, or the notification lists an error for any other document","C327396 | 2026-11-03: Errors 0 relaxed to exactly the documented CMP-003 rejection (operator decision, REG-2026-11-03-2035 triage); the seeded Size collision and the demo wireless value were fixed in the data",Katalon
 SRCHA-008,Rebuild index - both indices built,Index Management,Functional,High,5m,Blue-green indexing enabled,"1. Navigate to Search Index
 2. Click Rebuild
 3. Verify both active and inactive indices built","Both indices built successfully; statuses updated",C327397,Not Automated
@@ -64,9 +62,9 @@ SRCHA-012,Backup indices - select all,Index Management,Functional,Medium,3m,Blue
 4. Click Build index in the toolbar and choose Delete and build; wait for Indexation completed
 5. Click the Show backup indices toolbar button (a button, not a tick; it toggles to Hide backup indices)
 6. For every type, read the inactive (backup) row","- There is no Backup toolbar action (toolbar: Refresh, Build index, Show backup indices); backup is implicit in blue-green Delete and build
-- Indexation finishes with Errors 0
+- Indexation finishes; the only allowed error is the documented CMP-003 rejection of @td(PROD_PROP_PRICE.sku) ('failed to parse field [price] of type [double]', its text property Price cannot be indexed beside the numeric price field, KB-52EAADEE) plus its one 'Elasticsearch8 Server' batch row; any other error line is a FAIL
 - Every type shows an inactive row whose last-indexation date and document count equal the values recorded in step 2, beside a new active row with a later date
-- Fails if: a type has no backup row after Delete and build, or the backup row carries the new build instead of the previous one",C329230 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): there is no Backup action in 3.1076.1; backup is the inactive index kept by blue-green Delete and build {OBSERVED},Not Automated
+- Fails if: a type has no backup row after Delete and build, or the backup row carries the new build instead of the previous one","C329230 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): there is no Backup action in 3.1076.1; backup is the inactive index kept by blue-green Delete and build {OBSERVED} | 2026-11-03: Errors 0 relaxed to exactly the documented CMP-003 rejection (operator decision, REG-2026-11-03-2035 triage); the seeded Size collision and the demo wireless value were fixed in the data",Not Automated
 SRCHA-013,Backup indices - select one,Index Management,Functional,Medium,2m,Blue-green indexing available; Product has an active index; admin logged into {{BACK_URL}},"1. Navigate to {{BACK_URL}} > Search > Search index and make sure backup indices are shown: the toolbar button then reads Hide backup indices; if it reads Show backup indices, click it (a toggle button, not a tick)
 2. Record the Product active row last-indexation date D0 and document count C0
 3. Select only the Product row, click Build index > Delete and build and wait for Indexation completed
@@ -87,15 +85,19 @@ SRCHA-017,Cancel indexation task in progress,Index Management,Functional,Medium,
 SRCHA-018,Swap indexes then build and refresh,Index Management,Functional,Medium,5m,Blue-green indices available,"1. Swap indexes
 2. Build index
 3. Refresh blade","Index swap and rebuild completes correctly; blade shows updated state",C338467,Not Automated
-SRCHA-019,Full indexation (Elastic Search module),Elastic Search Module,Functional,Critical,5m,Elastic Search module installed,"1. Navigate to Search > Elastic Search
-2. Run full indexation
-3. Verify completion","Full indexation completed; all entities indexed",C217134,Not Automated
+SRCHA-019,Full indexation (Elastic Search module),Elastic Search Module,Functional,Critical,5m,ElasticSearch8 active; all 7 document types have an active index; admin logged into {{BACK_URL}}; run in an index-maintenance window (Delete and build on every type is heavy),"1. Navigate to {{BACK_URL}} > Search > Search index
+2. Make sure backup indices are hidden: the toolbar button must read Show backup indices (if it reads Hide backup indices, click it once)
+3. Record each type's active last-indexation date, then select all active indices (header checkbox)
+4. Click Build index in the toolbar and choose Delete and build; wait for Indexation completed
+5. Click Refresh and read every type's active row","- Indexation finishes; the only allowed error is the documented CMP-003 rejection of @td(PROD_PROP_PRICE.sku) ('failed to parse field [price] of type [double]', its text property Price cannot be indexed beside the numeric price field, KB-52EAADEE) plus its one 'Elasticsearch8 Server' batch row; any other error line is a FAIL
+- Every type has an active row with a later last-indexation date than recorded in step 3 and a document count > 0
+- Fails if: the build lists an error other than the documented CMP-003 rejection, or any type is left without an active index","C217134 | Repaired 2026-11-03 (REG-2026-11-03-2035 triage, STALE_TEST): there is no Search > Elastic Search blade; full indexation is Delete and build on all types in Search > Search index {OBSERVED} | 2026-11-03: Errors 0 relaxed to exactly the documented CMP-003 rejection (operator decision, REG-2026-11-03-2035 triage); the seeded Size collision and the demo wireless value were fixed in the data",Not Automated
 SRCHA-020,Index concrete entity,Elastic Search Module,Functional,High,3m,Elastic Search module installed; specific entity exists,"1. Select specific entity type (e.g. Product)
 2. Run indexation for that entity","Only selected entity type indexed",C217147,Not Automated
 SRCHA-021,Index update on entity changes,Elastic Search Module,Functional,High,3m,Entities indexed; changes pending,"1. Modify an entity (e.g. update product)
 2. Run incremental index update","Changed entities re-indexed correctly",C217148,Not Automated
 SRCHA-022,Build index in Elastic Search module,Elastic Search Module,Functional,High,3m,Elastic Search configured,"1. Navigate to Elastic Search
-2. Click Build","Index built successfully",C217785,Not Automated
+2. Click Build",Index built successfully,"C217785 | RETIRED 2026-11-03 (REG-2026-11-03-2035 triage): duplicate of SRCHA-007 (Run index build); there is no Elastic Search blade, the Product build runs from Search > Search index",Deprecated
 SRCHA-023,Delete and rebuild index,Elastic Search Module,Functional,High,3m,Index exists,"1. Click Delete + Build
 2. Wait for completion","Old index deleted; new index built from scratch",C217786,Not Automated
 SRCHA-024,Cancel Elastic Search build,Elastic Search Module,Functional,Medium,2m,Build in progress,"1. Start build
@@ -241,23 +243,19 @@ SRCHA-046,Partial Index Rebuild — Single Document Type,Index Management,Functi
 - Index timestamps for other document types (Customer, Order) remain unchanged
 - Product search returns correct results after the partial rebuild
 - System stability is maintained; no errors or corruption in non-rebuilt indices",,Not Automated
-SRCHA-047,Aggregation Properties - Configure Range Facet for Numeric Property,Aggregation Properties,Functional,High,5m,Admin logged into ${BACK_URL}; Store exists with catalog containing products with a numeric property (e.g. Volume_ml); search index active,"1. Navigate to ${BACK_URL} > Stores > @td(STORE_PRIMARY.id) > Aggregation properties
-2. Click 'Add' to create a new aggregation property
-3. Select the numeric property (e.g. 'Volume_ml') from the property list
-4. Set Aggregation Type to 'Range'
-5. Configure range buckets (e.g. 0-100, 100-300, 300-600)
-6. Save the aggregation property configuration
-7. Navigate to Search > Index Management and rebuild the product index
-8. Wait for index rebuild to complete
-9. Navigate to the storefront category containing products with Volume_ml values
-10. Verify the range filter appears in the sidebar/filter bar with configured buckets","- Aggregation property selector lists available numeric properties from the catalog
-- 'Range' aggregation type is selectable for numeric/money properties
-- Range buckets can be configured with from/to values
-- Configuration saves without errors
-- After index rebuild, the storefront displays the range facet with configured bucket labels
-- Bucket product counts are non-zero for ranges containing products
-- Clicking a range bucket filters products to those within the specified range
-- Property names with underscores (e.g. Volume_ml) are preserved correctly in the UI and filter URL",VP-9035,Not Automated
+SRCHA-047,Aggregation Properties - Configure Range Facet for Numeric Property,Aggregation Properties,Functional,High,5m,"Admin logged into {{BACK_URL}}; seeded range-facet fixtures present (npm run seed:range-facet): numeric property N = @td(RANGE_FACET_N.property) on products @td(PROD_RANGE_LOW.sku), @td(PROD_RANGE_MID.sku), @td(PROD_RANGE_HIGH.sku) and a control @td(PROD_RANGE_NONE.sku) with no value, in category @td(RANGE_FACET_N.category) of store @td(STORE_PRIMARY.id); theme setting range_filter_type is slider (the default; in ""default"" mode the facet renders as bucket checkboxes instead)","1. Navigate to {{BACK_URL}} > Stores > @td(STORE_PRIMARY.id) > Search configuration > Facets
+2. Add the facet for property @td(RANGE_FACET_N.property), set Aggregation Type to Range, configure bounds @td(RANGE_FACET_N.subFrom) and @td(RANGE_FACET_N.subTo), and Save
+3. Navigate to {{BACK_URL}} > Search > Search index, select Product, click Build index > Build and wait for Indexation completed
+4. Run anonymous xAPI products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}) filtered to the category and read range_facets for N: ranges, counts, statistics min/max
+5. Open {{FRONT_URL}}@td(RANGE_FACET_N.categoryUrl)
+6. In the sidebar, read the filter control for N: its scale and its Start/End inputs
+7. Set Start = @td(RANGE_FACET_N.subFrom) and End = @td(RANGE_FACET_N.subTo), apply it, and read the product list and the URL
+8. Remove the facet added in step 2","- Range is selectable and the facet saves without errors
+- xAPI range_facets for N returns the configured ranges with non-zero counts for ranges that hold products, and statistics min/max equal @td(RANGE_FACET_N.min) and @td(RANGE_FACET_N.max)
+- The storefront renders N as a range slider with Start/End inputs bounded by @td(RANGE_FACET_N.min) and @td(RANGE_FACET_N.max) (theme range_filter_type = slider; the configured ranges feed the slider histogram, not labelled buckets)
+- After applying the sub-range the list holds exactly @td(RANGE_FACET_N.subSkus); @td(PROD_RANGE_LOW.name), @td(PROD_RANGE_HIGH.name) and @td(PROD_RANGE_NONE.name) are absent
+- The property name with an underscore is preserved in the filter label and the URL
+- Fails if: N is missing from the sidebar, the slider bounds differ from statistics min/max, or applying the range leaves the list unchanged or keeps a product outside it","VP-9035 | Repaired 2026-11-03 (REG-2026-11-03-2035 triage, ASSERTION_DEFECT): a numeric range facet renders as a slider when the theme range_filter_type is slider (vc-frontend products-filters.vue; KB-1249F34B; price renders the same); bucket labels belong to range_filter_type default. Facets live under Store > Search configuration > Facets; the rebuild runs from Search > Search index {OBSERVED}. Data: seeded range-facet fixtures (seed:range-facet), replacing the single-valued Volume_ml",Not Automated
 SRCHA-048,Facet Sorting offers explicit Priority ascending and descending and persists the choice,Aggregation Properties,Functional,High,5m,"A store exists with at least one dictionary-type property configured as a facet (aggregation property);
 the property has dictionary values carrying distinct Priority numbers;
 admin logged into ${BACK_URL} with store-configuration rights","1. Navigate to ${BACK_URL} > Stores > select the store > Search configuration > Facets

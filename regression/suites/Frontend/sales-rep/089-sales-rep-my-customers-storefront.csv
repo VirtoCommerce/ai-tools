@@ -240,10 +240,10 @@ GAP-FILL for VCST-5310 (push/email broadcast entry point, vc-frontend PR #2392).
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 SR_REP_PRIMARY serves @td(ORG_ACME.id). Modal component is customer-communication-modal.vue per source (VCST-5310).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [WAIT] table rows loaded
-[ACT] click the 'Send email' icon button (accessible name 'Send email') in the 'Actions' column on the @td(ORG_ACME.name) row
+[ACT] click the 'Send message' icon button (accessible name 'Send message') in the 'Actions' column on the @td(ORG_ACME.name) row
 [WAIT] modal opens","[DOM] a modal dialog opens with Title, Message, Email and Push fields visible {OBSERVED}
 [DOM] the modal subtitle text includes the organization name @td(ORG_ACME.name) (e.g. ""Reaches every member of {organization}"") {DOC}
-[DOM] a Send button and a way to dismiss/cancel the modal are both visible {OBSERVED}","none","clicking the envelope icon does nothing; modal opens with the wrong organization's name in the subtitle; modal fields missing","[ACT] close the modal without sending",VCST-5310; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/components/customer-communication-modal.vue; Docs: N/A — VCST-5310 communication feature not yet in the published user guide | Behavior:sr.comms.modal-entry-points,"Reviewed"
+[DOM] a Send button and a way to dismiss/cancel the modal are both visible {OBSERVED}","none","clicking the envelope icon does nothing; modal opens with the wrong organization's name in the subtitle; modal fields missing","[ACT] close the modal without sending",VCST-5310; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/components/customer-communication-modal.vue; Docs: N/A — VCST-5310 communication feature not yet in the published user guide; Synced: VCST-6256 / vc-module-sales-rep PR #37 (2026-11-09) — REPAIR (mechanics only; assertions untouched): list entry accessible name 'Send email' -> 'Send message' (en.json sales_rep.communication.action) | Behavior:sr.comms.modal-entry-points,"Reviewed"
 "SR-FE-033","Send Button Disabled Until Message Valid AND At Least One Channel Selected","Storefront > Sales Rep > My Customers > Communication Modal","Critical","PROPOSED-BL-SR-COMM-VALIDATION","","state from SR-FE-032 (rep signed in, modal open for @td(ORG_ACME.id))","front_url={{FRONT_URL}}, message=AGENT-TEST-SR-COMM modal message","[ASSERT] Send button is disabled on initial modal open (no message, no channel selected)
 [ACT] fill 'Message' field: {{message}}
 [ASSERT] Send button remains disabled (no channel selected yet)
@@ -278,13 +278,13 @@ SR-FE-036,Successful Send Shows a Success Toast and Closes the Modal,Storefront 
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 SR_REP_PRIMARY serves >=2 distinctly-named orgs including @td(ORG_ACME.id) and @td(ORG_TECHFLOW.id) — proves the subtitle reflects the CLICKED row's org, not a stale/previous one.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [WAIT] table rows loaded
-[ACT] click the 'Send email' icon button (accessible name 'Send email') in the 'Actions' column on the @td(ORG_ACME.name) row
+[ACT] click the 'Send message' icon button (accessible name 'Send message') in the 'Actions' column on the @td(ORG_ACME.name) row
 [WAIT] modal opens
 [ASSERT] subtitle recorded
 [ACT] close the modal
-[ACT] click the 'Send email' icon button (accessible name 'Send email') in the 'Actions' column on the @td(ORG_TECHFLOW.name) row
+[ACT] click the 'Send message' icon button (accessible name 'Send message') in the 'Actions' column on the @td(ORG_TECHFLOW.name) row
 [WAIT] modal opens","[DOM] the first modal's subtitle names @td(ORG_ACME.name), not @td(ORG_TECHFLOW.name) {OBSERVED}
-[DOM] the second modal's subtitle names @td(ORG_TECHFLOW.name), not @td(ORG_ACME.name) — proves the subtitle is not stuck on the first-opened org {OBSERVED}","none","subtitle names the wrong organization; subtitle is generic with no organization name at all; subtitle from the first modal persists into the second","[ACT] close the modal without sending",VCST-5310; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/pages/my-customers.vue (openCommunication props per click) + components/customer-communication-modal.vue subtitle binds organizationName; Docs: N/A — implementation-detail: per-click modal prop binding | Behavior:sr.comms.modal-entry-points,"Reviewed"
+[DOM] the second modal's subtitle names @td(ORG_TECHFLOW.name), not @td(ORG_ACME.name) — proves the subtitle is not stuck on the first-opened org {OBSERVED}","none","subtitle names the wrong organization; subtitle is generic with no organization name at all; subtitle from the first modal persists into the second","[ACT] close the modal without sending",VCST-5310; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/pages/my-customers.vue (openCommunication props per click) + components/customer-communication-modal.vue subtitle binds organizationName; Docs: N/A — implementation-detail: per-click modal prop binding; Synced: VCST-6256 / vc-module-sales-rep PR #37 (2026-11-09) — REPAIR (mechanics only; assertions untouched): list entry accessible name 'Send email' -> 'Send message' (en.json sales_rep.communication.action) | Behavior:sr.comms.modal-entry-points,"Reviewed"
 "SR-FE-039","Message Containing a URL Is Accepted (No False-Positive Validation)","Storefront > Sales Rep > My Customers > Communication Modal","Medium","PROPOSED-BL-SR-COMM-VALIDATION","","state from SR-FE-032 (rep signed in, modal open for @td(ORG_ACME.id)). Mirrors 050m SR-GQL-050 at the UI layer.","front_url={{FRONT_URL}}, message=AGENT-TEST-SR-COMM check out {{FRONT_URL}}/promo for details","[ACT] fill 'Message' field: {{message}}
 [ACT] select the 'Push notification' channel checkbox (Email is env-blocked on this store — EmailUnavailable confirmed live 2026-09-04; message validation does not vary by channel, so Push is channel-agnostic evidence for this invariant)
 [ASSERT] no validation error shown for the URL-containing message
@@ -293,28 +293,28 @@ SR_REP_PRIMARY serves >=2 distinctly-named orgs including @td(ORG_ACME.id) and @
 [DOM] a success toast is visible and the communication modal is absent (closed) after Send {OBSERVED}","[API] the sendCustomerCommunication mutation succeeds via Push (succeeded=true pushSent=true warnings=[]) with the URL-containing message; Email on this store returns succeeded=false warnings=[EmailUnavailable] -- an env-config gap not a URL-validation defect (mirrors 050m SR-GQL-050)","a validation error incorrectly fires for a message containing a URL; Send is blocked/disabled solely because the message contains a URL","none (dispatches a real email to @td(ORG_ACME.id)'s seeded members)",VCST-5310; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/components/customer-communication-modal.vue (message schema has no URL check) + composables/useSalesRepCommunication.ts — live 2026-09-04: Email blocked by EmailUnavailable (env config) Push succeeded; Docs: N/A — implementation-detail: message-validation mechanics | Behavior:sr.comms.message-limits,"Reviewed"
 "SR-FE-040","Communication Modal Renders Usable at Tablet Viewport (768px) from the My-Customers List Entry","Storefront > Sales Rep > My Customers > Communication Modal","Medium","PROPOSED-BL-SR-COMM-UI","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-GAP-FILL for VCST-5310 responsive coverage — SR-FE-032/033 cover the modal at desktop and SR-CP-026 covers it at mobile 375px from the PROFILE entry, but the my-customers LIST modal at tablet width was uncovered. At <=1024 (VcTable lg breakpoint) the list renders as stacked mobile-item cards, each carrying a 'Send email' button. LIVE-VERIFIED (2026-07-22, vcptcore-qa theme 2.54.0-pr-2392, 768x1024, served org [E2E Test] Contoso Ltd.): the modal opened from a list card renders full-width and usable — the dialog uses its fullscreen layout at this width, all fields reachable, footer visible, no clipping/overflow.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers (tablet viewport 768x1024)
+GAP-FILL for VCST-5310 responsive coverage — SR-FE-032/033 cover the modal at desktop and SR-CP-026 covers it at mobile 375px from the PROFILE entry, but the my-customers LIST modal at tablet width was uncovered. At <=1024 (VcTable lg breakpoint) the list renders as stacked mobile-item cards, each carrying a labelled 'Send message' button (renamed from 'Send email' by VCST-6256). LIVE-VERIFIED (2026-07-22, vcptcore-qa theme 2.54.0-pr-2392, 768x1024, served org [E2E Test] Contoso Ltd.): the modal opened from a list card renders full-width and usable — the dialog uses its fullscreen layout at this width, all fields reachable, footer visible, no clipping/overflow.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers (tablet viewport 768x1024)
 [WAIT] customer list rendered as stacked mobile-item cards
-[ACT] click the 'Send email' icon button (accessible name 'Send email') on the @td(ORG_ACME.name) card
+[ACT] click the 'Send message' button (accessible name 'Send message') on the @td(ORG_ACME.name) card
 [WAIT] modal opens","[DOM] the modal opens with Title, Message, Email and Push channel fields all visible and not clipped at 768px width {OBSERVED}
 [DOM] both channel checkboxes (Email and Push notification) are fully visible; no ""Select at least one channel."" hint text is rendered anywhere in the fieldset {OBSERVED}
 [DOM] the Cancel and Send buttons are both visible and reachable in the modal footer (footer not pushed off-screen) {OBSERVED}
 [DOM] the modal subtitle names @td(ORG_ACME.name) {OBSERVED}
-[STATE] no horizontal overflow and no content clipped at 768px {OBSERVED}","[CONSOLE] no application-origin console errors on modal open (App Insights 'Invalid workspace' 400 + product-image 404s are known benign noise)","modal fields or footer clipped/overflowing at 768px; Send button unreachable; subtitle names the wrong org; modal fails to open from the mobile-item card","[ACT] close the modal without sending",VCST-5310; live-verified vcptcore-qa theme 2.54.0-pr-2392 2026-07-22; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/components/customer-communication-modal.vue template (no channel-hint element) + locales/en.json (no matching key); Docs: N/A — implementation-detail: channel-selection hint copy | Behavior:sr.comms.modal-entry-points,"Reviewed"
+[STATE] no horizontal overflow and no content clipped at 768px {OBSERVED}","[CONSOLE] no application-origin console errors on modal open (App Insights 'Invalid workspace' 400 + product-image 404s are known benign noise)","modal fields or footer clipped/overflowing at 768px; Send button unreachable; subtitle names the wrong org; modal fails to open from the mobile-item card","[ACT] close the modal without sending",VCST-5310; live-verified vcptcore-qa theme 2.54.0-pr-2392 2026-07-22; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/components/customer-communication-modal.vue template (no channel-hint element) + locales/en.json (no matching key); Docs: N/A — implementation-detail: channel-selection hint copy; Synced: VCST-6256 / vc-module-sales-rep PR #37 (2026-11-09) — REPAIR (mechanics only; assertions untouched): list entry accessible name 'Send email' -> 'Send message' (en.json sales_rep.communication.action) | Behavior:sr.comms.modal-entry-points,"Reviewed"
 "SR-FE-041","Communication Modal Renders is-mobile-fullscreen at Mobile Viewport (375px) from the My-Customers List Entry","Storefront > Sales Rep > My Customers > Communication Modal","Medium","PROPOSED-BL-SR-COMM-UI","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 GAP-FILL for VCST-5310 responsive coverage — SR-CP-026 covers the modal at mobile 375px from the PROFILE Quick-actions entry, but the my-customers LIST modal at mobile was uncovered. LIVE-VERIFIED (2026-07-22, vcptcore-qa theme 2.54.0-pr-2392, 375x812, served org [E2E Test] Contoso Ltd.): the modal opened from a list card renders edge-to-edge fullscreen (is-mobile-fullscreen) — the dialog fills the viewport with the footer (Cancel/Send) pinned at the bottom, all fields usable; filling Message + checking Email cleared the channel hint and enabled Send (form fully interactive at mobile).","front_url={{FRONT_URL}}, message=AGENT-TEST-SR-COMM mobile layout check","[NAV] {{FRONT_URL}}/company/my-customers (mobile viewport 375x812)
 [WAIT] customer list rendered as stacked mobile-item cards
-[ACT] click the 'Send email' icon button (accessible name 'Send email') on the @td(ORG_ACME.name) card
+[ACT] click the 'Send message' button (accessible name 'Send message') on the @td(ORG_ACME.name) card
 [WAIT] modal opens
 [ACT] fill 'Message' field: {{message}}
 [ACT] select the 'Email' channel checkbox","[DOM] the modal renders full-viewport (is-mobile-fullscreen) — the dialog spans the full 375px width edge-to-edge with the footer pinned at the bottom {OBSERVED}
 [DOM] Title, Message and both channel checkboxes are all visible and not clipped; no channel-hint element is rendered (none exists in this build) {OBSERVED}
 [DOM] the modal subtitle names @td(ORG_ACME.name) {OBSERVED}
-[STATE] after filling Message and checking Email, the Send button becomes enabled (form usable at mobile); no ""Select at least one channel."" hint is rendered at any point — the always-rendered-hint behaviour recorded from PR #2392 is not present in the current build {OBSERVED}","[CONSOLE] no application-origin console errors (App Insights 400 + product-image 404s are known benign noise)","modal does NOT go fullscreen at 375px (renders as a clipped centered dialog); fields/footer clipped or unreachable; Send never enables after Message+channel; subtitle names the wrong org","[ACT] close the modal without sending (no message dispatched)",VCST-5310; live-verified vcptcore-qa theme 2.54.0-pr-2392 2026-07-22; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/components/customer-communication-modal.vue template (no channel-hint element) + locales/en.json (no matching key); Docs: N/A — implementation-detail: channel-selection hint copy | Behavior:sr.comms.modal-entry-points,"Reviewed"
+[STATE] after filling Message and checking Email, the Send button becomes enabled (form usable at mobile); no ""Select at least one channel."" hint is rendered at any point — the always-rendered-hint behaviour recorded from PR #2392 is not present in the current build {OBSERVED}","[CONSOLE] no application-origin console errors (App Insights 400 + product-image 404s are known benign noise)","modal does NOT go fullscreen at 375px (renders as a clipped centered dialog); fields/footer clipped or unreachable; Send never enables after Message+channel; subtitle names the wrong org","[ACT] close the modal without sending (no message dispatched)",VCST-5310; live-verified vcptcore-qa theme 2.54.0-pr-2392 2026-07-22; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/components/customer-communication-modal.vue template (no channel-hint element) + locales/en.json (no matching key); Docs: N/A — implementation-detail: channel-selection hint copy; Synced: VCST-6256 / vc-module-sales-rep PR #37 (2026-11-09) — REPAIR (mechanics only; assertions untouched): list entry accessible name 'Send email' -> 'Send message' (en.json sales_rep.communication.action) | Behavior:sr.comms.modal-entry-points,"Reviewed"
 "SR-FE-042","Multi-Org Member Notification Inbox Aggregates Sales-Rep Pushes Across Organizations (Not Filtered by Active Org) — DESIGN-CONFIRM","Storefront > Sales Rep > My Customers > Communication Channel","Medium","PROPOSED-BL-SR-COMM-CHANNEL","ECL-14.3","[PRE:CLEAR_SESSION]
 Requires a storefront MEMBER who belongs to 2+ organizations each served by a sales rep (so both orgs can receive a rep push). DISCOVERY (2026-07-22, vcptcore-qa): agent-test-vcst5293-182326@example.com ('AGENT-TEST Qqqqqqqqqq SalesRep') is a member of 10 organizations — the same orgs it serves — and its account-menu org switcher lists them all, so it doubles as a multi-org member (no dedicated fixture was needed on this env).
-OPEN PRODUCT QUESTION (VCST-5310): is a single per-user aggregated inbox the intended design, or should the notification inbox be filtered by the ACTIVE organization? Left Draft pending the design decision; the assertions below encode the ACTUAL observed behavior so they can be promoted (or inverted) once the intended behavior is confirmed.","front_url={{FRONT_URL}}","[NAV] as the rep, send a Push-notification message to org A (e.g. @td(ORG_ACME.name)) via the my-customers 'Send email' modal, and a second Push to org B — both orgs containing the multi-org member (or reuse existing org-targeted pushes already present in the member's inbox)
+OPEN PRODUCT QUESTION (VCST-5310): is a single per-user aggregated inbox the intended design, or should the notification inbox be filtered by the ACTIVE organization? Left Draft pending the design decision; the assertions below encode the ACTUAL observed behavior so they can be promoted (or inverted) once the intended behavior is confirmed.","front_url={{FRONT_URL}}","[NAV] as the rep, send a Push-notification message to org A (e.g. @td(ORG_ACME.name)) via the my-customers 'Send message' modal, and a second Push to org B — both orgs containing the multi-org member (or reuse existing org-targeted pushes already present in the member's inbox)
 [PRE:SIGNIN_AS: the multi-org member]
 [NAV] {{FRONT_URL}}/account/notifications
 [WAIT] notification list rendered
@@ -322,7 +322,7 @@ OPEN PRODUCT QUESTION (VCST-5310): is a single per-user aggregated inbox the int
 [ACT] switch the active organization via the account-menu org switcher (org A -> org B)
 [NAV] reload {{FRONT_URL}}/account/notifications","[DOM] the inbox shows push notifications targeted at MULTIPLE different organizations together (e.g. an org-A push and an org-B push both visible) while a single organization is active {OBSERVED}
 [STATE] the notification set and the unread count are UNCHANGED after switching the active organization — the inbox is a single per-user inbox, NOT filtered by the active org {OBSERVED}
-[NOTE] DESIGN-CONFIRM: whether per-user aggregation is intended vs. per-active-org filtering is an open product-expectation question (VCST-5310); this assertion documents the shipped behavior, not a confirmed pass/fail contract {HYPOTHESIS}","[API] the pushMessages/notifications query for the member is keyed by the recipient user, not scoped by the active organization","N/A until the intended behavior is confirmed — IF per-org filtering is the decided design, the current per-user aggregation is the defect; IF per-user aggregation is intended, the current behavior is correct","none (read-only observation; any AGENT-TEST push is sent to a test org only)","VCST-5310; behavior discovered live vcptcore-qa theme 2.54.0-pr-2392 2026-07-22","Draft"
+[NOTE] DESIGN-CONFIRM: whether per-user aggregation is intended vs. per-active-org filtering is an open product-expectation question (VCST-5310); this assertion documents the shipped behavior, not a confirmed pass/fail contract {HYPOTHESIS}","[API] the pushMessages/notifications query for the member is keyed by the recipient user, not scoped by the active organization","N/A until the intended behavior is confirmed — IF per-org filtering is the decided design, the current per-user aggregation is the defect; IF per-user aggregation is intended, the current behavior is correct","none (read-only observation; any AGENT-TEST push is sent to a test org only)","VCST-5310; behavior discovered live vcptcore-qa theme 2.54.0-pr-2392 2026-07-22; Synced: VCST-6256 / vc-module-sales-rep PR #37 (2026-11-09) — REPAIR (mechanics only; assertions untouched): list entry label 'Send email' -> 'Send message'","Draft"
 "SR-FE-043","Sort — ""YTD Purchases"" Column Renders and Sorts by ytd-purchases Rule (New Column)","Storefront > Sales Rep > My Customers > Sort","High","PROPOSED-BL-SR-UI-SORT","ECL-3.2","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 NEW (PR #2395, VCST-5362): my-customers gains an inline ""YTD purchases"" column bridged to the ytd-purchases sort rule (order-derived, reversible :asc/:desc per salesRepCustomerSortRules). SR_REP_PRIMARY serves >=2 orgs with differing YTD purchase totals. Exact column header text not live-verified this session (offline sync) — confirm literal copy in Phase 5.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
@@ -434,3 +434,335 @@ ACME_ADMIN is an Organization maintainer (elevated org-admin org role) in the SA
 [STATE] no salesRepCustomers data rendered anywhere on the page {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql
 [NETWORK] no /graphql request for salesRepCustomers is issued for this session","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-5469 · Archetype:SCOPE · Technique:EP · Verified: live vcst-qa 2026-09-04 (Platform 3.1063.0 · SalesRep 3.1007.0-pr-14-5569 · theme 2.57.0-pr-2444-a247-a247b3ab) — ACME_ADMIN direct-hit /company/my-customers redirected to /account/dashboard · 0 salesRep* ops on the wire; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/routes.ts (guardSalesRep); Docs: vc-module-sales-rep README §Permissions | Promoted: REG-2026-09-07-1342 (2026-09-07) | Behavior:sr.hub.privileged-non-rep,Automated
+SR-FE-056,[JOURNEY] Call customer — from the My customers row to the profile Phone row (several numbers),Sales Rep Hub > My customers > Call customer > [JOURNEY],Critical,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. ORG_SR_CALL_MULTI: the owner has three phones in three spellings and no organization or address phone. The default number is primaryContact.phones[0] AS RETURNED by the API (the platform's stored order, not entry order) — never a literal; @td(ORG_SR_CALL_MULTI.default_href) is that value written by the seeder. The chain crosses two screens, so this is ONE continuous journey (Frontend Journey Exception).",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name); @td(ORG_SR_CALL_MULTI.default_href); @td(ORG_SR_CALL_MULTI.expected_hrefs),"--- SCREEN: My customers ---
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ASSERT] the @td(ORG_SR_CALL_MULTI.name) row's Actions cell holds an icon button 'Send message' and a call icon button with accessible name 'Call customer'
+[ACT] read the salesRepCustomers response (browser_network_requests, filter /graphql)
+[ACT] keep items[organizationName=@td(ORG_SR_CALL_MULTI.name)].primaryContact.phones as API_PHONES
+[ACT] click 'Call customer' in the @td(ORG_SR_CALL_MULTI.name) row
+[WAIT] the dropdown (role dialog, aria-label 'Choose a number to call') is open
+[ASSERT] the dropdown lists exactly @td(ORG_SR_CALL_MULTI.expected_phone_count) entries, each reading ""<name> · <number>"" with the name @td(ORG_SR_CALL_MULTI.expected_primary_contact)
+[ASSERT] the entries' tel: targets are the set @td(ORG_SR_CALL_MULTI.expected_hrefs) and the FIRST entry's target is tel: + the normalised API_PHONES[0] (= @td(ORG_SR_CALL_MULTI.default_href))
+[ACT] intercept the tel: navigation
+[ACT] click the second entry
+[WAIT] the dropdown closes
+[ASSERT] the click used the second entry's own tel: target and the page is still on /company/my-customers (no profile navigation)
+--- SCREEN: Customer profile ---
+[ACT] click the organization name @td(ORG_SR_CALL_MULTI.name) in its row (not the call control) to open the profile
+[WAIT] the profile page and its Customer information card are rendered
+[ASSERT] the Phone row value is a link whose href equals the list's first entry (= @td(ORG_SR_CALL_MULTI.default_href)) and whose text is that number as stored
+[ACT] click the call control beside the Phone row (accessible name 'Call customer')
+[WAIT] the dropdown is open","[DOM] the profile dropdown lists the same entries in the same order as the list dropdown: names, numbers and tel: targets equal, all entries visible {SPEC} (VCST-6256 AC7)
+[DOM] the profile Phone link's tel: target equals tel: + the normalised primaryContact.phones[0] of the list response — the list and the profile agree on the default number {SPEC} (VCST-6256 AC1)
+[STATE] pressing Escape closes the profile dropdown {SPEC} (VCST-6256 AC7)","[API] salesRepCustomers (xAPI /graphql/sales-rep) items[organizationName=@td(ORG_SR_CALL_MULTI.name)].primaryContact.phones and .phone are the values the UI is derived from and salesRepCustomer(organizationId).primaryContact.phones[0] are the same value as the Phone link
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the list dropdown shows fewer than the stored number of entries or drops the contact name (mid-journey, list screen); the chosen entry dials another number or navigates to the profile (mid-journey); the profile Phone link carries a different default from the list first entry (list and profile resolved phones on different code paths); profile dropdown order differs from the list",none (read-only); close any open dropdown and return to {{FRONT_URL}}/company/my-customers,VCST-6256 · Archetype:PARITY · Technique:FLOW · Purpose:FUNC,Draft
+SR-FE-057,Call customer — one number renders a direct tel: link with no dropdown,Sales Rep Hub > My customers > Call customer,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_PAGE2.name) has ONE contact number (the 11th org by name, so it is on page 2; find it by search).",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_PAGE2.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] fill the search input (placeholder 'Search by name') with @td(ORG_SR_CALL_PAGE2.name)
+[ACT] click the search button (aria-label 'Search customers')
+[WAIT] the table narrows to the @td(ORG_SR_CALL_PAGE2.name) row
+[ACT] hover the call control in the Actions cell of the @td(ORG_SR_CALL_PAGE2.name) row
+[WAIT] the tooltip is visible
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_PAGE2.name) row (intercept the tel: navigation)
+[WAIT] request settles","[DOM] the call control is a link whose href is ""@td(ORG_SR_CALL_PAGE2.expected_hrefs)"" {SPEC} (VCST-6256 AC6)
+[DOM] its accessible name is 'Call customer, ' followed by the number as stored (the row's primaryContact.phones[0] in the API response) {SPEC} (VCST-6256 AC6)
+[DOM] the hover tooltip reads 'Call customer' {SPEC} (VCST-6256 AC5)
+[DOM] after the click no dropdown (role dialog 'Choose a number to call') is in the page and the URL is still /company/my-customers {SPEC} (VCST-6256 AC6)","[API] salesRepCustomers (xAPI /graphql/sales-rep) items[organizationName=@td(ORG_SR_CALL_PAGE2.name)].primaryContact.phones and .phone are the values the UI is derived from
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",a one-number row opens a dropdown of one entry; the control is not a link or links a number other than the stored one; the accessible name lacks the number; the click navigates to the profile,none (read-only); clear the search,VCST-6256 · Archetype:FALLBACK · Technique:EP · Purpose:FUNC,Draft
+SR-FE-058,"Call customer — no number disables the icon and shows ""No phone number"" on hover and keyboard focus",Sales Rep Hub > My customers > Call customer,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_NONE.name) has an owner contact but NO number anywhere (no contact, organization or address phone).",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_NONE.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] hover the call control in the Actions cell of the @td(ORG_SR_CALL_NONE.name) row
+[WAIT] the tooltip is visible
+[ASSERT] record the tooltip text
+[ACT] move the pointer away from the control
+[WAIT] the tooltip is hidden
+[ACT] focus the same control with the keyboard (Tab from the row's 'Send message' button)
+[WAIT] the tooltip is visible
+[ACT] press Enter on the focused control
+[WAIT] request settles
+[ACT] press Space on the focused control
+[WAIT] request settles","[DOM] on hover the tooltip text is 'No phone number' {SPEC} (VCST-6256 AC8)
+[DOM] the control is reachable by Tab (role button, tabindex 0, aria-disabled true) and its tooltip 'No phone number' also shows on keyboard focus {SPEC} (VCST-6256 AC14)
+[DOM] its accessible name is 'Call customer, No phone number' {SPEC} (VCST-6256 AC8)
+[DOM] after Enter and Space no dropdown is present and the URL is still '/company/my-customers' {SPEC} (VCST-6256 AC8)","[API] salesRepCustomers (xAPI /graphql/sales-rep) items[organizationName=@td(ORG_SR_CALL_NONE.name)].primaryContact.phones and .phone are the values the UI is derived from has phone null and an empty phones list
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",the disabled control swallows hover and focus so no reason tooltip appears; the control is skipped by Tab; Enter opens something or navigates,none (read-only),VCST-6256 · Archetype:RENDER · Technique:EP · Purpose:FUNC,Draft
+SR-FE-059,"Call customer — several contact phones are all listed with the contact name, default first",Sales Rep Hub > My customers > Call customer,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_MULTI.name) owner has three phones; expected set and labels are in @td(ORG_SR_CALL_MULTI.expected_hrefs) / @td(ORG_SR_CALL_MULTI.expected_labels).",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name); @td(ORG_SR_CALL_MULTI.expected_hrefs); @td(ORG_SR_CALL_MULTI.expected_labels),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] read the salesRepCustomers response
+[ACT] keep items[organizationName=@td(ORG_SR_CALL_MULTI.name)].primaryContact.phones as API_PHONES
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_MULTI.name) row
+[WAIT] the dropdown is open","[COUNT] the dropdown entries number equals the length of API_PHONES (@td(ORG_SR_CALL_MULTI.expected_phone_count)) {SPEC} (VCST-6256 AC2)
+[DOM] every entry reads ""@td(ORG_SR_CALL_MULTI.expected_primary_contact) · <number>"" with the number as stored {SPEC} (VCST-6256 AC2)
+[DOM] each element of API_PHONES, normalised to digits and a leading +, is present as the tel: target of exactly one entry (the set equals ""@td(ORG_SR_CALL_MULTI.expected_hrefs)"") {SPEC} (VCST-6256 AC2)
+[DOM] the first entry's tel: target equals tel: + the normalised API_PHONES[0], whichever number that is {SPEC} (VCST-6256 AC7)","[API] salesRepCustomers (xAPI /graphql/sales-rep) items[organizationName=@td(ORG_SR_CALL_MULTI.name)].primaryContact.phones and .phone are the values the UI is derived from
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",only the first contact phone is offered; an entry is labelled with the organization instead of the contact name; the first entry is not the API default; a stored spelling without + is dropped,none (read-only); press Escape to close the dropdown,VCST-6256 · Archetype:SILENT · Technique:EP · Purpose:FUNC,Draft
+SR-FE-060,Call customer — the same number spelled differently on contact and address appears once,Sales Rep Hub > My customers > Call customer,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_DUP.name): the owner phone and the default-address phone are the SAME number in different text; the organization phone is not exposed while the contact has one.",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_DUP.name); @td(ORG_SR_CALL_DUP.expected_hrefs),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] read the salesRepCustomers response
+[ACT] keep the fields phone, address.phone, primaryContact.phones of items[organizationName=@td(ORG_SR_CALL_DUP.name)]
+[ASSERT] the response holds the same number twice in two spellings (contact phones[0] and address.phone)
+[ACT] hover the call control in the Actions cell of the @td(ORG_SR_CALL_DUP.name) row
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_DUP.name) row (intercept the tel: navigation)
+[WAIT] the UI settles","[COUNT] the row offers exactly @td(ORG_SR_CALL_DUP.expected_phone_count) number: the control is a direct tel: link and no dropdown opens {SPEC} (VCST-6256 AC12)
+[DOM] its tel: target is ""@td(ORG_SR_CALL_DUP.expected_hrefs)"" {SPEC} (VCST-6256 AC12)
+[DOM] its accessible name carries the contact's stored spelling (primaryContact.phones[0]), not the address spelling {SPEC} (VCST-6256 AC12)","[API] salesRepCustomers (xAPI /graphql/sales-rep) items[organizationName=@td(ORG_SR_CALL_DUP.name)].primaryContact.phones and .phone are the values the UI is derived from
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",the rep sees the same number twice under two names; the normalised duplicate survives with the address spelling; a distinct number is wrongly collapsed,none (read-only),VCST-6256 · Archetype:BOUNDARY · Technique:BVA · Purpose:FUNC,Draft
+SR-FE-061,"Call customer — organization-level numbers: an org-only number is offered, org and address spellings collapse, an address-only second number is labelled with the organization name",Sales Rep Hub > My customers > Call customer,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_ORGONLY.name): no contact member except the rep itself (excluded), so primaryContact is null and phone is the organization number. @td(ORG_SR_CALL_ORGADDR.name): organization phone and address phone are one number in two spellings, contact without phones. @td(ORG_SR_CALL_ADDR.name): owner number plus a DISTINCT default-address number. The rep's own contact number must never appear.",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_ORGONLY.name); @td(ORG_SR_CALL_ORGONLY.expected_hrefs); @td(ORG_SR_CALL_ORGADDR.name); @td(ORG_SR_CALL_ORGADDR.expected_hrefs),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_ORGONLY.name) row (intercept the tel: navigation)
+[WAIT] the UI settles
+[ASSERT] record its href, accessible name and that no dropdown opened
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_ORGADDR.name) row (intercept the tel: navigation)
+[WAIT] the UI settles
+[ASSERT] record its href and that no dropdown opened
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_ADDR.name) row
+[WAIT] the dropdown is open","[DOM] the org-only row is a direct tel: link to @td(ORG_SR_CALL_ORGONLY.expected_hrefs) — not disabled although primaryContact is null {SPEC} (VCST-6256 source rules 2-3)
+[DOM] the org+address row offers exactly one number, tel: target ""@td(ORG_SR_CALL_ORGADDR.expected_hrefs)"", and no dropdown is present {SPEC} (VCST-6256 AC12)
+[DOM] the address row's dropdown has two entries in the order of @td(ORG_SR_CALL_ADDR.expected_hrefs); the first is labelled @td(ORG_SR_CALL_ADDR.expected_primary_contact) and the second is labelled with the organization name @td(ORG_SR_CALL_ADDR.name) {SPEC} (VCST-6256 source rules 2-3)
+[DOM] no entry or link in these rows carries the rep's own contact number (it is none of the expected hrefs) {SPEC} (VCST-6256 PR #37 rep exclusion)","[API] salesRepCustomers (xAPI /graphql/sales-rep) items[organizationName=@td(ORG_SR_CALL_ORGONLY.name)].primaryContact.phones and .phone are the values the UI is derived from has primaryContact null and a non-empty phone
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",a customer with only an organization number shows as unreachable; the organization number and address number appear as two entries; the address-only number is labelled with the contact name; the rep's own number leaks into a customer,none (read-only); press Escape to close the dropdown,VCST-6256 · Archetype:FALLBACK · Technique:EP · Purpose:FUNC,Draft
+SR-FE-062,Call customer — ownerless organization never offers its own sales rep as the primary contact,Sales Rep Hub > My customers > Call customer,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_OWNERLESS.name) has NO owner; its contact members are SR_REP_CALL's own contact (OLDER, has a number) and a non-rep buyer created later (@td(ORG_SR_CALL_OWNERLESS.expected_primary_contact)). The PR changes the fallback from ""oldest contact"" to ""oldest contact who is not a rep of the organization"".",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_OWNERLESS.name); @td(ORG_SR_CALL_OWNERLESS.expected_hrefs); @td(ORG_SR_CALL_OWNERLESS.expected_primary_contact),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_OWNERLESS.name) row (intercept the tel: navigation)
+[WAIT] the UI settles
+[ASSERT] record the href and whether a dropdown opened
+[ACT] click the organization name @td(ORG_SR_CALL_OWNERLESS.name) to open its profile
+[WAIT] the Customer information card is rendered","[DOM] the list control is a direct tel: link to @td(ORG_SR_CALL_OWNERLESS.expected_hrefs) — the buyer's number, one entry {SPEC} (VCST-6256 PR #37 body)
+[DOM] the profile 'Primary contact' row reads ""@td(ORG_SR_CALL_OWNERLESS.expected_primary_contact)"" and does not read ""@td(SR_REP_CALL.fullName)"" {SPEC} (VCST-6256 PR #37 body)
+[DOM] the profile Phone link target equals the list control's target {SPEC} (VCST-6256 AC1)","[API] salesRepCustomers items[org].primaryContact.id and salesRepCustomer(organizationId).primaryContact.id are both @td(ORG_SR_CALL_OWNERLESS.primary_contact_id)
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",the rep calls a colleague: the list or profile offers the rep's own contact number or names the rep as primary contact; list and profile resolve different contacts,none (read-only),VCST-6256 · Archetype:FALLBACK · Technique:DT · Purpose:FUNC,Draft
+SR-FE-063,Call customer — organization whose only contacts are sales reps shows a disabled call icon,Sales Rep Hub > My customers > Call customer,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+@td(ORG_REP_ONLY.name) is served by SR_REP_PRIMARY and its ONLY member is that rep (no buyer contact, no organization or address phone), so the resolver has no non-rep contact and primaryContact is null.",front_url={{FRONT_URL}}; @td(SR_REP_PRIMARY.email); @td(ORG_REP_ONLY.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] fill the search input (placeholder 'Search by name') with @td(ORG_REP_ONLY.name)
+[ACT] click the search button (aria-label 'Search customers')
+[WAIT] the table narrows to the @td(ORG_REP_ONLY.name) row
+[ACT] hover the call control in the Actions cell of the @td(ORG_REP_ONLY.name) row
+[WAIT] the tooltip is visible
+[ACT] click the organization name @td(ORG_REP_ONLY.name) to open its profile
+[WAIT] the Customer information card is rendered","[DOM] the list call control is disabled and its tooltip reads 'No phone number' {SPEC} (VCST-6256 AC8)
+[DOM] the profile shows no 'Primary contact' row and no 'Phone' row (both absent: no blank label, no dead link) {SPEC} (VCST-6256 AC3)
+[DOM] nowhere on the row or profile is the rep's own name or number offered as the customer's {SPEC} (VCST-6256 PR #37 body)","[API] salesRepCustomer(organizationId).primaryContact is null and phone is null
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",a rep number leaks into the customer call options; the row errors on a null primaryContact; the profile names the rep as primary contact or renders an empty Phone label,none (read-only); clear the search,VCST-6256 · Archetype:FALLBACK · Technique:EP · Purpose:FUNC,Draft
+SR-FE-064,Call customer — a number with an extension builds a tel: target from all its digits,Sales Rep Hub > My customers > Call customer,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_EXT.name): the owner's only number is stored with an extension, ""x45"" after the digits. The ticket's normalisation rule is ""digits and a leading +"", which folds the extension digits into the dial string; whether that is wanted is an open product question (test model S9) — this case asserts the specified rule and goes red if the PO rules the extension must not be dialled.",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_EXT.name); @td(ORG_SR_CALL_EXT.expected_hrefs),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] open the profile of @td(ORG_SR_CALL_EXT.name) (click its name)
+[WAIT] the Customer information card is rendered
+[ASSERT] record the Phone link text and href","[DOM] the 'Phone' link text is the number exactly as stored, including its extension, and is visible {SPEC} (VCST-6256 AC7)
+[DOM] the 'Phone' link href is ""@td(ORG_SR_CALL_EXT.expected_hrefs)"", built from every digit of the stored number {SPEC} (VCST-6256 normalisation rule)","[API] salesRepCustomers (xAPI /graphql/sales-rep) items[organizationName=@td(ORG_SR_CALL_EXT.name)].primaryContact.phones and .phone are the values the UI is derived from
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",the rep dials a wrong number because the extension digits are glued into it; the stored text is shown normalised instead of as stored,none (read-only),VCST-6256 · Archetype:BOUNDARY · Technique:EG · Purpose:FUNC,Draft
+SR-FE-065,Send message — the message icon shows the design-system tooltip and no native title,Sales Rep Hub > My customers > Call customer,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. Any row works; @td(ORG_SR_CALL_MULTI.name) is used.",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] hover the 'Send message' icon button in the @td(ORG_SR_CALL_MULTI.name) row
+[WAIT] the tooltip is visible
+[ASSERT] record the tooltip text and the count of visible tooltips
+[ACT] move the pointer away from the 'Send message' icon button
+[ACT] press Tab until focus is on the 'Send message' icon button
+[WAIT] the tooltip is visible
+[ACT] click the 'Send message' button
+[WAIT] the communication modal opens
+[ASSERT] record the modal title and subtitle
+[ACT] click Cancel in the modal
+[WAIT] the UI settles","[DOM] the hover and the focus tooltip both read 'Send message', and exactly one tooltip is visible {SPEC} (VCST-6256 AC10)
+[DOM] the 'Send message' button has no title attribute: attribute is absent, so no native browser tooltip shows beside the design-system one {SPEC} (VCST-6256 AC10)
+[DOM] the modal opens with title 'Send a message' and a subtitle naming @td(ORG_SR_CALL_MULTI.name) {SPEC} (VCST-6256 AC10)","[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",two tooltips overlap (native title plus VcTooltip); the tooltip does not show on keyboard focus; the message modal stops opening after the wrapper was added,Cancel the modal if open; nothing is sent,VCST-6256 · Archetype:RENDER · Technique:EP · Purpose:FUNC,Draft
+SR-FE-066,"Mobile cards — each card offers ""Send message"" and a call button that follows the number count",Sales Rep Hub > My customers > Call customer,High,BL-UI-006,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. Viewport 375x812 (below the VcTable lg breakpoint the list renders as cards). Cards: @td(ORG_SR_CALL_MULTI.name) (several numbers), @td(ORG_SR_CALL_PAGE2.name) (one, on page 2 — find by search), @td(ORG_SR_CALL_NONE.name) (none).",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name); @td(ORG_SR_CALL_PAGE2.name); @td(ORG_SR_CALL_NONE.name),"[NAV] {{FRONT_URL}}/company/my-customers (viewport 375x812)
+[WAIT] the customer list is rendered as stacked cards
+[ASSERT] the @td(ORG_SR_CALL_MULTI.name) card shows buttons labelled 'Send message' and 'Call customer'
+[ACT] tap 'Call customer' on the @td(ORG_SR_CALL_MULTI.name) card
+[WAIT] the dropdown is open
+[ASSERT] it lists the contact's numbers
+[ACT] press Escape
+[ACT] tap 'Call customer' on the @td(ORG_SR_CALL_NONE.name) card
+[WAIT] the reason is shown
+[ACT] fill the search input (placeholder 'Search by name') with @td(ORG_SR_CALL_PAGE2.name)
+[ACT] click the search button (aria-label 'Search customers')
+[WAIT] the table narrows to the @td(ORG_SR_CALL_PAGE2.name) row","[DOM] every card carries a 'Send message' button and a 'Call customer' button; no button reads 'Send email' {SPEC} (VCST-6256 AC11)
+[DOM] the several-number card opens the dropdown on tap; the one-number card's call button is a tel: link to @td(ORG_SR_CALL_PAGE2.expected_hrefs) with accessible name 'Call customer, <number>' {SPEC} (VCST-6256 AC4)
+[DOM] the no-number card's call button is disabled and its reason 'No phone number' shows on tap or focus {SPEC} (VCST-6256 AC11)
+[DOM] each 'Call customer' button is visible and at least 24x24 CSS px {BL} (BL-UI-006)","[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","a mobile card has no call button or still reads ""Send email""; the one-number button opens a dropdown; the disabled reason cannot be reached by tap or focus",none (read-only); restore the desktop viewport,VCST-6256 · Archetype:RENDER · Technique:EP · Purpose:FUNC,Draft
+SR-FE-067,"Call dropdown — keyboard: open, move, choose, Escape closes and focus returns; tooltip hidden while open",Sales Rep Hub > My customers > Call customer,High,BL-A11Y-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_MULTI.name) has several numbers. Keyboard only. ArrowDown does not move between entries in this build (the list is a dialog, entries are reached with Tab).",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] Tab until focus is on the call control in the Actions cell of the @td(ORG_SR_CALL_MULTI.name) row
+[WAIT] the tooltip is visible
+[ASSERT] record the tooltip text
+[ACT] press Enter
+[WAIT] the dropdown is open
+[ASSERT] record whether the tooltip is still visible
+[ACT] press Tab once
+[ASSERT] record the focused element (first entry)
+[ACT] press Escape
+[WAIT] the dropdown closes
+[ASSERT] record the focused element
+[ACT] press Enter on the call control to reopen the dropdown
+[WAIT] the dropdown is open
+[ACT] click on the page background outside the dropdown
+[WAIT] the UI settles
+[ASSERT] record whether it closed","[DOM] on focus the tooltip reads 'Call customer' {SPEC} (VCST-6256 AC5)
+[DOM] while the dropdown is open the tooltip is hidden {SPEC} (VCST-6256 AC14)
+[DOM] after Tab the first entry link in the open dropdown is focused and visible {SPEC} (VCST-6256 AC14)
+[STATE] after Escape the dropdown is closed and focus is back on the call control of the same row {SPEC} (VCST-6256 AC14)
+[STATE] a click outside closes the reopened dropdown {SPEC} (VCST-6256 AC7)","[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",a keyboard user cannot open the dropdown with Enter; Escape closes it but focus is lost to the page body; the tooltip overlaps the open list,none (read-only),VCST-6256 · Archetype:RENDER · Technique:ST · Purpose:FUNC,Draft
+SR-FE-068,My customers — phone numbers come with the one list request per page; page/search/filter refetch once,Sales Rep Hub > My customers > Call customer,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. 11 customers: 10 on page 1 and @td(ORG_SR_CALL_PAGE2.name) on page 2. The ticket expected an aliased query; this build resolves phones inside the one list request, so the outcome asserted is ""one list request per view"", not the mechanism.",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_PAGE2.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[WAIT] observe API calls via browser_network_requests (filter /graphql); record each request's operationName
+[ACT] click page 2 in the pagination
+[WAIT] the page-2 rows are loaded
+[ASSERT] record the requests made since the click
+[ACT] fill the search input (placeholder 'Search by name') with @td(ORG_SR_CALL_MULTI.name)
+[ACT] click 'Search customers'
+[WAIT] the table narrows
+[ASSERT] record the requests made since the search
+[ACT] clear the search
+[WAIT] the table returns to 10 rows
+[ASSERT] record the requests made since the clear","[NETWORK] each of page load, page 2, search and clear fires exactly one SalesRepCustomers request {SPEC} (VCST-6256 AC13)
+[NETWORK] no request with operationName SalesRepCustomer (single customer) is fired at any point on the list {SPEC} (VCST-6256 AC13)
+[DOM] on page 2 the @td(ORG_SR_CALL_PAGE2.name) row's call control is a tel: link to @td(ORG_SR_CALL_PAGE2.expected_hrefs) (numbers are not reused from page 1) {SPEC} (VCST-6256 AC13)","[NETWORK] request count per action is read from the HAR, not inferred
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",one request per row (N+1 on the client); a refetch on an unrelated action; page 2 rows show page 1 numbers,none (read-only); clear the search,VCST-6256 · Archetype:SILENT · Technique:EG · Purpose:FUNC,Draft
+SR-FE-069,My customers — sorted by YTD purchases the call options still belong to the right customer,Sales Rep Hub > My customers > Call customer,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves >=2 organizations with differing YTD purchase totals, including @td(ORG_ACME.name) and @td(ORG_TECHFLOW.name) (see SR-FE-043). Sorting reloads the page with another response group; the numbers must come with it.",front_url={{FRONT_URL}}; @td(SR_REP_PRIMARY.email); @td(ORG_ACME.name); @td(ORG_TECHFLOW.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ASSERT] for every row on the page record the organization name and its call control state (disabled, tel: target, or the dropdown entries' targets) as UNSORTED
+[ACT] click the YTD purchases column header
+[WAIT] the table re-sorts
+[ASSERT] for every row record the same triple as SORTED
+[ACT] click the YTD purchases column header again
+[WAIT] the table re-sorts
+[ASSERT] record the triple as SORTED_REVERSED","[DOM] for every organization the call control is present in the same state (disabled, or enabled with the same tel: target set) in SORTED and SORTED_REVERSED as in UNSORTED {SPEC} (VCST-6256 AC4)
+[DOM] the rows of ""@td(ORG_ACME.name)"" and ""@td(ORG_TECHFLOW.name)"" each keep their own numbers (none moved to a neighbouring row) {SPEC} (VCST-6256 AC4)","[API] the salesRepCustomers response for the sorted request still carries phone and primaryContact.phones per item
+[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",sorting drops phones (every control turns disabled); numbers shift to the neighbouring row after the reload,none (read-only),VCST-6256 · Archetype:FALLBACK · Technique:EG · Purpose:FUNC,Draft
+SR-FE-070,"My customers — while the list loads or fails, no row flashes ""No phone number""",Sales Rep Hub > My customers > Call customer,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_MULTI.name) has numbers, so its control must never show the ""No phone number"" state. Needs a way to delay and to abort the salesRepCustomers request (network interception).",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name),"[SETUP] delay every salesRepCustomers GraphQL response by 6 seconds (network interception)
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] while the response is pending, observe the table area
+[ASSERT] record the skeleton rows and count the elements with accessible name 'Call customer, No phone number'
+[WAIT] the customers table rows are loaded
+[SETUP] remove the delay; abort every salesRepCustomers request
+[ACT] reload the page
+[WAIT] the page settles after the failed request","[DOM] while the response is pending the table shows skeleton rows and zero call controls with the 'No phone number' state {SPEC} (VCST-6256 AC9)
+[DOM] after the delayed response resolves the @td(ORG_SR_CALL_MULTI.name) control is enabled {SPEC} (VCST-6256 AC9)
+[DOM] after the aborted request the page shows its load-failed view (.vc-empty-view__error-illustration) and no row with a 'No phone number' control — a failure never reads as ""no phone number"" {SPEC} (VCST-6256 AC9)",[CONSOLE] no application-origin TypeError or JS error on the page under test (aborted-request errors are expected),a customer with a number briefly shows as unreachable while the list loads; a failed list renders rows with disabled call icons instead of an error,remove the network interception rules,VCST-6256 · Archetype:RACE · Technique:EG · Purpose:FUNC,Draft
+SR-FE-071,Call dropdown — opening a second row closes the first and a call click never opens the profile,Sales Rep Hub > My customers > Call customer,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_MULTI.name) and @td(ORG_SR_CALL_ADDR.name) both have two or more numbers and are on page 1.",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name); @td(ORG_SR_CALL_ADDR.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_MULTI.name) row
+[WAIT] its dropdown is open
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_ADDR.name) row
+[WAIT] request settles
+[ASSERT] record the open dropdowns and the URL
+[ACT] press Escape
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_MULTI.name) row
+[WAIT] the UI settles
+[ACT] click empty space inside that table row (not on a control)
+[WAIT] the UI settles
+[ASSERT] record the open dropdowns and the URL","[COUNT] after opening the second row's dropdown exactly one dropdown (role dialog 'Choose a number to call') is open {SPEC} (VCST-6256 AC7)
+[DOM] after the click the page is still '/company/my-customers' (the call control never navigates to the profile) {SPEC} (VCST-6256 Behaviour: the call action opens no profile)","[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",two dropdowns are open at once and overlap; clicking the call control opens the customer profile through the clickable row,none (read-only); press Escape,VCST-6256 · Archetype:RENDER · Technique:EG · Purpose:FUNC,Draft
+SR-FE-072,Call dropdown — the number list has an opaque surface in dark mode and the text stays readable over the next row,Sales Rep Hub > My customers > Call customer,Medium,BL-A11Y-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_MULTI.name) has several numbers. Dark mode via colour-scheme emulation. The list is rendered by VcPopover whose body had no surface in the discovery session.",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name),"[ACT] emulate prefers-color-scheme: dark
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] click the call control in the Actions cell of the @td(ORG_SR_CALL_MULTI.name) row
+[WAIT] the dropdown is open
+[ASSERT] read the computed background-color of the dropdown panel and of its list element, and its border and box-shadow
+[ASSERT] read the colour of each entry's name and number text and the colour actually behind it (composited over the table row beneath)","[DOM] the dropdown panel has a non-transparent background (alpha > 0) and a visible border or shadow, so the row beneath does not show through {BL} (BL-A11Y-003)
+[DOM] each entry's name and number text has contrast >= 4.5:1 against the colour behind it in dark mode {BL} (BL-A11Y-003)","[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",the list is transparent in dark mode and the next row shows through the numbers; neutral text colours hard-coded for light mode are illegible on the dark table,none (read-only); press Escape; reset colour-scheme emulation,VCST-6256 · Archetype:RENDER · Technique:EP · Purpose:VISUAL,Draft
+SR-FE-073,Call dropdown — the number list fits a 375 px viewport and does not make the page scroll sideways,Sales Rep Hub > My customers > Call customer,Medium,BL-UI-004,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. Viewport 375x812, mobile card list. @td(ORG_SR_CALL_ADDR.name) has two numbers and a long organization name.",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name); @td(ORG_SR_CALL_ADDR.name),"[NAV] {{FRONT_URL}}/company/my-customers (viewport 375x812)
+[WAIT] the customer list is rendered as stacked cards
+[ACT] tap 'Call customer' on the @td(ORG_SR_CALL_ADDR.name) card
+[WAIT] the dropdown is open
+[ASSERT] read the dropdown panel's bounding rectangle, each entry's scrollWidth and clientWidth, and document.scrollingElement.scrollWidth against window.innerWidth","[DOM] the dropdown panel's left edge is >= 0 and its right edge is <= 375 {BL} (BL-UI-004)
+[DOM] every entry is visible with its full name and number: scrollWidth <= clientWidth {BL} (BL-UI-004)
+[OVERFLOW] horizontal == false with the dropdown open (document scrollWidth <= viewport width) {BL} (BL-UI-004)","[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",the number list is wider than the phone screen so a number is clipped and the page scrolls sideways; the page scrolls sideways while the list is open,none (read-only); press Escape; restore the desktop viewport,VCST-6256 · Archetype:RENDER · Technique:BVA · Purpose:VISUAL,Draft
+SR-FE-074,Call dropdown — Tab out of the open list closes it and the next row controls stay reachable,Sales Rep Hub > My customers > Call customer,Medium,BL-A11Y-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call): it serves exactly the 11 ORG_SR_CALL_* organizations, store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(ORG_SR_CALL_MULTI.name) has several numbers; the row below it has its own call and message controls. Keyboard only.",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] focus the call control in the Actions cell of the @td(ORG_SR_CALL_MULTI.name) row
+[ACT] press Enter
+[WAIT] the dropdown is open
+[ACT] press Tab until focus has passed the last entry
+[ASSERT] record whether the dropdown is open and which element has focus
+[ACT] press Escape
+[ASSERT] record whether the dropdown is open","[MATH] count of open dropdowns (role dialog 'Choose a number to call') while focus is on a control of another row == 0 {BL} (BL-A11Y-001)
+[STATE] after Tab leaves the last entry the dropdown is closed, or focus is still inside it {BL} (BL-A11Y-001)
+[DOM] the focused element is visible and not covered by the dropdown: elementFromPoint at its centre returns the element itself {BL} (BL-A11Y-001)
+[STATE] if the dropdown is still open Escape closes it {BL} (BL-A11Y-001)","[CONSOLE] no application-origin TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the dropdown stays open after Tab-out, Escape then does nothing and the list covers the next row's actions so a keyboard user cannot see where focus is",none (read-only); press Escape,VCST-6256 · Archetype:RENDER · Technique:ST · Purpose:FUNC,Draft
+SR-FE-075,"Call customer — de and ja show the translated call and message labels and accessible names, no raw keys, no stale English or pre-PR wording",Sales Rep Hub > My customers > Call customer,Medium,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_CALL]
+SR_REP_CALL serves the 11 ORG_SR_CALL_* organizations. The store offers de and ja (SBTM 2026-11-09). Expected strings are the values of the module locale files (vc-module-sales-rep StorefrontApp/src/locales/de.json and ja.json) for the keys sales_rep.communication.action and sales_rep.communication.call.action / .no_phone — read from the file, never retyped here. Pre-PR wording of communication.action was ""E-Mail senden"" (de) and ""メールを送信"" (ja).",front_url={{FRONT_URL}}; @td(SR_REP_CALL.email); @td(ORG_SR_CALL_MULTI.name); @td(ORG_SR_CALL_NONE.name),"[ACT] switch the storefront language to German
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] hover the call control in the Actions cell of the @td(ORG_SR_CALL_NONE.name) row
+[WAIT] the tooltip is visible
+[ASSERT] record the tooltip text and the control's aria-label as DE_NONE
+[ACT] hover the call control in the Actions cell of the @td(ORG_SR_CALL_MULTI.name) row
+[WAIT] the tooltip is visible
+[ASSERT] record the tooltip text and the control's aria-label as DE_MULTI
+[ASSERT] record the aria-label of the message icon button in the @td(ORG_SR_CALL_MULTI.name) row as DE_MSG
+[ACT] switch the storefront language to Japanese
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the customers table rows are loaded
+[ACT] hover the call control in the Actions cell of the @td(ORG_SR_CALL_NONE.name) row
+[WAIT] the tooltip is visible
+[ASSERT] record the tooltip text and the control's aria-label as JA_NONE
+[ACT] hover the call control in the Actions cell of the @td(ORG_SR_CALL_MULTI.name) row
+[WAIT] the tooltip is visible
+[ASSERT] record the tooltip text and the control's aria-label as JA_MULTI
+[ASSERT] record the aria-label of the message icon button in the @td(ORG_SR_CALL_MULTI.name) row as JA_MSG","[DOM] DE_NONE tooltip equals the de.json value of sales_rep.communication.call.no_phone, and is not the English text ""No phone number"" {SPEC} (VCST-6256 AC15)
+[DOM] DE_MULTI aria-label equals the de.json value of ""sales_rep.communication.call.action"" {SPEC} (VCST-6256 AC15)
+[DOM] DE_MSG equals the de.json value of sales_rep.communication.action and is not ""E-Mail senden"" (the pre-PR wording) {SPEC} (VCST-6256 AC11)
+[DOM] JA_NONE tooltip equals the ja.json value of sales_rep.communication.call.no_phone, and is not the English text ""No phone number"" {SPEC} (VCST-6256 AC15)
+[DOM] JA_MULTI aria-label equals the ja.json value of ""sales_rep.communication.call.action"" {SPEC} (VCST-6256 AC15)
+[DOM] JA_MSG equals the ja.json value of sales_rep.communication.action and is not ""メールを送信"" (the pre-PR wording) {SPEC} (VCST-6256 AC11)
+[COUNT] elements on the page whose text or aria-label starts with ""sales_rep."" in de and in ja == 0 {BL} (BL-SR-013)","[CONSOLE] no application-origin TypeError or missing-translation warning for sales_rep keys
+[NETWORK] no 4xx/5xx on /graphql","a German or Japanese rep sees the English call label or a raw sales_rep key on the new control; the message icon still carries the pre-PR ""send email"" wording in a locale file nobody updated; a locale file lacks a call key and the control falls back to English silently",switch the storefront language back to English,VCST-6256 · Archetype:RENDER · Technique:EP · Purpose:FUNC,Draft

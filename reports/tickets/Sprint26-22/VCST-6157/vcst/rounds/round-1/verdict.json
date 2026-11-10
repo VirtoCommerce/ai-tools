@@ -1,0 +1,31 @@
+{
+  "round": 1,
+  "verdict": "FAIL",
+  "bugs": [
+    {
+      "id": "B-1",
+      "severity": "High",
+      "scope": "in",
+      "title": "Customer column cut to ~64 px of text at 1280 px: every customer reads \"AGENT-TEST-…\" and similar names are indistinguishable (BL-UI-004, AC-1, AC-5)",
+      "rows": [
+        "VIS-1"
+      ],
+      "package": "reports/tickets/Sprint26-22/VCST-6157/vcst/investigations/VIS-1",
+      "spec": null,
+      "key": "VCST-6701"
+    },
+    {
+      "id": "B-2",
+      "severity": "Medium",
+      "scope": "in",
+      "title": "At 768 px the Customers, Status and Priorities filters do not wrap: Priorities is cut off and the page scrolls sideways (BL-UI-004, AC-4, AC-6)",
+      "rows": [
+        "VIS-2"
+      ],
+      "package": "reports/tickets/Sprint26-22/VCST-6157/vcst/investigations/VIS-2",
+      "spec": null,
+      "key": "VCST-6702"
+    }
+  ],
+  "verdict_note": "operator: write-zone flag dismissed (own scenario scripts + another session); FAIL on two Medium bugs"
+}

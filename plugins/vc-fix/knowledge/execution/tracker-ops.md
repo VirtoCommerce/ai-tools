@@ -220,7 +220,7 @@ them. Always resolve the *destination status* by role, then map it to the live w
 
 ## 2a. Labels on bugs Claude files
 
-Every Jira **Bug** Claude creates — and every **Sub-task** that is a bug (§5b in-scope filing) — says who found it
+Every Jira **Bug** Claude creates says who found it
 and, for an agent finding, during what.
 In the VirtoCommerce QA repo a PreToolUse hook refuses the Atlassian MCP create call without a valid set; a bridge
 `jira request` POST is not checked, so it is used only without the MCP (`jira-bug-fields.md` §1).

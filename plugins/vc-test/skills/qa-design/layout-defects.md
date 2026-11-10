@@ -16,7 +16,7 @@ Layout defects rarely appear in a static screenshot of the default story. They e
 | **Empty state** | "0 items" UI collapses to wrong height, breaks parent grid |
 | **Counter / badge change** (single-digit → 3-digit) | Pill widens and pushes adjacent elements |
 | **Validation error inserted** under a field | Form below jumps; bottom-aligned CTAs move |
-| **Viewport drag** 1920 → 375 | Stuck horizontal scroll, sticky double-stacks, mid-breakpoint dead zones at 1024 / 1280 |
+| **Viewport sweep** (§Viewport sweep procedure) | Stuck horizontal scroll, sticky double-stacks, dead zones in the fluid band between two breakpoint edges |
 | **Theme switch** (Default ↔ Coffee) | FOUC, padding tokens diverge, contrast regression |
 | **RTL / long-locale** | Layout assumed LTR or short labels |
 | **3-state rapid switch** (loading → loaded → empty) | Flicker / flash / shift between transitions |
@@ -63,7 +63,13 @@ Static screenshots miss most layout bugs. Measure, don't eyeball. The shared "mi
 
 **Viewport sweep procedure:**
 
-1. Snap to 375 px → capture.
-2. Step +50 px to 1920 px → capture at each.
-3. Additionally capture at exact breakpoint boundaries `[767, 768, 1023, 1024, 1279, 1280]`.
-4. Side-by-side diff: text wrap-cliffs (a line breaks at one width but not at +1 px), sticky-header overlap, layout dead zones, button-row wrap.
+**The widths are derived, never hand-listed** — every viewport list in this skill and in `vc-test:ui-ux-expert`
+cites this procedure. Read `AUDIT_VIEWPORTS_PX` and `BREAKPOINTS_PX` from
+[`<plugin>/lib/design/measure-layout.mjs`](../../lib/design/measure-layout.mjs) (in this repository:
+`scripts/lib/design-tokens.generated.ts`, regenerated from the ui-kit by `npm run tokens:sync`): every ui-kit
+breakpoint edge, the width 1 px below it, the fluid midpoints between edges, plus the 375 and 1920 device widths.
+
+1. At every `AUDIT_VIEWPORTS_PX` width: `browser_resize`, then the invariant snippets — measurements, not screenshots.
+2. Baseline screenshot at the lowest and highest sweep width and at every `BREAKPOINTS_PX` edge; anywhere else, screenshot only a FAIL.
+3. Side-by-side diff: text wrap-cliffs (an edge and the width 1 px below it differ), sticky-header overlap, layout dead zones in the fluid bands, button-row wrap.
+4. Cite a finding by its width in px ("overflow at 1499"), never by a tier name. A run that audits fewer widths is a scoped run, and the report's **Viewports** line lists the ones it did.

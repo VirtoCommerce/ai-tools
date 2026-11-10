@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.68",
+    "version": "1.5.69",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -70,7 +70,8 @@
     "changelog_1_5_65": "RETURNS_ORDER_RECIPIENT: dedicated AGENT-TEST yopmail mailbox for the VCST-5628 returns orders' address emails (seed-return-orders.mjs forces + hard-stops; td:validate:orders §8c).",
     "changelog_1_5_66": "VCST-6017 GA4 markup product lists: registered PROD_GA4_RELATED_ANCHOR, PROD_GA4_VARIATION_PARENT, CART_GA4_SFL_RB (seed:ga4-lists, scripts/seed-data/analytics) and PB_GA4_PRODUCT_LISTS, PB_GA4_HTML_LISTS (seed:cms-pages:ga4) — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:ga4-lists.",
     "changelog_1_5_67": "VCST-5884 FIXTURE-GAP ORG_RET_OTHER_STORE_RETURN closed: registered ORG_RET_OTHER_STORE_RETURN (seed:returns:org) — ORG_RET_BUYER submits a return in STORE_ID on its last spare order, then an administrator PUT /api/return moves it to STORE_ID_SECONDARY (mechanism observed by 050o RET-ORG-011); no store setting is touched. RETURNS_LEGACY_STORELESS remains a FIXTURE-GAP.",
-    "changelog_1_5_68": "Registered RUN_USER — the binding of the env's storefront run persona ({{USER_EMAIL}} / {{USER_PASSWORD}} on {{STORE_ID}}), values only in the layered .env, like ADMIN_USER. No account is created or changed: the alias exists so test-data/models/auth.data-model.json (data.auth.account.store-contact) can address the persona through @td() instead of a bare {{VAR}}."
+    "changelog_1_5_68": "Registered RUN_USER — the binding of the env's storefront run persona ({{USER_EMAIL}} / {{USER_PASSWORD}} on {{STORE_ID}}), values only in the layered .env, like ADMIN_USER. No account is created or changed: the alias exists so test-data/models/auth.data-model.json (data.auth.account.store-contact) can address the persona through @td() instead of a bare {{VAR}}.",
+    "changelog_1_5_69": "VCST-6256 Call a customer: SR_REP_CALL (dedicated rep) + 11 inline ORG_SR_CALL_* org aliases (V1 multi-phone, V2 cross-source duplicate + masked org phone, V3 org-only, V4 ownerless with an older rep member, V5 no number, V6 extension, V7 address-distinct, V8 org+address duplicate, 2 fillers, PAGE2). Seeder seed:sales-rep-call, guard td:validate:sr-call."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -933,6 +934,159 @@
       "id": "coupon_id"
     },
     "_notes": "COU-027 (promo P21 'AGENT-TEST Lowercase Coupon Case Fidelity', 5% off cart subtotal, public + active, no endDate, no threshold). Dedicated collision-free lowercase coupon for the CPN-062 VCST-5233 apply/validate case-fidelity guard. code='agenttestlc062' satisfies /[a-z]/; its all-uppercase form 'AGENTTESTLC062' is NOT a valid/existing coupon on the env (probed vcst-qa 2026-07-21: 0 matches), so uppercasing (VCST-5233 bug) => ValidateCoupon false => 'This code is not valid' (clean fail signal while unfixed); lowercase preserved (once fixed) => applies. Unlike COUPON_SUPER('super'), uppercasing does NOT hit the unrelated 'SUPER'/'Super Discount' coupon. Seeded by seed-promotions.mjs; teardown: npm run seed:promotions:teardown -- --only P21. No runtime GUID here — resolves by static business key (coupon_id/code)."
+  },
+  "SRCPN_PROMO_END_EARLIER": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-028"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S7 — promotion ends +20d, coupon expires +40d (DISTINCT): salesRepCoupons endDate must equal the PROMOTION end. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_COUPON_END_EARLIER": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-029"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S6 — coupon expires +10d, promotion ends +60d (DISTINCT): endDate must equal the COUPON expiry. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_COUPON_EXPIRED": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-030"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S5 — promotion runs to +30d, coupon expired -1d (yesterday 23:59:59Z): HIDDEN by the coupon-level expiry filter (the buyer path ignores coupon expiry). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_PARTIAL": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-031"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S2 — cap 5, 2 REAL promotion-usage records (orders AGENT-TEST-SRCPN-COU-031-*): \"3 uses left out of 5\". LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_ONE_LEFT": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-032"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S4 — cap 2, 1 recorded use: singular \"1 use left out of 2\". LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_CAP_USED_UP": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-033"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid",
+      "max_uses_number": "max_uses_number",
+      "recorded_uses": "recorded_uses"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S3 static half — cap 1, 1 recorded use: HIDDEN (used-up, counted fresh from usage records). The dynamic half (last use recorded by an order inside the case) is created IN the case, never seeded (FIFTH RULE). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_MEMBER_BOUND": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-034"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S8 — Coupon.MemberId = @td(ORG_TECHFLOW.platform_id) (resolved at seed time from member_ref ORG_TECHFLOW): HIDDEN for every rep. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_FUTURE_START": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-035"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S9 — promotion starts +10d (not active yet): NOT LISTED (excluded at the promotion search, OnlyActive). Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_LONG_CODE": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-036"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id",
+      "coupon_guid": "coupon_guid",
+      "promotion_guid": "promotion_guid"
+    },
+    "seed": "seed:promotions:sales-rep-coupons",
+    "_notes": "VCST-6158 S24 — 46-char code, no whitespace: card wrap on the rep page, buyer /account/coupons and cart sidebar. LISTED. Seeded by `TEST_ENV=<env> npm run seed:promotions:sales-rep-coupons` (seed-promotions.mjs --family AGENT-TEST-SRCPN); teardown `npm run seed:promotions:sales-rep-coupons:teardown`. 1% off cart, coupon-only, public, active, store B2B-store, exactly ONE coupon. Dates are rolling (+Nd/-Nd, re-anchored every seed) — assert relations (endDate equals the promotion end / the coupon expiry), never a literal date. Runtime coupon_guid / promotion_guid live in aliases.<env>.json. Contract + guard: promotions-specs.mjs SR_CONTRACTS, npm run td:validate:marketing [6]. Live proof: the seed with --verify reads salesRepCoupons as the rep. NOTE: visible to EVERY buyer on /account/coupons and in the cart sidebar of the stand."
+  },
+  "SRCPN_LOWERCASE": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-027"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id"
+    },
+    "_notes": "VCST-6158 S15 (copy / case fidelity on the rep coupon card) — REUSES COU-027 agenttestlc062 (P21, lowercase-stored, no end date, uncapped; LISTED by salesRepCoupons on vcst 2026-11-03). Same row as COUPON_LC_CASEFIDELITY: its uppercase form AGENTTESTLC062 is no coupon, so an uppercasing copy is detectable. Seeded by seed-promotions.mjs --only P21."
   },
   "LOYALTY_SETTINGS": {
     "_inline": true,
@@ -3730,6 +3884,19 @@
     },
     "_notes": "Agent pool slot 3 (Edge / qa-backend-expert). Same pattern as AGENT_POOL_SLOT_1/2; customer-editable via test-data/users/agent-user-pool.csv."
   },
+  "AGENT_POOL_B2B_SLOT_3": {
+    "file": "users/agent-user-pool",
+    "filter": {
+      "slot": "3"
+    },
+    "fields": {
+      "email": "b2b_email",
+      "password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "browser": "server_name"
+    },
+    "_notes": "Signable B2B persona of agent-pool slot 3 — use as [AUTH role=AGENT_POOL_B2B_SLOT_3]. AGENT_POOL_SLOT_3.email/.password is the PERSONAL no-org account; this alias maps email/password to the slot's b2b_email/b2b_password columns, so the GraphQL runner (graphql-auth.ts resolveRole, CSV-backed branch) signs in as the B2B buyer. It is the OWNER of every seeded quote's <QUOTE_ALIAS>.id_slot3 (e.g. @td(QUOTE_TO_ACCEPT.id_slot3)): seed-quotes.mjs stamps slot n's quotes with that buyer's login id + LIVE organization (quote-buyers.mjs) and a languageCode (KB-97C03EB4), and td:reconcile [16] re-checks both. Password stays a {{VAR}} token in the CSV. No organization_id: the buyer has one organization, which the token takes; the b2b_org column is informational only — on vcst slot 1's CSV org was wrong (quote-buyers.mjs header), so never pin an org from it."
+  },
   "ADMIN_ROLE_TESTER": {
     "_inline": true,
     "_comment": "Customer's admin role assigned to the test admin user (ADMIN env var). The BL-RBAC invariants reference role CAPABILITIES, not names — so this alias absorbs naming differences. Customer's actual role name goes here; agents read this instead of assuming 'admin'. Update name + id per customer Admin SPA > Security > Roles.",
@@ -4190,11 +4357,15 @@
     "id": "",
     "name": "",
     "approved_count": "",
-    "notes": "Product carrying the seeded Approved reviews (>=6, for pagination/sort/approved-only). Runtime id/name/count written to aliases.<env>.json by seed:reviews; empty on an unseeded env.",
+    "new_count": "",
+    "rejected_count": "",
+    "notes": "Product carrying the seeded moderation corpus: >=6 Approved (pagination/sort/approved-only) + >=1 New + >=1 Rejected, and NO other review (the approved-only cases assert served total = approved_count, so the host is a product no other review touches and no REV_* fixture owns). Runtime id/name/slug/counts written to aliases.<env>.json by seed:reviews; empty on an unseeded env. Corpus + host rule: scripts/seed-data/products/reviews-specs.mjs; guard: npm run td:validate:reviews.",
     "fields": {
       "id": "id",
       "name": "name",
       "approved_count": "approved_count",
+      "new_count": "new_count",
+      "rejected_count": "rejected_count",
       "slug": "slug"
     },
     "slug": ""
@@ -4310,10 +4481,11 @@
   },
   "SR_UNSERVED_ORG": {
     "_inline": true,
-    "_notes": "An organization that PROVABLY EXISTS but is NOT served by SR_REP_PRIMARY — the target for the 'rep adds an unserved org to a Customer-scope share' negative (VCST-5707 / vc-module-sales-rep PR #21: adds must be served by the rep, else 'Access denied.' and nothing written). Deliberately the first SR_REP_PAGING org (AGENT-TEST-SR-Paging-01, created by scripts/seed-data/sales-rep/seed-sales-rep.mjs from the PAGING:12 cell in sales-rep/sales-reps.csv) rather than ORG-005 (b2b/organizations.csv, seeded=false): an unserved id and a NONEXISTENT id both return salesRepCustomer=null / organization 'Access denied.' to the rep, so an org whose existence nobody proved makes the negative undecidable — a 'denied' could be not-found. Existence is proven without admin rights: SR_REP_PAGING's own salesRepCustomers lists it. The negative writes nothing when correct, so it does not disturb SR_REP_PAGING's 15-org paging count. Business key = the name below; the runtime GUID lives ONLY in aliases.<env>.json — never in this committed file.",
+    "_notes": "An organization that PROVABLY EXISTS but is NOT served by SR_REP_PRIMARY — the target for the 'rep adds an unserved org to a Customer-scope share' negative (VCST-5707 / vc-module-sales-rep PR #21: adds must be served by the rep, else 'Access denied.' and nothing written). Deliberately the first SR_REP_PAGING org (AGENT-TEST-SR-Paging-01, created by scripts/seed-data/sales-rep/seed-sales-rep.mjs from the PAGING:12 cell in sales-rep/sales-reps.csv) rather than ORG-005 (b2b/organizations.csv, seeded=false): an unserved id and a NONEXISTENT id both return salesRepCustomer=null / organization 'Access denied.' to the rep, so an org whose existence nobody proved makes the negative undecidable — a 'denied' could be not-found. Existence is proven without admin rights: SR_REP_PAGING's own salesRepCustomers lists it. The negative writes nothing when correct, so it does not disturb SR_REP_PAGING's 15-org paging count. Business key = the name below; the runtime GUID lives ONLY in aliases.<env>.json — never in this committed file. Written back by seed-sales-rep.mjs (Phase 5 of npm run seed:sales-rep, or reads-only `npm run seed:sales-rep:writeback` when the paging orgs already exist) only after it checks live that the org exists (GET /api/members/{id}), SR_REP_PAGING serves it and SR_REP_PRIMARY does not; a full teardown blanks it. Static contract: td:validate:sales-rep [8].",
     "name": "AGENT-TEST-SR-Paging-01",
     "id": "",
-    "platform_id": ""
+    "platform_id": "",
+    "seed": "seed:sales-rep"
   },
   "SR_ADMIN_CUSTOMER_ONLY": {
     "file": "sales-rep/admin-users",
@@ -5427,6 +5599,16 @@
     "currency": "USD",
     "id": "",
     "catalogId": ""
+  },
+  "CATALOG_OTHER_WITH_PROPERTIES": {
+    "_inline": true,
+    "_notes": "CAT-GQL-153 (VCST-6251) — a physical catalog OUTSIDE the store (CAT-038's deliberately unlinked AGENT-TEST-Physical-Excluded) that owns properties the store's catalog does not have: AGENT_TEST_OTHER_CATALOG_SCOPE (type Catalog) and AGENT_TEST_OTHER_PRODUCT_SCOPE (type Product), declared in catalog-edge-specs.mjs OTHER_CATALOG. The case passes filter catalogIds:<this id> to Query.properties and asserts the store's own answer comes back; a build that honours the caller's catalogIds returns THESE properties instead, so the two sets must differ — the seeder proves live that the store's Query.properties returns none of them. Not CATALOG_ELECTRONICS (the store's physical source) and not an unmanaged env catalog. Seeded by npm run seed:catalog-edge; guarded by npm run td:validate:catalog-edge. Runtime id lives in aliases.<env>.json only.",
+    "name": "AGENT-TEST-Physical-Excluded",
+    "id": "",
+    "fields": {
+      "id": "id",
+      "name": "name"
+    }
   },
   "PROD_SEO_CONFIGURED": {
     "_inline": true,
@@ -11116,6 +11298,58 @@
     "sessionLifetimeMinutes": "",
     "source": ""
   },
+  "PUNCHOUT_CONFIG_DEFAULTS": {
+    "_inline": true,
+    "_notes": "VCST-5888 Punchout configuration DEFAULTS (Punchout:Configurations app setting at yml position 3, vc-deploy-dev#7011 — no REST read-back). One of the default-methods TRIAD that differ ONLY in their default method codes on ONE store: PUNCHOUT_CONFIG_0 (no codes, T17a) / THIS (codes of ACTIVE store methods, T1 methods + T4) / PUNCHOUT_CONFIG_BADCODES (codes that exist nowhere, T17b). Read the expected methods from defaultShipmentMethodCode / defaultPaymentMethodCode; defaultMethodsActive is re-checked live by the seeder (POST /api/shipping/search + /api/payment/search for storeId). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_DEFAULTS_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_DEFAULTS_VCPTCORE_QA1), promoted by config.js. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay (npm run seed:punchout; live re-check seed:punchout:verify, which also proves the secret live with a setup for PUNCHOUT_MAPPING_REQUISITION → cXML 200 + StartPage, session only, no cart). Guard npm run td:validate:punchout; spec punchout-specs.mjs (CONFIG_SPECS, DEFAULT_METHODS_TRIAD). POSITION vs INDEX: this alias has NO index — \"position\" is its yml positional index on the current deployment; the legacy PUNCHOUT_CONFIG_3 (index 3) is RETIRED and unrelated: since vc-deploy-dev#7011 yml position 3 is PUNCHOUT_CONFIG_DEFAULTS and 4 is PUNCHOUT_CONFIG_BADCODES — cite these aliases, never a number. On every env without a declared deployment these fields resolve to \"\" (a clear miss).",
+    "seed": "seed:punchout",
+    "position": 3,
+    "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_DEFAULTS}}",
+    "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_DEFAULTS",
+    "purpose": "same store as config 0; DefaultShipmentMethodCode + DefaultPaymentMethodCode name methods ACTIVE on that store — the OrderRequest applies them (VCST-5888 T1 methods / T4)",
+    "configurationId": "",
+    "deployed": "",
+    "storeId": "",
+    "storeExists": "",
+    "senderDomain": "",
+    "senderDomainCheck": "",
+    "allowedReturnUrl": "",
+    "returnUrlCheck": "",
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": "",
+    "sessionLifetimeMinutes": "",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": "",
+    "defaultMethodsActive": "",
+    "source": ""
+  },
+  "PUNCHOUT_CONFIG_BADCODES": {
+    "_inline": true,
+    "_notes": "VCST-5888 Punchout configuration BADCODES (Punchout:Configurations app setting at yml position 4, vc-deploy-dev#7011 — no REST read-back). One of the default-methods TRIAD (see PUNCHOUT_CONFIG_DEFAULTS): same store, but its default shipment/payment codes are AGENT-TEST- prefixed and exist on no store — defaultMethodsActive=false is re-checked live (neither code is a method of the store). It has no SenderDomain, so any Credential domain passes the sender check. sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_BADCODES_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_BADCODES_VCPTCORE_QA1), promoted by config.js. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay (npm run seed:punchout; live re-check seed:punchout:verify, which also proves the secret live with a setup for PUNCHOUT_MAPPING_REQUISITION → cXML 200 + StartPage, session only, no cart). Guard npm run td:validate:punchout; spec punchout-specs.mjs (CONFIG_SPECS, DEFAULT_METHODS_TRIAD). POSITION vs INDEX: this alias has NO index — \"position\" is its yml positional index on the current deployment; the legacy PUNCHOUT_CONFIG_3 (index 3) is RETIRED and unrelated: since vc-deploy-dev#7011 yml position 3 is PUNCHOUT_CONFIG_DEFAULTS and 4 is PUNCHOUT_CONFIG_BADCODES — cite these aliases, never a number. On every env without a declared deployment these fields resolve to \"\" (a clear miss).",
+    "seed": "seed:punchout",
+    "position": 4,
+    "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_BADCODES}}",
+    "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_BADCODES",
+    "purpose": "same store as config 0; default method codes that match NO method of that store (VCST-5888 T17b)",
+    "configurationId": "",
+    "deployed": "",
+    "storeId": "",
+    "storeExists": "",
+    "senderDomain": "",
+    "senderDomainCheck": "",
+    "allowedReturnUrl": "",
+    "returnUrlCheck": "",
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": "",
+    "sessionLifetimeMinutes": "",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": "",
+    "defaultMethodsActive": "",
+    "source": ""
+  },
   "PUNCHOUT_MAPPING_DEFAULT": {
     "_inline": true,
     "_notes": "VCST-5886 punchout user mapping AGENT-TEST-PO-100 → the contact + own security account of the single-org persona (exactly 1 organization): {{USER_EMAIL}} by default, {{ORG_USER_EMAIL}} on vcst (USER_EMAIL has no organization there). Cases read the buyer as persona_email / persona_password, which the env overlay sets to that env's {{VAR}} tokens. created by /qa-test VCST-5886 step 1r; deleted at run close-out — this seeder only registers it. id = mapping id, userId = security account, memberId = contact; currentOrganizationId/otherOrganizationId/organizationCount come from the contact. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
@@ -11258,13 +11492,35 @@
   },
   "PUNCHOUT_MAPPING_REQUISITION": {
     "_inline": true,
-    "_notes": "VCST-5887 DEDICATED punchout buyer + mapping AGENT-TEST-PO-300 — isolated from {{USER_EMAIL}} (AGENT-TEST-PO-100), which is shared with other runs and holds a dozen named carts. Contact \"AGENT-TEST-Punchout Buyer\" + Customer account @td(PUNCHOUT_MAPPING_REQUISITION.email) (password {{B2B_USER_PASSWORD}}) + ONE org membership (Purchasing agent, org-scoped) in the single org of the {{USER_EMAIL}} persona (derived live, so it prices like the default persona). Use it for every cart-content / requisition case; run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) in Setup AND Cleanup — it deletes every cart of this buyer and mints the empty `default` cart via xAPI (DISPOSABLE FIXTURES rule 4: two suites using this buyer are serialised). Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown deletes mapping, carts, membership, account, contact); guard npm run td:validate:punchout. Runtime ids (id = mapping, userId, memberId = contact, organizationId) live ONLY in aliases.<env>.json.",
+    "_notes": "VCST-5887 DEDICATED punchout buyer + mapping AGENT-TEST-PO-300 — isolated from {{USER_EMAIL}} (AGENT-TEST-PO-100), which is shared with other runs and holds a dozen named carts. Contact \"AGENT-TEST-Punchout Buyer\" + Customer account @td(PUNCHOUT_MAPPING_REQUISITION.email) (password {{B2B_USER_PASSWORD}}) + ONE org membership (Purchasing agent, org-scoped) in the single org of the {{USER_EMAIL}} persona (derived live, so it prices like the default persona). Use it for every cart-content / requisition case; run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) in Setup AND Cleanup — it deletes every cart of this buyer and mints the empty `default` cart via xAPI (DISPOSABLE FIXTURES rule 4: two suites using this buyer are serialised). Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown deletes mapping, carts, membership, account, contact); guard npm run td:validate:punchout. Runtime ids (id = mapping, userId, memberId = contact, organizationId) live ONLY in aliases.<env>.json, and are empty there after a renew.",
     "seed": "seed:punchout",
     "externalId": "AGENT-TEST-PO-300",
     "email": "AGENT-TEST-punchout-buyer@test.virtocommerce.com",
     "login": "AGENT-TEST-punchout-buyer@test.virtocommerce.com",
     "password": "{{B2B_USER_PASSWORD}}",
     "password_var": "B2B_USER_PASSWORD",
+    "org_role": "Purchasing agent",
+    "organization_from_persona_var": "USER_EMAIL",
+    "owned_by_seeder": true,
+    "id": "",
+    "userId": "",
+    "memberId": "",
+    "organizationId": "",
+    "currentOrganizationId": "",
+    "otherOrganizationId": "",
+    "organizationCount": ""
+  },
+  "PUNCHOUT_MAPPING_SECOND": {
+    "_inline": true,
+    "_notes": "VCST-5888 SECOND dedicated punchout buyer + mapping AGENT-TEST-PO-400, owned by suite 113 alone (PNCO-050 / PNCO-052) — never the shared {{USER_EMAIL}} persona of PUNCHOUT_MAPPING_DEFAULT, which holds carts and Returned sessions of other runs. Same shape as @td(PUNCHOUT_MAPPING_REQUISITION): contact \"AGENT-TEST-Punchout Second Buyer\" + Customer account @td(PUNCHOUT_MAPPING_SECOND.persona_email) (password {{B2B_USER_PASSWORD}}) + ONE org membership (Purchasing agent, org-scoped) in the single org of the {{USER_EMAIL}} persona — the same org, store and configuration 0 as REQUISITION, a DIFFERENT user. Carts: `npm run seed:punchout:second:reset-carts` deletes every cart and leaves NONE (the case creates what it needs); the unscoped `seed:punchout:reset-carts` touches only REQUISITION. Returned sessions: there is no REST/UI to list or delete a punchout session and an OrderRequest matches a Returned session by (store, configuration, user id), so a buyer that 'never returned a requisition' is restored only by `npm run seed:punchout:second:renew` (deletes and rebuilds the buyer → NEW userId, same externalId/email, and writes the runtime ids back EMPTY because they change on every renew; a case reads the user id from xAPI `me` with the buyer's own token, never through @td — Test_Data is resolved before Setup runs). Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout, or seed:punchout:second for this buyer only; teardown seed:punchout:teardown, or --teardown --only second); guard npm run td:validate:punchout. Runtime ids (id = mapping, userId, memberId = contact, organizationId) live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "externalId": "AGENT-TEST-PO-400",
+    "email": "AGENT-TEST-punchout-buyer2@test.virtocommerce.com",
+    "login": "AGENT-TEST-punchout-buyer2@test.virtocommerce.com",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "password_var": "B2B_USER_PASSWORD",
+    "persona_email": "AGENT-TEST-punchout-buyer2@test.virtocommerce.com",
+    "persona_password": "{{B2B_USER_PASSWORD}}",
     "org_role": "Purchasing agent",
     "organization_from_persona_var": "USER_EMAIL",
     "owned_by_seeder": true,
@@ -11512,5 +11768,448 @@
     "user_type": "Manager",
     "password_var": "DEFAULT_TEST_PASSWORD",
     "_notes": "VCST-6443: back-office (Manager, isAdministrator=false) account WITHOUT builder:create but WITH builder:read + builder:update, so POST /api/page-builder-pages/create-group-page returns 403 for it on a VALID permalink (verified at provision) — the case decides whether an INVALID permalink is rejected 400 before or 403 at the permission gate. Password is the {{DEFAULT_TEST_PASSWORD}} secret from .env.local (localhost-safe fallback via user-provision.mjs resolvePassword), never committed. Runtime user id lives only in aliases.<env>.json. Teardown: DELETE /api/platform/security/users?names=agent-test-6443-nocreate + DELETE /api/platform/security/roles?ids=AGENT-TEST-6443%20no-create."
+  },
+  "SANITY_DS": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "primary": "production",
+    "secondary": "qa-secondary",
+    "primaryTypes": "virtoPage,footerNavigation",
+    "secondaryTypes": "landing,virtoPage",
+    "_notes": "Dataset names + the per-dataset documentTypes the suite configures in Sanity.Projects (primaryTypes/secondaryTypes, comma lists). VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_PAGE_A": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-page-a",
+    "permalink": "agent-test-6475-a",
+    "title": "AGENT-TEST 6475 page A",
+    "webhookDecoyTitle": "AGENT-TEST 6475 page A (webhook-body decoy)",
+    "type": "virtoPage",
+    "dataset": "production",
+    "_notes": "VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_PAGE_B": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-page-b",
+    "seoSlug": "agent-test-6475-b-seo",
+    "title": "AGENT-TEST 6475 page B (seo slug only)",
+    "type": "virtoPage",
+    "dataset": "production",
+    "_notes": "VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_CONFLICT": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-conflict",
+    "titlePrimary": "CONFLICT from production",
+    "permalinkPrimary": "agent-test-6475-conflict-prod",
+    "titleSecondary": "CONFLICT from qa-secondary",
+    "permalinkSecondary": "agent-test-6475-conflict-sec",
+    "_notes": "Same id in BOTH datasets, different titles/permalinks - which one wins shows the priority rule. VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_SETTINGS": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-settings",
+    "type": "siteSettings",
+    "title": "AGENT-TEST 6475 site settings (no permalink)",
+    "dataset": "production",
+    "_notes": "VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_FOOTER": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-footer",
+    "type": "footerNavigation",
+    "title": "AGENT-TEST 6475 footer",
+    "dataset": "production",
+    "missingRef": "AGENT-TEST-6475-does-not-exist",
+    "_notes": "links: page-a, page-b, settings (no slug) + weak ref to missingRef (exists nowhere) + nested ref to page-a. VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_LANDING_IN_PROD": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-landing-in-prod",
+    "type": "landing",
+    "permalink": "agent-test-6475-landing-prod",
+    "dataset": "production",
+    "_notes": "type landing in production, where primaryTypes excludes it (secondaryTypes lists it). VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_UNLISTED": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-unlisted",
+    "type": "qaUnlisted",
+    "permalink": "agent-test-6475-unlisted",
+    "dataset": "production",
+    "_notes": "type qaUnlisted - in no dataset type list. VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_DRAFT_A": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "drafts.AGENT-TEST-6475-page-a",
+    "publishedId": "AGENT-TEST-6475-page-a",
+    "title": "AGENT-TEST 6475 page A — DRAFT edit",
+    "dataset": "production",
+    "_notes": "draft of PAGE_A with a different title. VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_LANDING": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-landing",
+    "type": "landing",
+    "permalink": "agent-test-6475-landing",
+    "title": "AGENT-TEST 6475 landing (qa-secondary)",
+    "dataset": "qa-secondary",
+    "_notes": "VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_DOC_SEC_PAGE": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "AGENT-TEST-6475-sec-page",
+    "type": "virtoPage",
+    "permalink": "agent-test-6475-sec",
+    "title": "AGENT-TEST 6475 page in qa-secondary",
+    "dataset": "qa-secondary",
+    "_notes": "VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_ASSET_IMAGE": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "",
+    "url": "",
+    "filename": "AGENT-TEST-6475.png",
+    "kind": "images",
+    "_notes": "runtime id/url (CDN url carries the project id) live only in aliases.<env>.json. VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "SANITY_ASSET_FILE": {
+    "_inline": true,
+    "seed": "seed:sanity",
+    "id": "",
+    "url": "",
+    "filename": "AGENT-TEST-6475.txt",
+    "kind": "files",
+    "_notes": "runtime id/url live only in aliases.<env>.json. VCST-6475 Sanity fixture (suite 117) - scripts/seed-data/sanity/seed-sanity.mjs (npm run seed:sanity, teardown seed:sanity:teardown, guard td:validate:sanity; spec sanity-specs.mjs). Documents live in the Sanity project {{SANITY_QA_PROJECT_ID}} (.env.<env>), not in the platform; doc ids are env-invariant business keys."
+  },
+  "PROD_RANGE_LOW": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-001"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: lowest value of the numeric property N (AgentTest_Length_mm = 9). Below the case sub-range, so applying it must drop this product; its value is the slider minimum."
+  },
+  "PROD_RANGE_MID": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-002"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: the only product whose N (45) lies inside the sub-range 30..60 — the list after applying the sub-range must hold exactly this product."
+  },
+  "PROD_RANGE_HIGH": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-003"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet fixture: highest value of N (120, three digits, so numeric and text ordering disagree). Above the sub-range; its value is the slider maximum."
+  },
+  "PROD_RANGE_NONE": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-004"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "value": "property_value",
+      "price": "price",
+      "stock": "stock_qty",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id"
+    },
+    "notes": "SRCHA-047 range-facet control: same category, priced, in stock, NO value for N. Must disappear once any range is applied."
+  },
+  "RANGE_FACET_N": {
+    "file": "search/range-facet-products",
+    "filter": {
+      "rf_id": "RF-002"
+    },
+    "fields": {
+      "property": "property_name",
+      "category": "category_name",
+      "categoryUrl": "category_url",
+      "min": "range_min",
+      "max": "range_max",
+      "subFrom": "sub_range_from",
+      "subTo": "sub_range_to",
+      "subSkus": "sub_range_skus"
+    },
+    "notes": "SRCHA-047: the numeric product property N for a Range facet on the store (Number, category-level property of the AGENT-TEST Range Facet Fixtures category, linked into the store catalog). Three products carry DIFFERENT values (min != max, mixed digit counts so a text-typed index would order them wrongly) plus one control without N. property = the name to pick in Store > Search configuration > Facets; min/max = expected statistics and slider bounds; subFrom..subTo holds exactly subSkus. Seed: npm run seed:range-facet. The store facet itself is NOT configured by the seeder."
+  },
+  "VARIANT_PICKER_MASTER": {
+    "json": "products/variant-picker",
+    "fields": {
+      "id": "id",
+      "sku": "master.sku",
+      "name": "master.name",
+      "slug": "master.slug",
+      "url": "master.url",
+      "layoutProperty": "layoutProperty.name",
+      "layoutValue": "layoutProperty.value"
+    },
+    "notes": "A11Y-VCP-001 (suite 045): the master whose PDP renders the storefront VcVariantPicker (vc-frontend options.vue on the B2C product template). Carries VirtoFrontend_UI_Layout=B2C (exact case - the theme compares with ===); 4 stocked, distinctly priced variations over Color x Size with a deliberately NON-full matrix, so picking Black makes Size L unavailable (the disabled state is reachable). Open {{FRONT_URL}}@td(VARIANT_PICKER_MASTER.url). Seeded by scripts/seed-data/products/seed-variant-picker.mjs (npm run seed:variant-picker); guard npm run td:validate:variant-picker; runtime id only in aliases.<env>.json."
+  },
+  "L10N_COLLISION_CATEGORY": {
+    "file": "catalogs/locale-slug-categories",
+    "filter": {
+      "fixture_key": "L10N_COLLISION_DE"
+    },
+    "fields": {
+      "id": "category_id",
+      "name": "category_name",
+      "code": "category_code",
+      "slug": "slug",
+      "url": "url",
+      "collisionLocale": "collision_locale",
+      "seoLanguages": "seo_languages"
+    },
+    "notes": "L10N-ROUTE-001/002 (suite 046): a TOP-LEVEL storefront category whose slug starts with a supported 2-letter locale code (de), with the SAME slug in every store language so a language switch keeps the slug and only the prefix changes - the slug-eating defect (VCST-5144) is then the only way the URL can differ. Seeded by scripts/seed-data/catalog/seed-locale-slug-category.mjs (npm run seed:locale-slug); guard npm run td:validate:locale-slug; category_id only in aliases.<env>.json."
+  },
+  "SR_REP_CALL": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "password_env": "SR_REP_PASSWORD",
+    "id": "",
+    "user_id": "",
+    "email": "agent-test-sr-call@example.com",
+    "firstName": "Cal",
+    "lastName": "Caller",
+    "fullName": "Cal Caller",
+    "store": "B2B-store",
+    "_notes": "VCST-6256 (Call a customer, vc-module-sales-rep PR #37) DEDICATED rep: serves ONLY the 11 ORG_SR_CALL_* orgs, so its My customers page shows exactly those rows (10 on page 1, ORG_SR_CALL_PAGE2 on page 2). No orders, so rows order by name. Its OWN contact carries phone +1-555-090-0001, which must never surface as a customer number (rep exclusion, V3/V4). Password = SR_REP_PASSWORD (Playwright lane types SR_REP_PASSWORD_<ENV>). Shape in scripts/seed-data/sales-rep/sales-rep-call-specs.mjs; guard td:validate:sr-call; id/user_id land in aliases.<env>.json (npm run seed:sales-rep-call). Isolation is per REP: nothing else reads these orgs."
+  },
+  "ORG_SR_CALL_MULTI": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "V1",
+    "name": "AGENT-TEST-SR-Call-01-MultiPhone",
+    "expected_phone_count": "3",
+    "expected_default_href": "",
+    "expected_hrefs": "tel:+15550102030;tel:+15550102031;tel:5550102032",
+    "expected_labels": "AGENT-TEST-SR-Call-01-Owner;AGENT-TEST-SR-Call-01-Owner;AGENT-TEST-SR-Call-01-Owner",
+    "expected_primary_contact": "AGENT-TEST-SR-Call-01-Owner",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "contact_V1C": "",
+    "default_href": "",
+    "_notes": "VCST-6256 V1. SEVERAL contact numbers: the org OWNER has three phones in three spellings; no org/address phone. Expect 3 numbers, all labelled with the owner, default = primaryContact.phones[0] AS PERSISTED — the platform does not keep the written order of a contact's phones (written 2030/2031/2032, read back 2031/2032/2030 on vcptcore), so expected_default_href is empty here and the observed default lands in aliases.<env>.json default_href. expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_DUP": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "V2",
+    "name": "AGENT-TEST-SR-Call-02-Duplicate",
+    "expected_phone_count": "1",
+    "expected_default_href": "tel:+15550203040",
+    "expected_hrefs": "tel:+15550203040",
+    "expected_labels": "AGENT-TEST-SR-Call-02-Owner",
+    "expected_primary_contact": "AGENT-TEST-SR-Call-02-Owner",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "contact_V2C": "",
+    "default_href": "",
+    "_notes": "VCST-6256 V2. DUPLICATE across sources in different text: owner phone \"+1 (555) 020-3040\" vs default-address phone \"+1-555-020-3040\" collapse to ONE. The org phone \"+1-555-020-9999\" is NOT exposed: the server `phone` = primaryContact.phones[0] ?? organization.phones[0], so a contact with a phone masks the org number. Expected list = 1 number (a client reading organization.phones directly would show 2). expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_ORGONLY": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "V3",
+    "name": "AGENT-TEST-SR-Call-03-OrgOnly",
+    "expected_phone_count": "1",
+    "expected_default_href": "tel:+15550304050",
+    "expected_hrefs": "tel:+15550304050",
+    "expected_labels": "AGENT-TEST-SR-Call-03-OrgOnly",
+    "expected_primary_contact": "",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "default_href": "",
+    "_notes": "VCST-6256 V3. ORG ONLY: no contact member except SR_REP_CALL itself (excluded as a rep) -> primaryContact null; `phone` = the org phone; 1 number labelled with the ORG name. The rep's own contact phone must NOT appear. expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_OWNERLESS": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "V4",
+    "name": "AGENT-TEST-SR-Call-04-Ownerless",
+    "expected_phone_count": "1",
+    "expected_default_href": "tel:+15550410002",
+    "expected_hrefs": "tel:+15550410002",
+    "expected_labels": "AGENT-TEST-SR-Call-04-Buyer",
+    "expected_primary_contact": "AGENT-TEST-SR-Call-04-Buyer",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "contact_V4C": "",
+    "default_href": "",
+    "_notes": "VCST-6256 V4. OWNERLESS: no owner; contact members = SR_REP_CALL's contact (OLDER, phone +1-555-090-0001) and a non-rep buyer created later (+1-555-041-0002). primaryContact must be the BUYER (PR #37 rep-excluding fallback); the rep's number must not appear. The seeder re-checks the createdDate order on every run. expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_NONE": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "V5",
+    "name": "AGENT-TEST-SR-Call-05-NoNumber",
+    "expected_phone_count": "0",
+    "expected_default_href": "",
+    "expected_hrefs": "",
+    "expected_labels": "",
+    "expected_primary_contact": "AGENT-TEST-SR-Call-05-Owner",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "contact_V5C": "",
+    "default_href": "",
+    "_notes": "VCST-6256 V5. NO number: owner contact without phones, no org phone, no address phone. primaryContact present, 0 numbers (no call icon / plain Phone row). expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_EXT": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "V6",
+    "name": "AGENT-TEST-SR-Call-06-Extension",
+    "expected_phone_count": "1",
+    "expected_default_href": "tel:+1555040506045",
+    "expected_hrefs": "tel:+1555040506045",
+    "expected_labels": "AGENT-TEST-SR-Call-06-Owner",
+    "expected_primary_contact": "AGENT-TEST-SR-Call-06-Owner",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "contact_V6C": "",
+    "default_href": "",
+    "_notes": "VCST-6256 V6. EXTENSION: owner phone \"+1-555-040-5060 x45\". Stored text is shown as-is; the href is the normalized digits, which FOLDS the extension into the dial string (tel:+1555040506045). expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_ADDR": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "V7",
+    "name": "AGENT-TEST-SR-Call-07-AddressDistinct",
+    "expected_phone_count": "2",
+    "expected_default_href": "tel:+15550506070",
+    "expected_hrefs": "tel:+15550506070;tel:+15550506071",
+    "expected_labels": "AGENT-TEST-SR-Call-07-Owner;AGENT-TEST-SR-Call-07-AddressDistinct",
+    "expected_primary_contact": "AGENT-TEST-SR-Call-07-Owner",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "contact_V7C": "",
+    "default_href": "",
+    "_notes": "VCST-6256 V7. Address phone is the only distinct second number: owner +1-555-050-6070, default address +1-555-050-6071 -> 2 numbers, the second labelled with the ORG name (label check). expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_ORGADDR": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "V8",
+    "name": "AGENT-TEST-SR-Call-08-OrgAddressDup",
+    "expected_phone_count": "1",
+    "expected_default_href": "tel:+15550809010",
+    "expected_hrefs": "tel:+15550809010",
+    "expected_labels": "AGENT-TEST-SR-Call-08-OrgAddressDup",
+    "expected_primary_contact": "AGENT-TEST-SR-Call-08-Owner",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "contact_V8C": "",
+    "default_href": "",
+    "_notes": "VCST-6256 V8. ORG + ADDRESS duplicate, no contact phone: owner without phones, org phone \"+1 (555) 080-9010\", address \"+1-555-080-9010\". `phone` falls back to the org number and collapses with the address: 1 number labelled with the ORG name. expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_FILL09": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "F9",
+    "name": "AGENT-TEST-SR-Call-09-Filler",
+    "expected_phone_count": "0",
+    "expected_default_href": "",
+    "expected_hrefs": "",
+    "expected_labels": "",
+    "expected_primary_contact": "",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "default_href": "",
+    "_notes": "VCST-6256 F9. Filler — no contact, no number. Exists only so SR_REP_CALL serves 11 orgs and ORG_SR_CALL_PAGE2 lands on page 2. expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_FILL10": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "F10",
+    "name": "AGENT-TEST-SR-Call-10-Filler",
+    "expected_phone_count": "0",
+    "expected_default_href": "",
+    "expected_hrefs": "",
+    "expected_labels": "",
+    "expected_primary_contact": "",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "default_href": "",
+    "_notes": "VCST-6256 F10. Filler — no contact, no number. Exists only so SR_REP_CALL serves 11 orgs and ORG_SR_CALL_PAGE2 lands on page 2. expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_PAGE2": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "P2",
+    "name": "AGENT-TEST-SR-Call-11-PageTwo",
+    "expected_phone_count": "1",
+    "expected_default_href": "tel:+15551101100",
+    "expected_hrefs": "tel:+15551101100",
+    "expected_labels": "AGENT-TEST-SR-Call-11-Owner",
+    "expected_primary_contact": "AGENT-TEST-SR-Call-11-Owner",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "contact_P2C": "",
+    "default_href": "",
+    "_notes": "VCST-6256 P2. PAGE 2: the 11th org by name (the rep has no orders, so the default rule ties and the handler orders by name) — the only row on page 2 at 10 per page, with an owner phone +1-555-110-1100. Backs \"numbers reloaded when the page changes\". expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
   }
 }

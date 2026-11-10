@@ -26,8 +26,8 @@ rules:
     violation_signal: Cart total higher than expected; coupon discount amount equals percentage of list price instead of sale/tier price.
     status: ACTIVE
     verified:
-      date: 2026-10-29
-      by: REG-2026-10-28-1915
+      date: 2026-11-04
+      by: REG-2026-11-04-1022
   - id: BL-PRICE-002
     title: Tax calculation position
     rule: Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).
