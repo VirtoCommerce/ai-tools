@@ -94,6 +94,7 @@ export function fromQaTest(path) {
     toFix: (s.to_fix ?? []).map((t, i) => ({
       id: t.id ?? `F-${i + 1}`, what: String(t.what ?? "").replace(/\s+/g, " ").trim() || "(untitled)",
       severity: t.severity ?? "", ref: t.ref ?? "", status: t.status ?? "open", report: t.report ?? "",
+      repro: t.repro ?? null,
     })),
     // Proposed to the operator and not created (unanswered or skipped): still named, never dropped.
     suggested: (s.suggested_tickets ?? []).map(t => ({
@@ -276,6 +277,26 @@ export function requireLede(m, ledeMax) {
   return { ...m, lede: s };
 }
 
+// "How to reproduce": one block per To-fix row that carries `repro` — what a developer needs to see
+// the defect without opening the run folder. Flat lines, because the template engine has no nested
+// sections; never trimmed (a repro cut in half is worse than none), so it counts against the budget.
+function reproLines(toFix) {
+  const one = s => String(s ?? "").replace(/\s+/g, " ").trim();
+  const out = [];
+  for (const t of toFix) {
+    const r = t.repro;
+    if (!r || typeof r !== "object") continue;
+    out.push(`#### ${t.id} — ${t.what}${t.severity ? ` (${t.severity})` : ""}`);
+    if (r.where) out.push(`- **Where to fix:** ${one(r.where)}`);
+    (Array.isArray(r.steps) ? r.steps : []).forEach((s, i) => out.push(`- **Step ${i + 1}:** ${one(s)}`));
+    if (r.expected) out.push(`- **Expected:** ${one(r.expected)}`);
+    if (r.actual) out.push(`- **Actual:** ${one(r.actual)}`);
+    if (r.cause) out.push(`- **Cause:** ${one(r.cause)}`);
+    out.push("");
+  }
+  return out;
+}
+
 export function templateData(m, dialect = "markdown") {
   return {
     ICON: m.icon, VERDICT_LABEL: m.verdictLabel, LEDE: m.lede, TICKET: m.ticket ?? "", RUN_ID: m.runLabel ?? "",
@@ -285,6 +306,7 @@ export function templateData(m, dialect = "markdown") {
     AREAS: m.areas ?? [], QUESTIONS: m.questions ?? [], BUGS: m.bugs, TO_FIX: m.toFix ?? [], SUGGESTED: m.suggested ?? [], NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
     // An empty side-effect table means "looked, found nothing" only when the run got that far.
     ISSUES_NONE: m.verdict === "BLOCKED" ? "Not checked — the verification was blocked" : "Nothing found nearby",
+    REPRO: reproLines(m.toFix ?? []),
     SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],
     PAGE_URL: m.pageUrl ?? null,
   };

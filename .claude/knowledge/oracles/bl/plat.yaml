@@ -56,7 +56,7 @@ rules:
     status: ACTIVE
     verified:
       date: 2026-11-10
-      by: REG-2026-11-10-1438-VCST6155-C1r2
+      by: REG-2026-11-10-1934-MCP
   - id: BL-PLAT-004
     title: A dynamic property's value type governs which capabilities it may declare
     rule: "A dynamic property is defined against exactly one object type and becomes available, by that definition alone, on every entity instance of that type that implements the dynamic-properties contract — no separate per-instance registration step is required. Each property's declared value type (short text, long text, HTML, decimal, integer, boolean, date-time, measure, …) determines which structural capabilities it may legally combine: only value types whose registered capability allows it may be flagged as an array, a dictionary, or multilingual — boolean and date-time support none of the three, while short text supports all three."

@@ -1,97 +1,34 @@
 {
-  "runId": "REG-2026-11-09-1635-W4",
+  "runId": "REG-2026-11-10-1934-MCP",
   "status": "completed",
-  "startedAt": "2026-11-09T13:35:54.317Z",
-  "env": "vcptcore_regression",
-  "selection": "stable:16 W4 (006,008,014b,014c,026,027,027b,031,033,050d,050o,073,073a,073b)",
+  "startedAt": "2026-11-10T18:35:10.991Z",
+  "env": "vcst",
+  "selection": "118,102",
   "suites": {
-    "026": {
+    "102": {
       "status": "done",
       "lane": "browser",
-      "cases": 74,
-      "startedAt": "2026-11-09T14:41:27.571Z"
+      "cases": 57,
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-10T18:38:55.758Z",
+      "pass": 33,
+      "fail": 7,
+      "blocked": 16,
+      "skipped": 1,
+      "finishedAt": "2026-11-10T19:38:48.722Z"
     },
-    "014c": {
+    "118": {
       "status": "done",
       "lane": "browser",
-      "cases": 46
-    },
-    "073b": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 17
-    },
-    "014b": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 50,
-      "startedAt": "2026-11-09T14:41:27.572Z"
-    },
-    "006": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 71,
-      "startedAt": "2026-11-09T14:41:27.572Z"
-    },
-    "027b": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 20,
-      "startedAt": "2026-11-09T13:40:00.231Z",
-      "browser": "playwright-firefox"
-    },
-    "008": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 40,
-      "browser": "playwright-edge"
-    },
-    "027": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 71,
-      "startedAt": "2026-11-09T13:40:00.231Z",
-      "browser": "playwright-chrome"
-    },
-    "031": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 37,
-      "browser": "playwright-firefox"
-    },
-    "073": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 23,
-      "browser": "playwright-firefox"
-    },
-    "050d": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 60,
-      "startedAt": "2026-11-09T13:40:00.231Z",
-      "browser": "playwright-edge"
-    },
-    "033": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 15,
-      "startedAt": "2026-11-09T14:41:27.572Z"
-    },
-    "050o": {
-      "status": "done",
-      "lane": "fastpath",
-      "cases": 63,
-      "startedAt": "2026-11-09T13:40:00.230Z"
-    },
-    "073a": {
-      "status": "done",
-      "lane": "fastpath",
-      "cases": 37,
-      "startedAt": "2026-11-09T13:40:00.231Z"
+      "cases": 58,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-10T18:38:55.758Z",
+      "pass": 35,
+      "fail": 16,
+      "blocked": 6,
+      "skipped": 1,
+      "finishedAt": "2026-11-10T19:38:48.722Z"
     }
   },
-  "stalledAt": "2026-11-09T18:18:04.684Z",
-  "stalledReason": "no progress for 45 min (REG-2026-11-09-1635-W4:in_progress:13:547:547)",
-  "finishedAt": "2026-11-10T07:32:16.060Z"
+  "finishedAt": "2026-11-10T19:40:37.154Z"
 }

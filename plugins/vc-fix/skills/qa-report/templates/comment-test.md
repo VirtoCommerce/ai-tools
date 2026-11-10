@@ -1,8 +1,8 @@
 ---
 kind: test
-budget: 3000
+budget: 12000
 lede_max: 240
-trim: "[AREAS, QUESTIONS, NOT_FILED, SUGGESTED, BUGS, TO_FIX]"
+trim: "[QUESTIONS, SUGGESTED, BUGS, TO_FIX]"
 ---
 ## {{ICON}} QA {{VERDICT_LABEL}} — {{TICKET}}
 {{LEDE}}
@@ -16,26 +16,10 @@ trim: "[AREAS, QUESTIONS, NOT_FILED, SUGGESTED, BUGS, TO_FIX]"
 {{/AS_USER}}
 | **When** | {{DATE}} · {{RUN_ID}} |
 
-### What was tested
-| Area | Cases | Result |
-|---|---|---|
-{{#AREAS}}
-| {{area}} | {{cases}} | {{result}} |
-{{/AREAS}}
-{{#AREAS_MORE}}
-| {{.}} | | |
-{{/AREAS_MORE}}
-{{^AREAS}}
-| Everything in the checklist | {{TOTAL}} | {{PASSED}} passed · {{FAILED}} failed · {{BLOCKED}} blocked |
-{{/AREAS}}
-
 {{#AC_DOD}}
 **Acceptance** {{.}}
 {{/AC_DOD}}
-**Regression** {{REGRESSION}}
-
-### New regression coverage
-{{NEW_CASES}}
+**Regression** {{REGRESSION}} · **New regression coverage** {{NEW_CASES}}
 
 ### To fix in this ticket
 | # | What to fix | Severity | Found by | Status |
@@ -49,6 +33,17 @@ trim: "[AREAS, QUESTIONS, NOT_FILED, SUGGESTED, BUGS, TO_FIX]"
 {{^TO_FIX}}
 | | Nothing to fix | | | |
 {{/TO_FIX}}
+
+{{?REPRO}}
+### How to reproduce
+{{/REPRO}}
+{{#REPRO}}
+{{.}}
+{{/REPRO}}
+
+{{#SHOTS}}
+!{{.}}|width=700!
+{{/SHOTS}}
 
 ### Separate tickets
 | What is wrong | Severity | Ticket |
@@ -68,21 +63,6 @@ trim: "[AREAS, QUESTIONS, NOT_FILED, SUGGESTED, BUGS, TO_FIX]"
 {{#SUGGESTED_MORE}}
 | {{.}} | | |
 {{/SUGGESTED_MORE}}
-
-{{#SHOTS}}
-!{{.}}|width=700!
-{{/SHOTS}}
-
-**Not filed (below severity floor)**
-{{#NOT_FILED}}
-- {{severity}} — {{title}}
-{{/NOT_FILED}}
-{{#NOT_FILED_MORE}}
-- {{.}}
-{{/NOT_FILED_MORE}}
-{{^NOT_FILED}}
-- None
-{{/NOT_FILED}}
 
 {{?QUESTIONS}}
 ### Open questions

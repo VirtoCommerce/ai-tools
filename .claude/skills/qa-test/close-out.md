@@ -89,8 +89,9 @@ Silence is the failure mode this pipeline is built against, so a below-floor fin
 
 1. Its **`{RUN_DIR}/bugs/low/` draft stays** (a below-floor finding is `Low`/P3 by definition, so `low/` is always its folder — `.claude/rules/reports.md` §1a) (5-triage's `--fix` pass wrote it, or write it here). That is the
    durable record, and what a human promotes from later if the finding recurs or the grade is disputed.
-2. **5-report's tracker comment names it** — count plus one line each, under `Not filed (below severity floor)`,
-   with the draft path. A reviewer who wants it filed can say so; a reviewer who never sees it cannot.
+2. **`summary.json.bugs_not_filed` names it** — one entry each, with the draft path. Since 2026-11-10 the
+   tracker comment does NOT list Lows: it carries only what a developer acts on — the To-fix rows and how to
+   reproduce each (operator decision on VCST-6155). A reviewer reads the Lows in the run folder.
 3. On the **FAST path** the Artifact-B checklist row carries it too, since the checklist is that run's only
    durable record.
 
@@ -103,7 +104,7 @@ Mechanics: `.claude/knowledge/execution/tracker-ops.md` §5b.
 
 | Provenance | Relationship |
 |---|---|
-| **IN-SCOPE** | **A row in the ticket's To-fix table — no tracker item, never a Sub-task.** No `/vc-fix:qa-bug` call: the draft stays in `{RUN_DIR}/bugs/<severity>/`, the finding is written to `summary.json.to_fix[]` (`id` `F-<n>`, `what`, `severity`, `ref` = the failing case / checklist item, `report` = the draft), and 5-report renders it as the comment's **To fix** table |
+| **IN-SCOPE** | **A row in the ticket's To-fix table — no tracker item, never a Sub-task.** No `/vc-fix:qa-bug` call: the draft stays in `{RUN_DIR}/bugs/<severity>/`, the finding is written to `summary.json.to_fix[]` (`id` `F-<n>`, `what`, `severity`, `ref` = the failing case / checklist item, `report` = the draft, `repro` = `{ where, steps[], expected, actual, cause }` from the draft), and 5-report renders it as the comment's **To fix** table plus a **How to reproduce** block per row |
 | **PRE-EXISTING** | **Link only, no new ticket** — `/vc-fix:qa-bug … link-only:<existing-bug-key>`, linked to `<ticket-key>` |
 | **OUT-OF-SCOPE incidental** | Its **own standalone ticket** + a *related* link back to `<ticket-key>` |
 | **`BL-A11Y-*` on a functional / feature / E2E ticket** | Its **own standalone ticket** + a *related* link — the same shape as an OUT-OF-SCOPE incidental, and for the same reason. **Never a To-fix row**: that row asserts this ticket caused it, and an inherited contrast or naming defect was not caused by this story. It keeps its **real severity** (never downgraded to look non-blocking) and does **not** fail 5-verdict ([`triage.md`](triage.md) §7a) |
