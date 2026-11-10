@@ -516,7 +516,7 @@ refuses that key (exit 1) and says so.
 
 Once every env of the run exists: `default-env.mjs [--env <env>]` sets **`.env.test-env`** (`TEST_ENV=<env>`).
 `ask` ⇒ ONE AskUserQuestion with its `options`, `recommended` first (Recommended; null ⇒ none); then `--choose <answer>`
-(`ask` again ⇒ ask again). Relay `lines`.
+(`ask` again ⇒ show its `error`, ask again). Relay `lines`.
 
 ### 3b. `.env.local` — test-user passwords (`scaffold-secrets.mjs`)
 
