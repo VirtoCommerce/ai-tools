@@ -279,36 +279,23 @@ export function requireLede(m, ledeMax) {
   return { ...m, lede: s };
 }
 
-// "How to reproduce": one block per To-fix row that carries `repro` — what a developer needs to see
-// the defect without opening the run folder. Flat lines, because the template engine has no nested
-// sections; never trimmed (a repro cut in half is worse than none), so it counts against the budget.
-// One card per To-fix row that carries `repro`: steps, expected next to actual, root cause, the fix,
-// its screenshot (wiki only — the one dialect that embeds an attachment) and what found it, by the
-// check's TITLE: an internal id (C-74, MCP-044) means nothing to the reader. Emitted as RAW lines
-// (`{{{.}}}` in the template), so every value is escaped here with the engine's own `cell` rules.
-function reproLines(toFix, dialect) {
+// The "What to fix" table: ONE row per To-fix finding — what is broken (and why it matters), how to
+// reproduce it, expected → actual, and where to fix it — so the whole comment reads in one screen.
+// A check is named by its TITLE (`found_by`), never an internal id (C-74, MCP-044). Cells hold line
+// breaks as `<br>`, which each dialect turns into its own (wiki `\\`, HTML <br/>). Emitted as RAW rows
+// (`{{{.}}}`), so every value is escaped here with the engine's own `cell` rules.
+function fixRows(toFix) {
   const v = s => String(s ?? "").replace(/\s*\r?\n\s*/g, " ").replace(/\|/g, "/").replace(/\{\{|\}\}/g, x => `${x[0]} ${x[1]}`).trim();
-  const out = [];
-  for (const t of toFix) {
-    const r = t.repro;
-    if (!r || typeof r !== "object") continue;
-    out.push(`#### ${v(t.id)} · ${v(r.title || t.what)}`);
-    const steps = Array.isArray(r.steps) ? r.steps : [];
-    if (steps.length) {
-      out.push(`| Step | ${v(r.setting) || "Do this"} |`, "|---|---|");
-      steps.forEach((s, i) => out.push(`| ${i + 1} | ${v(s)} |`));
-      out.push("");
-    }
-    if (r.expected || r.actual) {
-      out.push("| ✅ Expected | ❌ Actual |", "|---|---|", `| ${v(r.expected) || "—"} | ${v(r.actual) || "—"} |`, "");
-    }
-    if (r.cause) out.push(`**Root cause** ${v(r.cause)}${r.where ? ` (${v(r.where)})` : ""}`, "");
-    if (r.fix) out.push(`**Suggested fix** ${v(r.fix)}`, "");
-    if (r.shot && dialect === "wiki") out.push(`!${basename(String(r.shot))}|width=700!`, "");
+  return toFix.map(t => {
+    const r = t.repro && typeof t.repro === "object" ? t.repro : {};
+    const what = [v(t.what), r.impact ? `_${v(r.impact)}_` : ""].filter(Boolean).join("<br>");
+    const steps = (Array.isArray(r.steps) ? r.steps : []).map((x, i) => `${i + 1}. ${v(x)}`);
     const found = (Array.isArray(r.found_by) ? r.found_by : []).map(v).filter(Boolean);
-    if (found.length) out.push(`Found by: ${found.join(" · ")}`, "");
-  }
-  return out;
+    const how = [...steps, ...found.map(x => `Check: ${x}`)].join("<br>") || (t.ref ? v(t.ref) : "—");
+    const exp = [r.expected ? `✅ ${v(r.expected)}` : "", r.actual ? `❌ ${v(r.actual)}` : ""].filter(Boolean).join("<br>") || "—";
+    const where = [v(r.repo), v(r.file || r.where)].filter(Boolean).join("<br>") || "—";
+    return `| ${v(t.id)} | ${what} | ${how} | ${exp} | ${where} |`;
+  });
 }
 
 // The verdict panel's headline and the closing "Next step" — derived from the verdict and the To-fix
@@ -321,7 +308,7 @@ function verdictText(m) {
     case "FAIL": return {
       ALERT: "danger",
       HEADLINE: n ? `Not ready — ${n} defect${n > 1 ? "s" : ""} must be fixed before ${t} can pass` : `Not ready — ${t} failed testing`,
-      NEXT_STEP: n ? `Fix ${ids}, then move the ticket to Ready for test. QA re-runs the checks named under each defect.` : "Fix the failures below and send the ticket back to QA.",
+      NEXT_STEP: n ? `Fix ${ids}, then move the ticket to Ready for test. QA re-runs the checks named in the table.` : "Fix the failures below and send the ticket back to QA.",
     };
     case "BLOCKED": return { ALERT: "warning", HEADLINE: `Blocked — testing of ${t} could not finish`, NEXT_STEP: "Remove the blocker named above; QA resumes testing." };
     case "PASS_WITH_NOTES": return { ALERT: "note", HEADLINE: `Passed with notes — ${t} can go on`, NEXT_STEP: n ? `Fix ${ids} in this ticket or a follow-up.` : "No action needed in this ticket." };
@@ -338,11 +325,9 @@ export function templateData(m, dialect = "markdown") {
     AREAS: m.areas ?? [], QUESTIONS: m.questions ?? [], BUGS: m.bugs, TO_FIX: m.toFix ?? [], SUGGESTED: m.suggested ?? [], NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
     // An empty side-effect table means "looked, found nothing" only when the run got that far.
     ISSUES_NONE: m.verdict === "BLOCKED" ? "Not checked — the verification was blocked" : "Nothing found nearby",
-    REPRO: reproLines(m.toFix ?? [], dialect),
+    FIX_ROWS: fixRows(m.toFix ?? []),
     ...verdictText(m),
-    // A screenshot a defect card already shows is not repeated at the bottom.
-    SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s))
-      .filter(b => !(m.toFix ?? []).some(t => t.repro?.shot && basename(String(t.repro.shot)) === b)) : [],
+    SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],
     PAGE_URL: m.pageUrl ?? null,
   };
 }

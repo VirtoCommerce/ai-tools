@@ -2,7 +2,7 @@
 kind: test
 budget: 12000
 lede_max: 240
-trim: "[QUESTIONS, SUGGESTED, BUGS, TO_FIX]"
+trim: "[QUESTIONS, SUGGESTED, BUGS]"
 ---
 > [!{{ALERT}}] **{{ICON}} {{HEADLINE}}**
 > {{LEDE}}
@@ -13,20 +13,13 @@ Signed in as {{AS_USER}}
 {{/AS_USER}}
 
 {{?TO_FIX}}
-### What to fix
-| # | What is broken | Why it matters | Fix in |
-|---|---|---|---|
+### What to fix and how to reproduce
+| # | What is broken | How to reproduce | Expected → actual | Fix in |
+|---|---|---|---|---|
 {{/TO_FIX}}
-{{#TO_FIX}}
-| {{id}} | {{what}} | {{impact}} | {{repo}} |
-{{/TO_FIX}}
-{{#TO_FIX_MORE}}
-| | {{.}} | | |
-{{/TO_FIX_MORE}}
-
-{{#REPRO}}
+{{#FIX_ROWS}}
 {{{.}}}
-{{/REPRO}}
+{{/FIX_ROWS}}
 
 {{#SHOTS}}
 !{{.}}|width=700!

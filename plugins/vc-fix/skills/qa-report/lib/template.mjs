@@ -107,6 +107,7 @@ const PANEL = {
 /** Markdown subset → Jira wiki (v2 API) — the only dialect that embeds an attached image inline (tracker-ops.md §5c). */
 export function toWiki(md) {
   const inline = s => s
+    .replace(/<br>/g, " \\\\ ")
     .replace(/\*\*([^*]+)\*\*/g, "*$1*")
     .replace(/`([^`]+)`/g, "{{$1}}")
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "[$1|$2]");
@@ -142,6 +143,7 @@ export function toWiki(md) {
 export function toHtml(md) {
   const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const inline = s => esc(s)
+    .replace(/&lt;br&gt;/g, "<br/>")
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => /^https?:\/\//.test(url) ? `<a href="${url}">${text}</a>` : text);
