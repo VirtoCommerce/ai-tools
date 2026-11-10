@@ -305,6 +305,7 @@
     "layout:author": "node scripts/layout/author-reference-suite.mjs",
     "layout:author:check": "node scripts/layout/author-reference-suite.mjs --check",
     "design:extract": "npx tsx scripts/layout/design-spec-extract.ts",
+    "design:import": "npx tsx scripts/layout/design-import.ts",
     "visual:snap": "node plugins/vc-frontend/visual/snap.mjs",
     "visual:diff": "node plugins/vc-frontend/visual/diff.mjs",
     "visual:affected": "node plugins/vc-frontend/visual/affected.mjs",
