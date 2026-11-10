@@ -89,7 +89,7 @@ Known local reports below the filing floor reproduced again:
 - **The Customer mode needed a store save.** The settings-API write read back Customer, but accruals stayed organization-scoped until the store was saved in Admin (Stores > B2B-store > Save); the effective mode follows the store cache, not the setting write (KB-0761662A, suspected defect).
 - Re-seeded `seed:missions-e2e` (run 20261109153618-6c4c); mission progress already matched. One stale empty cart on the progress owner removed (`carts:sweep`).
 - **17 cases: 14 PASS, 1 FAIL, 2 BLOCKED.** 083c 9/11, 083d 4/4, MCO-E2E-002 PASS.
-- **TASK-016 FAIL — real bug, not filed yet:** a read-only task user sees an enabled Create button that opens an unsavable blade (`BaseWorkTasksList.vue` L216-223 has no permission check; server answers 401). Low, vc-module-task-management.
+- **TASK-016 FAIL — real bug, filed as VCST-6765:** a read-only task user sees an enabled Create button that opens an unsavable blade (`BaseWorkTasksList.vue` L216-223 has no permission check; server answers 401). Low, vc-module-task-management.
 - MSNF-075: TEST_DEFECT — missions are listed per session currency by design (`loyaltyMissionProgress` passes `currencyCode` to the search). MSNF-080: DATA — the fresh msne2e account has no points history.
 - Orders CO261109-00017…00022 cancelled.
 
@@ -179,7 +179,7 @@ All six are pre-existing, not regressions of this bundle. Each was re-verified l
    - QUOTE-031/032: retire or move to the orders suites;
    - NEWS-023: split into an API half and a UI half;
    - the quote-expiry rule (PENDING_DECISION).
-6. **TASK-016:** decide on filing (DRAFT). **MSNF-075** ARM 1 and **MSNF-080** data need repair.
+6. **MSNF-075** ARM 1 and **MSNF-080** data need repair.
 7. **The 19 NOT_TESTABLE 083c cases** move to Playwright specs; 5 pilots come first.
 
 Raw evidence (screenshots, traces, results JSON) is on the owner's machine under `reports/regression/REG-2026-11-05-1645-W7/`, `REG-2026-11-06-1424-W7C/` and `REG-2026-11-09-0950-W7U/` (the last in the worktree run folder).
