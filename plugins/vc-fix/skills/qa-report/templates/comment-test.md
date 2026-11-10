@@ -21,6 +21,13 @@ Signed in as {{AS_USER}}
 {{{.}}}
 {{/FIX_ROWS}}
 
+{{?SNIPPETS}}
+### Server response (evidence)
+{{/SNIPPETS}}
+{{#SNIPPETS}}
+{{{.}}}
+{{/SNIPPETS}}
+
 {{#SHOTS}}
 !{{.}}|width=700!
 {{/SHOTS}}

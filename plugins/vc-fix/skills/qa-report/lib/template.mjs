@@ -117,6 +117,15 @@ export function toWiki(md) {
   const out = [];
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
+    // A fenced code block (```lang … ```) is copied verbatim into {code:lang} — no inline rewriting, so a
+    // response snippet keeps its braces, pipes and backticks.
+    const fence = /^```(\w*)\s*$/.exec(l);
+    if (fence) {
+      out.push(fence[1] ? `{code:${fence[1]}}` : "{code}");
+      while (++i < lines.length && !/^```\s*$/.test(lines[i])) out.push(lines[i]);
+      out.push("{code}");
+      continue;
+    }
     // A `> [!kind]` alert block (GitHub syntax) becomes a coloured Jira panel — the verdict banner.
     if (/^>\s?/.test(l)) {
       const block = [];
@@ -156,6 +165,13 @@ export function toHtml(md) {
   };
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
+    if (/^```\w*\s*$/.test(l)) {
+      close();
+      const code = [];
+      while (++i < lines.length && !/^```\s*$/.test(lines[i])) code.push(esc(lines[i]));
+      out.push(`<pre>${code.join("\n")}</pre>`);
+      continue;
+    }
     if (/^>\s?/.test(l)) {
       close();
       const block = [];

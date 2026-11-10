@@ -286,6 +286,21 @@ export function requireLede(m, ledeMax) {
 // A check is named by its TITLE (`found_by`), never an internal id (C-74, MCP-044). Cells hold line
 // breaks as `<br>`, which each dialect turns into its own (wiki `\\`, HTML <br/>). Emitted as RAW rows
 // (`{{{.}}}`), so every value is escaped here with the engine's own `cell` rules.
+// "Evidence": an optional response snippet per To-fix row (`repro.snippet` = { caption, lang, text }) —
+// the server's own answer as confirmation, shown as a code block under the table. RAW lines; the text is
+// copied verbatim inside a fence (each dialect renders it as code, never as Markdown).
+function snippetLines(toFix) {
+  const out = [];
+  for (const t of toFix) {
+    const sn = t.repro?.snippet;
+    if (!sn || typeof sn.text !== "string" || !sn.text.trim()) continue;
+    const cap = String(sn.caption ?? "").replace(/\s+/g, " ").replace(/\|/g, "/").trim();
+    out.push(`**${t.id}**${cap ? ` — ${cap}` : ""}`, "```" + String(sn.lang ?? "").replace(/\W/g, ""),
+      ...sn.text.replace(/\r\n/g, "\n").replace(/```/g, "'''").trimEnd().split("\n"), "```", "");
+  }
+  return out;
+}
+
 function fixRows(toFix) {
   const v = s => String(s ?? "").replace(/\s*\r?\n\s*/g, " ").replace(/\|/g, "/").replace(/\{\{|\}\}/g, x => `${x[0]} ${x[1]}`).trim();
   return toFix.map(t => {
@@ -330,6 +345,7 @@ export function templateData(m, dialect = "markdown") {
     // An empty side-effect table means "looked, found nothing" only when the run got that far.
     ISSUES_NONE: m.verdict === "BLOCKED" ? "Not checked — the verification was blocked" : "Nothing found nearby",
     FIX_ROWS: fixRows(m.toFix ?? []),
+    SNIPPETS: snippetLines(m.toFix ?? []),
     ...verdictText(m),
     SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],
     PAGE_URL: m.pageUrl ?? null,
