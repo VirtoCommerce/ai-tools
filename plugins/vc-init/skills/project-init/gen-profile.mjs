@@ -76,6 +76,8 @@ const TICKET_KEY_FACTS = {
   jira: { ticketKeyFormat: "prefixed", crossLinkToken: "" },
   azure: { ticketKeyFormat: "numeric", crossLinkToken: "AB#" },
 };
+// A cross-link token one of the kinds derives — the only values the kind may replace.
+const DERIVED_CROSS_LINK_TOKENS = Object.values(TICKET_KEY_FACTS).map((f) => f.crossLinkToken);
 
 const ENUMS = {
   "project-type": ["platform", "client"],
@@ -294,7 +296,15 @@ function main() {
   // Jira: format facts only). Baked so /qa-fix transitions by role without asking.
   if (args["tracker-json"]) {
     try {
-      const t = JSON.parse(readFileSync(resolve(outputRoot(), args["tracker-json"]), "utf-8"));
+      const scan = JSON.parse(readFileSync(resolve(outputRoot(), args["tracker-json"]), "utf-8"));
+      // A scan of ANOTHER tracker (a leftover .local-env/tracker.json after a Jira ⇄ Azure switch) would
+      // bake that tracker's key format and status model into this profile: ignore it, loudly.
+      const trackerKind = args.tracker ?? base.tracker?.kind;
+      const otherTracker = Boolean(scan.kind && trackerKind && scan.kind !== trackerKind);
+      if (otherTracker) {
+        console.warn(`[gen-profile] ⚠ --tracker-json ${args["tracker-json"]} scans tracker ${scan.kind}, but this profile's tracker is ${trackerKind} — ignored; re-run discover-tracker for ${trackerKind}`);
+      }
+      const t = otherTracker ? {} : scan;
       if (t.ticketKeyFormat) set("tracker.ticketKeyFormat", t.ticketKeyFormat);
       if (t.crossLinkToken !== undefined) set("tracker.crossLinkToken", t.crossLinkToken);
       if (t.apiBase) set("tracker.azure.apiBase", t.apiBase);
@@ -369,14 +379,18 @@ function main() {
   // without it used to keep the Jira default — an Azure Boards profile with ticketKeyFormat "prefixed",
   // which makes every reader parse a bare work-item id (8944) as a Jira key. So when --tracker-json did
   // not set them, take discover-tracker's own values for the kind: the format always (each tracker has
-  // exactly one), the cross-link token only over a value one of the kinds derives ("" / "AB#"), so a
-  // token the operator chose survives. A --merge of an older wrong profile is corrected the same way.
+  // exactly one), the cross-link token only over a value one of the kinds derives ("" / "AB#"), so any
+  // other token the operator chose survives ("" cannot be told from the default, so it is replaced too). A --merge of an older wrong profile is corrected the same way.
   const keyFacts = TICKET_KEY_FACTS[profile.tracker?.kind];
   if (keyFacts) {
     const tracker = { ...profile.tracker };
-    if (patch.tracker?.ticketKeyFormat === undefined) tracker.ticketKeyFormat = keyFacts.ticketKeyFormat;
-    const derivedTokens = Object.values(TICKET_KEY_FACTS).map((f) => f.crossLinkToken);
-    if (patch.tracker?.crossLinkToken === undefined && derivedTokens.includes(tracker.crossLinkToken ?? "")) {
+    if (patch.tracker?.ticketKeyFormat === undefined && tracker.ticketKeyFormat !== keyFacts.ticketKeyFormat) {
+      if (existing?.tracker?.ticketKeyFormat) {
+        console.log(`[gen-profile] tracker.ticketKeyFormat ${existing.tracker.ticketKeyFormat} → ${keyFacts.ticketKeyFormat} (the only format for tracker ${profile.tracker.kind})`);
+      }
+      tracker.ticketKeyFormat = keyFacts.ticketKeyFormat;
+    }
+    if (patch.tracker?.crossLinkToken === undefined && DERIVED_CROSS_LINK_TOKENS.includes(tracker.crossLinkToken ?? "")) {
       tracker.crossLinkToken = keyFacts.crossLinkToken;
     }
     profile = { ...profile, tracker };

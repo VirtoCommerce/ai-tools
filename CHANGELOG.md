@@ -18,10 +18,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   `/qa-verify-fix` read the explicit field. The ticket key facts now follow `tracker.kind` when tracker-json
   does not set them: Azure `numeric` + `crossLinkToken: "AB#"`, Jira `prefixed` + `""` — the values
   `discover-tracker` emits for each kind.
-- A value carried by `--tracker-json` always wins. The cross-link token is replaced only when it holds one of the
-  derived values (`""` / `"AB#"`), so a token the operator set survives.
-- A profile already written with the wrong format is corrected by the next `/project-init` run (a fresh run or
-  `gen-profile --merge`); no hand edit is needed.
+- A value carried by `--tracker-json` always wins — unless that file is a scan of the OTHER tracker (a leftover
+  `tracker.json` after a Jira ⇄ Azure switch): it is then ignored with a warning instead of baking the wrong
+  tracker's key format and status model into the profile.
+- The cross-link token is replaced only when it holds one of the derived values (`""` / `"AB#"`), so any other
+  token the operator set survives. A token set to `""` by hand cannot be told from the default and becomes `"AB#"`
+  on Azure.
+- A profile already written with the wrong format is corrected by a fresh `/project-init` run or by
+  `gen-profile --merge`, which prints the change. `/project-init --check` does not correct it: it goes through
+  `reconcile-profile.mjs`, which does not touch the key format.
 - Universal: Jira projects and Azure projects scanned by `discover-tracker` write the same values as before.
 
 ## A client project gets its default env at onboarding — `vc-init` `0.5.4` — 2026-11-10
