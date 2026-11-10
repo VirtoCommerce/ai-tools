@@ -1,32 +1,97 @@
 {
-  "runId": "REG-2026-11-05-1740",
+  "runId": "REG-2026-11-09-1635-W4",
   "status": "completed",
-  "startedAt": "2026-11-05T16:41:03.321Z",
-  "windowStart": "2026-11-05T16:41:03.321Z",
-  "selection": "106",
-  "env": "vcst",
-  "scoped": true,
-  "cases": "ids",
-  "ids": [
-    "SR-TK-043",
-    "SR-TK-044",
-    "SR-TK-048",
-    "SR-TK-057"
-  ],
-  "purpose": "VCST-6157 re-run on ff13 of the cases REG-2026-11-05-1651 blocked on the stale edge bundle (VCST-6676) + SR-TK-057 rewritten for the ff13 container-query toolbar",
-  "plan": "reports/regression/REG-2026-11-05-1740/preflight.json",
+  "startedAt": "2026-11-09T13:35:54.317Z",
+  "env": "vcptcore_regression",
+  "selection": "stable:16 W4 (006,008,014b,014c,026,027,027b,031,033,050d,050o,073,073a,073b)",
   "suites": {
-    "106": {
+    "026": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-firefox",
-      "total": 4,
-      "startedAt": "2026-11-05T16:41:57.130Z",
-      "pass": 4,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-05T16:58:21.182Z"
+      "cases": 74,
+      "startedAt": "2026-11-09T14:41:27.571Z"
+    },
+    "014c": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 46
+    },
+    "073b": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 17
+    },
+    "014b": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 50,
+      "startedAt": "2026-11-09T14:41:27.572Z"
+    },
+    "006": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 71,
+      "startedAt": "2026-11-09T14:41:27.572Z"
+    },
+    "027b": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 20,
+      "startedAt": "2026-11-09T13:40:00.231Z",
+      "browser": "playwright-firefox"
+    },
+    "008": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 40,
+      "browser": "playwright-edge"
+    },
+    "027": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 71,
+      "startedAt": "2026-11-09T13:40:00.231Z",
+      "browser": "playwright-chrome"
+    },
+    "031": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 37,
+      "browser": "playwright-firefox"
+    },
+    "073": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 23,
+      "browser": "playwright-firefox"
+    },
+    "050d": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 60,
+      "startedAt": "2026-11-09T13:40:00.231Z",
+      "browser": "playwright-edge"
+    },
+    "033": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 15,
+      "startedAt": "2026-11-09T14:41:27.572Z"
+    },
+    "050o": {
+      "status": "done",
+      "lane": "fastpath",
+      "cases": 63,
+      "startedAt": "2026-11-09T13:40:00.230Z"
+    },
+    "073a": {
+      "status": "done",
+      "lane": "fastpath",
+      "cases": 37,
+      "startedAt": "2026-11-09T13:40:00.231Z"
     }
   },
-  "finishedAt": "2026-11-05T16:58:38.177Z"
+  "stalledAt": "2026-11-09T18:18:04.684Z",
+  "stalledReason": "no progress for 45 min (REG-2026-11-09-1635-W4:in_progress:13:547:547)",
+  "finishedAt": "2026-11-10T07:32:16.060Z"
 }
