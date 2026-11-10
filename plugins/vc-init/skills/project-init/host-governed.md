@@ -185,7 +185,7 @@ One message, two parts, after §8 verify-access:
 | §3e normalize-env | as usual — it requests the storefront URL once to detect `STORE_ID` |
 | §4 `discover-repos` | **through the host**: step 3a — a listing read with the host's server, `--listing-json`; without one it stands down. VirtoCommerce modules are not listed (the modules API needs an admin sign-in, which is the host's) |
 | §4b `discover-tracker`, §5 `derive-context` | **skipped** — read through the host's MCP servers at run time; each script stands down by itself |
-| §6 `gen-profile` | written in step 3 with the facts and answers; recorded as a client project that files nothing upstream |
+| §6 `gen-profile` | written in step 3 with the facts and answers; recorded as a client project that files nothing upstream; with no tracker scan the ticket key format follows the tracker (Azure Boards `numeric`, Jira `prefixed`) |
 | §7 `sync-browser-secrets`, `gen-mcp`, `write-agent-rules` | **skipped** — servers, browser lanes and their rules are the host's |
 | §8 `verify-access` | the **host-mode readiness table**: host plugin, each role's server, the host's setup ran here, the profile matches the servers on, each env's test users and their slots (a filled slot is NOT checked — no secret is resolved), the URLs |
 | §9 `next-steps` | as usual; tracker asks name the host's tracker server; no `/qa-fix` without a code host |

@@ -70,6 +70,13 @@ import { emitObservations } from "./lib/diag-obs.mjs";
 // iteration resolves at create time via `--iteration current`.
 const ILLEGAL_FIELDDEFAULT_REF = /(^|\.)(iteration|area)id$/i;
 
+// How a ticket id looks per tracker kind — the values discover-tracker.mjs emits for each kind
+// (Jira `ABC-123`; Azure Boards a bare `12345`, cross-linked from a GitHub commit/PR as `AB#12345`).
+const TICKET_KEY_FACTS = {
+  jira: { ticketKeyFormat: "prefixed", crossLinkToken: "" },
+  azure: { ticketKeyFormat: "numeric", crossLinkToken: "AB#" },
+};
+
 const ENUMS = {
   "project-type": ["platform", "client"],
   operator: ["virto-engineer", "client", "ask"],
@@ -357,6 +364,23 @@ function main() {
   else if (effectiveType === "platform") set("buildVerify.source", "vc-deploy-dev");
 
   let profile = deepMerge(base, patch);
+  // The ticket key facts follow the tracker KIND. In the normal flow discover-tracker.mjs supplies them
+  // through --tracker-json, but a host-governed project skips that scan (§4b stands down), and a run
+  // without it used to keep the Jira default — an Azure Boards profile with ticketKeyFormat "prefixed",
+  // which makes every reader parse a bare work-item id (8944) as a Jira key. So when --tracker-json did
+  // not set them, take discover-tracker's own values for the kind: the format always (each tracker has
+  // exactly one), the cross-link token only over a value one of the kinds derives ("" / "AB#"), so a
+  // token the operator chose survives. A --merge of an older wrong profile is corrected the same way.
+  const keyFacts = TICKET_KEY_FACTS[profile.tracker?.kind];
+  if (keyFacts) {
+    const tracker = { ...profile.tracker };
+    if (patch.tracker?.ticketKeyFormat === undefined) tracker.ticketKeyFormat = keyFacts.ticketKeyFormat;
+    const derivedTokens = Object.values(TICKET_KEY_FACTS).map((f) => f.crossLinkToken);
+    if (patch.tracker?.crossLinkToken === undefined && derivedTokens.includes(tracker.crossLinkToken ?? "")) {
+      tracker.crossLinkToken = keyFacts.crossLinkToken;
+    }
+    profile = { ...profile, tracker };
+  }
   // A profile written before 0.5.0 recorded the host by its plugin NAME: read it as the plugin id it
   // means (the one installed plugin with that name), so a re-run upgrades it in place.
   const current = profile.governance;

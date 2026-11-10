@@ -8,6 +8,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## An Azure Boards profile keeps numeric ticket keys without a tracker scan — `vc-init` `0.5.5` — 2026-11-10
+
+### Fixed
+
+- `gen-profile.mjs` wrote `tracker.ticketKeyFormat: "prefixed"` (the Jira default) for an Azure Boards project
+  whenever it ran without `--tracker-json` — always on a host-governed project, where `discover-tracker.mjs`
+  stands down. Readers then took a bare work-item id (`8944`) for a Jira key: vc-test's ticket context and vc-fix
+  `/qa-verify-fix` read the explicit field. The ticket key facts now follow `tracker.kind` when tracker-json
+  does not set them: Azure `numeric` + `crossLinkToken: "AB#"`, Jira `prefixed` + `""` — the values
+  `discover-tracker` emits for each kind.
+- A value carried by `--tracker-json` always wins. The cross-link token is replaced only when it holds one of the
+  derived values (`""` / `"AB#"`), so a token the operator set survives.
+- A profile already written with the wrong format is corrected by the next `/project-init` run (a fresh run or
+  `gen-profile --merge`); no hand edit is needed.
+- Universal: Jira projects and Azure projects scanned by `discover-tracker` write the same values as before.
+
 ## A client project gets its default env at onboarding — `vc-init` `0.5.4` — 2026-11-10
 
 ### Fixed
