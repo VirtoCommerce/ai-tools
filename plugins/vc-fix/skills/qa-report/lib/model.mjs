@@ -322,7 +322,8 @@ function verdictText(m) {
   const blocking = (m.toFix ?? []).filter(x => x.blocking !== false);
   const n = blocking.length;
   const t = m.ticket ?? "the ticket";
-  const ids = n ? (n === 1 ? blocking[0].id : `${blocking[0].id}…${blocking[n - 1].id}`) : "";
+  // Rows are in priority order, not id order, so a range ("F-1…F-4") would misname them: list the ids.
+  const ids = blocking.map(x => x.id).join(", ");
   switch (m.verdict) {
     case "FAIL": return {
       ALERT: "danger",
