@@ -138,7 +138,7 @@ export function ensureGitignoreEntries(root, entries, opts = {}) {
 }
 
 /**
- * Only the `.env.test-env` entry, for normalize-env: it runs on every `--check`, where re-adding the whole
+ * Only the `.env.test-env` entry, for default-env.mjs: it runs on every `--check`, where re-adding the whole
  * SECRET_IGNORES list would bring back entries a team removed on purpose. Same never-throw contract.
  */
 export function ensureSelectorIgnore(projectRoot) {

@@ -27,7 +27,8 @@
  * Flags: --env <name> (required), --tracker jira|azure, --project-type
  *        platform|client, --client-vcs github|azure-repos, --contribution-mode
  *        fork|direct, --out <path> (default .env.<env>), --print,
- *        --primary (make this env the default in .env.test-env even when others exist).
+ *        --primary (make this env the default in .env.test-env even when others exist),
+ *        --no-default (leave .env.test-env to default-env.mjs, which /project-init runs afterwards).
  *
  * Then `.env.test-env` (`TEST_ENV=<env>`, gitignored) when the project has none and this is its only env
  * (or --primary): written / kept / skipped, never overwritten (lib/test-env-selector.mjs).
@@ -203,10 +204,11 @@ function main() {
   if (args.print && emitted.length) console.log(`[scaffold-env] placeholders emitted: ${emitted.length}`);
 
   // The project's default env, so a command run without one does not fall back to the built-in vcst.
-  // Only beside the project's own env files: an --out elsewhere is not the project's env.
-  if (dirname(outPath) === resolve(outputRoot())) {
+  // Only beside the project's own env files: an --out elsewhere is not the project's env. /project-init
+  // passes --no-default and runs default-env.mjs once every env of the run exists, so it can ASK.
+  if (args["no-default"] !== true && dirname(outPath) === resolve(outputRoot())) {
     const selector = ensureTestEnvSelector(dirname(outPath), env, { primary: args.primary === true });
-    for (const line of describeSelector(selector, env)) console.log(`[scaffold-env] ${line}`);
+    for (const line of describeSelector(selector, env, { hostGoverned: opts.hostGoverned })) console.log(`[scaffold-env] ${line}`);
   }
 }
 

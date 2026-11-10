@@ -52,14 +52,17 @@ What it writes into the project (all gitignored):
 
 **`.env.test-env`** decides which env a command uses when it is given none. Every plugin's resolver looks at
 `TEST_ENV` first, then this file, then the built-in `vcst`. Without it, a client project that has only
-`.env.qa` stops on `unknown env "vcst"`. `/project-init` writes it after it creates the first `.env.<env>`,
-but only when the file does not exist, when that env is the project's only one, and when git ignores the
-file (onboarding adds it to `.gitignore`). An existing file is never overwritten, and `--add-env` does not
-change it. A project onboarded before 0.5.4 gets the file from `/project-init --check` (its `normalize-env`
-step). To switch the default, edit the file (one line `TEST_ENV=<env>`, saved as UTF-8 — Windows PowerShell
-5.1's `>` writes UTF-16, which no resolver reads), or pass the env to a single command.
-After a switch, restart Claude Code: the Playwright lanes pick their env's passwords from this file when
-their MCP servers start.
+`.env.qa` stops on `unknown env "vcst"`. `/project-init` writes it once the project's envs exist (an env is
+an `.env.<x>` holding `BACK_URL`): with one env, by itself; with several, it asks one question — which env
+commands use by default — and offers first a non-production one (qa / test / dev / staging before uat; on a
+host-governed project, one the host keeps test-user slots for). Nothing is left to set up by hand. The file
+is written only when it does not exist and git ignores it (onboarding adds it to `.gitignore`); an existing
+file is never overwritten, `--add-env` does not change it, and a broken one is reported. A project onboarded
+before 0.5.4 gets it from `/project-init --check`. To switch the default, edit the file (one line
+`TEST_ENV=<env>`, saved as UTF-8 — Windows PowerShell 5.1's `>` writes UTF-16, which no resolver reads), or
+pass the env to a single command. With vc-secrets passwords, restart Claude Code after a switch: our
+Playwright lanes pick their env's passwords from this file when their MCP servers start. On a host-governed
+project the browser servers and passwords are the host's and do not read this file.
 
 One more file is meant to be **committed**: `.claude/rules/vc-browser.md`, the always-loaded rule that every <!-- doclint:may-not-exist -->
 browser action goes through a Playwright MCP lane — never the built-in browser pane, Claude in Chrome,

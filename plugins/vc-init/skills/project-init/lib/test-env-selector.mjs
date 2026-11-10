@@ -6,7 +6,8 @@
  * reads it after TEST_ENV and before the built-in `vcst`. A client project has no `.env.vcst`, so
  * without this file every command run without an env stops on `unknown env "vcst"`.
  *
- * Written by scaffold-env.mjs right after it creates `.env.<env>`, and only when ALL hold:
+ * Written by default-env.mjs (the /project-init step, which ASKS when several envs exist) or by a
+ * stand-alone scaffold-env.mjs right after it creates `.env.<env>`, and only when ALL hold:
  *   - the file does not exist yet — an existing one is the developer's own choice and is never rewritten;
  *   - the choice is unambiguous: this env is the project's only one (an `.env.<x>` holding BACK_URL, so a
  *     framework's `.env.development` does not count), or the caller named it the default (`primary`);
@@ -51,10 +52,39 @@ function gitIgnored(root, file) {
 
 /** The project's environments: `.env.<x>` files that hold `BACK_URL` (every env onboarding writes does).
  *  A framework's own `.env.development` / `.env.production` in a Vite or Next repo holds none. */
-function ourEnvs(root) {
+export function ourEnvs(root) {
   return envFileNames(root).filter((n) => {
     try { return readKey(readFileSync(join(root, n), "utf-8"), "BACK_URL") !== null; } catch { return false; }
   }).map((n) => n.slice(".env.".length));
+}
+
+/** A production-looking env name (`prod`, `production`, `prd`, `live`, as a whole `_`-separated word). */
+export const looksProduction = (env) => /(^|_)(prod|production|prd|live)\d*(_|$)/.test(env);
+
+// Lower is preferred: a test stand before an acceptance one. Matched as a whole `_`-separated word.
+const PREFERENCE = [["qa"], ["test"], ["dev", "develop", "development"], ["staging", "stage", "stg"]];
+const UAT = ["uat", "acceptance", "preprod", "pre_prod"];
+function rank(env) {
+  const words = env.split("_");
+  const at = PREFERENCE.findIndex((names) => names.some((n) => words.includes(n)));
+  if (at >= 0) return at;
+  return UAT.some((n) => words.includes(n) || env === n) ? PREFERENCE.length + 1 : PREFERENCE.length;
+}
+
+/**
+ * The env /project-init offers first (Recommended) when several exist and none is the default, or null.
+ * Never a production-looking one. On a host-governed project, an env the host keeps test-user slots for
+ * (`withSlots(env)`, from lib/host-adapter.mjs hostEnvsOf + the profile's env map) goes first; then
+ * qa / test / dev / staging before uat; ties keep the given order. Pure.
+ */
+export function recommendDefault(envs, { withSlots = () => false } = {}) {
+  const candidates = envs.filter((e) => !looksProduction(e));
+  if (!candidates.length) return null;
+  const key = (e) => [withSlots(e) ? 0 : 1, rank(e), envs.indexOf(e)];
+  return [...candidates].sort((a, b) => {
+    const [x, y] = [key(a), key(b)];
+    return x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
+  })[0];
 }
 
 /** What an existing selector names, and why it names nothing a resolver can use (`problem`), if so. Never
@@ -100,9 +130,16 @@ export function ensureTestEnvSelector(root, env, { primary = false, dryRun = fal
   return { status: "written", env };
 }
 
-/** The operator-facing lines for a result (no `[script]` prefix). `env` is the env just scaffolded. */
-export function describeSelector(result, env) {
-  const switchHow = `to switch, edit ${SELECTOR_FILE} (TEST_ENV=<env>) or pass the env to the command (e.g. /vc-test:qa-ticket <TICKET> <env>); restart Claude Code after a switch — the Playwright lanes pick their env's passwords from ${SELECTOR_FILE} when the MCP servers start`;
+/**
+ * The operator-facing lines for a result (no `[script]` prefix). `env` is the env just scaffolded. On a
+ * host-governed project (lib/governance.mjs isHostGoverned) the browser servers and their passwords are the
+ * host's and never read this file, so nothing is said about restarting for them.
+ */
+export function describeSelector(result, env, { hostGoverned = false } = {}) {
+  const switchHow = `to switch, edit ${SELECTOR_FILE} (TEST_ENV=<env>) or pass the env to the command (e.g. /vc-test:qa-ticket <TICKET> <env>)` +
+    (hostGoverned ? "" : `; restart Claude Code after a switch — the Playwright lanes pick their env's passwords from ${SELECTOR_FILE} when the MCP servers start`);
+  // Our lanes (lib/passwords.mjs currentEnv) read the file's FIRST line and no `export` line; a host's do not read it.
+  if (hostGoverned && result.problem === "exported") result = { ...result, problem: undefined };
   switch (result.status) {
     case "written":
       return [`${SELECTOR_FILE}: written (TEST_ENV=${result.env}) — commands run without an env use ${result.env}`];
@@ -112,7 +149,7 @@ export function describeSelector(result, env) {
         unreadable: `it cannot be read — ${fix}`,
         utf16: `it is UTF-16 (Windows PowerShell 5.1's >), which no resolver reads, so commands fall back to vcst — ${fix}`,
         "no-env": `it names no TEST_ENV, so commands fall back to vcst — ${fix}`,
-        conflict: `it has several TEST_ENV lines with different values: commands use the last (${result.env}), the Playwright lanes the first — ${fix}`,
+        conflict: `it has several TEST_ENV lines with different values: commands use the last (${result.env})${hostGoverned ? "" : ", the Playwright lanes the first"} — ${fix}`,
         exported: `its line starts with "export": commands use ${result.env}, but the Playwright lanes do not read it (they take the only declared env, else vcst) — drop "export"`,
         "no-env-file": `there is no .env.${result.env} here — fine if it is in a QA_ENV_PATH folder, else ${fix}`,
       }[result.problem];
