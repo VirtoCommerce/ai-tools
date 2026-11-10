@@ -5641,5 +5641,37 @@
     "pass_rate": 68.63,
     "duration_minutes": 56.51,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-10-2108-MCPFIX",
+    "date": "2026-11-10",
+    "suiteId": "102",
+    "suiteName": "UCP Agentic Commerce",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 21,
+    "passed": 19,
+    "failed": 1,
+    "blocked": 1,
+    "skipped": 0,
+    "pass_rate": 95,
+    "duration_minutes": 24.24,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-10-2108-MCPFIX",
+    "date": "2026-11-10",
+    "suiteId": "118",
+    "suiteName": "MCP — agents: sign-in, tools, approval, kill switch, audit and connected agents (admin scope)",
+    "environment": "vcst",
+    "browser": "playwright-edge",
+    "total": 5,
+    "passed": 2,
+    "failed": 1,
+    "blocked": 2,
+    "skipped": 0,
+    "pass_rate": 66.67,
+    "duration_minutes": 18.37,
+    "mode": "interactive"
   }
 ]

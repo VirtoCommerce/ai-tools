@@ -1,34 +1,36 @@
 {
-  "runId": "REG-2026-11-10-1934-MCP",
+  "runId": "REG-2026-11-10-2108-MCPFIX",
   "status": "completed",
-  "startedAt": "2026-11-10T18:35:10.991Z",
+  "startedAt": "2026-11-10T20:10:07.284Z",
   "env": "vcst",
-  "selection": "118,102",
+  "selection": "118,102 --ids (26 fixed cases)",
   "suites": {
     "102": {
       "status": "done",
       "lane": "browser",
-      "cases": 57,
-      "browser": "playwright-edge",
-      "startedAt": "2026-11-10T18:38:55.758Z",
-      "pass": 33,
-      "fail": 7,
-      "blocked": 16,
-      "skipped": 1,
-      "finishedAt": "2026-11-10T19:38:48.722Z"
+      "cases": 21,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-10T20:11:40.500Z",
+      "resumedAt": "2026-11-10T20:26:44.100Z",
+      "note": "resumed after session loss: 6/21 done",
+      "pass": 19,
+      "fail": 1,
+      "blocked": 1,
+      "finishedAt": "2026-11-10T20:39:29.816Z"
     },
     "118": {
       "status": "done",
       "lane": "browser",
-      "cases": 58,
-      "browser": "playwright-chrome",
-      "startedAt": "2026-11-10T18:38:55.758Z",
-      "pass": 35,
-      "fail": 16,
-      "blocked": 6,
-      "skipped": 1,
-      "finishedAt": "2026-11-10T19:38:48.722Z"
+      "cases": 5,
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-10T20:11:40.500Z",
+      "resumedAt": "2026-11-10T20:26:44.100Z",
+      "note": "resumed after session loss: 3/5 done",
+      "pass": 2,
+      "fail": 1,
+      "blocked": 2,
+      "finishedAt": "2026-11-10T20:39:29.816Z"
     }
   },
-  "finishedAt": "2026-11-10T19:40:37.154Z"
+  "finishedAt": "2026-11-10T20:40:20.585Z"
 }
