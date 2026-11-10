@@ -575,6 +575,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-5028 (Done) — story: access blocks scoped to one organization must not lock the user globally (old handler set the global lockout).
 - **Source:** VCST-5496 (Done) — fixed a contact with one locked org membership being unable to obtain a token for any org.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] B2C-ORG-046, B2C-ORG-053, B2C-ORG-068, ORGROLE-014 failed in REG-2026-11-09-1635-W4
 
 ### BL-AUTH-013: Org-scoped access refusal is distinct from global lockout, and per-cause `[P1-data]`
 - **Rule:** An org-scoped refusal from `/connect/token` MUST carry `error: invalid_grant` plus a **cause-specific `code`** — never a global lockout code (`user_is_locked_out` / `user_is_temporary_locked_out`). There are **two independent refusal axes**, each with its own code(s):
@@ -591,6 +592,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-5374 (Done) — fix kept the org-block path (user_is_locked_in_organization) distinct from global lockout codes.
 - **Source:** VCST-6132 — description (cases table: removed from the org → invalid_organization_id, membership locked → user_is_locked_in_organization, Invited / Rejected / Deleted → the corresponding org error, when no fallback applies) + Dmitry Grishin QA comment 2026-10-14 (credential sign-ins fall back, an explicit refresh_token switch still fails; Rejected in every org → the membership-status error). Live on the VCST-6132 build: Rejected / Invited / Deleted in every org returned user_is_rejected_in_organization / user_invitation_pending_in_organization / user_is_removed_from_organization, one errors[] entry each, identical on otp_email and password; refresh_token to a removed org returned invalid_organization_id.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] CUST-112, PRF-GQL-080 failed in REG-2026-11-09-1635-W4
 
 ### BL-AUTH-014: Admin/Platform API cookie-auth challenge returns a status code, never a login-page redirect `[P1-data]`
 - **Rule:** When cookie authentication challenges a request whose path's first segment is `api` (case-insensitive; a path that merely starts with the string "api", e.g. `/apiary/...`, does NOT match) or that carries the header `X-Requested-With: XMLHttpRequest`, the response is a direct status code — 401 if unauthenticated, 403 if authenticated but forbidden — with no `Location` header and no login-page HTML body. Any other cookie-authentication challenge (e.g. the OIDC `/connect/authorize` flow) still issues a 302 redirect to the login page, so browser-driven authorization flows are unaffected.
@@ -619,6 +621,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** `vc-module-customer` `OrganizationAccessResolver.cs:14-40` (steps 3–5) and `:42-79` (the two-axis predicate; the skip at `:48-51` is keyed on an absent userId or empty organization list, and the per-org branch at `:64-77` evaluates a null membership through the contact-status fallthrough) + `OrganizationIdRequestValidator.cs:136-151` (steps 1–2) + `OrganizationMembership.cs:22,26-34` (`IsCurrentlyLocked`, `ResolveEffectiveStatus`) + `ModuleConstants.cs:51-54` (blocking statuses) + `CurrentOrganizationIdTokenRequestHandler.cs:16-43` (the write-back, and its impersonation skip). Live-confirmed on the environment: step-1 precedence over the stored org; a stored current org honoured over the first-listed org; a zero-membership-row contact resolving and accepting an explicit org; all three blocking-status single-org fixtures signing in with no explicit org and receiving no organization claim; and the write-back observed moving a contact's stored org, after which the next no-org grant resolved the new value. The ordering **between** steps 3 and 4 remains source-only — no fixture carries a default organization, so it was not isolated live. Docs axis: N/A — the published guides describe multi-organization switching as a feature but no resolution order, accessibility predicate, or persistence; the behaviour shipped in the change under audit (waived).
 - **Source:** VCST-5496 (Done) — fixed org auto-resolution (Current, then Default, then first org) ignoring the user's other active orgs when the resolved one was locked.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] B2C-ORG-045, B2C-ORG-050, B2C-ORG-051 failed in REG-2026-11-09-1635-W4
 
 ### BL-AUTH-016: An org refusal is a single code, lock-first, and only when no fallback remains `[P0-revenue]`
 - **Rule:** When the requested organization is one the user is associated with but cannot currently access, the outcome is decided in this order:
@@ -828,6 +831,7 @@ Cases MFA-033 and MFA-062 (suite 110a).
 - **Source:** VCST-5028 (Done) — roles must be scoped to a single organization so a user can hold different roles in different organizations
 - **Source:** VCST-5401 (Done) — fixed an org membership role leaking into the global account; per-org permissions must come only for the active org
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] B2C-ORG-051, CUST-112, RET-ORG-001, RET-ORG-002, RET-ORG-005, RET-ORG-042, RET-ORG-043, RET-ORG-044 failed in REG-2026-11-09-1635-W4
 
 ### BL-B2B-008: Org-scoped role change mutates only the target org's membership `[P1-data]`
 - **Rule:** Changing a member's role in org X (`changeOrganizationContactRole(memberId, roleIds)` or REST `PUT /api/customer/organization-memberships/{id}`) MUST update only the (userId, orgX) `OrganizationMembership.Roles`. Other orgs' membership records and the global `ApplicationUser.Roles` MUST be unchanged. (VCST-5028 — guards against the old handler that replaced global roles.)
@@ -837,6 +841,7 @@ Cases MFA-033 and MFA-062 (suite 110a).
 - **Docs:** platform/user-guide/docs/contacts/managing-organization-roles.md (published) — membership roles are assigned per individual per organization via the memberships widget
 - **Source:** VCST-5028 (Done) — roles scoped to one organization, governing an org without affecting the user's access elsewhere
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] ORGROLE-014 failed in REG-2026-11-09-1635-W4
 
 ### BL-B2B-009: Inviting a member creates a per-org membership, not a global role `[P1-data]`
 - **Rule:** Inviting a user into org X with a role MUST create an `OrganizationMembership` for (newUserId, orgX) with that role; the global `ApplicationUser.Roles` MUST NOT be modified. After acceptance, `GET /api/customer/organization-memberships/user/{userId}/count` ≥ 1. (VCST-5028.)
@@ -847,6 +852,7 @@ Cases MFA-033 and MFA-062 (suite 110a).
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/inviteUser.md (published) — invite takes organizationId and roleIds to assign
 - **Source:** VCST-5028 (Done) — roles scoped per organization rather than on the global account
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] CUST-077, CUST-090, PRF-GQL-073, PRF-GQL-074, PRF-GQL-075 failed in REG-2026-11-09-1635-W4
 
 ### BL-B2B-010: Self-service company registration grants org-membership roles only, never global roles `[P1-data]`
 - **Rule:** Self-service company registration (storefront `/sign-up`, "Organization" account type) MUST create the `Organization`, the registrant `Contact`, and an `OrganizationMembership` for (newUserId, newOrg) carrying the registrant's org role(s) (e.g. org-maintainer); the registration flow MUST NOT write any platform security role to the global `ApplicationUser.Roles`. This is the registration-time counterpart of BL-B2B-009 (which covers the invite path). (VCST-5028.)
@@ -923,6 +929,7 @@ Cases MFA-033 and MFA-062 (suite 110a).
 - **Source:** VCST-5441 (Done) — fixed dictionary setting (whitelist) not persisting when cleared to empty
 - **Source:** VCST-5450 (Done 2026-09-01; released customer 3.1023.0, profile-experience-api 3.1017.0, platform 3.1063.0) — AC #4: related XAPI should accept only whitelisted roles; other roles should be rejected
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] ORGROLE-009, ORGROLE-010, ORGROLE-011, ORGROLE-012 failed in REG-2026-11-09-1635-W4
 
 ### BL-B2B-012: Declining or revoking an invite changes a status — it never deletes the membership row `[P1-data]`
 - **Rule:** The membership lifecycle is **status transitions on a persistent row**, not row creation/deletion:
@@ -937,6 +944,7 @@ Cases MFA-033 and MFA-062 (suite 110a).
 - **Source:** `vc-module-profile-experience-api` `RejectOrganizationInviteCommandHandler.Handle` (a single `SetStatusAsync(..., Rejected)` — no row delete, no mutation of the contact's organizations) + `vc-module-customer` `InviteCustomerService` `RevokeInviteAsync` (`SetStatusAsync(..., Deleted)`), `InviteExistingUserToOrganization` (the `ReinvitableStatuses.Contains(...)` gate, else already-a-member) and `ModuleConstants.MembershipStatuses` (`BlockingStatuses` = {Invited, Rejected, Deleted}; `ReinvitableStatuses` = {Rejected, Deleted}). Live-confirmed on the environment: memberships at rest at `Rejected` and at `Deleted` are both still present in the organization's member list (rendered under an inactive label) and their users still resolve as associated contacts. The **mutation** half is now **live-confirmed** (2026-08-25): a membership created at `Invited` and rejected by the invitee resolved to `Rejected` on an authoritative admin re-read, with the row still present. Note the mutation's own **response payload** reports the stale pre-write value (`Approved`, the BL-B2B-013 default) — the write is correct, the returned projection is not; tracked separately as a response-shape defect. Docs axis: N/A — the published storefront guide documents inviting and block/unblock/delete of members but has no accept/decline-invitation surface at all, and names no status vocabulary (waived).
 - **Source:** VCST-5281 (Done) — invite existing customers to multiple organizations with membership-based statuses
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] RET-ORG-003 failed in REG-2026-11-09-1635-W4
 
 ### BL-B2B-013: Membership status resolves per-org-first, then contact, then `Approved` `[P1-data]`
 - **Rule:** A membership's **effective status** is resolved by a three-tier fallback — `ResolveEffectiveStatus(membershipStatus, memberStatus)`:
@@ -952,6 +960,7 @@ Cases MFA-033 and MFA-062 (suite 110a).
 - **Docs:** platform/user-guide/docs/contacts/managing-organization-membership-status.md (published) — values Approved/Invited/Rejected/Deleted; 'Inherit from member' sentinel; Approved full access, others block
 - **Source:** `vc-module-customer` `OrganizationMembership.ResolveEffectiveStatus` (the three tiers) and `IsCurrentlyLocked` (the separate lock axis) + `ModuleConstants.MembershipStatuses` (`ManuallySelectableStatuses` / `BlockingStatuses` / `ReinvitableStatuses`) and the `OrganizationMembershipStatuses` setting descriptor (`IsDictionary = true`, `DefaultValue = Approved`, `AllowedValues = ManuallySelectableStatuses`). Live-confirmed on the environment: a membership at `Rejected` whose contact was `Approved` resolved to the membership's value (the org was excluded from access), i.e. tier 1 beats tier 2; and the member list rendered the lock axis as its own label distinct from every status label. Tiers 2 and 3 (inherit-from-contact, and the terminal `Approved`) are **source-only this run**. Docs axis: N/A — the published guide documents that Customer statuses are configurable dictionaries but names no membership-status value, default, or resolution order (waived).
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] B2C-ORG-068, RET-ORG-003 failed in REG-2026-11-09-1635-W4
 
 ---
 
@@ -1364,6 +1373,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Docs:** platform/user-guide/docs/notifications/notification-log.md (published) — sent notifications are recorded in the Notification activity feed
 - **Source:** vc-module-order `SendNotificationsOrderChangedEventHandler.Handle(OrderChangedEvent)` — `SendOrderNotifications`-gated, `IsNewlyAdded` → one `OrderCreateEmailNotification` via `BackgroundJob.Enqueue` → `ScheduleSendNotificationAsync`; failures surface in the Admin Notification activity feed (attempt count / status).
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] RET-AUTH-009, RET-AUTH-028, RET-AUTH-029, RET-AUTH-030 failed in REG-2026-11-09-1635-W4
 
 ### BL-NOTIF-002: Email content matches order data `[P1-data]`
 - **Rule:** Order confirmation email content must match the actual order: order number, item names, quantities, prices, subtotal, shipping cost, tax, and grand total. The email uses the same currency as the order. Personalization tokens (customer name, shipping address) must be resolved — no `{{customerName}}` or blank fields.
@@ -1596,6 +1606,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Source:** VCST-5862 (Done) — admin (vc-shell) light-theme text contrast violations (1.4.3)
 - **Source:** VCST-5671 (Done) — admin scheduler overflow popover not keyboard/AT reachable (2.1.1, 4.1.2)
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] ORD-102 failed in REG-2026-11-09-1635-W4
 
 ---
 
@@ -1611,7 +1622,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/best-practices.md (docs) — responses typically return HTTP 200 even when errors occur; inspect errors[] in the body
 - **Source:** VP-6664 (Done) — unauthorized user query returned an unhandled error instead of a structured Access denied error; fixed
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] WISH-006 failed in REG-2026-11-04-1022
+- **Lifecycle:** SUSPECT — [case] PRF-GQL-066, PRF-GQL-067, PRF-GQL-068, PRF-GQL-069, RET-ORG-001, RET-ORG-042 failed in REG-2026-11-09-1635-W4
 
 ### BL-GQL-002: GraphQL query performance thresholds `[P2-ux]`
 - **Rule:** Happy-path GraphQL operations against the xAPI complete within target wall-clock thresholds measured from request-send to response-received: simple single-resolver queries (`me`, `categories(first:1)`, flat `orders(first:10)`) **< 500 ms**; deep nested queries (`orders { items addresses inPayments shipments }`) **< 1000 ms**; introspection (`__schema { types }`) **< 1000 ms**. Thresholds are environment-specific — these are baselines for one deployment; other environments may differ.
@@ -2666,18 +2677,18 @@ ticket or a docs page disputes (`status`).
 | Cart | BL-CART-001–016 | 16 | 6 | 10 | 0 | 8 | 2 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
-| Users & Authentication | BL-AUTH-001–025 | 25 | 13 | 11 | 1 | 18 | 6 |
-| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
+| Users & Authentication | BL-AUTH-001–025 | 25 | 13 | 11 | 1 | 18 | 9 |
+| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 9 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 3 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
 | BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 0 |
-| Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 3 |
+| Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 4 |
 | Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 | 1 | 0 |
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 3 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
-| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 4 |
+| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 5 |
 | GraphQL xAPI Contract | BL-GQL-001–005 | 5 | 2 | 2 | 1 | 3 | 4 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
@@ -2692,4 +2703,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **242** | **75** | **128** | **39** | **134** | **62** |
+| **Total** | | **242** | **75** | **128** | **39** | **134** | **73** |

@@ -47,3 +47,11 @@ Control (no PR 2519): `reports/tickets/Sprint26-20/VCST-6001/screenshots/ab-2-b7
 
 ## Blocked 2026-10-27
 `/qa-verify-fix` of vc-frontend#2609 (OPEN, @52e9649c) on a local frontend-only stand bound to vcptcore-qa: RED re-reproduced on vcptcore-qa (drawer still "Last week" after the Start chip is removed). GREEN not executable — the Sales Rep hub renders the SalesRep module's federated plugin chunk (pluginVersion 0.2.5, pre-fix), not the theme chunk that carries the fix. Needs a SalesRep module plugin rebuilt from #2609 to verify. Evidence: `reports/tickets/Sprint26-21/VCST-6195/verification-report.md`.
+
+## Resolution
+- **Fixed in:** vc-module-sales-rep#35 @08fddd78 (`VirtoCommerce.SalesRep 3.1020.0-pr-35-08fd`, PR still open at verification); the vc-frontend#2609 fix was moved to the module after vc-frontend#2607
+- **Tracker:** VCST-6195 → Tested (2026-11-09), comment 112864
+- **Verified:** 2026-11-09 on vcptcore-qa, theme 2.62.0-alpha.2628 (host facade 0.2.10, required `^0.2.9`)
+- **Method:** live RED (2026-10-27) → GREEN; STR 3/3 + a clean client-path control run, checklist 10/10, SR-CO-034 3/3 — `reports/tickets/Sprint26-22/VCST-6195/vcptcore/verification-report.md`
+
+## Status: FIXED
