@@ -28,6 +28,9 @@ rules:
     violation_signal: A removed permission or a deleted role's effect is visible only after the affected user signs out and back in (stale cache); deleting a role currently assigned to a user returns a server error, or the user's role list is corrupted or blanked afterward.
     status: SUSPECT
     suspect_reason: "[case] MCP-030, MCP-034 failed in REG-2026-11-10-1438-VCST6155-C1r2"
+    verified:
+      date: 2026-11-10
+      by: REG-2026-11-09-1635-W4
   - id: BL-PLAT-002
     title: Account lock or deletion is authoritative over every credential and session tied to it
     rule: A user's Locked or Deleted account state overrides every authentication surface bound to that account, regardless of that credential's own individual flag. An API key's own active flag is not sufficient to authenticate — the owning account must also exist, be allowed to sign in, and not be locked out; a locked or deleted owning account causes API-key authentication to fail even though the key itself is active. Locking (setting a non-empty lockout end) or deleting a user account immediately terminates every active session and token issued to that account — a currently-signed-in session does not survive an administrator locking or deleting the account.

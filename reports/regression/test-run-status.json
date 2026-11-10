@@ -1,96 +1,97 @@
 {
-  "runId": "REG-2026-11-10-1438-VCST6155-C1r2",
+  "runId": "REG-2026-11-09-1635-W4",
   "status": "completed",
-  "startedAt": "2026-11-10T14:38:52.505Z",
-  "windowStart": "2026-11-10T14:38:52.505Z",
-  "selection": "118,102,094",
-  "env": "vcst",
-  "scoped": true,
-  "cases": "ids",
-  "ids": [
-    "MCP-010",
-    "MCP-011",
-    "MCP-012",
-    "MCP-027",
-    "MCP-029",
-    "MCP-030",
-    "MCP-031",
-    "MCP-032",
-    "MCP-033",
-    "MCP-034",
-    "MCP-035",
-    "MCP-036",
-    "MCP-037",
-    "MCP-038",
-    "MCP-039",
-    "MCP-040",
-    "MCP-041",
-    "MCP-042",
-    "MCP-043",
-    "MCP-044",
-    "MCP-045",
-    "MCP-046",
-    "MCP-047",
-    "MCP-048",
-    "MCP-049",
-    "MCP-050",
-    "MCP-051",
-    "UCPA-002",
-    "UCPA-011",
-    "UCPA-014",
-    "UCPA-021",
-    "UCPA-028",
-    "UCPA-043",
-    "UCPA-044",
-    "UCPA-046",
-    "UCPA-047",
-    "UCPA-048",
-    "UCPA-049",
-    "UCPA-056",
-    "UCPO-001",
-    "UCPO-017"
-  ],
-  "purpose": "VCST-6155 /qa-test round 2 C1 (4c): every case this run wrote or changed; --no-promote",
-  "plan": "reports/regression/REG-2026-11-10-1438-VCST6155-C1r2/preflight.json",
+  "startedAt": "2026-11-09T13:35:54.317Z",
+  "env": "vcptcore_regression",
+  "selection": "stable:16 W4 (006,008,014b,014c,026,027,027b,031,033,050d,050o,073,073a,073b)",
   "suites": {
-    "102": {
-      "name": "UCP Agentic Commerce",
+    "026": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-edge",
-      "startedAt": "2026-11-10T14:43:15Z",
-      "note": "machine part done (1 PASS, 4 BLOCKED); 7 browser cases dispatched",
-      "pass": 5,
-      "fail": 3,
-      "blocked": 4,
-      "total": 12,
-      "finishedAt": "2026-11-10T15:40:12Z"
+      "cases": 74,
+      "startedAt": "2026-11-09T14:41:27.571Z"
     },
-    "118": {
-      "name": "MCP — agents: sign-in, tools, approval, kill switch, audit and connected agents (admin scope)",
+    "014c": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-chrome",
-      "startedAt": "2026-11-10T14:43:15Z",
-      "note": "scoped 27 cases, run as two sequential slices A(14)/B(13)",
-      "pass": 9,
-      "fail": 13,
-      "blocked": 5,
-      "total": 27,
-      "finishedAt": "2026-11-10T15:40:12Z"
+      "cases": 46
     },
-    "094": {
-      "name": "UCP Observability",
+    "073b": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-edge",
-      "startedAt": "2026-11-10T14:43:15Z",
-      "pass": 1,
-      "fail": 1,
-      "blocked": 0,
-      "total": 2,
-      "finishedAt": "2026-11-10T15:40:12Z"
+      "cases": 17
+    },
+    "014b": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 50,
+      "startedAt": "2026-11-09T14:41:27.572Z"
+    },
+    "006": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 71,
+      "startedAt": "2026-11-09T14:41:27.572Z"
+    },
+    "027b": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 20,
+      "startedAt": "2026-11-09T13:40:00.231Z",
+      "browser": "playwright-firefox"
+    },
+    "008": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 40,
+      "browser": "playwright-edge"
+    },
+    "027": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 71,
+      "startedAt": "2026-11-09T13:40:00.231Z",
+      "browser": "playwright-chrome"
+    },
+    "031": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 37,
+      "browser": "playwright-firefox"
+    },
+    "073": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 23,
+      "browser": "playwright-firefox"
+    },
+    "050d": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 60,
+      "startedAt": "2026-11-09T13:40:00.231Z",
+      "browser": "playwright-edge"
+    },
+    "033": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 15,
+      "startedAt": "2026-11-09T14:41:27.572Z"
+    },
+    "050o": {
+      "status": "done",
+      "lane": "fastpath",
+      "cases": 63,
+      "startedAt": "2026-11-09T13:40:00.230Z"
+    },
+    "073a": {
+      "status": "done",
+      "lane": "fastpath",
+      "cases": 37,
+      "startedAt": "2026-11-09T13:40:00.231Z"
     }
   },
-  "finishedAt": "2026-11-10T15:41:07.274Z"
+  "stalledAt": "2026-11-09T18:18:04.684Z",
+  "stalledReason": "no progress for 45 min (REG-2026-11-09-1635-W4:in_progress:13:547:547)",
+  "finishedAt": "2026-11-10T07:32:16.060Z"
 }

@@ -8,6 +8,95 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A ticket's Claude Design project is imported, not silently skipped — `vc-test` `0.14.0` — 2026-11-10
+
+### Added
+
+- `design:import` (`plugins/vc-test/lib/design/design-import.mjs`, generated from
+  `scripts/layout/design-import.ts`; in this repository `npm run design:import`): takes the ticket's
+  `claude.ai/design/p/<uuid>?file=…` link and a downloaded zip or folder, puts the copy in
+  `.design-source/<uuid>/` with a `.source.json` (project, `file=` artboard, anchor), and exits `2`
+  without writing when the copy lacks the artboard the link names. Before it, the copy had to be unpacked by
+  hand into a folder named after a UUID from the link, and in practice was not.
+
+### Changed
+
+- A ticket that links a Claude Design project with no local copy now stops the run once, before dispatch, and
+  asks (`claude-design-verification.md` §Missing copy): *I downloaded it* — the run itself imports the path
+  given, or the newest `.zip` in Downloads; *Pull it for me* — the operator types `/design-sync` and the run
+  pulls the screen's files; or continue without the design. The operator never needs to know the command, the
+  UUID or the folder. Asked at `/qa-test` `1b`, `/qa-test-fast` Stage 1's Join, `/vc-test:qa-design` before
+  Step 3; headless runs still record `SKIPPED`. Previously the design axis was skipped silently and the gap
+  was visible only in the report.
+- The source policy (`claude-design-verification.md` §Filling the local copy) names the two imports a person
+  may start: `design:import`, or a pull through an operator-started `/design-sync` (read methods only, main
+  session only). A QA run still never calls `DesignSync` itself. It also records what a pull measured on
+  2026-11-10: `get_file` truncates at 256 KiB, and a project reported `moveState: moved` to a Claude artifact.
+
+### Verified
+
+- A temporary run of the generated `design-import.mjs` against a Windows-made zip with a wrapper folder,
+  a folder, a bare uuid, a missing artboard (exit `2`, nothing written), an existing copy without
+  `--force` (exit `1`) and a foreign link (exit `1`), deleted before commit. `vc-test:design:check`,
+  `context:check` and `tsc` pass.
+
+## An Azure Boards profile keeps numeric ticket keys without a tracker scan — `vc-init` `0.5.5` — 2026-11-10
+
+### Fixed
+
+- `gen-profile.mjs` wrote `tracker.ticketKeyFormat: "prefixed"` (the Jira default) for an Azure Boards project
+  whenever it ran without `--tracker-json` — always on a host-governed project, where `discover-tracker.mjs`
+  stands down. Readers then took a bare work-item id (`8944`) for a Jira key: vc-test's ticket context and vc-fix
+  `/qa-verify-fix` read the explicit field. The ticket key facts now follow `tracker.kind` when tracker-json
+  does not set them: Azure `numeric` + `crossLinkToken: "AB#"`, Jira `prefixed` + `""` — the values
+  `discover-tracker` emits for each kind.
+- A value carried by `--tracker-json` always wins — unless that file is a scan of the OTHER tracker (a leftover
+  `tracker.json` after a Jira ⇄ Azure switch): it is then ignored with a warning instead of baking the wrong
+  tracker's key format and status model into the profile.
+- The cross-link token is replaced only when it holds one of the derived values (`""` / `"AB#"`), so any other
+  token the operator set survives. A token set to `""` by hand cannot be told from the default and becomes `"AB#"`
+  on Azure.
+- A profile already written with the wrong format is corrected by a fresh `/project-init` run or by
+  `gen-profile --merge`, which prints the change. `/project-init --check` does not correct it: it goes through
+  `reconcile-profile.mjs`, which does not touch the key format.
+- Universal: Jira projects and Azure projects scanned by `discover-tracker` write the same values as before.
+
+## A client project gets its default env at onboarding — `vc-init` `0.5.4` — 2026-11-10
+
+### Fixed
+
+- `/project-init` sets `.env.test-env` (`TEST_ENV=<env>`), the env a command run without one uses. Before, a
+  client project had only `.env.<its env>`, so every such command (`run-folder.mjs use <TICKET>`, the first step of
+  `/vc-test:qa-ticket`) fell back to the built-in `vcst` and stopped on `unknown env "vcst"`. Nothing is left to
+  set up by hand:
+  - **one env** — written by itself;
+  - **several envs** — ONE question, *which env do commands use by default?*: the project's envs, the recommended
+    one first — never a production-looking one (`prod`, `production`, `prd`, `live`); qa / test / dev / staging
+    before uat; on a host-governed project, one the host keeps test-user slots for;
+  - **an existing file** — kept, never rewritten, no question.
+  An answer that names no env of the project is asked again; choosing a production-looking env is written with a
+  warning; with every env production-looking, none is recommended. A lone production-looking env is not made the
+  default unasked: the question offers it and "No default environment" — declining leaves `.env.test-env` holding
+  only a comment line, so resolvers find no `TEST_ENV` and `--check` does not ask again (our Playwright lanes, which take no env per command, still start for the only env with stored passwords, as without the file — the output says so). An answer that arrives
+  after the file was written is reported as not applied.
+- The step is the new `default-env.mjs`, run once every env of the run exists (`scaffold-env --no-default`), in
+  §3a, `--add-env` and `--check` Step C — so a project onboarded before 0.5.4 gets the file, or the question, from
+  `/project-init --check`. The host-governed flow scaffolds all its envs first and then takes the same step.
+- The file is written only when git ignores it and does not track it; `.env.test-env` joins the `.gitignore` block
+  onboarding writes, and an older project gets only that one entry, in its own block.
+- An existing file is checked: UTF-16 (Windows PowerShell 5.1's `>`), no `TEST_ENV` line, an env with no
+  `.env.<env>` beside it, an `export` prefix, or several lines with different values are reported as
+  `kept, but …` with the fix. It is read as dotenv reads it (a UTF-8 BOM is dropped, the last line wins).
+- Only an `.env.<x>` holding `BACK_URL` counts as an env, so a Vite / Next repo's `.env.development` /
+  `.env.production` is not one.
+- The hint after a switch: with vc-secrets passwords, restart Claude Code (our Playwright lanes read their env's
+  passwords from `.env.test-env` at start). On a host-governed project the browser servers and passwords are the
+  host's and do not read the file, so only how to switch is said.
+- `scaffold-env.mjs` run on its own (by hand, in CI) keeps its behaviour: one env is written, several are
+  `skipped` with a one-line instruction (never `echo … >`, never a scaffold-env re-run); `--primary` chooses.
+- Universal: a project with one env, Jira / GitHub projects and projects without a governing plugin behave as
+  before. The resolvers and their `vcst` default are unchanged.
+
 ## The triage collector reads the visual lane's verdict words — `vc-test` `0.13.2` — 2026-11-06
 
 ### Fixed

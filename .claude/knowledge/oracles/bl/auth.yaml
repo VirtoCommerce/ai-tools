@@ -240,7 +240,8 @@ rules:
       kind: manual
       ref: "Lock membership in org X via `POST /api/customer/organization-memberships/{id}/lock` → `GET /api/platform/security/users/{userId}/locked` returns `locked: false` → an explicit `refresh_token` switch to `organization_id=X` (refresh token minted **after** the lock — a membership write revokes older tokens, which then fail code-less) → HTTP 400 `code: user_is_locked_in_organization` → the same switch to `organization_id=Y` (same user, unlocked) → HTTP 200. **Assert the refusal on the explicit switch, never on a credential sign-in** (`password`, `otp_email`): a sign-in naming locked X falls back to an accessible Y with HTTP 200, and when no accessible org remains it signs in with **no organization** — also HTTP 200 (BL-AUTH-016). A credential sign-in therefore never shows the 400, and a step expecting it there reads as a false FAIL. Two further traps: the **no-`organization_id`** variant of the same call returns **HTTP 200 with no organization context** rather than any refusal (the chain resolves nothing — BL-AUTH-015), so a refusal must be asserted on the explicit-org form; and the global-lock state must be read from the `/locked` endpoint, because the by-id platform-user payload can come back successful but **empty**, in which case a test reading `isLockedOut` off it sees `undefined` and passes without proving anything."
     violation_signal: "Global `locked: true` after an org-scoped lock; login to a non-locked org fails with the same credentials."
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] B2C-ORG-046, B2C-ORG-053, B2C-ORG-068, ORGROLE-014 failed in REG-2026-11-09-1635-W4"
   - id: BL-AUTH-013
     title: Org-scoped access refusal is distinct from global lockout, and per-cause
     rule: |-
@@ -267,11 +268,12 @@ rules:
       kind: manual
       ref: "For each **STATUS** cause, put a **single-accessible-org** user into that state, then `/connect/token` (a credential grant — `password` or `otp_email` — with a store identifier and `organization_id` naming that org) → assert `error == \"invalid_grant\"` and the exact `code` from the table above. The **LOCK** cause and `invalid_organization_id` are asserted on an explicit `refresh_token` switch instead (refresh token minted after the state change): on a credential sign-in a lock with no accessible org left signs in with no organization, and an unassociated org is substituted (BL-AUTH-016). In every case assert `errors[]` carries **exactly one** entry whose `code` matches (BL-AUTH-016). Do **not** assert on the response's `count` field — it is the token response's parameter count, not an error count, and reads greater than one on a single-error refusal. Storefront `/sign-in` or an org-switch into the refused org → assert org-specific copy, distinct from the global-lockout copy."
     violation_signal: A global lockout code is returned for an org-scoped refusal; two different causes collapse onto the same code (a caller cannot tell "invitation pending" from "removed"); a blocking status returns the LOCK code or vice-versa (see BL-AUTH-016 for the deliberate lock-wins precedence); the storefront shows the generic lockout message.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-20
       version: Customer 3.1030.0-pr-321 (VCST-6132)
       by: REG-2026-10-20-1329
+    suspect_reason: "[case] CUST-112, PRF-GQL-080 failed in REG-2026-11-09-1635-W4"
   - id: BL-AUTH-014
     title: Admin/Platform API cookie-auth challenge returns a status code, never a login-page redirect
     rule: "When cookie authentication challenges a request whose path's first segment is `api` (case-insensitive; a path that merely starts with the string \"api\", e.g. `/apiary/...`, does NOT match) or that carries the header `X-Requested-With: XMLHttpRequest`, the response is a direct status code — 401 if unauthenticated, 403 if authenticated but forbidden — with no `Location` header and no login-page HTML body. Any other cookie-authentication challenge (e.g. the OIDC `/connect/authorize` flow) still issues a 302 redirect to the login page, so browser-driven authorization flows are unaffected."
@@ -316,10 +318,11 @@ rules:
       kind: manual
       ref: Multi-org user, `password` grant naming org Y explicitly → active org is Y even when the contact's `CurrentOrganizationId` is X (step 1 beats step 3). Re-read the contact after that grant → `CurrentOrganizationId` is now Y (the write-back), so re-read stored state between steps instead of assuming the seeded value. Switch orgs through the real UI, then sign out and sign in again → the resend/persisted org is honoured, not the previous first-accessible one. Put a single-org user's only membership at a blocking status → sign in with **no** explicit `organization_id` → the org is absent from the resolved context (org switcher and org-scoped navigation are gone), not merely refused. A contact with organization associations but no membership rows → accessible per the contact's own status. Confirm the switcher lists only accessible orgs.
     violation_signal: A blocked or blocking-status org is selected as active; `DefaultOrganizationId` is pinned despite being inaccessible; an explicit `organization_id` is ignored in favour of the contact's stored org; a user with associations but no membership rows is denied every org **while their contact status is non-blocking**; the resolved org is not persisted, or a substituted org is persisted for a grant type that should not write.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-11-04
       by: REG-2026-11-04-1531
+    suspect_reason: "[case] B2C-ORG-045, B2C-ORG-050, B2C-ORG-051 failed in REG-2026-11-09-1635-W4"
   - id: BL-AUTH-016
     title: An org refusal is a single code, lock-first, and only when no fallback remains
     rule: |-

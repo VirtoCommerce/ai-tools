@@ -21,7 +21,7 @@
  * The repository's TypeScript and `npm run design:extract` stay as they are (code consumers keep the repository's half).
  *
  * USAGE
- *   npm run vc-test:design         # write the four generated files
+ *   npm run vc-test:design         # write the generated files
  *   npm run vc-test:design:check   # write nothing; exit 1 and name each stale file
  *
  * Output is deterministic: no timestamps, sorted inputs, LF line endings (the check compares with CRLF folded to LF, so
@@ -56,6 +56,12 @@ const BUNDLES = [
     out: "design-spec-extract.mjs",
     siblings: { "../lib/verify-design-spec.ts": "./verify-design-spec.mjs" },
     cliGuard: { from: 'endsWith("design-spec-extract.ts")', to: 'endsWith("design-spec-extract.mjs")' },
+  },
+  {
+    entry: "scripts/layout/design-import.ts",
+    out: "design-import.mjs",
+    siblings: {},
+    cliGuard: { from: 'endsWith("design-import.ts")', to: 'endsWith("design-import.mjs")' },
   },
 ];
 

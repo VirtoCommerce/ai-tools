@@ -128,22 +128,22 @@
     "dearest_pts_price": "1"
   },
   "ORG_LOY_MISSION": {
-    "id": "48fee594-670b-4c9f-bee8-dfc4875b298c",
-    "name": "AGENT-TEST-MSN-ORGLOY-20261013131942-a292",
-    "run_id": "20261013131942-a292",
-    "seeded_at": "2026-10-13T13:19:44.431Z"
+    "id": "a05da385-ba69-409f-9b71-4602ebaee37a",
+    "name": "AGENT-TEST-MSN-ORGLOY-20261109093657-a4ca",
+    "run_id": "20261109093657-a4ca",
+    "seeded_at": "2026-11-09T09:36:59.073Z"
   },
   "ORG_LOY_MISSION_2": {
-    "id": "e13a70bb-5577-4a92-bba3-46ee110c47be",
-    "name": "AGENT-TEST-MSN-ORGLOY-M2-20261013131943-a00e",
-    "run_id": "20261013131943-a00e",
-    "seeded_at": "2026-10-13T13:19:44.431Z"
+    "id": "1f846347-63e9-4d74-98e7-963909d4beb7",
+    "name": "AGENT-TEST-MSN-ORGLOY-M2-20261109093658-62a8",
+    "run_id": "20261109093658-62a8",
+    "seeded_at": "2026-11-09T09:36:59.073Z"
   },
   "ORG_LOY_MISSION_PARTIAL": {
-    "id": "d6794968-2f23-4305-bd82-31f0856b5f13",
-    "name": "AGENT-TEST-MSN-ORGLOY-P2-20261013131943-3f90",
-    "run_id": "20261013131943-3f90",
-    "seeded_at": "2026-10-13T13:19:44.431Z"
+    "id": "4ee02629-f594-45c9-8d97-d0d7820838b2",
+    "name": "AGENT-TEST-MSN-ORGLOY-P2-20261109093658-9c75",
+    "run_id": "20261109093658-9c75",
+    "seeded_at": "2026-11-09T09:36:59.073Z"
   },
   "UCP_ORG_ONLY_PRODUCT": {
     "id": "6435f0b3-5f46-404d-9703-276be717c33d",
@@ -945,7 +945,7 @@
     "contactId": "c5b7fcd3-9712-4873-a914-8cbc5938eb81"
   },
   "MSN_ORDERVALUE": {
-    "id": "2adf3994-adf4-412d-b1a9-d60b86b343fb",
+    "id": "1b0d2a25-9156-41f0-a0c3-dec58e1c5dcf",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
     "goal_currency": "USD",
     "accrued_value_at_seed": "116.5",
@@ -953,7 +953,7 @@
     "progress_percent_at_seed": "100"
   },
   "MSN_ORDERVALUE_NET": {
-    "id": "b627e7d6-b916-4a47-a6f4-9c0b3bd4a43e",
+    "id": "dd1935fe-b987-418a-b8fc-f827d8175894",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
     "goal_currency": "USD",
     "accrued_value_at_seed": "116.5",
@@ -961,7 +961,7 @@
     "progress_percent_at_seed": "100"
   },
   "MSN_ORDERVALUE_POINTS": {
-    "id": "baf4d104-367e-4d8f-8735-5b0f16026527",
+    "id": "dee92445-fe63-469f-b099-fd3b8876d2cb",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
     "goal_currency": "USD",
     "accrued_value_at_seed": "116.5",
@@ -969,94 +969,94 @@
     "progress_percent_at_seed": "31.7872"
   },
   "MSN_ORDERVALUE_ALTCURRENCY": {
-    "id": "253721d4-c0b6-4516-b471-f16a376670d6",
+    "id": "286e5781-2e75-462e-af10-efdad43d26ff",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
-    "goal_currency": "EUR",
+    "goal_currency": "CZK",
     "accrued_value_at_seed": "",
     "progress_status_at_seed": "",
     "progress_percent_at_seed": ""
   },
   "MSN_ORDERCOUNT": {
-    "id": "6eb59289-48b1-4559-bb2f-053e664a06a2",
+    "id": "96e4613e-56bd-4077-a168-11aacb1cad9b",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_PERSKU_ALL": {
-    "id": "e1767f35-99ef-4086-b240-0ecdabef7c5a",
+    "id": "bcd92d86-9eb8-4860-9857-088054664959",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg",
     "locale_default": "en-US"
   },
   "MSN_PERSKU_ANY": {
-    "id": "fe2a40f4-1c4d-4842-93db-75dca9203d55",
+    "id": "2fcd6b59-6013-4580-a977-b6cb1599beaf",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_PERSKU_PTS": {
-    "id": "3929c615-0eea-4da4-96fc-f06b51f9bef3",
+    "id": "b484c128-d550-47a6-99be-b445d1317e52",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_PUBLISHED_PRIVATE": {
-    "id": "70ebd32c-49d6-4c80-abf0-313edfb54b1d",
+    "id": "5431714a-2009-4fb8-8c15-f2ef6d06ba4e",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_GROUP_VIP": {
-    "id": "dd1830c9-ca30-400f-a7a3-e83b78a81b55",
+    "id": "3176186f-d1d4-4170-8e9c-124d86c755fb",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_GROUP_VIP_PRIVATE": {
-    "id": "293f97dd-25f0-4c2f-a64c-30279ff23516",
+    "id": "89bd51df-7745-472c-a7a3-272a6631c01e",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_ZEROTARGET": {
-    "id": "ac0c2dc9-a9fa-4071-9ad3-be0fbfd9c101",
+    "id": "f49ac5eb-c85c-4281-bd84-996168353588",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_ZEROREWARD": {
-    "id": "dcad40af-1b26-4e07-8da8-5981c7e89bac",
+    "id": "bb3784a7-d184-4323-84ad-5fdf4e989143",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_EXPIRED": {
-    "id": "2a046cf8-3f7d-47d1-a80f-ebb1a516c41a",
+    "id": "86d2bf0e-975c-4fff-801f-d5163b3cea31",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_LOCALIZED": {
-    "id": "13a36408-4918-4a8a-b4e9-b16c2bae8105",
+    "id": "af845a82-45e0-495e-bd8f-ecf4cc18813c",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg",
     "locale_default": "en-US",
     "locale_alternate": "de-DE"
   },
   "MSN_DRAFT": {
-    "id": "bee2037e-93df-4b48-bbcb-bc7f3bae0dda",
+    "id": "a6164614-6ff0-4808-b454-1588cb5f27da",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_OPEN_ENDED": {
-    "id": "e74e983e-9678-43ce-9c4b-2d8201fcb2bd",
+    "id": "2e096c40-1a6d-4d3d-bb3a-01823fec777b",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_PERSKU_OOS": {
-    "id": "1d4e34ca-3380-40d0-8834-1b0fb72164d5",
+    "id": "df5e3e2a-2923-4cc1-b0ec-5b796f64eb56",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_PERSKU_TRACKED": {
-    "id": "0a2a7b9d-a825-42df-8b6d-1c280e909e04",
+    "id": "fbb96a68-9104-4d9a-97f4-790183879ffc",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_LONG_CONTENT": {
-    "id": "2cc57c69-0061-466c-a279-9a5a66d76a83",
+    "id": "fb492fea-6149-456d-99d5-81ceabf24870",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_ENDING_SOON": {
-    "id": "f723b0e1-8f12-4e3a-93ed-66010245aa1c",
+    "id": "32cac85e-df9c-460c-8087-a4efd37c2709",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_PROGRESS_PARTIAL": {
-    "id": "6e93f498-dde2-4bcc-a953-c3ad09f80c76",
+    "id": "db281cf6-6e8f-4466-ad53-30ed0aa6001b",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_PROGRESS_COMPLETED": {
-    "id": "86601cb8-6ca5-44f8-bdc6-1806d9791ee0",
+    "id": "9d8320c8-0018-4f77-b839-1ce8aac23041",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_PROGRESS_ORDER": {
-    "id": "93611b76-e1f0-4eba-b7ea-8b49b586a262",
+    "id": "05fbc76a-29ae-4039-b781-ba7c7acf8a0d",
     "user_id": "a759d8df-faa4-4c7d-99ba-6835a229c7c6",
     "user_email": "test-john.mitchell-20260310@test-agent.com",
     "store_id": "B2B-store",
@@ -1068,7 +1068,7 @@
     "observed_total": "116.5"
   },
   "MSN_POINTS_ORDER": {
-    "id": "87a04ba1-85f2-436c-8b5e-886784a89256",
+    "id": "90f78806-f30d-436c-8b88-d01abe1dbc74",
     "user_id": "a759d8df-faa4-4c7d-99ba-6835a229c7c6",
     "store_id": "B2B-store",
     "currency": "PTS",
@@ -1121,9 +1121,9 @@
     "store_id": "B2B-store"
   },
   "LOYALTY_ZERO_USER": {
-    "memberId": "00ce40ef-cd8d-4aba-a54b-4693599c67f3",
-    "securityAccountId": "12c9bcc6-13d2-4974-8399-a8ec5fda72f8",
-    "email": "AGENT-TEST-loyzero-20261016150727-65c2@test-agent.com"
+    "memberId": "c3c63d6d-6dc7-4dc4-9975-07f948b0bff4",
+    "securityAccountId": "3ea2663f-b15f-4b6d-a0af-ec6ff4b0e53b",
+    "email": "AGENT-TEST-loyzero-20261109093711-a556@test-agent.com"
   },
   "MSN_E2E_RUN": {
     "run_id": "20261016150733-bb26",
@@ -1710,101 +1710,414 @@
     "expiration_date_slot3": ""
   },
   "MSN_DL_RUN": {
-    "run_id": "202611051339",
-    "seeded_at": "2026-11-05T13:39:28.000Z",
-    "valid_until": "2026-11-06T01:39:28.000Z",
-    "clock_skew_ms": "-1102",
+    "run_id": "202611090936",
+    "seeded_at": "2026-11-09T09:36:31.000Z",
+    "valid_until": "2026-11-09T21:36:31.000Z",
+    "clock_skew_ms": "382",
     "reader_user_id": "dbb1360c-579d-4686-ba0e-a813b76febe7",
-    "order_id": "821213e7-ef4f-4447-8fce-8a4ec605d01a",
-    "order_number": "AGENT-TEST-MSN-VCST5957-202611051339-ORD",
-    "balance_before": "30570",
-    "balance_after": "31591",
-    "order_co_completed": "AGENT-TEST-MSN-E2E-20261016150733-bb26-ORDERVALUE-008=+508 (OrderValue, near); AGENT-TEST-MSN-E2E-20261016150733-bb26-ORDERCOUNT=+501; AGENT-TEST-MSN-ORDERCOUNT=+300",
+    "order_id": "11deee06-b7e7-4c3b-9a72-e73b28623621",
+    "order_number": "AGENT-TEST-MSN-VCST5957-202611090936-ORD",
+    "balance_before": "36426",
+    "balance_after": "36996",
+    "order_co_completed": "AGENT-TEST-MSN-LOCALIZED=+250; AGENT-TEST-MSN-ZEROREWARD=+0; AGENT-TEST-MSN-PUBLISHED-PRIVATE=+100",
     "expired_observation": ""
   },
   "MSN_DL_NOAVAIL_PRODUCT": {
-    "productId": "16b69e8d-f8da-416a-801e-e850483d4e7d",
+    "productId": "b0a83ec2-872d-4b63-8692-ba3c15a7197d",
     "catalogId": "7829d35f417e4dd98851f51322f32c23",
-    "deleted_at": "2026-11-05T13:39:47.673Z"
+    "deleted_at": "2026-11-09T09:36:40.902Z"
   },
   "MSN_DL_DUE_01": {
-    "id": "e3154757-a7fe-4678-9f61-99e171cfa3d0",
-    "name": "AGENT-TEST-MSN-VCST5957-202611051339-DUE-01",
-    "run_id": "202611051339",
-    "end_date": "2026-11-06T01:39:28.000Z",
-    "valid_until": "2026-11-06T01:39:28.000Z",
+    "id": "965260bd-d259-4760-b9bb-0158bd93ea66",
+    "name": "AGENT-TEST-MSN-VCST5957-202611090936-DUE-01",
+    "run_id": "202611090936",
+    "end_date": "2026-11-09T21:36:31.000Z",
+    "valid_until": "2026-11-09T21:36:31.000Z",
     "days_remaining_at_seed": "1",
     "status_at_seed": "InProgress",
     "percentage_at_seed": "0"
   },
   "MSN_DL_DUE_15": {
-    "id": "f890f367-de2f-42e4-93c0-082b6bab2dfe",
-    "name": "AGENT-TEST-MSN-VCST5957-202611051339-DUE-15",
-    "run_id": "202611051339",
-    "end_date": "2026-11-20T01:39:28.000Z",
-    "valid_until": "2026-11-06T01:39:28.000Z",
+    "id": "dce4f6c5-3811-4163-b283-aa7fbeeed2af",
+    "name": "AGENT-TEST-MSN-VCST5957-202611090936-DUE-15",
+    "run_id": "202611090936",
+    "end_date": "2026-11-23T21:36:31.000Z",
+    "valid_until": "2026-11-09T21:36:31.000Z",
     "days_remaining_at_seed": "15",
     "status_at_seed": "InProgress",
     "percentage_at_seed": "0"
   },
   "MSN_DL_DUE_16": {
-    "id": "1aac2338-3cab-4088-b079-346cb614e95c",
-    "name": "AGENT-TEST-MSN-VCST5957-202611051339-DUE-16",
-    "run_id": "202611051339",
-    "end_date": "2026-11-21T01:39:28.000Z",
-    "valid_until": "2026-11-06T01:39:28.000Z",
+    "id": "55c9ec8c-0376-4945-b647-efdbd053bfdc",
+    "name": "AGENT-TEST-MSN-VCST5957-202611090936-DUE-16",
+    "run_id": "202611090936",
+    "end_date": "2026-11-24T21:36:31.000Z",
+    "valid_until": "2026-11-09T21:36:31.000Z",
     "days_remaining_at_seed": "16",
     "status_at_seed": "InProgress",
     "percentage_at_seed": "0"
   },
   "MSN_DL_DUE_30": {
-    "id": "193795bf-85f8-4342-86b1-e8d32fc71b97",
-    "name": "AGENT-TEST-MSN-VCST5957-202611051339-DUE-30",
-    "run_id": "202611051339",
-    "end_date": "2026-12-05T01:39:28.000Z",
-    "valid_until": "2026-11-06T01:39:28.000Z",
+    "id": "4723823e-64be-4a5b-8c84-7d49fec85c1c",
+    "name": "AGENT-TEST-MSN-VCST5957-202611090936-DUE-30",
+    "run_id": "202611090936",
+    "end_date": "2026-12-08T21:36:31.000Z",
+    "valid_until": "2026-11-09T21:36:31.000Z",
     "days_remaining_at_seed": "30",
     "status_at_seed": "InProgress",
     "percentage_at_seed": "0"
   },
   "MSN_DL_DUE_31": {
-    "id": "1884e3ec-5a49-4867-861d-cd865401de3a",
-    "name": "AGENT-TEST-MSN-VCST5957-202611051339-DUE-31",
-    "run_id": "202611051339",
-    "end_date": "2026-12-06T01:39:28.000Z",
-    "valid_until": "2026-11-06T01:39:28.000Z",
+    "id": "ad2ac71f-efcb-44d3-99ac-b1a9f8e422ec",
+    "name": "AGENT-TEST-MSN-VCST5957-202611090936-DUE-31",
+    "run_id": "202611090936",
+    "end_date": "2026-12-09T21:36:31.000Z",
+    "valid_until": "2026-11-09T21:36:31.000Z",
     "days_remaining_at_seed": "31",
     "status_at_seed": "InProgress",
     "percentage_at_seed": "0"
   },
   "MSN_DL_DONE_SOON": {
-    "id": "5dbda4b6-823c-4996-824f-972d1597b203",
-    "name": "AGENT-TEST-MSN-VCST5957-202611051339-DONE-15",
-    "run_id": "202611051339",
-    "end_date": "2026-11-20T01:39:28.000Z",
-    "valid_until": "2026-11-06T01:39:28.000Z",
+    "id": "00e35576-b520-4d9c-9649-d2721c9b386d",
+    "name": "AGENT-TEST-MSN-VCST5957-202611090936-DONE-15",
+    "run_id": "202611090936",
+    "end_date": "2026-11-23T21:36:31.000Z",
+    "valid_until": "2026-11-09T21:36:31.000Z",
     "days_remaining_at_seed": "15",
     "status_at_seed": "Completed",
     "percentage_at_seed": "100"
   },
   "MSN_DL_EXPIRED": {
-    "id": "ed2c4dad-05cc-4b60-ab69-989a158492b4",
-    "name": "AGENT-TEST-MSN-VCST5957-202611051339-DUE-00",
-    "run_id": "202611051339",
-    "end_date": "2026-11-05T13:59:28.000Z",
+    "id": "13e85095-41d5-448c-8194-260cc74b9bb2",
+    "name": "AGENT-TEST-MSN-VCST5957-202611090936-DUE-00",
+    "run_id": "202611090936",
+    "end_date": "2026-11-09T09:56:31.000Z",
     "valid_until": "",
     "days_remaining_at_seed": "1",
     "status_at_seed": "InProgress",
     "percentage_at_seed": "2"
   },
   "MSN_DL_SKU_NOAVAIL": {
-    "id": "e41977de-9fc5-4857-a5fc-13bc9e1c8381",
-    "name": "AGENT-TEST-MSN-VCST5957-202611051339-SKU-NOAVAIL",
-    "run_id": "202611051339",
-    "end_date": "2027-01-04T01:39:28.000Z",
-    "valid_until": "2026-11-06T01:39:28.000Z",
+    "id": "67921112-e4e3-4673-add6-4e194b0f2f38",
+    "name": "AGENT-TEST-MSN-VCST5957-202611090936-SKU-NOAVAIL",
+    "run_id": "202611090936",
+    "end_date": "2027-01-07T21:36:31.000Z",
+    "valid_until": "2026-11-09T21:36:31.000Z",
     "days_remaining_at_seed": "60",
     "status_at_seed": "InProgress",
     "percentage_at_seed": "0"
+  },
+  "RESTRICTED_USER": {
+    "_inline": true,
+    "platform_id": "74a99c21-a9fb-4261-a1fa-9c2d904729e4",
+    "user_id": "74a99c21-a9fb-4261-a1fa-9c2d904729e4",
+    "role_id": "AGENT-TEST-Task-ReadOnly",
+    "userName": "AGENT-TEST-task-readonly@test.virtocommerce.com"
+  },
+  "PERSONAL_NON_ORG_USER": {
+    "email": "agent-test-personal-virto-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "e6267e8c-b70d-4c82-99f0-887b57534b34",
+    "contactId": "957b5de9-0c2c-4b5c-a885-02c0f2a99b5e"
+  },
+  "ORG_RET_VIEWER_ORG": {
+    "id": "b487daea-7ab5-44dd-9102-6be02c8d7b2a"
+  },
+  "ORG_RET_ORGROLE_ORG": {
+    "id": "1b444af4-916b-468e-8eb4-bf0337b16f4f"
+  },
+  "ORG_RET_OTHER_ORG": {
+    "id": "f23999a0-5c0c-4dc8-870a-83f19d37348e"
+  },
+  "ORG_RET_SAME_ADDRESS_ORG": {
+    "id": "ee54ae71-39c3-4274-9bd6-e085fbdf43b1"
+  },
+  "ORG_RET_NOEMAIL_ORG": {
+    "id": "e71ef241-397e-44cd-9e5a-cef5450d7641"
+  },
+  "ORG_RET_LONG_NAME_ORG": {
+    "id": "dba448cf-73b6-44d4-97c7-8971ebc8cff5"
+  },
+  "ORG_RET_HOME_ORG": {
+    "id": "dcb43a30-62d6-4a6c-ac8a-2bfc9e21f005"
+  },
+  "ORG_RET_EMPTY_ORG": {
+    "id": "7846a5ca-2208-4fee-b268-39a73edc11c6"
+  },
+  "ORG_RET_RENAME_ORG": {
+    "id": "ef2c0c48-2ed9-459d-bfa9-d83e69e3a7ba"
+  },
+  "ORG_RET_BUYER": {
+    "userId": "3a228fc7-ab02-472d-ba63-ab394b67c7de",
+    "contactId": "193b3988-dfd8-4f53-ae79-e6a9b1a6475a",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "c8ee3cfb-d86a-4a19-9ec2-8c4dd7ead9dd",
+    "orderId": "db55746c-8cec-4899-aaa6-36838dff574c",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER",
+    "orderOrganizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "lineAItemId": "3ac02900-a327-4563-8cc7-fd3e3e509381",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "c9d77855-72ca-4666-87b8-328c71d0e82e",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25,
+    "spare1OrderId": "f6a4ae57-38ae-4579-95e3-8e83d8bba595",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-1",
+    "spare1LineAItemId": "c7d1a8a0-0718-41cc-a89a-0c6192813ea1",
+    "spare1LineBItemId": "e680c428-2b28-4f83-8772-936b2e3f6290",
+    "spare2OrderId": "af8515ba-a1be-4d94-8857-e75cb7247ed2",
+    "spare2OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-2",
+    "spare2LineAItemId": "2f605e5e-13fb-4766-a605-3e62be64b195",
+    "spare2LineBItemId": "4e1a4a4c-5624-4e72-b569-0f75762e2526",
+    "spare3OrderId": "7243285d-ad84-4a8e-ae75-ffbb8a114daa",
+    "spare3OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-3",
+    "spare3LineAItemId": "d8253f86-f31d-44b8-ac35-24df2cf8c6d2",
+    "spare3LineBItemId": "d04e0a72-c138-462d-85f9-cb0be94303be",
+    "spare4OrderId": "1df0c034-82c5-47b8-ab1d-68cb26a7c4af",
+    "spare4OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-4",
+    "spare4LineAItemId": "5ec610a2-e39f-4e85-a641-affdb6531d71",
+    "spare4LineBItemId": "511eca23-5dc3-47c6-bf29-7b3b728a0d90",
+    "spare5OrderId": "1e84288c-4a9f-44c8-9902-a706794eeb13",
+    "spare5OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-5",
+    "spare5LineAItemId": "d046a36d-3fc3-44dd-a991-e0ac3ac1ad88",
+    "spare5LineBItemId": "2a62420d-69cf-4e62-90f1-e654e6fdd2fa",
+    "spare6OrderId": "f8430a2b-a2b3-46c0-8c09-b69ed32b99dd",
+    "spare6OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-6",
+    "spare6LineAItemId": "4f1acf11-0195-46a1-b963-158d9916ba8d",
+    "spare6LineBItemId": "b881f5ea-1bdb-4aa2-996a-3a82f5316b62",
+    "spare7OrderId": "4c199b4b-e253-4a71-986a-3208bc7afd37",
+    "spare7OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-7",
+    "spare7LineAItemId": "d9b65760-cb32-4060-a8f8-457f5dcfdb37",
+    "spare7LineBItemId": "6e08dd7e-638c-4bbe-9bfb-ce903be5fb26"
+  },
+  "ORG_RET_LEAVER": {
+    "userId": "dc26e822-861e-456b-833a-3071fb2649fd",
+    "contactId": "0a45d07d-3e62-4583-be4c-1411d6a29567",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "04f9ae0e-a20e-48dc-aa61-b4250ea36245",
+    "orderId": "3b940bfa-2640-4800-a521-bff192745617",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-LEAVER",
+    "orderOrganizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "lineAItemId": "34dbc8ed-ab67-4780-9a00-4ce4b7d48416",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "18247a8d-9fb4-49b0-bdca-fd910bdf09ae",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_HOLDER_GLOBAL": {
+    "userId": "9e6b37ca-280b-4b30-a786-d18c90549dc7",
+    "contactId": "d59a462b-577a-42a9-a47d-432f3cba18a7",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "a7719ac7-9912-4abe-9ecb-73fe4a599eda"
+  },
+  "ORG_RET_HOLDER_MEMBERSHIP": {
+    "userId": "8a5d3d38-f765-4648-8b95-cff56c3eed63",
+    "contactId": "8facd23d-a712-4693-98b5-3a0f324880a2",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "ed90df19-c13f-4d2e-8bca-92cbc96ef9b3",
+    "orderId": "fdab1b78-b6ad-4b8b-b50b-746f693293bb",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-HOLDER-MEMBERSHIP",
+    "orderOrganizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "lineAItemId": "c11fdf9c-cdc8-47be-a11f-046fef77a693",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "2cbd4f48-ff56-401b-b7cf-6c33e77d81ed",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_HOLDER_SUBMIT": {
+    "userId": "ddb9221d-e38e-4f6a-8c6b-5486a13ad015",
+    "contactId": "8739cb5c-36f7-4c98-968f-43d8846a5cbd",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "38b28708-4f3d-4b37-864f-4ad2d74baf98"
+  },
+  "ORG_RET_HOLDER_LOCKED": {
+    "userId": "d5493ab8-a5db-4912-9403-33c847b29cae",
+    "contactId": "313287d2-6f04-4a9b-94a8-693731442b1f",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "f3b06214-f2bd-4b51-bf86-02acf289acc8"
+  },
+  "ORG_RET_HOLDER_INVITED": {
+    "userId": "6fc86992-718e-4a1d-8aff-8c9d4dc47fc9",
+    "contactId": "a8e84d72-d62e-4416-921b-cb56803af9ac",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "451c400d-a54a-4e68-a94b-2129145ff597"
+  },
+  "ORG_RET_HOLDER_REJECTED": {
+    "userId": "165c38a7-1ddd-4aa6-9e0c-f2cb8a2f988c",
+    "contactId": "fdeee370-f991-49f4-8f08-ab84b19f2b99",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "8aaf6a20-3821-4e0f-98ce-392a21d00623"
+  },
+  "ORG_RET_HOLDER_DELETED": {
+    "userId": "bd208edf-928c-494b-acd3-7e7490de8be6",
+    "contactId": "f8dbb32f-a8fc-48b0-bfa5-6e1f8dde34bd",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "44e147e8-5716-4a21-be23-1d5fe762a5e2"
+  },
+  "ORG_RET_BUYER_NOEMAIL": {
+    "userId": "9fa1cd09-15ec-4959-ac88-85240e2e6de9",
+    "contactId": "cae9d6a5-0cc7-4bb5-8180-efcc00537e04",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "c728f51c-b493-4817-a328-c9c8b5ee05bd",
+    "orderId": "efdd1621-e183-49a3-a573-59e6468a40db",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-NOEMAIL",
+    "orderOrganizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "lineAItemId": "1ebce0fa-a706-4790-853c-3e3e9bbcff0c",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "28b4b840-936d-4ca5-841c-f79bbd0929de",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_MULTI_ORG": {
+    "userId": "c27fea15-3ba6-4cf3-b25f-1218e0ee0974",
+    "contactId": "9da81451-6b24-44c7-b0c6-00800aa21651",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "30572b1a-e235-4f18-a3f4-b08ef18400c6",
+    "org_x_id": "dcb43a30-62d6-4a6c-ac8a-2bfc9e21f005",
+    "org_y_id": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "org_x_membership_id": "5ee977e4-5a34-476b-93af-76dd3e76982d",
+    "org_y_membership_id": "30572b1a-e235-4f18-a3f4-b08ef18400c6",
+    "orderId": "88566e34-26c0-4d39-b3f8-1c96ff48b465",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-MULTI",
+    "orderOrganizationId": "dcb43a30-62d6-4a6c-ac8a-2bfc9e21f005",
+    "lineAItemId": "b4d90c77-bd19-4162-83ff-b50ba6c5ec73",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "98468337-fd8f-4590-b432-9d3b6a8001c1",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_HOLDER_ORGROLE": {
+    "userId": "e3301248-ca13-4b2f-a2f4-02e4dbb9ee44",
+    "contactId": "567286a0-8753-4261-b471-60a1e152aa32",
+    "organizationId": "1b444af4-916b-468e-8eb4-bf0337b16f4f",
+    "membershipId": "d2a314d6-12c7-4714-82dc-3cd4e8ec38a9"
+  },
+  "ORG_RET_ORGROLE_BUYER": {
+    "userId": "a8c93a15-d6fc-40a6-9254-e01ad6a1e5ea",
+    "contactId": "a2038da9-229f-423f-8311-1beac81ec283",
+    "organizationId": "1b444af4-916b-468e-8eb4-bf0337b16f4f",
+    "membershipId": "056b91bc-5d36-4b94-a2c8-7d3f22b11b6e",
+    "orderId": "0862d1bc-78e4-4cc0-939c-e7ca7c7a7462",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER",
+    "orderOrganizationId": "1b444af4-916b-468e-8eb4-bf0337b16f4f",
+    "lineAItemId": "d3dd68aa-640a-4b55-afcd-ad376c6d3a1a",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "27731d1a-138e-4a0b-aeb4-e57bd636dedc",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25,
+    "spare1OrderId": "d5ef6b6a-93f2-42cb-8d29-359cb8637d35",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER-SPARE-1",
+    "spare1LineAItemId": "ba4d6cb3-ed8a-438b-940e-fd73a1b54568",
+    "spare1LineBItemId": "edce7ce4-99f1-4d2d-80ab-e76763c6bc35"
+  },
+  "ORG_RET_OTHER_BUYER": {
+    "userId": "e7033726-6536-43bf-980c-161602644985",
+    "contactId": "334e9fc8-01c1-403a-9ae3-c764bf82f82f",
+    "organizationId": "f23999a0-5c0c-4dc8-870a-83f19d37348e",
+    "membershipId": "84232d79-bacc-4329-a4b7-56a7b42b2ef0",
+    "orderId": "3fcc3c2a-48f5-45ff-a384-7a5e0d4554c3",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER",
+    "orderOrganizationId": "f23999a0-5c0c-4dc8-870a-83f19d37348e",
+    "lineAItemId": "7e489d2e-a896-4e0c-a1f9-80b935a43cd1",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "64e5de29-ead6-4ba3-9c69-915bdaeda476",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25,
+    "spare1OrderId": "e8c527a7-a2b8-4e3e-b85f-e84fd7f0f1db",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER-SPARE-1",
+    "spare1LineAItemId": "f0bc5938-4819-4f8c-ae52-34b5f4061cfa",
+    "spare1LineBItemId": "508d3827-d9e1-4e9f-873a-8fe6d1b80e2d"
+  },
+  "ORG_RET_SAME_ADDRESS_BUYER": {
+    "userId": "a52d991f-d77c-403e-b8a9-8129ecae4ef6",
+    "contactId": "67cb2a75-fc19-4302-b1a9-7e94fe6bb707",
+    "organizationId": "ee54ae71-39c3-4274-9bd6-e085fbdf43b1",
+    "membershipId": "57f9741e-b801-4064-93fc-388c6de62506",
+    "orderId": "70f9828e-40b6-47d4-99f7-87e06d7f7dcf",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-SAME-ADDRESS-BUYER",
+    "orderOrganizationId": "ee54ae71-39c3-4274-9bd6-e085fbdf43b1",
+    "lineAItemId": "00a3e1d0-dc1b-4ebc-b4a1-33d8deb03094",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "aa552ddf-a7ac-48ca-9572-9331c153102d",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_NOEMAIL_ORG_BUYER": {
+    "userId": "8ba93b25-e112-4a70-9d8d-9dbfea71d3f0",
+    "contactId": "59b227e0-33c8-46f9-97ed-df24407bf617",
+    "organizationId": "e71ef241-397e-44cd-9e5a-cef5450d7641",
+    "membershipId": "486c0b66-50dc-4a62-a6fd-29d7ba804e28",
+    "orderId": "3ee8f890-4c83-455c-874d-a3ee4f705f80",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-NOEMAIL-ORG-BUYER",
+    "orderOrganizationId": "e71ef241-397e-44cd-9e5a-cef5450d7641",
+    "lineAItemId": "df29da68-7be9-42e3-a058-4918a2a83220",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "71b0e574-a0a2-4373-8467-e61b303be636",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_LONG_NAME_BUYER": {
+    "userId": "40b09c5b-521e-4cea-9bd0-c20f4fa2f492",
+    "contactId": "71b226f5-b2e6-4c5c-a20c-7570c6be6ebd",
+    "organizationId": "dba448cf-73b6-44d4-97c7-8971ebc8cff5",
+    "membershipId": "a8e87675-5eb1-46bd-ab21-d89d7941f674",
+    "orderId": "938fd39e-0ca0-4bad-8f3e-37757cfe6a68",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER",
+    "orderOrganizationId": "dba448cf-73b6-44d4-97c7-8971ebc8cff5",
+    "lineAItemId": "0128c265-9275-4525-a6c1-3a7ca5eb6409",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "626d0527-15eb-4018-92b2-90c81b2a8e39",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25,
+    "spare1OrderId": "56391af1-ad8e-4bb0-a2e4-20333032f405",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER-SPARE-1",
+    "spare1LineAItemId": "9fdb5cab-77b9-4396-90f6-5adc37e660c7",
+    "spare1LineBItemId": "448215a4-44cc-4b06-9fc1-67a292a91d29"
+  },
+  "ORG_RET_EMPTY_HOLDER": {
+    "userId": "a606be63-9066-4ea5-82b9-02077faa125b",
+    "contactId": "e2eadffd-e5fe-48b2-9911-b2c2da3716da",
+    "organizationId": "7846a5ca-2208-4fee-b268-39a73edc11c6",
+    "membershipId": "be625524-c3ce-4560-b652-47906a44a988"
+  },
+  "ORG_RET_RENAME_BUYER": {
+    "userId": "5065ae02-f1f2-45a6-a969-ef6641887e39",
+    "contactId": "9e57a6db-a957-426d-a555-41eca12bb79e",
+    "organizationId": "ef2c0c48-2ed9-459d-bfa9-d83e69e3a7ba",
+    "membershipId": "eb6e5f31-a253-4c5c-b4cf-a56ae06596d8",
+    "orderId": "99c71662-6685-46b5-aa5d-9995af90de4f",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-RENAME-BUYER",
+    "orderOrganizationId": "ef2c0c48-2ed9-459d-bfa9-d83e69e3a7ba",
+    "lineAItemId": "2359c4c5-6da0-427b-abd9-e239a1fc63bc",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "ea6e9dfd-25d5-4561-b313-42e3e5e4f495",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_OTHER_ORG_RETURN": {
+    "id": "0a4ddc03-05ad-4b41-8839-0e279ad7c5cc",
+    "number": "RET261016-00001",
+    "status": "Requested",
+    "orderId": "3fcc3c2a-48f5-45ff-a384-7a5e0d4554c3",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER"
+  },
+  "ORG_RET_OTHER_STORE_RETURN": {
+    "id": "6d463236-f308-4c2a-804c-f405a2442507",
+    "number": "RET261016-00002",
+    "status": "Requested",
+    "storeId": "Electronics",
+    "orderId": "4c199b4b-e253-4a71-986a-3208bc7afd37",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-7"
   }
 }

@@ -79,7 +79,8 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" <state.genProfile
   --client-vcs <facts.clientVcs> --gov-envs <env>=<host env>,… --self-diagnostics false --runtime-mode plugin
 ```
 
-(`--gov-envs` only for an env whose name differs from the host's.) Then §3a scaffold-env for each env.
+(`--gov-envs` only for an env whose name differs from the host's.) Then §3a scaffold-env `--no-default` for
+each env — the default env is chosen once all of them exist (step 4).
 
 ### 3a. Code access — probe it, never ask it; then scan the repos
 
@@ -145,6 +146,15 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/add-user.mjs" --env <env> --slot <
 Admins take their environment's slots first. Collect every add-user report's `steps` for the hand-off,
 then §3e normalize-env (it detects `STORE_ID`).
 
+Then the **default environment** — §3a `default-env.mjs`, the same step as the normal flow. With one env it
+writes `.env.test-env` by itself; with several it answers `ask`, and you ask ONE `AskUserQuestion` *"Which
+environment do commands use by default?"* — its `options`, `recommended` first and marked Recommended (an
+env the host keeps test-user slots for, never a production-looking one) — then run it again with
+`--choose <answer>`. A lone production-looking env answers `ask` with `decline: true`: offer it AND *"No
+default environment"*, which runs `--decline`. An answer naming no env comes back as `ask` with `error`: show
+it and ask again. The full contract is the script's header (§3a). The host's browser servers do not read
+`.env.test-env`, so its lines say nothing about restarting for passwords.
+
 ### 5. The hand-off — what was set up, then exactly how to enter the passwords
 
 One message, two parts, after §8 verify-access:
@@ -169,13 +179,13 @@ One message, two parts, after §8 verify-access:
 | §0e tooling | `gh`/`az` are not installed for us; Node + git only |
 | §1 deps | `install-deps` as usual; **no `playwright install`** — the browser servers are the host's |
 | §2 interview | replaced by steps 2–4 above: facts shown, then `AskUserQuestion` rounds (choices, URLs, accounts). §2b and §2d are **not asked** |
-| §3a `.env.<env>` | URLs only — no built-in `ADMIN` / `USER_EMAIL`: test users take the host's slots. The file is gitignored |
+| §3a `.env.<env>` | URLs only — no built-in `ADMIN` / `USER_EMAIL`: test users take the host's slots. The file is gitignored. `.env.test-env` by `default-env.mjs` after step 4 (one question when there are several envs) |
 | §3b `.env.local` | **no password placeholder** — the tracker / code-host connection only |
 | §3c `write-secrets-decl`, §3d token pause, §3e token gate | **skipped** |
 | §3e normalize-env | as usual — it requests the storefront URL once to detect `STORE_ID` |
 | §4 `discover-repos` | **through the host**: step 3a — a listing read with the host's server, `--listing-json`; without one it stands down. VirtoCommerce modules are not listed (the modules API needs an admin sign-in, which is the host's) |
 | §4b `discover-tracker`, §5 `derive-context` | **skipped** — read through the host's MCP servers at run time; each script stands down by itself |
-| §6 `gen-profile` | written in step 3 with the facts and answers; recorded as a client project that files nothing upstream |
+| §6 `gen-profile` | written in step 3 with the facts and answers; recorded as a client project that files nothing upstream; with no tracker scan the ticket key format follows the tracker (Azure Boards `numeric`, Jira `prefixed`) |
 | §7 `sync-browser-secrets`, `gen-mcp`, `write-agent-rules` | **skipped** — servers, browser lanes and their rules are the host's |
 | §8 `verify-access` | the **host-mode readiness table**: host plugin, each role's server, the host's setup ran here, the profile matches the servers on, each env's test users and their slots (a filled slot is NOT checked — no secret is resolved), the URLs |
 | §9 `next-steps` | as usual; tracker asks name the host's tracker server; no `/qa-fix` without a code host |

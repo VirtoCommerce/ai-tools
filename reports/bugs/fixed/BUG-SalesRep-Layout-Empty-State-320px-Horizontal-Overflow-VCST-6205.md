@@ -41,3 +41,10 @@ Fix direction: `max-width: 100%; height: auto` on `.layout-empty-state__art svg`
 - **Component / module:** `client-app/modules/sales-rep/components/layout-empty-state.vue` + `assets/layout-empty-state.svg`
 - **RCA anchor:** `layout-empty-state.vue` `.layout-empty-state__art` (inline SVG, fixed width)
 - **Routing confidence:** HIGH — the component and asset are new in PR #2539, and the measured minimum width matches the SVG width + padding
+
+## Resolution
+- **Fixed in:** vc-module-sales-rep PR #34 (`VirtoCommerce.SalesRep 3.1021.0-pr-34-0b01`; the sales rep module moved out of vc-frontend). The SVG lost its fixed `width`/`height`; `.layout-empty-state__art` is `w-[14.75rem] max-w-full`; the root got `w-full`.
+- **Tracker:** VCST-6205 → Tested (comment 112869).
+- **Verified:** 2026-11-09, vcptcore-qa, `/qa-verify-fix`, Chrome 320×900, Dashboard + Customer profile, 3/3 runs each: scrollWidth 305 = clientWidth 305, block 256.8 = column 256.8, art 208.8×148.6 (ratio kept). 375px / 1440px unchanged (236×168). Run folder: `reports/tickets/Sprint26-22/VCST-6205/vcptcore/`.
+
+## Status: FIXED
