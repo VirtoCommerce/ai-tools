@@ -24,7 +24,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   An answer that names no env of the project is asked again; choosing a production-looking env is written with a
   warning; with every env production-looking, none is recommended. A lone production-looking env is not made the
   default unasked: the question offers it and "No default environment" — declining leaves `.env.test-env` holding
-  only a comment line, so resolvers find no `TEST_ENV` and `--check` does not ask again. An answer that arrives
+  only a comment line, so resolvers find no `TEST_ENV` and `--check` does not ask again (our Playwright lanes, which take no env per command, still start for the only env with stored passwords, as without the file — the output says so). An answer that arrives
   after the file was written is reported as not applied.
 - The step is the new `default-env.mjs`, run once every env of the run exists (`scaffold-env --no-default`), in
   §3a, `--add-env` and `--check` Step C — so a project onboarded before 0.5.4 gets the file, or the question, from

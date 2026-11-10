@@ -146,7 +146,10 @@ export function describeSelector(result, env, { hostGoverned = false } = {}) {
     (hostGoverned ? "" : `; restart Claude Code after a switch — the Playwright lanes pick their env's passwords from ${SELECTOR_FILE} when the MCP servers start`);
   // Our lanes (lib/passwords.mjs currentEnv) read the file's FIRST line and no `export` line; a host's do not read it.
   if (hostGoverned && result.problem === "exported") result = { ...result, problem: undefined };
-  const setOne = `to set one later, replace ${SELECTOR_FILE} with the one line TEST_ENV=<env>, saved as UTF-8`;
+  // Our lanes take no env per command: lib/passwords.mjs currentEnv falls back to the only env that has
+  // declared passwords, file or no file — said, not hidden. A host's lanes do not read this file at all.
+  const setOne = `to set one later, replace ${SELECTOR_FILE} with the one line TEST_ENV=<env>, saved as UTF-8` +
+    (hostGoverned ? "" : `; the Playwright lanes still start for the only env with stored passwords, if there is one`);
   switch (result.status) {
     case "written":
       if (result.declined) return [`${SELECTOR_FILE}: written — no default environment, by choice: pass the env to each command; ${setOne}`];

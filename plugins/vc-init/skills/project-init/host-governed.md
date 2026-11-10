@@ -150,8 +150,10 @@ Then the **default environment** — §3a `default-env.mjs`, the same step as th
 writes `.env.test-env` by itself; with several it answers `ask`, and you ask ONE `AskUserQuestion` *"Which
 environment do commands use by default?"* — its `options`, `recommended` first and marked Recommended (an
 env the host keeps test-user slots for, never a production-looking one) — then run it again with
-`--choose <answer>`. The host's browser servers do not read `.env.test-env`, so its lines say nothing about
-restarting for passwords.
+`--choose <answer>`. A lone production-looking env answers `ask` with `decline: true`: offer it AND *"No
+default environment"*, which runs `--decline`. An answer naming no env comes back as `ask` with `error`: show
+it and ask again. The full contract is the script's header (§3a). The host's browser servers do not read
+`.env.test-env`, so its lines say nothing about restarting for passwords.
 
 ### 5. The hand-off — what was set up, then exactly how to enter the passwords
 
