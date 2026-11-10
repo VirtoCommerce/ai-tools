@@ -515,8 +515,8 @@ a bare empty one. `write-env.mjs` never overwrites a different value already in 
 refuses that key (exit 1) and says so.
 
 Once every env of the run exists: `default-env.mjs [--env <env>]` sets **`.env.test-env`** (`TEST_ENV=<env>`).
-`ask` ⇒ ONE AskUserQuestion with its `options`, `recommended` first (Recommended; null ⇒ none); then `--choose <answer>`
-(`ask` again ⇒ show its `error`, ask again). Relay `lines`.
+`ask` ⇒ ONE AskUserQuestion as its header says (`options`, `recommended`, `error`, `decline`), then `--choose <answer>`
+or `--decline`. Relay `lines`.
 
 ### 3b. `.env.local` — test-user passwords (`scaffold-secrets.mjs`)
 

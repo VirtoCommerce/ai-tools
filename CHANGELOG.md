@@ -22,8 +22,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
     before uat; on a host-governed project, one the host keeps test-user slots for;
   - **an existing file** — kept, never rewritten, no question.
   An answer that names no env of the project is asked again; choosing a production-looking env is written with a
-  warning; with every env production-looking, none is recommended, and a lone production-looking env is asked, not
-  written unasked. An answer that arrives after the file was written is reported as not applied.
+  warning; with every env production-looking, none is recommended. A lone production-looking env is not made the
+  default unasked: the question offers it and "No default environment" — declining leaves `.env.test-env` holding
+  only a comment line, so resolvers find no `TEST_ENV` and `--check` does not ask again. An answer that arrives
+  after the file was written is reported as not applied.
 - The step is the new `default-env.mjs`, run once every env of the run exists (`scaffold-env --no-default`), in
   §3a, `--add-env` and `--check` Step C — so a project onboarded before 0.5.4 gets the file, or the question, from
   `/project-init --check`. The host-governed flow scaffolds all its envs first and then takes the same step.

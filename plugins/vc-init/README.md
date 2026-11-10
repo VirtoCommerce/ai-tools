@@ -55,7 +55,9 @@ What it writes into the project (all gitignored):
 `.env.qa` stops on `unknown env "vcst"`. `/project-init` writes it once the project's envs exist (an env is
 an `.env.<x>` holding `BACK_URL`): with one env, by itself; with several, it asks one question — which env
 commands use by default — and offers first a non-production one (qa / test / dev / staging before uat; on a
-host-governed project, one the host keeps test-user slots for). Nothing is left to set up by hand. The file
+host-governed project, one the host keeps test-user slots for). A lone production-looking env is asked too, and
+the operator may decline a default: the file then holds only a comment, so it is not asked again. Nothing is
+left to set up by hand. The file
 is written only when it does not exist and git ignores it (onboarding adds it to `.gitignore`); an existing
 file is never overwritten, `--add-env` does not change it, and a broken one is reported. A project onboarded
 before 0.5.4 gets it from `/project-init --check`. To switch the default, edit the file (one line

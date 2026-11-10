@@ -22,6 +22,10 @@ import { envFileNames, isGitTracked, readKey } from "./project-env.mjs";
 
 export const SELECTOR_FILE = ".env.test-env";
 
+/** The one line a DECLINED default leaves: the operator chose no default env at /project-init. A comment, so
+ *  every resolver still finds no TEST_ENV here; the file only stops /project-init from asking again. */
+export const DECLINED_LINE = "# TEST_ENV: none — no default environment, chosen at /project-init";
+
 /** The env a selector text names, or null, and whether its line carries dotenv's `export ` prefix — which
  *  the resolvers accept but lib/passwords.mjs currentEnv() (the Playwright lanes) does not. `[ \t]` and not
  *  `\s`, so an empty `TEST_ENV=` never takes its value from the next line. A UTF-8 BOM (Notepad, PowerShell
@@ -94,8 +98,9 @@ function inspectSelector(root, path) {
   try { raw = readFileSync(path); } catch { return { env: null, problem: "unreadable" }; }
   // UTF-16 (Windows PowerShell 5.1's `>`): a BOM or NUL bytes. dotenv reads no key from it.
   if ((raw[0] === 0xff && raw[1] === 0xfe) || (raw[0] === 0xfe && raw[1] === 0xff) || raw.includes(0)) return { env: null, problem: "utf16" };
-  const { env, exported, conflict } = parseSelector(raw.toString("utf-8"));
-  if (!env) return { env: null, problem: "no-env" };
+  const text = raw.toString("utf-8");
+  const { env, exported, conflict } = parseSelector(text);
+  if (!env) return text.includes(DECLINED_LINE) ? { env: null, declined: true } : { env: null, problem: "no-env" };
   // An env may live in a QA_ENV_PATH folder instead, so this one is a warning, not a verdict. Checked before
   // `export`: that message says commands use the env, which is false when its file is missing.
   if (!existsSync(join(root, `.env.${env}`))) return { env, problem: "no-env-file" };
@@ -113,21 +118,22 @@ function inspectSelector(root, path) {
  * @param {{ primary?: boolean, dryRun?: boolean, tracked?: Function, ignored?: Function }} [opts]
  * @returns {{ status: "written"|"kept"|"skipped", env: string|null, reason?: string, envs?: string[] }}
  */
-export function ensureTestEnvSelector(root, env, { primary = false, dryRun = false, tracked = isGitTracked, ignored = gitIgnored } = {}) {
+export function ensureTestEnvSelector(root, env, { primary = false, declined = false, dryRun = false, tracked = isGitTracked, ignored = gitIgnored } = {}) {
   const path = join(root, SELECTOR_FILE);
   if (existsSync(path)) return { status: "kept", ...inspectSelector(root, path) };
   const envs = ourEnvs(root);
-  if (!envs.includes(env)) envs.push(env);
-  if (envs.length > 1 && !primary) return { status: "skipped", env: null, reason: "several-envs", envs: envs.sort() };
+  if (!declined && !envs.includes(env)) envs.push(env);
+  if (envs.length > 1 && !primary && !declined) return { status: "skipped", env: null, reason: "several-envs", envs: envs.sort() };
   if (tracked(root, SELECTOR_FILE)) return { status: "skipped", env: null, reason: "tracked" };
   if (ignored(root, SELECTOR_FILE) === false) return { status: "skipped", env: null, reason: "not-ignored" };
-  if (dryRun) return { status: "written", env };
+  const written = declined ? { status: "written", env: null, declined: true } : { status: "written", env };
+  if (dryRun) return written;
   try {
-    writeFileSync(path, `TEST_ENV=${env}\n`);
+    writeFileSync(path, declined ? `${DECLINED_LINE}\n` : `TEST_ENV=${env}\n`);
   } catch (e) {
     return { status: "skipped", env: null, reason: `write failed: ${e.message}` };
   }
-  return { status: "written", env };
+  return written;
 }
 
 /**
@@ -140,10 +146,13 @@ export function describeSelector(result, env, { hostGoverned = false } = {}) {
     (hostGoverned ? "" : `; restart Claude Code after a switch — the Playwright lanes pick their env's passwords from ${SELECTOR_FILE} when the MCP servers start`);
   // Our lanes (lib/passwords.mjs currentEnv) read the file's FIRST line and no `export` line; a host's do not read it.
   if (hostGoverned && result.problem === "exported") result = { ...result, problem: undefined };
+  const setOne = `to set one later, replace ${SELECTOR_FILE} with the one line TEST_ENV=<env>, saved as UTF-8`;
   switch (result.status) {
     case "written":
+      if (result.declined) return [`${SELECTOR_FILE}: written — no default environment, by choice: pass the env to each command; ${setOne}`];
       return [`${SELECTOR_FILE}: written (TEST_ENV=${result.env}) — commands run without an env use ${result.env}`];
     case "kept": {
+      if (result.declined) return [`${SELECTOR_FILE}: kept — no default environment, by choice; ${setOne}`];
       const fix = `rewrite it as the one line TEST_ENV=<env>, saved as UTF-8`;
       const problem = {
         unreadable: `it cannot be read — ${fix}`,
