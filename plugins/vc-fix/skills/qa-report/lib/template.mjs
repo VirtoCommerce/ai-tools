@@ -50,7 +50,10 @@ export function fill(body, data) {
     const list = Array.isArray(v) ? v : v ? [v] : [];
     if (op === "^") return (list.length ? "" : inner) + tail;
     if (op === "?") return (list.length ? inner : "") + tail;
-    return list.map(item => inner.replace(/\{\{(\.|\w+)\}\}/g, (__, f) => {
+    // `{{{.}}}` is a RAW line: the model built it (already escaping its values with `cell`), so the
+    // template can emit a whole Markdown table row from one list item — "How to reproduce" needs that.
+    return list.map(item => inner.replace(/\{\{\{\.\}\}\}|\{\{(\.|\w+)\}\}/g, (m, f) => {
+      if (m === "{{{.}}}") return String(item ?? "");
       if (f === ".") return cell(item);
       if (item === null || typeof item !== "object" || !(f in item)) throw new Error(`list ${key} item has no field "${f}"`);
       return cell(item[f]);

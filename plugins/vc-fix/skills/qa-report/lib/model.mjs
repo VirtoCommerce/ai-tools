@@ -280,18 +280,21 @@ export function requireLede(m, ledeMax) {
 // "How to reproduce": one block per To-fix row that carries `repro` — what a developer needs to see
 // the defect without opening the run folder. Flat lines, because the template engine has no nested
 // sections; never trimmed (a repro cut in half is worse than none), so it counts against the budget.
+// One two-column table per row (emitted as RAW lines, `{{{.}}}` in the template), so every value is
+// escaped here with the template engine's own `cell` rules: a pipe or a newline in a value can never
+// break the table.
 function reproLines(toFix) {
-  const one = s => String(s ?? "").replace(/\s+/g, " ").trim();
+  const v = s => String(s ?? "").replace(/\s*\r?\n\s*/g, " ").replace(/\|/g, "/").replace(/\{\{|\}\}/g, x => `${x[0]} ${x[1]}`).trim();
   const out = [];
   for (const t of toFix) {
     const r = t.repro;
     if (!r || typeof r !== "object") continue;
-    out.push(`#### ${t.id} — ${t.what}${t.severity ? ` (${t.severity})` : ""}`);
-    if (r.where) out.push(`- **Where to fix:** ${one(r.where)}`);
-    (Array.isArray(r.steps) ? r.steps : []).forEach((s, i) => out.push(`- **Step ${i + 1}:** ${one(s)}`));
-    if (r.expected) out.push(`- **Expected:** ${one(r.expected)}`);
-    if (r.actual) out.push(`- **Actual:** ${one(r.actual)}`);
-    if (r.cause) out.push(`- **Cause:** ${one(r.cause)}`);
+    out.push(`#### ${v(t.id)} — ${v(t.what)}${t.severity ? ` (${v(t.severity)})` : ""}`);
+    out.push(`| Where to fix | ${v(r.where) || "—"} |`, "|---|---|");
+    (Array.isArray(r.steps) ? r.steps : []).forEach((s, i) => out.push(`| Step ${i + 1} | ${v(s)} |`));
+    if (r.expected) out.push(`| **Expected** | ${v(r.expected)} |`);
+    if (r.actual) out.push(`| **Actual** | ${v(r.actual)} |`);
+    if (r.cause) out.push(`| Cause | ${v(r.cause)} |`);
     out.push("");
   }
   return out;

@@ -38,7 +38,7 @@ trim: "[QUESTIONS, SUGGESTED, BUGS, TO_FIX]"
 ### How to reproduce
 {{/REPRO}}
 {{#REPRO}}
-{{.}}
+{{{.}}}
 {{/REPRO}}
 
 {{#SHOTS}}
