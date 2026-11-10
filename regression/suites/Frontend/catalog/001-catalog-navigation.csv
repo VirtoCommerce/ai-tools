@@ -456,3 +456,38 @@ Other locales carry the same key and needed plural forms too; they are not asser
 [REL] the number in TEXT_ONE equals N_ONE and the number in TEXT_MANY equals N_MANY, both counted from the entries the panel lists — a label that ignores the listed entries (fixed text, or xAPI variations.length instead of the listed entries) cannot pass {OBSERVED} (VCST-6046)
 [REL] the noun in TEXT_ONE is the singular of the noun in HEAD_ONE, and the same holds for the plural pair — the button and the panel agree {SPEC} (VCST-6046)
 [REL] the number in HEAD_ONE equals N_ONE and the number in HEAD_MANY equals N_MANY — the heading counts the same listed entries as the button {OBSERVED}","[API] none for the count: xAPI variations.length is used only to pick candidates — the panel adds the sellable master and 'Show in stock' hides out-of-stock entries; the same wording rule holds on the related-products, recently-browsed, compare and wishlist cards that use the same key",'1 variations'; a button number that differs from the number of entries the panel lists; button and panel disagree on number or on singular/plural,none — read-only,"VCST-6046 · Archetype:MONEY · Technique:BVA · Catches:VCST-6046 · Storefront product-card; locales/en.json pages.catalog.variations_button · Repaired 2026-10-14 (Stable 16 regression VCST-6042): the count source was xAPI variations.length but the UI counts the entries the panel lists (sellable master included, 'Show in stock' filters); wording assertions unchanged. Count assertions now {OBSERVED}",Draft
+CAT-084,Catalog Listing - Product Card Quantity Stepper: Backspace-Clearing the Field Digit by Digit Never Commits or Restores a Half-Deleted Quantity,Catalog > Listing > Quantity Stepper,High,BL-CART-001,"ECL-5.3, ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Cart is empty before Steps run. The card is the one for @td(BUYABLE_NO_MIN_QTY.sku) on its search-results listing (an unconstrained simple B2B product, availableQuantity well above 345). Stock guard: if after the 345 commit the card shows an inline maximum/insufficient-stock message, the case ends BLOCKED:<CONDITION_NOT_MET>, never PASS or FAIL.
+A listing card stepper allows 0 like the PDP (allowZero=true): 'the empty field becomes 0' means the line is removed. VCST-6768 reproduces on the card (UpdateShortCartItemQuantity quantity:4); this case runs signed-in with a different value than the anonymous PDP case (345, partials 34 and 3), which also varies the first-digit-removal path.","url={{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+target_sku=@td(BUYABLE_NO_MIN_QTY.sku)
+typed_quantity=345","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+[WAIT] wait for the result cards to render
+[ASSERT] verify the card for @td(BUYABLE_NO_MIN_QTY.sku) shows its quantity spinbutton at 0 and no 'in Cart' indicator
+[ACT] click the card's quantity spinbutton to focus it
+[WAIT] wait for the spinbutton to be focused
+[KEY] press Control+a to select all its content
+[ACT] set its value to 345 in ONE input event (fill / paste, not key by key)
+[KEY] press Tab to blur the field
+[WAIT] wait 2s for the add-to-cart mutation to settle
+[ASSERT] verify the card's spinbutton shows 345 and its 'in Cart' indicator shows 345, with no inline maximum message (otherwise BLOCKED:<CONDITION_NOT_MET>)
+[KEY] start recording every POST {{FRONT_URL}}/graphql request whose operationName is UpdateShortCartItemQuantity or ChangeFullCartItemsQuantity or whose mutation removes the line (variables quantity values go into QTY_SENT); the list starts empty here
+[ACT] click the card's quantity spinbutton to focus it
+[WAIT] wait for the spinbutton to be focused
+[KEY] press ArrowRight four times so the caret is after the last digit (End does not move the caret in a number field, so each Backspace removes exactly one digit from the right)
+[KEY] press Backspace three times back to back in one action (345 -> 34 -> 3 -> empty), no wait between the presses
+[WAIT] wait 2s while the field is still focused and empty
+[KEY] record the card's 'in Cart' indicator as BADGE_EMPTY (a missing indicator is recorded as 0) and the current QTY_SENT as QTY_SENT_PRE_BLUR
+[ACT] click outside the card (the listing heading) to blur the field
+[WAIT] wait 2s for any commit to settle
+[KEY] record the value the card's spinbutton shows as V_BLUR, its 'in Cart' indicator as BADGE_BLUR (a missing indicator is recorded as 0) and the full QTY_SENT
+[NAV] navigate to {{FRONT_URL}}/cart
+[KEY] record the quantity of the @td(BUYABLE_NO_MIN_QTY.sku) line as V_CART (an absent line is recorded as 0)","[STATE] BADGE_EMPTY is neither 34 nor 3: an empty, still-focused card field does not put a partial quantity in the cart {SPEC} (VCST-6768 Expected: the cart quantity does not change to partial values while typing/clearing)
+[STATE] V_BLUR is neither 34 nor 3 and is not empty: the card never shows a half-deleted value the user did not choose {SPEC} (VCST-6768 Expected; Actual: 789 -> 7)
+[STATE] V_BLUR is 0 (empty becomes 0, the line is removed) or 345 (reverts to the value before editing) {HYPOTHESIS} (VCST-6768: the empty->0 versus revert-to-previous choice is an OPEN PO decision (VCST-6768), so only the invariants every candidate outcome shares are asserted as {SPEC}; the choice itself is {HYPOTHESIS}; either outcome is recorded for the PO and neither is failed, every other number fails)
+[STATE] V_BLUR equals BADGE_BLUR equals V_CART, with 0 meaning no indicator and no line: card field, 'in Cart' indicator and the persisted cart quantity agree {SPEC} (VCST-6768 Actual: card 4, badge 4, cart 4 all showing a value never entered)
+[NETWORK] no request in QTY_SENT carries quantity 34 or 3: no cart mutation is built from an intermediate Backspace state {SPEC} (VCST-6768 Expected; Actual: UpdateShortCartItemQuantity quantity:4 from the catalog card)","[API] every cart quantity mutation response in QTY_SENT has errors[] empty
+[CONSOLE] no JS errors during the Backspace sequence and the blur
+[NETWORK] no 4xx/5xx on /graphql during the window","card spinbutton shows 3 or 34 after blur; 'in Cart' indicator shows 3 or 34 while the field is empty or after blur; UpdateShortCartItemQuantity with quantity 34 or 3 in the request log; card field, indicator and cart quantity disagree",Remove @td(BUYABLE_NO_MIN_QTY.sku) from the cart if still present; no other state change,"VCST-6768; Archetype:STALE · Technique:ST · Purpose:FUNC · Catches:VCST-6768; STALE: the last non-empty value kept in the stepper serves a superseded quantity back to the field; no BL-* states the empty-field rule (BL-CART-001 cited as the nearest rule for the listing quantity control); Source: VirtoCommerce/vc-frontend@dev client-app/ui-kit/components/organisms/quantity-stepper/vc-quantity-stepper.vue (watch(model) writes every non-empty value into lastNonEmptyValue; normalize() on blur restores it when the model is undefined) + client-app/shared/common/components/quantity-control.vue (watch(stepperQuantity) -> handleStepperChange emits update:cartItemQuantity per value); kb KB-9314E8DA (SUSPECTED DEFECT, proof the commit-before-blur reproduces on /cart, never an expected result); kb KB-98A231B6 (PDP and card stepper send UpdateShortCartItemQuantity, /cart line sends ChangeFullCartItemsQuantity); Docs: StorefrontUserGuide is silent on empty-field and partial-typing behaviour, so no {DOC} tag is possible",Draft

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "What a suite's cases need from the stand that the suite CSV cannot express: a store setting, a platform setting, a payment method, a key in vc-deploy-dev infra/environments.yml (headers, FileUpload scopes, KnownAssetHosts). Read by the regression pre-flight (scripts/regression/requirements.ts) before every run and every release wave; personas ([PRE:SIGNIN_AS:*]) and fixtures (@td()) are derived from the CSVs and are NOT declared here.",
-    "kinds": "storeSetting · platformSetting · paymentMethod (isActive) · deployConfig (dotted path in the env's block of infra/environments.yml; prefix:true for an indexed list) · uploadScope (a FileUpload__Scopes__N__Scope value)",
+    "kinds": "storeSetting · platformSetting · paymentMethod (isActive) · deployConfig (dotted path in the env's block of infra/environments.yml; prefix:true for an indexed list) · uploadScope (a FileUpload__Scopes__N__Scope value) · contract (a generated contract snapshot the cases cite — mcp-schema | ucp-schema; runs its --check read-only, drift is a WARN whose remedy is the refresh then a re-read of the cases, never an automatic refresh)",
     "match": "equals · notEquals · nonEmpty · allowedIncludes (platformSetting: values its dictionary must offer) · (none = must be set). level: warn (default — the named cases will BLOCK) or block (the suite cannot run meaningfully).",
     "personas": "personas: a persona or @td() fixture alias (or PREFIX*) → the module it needs. Without that module on the stand its cases are NOT DEPLOYED: they leave the plan (not run, not counted, not triaged), like a suite whose requiresModules is not deployed.",
     "skip": "Every case a WARN/BLOCK row names is recorded BLOCKED with that row's reason and NOT run (regression:plan --run-blocked runs them anyway).",
@@ -13,6 +13,16 @@
     "SR_*": { "module": "VirtoCommerce.SalesRep", "why": "the sales-rep personas are rep contacts of the SalesRep module (seed:sales-rep → /api/sales-rep/*)" }
   },
   "suites": {
+    "094": [
+      { "kind": "contract", "name": "ucp-schema", "why": "cases cite .claude/knowledge/api/ucp-schema.md for the /ucp/mcp tools and arguments; drift means a case may assert a tool or argument that moved" }
+    ],
+    "102": [
+      { "kind": "contract", "name": "ucp-schema", "why": "cases cite .claude/knowledge/api/ucp-schema.md for the /ucp/mcp tools and arguments; drift means a case may assert a tool or argument that moved" },
+      { "kind": "contract", "name": "mcp-schema", "why": "the ucp scope tool catalog (names, read-only/destructive flags) lives in .claude/knowledge/api/mcp-schema.md" }
+    ],
+    "118": [
+      { "kind": "contract", "name": "mcp-schema", "why": "cases cite .claude/knowledge/api/mcp-schema.md for scopes, tool sets, flags and /admin/mcp arguments; drift means a case may assert a tool, argument or scope that moved" }
+    ],
     "001": [
       { "kind": "storeSetting", "name": "Catalog.BrandStoreSetting.BrandsEnabled", "equals": true, "cases": ["CAT-035", "CAT-036", "CAT-037"], "why": "the /brands page and brand facets" }
     ],
