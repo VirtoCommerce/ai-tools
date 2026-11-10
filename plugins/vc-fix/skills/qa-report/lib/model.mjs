@@ -95,6 +95,8 @@ export function fromQaTest(path) {
       id: t.id ?? `F-${i + 1}`, what: String(t.what ?? "").replace(/\s+/g, " ").trim() || "(untitled)",
       severity: t.severity ?? "", ref: t.ref ?? "", status: t.status ?? "open", report: t.report ?? "",
       repro: t.repro ?? null,
+      impact: String(t.repro?.impact ?? "").replace(/\s+/g, " ").trim(),
+      repo: String(t.repro?.repo ?? "").replace(/\s+/g, " ").trim(),
     })),
     // Proposed to the operator and not created (unanswered or skipped): still named, never dropped.
     suggested: (s.suggested_tickets ?? []).map(t => ({
@@ -280,24 +282,51 @@ export function requireLede(m, ledeMax) {
 // "How to reproduce": one block per To-fix row that carries `repro` — what a developer needs to see
 // the defect without opening the run folder. Flat lines, because the template engine has no nested
 // sections; never trimmed (a repro cut in half is worse than none), so it counts against the budget.
-// One two-column table per row (emitted as RAW lines, `{{{.}}}` in the template), so every value is
-// escaped here with the template engine's own `cell` rules: a pipe or a newline in a value can never
-// break the table.
-function reproLines(toFix) {
+// One card per To-fix row that carries `repro`: steps, expected next to actual, root cause, the fix,
+// its screenshot (wiki only — the one dialect that embeds an attachment) and what found it, by the
+// check's TITLE: an internal id (C-74, MCP-044) means nothing to the reader. Emitted as RAW lines
+// (`{{{.}}}` in the template), so every value is escaped here with the engine's own `cell` rules.
+function reproLines(toFix, dialect) {
   const v = s => String(s ?? "").replace(/\s*\r?\n\s*/g, " ").replace(/\|/g, "/").replace(/\{\{|\}\}/g, x => `${x[0]} ${x[1]}`).trim();
   const out = [];
   for (const t of toFix) {
     const r = t.repro;
     if (!r || typeof r !== "object") continue;
-    out.push(`#### ${v(t.id)} — ${v(t.what)}${t.severity ? ` (${v(t.severity)})` : ""}`);
-    out.push(`| Where to fix | ${v(r.where) || "—"} |`, "|---|---|");
-    (Array.isArray(r.steps) ? r.steps : []).forEach((s, i) => out.push(`| Step ${i + 1} | ${v(s)} |`));
-    if (r.expected) out.push(`| **Expected** | ${v(r.expected)} |`);
-    if (r.actual) out.push(`| **Actual** | ${v(r.actual)} |`);
-    if (r.cause) out.push(`| Cause | ${v(r.cause)} |`);
-    out.push("");
+    out.push(`#### ${v(t.id)} · ${v(r.title || t.what)}`);
+    const steps = Array.isArray(r.steps) ? r.steps : [];
+    if (steps.length) {
+      out.push(`| Step | ${v(r.setting) || "Do this"} |`, "|---|---|");
+      steps.forEach((s, i) => out.push(`| ${i + 1} | ${v(s)} |`));
+      out.push("");
+    }
+    if (r.expected || r.actual) {
+      out.push("| ✅ Expected | ❌ Actual |", "|---|---|", `| ${v(r.expected) || "—"} | ${v(r.actual) || "—"} |`, "");
+    }
+    if (r.cause) out.push(`**Root cause** ${v(r.cause)}${r.where ? ` (${v(r.where)})` : ""}`, "");
+    if (r.fix) out.push(`**Suggested fix** ${v(r.fix)}`, "");
+    if (r.shot && dialect === "wiki") out.push(`!${basename(String(r.shot))}|width=700!`, "");
+    const found = (Array.isArray(r.found_by) ? r.found_by : []).map(v).filter(Boolean);
+    if (found.length) out.push(`Found by: ${found.join(" · ")}`, "");
   }
   return out;
+}
+
+// The verdict panel's headline and the closing "Next step" — derived from the verdict and the To-fix
+// count, so the reader sees in one line whether the ticket can go on and what has to happen first.
+function verdictText(m) {
+  const n = (m.toFix ?? []).length;
+  const t = m.ticket ?? "the ticket";
+  const ids = n ? (n === 1 ? m.toFix[0].id : `${m.toFix[0].id}…${m.toFix[n - 1].id}`) : "";
+  switch (m.verdict) {
+    case "FAIL": return {
+      ALERT: "danger",
+      HEADLINE: n ? `Not ready — ${n} defect${n > 1 ? "s" : ""} must be fixed before ${t} can pass` : `Not ready — ${t} failed testing`,
+      NEXT_STEP: n ? `Fix ${ids}, then move the ticket to Ready for test. QA re-runs the checks named under each defect.` : "Fix the failures below and send the ticket back to QA.",
+    };
+    case "BLOCKED": return { ALERT: "warning", HEADLINE: `Blocked — testing of ${t} could not finish`, NEXT_STEP: "Remove the blocker named above; QA resumes testing." };
+    case "PASS_WITH_NOTES": return { ALERT: "note", HEADLINE: `Passed with notes — ${t} can go on`, NEXT_STEP: n ? `Fix ${ids} in this ticket or a follow-up.` : "No action needed in this ticket." };
+    default: return { ALERT: "success", HEADLINE: `Passed — ${t} can go on`, NEXT_STEP: "No action needed in this ticket." };
+  }
 }
 
 export function templateData(m, dialect = "markdown") {
@@ -309,8 +338,11 @@ export function templateData(m, dialect = "markdown") {
     AREAS: m.areas ?? [], QUESTIONS: m.questions ?? [], BUGS: m.bugs, TO_FIX: m.toFix ?? [], SUGGESTED: m.suggested ?? [], NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
     // An empty side-effect table means "looked, found nothing" only when the run got that far.
     ISSUES_NONE: m.verdict === "BLOCKED" ? "Not checked — the verification was blocked" : "Nothing found nearby",
-    REPRO: reproLines(m.toFix ?? []),
-    SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],
+    REPRO: reproLines(m.toFix ?? [], dialect),
+    ...verdictText(m),
+    // A screenshot a defect card already shows is not repeated at the bottom.
+    SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s))
+      .filter(b => !(m.toFix ?? []).some(t => t.repro?.shot && basename(String(t.repro.shot)) === b)) : [],
     PAGE_URL: m.pageUrl ?? null,
   };
 }

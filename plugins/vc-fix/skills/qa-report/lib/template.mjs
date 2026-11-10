@@ -98,6 +98,12 @@ const cells = row => row.trim().replace(/^\||\|$/g, "").split("|").map(s => s.tr
 const DIVIDER = /^\|[\s:|-]+\|\s*$/;
 const ROW = /^\|.*\|\s*$/;
 
+// Jira panel colours per alert kind: [background, border] (Atlassian's own status palette).
+const PANEL = {
+  danger: ["#FFEBE6", "#FF8F73"], warning: ["#FFFAE6", "#FFC400"],
+  success: ["#E3FCEF", "#57D9A3"], note: ["#DEEBFF", "#4C9AFF"],
+};
+
 /** Markdown subset → Jira wiki (v2 API) — the only dialect that embeds an attached image inline (tracker-ops.md §5c). */
 export function toWiki(md) {
   const inline = s => s
@@ -110,6 +116,17 @@ export function toWiki(md) {
   const out = [];
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
+    // A `> [!kind]` alert block (GitHub syntax) becomes a coloured Jira panel — the verdict banner.
+    if (/^>\s?/.test(l)) {
+      const block = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) block.push(lines[i++].replace(/^>\s?/, ""));
+      i--;
+      const kind = /^\[!(\w+)\]\s*/.exec(block[0] ?? "");
+      if (kind) block[0] = block[0].slice(kind[0].length);
+      const [bg, border] = PANEL[kind?.[1]?.toLowerCase()] ?? PANEL.note;
+      out.push(`{panel:bgColor=${bg}|borderColor=${border}}`, ...block.map(inline), "{panel}");
+      continue;
+    }
     const h = /^(#{1,6})\s+(.*)$/.exec(l);
     const b = /^(\s*)[-*]\s+(.*)$/.exec(l);
     if (h) out.push(`h${h[1].length}. ${inline(h[2])}`);
@@ -137,6 +154,14 @@ export function toHtml(md) {
   };
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
+    if (/^>\s?/.test(l)) {
+      close();
+      const block = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) block.push(lines[i++].replace(/^>\s?/, "").replace(/^\[!\w+\]\s*/, ""));
+      i--;
+      out.push(`<blockquote>${block.map(inline).join("<br/>")}</blockquote>`);
+      continue;
+    }
     const h = /^(#{1,6})\s+(.*)$/.exec(l);
     const b = /^\s*[-*]\s+(.*)$/.exec(l);
     if (h) { close(); out.push(`<b>${inline(h[2])}</b><br/>`); continue; }

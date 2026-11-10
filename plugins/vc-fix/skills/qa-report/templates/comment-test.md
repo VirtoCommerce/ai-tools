@@ -4,39 +4,26 @@ budget: 12000
 lede_max: 240
 trim: "[QUESTIONS, SUGGESTED, BUGS, TO_FIX]"
 ---
-## {{ICON}} QA {{VERDICT_LABEL}} — {{TICKET}}
-{{LEDE}}
+> [!{{ALERT}}] **{{ICON}} {{HEADLINE}}**
+> {{LEDE}}
 
-| Where we tested | |
-|---|---|
-| **Environment** | {{ENV}} |
-| **Artifact** | {{BUILD}} |
+Tested on {{ENV}} · {{DATE}} · {{BUILD}} · {{TOTAL}} checks: {{PASSED}} passed, {{FAILED}} failed, {{BLOCKED}} blocked
 {{?AS_USER}}
-| **Signed in as** | {{AS_USER}} |
+Signed in as {{AS_USER}}
 {{/AS_USER}}
-| **When** | {{DATE}} · {{RUN_ID}} |
 
-{{#AC_DOD}}
-**Acceptance** {{.}}
-{{/AC_DOD}}
-**Regression** {{REGRESSION}} · **New regression coverage** {{NEW_CASES}}
-
-### To fix in this ticket
-| # | What to fix | Severity | Found by | Status |
-|---|---|---|---|---|
+{{?TO_FIX}}
+### What to fix
+| # | What is broken | Why it matters | Fix in |
+|---|---|---|---|
+{{/TO_FIX}}
 {{#TO_FIX}}
-| {{id}} | {{what}} | {{severity}} | {{ref}} | {{status}} |
+| {{id}} | {{what}} | {{impact}} | {{repo}} |
 {{/TO_FIX}}
 {{#TO_FIX_MORE}}
-| | {{.}} | | | |
+| | {{.}} | | |
 {{/TO_FIX_MORE}}
-{{^TO_FIX}}
-| | Nothing to fix | | | |
-{{/TO_FIX}}
 
-{{?REPRO}}
-### How to reproduce
-{{/REPRO}}
 {{#REPRO}}
 {{{.}}}
 {{/REPRO}}
@@ -45,20 +32,24 @@ trim: "[QUESTIONS, SUGGESTED, BUGS, TO_FIX]"
 !{{.}}|width=700!
 {{/SHOTS}}
 
-### Separate tickets
+{{?BUGS}}
+### Filed as separate bugs
 | What is wrong | Severity | Ticket |
 |---|---|---|
+{{/BUGS}}
 {{#BUGS}}
 | {{what}} | {{severity}} | {{ref}} |
 {{/BUGS}}
 {{#BUGS_MORE}}
 | {{.}} | | |
 {{/BUGS_MORE}}
-{{^BUGS}}
-| None created | | |
-{{/BUGS}}
+{{?SUGGESTED}}
+### Suggested as separate tickets (not created)
+| What is wrong | Severity | Type |
+|---|---|---|
+{{/SUGGESTED}}
 {{#SUGGESTED}}
-| {{what}} | {{severity}} | suggested {{type}} — not created |
+| {{what}} | {{severity}} | {{type}} |
 {{/SUGGESTED}}
 {{#SUGGESTED_MORE}}
 | {{.}} | | |
@@ -74,7 +65,7 @@ trim: "[QUESTIONS, SUGGESTED, BUGS, TO_FIX]"
 - {{.}}
 {{/QUESTIONS_MORE}}
 
-**Release gate** {{RELEASE_GATE}} · **Release note** {{RELEASE_NOTE}}
+**Next step** {{NEXT_STEP}}
 {{#PAGE_URL}}
 **Report** [open the report page]({{.}})
 {{/PAGE_URL}}
