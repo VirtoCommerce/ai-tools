@@ -8,6 +8,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A client project gets its default env at onboarding — `vc-init` `0.5.4` — 2026-11-10
+
+### Fixed
+
+- `/project-init` sets `.env.test-env` (`TEST_ENV=<env>`), the env a command run without one uses. Before, a
+  client project had only `.env.<its env>`, so every such command (`run-folder.mjs use <TICKET>`, the first step of
+  `/vc-test:qa-ticket`) fell back to the built-in `vcst` and stopped on `unknown env "vcst"`. Nothing is left to
+  set up by hand:
+  - **one env** — written by itself;
+  - **several envs** — ONE question, *which env do commands use by default?*: the project's envs, the recommended
+    one first — never a production-looking one (`prod`, `production`, `prd`, `live`); qa / test / dev / staging
+    before uat; on a host-governed project, one the host keeps test-user slots for;
+  - **an existing file** — kept, never rewritten, no question.
+  An answer that names no env of the project is asked again; choosing a production-looking env is written with a
+  warning; with every env production-looking, none is recommended. A lone production-looking env is not made the
+  default unasked: the question offers it and "No default environment" — declining leaves `.env.test-env` holding
+  only a comment line, so resolvers find no `TEST_ENV` and `--check` does not ask again (our Playwright lanes, which take no env per command, still start for the only env with stored passwords, as without the file — the output says so). An answer that arrives
+  after the file was written is reported as not applied.
+- The step is the new `default-env.mjs`, run once every env of the run exists (`scaffold-env --no-default`), in
+  §3a, `--add-env` and `--check` Step C — so a project onboarded before 0.5.4 gets the file, or the question, from
+  `/project-init --check`. The host-governed flow scaffolds all its envs first and then takes the same step.
+- The file is written only when git ignores it and does not track it; `.env.test-env` joins the `.gitignore` block
+  onboarding writes, and an older project gets only that one entry, in its own block.
+- An existing file is checked: UTF-16 (Windows PowerShell 5.1's `>`), no `TEST_ENV` line, an env with no
+  `.env.<env>` beside it, an `export` prefix, or several lines with different values are reported as
+  `kept, but …` with the fix. It is read as dotenv reads it (a UTF-8 BOM is dropped, the last line wins).
+- Only an `.env.<x>` holding `BACK_URL` counts as an env, so a Vite / Next repo's `.env.development` /
+  `.env.production` is not one.
+- The hint after a switch: with vc-secrets passwords, restart Claude Code (our Playwright lanes read their env's
+  passwords from `.env.test-env` at start). On a host-governed project the browser servers and passwords are the
+  host's and do not read the file, so only how to switch is said.
+- `scaffold-env.mjs` run on its own (by hand, in CI) keeps its behaviour: one env is written, several are
+  `skipped` with a one-line instruction (never `echo … >`, never a scaffold-env re-run); `--primary` chooses.
+- Universal: a project with one env, Jira / GitHub projects and projects without a governing plugin behave as
+  before. The resolvers and their `vcst` default are unchanged.
+
 ## The triage collector reads the visual lane's verdict words — `vc-test` `0.13.2` — 2026-11-06
 
 ### Fixed

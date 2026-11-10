@@ -45,9 +45,26 @@ What it writes into the project (all gitignored):
 |---|---|
 | `project-profile.json` | the deployment profile (`schemaVersion` 3): tracker, code host, repos, `auth.{github,ado,jira}`, `governance` |
 | `.env.<env>` | per-env URLs and identifiers (no secret) |
+| `.env.test-env` | `TEST_ENV=<env>`, the project's default env (below) |
 | `.env.local` | what is the same for every env — the tracker / code-host connection (`JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL` / `ADO_ORG`, `ADO_PROJECT`, `CLIENT_REPO_ORG`) — and the test-user passwords of the roles not kept in vc-secrets (below) |
 | `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server; with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>`, `vc-init-runner.<env>` and the `playwright-<lane>.<env>` servers <!-- doclint:may-not-exist --> |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers; the settings `env` holds `VC_RUN` and `VC_SECRETS` (paths) and no token |
+
+**`.env.test-env`** decides which env a command uses when it is given none. Every plugin's resolver looks at
+`TEST_ENV` first, then this file, then the built-in `vcst`. Without it, a client project that has only
+`.env.qa` stops on `unknown env "vcst"`. `/project-init` writes it once the project's envs exist (an env is
+an `.env.<x>` holding `BACK_URL`): with one env, by itself; with several, it asks one question — which env
+commands use by default — and offers first a non-production one (qa / test / dev / staging before uat; on a
+host-governed project, one the host keeps test-user slots for). A lone production-looking env is asked too, and
+the operator may decline a default: the file then holds only a comment, so it is not asked again. Nothing is
+left to set up by hand. The file
+is written only when it does not exist and git ignores it (onboarding adds it to `.gitignore`); an existing
+file is never overwritten, `--add-env` does not change it, and a broken one is reported. A project onboarded
+before 0.5.4 gets it from `/project-init --check`. To switch the default, edit the file (one line
+`TEST_ENV=<env>`, saved as UTF-8 — Windows PowerShell 5.1's `>` writes UTF-16, which no resolver reads), or
+pass the env to a single command. With vc-secrets passwords, restart Claude Code after a switch: our
+Playwright lanes pick their env's passwords from this file when their MCP servers start. On a host-governed
+project the browser servers and passwords are the host's and do not read this file.
 
 One more file is meant to be **committed**: `.claude/rules/vc-browser.md`, the always-loaded rule that every <!-- doclint:may-not-exist -->
 browser action goes through a Playwright MCP lane — never the built-in browser pane, Claude in Chrome,
