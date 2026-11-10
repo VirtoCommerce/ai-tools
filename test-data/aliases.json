@@ -11604,58 +11604,6 @@
     "previousValue": "",
     "owned": ""
   },
-  "PUNCHOUT_CONFIG_DEFAULTS": {
-    "_inline": true,
-    "_notes": "VCST-5888 Punchout configuration DEFAULTS (Punchout:Configurations app setting at yml position 3, vc-deploy-dev#7011 — no REST read-back). One of the default-methods TRIAD that differ ONLY in their default method codes on ONE store: PUNCHOUT_CONFIG_0 (no codes, T17a) / THIS (codes of ACTIVE store methods, T1 methods + T4) / PUNCHOUT_CONFIG_BADCODES (codes that exist nowhere, T17b). Read the expected methods from defaultShipmentMethodCode / defaultPaymentMethodCode; defaultMethodsActive is re-checked live by the seeder (POST /api/shipping/search + /api/payment/search for storeId). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_DEFAULTS_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_DEFAULTS_VCPTCORE_QA1), promoted by config.js. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay (npm run seed:punchout; live re-check seed:punchout:verify, which also proves the secret live with a setup for PUNCHOUT_MAPPING_REQUISITION → cXML 200 + StartPage, session only, no cart). Guard npm run td:validate:punchout; spec punchout-specs.mjs (CONFIG_SPECS, DEFAULT_METHODS_TRIAD). POSITION vs INDEX: this alias has NO index — \"position\" is its yml positional index on the current deployment; the legacy PUNCHOUT_CONFIG_3 (index 3) is RETIRED and unrelated: since vc-deploy-dev#7011 yml position 3 is PUNCHOUT_CONFIG_DEFAULTS and 4 is PUNCHOUT_CONFIG_BADCODES — cite these aliases, never a number. On every env without a declared deployment these fields resolve to \"\" (a clear miss).",
-    "seed": "seed:punchout",
-    "position": 3,
-    "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_DEFAULTS}}",
-    "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_DEFAULTS",
-    "purpose": "same store as config 0; DefaultShipmentMethodCode + DefaultPaymentMethodCode name methods ACTIVE on that store — the OrderRequest applies them (VCST-5888 T1 methods / T4)",
-    "configurationId": "",
-    "deployed": "",
-    "storeId": "",
-    "storeExists": "",
-    "senderDomain": "",
-    "senderDomainCheck": "",
-    "allowedReturnUrl": "",
-    "returnUrlCheck": "",
-    "tokenLifetime": "",
-    "sessionLifetime": "",
-    "tokenLifetimeMinutes": "",
-    "sessionLifetimeMinutes": "",
-    "defaultShipmentMethodCode": "",
-    "defaultPaymentMethodCode": "",
-    "defaultMethodsDeclared": "",
-    "defaultMethodsActive": "",
-    "source": ""
-  },
-  "PUNCHOUT_CONFIG_BADCODES": {
-    "_inline": true,
-    "_notes": "VCST-5888 Punchout configuration BADCODES (Punchout:Configurations app setting at yml position 4, vc-deploy-dev#7011 — no REST read-back). One of the default-methods TRIAD (see PUNCHOUT_CONFIG_DEFAULTS): same store, but its default shipment/payment codes are AGENT-TEST- prefixed and exist on no store — defaultMethodsActive=false is re-checked live (neither code is a method of the store). It has no SenderDomain, so any Credential domain passes the sender check. sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_BADCODES_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_BADCODES_VCPTCORE_QA1), promoted by config.js. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay (npm run seed:punchout; live re-check seed:punchout:verify, which also proves the secret live with a setup for PUNCHOUT_MAPPING_REQUISITION → cXML 200 + StartPage, session only, no cart). Guard npm run td:validate:punchout; spec punchout-specs.mjs (CONFIG_SPECS, DEFAULT_METHODS_TRIAD). POSITION vs INDEX: this alias has NO index — \"position\" is its yml positional index on the current deployment; the legacy PUNCHOUT_CONFIG_3 (index 3) is RETIRED and unrelated: since vc-deploy-dev#7011 yml position 3 is PUNCHOUT_CONFIG_DEFAULTS and 4 is PUNCHOUT_CONFIG_BADCODES — cite these aliases, never a number. On every env without a declared deployment these fields resolve to \"\" (a clear miss).",
-    "seed": "seed:punchout",
-    "position": 4,
-    "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_BADCODES}}",
-    "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_BADCODES",
-    "purpose": "same store as config 0; default method codes that match NO method of that store (VCST-5888 T17b)",
-    "configurationId": "",
-    "deployed": "",
-    "storeId": "",
-    "storeExists": "",
-    "senderDomain": "",
-    "senderDomainCheck": "",
-    "allowedReturnUrl": "",
-    "returnUrlCheck": "",
-    "tokenLifetime": "",
-    "sessionLifetime": "",
-    "tokenLifetimeMinutes": "",
-    "sessionLifetimeMinutes": "",
-    "defaultShipmentMethodCode": "",
-    "defaultPaymentMethodCode": "",
-    "defaultMethodsDeclared": "",
-    "defaultMethodsActive": "",
-    "source": ""
-  },
   "PB_6443_LEGACY_S6": {
     "_inline": true,
     "seed": "seed:pb-legacy-permalinks",
@@ -12211,5 +12159,29 @@
     "contact_P2C": "",
     "default_href": "",
     "_notes": "VCST-6256 P2. PAGE 2: the 11th org by name (the rep has no orders, so the default rule ties and the handler orders by name) — the only row on page 2 at 10 per page, with an owner phone +1-555-110-1100. Backs \"numbers reloaded when the page changes\". expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "RESTRICTED_USER": {
+    "seed": "seed:rbac",
+    "_inline": true,
+    "_comment": "Suite 085 TASK-016 persona: a back-office Manager account whose only role grants task:access + task:read (no task:create or any other task write). The Tasks app opens, but Add/Create must be absent or disabled and POST /api/task-management must answer 403. Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs (TASK_READONLY_*); seed: npm run seed:rbac -- --only RESTRICTED_USER (add --verify for the live /currentuser proof); drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only RESTRICTED_USER. Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json. The PASSWORD is a {{RESTRICTED_USER_PASSWORD}} secret from .env.local (never committed).",
+    "email": "AGENT-TEST-task-readonly@test.virtocommerce.com",
+    "login": "AGENT-TEST-task-readonly@test.virtocommerce.com",
+    "password": "{{RESTRICTED_USER_PASSWORD}}",
+    "password_var": "RESTRICTED_USER_PASSWORD",
+    "role": "AGENT-TEST-Task-ReadOnly",
+    "permissions": [
+      "task:access",
+      "task:read"
+    ],
+    "excluded_permission": "task:create",
+    "excluded_permissions": [
+      "task:create",
+      "task:update",
+      "task:delete",
+      "task:finish",
+      "task:attachment:management"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
   }
 }

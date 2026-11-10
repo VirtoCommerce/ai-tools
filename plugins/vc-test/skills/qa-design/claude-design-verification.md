@@ -28,12 +28,34 @@ the axis fell back to eyeballing screenshots. A gate that runs on the model's mo
 
 ```
 1. LOCAL COPY of the project the Prototype link names  → design:extract over the in-scope files
-   .design-source/<project-uuid>/ (gitignored), or /qa-design --design-dir <path>; files the
-   user put on disk — e.g. Claude Design's "Send to Claude Code", or a download
+   .design-source/<project-uuid>/ (gitignored), or /qa-design --design-dir <path>; filled by one
+   of the two imports below
 2. ARTIFACT link on the ticket (claude.ai/code/artifact/…) → Artifact tool `read` (saves the raw
    HTML and names the path) → design:extract --only icons,geometry,stroke,changes
-3. neither                                              → SKIPPED, with that reason
+3. neither                                              → ASK the operator (§Missing copy), then
+                                                          SKIPPED with that reason if they decline
 ```
+
+### Filling the local copy — two imports, both started by a person
+
+A run does not fetch the project; a person puts it on disk, and either way it lands in
+`.design-source/<uuid>/` with a `.source.json` naming the project, the `file=` artboard and the anchor:
+
+| Import | When | How |
+|---|---|---|
+| **`design:import`** — the default | a download or "Send to Claude Code" export exists | `node <plugin>/lib/design/design-import.mjs "<ticket's design link>" <export.zip \| folder>` (in this repository: `npm run design:import -- …`). Exit `2` = the copy lacks the `file=` artboard — another project or revision; nothing is written |
+| **Operator pull through `/design-sync`** | no export at hand | the operator starts `/design-sync` and asks for the ticket's project; in that session the main agent uses `DesignSync`'s **read** methods only (`get_project`, `list_files`, `get_file`) to write the files the ticket's screen needs, plus a `.source.json` with `"via": "design-sync"`. Never a write method, never a dispatched agent, never a QA run starting it on its own |
+
+This keeps the rule above whole: the pull is an operator-started `/design-sync` session — the use
+the tool's description allows — not a QA run, and the run still reads only files. **Known limits of
+the pull, measured 2026-11-10 on `518d0b90-…`:** `get_file` caps at 256 KiB and marks the rest
+`truncated` (that project's `storefront.css` is 258 KiB) — record such a file in `.source.json` and
+treat its tail as absent, never as clean; images come back base64 (a `.png` there was a JPEG); every
+file passes through the session's context, so pull the screen's files, not the project (1,729 paths).
+And `get_project` then reported the project **`moveState: moved`** to a Claude artifact
+(`claude.ai/code/artifact/8991cc73-…`) while `list_files`/`get_file` still answered. Standalone
+Claude Design closes 2026-12-14; after that the moved project is reached as an artifact (rung 2) —
+whether a multi-file artifact owned by a teammate is readable file by file is **not yet verified**.
 
 **A document about a design is not a design.** The ticket's *Changes artifact* is the usual
 rung-2 source, and it styles itself with `:root` variables: run on VCST-5957's, the extractor
@@ -137,6 +159,26 @@ of the audit. **Never** report the design axis as PASS, and never omit it silent
 
 Silence reads as the first. This is the same discipline as `tokens:check` exiting `2` on an
 unreachable source instead of passing, and `tc:audit:source` refusing to invent a repo name.
+
+### Missing copy — ask, then import it yourself
+
+**A ticket that links a Claude Design project, with no `.design-source/<uuid>/`, stops the run at its
+pre-flight and asks — once — before anything is dispatched.** A silent `SKIPPED` was the norm: every
+design axis came back empty, read in the report after the run, and the copy was never made.
+
+**The operator is not expected to know `design:import`, a UUID or a folder — the run does the import.**
+The question names the project and the screen (`file=`, the anchor) and offers three answers, each
+leaving the operator one plain action at most:
+
+| Answer | The operator does | The run does |
+|---|---|---|
+| *I downloaded it* | downloads the project from Claude Design (or "Send to Claude Code") and answers — with the path, or with nothing | runs `design:import` itself on that path, else on the newest `.zip` in the operator's Downloads folder; exit `2` (not this project's copy) ⇒ says so and asks once more |
+| *Pull it for me* | types `/design-sync` — the one step the run cannot take for them: the tool may only be used in a session the operator started | the read-only pull of the screen's files (§Filling the local copy), then carries on |
+| *Continue without the design* | nothing | records the axis `SKIPPED`, reason `operator declined` |
+
+Where the run asks lives with each caller: `/qa-test` at `1b` (item 2c, [`visual-axis.md`](visual-axis.md)
+§1), `/qa-test-fast` at Stage 1's Join, `/qa-design` before its Step 3. **Headless (CI, `--yes`, a
+dispatched agent) never asks** — it records `SKIPPED` with the folder to fill, as before.
 
 ## 2. Extraction contract — what a spec is, and what it never is
 

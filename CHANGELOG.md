@@ -8,6 +8,59 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A ticket's Claude Design project is imported, not silently skipped — `vc-test` `0.14.0` — 2026-11-10
+
+### Added
+
+- `design:import` (`plugins/vc-test/lib/design/design-import.mjs`, generated from
+  `scripts/layout/design-import.ts`; in this repository `npm run design:import`): takes the ticket's
+  `claude.ai/design/p/<uuid>?file=…` link and a downloaded zip or folder, puts the copy in
+  `.design-source/<uuid>/` with a `.source.json` (project, `file=` artboard, anchor), and exits `2`
+  without writing when the copy lacks the artboard the link names. Before it, the copy had to be unpacked by
+  hand into a folder named after a UUID from the link, and in practice was not.
+
+### Changed
+
+- A ticket that links a Claude Design project with no local copy now stops the run once, before dispatch, and
+  asks (`claude-design-verification.md` §Missing copy): *I downloaded it* — the run itself imports the path
+  given, or the newest `.zip` in Downloads; *Pull it for me* — the operator types `/design-sync` and the run
+  pulls the screen's files; or continue without the design. The operator never needs to know the command, the
+  UUID or the folder. Asked at `/qa-test` `1b`, `/qa-test-fast` Stage 1's Join, `/vc-test:qa-design` before
+  Step 3; headless runs still record `SKIPPED`. Previously the design axis was skipped silently and the gap
+  was visible only in the report.
+- The source policy (`claude-design-verification.md` §Filling the local copy) names the two imports a person
+  may start: `design:import`, or a pull through an operator-started `/design-sync` (read methods only, main
+  session only). A QA run still never calls `DesignSync` itself. It also records what a pull measured on
+  2026-11-10: `get_file` truncates at 256 KiB, and a project reported `moveState: moved` to a Claude artifact.
+
+### Verified
+
+- A temporary run of the generated `design-import.mjs` against a Windows-made zip with a wrapper folder,
+  a folder, a bare uuid, a missing artboard (exit `2`, nothing written), an existing copy without
+  `--force` (exit `1`) and a foreign link (exit `1`), deleted before commit. `vc-test:design:check`,
+  `context:check` and `tsc` pass.
+
+## An Azure Boards profile keeps numeric ticket keys without a tracker scan — `vc-init` `0.5.5` — 2026-11-10
+
+### Fixed
+
+- `gen-profile.mjs` wrote `tracker.ticketKeyFormat: "prefixed"` (the Jira default) for an Azure Boards project
+  whenever it ran without `--tracker-json` — always on a host-governed project, where `discover-tracker.mjs`
+  stands down. Readers then took a bare work-item id (`8944`) for a Jira key: vc-test's ticket context and vc-fix
+  `/qa-verify-fix` read the explicit field. The ticket key facts now follow `tracker.kind` when tracker-json
+  does not set them: Azure `numeric` + `crossLinkToken: "AB#"`, Jira `prefixed` + `""` — the values
+  `discover-tracker` emits for each kind.
+- A value carried by `--tracker-json` always wins — unless that file is a scan of the OTHER tracker (a leftover
+  `tracker.json` after a Jira ⇄ Azure switch): it is then ignored with a warning instead of baking the wrong
+  tracker's key format and status model into the profile.
+- The cross-link token is replaced only when it holds one of the derived values (`""` / `"AB#"`), so any other
+  token the operator set survives. A token set to `""` by hand cannot be told from the default and becomes `"AB#"`
+  on Azure.
+- A profile already written with the wrong format is corrected by a fresh `/project-init` run or by
+  `gen-profile --merge`, which prints the change. `/project-init --check` does not correct it: it goes through
+  `reconcile-profile.mjs`, which does not touch the key format.
+- Universal: Jira projects and Azure projects scanned by `discover-tracker` write the same values as before.
+
 ## A client project gets its default env at onboarding — `vc-init` `0.5.4` — 2026-11-10
 
 ### Fixed

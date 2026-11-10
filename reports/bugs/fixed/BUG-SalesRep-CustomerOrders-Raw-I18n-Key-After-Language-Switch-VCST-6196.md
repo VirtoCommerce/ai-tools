@@ -52,3 +52,10 @@ Evidence: `screenshots/ab2-A-de.png`, `ab2-B-de.png`, `loc-ja-rawkey-cold.png`, 
 - vc-frontend PR #2609 (head `52e9649c`, open) fixes the label in the theme's built-in hub: STR A 3/3, de cold 3/3, ja/zh cold 1/1 each; RED on the vcst-qa control (de in-session, ja, zh).
 - vcst-qa / vcptcore-qa render this page from the vc-module-sales-rep MF plugin (`sales-rep` 0.2.5); its copy `src/VirtoCommerce.SalesRep.Web/StorefrontApp/src/components/sales-rep-orders-filters.vue` is still pre-fix. The same change is needed there.
 - Evidence: `reports/tickets/Sprint26-21/VCST-6196/` (verification-report.md, evidence.html). Jira comment 112412.
+
+## Resolution
+- **Fixed in:** vc-module-sales-rep PR #35 (open at verification) → `VirtoCommerce.SalesRep_3.1020.0-pr-35-08fd`, which needs a host theme with `@vc-frontend/core` ≥ 0.2.9. Verified with theme `2.62.0-alpha.2628`. The theme PR vc-frontend #2609 was closed unmerged after vc-frontend #2607 moved the hub into the module plugin.
+- **Tracker:** VCST-6196 → Tested (2026-11-09), comment 112866.
+- **Verified:** 2026-11-09 on vcptcore-qa, using real browser clicks only. Both STRs passed 3/3: en→de and cold loads in de, ja and zh, each in a new browser context. Checklist 10/10, including VCST-6195. The baseline was the pre-fix control run on vcst-qa (2026-10-27). Run folder: `reports/tickets/Sprint26-22/VCST-6196/vcptcore/`.
+
+## Status: FIXED
