@@ -34,6 +34,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { outputRoot } from "./lib/paths.mjs";
 import { ensureSelectorIgnore } from "./lib/gitignore.mjs";
+import { emitObservations } from "./lib/diag-obs.mjs";
 import { hostInstallPath, isHostGoverned } from "./lib/governance.mjs";
 import { hostState } from "./lib/host-adapter.mjs";
 import { hostEnvFor } from "./lib/test-users.mjs";
@@ -105,6 +106,8 @@ function main() {
   }
   if (result.status === "written" && looksProduction(result.env)) {
     lines.push(`  ⚠ ${result.env} looks like production: every command run without an env now targets it — edit ${SELECTOR_FILE} if that was not meant`);
+    // A visible warn is never telemetry-blind (VCST-5582 H). No env name in the evidence: it can be a client's.
+    emitObservations([{ class: "self_reported_warn", subject: "default_env_production", code: "NONE", evidence: { snippet: "a production-looking env became the default" } }], { skill: "project-init" });
   }
   out({ ...result, lines });
 }
