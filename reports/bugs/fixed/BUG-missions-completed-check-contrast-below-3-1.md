@@ -1,6 +1,6 @@
 # Completed-mission check icon fails 3:1 non-text contrast over its overlay — 2.04:1 (light) / 2.56:1 (dark) — **P2**
 
-## Status: CONFIRMED (live, two lanes)
+## Status: FIXED
 **Found by:** agent — testing VCST-5957 (`/qa-test` 4a + 4v, 2026-10-01)
 **Tracker:** **VCST-6142** (Bug, Medium) · Relates VCST-5957 (standalone, BL-A11Y on a feature ticket — never a Sub-task)
 **Archetype:** `RENDER` · **Oracle:** `BL-A11Y-003` (WCAG 2.2 SC 1.4.11 Non-text Contrast, AA)
@@ -46,3 +46,11 @@ The design (Changes artifact item 4) specifies a darker, more transparent scrim,
 Fixed build `2.61.0-pr-2590` on localhost (API → vcst-qa): 5.31:1 light, 7.17:1 dark (Red). Pre-fix (remote vcst-qa, already `success-600 @ 55%` scrim): 2.04:1 light p05, 2.31:1 dark over black art. So the designed scrim alone did not fix it.
 Not observed live: default/mercury dark (3.74:1 computed), dark-art/placeholder card. Stays open until merged and re-verified on the deployed build.
 Evidence: `reports/tickets/Sprint26-20/VCST-6142/` (verification-report.md, evidence.html).
+
+## Resolution
+- **Fixed in:** VirtoCommerce/vc-frontend#2590 — theme build `2.62.0-pr-2590-e1b4-e1b45007` (PR open, not merged as of 2026-11-09)
+- **Tracker:** VCST-6142 → Tested (comment 112825)
+- **Verified:** 2026-11-09, `/qa-verify-fix` — VERIFIED WITH NOTES
+- **Method:** same account and missions on the pre-fix build (vcst-qa `2.62.0-pr-2620`) and the PR build (local frontend-only container, vcst-qa data); banner art swapped to white / black / none / real, 7 presets × light/dark, pixel-measured. Before: down to 1.76:1. After: constant per preset, at least 3.74:1 (default.dark, mercury.dark), 3/3 runs.
+- **Open:** designer sign-off on the disc; merge of the PR.
+- Evidence: `reports/tickets/Sprint26-22/VCST-6142/vcst/`
