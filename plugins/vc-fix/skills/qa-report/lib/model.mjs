@@ -95,6 +95,8 @@ export function fromQaTest(path) {
       id: t.id ?? `F-${i + 1}`, what: String(t.what ?? "").replace(/\s+/g, " ").trim() || "(untitled)",
       severity: t.severity ?? "", ref: t.ref ?? "", status: t.status ?? "open", report: t.report ?? "",
       repro: t.repro ?? null,
+      // `blocking: false` = fix it in this ticket, but it does not hold the verdict (an operator decision).
+      blocking: t.blocking !== false,
       impact: String(t.repro?.impact ?? "").replace(/\s+/g, " ").trim(),
       repo: String(t.repro?.repo ?? "").replace(/\s+/g, " ").trim(),
     })),
@@ -288,7 +290,7 @@ function fixRows(toFix) {
   const v = s => String(s ?? "").replace(/\s*\r?\n\s*/g, " ").replace(/\|/g, "/").replace(/\{\{|\}\}/g, x => `${x[0]} ${x[1]}`).trim();
   return toFix.map(t => {
     const r = t.repro && typeof t.repro === "object" ? t.repro : {};
-    const what = [v(t.what), r.impact ? `_${v(r.impact)}_` : ""].filter(Boolean).join("<br>");
+    const what = [v(t.what), r.impact ? `_${v(r.impact)}_` : "", t.blocking === false ? "*Not a blocker for this ticket*" : ""].filter(Boolean).join("<br>");
     const steps = (Array.isArray(r.steps) ? r.steps : []).map((x, i) => `${i + 1}. ${v(x)}`);
     const found = (Array.isArray(r.found_by) ? r.found_by : []).map(v).filter(Boolean);
     const how = [...steps, ...found.map(x => `Check: ${x}`)].join("<br>") || (t.ref ? v(t.ref) : "—");
@@ -301,9 +303,11 @@ function fixRows(toFix) {
 // The verdict panel's headline and the closing "Next step" — derived from the verdict and the To-fix
 // count, so the reader sees in one line whether the ticket can go on and what has to happen first.
 function verdictText(m) {
-  const n = (m.toFix ?? []).length;
+  // Only blocking rows count toward "must be fixed before … can pass"; a non-blocking row still shows in the table.
+  const blocking = (m.toFix ?? []).filter(x => x.blocking !== false);
+  const n = blocking.length;
   const t = m.ticket ?? "the ticket";
-  const ids = n ? (n === 1 ? m.toFix[0].id : `${m.toFix[0].id}…${m.toFix[n - 1].id}`) : "";
+  const ids = n ? (n === 1 ? blocking[0].id : `${blocking[0].id}…${blocking[n - 1].id}`) : "";
   switch (m.verdict) {
     case "FAIL": return {
       ALERT: "danger",
