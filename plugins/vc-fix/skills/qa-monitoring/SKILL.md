@@ -14,16 +14,13 @@ flow, the KQL probe library, the triage taxonomy, and the dedup model.
 whether to run `/qa-bug` or `/qa-fix`.
 
 > **In `vc-fix`:** this is a self-contained extract of the full `vc-qa` plugin's
-> monitoring pipeline (`ci/run-monitor.ts` + `ci/lib/appinsights.ts` +
-> `ci/lib/fingerprint-store.ts` + `ci/monitoring/queries/` + `ci/agents/monitor-triage-agent.md`
-> + `ci/notify-teams.ts` — full `vc-qa` plugin only, not shipped here). The headless
-> CI twin and its `@azure/identity` REST query client are dropped; queries run through
+> monitoring flow (`ci/monitoring/queries/` + `ci/agents/monitor-triage-agent.md`). Its
+> `@azure/identity` REST query client is not shipped; queries run through
 > **Azure MCP's `applicationinsights` tool** directly instead. The dedup logic is kept
 > verbatim in `skills/qa-monitoring/fingerprint-store.ts` (self-contained — no
-> import from an unshipped `ci/lib/appinsights.ts`), the KQL probes are kept
+> import from an unshipped `scripts/lib/appinsights.ts`), the KQL probes are kept
 > verbatim in `skills/qa-monitoring/queries/`, and the Teams card is a monitor-only
-> extract in `skills/qa-monitoring/notify-teams.ts` (the regression-card mode of the
-> original is dropped — no regression pipeline is shipped here).
+> extract in `skills/qa-monitoring/notify-teams.ts` (monitor card only).
 
 ## Why this exists
 Real production-like defects in the QA environment (storefront JS exceptions, failed

@@ -1,6 +1,6 @@
 // Storefront browser JS exceptions, grouped by signature. Storefront App
 // Insights resource (env-resolved App ID). operation_Name carries the page/route.
-// Window via API `timespan`. Columns are consumed by ci/lib/fingerprint-store.ts.
+// Window via API `timespan`. Columns are consumed by the /qa-monitoring fingerprint store.
 exceptions
 | where client_Type == "Browser" or isnotempty(client_Browser)
 | summarize
