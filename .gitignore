@@ -65,6 +65,10 @@ project-profile.json
 !test-data/**/*.webp
 !test-data/**/*.mp4
 !test-data/**/*.zip
+# ...but a fixture that only tests a SIZE limit is generated, never committed (npm run td:gen:uploads,
+# scripts/test-data/gen-upload-size-fixtures.mjs). td:validate DV-026 fails any test-data/ binary over 1 MiB.
+test-data/uploads/large_test.png
+test-data/uploads/oversize_test.png
 
 # Per-FAIL failure traces (network + parsed stack traces) — disposable evidence
 # referenced from the report; may carry redacted-but-sensitive bodies, and this
