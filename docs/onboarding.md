@@ -16,7 +16,7 @@
 
 For a teammate who works in this repo. Every step is detailed further down; this is the order.
 
-1. **Tools:** Claude Code (desktop app or CLI), Node.js 18+, `git`, `gh` (`winget install GitHub.cli`), `uv` (for Serena).
+1. **Tools:** Claude Code (desktop app or CLI), Node.js 18+, `git` with Git LFS (`git lfs install` once per machine — the large upload fixtures in `test-data/uploads/` are LFS objects), `gh` (`winget install GitHub.cli`), `uv` (for Serena).
 2. **Clone and install:** `git clone https://github.com/VirtoCommerce/ai-tools` → `cd ai-tools` → `npm install` → `npx playwright install chromium firefox`.
 3. **Open the folder in Claude Code** and install the plugins — **`vc-init` first**: it is the project-setup plugin (`/project-init`) and pulls in `vc-secrets`. The tracked `.claude/settings.json` already enables the rest; installing is per machine:
    ```
@@ -57,6 +57,7 @@ You need each of these before you start. If any are missing, the install will fa
 |------------|-----|--------------|
 | Claude Code (desktop app, IDE extension or CLI) | The plugin's agents/skills/commands are loaded by Claude Code. | `claude --version` |
 | Node.js ≥ 18, `git` | The plugin's scripts and orchestrators are Node/TypeScript. | `node --version`, `git --version` |
+| Git LFS | `test-data/uploads/*.mp4` are LFS objects; without LFS a clone gets ~130-byte pointer files and the oversized-upload case in suite 072b uploads the pointer. | `git lfs version`, then `git lfs install` once |
 | `gh` (GitHub CLI); `az` only for Azure Boards/Repos | `/qa-fix` opens PRs, `/project-init` scans repos. `/project-init` installs them if missing. | `gh --version` |
 | `playwright-chrome`, `playwright-firefox`, `playwright-edge` MCP servers (+ optional `playwright-mobile`) | Browser automation for storefront + cross-browser. `/project-init` writes the first three. | See [Required MCP servers](#required-mcp-servers) below. |
 | A VC storefront URL (`FRONT_URL`) | Where the storefront tests will run. | Browse to it in your browser; should load. |

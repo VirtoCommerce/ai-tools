@@ -20,3 +20,6 @@ test-data/**/*.csv text eol=crlf
 # Release regression folders are shared state edited on Windows and macOS alike; pin them to LF so a
 # checkout never shows line-ending-only changes in a ledger.csv or state.json someone else owns.
 regression/releases/** text eol=lf
+# Large binary upload fixtures live in Git LFS, so a checkout without LFS gets a ~130-byte pointer
+# instead of the file: run `git lfs install` once per machine, then `git lfs pull`.
+test-data/uploads/*.mp4 filter=lfs diff=lfs merge=lfs -text
