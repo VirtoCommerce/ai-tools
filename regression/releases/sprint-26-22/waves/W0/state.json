@@ -1,7 +1,26 @@
 {
  "wave": "W0",
- "owner": null,
- "status": "NOT_STARTED",
- "runIds": [],
- "updatedAt": "2026-11-11"
+ "owner": "Elena Kutasina",
+ "status": "TRIAGED",
+ "runIds": [
+  "REG-2026-11-11-1825-W0"
+ ],
+ "updatedAt": "2026-11-11",
+ "personas": "USER_DEFAULT = qa-user-01@virtocommerce.com and lane accounts qa-agent-slot1..3@virtocommerce.com, as resolved from Elena Kutasina's .env.local via config.js; a parallel owner must use different accounts",
+ "totals": {
+  "planned": 34,
+  "executed": 34,
+  "pass": 27,
+  "fail": 0,
+  "blocked": 2,
+  "skipped": 5,
+  "ambiguous": 0
+ },
+ "untriaged": 0,
+ "reports": {
+  "W0": {
+   "subtask": "112953",
+   "release": "112954"
+  }
+ }
 }

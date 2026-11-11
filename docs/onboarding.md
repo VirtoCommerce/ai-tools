@@ -2,15 +2,36 @@
 
 > **Audience:** Anyone with a Virto Commerce deployment (storefront + Admin SPA) who wants to use VC's QA agent crew + authoring framework against their own environment.
 
-> **This repo is no longer a single plugin.** As of v0.7.0 it ships **two** things — pick the one you need:
+> **This repo ships two things** — pick the one you need:
 >
-> | | **`vc-fix` plugin** | **Full `vc-qa` toolset** |
+> | | **Marketplace plugins** | **Full `vc-qa` toolset** |
 > |---|---|---|
-> | What | The bug-lifecycle slice: setup, bug filing, autofix, verification, monitoring, self-diagnostics (10 agents / 16 skills / 8 commands). | The whole crew: regression, BA analysis, ~121 reference suites, test-data + authoring framework (17 agents / 40 skills / 31 commands). |
-> | How you get it | `/plugin install vc-fix@ai-tools` from the marketplace. | **Clone this repo** — `.claude/` components auto-load in the checkout. **Not** marketplace-installable. |
-> | This guide | **Install & Verify** below. | Everything **after Verify** (regression selections, module subsetting, suite authoring). |
+> | What | `vc-fix` (bug lifecycle: filing, autofix, verification, monitoring, self-diagnostics), `vc-init` (onboarding, `/project-init`), `vc-secrets` (token store), `vc-test` (preview ticket-testing flow), `vc-perf`, `vc-frontend` — `.claude-plugin/marketplace.json` is the list. | The whole crew: ticket testing, regression, BA analysis, the reference suites, test-data + authoring framework. |
+> | How you get it | `/plugin install <name>@ai-tools` from the marketplace. | **Clone this repo** — `.claude/` components auto-load in the checkout. **Not** marketplace-installable. |
+> | This guide | **Install & Verify** below. | §VC QA team quick start, then everything **after Verify**. |
 >
-> The old model — installing the whole repo as one `vc-qa` plugin — was retired in v0.7.0, along with its `manifest.json` + `bootstrap/install.ts` installer. Onboarding is now `/project-init`.
+> Counts of agents, skills, commands and suites are deliberately not written here: `ls .claude/{agents,skills,commands}`, `ls plugins/<name>/{agents,skills,commands}` and `npm run suites:lint` print the live ones. Installing the whole repo as one `vc-qa` plugin was retired in v0.7.0; onboarding is `/project-init`.
+
+## VC QA team quick start (repo clone, ~20 minutes)
+
+For a teammate who works in this repo. Every step is detailed further down; this is the order.
+
+1. **Tools:** Claude Code (desktop app or CLI), Node.js 18+, `git`, `gh` (`winget install GitHub.cli`), `uv` (for Serena).
+2. **Clone and install:** `git clone https://github.com/VirtoCommerce/ai-tools` → `cd ai-tools` → `npm install` → `npx playwright install chromium firefox`.
+3. **Open the folder in Claude Code** and install the plugins — **`vc-init` first**: it is the project-setup plugin (`/project-init`) and pulls in `vc-secrets`. The tracked `.claude/settings.json` already enables the rest; installing is per machine:
+   ```
+   /plugin marketplace add VirtoCommerce/ai-tools
+   /plugin install vc-init@ai-tools         # project setup (/project-init) + vc-secrets
+   /plugin install vc-fix@ai-tools          # bug lifecycle
+   /plugin install vc-test@ai-tools         # needed for /vc-test:qa-ticket
+   /plugin marketplace add anthropics/claude-plugins-official
+   /plugin install serena@claude-plugins-official
+   ```
+   **Restart Claude Code.**
+4. **`/project-init`** (vc-init) — any env name (`qa`, `staging`, `client_eu`…; if `.env.<name>` already exists it offers to reuse it), Jira + GitHub, PAT, and where test-user passwords live (vc-secrets, recommended, or `.env.local`; asked separately for admins and storefront users). When it pauses, in a **separate terminal** in the repo folder run `node "<VC_SECRETS>" trust` and `node "<VC_SECRETS>" set <name>` for each token and password it lists (`github-pat`, `jira-token`, `admin-password-<env>`, …; the wizard prints the exact commands). Nothing secret goes into the chat. Reply `done`. This repo's own scripts (seeders, the module registry) read passwords from `.env.local`, not through the bridge — keep the admin password there if you run them. Full reference: [`plugins/vc-init/README.md`](../plugins/vc-init/README.md).
+5. **Restart Claude Code** (new `.mcp.json`, `.claude/settings.local.json` with `VC_RUN`/`VC_SECRETS`, the `kb` server). Later: `/project-init --add-env`, `--add-user`, `--check` (after a plugin upgrade).
+6. **Check:** `/project-init --check` — reconciles the profile, moves any plaintext token into vc-secrets, verifies every credential and prints the readiness table. Before work against a stand: `/preflight` (`npm run preflight`) — env health, deployed build, MCP availability.
+7. **Work:** `/qa-test VCST-XXXX`, `/qa-test-fast VCST-XXXX`, `/qa-bug`, `/qa-regression smoke`. Which tool for which job: [`.claude/ROUTING.md`](../.claude/ROUTING.md); how to invoke: [`using-commands-and-skills.md`](using-commands-and-skills.md).
 
 > **Time:** 5–15 minutes per environment for setup. Days-to-weeks for customer-specific suite authoring (your customizations need your tests).
 >
@@ -18,13 +39,13 @@
 
 ## What you get (and what you write)
 
-Whichever path you pick, this is **a methodology + agents + framework + reference suite library** — not a complete test suite for your specific storefront. See [`docs/marketing-onepager.md`](marketing-onepager.md) for the full framing.
+Whichever path you pick, this is **a methodology + agents + framework + reference suite library** — not a complete test suite for your specific storefront.
 
 | Layer | Out of the box | Your job |
 |-------|---------------|---------|
 | Methodology (ISTQB, evidence policy, defect workflow, report templates) | ✅ Use as-is | — |
 | Agent crew + capability infrastructure (orchestrator, env loader, `@td()`, MCP browser pool) | ✅ Use as-is | — |
-| Reference suites for **universal VC platform behavior** (auth, cart, checkout shape, payment integration patterns, GraphQL xAPI, Admin SPA module surfaces) | ✅ ~60-70% of the 110 suites run as-is once you fill in your `@td()` data | Configure `MODULES_ENABLED`, `STOREFRONT_PROFILE`, `PAYMENT_PROCESSORS_ENABLED` so non-applicable suites skip |
+| Reference suites for **universal VC platform behavior** (auth, cart, checkout shape, payment integration patterns, GraphQL xAPI, Admin SPA module surfaces) | ✅ Most of the reference suites run as-is once you fill in your `@td()` data | Configure `MODULES_ENABLED`, `STOREFRONT_PROFILE`, `PAYMENT_PROCESSORS_ENABLED` so non-applicable suites skip |
 | Reference suites that are **vcst-qa-specific** (some BL invariants assume vcst-qa data shape, some UI assertions match VC's default Coffee theme) | ⚠️ Will fail or need adaptation on your deployment | Clone-and-adapt the closest reference, or skip via suite-list selection |
 | Suites for **your custom features** (custom modules, custom checkout customizations, branded theme assertions, business-specific invariants) | ❌ Plugin does NOT ship these | **You write them** under `regression/suites/customer/` — see [`docs/test-authoring.md`](test-authoring.md) |
 
@@ -34,9 +55,10 @@ You need each of these before you start. If any are missing, the install will fa
 
 | Requirement | Why | How to check |
 |------------|-----|--------------|
-| Claude Code CLI (≥ 1.0) | The plugin's agents/skills/commands are loaded by Claude Code. | `claude --version` |
-| Node.js ≥ 18 | The plugin's scripts and orchestrators are Node/TypeScript. | `node --version` |
-| `playwright-chrome`, `playwright-firefox`, `playwright-edge` MCP servers | Browser automation for storefront + cross-browser. | See [Required MCP servers](#required-mcp-servers) below. |
+| Claude Code (desktop app, IDE extension or CLI) | The plugin's agents/skills/commands are loaded by Claude Code. | `claude --version` |
+| Node.js ≥ 18, `git` | The plugin's scripts and orchestrators are Node/TypeScript. | `node --version`, `git --version` |
+| `gh` (GitHub CLI); `az` only for Azure Boards/Repos | `/qa-fix` opens PRs, `/project-init` scans repos. `/project-init` installs them if missing. | `gh --version` |
+| `playwright-chrome`, `playwright-firefox`, `playwright-edge` MCP servers (+ optional `playwright-mobile`) | Browser automation for storefront + cross-browser. `/project-init` writes the first three. | See [Required MCP servers](#required-mcp-servers) below. |
 | A VC storefront URL (`FRONT_URL`) | Where the storefront tests will run. | Browse to it in your browser; should load. |
 | A VC Admin SPA / platform URL (`BACK_URL`) | Where the admin + API tests will run. | Browse to `${BACK_URL}/health` — should return JSON with module status. |
 | Two test accounts | One non-admin storefront user, one admin SPA user. | See [Test accounts](#test-accounts) below. |
@@ -60,7 +82,8 @@ The plugin distributes as a Claude Code marketplace plugin (per [Claude Code plu
 
 ```
 /plugin marketplace add VirtoCommerce/ai-tools
-/plugin install vc-fix@ai-tools      # pulls in vc-init (onboarding) and vc-secrets (token store)
+/plugin install vc-init@ai-tools     # project setup: /project-init; pulls in vc-secrets (token store)
+/plugin install vc-fix@ai-tools      # bug lifecycle (would also pull vc-init in if it were missing)
 ```
 
 (Other accepted source formats: `https://github.com/VirtoCommerce/ai-tools`, `git@github.com:VirtoCommerce/ai-tools.git`, or `./path/to/local/checkout`. The `github://` URI scheme is NOT supported.)
@@ -76,13 +99,17 @@ Run `/project-init` in Claude Code. It's a **derive-driven** wizard — it asks 
 - the environment **name** (e.g. `qa`, `staging`, `client_eu`),
 - the bug **tracker** — Jira or Azure Boards,
 - the code **host** — GitHub or Azure Repos,
-- an **auth** preference per axis (a PAT is recommended; otherwise browser / CLI login — never passwords). A PAT is never typed into the chat: `/project-init` prints `node "<VC_SECRETS>" set <name>` per token, you run it in a terminal and paste the token at a hidden prompt, and `vc-secrets trust` once to approve what the project declares.
+- an **auth** preference per axis (a PAT is recommended; otherwise browser / CLI login — never passwords). A PAT is never typed into the chat: `/project-init` prints `node "<VC_SECRETS>" set <name>` per token, you run it in a terminal and paste the token at a hidden prompt, and `vc-secrets trust` once to approve what the project declares,
+- where **test-user passwords** live, separately for admins and storefront users: vc-secrets (recommended — `admin-password-<env>`, `user-password-<env>`, stored with `set` like a token) or `.env.local`,
+- the stand's URLs and logins, one value per question.
 
 Everything else — native-platform vs CLIENT project, your org, contribution mode, fork account — is **derived** from the token plus a live module/repo scan. It writes:
 
 - `project-profile.json` — the deployment profile that makes `/qa-fix` route each bug to the right repo (your custom code vs the native platform) and file to the right tracker,
 - `.env.<env>` — per-env config (committable in your own repo, no secrets),
-- `.env.local` — test-user passwords (gitignored; no token),
+- `.env.local` — the tracker / code-host connection and the test-user passwords of roles not kept in vc-secrets (gitignored; no token),
+- `.env.test-env` — `TEST_ENV=<env>`, the env a command uses when given none,
+- `.claude/rules/vc-browser.md` — the rule that every browser action goes through a Playwright lane (meant to be committed),
 - `.claude/vc-secrets.local.json` — the vc-secrets declarations (which tokens this project uses; no value),
 - `.mcp.json` — MCP server config (the GitHub server, on a PAT axis, is a `vc-secrets run github` call),
 
@@ -93,11 +120,13 @@ then prints a **readiness table** confirming access. Re-run `/project-init` for 
 ## Verify
 
 ```bash
-# Validate current install without prompting.
-npm run env:check
+# The setup: profile, every credential, readiness table (vc-init).
+/project-init --check
 
-# Run a smoke test against your default env.
-/qa-env-check
+# The stand, before work against it (repo clone): env health, deployed build, MCP availability.
+/preflight ticket            # or: npm run preflight
+
+# Optional: a smoke run against the default env.
 /qa-smoke
 ```
 
@@ -118,7 +147,7 @@ Every customer has multiple environments. The plugin treats env names as arbitra
 | `staging` | Everything. Real-like data — be careful. | Pre-prod. |
 | `production` | **Read-only by default.** Admin-write suites refuse to run without `--allow-admin-writes-on-prod`. | Live env. |
 
-Set `ENV_RISK` in your `.env.${env-name}` file. The installer prompts you for it.
+`/project-init` does not ask for `ENV_RISK`: `config.js` defaults it to `test`. Set `ENV_RISK=production` in `.env.${env-name}` by hand for a live env.
 
 ## Configuration Buckets
 
@@ -181,7 +210,7 @@ For impersonation tests, additional accounts are required. See `templates/aliase
 
 ## Required MCP Servers
 
-Install these via Claude Code's MCP settings (`.mcp.json` or `claude_code/settings.json`):
+**You normally do not write these by hand:** `/project-init` generates `.mcp.json` with the three desktop Playwright lanes (wired to the test-user passwords through `--secrets`) and the GitHub server. The block below shows the shape. The optional `playwright-mobile` lane (390×844) is not generated: copy the `playwright-chrome` entry, rename it and point it at `config/mcp-playwright-mobile.config.json`. Restart Claude Code after any change.
 
 ```jsonc
 {
@@ -291,7 +320,7 @@ Optional (each gates specific skills):
 - **atlassian** — enables `/qa-bug` JIRA filing, `/qa-status`, `/qa-test-plan`
 - **context7** + **VirtoOZ connector** — product docs lookup (`.claude/knowledge/execution/doc-sources.md`)
 - **github** — enables `/qa-test PR #N`, `/ba-analyze`
-- **figma-remote-mcp** — enables `/qa-design` Figma comparison
+- **figma-remote-mcp** — manual fallback only for `/qa-design`; the `vs. DESIGN` axis compares against a Claude Design project (`plugins/vc-test/skills/qa-design/claude-design-verification.md`)
 
 `npm run env:check` will warn if a required MCP server is missing.
 
@@ -322,7 +351,7 @@ tweaks go in `.serena/project.local.yml` (gitignored), never in the shared `proj
 
 `/qa-bug` files tickets into your JIRA project. Set `JIRA_PROJECT_KEY` in your `.env.{env-name}` to your project's key. The atlassian MCP server handles authentication — typically via OAuth on first use.
 
-Bugs from each env are auto-tagged `env:${TEST_ENV}` and `risk:${ENV_RISK}` in JIRA labels so you can filter by env (e.g. "show me only prod bugs").
+On VC's own Jira, a bug Claude files carries origin labels: `found-by-agent` + `found-in-testing` / `found-in-regression` when Claude saw the failure itself, `reported-by-human` otherwise (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files). A client project's tracker gets none of these.
 
 ## Cost Awareness
 
@@ -344,7 +373,9 @@ Default selections are conservative. Don't run `/qa-regression full` against pro
 
 **`Missing required environment variables: FRONT_URL, …`** → run `/project-init`. If you ran it but vars are still missing, check that `.env.local` has the per-env-suffixed entries (e.g. `USER_PASSWORD_QA`, not just `USER_PASSWORD`).
 
-**`Browser "chromium" is not installed`** → run `cli.js install` inside the MCP's bundled playwright-core. See memory `feedback_playwright_mcp_browser_version` in the plugin's MEMORY.md.
+**`Browser "chromium" is not installed` / `Executable doesn't exist`** → run `npx playwright install chromium firefox`, and check that `.mcp.json` pins `@playwright/mcp` to the version in `package.json` (never `@latest`: each release wants its own browser build). Edge uses the system `msedge`.
+
+**A Playwright tool is missing, or a typed password name lands in the field as text** → restart Claude Code (MCP servers start with the session), then `/project-init --check`. Do not switch to another browser: only the Playwright lanes receive the passwords (`.claude/rules/vc-browser.md`).
 
 **Suites skipped for "requires modules not in MODULES_ENABLED"** → expected if you don't have that module. To run them anyway, add the module to your `MODULES_ENABLED` list — but the suite will fail if the module isn't actually installed.
 
@@ -359,7 +390,7 @@ After your first green `/qa-smoke`:
 **Day 1:**
 - Try a focused regression: `/qa-regression critical`
 - Run a design audit: `/qa-design <your storefront page>`
-- Explore the agent set: `knowledge/agents/README.md`
+- Explore the agent set: `.claude/knowledge/agents/README.md`
 
 **Week 1:**
 - Identify vcst-specific suites that don't apply to your deployment; add them to your local suite-skip list.
@@ -377,5 +408,5 @@ After your first green `/qa-smoke`:
 - Plugin docs: `docs/`
 - Tier classification + governance: `.claude/architecture/TIER.md`
 - Versioning + stability promise: `docs/versioning.md`
-- Strategic plan (internal): `~/.claude/plans/functional-singing-cosmos.md`
+- Which command for which job: `.claude/ROUTING.md`
 - Issues + feature requests: GitHub Issues on this repo

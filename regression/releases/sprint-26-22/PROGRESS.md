@@ -4,11 +4,11 @@
 
 Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst · 3.1097.0 · 2.62.0-alpha.2642 · Xapi is the PR build 3.1031.0-pr-70-108f (vc-module-x-api#70, VCST-4717), deployed by vc-deploy-dev#7095
 
-**Executed 0 · PASS 0 · FAIL 0 · BLOCKED 0** · ledger 0 rows
+**Executed 34 · PASS 27 · FAIL 0 · BLOCKED 2** · ledger 11 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| W0 | Smoke gate | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W0 | Smoke gate | Elena Kutasina | TRIAGED | 34 | 34 | 27 | 0 | 2 | 0 | 11 | REG-2026-11-11-1825-W0 |
 | W1 | Authentication — sign-in, session, security | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W2 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W3 | Cart, checkout & addresses | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -21,5 +21,9 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
+| REAL_BUG | 2 |
+| BY_DESIGN | 5 |
+| DATA | 3 |
+| DUPLICATE | 1 |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
