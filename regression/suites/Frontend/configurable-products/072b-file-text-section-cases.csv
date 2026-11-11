@@ -151,8 +151,8 @@ User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(
 [STATE] .xlsx accepted (.xls, .xlsx in allowed list)
 [STATE] .avif rejected with error (not in allowed list)
 [STATE] .webp rejected with error (not in allowed list)
-[DOM] Error messages clearly state format is not supported","[CONSOLE] No 500 errors for rejected type uploads
-[NETWORK] Upload API returns 4xx for rejected types; 200 for accepted","Accepted types rejected; unsupported types silently accepted; server 500 on type rejection","Remove all uploaded files; navigate away",,"Manual"
+[DOM] Error messages clearly state format is not supported","[CONSOLE] No errors during the uploads
+[NETWORK] POST /api/files/product-configuration returns 200 for each accepted type; no upload request is sent for a rejected type (the type check runs client-side, INVALID_EXTENSION)","Accepted types rejected; unsupported types silently accepted; server 500 on type rejection","Remove all uploaded files; navigate away",,"Manual"
 "CFG-FILE-008","File Section — Max File Size Enforcement (9.5MB Platform Limit)","Configurable Products > File Section > Size Validation","High","BL-CAT-006","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures: large_test.png (5MB) and oversize_test.png (24MB), both PNG — an accepted type, so only the size limit can reject the larger one — generated once via 'npm run td:gen:uploads'.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Configuration widget visible
