@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-11-10",
-    "totalSuites": 178,
+    "totalSuites": 179,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -4406,6 +4406,33 @@
       "exclusiveGroup": "platform-setting:MCP.Tools.Disabled",
       "clickDriven": true,
       "notes": "VCST-6155 (vc-module-mcp#1 @df74972, vc-module-ucp#13 @5de2fc9, platform 3.1096.0). Model reports/tickets/Sprint26-23/VCST-6155/vcst/test-model.md (S1-S58, BSC-1..5; round 2 added MCP-032..051 and amended MCP-010/029/031). MCP-001 is the [JOURNEY] case. EVERY CASE IS AGENT-LANE (Draft, except MCP-016 which is Manual): an agent reaches /admin/mcp with an OAuth authorization-code + PKCE token, and scripts/lib/graphql-auth.ts (the runner's only token source) mints password grants, which the MCP module is expected to refuse (vc-module-mcp#1 §Authentication {SPEC}; observed on the runner path for /ucp/mcp on 2026-11-10 - see suite 102 - not yet observed for /admin/mcp) - so no case here is machine-lane until an authorization-code helper exists. EXCLUDED from the backend, full, sprint and concern:api selections until promotion (selections.<name>.exclude), as 110/111 are: name 118 explicitly and run it ALONE. SHARED STAND RULES: (1) never approve a pending change - restart_platform is the only approval tool on vcst and approving it restarts the stand; the approve path is MCP-016 (Manual, disposable stand ONLY, hard first-step guard) and the declined-approve probe MCP-027 (guarded by switching restart_platform off first); (2) MCP.Tools.Disabled is stand-wide: MCP-011, MCP-012, MCP-018, MCP-027 and MCP-051 read it, flip it and restore it in the same case, never beside another lane on /admin/mcp; (3) Disconnect only the seeded users' agents (the MCP_OPERATOR, MCP_APPROVER, MCP_MANAGER and MCP_NOROLE aliases), never the super-admin's or it-operator-qa's; (4) the stand owner authorised ONE real reset_platform_cache: MCP-010 (the no-elicitation step C) and MCP-032 (cell E) share one RESET_BUDGET and at 0 those steps are BLOCKED, never FAIL. The one reset was ALREADY consumed by the VCST-6155 checklist run (C-66, 4a-BE, 14:25:25Z), so RESET_BUDGET is 0 for that round-2 C1 and both are BLOCKED there; a later run needs a fresh operator OK, and with a budget of 1 MCP-032 cell E runs first; (5) MCP-033 locks and unlocks the MCP_MANAGER user (POST api/platform/security/users/{id}/lock|unlock - a PUT of lockoutEnd locks nothing) and MCP-034 and MCP-030 edit the AGENT-TEST-MCP-Approver role (PUT api/platform/security/roles): all restore in Cleanup, run serially, never on admin or it-operator-qa; MCP-039 needs App Insights READ (BLOCKED without it) and MCP-042's expiry steps are BLOCKED when the access-token lifetime exceeds 900 s. Fixtures: `npm run seed:mcp-security` / `npm run seed:mcp-security:teardown`, drift guard `npm run td:validate:mcp-security`. Expected tool sets and counts are derived at run time (GET api/mcp/tools, the role's permission set, GET /api/platform/modules), never typed. BL-MCP is undeclared and BL-UCP is empty: the cases cite {SPEC} (ticket 2026-11-08 scenarios, PR bodies, module README) plus the delegated BL-AUTH-005/014/017, BL-PLAT-001/002; where the spec is silent the assertion is a {HYPOTHESIS} question, legal at Draft only. Cases that encode a SPEC expectation the 3x session did not see met (MCP-012 prompts under a switched-off scope, MCP-028 author visibility) keep the spec expectation: never rewrite them to the build. Not testable on vcst-qa (stated, never silent): Marketing sample and store-limited [McpPermission]; vendor scope with a vendor module; custom AddMcpScope; MCP:Scopes:*:Hosts; MCP:Scopes:ucp:Enabled=false; closed UCP catalog; approve-and-execute; concurrent approve; 72 h expiry and MCP.Cleanup; [McpSensitive] on an approval tool. CONTRACT (round 2 sync 2026-11-10): the tools, their arguments (`*` = required) and the prompts these cases call are the GENERATED contract .claude/knowledge/api/mcp-schema.md (scopes, per-scope tool catalog with read-only / destructive / approval flags, Part 2 admin tool arguments and prompts; kept current by `npm run mcp:schema:check`) - the cases cite it and never transcribe a tool list, count or argument; MCP-006 and MCP-012 read the prompt set from prompts/list at run time. Round 2 sync: the approval tools take `change_id` (not `id`); MCP-052..058 close the coverage gaps found by comparing the cases with that contract (get_platform_health, list_failed_jobs, search_errors, get_environment_profile called directly, and the capacity_review, production_readiness, incident_rca and is_it_us_or_virto prompts); a missing required PROMPT argument answering -32603 is a known non-defect, recorded and not asserted."
+    },
+    {
+      "id": "119",
+      "name": "Azure Monitor OpenTelemetry telemetry (App Insights migration)",
+      "file": "regression/suites/Backend/observability/119-azure-monitor-opentelemetry.csv",
+      "domain": "observability",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P2",
+      "testCount": 6,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "observability",
+        "telemetry",
+        "appinsights",
+        "opentelemetry",
+        "graphql",
+        "kql"
+      ],
+      "customerApplicability": "universal",
+      "requiresModules": [
+        "VirtoCommerce.ApplicationInsights",
+        "VirtoCommerce.Xapi",
+        "VirtoCommerce.BackgroundJobs"
+      ],
+      "notes": "ON-DEMAND ONLY — excluded from every selection (backend, full); run as /qa-regression 119 when ApplicationInsights, BackgroundJobs, Xapi or a stand's telemetry config changes. VCST-4717 (Migrate Application Insights to Azure Monitor OpenTelemetry). Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) - without it every telemetry assertion is unverifiable, not failing. Every KQL step filters on the run's own generated operation name (AgentTestObs + random) over a relative window, fires >=14 calls (sampling keeps ~50%, less under bursts) and carries a control assertion so a zero cannot be an ingestion gap; ingestion lag is 2-5 min, poll up to 10 min. SPAN/TABLE NOTES: on the OpenTelemetry exporter use `contains` not `has` on sdkVersion (`has` is term-based and misses otel1.15.3); named GraphQL operations are recorded as `POST graphql/<OperationName>`, plain POST /graphql is not recorded. OBS-001 is the regression catcher for the fixed round-1 url-shape bug. Cases for open findings (BackgroundJobs metrics, SQL ignore list, exceptions.operation_Name, itemCount vs sample_rate), AuditLog (VCST-6006), https scheme, and the deployment-level checks (no module / no connection string / RoleName) are held out of the suite until they can pass; they are added back when fixed."
     }
   ],
   "selections": {
@@ -4561,7 +4588,8 @@
         "108",
         "110",
         "110a",
-        "118"
+        "118",
+        "119"
       ]
     },
     "sprint": {
@@ -4616,7 +4644,8 @@
         "110a",
         "111",
         "112",
-        "118"
+        "118",
+        "119"
       ]
     },
     "sales-rep": {
