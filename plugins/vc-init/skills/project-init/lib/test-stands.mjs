@@ -28,6 +28,11 @@
 import { resolvePluginFile } from "../../../bridge/resolve-plugin.mjs";
 import { pathToFileURL } from "node:url";
 
+/** One stand, as vc-test's capabilities.mjs compares them: trailing slashes and case ignored. Pure. */
+const sameStand = (a, b) => String(a ?? "").replace(/\/+$/, "").toLowerCase() === String(b ?? "").replace(/\/+$/, "").toLowerCase();
+/** The first line of an error, for a one-line reason. Pure. */
+const firstLine = (e) => String(e?.message || e).split(/\r?\n/)[0];
+
 /**
  * `{ urls: { <env>: <its BACK_URL, "" when none> } }` for every env vc-test sees here, read as vc-test reads
  * it; `{ urls: null, why }` when vc-test is not installed (`why: null`) or its reader cannot be loaded.
@@ -36,13 +41,18 @@ export async function envBackUrls(root, { file = resolvePluginFile("vc-test", "s
   if (!file) return { urls: null, why: null };
   let layers;
   try { layers = await import(pathToFileURL(file).href); } catch (e) {
-    return { urls: null, why: `vc-test's env reader could not be loaded (${String(e?.message || e).split(/\r?\n/)[0]}) — install vc-test's dependencies, then /project-init --check` };
+    return { urls: null, why: `vc-test's env reader could not be loaded (${firstLine(e)}) — install vc-test's dependencies, then /project-init --check` };
   }
-  const urls = {};
-  for (const env of layers.knownEnvs(root)) {
-    try { urls[env] = String(layers.ownEnv(env, { root, ticket: null }).vars.BACK_URL || "").trim(); } catch { urls[env] = ""; }
+  // vc-test's module is not a contract of ours: any other failure of it degrades the same way, never a crash.
+  try {
+    const urls = {};
+    for (const env of layers.knownEnvs(root)) {
+      try { urls[env] = String(layers.ownEnv(env, { root, ticket: null }).vars.BACK_URL || "").trim(); } catch { urls[env] = ""; }
+    }
+    return { urls };
+  } catch (e) {
+    return { urls: null, why: `vc-test's env reader failed (${firstLine(e)}) — update vc-init and vc-test together, then /project-init --check` };
   }
-  return { urls };
 }
 
 /**
@@ -56,8 +66,12 @@ export function testEnvironmentsFrom(governance, backUrls, current = {}, { reass
   for (const [env, backUrl] of Object.entries(backUrls)) {
     const had = out[env] && typeof out[env] === "object" ? out[env] : null;
     const answer = allowed.has(governance.envs?.[env] || env);
-    // Declared = a writable recorded WITH a stand; one recorded before its BACK_URL existed follows the answer.
-    const declared = typeof had?.writable === "boolean" && Boolean(had?.backUrl);
+    // A `.env.<name>` with no BACK_URL that nobody allowed or declared is not a stand (a front's own
+    // `.env.development` / `.env.production`): left out, like lib/test-env-selector.mjs ourEnvs leaves it out.
+    if (!backUrl && !answer && !had) continue;
+    // Declared = a writable recorded for THIS stand. One recorded before its BACK_URL existed, or for another
+    // stand (the env's URL changed), follows the answer again: a choice never moves to a stand it was not made for.
+    const declared = typeof had?.writable === "boolean" && Boolean(had?.backUrl) && sameStand(had.backUrl, backUrl);
     const writable = !backUrl ? false : reassert || !declared ? answer : had.writable;
     const { backUrl: _old, ...rest } = had || {};
     out[env] = { ...rest, writable, ...(backUrl ? { backUrl } : {}) };
@@ -78,6 +92,10 @@ export async function declareTestStands(profile, root, { reassert = false, reade
   if (!next || JSON.stringify(next) === JSON.stringify(current ?? {})) return { profile, lines: [] };
   const lines = Object.entries(next)
     .filter(([env, d]) => JSON.stringify(d) !== JSON.stringify(current?.[env]))
-    .map(([env, d]) => `test.environments.${env}: ${d.writable ? "writable" : "read-only"}${d.backUrl ? "" : " — its .env file has no BACK_URL yet"}`);
+    .map(([env, d]) => {
+      const was = current?.[env]?.backUrl;
+      const moved = was && d.backUrl && !sameStand(was, d.backUrl) ? ` — its stand changed: ${was} → ${d.backUrl}` : "";
+      return `test.environments.${env}: ${d.writable ? "writable" : "read-only"}${d.backUrl ? moved : " — its .env file has no BACK_URL yet"}`;
+    });
   return { profile: { ...profile, test: { ...(profile.test || {}), environments: next } }, lines };
 }

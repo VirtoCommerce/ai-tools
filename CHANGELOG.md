@@ -37,7 +37,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   in onboarding step 4, `--add-env` and `--check` Step C — declares every env on disk each time (`testStands`
   lines), so a new env or a changed BACK_URL needs no step of its own. A new answer (`--gov-stand-envs`, a
   `--check` answer) re-applies to every env; otherwise an env's existing `writable` — a later `/vc-test:init`
-  choice — is kept and only `backUrl` is refreshed. The URL is read with vc-test's own env reader (root
+  choice — is kept while the env's stand stays the same. When its BACK_URL changes it follows the answer again and
+  a line names the move (`old → new`), so a writable choice never follows an env name to another stand (vc-test's
+  `backUrl` pin). A front's own `.env.development` / `.env.production` (no BACK_URL, not allowed) is not declared,
+  and a vc-test reader of another shape degrades to the NOT-declared line instead of failing gen-profile. The URL is read with vc-test's own env reader (root
   `.env.<env>` + QA_ENV_PATH folders), so it is the one its run check loads; without vc-test installed nothing is
   declared, and a vc-test whose reader cannot be loaded gets a "NOT declared" line instead of silence. An env
   recorded before its BACK_URL existed follows the answer once the URL appears. The URL is read without a ticket's

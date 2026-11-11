@@ -84,7 +84,10 @@ backUrl: <the env's BACK_URL, read as vc-test reads it, without a ticket's own f
 declared read-only, so vc-test writes only where the operator said yes. `default-env.mjs` declares every env
 on disk each time it runs — after step 4, in `--add-env` and in `--check` — and shows it as `testStands`
 lines; a new answer (`--gov-stand-envs`, a `--check` answer) re-applies to every env, otherwise an env's
-existing `writable` (a later `/vc-test:init` choice) is kept and only its `backUrl` refreshed.
+existing `writable` (a later `/vc-test:init` choice) is kept while its stand stays the same; when the env's
+BACK_URL changes it follows the answer again and a line names the move (`old → new`) — a choice never follows
+an env to another stand. A `.env.<name>` with no BACK_URL that nobody allowed (a front's `.env.production`) is
+not declared.
 An env whose URL the host blocks in step 4 is dropped from the list again (`--merge --gov-stand-envs`).
 A profile written before vc-init 0.6.0 (`stand: { writable: false }` with no `envs`) was never asked:
 `--check` reports `governance.stand.envs` as `pending` with this question and its options, and the answer goes
