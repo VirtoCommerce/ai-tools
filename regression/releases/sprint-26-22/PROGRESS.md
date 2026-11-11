@@ -21,21 +21,18 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 7 |
+| REAL_BUG | 6 |
 | BY_DESIGN | 52 |
 | TEST_DEFECT | 26 |
-| DATA | 11 |
+| DATA | 12 |
 | ENV_CONFIG | 15 |
-| DUPLICATE | 5 |
-| PENDING_DECISION | 2 |
+| DUPLICATE | 6 |
+| PENDING_DECISION | 1 |
 
 ## Real bugs awaiting filing
 
 | Wave | Case | Summary | New in release | Note |
 |---|---|---|---|---|
-| W0 | OBS-BUG_042_001 | Pick points dialog locations radiogroup accessible name is the raw key pages.checkout.shipping.links.select_pickup_point | unknown |  |
-| W0 | OBS-BUG_042_002 | Profile Last name and Email inputs show the placeholder Enter your first name | unknown |  |
-| W0 | OBS-BUG_042_004 | Reloading /checkout/completed drops the order number and the Show order link | no |  |
 | W4 | CMP-006 | One-product tab: All/Differences switch only visually disabled; Tab+Enter activates Differences | no |  |
 | W4 | CMP-032 | One-entry state: All/Differences not truly disabled | no | same defect as CMP-006, file once |
 | W4 | CMP-017 | Two configuration sections with the same label collapse into one compare row; a selected option disappears | no |  |
@@ -45,7 +42,6 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Wave | Case | Question | Who decides |
 |---|---|---|---|
-| W0 | OBS-BUG_042_003 | Cart totals stayed stale 15-35 s after changeCartItemsQuantity returned 200 in 817 ms | Elena Kutasina |
 | W4 | CMP-031 | Below md (200/400% zoom) row Pin and info-tooltip controls are display:none with no substitute | Elena Kutasina |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

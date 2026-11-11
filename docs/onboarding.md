@@ -307,13 +307,12 @@ shows the backlog, the age of the oldest queued line, and the last push result. 
 until a push lands. The detached push's own output goes to `push.log` next to the queue.
 
 **Pin the version — never `@playwright/mcp@latest`.** The pin must match `package.json`'s
-`@playwright/mcp` devDependency and `PLAYWRIGHT_MCP_PACKAGE` in `ci/lib/lane-mcp.ts`; `/project-init`'s
+`@playwright/mcp` devDependency; `/project-init`'s
 `gen-mcp.mjs` emits it for the same reason. Two things break on drift: each MCP release bundles its own
 `playwright-core`, which demands a specific browser build — one you may not have, so an `@latest` bump
 fails the lane at launch mid-run with *"Executable doesn't exist"* — and bare-screenshot path resolution
 is version-specific, which `/qa-bug`'s `_incoming/` reconcile depends on
-([`.claude/skills/qa-evidence/output-paths.md`](../.claude/skills/qa-evidence/output-paths.md)). An
-unpinned lane also stops reproducing what `ci/run-regression.ts` runs.
+([`.claude/skills/qa-evidence/output-paths.md`](../.claude/skills/qa-evidence/output-paths.md)).
 
 Optional (each gates specific skills):
 - **postman** — enables `/qa-postman`, `/qa-api test`

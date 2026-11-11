@@ -1,6 +1,6 @@
 # BUG: [Catalog] Leaving a category page before its data loads rewrites the URL to that category while another page stays on screen
 
-## Status: FILED — [VCST-6253](https://virtocommerce.atlassian.net/browse/VCST-6253) (Medium, standalone, relates to VCST-5817)
+## Status: FILED · VERIFIED on PR build 2026-11-11 — [VCST-6253](https://virtocommerce.atlassian.net/browse/VCST-6253) (Medium, standalone, relates to VCST-5817)
 
 **Severity: Medium** · Provenance: PRE-EXISTING (A/B control: vcst-qa-storefront 3.0.0-alpha.2685) · Found: /qa-test VCST-5817, 2026-10-09
 
@@ -42,3 +42,6 @@ Set a `cancelled` flag in the watcher's `onCleanup` (PR #2522 already adds one f
 
 ## References
 Found during VCST-5817 /qa-test (2026-10-09), checklist D1; evidence: `reports/tickets/Sprint26-20/VCST-5817/evidence/D1-stale-category-url-rewrite/`.
+## Verification 2026-11-11
+**Verdict: VERIFIED WITH NOTES** on vc-frontend PR #2633 @ 294c35cf (still open, not merged), local storefront against vcst-qa. RED reproduced live on the vcst-qa storefront (Cart, search and product → Cart variants); GREEN 3/3 for each on the PR build. Notes (Low): the fast A→B category-switch order where A answers last could not be forced live; one breadcrumb non-render, not reproduced. Ticket moved to Tested; result comment 112942. Evidence: `reports/tickets/Sprint26-23/VCST-6253/vcst_6253/` (verification-report.md, evidence.html).
+Kept in `open/`: the fix is not merged or released yet — move to `fixed/` with a `## Resolution` block once PR #2633 ships.

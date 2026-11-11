@@ -5,22 +5,13 @@
 ### 1. Interactive MCP-Driven Testing (Primary)
 Load a prompt template from `vc/shared/docs/prompts/`, execute via MCP browser tools with DevTools monitoring. After each flow: export HAR, capture console logs, take screenshots. Generate bug reports in `reports/bugs/`.
 
-### 2. CI Regression via Claude Agent SDK
+### 2. Headless CI pipelines — REMOVED 2026-11-11
 
-`ci/run-regression.ts` runs suites headless via `@anthropic-ai/claude-agent-sdk` (chrome only, up to 3 in parallel, 90-day `history.json`). The live-progress watcher, run close-out ownership and the `regression:reap` orphan backstop are specified in [`knowledge/execution/regression-pipelines.md`](../knowledge/execution/regression-pipelines.md) — read it before touching `test-run-status.json` or the watcher.
+The Agent-SDK runners (regression, full cycle, monitor, suite audit), their Docker image, the `ci:*` npm scripts and the `full-cycle` / `monitor` / `suite-audit` / `customer-template` workflows are gone (VCST-6637). Regression runs interactively through `/qa-regression` and `/qa-run`. `ci/` now holds only the shared planning library (`ci/lib/`), the App Insights probes (`ci/monitoring/queries/`), `monitor-triage-agent.md` and the typecheck `tsconfig.json`. Do not re-create a headless runner without reading why it went: [`docs/decisions/regression-history.md`](../../docs/decisions/regression-history.md) §Headless pipelines removed. The live-progress watcher, run close-out ownership and the `regression:reap` orphan backstop are in [`knowledge/execution/regression-pipelines.md`](../knowledge/execution/regression-pipelines.md) — read it before touching `test-run-status.json` or the watcher.
 
 ### 3. Autonomous Interactive Regression — REMOVED 2026-08-26
 
 Do not re-create it. Why it was removed: [`docs/decisions/regression-history.md`](../../docs/decisions/regression-history.md).
-
-### 4. Full Test Cycle CI Pipeline (Sync → Lifecycle → Regression)
-`ci/run-full-cycle.ts` orchestrates a 3-phase pipeline triggered by code changes. Phase 1 (SYNC + REVIEW) uses `/qa-test-lifecycle --ci` to detect stale test cases from PRs/diffs/module updates, update Steps/Assertions, analyze coverage gaps, and run the `/qa-review-tests` **static** dimensions (1–7, 9, 10 — dim 8 needs a browser, dim 11 is the separate `ci/run-suite-audit.ts` twin). Phase 3 (REGRESSION) delegates to `ci/run-regression.ts` to execute the affected suites — the workflow's phase numbering (1 Sync · 2 Lifecycle · 3 Regression) is the one to quote. Each phase has independent skip flags and budget allocation (50%/50% of total budget). Results go to `reports/full-cycle/{RUN_ID}/`.
-
-**Phases 1–2 are broken until `ci/run-full-cycle.ts` is updated:** it still passes `--ci --skip-*`, which `/qa-test-lifecycle` (a router since its split into `qa-suite-sync` + `qa-case-promotion`) refuses with its usage block, so those phases sync and review nothing.
-
-**Invoke:** `CHANGE_SOURCE="PR #123" npm run ci:cycle` or via `.github/workflows/full-cycle.yml`
-**Triggers:** PR merge to main (auto), daily schedule (Mon-Fri 8AM UTC), manual dispatch
-**npm scripts:** `ci:cycle` (full), `ci:cycle:pr` (PR-driven), `ci:cycle:sync-only` (Phase 1 only), `ci:cycle:no-sync` (skip Phase 1)
 
 ## Test Suite Manifest: `config/test-suites.json`
 
@@ -66,21 +57,9 @@ suite list. The table below is *when to reach for which*, which the manifest can
 | `stable:N <wave>` (`/qa-run` only) | One wave of a stable-bundle regression planned by `/qa-test-plan stable N` — claim, run, triage, publish; `stable:N status` for the overview |
 | `full` | Everything the manifest does not exclude — before a production release |
 
-## CI Regression Testing
+## CI
 
-The `ci/` directory provides Docker-based CI regression using the Claude Agent SDK — build from
-`ci/Dockerfile` and pass the run's knobs as `-e` env vars (`ci/run-regression.ts` reads them; `--shm-size`
-must be raised for headed browsers).
-
-Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, etc.) or comma-separated IDs (`042,039,049`). CI runs up to 3 suites in parallel (configurable via `MAX_PARALLEL`). Reports go to `reports/regression/ci-YYYY-MM-DD/` (markdown + JSON summary).
-
-**Note:** The CI `run-regression.ts` dynamically loads suite definitions from `config/test-suites.json` at startup. Selection groups are also defined in the manifest's `selections` block.
-
-**There is no regression GitHub Actions workflow.** `regression.yml` was **removed 2026-09-08** — it ran exactly once, on 2026-02-11, from a schedule that was later commented out, and that run **failed** after 72 s. It never ran manually and never succeeded, so it documented a capability the team does not have. **The RUNNER is unaffected:** `ci/run-regression.ts` is invoked by `npm run ci:regression`, by the Docker image above, and by `full-cycle.yml` Phase 3 (Regression).
-
-The remaining pipelines (`suite-audit.yml`, `monitor.yml`, `full-cycle.yml`) still have every `cron:` **commented out**, so nothing in `ci/` runs unattended (audit 2026-09-07 §4b, D9). Re-enabling one means uncommenting its `cron:` line; until then do not describe those runs as happening.
-
-**Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.
+The only workflows are `gates.yml` and `unit-tests.yml`; both run on every PR. No workflow runs a suite.
 
 ## On-demand references (moved out of the always-loaded tier, 2026-09-08)
 
@@ -93,7 +72,7 @@ Each of these is read by the step that needs it and by nothing else. Anchors (`�
 | Pre-authoring scaffold (`tc:alloc`, `tc:scaffold --check`, the KEEP gate) | [`knowledge/execution/regression-scaffold.md`](../knowledge/execution/regression-scaffold.md) |
 | Change-scoped selection (`regression:select`), existing-coverage triage (`tc:scope`), post-run triage (`/qa-triage-results`) | [`knowledge/execution/regression-selection.md`](../knowledge/execution/regression-selection.md) |
 | Storefront selectors — generated surface, `selectors:sync` / `selectors:check` | [`knowledge/execution/regression-selectors.md`](../knowledge/execution/regression-selectors.md) |
-| Headless CI runner internals, the App Insights monitoring twin, the suite staleness-audit twin | [`knowledge/execution/regression-pipelines.md`](../knowledge/execution/regression-pipelines.md) |
+| Interactive run orchestration, the live watcher and run close-out, App Insights monitoring, the suite staleness audit | [`knowledge/execution/regression-pipelines.md`](../knowledge/execution/regression-pipelines.md) |
 | Suite inventory rules (unique IDs, naming, XREF-001) | [`knowledge/execution/regression-suites.md`](../knowledge/execution/regression-suites.md) |
 | A stable-bundle or sprint regression several QA run in parallel — `/qa-test-plan stable <N>` or `<sprint>`, `/qa-run stable:<N>` or `sprint:<XX-YY>` `<wave>`, `regression/releases/<release>/`, the triage ledger | [`skills/qa-run/release-folder.md`](../skills/qa-run/release-folder.md) |
 

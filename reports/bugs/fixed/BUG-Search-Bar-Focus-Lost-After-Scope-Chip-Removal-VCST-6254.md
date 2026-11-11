@@ -1,6 +1,6 @@
 # BUG: [Search] Keyboard focus is lost to the page body after removing the category scope chip from the search bar
 
-## Status: FILED — [VCST-6254](https://virtocommerce.atlassian.net/browse/VCST-6254) (Medium, standalone, relates to VCST-5817)
+## Status: FIXED — [VCST-6254](https://virtocommerce.atlassian.net/browse/VCST-6254) verified 2026-11-11 (Tested)
 
 **Severity: Medium** · Provenance: PRE-EXISTING (A/B control: vcst-qa-storefront 3.0.0-alpha.2685) · Found: /qa-test VCST-5817, 2026-10-09
 
@@ -37,3 +37,8 @@ After `removeScopeItemById`, `await nextTick()` and focus the search input.
 
 ## References
 Found during VCST-5817 /qa-test (2026-10-09), checklist B10, regression case SRCH-032 (run REG-2026-10-09-1616).
+## Resolution
+- **Fixed in:** vc-frontend PR #2634 (`fix/VCST-6254-scope-chip-focus`, still OPEN at verification), theme build `2.62.0-pr-2634-9466-94660e06`.
+- **Tracker:** VCST-6254 → Tested (2026-11-11); QA comment 112946.
+- **Verified:** 2026-11-11 by `/qa-test` → verify-fix, on a local frontend-only stand (PR theme, API vcst-qa). RED on the control `2.62.0-pr-2629-8fcc` (focus on BODY, both paths), GREEN 3/3 keyboard + 3/3 mouse in Chromium and Firefox; focus lands in the search input with a visible ring; dropdown state preserved.
+- **Note:** in current Firefox the mouse path's next Tab lands in the input (not "Skip to main content"); focus is still on BODY on the control. Re-check on vcst-qa once the PR deploys.
