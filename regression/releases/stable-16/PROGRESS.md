@@ -4,7 +4,7 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 2569 · PASS 1722 · FAIL 229 · BLOCKED 495** · ledger 937 rows
+**Executed 3193 · PASS 2051 · FAIL 348 · BLOCKED 636** · ledger 1233 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -12,7 +12,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W1 | Platform & infrastructure | Elena Kutasina | RUN_DONE | 538 | 538 | 436 | 19 | 67 | 72 | 26 | REG-2026-10-13-0035 REG-2026-10-13-1241-UCP |
 | W2 | Catalog & search | Elena Kutasina | RUN_DONE | 611 | 553 | 445 | 53 | 51 | 49 | 58 | REG-2026-10-13-W2 |
 | W3 | Purchase flow | Elena Kutasina | TRIAGED | 840 | 757 | 500 | 95 | 159 | 0 | 256 | REG-2026-10-15-W3 REG-2026-10-26-1847-W3R REG-2026-10-26-2010-W3R2 REG-2026-10-26-2044-W3R3 |
-| W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W4 | Returns, B2B, accounts | Aleksandra Mitricheva | TRIAGED | 624 | 624 | 329 | 119 | 141 | 0 | 296 | REG-2026-11-09-1635-W4 |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | Aleksandra Mitricheva | TRIAGED | 144 | 144 | 72 | 14 | 6 | 0 | 68 | REG-2026-11-04-1505-W6 REG-2026-11-05-0023-W6R REG-2026-11-06-1345-W6R2 REG-2026-11-06-1410-W6R3 REG-2026-11-09-W6R4 REG-2026-11-09-W6R5 |
 | W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | TRIAGED | 428 | 428 | 169 | 44 | 193 | 0 | 524 | REG-2026-11-05-1645-W7 REG-2026-11-06-1424-W7C |
@@ -22,15 +22,15 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 54 |
+| REAL_BUG | 76 |
 | BY_DESIGN | 20 |
-| TEST_DEFECT | 163 |
-| DATA | 173 |
-| ENV_CONFIG | 455 |
-| NOT_TESTABLE | 42 |
+| TEST_DEFECT | 205 |
+| DATA | 233 |
+| ENV_CONFIG | 535 |
+| NOT_TESTABLE | 132 |
 | DUPLICATE | 16 |
 | FLAKY | 3 |
-| PENDING_DECISION | 11 |
+| PENDING_DECISION | 13 |
 
 ## Not run yet
 
@@ -55,6 +55,28 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W2 | IMGTL-024 | JPEG 50% vs 95% comparison impossible: no JPEG thumbnail is produced from .jpg sources | no | same defect as IMGTL-007, file once |
 | W2 | IMGTL-025 | Task over 5 .jpg images and 1 .png: thumbnails only for the .png, success notification with 0 errors | no | same defect as IMGTL-007, file once |
 | W2 | CHAN-008 | Channel completeness stays 0% after an evaluation that scored the products 62/25/25% | no | pre-existing, not filed yet |
+| W4 | RET-AUTH-035 | read_priced: lineItems[A].attachments.0.url is null on the seeded decided return | unknown |  |
+| W4 | ORD-063 | "Last day" sends createddate ["2026-11-06T21:00Z" TO "2026-11-08T20:59:59.999Z"]: chips 11/7-11/8, lower is now-~66h and today (11/9) is ex… | unknown |  |
+| W4 | ORD-064 | "Last week" sends ["2026-10-31T21:00Z" TO "2026-11-08T20:59:59.999Z"] (chips 11/1-11/8): same UTC+3 one-day-early shift and today excluded … | unknown | same defect as ORD-063, file once |
+| W4 | ORD-065 | "Last month" sends ["2026-09-29T21:00Z" TO "2026-10-31T20:59:59.999Z"] (chips 9/30-10/31): previous calendar month starting one day early, … | unknown | same defect as ORD-063, file once |
+| W4 | ORD-066 | "Last year" sends ["2024-12-30T21:00Z" TO "2025-12-31T20:59:59.999Z"] (chips 12/31/2024-12/31/2025): empty state although the account has 2… | unknown | same defect as ORD-063, file once |
+| W4 | ORD-075 | After an outside-click dismiss, the un-applied Start 01/01/2026 / End 06/30/2026 are still filled on reopen (also after Escape) | unknown |  |
+| W4 | ORD-081 | FAIL-DETECT guard for open VCST-4892: the applied 10/1-10/31 range is lost after Sidebar -> Back (0 chips, 26 rows, no URL date params) | unknown |  |
+| W4 | ORD-102 | The single container ring (one ring, correct) is orange rgb(250,177,80) on white = 1.83:1 (< 3:1) per BL-UI-007 | unknown |  |
+| W4 | PRF-GQL-074 | revokeOrganizationInvite(memberId) as ADMIN_DEFAULT -> data null, errors[0] "Error trying to resolve field 'revokeOrganizationInvite'." cod… | unknown |  |
+| W4 | PRF-GQL-079 | Rejected single-org user, implicit password grant -> token still issued (token_after_reject non-null, errors.0.code undefined) | unknown |  |
+| W4 | PRF-GQL-080 | locked membership, /connect/token with storeId: error and code both undefined (token issued, not 400 invalid_grant user_is_locked_in_organi… | unknown |  |
+| W4 | CUST-079 | Default language (en-US) is sent as cultureName, but after manually choosing de-DE or fr-FR the POST /api/members/customers/invite body has… | unknown |  |
+| W4 | CUST-084 | inviteUser with a nonexistent customerOrderId returns succeeded:true with no error, and a real order is not linked to the invitee after the… | unknown |  |
+| W4 | CUST-090 | inviteUser with urlSuffix "/confirm-invitation" is accepted but the OrganizationInviteExistingUserEmailNotification link is FRONT_URL/accou… | unknown |  |
+| W4 | CUST-093 | POST /api/customer/organization-memberships with null or missing userId returns 500 exposing the raw SQL error (database, table, FK name) | no |  |
+| W4 | CUST-002 | An Employee created via the Admin 'New employee' blade is saved with name=null (fullName/firstName/lastName set), so the grid Name cell and… | unknown |  |
+| W4 | CUST-036 | Keyword !Vendor026 returns the whole member set including the vendor it should exclude (HTTP 200, totalCount 464) | unknown | same defect as CUST-054, file once |
+| W4 | CUST-054 | A ? inside an existing token (Vend?r026, Vendor0?6) returns the entire member set (462), while an exact token and trailing * return 1 and a… | unknown |  |
+| W4 | CUST-161 | The blade grid is filtered by groups:["Wholesaler"] (2 rows), but Export opens "All 336 contacts & 99 organizations will be exported" and t… | unknown |  |
+| W4 | CUST-172 | After sorting by Modified Date asc, the keyword search (MemberType:Contact + Enter) sends POST /api/members/search with sort "" and the hea… | unknown |  |
+| W4 | AUTH-069 | KB-4BDF14A7 - /account/change-password shows no "signs you out of other devices" notice (VCST-4531 AC, PR #2275) | unknown |  |
+| W4 | OBS-CUST-093-EMPTY-USERID | POST /api/customer/organization-memberships accepts userId "" (empty string): 200 and a membership with an empty userId is saved | no |  |
 
 ## Decisions pending
 
@@ -62,6 +84,8 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 |---|---|---|---|
 | W1 | STORE-069 | Verification link still confirms the email after store email verification is turned off: intended? | product owner |
 | W2 | SRCH-009 | SRCH-009 and SRCH-010 assert behaviour this bundle deprecates: deprecate the cases or retarget them? | Elena Kutasina |
+| W4 | CUST-056 | Account created from Admin Contacts > Accounts on B2B-store (emailConfirmed=false) produced no ConfirmationEmailNotification in POST /api/n… | Product owner (Customer module) |
+| W4 | CUST-112 | Bogus-GUID and foreign organization_id on a password grant return 200 with the claim silently substituted to TechFlow (request-relative pri… | Product owner (Customer module) |
 | W6 | SEC-AUTH-005 | /account/change-password shows no notice that other sessions will be signed out | Aleksandra Mitricheva |
 | W6 | SEC-SESSION-001 | After an admin ends the browser session, reloading /checkout lands on /cart as a signed-out guest with no sign-in prompt and no returnUrl | Aleksandra Mitricheva |
 | W6 | SEC-AUTH-005 | Re-run: /account/change-password still shows no notice that other sessions will be signed out | Aleksandra Mitricheva |
