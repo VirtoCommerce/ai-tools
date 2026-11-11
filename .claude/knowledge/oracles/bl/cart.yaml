@@ -94,8 +94,8 @@ rules:
     violation_signal: A previous-currency line still uses the old price; subtotal/shipping not recalculated; **OR** (Mixed Cart) a non-primary-currency loyalty line is wrongly converted, dropped, or duplicated on currency switch.
     status: ACTIVE
     verified:
-      date: 2026-10-20
-      by: REG-2026-10-20-1418
+      date: 2026-11-10
+      by: REG-2026-11-09-1635-W4
   - id: BL-CART-005
     title: Cart isolation per organization
     rule: In B2B mode, each organization has its own cart. When a user switches organizations, the previous org's cart is preserved server-side but not visible. The active cart reflects only the current organization's items, prices, and shipping context. Cart items from Org A must never appear in Org B's cart.
@@ -109,6 +109,9 @@ rules:
       ref: "As Org A, add items → switch to Org B → cart is empty (or Org B's separate cart). Switch back to Org A → original items restored. Check xAPI: `cart` query with different org context returns different carts."
     violation_signal: Items from Org A visible in Org B's cart; switching back loses Org A's cart; xAPI returns same cart regardless of org context.
     status: ACTIVE
+    verified:
+      date: 2026-11-10
+      by: REG-2026-11-10-1934-MCP
   - id: BL-CART-006
     title: Pack size enforcement
     rule: When a product has a minimum order quantity (MOQ) or pack size (e.g., sold in packs of 6), the cart must enforce that quantity is a multiple of the pack size. The quantity stepper should increment by pack size, and manual entry of non-multiple quantities must be rejected or rounded up.

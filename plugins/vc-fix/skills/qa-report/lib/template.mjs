@@ -50,7 +50,10 @@ export function fill(body, data) {
     const list = Array.isArray(v) ? v : v ? [v] : [];
     if (op === "^") return (list.length ? "" : inner) + tail;
     if (op === "?") return (list.length ? inner : "") + tail;
-    return list.map(item => inner.replace(/\{\{(\.|\w+)\}\}/g, (__, f) => {
+    // `{{{.}}}` is a RAW line: the model built it (already escaping its values with `cell`), so the
+    // template can emit a whole Markdown table row from one list item — "How to reproduce" needs that.
+    return list.map(item => inner.replace(/\{\{\{\.\}\}\}|\{\{(\.|\w+)\}\}/g, (m, f) => {
+      if (m === "{{{.}}}") return String(item ?? "");
       if (f === ".") return cell(item);
       if (item === null || typeof item !== "object" || !(f in item)) throw new Error(`list ${key} item has no field "${f}"`);
       return cell(item[f]);
@@ -95,9 +98,16 @@ const cells = row => row.trim().replace(/^\||\|$/g, "").split("|").map(s => s.tr
 const DIVIDER = /^\|[\s:|-]+\|\s*$/;
 const ROW = /^\|.*\|\s*$/;
 
+// Jira panel colours per alert kind: [background, border] (Atlassian's own status palette).
+const PANEL = {
+  danger: ["#FFEBE6", "#FF8F73"], warning: ["#FFFAE6", "#FFC400"],
+  success: ["#E3FCEF", "#57D9A3"], note: ["#DEEBFF", "#4C9AFF"],
+};
+
 /** Markdown subset → Jira wiki (v2 API) — the only dialect that embeds an attached image inline (tracker-ops.md §5c). */
 export function toWiki(md) {
   const inline = s => s
+    .replace(/<br>/g, " \\\\ ")
     .replace(/\*\*([^*]+)\*\*/g, "*$1*")
     .replace(/`([^`]+)`/g, "{{$1}}")
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "[$1|$2]");
@@ -107,6 +117,26 @@ export function toWiki(md) {
   const out = [];
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
+    // A fenced code block (```lang … ```) is copied verbatim into {code:lang} — no inline rewriting, so a
+    // response snippet keeps its braces, pipes and backticks.
+    const fence = /^```(\w*)\s*$/.exec(l);
+    if (fence) {
+      out.push(fence[1] ? `{code:${fence[1]}}` : "{code}");
+      while (++i < lines.length && !/^```\s*$/.test(lines[i])) out.push(lines[i]);
+      out.push("{code}");
+      continue;
+    }
+    // A `> [!kind]` alert block (GitHub syntax) becomes a coloured Jira panel — the verdict banner.
+    if (/^>\s?/.test(l)) {
+      const block = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) block.push(lines[i++].replace(/^>\s?/, ""));
+      i--;
+      const kind = /^\[!(\w+)\]\s*/.exec(block[0] ?? "");
+      if (kind) block[0] = block[0].slice(kind[0].length);
+      const [bg, border] = PANEL[kind?.[1]?.toLowerCase()] ?? PANEL.note;
+      out.push(`{panel:bgColor=${bg}|borderColor=${border}}`, ...block.map(inline), "{panel}");
+      continue;
+    }
     const h = /^(#{1,6})\s+(.*)$/.exec(l);
     const b = /^(\s*)[-*]\s+(.*)$/.exec(l);
     if (h) out.push(`h${h[1].length}. ${inline(h[2])}`);
@@ -122,6 +152,7 @@ export function toWiki(md) {
 export function toHtml(md) {
   const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const inline = s => esc(s)
+    .replace(/&lt;br&gt;/g, "<br/>")
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => /^https?:\/\//.test(url) ? `<a href="${url}">${text}</a>` : text);
@@ -134,6 +165,21 @@ export function toHtml(md) {
   };
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
+    if (/^```\w*\s*$/.test(l)) {
+      close();
+      const code = [];
+      while (++i < lines.length && !/^```\s*$/.test(lines[i])) code.push(esc(lines[i]));
+      out.push(`<pre>${code.join("\n")}</pre>`);
+      continue;
+    }
+    if (/^>\s?/.test(l)) {
+      close();
+      const block = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) block.push(lines[i++].replace(/^>\s?/, "").replace(/^\[!\w+\]\s*/, ""));
+      i--;
+      out.push(`<blockquote>${block.map(inline).join("<br/>")}</blockquote>`);
+      continue;
+    }
     const h = /^(#{1,6})\s+(.*)$/.exec(l);
     const b = /^\s*[-*]\s+(.*)$/.exec(l);
     if (h) { close(); out.push(`<b>${inline(h[2])}</b><br/>`); continue; }

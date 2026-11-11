@@ -57,7 +57,9 @@ same `checks[]`, read-only:
 - `req:<kind>:<name>` — what `config/suite-requirements.json` declares: store and platform settings, payment
   methods, vc-deploy-dev `infra/environments.yml` keys (headers, FileUpload scopes, KnownAssetHosts), and the values a
   platform setting's dictionary must offer (`allowedIncludes` — a seeder that writes `Quotes.Status = Declined` fails
-  when the stand's dictionary has no `Declined`).
+  when the stand's dictionary has no `Declined`), and a `contract` the cases cite (`mcp-schema` / `ucp-schema`): its
+  `--check` runs read-only, and drift is a WARN whose remedy is the refresh plus a re-read of the cases — never an
+  automatic refresh, which would accept the very change the snapshot exists to catch.
 
 Each row names its cases. They are WARN unless a requirement says `"level": "block"` — the run goes, and the owner
 knows which cases will BLOCK and why before spending a run on them. **Those cases are then not run:** the JSON's

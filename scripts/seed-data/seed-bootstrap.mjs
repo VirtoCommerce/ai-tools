@@ -72,6 +72,8 @@ const TEARDOWN_STEPS = [
   { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', args: ['--teardown'] },
+  // VCST-6155 MCP back-office accounts — deletes the four AGENT-TEST-mcp-* users and the AGENT-TEST-MCP-* roles only.
+  { name: 'mcp-security', script: 'platform/seed-mcp-security.mjs', args: ['--teardown'] },
   // VCST-5886 punchout: the OWNED mapping AGENT-TEST-PO-200 + two AGENT-TEST back-office roles/accounts.
   // Before company-users, whose MULTI_ORG persona the mapping points at. Skips (exit 0) where the module is absent.
   { name: 'punchout', script: 'punchout/seed-punchout.mjs', args: ['--teardown'] },
@@ -206,6 +208,9 @@ const STEPS = [
   // Restricted back-office (Manager) RBAC account for CMS-123/124 — read-only Page Builder, no
   // builder:update. Independent of the catalog/user graph (own role + account); optional.
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', required: false, priority: 135 },
+  // VCST-6155 MCP back-office accounts (platform/mcp-security-specs.mjs). Independent; optional — skips
+  // (exit 0) where the MCP / System Operations permissions are not registered.
+  { name: 'mcp-security', script: 'platform/seed-mcp-security.mjs', required: false, priority: 136 },
   // VCST-5886 punchout cXML fixtures — after company-users (100): the mappings point at the USER_EMAIL /
   // MULTI_ORG personas. Optional: VirtoCommerce.Punchout is deployed on vcptcore_qa1 only; elsewhere the
   // seeder prints one skip line and exits 0. Registers (never creates) the /qa-test-owned AGENT-TEST-PO-100.

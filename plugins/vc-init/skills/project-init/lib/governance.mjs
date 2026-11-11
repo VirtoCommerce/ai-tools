@@ -18,6 +18,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import os from "node:os";
 import { join, resolve } from "node:path";
 import { pluginRoot } from "./paths.mjs";
+import { looksProduction } from "./test-env-selector.mjs";
 
 /** Roles a host server can fill. `browsers` is a list; the rest are one server key each. */
 export const ROLES = ["tracker", "codeHost", "github", "telemetry", "testManagement", "browsers"];
@@ -72,6 +73,77 @@ export function ownMarketplaces({ home = process.env.HOME || os.homedir(), root 
   return [...out].filter(Boolean);
 }
 
+/**
+ * Where a run may create its own test data — `governance.stand`:
+ *   envs     the host environments the operator allowed (`[]` = nowhere), or `null` = never asked;
+ *   writable true when at least one is listed.
+ * `writable` is the project-wide ceiling vc-test reads (`standOf()`); per env, gen-profile declares the
+ * answer to vc-test itself (lib/test-stands.mjs → `test.environments.<env>`), so no /vc-test:init is
+ * needed for it (host-governed.md step 3). A host-governed project starts
+ * read-only and unasked (`{ writable: false, envs: null }`) until the operator answers (host-governed.md
+ * step 3, or `--check`); a project with no host carries no `envs` and stays writable, as before.
+ * `kept` is a block a re-run keeps: with no list, its `writable` survives (a hand-set `true` included).
+ */
+export function standBlock(envs, kept = null) {
+  if (!Array.isArray(envs)) return { writable: kept?.writable === true, envs: null };
+  const list = [...new Set(envs.map((e) => String(e).trim().toLowerCase()).filter(Boolean))];
+  return { writable: list.length > 0, envs: list };
+}
+
+/**
+ * Parse `qa,uat` | `none` into a stand env list. Pure. Throws on a malformed name, a non-string (a
+ * coerced `true` or number is not an answer), and on "none" ticked together with an env — "Nowhere" and
+ * an environment contradict each other, so neither is guessed.
+ */
+export function parseStandEnvs(text) {
+  // `null` too: it reads as "never asked", and an answer cannot un-ask the question.
+  if (typeof text !== "string") throw new Error(`${JSON.stringify(text)} is not a list of environment names, or "none"`);
+  const list = [...new Set(text.toLowerCase().split(",").map((s) => s.trim()).filter(Boolean))];
+  if (list.includes(TYPE_THEM.value)) throw new Error(`"${TYPE_THEM.value}" is the option for typing the names — pass the names typed instead`);
+  if (list.includes("none")) {
+    if (list.length > 1) throw new Error(`"none" (Nowhere) was given together with ${list.filter((e) => e !== "none").join(", ")} — ask again`);
+    return [];
+  }
+  for (const e of list) if (!/^[a-z0-9_]+$/.test(e)) throw new Error(`"${e}" is not an environment name ([a-z0-9_]+), or "none"`);
+  return list;
+}
+
+/** The production-looking names in a stand list — a warning line each, never a silent write. Pure. */
+export function productionStandEnvs(envs) {
+  return (Array.isArray(envs) ? envs : []).filter((e) => looksProduction(e));
+}
+
+/** The host environments the stand question offers: the host's own, never a production-looking one. Pure. */
+export function standChoices(hostEnvs) {
+  return (Array.isArray(hostEnvs) ? hostEnvs : []).filter((e) => !looksProduction(e));
+}
+
+const NOWHERE = { label: "Nowhere — read-only (recommended)", value: "none", hint: "a scenario that needs to write is BLOCKED" };
+const TYPE_THEM = { label: "Let me type the environment names", value: "type", hint: "choose “Type something” and enter them comma-separated" };
+
+/**
+ * The test-data question's options, within AskUserQuestion's 2–4: up to three environments, then
+ * "Nowhere". The environments are the host's (`hostEnvs`), else — a host with no password slots — the
+ * project's own `.env.<env>` names mapped to host names through `envMap` (governance.envs). None at all ⇒
+ * "Let me type the environment names" keeps the second option. `more` lists what did not fit: the
+ * question text names them, to be typed. Production-looking names are never offered. Pure.
+ */
+export function standOptions(hostEnvs, ourEnvList = [], envMap = {}) {
+  const host = Array.isArray(hostEnvs) ? hostEnvs : [];
+  const candidates = host.length ? host : (Array.isArray(ourEnvList) ? ourEnvList : []).map((e) => envMap?.[e] || e);
+  const all = standChoices([...new Set(candidates.map((e) => String(e).toLowerCase()))]);
+  const options = all.slice(0, 3).map((e) => ({ label: e, value: e }));
+  if (!options.length) options.push(TYPE_THEM);
+  options.push(NOWHERE);
+  return { options, more: all.slice(3) };
+}
+
+/** Has the operator been asked where test data may be created? (Only a host-governed project asks.) Pure. */
+export function standPending(profile) {
+  const g = profile?.governance;
+  return Boolean(g?.host) && g?.stand?.writable !== true && !Array.isArray(g?.stand?.envs);
+}
+
 /** The governance block for a host (or none). Pure. */
 export function governanceBlock(host, overrides = {}, extras = {}) {
   if (!host) return { host: null, secrets: "vc-secrets", servers: emptyServers(), stand: { writable: true }, ...emptyExtras() };
@@ -83,7 +155,9 @@ export function governanceBlock(host, overrides = {}, extras = {}) {
       ? String(overrides[role]).split(",").map((s) => s.trim()).filter(Boolean)
       : String(overrides[role]);
   }
-  return { host, secrets: "host", servers, stand: { writable: false }, ...emptyExtras(), ...cleanExtras(extras) };
+  // `standEnvs` is a new answer; `stand` the block a re-run keeps (a hand-set one included); neither ⇒ unasked.
+  const stand = extras.standEnvs !== undefined ? standBlock(extras.standEnvs) : standBlock(extras.stand?.envs, extras.stand);
+  return { host, secrets: "host", servers, stand, ...emptyExtras(), ...cleanExtras(extras) };
 }
 
 export function emptyServers() {

@@ -45,7 +45,7 @@ template.
 
 | Kind | Machine record | Fields read |
 |---|---|---|
-| `test` | `summary.json` | ticket, verdict, environment, build, date, case totals, `ac_analysis.ac_dod_estimate` (AC / DoD), the regression block, business rules verified, `to_fix` (the **To fix** table: `id`, `what`, `severity`, `ref`, `status`), `bugs_filed`, `suggested_tickets` (`type`, `what`, `severity`), `bugs_not_filed`, `release`, `report.page_url`, `screenshots` |
+| `test` | `summary.json` | ticket, verdict, environment, build, date, case totals, `ac_analysis.ac_dod_estimate` (AC / DoD), the regression block, business rules verified, `to_fix` (the **To fix** table: `id`, `what`, `severity`, `ref`, `status`; optional `repro` `{ impact, repo, file, where, steps[], expected, actual, found_by[], snippet: { caption, lang, text } }` → its row of the ONE **What to fix and how to reproduce** table: what is broken + why it matters · numbered steps + the check that found it **by title, never an internal id** · ✅ expected / ❌ actual · repo + file:line. Keep cells short (≤3 steps, one line each for expected and actual); the long explanation stays in the draft. Never trimmed. `snippet` is the server's own response as confirmation, rendered verbatim as a code block under the table ("Server response (evidence)"); keep it an excerpt, no tokens or hosts), `bugs_filed`, `suggested_tickets` (`type`, `what`, `severity`), `bugs_not_filed`, `release`, `report.page_url`, `screenshots` |
 | `fix` | `verification-summary.json` | ticket, verdict, environment, build, date, checklist totals, STR and baseline results, `before_after[]`, regression / side-effect issues, `bugs_filed`, `evidence_artifact` |
 | `regression`, `smoke` | the run folder `suite-*-results*.json` | per suite: id, name, environment, start / completion, each case's status, id and title. A suite with no `completedAt` is an unconsolidated run — refused |
 
@@ -98,7 +98,7 @@ The one source for whether a report page is published (moved here from `/qa-veri
 | `title` | string — page title |
 | `lede` | string — the same slot as `--lede`; the flag wins |
 | `rows` | array of `{ id, text, result, evidence }` — the page's case table |
-| `areas` | array of `{ area, cases, result }` — the `test` comment's "What was tested" table. Absent ⇒ one row from the checklist counts |
+| `areas` | array of `{ area, cases, result }` — accepted for the page; the `test` comment has no "What was tested" table since 2026-11-10 (it shows what failed and how to reproduce it instead) |
 | `questions` | array of strings — the "Open questions" section. A question is what needs a DECISION, not a defect: a defect goes in Findings with a ticket. Absent ⇒ no section at all |
 | `notTested` | array of `{ item, reason }` |
 | `context` | array of `{ label, value }` — page-only context lines |

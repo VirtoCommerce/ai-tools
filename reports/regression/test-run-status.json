@@ -1,32 +1,30 @@
 {
-  "runId": "REG-2026-11-05-1740",
+  "runId": "REG-2026-11-10-2148-MCPFIX2",
   "status": "completed",
-  "startedAt": "2026-11-05T16:41:03.321Z",
-  "windowStart": "2026-11-05T16:41:03.321Z",
-  "selection": "106",
+  "startedAt": "2026-11-10T20:48:49.676Z",
   "env": "vcst",
-  "scoped": true,
-  "cases": "ids",
-  "ids": [
-    "SR-TK-043",
-    "SR-TK-044",
-    "SR-TK-048",
-    "SR-TK-057"
-  ],
-  "purpose": "VCST-6157 re-run on ff13 of the cases REG-2026-11-05-1651 blocked on the stale edge bundle (VCST-6676) + SR-TK-057 rewritten for the ff13 container-query toolbar",
-  "plan": "reports/regression/REG-2026-11-05-1740/preflight.json",
+  "selection": "118,102 --ids UCPA-026,MCP-053",
   "suites": {
-    "106": {
+    "102": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-firefox",
-      "total": 4,
-      "startedAt": "2026-11-05T16:41:57.130Z",
-      "pass": 4,
+      "cases": 1,
+      "note": "A duplicate resume dispatch at 20:26Z (wrong premise: the original runner was still live) ran 0 cases; results are the original runner's.",
+      "browser": "playwright-chrome",
+      "pass": 1,
       "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-05T16:58:21.182Z"
+      "blocked": 0
+    },
+    "118": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 1,
+      "note": "A duplicate resume dispatch at 20:26Z re-ran MCP-026 and MCP-053 after close; its rows are kept apart in suite-118-cases.resume.jsonl / suite-118-results.browser.resume.json and do not change the canonical results.",
+      "browser": "playwright-edge",
+      "pass": 0,
+      "fail": 0,
+      "blocked": 1
     }
   },
-  "finishedAt": "2026-11-05T16:58:38.177Z"
+  "finishedAt": "2026-11-10T20:59:05.580Z"
 }

@@ -115,11 +115,12 @@ rules:
       kind: manual
       ref: User is org-maintainer in X, org-employee in Y. Switch to X → decode JWT → maintainer set present, employee-only set absent. Switch to Y → only employee set. For each org, `GetPageContext` → `user.permissions` matches the decoded JWT for that org.
     violation_signal: JWT carries another org's permissions; `pageContext.user.permissions` diverges from the JWT (BUG-A condition — pageContext returned `[]` while the JWT held 8 maintainer perms).
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-12
       version: Customer 3.1029.0
       by: ORACLE-REVIEW-2026-10-12
+    suspect_reason: "[case] B2C-ORG-051, CUST-112, RET-ORG-001, RET-ORG-002, RET-ORG-005, RET-ORG-042, RET-ORG-043, RET-ORG-044 failed in REG-2026-11-09-1635-W4"
   - id: BL-B2B-008
     title: Org-scoped role change mutates only the target org's membership
     rule: Changing a member's role in org X (`changeOrganizationContactRole(memberId, roleIds)` or REST `PUT /api/customer/organization-memberships/{id}`) MUST update only the (userId, orgX) `OrganizationMembership.Roles`. Other orgs' membership records and the global `ApplicationUser.Roles` MUST be unchanged. (VCST-5028 — guards against the old handler that replaced global roles.)
@@ -136,7 +137,8 @@ rules:
       kind: manual
       ref: Member is employee in X, manager in Y. Change X → manager. `POST /api/customer/organization-memberships/search {userId}` → X role = manager, Y role still manager. `GET /api/platform/security/users/{userId}` → global `roles[]` unchanged.
     violation_signal: Role change in X also alters Y's membership or the global account roles.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] ORGROLE-014 failed in REG-2026-11-09-1635-W4"
   - id: BL-B2B-009
     title: Inviting a member creates a per-org membership, not a global role
     rule: Inviting a user into org X with a role MUST create an `OrganizationMembership` for (newUserId, orgX) with that role; the global `ApplicationUser.Roles` MUST NOT be modified. After acceptance, `GET /api/customer/organization-memberships/user/{userId}/count` ≥ 1. (VCST-5028.)
@@ -155,7 +157,8 @@ rules:
       kind: manual
       ref: Invite a new user into X as employee; after acceptance, `POST /search {userId}` → contains org X with role employee. `GET /api/platform/security/users/{userId}` → global `roles[]` empty / no org-specific role.
     violation_signal: No membership record after invite acceptance; the invite writes a global role instead.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] CUST-077, CUST-090, PRF-GQL-073, PRF-GQL-074, PRF-GQL-075 failed in REG-2026-11-09-1635-W4"
   - id: BL-B2B-010
     title: Self-service company registration grants org-membership roles only, never global roles
     rule: Self-service company registration (storefront `/sign-up`, "Organization" account type) MUST create the `Organization`, the registrant `Contact`, and an `OrganizationMembership` for (newUserId, newOrg) carrying the registrant's org role(s) (e.g. org-maintainer); the registration flow MUST NOT write any platform security role to the global `ApplicationUser.Roles`. This is the registration-time counterpart of BL-B2B-009 (which covers the invite path). (VCST-5028.)
@@ -252,7 +255,8 @@ rules:
         `schema` endpoint's `allowedValues` (the pool is a hardcoded module constant, not a writable per-tenant resource);
         one whitelist's picker reflects the other whitelist's roles; clear-to-empty silently reverts (the pre-fix VCST-5441
         signature — a re-appearance now means PR #3076 regressed); a non-whitelisted role is accepted by `changeOrganizationContactRole`, OR a whitelisted role is rejected (over-blocking).
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] ORGROLE-009, ORGROLE-010, ORGROLE-011, ORGROLE-012 failed in REG-2026-11-09-1635-W4"
   - id: BL-B2B-012
     title: Declining or revoking an invite changes a status — it never deletes the membership row
     rule: |-
@@ -277,10 +281,11 @@ rules:
       kind: manual
       ref: Decline an invitation → membership search still returns the row with `Status = "Rejected"`; the contact's organization list still contains that organization; the member is still listed in the organization's member list (surfaced under an inactive-style label, not removed). Re-invite the same user into the same organization → succeeds. Repeat against a membership at `Invited` → rejected as already-a-member. A test asserting a member is *gone* must check the **row's absence**, not a `Deleted` status; teardown must delete the row.
     violation_signal: Declining removes the membership row or strips the contact's organization association (a later re-invite then has nothing to reactivate, and a "still a member?" assertion silently inverts); a `Deleted` status is treated as row removal by a search consumer; re-invite succeeds against an `Invited` membership (duplicating the pending invite) or fails against a `Rejected`/`Deleted` one (declining becomes irreversible).
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-12
       by: REG-2026-10-12-1119
+    suspect_reason: "[case] RET-ORG-003 failed in REG-2026-11-09-1635-W4"
   - id: BL-B2B-013
     title: Membership status resolves per-org-first, then contact, then `Approved`
     rule: |-
@@ -304,7 +309,8 @@ rules:
       kind: manual
       ref: Set a membership's `Status` to a blocking value while the **contact's** status stays `Approved` → the effective status is the membership's (access is refused per BL-AUTH-013), proving tier 1 beats tier 2. Clear the membership's `Status` → the effective status follows the contact's. Read `Customer.OrganizationMembershipStatuses` → default `Approved`, allowed values the four-value set. Lock a membership whose status is `Approved` → refused on the lock axis with the status untouched.
     violation_signal: A contact-level status overrides an explicit membership status (tiers inverted — a per-org block silently ignored, or a healthy org blocked by an unrelated contact status); a null membership status is treated as blocking (or as a fifth state) instead of inheriting; a lock is written into the `Status` field, or a status value is used to express a lock, collapsing the two axes so one cannot be cleared without the other.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-12
       by: REG-2026-10-12-1119
+    suspect_reason: "[case] B2C-ORG-068, RET-ORG-003 failed in REG-2026-11-09-1635-W4"

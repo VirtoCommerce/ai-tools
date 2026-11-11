@@ -64,7 +64,7 @@ result:
 | Reverse edges | no reverse effect exists | covered by #, or `ABSENT IN PRODUCT` (a finding) |
 | Archetype / UIP sweep | not applicable | covered by #, or `WAIVED + reason` |
 | Regression Scope Exclusions | the suite passed | name every suite that contributed zero cases |
-| 5-file below-floor findings | nothing minor was found | `Not filed (below severity floor): None` |
+| 5-file below-floor findings | nothing minor was found | `summary.json.bugs_not_filed: []` |
 | A checklist condition with no case | condition covered | list it as uncovered |
 | An absent `contract` block | the schema was fresh | record `contract_surface` + its sources, or `UNKNOWN` |
 

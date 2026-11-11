@@ -67,13 +67,13 @@ Skipped for a page or flow target, and under `--storefront-only`. Otherwise reso
 
 Runs on every component/page/flow audit. `--design` only changes step 1.
 
-**No QA run calls `DesignSync`** — its own description restricts it to the user-started `/design-sync` skill. Our tools read files instead ([claude-design-verification.md](claude-design-verification.md) §1 — the source ladder and why).
+**No QA run calls `DesignSync`** — its description restricts it to the user-started `/design-sync`. Our tools read files instead ([claude-design-verification.md](claude-design-verification.md) §1 — the source ladder and why).
 
 1. Resolve the project id: `--design <uuid>` if given, else **from the ticket's Prototype link** (`claude.ai/design/p/<uuid>?file=…`); note the `file=` artboard the ticket treats as authoritative. **No global default** (see `--design` above). No link and no `--design` ⇒ `SKIPPED`. A **Figma** link is not a substitute — an unread Figma node is an `unresolved` entry, never a pass.
 2. Find the source on disk: `--design-dir`, else `.design-source/<uuid>/`. Pick the in-scope files — the `file=` artboard (plus its sibling `.jsx` when it is a bundled harness), or the artboard whose `@dsCard group` matches the target. No local copy, but an artifact link on the ticket (`claude.ai/code/artifact/…`) ⇒ `Artifact` `read` it (the raw HTML is saved locally) and extract with `--only icons,geometry,stroke,changes` — an artifact page's own `:root` variables are its chrome, not product tokens.
 3. `node <plugin>/lib/design/design-spec-extract.mjs --source "<uuid or artifact id> <file=…>" --out <scratch>/design-spec.json <files…>` (in this repository: `npm run design:extract`). Exit `2` (nothing readable, or zero expectations) ⇒ `SKIPPED` with the printed reason.
 
-**If the source cannot be resolved**, do **not** abort the run. Record the reason — naming the folder to fill, `.design-source/<uuid>/` — pass it to the agent as `designSkipReason`, and let Phase C report `SKIPPED` while every other phase proceeds normally.
+**No local copy ⇒ ask once to import it, before Step 3** ([§Missing copy](claude-design-verification.md)). Declined or headless: do **not** abort — pass the reason, naming `.design-source/<uuid>/`, as `designSkipReason`; Phase C reports `SKIPPED`, all else proceeds.
 
 Ambiguity (two projects match the name) → ask which one; never guess.
 

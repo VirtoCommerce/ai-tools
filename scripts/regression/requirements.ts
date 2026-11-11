@@ -24,6 +24,7 @@
  * `"level": "block"`. Anything that could not be read is UNKNOWN, never OK.
  */
 import { existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { parse as parseYaml } from "yaml";
@@ -34,7 +35,27 @@ import { probeAdminToken, type AdminAuth } from "../deploy/lib/live.ts";
 import { ghJson, setToken } from "../deploy/lib/github.ts";
 import type { Check } from "../preflight/policy.ts";
 
-export type ReqKind = "storeSetting" | "platformSetting" | "paymentMethod" | "deployConfig" | "uploadScope" | "storeLanguage" | "storeCurrency";
+export type ReqKind = "storeSetting" | "platformSetting" | "paymentMethod" | "deployConfig" | "uploadScope" | "storeLanguage" | "storeCurrency" | "contract";
+
+/**
+ * contract: a generated contract snapshot the suite's cases cite (`.claude/knowledge/api/<name>.md`). The check runs
+ * its `--check` mode (read-only) against the stand: drift means the cases may assert a tool, argument or scope that
+ * moved. Never a refresh here — refreshing before every run would silently accept the change the snapshot exists to
+ * catch; the remedy row says to refresh and re-read the cases.
+ */
+export const CONTRACTS: Record<string, { script: string; refresh: string }> = {
+  "mcp-schema": { script: "scripts/mcp/refresh-mcp-schema.mjs", refresh: "npm run mcp:schema:refresh" },
+  "ucp-schema": { script: "scripts/ucp/refresh-ucp-schema.mjs", refresh: "npm run ucp:schema:refresh" },
+};
+function checkContract(root: string, env: string, name: string): { ok: boolean; unknown: string | null; detail: string } {
+  const c = CONTRACTS[name];
+  if (!c) return { ok: false, unknown: `no contract named "${name}" (known: ${Object.keys(CONTRACTS).join(", ")})`, detail: "" };
+  const r = spawnSync(process.execPath, [join(root, c.script), "--check"], { cwd: root, env: { ...process.env, TEST_ENV: env }, encoding: "utf8", timeout: 120_000 });
+  const tail = `${r.stdout ?? ""}${r.stderr ?? ""}`.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("[config]"));
+  if (r.status === 0) return { ok: true, unknown: null, detail: tail.find((l) => /OK/.test(l)) ?? "no drift" };
+  if (r.status === 1) return { ok: false, unknown: null, detail: tail.find((l) => /DRIFT|no snapshot/.test(l)) ?? "drift" };
+  return { ok: false, unknown: tail.slice(-1)[0] ?? `check exited ${r.status ?? r.signal}`, detail: "" };
+}
 export interface Requirement {
   kind: ReqKind;
   /**
@@ -329,7 +350,7 @@ function meets(r: Requirement, value: unknown, present: boolean): boolean {
 }
 const want = (r: Requirement) => r.allowedIncludes ? `to offer ${r.allowedIncludes.map((v) => JSON.stringify(v)).join(", ")}` : r.equals !== undefined ? `= ${JSON.stringify(r.equals)}` : r.notEquals !== undefined ? `≠ ${JSON.stringify(r.notEquals)}` : "set";
 
-export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth | null, reqs: { suite: string; r: Requirement }[]): Promise<Check[]> {
+export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth | null, reqs: { suite: string; r: Requirement }[], root: string = process.cwd()): Promise<Check[]> {
   if (!reqs.length) return [];
   const storeId = process.env.STORE_ID || "B2B-store";
   const auth = token ? { ...token.headers, "Content-Type": "application/json" } : null;
@@ -363,6 +384,17 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
   for (const [, g] of groups) {
     const r = g.r;
     let value: unknown, present = false, unknown: string | null = null, where = "";
+    if (r.kind === "contract") {
+      const cases = g.cases.size ? ` — ${count(g.cases)}: ${bySuite(g.cases)}` : ` — suites ${[...g.suites].join(", ")}`;
+      const res = checkContract(root, env, r.name);
+      const fixC = CONTRACTS[r.name]?.refresh ?? "";
+      const id = `req:contract:${r.name}`;
+      if (res.unknown) out.push({ id, status: "UNKNOWN", found: `${r.name}: not checked (${res.unknown})${cases}`, who: "you", do: `make the check runnable (admin credentials in the env files) and re-run`, diagnose: [] });
+      else if (res.ok) out.push({ id, status: "OK", found: `${r.name}: ${res.detail}${cases}`, who: null, do: null, diagnose: [] });
+      else out.push({ id, status: r.level === "block" ? "BLOCK" : "WARN", found: `${r.name}: ${res.detail} — ${r.why}${cases}`, who: "me, with OK",
+        do: `${fixC} (rewrites the tracked snapshot), then re-read every case that asserts a changed tool, argument or scope before running`, diagnose: [], cases: [...g.cases] });
+      continue;
+    }
     if (r.kind === "storeSetting") {
       if (!store) unknown = `store ${storeId} not readable (admin token?)`;
       else { const s = (store.settings ?? []).find((x: any) => x.name === r.name); present = !!s; value = s ? s.value ?? s.defaultValue : undefined; where = `store ${storeId}`; }
@@ -462,6 +494,6 @@ export async function requirementChecks(o: { root: string; env: string; suites: 
   if (c) checks.push(...await laneAccountChecks(o.root, o.env, c, token));
   if (c) checks.push(...await personaChecks(o.root, o.env, c, token, needs.personas, { reqs: reqFile.personas, installed }));
   const declared = o.suites.flatMap((s) => (reqFile.suites[s.id] ?? []).map((r) => ({ suite: s.id, r })));
-  if (c) checks.push(...await declaredChecks(o.env, c, token, declared));
+  if (c) checks.push(...await declaredChecks(o.env, c, token, declared, o.root));
   return checks;
 }
