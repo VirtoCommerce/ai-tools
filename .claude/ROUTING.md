@@ -92,7 +92,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-deploy-pr` — Gather every fresh CI prerelease artifact a change produced and deploy them together in ONE `vc-deploy-dev` manifest update. Unblocks `/qa-test PR #N` and `/qa-verify-fix`
 - `/qa-env-upgrade` — Compare an env's `vc-deploy-dev` manifest with the latest releases (`modules_v3.json` + `vc-platform`), move PR/alpha pins to the release that contains them, ask where none does, and open ONE deploy PR on a yes. Never merges
 - `/qa-bundle-check` → `/qa-hotfix` → `/qa-hotfix-check` — the three-link hotfix chain: find bundles missing a shipped patch → cherry-pick onto `support/<X.Y>` and release → deliver onto the deployed envs and close the ticket
-- `/qa-monitoring` — App Insights: query → dedup by fingerprint → triage → live repro → report. Detect-and-report only. Interactive twin of `ci/run-monitor.ts`
+- `/qa-monitoring` — App Insights: query → dedup by fingerprint → triage → live repro → report. Detect-and-report only.
 - `/qa-perf-measure` — Backend work per request on a **deployed** env (dependency counts via the `operation_Id` join, N+1 by input scaling, paired controls). Measure-and-report only
 - `/qa-local-env` — Local VC stack (start-local + Docker) pinned to the deployed manifest; fresh DB every run
 

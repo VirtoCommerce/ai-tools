@@ -180,9 +180,9 @@ async function main(): Promise<void> {
     csvPath: s.file,
     agent: s.agent,
     runner: s.runner,
-    agentPath: join("ci", "agents", `${s.agent}.md`),
+    agentPath: join(".claude", "agents", `${s.agent}.md`),
   }));
-  // The interactive path's agents live under `.claude/agents/`, so a missing `ci/agents/*.md`
+  // Agents live under `.claude/agents/`; a missing one
   // is not fatal here — only a missing CSV or a suite with no executor at all is.
   const problems = preflightManifest(preflight, { fileExists: existsSync }).filter(
     (p) => p.kind !== "missing-agent",

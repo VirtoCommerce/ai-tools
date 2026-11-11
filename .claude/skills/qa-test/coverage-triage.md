@@ -52,8 +52,7 @@ every append (it moved during the change that added this section) and a transcri
 four files at once, silently. Re-derive it rather than trusting the figure above if it matters:
 `Audited:` occurrences over total rows across `regression/suites/**/*.csv`. `/qa-review-tests --triangulate` — the mechanism
 that answers *is this assertion still true* — is invoked from `/qa-test` at **no** step, either path.
-Its scheduled twin `ci/run-suite-audit.ts` covers one suite per weekday on a ≈25-week cycle, which is
-the right cadence for rot and the wrong one for a change landing today.
+Nothing runs it on a schedule, and a sweep cadence would be the wrong one for a change landing today anyway.
 
 ---
 
@@ -324,8 +323,8 @@ blockers hid: in scope, invalidated by the rename, and not in any run the ticket
 
 ## 5. Where it does NOT belong
 
-- **It is not a suite audit.** Whether an untouched row has rotted is `/qa-review-tests --triangulate`
-  and its scheduled `ci/run-suite-audit.ts` twin, one suite per weekday. This axis asks only what
+- **It is not a suite audit.** Whether an untouched row has rotted is `/qa-review-tests --triangulate`,
+  one suite at a time. This axis asks only what
   **this change** invalidates, and it refuses to run without a risk term precisely so the two cannot
   blur.
 - **It does not judge whether the row is wrong.** It reports which rows mention a moved observable,
