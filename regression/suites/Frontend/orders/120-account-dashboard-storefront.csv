@@ -956,7 +956,7 @@ The stored document is read with GetLayout after the reload so the screen cannot
 [KEY] record the tab labels right after Save (TABS_SAVED)
 [NAV] {{FRONT_URL}}/account/dashboard (full reload)
 [WAIT] the cards and 'My recent orders' have rendered
-[KEY] record the tab labels (TABS_1), click 'All' and record the rows (ALL_ROWS), then read the stored layout from GetLayout (L_1, scope accountDashboard, recent-orders block settings hiddenTabs)
+[KEY] record the tab labels (TABS_1), click 'All' and record the rows (ALL_ROWS), then read the stored layout from GetLayout (L_1, scope accountDashboard, recent-orders block settings hidden statuses (block settings tab.<Status> = false))
 [ACT] press 'Edit layout'
 [WAIT] the edit bar is visible
 [KEY] record the checked state of every checkbox in 'Statuses to show' (BOXES_1)
@@ -965,7 +965,7 @@ The stored document is read with GetLayout after the reload so the screen cannot
 [REL] TABS_CANCEL == TABS_0 and SAVES_CANCEL == 0 - clearing a box and pressing Cancel changes nothing {SPEC}
 [REL] TABS_SAVED and TABS_1 are 'All', 'Completed', 'Processing' - the tabs of 'New' and 'Cancelled' are gone, the other statuses keep theirs {OBSERVED}
 [REL] after the reload BOXES_1 shows 'New' and 'Cancelled' cleared and 'Completed' and 'Processing' checked - the selector reads the saved setting, not a default {OBSERVED}
-[REL] L_1 hiddenTabs (recent-orders block settings of layout scope accountDashboard) == {New, Cancelled} - storage and screen agree {SPEC} (vc-frontend#2653)
+[REL] L_1 hidden statuses (block settings tab.<Status> = false) (recent-orders block settings of layout scope accountDashboard) == {New, Cancelled} - storage and screen agree {SPEC} (vc-frontend#2653)
 [DOM] hiding a tab hides the TAB only: ALL_ROWS still lists the orders of the hidden statuses (the 'All' tab shows all) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","the hidden tab returns after the reload
 the checkbox is checked again after the reload though the tab is gone
@@ -1006,7 +1006,7 @@ The case is self-contained: it first brings the buyer to the state 'New and Canc
 [ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard (full reload)
-[KEY] record the tab labels (TABS_B) and the stored hiddenTabs from GetLayout (L_B, scope accountDashboard)
+[KEY] record the tab labels (TABS_B) and the stored hidden statuses (block settings tab.<Status> = false) from GetLayout (L_B, scope accountDashboard)
 --- SCREEN: one status given back ---
 [ACT] press 'Edit layout'
 [WAIT] the edit bar is visible
@@ -1016,11 +1016,11 @@ The case is self-contained: it first brings the buyer to the state 'New and Canc
 [ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard (full reload)
-[KEY] record the tab labels (TABS_C) and the stored hiddenTabs (L_C)","[REL] TABS_A == 'All', 'Completed', 'Processing' {OBSERVED}
+[KEY] record the tab labels (TABS_C) and the stored hidden statuses (block settings tab.<Status> = false) (L_C)","[REL] TABS_A == 'All', 'Completed', 'Processing' {OBSERVED}
 [REL] BOXES_B0 shows 'New' and 'Cancelled' cleared before anything is toggled {OBSERVED}
-[REL] TABS_B == 'All', 'Processing' and L_B hiddenTabs == {New, Cancelled, Completed} - clearing 'Completed' did not reset the two statuses hidden earlier {OBSERVED}
+[REL] TABS_B == 'All', 'Processing' and L_B hidden statuses (block settings tab.<Status> = false) == {New, Cancelled, Completed} - clearing 'Completed' did not reset the two statuses hidden earlier {OBSERVED}
 [REL] BOXES_B shows 'New', 'Cancelled' and 'Completed' cleared and 'Processing' checked {OBSERVED}
-[REL] TABS_C == 'All', 'Completed', 'Processing' and L_C hiddenTabs == {New, Cancelled} - re-checking one status gives back that tab only {SPEC} (vc-frontend#2653)","[CONSOLE] no TypeError or JS error on the page under test
+[REL] TABS_C == 'All', 'Completed', 'Processing' and L_C hidden statuses (block settings tab.<Status> = false) == {New, Cancelled} - re-checking one status gives back that tab only {SPEC} (vc-frontend#2653)","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","toggling one checkbox resets the others (the hidden set is rebuilt from the toggled box alone)
 re-checking a status clears the whole hidden set
 the saved set differs from what the screen shows
@@ -1049,7 +1049,7 @@ ORD-DASH-033,"Dashboard layout — a hidden status is not dropped while the buye
 [ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard (full reload)
-[KEY] record the tab labels (TABS_HIDDEN) and the stored hiddenTabs from GetLayout (L_HIDDEN, scope accountDashboard)
+[KEY] record the tab labels (TABS_HIDDEN) and the stored hidden statuses (block settings tab.<Status> = false) from GetLayout (L_HIDDEN, scope accountDashboard)
 --- SCREEN: the buyer has no order in that status ---
 [SETUP] with the Platform API move PROC_ORDER to status New (set-order-status.mjs <PROC_ORDER.id> New, admin credentials from the env loader); wait until the Orders page lists no Processing order for the buyer (search index lag 30-60 s)
 [NAV] {{FRONT_URL}}/account/dashboard (full reload)
@@ -1066,7 +1066,7 @@ ORD-DASH-033,"Dashboard layout — a hidden status is not dropped while the buye
 [WAIT] the page leaves edit mode
 [KEY] count the SaveLayout requests in GQL_LOG (SAVES_EMPTY)
 [NAV] {{FRONT_URL}}/account/dashboard (full reload)
-[KEY] read the stored layout from GetLayout (L_EMPTY, recent-orders block settings hiddenTabs)
+[KEY] read the stored layout from GetLayout (L_EMPTY, recent-orders block settings hidden statuses (block settings tab.<Status> = false))
 --- SCREEN: an order in that status appears again ---
 [SETUP] with the Platform API move PROC_ORDER back to status Processing; wait until the Orders page lists it again
 [NAV] {{FRONT_URL}}/account/dashboard (full reload)
@@ -1076,14 +1076,14 @@ ORD-DASH-033,"Dashboard layout — a hidden status is not dropped while the buye
 [WAIT] the edit bar is visible
 [KEY] record the checked state of 'Processing' in 'Statuses to show' (BOX_BACK)
 [ACT] press 'Cancel'
-[WAIT] the page leaves edit mode","[REL] TABS_HIDDEN has no 'Processing' tab and L_HIDDEN hiddenTabs contains Processing {OBSERVED}
+[WAIT] the page leaves edit mode","[REL] TABS_HIDDEN has no 'Processing' tab and L_HIDDEN hidden statuses (block settings tab.<Status> = false) contains Processing {OBSERVED}
 [COUNT] SAVES_EMPTY == 1 - exactly one SaveLayout request fired in the 'Save layout' step, so the next assertion is not vacuous (a Save that sent nothing would keep Processing trivially) {SPEC} (vc-frontend#2653 review rule)
-[REL] L_EMPTY hiddenTabs still contains Processing: opening edit mode and pressing 'Save layout' while the buyer has no Processing order did not drop the hidden status {SPEC} (vc-frontend#2653 review rule)
+[REL] L_EMPTY hidden statuses (block settings tab.<Status> = false) still contains Processing: opening edit mode and pressing 'Save layout' while the buyer has no Processing order did not drop the hidden status {SPEC} (vc-frontend#2653 review rule)
 [REL] TABS_BACK has no 'Processing' tab and BOX_BACK is cleared - the hidden status applies again as soon as an order of that status exists {SPEC} (vc-frontend#2653 review rule)
-[STATE] every SaveLayout request in GQL_LOG carries Processing in hiddenTabs {SPEC} (vc-frontend#2653)","[CONSOLE] no TypeError or JS error on the page under test
+[STATE] every SaveLayout request in GQL_LOG carries Processing in hidden statuses (block settings tab.<Status> = false) {SPEC} (vc-frontend#2653)","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","a hidden status is forgotten after a save made while no order carries it, so its tab reappears with the next such order
 the case's status change did not reach the index (BLOCKED, not a product failure)
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[SETUP] move PROC_ORDER back to Processing if the case stopped before the last step; then Edit layout, check 'Processing', press 'Save layout'","VCST-6078 · Archetype:STALE · Technique:ST | Purpose:FUNC | Behavior chain V7-V8 · BL-SR-026 | Catches: a status list taken from the orders' facet dropping a hidden status that is missing from it (vc-frontend#2653 review finding) | Open dependencies: (1) whether the checkbox for a status with no orders is listed is not asserted - not observed; (2) exact key and block id of the stored hiddenTabs are read from the GetLayout response at run time, only the name hiddenTabs is taken from the review; (3) the order id comes from the buyer's own order list (no @td field exposes seeded order ids); (4) the status change needs admin credentials and set-order-status.mjs, so the case runs on a lane with Platform API access | Promoted: REG-2026-11-11-1738 (2026-11-11)",Automated
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[SETUP] move PROC_ORDER back to Processing if the case stopped before the last step; then Edit layout, check 'Processing', press 'Save layout'","VCST-6078 · Archetype:STALE · Technique:ST | Purpose:FUNC | Behavior chain V7-V8 · BL-SR-026 | Catches: a status list taken from the orders' facet dropping a hidden status that is missing from it (vc-frontend#2653 review finding) | Open dependencies: (1) whether the checkbox for a status with no orders is listed is not asserted - not observed; (2) the stored layout keeps a hidden status as the recent-orders block setting tab.<Status> = false (observed REG-2026-11-11-1922, KB-1E098549); (3) the order id comes from the buyer's own order list (no @td field exposes seeded order ids); (4) the status change needs admin credentials and set-order-status.mjs, so the case runs on a lane with Platform API access | Promoted: REG-2026-11-11-1738 (2026-11-11)",Automated
 ORD-DASH-034,Dashboard layout — a stat card that receives keyboard focus in edit mode shows a visible focus ring,Orders > Account dashboard > Live data,Medium,BL-A11Y-001,,"Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run). Fix in vc-frontend#2653: in edit mode a stat card focused with the keyboard shows a visible focus ring. {OBSERVED} vcptcore_qa1 2026-11-11, theme 2.62.0-pr-2552-942a. The edit is cancelled, nothing is saved.",buyer=@td(BD_LAYOUT.email),"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:BD_LAYOUT]
 [SETUP] normalise the saved layout of this buyer so the case starts from the defaults

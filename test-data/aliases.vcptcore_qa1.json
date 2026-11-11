@@ -1308,5 +1308,93 @@
       }
     },
     "seededAt": "2026-11-11T16:21:23.181Z"
+  },
+  "SR_REP_DOCS": {
+    "id": "1ae2395d-8ee5-41b3-80a6-62229a2d972a",
+    "user_id": "6c0168b3-57c0-4791-9b3b-f71326656844"
+  },
+  "SR_REP_DOCS_WRITER": {
+    "id": "39dde63d-0de6-4841-b3f9-c4132706446b",
+    "user_id": "bf3c2f62-4748-4a5b-a2a4-125750a5f39d"
+  },
+  "SR_DOC_PDF": {
+    "id": "70eb2d6f-1309-423d-9bc4-050c24d1ee12",
+    "file_id": "eb481dd53ed24122901498c4ad77ba62",
+    "url": "/api/files/eb481dd53ed24122901498c4ad77ba62"
+  },
+  "SR_DOC_DOCX": {
+    "id": "8948d4c1-9f16-4b8e-b272-3b33404e9fd0",
+    "file_id": "78941fcd4cfa4287bcdea5101d02c1d8",
+    "url": "/api/files/78941fcd4cfa4287bcdea5101d02c1d8"
+  },
+  "SR_DOC_XLSX": {
+    "id": "43005ac0-54a7-4680-b337-47de98b5d6d2",
+    "file_id": "d1374f895f454598abdbff2dad785405",
+    "url": "/api/files/d1374f895f454598abdbff2dad785405"
+  },
+  "SR_DOC_TXT": {
+    "id": "96cbea9e-ad95-4b8b-9029-0da451205983",
+    "file_id": "e23466d3c2cd452a8cb490c545b4017f",
+    "url": "/api/files/e23466d3c2cd452a8cb490c545b4017f"
+  },
+  "SR_DOC_PNG": {
+    "id": "f7b18dc1-47b0-4816-9589-1602d05ada89",
+    "file_id": "2b583fc7e79e4a39a0a8059d57df6d77",
+    "url": "/api/files/2b583fc7e79e4a39a0a8059d57df6d77"
+  },
+  "SR_DOC_JPG": {
+    "id": "2b82cb38-edea-4a9d-9bf7-8dfcac094cec",
+    "file_id": "15770bf3857747558228f9edf9a697fb",
+    "url": "/api/files/15770bf3857747558228f9edf9a697fb"
+  },
+  "SR_DOC_UNKNOWN_EXT": {
+    "id": "8ce2b5ee-5d13-4bc1-aa15-074130439dfb",
+    "file_id": "e0a4113751ee4d858e18d685d483ec23",
+    "url": "/api/files/e0a4113751ee4d858e18d685d483ec23"
+  },
+  "SR_DOC_UNICODE": {
+    "id": "421152fa-6d33-45a6-b00f-71373733e02c",
+    "file_id": "3dee21bde6214c18a89363979d71bb72",
+    "url": "/api/files/3dee21bde6214c18a89363979d71bb72"
+  },
+  "SR_DOC_LARGE": {
+    "id": "25a12760-7d6f-4b7d-9628-e448396874dc",
+    "file_id": "d1eca51924904ea4bf38d13d61a6dc42",
+    "url": "/api/files/d1eca51924904ea4bf38d13d61a6dc42"
+  },
+  "SR_DOC_FILLER_01": {
+    "id": "53da0021-a45d-4c27-9178-78de8b47ace9",
+    "file_id": "a4cefcf0f4c546948cdc77e08e9ef06b",
+    "url": "/api/files/a4cefcf0f4c546948cdc77e08e9ef06b"
+  },
+  "SR_DOC_FILLER_02": {
+    "id": "fc01de2d-3d39-4e2e-b6e9-6542ef2a6419",
+    "file_id": "a4129de9fb9e498dac11f148d0251cfe",
+    "url": "/api/files/a4129de9fb9e498dac11f148d0251cfe"
+  },
+  "SR_DOC_FILLER_03": {
+    "id": "13957125-b947-4bec-bb3e-1d24c7f0cb6a",
+    "file_id": "75c9a7da453842a192ddd7c435231442",
+    "url": "/api/files/75c9a7da453842a192ddd7c435231442"
+  },
+  "SR_DOC_FILLER_04": {
+    "id": "22ac3e4e-bf49-404f-bbd6-cd1d91e34204",
+    "file_id": "79b13db63998473bb733ec324d884df7",
+    "url": "/api/files/79b13db63998473bb733ec324d884df7"
+  },
+  "SR_DOC_FILLER_05": {
+    "id": "db39ef18-a4fb-4927-9012-618b293f7ed2",
+    "file_id": "780860c86f314b1488bcfbc671575c46",
+    "url": "/api/files/780860c86f314b1488bcfbc671575c46"
+  },
+  "SR_DOC_FILLER_06": {
+    "id": "b40575de-8a64-49b8-8760-c55104b06c7c",
+    "file_id": "d4884c93bb4f41708d08fd8ed6269ef8",
+    "url": "/api/files/d4884c93bb4f41708d08fd8ed6269ef8"
+  },
+  "SR_DOC_FILLER_07": {
+    "id": "d8c7f54f-1cda-4fc3-87de-46a8b642c778",
+    "file_id": "b950e276d47e483b817ca0bc43d4df12",
+    "url": "/api/files/b950e276d47e483b817ca0bc43d4df12"
   }
 }
