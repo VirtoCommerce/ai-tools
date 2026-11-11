@@ -7,7 +7,7 @@
  * project set up with several envs at once is ASKED, never defaulted to whichever was scaffolded first. It
  * prints one JSON object the skill acts on:
  *
- *   { status: "written" | "kept" | "ask" | "skipped", env, problem?, reason?, options?, recommended?, decline?, error?, declined?, lines }
+ *   { status: "written" | "kept" | "ask" | "skipped" | "error", env, problem?, reason?, options?, recommended?, decline?, error?, declined?, lines, testStands? }
  *
  *   written — the project's only env became the default (or `--choose` named one; a production-looking
  *             one gets a warning line). A lone production-looking env is not written unasked: `ask`;
@@ -23,10 +23,14 @@
  *             names no env of the project comes back as `ask` again with `error` — show `error` and ask again.
  *             `decline: true` (a lone production-looking env) ⇒ add the answer "No default environment",
  *             which runs `--decline`: `.env.test-env` then holds only DECLINED_LINE (`written`, `declined`);
- *   skipped — git tracks the file or does not ignore it, or the write failed: relay `lines`.
+ *   skipped — git tracks the file or does not ignore it, or the write failed: relay `lines`;
+ *   error   — the script itself failed (`error`): relay it.
  *
- * `lines` are the operator-facing lines to relay. Writes only `.env.test-env` and, first, its `.gitignore`
- * entry (lib/gitignore.mjs ensureSelectorIgnore). Never asks anything itself — the skill does.
+ * `lines` are the operator-facing lines to relay. Writes `.env.test-env` and, first, its `.gitignore` entry
+ * (lib/gitignore.mjs ensureSelectorIgnore). On a host-governed project with a test-data answer it ALSO
+ * declares every env on disk to vc-test in `project-profile.json` (`test.environments`, lib/test-stands.mjs)
+ * and reports it in `testStands` — relay those lines too (including a NOT-declared line). Never asks
+ * anything itself — the skill does.
  *
  * Usage: node default-env.mjs [--env <the env just scaffolded or added>] [--choose <env> | --decline]
  */
@@ -64,12 +68,12 @@ async function main() {
   if (profile?.governance?.host) {
     try {
       const declared = await declareTestStands(profile, root);
-      if (declared.lines.length) {
+      if (declared.profile !== profile) {
         const path = process.env.PROJECT_PROFILE_PATH || join(root, "project-profile.json");
         writeFileSync(path, `${JSON.stringify(declared.profile, null, 2)}\n`);
         profile = declared.profile;
-        testStands = declared.lines;
       }
+      testStands = declared.lines;
     } catch (e) { testStands = [`test environments not declared: ${e.message}`]; }
   }
   const named = arg("--env");

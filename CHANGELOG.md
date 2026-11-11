@@ -39,7 +39,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   `--check` answer) re-applies to every env; otherwise an env's existing `writable` — a later `/vc-test:init`
   choice — is kept and only `backUrl` is refreshed. The URL is read with vc-test's own env reader (root
   `.env.<env>` + QA_ENV_PATH folders), so it is the one its run check loads; without vc-test installed nothing is
-  declared. Only on a host-governed project with an answer.
+  declared, and a vc-test whose reader cannot be loaded gets a "NOT declared" line instead of silence. An env
+  recorded before its BACK_URL existed follows the answer once the URL appears. The URL is read without a ticket's
+  own `<ticket>` folder, so it does not depend on the session's bound ticket. Only on a host-governed project with an
+  answer.
 - **Schema:** `governance.stand.envs` (`string[] | null`, default `null`) added to `PROFILE_DEFAULTS` and the
   `.d.mts` typings in vc-init and in vc-fix's reader copy — a host-governed project's field only: reconcile
   treats it as conditional on `governance.host` (never added to, and pruned from, a no-host profile), and

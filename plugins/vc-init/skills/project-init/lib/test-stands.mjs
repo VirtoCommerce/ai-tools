@@ -20,26 +20,29 @@
  * stays vc-test's. A project with no host, or a host never asked (`stand.envs: null`), gets nothing written.
  *
  * The URLs are read with vc-test's OWN env reader (`scripts/lib/env-layers.mjs` ownEnv: the root `.env.<env>`
- * plus the QA_ENV_PATH folders), so the recorded `backUrl` is the one its run check loads. vc-test not
- * installed (or its dependencies not yet) ⇒ nothing is declared: nothing would read it.
+ * plus the QA_ENV_PATH folders), so the recorded `backUrl` is the one its run check loads — with NO ticket:
+ * a `<ticket>` folder is one ticket's stand, and declaring it would pin the project to whichever ticket the
+ * session had bound (a ticket's own stand is declared by /vc-test:init, as before). vc-test not installed ⇒
+ * nothing is declared (nothing would read it); installed but its reader not loadable ⇒ a line says so.
  */
 import { resolvePluginFile } from "../../../bridge/resolve-plugin.mjs";
 import { pathToFileURL } from "node:url";
 
 /**
- * `{ <env>: <its BACK_URL, "" when none> }` for every env vc-test sees here, read as vc-test reads it; null
- * when vc-test's reader is not available.
+ * `{ urls: { <env>: <its BACK_URL, "" when none> } }` for every env vc-test sees here, read as vc-test reads
+ * it; `{ urls: null, why }` when vc-test is not installed (`why: null`) or its reader cannot be loaded.
  */
-export async function envBackUrls(root) {
-  const file = resolvePluginFile("vc-test", "scripts/lib/env-layers.mjs");
-  if (!file) return null;
+export async function envBackUrls(root, { file = resolvePluginFile("vc-test", "scripts/lib/env-layers.mjs") } = {}) {
+  if (!file) return { urls: null, why: null };
   let layers;
-  try { layers = await import(pathToFileURL(file).href); } catch { return null; }
-  const out = {};
-  for (const env of layers.knownEnvs(root)) {
-    try { out[env] = String(layers.ownEnv(env, { root }).vars.BACK_URL || "").trim(); } catch { out[env] = ""; }
+  try { layers = await import(pathToFileURL(file).href); } catch (e) {
+    return { urls: null, why: `vc-test's env reader could not be loaded (${String(e?.message || e).split(/\r?\n/)[0]}) — install vc-test's dependencies, then /project-init --check` };
   }
-  return out;
+  const urls = {};
+  for (const env of layers.knownEnvs(root)) {
+    try { urls[env] = String(layers.ownEnv(env, { root, ticket: null }).vars.BACK_URL || "").trim(); } catch { urls[env] = ""; }
+  }
+  return { urls };
 }
 
 /**
@@ -53,7 +56,9 @@ export function testEnvironmentsFrom(governance, backUrls, current = {}, { reass
   for (const [env, backUrl] of Object.entries(backUrls)) {
     const had = out[env] && typeof out[env] === "object" ? out[env] : null;
     const answer = allowed.has(governance.envs?.[env] || env);
-    const writable = !backUrl ? false : reassert || typeof had?.writable !== "boolean" ? answer : had.writable;
+    // Declared = a writable recorded WITH a stand; one recorded before its BACK_URL existed follows the answer.
+    const declared = typeof had?.writable === "boolean" && Boolean(had?.backUrl);
+    const writable = !backUrl ? false : reassert || !declared ? answer : had.writable;
     const { backUrl: _old, ...rest } = had || {};
     out[env] = { ...rest, writable, ...(backUrl ? { backUrl } : {}) };
   }
@@ -64,10 +69,12 @@ export function testEnvironmentsFrom(governance, backUrls, current = {}, { reass
  * Fold the declarations into a profile object (returns a new one) with one line per changed env;
  * `{ profile, lines: [] }` when nothing changed. Reads the project's env files.
  */
-export async function declareTestStands(profile, root, { reassert = false } = {}) {
+export async function declareTestStands(profile, root, { reassert = false, reader } = {}) {
   if (!profile?.governance?.host || !Array.isArray(profile?.governance?.stand?.envs)) return { profile, lines: [] };
   const current = profile?.test?.environments;
-  const next = testEnvironmentsFrom(profile.governance, await envBackUrls(root), current, { reassert });
+  const { urls, why } = await envBackUrls(root, reader ? { file: reader } : undefined);
+  if (!urls) return { profile, lines: why ? [`test environments NOT declared: ${why}`] : [] };
+  const next = testEnvironmentsFrom(profile.governance, urls, current, { reassert });
   if (!next || JSON.stringify(next) === JSON.stringify(current ?? {})) return { profile, lines: [] };
   const lines = Object.entries(next)
     .filter(([env, d]) => JSON.stringify(d) !== JSON.stringify(current?.[env]))

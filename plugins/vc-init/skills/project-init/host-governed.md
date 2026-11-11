@@ -80,7 +80,7 @@ anything. The ticked values go, comma-joined, to ONE `gen-profile --gov-stand-en
 `governance.stand` `{ writable: <any ticked>, envs: [...] }`; "Nowhere" ticked together with an env is
 refused — ask again. **This answer is the only one: `/vc-test:init` is not needed for it.** It is declared to
 vc-test per env (`lib/test-stands.mjs`): `test.environments.<env> = { writable: <its host env is listed>,
-backUrl: <the env's BACK_URL, read as vc-test reads it> }`, other `test` keys untouched. An env not listed is
+backUrl: <the env's BACK_URL, read as vc-test reads it, without a ticket's own folder> }`, other `test` keys untouched. An env not listed is
 declared read-only, so vc-test writes only where the operator said yes. `default-env.mjs` declares every env
 on disk each time it runs — after step 4, in `--add-env` and in `--check` — and shows it as `testStands`
 lines; a new answer (`--gov-stand-envs`, a `--check` answer) re-applies to every env, otherwise an env's
@@ -204,7 +204,7 @@ One message, after §8 verify-access:
 | §0e tooling | `gh`/`az` are not installed for us; Node + git only |
 | §1 deps | `install-deps` as usual; **no `playwright install`** — the browser servers are the host's |
 | §2 interview | replaced by steps 2–4 above: facts shown, then `AskUserQuestion` rounds (choices, URLs, accounts). §2b and §2d are **not asked** |
-| §3a `.env.<env>` | URLs only — no built-in `ADMIN` / `USER_EMAIL`: test users take the host's slots. The file is gitignored. `.env.test-env` by `default-env.mjs` after step 4 (one question when there are several envs) |
+| §3a `.env.<env>` | URLs only — no built-in `ADMIN` / `USER_EMAIL`: test users take the host's slots. The file is gitignored. `.env.test-env` by `default-env.mjs` after step 4 (one question when there are several envs); it also declares each env to vc-test from the test-data answer (`testStands` — relay them, a NOT-declared line included) |
 | §3b `.env.local` | **no password placeholder** — the tracker / code-host connection only |
 | §3c `write-secrets-decl`, §3d token pause, §3e token gate | **skipped** |
 | §3e normalize-env | as usual — it requests the storefront URL once to detect `STORE_ID` |

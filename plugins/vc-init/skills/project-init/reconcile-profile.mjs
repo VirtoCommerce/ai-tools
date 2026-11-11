@@ -517,9 +517,11 @@ async function main() {
   // An answer given here is declared to vc-test per env at once (lib/test-stands.mjs), as gen-profile does.
   if (added.some((a) => a.path === "governance.stand" && a.via === "ask-resolved")) {
     const declared = await declareTestStands(migrated, outputRoot(), { reassert: true });
-    if (declared.lines.length) {
+    if (declared.profile !== migrated) {
       Object.assign(migrated, { test: declared.profile.test });
       added.push({ path: "test.environments", value: declared.profile.test.environments, via: "stand-declared", lines: declared.lines });
+    } else {
+      warnings.push(...declared.lines);
     }
   }
   const hasStructuralChange = added.length > 0 || removed.length > 0 || unset.length > 0;
