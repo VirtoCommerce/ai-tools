@@ -1,0 +1,143 @@
+{
+ "suites": {
+  "042": 34
+ },
+ "cases": {
+  "042|SMK-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-003": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-004": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-005": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-006": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-007": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-008": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-009": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-010": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-011": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-012": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-013": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-014": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-015": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-016": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-017": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-018": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-019": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-020": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-021": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-022": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-023": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-024": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-025": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-026": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-027": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-028": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-029": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-030": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-031": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-032": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-033": {
+   "status": "PASS",
+   "run": "REG-2026-11-11-1825-W0"
+  },
+  "042|SMK-034": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-11-1825-W0"
+  }
+ }
+}
