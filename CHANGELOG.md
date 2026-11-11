@@ -18,14 +18,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   host's rules allow the agent to create its own test entities on QA (they forbid other people's entities, direct
   database / search-index writes and production). The question round of `host-governed.md` step 3 now asks:
   *"On which environments may the agent create its own test data?"* — multi-select over the host's
-  environments (detect-governance's new `standChoices`: no production-looking env), plus **"Nowhere —
-  read-only"**, the Recommended default.
+  environments (detect-governance's new `standQuestion`: always 2–4 options — up to three envs, the host's or,
+  without password slots, the project's own, never a production-looking one — plus **"Nowhere — read-only"**,
+  the Recommended default; `more` names the envs that did not fit).
 - New `gen-profile --gov-stand-envs <host env>,…|none` writes `governance.stand = { writable: <any listed>,
   envs: [...] }`. `writable` is the project-wide ceiling; which of our envs a run writes to stays vc-test's
   `test.environments.<env>.writable`, and a run writes only where both say yes. Absent ⇒ the recorded answer is
   kept; a host never asked stays `{ writable: false, envs: null }` — the old safe behaviour. The ticked values
   are ONE comma-joined answer; "none" together with an env, or a non-string `--set` value (`true`, a number), is
-  refused, and a production-looking env gets a warning line (gen-profile) or a `warnings` entry (reconcile).
+  refused (as is `null`, which would read as "never asked"), and a production-looking env gets a warning line
+  (gen-profile, only where the answer is recorded) or a `warnings` entry (reconcile, shown by `--check` Step B).
+  The hand-off adds a test-data line naming the envs to mark writable in `/vc-test:init`.
 - **Only `writable` is enforced, project-wide.** `envs` records the answer in the host's env names; vc-test does
   not read it per env. The hand-off tells the operator to declare in `/vc-test:init` only the envs that map to
   the listed ones (host-governed.md step 3).
