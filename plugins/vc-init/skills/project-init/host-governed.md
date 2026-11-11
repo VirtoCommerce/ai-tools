@@ -74,9 +74,12 @@ its own test data (orders, users, carts — never someone else's, never a direct
 read-only."* Options: each of detect-governance's `standChoices` (the host's environments — a
 production-looking one is never offered) and **"Nowhere — read-only"**, the Recommended one and the default.
 The host's rules decide what the operator may tick — the question records their answer, it does not grant
-anything. The answer goes to `gen-profile --gov-stand-envs <env>,…|none` → `governance.stand`
-`{ writable: <any ticked>, envs: [...] }`. That is the project's ceiling: `/vc-test:init` still declares, per
-env, which one a run writes to (`test.environments.<env>.writable`), and a run writes only where both say yes.
+anything. The ticked values go, comma-joined, to ONE `gen-profile --gov-stand-envs <env>,…|none` →
+`governance.stand` `{ writable: <any ticked>, envs: [...] }`; "Nowhere" ticked together with an env is
+refused — ask again. **Only `writable` is enforced, and it is project-wide**: vc-test reads that one flag,
+then its own per-env declaration (`test.environments.<env>.writable`, `/vc-test:init`). `envs` records the
+answer in the host's env names and is not checked per env — so tell the operator, in the hand-off, to tick
+in `/vc-test:init` only the envs that map to the ones listed here (`governance.envs` maps a renamed one).
 An env whose URL the host blocks in step 4 is dropped from the list again (`--merge --gov-stand-envs`).
 A profile written before vc-init 0.6.0 (`stand: { writable: false }` with no `envs`) was never asked:
 `--check` reports `governance.stand.envs` as `pending` with this question and its options, and the answer goes

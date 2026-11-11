@@ -23,10 +23,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 - New `gen-profile --gov-stand-envs <host env>,…|none` writes `governance.stand = { writable: <any listed>,
   envs: [...] }`. `writable` is the project-wide ceiling; which of our envs a run writes to stays vc-test's
   `test.environments.<env>.writable`, and a run writes only where both say yes. Absent ⇒ the recorded answer is
-  kept; a host never asked stays `{ writable: false, envs: null }` — the old safe behaviour.
-- **Schema:** `governance.stand.envs` (`string[] | null`, default `null`) added to `PROFILE_DEFAULTS` in vc-init
-  and in vc-fix's reader copy. No `schemaVersion` change: the field is optional and every reader layers the
-  defaults. `[]` = asked, nowhere; `null` = never asked.
+  kept; a host never asked stays `{ writable: false, envs: null }` — the old safe behaviour. The ticked values
+  are ONE comma-joined answer; "none" together with an env, or a non-string `--set` value (`true`, a number), is
+  refused, and a production-looking env gets a warning line (gen-profile) or a `warnings` entry (reconcile).
+- **Only `writable` is enforced, project-wide.** `envs` records the answer in the host's env names; vc-test does
+  not read it per env. The hand-off tells the operator to declare in `/vc-test:init` only the envs that map to
+  the listed ones (host-governed.md step 3).
+- **Schema:** `governance.stand.envs` (`string[] | null`, default `null`) added to `PROFILE_DEFAULTS` and the
+  `.d.mts` typings in vc-init and in vc-fix's reader copy — a host-governed project's field only: reconcile
+  treats it as conditional on `governance.host` (never added to, and pruned from, a no-host profile), and
+  gen-profile writes none without a host. No `schemaVersion` change. `[]` = asked, nowhere; `null` = never asked.
 - `/project-init --check`: a host-governed profile with `stand.writable` not `true` and no `envs` (every profile
   written before 0.6.0) is reported as a `pending` decision `governance.stand.envs`, with the question and the
   host's environments as options; the answer goes back as `reconcile-profile.mjs --write --set

@@ -63,8 +63,7 @@ import { ensureGitignoreEntries, ensureProjectIgnores, removeGitignoreBlock } fr
 
 /** The .gitignore block a host-governed project gets for its env files (removed when it stops being one). */
 const HOST_ENV_IGNORE = "vc-init (/project-init) — host-governed: env files are local";
-import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, parseStandEnvs, resolveHostId, standBlock } from "./lib/governance.mjs";
-import { looksProduction } from "./lib/test-env-selector.mjs";
+import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, parseStandEnvs, productionStandEnvs, resolveHostId, standBlock } from "./lib/governance.mjs";
 import { envFileNames, gitTracked } from "./lib/project-env.mjs";
 import { emitObservations } from "./lib/diag-obs.mjs";
 
@@ -141,7 +140,7 @@ function governanceExtras(args, current = {}) {
     } catch (e) {
       fail(`--gov-stand-envs: ${e.message}`);
     }
-    for (const e of extras.standEnvs.filter(looksProduction)) console.log(`[gen-profile] ⚠ ${e} looks like production — test data may now be created there`);
+    for (const e of productionStandEnvs(extras.standEnvs)) console.log(`[gen-profile] ⚠ ${e} looks like production — test data may now be created there`);
   }
   return extras;
 }
@@ -436,8 +435,15 @@ function main() {
     }
     if (args["gov-browsers"] !== undefined) servers.browsers = String(args["gov-browsers"]).split(",").map((s) => s.trim()).filter(Boolean);
     const { standEnvs, ...answers } = governanceExtras(args, current);
-    const stand = standEnvs !== undefined ? standBlock(standEnvs) : current.stand;
+    const stand = standEnvs !== undefined ? standBlock(standEnvs) : standBlock(current.stand?.envs, current.stand);
     profile = { ...profile, governance: { ...current, host: currentId, servers, stand, ...answers } };
+  }
+  // `governance.stand.envs` is a host-governed project's answer only: a project with no host carries
+  // none (reconcile treats the field as conditional on a host), and the flag has nothing to record there.
+  if (!profile.governance?.host && profile.governance?.stand) {
+    const { envs: _unused, ...stand } = profile.governance.stand;
+    profile = { ...profile, governance: { ...profile.governance, stand } };
+    if (args["gov-stand-envs"] !== undefined) console.log("[gen-profile] ⚠ --gov-stand-envs ignored: not a host-governed project (its stands stay writable; vc-test's per-env declaration decides)");
   }
 
   // A host-governed project is a client's, and its repo scan (§4/§5) does not run — so the defaults

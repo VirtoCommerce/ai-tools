@@ -288,7 +288,7 @@ export const PROFILE_DEFAULTS = {
   //            az login) | "vc-secrets" — the normal VCST-6402 flow
   //   servers: the host's MCP server key per role — operator-confirmed, never inferred
   //   stand:   where a run may create its own test data. writable: false on a governed project until the
-  //            operator answers; envs: the host environments allowed ([] = nowhere, null = never asked)
+  //            operator answers; envs (host-governed only): the host envs allowed — [] nowhere, null never asked
   //   websiteAuth: how test users sign in to the client's site — "host-secrets" (passwords in the host's
   //            wrapper, typed by NAME) | "manual-operator" (the operator signs in by hand) | ""
   //   envs:    open map, `.env.<env>` name → the host's website environment (its password slots' prefix)

@@ -60,7 +60,7 @@ import { readFileSync, writeFileSync, existsSync, realpathSync } from "fs";
 import { fileURLToPath } from "url";
 import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION, authAxes } from "../../scripts/lib/project-profile.mjs";
 import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
-import { hostInstallPath, parseStandEnvs, standBlock, standChoices, standPending } from "./lib/governance.mjs";
+import { hostInstallPath, parseStandEnvs, productionStandEnvs, standBlock, standChoices, standPending } from "./lib/governance.mjs";
 import { hostState } from "./lib/host-adapter.mjs";
 
 // ─── managed-field migration policy ──────────────────────────────────────────
@@ -106,6 +106,8 @@ const STAND_QUESTION = {
   question: "On which environments may the agent create its own test data (orders, users, carts — never someone else's, never a direct DB write)? Not ticked = read-only.",
   multiSelect: true,
   options: [{ label: "Nowhere — read-only (recommended)", value: "none", hint: "a scenario that needs to write is BLOCKED" }],
+  // A multi-select answer is ONE --set, comma-joined (repeated --set flags overwrite each other).
+  set: "--set governance.stand.envs=<env>,<env>  (one --set, the ticked values comma-joined; Nowhere = none, never with an env)",
 };
 
 // Fixed-shape scalars `--set` may write directly, each with its allowed values. The auth axes are
@@ -128,6 +130,8 @@ const SETTABLE_SCALARS = {
 const CONDITIONAL = [
   { path: "tracker.azure", when: (p) => (p?.tracker?.kind ?? PROFILE_DEFAULTS.tracker.kind) === "azure" },
   { path: "vcs.azure", when: (p) => (p?.vcs?.clientHost ?? PROFILE_DEFAULTS.vcs.clientHost) === "azure-repos" },
+  // The test-data answer belongs to a host-governed project only (lib/governance.mjs standBlock).
+  { path: "governance.stand.envs", when: (p) => Boolean(p?.governance?.host) },
 ];
 
 // ─── arg parsing ─────────────────────────────────────────────────────────────
@@ -207,7 +211,7 @@ function setDeep(obj, dotted, value) {
  * pending (unresolved ask/rescan) field, so it is always safe to write.
  */
 export function reconcile(schema, existing, decisions, unsets = []) {
-  const report = { added: [], removed: [], pending: [], rescan: [], unset: [], rejected: [], preserved: [] };
+  const report = { added: [], removed: [], pending: [], rescan: [], unset: [], rejected: [], preserved: [], warnings: [] };
   // ─── schema 1 → 2 (VCST-6402): the single `vcs.auth` becomes `auth.{github,ado,jira}` ─────────
   // A version-1 profile recorded the client host's auth only. Derive what it does say (authAxes)
   // BEFORE the walk, so the walk keeps the derived block instead of adding an all-empty default;
@@ -434,6 +438,7 @@ export function reconcile(schema, existing, decisions, unsets = []) {
     if (envs && migrated?.governance?.host) {
       migrated.governance.stand = standBlock(envs);
       report.added.push({ path: "governance.stand", value: migrated.governance.stand, via: "ask-resolved" });
+      for (const e of productionStandEnvs(envs)) report.warnings.push(`${e} looks like production — test data may now be created there`);
     } else if (envs) {
       report.rejected.push({ path: STAND_PATH, value: decisions[STAND_PATH], reason: "only a host-governed project records where test data may be created" });
     }
@@ -492,7 +497,7 @@ function main() {
     return;
   }
 
-  const { migrated, added, removed, pending, rescan, unset, rejected, preserved } = reconcile(PROFILE_DEFAULTS, raw, decisions, args.unset);
+  const { migrated, added, removed, pending, rescan, unset, rejected, preserved, warnings } = reconcile(PROFILE_DEFAULTS, raw, decisions, args.unset);
   // The test-data question offers the host's own environments (never a production-looking one) — read
   // from the host's install here, since reconcile() is pure. Unreadable host ⇒ only "Nowhere" + free text.
   const standAsk = pending.find((p) => p.path === STAND_PATH);
@@ -531,6 +536,7 @@ function main() {
           pending,
           rescan,
           preserved,
+          warnings,
         },
         null,
         2,
@@ -563,7 +569,7 @@ function main() {
 
   console.log(
     JSON.stringify(
-      { status, path: outPath, wrote, added, removed, unset, rejected, pending, rescan, preserved },
+      { status, path: outPath, wrote, added, removed, unset, rejected, pending, rescan, preserved, warnings },
       null,
       2,
     ),
