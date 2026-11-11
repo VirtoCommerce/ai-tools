@@ -1,97 +1,30 @@
 {
-  "runId": "REG-2026-11-09-1635-W4",
+  "runId": "REG-2026-11-10-2148-MCPFIX2",
   "status": "completed",
-  "startedAt": "2026-11-09T13:35:54.317Z",
-  "env": "vcptcore_regression",
-  "selection": "stable:16 W4 (006,008,014b,014c,026,027,027b,031,033,050d,050o,073,073a,073b)",
+  "startedAt": "2026-11-10T20:48:49.676Z",
+  "env": "vcst",
+  "selection": "118,102 --ids UCPA-026,MCP-053",
   "suites": {
-    "026": {
+    "102": {
       "status": "done",
       "lane": "browser",
-      "cases": 74,
-      "startedAt": "2026-11-09T14:41:27.571Z"
+      "cases": 1,
+      "note": "A duplicate resume dispatch at 20:26Z (wrong premise: the original runner was still live) ran 0 cases; results are the original runner's.",
+      "browser": "playwright-chrome",
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0
     },
-    "014c": {
+    "118": {
       "status": "done",
       "lane": "browser",
-      "cases": 46
-    },
-    "073b": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 17
-    },
-    "014b": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 50,
-      "startedAt": "2026-11-09T14:41:27.572Z"
-    },
-    "006": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 71,
-      "startedAt": "2026-11-09T14:41:27.572Z"
-    },
-    "027b": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 20,
-      "startedAt": "2026-11-09T13:40:00.231Z",
-      "browser": "playwright-firefox"
-    },
-    "008": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 40,
-      "browser": "playwright-edge"
-    },
-    "027": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 71,
-      "startedAt": "2026-11-09T13:40:00.231Z",
-      "browser": "playwright-chrome"
-    },
-    "031": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 37,
-      "browser": "playwright-firefox"
-    },
-    "073": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 23,
-      "browser": "playwright-firefox"
-    },
-    "050d": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 60,
-      "startedAt": "2026-11-09T13:40:00.231Z",
-      "browser": "playwright-edge"
-    },
-    "033": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 15,
-      "startedAt": "2026-11-09T14:41:27.572Z"
-    },
-    "050o": {
-      "status": "done",
-      "lane": "fastpath",
-      "cases": 63,
-      "startedAt": "2026-11-09T13:40:00.230Z"
-    },
-    "073a": {
-      "status": "done",
-      "lane": "fastpath",
-      "cases": 37,
-      "startedAt": "2026-11-09T13:40:00.231Z"
+      "cases": 1,
+      "note": "A duplicate resume dispatch at 20:26Z re-ran MCP-026 and MCP-053 after close; its rows are kept apart in suite-118-cases.resume.jsonl / suite-118-results.browser.resume.json and do not change the canonical results.",
+      "browser": "playwright-edge",
+      "pass": 0,
+      "fail": 0,
+      "blocked": 1
     }
   },
-  "stalledAt": "2026-11-09T18:18:04.684Z",
-  "stalledReason": "no progress for 45 min (REG-2026-11-09-1635-W4:in_progress:13:547:547)",
-  "finishedAt": "2026-11-10T07:32:16.060Z"
+  "finishedAt": "2026-11-10T20:59:05.580Z"
 }

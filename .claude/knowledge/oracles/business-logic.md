@@ -511,6 +511,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/Fundamentals/Security/authorization/global-permissions.md (published) — modules declare access/read/create/update/delete (+extensions) permissions; [Authorize] enforces them on API methods.
 - **Source:** Platform docs "Global permissions" (the module permission template is `access/read/create/update/delete`; Orders extends it with `read_prices`) + `vc-platform` `ClaimsPrincipalExtensions.cs:61-71` (`HasGlobalPermission` = reserved-administrator short-circuit, else the permission claim must be held) + `vc-module-customer` `ModuleConstants.cs:14-34` (base 5 plus a module-specific `invite`, and a separate organization-membership permission group) with `OrganizationMembershipController.cs:22,34,80,92,119,129,137` gating each action by permission. Live-confirmed on the environment: the registered permission catalog is dominated by the base-5 verbs across every module group, `export` appears only on the few modules that support data export, and a storefront-scoped token carrying no platform permission claims received 403 from three permission-gated admin endpoints. The Admin-SPA button-visibility half of `Verify` was not re-observed this run (docs + source cover the UI-gating mechanism).
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MCP-029 failed in REG-2026-11-10-1438-VCST6155-C1r2
 
 ### BL-AUTH-006: Role hierarchy `[P1-data]`
 - **Rule:** Virto Commerce roles are independent permission-claim sets, **NOT** a built-in inheritance hierarchy — a role has exactly the permissions assigned to it and does not automatically inherit a lower role's permissions. The role entity carries no parent, base, extends, or child field of any kind. Three names are **reserved system roles** carried on the account rather than rows in the role list (administrator, manager, customer); every other role is **per-deployment data** — role names and their permission sets are created per deployment and must be read from the environment, never assumed to exist. Administrator power is a **short-circuit, not inheritance**: a principal in the reserved administrator system role passes every global permission check without holding the claim, while everyone else must hold the specific permission claim. Within that model: An Administrator can perform any action. Store Managers can manage their assigned store(s) but not platform settings. Customers can only access their own data — a storefront account is an account category, not a platform role, and typically holds no platform role at all (its rights arrive as organization-scoped claims). Anonymous users are limited to browsing (if `anonymousUsersAllowed = true`) — an unauthenticated state, not a role.
@@ -664,6 +665,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** vc-platform `src/VirtoCommerce.Platform.Web/Controllers/Api/SecurityController.cs` — `Login([FromBody] LoginRequest request)` guards `if (request?.UserName == null || request.Password == null) { return BadRequest(); }` before any user lookup. The source evidence is this one endpoint; the Rule generalizes it on the strength of the documented platform-wide convention.
 - **Source:** VCST-5623 (Done) — fixed POST /api/platform/security/login returning 500 instead of 400 on null/empty credential fields or body.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MCP-038 failed in REG-2026-11-10-1438-VCST6155-C1r2
 
 ### BL-AUTH-018: An expired password is enforced only on a password sign-in `[P0-security]`
 - **Rule:** The password-expiry state (`passwordExpired`, set when `User:MaxPasswordAge` runs out or an admin forces a change on next sign-in) is a property of the **password**, so it is enforced only on a session that was signed in **with that password**.
@@ -2403,6 +2405,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** vc-platform `src/VirtoCommerce.Platform.Security/CustomRoleManager.cs` — `CreateAsync`, `UpdateInternalAsync` and `DeleteAsync` each call `SecurityCacheRegion.ExpireRegion()` on success, invalidating cached role/permission lookups platform-wide on every role mutation.
 - **Source:** VP-8379 (Done) — a role assigned to users could not be deleted (nor its users); fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MCP-030, MCP-034 failed in REG-2026-11-10-1438-VCST6155-C1r2
 
 ### BL-PLAT-002: Account lock or deletion is authoritative over every credential and session tied to it `[P1-data]`
 - **Rule:** A user's Locked or Deleted account state overrides every authentication surface bound to that account, regardless of that credential's own individual flag. An API key's own active flag is not sufficient to authenticate — the owning account must also exist, be allowed to sign in, and not be locked out; a locked or deleted owning account causes API-key authentication to fail even though the key itself is active. Locking (setting a non-empty lockout end) or deleting a user account immediately terminates every active session and token issued to that account — a currently-signed-in session does not survive an administrator locking or deleting the account.
@@ -2677,7 +2680,7 @@ ticket or a docs page disputes (`status`).
 | Cart | BL-CART-001–016 | 16 | 6 | 10 | 0 | 8 | 2 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
-| Users & Authentication | BL-AUTH-001–025 | 25 | 13 | 11 | 1 | 18 | 9 |
+| Users & Authentication | BL-AUTH-001–025 | 25 | 13 | 11 | 1 | 18 | 11 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 9 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
@@ -2696,11 +2699,11 @@ ticket or a docs page disputes (`status`).
 | Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 11 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
-| Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
+| Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 1 |
 | Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 0 |
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **242** | **75** | **128** | **39** | **134** | **73** |
+| **Total** | | **242** | **75** | **128** | **39** | **134** | **76** |

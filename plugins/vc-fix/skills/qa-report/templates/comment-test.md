@@ -1,88 +1,59 @@
 ---
 kind: test
-budget: 3000
+budget: 12000
 lede_max: 240
-trim: "[AREAS, QUESTIONS, NOT_FILED, SUGGESTED, BUGS, TO_FIX]"
+trim: "[QUESTIONS, SUGGESTED, BUGS]"
 ---
-## {{ICON}} QA {{VERDICT_LABEL}} — {{TICKET}}
-{{LEDE}}
+> [!{{ALERT}}] **{{ICON}} {{HEADLINE}}**
+> {{LEDE}}
 
-| Where we tested | |
-|---|---|
-| **Environment** | {{ENV}} |
-| **Artifact** | {{BUILD}} |
+Tested on {{ENV}} · {{DATE}} · {{BUILD}} · {{TOTAL}} checks: {{PASSED}} passed, {{FAILED}} failed, {{BLOCKED}} blocked
 {{?AS_USER}}
-| **Signed in as** | {{AS_USER}} |
+Signed in as {{AS_USER}}
 {{/AS_USER}}
-| **When** | {{DATE}} · {{RUN_ID}} |
 
-### What was tested
-| Area | Cases | Result |
-|---|---|---|
-{{#AREAS}}
-| {{area}} | {{cases}} | {{result}} |
-{{/AREAS}}
-{{#AREAS_MORE}}
-| {{.}} | | |
-{{/AREAS_MORE}}
-{{^AREAS}}
-| Everything in the checklist | {{TOTAL}} | {{PASSED}} passed · {{FAILED}} failed · {{BLOCKED}} blocked |
-{{/AREAS}}
-
-{{#AC_DOD}}
-**Acceptance** {{.}}
-{{/AC_DOD}}
-**Regression** {{REGRESSION}}
-
-### New regression coverage
-{{NEW_CASES}}
-
-### To fix in this ticket
-| # | What to fix | Severity | Found by | Status |
+{{?TO_FIX}}
+### What to fix and how to reproduce
+| # | What is broken | How to reproduce | Expected → actual | Fix in |
 |---|---|---|---|---|
-{{#TO_FIX}}
-| {{id}} | {{what}} | {{severity}} | {{ref}} | {{status}} |
 {{/TO_FIX}}
-{{#TO_FIX_MORE}}
-| | {{.}} | | | |
-{{/TO_FIX_MORE}}
-{{^TO_FIX}}
-| | Nothing to fix | | | |
-{{/TO_FIX}}
+{{#FIX_ROWS}}
+{{{.}}}
+{{/FIX_ROWS}}
 
-### Separate tickets
+{{?SNIPPETS}}
+### Server response (evidence)
+{{/SNIPPETS}}
+{{#SNIPPETS}}
+{{{.}}}
+{{/SNIPPETS}}
+
+{{#SHOTS}}
+!{{.}}|width=700!
+{{/SHOTS}}
+
+{{?BUGS}}
+### Filed as separate bugs
 | What is wrong | Severity | Ticket |
 |---|---|---|
+{{/BUGS}}
 {{#BUGS}}
 | {{what}} | {{severity}} | {{ref}} |
 {{/BUGS}}
 {{#BUGS_MORE}}
 | {{.}} | | |
 {{/BUGS_MORE}}
-{{^BUGS}}
-| None created | | |
-{{/BUGS}}
+{{?SUGGESTED}}
+### Suggested as separate tickets (not created)
+| What is wrong | Severity | Type |
+|---|---|---|
+{{/SUGGESTED}}
 {{#SUGGESTED}}
-| {{what}} | {{severity}} | suggested {{type}} — not created |
+| {{what}} | {{severity}} | {{type}} |
 {{/SUGGESTED}}
 {{#SUGGESTED_MORE}}
 | {{.}} | | |
 {{/SUGGESTED_MORE}}
-
-{{#SHOTS}}
-!{{.}}|width=700!
-{{/SHOTS}}
-
-**Not filed (below severity floor)**
-{{#NOT_FILED}}
-- {{severity}} — {{title}}
-{{/NOT_FILED}}
-{{#NOT_FILED_MORE}}
-- {{.}}
-{{/NOT_FILED_MORE}}
-{{^NOT_FILED}}
-- None
-{{/NOT_FILED}}
 
 {{?QUESTIONS}}
 ### Open questions
@@ -94,7 +65,7 @@ trim: "[AREAS, QUESTIONS, NOT_FILED, SUGGESTED, BUGS, TO_FIX]"
 - {{.}}
 {{/QUESTIONS_MORE}}
 
-**Release gate** {{RELEASE_GATE}} · **Release note** {{RELEASE_NOTE}}
+**Next step** {{NEXT_STEP}}
 {{#PAGE_URL}}
 **Report** [open the report page]({{.}})
 {{/PAGE_URL}}

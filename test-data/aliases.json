@@ -12160,6 +12160,93 @@
     "default_href": "",
     "_notes": "VCST-6256 P2. PAGE 2: the 11th org by name (the rep has no orders, so the default rule ties and the handler orders by name) — the only row on page 2 at 10 per page, with an owner phone +1-555-110-1100. Backs \"numbers reloaded when the page changes\". expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
   },
+  "MCP_OPERATOR": {
+    "seed": "seed:mcp-security",
+    "_inline": true,
+    "_comment": "VCST-6155 (MCP module, back-office /admin/mcp) Manager account, isAdministrator=false, emailConfirmed, not locked out — holds the stand-owned role \"IT Platform Operator\" (System Operations tools: systemoperations:diagnostics:read, cache:reset, platform:module:manage + mcp:audit:read; NO mcp:approve, NO mcp:manage). Requests tool calls, cannot approve them. The seeder READS that shared role and fails if it drifted — never writes or deletes it; where it is missing it falls back to AGENT-TEST-MCP-Operator and says so. Single source of truth: scripts/seed-data/platform/mcp-security-specs.mjs; seed: npm run seed:mcp-security -- --verify; drift-guard: npm run td:validate:mcp-security; teardown: npm run seed:mcp-security:teardown. Runtime id/platform_id/role_id resolve from aliases.<env>.json. The PASSWORD is the {{DEFAULT_TEST_PASSWORD}} secret (Playwright lane NAME: DEFAULT_TEST_PASSWORD_<ENV>).",
+    "email": "AGENT-TEST-mcp-operator@test.virtocommerce.com",
+    "login": "AGENT-TEST-mcp-operator@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "role": "IT Platform Operator",
+    "permissions": [
+      "systemoperations:diagnostics:read",
+      "cache:reset",
+      "platform:module:manage",
+      "mcp:audit:read"
+    ],
+    "excluded_permissions": [
+      "mcp:approve",
+      "mcp:manage"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "MCP_APPROVER": {
+    "seed": "seed:mcp-security",
+    "_inline": true,
+    "_comment": "VCST-6155 (MCP module, back-office /admin/mcp) Manager account, isAdministrator=false, emailConfirmed, not locked out — role AGENT-TEST-MCP-Approver: mcp:approve + mcp:audit:read, NO System Operations tool permission, NO mcp:manage. A different user from MCP_OPERATOR, so approver-is-not-requester can fail. Single source of truth: scripts/seed-data/platform/mcp-security-specs.mjs; seed: npm run seed:mcp-security -- --verify; drift-guard: npm run td:validate:mcp-security; teardown: npm run seed:mcp-security:teardown. Runtime id/platform_id/role_id resolve from aliases.<env>.json. The PASSWORD is the {{DEFAULT_TEST_PASSWORD}} secret (Playwright lane NAME: DEFAULT_TEST_PASSWORD_<ENV>).",
+    "email": "AGENT-TEST-mcp-approver@test.virtocommerce.com",
+    "login": "AGENT-TEST-mcp-approver@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "role": "AGENT-TEST-MCP-Approver",
+    "permissions": [
+      "mcp:approve",
+      "mcp:audit:read"
+    ],
+    "excluded_permissions": [
+      "systemoperations:diagnostics:read",
+      "cache:reset",
+      "platform:module:manage",
+      "mcp:manage"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "MCP_MANAGER": {
+    "seed": "seed:mcp-security",
+    "_inline": true,
+    "_comment": "VCST-6155 (MCP module, back-office /admin/mcp) Manager account, isAdministrator=false, emailConfirmed, not locked out — role AGENT-TEST-MCP-Manager: mcp:manage + mcp:audit:read (tool switches / connected agents of everyone), NO mcp:approve, NO tool permission. Single source of truth: scripts/seed-data/platform/mcp-security-specs.mjs; seed: npm run seed:mcp-security -- --verify; drift-guard: npm run td:validate:mcp-security; teardown: npm run seed:mcp-security:teardown. Runtime id/platform_id/role_id resolve from aliases.<env>.json. The PASSWORD is the {{DEFAULT_TEST_PASSWORD}} secret (Playwright lane NAME: DEFAULT_TEST_PASSWORD_<ENV>).",
+    "email": "AGENT-TEST-mcp-manager@test.virtocommerce.com",
+    "login": "AGENT-TEST-mcp-manager@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "role": "AGENT-TEST-MCP-Manager",
+    "permissions": [
+      "mcp:manage",
+      "mcp:audit:read"
+    ],
+    "excluded_permissions": [
+      "systemoperations:diagnostics:read",
+      "cache:reset",
+      "platform:module:manage",
+      "mcp:approve"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "MCP_NOROLE": {
+    "seed": "seed:mcp-security",
+    "_inline": true,
+    "_comment": "VCST-6155 (MCP module, back-office /admin/mcp) Manager account, isAdministrator=false, emailConfirmed, not locked out — NO role and no permission: the negative for \"a user without the role sees no System Operations tools\". Single source of truth: scripts/seed-data/platform/mcp-security-specs.mjs; seed: npm run seed:mcp-security -- --verify; drift-guard: npm run td:validate:mcp-security; teardown: npm run seed:mcp-security:teardown. Runtime id/platform_id/role_id resolve from aliases.<env>.json. The PASSWORD is the {{DEFAULT_TEST_PASSWORD}} secret (Playwright lane NAME: DEFAULT_TEST_PASSWORD_<ENV>).",
+    "email": "AGENT-TEST-mcp-norole@test.virtocommerce.com",
+    "login": "AGENT-TEST-mcp-norole@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "role": null,
+    "permissions": [],
+    "excluded_permissions": [
+      "systemoperations:diagnostics:read",
+      "cache:reset",
+      "platform:module:manage",
+      "mcp:approve",
+      "mcp:manage",
+      "mcp:audit:read"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
   "RESTRICTED_USER": {
     "seed": "seed:rbac",
     "_inline": true,

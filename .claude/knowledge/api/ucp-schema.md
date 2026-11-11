@@ -8,19 +8,19 @@
 ## Server
 
 - protocol: `2025-06-18`
-- serverInfo: `Virto Commerce UCP Instructions` v`1.0`
-- capabilities: `logging`, `tools`
+- serverInfo: `Virto Commerce UCP` v`1.0`
+- capabilities: `logging`, `prompts`, `tools`
 
 ### Tool-count agreement across the three surfaces that publish one
 
 | surface | count |
 |---|---|
-| `tools/list` | 18 |
-| `get_store_capabilities.mcp_tools` | 17 |
-| `initialize.instructions` prose | 16 |
+| `tools/list` | 25 |
+| `get_store_capabilities.mcp_tools` | 25 |
+| `initialize.instructions` prose | 25 |
 
-- in `tools/list` but NOT advertised: `logout_buyer`
-- in `tools/list` but NOT in the prose list: `link_buyer_identity`, `logout_buyer`
+- in `tools/list` but NOT advertised: (none)
+- in `tools/list` but NOT in the prose list: (none)
 
 ### Discovery manifest endpoint, per host
 
@@ -28,6 +28,30 @@
 - `back`: https://vcst-qa-storefront.govirto.com/ucp/mcp
 
 ## Tools
+
+### `cancel_cart`
+
+required: (none)
+
+```
+  id: string
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
+  store_id: string
+  buyer_id: string
+```
+
+### `cancel_checkout`
+
+required: (none)
+
+```
+  id: string
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
+```
 
 ### `checkout_and_handoff`
 
@@ -83,12 +107,32 @@ required: `cart_id`
   notes: string
 ```
 
-### `create_cart`
+### `complete_checkout`
 
-required: `line_items`
+required: (none)
 
 ```
-* line_items: array
+  id: string
+  checkout: object
+      cart_id: string|null
+      line_items: array|null
+      buyer: object|null
+      context: object|null
+      fulfillment: object|null
+      payment: object|null
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
+  store_id: string
+  buyer_id: string
+```
+
+### `create_cart`
+
+required: (none)
+
+```
+  line_items: array
     [item]
         id: string|null
         product_id: string|null
@@ -100,14 +144,21 @@ required: `line_items`
   cart_name: string
   cart_type: string
   coupons: array
+  cart: object
+      line_items: array|null
+      context: object|null
+      buyer: object|null
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
 ```
 
 ### `create_checkout`
 
-required: `cart_id`
+required: (none)
 
 ```
-* cart_id: string
+  cart_id: string
   store_id: string
   currency: string
   language: string
@@ -154,18 +205,59 @@ required: `cart_id`
       email: string|null
   payment_handler: string
   notes: string
+  checkout: object
+      cart_id: string|null
+      line_items: array|null
+      buyer: object|null
+      context: object|null
+      fulfillment: object|null
+      payment: object|null
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
 ```
 
 ### `get_cart`
 
-required: `cart_id`
+required: (none)
 
 ```
-* cart_id: string
+  cart_id: string
   store_id: string
   currency: string
   language: string
   buyer_id: string
+  id: string
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
+```
+
+### `get_checkout`
+
+required: (none)
+
+```
+  id: string
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
+  store_id: string
+  buyer_id: string
+```
+
+### `get_order`
+
+required: (none)
+
+```
+  id: string
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
+  store_id: string
+  buyer_id: string
+  language: string
 ```
 
 ### `get_payment_handlers`
@@ -186,6 +278,13 @@ required: (none)
   store_id: string
   currency: string
   language: string
+  catalog: object
+      id: string|null
+      filters: object|null
+      context: object|null
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
 ```
 
 ### `get_store_capabilities`
@@ -300,12 +399,43 @@ required: (none)
 (no arguments)
 ```
 
+### `lookup_catalog`
+
+required: (none)
+
+```
+  catalog: object
+      ids: array|null
+      filters: object|null
+      context: object|null
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
+  store_id: string
+```
+
 ### `resolve_country`
 
 required: `query`
 
 ```
 * query: string
+```
+
+### `search_catalog`
+
+required: (none)
+
+```
+  catalog: object
+      query: string|null
+      context: object|null
+      filters: object|null
+      pagination: object|null
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
+  store_id: string
 ```
 
 ### `search_products`
@@ -330,6 +460,7 @@ required: (none)
   order_id: string
   order_number: string
   cart_id: string
+  placed_after: string|null
   store_id: string
   currency: string
   language: string
@@ -338,11 +469,11 @@ required: (none)
 
 ### `update_cart`
 
-required: `cart_id`, `line_items`
+required: (none)
 
 ```
-* cart_id: string
-* line_items: array
+  cart_id: string
+  line_items: array
     [item]
         id: string|null
         product_id: string|null
@@ -354,14 +485,22 @@ required: `cart_id`, `line_items`
   cart_name: string
   cart_type: string
   coupons: array
+  id: string
+  cart: object
+      line_items: array|null
+      context: object|null
+      buyer: object|null
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
 ```
 
 ### `update_checkout`
 
-required: `checkout_id`
+required: (none)
 
 ```
-* checkout_id: string
+  checkout_id: string
   cart_id: string
   store_id: string
   currency: string
@@ -409,6 +548,17 @@ required: `checkout_id`
       email: string|null
   payment_handler: string
   notes: string
+  id: string
+  checkout: object
+      cart_id: string|null
+      line_items: array|null
+      buyer: object|null
+      context: object|null
+      fulfillment: object|null
+      payment: object|null
+  meta: object
+      ucp-agent: object|null
+      idempotency-key: string|null
 ```
 
 ## Declared operations (`get_store_capabilities.endpoints.operations`)
@@ -418,6 +568,7 @@ required: `checkout_id`
 | `GET` | `/.well-known/ucp` | `get_store_capabilities` | profile | available |
 | `MCP` | `/ucp/mcp` | `checkout_and_handoff` | checkout | available |
 | `MCP` | `/ucp/mcp` | `link_buyer_identity` | identity_linking | available |
+| `MCP` | `/ucp/mcp` | `logout_buyer` | identity_linking | available |
 | `GET` | `/ucp/v1/carts/{cartId}` | `get_cart` | cart | available |
 | `PUT` | `/ucp/v1/carts/{cartId}` | `update_cart` | cart | available |
 | `POST` | `/ucp/v1/carts` | `create_cart` | cart | available |
@@ -437,7 +588,7 @@ required: `checkout_id`
 
 ## Error codes
 
-`invalid_request` · `identity_required` · `buyer_context_mismatch` · `missing_store_id` · `product_not_found` · `cart_not_found` · `out_of_stock` · `insufficient_stock` · `inventory_unavailable` · `order_not_found` · `xapi_invalid_response`
+`invalid_request` · `identity_required` · `buyer_context_mismatch` · `handoff_in_progress` · `missing_store_id` · `product_not_found` · `cart_not_found` · `out_of_stock` · `insufficient_stock` · `inventory_unavailable` · `order_not_found` · `xapi_invalid_response`
 
 ## Advertised headers
 

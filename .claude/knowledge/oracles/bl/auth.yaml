@@ -111,10 +111,11 @@ rules:
       kind: manual
       ref: Create a role with only `read` on Catalog → assign to user → sign in as that user → "Create" and "Delete" buttons absent in Catalog blade. Attempt `POST /api/catalog/products` → 403. Add `create` permission → button appears.
     violation_signal: Buttons visible for unauthorized actions; API returns 200 instead of 403; user can create/delete without permission; `access` permission not required to enter module.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-29
       by: REG-2026-10-28-1915
+    suspect_reason: "[case] MCP-029 failed in REG-2026-11-10-1438-VCST6155-C1r2"
   - id: BL-AUTH-006
     title: Role hierarchy
     rule: "Virto Commerce roles are independent permission-claim sets, **NOT** a built-in inheritance hierarchy — a role has exactly the permissions assigned to it and does not automatically inherit a lower role's permissions. The role entity carries no parent, base, extends, or child field of any kind. Three names are **reserved system roles** carried on the account rather than rows in the role list (administrator, manager, customer); every other role is **per-deployment data** — role names and their permission sets are created per deployment and must be read from the environment, never assumed to exist. Administrator power is a **short-circuit, not inheritance**: a principal in the reserved administrator system role passes every global permission check without holding the claim, while everyone else must hold the specific permission claim. Within that model: An Administrator can perform any action. Store Managers can manage their assigned store(s) but not platform settings. Customers can only access their own data — a storefront account is an account category, not a platform role, and typically holds no platform role at all (its rights arrive as organization-scoped claims). Anonymous users are limited to browsing (if `anonymousUsersAllowed = true`) — an unauthenticated state, not a role."
@@ -390,7 +391,8 @@ rules:
       kind: manual
       ref: '`POST /api/platform/security/login` with `{}`, `{"userName":null,"password":null}`, a missing `password` key, or an empty raw body → `400`. The same shape with a well-formed but unknown `userName` → `200` + `succeeded:false`. Assert no `stackTrace` in any response.'
     violation_signal: "`500 Internal Server Error` on a malformed or empty request body; a parameter-name leak such as `Value cannot be null. (Parameter 'userName')` surfacing to the caller; or an over-correction that starts rejecting previously-valid payloads with `400`."
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] MCP-038 failed in REG-2026-11-10-1438-VCST6155-C1r2"
   - id: BL-AUTH-018
     title: An expired password is enforced only on a password sign-in
     rule: |-

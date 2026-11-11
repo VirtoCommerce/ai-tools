@@ -3492,5 +3492,45 @@
   },
   "CATALOG_OTHER_WITH_PROPERTIES": {
     "id": "8a55771b-16d6-41f9-8dcd-329099233c8f"
+  },
+  "MCP_OPERATOR": {
+    "_inline": true,
+    "platform_id": "86d6f3ff-e58a-4289-8fa1-1770982381cb",
+    "user_id": "86d6f3ff-e58a-4289-8fa1-1770982381cb",
+    "id": "86d6f3ff-e58a-4289-8fa1-1770982381cb",
+    "userName": "AGENT-TEST-mcp-operator@test.virtocommerce.com",
+    "email": "AGENT-TEST-mcp-operator@test.virtocommerce.com",
+    "role_id": "66475f2f-d27e-495e-98c3-c65a46285682",
+    "role_name": "IT Platform Operator"
+  },
+  "MCP_APPROVER": {
+    "_inline": true,
+    "platform_id": "8fec0e1c-89ac-4da8-a0b4-9aaf323b821a",
+    "user_id": "8fec0e1c-89ac-4da8-a0b4-9aaf323b821a",
+    "id": "8fec0e1c-89ac-4da8-a0b4-9aaf323b821a",
+    "userName": "AGENT-TEST-mcp-approver@test.virtocommerce.com",
+    "email": "AGENT-TEST-mcp-approver@test.virtocommerce.com",
+    "role_id": "AGENT-TEST-MCP-Approver",
+    "role_name": "AGENT-TEST-MCP-Approver"
+  },
+  "MCP_MANAGER": {
+    "_inline": true,
+    "platform_id": "570a88f1-9638-44a4-b789-7d594af799b2",
+    "user_id": "570a88f1-9638-44a4-b789-7d594af799b2",
+    "id": "570a88f1-9638-44a4-b789-7d594af799b2",
+    "userName": "AGENT-TEST-mcp-manager@test.virtocommerce.com",
+    "email": "AGENT-TEST-mcp-manager@test.virtocommerce.com",
+    "role_id": "AGENT-TEST-MCP-Manager",
+    "role_name": "AGENT-TEST-MCP-Manager"
+  },
+  "MCP_NOROLE": {
+    "_inline": true,
+    "platform_id": "d201daac-8a14-4143-af1a-8fb5a82def69",
+    "user_id": "d201daac-8a14-4143-af1a-8fb5a82def69",
+    "id": "d201daac-8a14-4143-af1a-8fb5a82def69",
+    "userName": "AGENT-TEST-mcp-norole@test.virtocommerce.com",
+    "email": "AGENT-TEST-mcp-norole@test.virtocommerce.com",
+    "role_id": null,
+    "role_name": null
   }
 }
