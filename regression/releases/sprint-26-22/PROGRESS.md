@@ -4,11 +4,11 @@
 
 Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst · 3.1097.0 · 2.62.0-alpha.2642 · Xapi is the PR build 3.1031.0-pr-70-108f (vc-module-x-api#70, VCST-4717), deployed by vc-deploy-dev#7095
 
-**Executed 0 · PASS 0 · FAIL 0 · BLOCKED 0** · ledger 0 rows
+**Executed 34 · PASS 27 · FAIL 0 · BLOCKED 2** · ledger 11 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| W0 | Smoke gate | Elena Kutasina | CLAIMED | — | — | — | — | — | — | 0 | — |
+| W0 | Smoke gate | Elena Kutasina | TRIAGED | 34 | 34 | 27 | 0 | 2 | 0 | 11 | REG-2026-11-11-1825-W0 |
 | W1 | Authentication — sign-in, session, security | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W2 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W3 | Cart, checkout & addresses | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -21,5 +21,23 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
+| REAL_BUG | 3 |
+| BY_DESIGN | 5 |
+| DATA | 2 |
+| PENDING_DECISION | 1 |
+
+## Real bugs awaiting filing
+
+| Wave | Case | Summary | New in release | Note |
+|---|---|---|---|---|
+| W0 | OBS-BUG_042_001 | Pick points dialog locations radiogroup accessible name is the raw key pages.checkout.shipping.links.select_pickup_point | unknown |  |
+| W0 | OBS-BUG_042_002 | Profile Last name and Email inputs show the placeholder Enter your first name | unknown |  |
+| W0 | OBS-BUG_042_004 | Reloading /checkout/completed drops the order number and the Show order link | no |  |
+
+## Decisions pending
+
+| Wave | Case | Question | Who decides |
+|---|---|---|---|
+| W0 | OBS-BUG_042_003 | Cart totals stayed stale 15-35 s after changeCartItemsQuantity returned 200 in 817 ms | Elena Kutasina |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
