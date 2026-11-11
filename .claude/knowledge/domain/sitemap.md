@@ -5,11 +5,11 @@ applicability_rationale: "Full storefront URL map. Customer's sitemap differs by
 
 # Sitemap: FRONT_URL
 
-**Generated:** October 28, 2026 (rev 12 — deterministic axis refreshed for the Sprint 26-21 plan; body carried from rev 5, July 20 2026)
+**Generated:** November 11, 2026 (rev 13 — deterministic axis refreshed for the Sprint 26-22 plan; body carried from rev 5, July 20 2026)
 **Base URL:** FRONT_URL (from `FRONT_URL` env var) — vcst-qa
 **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver.") *(was 2.49.0 in May)*
-**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1090.0**; 89 modules loaded) *(was 3.1078.0 / 87 at rev 11, 3.1073.0 at rev 10; rev 9, 2026-09-18: was `3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow`, a pre-release build pinned to VCST-5378 — the QA env is back on a stable-numbered line)*
-**Store total products:** 4,655 *(was 4,615 at rev 11, 4,567 at rev 10, 4,550 at rev 9; treat product counts and slugs as drift candidates)* · nav categories 52 *(53 at rev 11 counted `seed-loyalty-fixtures` twice; Carriage Bolts re-parented back `destinations/` → `bolts/` at rev 12)* · `/products-with-options` subcategories 7 *(unchanged)*
+**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1097.0**; 92 modules loaded) *(was 3.1090.0 / 89 at rev 12, 3.1078.0 / 87 at rev 11, 3.1073.0 at rev 10; rev 9, 2026-09-18: was `3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow`, a pre-release build pinned to VCST-5378 — the QA env is back on a stable-numbered line)*
+**Store total products:** 4,652 *(was 4,655 at rev 12, 4,615 at rev 11, 4,567 at rev 10, 4,550 at rev 9; treat product counts and slugs as drift candidates)* · nav categories 53 *(rev 13 added `seed-range-facet-fixtures`; 53 at rev 11 counted `seed-loyalty-fixtures` twice; Carriage Bolts re-parented back `destinations/` → `bolts/` at rev 12)* · `/products-with-options` subcategories 7 *(unchanged)*
 
 > **Note on the version fields:** the storefront footer "Ver." (`2.54.0-pr-2382`) is the **vc-frontend theme** version — earlier revs of this doc mislabeled it "Platform version". The actual VirtoCommerce **platform** runs on the `3.10xx` assembly line (resolved from `/api/platform/modules`).
 
@@ -580,6 +580,16 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 
 ---
 
+## Changelog (vs. October 28, 2026 rev 12)
+
+| Area | Delta |
+|------|-------|
+| Platform assembly line | max module-required `platformVersion` 3.1090.0 → **3.1097.0**; modules loaded 89 → **92** |
+| Store total products | 4,655 → **4,652** (−3) |
+| Nav categories | 52 → **53**. ADDED (1): `seed-range-facet-fixtures` — a QA seed fixture, not merchandising; teardown-eligible |
+| Route axis | ADDED (2): `/punchout/:sessionToken` (`modules/punchout/index.ts`), an `Account` mount from `modules/returns/index.ts`. Read from the local `.fix-workspace/vc-frontend` checkout (`66004bd4` @ 2026-10-09), so routes merged since then are still missing; freshness reported UNKNOWN. §2 **not** rewritten |
+| Scope of this rev | Deterministic xAPI crawl only (`npm run sitemap:refresh`, 2026-11-11, `/qa-test-plan 26-22` Step 0). Touched: header, this changelog, footer. Theme "Ver." not resolved (no browser pass). §§2–13 carried forward, **not** re-verified |
+
 ## Changelog (vs. October 14, 2026 rev 11)
 
 | Area | Delta |
@@ -687,6 +697,6 @@ See git history of this file for prior revisions.
 
 ---
 
-**Last Updated:** October 28, 2026 (rev 12)
+**Last Updated:** November 11, 2026 (rev 13)
 **Tool Used:** Playwright (Chrome) MCP — live crawl (guest) + `/api/platform/modules` (authed) for platform version
 **Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Re-derived from source at rev 8:** §2 Account + Corporate + Sales Rep hub routes (vc-frontend `router/routes/` + `modules/*/index.ts`). **Carried forward from rev 4 (not re-verified):** §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.
