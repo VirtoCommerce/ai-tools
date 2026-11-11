@@ -522,33 +522,59 @@ if (specHits.length === 0) {
 }
 
 // --- DV-026: a large binary fixture is generated, never committed ---
-// A binary under test-data/ is in every clone forever, and a fixture that only tests a size limit
-// carries no information a script cannot recreate: suite 072b's 5 MB PNG and 24 MB MP4 were 28 MB of
-// a 104 MB checkout. Generate such a file (scripts/test-data/gen-*.mjs, an npm td:gen:* script) and
-// gitignore its output instead. Text fixtures (CSV/JSON/MD/YAML, code) are exempt: git deltas them.
-// The limit is a policy line, not a measured constant: today's largest legitimate binary is ~0.4 MB.
+// A binary under test-data/ is in every clone forever, and a fixture that only tests its own size or
+// type carries no information a script cannot recreate (scripts/test-data/gen-upload-size-fixtures.mjs,
+// `npm run td:gen:uploads`). Rule: .claude/knowledge/execution/test-data-authoring.md §Large fixtures.
+// What is measured is what git holds, not the working tree: the index (= HEAD in CI) lists the paths,
+// git's own text detection (`ls-files --eol`, `i/-text`) decides binary, and `cat-file` gives the blob
+// size. So a locally deleted or swapped file cannot change the answer, and a text fixture with an
+// unusual extension is never counted as binary. Run from any directory: paths come from the repo top.
+// If git cannot be asked, the guard FAILS — it never reports clean on an answer it did not get.
 const MAX_FIXTURE_BINARY_BYTES = 1024 * 1024;
-const TEXT_FIXTURE_RE = /\.(csv|json|jsonl|md|ya?ml|txt|mjs|js|ts|xml|graphql|html|svg)$/i;
 const bigBinaries: { file: string; bytes: number }[] = [];
+let dv026Error: string | null = null;
 {
-  const ls = spawnSync("git", ["ls-files", "-z", "--", "test-data"], { cwd: ROOT, encoding: "utf8" });
-  for (const file of (ls.stdout || "").split("\0").filter(Boolean)) {
-    if (TEXT_FIXTURE_RE.test(file)) continue;
-    let bytes = 0;
-    try { bytes = statSync(join(ROOT, file)).size; } catch { continue; }
-    if (bytes > MAX_FIXTURE_BINARY_BYTES) bigBinaries.push({ file, bytes });
+  const git = (args: string[], input?: string) => {
+    const r = spawnSync("git", args, { cwd: ROOT, encoding: "utf8", input, maxBuffer: 64 * 1024 * 1024 });
+    if (r.error || r.status !== 0) throw new Error(`git ${args[0]} failed: ${r.error?.message ?? ((r.stderr || "").trim() || `exit ${r.status}`)}`);
+    return r.stdout;
+  };
+  try {
+    const top = git(["rev-parse", "--show-toplevel"]).trim();
+    const at = (args: string[], input?: string) => git(["-C", top, ...args], input);
+    const binary = new Set<string>();
+    for (const rec of at(["ls-files", "-z", "--eol", "--", "test-data"]).split("\0").filter(Boolean)) {
+      const tab = rec.indexOf("\t");
+      if (tab > 0 && /(^|\s)i\/-text(\s|$)/.test(rec.slice(0, tab))) binary.add(rec.slice(tab + 1));
+    }
+    const staged = at(["ls-files", "-z", "-s", "--", "test-data"]).split("\0").filter(Boolean)
+      .map((rec) => { const tab = rec.indexOf("\t"); return { sha: rec.slice(0, tab).split(" ")[1], file: rec.slice(tab + 1) }; })
+      .filter((e) => binary.has(e.file));
+    if (staged.length) {
+      const sizes = at(["cat-file", "--batch-check=%(objectsize)"], staged.map((e) => e.sha).join("\n") + "\n").trim().split("\n");
+      staged.forEach((e, i) => {
+        const bytes = Number(sizes[i]);
+        if (!Number.isFinite(bytes)) throw new Error(`git cat-file gave no size for ${e.file}`);
+        if (bytes > MAX_FIXTURE_BINARY_BYTES) bigBinaries.push({ file: e.file, bytes });
+      });
+    }
+  } catch (e) {
+    dv026Error = (e as Error).message;
   }
 }
 console.log("\n--- Large Binary Fixture Guard (DV-026) ---\n");
-if (bigBinaries.length === 0) {
-  console.log("  No committed binary under test-data/ is over 1 MiB. ✓");
+if (dv026Error) {
+  console.log(`  NOT CHECKED [FAIL]: ${dv026Error}`);
+  console.log("  The guard reads test-data/ from git. Run td:validate inside a git checkout with git on PATH.");
+} else if (bigBinaries.length === 0) {
+  console.log("  No binary under test-data/ in git is over 1 MiB. ✓");
 } else {
   const tag = WARN_ONLY ? "WARN" : "FAIL";
-  console.log(`  ${bigBinaries.length} committed binary fixture(s) over 1 MiB [${tag}]:`);
+  console.log(`  ${bigBinaries.length} binary fixture(s) over 1 MiB in git [${tag}]:`);
   for (const b of bigBinaries) console.log(`    DV-026 ${b.file} ${(b.bytes / 1048576).toFixed(1)} MiB`);
   console.log(
-    "\n  Generate it with a script (see scripts/test-data/gen-upload-size-fixtures.mjs, npm run td:gen:uploads)\n" +
-    "  and gitignore the output. Rule: .claude/knowledge/execution/test-data-authoring.md §Large fixtures." +
+    "\n  Generate it with a script (like scripts/test-data/gen-upload-size-fixtures.mjs) and gitignore the output.\n" +
+    "  Rule: .claude/knowledge/execution/test-data-authoring.md §Large fixtures." +
     (WARN_ONLY ? "\n  (--warn-only: not failing the build. Drop the flag to enforce.)" : "")
   );
 }
@@ -556,4 +582,6 @@ if (bigBinaries.length === 0) {
 const idFatal =
   (idHits.length > 0 || aliasGuidHits.length > 0 || shapeHits.length > 0 || driftHits.length > 0 ||
     evidenceHits.length > 0 || specHits.length > 0 || bigBinaries.length > 0) && !WARN_ONLY;
-process.exit(totalFailed > 0 || idFatal || (REQUIRE_SEEDED && totalUnseeded > 0) ? 1 : 0);
+// DV-026 that could not ask git is fatal even under --warn-only: it is an unanswered check, not a finding.
+const guardBroken = dv026Error !== null;
+process.exit(totalFailed > 0 || idFatal || guardBroken || (REQUIRE_SEEDED && totalUnseeded > 0) ? 1 : 0);

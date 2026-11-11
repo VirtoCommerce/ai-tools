@@ -14,6 +14,9 @@
  *        NEVER by signing in: a failed sign-in counts towards the lockout of an account other lanes share.
  *      - fixtures: every `@td(ALIAS.field)`, resolved by the same TestDataResolver the runners use. A miss the
  *        resolver classifies `unseeded` (another env has the value, this one does not) is a seeding gap.
+ *      - generated files: a case that names a file a `td:gen:*` script writes (`GENERATORS` below) while that
+ *        file is missing — a fresh clone, or a pull that untracked it. Flagged with the command that writes it;
+ *        the pre-flight itself writes nothing.
  *   2. DECLARED in `config/suite-requirements.json` — what a CSV cannot express: a store setting, a platform
  *      setting, a payment method, a key in vc-deploy-dev `infra/environments.yml` (headers, FileUpload scopes,
  *      KnownAssetHosts). Each entry names the cases it gates and why.
@@ -34,6 +37,12 @@ import { probeCoords } from "../lib/env-facts.ts";
 import { probeAdminToken, type AdminAuth } from "../deploy/lib/live.ts";
 import { ghJson, setToken } from "../deploy/lib/github.ts";
 import type { Check } from "../preflight/policy.ts";
+import { OUTPUTS as UPLOAD_SIZE_OUTPUTS } from "../test-data/gen-upload-size-fixtures.mjs";
+
+/** Fixtures a script writes instead of git (test-data-authoring.md §Large fixtures). The npm script is derived from package.json. */
+const GENERATORS: { script: string; outputs: readonly string[] }[] = [
+  { script: "scripts/test-data/gen-upload-size-fixtures.mjs", outputs: UPLOAD_SIZE_OUTPUTS },
+];
 
 export type ReqKind = "storeSetting" | "platformSetting" | "paymentMethod" | "deployConfig" | "uploadScope" | "storeLanguage" | "storeCurrency" | "contract";
 
@@ -113,6 +122,8 @@ export function loadRequirements(root: string): RequirementsFile {
 export function collectCaseNeeds(root: string, suites: SuiteFile[]) {
   const personas = new Map<string, Set<string>>();
   const refs = new Map<string, Set<string>>();
+  const generated = new Map<string, Set<string>>();
+  const outputs = GENERATORS.flatMap((g) => g.outputs.map((rel) => ({ rel, base: rel.split("/").pop()! })));
   const add = (m: Map<string, Set<string>>, k: string, c: string) => (m.get(k) ?? m.set(k, new Set()).get(k)!).add(c);
   const unreadable: string[] = [];
   for (const s of suites) {
@@ -129,9 +140,30 @@ export function collectCaseNeeds(root: string, suites: SuiteFile[]) {
       const key = `${s.id}/${id}`;
       for (const m of text.matchAll(PERSONA)) add(personas, m[1], key);
       for (const m of text.matchAll(TD_REF)) add(refs, m[1], key);
+      for (const o of outputs) if (text.includes(o.base)) add(generated, o.rel, key);
     }
   }
-  return { personas, refs, unreadable };
+  return { personas, refs, generated, unreadable };
+}
+
+/** A case names a generated fixture that is not on disk: say which command writes it. Never writes it. */
+export function generatedFixtureChecks(root: string, generated: Map<string, Set<string>>): Check[] {
+  let scripts: Record<string, string> = {};
+  try { scripts = JSON.parse(readFileSync(join(root, "package.json"), "utf-8")).scripts ?? {}; } catch { /* named by path below */ }
+  const checks: Check[] = [];
+  for (const g of GENERATORS) {
+    const missing = g.outputs.filter((rel) => generated.has(rel) && !existsSync(join(root, rel)));
+    if (!missing.length) continue;
+    const npm = Object.keys(scripts).find((k) => scripts[k].includes(g.script));
+    const cmd = npm ? `npm run ${npm}` : `node ${g.script}`;
+    const cases = [...new Set(missing.flatMap((rel) => [...generated.get(rel)!]))].sort();
+    checks.push({
+      id: `generated:${npm ?? g.script}`, status: "WARN", who: "me", diagnose: [], cases,
+      found: `${missing.join(", ")} not on disk — generated, not committed; ${cases.length} case(s) upload it: ${bySuite(cases)}`,
+      do: `${cmd}, then re-run the pre-flight`,
+    });
+  }
+  return checks;
 }
 
 /** "036 (29), 037 (2)" — the affected cases, by suite. */
@@ -491,6 +523,7 @@ export async function requirementChecks(o: { root: string; env: string; suites: 
   for (const s of needs.unreadable) checks.push({ id: `case-needs:${s}`, status: "UNKNOWN", found: `suite ${s}: CSV not readable, its personas and fixtures were not checked`, who: "me", do: "npm run suites:lint", diagnose: [] });
   const installed = c && reqFile.personas ? await installedModules(c, token) : null;
   checks.push(...fixtureChecks(o.root, o.env, needs.refs, { reqs: reqFile.personas, installed }));
+  checks.push(...generatedFixtureChecks(o.root, needs.generated));
   if (c) checks.push(...await laneAccountChecks(o.root, o.env, c, token));
   if (c) checks.push(...await personaChecks(o.root, o.env, c, token, needs.personas, { reqs: reqFile.personas, installed }));
   const declared = o.suites.flatMap((s) => (reqFile.suites[s.id] ?? []).map((r) => ({ suite: s.id, r })));

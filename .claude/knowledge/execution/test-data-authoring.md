@@ -512,19 +512,22 @@ Traceability).
 
 A binary under `test-data/` stays in every clone forever, even after it is deleted. So a fixture
 over **1 MiB** is not committed: a script writes it, an npm `td:gen:*` script runs that script, and
-`.gitignore` keeps its output out of git. `npm run td:validate` **DV-026** fails a committed
-`test-data/` binary over the limit; text fixtures (CSV, JSON, MD, YAML, code) are exempt, because git
-stores their changes as small deltas.
+`.gitignore` keeps its output out of git. `npm run td:validate` **DV-026** fails a `test-data/` binary
+in git over the limit; what counts as text is git's own detection, and text is exempt because git
+stores its changes as small deltas.
 
 - **Generate what only its shape matters for.** A file that tests a size limit, a type guard or an
   overwrite carries no information a script cannot recreate. Make the bytes deterministic (fixed-seed
   PRNG) so every machine and CI get the same file, and incompressible when the SIZE is under test —
   a solid-colour PNG deflates to a few KB and stops testing the limit.
 - **Existing generators:** `npm run td:gen:uploads` (`scripts/test-data/gen-upload-size-fixtures.mjs`:
-  suite 072b's 5 MiB PNG and 24 MiB MP4) and `npm run td:gen:cms-uploads`
+  suite 072b's size probes; its `OUTPUTS` lists the files) and `npm run td:gen:cms-uploads`
   (`gen-cms-upload-fixtures.mjs`: suite 060c's asset-library images).
-- **The case names the generator** in its Preconditions (`generated once via 'npm run td:gen:uploads'`), so
-  a runner on a fresh clone knows how to get the file.
+- **The case names the generator** in its Preconditions (`generated once via 'npm run td:gen:uploads'`), and
+  the regression pre-flight (`regression:plan --preflight`, `scripts/regression/requirements.ts` `GENERATORS`)
+  flags a run whose cases name a generated file that is not on disk, with the command that writes it. The
+  pre-flight writes nothing itself; a case that runs without its file is recorded BLOCKED with that reason.
+  A new generator registers there by exporting `OUTPUTS`.
 - **A real asset the seeders upload** (a brand banner, a category image) stays committed and small.
   If one ever needs to exceed 1 MiB, resize it before committing rather than raising the limit.
 

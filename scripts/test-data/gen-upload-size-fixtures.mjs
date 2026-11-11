@@ -7,26 +7,35 @@
  *
  * Suite 072b CFG-FILE-008 checks the 9.5 MB File-section limit with two files: one under it that must
  * be accepted and one over it that must be rejected. The content of either file is never asserted,
- * only its size and that it is a real file of its type. Committed, the two were 28 MB of the repo
- * (VCST-6637 follow-up); generated, they cost nothing and are identical on every machine and in CI.
+ * only its size and that it is a real file of its type, so a script can recreate it and git does not
+ * need to carry it (`.claude/knowledge/execution/test-data-authoring.md` §Large fixtures).
  *
- * The bytes are deterministic (a fixed-seed PRNG), so a re-run rewrites the same files. They are
- * incompressible on purpose: a solid-colour PNG of the same dimensions would deflate to a few KB
- * and stop testing the limit.
+ * `OUTPUTS` below is the one list of what this writes: `.gitignore` ignores those paths, and the regression
+ * pre-flight (`scripts/regression/requirements.ts`) imports it to flag a run whose cases need a missing one.
  *
- * Written (gitignored, see `.gitignore`):
- *   test-data/uploads/large_test.png  ~5 MiB  — a real PNG of random pixels, UNDER the limit
- *   test-data/uploads/video.mp4        24 MiB — an ISO-BMFF file (`ftyp` + `mdat`), OVER the limit.
- *                                               It has no `moov` box, so it is not playable; the case
- *                                               only needs a file the browser and platform see as
- *                                               video/mp4 and that is too big.
+ * Determinism: the bytes come from a fixed-seed PRNG. The MP4 is therefore byte-identical everywhere. The
+ * PNG's pixels are identical too, but its compressed bytes depend on the zlib build Node ships, so its hash
+ * can differ between machines — harmless, because only its size and type are under test. Both files are
+ * incompressible on purpose: a solid-colour PNG of the same dimensions would deflate to a few KB and stop
+ * testing the limit.
+ *
+ *   large_test.png — a real PNG of random pixels, UNDER the limit (LARGE_PNG_BYTES of raw pixels).
+ *   video.mp4      — an ISO-BMFF file (`ftyp` + `mdat`), OVER the limit (VIDEO_BYTES). It has no `moov`
+ *                    box, so it is not playable; the case only needs a file the browser and platform see
+ *                    as video/mp4 and that is too big.
  */
 import { makePng } from '../lib/png.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const OUT = path.resolve('test-data/uploads');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MiB = 1024 * 1024;
+const LARGE_PNG_BYTES = 5 * MiB;
+const VIDEO_BYTES = 24 * MiB;
+
+/** Repo-relative paths this script writes. */
+export const OUTPUTS = ['test-data/uploads/large_test.png', 'test-data/uploads/video.mp4'];
 
 /** mulberry32 — small, fast, fixed-seed PRNG so the output is the same everywhere. */
 function prng(seed) {
@@ -67,15 +76,22 @@ function mp4(totalBytes, seed) {
   return Buffer.concat([ftyp, mdatHead, noise(payload, seed)]);
 }
 
-const files = [
-  ['large_test.png', noisePng(5 * MiB, 0x5a17)],
-  ['video.mp4', mp4(24 * MiB, 0x0b24)],
-];
+/** Write every OUTPUT under `root` (the repo root by default, whatever the current directory). */
+export function generate(root = ROOT) {
+  const bytes = {
+    'test-data/uploads/large_test.png': noisePng(LARGE_PNG_BYTES, 0x5a17),
+    'test-data/uploads/video.mp4': mp4(VIDEO_BYTES, 0x0b24),
+  };
+  for (const rel of OUTPUTS) {
+    const dest = path.join(root, rel);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, bytes[rel]);
+  }
+  return OUTPUTS.map((rel) => ({ rel, size: bytes[rel].length, head: bytes[rel].subarray(0, 8).toString('hex') }));
+}
 
-fs.mkdirSync(OUT, { recursive: true });
-for (const [name, buf] of files) fs.writeFileSync(path.join(OUT, name), buf);
-
-console.log(`wrote ${files.length} size fixtures to ${OUT}`);
-for (const [name, buf] of files) {
-  console.log(`  ${name.padEnd(16)} ${(buf.length / MiB).toFixed(2).padStart(6)} MiB  ${buf.subarray(0, 8).toString('hex')}`);
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  const written = generate();
+  console.log(`wrote ${written.length} size fixtures under ${ROOT}`);
+  for (const w of written) console.log(`  ${w.rel.padEnd(34)} ${(w.size / MiB).toFixed(2).padStart(6)} MiB  ${w.head}`);
 }

@@ -1,7 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CFG-FILE-001","File Section — Upload Button Disabled After 5th File Uploaded (Max Limit)","Configurable Products > File Section > Upload Limits","High","BL-CAT-006","ECL-7.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url) (Hoodie Base, optional File section). Upload fixtures available: Logo1.png, Netflix-25.jpg, newier.pdf, Test.xlsx, large_test.png (large_test.png generated once via 'npm run td:gen:uploads').","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url), max_files=5","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
+User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url) (Hoodie Base, optional File section). Upload fixtures available: Logo1.png, Netflix-25.jpg, newier.pdf, Test.xlsx, large_test.png (generated once via 'npm run td:gen:uploads').","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url), max_files=5","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Product configuration widget visible
 [SCROLL] Scroll to File upload section
 [ASSERT] File upload button visible and enabled
