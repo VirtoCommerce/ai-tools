@@ -9,7 +9,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | TRIAGED | 34 | 34 | 27 | 0 | 2 | 0 | 11 | REG-2026-11-11-1825-W0 |
-| W1 | Authentication — sign-in, session, security | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W1 | Authentication — sign-in, session, security | Elena Kutasina | CLAIMED | — | — | — | — | — | — | 0 | — |
 | W2 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W3 | Cart, checkout & addresses | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Catalog, search, compare & analytics | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
