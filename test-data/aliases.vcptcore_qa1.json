@@ -874,6 +874,42 @@
     "organizationCount": 0,
     "organizationId": ""
   },
+  "BD_JOHN_DEMO": {
+    "user_id": "8955c03c-190f-4c2e-8cd3-d85cb1780f56",
+    "contact_id": "28df4ed6-67ed-455a-8fbf-65d1958f69cc",
+    "org_id": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
+    "orders": {
+      "1": {
+        "id": "6b4010a6-4c95-443b-8311-45d09c0ba664",
+        "number": "AGENT-TEST-6078-DEMO-1",
+        "createdDate": "2026-11-09T13:29:25.2222126Z",
+        "currency": "USD",
+        "total": 120.5,
+        "storeId": "B2B-store"
+      },
+      "2": {
+        "id": "5ea33308-b569-47ba-a4c1-d0eaff4eedf1",
+        "number": "AGENT-TEST-6078-DEMO-2",
+        "createdDate": "2026-11-09T13:29:26.2236282Z",
+        "currency": "USD",
+        "total": 245.75,
+        "storeId": "B2B-store"
+      },
+      "3": {
+        "id": "51daef30-1659-4762-ac70-119fd242142a",
+        "number": "AGENT-TEST-6078-DEMO-3",
+        "createdDate": "2026-11-09T13:29:27.0166598Z",
+        "currency": "USD",
+        "total": 389,
+        "storeId": "B2B-store"
+      }
+    },
+    "window": {
+      "from": "2026-11-09T13:29:25.222Z",
+      "to": "2026-11-09T13:29:27.017Z"
+    },
+    "seededAt": "2026-11-09T13:29:33.326Z"
+  },
   "BD_STATS": {
     "user_id": "142f01c4-2cbc-4bf9-b8db-1bd638dd76d1",
     "contact_id": "2e9aca28-27d3-4942-a0ec-794747ed9c1b",
@@ -973,7 +1009,7 @@
         "to": "2026-11-09T09:19:32.447Z"
       }
     },
-    "seededAt": "2026-11-09T09:20:23.806Z"
+    "seededAt": "2026-11-11T16:19:34.398Z"
   },
   "BD_LARGE": {
     "user_id": "b051ced8-2332-429f-9610-acf16f192890",
@@ -1011,7 +1047,7 @@
         "to": "2026-11-09T09:19:39.435Z"
       }
     },
-    "seededAt": "2026-11-09T09:19:39.901Z"
+    "seededAt": "2026-11-11T16:19:38.301Z"
   },
   "BD_EUR": {
     "user_id": "4b68a683-146b-4c5e-9abc-cfd1fa2932cc",
@@ -1059,7 +1095,7 @@
         "to": "2026-11-09T09:19:44.860Z"
       }
     },
-    "seededAt": "2026-11-09T09:19:45.388Z"
+    "seededAt": "2026-11-11T16:19:41.918Z"
   },
   "BD_TWOSTORE": {
     "user_id": "dc249600-f1bf-4ead-bb3c-384ed7d755d9",
@@ -1107,7 +1143,7 @@
         "to": "2026-11-09T09:19:50.270Z"
       }
     },
-    "seededAt": "2026-11-09T09:19:50.802Z"
+    "seededAt": "2026-11-11T16:19:45.353Z"
   },
   "BD_NOORG": {
     "user_id": "1baccff0-45a8-4456-86e3-8f4dfc87f801",
@@ -1155,7 +1191,7 @@
         "to": "2026-11-09T09:19:55.005Z"
       }
     },
-    "seededAt": "2026-11-09T09:19:55.384Z"
+    "seededAt": "2026-11-11T16:19:48.423Z"
   },
   "BD_UNCFG": {
     "user_id": "2987481e-8781-458c-ba67-d7f025fda351",
@@ -1193,42 +1229,84 @@
         "to": "2026-11-09T09:19:59.789Z"
       }
     },
-    "seededAt": "2026-11-09T09:20:00.264Z"
+    "seededAt": "2026-11-11T16:19:52.233Z"
   },
-  "BD_JOHN_DEMO": {
-    "user_id": "8955c03c-190f-4c2e-8cd3-d85cb1780f56",
-    "contact_id": "28df4ed6-67ed-455a-8fbf-65d1958f69cc",
-    "org_id": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
+  "BD_LAYOUT": {
+    "user_id": "fa10e8ed-dc5e-460e-9dbd-9fd67f330dba",
+    "contact_id": "bd456e17-90ca-45ef-9d21-0d16d6e9b440",
+    "org_id": "3d65c402-e4f9-40e5-abae-00a805a0be39",
+    "org_ids": {
+      "LAYOUT": "3d65c402-e4f9-40e5-abae-00a805a0be39"
+    },
     "orders": {
-      "1": {
-        "id": "6b4010a6-4c95-443b-8311-45d09c0ba664",
-        "number": "AGENT-TEST-6078-DEMO-1",
-        "createdDate": "2026-11-09T13:29:25.2222126Z",
+      "LAYOUT-N1": {
+        "id": "bcaf0874-ff06-45d1-862f-6d507191089c",
+        "number": "AGENT-TEST-BD-LAYOUT-N1",
+        "createdDate": "2026-11-11T16:21:18.752714Z",
         "currency": "USD",
-        "total": 120.5,
-        "storeId": "B2B-store"
+        "total": 215.1,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
       },
-      "2": {
-        "id": "5ea33308-b569-47ba-a4c1-d0eaff4eedf1",
-        "number": "AGENT-TEST-6078-DEMO-2",
-        "createdDate": "2026-11-09T13:29:26.2236282Z",
+      "LAYOUT-N2": {
+        "id": "40e926bd-33db-4445-8bec-fe3ef4e7b468",
+        "number": "AGENT-TEST-BD-LAYOUT-N2",
+        "createdDate": "2026-11-11T16:21:19.7700183Z",
         "currency": "USD",
-        "total": 245.75,
-        "storeId": "B2B-store"
+        "total": 118.9,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
       },
-      "3": {
-        "id": "51daef30-1659-4762-ac70-119fd242142a",
-        "number": "AGENT-TEST-6078-DEMO-3",
-        "createdDate": "2026-11-09T13:29:27.0166598Z",
+      "LAYOUT-P1": {
+        "id": "faa4578a-b7bd-42c1-af83-2934a5d4c3ad",
+        "number": "AGENT-TEST-BD-LAYOUT-P1",
+        "createdDate": "2026-11-11T16:21:20.7037734Z",
         "currency": "USD",
-        "total": 389,
-        "storeId": "B2B-store"
+        "total": 325.2,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "LAYOUT-N3": {
+        "id": "c68fa0b1-61ad-42a4-9cf7-5ab0d3446c95",
+        "number": "AGENT-TEST-BD-LAYOUT-N3",
+        "createdDate": "2026-11-11T16:21:21.4661189Z",
+        "currency": "USD",
+        "total": 141.8,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "LAYOUT-D1": {
+        "id": "d7ab24e6-cad2-4730-a9b3-1a45efe7f15d",
+        "number": "AGENT-TEST-BD-LAYOUT-D1",
+        "createdDate": "2026-11-11T16:21:22.326857Z",
+        "currency": "USD",
+        "total": 435.3,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "LAYOUT-X1": {
+        "id": "453b4957-c420-41df-8da2-3fefe2286360",
+        "number": "AGENT-TEST-BD-LAYOUT-X1",
+        "createdDate": "2026-11-11T16:21:23.1227046Z",
+        "currency": "USD",
+        "total": 104.4,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
       }
     },
-    "window": {
-      "from": "2026-11-09T13:29:25.222Z",
-      "to": "2026-11-09T13:29:27.017Z"
+    "windows": {
+      "prev": null,
+      "cur": {
+        "from": "2026-11-11T16:21:18.752Z",
+        "to": "2026-11-11T16:21:23.123Z"
+      }
     },
-    "seededAt": "2026-11-09T13:29:33.326Z"
+    "seededAt": "2026-11-11T16:21:23.181Z"
   }
 }

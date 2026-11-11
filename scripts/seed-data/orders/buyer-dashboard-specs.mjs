@@ -36,6 +36,32 @@ export function allOrderNumbers(fx) {
   return Object.values(fx.buyers).flatMap((b) => b.orders.map((o) => orderNumber(fx, o.key)));
 }
 
+/** The order numbers of ONE buyer (a `--teardown --only <BUYER>` deletes exactly these). */
+export const buyerOrderNumbers = (fx, key) => (fx.buyers[key]?.orders || []).map((o) => orderNumber(fx, o.key));
+
+/** Every org KEY a buyer touches: its own org plus any org its orders are stamped with. */
+export function buyerOrgKeys(buyer) {
+  return [...new Set([buyer.org, ...buyer.orders.map((o) => orderOrgKey(buyer, o))].filter(Boolean))];
+}
+
+/** Org keys only `key` uses — a scoped teardown may delete these and must leave every other buyer's. */
+export function orgKeysOwnedOnlyBy(fx, key) {
+  const others = new Set(Object.entries(fx.buyers).filter(([k]) => k !== key).flatMap(([, b]) => buyerOrgKeys(b)));
+  return buyerOrgKeys(fx.buyers[key]).filter((o) => !others.has(o));
+}
+
+/**
+ * The X-Frontend account-dashboard layout preference: `Layout.accountDashboard` or, store-scoped,
+ * `Layout.accountDashboard.{storeId}` (KB-AC688064). Case-insensitive. Any other `Layout.*` scope
+ * (a sales-rep layout on the same account, say) is not this fixture's to delete.
+ */
+export const ACCOUNT_DASHBOARD_LAYOUT_SCOPE = 'accountDashboard';
+const ACCOUNT_DASHBOARD_LAYOUT_RE = /^Layout\.accountDashboard(\..+)?$/i;
+export const isAccountDashboardLayoutPreference = (name) => ACCOUNT_DASHBOARD_LAYOUT_RE.test(String(name || '').trim());
+
+/** The buyers a case may save a dashboard layout as (fixture flag layoutDisposable). */
+export const layoutDisposableBuyers = (fx) => Object.keys(fx.buyers).filter((k) => fx.buyers[k].layoutDisposable === true);
+
 /**
  * Opt-in demo targets: orders for an EXISTING env persona (never created or deleted by this seeder).
  * Seeded only by `--only <KEY>`; their numbers are NOT in allOrderNumbers() of a buyer teardown scope
@@ -133,6 +159,42 @@ export function declaredRates(fx) {
 const near = (a, b) => a === b || (a != null && b != null && Math.abs(a - b) < 0.011);
 
 /**
+ * The value an alias field path (`buyers.<K>.expected.<section>.<field>`) takes under `rates`, or
+ * undefined when the path is not a rate-dependent expectation. Sections: today / allStores /
+ * todayInEur (figures) and comparison (change block).
+ */
+function derivedAt(fx, path, rates) {
+  const m = /^buyers\.([A-Z0-9_]+)\.expected\.(today|allStores|todayInEur|comparison)\.([A-Za-z]+)$/.exec(path);
+  if (!m) return undefined;
+  const [, key, section, field] = m;
+  const b = fx.buyers[key]; if (!b) return undefined;
+  const e = b.expected || {};
+  if (section === 'comparison') return expectedComparison(b, { store: e.store, currency: e.currency, rates })[field];
+  const opts = section === 'today' ? { store: e.store, currency: e.currency }
+    : section === 'allStores' ? { store: null, currency: e.currency } : { store: e.store, currency: 'EUR' };
+  const v = expectedFigures(b, { ...opts, rates })[field];
+  return typeof v === 'number' ? v : undefined;
+}
+
+/**
+ * Env-correct expectations for one alias: every rate-dependent field whose value under the LIVE
+ * platform rates differs from the committed declaration (which assumes declaredRates). Returns
+ * { fieldName: liveValue } — empty when the env's rates match the fixture. The seeder writes it to
+ * aliases.<env>.json, which the resolver layers over the fixture field by field.
+ */
+export function liveExpectationOverrides(fx, aliasFields, liveRates) {
+  const out = {};
+  const declared = declaredRates(fx);
+  for (const [field, path] of Object.entries(aliasFields || {})) {
+    const live = derivedAt(fx, path, liveRates);
+    const base = derivedAt(fx, path, declared);
+    if (live === undefined || base === undefined) continue;
+    if (!near(live, base)) out[field] = live;
+  }
+  return out;
+}
+
+/**
  * Non-vacuity + declared-vs-derived contract. Returns a list of problems (empty = sound).
  * Each check names the distinction it protects: if it collapses, a wrong implementation would pass.
  */
@@ -220,6 +282,16 @@ export function fixtureProblems(fx) {
     if (!(f.excludedCount >= 1 && f.count >= 1)) p.push('UNCFG: needs >=1 excluded and >=1 counted order');
     if (!b.UNCFG.orders.some((x) => x.currency === fx.unconfiguredCurrency.code)) p.push('UNCFG: needs an order in the unconfigured currency');
     if (fx.unconfiguredCurrency.code in rates) p.push('UNCFG: the unconfigured currency must not be in the configured rates');
+  }
+  // LAYOUT — the one disposable-layout buyer, and the status facet must offer every tab
+  const disposable = layoutDisposableBuyers(fx);
+  if (JSON.stringify(disposable) !== JSON.stringify(['LAYOUT'])) p.push(`exactly one buyer (LAYOUT) may be layoutDisposable, got [${disposable.join(', ')}]`);
+  if (b.LAYOUT) {
+    const statuses = [...new Set(b.LAYOUT.orders.map((x) => x.status))].sort();
+    for (const s of ['Cancelled', 'Completed', 'New', 'Processing']) if (!statuses.includes(s)) p.push(`LAYOUT: needs an order in status ${s} (status-facet tab)`);
+    if (JSON.stringify(b.LAYOUT.expected?.statuses || []) !== JSON.stringify(statuses)) p.push(`LAYOUT.expected.statuses must equal the order statuses [${statuses.join(', ')}]`);
+    const perStatus = b.LAYOUT.orders.reduce((m, x) => m.set(x.status, (m.get(x.status) || 0) + 1), new Map());
+    if (![...perStatus.values()].some((n) => n >= 2)) p.push('LAYOUT: needs a status with >= 2 orders (so a Max rows cap of 1 is observable)');
   }
   p.push(...demoProblems(fx));
   return p;

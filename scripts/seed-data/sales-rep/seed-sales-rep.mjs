@@ -38,7 +38,8 @@
 import {
   assertSafeTarget, auth, api, log, verbose, loadCsv, loadAliases,
   writeEnvAliasOverride, syncEnvAliases, csvBool, DRY_RUN, TEARDOWN, ONLY, STORE_ID, verifyRemoved,
-  discoverCatalogProducts, orderLacksProductImages, resetSecurityPassword, idsParam,
+  discoverCatalogProducts, orderLacksProductImages, resetSecurityPassword,
+  findCustomerPreferences, resetCustomerPreferences,
 } from '../../lib/seed-common.mjs';
 import {
   parseServedOrgs, isDisposableLayoutRep, isLayoutPreference, LAYOUT_SCOPES,
@@ -171,31 +172,10 @@ async function clearRepStaleLockout(email, status) {
  * (zero residue). Only reps on the DISPOSABLE_LAYOUT_REP_KEYS allowlist are ever touched. */
 
 /** The rep's persisted layout preference rows, both generations (isLayoutPreference) ([] when none / module route absent). */
-async function findLayoutPreferences(userId) {
-  if (!userId) return [];
-  const res = await api('POST', '/api/customer-preferences/search', { userId, take: 100 }, { expectStatus: [200, 201, 404] });
-  return (res?.results || res?.items || []).filter((p) => isLayoutPreference(p?.name));
-}
+const findLayoutPreferences = (userId) => findCustomerPreferences(api, userId, isLayoutPreference);
 
 /** Delete every rep layout row (Layout.salesRep* + legacy SalesRepLayout.*) so layout(scope:…) / salesRepLayout(scope:…) resolve to null again. */
-async function resetLayoutPreferences(userId, label) {
-  if (!userId) {
-    // In --dry-run a not-yet-created rep has no account, which is expected — not a warning.
-    const msg = `${label} — no ApplicationUser id resolved, cannot reset rep layout preferences`;
-    if (DRY_RUN) verbose(msg); else log(`  WARN: ${msg}`);
-    return 0;
-  }
-  const rows = await findLayoutPreferences(userId);
-  if (rows.length === 0) {
-    verbose(`${label}: no rep layout preference — already never-saved (${LAYOUT_SCOPES.join(' / ')} resolve to null)`);
-    return 0;
-  }
-  const names = rows.map((r) => r.name).join(', ');
-  if (DRY_RUN) { log(`  ${label}: would delete ${rows.length} rep layout preference(s): ${names}`); return rows.length; }
-  await api('DELETE', `/api/customer-preferences?${idsParam(rows.map((r) => r.id))}`, null, { expectStatus: [200, 204] });
-  log(`  ${label}: layout reset to never-saved — deleted ${rows.length} preference(s) (${names})`);
-  return rows.length;
-}
+const resetLayoutPreferences = (userId, label) => resetCustomerPreferences(api, userId, isLayoutPreference, `${label} rep layout (${LAYOUT_SCOPES.join(' / ')})`);
 
 /** Create/resolve N dedicated paging orgs (no orders, no pinned id) served by a paging rep. Idempotent by name. */
 async function ensurePagingOrgs(n) {

@@ -70,6 +70,9 @@ const TEARDOWN_STEPS = [
   { name: 'returns-org', script: 'orders/seed-org-returns.mjs', args: ['--teardown'] },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', args: ['--teardown'] },
   { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
+  // VCST-6078 buyer dashboard: its own AGENT-TEST-BD buyers, orgs, orders and layout preferences (+ the
+  // temporary XTS currency) — orders reference products + users, so it goes with the order steps.
+  { name: 'buyer-dashboard', script: 'orders/seed-buyer-dashboard.mjs', args: ['--teardown'], required: false },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', args: ['--teardown'] },
   // VCST-6155 MCP back-office accounts — deletes the four AGENT-TEST-mcp-* users and the AGENT-TEST-MCP-* roles only.
@@ -222,6 +225,9 @@ const STEPS = [
   // owned by USER_EMAIL, quotes submitted by ORG_USER_EMAIL, and line items point at real catalog
   // products. Optional: quotes need the Quote module deployed + Stores.EnableQuotes on the store.
   { name: 'orders', script: 'orders/seed-order-states.mjs', required: false, priority: 140 },
+  // VCST-6078 buyer dashboard statistics: dedicated AGENT-TEST-BD buyers/orgs + orders on a live-discovered
+  // product (40). Optional: the read-back needs X-Frontend orderStatistics; failures warn, never abort.
+  { name: 'buyer-dashboard', script: 'orders/seed-buyer-dashboard.mjs', required: false, priority: 141 },
   // Sales Rep family. Sits with the order steps because it CREATES orders, and after products (40)
   // for their line items, inventory (70) for fulfillment centers, and company-users (100) for the
   // org graph its reps are given memberships in. Optional: the module is absent on some

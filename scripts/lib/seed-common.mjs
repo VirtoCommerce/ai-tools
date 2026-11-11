@@ -580,10 +580,40 @@ export async function discoverLineCandidates(api, count, { catalogId = null } = 
  * then judges or DELETES "its" order acts on another fixture's. Always filter by `number ===`, with a
  * take large enough to reach the exact hit behind newer prefix matches. DI on `api` like the helpers above.
  */
-export async function findOrdersByExactNumber(api, number, { take = 100 } = {}) {
+export async function findOrdersByExactNumber(api, number, { take = 100, withPrototypes = false } = {}) {
   if (!number) return [];
-  const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take });
+  // customerOrders/search drops IsPrototype orders unless withPrototypes=true (measured 2026-11-09),
+  // so a seeder that owns a prototype fixture must pass it or its teardown leaves the prototype behind.
+  const body = withPrototypes ? { keyword: number, take, withPrototypes: true } : { keyword: number, take };
+  const found = await api('POST', '/api/order/customerOrders/search', body);
   return (found?.results || []).filter((o) => o?.number === number);
+}
+
+/**
+ * A user's Customer-module preference rows whose `name` passes `match` ([] when none / route absent).
+ * Preferences are keyed on the ApplicationUser id, and deleting the user does NOT cascade them
+ * (kb KB-AC688064 / KB-F57FC873), so a seeder that owns one must find and delete it explicitly.
+ */
+export async function findCustomerPreferences(api, userId, match) {
+  if (!userId) return [];
+  const res = await api('POST', '/api/customer-preferences/search', { userId, take: 100 }, { expectStatus: [200, 201, 404] });
+  return (res?.results || res?.items || []).filter((p) => match(p?.name));
+}
+
+/** Delete every preference row of `userId` whose name passes `match`. Returns the row count (dry-run: would-delete). */
+export async function resetCustomerPreferences(api, userId, match, label) {
+  if (!userId) {
+    const msg = `${label} — no ApplicationUser id resolved, cannot reset its preferences`;
+    if (DRY_RUN) verbose(msg); else log(`  WARN: ${msg}`);
+    return 0;
+  }
+  const rows = await findCustomerPreferences(api, userId, match);
+  if (rows.length === 0) { verbose(`${label}: no matching preference — already never-saved`); return 0; }
+  const names = rows.map((r) => r.name).join(', ');
+  if (DRY_RUN) { log(`  ${label}: would delete ${rows.length} preference(s): ${names}`); return rows.length; }
+  await api('DELETE', `/api/customer-preferences?${idsParam(rows.map((r) => r.id))}`, null, { expectStatus: [200, 204] });
+  log(`  ${label}: deleted ${rows.length} preference(s) (${names})`);
+  return rows.length;
 }
 
 /**

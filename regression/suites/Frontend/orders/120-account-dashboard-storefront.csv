@@ -25,20 +25,20 @@ Buyer {{USER_EMAIL}} is an organization maintainer of the AcmeCorp organization 
 [KEY] record the same figures again (WEEK_1, MTD_1, YTD_1, AOV_1, ROW1_1)
 --- SCREEN: edit and save the layout ---
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag the 'Orders placed · WEEK' card into 'Hidden stats'
 [WAIT] the draft shows the change
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the page has rendered
 [ASSERT] the WEEK card is gone after the reload
 --- SCREEN: restore ---
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] press 'Reset'
 [WAIT] the draft shows the default order
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the page has rendered","[REL] WEEK_1 count == WEEK_0 count + 1, MTD_1 count == MTD_0 count + 1 and YTD_1 count == YTD_0 count + 1 {SPEC}
@@ -54,7 +54,7 @@ AOV not equal to YTD total divided by count
 the saved arrangement lost after reload
 Reset+Save leaves a card hidden
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","the layout is returned to the defaults by the last SCREEN (Reset + Save writes a defaults document, it does not delete the stored one); the order placed in the run stays - orders cannot be deleted from the storefront and an extra order only moves the counters forward, which every figure in this case reads as a difference","VCST-6078 · Archetype:STALE · Technique:FLOW | Behavior chain V1-V8 · KEEP: the journey is the one case that crosses placement, count, list and saved layout in one session",Draft
-ORD-DASH-002,Dashboard — a cancelled order leaves every card at once,Orders > Account dashboard > Live data,High,BL-ORD-009,,"Buyer {{USER_EMAIL}} (AcmeCorp maintainer). The buyer's saved layout may hide cards or statuses (other cases change it), so the case first resets it to the default. A per-run order is needed: it is placed in step 1 and cancelled by the buyer on the order page (the storefront has no Cancel order action for a buyer (observed 2026-11-11, theme 2.62.0-pr-2552-942a: an unpaid New order offers only Pay now), so the order is cancelled as an administrator would, through the Platform API with the cancelled flag). Cancellation is an order save, so the Orders change token expires the per-customer cache (observed for admin cancel, create and delete 2026-11-09); the case reads that this cancel expires it too. {SPEC} = X-Frontend README exclusions (cancelled orders are not counted).",buyer={{USER_EMAIL}},"[PRE:CLEAR_SESSION]
+ORD-DASH-002,Dashboard — a cancelled order leaves every card at once,Orders > Account dashboard > Live data,High,BL-ORD-009,,"Buyer {{USER_EMAIL}} (AcmeCorp maintainer). The buyer's saved layout may hide cards or statuses (other cases change it), so the case first resets it to the default. A per-run order is needed: it is placed in the run and then cancelled through the Platform API with the cancelled flag, as an administrator would (the storefront has no Cancel order action for a buyer, observed 2026-11-11, theme 2.62.0-pr-2552-942a: an unpaid New order offers only Pay now). Cancellation is an order save, so the Orders change token expires the per-customer cache (observed for admin cancel, create and delete 2026-11-09); the case reads that this cancel expires it too. {SPEC} = X-Frontend README exclusions (cancelled orders are not counted).",buyer={{USER_EMAIL}},"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER]
 [PRE:RESET_CART]
 --- SCREEN: default layout, so every card and status tab is shown ---
@@ -76,19 +76,21 @@ ORD-DASH-002,Dashboard — a cancelled order leaves every card at once,Orders > 
 [ACT] complete every checkout step with the first payment method that needs no card entry
 [WAIT] the order confirmation page is rendered
 [KEY] record the order number (ORDER_NO)
+[KEY] record the order total (ORDER_TOTAL)
 --- SCREEN: dashboard with the order ---
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards and the list have rendered
-[KEY] record WEEK, MTD and YTD count and total (WITH_*) and whether ORDER_NO is in 'My recent orders'
+[KEY] record WEEK, MTD and YTD count and total (WITH_*) whether ORDER_NO is in 'My recent orders' and the order number and status of every row of 'My recent orders' (ROWS_WITH)
 --- SCREEN: cancel the order (the storefront offers buyers no Cancel order action) ---
 [SETUP] with the Platform API cancel ORDER_NO the way the Admin Cancel does: set-order-status.mjs <ORDER_NO id> Cancelled --cancel 'AGENT-TEST ORD-DASH-002' (admin credentials from the env loader); it reads the order back and fails unless status is Cancelled and isCancelled is true
 --- SCREEN: dashboard right after the cancellation (no waiting) ---
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards and the list have rendered
-[KEY] record WEEK, MTD and YTD count and total (AFTER_*)
+[KEY] record WEEK, MTD and YTD count and total (AFTER_*) and the order number and status of every row of 'My recent orders' (ROWS_AFTER)
 [ACT] in 'My recent orders' click the 'Cancelled' tab
 [WAIT] the list refreshes
-[KEY] record the label of the tab (CANCELLED_TAB) and the rows under it (CANCELLED_ROWS)","[REL] WEEK, MTD and YTD count AFTER == count WITH - 1 and each total AFTER == total WITH - the order total {SPEC}
+[KEY] record the label of the tab (CANCELLED_TAB) and the rows under it (CANCELLED_ROWS)","[REL] WEEK, MTD and YTD count AFTER == count WITH - 1 and each total AFTER == total WITH - ORDER_TOTAL {SPEC}
+[REL] ROWS_AFTER differs from ROWS_WITH in exactly one row, the one of ORDER_NO, whose status changed to Cancelled - the order that left the cards is ORDER_NO and no other order changed {SPEC}
 [STATE] the cancelled order leaves all three cards in the same session, without a five-minute lag {SPEC}
 [DOM] ORDER_NO is still listed in 'My recent orders' with status Cancelled (the list shows every status) {OBSERVED}
 [DOM] the tab row of 'My recent orders' offers a 'Cancelled' tab labelled with the status name only (no count); clicking it lists ORDER_NO and only orders with status Cancelled {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
@@ -115,7 +117,17 @@ MTD or YTD starts at the wrong day for a non-UTC buyer
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",close the emulated context,"VCST-6078 · Archetype:MONEY · Technique:BVA | Probe:VC-PLATFORM-005 · KEEP: reads request variables, so it holds on any run date",Draft
 ORD-DASH-004,Dashboard — an order placed now lands in today's week in UTC-8 and UTC+10,Orders > Account dashboard > Live data,High,BL-ORD-010,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER2]
-A browser context with an emulated clock (Playwright clock install at a fixed instant plus a timezoneId) is a SEPARATE context from the normal lane; the server trusts the windows the browser sends (observed 2026-11-09), so the emulated clock moves only the window bounds and never the stored orders. Buyer {{USER2_EMAIL}} (AcmeCorp, orders placed today include CO261109-00002 on the 2026-11-09 stand; the case needs ONE order placed in the run - place it as in ORD-DASH-001 step 'checkout' when none is placed today in the buyer's local day). The same buyer is read in two contexts whose local day differs: time zone America/Los_Angeles (UTC-8 in November) and Australia/Brisbane (UTC+10).",buyer={{USER2_EMAIL}},"[PRE:RESET_CART]
+A browser context with an emulated clock (Playwright clock install at a fixed instant plus a timezoneId) is a SEPARATE context from the normal lane; the server trusts the windows the browser sends (observed 2026-11-09), so the emulated clock moves only the window bounds and never the stored orders. Buyer {{USER2_EMAIL}} (AcmeCorp). The case places ONE order in the run (as in ORD-DASH-001 SCREEN 'checkout') and never relies on an order of an earlier day or on a pinned order number. The same buyer is read in two contexts whose local day differs: time zone America/Los_Angeles (UTC-8 in November) and Australia/Brisbane (UTC+10). Each context reads its own WEEK and MTD baseline BEFORE the order, so the order is a +1 delta in each (a context whose local week or month boundary falls between the baseline and the order ends BLOCKED:CLOCK_EDGE, never FAIL).",buyer={{USER2_EMAIL}},"[PRE:RESET_CART]
+--- SCREEN: baseline before the order, context A (UTC-8) ---
+[SETUP] open a separate context with the clock installed at the current instant (BASE_AT) and timezoneId America/Los_Angeles, sign in as the buyer
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the cards have rendered
+[KEY] record the WEEK and MTD counts (WEEK_A0, MTD_A0)
+--- SCREEN: baseline before the order, context B (UTC+10) ---
+[SETUP] open a second context with the clock installed at BASE_AT and timezoneId Australia/Brisbane, sign in as the same buyer
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the cards have rendered
+[KEY] record the WEEK and MTD counts (WEEK_B0, MTD_B0)
 --- SCREEN: an order placed now ---
 [NAV] {{FRONT_URL}}/
 [ACT] open the first buyable in-stock product of the catalog listing (discovered at run time)
@@ -130,17 +142,17 @@ A browser context with an emulated clock (Playwright clock install at a fixed in
 [WAIT] the order confirmation page is rendered
 [KEY] record ORDER_NO and the placement instant (PLACED_AT)
 --- SCREEN: context A, UTC-8 ---
-[SETUP] open a separate context with the clock installed at PLACED_AT plus 1 minute and timezoneId America/Los_Angeles, sign in as the buyer
+[SETUP] reopen context A with the clock installed at PLACED_AT plus 1 minute and timezoneId America/Los_Angeles, signed in as the buyer
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards have rendered
-[KEY] record the WEEK and MTD counts (WEEK_A, MTD_A) and the WEEK from/to bounds sent (BOUNDS_A)
+[KEY] record the WEEK and MTD counts (WEEK_A, MTD_A), the WEEK from/to bounds sent (BOUNDS_A) and the order number and date of row 1 of 'My recent orders'
 --- SCREEN: context B, UTC+10 ---
-[SETUP] open a second context with the same clock and timezoneId Australia/Brisbane, sign in as the same buyer
+[SETUP] reopen context B with the same clock and timezoneId Australia/Brisbane, signed in as the same buyer
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards have rendered
-[KEY] record WEEK_B, MTD_B and BOUNDS_B","[REL] the WEEK window of each context contains PLACED_AT (from <= PLACED_AT <= to) {SPEC}
-[REL] WEEK_A >= 1 and WEEK_B >= 1, and MTD_A >= 1 and MTD_B >= 1 - an order placed today is in today's week and month wherever the buyer is {SPEC}
-[REL] the date shown for ORDER_NO in 'My recent orders' equals the buyer's local date of PLACED_AT in each context (list and cards agree on the day) {OBSERVED}
+[KEY] record WEEK_B, MTD_B, BOUNDS_B and the order number and date of row 1 of 'My recent orders'","[REL] the WEEK window of each context contains PLACED_AT (from <= PLACED_AT <= to) {SPEC}
+[REL] WEEK_A == WEEK_A0 + 1, MTD_A == MTD_A0 + 1, WEEK_B == WEEK_B0 + 1 and MTD_B == MTD_B0 + 1 - an order placed today is in today's week and month wherever the buyer is, and counted exactly once {SPEC}
+[REL] the date shown for ORDER_NO (row 1) in 'My recent orders' equals the buyer's local date of PLACED_AT in each context (list and cards agree on the day) {OBSERVED}
 [REL] the two contexts send DIFFERENT window bounds (the bounds follow the browser time zone) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","today's order missing from WEEK or MTD in a UTC-8 or UTC+10 browser
 the list date and the card window disagree on the day
@@ -195,7 +207,8 @@ switching back shows the empty organization's zeros
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",switch back to the buyer's default organization,VCST-6078 · Archetype:SCOPE · Technique:DT | Role: buyer in a 2nd org · Technique:DT,Draft
 ORD-DASH-007,Dashboard — orders of another store are counted nowhere on this store's dashboard,Orders > Account dashboard > Live data,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:BD_TWOSTORE]
-Buyer @td(BD_TWOSTORE.email) has orders in {{STORE_ID}} and in a second store (@td(BD_TWOSTORE.secondStore)). The dashboard is store-scoped (cards AND list) while /account/orders lists every store (README + dev decision A-F1, still to be confirmed by the PO - see References). Seed-day figures: count @td(BD_TWOSTORE.expectedCount), total @td(BD_TWOSTORE.expectedTotal), all stores @td(BD_TWOSTORE.allStoresCount).",buyer=@td(BD_TWOSTORE.email),"[NAV] {{FRONT_URL}}/account/dashboard
+Buyer @td(BD_TWOSTORE.email) has orders in {{STORE_ID}} and in a second store (@td(BD_TWOSTORE.secondStore)). The dashboard is store-scoped (cards AND list) while /account/orders lists every store (README + dev decision A-F1, still to be confirmed by the PO - see References). Seed-day figures: count @td(BD_TWOSTORE.expectedCount), total @td(BD_TWOSTORE.expectedTotal), all stores @td(BD_TWOSTORE.allStoresCount). The seed-day figures hold only on the seed day (the YTD card, the total and the average are calendar-bound), so the case runs in a SEPARATE browser context with the clock emulated at SEED_DAY 12:00 UTC (timezoneId UTC); SEED_DAY = the calendar date of @td(BD_TWOSTORE.windows.cur.from) (the instant the seeder created the orders). The server trusts the window bounds the browser sends (observed 2026-11-09), so the emulated clock moves only the bounds, never the stored orders.",buyer=@td(BD_TWOSTORE.email); seed_from=@td(BD_TWOSTORE.windows.cur.from),"[SETUP] open a context with the clock at SEED_DAY 12:00 UTC (timezoneId UTC), sign in as the buyer
+[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards and the list have rendered
 [KEY] record the YTD count and total (DASH_COUNT, DASH_TOTAL) and the rows of 'My recent orders' with their order numbers (DASH_ROWS)
 [NAV] {{FRONT_URL}}/account/orders
@@ -206,9 +219,18 @@ Buyer @td(BD_TWOSTORE.email) has orders in {{STORE_ID}} and in a second store (@
 [REL] the 'All orders' link of the widget goes to /account/orders, where the other store's order IS listed {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","the recent list shows the other store's order that the cards do not count
 the cards count the other store's order
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-6078 · Archetype:SCOPE · Technique:DT | Open question: store scoping of the dashboard is a developer decision (A-F1) with no AC - PO to confirm; the {SPEC} above is the written README text,Draft
-ORD-DASH-008,"Dashboard — My recent orders shows the five newest orders, status tabs filter them, All orders opens the Orders page",Orders > Account dashboard > Live data,High,BL-ORD-009,,"Buyer {{USER_EMAIL}} has more than five orders in {{STORE_ID}} across several statuses (checklist A7 recorded Completed, Cancelled, New and Processing). The block is 'My recent orders' with a status tab row ('All' plus one tab per status the buyer's orders carry, label = status name only, no counts); the tabs come from the store-scoped search facets, not from the five visible rows.",buyer={{USER_EMAIL}},"[PRE:CLEAR_SESSION]
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",close the emulated context (read-only otherwise),VCST-6078 · Archetype:SCOPE · Technique:DT | Open question: store scoping of the dashboard is a developer decision (A-F1) with no AC - PO to confirm; the {SPEC} above is the written README text,Draft
+ORD-DASH-008,"Dashboard — My recent orders shows the five newest orders, status tabs filter them, All orders opens the Orders page",Orders > Account dashboard > Live data,High,BL-ORD-009,,"Buyer {{USER_EMAIL}} has more than five orders in {{STORE_ID}} across several statuses (checklist A7 recorded Completed, Cancelled, New and Processing). The saved layout of this buyer may hide statuses (other cases change it), so the case first resets it to the default (Edit layout, Reset, Save layout). The block is 'My recent orders' with a status tab row ('All' plus one tab per status the buyer's orders carry, label = status name only, no counts); the tabs come from the store-scoped search facets, not from the five visible rows.",buyer={{USER_EMAIL}},"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER]
+[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] 'My recent orders' has rendered
 [KEY] record the rows (order number, date, status, total) in order (ROWS), the tab labels (TABS) and the href of 'All orders' (ALL_HREF)
@@ -233,7 +255,8 @@ a status the buyer has no order in is offered as a tab
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6078 · Archetype:SILENT · Technique:EP | Open question: whether the tab row should offer Cancelled orders that the cards exclude (checklist A7) | REPAIR 2026-11-11: re-based for vc-frontend#2653 (status counts removed by design; tabs show the status name only, {OBSERVED} vcptcore_qa1 2026-11-11, theme 2.62.0-pr-2552-942a); kept: the five newest rows, the tab filters by status, All orders opens the Orders page | Promoted: REG-2026-11-11-1738 (2026-11-11)",Automated
 ORD-DASH-009,Dashboard — EUR display converts and rounds every amount,Orders > Account dashboard > Live data,High,BL-ORD-010,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:BD_EUR]
-Buyer @td(BD_EUR.email): orders in EUR and in USD, converted at the platform rate to the display currency (CurrencyFold, rounded by the currency policy). Seed-day figures: EUR display total @td(BD_EUR.eurTotal) and average @td(BD_EUR.eurAverage); USD display total @td(BD_EUR.expectedTotal) and average @td(BD_EUR.expectedAverage); count @td(BD_EUR.expectedCount). EUR has no symbol in the platform currency list; the storefront formats it with its own symbol. List rows keep the currency each order was placed in. The display currency is switched with the header 'Currency' control.",buyer=@td(BD_EUR.email),"[NAV] {{FRONT_URL}}/account/dashboard
+Buyer @td(BD_EUR.email): orders in EUR and in USD, converted at the platform rate to the display currency (CurrencyFold, rounded by the currency policy). Seed-day figures: EUR display total @td(BD_EUR.eurTotal) and average @td(BD_EUR.eurAverage); USD display total @td(BD_EUR.expectedTotal) and average @td(BD_EUR.expectedAverage); count @td(BD_EUR.expectedCount). EUR has no symbol in the platform currency list; the storefront formats it with its own symbol. List rows keep the currency each order was placed in. The display currency is switched with the header 'Currency' control. The seed-day figures hold only on the seed day (the YTD card, the total and the average are calendar-bound), so the case runs in a SEPARATE browser context with the clock emulated at SEED_DAY 12:00 UTC (timezoneId UTC); SEED_DAY = the calendar date of @td(BD_EUR.windows.cur.from) (the instant the seeder created the orders). The server trusts the window bounds the browser sends (observed 2026-11-09), so the emulated clock moves only the bounds, never the stored orders.",buyer=@td(BD_EUR.email); seed_from=@td(BD_EUR.windows.cur.from),"[SETUP] open a context with the clock at SEED_DAY 12:00 UTC (timezoneId UTC), sign in as the buyer
+[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards and the list have rendered
 [ACT] open the header 'Currency' control
 [WAIT] the currency list is open
@@ -254,10 +277,11 @@ Buyer @td(BD_EUR.email): orders in EUR and in USD, converted at the platform rat
 a fixed number of decimals
 the count changing with the currency
 rows re-priced to the display currency
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",set the header currency back to USD,VCST-6078 · Archetype:MONEY · Technique:EP | Role: EUR buyer · BL-ORD-010 · Technique:EP,Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",set the header currency back to USD; close the emulated context,VCST-6078 · Archetype:MONEY · Technique:EP | Role: EUR buyer · BL-ORD-010 · Technique:EP,Draft
 ORD-DASH-010,"Dashboard — an order in an unconfigured currency is left out with a note, the page still works",Orders > Account dashboard > Live data,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:BD_UNCFG]
-Buyer @td(BD_UNCFG.email) has one order in a currency REMOVED from the platform after the order (XTS, no rate): the statistics exclude it and say so (excludedCount). Seed-day figures: count @td(BD_UNCFG.expectedCount), total @td(BD_UNCFG.expectedTotal), excluded @td(BD_UNCFG.expectedExcludedCount). This buyer's order list is known to fail server-side (VCST-6535 class: xAPI orders cannot be read for an order whose currency is gone); that defect belongs to its own ticket, so this case asserts the CONTAINMENT rule and never certifies the failure.",buyer=@td(BD_UNCFG.email),"[NAV] {{FRONT_URL}}/account/dashboard
+Buyer @td(BD_UNCFG.email) has one order in a currency REMOVED from the platform after the order (XTS, no rate): the statistics exclude it and say so (excludedCount). Seed-day figures: count @td(BD_UNCFG.expectedCount), total @td(BD_UNCFG.expectedTotal), excluded @td(BD_UNCFG.expectedExcludedCount). This buyer's order list is known to fail server-side (VCST-6535 class: xAPI orders cannot be read for an order whose currency is gone); that defect belongs to its own ticket, so this case asserts the CONTAINMENT rule and never certifies the failure. The seed-day figures hold only on the seed day (the YTD card, the total and the average are calendar-bound), so the case runs in a SEPARATE browser context with the clock emulated at SEED_DAY 12:00 UTC (timezoneId UTC); SEED_DAY = the calendar date of @td(BD_UNCFG.windows.cur.from) (the instant the seeder created the orders). The server trusts the window bounds the browser sends (observed 2026-11-09), so the emulated clock moves only the bounds, never the stored orders.",buyer=@td(BD_UNCFG.email); seed_from=@td(BD_UNCFG.windows.cur.from),"[SETUP] open a context with the clock at SEED_DAY 12:00 UTC (timezoneId UTC), sign in as the buyer
+[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the page has settled (cards and the recent-orders block each rendered, errored or empty)
 [KEY] record the card figures and any note on the cards (CARD_*), the state of 'My recent orders' (LIST_STATE), whether a global toast/banner appeared (TOAST) and whether the rest of the page (sidebar, header, other cards) works
 [ACT] click the sidebar link 'Orders'
@@ -272,7 +296,7 @@ Buyer @td(BD_UNCFG.email) has one order in a currency REMOVED from the platform 
 [NETWORK] no 4xx/5xx on /graphql","the whole widget group fails
 the order silently disappears from the totals with no count
 a global toast blames the server
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6078 · Archetype:FALLBACK · Technique:EG | Probe:VCST-6535 · Open question: the recent list for this buyer fails today (order list needs the currency) - the {SPEC} only requires containment; file the list failure under VCST-6535, not here",Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",close the emulated context (read-only otherwise),"VCST-6078 · Archetype:FALLBACK · Technique:EG | Probe:VCST-6535 · Open question: the recent list for this buyer fails today (order list needs the currency) - the {SPEC} only requires containment; file the list failure under VCST-6535, not here",Draft
 ORD-DASH-011,"Dashboard — flag-cancelled orders are excluded, a status-only Cancelled order follows the stated rule",Orders > Account dashboard > Live data,Medium,,,"A browser context with an emulated clock (Playwright clock install at a fixed instant plus a timezoneId) is a SEPARATE context from the normal lane; the server trusts the windows the browser sends (observed 2026-11-09), so the emulated clock moves only the window bounds and never the stored orders. Buyer @td(BD_STATS.email) has, besides ordinary orders, three orders that must stay out of every total: one with IsCancelled set, one prototype and one stamped with another organization; and one order whose STATUS reads Cancelled but whose flag is not set (counted by the build: dev decision A-F2, see References). Seed-day figures: count @td(BD_STATS.expectedCount), total @td(BD_STATS.expectedTotal), average @td(BD_STATS.expectedAverage). The seed-day figure needs the clock of the seed day: SEED_DAY = the calendar date of @td(BD_STATS.windows.cur.from) (the instant the seeder created the current-wave orders) (UTC noon).",buyer=@td(BD_STATS.email); seed_from=@td(BD_STATS.windows.cur.from),"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:BD_STATS]
 [SETUP] open a context with the clock at SEED_DAY 12:00 UTC (timezoneId UTC), sign in as the buyer
@@ -290,13 +314,14 @@ the cards and the list follow different rules with no stated rule
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",close the emulated context,VCST-6078 · Archetype:MONEY · Technique:DT | Open question (PO): should a status-named 'Cancelled' order be counted? The cards exclude only the flag (A-F2) - the {SPEC} follows the README (flag); prototype orders are seeded via BD_STATS (CPROTO) and cannot be created through the storefront | wording re-based for vc-frontend#2653 (chip -> status tab) | Promoted: REG-2026-11-11-1738 (2026-11-11),Automated
 ORD-DASH-012,"Dashboard — a million-dollar average stays inside its card at 1280, 768 and 390 px",Orders > Account dashboard > Live data,Medium,BL-UI-004,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:BD_LARGE]
-Buyer @td(BD_LARGE.email) has orders whose average is at least one million dollars (@td(BD_LARGE.expectedTotal) total, @td(BD_LARGE.expectedAverage) average): the ticket's long-figure defect VCST-6714 (A-F13). The figure must fit its card at three widths and in edit mode (BL-UI-004).",buyer=@td(BD_LARGE.email),"[VIEWPORT] 1280x900
+Buyer @td(BD_LARGE.email) has orders whose average is at least one million dollars (@td(BD_LARGE.expectedTotal) total, @td(BD_LARGE.expectedAverage) average): the ticket's long-figure defect VCST-6714 (A-F13). The figure must fit its card at three widths and in edit mode (BL-UI-004). The seed-day figures hold only on the seed day (the YTD card, the total and the average are calendar-bound), so the case runs in a SEPARATE browser context with the clock emulated at SEED_DAY 12:00 UTC (timezoneId UTC); SEED_DAY = the calendar date of @td(BD_LARGE.windows.cur.from) (the instant the seeder created the orders). The server trusts the window bounds the browser sends (observed 2026-11-09), so the emulated clock moves only the bounds, never the stored orders.",buyer=@td(BD_LARGE.email); seed_from=@td(BD_LARGE.windows.cur.from),"[SETUP] open a context with the clock at SEED_DAY 12:00 UTC (timezoneId UTC), sign in as the buyer
+[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards have rendered
 [PROBE:OVERFLOW]
 [KEY] for each card record the bounding box of the card and of its figure and sub-line text (BOX_1280_*)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [KEY] record the boxes again (BOX_1280_EDIT_*)
 [VIEWPORT] 768x1024
 [NAV] {{FRONT_URL}}/account/dashboard
@@ -307,7 +332,7 @@ Buyer @td(BD_LARGE.email) has orders whose average is at least one million dolla
 [PROBE:OVERFLOW]
 [KEY] record the boxes (BOX_390_*)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [KEY] record the boxes (BOX_390_EDIT_*)","[OVERFLOW] horizontal == false at 1280, 768 and 390 in view mode and in edit mode {SPEC}
 [REL] for every card the right edge of the figure text <= the right edge of the card, and the sub-line too, at every width in every mode {SPEC}
 [DER] the average card shows the amount @td(BD_LARGE.expectedAverage) in full (no ellipsis, no clipped digits) {SPEC}
@@ -315,23 +340,23 @@ Buyer @td(BD_LARGE.email) has orders whose average is at least one million dolla
 [NETWORK] no 4xx/5xx on /graphql","the average order value runs past the card edge
 a figure is clipped with an ellipsis
 the page scrolls sideways
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Cancel the edit mode (no save); restore the viewport to 1280x900,VCST-6078 · Archetype:RENDER · Technique:BVA | Behavior chain V5 · BL-UI-004 · VCST-6714,Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Cancel the edit mode (no save); restore the viewport to 1280x900; close the emulated context,VCST-6078 · Archetype:RENDER · Technique:BVA | Behavior chain V5 · BL-UI-004 · VCST-6714,Draft
 ORD-DASH-013,"Dashboard layout — never saved shows defaults; save then reload keeps order, hidden cards and rows",Orders > Account dashboard > Live data,High,BL-SR-026,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:BD_LARGE]
-Buyer @td(BD_LARGE.email) has NEVER saved a dashboard layout, so layout(accountDashboard) is null and the page renders the registry defaults with editing ENABLED (a null is not a load failure). The never-saved half of this case is ONE-SHOT: a stored layout cannot be deleted through the API (only replaced), so after the first save this buyer is a saved-layout buyer. GUARD: the case reads the GetLayout response first; when it is not null the buyer was already saved and the case is BLOCKED:PRECONDITION_UNMET (re-run only after `npm run seed:buyer-dashboard` has recreated the buyer, or point the case at a fresh buyer). Registry defaults: four stat cards in the order WEEK, MTD, YTD, AOV and 'My recent orders' with 5 rows.",buyer=@td(BD_LARGE.email),"[SETUP] start recording the /graphql responses of the tab into GQL_LOG
+[PRE:SIGNIN_AS:BD_LAYOUT]
+Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change) has NEVER saved a dashboard layout, so layout(accountDashboard) is null and the page renders the registry defaults with editing ENABLED (a null is not a load failure). Every `npm run seed:buyer-dashboard` run resets the saved layout of the buyer, so the case requires a fresh seed:buyer-dashboard and runs BEFORE any other BD_LAYOUT case (they normalise the layout by saving). GUARD: the case reads the GetLayout response first; when it is not null the buyer is not fresh and the case is BLOCKED:PRECONDITION_UNMET (re-run after a fresh `npm run seed:buyer-dashboard`). Registry defaults: four stat cards in the order WEEK, MTD, YTD, AOV and 'My recent orders' with 5 rows.",buyer=@td(BD_LAYOUT.email),"[SETUP] start recording the /graphql responses of the tab into GQL_LOG
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the page has rendered
 [KEY] read the GetLayout response (LAYOUT_0) and record the card order, the hidden stats tray and the recent-orders row count (DEFAULT_*)
 [ASSERT] LAYOUT_0 layout is null, otherwise stop BLOCKED
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag the YTD card before the WEEK card
 [WAIT] the draft shows the change
 [ACT] drag the MTD card into 'Hidden stats'
 [WAIT] the draft shows the change
 [ACT] set 'Max rows' of 'My recent orders' to 3
 [WAIT] the field shows 3
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the page has rendered
@@ -343,16 +368,25 @@ Buyer @td(BD_LARGE.email) has NEVER saved a dashboard layout, so layout(accountD
 [STATE] reloading the page does not trigger a second SaveLayout request {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","a first-time buyer sees an empty dashboard or a disabled Edit layout
 the saved order, hidden card or row count is lost after a reload
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","none that deletes: Reset + Save writes a defaults document; the buyer remains a saved-layout buyer afterwards (documented one-shot, see Preconditions)",VCST-6078 · Archetype:FALLBACK · Technique:ST | Behavior chain V7-V8 · BL-SR-026 (ported) · Open question: is a stored layout ever deletable back to null?,Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Edit layout, Reset, Save layout (writes the defaults document); the next seed:buyer-dashboard resets the buyer to never-saved",VCST-6078 · Archetype:FALLBACK · Technique:ST | Behavior chain V7-V8 · BL-SR-026 (ported) · Open question: is a stored layout ever deletable back to null?,Draft
 ORD-DASH-014,Dashboard layout — Cancel discards edits and Reset restores defaults only after Save,Orders > Account dashboard > Live data,High,BL-SR-016; BL-SR-024,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:USER2]
-Buyer {{USER2_EMAIL}} (AcmeCorp). Cancel and Reset are DRAFT-ONLY actions: nothing is saved until Save, and Save is a full replace of the layout document. The case reads the stored document with GetLayout after each reload so that the screen cannot hide a persisted change. The buyer's own layout state is restored by the last step (per-user state).",buyer={{USER2_EMAIL}},"[SETUP] start recording /graphql requests into GQL_LOG
+[PRE:SIGNIN_AS:BD_LAYOUT]
+Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run) (AcmeCorp). Cancel and Reset are DRAFT-ONLY actions: nothing is saved until Save, and Save is a full replace of the layout document. The case reads the stored document with GetLayout after each reload so that the screen cannot hide a persisted change. The buyer's own layout state is restored by the last step (per-user state).",buyer=@td(BD_LAYOUT.email),"[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[SETUP] start recording /graphql requests into GQL_LOG
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the page has rendered
 [KEY] record the stored layout from GetLayout (L_START) and the visible card order
 --- SCREEN: Cancel ---
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag the AOV card before the WEEK card
 [WAIT] the draft shows the change
 [ACT] drag the YTD card into 'Hidden stats'
@@ -364,7 +398,7 @@ Buyer {{USER2_EMAIL}} (AcmeCorp). Cancel and Reset are DRAFT-ONLY actions: nothi
 [KEY] record the stored layout (L_CANCEL)
 --- SCREEN: Reset without Save ---
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag the WEEK card into 'Hidden stats'
 [WAIT] the draft shows the change
 [ACT] press 'Reset'
@@ -376,14 +410,14 @@ Buyer {{USER2_EMAIL}} (AcmeCorp). Cancel and Reset are DRAFT-ONLY actions: nothi
 [KEY] record the stored layout (L_RESET_CANCEL)
 --- SCREEN: Reset with Save ---
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag the WEEK card into 'Hidden stats'
 [WAIT] the draft shows the change
 [ACT] drag the MTD card after the last card
 [WAIT] the draft shows the change
 [ACT] press 'Reset'
 [WAIT] the draft shows the default order
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
 [KEY] record the stored layout (L_RESET_SAVE) and the visible card order","[REL] SAVES_AFTER_CANCEL == 0 and L_CANCEL == L_START - Cancel persists nothing {SPEC}
@@ -394,44 +428,53 @@ Buyer {{USER2_EMAIL}} (AcmeCorp). Cancel and Reset are DRAFT-ONLY actions: nothi
 [NETWORK] no 4xx/5xx on /graphql","Cancel persists edits
 Reset saves by itself
 Reset+Save leaves part of the old layout
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","if L_START held a non-default arrangement, rebuild it and Save; otherwise the defaults document written by the last step is the buyer's normal state","VCST-6078 · Archetype:SILENT · Technique:ST | Behavior chain V7 · BL-SR-016 / BL-SR-024 (ported) · Probe:VC-API-009 (the stored document is read, not the screen)",Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",the defaults document written by the last step is the buyer's normal state (L_START is the normalised default layout),"VCST-6078 · Archetype:SILENT · Technique:ST | Behavior chain V7 · BL-SR-016 / BL-SR-024 (ported) · Probe:VC-API-009 (the stored document is read, not the screen)",Draft
 ORD-DASH-015,Dashboard layout — Max rows accepts its range and the list follows it,Orders > Account dashboard > Live data,Medium,,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:USER2]
-Buyer {{USER2_EMAIL}} (AcmeCorp). 'Max rows' of 'My recent orders' accepts 1 to 20 (README settings range; checklist C4) - the buyer has fewer than 21 orders in the store so 'rows rendered' is min(setting, orders). Edge values are typed, not stepped, to reach the limit values.",buyer={{USER2_EMAIL}},"[NAV] {{FRONT_URL}}/account/dashboard
+[PRE:SIGNIN_AS:BD_LAYOUT]
+Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run) (AcmeCorp). 'Max rows' of 'My recent orders' accepts 1 to 20 (README settings range; checklist C4) - the buyer has fewer than 21 orders in the store so 'rows rendered' is min(setting, orders). Edge values are typed, not stepped, to reach the limit values.",buyer=@td(BD_LAYOUT.email),"[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the page has rendered
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] clear 'Max rows' of 'My recent orders'
 [WAIT] the field is empty
 [ACT] type 0
 [WAIT] the field shows 0
-[KEY] record whether the field is flagged invalid and whether 'Save' is enabled (V0_*)
+[KEY] record whether the field is flagged invalid and whether 'Save layout' is enabled (V0_*)
 [ACT] replace the field value with 1
 [WAIT] the field shows 1
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
 [KEY] record the rows rendered (ROWS_1)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] replace the field value with 20
 [WAIT] the field shows 20
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
 [KEY] record the rows rendered (ROWS_20)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] replace the field value with 21
 [WAIT] the field shows 21
-[KEY] record whether the field is flagged invalid and whether 'Save' is enabled (V21_*)
+[KEY] record whether the field is flagged invalid and whether 'Save layout' is enabled (V21_*)
 [ACT] press 'Cancel'
 [WAIT] the page leaves edit mode
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] replace the field value with 5
 [WAIT] the field shows 5
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode","[STATE] 0 and 21 are refused: the field is flagged invalid and the value cannot be saved {SPEC}
 [COUNT] ROWS_1 == 1 and ROWS_20 == min(20, the buyer's order count in this store) {SPEC}
 [REL] the row count the list shows after Save equals the stored setting (read via GetLayout) {SPEC}
@@ -441,25 +484,34 @@ the list ignores the cap
 typing an edge value refetches the list before Save
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",the last step restores 5 rows (the default),VCST-6078 · Archetype:CONFIG · Technique:BVA | Behavior chain V7 · Technique:BVA,Draft
 ORD-DASH-016,Dashboard layout — a hidden card sends no statistics request for its slice,Orders > Account dashboard > Live data,Medium,,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:USER2]
-Buyer {{USER2_EMAIL}}. Each stat card is gated by an @include flag in GetOrderStatistics (withWeek, withMtd, withYtd, withYearOverYear...), so a hidden card sends no request for its slice - this contradicts the older BL-SR-031 text (a hidden STAT card still queried) and is the behaviour the README describes ({SPEC}). The sibling cards must still carry the right figures.",buyer={{USER2_EMAIL}},"[SETUP] start recording /graphql request bodies and responses into GQL_LOG
+[PRE:SIGNIN_AS:BD_LAYOUT]
+Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run). Each stat card is gated by an @include flag in GetOrderStatistics (withWeek, withMtd, withYtd, withYearOverYear...), so a hidden card sends no request for its slice - this contradicts the older BL-SR-031 text (a hidden STAT card still queried) and is the behaviour the README describes ({SPEC}). The sibling cards must still carry the right figures.",buyer=@td(BD_LAYOUT.email),"[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[SETUP] start recording /graphql request bodies and responses into GQL_LOG
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards have rendered
 [KEY] record the variables of GetOrderStatistics (VARS_ALL) and the MTD card figures (MTD_ALL)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag the WEEK card into 'Hidden stats'
 [WAIT] the draft shows the change
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards have rendered
 [KEY] record the variables (VARS_NO_WEEK), the fields present in the response (RESP_FIELDS) and the MTD card figures (MTD_NO_WEEK)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag the WEEK card back from 'Hidden stats'
 [WAIT] the draft shows the change
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode","[REL] VARS_ALL has the week flag true and VARS_NO_WEEK has it false {SPEC}
 [REL] RESP_FIELDS contains no week period data when the week flag is false {SPEC}
 [REL] MTD_NO_WEEK == MTD_ALL - hiding one card does not change another card's figures {SPEC}
@@ -484,37 +536,46 @@ Buyer {{USER_EMAIL}}. The failure is injected by aborting the /graphql requests 
 [STATE] TOAST is empty - no global error toast {SPEC}
 [STATE] the sidebar and the header stay usable while the cards are in the error state {SPEC}
 [DOM] after the requests are allowed again the cards 'Orders placed · WEEK' to 'Avg order value' show figures and 'My recent orders' shows order rows instead of the error text {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","a blank card with no error text
+[NETWORK] no 4xx/5xx on /graphql other than the /graphql requests this case aborts (the injected failure)","a blank card with no error text
 a page-wide server-error toast
 no recovery after the connection returns
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",stop request interception,VCST-6078 · Archetype:FALLBACK · Technique:EG | Probe:UIP-NET · BL-UI-003 · Technique:EG,Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql other than the injected failure",stop request interception,VCST-6078 · Archetype:FALLBACK · Technique:EG | Probe:UIP-NET · BL-UI-003 · Technique:EG,Draft
 ORD-DASH-018,"Dashboard layout — a failed save keeps the draft, announces it and returns focus to Save",Orders > Account dashboard > Live data,Medium,BL-A11Y-004,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:USER2]
-Buyer {{USER2_EMAIL}}. Only the SaveLayout request is failed (network interception) while the layout READ works, because a failed read disables editing altogether (see the failed-read case). On a failed Save the draft stays, the edit bar shows an alert, a live region announces it, focus goes back to Save only if it was left there (A-F15) and no global toast appears.",buyer={{USER2_EMAIL}},"[NAV] {{FRONT_URL}}/account/dashboard
+[PRE:SIGNIN_AS:BD_LAYOUT]
+Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run). Only the SaveLayout request is failed (network interception) while the layout READ works, because a failed read disables editing altogether (see the failed-read case). On a failed Save the draft stays, the edit bar shows an alert, a live region announces it, focus goes back to Save only if it was left there (A-F15) and no global toast appears.",buyer=@td(BD_LAYOUT.email),"[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the page has rendered
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag the AOV card before the WEEK card
 [WAIT] the draft shows the change
 [SETUP] abort the next SaveLayout request
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the failure is reported
 [KEY] record the edit-bar alert text (ALERT), the live-region text (LIVE), the element holding focus (FOCUS), the card order in the draft (DRAFT_ORDER), whether a toast appeared (TOAST) and whether the page is still in edit mode
 [SETUP] stop aborting SaveLayout
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
-[KEY] record the stored layout (STORED_ORDER)","[DOM] the edit bar shows an alert reading that the layout could not be saved and the 'Reset', 'Cancel' and 'Save' buttons are still shown {SPEC}
+[KEY] record the stored layout (STORED_ORDER)","[DOM] the edit bar shows an alert reading that the layout could not be saved and the 'Reset', 'Cancel' and 'Save layout' buttons are still shown {SPEC}
 [REL] DRAFT_ORDER is the order the buyer arranged - nothing was lost by the failure {SPEC}
 [STATE] the live region announces the failure (LIVE is non-empty) {SPEC}
-[STATE] FOCUS is the 'Save' button {OBSERVED}
+[STATE] FOCUS is the 'Save layout' button {OBSERVED}
 [STATE] TOAST is empty {SPEC}
 [REL] after the retry STORED_ORDER == the arranged order {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","the draft is lost on a failed save
+[NETWORK] no 4xx/5xx on /graphql other than the SaveLayout request this case aborts (the injected failure)","the draft is lost on a failed save
 the failure is silent
 edit mode closes
 a toast blames the server
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Reset + Save to return the buyer's layout to the defaults,VCST-6078 · Archetype:FALLBACK · Technique:EG | Behavior chain V7 · BL-A11Y-004 · A-F15 · Technique:EG,Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql other than the injected failure",Reset + Save to return the buyer's layout to the defaults,VCST-6078 · Archetype:FALLBACK · Technique:EG | Behavior chain V7 · BL-A11Y-004 · A-F15 · Technique:EG,Draft
 ORD-DASH-019,"Dashboard — tablet and phone widths, view and edit mode, no horizontal scroll",Orders > Account dashboard > Live data,Medium,BL-UI-004; BL-UI-006,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer {{USER_EMAIL}}. Tablet width renders the four cards as a 2x2 grid and phone width stacks them (checklist A15); the page never scrolls sideways in view or edit mode and the edit bar stays inside the viewport (BL-UI-004, BL-UI-006). The Page Builder has no mobile layout and is not part of this case.",buyer={{USER_EMAIL}},"[VIEWPORT] 768x1024
@@ -523,9 +584,9 @@ Buyer {{USER_EMAIL}}. Tablet width renders the four cards as a 2x2 grid and phon
 [PROBE:OVERFLOW]
 [KEY] record the number of cards per row (COLS_768)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [PROBE:OVERFLOW]
-[KEY] record the position of the edit bar buttons 'Reset', 'Cancel' and 'Save' (BAR_768)
+[KEY] record the position of the edit bar buttons 'Reset', 'Cancel' and 'Save layout' (BAR_768)
 [ACT] press 'Cancel'
 [WAIT] the page leaves edit mode
 [VIEWPORT] 390x844
@@ -534,20 +595,29 @@ Buyer {{USER_EMAIL}}. Tablet width renders the four cards as a 2x2 grid and phon
 [PROBE:OVERFLOW]
 [KEY] record the number of cards per row (COLS_390)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [PROBE:OVERFLOW]
 [KEY] record the position of the edit bar buttons (BAR_390)
 [ACT] press 'Cancel'
 [WAIT] the page leaves edit mode","[OVERFLOW] horizontal == false at 768 and 390, in view mode and in edit mode {SPEC}
 [COUNT] COLS_768 == 2 and COLS_390 == 1 {OBSERVED}
 [REL] every edit-bar button is fully inside the viewport (left >= 0 and right <= viewport width) at 768 and 390 {SPEC}
-[TOUCH] belowAA == 0 for the 'Edit layout', 'Reset', 'Cancel' and 'Save' controls at 390 {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[TOUCH] belowAA == 0 for the 'Edit layout', 'Reset', 'Cancel' and 'Save layout' controls at 390 {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","cards or the edit bar run off the screen on a phone
 a control is smaller than the touch minimum
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",restore the viewport to 1280x900,VCST-6078 · Archetype:RENDER · Technique:EP | Behavior chain V5 · BL-UI-004 / BL-UI-006 · Probe:VC-UI-005,Draft
 ORD-DASH-020,Dashboard — keyboard-only layout editing is announced and passes contrast in view and edit mode,Orders > Account dashboard > Live data,Medium,BL-A11Y-001; BL-A11Y-002; BL-A11Y-003,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:USER2]
-Buyer {{USER2_EMAIL}}. Layout editing must be fully operable with the keyboard and every step announced (BL-A11Y-001..004, BL-SR-029 ported): Space grabs, arrows move, Space drops, Escape cancels. The theme's accent orange fails AA contrast on its own and is a known exception handled outside this ticket (checklist C10); every other violation counts.",buyer={{USER2_EMAIL}},"[NAV] {{FRONT_URL}}/account/dashboard
+[PRE:SIGNIN_AS:BD_LAYOUT]
+Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run). Layout editing must be fully operable with the keyboard and every step announced (BL-A11Y-001..004, BL-SR-029 ported): Space grabs, arrows move, Space drops, Escape cancels. The theme's accent orange fails AA contrast on its own and is a known exception handled outside this ticket (checklist C10); every other violation counts.",buyer=@td(BD_LAYOUT.email),"[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the page has rendered
 [ACT] run the axe-core scan (wcag2a, wcag2aa, wcag22aa) on the dashboard in view mode
 [WAIT] the scan returns
@@ -587,7 +657,7 @@ Buyer {{USER_EMAIL}}. The ticket asks to remove all placeholder widgets (To-Be a
 [WAIT] the page has rendered
 [KEY] record every block heading on the page (HEADINGS_VIEW)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [KEY] record every block heading and every entry of the hidden tray (HEADINGS_EDIT)
 [ACT] press 'Cancel'
 [WAIT] the page leaves edit mode","[COUNT] occurrences of the headings 'Latest orders', 'Monthly spend report' and 'Orders status' in HEADINGS_VIEW == 0 {SPEC}
@@ -596,17 +666,26 @@ Buyer {{USER_EMAIL}}. The ticket asks to remove all placeholder widgets (To-Be a
 [NETWORK] no 4xx/5xx on /graphql","a placeholder widget still renders beside the live cards, or is offered in the hidden tray
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",the edit was cancelled; nothing to restore,VCST-6078 · Archetype:SILENT · Technique:EP | Behavior chain V5 · To-Be annotation 3 · supersedes the placeholders asserted by 010 B2C-DASH-002/-003/-006/-007,Draft
 ORD-DASH-022,Dashboard layout — with every block hidden the page says so and requests no statistics and no orders,Orders > Account dashboard > Live data,High,BL-SR-031,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:USER2]
-Buyer {{USER2_EMAIL}}. PROMOTED from the discovery lane (SBTM-VCST-6078 scenario 1, {OBSERVED} 2026-11-09): when every block is hidden the page shows 'All blocks are hidden' and a 'Restore default layout' action and sends NO GetOrderStatistics and NO GetOrders request. The state is reached through edit mode, so the buyer's stored layout is changed and restored by the last step.",buyer={{USER2_EMAIL}},"[SETUP] start recording /graphql operation names into GQL_LOG
+[PRE:SIGNIN_AS:BD_LAYOUT]
+Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run). PROMOTED from the discovery lane (SBTM-VCST-6078 scenario 1, {OBSERVED} 2026-11-09): when every block is hidden the page shows 'All blocks are hidden' and a 'Restore default layout' action and sends NO GetOrderStatistics and NO GetOrders request. The state is reached through edit mode, so the buyer's stored layout is changed and restored by the last step.",buyer=@td(BD_LAYOUT.email),"[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the page has rendered
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[SETUP] start recording /graphql operation names into GQL_LOG
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag every stat card into 'Hidden stats'
 [WAIT] the draft shows the change
 [ACT] press the hide (x) control of the 'My recent orders' block
 [WAIT] the block is listed in the hidden tray
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [SETUP] clear GQL_LOG
 [NAV] {{FRONT_URL}}/account/dashboard
@@ -623,16 +702,25 @@ Buyer {{USER2_EMAIL}}. PROMOTED from the discovery lane (SBTM-VCST-6078 scenario
 a blank page with no way back
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",'Restore default layout' (the last step) writes the defaults back,VCST-6078 · Archetype:SILENT · Technique:EP | Behavior chain V8 · Technique:EP · promoted from SBTM-VCST-6078-2026-11-09 scenario 1,Draft
 ORD-DASH-023,Dashboard layout — 'Restore default layout' on the all-hidden page saves at once and survives a reload,Orders > Account dashboard > Live data,High,BL-SR-016,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:USER2]
-Buyer {{USER2_EMAIL}}. PROMOTED from the discovery lane (SBTM scenario 2, {OBSERVED} 2026-11-09): on the ALL-HIDDEN page 'Restore default layout' SAVES AT ONCE (a SaveLayout request fires and the defaults persist after a reload), unlike edit-mode 'Reset', which only fills a draft; and 'Cancel' cannot undo it. The stored layout is read with GetLayout after the reload so the screen cannot stand in for storage.",buyer={{USER2_EMAIL}},"[SETUP] start recording /graphql operation names into GQL_LOG
+[PRE:SIGNIN_AS:BD_LAYOUT]
+Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run). PROMOTED from the discovery lane (SBTM scenario 2, {OBSERVED} 2026-11-09): on the ALL-HIDDEN page 'Restore default layout' SAVES AT ONCE (a SaveLayout request fires and the defaults persist after a reload), unlike edit-mode 'Reset', which only fills a draft; and 'Cancel' cannot undo it. The stored layout is read with GetLayout after the reload so the screen cannot stand in for storage.",buyer=@td(BD_LAYOUT.email),"[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[SETUP] start recording /graphql operation names into GQL_LOG
 [NAV] {{FRONT_URL}}/account/dashboard
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag every stat card into 'Hidden stats'
 [WAIT] the draft shows the change
 [ACT] press the hide (x) control of the 'My recent orders' block
 [WAIT] the block is listed in the hidden tray
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] 'All blocks are hidden' is shown
@@ -644,7 +732,7 @@ Buyer {{USER2_EMAIL}}. PROMOTED from the discovery lane (SBTM scenario 2, {OBSER
 [WAIT] the page has rendered
 [KEY] read the GetLayout response: block ids in order and hidden flags (RESTORED)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] press 'Cancel'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
@@ -656,31 +744,41 @@ Buyer {{USER2_EMAIL}}. PROMOTED from the discovery lane (SBTM scenario 2, {OBSER
 Cancel after a restore changes the stored layout
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",the restore leaves the buyer on the defaults document,"VCST-6078 · Archetype:SILENT · Technique:ST | Behavior chain V7-V8 · Open question (PO): is restore-without-Save intended, and is a stored layout ever deletable back to null? · promoted from SBTM scenario 2",Draft
 ORD-DASH-024,Dashboard layout — hiding the YTD card keeps the average order value card rendering,Orders > Account dashboard > Live data,High,BL-SR-031,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:BD_STATS]
-A browser context with an emulated clock (Playwright clock install at a fixed instant plus a timezoneId) is a SEPARATE context from the normal lane; the server trusts the windows the browser sends (observed 2026-11-09), so the emulated clock moves only the window bounds and never the stored orders. Buyer @td(BD_STATS.email). PROMOTED from the discovery lane (SBTM scenario 3): the average-order-value card is DERIVED from the year-to-date period, so hiding the YTD card must keep the YTD slice requested for the AOV card; only the year-over-year flag turns off (withYtd stays true, withYearOverYear false). SEED_DAY = the calendar date of @td(BD_STATS.windows.cur.from) (the instant the seeder created the current-wave orders) (UTC noon) so the seed-day figures hold. The buyer's layout is restored by the last step.",buyer=@td(BD_STATS.email); seed_from=@td(BD_STATS.windows.cur.from),"[SETUP] open a context with the clock at SEED_DAY 12:00 UTC, sign in as the buyer, start recording /graphql bodies into GQL_LOG
+[PRE:SIGNIN_AS:BD_LAYOUT]
+Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run). PROMOTED from the discovery lane (SBTM scenario 3): the average-order-value card is DERIVED from the year-to-date period, so hiding the YTD card must keep the YTD slice requested for the AOV card; only the year-over-year flag turns off (withYtd stays true, withYearOverYear false). The case changes the layout, so it runs on the layout buyer and the figures are checked RELATIONALLY (AOV before == AOV after == YTD total / YTD count); the seeded expected average of BD_STATS is asserted read-only in ORD-DASH-011. The buyer's layout is normalised first and restored by the last step.",buyer=@td(BD_LAYOUT.email),"[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[SETUP] start recording /graphql bodies into GQL_LOG
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards have rendered
-[KEY] record the AOV card text (AOV_BEFORE) and the variables of GetOrderStatistics (VARS_BEFORE)
+[KEY] record the YTD card count and total (YTD_BEFORE), the AOV card text (AOV_BEFORE) and the variables of GetOrderStatistics (VARS_BEFORE)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag the YTD card ('Orders placed · YTD') into 'Hidden stats'
 [WAIT] the draft shows the change
-[ACT] press 'Save'
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] the cards have rendered
 [KEY] record the variables (VARS_AFTER) and the cards shown with the AOV text (AOV_AFTER)
 [ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save' is visible
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] drag the YTD card back from 'Hidden stats'
 [WAIT] the draft shows the change
-[ACT] press 'Save'
-[WAIT] the page leaves edit mode","[REL] AOV_AFTER == AOV_BEFORE == @td(BD_STATS.expectedAverage) - the average survives the hide {SPEC}
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode","[REL] AOV_BEFORE == YTD_BEFORE total / YTD_BEFORE count, rounded as displayed, and is not zero or blank {SPEC}
+[REL] AOV_AFTER == AOV_BEFORE - the average survives the hide {SPEC}
 [REL] VARS_AFTER: the year-to-date flag is true and the year-over-year flag is false {OBSERVED}
 [DOM] the YTD card itself is not rendered (it is under 'Hidden stats') {SPEC}
 [REL] the WEEK and MTD cards are unchanged {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","the AOV card goes blank, zero or stale because its YTD slice was switched off with the YTD card
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",the last step puts the YTD card back and saves; close the emulated context,VCST-6078 · Archetype:SILENT · Technique:EP | Behavior chain V8 · BL-SR-031 re-based · Technique:EP · promoted from SBTM scenario 3,Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",the last step puts the YTD card back and saves,VCST-6078 · Archetype:SILENT · Technique:EP | Behavior chain V8 · BL-SR-031 re-based · Technique:EP · promoted from SBTM scenario 3 | re-pointed to the layout buyer: the seeded-average assertion stays with ORD-DASH-011,Draft
 ORD-DASH-025,"Dashboard — period windows at month end, on a leap day, on a DST day and on a UTC-10 Monday morning",Orders > Account dashboard > Live data,High,BL-ORD-010,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER2]
 A browser context with an emulated clock (Playwright clock install at a fixed instant plus a timezoneId) is a SEPARATE context from the normal lane; the server trusts the windows the browser sends (observed 2026-11-09), so the emulated clock moves only the window bounds and never the stored orders. Buyer {{USER2_EMAIL}} (orders placed on the stand today). PROMOTED from the discovery lane (SBTM scenarios 4 and 5): the previous-month window clamps at month end, a leap day and a 25-hour DST day are handled, and a browser in UTC-10 on a Monday morning UTC sits on the previous LOCAL week. All rows are read as the from/to bounds the dashboard sends under an emulated clock + time zone (the stored orders do not move); expected bounds are derived in the step from the calendar, never typed.",buyer={{USER2_EMAIL}},"--- SCREEN: row A - month-end clamp (2027-03-31 12:00 UTC) ---
@@ -732,8 +830,17 @@ The browser starts signed out. Account @td(USER_LOCKED.email) is Locked (lockout
 a dashboard data request is sent without a valid session
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none - the account stays locked (it is the fixture),VCST-6078 · Archetype:SCOPE · Technique:EG | PENDING-A C29 · Role: locked buyer · Probe:VC-API-010 · Technique:EG · the API twin (orderStatistics anonymous = Unauthorized) is XFE-GQL in 050e,Draft
 ORD-DASH-027,Dashboard layout — a failed layout read renders the defaults with an alert and switches editing off,Orders > Account dashboard > Live data,High,BL-SR-026; BL-A11Y-004,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:USER2]
-Buyer {{USER2_EMAIL}}. PENDING-A condition C34 resolved here: when the layout READ fails, the page renders the registry defaults with a visible alert and editing is switched OFF, because a Save would be a full replace of a layout that was never read (a successful read of null is a different state, ORD-DASH-013). Only GetLayout is failed (network interception); the statistics and orders requests succeed.",buyer={{USER2_EMAIL}},"[NAV] {{FRONT_URL}}/account/orders
+[PRE:SIGNIN_AS:BD_LAYOUT]
+Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run). PENDING-A condition C34 resolved here: when the layout READ fails, the page renders the registry defaults with a visible alert and editing is switched OFF, because a Save would be a full replace of a layout that was never read (a successful read of null is a different state, ORD-DASH-013). Only GetLayout is failed (network interception); the statistics and orders requests succeed.",buyer=@td(BD_LAYOUT.email),"[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[NAV] {{FRONT_URL}}/account/orders
 [SETUP] abort the next GetLayout request only
 [ACT] click the sidebar link 'Dashboard'
 [WAIT] the dashboard has settled
@@ -746,9 +853,9 @@ Buyer {{USER2_EMAIL}}. PENDING-A condition C34 resolved here: when the layout RE
 [COUNT] RENDERED holds the four default cards and the list with real figures - the data requests are not blocked by the layout failure {SPEC}
 [STATE] TOAST is empty {SPEC}
 [STATE] EDIT_STATE_AFTER is enabled after the read succeeds again {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","editing stays enabled so the next Save overwrites the stored layout with the defaults
+[NETWORK] no 4xx/5xx on /graphql other than the GetLayout request this case aborts (the injected failure)","editing stays enabled so the next Save overwrites the stored layout with the defaults
 the dashboard blanks because the layout failed
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",stop request interception,VCST-6078 · Archetype:FALLBACK · Technique:EG | PENDING-A C34 · Behavior chain V8 · BL-SR-026 / BL-A11Y-004 (ported) · Technique:EG,Draft
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql other than the injected failure",stop request interception,VCST-6078 · Archetype:FALLBACK · Technique:EG | PENDING-A C34 · Behavior chain V8 · BL-SR-026 / BL-A11Y-004 (ported) · Technique:EG,Draft
 ORD-DASH-028,Dashboard — the loading skeleton has the height of the loaded content so nothing shifts on arrival,Orders > Account dashboard > Live data,Medium,BL-UI-001,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer {{USER_EMAIL}}. PENDING-A condition C44 resolved here (finding A-F14, fixed in cf4ea491): on a slow network the 'My recent orders' skeleton draws the same number of rows as the list will show, so the block does not shrink and the 'Edit layout' control does not move when data arrives. The slow network is CDP throttling (slow3g) reached by IN-APP navigation, because a full slow reload exceeds the budget.",buyer={{USER_EMAIL}},"[NAV] {{FRONT_URL}}/account/orders
@@ -782,116 +889,153 @@ Buyer @td(BD_NOORG.email) is a personal buyer with NO organization in the token;
 [COUNT] ROWS == min(5, PAGE_ORDERS) {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","the dashboard counts fewer orders than the buyer owns; an organization filter with an empty value counts the orders of every organization
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",close the emulated context,"VCST-6078 · Archetype:SCOPE · Technique:DT | Model #7 (no-org buyer) · Role: personal buyer · Open question (PO): README is silent on orders stamped with another organization for a no-org buyer - a status of {OBSERVED} (3 orders / 1,200.01) is the build's behaviour, not the oracle · seeded via BD_NOORG",Draft
-ORD-DASH-030,"Dashboard layout — edit mode offers a 'Statuses to show' group with one checkbox per status, matching the tabs",Orders > Account dashboard > Live data,Medium,BL-SR-026; BL-A11Y-002,,"Buyer @td(BD_STATS.email) carries orders in the statuses New, Processing, Completed and Cancelled (seed: test-data/orders/buyer-dashboard.json buyers.STATS.orders), so the tab row offers four status tabs plus 'All' and the edit mode four checkboxes. {OBSERVED} vcptcore_qa1 2026-11-11, theme 2.62.0-pr-2552-942a: tabs show the status name only (no counts); in edit mode 'My recent orders' holds a group named 'Statuses to show' (a fieldset, role group) with one checkbox per status. The layout of this buyer is persisted per user and cannot be deleted, so the case ends by checking every status again and saving (an all-visible document).
-GUARD: read GetLayout first; the starting state may already hold hidden statuses from an earlier case, so the case compares checkbox state with the stored layout instead of assuming all are checked.",buyer=@td(BD_STATS.email),"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:BD_STATS]
-[SETUP] start recording /graphql responses of the tab into GQL_LOG
-[NAV] {{FRONT_URL}}/account/dashboard
-[WAIT] the cards and 'My recent orders' have rendered
-[KEY] record the tab labels of 'My recent orders' (TABS_VIEW), whether a group named 'Statuses to show' exists in the DOM (GROUP_VIEW) and the stored layout from GetLayout (L_START, the hidden statuses of the recent-orders block)
-[ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
-[KEY] inside 'My recent orders', under the title, find the group named 'Statuses to show' and record its role, the checkbox labels with their checked state (BOXES), the 'Max rows' spinbutton (min, max) and the 'Hide My recent orders' control
-[ACT] press 'Cancel'
-[WAIT] the page leaves edit mode
-[KEY] count the SaveLayout requests in GQL_LOG (SAVES)","[DOM] GROUP_VIEW is false: in view mode the page has no group named 'Statuses to show'; it appears only after 'Edit layout' {OBSERVED}
-[DOM] in edit mode 'My recent orders' holds, under its title, an accessible group (fieldset) named 'Statuses to show', the 'Max rows' spinbutton with range 1..20 and 'Hide My recent orders' {OBSERVED}
-[REL] the checkbox labels in BOXES == the status tabs in TABS_VIEW without 'All' == the distinct statuses of the buyer's orders in this store (seed: New, Processing, Completed, Cancelled) - one checkbox per status, none missing, none invented {OBSERVED}
-[REL] a checkbox is checked exactly when its status is NOT in the hidden statuses of L_START, and exactly the checked statuses have a tab in TABS_VIEW (checked = offered as a tab) {OBSERVED}
-[DOM] every checkbox label in the group 'Statuses to show' and every tab button in 'My recent orders' is a status name with no digit (matches /^[^0-9]+$/) {OBSERVED}
-[COUNT] SAVES == 0 - looking at the selector and pressing Cancel persists nothing {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","the selector lists statuses the buyer has no orders in, or misses one
-a checkbox is checked while its tab is missing (or the reverse)
-the group has no accessible name
+ORD-DASH-030,"Dashboard layout — edit mode offers a 'Statuses to show' group with one checkbox per status, matching the tabs",Orders > Account dashboard > Live data,Medium,BL-SR-026; BL-A11Y-002,,"Buyer @td(BD_LAYOUT.email) (the one seeded buyer whose layout cases may change; password NAME in @td(BD_LAYOUT.passwordVar)) carries orders in the statuses New, Processing, Completed and Cancelled (seed: the layout buyer of test-data/orders/buyer-dashboard.json), so the tab row offers four status tabs plus 'All' and the edit mode four checkboxes. {OBSERVED} vcptcore_qa1 2026-11-11, theme 2.62.0-pr-2552-942a: tabs show the status name only (no counts); in edit mode 'My recent orders' holds a group named 'Statuses to show' (a fieldset, role group) with one checkbox per status. The layout of this buyer is persisted per user: the case first normalises it (Edit layout, Reset, Save layout) and ends by checking every status again and saving (an all-visible document).
+GUARD: read GetLayout first; the starting state may already hold hidden statuses from an earlier case, so the case compares checkbox state with the stored layout instead of assuming all are checked.",buyer=@td(BD_LAYOUT.email),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:BD_LAYOUT]
+[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[SETUP] start recording /graphql responses of the tab into GQL_LOG
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the cards and 'My recent orders' have rendered
+[KEY] record the tab labels of 'My recent orders' (TABS_VIEW), whether a group named 'Statuses to show' exists in the DOM (GROUP_VIEW) and the stored layout from GetLayout (L_START, the hidden statuses of the recent-orders block)
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[KEY] inside 'My recent orders', under the title, find the group named 'Statuses to show' and record its role, the checkbox labels with their checked state (BOXES), the 'Max rows' spinbutton (min, max) and the 'Hide My recent orders' control
+[ACT] press 'Cancel'
+[WAIT] the page leaves edit mode
+[KEY] count the SaveLayout requests in GQL_LOG (SAVES)","[DOM] GROUP_VIEW is false: in view mode the page has no group named 'Statuses to show'; it appears only after 'Edit layout' {OBSERVED}
+[DOM] in edit mode 'My recent orders' holds, under its title, an accessible group (fieldset) named 'Statuses to show', the 'Max rows' spinbutton with range 1..20 and 'Hide My recent orders' {OBSERVED}
+[REL] the checkbox labels in BOXES == the status tabs in TABS_VIEW without 'All' == the distinct statuses of the buyer's orders in this store (seed: New, Processing, Completed, Cancelled) - one checkbox per status, none missing, none invented {OBSERVED}
+[REL] a checkbox is checked exactly when its status is NOT in the hidden statuses of L_START, and exactly the checked statuses have a tab in TABS_VIEW (checked = offered as a tab) {OBSERVED}
+[DOM] every checkbox label in the group 'Statuses to show' and every tab button in 'My recent orders' is a status name with no digit (matches /^[^0-9]+$/) {OBSERVED}
+[COUNT] SAVES == 0 - looking at the selector and pressing Cancel persists nothing {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the selector lists statuses the buyer has no orders in, or misses one
+a checkbox is checked while its tab is missing (or the reverse)
+the group has no accessible name
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none - the edit was cancelled,VCST-6078 · Archetype:RENDER · Technique:EP | Purpose:FUNC | Behavior chain V7 · BL-SR-026 / BL-A11Y-002 | Catches: a status selector that disagrees with the offered tabs (built from the five visible rows instead of the orders' status facet) or an unnamed fieldset | vc-frontend#2552 + #2653 | Open dependency: a persona with no hidden status is not seeded; the case reads the stored layout instead | Promoted: REG-2026-11-11-1738 (2026-11-11),Automated
-ORD-DASH-031,"Dashboard layout — clearing status checkboxes and saving removes those tabs, and they stay gone after a reload",Orders > Account dashboard > Live data,High,BL-SR-026; BL-SR-016,,"Buyer @td(BD_STATS.email) carries orders in the statuses New, Processing, Completed and Cancelled (seed: test-data/orders/buyer-dashboard.json buyers.STATS.orders), so the tab row offers four status tabs plus 'All' and the edit mode four checkboxes. {OBSERVED} vcptcore_qa1 2026-11-11, theme 2.62.0-pr-2552-942a: tabs show the status name only (no counts); in edit mode 'My recent orders' holds a group named 'Statuses to show' (a fieldset, role group) with one checkbox per status. The layout of this buyer is persisted per user and cannot be deleted, so the case ends by checking every status again and saving (an all-visible document).
-The stored document is read with GetLayout after the reload so the screen cannot hide a persisted change.",buyer=@td(BD_STATS.email),"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:BD_STATS]
-[SETUP] start recording /graphql responses of the tab into GQL_LOG
-[NAV] {{FRONT_URL}}/account/dashboard
-[WAIT] the cards and 'My recent orders' have rendered
-[KEY] record the tab labels (TABS_0)
---- SCREEN: draft discarded ---
-[ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
-[ACT] in the group 'Statuses to show' clear the checkbox 'Processing'
-[ACT] press 'Cancel'
-[WAIT] the page leaves edit mode
-[NAV] {{FRONT_URL}}/account/dashboard
-[KEY] record the tab labels (TABS_CANCEL) and count the SaveLayout requests in GQL_LOG (SAVES_CANCEL)
---- SCREEN: saved ---
-[ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+ORD-DASH-031,"Dashboard layout — clearing status checkboxes and saving removes those tabs, and they stay gone after a reload",Orders > Account dashboard > Live data,High,BL-SR-026; BL-SR-016,,"Buyer @td(BD_LAYOUT.email) (the one seeded buyer whose layout cases may change; password NAME in @td(BD_LAYOUT.passwordVar)) carries orders in the statuses New, Processing, Completed and Cancelled (seed: the layout buyer of test-data/orders/buyer-dashboard.json), so the tab row offers four status tabs plus 'All' and the edit mode four checkboxes. {OBSERVED} vcptcore_qa1 2026-11-11, theme 2.62.0-pr-2552-942a: tabs show the status name only (no counts); in edit mode 'My recent orders' holds a group named 'Statuses to show' (a fieldset, role group) with one checkbox per status. The layout of this buyer is persisted per user: the case first normalises it (Edit layout, Reset, Save layout) and ends by checking every status again and saving (an all-visible document).
+The stored document is read with GetLayout after the reload so the screen cannot hide a persisted change.",buyer=@td(BD_LAYOUT.email),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:BD_LAYOUT]
+[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[SETUP] start recording /graphql responses of the tab into GQL_LOG
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the cards and 'My recent orders' have rendered
+[KEY] record the tab labels (TABS_0); after the normalising opening every status is offered
+--- SCREEN: draft discarded ---
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] in the group 'Statuses to show' clear the checkbox 'Processing'
+[ACT] press 'Cancel'
+[WAIT] the page leaves edit mode
+[NAV] {{FRONT_URL}}/account/dashboard
+[KEY] record the tab labels (TABS_CANCEL) and count the SaveLayout requests in GQL_LOG (SAVES_CANCEL)
+--- SCREEN: saved ---
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] in the group 'Statuses to show' clear the checkbox 'New'
 [WAIT] the checkbox 'New' is unchecked
 [ACT] in the group 'Statuses to show' clear the checkbox 'Cancelled'
-[WAIT] the checkbox 'Cancelled' is unchecked
-[ACT] press 'Save layout'
-[WAIT] the page leaves edit mode
-[KEY] record the tab labels right after Save (TABS_SAVED)
-[NAV] {{FRONT_URL}}/account/dashboard (full reload)
-[WAIT] the cards and 'My recent orders' have rendered
-[KEY] record the tab labels (TABS_1), click 'All' and record the rows (ALL_ROWS), then read the stored layout from GetLayout (L_1, scope accountDashboard, recent-orders block settings hiddenTabs)
-[ACT] press 'Edit layout'
-[WAIT] the edit bar is visible
-[KEY] record the checked state of every checkbox in 'Statuses to show' (BOXES_1)
-[ACT] press 'Cancel'
-[WAIT] the page leaves edit mode","[REL] TABS_CANCEL == TABS_0 and SAVES_CANCEL == 0 - clearing a box and pressing Cancel changes nothing {SPEC}
-[REL] TABS_SAVED and TABS_1 are 'All', 'Completed', 'Processing' - the tabs of 'New' and 'Cancelled' are gone, the other statuses keep theirs {OBSERVED}
-[REL] after the reload BOXES_1 shows 'New' and 'Cancelled' cleared and 'Completed' and 'Processing' checked - the selector reads the saved setting, not a default {OBSERVED}
-[REL] L_1 hiddenTabs (recent-orders block settings of layout scope accountDashboard) == {New, Cancelled} - storage and screen agree {SPEC} (vc-frontend#2653)
-[DOM] hiding a tab hides the TAB only: ALL_ROWS still lists the orders of the hidden statuses (the 'All' tab shows all) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","the hidden tab returns after the reload
-the checkbox is checked again after the reload though the tab is gone
-Cancel persists the clearing
-hiding a tab drops the orders of that status from 'All'
+[WAIT] the checkbox 'Cancelled' is unchecked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode
+[KEY] record the tab labels right after Save (TABS_SAVED)
+[NAV] {{FRONT_URL}}/account/dashboard (full reload)
+[WAIT] the cards and 'My recent orders' have rendered
+[KEY] record the tab labels (TABS_1), click 'All' and record the rows (ALL_ROWS), then read the stored layout from GetLayout (L_1, scope accountDashboard, recent-orders block settings hiddenTabs)
+[ACT] press 'Edit layout'
+[WAIT] the edit bar is visible
+[KEY] record the checked state of every checkbox in 'Statuses to show' (BOXES_1)
+[ACT] press 'Cancel'
+[WAIT] the page leaves edit mode","[REL] TABS_0 holds a tab for each of the four statuses plus 'All' - the known start the later steps rely on {OBSERVED}
+[REL] TABS_CANCEL == TABS_0 and SAVES_CANCEL == 0 - clearing a box and pressing Cancel changes nothing {SPEC}
+[REL] TABS_SAVED and TABS_1 are 'All', 'Completed', 'Processing' - the tabs of 'New' and 'Cancelled' are gone, the other statuses keep theirs {OBSERVED}
+[REL] after the reload BOXES_1 shows 'New' and 'Cancelled' cleared and 'Completed' and 'Processing' checked - the selector reads the saved setting, not a default {OBSERVED}
+[REL] L_1 hiddenTabs (recent-orders block settings of layout scope accountDashboard) == {New, Cancelled} - storage and screen agree {SPEC} (vc-frontend#2653)
+[DOM] hiding a tab hides the TAB only: ALL_ROWS still lists the orders of the hidden statuses (the 'All' tab shows all) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the hidden tab returns after the reload
+the checkbox is checked again after the reload though the tab is gone
+Cancel persists the clearing
+hiding a tab drops the orders of that status from 'All'
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] Edit layout, check every checkbox in 'Statuses to show', press 'Save layout' (the buyer's stored layout cannot be deleted; this writes the all-visible document)","VCST-6078 · Archetype:SILENT · Technique:ST | Purpose:FUNC | Behavior chain V7-V8 · BL-SR-026 | Catches: hidden statuses applied to the draft only and lost on reload, or saved but read back as all-checked | vc-frontend#2552 + #2653 | {OBSERVED} vcptcore_qa1 2026-11-11 (New and Cancelled hidden, then Completed: tabs persisted over a reload) | Promoted: REG-2026-11-11-1738 (2026-11-11)",Automated
-ORD-DASH-032,"Dashboard layout — clearing one more status keeps the statuses hidden earlier hidden, re-checking one brings back only its tab",Orders > Account dashboard > Live data,High,BL-SR-026; BL-SR-016,,"Buyer @td(BD_STATS.email) carries orders in the statuses New, Processing, Completed and Cancelled (seed: test-data/orders/buyer-dashboard.json buyers.STATS.orders), so the tab row offers four status tabs plus 'All' and the edit mode four checkboxes. {OBSERVED} vcptcore_qa1 2026-11-11, theme 2.62.0-pr-2552-942a: tabs show the status name only (no counts); in edit mode 'My recent orders' holds a group named 'Statuses to show' (a fieldset, role group) with one checkbox per status. The layout of this buyer is persisted per user and cannot be deleted, so the case ends by checking every status again and saving (an all-visible document).
-The case is self-contained: it first brings the buyer to the state 'New and Cancelled hidden' through the UI and saves it, so it does not depend on ORD-DASH-031 having run.",buyer=@td(BD_STATS.email),"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:BD_STATS]
-[NAV] {{FRONT_URL}}/account/dashboard
-[WAIT] the cards and 'My recent orders' have rendered
---- SCREEN: first save (New and Cancelled hidden) ---
-[ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+ORD-DASH-032,"Dashboard layout — clearing one more status keeps the statuses hidden earlier hidden, re-checking one brings back only its tab",Orders > Account dashboard > Live data,High,BL-SR-026; BL-SR-016,,"Buyer @td(BD_LAYOUT.email) (the one seeded buyer whose layout cases may change; password NAME in @td(BD_LAYOUT.passwordVar)) carries orders in the statuses New, Processing, Completed and Cancelled (seed: the layout buyer of test-data/orders/buyer-dashboard.json), so the tab row offers four status tabs plus 'All' and the edit mode four checkboxes. {OBSERVED} vcptcore_qa1 2026-11-11, theme 2.62.0-pr-2552-942a: tabs show the status name only (no counts); in edit mode 'My recent orders' holds a group named 'Statuses to show' (a fieldset, role group) with one checkbox per status. The layout of this buyer is persisted per user: the case first normalises it (Edit layout, Reset, Save layout) and ends by checking every status again and saving (an all-visible document).
+The case is self-contained: it first brings the buyer to the state 'New and Cancelled hidden' through the UI and saves it, so it does not depend on ORD-DASH-031 having run.",buyer=@td(BD_LAYOUT.email),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:BD_LAYOUT]
+[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the cards and 'My recent orders' have rendered
+--- SCREEN: first save (New and Cancelled hidden) ---
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
 [ACT] in the group 'Statuses to show' tick the checkbox 'Processing' if it is unchecked
 [ACT] tick the checkbox 'Completed' if it is unchecked
 [ACT] clear the checkbox 'New' if it is checked
 [ACT] clear the checkbox 'Cancelled' if it is checked
-[WAIT] 'New' and 'Cancelled' are unchecked, every other checkbox is checked
-[ACT] press 'Save layout'
-[WAIT] the page leaves edit mode
-[NAV] {{FRONT_URL}}/account/dashboard (full reload)
-[KEY] record the tab labels (TABS_A)
---- SCREEN: one more status cleared ---
-[ACT] press 'Edit layout'
-[WAIT] the edit bar is visible
-[KEY] record the checked state of every checkbox (BOXES_B0)
-[ACT] clear the checkbox 'Completed' only
-[ACT] press 'Save layout'
-[WAIT] the page leaves edit mode
-[NAV] {{FRONT_URL}}/account/dashboard (full reload)
-[KEY] record the tab labels (TABS_B) and the stored hiddenTabs from GetLayout (L_B, scope accountDashboard)
---- SCREEN: one status given back ---
-[ACT] press 'Edit layout'
-[WAIT] the edit bar is visible
-[KEY] record the checked state of every checkbox (BOXES_B)
+[WAIT] 'New' and 'Cancelled' are unchecked, every other checkbox is checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode
+[NAV] {{FRONT_URL}}/account/dashboard (full reload)
+[KEY] record the tab labels (TABS_A)
+--- SCREEN: one more status cleared ---
+[ACT] press 'Edit layout'
+[WAIT] the edit bar is visible
+[KEY] record the checked state of every checkbox (BOXES_B0)
+[ACT] clear the checkbox 'Completed' only
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode
+[NAV] {{FRONT_URL}}/account/dashboard (full reload)
+[KEY] record the tab labels (TABS_B) and the stored hiddenTabs from GetLayout (L_B, scope accountDashboard)
+--- SCREEN: one status given back ---
+[ACT] press 'Edit layout'
+[WAIT] the edit bar is visible
+[KEY] record the checked state of every checkbox (BOXES_B)
 [ACT] tick the checkbox 'Completed'
-[WAIT] the checkbox 'Completed' is checked
-[ACT] press 'Save layout'
-[WAIT] the page leaves edit mode
-[NAV] {{FRONT_URL}}/account/dashboard (full reload)
-[KEY] record the tab labels (TABS_C) and the stored hiddenTabs (L_C)","[REL] TABS_A == 'All', 'Completed', 'Processing' {OBSERVED}
-[REL] BOXES_B0 shows 'New' and 'Cancelled' cleared before anything is toggled {OBSERVED}
-[REL] TABS_B == 'All', 'Processing' and L_B hiddenTabs == {New, Cancelled, Completed} - clearing 'Completed' did not reset the two statuses hidden earlier {OBSERVED}
-[REL] BOXES_B shows 'New', 'Cancelled' and 'Completed' cleared and 'Processing' checked {OBSERVED}
-[REL] TABS_C == 'All', 'Completed', 'Processing' and L_C hiddenTabs == {New, Cancelled} - re-checking one status gives back that tab only {SPEC} (vc-frontend#2653)","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","toggling one checkbox resets the others (the hidden set is rebuilt from the toggled box alone)
-re-checking a status clears the whole hidden set
-the saved set differs from what the screen shows
+[WAIT] the checkbox 'Completed' is checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode
+[NAV] {{FRONT_URL}}/account/dashboard (full reload)
+[KEY] record the tab labels (TABS_C) and the stored hiddenTabs (L_C)","[REL] TABS_A == 'All', 'Completed', 'Processing' {OBSERVED}
+[REL] BOXES_B0 shows 'New' and 'Cancelled' cleared before anything is toggled {OBSERVED}
+[REL] TABS_B == 'All', 'Processing' and L_B hiddenTabs == {New, Cancelled, Completed} - clearing 'Completed' did not reset the two statuses hidden earlier {OBSERVED}
+[REL] BOXES_B shows 'New', 'Cancelled' and 'Completed' cleared and 'Processing' checked {OBSERVED}
+[REL] TABS_C == 'All', 'Completed', 'Processing' and L_C hiddenTabs == {New, Cancelled} - re-checking one status gives back that tab only {SPEC} (vc-frontend#2653)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","toggling one checkbox resets the others (the hidden set is rebuilt from the toggled box alone)
+re-checking a status clears the whole hidden set
+the saved set differs from what the screen shows
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] Edit layout, check every checkbox in 'Statuses to show', press 'Save layout'","VCST-6078 · Archetype:SILENT · Technique:ST | Purpose:FUNC | Behavior chain V7-V8 · BL-SR-026 | Catches: the hidden-status set being replaced instead of merged when another box is toggled | vc-frontend#2552 + #2653 | {OBSERVED} vcptcore_qa1 2026-11-11 (New + Cancelled hidden, then Completed: only 'All' and 'Processing' after Save + reload) | Promoted: REG-2026-11-11-1738 (2026-11-11)",Automated
-ORD-DASH-033,"Dashboard layout — a hidden status is not dropped while the buyer has no order in that status, and applies again when such an order appears",Orders > Account dashboard > Live data,High,BL-SR-026; BL-SR-016,,"Buyer @td(BD_EUR.email) carries orders in two statuses only: New and Processing (seed: test-data/orders/buyer-dashboard.json buyers.EUR.orders); exactly one of them is Processing. Product rule from the code review of vc-frontend#2653 (unit-tested there, hard to reproduce live): the status list of the tabs and checkboxes comes from the orders' facet, so a status with no order right now is MISSING from it; the hidden setting of such a status must survive edit mode and Save, and apply again once an order of that status exists. The condition is created in the case: the buyer's only Processing order is moved to another status through the Platform API (a per-run state change that the case reverts), and the order is discovered at run time from the buyer's own order list, never pinned. GUARD: when the buyer has not exactly one Processing order, or the status change is refused, the case is BLOCKED:PRECONDITION_UNMET, never FAIL.",buyer=@td(BD_EUR.email); status_to_hide=Processing; status_fallback=New,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:BD_EUR]
+ORD-DASH-033,"Dashboard layout — a hidden status is not dropped while the buyer has no order in that status, and applies again when such an order appears",Orders > Account dashboard > Live data,High,BL-SR-026; BL-SR-016,,"Buyer @td(BD_LAYOUT.email) (the one seeded buyer whose layout cases may change; password NAME in @td(BD_LAYOUT.passwordVar)) carries orders in the statuses New, Processing, Completed and Cancelled (seed: the layout buyer of test-data/orders/buyer-dashboard.json); exactly one of them is Processing. The saved layout is normalised first (Edit layout, Reset, Save layout), so Max rows is the default 5. Product rule from the code review of vc-frontend#2653 (unit-tested there, hard to reproduce live): the status list of the tabs and checkboxes comes from the orders' facet, so a status with no order right now is MISSING from it; the hidden setting of such a status must survive edit mode and Save, and apply again once an order of that status exists. The condition is created in the case: the buyer's only Processing order is moved to another status through the Platform API (a per-run state change that the case reverts), and the order is discovered at run time from the buyer's own order list, never pinned. GUARD: when the buyer has not exactly one Processing order, or the status change is refused, the case is BLOCKED:PRECONDITION_UNMET, never FAIL.",buyer=@td(BD_LAYOUT.email); status_to_hide=Processing; status_fallback=New,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:BD_LAYOUT]
+[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
 [SETUP] start recording /graphql responses of the tab into GQL_LOG
 [NAV] {{FRONT_URL}}/account/orders
 [WAIT] the orders table has rendered
@@ -913,8 +1057,14 @@ ORD-DASH-033,"Dashboard layout — a hidden status is not dropped while the buye
 [ACT] press 'Edit layout'
 [WAIT] the edit bar is visible
 [KEY] record the checkbox labels of 'Statuses to show' (BOXES_EMPTY)
-[ACT] press 'Save layout' without changing anything
+[ACT] set 'Max rows' of 'My recent orders' to 4
+[WAIT] the field shows 4
+[ACT] set 'Max rows' of 'My recent orders' back to 5 (the draft ends equal to the stored layout but the edit was real, so Save layout issues a request)
+[WAIT] the field shows 5
+[SETUP] clear GQL_LOG
+[ACT] press 'Save layout'
 [WAIT] the page leaves edit mode
+[KEY] count the SaveLayout requests in GQL_LOG (SAVES_EMPTY)
 [NAV] {{FRONT_URL}}/account/dashboard (full reload)
 [KEY] read the stored layout from GetLayout (L_EMPTY, recent-orders block settings hiddenTabs)
 --- SCREEN: an order in that status appears again ---
@@ -927,30 +1077,40 @@ ORD-DASH-033,"Dashboard layout — a hidden status is not dropped while the buye
 [KEY] record the checked state of 'Processing' in 'Statuses to show' (BOX_BACK)
 [ACT] press 'Cancel'
 [WAIT] the page leaves edit mode","[REL] TABS_HIDDEN has no 'Processing' tab and L_HIDDEN hiddenTabs contains Processing {OBSERVED}
+[COUNT] SAVES_EMPTY == 1 - exactly one SaveLayout request fired in the 'Save layout' step, so the next assertion is not vacuous (a Save that sent nothing would keep Processing trivially) {SPEC} (vc-frontend#2653 review rule)
 [REL] L_EMPTY hiddenTabs still contains Processing: opening edit mode and pressing 'Save layout' while the buyer has no Processing order did not drop the hidden status {SPEC} (vc-frontend#2653 review rule)
 [REL] TABS_BACK has no 'Processing' tab and BOX_BACK is cleared - the hidden status applies again as soon as an order of that status exists {SPEC} (vc-frontend#2653 review rule)
 [STATE] every SaveLayout request in GQL_LOG carries Processing in hiddenTabs {SPEC} (vc-frontend#2653)","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","a hidden status is forgotten after a save made while no order carries it, so its tab reappears with the next such order
 the case's status change did not reach the index (BLOCKED, not a product failure)
-Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[SETUP] move PROC_ORDER back to Processing if the case stopped before the last step; then Edit layout, check 'Processing', press 'Save layout'","VCST-6078 · Archetype:STALE · Technique:ST | Purpose:FUNC | Behavior chain V7-V8 · BL-SR-026 | Catches: a status list taken from the orders' facet dropping a hidden status that is missing from it (vc-frontend#2653 review finding) | Open dependencies: (1) whether the checkbox for a status with no orders is listed is not asserted - not observed; (2) exact key and block id of the stored hiddenTabs are read from the GetLayout response at run time, only the name hiddenTabs is taken from the review; (3) the order id comes from the buyer's own order list (no @td field exposes seeded order ids); (4) the status change needs admin credentials and set-order-status.mjs, so the case runs on a lane with Platform API access; (5) the live condition itself is not yet observed - vc-frontend#2653 covers it with a unit test only | Promoted: REG-2026-11-11-1738 (2026-11-11)",Automated
-ORD-DASH-034,Dashboard layout — a stat card that receives keyboard focus in edit mode shows a visible focus ring,Orders > Account dashboard > Live data,Medium,BL-A11Y-001,,"Buyer {{USER2_EMAIL}}. Fix in vc-frontend#2653: in edit mode a stat card focused with the keyboard shows a visible focus ring. {OBSERVED} vcptcore_qa1 2026-11-11, theme 2.62.0-pr-2552-942a. The edit is cancelled, nothing is saved.",buyer={{USER2_EMAIL}},"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:USER2]
-[NAV] {{FRONT_URL}}/account/dashboard
-[WAIT] the page has rendered
-[ACT] press 'Edit layout'
-[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
-[KEY] for each of the four stat cards record the computed outline (style, width, colour) and box-shadow of the card (or of its focusable handle) while NOT focused (RING_OFF_WEEK, RING_OFF_MTD, RING_OFF_YTD, RING_OFF_AOV)
-[KEY] press Tab until the WEEK card has keyboard focus
-[KEY] record the same computed outline and box-shadow on the focused element (RING_ON_WEEK) and take a screenshot of the card
-[KEY] press Tab until the MTD card has keyboard focus and record RING_ON_MTD
-[KEY] press Tab until the YTD card has keyboard focus and record RING_ON_YTD
-[KEY] press Tab until the AOV card has keyboard focus and record RING_ON_AOV
-[ACT] press 'Cancel'
-[WAIT] the page leaves edit mode","[REL] for each card RING_ON_* differs from RING_OFF_* by a drawn ring: an outline with style other than none and width > 0, or a non-empty box-shadow with a non-zero spread or blur {SPEC} (vc-frontend#2653)
-[DOM] in the screenshot, the stat card that has keyboard focus in the group 'Visible stats' has a ring drawn around its border, distinct from the card fill and the page background {OBSERVED}
-[STATE] at any moment exactly one card shows the ring - the ring follows the focus and does not stay on the previous card {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","outline: none (or a zero-width ring) on a focused stat card in edit mode
-the ring stays on a card that no longer has focus
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[SETUP] move PROC_ORDER back to Processing if the case stopped before the last step; then Edit layout, check 'Processing', press 'Save layout'","VCST-6078 · Archetype:STALE · Technique:ST | Purpose:FUNC | Behavior chain V7-V8 · BL-SR-026 | Catches: a status list taken from the orders' facet dropping a hidden status that is missing from it (vc-frontend#2653 review finding) | Open dependencies: (1) whether the checkbox for a status with no orders is listed is not asserted - not observed; (2) exact key and block id of the stored hiddenTabs are read from the GetLayout response at run time, only the name hiddenTabs is taken from the review; (3) the order id comes from the buyer's own order list (no @td field exposes seeded order ids); (4) the status change needs admin credentials and set-order-status.mjs, so the case runs on a lane with Platform API access | Promoted: REG-2026-11-11-1738 (2026-11-11)",Automated
+ORD-DASH-034,Dashboard layout — a stat card that receives keyboard focus in edit mode shows a visible focus ring,Orders > Account dashboard > Live data,Medium,BL-A11Y-001,,"Buyer @td(BD_LAYOUT.email) (password NAME in @td(BD_LAYOUT.passwordVar); the one seeded buyer whose layout cases may change, reset by every seed:buyer-dashboard run). Fix in vc-frontend#2653: in edit mode a stat card focused with the keyboard shows a visible focus ring. {OBSERVED} vcptcore_qa1 2026-11-11, theme 2.62.0-pr-2552-942a. The edit is cancelled, nothing is saved.",buyer=@td(BD_LAYOUT.email),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:BD_LAYOUT]
+[SETUP] normalise the saved layout of this buyer so the case starts from the defaults
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[ACT] press 'Reset'
+[WAIT] the draft shows the default order, no hidden block and every status checked
+[ACT] press 'Save layout'
+[WAIT] the page leaves edit mode and the four cards and 'My recent orders' show the default layout
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page has rendered
+[ACT] press 'Edit layout'
+[WAIT] the edit bar with 'Reset', 'Cancel' and 'Save layout' is visible
+[KEY] for each of the four stat cards record the computed outline (style, width, colour) and box-shadow of the card (or of its focusable handle) while NOT focused (RING_OFF_WEEK, RING_OFF_MTD, RING_OFF_YTD, RING_OFF_AOV)
+[KEY] press Tab until the WEEK card has keyboard focus
+[KEY] record the same computed outline and box-shadow on the focused element (RING_ON_WEEK) and take a screenshot of the card
+[KEY] press Tab until the MTD card has keyboard focus and record RING_ON_MTD
+[KEY] press Tab until the YTD card has keyboard focus and record RING_ON_YTD
+[KEY] press Tab until the AOV card has keyboard focus and record RING_ON_AOV
+[ACT] press 'Cancel'
+[WAIT] the page leaves edit mode","[REL] for each card RING_ON_* differs from RING_OFF_* by a drawn ring: an outline with style other than none and width > 0, or a non-empty box-shadow with a non-zero spread or blur {SPEC} (vc-frontend#2653)
+[DOM] in the screenshot, the stat card that has keyboard focus in the group 'Visible stats' has a ring drawn around its border, distinct from the card fill and the page background {OBSERVED}
+[STATE] at any moment exactly one card shows the ring - the ring follows the focus and does not stay on the previous card {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","outline: none (or a zero-width ring) on a focused stat card in edit mode
+the ring stays on a card that no longer has focus
 Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",[ACT] the edit was cancelled; nothing to restore,"VCST-6078 · Archetype:RENDER · Technique:EG | Purpose:FUNC | Behavior chain V7 · BL-A11Y-001 | Catches: a stat card focusable in edit mode with the focus ring suppressed (vc-frontend#2653 fix); ORD-DASH-020 passes such a build because its checks are announcements and axe, not the computed ring | Open question: the ring colour contrast is not asserted - no spec value | Promoted: REG-2026-11-11-1738 (2026-11-11)",Automated
 ORD-DASH-035,Dashboard — the empty state of an organization with no orders fits a 320 px screen with no horizontal scroll,Orders > Account dashboard > Live data,Medium,BL-UI-004,,"Buyer {{MULTI_ORG_USER_EMAIL}} belongs to two organizations; the second (BuildRight) has no orders for this buyer (the same fixture as ORD-DASH-006), so the dashboard shows the empty state 'There are no orders yet' with a 'Continue browsing' action. Fix in vc-frontend#2653 (port of VCST-6205): at 320 px the empty state fits the screen. 320 px is narrower than the widths of ORD-DASH-019 (768 and 390).",buyer={{MULTI_ORG_USER_EMAIL}},"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:MULTI_ORG_USER]

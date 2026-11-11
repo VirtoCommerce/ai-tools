@@ -9,11 +9,13 @@
  * --cancel also sets isCancelled + cancelReason + cancelledDate, as the Admin "Cancel" does. A status alone
  * is not a cancellation: the account dashboard cards still count an order whose only change is the status.
  *
- * Reads BACK_URL / ADMIN_USER / ADMIN_PASSWORD from the layered env loader (config.js).
+ * Reads BACK_URL / ADMIN_USER / ADMIN_PASSWORD from the layered env loader (config.js). Refuses an env
+ * whose ENV_RISK is undeclared or production (seed-common assertSafeRisk), and an orderId that is not a GUID.
  * Never logs the password or the access token.
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import '../../../config.js';
+import { assertSafeRisk } from '../../lib/seed-common.mjs';
 
 const [, , orderId, nextStatus, ...rest] = process.argv;
 const cancelAt = rest.indexOf('--cancel');
@@ -27,12 +29,20 @@ if (!orderId || !nextStatus) {
   console.error('usage: set-order-status.mjs <orderId> <status> [--cancel <reason>]');
   process.exit(2);
 }
+// The id goes into a URL path: accept only a platform GUID, never a path fragment.
+if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) {
+  console.error(`orderId must be an order GUID, got "${orderId}"`);
+  process.exit(2);
+}
 
 const BACK_URL = process.env.BACK_URL;
 if (!BACK_URL) {
   console.error('BACK_URL is not set for TEST_ENV=' + (process.env.TEST_ENV ?? '(unset)'));
   process.exit(2);
 }
+
+// A write to the platform: refuse an undeclared / production-risk env before any credential is sent.
+assertSafeRisk(new URL(BACK_URL).host);
 
 const tokenRes = await fetch(`${BACK_URL}/connect/token`, {
   method: 'POST',
@@ -54,7 +64,7 @@ const token = (await tokenRes.json()).access_token;
 const auth = { Authorization: `Bearer ${token}` };
 
 const readOrder = async () => {
-  const res = await fetch(`${BACK_URL}/api/order/customerOrders/${orderId}`, { headers: auth });
+  const res = await fetch(`${BACK_URL}/api/order/customerOrders/${encodeURIComponent(orderId)}`, { headers: auth });
   if (!res.ok) {
     console.error('GET order failed:', res.status);
     process.exit(1);

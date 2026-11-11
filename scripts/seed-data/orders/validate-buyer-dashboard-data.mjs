@@ -8,7 +8,9 @@
  *       totals; AOV >= 1,000,000; conversion observable; store / org scoping changes the figure;
  *       an excluded currency next to a counted one.
  *   [2] No runtime GUID / createdDate in the committed fixture.
- *   [3] One JSON-fixture alias per buyer in aliases.json, every field path resolving in the fixture.
+ *   [3] One JSON-fixture alias per buyer in aliases.json (seed: seed:buyer-dashboard), every field path
+ *       resolving in the fixture. [1] also holds the LAYOUT contract: exactly one layoutDisposable buyer
+ *       (LAYOUT), orders in New / Processing / Completed / Cancelled, a status with >= 2 orders.
  *   [4] Seeded state (aliases.<TEST_ENV>.json, informational when absent): ids present, prev wave
  *       strictly before cur wave, the seed day (expectations are day-bound — warn when stale).
  *   [5] Opt-in demo targets (demoTargets, e.g. JOHN_DEMO): when seeded, every order id is recorded.
@@ -51,6 +53,7 @@ for (const k of Object.keys(fx.buyers)) {
   if (!a) { fail(`${aliasFor(k)} missing from aliases.json`); continue; }
   if (a.json !== FIXTURE_ALIAS_JSON) fail(`${aliasFor(k)}.json must be "${FIXTURE_ALIAS_JSON}"`);
   if ('id' in a || 'user_id' in a) fail(`${aliasFor(k)} pins a runtime id in the committed base`);
+  if (a.seed !== 'seed:buyer-dashboard') fail(`${aliasFor(k)}.seed must be "seed:buyer-dashboard" (the seeder that provisions it)`);
   const bad = Object.entries(a.fields || {}).filter(([, p]) => get(fx, p) === undefined).map(([f]) => f);
   if (bad.length) fail(`${aliasFor(k)}: field path(s) not in the fixture: ${bad.join(', ')}`); else ok(`${aliasFor(k)} (${Object.keys(a.fields).length} fields)`);
 }
