@@ -21,23 +21,9 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 3 |
+| REAL_BUG | 2 |
 | BY_DESIGN | 5 |
-| DATA | 2 |
-| PENDING_DECISION | 1 |
-
-## Real bugs awaiting filing
-
-| Wave | Case | Summary | New in release | Note |
-|---|---|---|---|---|
-| W0 | OBS-BUG_042_001 | Pick points dialog locations radiogroup accessible name is the raw key pages.checkout.shipping.links.select_pickup_point | unknown |  |
-| W0 | OBS-BUG_042_002 | Profile Last name and Email inputs show the placeholder Enter your first name | unknown |  |
-| W0 | OBS-BUG_042_004 | Reloading /checkout/completed drops the order number and the Show order link | no |  |
-
-## Decisions pending
-
-| Wave | Case | Question | Who decides |
-|---|---|---|---|
-| W0 | OBS-BUG_042_003 | Cart totals stayed stale 15-35 s after changeCartItemsQuantity returned 200 in 817 ms | Elena Kutasina |
+| DATA | 3 |
+| DUPLICATE | 1 |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
