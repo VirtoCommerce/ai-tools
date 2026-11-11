@@ -34,14 +34,12 @@ filing bugs, editing code. That's the large majority of the toolkit. Example:
 /qa-smoke storefront
 ```
 
-**2. Describe the task in natural language.** This only works for the handful of **read-only** tools
-that are safe to auto-trigger: `/qa-status` and `/qa-env-check`. Saying *"show me the QA
-dashboard"* will run `/qa-status`; saying *"run the smoke suite"* will **not** auto-run `/qa-smoke` —
-you have to type it.
-
-Why the split? Side-effect commands carry `disable-model-invocation: true` in their frontmatter, a
-deliberate guard so Claude never kicks off a test run, a bug filing, or a code change on its own. Only
-the read-only three opt back in.
+**2. Describe the task in natural language.** Claude can pick a command or skill from its description
+— *"show me the QA dashboard"* runs `/qa-status` — **unless** the file carries
+`disable-model-invocation: true` in its frontmatter. Those (`/qa-smoke`, `/qa-onboarding`, `/qa-run`,
+`/qa-seed-data` and others — `grep -l "disable-model-invocation: true" .claude/commands/*.md` lists them)
+run only when you type the slash. Typing the slash is the reliable way for anything that runs tests,
+files bugs or changes code; the commands that write to a tracker or GitHub still ask before the write.
 
 ---
 
