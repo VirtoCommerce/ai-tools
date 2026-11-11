@@ -78,10 +78,10 @@ type the environment names" instead. Name `standQuestion.more` (what did not fit
 The host's rules decide what the operator may tick — the question records their answer, it does not grant
 anything. The ticked values go, comma-joined, to ONE `gen-profile --gov-stand-envs <env>,…|none` →
 `governance.stand` `{ writable: <any ticked>, envs: [...] }`; "Nowhere" ticked together with an env is
-refused — ask again. **Only `writable` is enforced, and it is project-wide**: vc-test reads that one flag,
-then its own per-env declaration (`test.environments.<env>.writable`, `/vc-test:init`). `envs` records the
-answer in the host's env names and is not checked per env — so tell the operator, in the hand-off, to tick
-in `/vc-test:init` only the envs that map to the ones listed here (`governance.envs` maps a renamed one).
+refused — ask again. **This answer is the only one: `/vc-test:init` is not needed for it.** gen-profile
+declares it to vc-test per env (`lib/test-stands.mjs`): `test.environments.<env> = { writable: <its host env
+is listed>, backUrl: <BACK_URL of .env.<env>> }`, the shape vc-test's run check reads, other `test` keys
+untouched. An env not listed is declared read-only, so vc-test writes only where the operator said yes.
 An env whose URL the host blocks in step 4 is dropped from the list again (`--merge --gov-stand-envs`).
 A profile written before vc-init 0.6.0 (`stand: { writable: false }` with no `envs`) was never asked:
 `--check` reports `governance.stand.envs` as `pending` with this question and its options, and the answer goes
@@ -175,14 +175,18 @@ default environment"*, which runs `--decline`. An answer naming no env comes bac
 it and ask again. The full contract is the script's header (§3a). The host's browser servers do not read
 `.env.test-env`, so its lines say nothing about restarting for passwords.
 
+Then run `gen-profile.mjs --merge` once more (no other flag): every `.env.<env>` now exists, so it declares
+each one to vc-test from the test-data answer and prints one `test.environments.<env>: writable | read-only`
+line per env.
+
 ### 5. The hand-off — what was set up, then exactly how to enter the passwords
 
 One message, after §8 verify-access:
 
 1. **What was set up** — a short table `File | Field | Value`: the URLs, `STORE_ID` (detected), each
    account (`USER1` — admin — <login>), the ADO coordinates. Nothing for the operator to do there.
-2. **Test data** — one line when `governance.stand.writable` is true: *"In `/vc-test:init`, mark as
-   writable only <the envs that map to stand.envs>; vc-test enforces only the project-wide flag."*
+2. **Test data** — one line: the envs where the agent may create its own test data (gen-profile's
+   `test.environments` lines), or "nowhere — read-only". No `/vc-test:init` is needed for it.
 3. **Enter the passwords — numbered steps**, written for someone doing it for the first time:
    1. Open a terminal (PowerShell) — a separate window, not this chat.
    2. For each account, run its command (from `steps`), one at a time. Put the account's login above it
@@ -220,6 +224,8 @@ One message, after §8 verify-access:
 name needs `gen-profile --gov-envs <env>=<host env>` (adds, never drops). A slot is one password, so it
 belongs to one user across every `.env.<env>` mapped to the same host environment.
 
+- **A new env** (`--add-env`) is declared to vc-test by the next `gen-profile --merge` (with `--gov-envs`
+  when renamed); `--merge --gov-stand-envs <envs>|none` changes the answer for every env at once.
 - **`websiteAuth: "host-secrets"`** — add a user any time with `/project-init --add-user`: the free slots
   are offered, the login and a note go to `.env.<env>`, and the operator stores the password with the
   host's tool.

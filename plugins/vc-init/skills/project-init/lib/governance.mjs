@@ -77,10 +77,9 @@ export function ownMarketplaces({ home = process.env.HOME || os.homedir(), root 
  * Where a run may create its own test data — `governance.stand`:
  *   envs     the host environments the operator allowed (`[]` = nowhere), or `null` = never asked;
  *   writable true when at least one is listed.
- * Only `writable` is read at run time (vc-test `standOf()`), and it is project-wide: `envs` is a RECORD
- * of the answer, in the host's env names, not enforced per env. Which of OUR envs a run writes to is
- * vc-test's own per-env declaration (`test.environments.<env>.writable`, /vc-test:init), which must
- * name only envs that map to one listed here (host-governed.md step 3). A host-governed project starts
+ * `writable` is the project-wide ceiling vc-test reads (`standOf()`); per env, gen-profile declares the
+ * answer to vc-test itself (lib/test-stands.mjs → `test.environments.<env>`), so no /vc-test:init is
+ * needed for it (host-governed.md step 3). A host-governed project starts
  * read-only and unasked (`{ writable: false, envs: null }`) until the operator answers (host-governed.md
  * step 3, or `--check`); a project with no host carries no `envs` and stays writable, as before.
  * `kept` is a block a re-run keeps: with no list, its `writable` survives (a hand-set `true` included).

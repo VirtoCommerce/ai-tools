@@ -62,6 +62,7 @@ import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION, authAxes } from "../../script
 import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 import { hostInstallPath, parseStandEnvs, productionStandEnvs, standBlock, standOptions, standPending } from "./lib/governance.mjs";
 import { ourEnvs } from "./lib/test-env-selector.mjs";
+import { declareTestStands } from "./lib/test-stands.mjs";
 import { hostState } from "./lib/host-adapter.mjs";
 
 // ─── managed-field migration policy ──────────────────────────────────────────
@@ -512,6 +513,14 @@ function main() {
     let ours = [];
     try { ours = ourEnvs(root); } catch { /* no env files readable — the operator types the names */ }
     Object.assign(standAsk, standOptions(hostEnvs, ours, migrated.governance.envs));
+  }
+  // An answer given here is declared to vc-test per env at once (lib/test-stands.mjs), as gen-profile does.
+  if (added.some((a) => a.path === "governance.stand" && a.via === "ask-resolved")) {
+    const declared = declareTestStands(migrated, outputRoot());
+    if (declared.lines.length) {
+      Object.assign(migrated, { test: declared.profile.test });
+      added.push({ path: "test.environments", value: declared.profile.test.environments, via: "stand-declared", lines: declared.lines });
+    }
   }
   const hasStructuralChange = added.length > 0 || removed.length > 0 || unset.length > 0;
   // `rescan` (e.g. an Azure profile with an empty tracker.fields, VCST-5582 E5) also counts as

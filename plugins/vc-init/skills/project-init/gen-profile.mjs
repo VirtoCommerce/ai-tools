@@ -65,6 +65,7 @@ import { ensureGitignoreEntries, ensureProjectIgnores, removeGitignoreBlock } fr
 const HOST_ENV_IGNORE = "vc-init (/project-init) — host-governed: env files are local";
 import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, parseStandEnvs, productionStandEnvs, resolveHostId, standBlock } from "./lib/governance.mjs";
 import { envFileNames, gitTracked } from "./lib/project-env.mjs";
+import { declareTestStands } from "./lib/test-stands.mjs";
 import { emitObservations } from "./lib/diag-obs.mjs";
 
 // A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
@@ -487,6 +488,14 @@ function main() {
   // every credential, so the bridge never reads auth.* there.
   if (profile.governance?.host) profile.auth = { github: "", ado: "", jira: "" };
   profile.schemaVersion = PROFILE_SCHEMA_VERSION;
+  // A host-governed project's test-data answer is declared to vc-test per env (test.environments.<env>
+  // { writable, backUrl }), so /vc-test:init is not needed for it — lib/test-stands.mjs. Every env that has a
+  // .env.<env> by now; host-governed.md re-runs gen-profile --merge after step 4 for the ones written then.
+  if (profile.governance?.host) {
+    const declared = declareTestStands(profile, outputRoot());
+    profile = declared.profile;
+    for (const l of declared.lines) console.log(`[gen-profile] ${l}`);
+  }
 
   const withMeta = {
     _meta: {

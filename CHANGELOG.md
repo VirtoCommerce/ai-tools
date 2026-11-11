@@ -28,10 +28,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   are ONE comma-joined answer; "none" together with an env, or a non-string `--set` value (`true`, a number), is
   refused (as is `null`, which would read as "never asked"), and a production-looking env gets a warning line
   (gen-profile, only where the answer is recorded) or a `warnings` entry (reconcile, shown by `--check` Step B).
-  The hand-off adds a test-data line naming the envs to mark writable in `/vc-test:init`.
-- **Only `writable` is enforced, project-wide.** `envs` records the answer in the host's env names; vc-test does
-  not read it per env. The hand-off tells the operator to declare in `/vc-test:init` only the envs that map to
-  the listed ones (host-governed.md step 3).
+  The hand-off names the envs where the agent may create test data.
+- **No `/vc-test:init` needed for it.** gen-profile (new `lib/test-stands.mjs`) declares the answer to vc-test
+  per env, in the shape vc-test's own init writes: `test.environments.<env> = { writable: <its host env is
+  listed>, backUrl: <BACK_URL of .env.<env>> }`, other keys of an existing entry and of the `test` block kept.
+  An env not listed is declared read-only, so the answer is enforced per env by vc-test's existing run check
+  (`standOf()`), not only as the project-wide flag. Step 4 of host-governed.md re-runs `gen-profile --merge` once
+  the env files exist; a `--check` answer is declared on the same write. Only on a host-governed project with an
+  answer; a later `/vc-test:init` can still change the block.
 - **Schema:** `governance.stand.envs` (`string[] | null`, default `null`) added to `PROFILE_DEFAULTS` and the
   `.d.mts` typings in vc-init and in vc-fix's reader copy — a host-governed project's field only: reconcile
   treats it as conditional on `governance.host` (never added to, and pruned from, a no-host profile), and
