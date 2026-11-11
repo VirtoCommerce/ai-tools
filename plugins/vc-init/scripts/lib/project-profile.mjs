@@ -35,7 +35,7 @@
  *   login. "" ⇒ the axis does not apply to this deployment (e.g. `ado` on Jira + GitHub).
  * @property {Record<string, any>} perf  vc-perf's block — an open map, kept wholesale by reconcile
  * @property {Record<string, any>} test  vc-test's block — an open map, kept wholesale by reconcile
- * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean}, websiteAuth:""|"host-secrets"|"manual-operator", envs:Record<string,string>, codeAccess:""|"none"|"read"|"write"}} governance
+ * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean, envs:string[]|null}, websiteAuth:""|"host-secrets"|"manual-operator", envs:Record<string,string>, codeAccess:""|"none"|"read"|"write"}} governance
  *   a host-governed project (schema 3): see the PROFILE_DEFAULTS comment
  * @property {"platform"|"client"} projectType
  * @property {"virto-engineer"|"client"|"ask"} operator
@@ -287,7 +287,8 @@ export const PROFILE_DEFAULTS = {
   //   secrets: "host" — no token path of ours runs at all (bridge refuses, no vc-secrets, no PAT, no
   //            az login) | "vc-secrets" — the normal VCST-6402 flow
   //   servers: the host's MCP server key per role — operator-confirmed, never inferred
-  //   stand.writable: false on a governed project (no seeding/mutation of the client's stands)
+  //   stand:   where a run may create its own test data. writable: false on a governed project until the
+  //            operator answers; envs: the host environments allowed ([] = nowhere, null = never asked)
   //   websiteAuth: how test users sign in to the client's site — "host-secrets" (passwords in the host's
   //            wrapper, typed by NAME) | "manual-operator" (the operator signs in by hand) | ""
   //   envs:    open map, `.env.<env>` name → the host's website environment (its password slots' prefix)
@@ -297,7 +298,7 @@ export const PROFILE_DEFAULTS = {
     host: null,
     secrets: "vc-secrets",
     servers: { tracker: "", codeHost: "", github: "", telemetry: "", testManagement: "", browsers: [] },
-    stand: { writable: true },
+    stand: { writable: true, envs: null },
     websiteAuth: "",
     envs: {},
     codeAccess: "",

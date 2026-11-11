@@ -65,8 +65,22 @@ Everything with a fixed set of answers goes into ONE `AskUserQuestion` call (at 
 the ones that apply): the host is this project's governance · the host's setup has run here (only when
 `confirmed: false`) · which server serves each role in `state.choices` (telemetry included — which one is
 production is never guessed) · only when the code probe (3a) READ the repos: may the agent open PRs on
-the client's repos (the person's host role grants writing) — yes ⇒ `write`, no ⇒ `read`. URLs and
-accounts follow in step 4, also as `AskUserQuestion` rounds.
+the client's repos (the person's host role grants writing) — yes ⇒ `write`, no ⇒ `read` · **where the
+agent may create its own test data** (always asked; below). URLs and accounts follow in step 4, also as
+`AskUserQuestion` rounds. More than four questions ⇒ the rest go into one more call, never into chat.
+
+**The test-data question** — multi-select, header `test data`: *"On which environments may the agent create
+its own test data (orders, users, carts — never someone else's, never a direct database write)? Not ticked =
+read-only."* Options: each of detect-governance's `standChoices` (the host's environments — a
+production-looking one is never offered) and **"Nowhere — read-only"**, the Recommended one and the default.
+The host's rules decide what the operator may tick — the question records their answer, it does not grant
+anything. The answer goes to `gen-profile --gov-stand-envs <env>,…|none` → `governance.stand`
+`{ writable: <any ticked>, envs: [...] }`. That is the project's ceiling: `/vc-test:init` still declares, per
+env, which one a run writes to (`test.environments.<env>.writable`), and a run writes only where both say yes.
+An env whose URL the host blocks in step 4 is dropped from the list again (`--merge --gov-stand-envs`).
+A profile written before vc-init 0.6.0 (`stand: { writable: false }` with no `envs`) was never asked:
+`--check` reports `governance.stand.envs` as `pending` with this question and its options, and the answer goes
+back as `reconcile-profile.mjs --write --set governance.stand.envs=<env>,…|none` — no full re-run.
 
 Never invent a URL; an origin the host blocks (its browser config's `blockedOrigins`) is refused.
 
@@ -76,7 +90,8 @@ plus the tracker / code host facts:
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" <state.genProfile, answers applied> \
   --tracker <facts.tracker> --azure-org <facts.adoOrg> --azure-project <facts.adoProject> \
-  --client-vcs <facts.clientVcs> --gov-envs <env>=<host env>,… --self-diagnostics false --runtime-mode plugin
+  --client-vcs <facts.clientVcs> --gov-envs <env>=<host env>,… --gov-stand-envs <ticked>|none \
+  --self-diagnostics false --runtime-mode plugin
 ```
 
 (`--gov-envs` only for an env whose name differs from the host's.) Then §3a scaffold-env `--no-default` for
@@ -185,11 +200,12 @@ One message, two parts, after §8 verify-access:
 | §3e normalize-env | as usual — it requests the storefront URL once to detect `STORE_ID` |
 | §4 `discover-repos` | **through the host**: step 3a — a listing read with the host's server, `--listing-json`; without one it stands down. VirtoCommerce modules are not listed (the modules API needs an admin sign-in, which is the host's) |
 | §4b `discover-tracker`, §5 `derive-context` | **skipped** — read through the host's MCP servers at run time; each script stands down by itself |
-| §6 `gen-profile` | written in step 3 with the facts and answers; recorded as a client project that files nothing upstream; with no tracker scan the ticket key format follows the tracker (Azure Boards `numeric`, Jira `prefixed`) |
+| §6 `gen-profile` | written in step 3 with the facts and answers; recorded as a client project that files nothing upstream; with no tracker scan the ticket key format follows the tracker (Azure Boards `numeric`, Jira `prefixed`); `governance.stand` from the test-data question (`--gov-stand-envs`), read-only until it is answered |
 | §7 `sync-browser-secrets`, `gen-mcp`, `write-agent-rules` | **skipped** — servers, browser lanes and their rules are the host's |
 | §8 `verify-access` | the **host-mode readiness table**: host plugin, each role's server, the host's setup ran here, the profile matches the servers on, each env's test users and their slots (a filled slot is NOT checked — no secret is resolved), the URLs |
 | §9 `next-steps` | as usual; tracker asks name the host's tracker server; no `/qa-fix` without a code host |
 | `ensure-session`, `--check` Step M | **skipped** |
+| `--check` Step A/B | as usual, plus the test-data question as a `pending` decision when it was never asked (a pre-0.6.0 profile); answered with `--set governance.stand.envs=…` |
 
 ## Environments and test users later
 

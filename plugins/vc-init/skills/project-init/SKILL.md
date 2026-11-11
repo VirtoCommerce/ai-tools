@@ -1294,9 +1294,8 @@ report — no writes, no scans, no questions of its own:
 - **`removed`** — obsolete fields no longer in the schema (pruned on `--write`). **Open
   maps** (`tracker.azure.roleStates`/`stateMap`/`workItemTypes`) and **arrays** (`repos.*`)
   are kept wholesale — their contents are data, not schema.
-- **`pending`** — fields whose value is the OPERATOR's decision (a privacy / behaviour
-  opt-in, e.g. `selfDiagnostics`). Each carries its own `question` + `options`; **never**
-  auto-filled.
+- **`pending`** — the OPERATOR's decisions (`selfDiagnostics`; host-governed: `governance.stand.envs`,
+  `host-governed.md` §3). Each has its `question` + `options`; never auto-filled.
 - **`rescan`** — fields that should be re-derived from a live scan (repos / tracker).
 
 `status:"no-profile"` ⇒ never onboarded — run the **full interview** instead, don't reconcile.

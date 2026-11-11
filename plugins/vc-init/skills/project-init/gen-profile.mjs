@@ -41,6 +41,9 @@
  *   --gov-website-auth host-secrets|manual-operator   how test users sign in to the client's website
  *   --gov-envs <env>=<host env>,…   which host website environment each `.env.<env>` is (added, never dropped)
  *   --gov-code-access none|read|write   what the person may do with the client's code through --gov-code-host
+ *   --gov-stand-envs <host env>,…|none   the host environments a run may create its own test data on:
+ *                              governance.stand = { writable: <any listed>, envs: [...] }. Absent ⇒ kept
+ *                              as recorded; a host never asked stays { writable: false, envs: null }.
  *
  *   # Merge a discovered repo map (output of discover-repos.mjs) into an existing profile:
  *   node skills/project-init/gen-profile.mjs --repos-json repos.json --merge --print
@@ -60,7 +63,8 @@ import { ensureGitignoreEntries, ensureProjectIgnores, removeGitignoreBlock } fr
 
 /** The .gitignore block a host-governed project gets for its env files (removed when it stops being one). */
 const HOST_ENV_IGNORE = "vc-init (/project-init) — host-governed: env files are local";
-import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, resolveHostId } from "./lib/governance.mjs";
+import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, parseStandEnvs, resolveHostId, standBlock } from "./lib/governance.mjs";
+import { looksProduction } from "./lib/test-env-selector.mjs";
 import { envFileNames, gitTracked } from "./lib/project-env.mjs";
 import { emitObservations } from "./lib/diag-obs.mjs";
 
@@ -130,6 +134,14 @@ function governanceExtras(args, current = {}) {
     } catch (e) {
       fail(`--gov-envs: ${e.message}`);
     }
+  }
+  if (args["gov-stand-envs"] !== undefined) {
+    try {
+      extras.standEnvs = parseStandEnvs(args["gov-stand-envs"] === true ? "" : args["gov-stand-envs"]);
+    } catch (e) {
+      fail(`--gov-stand-envs: ${e.message}`);
+    }
+    for (const e of extras.standEnvs.filter(looksProduction)) console.log(`[gen-profile] ⚠ ${e} looks like production — test data may now be created there`);
   }
   return extras;
 }
@@ -411,7 +423,7 @@ function main() {
     const govExtras = governanceExtras(args, same || {});
     const kept = same ? { ...same.servers, browsers: (same.servers?.browsers || []).join(",") } : {};
     const overrides = Object.fromEntries(Object.keys(flagged).map((k) => [k, flagged[k] !== undefined ? flagged[k] : kept[k]]));
-    const extras = same ? { websiteAuth: same.websiteAuth, envs: same.envs, codeAccess: same.codeAccess, ...govExtras } : govExtras;
+    const extras = same ? { websiteAuth: same.websiteAuth, envs: same.envs, codeAccess: same.codeAccess, stand: same.stand, ...govExtras } : govExtras;
     profile = { ...profile, governance: governanceBlock(host, overrides, extras) };
   } else if (current?.host) {
     // A day-2 run (--add-env) on a governed project: fold the answers
@@ -423,7 +435,9 @@ function main() {
       if (args[flag] !== undefined) servers[role] = String(args[flag]);
     }
     if (args["gov-browsers"] !== undefined) servers.browsers = String(args["gov-browsers"]).split(",").map((s) => s.trim()).filter(Boolean);
-    profile = { ...profile, governance: { ...current, host: currentId, servers, ...governanceExtras(args, current) } };
+    const { standEnvs, ...answers } = governanceExtras(args, current);
+    const stand = standEnvs !== undefined ? standBlock(standEnvs) : current.stand;
+    profile = { ...profile, governance: { ...current, host: currentId, servers, stand, ...answers } };
   }
 
   // A host-governed project is a client's, and its repo scan (§4/§5) does not run — so the defaults
@@ -499,7 +513,7 @@ function main() {
   console.log(g?.host
     // A guest's tracker / code host are only known once the interview filled them in — say what IS set.
     ? `[gen-profile] host-governed by ${g.host}: tracker server ${g.servers.tracker || "—"}, code host ${g.servers.codeHost || "—"}, ` +
-      `test users ${g.websiteAuth || "—"}${args.tracker || args["client-vcs"] ? ` · tracker=${profile.tracker.kind} clientVcs=${profile.vcs.clientHost}` : ""}`
+      `test users ${g.websiteAuth || "—"}, test data ${Array.isArray(g.stand?.envs) ? g.stand.envs.join(",") || "nowhere" : "not asked yet (read-only)"}${args.tracker || args["client-vcs"] ? ` · tracker=${profile.tracker.kind} clientVcs=${profile.vcs.clientHost}` : ""}`
     : `[gen-profile] projectType=${profile.projectType} tracker=${profile.tracker.kind} ` +
       `clientVcs=${profile.vcs.clientHost} upstream=${profile.upstream.org} ` +
       `contributionMode=${profile.upstream.contributionMode}` +

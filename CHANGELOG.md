@@ -8,6 +8,47 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A host-governed project asks where the agent may create test data — `vc-init` `0.6.0`, `vc-fix` `0.18.6` — 2026-11-11
+
+### Changed
+
+- On a host-governed project, `/project-init` wrote `governance.stand: { writable: false }` without asking.
+  vc-test's `standOf()` checks that flag after the per-env declaration, so an operator who told
+  `/vc-test:init` that `qa` may be written to still got every run on `qa` treated as read-only — even where the
+  host's rules allow the agent to create its own test entities on QA (they forbid other people's entities, direct
+  database / search-index writes and production). The question round of `host-governed.md` step 3 now asks:
+  *"On which environments may the agent create its own test data?"* — multi-select over the host's
+  environments (detect-governance's new `standChoices`: no production-looking env), plus **"Nowhere —
+  read-only"**, the Recommended default.
+- New `gen-profile --gov-stand-envs <host env>,…|none` writes `governance.stand = { writable: <any listed>,
+  envs: [...] }`. `writable` is the project-wide ceiling; which of our envs a run writes to stays vc-test's
+  `test.environments.<env>.writable`, and a run writes only where both say yes. Absent ⇒ the recorded answer is
+  kept; a host never asked stays `{ writable: false, envs: null }` — the old safe behaviour.
+- **Schema:** `governance.stand.envs` (`string[] | null`, default `null`) added to `PROFILE_DEFAULTS` in vc-init
+  and in vc-fix's reader copy. No `schemaVersion` change: the field is optional and every reader layers the
+  defaults. `[]` = asked, nowhere; `null` = never asked.
+- `/project-init --check`: a host-governed profile with `stand.writable` not `true` and no `envs` (every profile
+  written before 0.6.0) is reported as a `pending` decision `governance.stand.envs`, with the question and the
+  host's environments as options; the answer goes back as `reconcile-profile.mjs --write --set
+  governance.stand.envs=<envs>|none`. No full re-run of the interview. A `writable: true` set by hand is kept and
+  not asked again.
+- vc-fix `knowledge/execution/host-governance.md` rule 3: stands are read-only unless the operator said
+  otherwise; `true` allows only the agent's own test data on `stand.envs`, and the host's rules still win.
+- Unchanged: a project with no host (`governance.host: null`) stays `writable: true`; the Jira / GitHub flows do
+  not touch the field.
+
+### Verified
+
+- A temporary script (deleted): the governance block with and without the flag; `gen-profile` host without the
+  flag ⇒ `{false, null}`, with `qa` ⇒ `{true, ["qa"]}`, a same-host re-run keeps it, `--merge --gov-stand-envs
+  none` ⇒ `{false, []}`; a no-host profile ⇒ `writable: true` before and after `--governance none`; reconcile of
+  a pre-0.6.0 host profile ⇒ `pending`, `--set …=qa,uat` / `=none` resolves it and a second pass asks nothing; a
+  hand-set `writable: true` is not pending; a no-host profile gets no question and refuses the `--set`.
+  `node --test plugins/vc-init/bridge/*.test.mjs` 94/94; `scripts/unit/{gen-profile,reconcile-profile,
+  gen-mcp-secret-hygiene}.test.mjs` 35/35.
+
+---
+
 ## A ticket's Claude Design project is imported, not silently skipped — `vc-test` `0.14.0` — 2026-11-10
 
 ### Added

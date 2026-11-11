@@ -18,6 +18,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import os from "node:os";
 import { join, resolve } from "node:path";
 import { pluginRoot } from "./paths.mjs";
+import { looksProduction } from "./test-env-selector.mjs";
 
 /** Roles a host server can fill. `browsers` is a list; the rest are one server key each. */
 export const ROLES = ["tracker", "codeHost", "github", "telemetry", "testManagement", "browsers"];
@@ -72,9 +73,45 @@ export function ownMarketplaces({ home = process.env.HOME || os.homedir(), root 
   return [...out].filter(Boolean);
 }
 
+/**
+ * Where a run may create its own test data — `governance.stand`:
+ *   envs     the host environments the operator allowed (`[]` = nowhere), or `null` = never asked;
+ *   writable true when at least one is listed.
+ * This is the project-wide ceiling: which of OUR envs a run writes to is still vc-test's per-env
+ * declaration (`test.environments.<env>.writable`, /vc-test:init), and `envs` is the operator's answer
+ * that step can offer first. A host-governed project starts read-only and unasked
+ * (`{ writable: false, envs: null }`) until the operator answers (host-governed.md step 3, or
+ * `--check`); a project with no host stays writable, as before.
+ */
+export function standBlock(envs) {
+  if (!Array.isArray(envs)) return { writable: false, envs: null };
+  const list = [...new Set(envs.map((e) => String(e).trim().toLowerCase()).filter(Boolean))];
+  return { writable: list.length > 0, envs: list };
+}
+
+/** Parse `qa,uat` | `none` into a stand env list. Throws on a malformed name. Pure. */
+export function parseStandEnvs(text) {
+  const raw = String(text ?? "").trim().toLowerCase();
+  if (raw === "" || raw === "none") return [];
+  const list = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  for (const e of list) if (!/^[a-z0-9_]+$/.test(e)) throw new Error(`"${e}" is not an environment name ([a-z0-9_]+), or "none"`);
+  return [...new Set(list)];
+}
+
+/** The host environments the stand question offers: the host's own, never a production-looking one. Pure. */
+export function standChoices(hostEnvs) {
+  return (Array.isArray(hostEnvs) ? hostEnvs : []).filter((e) => !looksProduction(e));
+}
+
+/** Has the operator been asked where test data may be created? (Only a host-governed project asks.) Pure. */
+export function standPending(profile) {
+  const g = profile?.governance;
+  return Boolean(g?.host) && g?.stand?.writable !== true && !Array.isArray(g?.stand?.envs);
+}
+
 /** The governance block for a host (or none). Pure. */
 export function governanceBlock(host, overrides = {}, extras = {}) {
-  if (!host) return { host: null, secrets: "vc-secrets", servers: emptyServers(), stand: { writable: true }, ...emptyExtras() };
+  if (!host) return { host: null, secrets: "vc-secrets", servers: emptyServers(), stand: { writable: true, envs: null }, ...emptyExtras() };
   if (!PLUGIN_ID_RE.test(String(host))) throw new Error(`governance host "${host}" is not a plugin id (<plugin>@<marketplace>)`);
   const servers = emptyServers();
   for (const role of ROLES) {
@@ -83,7 +120,11 @@ export function governanceBlock(host, overrides = {}, extras = {}) {
       ? String(overrides[role]).split(",").map((s) => s.trim()).filter(Boolean)
       : String(overrides[role]);
   }
-  return { host, secrets: "host", servers, stand: { writable: false }, ...emptyExtras(), ...cleanExtras(extras) };
+  // `standEnvs` is a new answer; `stand` the block a re-run keeps (a hand-set one included); neither ⇒ unasked.
+  const stand = extras.standEnvs !== undefined ? standBlock(extras.standEnvs)
+    : extras.stand && typeof extras.stand === "object" ? { writable: extras.stand.writable === true, envs: Array.isArray(extras.stand.envs) ? [...extras.stand.envs] : null }
+      : standBlock(null);
+  return { host, secrets: "host", servers, stand, ...emptyExtras(), ...cleanExtras(extras) };
 }
 
 export function emptyServers() {
