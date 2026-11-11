@@ -1,0 +1,211 @@
+{
+  "sprint": "Sprint26-22",
+  "startDate": "2026-11-02",
+  "endDate": "2026-11-16",
+  "doneCounts": {
+    "stories": 11,
+    "bugs": 38,
+    "tasks": 23,
+    "spikes": 0,
+    "total": 78
+  },
+  "testRelevantCount": 60,
+  "mergedFrontendPRs": 37,
+  "mergedModulePRs": null,
+  "domains": [
+    {
+      "name": "Authentication — MFA, passkeys, OTP & password policy",
+      "score": 25,
+      "level": "Critical"
+    },
+    {
+      "name": "Storefront UI kit, design tokens, a11y & i18n (Bridge)",
+      "score": 25,
+      "level": "Critical"
+    },
+    {
+      "name": "Sales Rep hub",
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Cart, checkout & addresses",
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Catalog, search, compare & analytics",
+      "score": 15,
+      "level": "High"
+    },
+    {
+      "name": "Company & organization",
+      "score": 12,
+      "level": "High"
+    },
+    {
+      "name": "Storefront dependencies & build (security upgrades)",
+      "score": 10,
+      "level": "High"
+    },
+    {
+      "name": "Platform, MCP & back office (no storefront wave)",
+      "score": 12,
+      "level": "High"
+    }
+  ],
+  "suitesActivated": [
+    "042",
+    "031",
+    "032",
+    "033",
+    "082",
+    "044",
+    "089",
+    "090",
+    "091",
+    "091c",
+    "093",
+    "093b",
+    "097",
+    "106",
+    "112",
+    "011",
+    "013",
+    "028",
+    "029",
+    "030",
+    "081",
+    "015",
+    "036",
+    "001",
+    "002",
+    "004",
+    "005",
+    "098",
+    "043",
+    "006",
+    "008",
+    "011b",
+    "083c",
+    "045",
+    "046",
+    "048c",
+    "070",
+    "071",
+    "104",
+    "111",
+    "114",
+    "114a",
+    "114b",
+    "110",
+    "105",
+    "115",
+    "050b3",
+    "050a",
+    "061",
+    "061b",
+    "026",
+    "064",
+    "051",
+    "053",
+    "020b",
+    "102",
+    "094",
+    "050m3"
+  ],
+  "newCasesEstimate": "70-101",
+  "exploratoryCharters": [
+    {
+      "id": "EXP-01",
+      "domain": "Cart, checkout & addresses",
+      "signals": [
+        "C1",
+        "C2"
+      ],
+      "mission": "Discover what breaks when the sprint's cart/address changes meet in one buyer session, and whether address autocomplete, maps and push registration still work after the Google Cloud account move (GAP-31, no suite); suites 028/081/011 assert each change alone.",
+      "candidateScenarios": [
+        "A long Line1/Line2 address saved in the ship-to popup, then shown in checkout and an order, at desktop and 375 px (GAP-20, GAP-21)",
+        "A promo line with \"Round amount per item\" unchecked: price per item across the narrow breakpoint while the checkbox names are read by a screen reader (GAP-22, GAP-23)",
+        "Anonymous cart then sign-in merge, then address autocomplete and map on a new address (GAP-24, GAP-31)"
+      ],
+      "technique": "Feature-pair matrix + Soap Opera",
+      "lane": "playwright-chrome",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-02",
+      "domain": "Authentication — MFA, passkeys, OTP & password policy",
+      "signals": [
+        "C2"
+      ],
+      "mission": "Discover seams between MFA per-store policy and the three sign-in methods (password, OTP, passkey) with an expired password, a forced change and an org fallback; suites 104/111/114/114a/114b each hold one method and no policy permutation.",
+      "candidateScenarios": [
+        "Policy changed by an org maintainer while a member is on the code step (GAP-01, GAP-02)",
+        "Expired-password account through OTP, passkey and password with MFA on and off, ending on the right page each time (GAP-03, GAP-04)",
+        "Passkey add/delete on the Security page by keyboard only, then sign-out and sign-in in a second tab (GAP-05)"
+      ],
+      "technique": "State transitions + Boundary-of-features",
+      "lane": "playwright-edge",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-03",
+      "domain": "Storefront UI kit, design tokens, a11y & i18n (Bridge)",
+      "signals": [
+        "C2"
+      ],
+      "mission": "Discover pages where the token, soft VcWidget, CSS-layer and form-a11y changes interact: a preset, a widget mode and a long locale together; 048c/070/071 check layout per feature, not their combination.",
+      "candidateScenarios": [
+        "Each preset (incl. Watermelon) x classic/soft widget on PDP, cart, account dashboard: radius, focus ring vs error colour, overflow (GAP-08, GAP-09, GAP-10)",
+        "Required and invalid fields under pl/ru with a keyboard-only walk: label size/colour parity and announced error state (GAP-07, GAP-11)",
+        "Header badge at large counts in pl/pt/es/ru at 1024 and 375 px with the soft design (GAP-12)"
+      ],
+      "technique": "Galumphing + Feature-pair matrix",
+      "lane": "playwright-firefox",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-04",
+      "domain": "Sales Rep hub",
+      "signals": [
+        "C2"
+      ],
+      "mission": "Discover seams in the Sales Rep Hub after two stories, a header link, a report component and six layout fixes landed together: the Tasks customer filter, coupons widget, customer-profile report and dashboard layout share one rep session.",
+      "candidateScenarios": [
+        "Rep opens the hub from the new header icon, filters Tasks by customer, schedules a call, then opens that customer's profile report and coupons at 768 and 320 px (GAP-13, GAP-14, GAP-16, GAP-17)",
+        "Edit layout hides every block, reload, language switch, then the Customers/Status/Priorities row is checked for raw keys (GAP-18)",
+        "A rep who loses a served customer mid-session: Tasks, coupons and report on the same page (GAP-13, GAP-15, GAP-16)"
+      ],
+      "technique": "Soap Opera + Boundary-of-features",
+      "lane": "playwright-chrome",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-05",
+      "domain": "Catalog, search, compare & analytics",
+      "signals": [
+        "C4"
+      ],
+      "mission": "Probe the P0 browse path (I=5) where several navigation-race and focus fixes landed with a low likelihood score and no combined test: category load race, search scope chip, compare freeze, GA payload.",
+      "candidateScenarios": [
+        "Click through three categories quickly and use Back while the first loads; URL vs page on screen (GAP-25)",
+        "Add a scope chip, remove it by keyboard, search with an apostrophe in the term, compare 4 products and resize (GAP-25, GAP-26, GAP-28)",
+        "Same session: GA view_item_list on /search and category pages after each step (GAP-27)"
+      ],
+      "technique": "Saboteur + Galumphing",
+      "lane": "playwright-edge",
+      "timeboxMin": 30
+    }
+  ],
+  "criticalTickets": [
+    "VCST-6698",
+    "VCST-6669",
+    "VCST-6662",
+    "VCST-6630",
+    "VCST-6157"
+  ],
+  "outOfScopeCount": 18,
+  "artifacts": "docs/Sprint plans/",
+  "release": "sprint-26-22"
+}
