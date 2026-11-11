@@ -4429,10 +4429,9 @@
       "customerApplicability": "universal",
       "requiresModules": [
         "VirtoCommerce.ApplicationInsights",
-        "VirtoCommerce.Xapi",
-        "VirtoCommerce.BackgroundJobs"
+        "VirtoCommerce.Xapi"
       ],
-      "notes": "ON-DEMAND ONLY — excluded from every selection (backend, full); run as /qa-regression 119 when ApplicationInsights, BackgroundJobs, Xapi or a stand's telemetry config changes. VCST-4717 (Migrate Application Insights to Azure Monitor OpenTelemetry). Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) - without it every telemetry assertion is unverifiable, not failing. Every KQL step filters on the run's own generated operation name (AgentTestObs + random) over a relative window, fires >=14 calls (sampling keeps ~50%, less under bursts) and carries a control assertion so a zero cannot be an ingestion gap; ingestion lag is 2-5 min, poll up to 10 min. SPAN/TABLE NOTES: on the OpenTelemetry exporter use `contains` not `has` on sdkVersion (`has` is term-based and misses otel1.15.3); named GraphQL operations are recorded as `POST graphql/<OperationName>`, plain POST /graphql is not recorded. OBS-001 is the regression catcher for the fixed round-1 url-shape bug. Cases for open findings (BackgroundJobs metrics, SQL ignore list, exceptions.operation_Name, itemCount vs sample_rate), AuditLog (VCST-6006), https scheme, and the deployment-level checks (no module / no connection string / RoleName) are held out of the suite until they can pass; they are added back when fixed."
+      "notes": "ON-DEMAND ONLY — excluded from every selection that would otherwise include it (backend, full, sprint, concern:api); run as /qa-regression 119 when ApplicationInsights, BackgroundJobs, Xapi or a stand's telemetry config changes. VCST-4717 (Migrate Application Insights to Azure Monitor OpenTelemetry). Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) - without it every telemetry assertion is unverifiable, not failing. Every KQL step filters on the run's own generated operation name (AgentTestObs + random) over a relative window, the operation name starts with AgentTestObs (GraphQL names cannot carry the AGENT-TEST- hyphen), fires >=14 calls (sampling keeps ~50%, less under bursts) and carries a control assertion so a zero cannot be an ingestion gap; ingestion lag is 2-5 min, poll up to 10 min. SPAN/TABLE NOTES: on the OpenTelemetry exporter use `contains` not `has` on sdkVersion (`has` is term-based and misses otel1.15.3); named GraphQL operations are recorded as `POST graphql/<OperationName>`, plain POST /graphql is not recorded. OBS-001 is the regression catcher for the fixed round-1 url-shape bug. Cases for open findings (BackgroundJobs metrics, SQL ignore list, exceptions.operation_Name, itemCount vs sample_rate), AuditLog (VCST-6006), the REST https scheme check, and the deployment-level checks (no module / no connection string / RoleName) are held out of the suite until they can pass; they are added back when fixed."
     }
   ],
   "selections": {
@@ -4620,7 +4619,8 @@
         "110a",
         "111",
         "112",
-        "118"
+        "118",
+        "119"
       ]
     },
     "full": {
@@ -4730,7 +4730,8 @@
         "050m2",
         "110",
         "110a",
-        "118"
+        "118",
+        "119"
       ]
     },
     "concern:admin": {
