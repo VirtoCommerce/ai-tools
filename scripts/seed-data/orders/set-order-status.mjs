@@ -42,6 +42,12 @@ if (!BACK_URL) {
 }
 
 // A write to the platform: refuse an undeclared / production-risk env before any credential is sent.
+// This script has no dry run: it always writes. seed-common reads --dry-run from argv and then skips the
+// production refusal, so a --dry-run here would let a production write through — refuse it instead.
+if (process.argv.includes('--dry-run')) {
+  console.error('set-order-status.mjs has no --dry-run; it always writes. Remove the flag.');
+  process.exit(2);
+}
 assertSafeRisk(new URL(BACK_URL).host);
 
 const tokenRes = await fetch(`${BACK_URL}/connect/token`, {

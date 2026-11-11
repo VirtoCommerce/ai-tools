@@ -225,9 +225,9 @@ const STEPS = [
   // owned by USER_EMAIL, quotes submitted by ORG_USER_EMAIL, and line items point at real catalog
   // products. Optional: quotes need the Quote module deployed + Stores.EnableQuotes on the store.
   { name: 'orders', script: 'orders/seed-order-states.mjs', required: false, priority: 140 },
-  // VCST-6078 buyer dashboard statistics: dedicated AGENT-TEST-BD buyers/orgs + orders on a live-discovered
-  // product (40). Optional: the read-back needs X-Frontend orderStatistics; failures warn, never abort.
-  { name: 'buyer-dashboard', script: 'orders/seed-buyer-dashboard.mjs', required: false, priority: 141 },
+  // VCST-6078 buyer dashboard is deliberately NOT seeded here (teardown only): its UNCFG buyer leaves an
+  // order in a removed currency, and an admin order search whose page holds it returns 500 (VCST-6535).
+  // Seed it on purpose with `npm run seed:buyer-dashboard` on a stand that runs suite 120.
   // Sales Rep family. Sits with the order steps because it CREATES orders, and after products (40)
   // for their line items, inventory (70) for fulfillment centers, and company-users (100) for the
   // org graph its reps are given memberships in. Optional: the module is absent on some
