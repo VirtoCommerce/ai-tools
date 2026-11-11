@@ -16,12 +16,12 @@
 | 002 Product Detail | 32 | 28 | 1 | 2 | 1 |
 | 001 Catalog Navigation | 29 | 19 | 0 | 2 | 8 |
 
-## Real bugs (pre-existing, not filed yet)
+## Real bugs (pre-existing; VCST-6810 and VCST-6811 filed Low, GA-027 to be re-verified)
 
 | Ledger row | Defect | Since |
 |------------|--------|-------|
-| CMP-006 (+ CMP-032) | Compare: All/Differences switch only visually disabled on a one-product tab (keyboard-operable) | 2026-10-12 |
-| CMP-017 | Compare: two configuration sections with the same label collapse into one row — a selected option disappears | 2026-10-14 |
+| CMP-006 (+ CMP-032) | Compare: All/Differences switch only visually disabled on a one-product tab (keyboard-operable) — **VCST-6810** | 2026-10-12 |
+| CMP-017 | Compare: two configuration sections with the same label collapse into one row — a selected option disappears — **VCST-6811** | 2026-10-14 |
 
 | GA-027 | GA4: re-paying an unpaid order from the order page sends `purchase` again | 2026-10-29 |
 

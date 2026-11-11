@@ -21,21 +21,18 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 6 |
+| REAL_BUG | 5 |
 | BY_DESIGN | 52 |
 | TEST_DEFECT | 26 |
 | DATA | 12 |
 | ENV_CONFIG | 15 |
-| DUPLICATE | 6 |
+| DUPLICATE | 7 |
 | PENDING_DECISION | 1 |
 
 ## Real bugs awaiting filing
 
 | Wave | Case | Summary | New in release | Note |
 |---|---|---|---|---|
-| W4 | CMP-006 | One-product tab: All/Differences switch only visually disabled; Tab+Enter activates Differences | no |  |
-| W4 | CMP-032 | One-entry state: All/Differences not truly disabled | no | same defect as CMP-006, file once |
-| W4 | CMP-017 | Two configuration sections with the same label collapse into one compare row; a selected option disappears | no |  |
 | W4 | GA-027 | Re-paying an unpaid order from the order page sends a GA4 purchase event | no |  |
 
 ## Decisions pending
