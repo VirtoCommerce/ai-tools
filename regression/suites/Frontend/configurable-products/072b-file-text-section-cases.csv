@@ -1,7 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CFG-FILE-001","File Section — Upload Button Disabled After 5th File Uploaded (Max Limit)","Configurable Products > File Section > Upload Limits","High","BL-CAT-006","ECL-7.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url) (Hoodie Base, optional File section). Upload fixtures available: Logo1.png, Netflix-25.jpg, newier.pdf, Test.xlsx, large_test.png.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url), max_files=5","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
+User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url) (Hoodie Base, optional File section). Upload fixtures available: Logo1.png, Netflix-25.jpg, newier.pdf, Test.xlsx, large_test.png (large_test.png generated once via 'npm run td:gen:uploads').","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url), max_files=5","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Product configuration widget visible
 [SCROLL] Scroll to File upload section
 [ASSERT] File upload button visible and enabled
@@ -128,7 +128,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with optional File sectio
 [STATE] Correct files remain after specific file deletion","[CONSOLE] No JS errors on file removal
 [NETWORK] No unexpected API failures","Removing one file clears all files; wrong file removed; file list showing stale entries","Remove all files; navigate away",,"Manual"
 "CFG-FILE-007","File Section — Accepted and Rejected File Types Boundary","Configurable Products > File Section > Type Validation","High","BL-CAT-006","ECL-7.1; ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures available: Logo1.png, newier.pdf, Test.xlsx, video.mp4 (24MB oversized), download.avif, Stabilio.webp.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
+User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures available: Logo1.png, newier.pdf, Test.xlsx, video.mp4 (24MB oversized; generated once via 'npm run td:gen:uploads'), download.avif, Stabilio.webp.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Configuration widget visible
 [ACT] Upload Logo1.png (.png — accepted type)
 [WAIT] Result
@@ -154,7 +154,7 @@ User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(
 [DOM] Error messages clearly state format is not supported","[CONSOLE] No 500 errors for rejected type uploads
 [NETWORK] Upload API returns 4xx for rejected types; 200 for accepted","Accepted types rejected; unsupported types silently accepted; server 500 on type rejection","Remove all uploaded files; navigate away",,"Manual"
 "CFG-FILE-008","File Section — Max File Size Enforcement (9.5MB Platform Limit)","Configurable Products > File Section > Size Validation","High","BL-CAT-006","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures: large_test.png (5MB), video.mp4 (24MB).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
+User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures: large_test.png (5MB), video.mp4 (24MB), both generated once via 'npm run td:gen:uploads'.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Configuration widget visible
 [ACT] Upload large_test.png (5MB — within 9.5MB limit)
 [WAIT] Upload completes

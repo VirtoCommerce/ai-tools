@@ -24,6 +24,7 @@
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, readdirSync, statSync } from "fs";
+import { spawnSync } from "child_process";
 import { join, relative } from "path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { TestDataResolver } from "../lib/test-data-resolver.js";
@@ -520,7 +521,39 @@ if (specHits.length === 0) {
   );
 }
 
+// --- DV-026: a large binary fixture is generated, never committed ---
+// A binary under test-data/ is in every clone forever, and a fixture that only tests a size limit
+// carries no information a script cannot recreate: suite 072b's 5 MB PNG and 24 MB MP4 were 28 MB of
+// a 104 MB checkout. Generate such a file (scripts/test-data/gen-*.mjs, an npm td:gen:* script) and
+// gitignore its output instead. Text fixtures (CSV/JSON/MD/YAML, code) are exempt: git deltas them.
+// The limit is a policy line, not a measured constant: today's largest legitimate binary is ~0.4 MB.
+const MAX_FIXTURE_BINARY_BYTES = 1024 * 1024;
+const TEXT_FIXTURE_RE = /\.(csv|json|jsonl|md|ya?ml|txt|mjs|js|ts|xml|graphql|html|svg)$/i;
+const bigBinaries: { file: string; bytes: number }[] = [];
+{
+  const ls = spawnSync("git", ["ls-files", "-z", "--", "test-data"], { cwd: ROOT, encoding: "utf8" });
+  for (const file of (ls.stdout || "").split("\0").filter(Boolean)) {
+    if (TEXT_FIXTURE_RE.test(file)) continue;
+    let bytes = 0;
+    try { bytes = statSync(join(ROOT, file)).size; } catch { continue; }
+    if (bytes > MAX_FIXTURE_BINARY_BYTES) bigBinaries.push({ file, bytes });
+  }
+}
+console.log("\n--- Large Binary Fixture Guard (DV-026) ---\n");
+if (bigBinaries.length === 0) {
+  console.log("  No committed binary under test-data/ is over 1 MiB. ✓");
+} else {
+  const tag = WARN_ONLY ? "WARN" : "FAIL";
+  console.log(`  ${bigBinaries.length} committed binary fixture(s) over 1 MiB [${tag}]:`);
+  for (const b of bigBinaries) console.log(`    DV-026 ${b.file} ${(b.bytes / 1048576).toFixed(1)} MiB`);
+  console.log(
+    "\n  Generate it with a script (see scripts/test-data/gen-upload-size-fixtures.mjs, npm run td:gen:uploads)\n" +
+    "  and gitignore the output. Rule: .claude/knowledge/execution/test-data-authoring.md §Large fixtures." +
+    (WARN_ONLY ? "\n  (--warn-only: not failing the build. Drop the flag to enforce.)" : "")
+  );
+}
+
 const idFatal =
   (idHits.length > 0 || aliasGuidHits.length > 0 || shapeHits.length > 0 || driftHits.length > 0 ||
-    evidenceHits.length > 0 || specHits.length > 0) && !WARN_ONLY;
+    evidenceHits.length > 0 || specHits.length > 0 || bigBinaries.length > 0) && !WARN_ONLY;
 process.exit(totalFailed > 0 || idFatal || (REQUIRE_SEEDED && totalUnseeded > 0) ? 1 : 0);
