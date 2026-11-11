@@ -1,7 +1,8 @@
 {
  "wave": "W0",
- "owner": null,
- "status": "NOT_STARTED",
+ "owner": "Elena Kutasina",
+ "status": "CLAIMED",
  "runIds": [],
- "updatedAt": "2026-11-11"
+ "updatedAt": "2026-11-11",
+ "personas": "USER_DEFAULT = qa-user-01@virtocommerce.com and lane accounts qa-agent-slot1..3@virtocommerce.com, as resolved from Elena Kutasina's .env.local via config.js; a parallel owner must use different accounts"
 }
