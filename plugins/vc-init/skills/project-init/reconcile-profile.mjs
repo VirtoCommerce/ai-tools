@@ -60,7 +60,8 @@ import { readFileSync, writeFileSync, existsSync, realpathSync } from "fs";
 import { fileURLToPath } from "url";
 import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION, authAxes } from "../../scripts/lib/project-profile.mjs";
 import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
-import { hostInstallPath, parseStandEnvs, productionStandEnvs, standBlock, standChoices, standPending } from "./lib/governance.mjs";
+import { hostInstallPath, parseStandEnvs, productionStandEnvs, standBlock, standOptions, standPending } from "./lib/governance.mjs";
+import { ourEnvs } from "./lib/test-env-selector.mjs";
 import { hostState } from "./lib/host-adapter.mjs";
 
 // ─── managed-field migration policy ──────────────────────────────────────────
@@ -100,14 +101,14 @@ const managedFor = (path) => MANAGED_FIELDS.find((m) => m.path === path);
 
 // The host-governed test-data question (host-governed.md step 3). Not a MANAGED_FIELDS entry: the field
 // exists (null = never asked), so it is a value check after the walk. Its env options are the host's
-// environments, which only `main()` can read (lib/host-adapter.mjs) — `reconcile()` stays pure.
+// environments, which only `main()` can read (lib/host-adapter.mjs) — `reconcile()` stays pure. Options and
+// `more` (what did not fit AskUserQuestion's 2–4) come from lib/governance.mjs standOptions.
 const STAND_PATH = "governance.stand.envs";
 const STAND_QUESTION = {
   question: "On which environments may the agent create its own test data (orders, users, carts — never someone else's, never a direct DB write)? Not ticked = read-only.",
   multiSelect: true,
-  options: [{ label: "Nowhere — read-only (recommended)", value: "none", hint: "a scenario that needs to write is BLOCKED" }],
   // A multi-select answer is ONE --set, comma-joined (repeated --set flags overwrite each other).
-  set: "--set governance.stand.envs=<env>,<env>  (one --set, the ticked values comma-joined; Nowhere = none, never with an env)",
+  set: "--set governance.stand.envs=<env>,<env>  (one --set, the ticked or typed values comma-joined; Nowhere = none, never with an env)",
 };
 
 // Fixed-shape scalars `--set` may write directly, each with its allowed values. The auth axes are
@@ -443,7 +444,7 @@ export function reconcile(schema, existing, decisions, unsets = []) {
       report.rejected.push({ path: STAND_PATH, value: decisions[STAND_PATH], reason: "only a host-governed project records where test data may be created" });
     }
   }
-  if (standPending(migrated)) report.pending.push({ path: STAND_PATH, policy: "ask", default: "none", ...STAND_QUESTION });
+  if (standPending(migrated)) report.pending.push({ path: STAND_PATH, policy: "ask", default: "none", ...STAND_QUESTION, ...standOptions([]) });
 
   // ─── tracker.fields rescan (VCST-5582 E5) ──────────────────────────────────────────
   // tracker.fields on an Azure profile is DISCOVERED live (discover-tracker.mjs). It is an OPEN
@@ -502,13 +503,15 @@ function main() {
   // from the host's install here, since reconcile() is pure. Unreadable host ⇒ only "Nowhere" + free text.
   const standAsk = pending.find((p) => p.path === STAND_PATH);
   if (standAsk) {
+    const root = outputRoot();
     let hostEnvs = [];
     try {
-      const root = outputRoot();
       const installPath = hostInstallPath(migrated.governance.host, { projectRoot: root });
-      if (installPath) hostEnvs = standChoices(hostState(migrated.governance.host, installPath, root).hostEnvs);
-    } catch { /* the host's files are unreadable — the operator types the env names */ }
-    standAsk.options = [...hostEnvs.map((e) => ({ label: e, value: e })), ...standAsk.options];
+      if (installPath) hostEnvs = hostState(migrated.governance.host, installPath, root).hostEnvs;
+    } catch { /* the host's files are unreadable — fall back to the project's own envs */ }
+    let ours = [];
+    try { ours = ourEnvs(root); } catch { /* no env files readable — the operator types the names */ }
+    Object.assign(standAsk, standOptions(hostEnvs, ours, migrated.governance.envs));
   }
   const hasStructuralChange = added.length > 0 || removed.length > 0 || unset.length > 0;
   // `rescan` (e.g. an Azure profile with an empty tracker.fields, VCST-5582 E5) also counts as

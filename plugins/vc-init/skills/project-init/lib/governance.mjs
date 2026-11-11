@@ -97,8 +97,10 @@ export function standBlock(envs, kept = null) {
  * an environment contradict each other, so neither is guessed.
  */
 export function parseStandEnvs(text) {
-  if (text !== undefined && text !== null && typeof text !== "string") throw new Error(`${JSON.stringify(text)} is not a list of environment names, or "none"`);
-  const list = [...new Set(String(text ?? "").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean))];
+  // `null` too: it reads as "never asked", and an answer cannot un-ask the question.
+  if (typeof text !== "string") throw new Error(`${JSON.stringify(text)} is not a list of environment names, or "none"`);
+  const list = [...new Set(text.toLowerCase().split(",").map((s) => s.trim()).filter(Boolean))];
+  if (list.includes(TYPE_THEM.value)) throw new Error(`"${TYPE_THEM.value}" is the option for typing the names — pass the names typed instead`);
   if (list.includes("none")) {
     if (list.length > 1) throw new Error(`"none" (Nowhere) was given together with ${list.filter((e) => e !== "none").join(", ")} — ask again`);
     return [];
@@ -115,6 +117,26 @@ export function productionStandEnvs(envs) {
 /** The host environments the stand question offers: the host's own, never a production-looking one. Pure. */
 export function standChoices(hostEnvs) {
   return (Array.isArray(hostEnvs) ? hostEnvs : []).filter((e) => !looksProduction(e));
+}
+
+const NOWHERE = { label: "Nowhere — read-only (recommended)", value: "none", hint: "a scenario that needs to write is BLOCKED" };
+const TYPE_THEM = { label: "Let me type the environment names", value: "type", hint: "choose “Type something” and enter them comma-separated" };
+
+/**
+ * The test-data question's options, within AskUserQuestion's 2–4: up to three environments, then
+ * "Nowhere". The environments are the host's (`hostEnvs`), else — a host with no password slots — the
+ * project's own `.env.<env>` names mapped to host names through `envMap` (governance.envs). None at all ⇒
+ * "Let me type the environment names" keeps the second option. `more` lists what did not fit: the
+ * question text names them, to be typed. Production-looking names are never offered. Pure.
+ */
+export function standOptions(hostEnvs, ourEnvList = [], envMap = {}) {
+  const host = Array.isArray(hostEnvs) ? hostEnvs : [];
+  const candidates = host.length ? host : (Array.isArray(ourEnvList) ? ourEnvList : []).map((e) => envMap?.[e] || e);
+  const all = standChoices([...new Set(candidates.map((e) => String(e).toLowerCase()))]);
+  const options = all.slice(0, 3).map((e) => ({ label: e, value: e }));
+  if (!options.length) options.push(TYPE_THEM);
+  options.push(NOWHERE);
+  return { options, more: all.slice(3) };
 }
 
 /** Has the operator been asked where test data may be created? (Only a host-governed project asks.) Pure. */

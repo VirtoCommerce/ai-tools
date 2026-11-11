@@ -140,7 +140,6 @@ function governanceExtras(args, current = {}) {
     } catch (e) {
       fail(`--gov-stand-envs: ${e.message}`);
     }
-    for (const e of productionStandEnvs(extras.standEnvs)) console.log(`[gen-profile] ⚠ ${e} looks like production — test data may now be created there`);
   }
   return extras;
 }
@@ -444,6 +443,10 @@ function main() {
     const { envs: _unused, ...stand } = profile.governance.stand;
     profile = { ...profile, governance: { ...profile.governance, stand } };
     if (args["gov-stand-envs"] !== undefined) console.log("[gen-profile] ⚠ --gov-stand-envs ignored: not a host-governed project (its stands stay writable; vc-test's per-env declaration decides)");
+  }
+  // Warned only where the answer was recorded — a host-governed project.
+  if (profile.governance?.host && args["gov-stand-envs"] !== undefined) {
+    for (const e of productionStandEnvs(profile.governance.stand?.envs)) console.log(`[gen-profile] ⚠ ${e} looks like production — test data may now be created there`);
   }
 
   // A host-governed project is a client's, and its repo scan (§4/§5) does not run — so the defaults

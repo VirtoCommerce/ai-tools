@@ -1318,7 +1318,7 @@ operator to update vc-init; nothing was changed.
   source: "derive-context" }`. Run `TEST_ENV=<env> node "$VC_RUN" onboard derive-context --tracker
   <kind> --client-vcs <host>` and pass its `auth.<axis>` back as `--set auth.<axis>=<pat|gh-cli|az-login|oauth>`
   (derive's `none` ⇒ ask the operator which they want, as in §2d).
-- Then apply everything in one write, one `--set path=value` per resolved decision:
+- Then apply it all in one write, one `--set` per decision; show `warnings` verbatim:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --write \

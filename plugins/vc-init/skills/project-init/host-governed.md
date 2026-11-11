@@ -71,8 +71,10 @@ agent may create its own test data** (always asked; below). URLs and accounts fo
 
 **The test-data question** — multi-select, header `test data`: *"On which environments may the agent create
 its own test data (orders, users, carts — never someone else's, never a direct database write)? Not ticked =
-read-only."* Options: each of detect-governance's `standChoices` (the host's environments — a
-production-looking one is never offered) and **"Nowhere — read-only"**, the Recommended one and the default.
+read-only."* Options: detect-governance's `standQuestion.options` as given — always 2–4: up to three
+environments (the host's; for a host with no password slots, this project's own; never a production-looking
+one), then **"Nowhere — read-only"**, the Recommended one and the default; with no environment known, "Let me
+type the environment names" instead. Name `standQuestion.more` (what did not fit) in the question text, to type.
 The host's rules decide what the operator may tick — the question records their answer, it does not grant
 anything. The ticked values go, comma-joined, to ONE `gen-profile --gov-stand-envs <env>,…|none` →
 `governance.stand` `{ writable: <any ticked>, envs: [...] }`; "Nowhere" ticked together with an env is
@@ -175,11 +177,13 @@ it and ask again. The full contract is the script's header (§3a). The host's br
 
 ### 5. The hand-off — what was set up, then exactly how to enter the passwords
 
-One message, two parts, after §8 verify-access:
+One message, after §8 verify-access:
 
 1. **What was set up** — a short table `File | Field | Value`: the URLs, `STORE_ID` (detected), each
    account (`USER1` — admin — <login>), the ADO coordinates. Nothing for the operator to do there.
-2. **Enter the passwords — numbered steps**, written for someone doing it for the first time:
+2. **Test data** — one line when `governance.stand.writable` is true: *"In `/vc-test:init`, mark as
+   writable only <the envs that map to stand.envs>; vc-test enforces only the project-wide flag."*
+3. **Enter the passwords — numbered steps**, written for someone doing it for the first time:
    1. Open a terminal (PowerShell) — a separate window, not this chat.
    2. For each account, run its command (from `steps`), one at a time. Put the account's login above it
       as a comment so the operator knows whose password is asked.
