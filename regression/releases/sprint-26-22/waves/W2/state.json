@@ -1,7 +1,8 @@
 {
  "wave": "W2",
- "owner": null,
- "status": "NOT_STARTED",
+ "owner": "Elena Kutasina",
+ "status": "CLAIMED",
  "runIds": [],
- "updatedAt": "2026-11-11"
+ "updatedAt": "2026-11-11",
+ "personas": "sales-rep fixture accounts SR_REP_* (agent-test-sr-*@example.com, test-data/sales-rep/sales-reps.csv) + ACME_* buyers (ACME_BUYER, ACME_BUYER2, ACME_ADMIN) + MULTI_ORG_TF_BR, and lane accounts qa-agent-slot1..3@virtocommerce.com, as resolved from Elena Kutasina's .env.local via config.js; the SR_* accounts are wave-wide fixtures — nobody re-seeds seed:sales-rep / seed:sales-rep-tasks on vcst while W2 runs"
 }
