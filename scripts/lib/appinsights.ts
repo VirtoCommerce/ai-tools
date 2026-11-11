@@ -2,8 +2,8 @@
  * Application Insights query client — online bug monitoring.
  * --------------------------------------------------------------
  * Thin wrapper over the App Insights REST query API
- * (https://api.applicationinsights.io/v1/apps/{appId}/query), used by the
- * headless monitor twin (`ci/run-monitor.ts`).
+ * (https://api.applicationinsights.io/v1/apps/{appId}/query). Suites 094 and 118 call
+ * `queryAppInsights()` from their steps.
  *
  * Auth is AAD-first: it acquires an Azure AD token via `DefaultAzureCredential`
  * (your `az login` / VS Code Azure session / a CI service principal / managed
