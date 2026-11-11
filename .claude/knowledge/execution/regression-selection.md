@@ -53,13 +53,12 @@ selection, and its `sprint` runs a plan whole only when the sprint has no waves 
 LLM. Measured on the real manifest: a single-module change selects ~24 of 127 suites, ~149
 predicted minutes against ~1010 for the whole corpus.
 
-**It exists to replace a hallucination.** `ci/run-full-cycle.ts` asked an agent to print
+**It exists to replace a hallucination.** The headless full-cycle runner (removed by VCST-6637) asked an agent to print
 `AFFECTED_SUITES: <ids>` and parsed it with a regex — and the `REG-2026-08-24-1806` notes carry 32
 claimed case ids that do not exist, each exactly the next sequential number after a real suite's
 maximum. A model asked to name ids names plausible ones. The selector cannot: every id it prints
-came out of `config/test-suites.json`, which is a unit-tested property. Phase 1 now uses the
-selector and reads the agent's line only to LOG a disagreement — an id the selector did not choose
-is either a hallucination or a mapping gap, and both want looking at rather than running on.
+came out of `config/test-suites.json`, which is a unit-tested property. Every
+selection now goes through the selector.
 
 Four rules, and the first inverts the discipline the rest of this file follows:
 

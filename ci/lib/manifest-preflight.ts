@@ -1,12 +1,9 @@
 // Fail-fast manifest validation, run BEFORE the first suite is dispatched.
 //
-// Today a broken manifest entry is discovered mid-run, one suite at a time, hours in:
-// `runSuite` resolves `ci/agents/${config.agent}.md` unconditionally and returns
-// `status: "error"` when it is missing — counted as a REAL failure. Suite `048c` is exactly
-// this case: it carries `"agent": "none"` because it is executed deterministically by
-// `scripts/layout/layout-runner.ts`, and `ci/agents/none.md` does not exist. `048c` is not
-// in `full`'s exclude list and IS in `frontend`, so both selections fail in CI every time,
-// and the failure looks like a test failure rather than a config error.
+// A broken manifest entry must surface as a config error before planning, not mid-run as a test
+// failure. Suite `048c` is the standing example: it carries `"agent": "none"` because
+// `scripts/layout/layout-runner.ts` executes it deterministically, so no agent definition exists.
+// (The headless runner that first hit this, `ci/run-regression.ts`, was removed by VCST-6637.)
 //
 // Two rules encoded here:
 //   * a suite is valid if it has a CSV AND (a deterministic `runner` OR an agent definition);

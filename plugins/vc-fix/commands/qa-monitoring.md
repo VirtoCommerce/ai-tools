@@ -16,13 +16,10 @@ library (`skills/qa-monitoring/queries/*.kql`), the fingerprint store
 and the triage agent (`monitor-triage-agent`).
 
 > **In `vc-fix`:** this is the self-contained interactive-only version of the full `vc-qa`
-> plugin's monitoring pipeline — the headless CI twin (`ci/run-monitor.ts` +
-> `.github/workflows/monitor.yml`) is full `vc-qa` plugin only, not shipped here. Every
+> plugin's monitoring pipeline; there is no headless CI twin. Every
 > query and dedup step below runs inline through Azure MCP + this plugin's own
 > `skills/qa-monitoring/` — there is no headless twin to delegate to. The Teams card
-> **is** shipped, as `skills/qa-monitoring/notify-teams.ts` (a monitor-only extract of
-> `ci/notify-teams.ts` — the regression-card mode is dropped, `vc-fix` has no regression
-> pipeline); it needs `TEAMS_WEBHOOK_URL` in `.env.local` and no-ops with a clear message
+> **is** shipped, as `skills/qa-monitoring/notify-teams.ts` (monitor card only); it needs `TEAMS_WEBHOOK_URL` in `.env.local` and no-ops with a clear message
 > when unset.
 
 ## Usage

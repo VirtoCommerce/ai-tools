@@ -1,0 +1,157 @@
+{
+ "release": "sprint-26-22",
+ "ticket": "VCST-6644",
+ "sprint": {
+  "label": "Sprint26-22",
+  "startDate": "2026-11-02",
+  "endDate": "2026-11-16",
+  "plan": "docs/Sprint plans/sprint-26-22-test-plan.md"
+ },
+ "env": {
+  "testEnv": "vcst",
+  "platform": "3.1097.0",
+  "theme": "2.62.0-alpha.2642",
+  "note": "Xapi is the PR build 3.1031.0-pr-70-108f (vc-module-x-api#70, VCST-4717), deployed by vc-deploy-dev#7095"
+ },
+ "waves": [
+  {
+   "id": "W0",
+   "title": "Smoke gate",
+   "suites": [
+    "042"
+   ],
+   "note": "Runs first and alone; a red W0 stops every wave",
+   "subtask": "VCST-6796"
+  },
+  {
+   "id": "W1",
+   "title": "Authentication — sign-in, session, security",
+   "suites": [
+    "031",
+    "032",
+    "033",
+    "082",
+    "044"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "MFA/OTP/passkey settings stay at defaults here; the setting-flipping suites are in WX",
+   "subtask": "VCST-6797"
+  },
+  {
+   "id": "W2",
+   "title": "Sales Rep hub",
+   "suites": [
+    "089",
+    "090",
+    "091",
+    "091c",
+    "093",
+    "093b",
+    "097",
+    "106",
+    "112"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "One owner: all suites share the sales-rep fixtures (re-seed tasks before 106)",
+   "subtask": "VCST-6798"
+  },
+  {
+   "id": "W3",
+   "title": "Cart, checkout & addresses",
+   "suites": [
+    "011",
+    "013",
+    "028",
+    "029",
+    "030",
+    "081",
+    "015",
+    "036"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "subtask": "VCST-6799"
+  },
+  {
+   "id": "W4",
+   "title": "Catalog, search, compare & analytics",
+   "suites": [
+    "001",
+    "002",
+    "004",
+    "005",
+    "098",
+    "043"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "6253 and 6254 are not deployed on alpha.2642: their cases are NOT_DEPLOYED",
+   "subtask": "VCST-6800"
+  },
+  {
+   "id": "W5",
+   "title": "Company & organization",
+   "suites": [
+    "006",
+    "008",
+    "011b"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "One owner: the three suites share the B2B organization fixtures",
+   "subtask": "VCST-6801"
+  },
+  {
+   "id": "W6",
+   "title": "UI kit, design tokens, a11y & i18n (Bridge)",
+   "suites": [
+    "083c",
+    "045",
+    "046",
+    "048c",
+    "070",
+    "071"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "Whole-storefront sweep for the CSS-layer and token changes; 6079 not deployed",
+   "subtask": "VCST-6802"
+  },
+  {
+   "id": "WX",
+   "title": "Exclusive window — sign-in settings",
+   "suites": [
+    "104",
+    "111",
+    "114",
+    "114a",
+    "114b"
+   ],
+   "dependsOn": [
+    "W1",
+    "W2",
+    "W3",
+    "W4",
+    "W5",
+    "W6"
+   ],
+   "exclusive": [
+    "104",
+    "111",
+    "114",
+    "114a",
+    "114b"
+   ],
+   "note": "Flips MultiFactorAuthentication / OtpSignIn.Enabled / Passkey store settings; one owner, alone, settings restored in Cleanup",
+   "subtask": "VCST-6803"
+  }
+ ]
+}
