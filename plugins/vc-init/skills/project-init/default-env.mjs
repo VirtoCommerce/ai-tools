@@ -30,7 +30,7 @@
  *
  * Usage: node default-env.mjs [--env <the env just scaffolded or added>] [--choose <env> | --decline]
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { outputRoot } from "./lib/paths.mjs";
 import { ensureSelectorIgnore } from "./lib/gitignore.mjs";
@@ -38,6 +38,7 @@ import { emitObservations } from "./lib/diag-obs.mjs";
 import { hostInstallPath, isHostGoverned } from "./lib/governance.mjs";
 import { hostState } from "./lib/host-adapter.mjs";
 import { hostEnvFor } from "./lib/test-users.mjs";
+import { declareTestStands } from "./lib/test-stands.mjs";
 import { SELECTOR_FILE, describeSelector, ensureTestEnvSelector, looksProduction, ourEnvs, recommendDefault } from "./lib/test-env-selector.mjs";
 
 function arg(name) {
@@ -46,15 +47,31 @@ function arg(name) {
   return at >= 0 && argv[at + 1] && !argv[at + 1].startsWith("--") ? argv[at + 1] : null;
 }
 
+// What this run declared to vc-test (lib/test-stands.mjs), reported with every outcome.
+let testStands = [];
+
 function out(result) {
-  console.log(JSON.stringify(result, null, 2));
+  console.log(JSON.stringify(testStands.length ? { ...result, testStands } : result, null, 2));
 }
 
-function main() {
+async function main() {
   const root = outputRoot();
   let profile = null;
   try { profile = JSON.parse(readFileSync(process.env.PROJECT_PROFILE_PATH || join(root, "project-profile.json"), "utf-8")); } catch { /* not written yet */ }
   const hostGoverned = isHostGoverned(profile);
+  // Runs after the env files are written (onboarding step 4, --add-env, --check Step C): a host-governed
+  // project's test-data answer is declared to vc-test for every env now on disk, a changed BACK_URL refreshed.
+  if (profile?.governance?.host) {
+    try {
+      const declared = await declareTestStands(profile, root);
+      if (declared.lines.length) {
+        const path = process.env.PROJECT_PROFILE_PATH || join(root, "project-profile.json");
+        writeFileSync(path, `${JSON.stringify(declared.profile, null, 2)}\n`);
+        profile = declared.profile;
+        testStands = declared.lines;
+      }
+    } catch (e) { testStands = [`test environments not declared: ${e.message}`]; }
+  }
   const named = arg("--env");
   const choose = arg("--choose");
   const declined = process.argv.includes("--decline");
@@ -112,4 +129,4 @@ function main() {
   out({ ...result, lines });
 }
 
-main();
+main().catch((e) => { console.log(JSON.stringify({ status: "error", error: String(e?.message || e) }, null, 2)); process.exit(1); });

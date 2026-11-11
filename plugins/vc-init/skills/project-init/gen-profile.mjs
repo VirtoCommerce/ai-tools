@@ -166,7 +166,7 @@ function deepMerge(base, override) {
   return out;
 }
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
   for (const k of Object.keys(ENUMS)) validateEnum(args, k);
   // --self-diagnostics is boolean, not an ENUM, but must still reject a malformed value: a bare
@@ -489,10 +489,10 @@ function main() {
   if (profile.governance?.host) profile.auth = { github: "", ado: "", jira: "" };
   profile.schemaVersion = PROFILE_SCHEMA_VERSION;
   // A host-governed project's test-data answer is declared to vc-test per env (test.environments.<env>
-  // { writable, backUrl }), so /vc-test:init is not needed for it — lib/test-stands.mjs. Every env that has a
-  // .env.<env> by now; host-governed.md re-runs gen-profile --merge after step 4 for the ones written then.
+  // { writable, backUrl }), so /vc-test:init is not needed for it — lib/test-stands.mjs. A new answer
+  // (--gov-stand-envs) re-applies to every env; otherwise only undeclared envs follow it.
   if (profile.governance?.host) {
-    const declared = declareTestStands(profile, outputRoot());
+    const declared = await declareTestStands(profile, outputRoot(), { reassert: args["gov-stand-envs"] !== undefined });
     profile = declared.profile;
     for (const l of declared.lines) console.log(`[gen-profile] ${l}`);
   }
@@ -540,4 +540,4 @@ function main() {
   if (args.print) console.log(JSON.stringify(withMeta, null, 2));
 }
 
-main();
+main().catch((e) => { console.error(`[gen-profile] ${e?.stack || e}`); process.exit(1); });

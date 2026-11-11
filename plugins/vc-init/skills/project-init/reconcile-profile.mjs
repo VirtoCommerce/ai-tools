@@ -467,7 +467,7 @@ export function reconcile(schema, existing, decisions, unsets = []) {
 }
 
 // ─── main ────────────────────────────────────────────────────────────────────
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
   const decisions = parseDecisions(args.set);
   const outPath = resolveOutPath(args.out, "project-profile.json");
@@ -516,7 +516,7 @@ function main() {
   }
   // An answer given here is declared to vc-test per env at once (lib/test-stands.mjs), as gen-profile does.
   if (added.some((a) => a.path === "governance.stand" && a.via === "ask-resolved")) {
-    const declared = declareTestStands(migrated, outputRoot());
+    const declared = await declareTestStands(migrated, outputRoot(), { reassert: true });
     if (declared.lines.length) {
       Object.assign(migrated, { test: declared.profile.test });
       added.push({ path: "test.environments", value: declared.profile.test.environments, via: "stand-declared", lines: declared.lines });
@@ -592,4 +592,4 @@ function main() {
 const invoked = process.argv[1] && (() => {
   try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; }
 })();
-if (invoked) main();
+if (invoked) main().catch((e) => { console.log(JSON.stringify({ status: "error", error: String(e?.message || e) }, null, 2)); });

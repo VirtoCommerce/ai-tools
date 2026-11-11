@@ -33,9 +33,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   per env, in the shape vc-test's own init writes: `test.environments.<env> = { writable: <its host env is
   listed>, backUrl: <BACK_URL of .env.<env>> }`, other keys of an existing entry and of the `test` block kept.
   An env not listed is declared read-only, so the answer is enforced per env by vc-test's existing run check
-  (`standOf()`), not only as the project-wide flag. Step 4 of host-governed.md re-runs `gen-profile --merge` once
-  the env files exist; a `--check` answer is declared on the same write. Only on a host-governed project with an
-  answer; a later `/vc-test:init` can still change the block.
+  (`standOf()`), not only as the project-wide flag. `default-env.mjs` — already run after the env files are written
+  in onboarding step 4, `--add-env` and `--check` Step C — declares every env on disk each time (`testStands`
+  lines), so a new env or a changed BACK_URL needs no step of its own. A new answer (`--gov-stand-envs`, a
+  `--check` answer) re-applies to every env; otherwise an env's existing `writable` — a later `/vc-test:init`
+  choice — is kept and only `backUrl` is refreshed. The URL is read with vc-test's own env reader (root
+  `.env.<env>` + QA_ENV_PATH folders), so it is the one its run check loads; without vc-test installed nothing is
+  declared. Only on a host-governed project with an answer.
 - **Schema:** `governance.stand.envs` (`string[] | null`, default `null`) added to `PROFILE_DEFAULTS` and the
   `.d.mts` typings in vc-init and in vc-fix's reader copy — a host-governed project's field only: reconcile
   treats it as conditional on `governance.host` (never added to, and pruned from, a no-host profile), and

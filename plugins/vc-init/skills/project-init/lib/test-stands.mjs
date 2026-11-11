@@ -7,51 +7,70 @@
  * `governance.stand.writable` is not false. /vc-test:init writes that block from a second question; on a
  * host-governed project vc-init already asked it (`governance.stand.envs`, host-governed.md step 3), so it
  * writes the per-env declarations itself, in the shape vc-test's init-plan writes them:
- *   test.environments.<env> = { ...what is there, writable: <its host env is in stand.envs>, backUrl }
- * Every other key of the `test` block (knowledge store, routing, budget) stays vc-test's and is not touched;
- * a later /vc-test:init may still change any of it. A project with no host, or a host never asked
- * (`stand.envs: null`), gets nothing written.
+ *   test.environments.<env> = { ...what is there, writable, backUrl }
+ *
+ * Who runs it: gen-profile (every host-governed write), reconcile (`--check` resolving the answer) and
+ * default-env.mjs, which already runs after the env files are written in onboarding step 4, `--add-env` and
+ * `--check` Step C — so a new env, or a stand whose URL changed, is declared without a step of its own.
+ *
+ * `writable` follows the answer (its host env — governance.envs maps a renamed one — is in stand.envs) for an
+ * env not declared yet, and for every env when `reassert` is set (the answer was just given). Otherwise an
+ * existing `writable` is kept, so a later /vc-test:init choice survives unrelated runs. `backUrl` is always
+ * refreshed from the env's own file. Every other key of the `test` block (knowledge store, routing, budget)
+ * stays vc-test's. A project with no host, or a host never asked (`stand.envs: null`), gets nothing written.
+ *
+ * The URLs are read with vc-test's OWN env reader (`scripts/lib/env-layers.mjs` ownEnv: the root `.env.<env>`
+ * plus the QA_ENV_PATH folders), so the recorded `backUrl` is the one its run check loads. vc-test not
+ * installed (or its dependencies not yet) ⇒ nothing is declared: nothing would read it.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { readKey } from "./project-env.mjs";
-import { ourEnvs } from "./test-env-selector.mjs";
+import { resolvePluginFile } from "../../../bridge/resolve-plugin.mjs";
+import { pathToFileURL } from "node:url";
 
-/** `{ <env>: <BACK_URL of its .env.<env>> }` for every env this project defines. Reads files. */
-export function envBackUrls(root) {
+/**
+ * `{ <env>: <its BACK_URL, "" when none> }` for every env vc-test sees here, read as vc-test reads it; null
+ * when vc-test's reader is not available.
+ */
+export async function envBackUrls(root) {
+  const file = resolvePluginFile("vc-test", "scripts/lib/env-layers.mjs");
+  if (!file) return null;
+  let layers;
+  try { layers = await import(pathToFileURL(file).href); } catch { return null; }
   const out = {};
-  for (const env of ourEnvs(root)) {
-    try { out[env] = readKey(readFileSync(join(root, `.env.${env}`), "utf-8"), "BACK_URL") || ""; } catch { out[env] = ""; }
+  for (const env of layers.knownEnvs(root)) {
+    try { out[env] = String(layers.ownEnv(env, { root }).vars.BACK_URL || "").trim(); } catch { out[env] = ""; }
   }
   return out;
 }
 
 /**
  * The `test.environments` map that declares the answer, merged over `current`; null when there is no
- * answer to declare. An env is writable when its host env (governance.envs maps a renamed one) is in
- * stand.envs and its `.env.<env>` names a BACK_URL — without one, vc-test could not pin the stand. Pure.
+ * answer to declare. An env with no BACK_URL is declared read-only: vc-test could not pin its stand. Pure.
  */
-export function testEnvironmentsFrom(governance, backUrls, current = {}) {
-  if (!governance?.host || !Array.isArray(governance?.stand?.envs)) return null;
+export function testEnvironmentsFrom(governance, backUrls, current = {}, { reassert = false } = {}) {
+  if (!governance?.host || !Array.isArray(governance?.stand?.envs) || !backUrls) return null;
   const allowed = new Set(governance.stand.envs);
   const out = { ...(current && typeof current === "object" ? current : {}) };
-  for (const [env, backUrl] of Object.entries(backUrls || {})) {
-    const hostEnv = governance.envs?.[env] || env;
-    out[env] = { ...(out[env] && typeof out[env] === "object" ? out[env] : {}), writable: allowed.has(hostEnv) && Boolean(backUrl), ...(backUrl ? { backUrl } : {}) };
+  for (const [env, backUrl] of Object.entries(backUrls)) {
+    const had = out[env] && typeof out[env] === "object" ? out[env] : null;
+    const answer = allowed.has(governance.envs?.[env] || env);
+    const writable = !backUrl ? false : reassert || typeof had?.writable !== "boolean" ? answer : had.writable;
+    const { backUrl: _old, ...rest } = had || {};
+    out[env] = { ...rest, writable, ...(backUrl ? { backUrl } : {}) };
   }
   return out;
 }
 
 /**
- * Fold the declarations into a profile object (returns a new one) and say what changed, one line per env;
+ * Fold the declarations into a profile object (returns a new one) with one line per changed env;
  * `{ profile, lines: [] }` when nothing changed. Reads the project's env files.
  */
-export function declareTestStands(profile, root) {
+export async function declareTestStands(profile, root, { reassert = false } = {}) {
+  if (!profile?.governance?.host || !Array.isArray(profile?.governance?.stand?.envs)) return { profile, lines: [] };
   const current = profile?.test?.environments;
-  const next = testEnvironmentsFrom(profile?.governance, envBackUrls(root), current);
+  const next = testEnvironmentsFrom(profile.governance, await envBackUrls(root), current, { reassert });
   if (!next || JSON.stringify(next) === JSON.stringify(current ?? {})) return { profile, lines: [] };
   const lines = Object.entries(next)
     .filter(([env, d]) => JSON.stringify(d) !== JSON.stringify(current?.[env]))
-    .map(([env, d]) => `test.environments.${env}: ${d.writable ? "writable" : "read-only"}${d.backUrl ? "" : " (no BACK_URL in its .env file)"}`);
+    .map(([env, d]) => `test.environments.${env}: ${d.writable ? "writable" : "read-only"}${d.backUrl ? "" : " — its .env file has no BACK_URL yet"}`);
   return { profile: { ...profile, test: { ...(profile.test || {}), environments: next } }, lines };
 }
