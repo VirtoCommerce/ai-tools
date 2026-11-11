@@ -128,7 +128,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with optional File sectio
 [STATE] Correct files remain after specific file deletion","[CONSOLE] No JS errors on file removal
 [NETWORK] No unexpected API failures","Removing one file clears all files; wrong file removed; file list showing stale entries","Remove all files; navigate away",,"Manual"
 "CFG-FILE-007","File Section — Accepted and Rejected File Types Boundary","Configurable Products > File Section > Type Validation","High","BL-CAT-006","ECL-7.1; ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures available: Logo1.png, newier.pdf, Test.xlsx, video.mp4 (24MB oversized; generated once via 'npm run td:gen:uploads'), download.avif, Stabilio.webp.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
+User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures available: Logo1.png, newier.pdf, Test.xlsx, download.avif, Stabilio.webp.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Configuration widget visible
 [ACT] Upload Logo1.png (.png — accepted type)
 [WAIT] Result
@@ -154,20 +154,22 @@ User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(
 [DOM] Error messages clearly state format is not supported","[CONSOLE] No 500 errors for rejected type uploads
 [NETWORK] Upload API returns 4xx for rejected types; 200 for accepted","Accepted types rejected; unsupported types silently accepted; server 500 on type rejection","Remove all uploaded files; navigate away",,"Manual"
 "CFG-FILE-008","File Section — Max File Size Enforcement (9.5MB Platform Limit)","Configurable Products > File Section > Size Validation","High","BL-CAT-006","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures: large_test.png (5MB), video.mp4 (24MB), both generated once via 'npm run td:gen:uploads'.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
+User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures: large_test.png (5MB) and oversize_test.png (24MB), both PNG — an accepted type, so only the size limit can reject the larger one — generated once via 'npm run td:gen:uploads'.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Configuration widget visible
 [ACT] Upload large_test.png (5MB — within 9.5MB limit)
 [WAIT] Upload completes
 [ASSERT] large_test.png accepted; visible in file list
 [ACT] Remove large_test.png
-[ACT] Upload video.mp4 (24MB — exceeds 9.5MB platform limit)
+[ACT] Upload oversize_test.png (24MB PNG — exceeds 9.5MB platform limit)
 [WAIT] Upload attempt result
-[ASSERT] video.mp4 rejected with size error message
-[ASSERT] Upload area returns to empty state (no file persisted)","[STATE] 5MB file within 9.5MB limit accepted
+[ASSERT] oversize_test.png rejected with size error message
+[ASSERT] oversize_test.png stays listed with its error and 'Fix file upload errors to continue.' is shown; no file is stored (the section value stays None)
+[ACT] Remove oversize_test.png
+[ASSERT] Upload area returns to empty state","[STATE] 5MB file within 9.5MB limit accepted
 [STATE] 24MB file exceeding 9.5MB limit rejected with clear error
 [DOM] Error message references size limit
-[STATE] Upload area clean after rejection","[CONSOLE] No 500 server errors on oversized upload
-[NETWORK] Upload API returns 4xx for oversized file; 200 for 5MB file","5MB file rejected incorrectly; 24MB file accepted; server 500 on oversized upload; UI frozen after oversized upload attempt","Remove uploaded files; navigate away",,"Manual"
+[STATE] No file stored after rejection: the section value stays None, and the upload area is empty once the rejected entry is removed","[CONSOLE] No errors during either upload
+[NETWORK] POST /api/files/product-configuration returns 200 for the 5MB file; no upload request is sent for the oversized file (the size check runs client-side, INVALID_SIZE)","5MB file rejected incorrectly; 24MB file accepted or sent to the server; error message missing the size limit; UI frozen after oversized upload attempt","Remove uploaded files; navigate away","KB-47D078C7; KB-451E54B3; KB-057A596A (observed vcst_qa 2026-11-11)","Manual"
 "CFG-FILE-009","File Section — Re-Upload After Failed Attempt Works Correctly","Configurable Products > File Section > Upload Recovery","Medium","BL-CAT-006","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as {{USER_EMAIL}}. Product with required File section at {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_REQUIRED_FILE_CHILD.url)","[NAV] {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url)

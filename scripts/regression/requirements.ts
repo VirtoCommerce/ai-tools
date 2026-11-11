@@ -140,7 +140,9 @@ export function collectCaseNeeds(root: string, suites: SuiteFile[]) {
       const key = `${s.id}/${id}`;
       for (const m of text.matchAll(PERSONA)) add(personas, m[1], key);
       for (const m of text.matchAll(TD_REF)) add(refs, m[1], key);
-      for (const o of outputs) if (text.includes(o.base)) add(generated, o.rel, key);
+      // Steps only: a Preconditions list can name a fixture the case never uploads.
+      const steps = r.Steps ?? text;
+      for (const o of outputs) if (steps.includes(o.base)) add(generated, o.rel, key);
     }
   }
   return { personas, refs, generated, unreadable };
