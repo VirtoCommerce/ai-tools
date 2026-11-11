@@ -41,6 +41,9 @@
  *   --gov-website-auth host-secrets|manual-operator   how test users sign in to the client's website
  *   --gov-envs <env>=<host env>,…   which host website environment each `.env.<env>` is (added, never dropped)
  *   --gov-code-access none|read|write   what the person may do with the client's code through --gov-code-host
+ *   --gov-stand-envs <host env>,…|none   the host environments a run may create its own test data on:
+ *                              governance.stand = { writable: <any listed>, envs: [...] }. Absent ⇒ kept
+ *                              as recorded; a host never asked stays { writable: false, envs: null }.
  *
  *   # Merge a discovered repo map (output of discover-repos.mjs) into an existing profile:
  *   node skills/project-init/gen-profile.mjs --repos-json repos.json --merge --print
@@ -60,8 +63,9 @@ import { ensureGitignoreEntries, ensureProjectIgnores, removeGitignoreBlock } fr
 
 /** The .gitignore block a host-governed project gets for its env files (removed when it stops being one). */
 const HOST_ENV_IGNORE = "vc-init (/project-init) — host-governed: env files are local";
-import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, resolveHostId } from "./lib/governance.mjs";
+import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, parseStandEnvs, productionStandEnvs, resolveHostId, standBlock } from "./lib/governance.mjs";
 import { envFileNames, gitTracked } from "./lib/project-env.mjs";
+import { declareTestStands } from "./lib/test-stands.mjs";
 import { emitObservations } from "./lib/diag-obs.mjs";
 
 // A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
@@ -131,6 +135,13 @@ function governanceExtras(args, current = {}) {
       fail(`--gov-envs: ${e.message}`);
     }
   }
+  if (args["gov-stand-envs"] !== undefined) {
+    try {
+      extras.standEnvs = parseStandEnvs(args["gov-stand-envs"] === true ? "" : args["gov-stand-envs"]);
+    } catch (e) {
+      fail(`--gov-stand-envs: ${e.message}`);
+    }
+  }
   return extras;
 }
 
@@ -155,7 +166,7 @@ function deepMerge(base, override) {
   return out;
 }
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
   for (const k of Object.keys(ENUMS)) validateEnum(args, k);
   // --self-diagnostics is boolean, not an ENUM, but must still reject a malformed value: a bare
@@ -411,7 +422,7 @@ function main() {
     const govExtras = governanceExtras(args, same || {});
     const kept = same ? { ...same.servers, browsers: (same.servers?.browsers || []).join(",") } : {};
     const overrides = Object.fromEntries(Object.keys(flagged).map((k) => [k, flagged[k] !== undefined ? flagged[k] : kept[k]]));
-    const extras = same ? { websiteAuth: same.websiteAuth, envs: same.envs, codeAccess: same.codeAccess, ...govExtras } : govExtras;
+    const extras = same ? { websiteAuth: same.websiteAuth, envs: same.envs, codeAccess: same.codeAccess, stand: same.stand, ...govExtras } : govExtras;
     profile = { ...profile, governance: governanceBlock(host, overrides, extras) };
   } else if (current?.host) {
     // A day-2 run (--add-env) on a governed project: fold the answers
@@ -423,7 +434,20 @@ function main() {
       if (args[flag] !== undefined) servers[role] = String(args[flag]);
     }
     if (args["gov-browsers"] !== undefined) servers.browsers = String(args["gov-browsers"]).split(",").map((s) => s.trim()).filter(Boolean);
-    profile = { ...profile, governance: { ...current, host: currentId, servers, ...governanceExtras(args, current) } };
+    const { standEnvs, ...answers } = governanceExtras(args, current);
+    const stand = standEnvs !== undefined ? standBlock(standEnvs) : standBlock(current.stand?.envs, current.stand);
+    profile = { ...profile, governance: { ...current, host: currentId, servers, stand, ...answers } };
+  }
+  // `governance.stand.envs` is a host-governed project's answer only: a project with no host carries
+  // none (reconcile treats the field as conditional on a host), and the flag has nothing to record there.
+  if (!profile.governance?.host && profile.governance?.stand) {
+    const { envs: _unused, ...stand } = profile.governance.stand;
+    profile = { ...profile, governance: { ...profile.governance, stand } };
+    if (args["gov-stand-envs"] !== undefined) console.log("[gen-profile] ⚠ --gov-stand-envs ignored: not a host-governed project (its stands stay writable; vc-test's per-env declaration decides)");
+  }
+  // Warned only where the answer was recorded — a host-governed project.
+  if (profile.governance?.host && args["gov-stand-envs"] !== undefined) {
+    for (const e of productionStandEnvs(profile.governance.stand?.envs)) console.log(`[gen-profile] ⚠ ${e} looks like production — test data may now be created there`);
   }
 
   // A host-governed project is a client's, and its repo scan (§4/§5) does not run — so the defaults
@@ -464,6 +488,14 @@ function main() {
   // every credential, so the bridge never reads auth.* there.
   if (profile.governance?.host) profile.auth = { github: "", ado: "", jira: "" };
   profile.schemaVersion = PROFILE_SCHEMA_VERSION;
+  // A host-governed project's test-data answer is declared to vc-test per env (test.environments.<env>
+  // { writable, backUrl }), so /vc-test:init is not needed for it — lib/test-stands.mjs. A new answer
+  // (--gov-stand-envs) re-applies to every env; otherwise only undeclared envs follow it.
+  if (profile.governance?.host) {
+    const declared = await declareTestStands(profile, outputRoot(), { reassert: args["gov-stand-envs"] !== undefined });
+    profile = declared.profile;
+    for (const l of declared.lines) console.log(`[gen-profile] ${l}`);
+  }
 
   const withMeta = {
     _meta: {
@@ -499,7 +531,7 @@ function main() {
   console.log(g?.host
     // A guest's tracker / code host are only known once the interview filled them in — say what IS set.
     ? `[gen-profile] host-governed by ${g.host}: tracker server ${g.servers.tracker || "—"}, code host ${g.servers.codeHost || "—"}, ` +
-      `test users ${g.websiteAuth || "—"}${args.tracker || args["client-vcs"] ? ` · tracker=${profile.tracker.kind} clientVcs=${profile.vcs.clientHost}` : ""}`
+      `test users ${g.websiteAuth || "—"}, test data ${Array.isArray(g.stand?.envs) ? g.stand.envs.join(",") || "nowhere" : "not asked yet (read-only)"}${args.tracker || args["client-vcs"] ? ` · tracker=${profile.tracker.kind} clientVcs=${profile.vcs.clientHost}` : ""}`
     : `[gen-profile] projectType=${profile.projectType} tracker=${profile.tracker.kind} ` +
       `clientVcs=${profile.vcs.clientHost} upstream=${profile.upstream.org} ` +
       `contributionMode=${profile.upstream.contributionMode}` +
@@ -508,4 +540,4 @@ function main() {
   if (args.print) console.log(JSON.stringify(withMeta, null, 2));
 }
 
-main();
+main().catch((e) => { console.error(`[gen-profile] ${e?.stack || e}`); process.exit(1); });

@@ -1294,9 +1294,8 @@ report — no writes, no scans, no questions of its own:
 - **`removed`** — obsolete fields no longer in the schema (pruned on `--write`). **Open
   maps** (`tracker.azure.roleStates`/`stateMap`/`workItemTypes`) and **arrays** (`repos.*`)
   are kept wholesale — their contents are data, not schema.
-- **`pending`** — fields whose value is the OPERATOR's decision (a privacy / behaviour
-  opt-in, e.g. `selfDiagnostics`). Each carries its own `question` + `options`; **never**
-  auto-filled.
+- **`pending`** — the OPERATOR's decisions (`selfDiagnostics`; host-governed:
+  `governance.stand.envs`). Each has its `question` + `options` (+ `set`); never auto-filled.
 - **`rescan`** — fields that should be re-derived from a live scan (repos / tracker).
 
 `status:"no-profile"` ⇒ never onboarded — run the **full interview** instead, don't reconcile.
@@ -1319,7 +1318,7 @@ operator to update vc-init; nothing was changed.
   source: "derive-context" }`. Run `TEST_ENV=<env> node "$VC_RUN" onboard derive-context --tracker
   <kind> --client-vcs <host>` and pass its `auth.<axis>` back as `--set auth.<axis>=<pat|gh-cli|az-login|oauth>`
   (derive's `none` ⇒ ask the operator which they want, as in §2d).
-- Then apply everything in one write, one `--set path=value` per resolved decision:
+- Then apply it all in one write, one `--set` per decision; show `warnings` verbatim:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --write \
@@ -1480,7 +1479,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `../../scripts/install-bridge.mjs` | copy `vc-run-shim.mjs` to `~/.claude/plugins/data/vc-init-ai-tools/vc-run.mjs` (§0d) and print `VC_RUN=<path>` |
 | `../../bridge/run.mjs` | the `$VC_RUN` dispatcher: allowlist (`bridge/allowlist.mjs`) → `vc-secrets task vc-init-<group>` for a PAT axis, else the tool directly; inner side builds an allowlisted env, pins git to `bridge/git-credential.mjs`, redacts output (`bridge/redact.mjs`) |
 | `normalize-env.mjs` | **run on "done" (§3e) and in `--check` Step C** — moves a tracker / code-host key left in a `.env.<env>` to `.env.local` (one the files disagree on is reported, never moved), normalizes `.env.<env>` and the project keys IN PLACE (quotes, padding, trailing slashes, a pasted `dev.azure.com/<org>` → the slug) and validates: exit 1 on an unfilled placeholder, a URL without `http(s)://`, a path-shaped `ADO_ORG`/`ADO_PROJECT`; WARN on a path in `FRONT_URL`/`BACK_URL`. Rules: `scaffold-env.mjs` `CATALOG` |
-| `default-env.mjs` | `.env.test-env` once every env exists (§3a): `written` / `kept` / `ask` (`options`, `recommended`) / `skipped`; `--choose <env>` |
+| `default-env.mjs` | `.env.test-env` once every env exists (§3a): `written` / `kept` / `ask` / `skipped`; `--choose <env>`; host: `testStands` |
 | `write-env.mjs` | (non-interactive helper) write `.env.<env>` / `.env.local` from a JSON answer object on STDIN when values ARE known programmatically — a `scope: "project"` key in `envVars` lands in `.env.local`; idempotent |
 | `lib/project-env.mjs` | where the project-level keys live (`.env.local`) and the one-time move out of every `.env.<env>` git does not track, run by scaffold-env + normalize-env; the shared `.env.local` header |
 | `discover-repos.mjs` | ALWAYS-run scan: Platform API modules → client/platform split, client-host scan for the storefront repo, and **derives projectType + clientOrg**; bakes per-repo `contribution`/`integrationBranch`/`toolchain`/`localVerify`; emits `{ projectType, clientOrg, client, platform }` |
