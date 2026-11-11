@@ -873,5 +873,362 @@
     "otherOrganizationId": "",
     "organizationCount": 0,
     "organizationId": ""
+  },
+  "BD_STATS": {
+    "user_id": "142f01c4-2cbc-4bf9-b8db-1bd638dd76d1",
+    "contact_id": "2e9aca28-27d3-4942-a0ec-794747ed9c1b",
+    "org_id": "54c0ec8f-9fbb-4ee3-8a80-29d8aa64c06e",
+    "org_ids": {
+      "STATS": "54c0ec8f-9fbb-4ee3-8a80-29d8aa64c06e"
+    },
+    "orders": {
+      "STATS-P1": {
+        "id": "54bf84c6-9d4e-4deb-b80f-cc0866307f1d",
+        "number": "AGENT-TEST-BD-STATS-P1",
+        "createdDate": "2026-11-09T09:19:25.7190416Z",
+        "currency": "USD",
+        "total": 410.25,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "STATS-P2": {
+        "id": "e7b0f445-f59d-41dc-b0ca-f7206f8c0b6a",
+        "number": "AGENT-TEST-BD-STATS-P2",
+        "createdDate": "2026-11-09T09:19:26.484182Z",
+        "currency": "USD",
+        "total": 490.5,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "STATS-C1": {
+        "id": "8953ce18-1b7f-4a21-8dbf-bee016cf617e",
+        "number": "AGENT-TEST-BD-STATS-C1",
+        "createdDate": "2026-11-09T09:19:27.2540021Z",
+        "currency": "USD",
+        "total": 120.15,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "STATS-C2": {
+        "id": "98f3d219-60c2-43dd-b7b6-e5f919752c13",
+        "number": "AGENT-TEST-BD-STATS-C2",
+        "createdDate": "2026-11-09T09:19:28.0668652Z",
+        "currency": "USD",
+        "total": 79.3,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "STATS-CSTATUS": {
+        "id": "d8b07ff2-bdd3-40cc-a9f3-91025fc8b2a3",
+        "number": "AGENT-TEST-BD-STATS-CSTATUS",
+        "createdDate": "2026-11-09T09:19:28.8520723Z",
+        "currency": "USD",
+        "total": 100.55,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "STATS-CFLAG": {
+        "id": "23fe177e-f5dc-4e9f-a230-01b237d1d468",
+        "number": "AGENT-TEST-BD-STATS-CFLAG",
+        "createdDate": "2026-11-09T09:19:30.3896162Z",
+        "currency": "USD",
+        "total": 7777.77,
+        "storeId": "B2B-store",
+        "isCancelled": true,
+        "isPrototype": false
+      },
+      "STATS-CPROTO": {
+        "id": "31dc76f6-0218-4659-9038-b858bd9354b3",
+        "number": "AGENT-TEST-BD-STATS-CPROTO",
+        "createdDate": "2026-11-09T09:19:31.7475667Z",
+        "currency": "USD",
+        "total": 3333.33,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": true
+      },
+      "STATS-COFFORG": {
+        "id": "e20937be-ec3c-4a0f-ab9b-632bfbc921eb",
+        "number": "AGENT-TEST-BD-STATS-COFFORG",
+        "createdDate": "2026-11-09T09:19:32.4464659Z",
+        "currency": "USD",
+        "total": 2468.02,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      }
+    },
+    "windows": {
+      "prev": {
+        "from": "2026-11-09T09:19:25.719Z",
+        "to": "2026-11-09T09:19:26.485Z"
+      },
+      "cur": {
+        "from": "2026-11-09T09:19:27.254Z",
+        "to": "2026-11-09T09:19:32.447Z"
+      }
+    },
+    "seededAt": "2026-11-09T09:20:23.806Z"
+  },
+  "BD_LARGE": {
+    "user_id": "b051ced8-2332-429f-9610-acf16f192890",
+    "contact_id": "f9216236-da0d-45bd-9873-084bb9c0dd8c",
+    "org_id": "3c7d51d1-6d56-4d35-b5b8-b8df5a561394",
+    "org_ids": {
+      "LARGE": "3c7d51d1-6d56-4d35-b5b8-b8df5a561394"
+    },
+    "orders": {
+      "LARGE-1": {
+        "id": "00facdad-c3e4-42fa-b1e2-bc0769dac215",
+        "number": "AGENT-TEST-BD-LARGE-1",
+        "createdDate": "2026-11-09T09:19:38.5648416Z",
+        "currency": "USD",
+        "total": 13473654.86,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "LARGE-2": {
+        "id": "85ed220b-fceb-46f7-a223-d35719697808",
+        "number": "AGENT-TEST-BD-LARGE-2",
+        "createdDate": "2026-11-09T09:19:39.4344179Z",
+        "currency": "USD",
+        "total": 1026345.14,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      }
+    },
+    "windows": {
+      "prev": null,
+      "cur": {
+        "from": "2026-11-09T09:19:38.564Z",
+        "to": "2026-11-09T09:19:39.435Z"
+      }
+    },
+    "seededAt": "2026-11-09T09:19:39.901Z"
+  },
+  "BD_EUR": {
+    "user_id": "4b68a683-146b-4c5e-9abc-cfd1fa2932cc",
+    "contact_id": "c7e4fb0e-3529-4d1a-a5f3-cbf7ba3e251c",
+    "org_id": "aa5a6a19-1a05-422b-8a80-d0906ba3dfae",
+    "org_ids": {
+      "EUR": "aa5a6a19-1a05-422b-8a80-d0906ba3dfae"
+    },
+    "orders": {
+      "EUR-E1": {
+        "id": "69630498-54ea-4d8e-bba4-ea870d4b137d",
+        "number": "AGENT-TEST-BD-EUR-E1",
+        "createdDate": "2026-11-09T09:19:43.1901955Z",
+        "currency": "EUR",
+        "total": 250,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "EUR-E2": {
+        "id": "61291b53-6369-49c2-bef9-d3f89d23184e",
+        "number": "AGENT-TEST-BD-EUR-E2",
+        "createdDate": "2026-11-09T09:19:43.9991315Z",
+        "currency": "EUR",
+        "total": 99.99,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "EUR-U1": {
+        "id": "0c45ecd6-9511-48ee-b69d-831769bfed21",
+        "number": "AGENT-TEST-BD-EUR-U1",
+        "createdDate": "2026-11-09T09:19:44.8594711Z",
+        "currency": "USD",
+        "total": 310,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      }
+    },
+    "windows": {
+      "prev": null,
+      "cur": {
+        "from": "2026-11-09T09:19:43.190Z",
+        "to": "2026-11-09T09:19:44.860Z"
+      }
+    },
+    "seededAt": "2026-11-09T09:19:45.388Z"
+  },
+  "BD_TWOSTORE": {
+    "user_id": "dc249600-f1bf-4ead-bb3c-384ed7d755d9",
+    "contact_id": "4684b910-c698-429e-92e9-f0d61a86c115",
+    "org_id": "8e387027-c930-4500-94c6-8b0ad84178a2",
+    "org_ids": {
+      "TWOSTORE": "8e387027-c930-4500-94c6-8b0ad84178a2"
+    },
+    "orders": {
+      "TWO-B1": {
+        "id": "34e8ac62-2b7e-45c0-a0c4-729527a174fc",
+        "number": "AGENT-TEST-BD-TWO-B1",
+        "createdDate": "2026-11-09T09:19:48.3935239Z",
+        "currency": "USD",
+        "total": 250.4,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "TWO-B2": {
+        "id": "039dd124-0cec-4559-bec7-80d7fc2b8108",
+        "number": "AGENT-TEST-BD-TWO-B2",
+        "createdDate": "2026-11-09T09:19:49.4761864Z",
+        "currency": "USD",
+        "total": 149.6,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "TWO-N1": {
+        "id": "9c614a72-188b-427d-910d-745b55225e4c",
+        "number": "AGENT-TEST-BD-TWO-N1",
+        "createdDate": "2026-11-09T09:19:50.2697219Z",
+        "currency": "USD",
+        "total": 9100.9,
+        "storeId": "New-super",
+        "isCancelled": false,
+        "isPrototype": false
+      }
+    },
+    "windows": {
+      "prev": null,
+      "cur": {
+        "from": "2026-11-09T09:19:48.393Z",
+        "to": "2026-11-09T09:19:50.270Z"
+      }
+    },
+    "seededAt": "2026-11-09T09:19:50.802Z"
+  },
+  "BD_NOORG": {
+    "user_id": "1baccff0-45a8-4456-86e3-8f4dfc87f801",
+    "contact_id": "62446542-c188-4299-98e5-794e2f490566",
+    "org_id": "",
+    "org_ids": {
+      "AUX": "c4de69a2-4e31-424c-9acc-310c129a685e"
+    },
+    "orders": {
+      "NOORG-1": {
+        "id": "a51baf1a-41cf-4316-96a4-eb69da639f8b",
+        "number": "AGENT-TEST-BD-NOORG-1",
+        "createdDate": "2026-11-09T09:19:53.351229Z",
+        "currency": "USD",
+        "total": 64.2,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "NOORG-2": {
+        "id": "16ef3db9-0ea9-46a2-9e38-16ce70c4a1a2",
+        "number": "AGENT-TEST-BD-NOORG-2",
+        "createdDate": "2026-11-09T09:19:54.2501879Z",
+        "currency": "USD",
+        "total": 135.8,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "NOORG-AUX": {
+        "id": "93d82663-cfe5-40fc-806f-b89762ae40de",
+        "number": "AGENT-TEST-BD-NOORG-AUX",
+        "createdDate": "2026-11-09T09:19:55.0041116Z",
+        "currency": "USD",
+        "total": 1000.01,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      }
+    },
+    "windows": {
+      "prev": null,
+      "cur": {
+        "from": "2026-11-09T09:19:53.351Z",
+        "to": "2026-11-09T09:19:55.005Z"
+      }
+    },
+    "seededAt": "2026-11-09T09:19:55.384Z"
+  },
+  "BD_UNCFG": {
+    "user_id": "2987481e-8781-458c-ba67-d7f025fda351",
+    "contact_id": "6e6b59ae-a14c-4b57-84a7-c3bf2d5f8958",
+    "org_id": "6709d4e0-cc90-40ef-85a7-7fec853e8156",
+    "org_ids": {
+      "UNCFG": "6709d4e0-cc90-40ef-85a7-7fec853e8156"
+    },
+    "orders": {
+      "UNCFG-U1": {
+        "id": "109d0ba6-29fa-4a5d-bb87-830d7ec28bf3",
+        "number": "AGENT-TEST-BD-UNCFG-U1",
+        "createdDate": "2026-11-09T09:19:58.5850057Z",
+        "currency": "USD",
+        "total": 42.42,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      },
+      "UNCFG-X1": {
+        "id": "9174afbc-6e69-4b8a-9953-3d7e96abfaa6",
+        "number": "AGENT-TEST-BD-UNCFG-X1",
+        "createdDate": "2026-11-09T09:19:59.7885379Z",
+        "currency": "XTS",
+        "total": 58.58,
+        "storeId": "B2B-store",
+        "isCancelled": false,
+        "isPrototype": false
+      }
+    },
+    "windows": {
+      "prev": null,
+      "cur": {
+        "from": "2026-11-09T09:19:58.585Z",
+        "to": "2026-11-09T09:19:59.789Z"
+      }
+    },
+    "seededAt": "2026-11-09T09:20:00.264Z"
+  },
+  "BD_JOHN_DEMO": {
+    "user_id": "8955c03c-190f-4c2e-8cd3-d85cb1780f56",
+    "contact_id": "28df4ed6-67ed-455a-8fbf-65d1958f69cc",
+    "org_id": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
+    "orders": {
+      "1": {
+        "id": "6b4010a6-4c95-443b-8311-45d09c0ba664",
+        "number": "AGENT-TEST-6078-DEMO-1",
+        "createdDate": "2026-11-09T13:29:25.2222126Z",
+        "currency": "USD",
+        "total": 120.5,
+        "storeId": "B2B-store"
+      },
+      "2": {
+        "id": "5ea33308-b569-47ba-a4c1-d0eaff4eedf1",
+        "number": "AGENT-TEST-6078-DEMO-2",
+        "createdDate": "2026-11-09T13:29:26.2236282Z",
+        "currency": "USD",
+        "total": 245.75,
+        "storeId": "B2B-store"
+      },
+      "3": {
+        "id": "51daef30-1659-4762-ac70-119fd242142a",
+        "number": "AGENT-TEST-6078-DEMO-3",
+        "createdDate": "2026-11-09T13:29:27.0166598Z",
+        "currency": "USD",
+        "total": 389,
+        "storeId": "B2B-store"
+      }
+    },
+    "window": {
+      "from": "2026-11-09T13:29:25.222Z",
+      "to": "2026-11-09T13:29:27.017Z"
+    },
+    "seededAt": "2026-11-09T13:29:33.326Z"
   }
 }

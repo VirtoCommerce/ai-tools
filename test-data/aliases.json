@@ -4806,7 +4806,7 @@
       "fullName": "full_name",
       "store": "store"
     },
-    "_notes": "VCST-5367 saved-layout rep — the ONLY rep whose persisted layout (salesRepLayout/saveSalesRepLayout; CustomerPreference SalesRepLayout.{scope}[.{storeId}] on the caller's own user id) the 091/093 drag/hide/Save cases may mutate. Use this alias, NOT SR_REP_PRIMARY, in any case that Saves a layout: primary's both scopes are verified never-saved (null) and ~40 cases in 050m/089/091/093 depend on that baseline. Serves ORG-001 + ORG-002 so the customerProfile scope has a customer to open and the scope-wide (not per-customer) case has a second customer. seed-sales-rep.mjs wipes its SalesRepLayout.* preferences on every reseed (disposable by design — see scripts/seed-data/sales-rep/sales-rep-layout-specs.mjs). Login password: SR_REP_PASSWORD (never committed); runtime GUIDs in aliases.<env>.json."
+    "_notes": "VCST-5367 saved-layout rep — the ONLY rep whose persisted layout the 091/093 drag/hide/Save cases may mutate. Layout = a CustomerPreference on the caller's own user id: CURRENT X-Frontend layout/saveLayout (Sales Rep PR #24+) -> Layout.{salesRepDashboard|salesRepCustomerProfile}[.{storeId}]; LEGACY salesRepLayout/saveSalesRepLayout (older builds) -> SalesRepLayout.{dashboard|customerProfile}[.{storeId}]; old rows are not migrated. Use this alias, NOT SR_REP_PRIMARY, in any case that Saves a layout: primary's both scopes are verified never-saved (null) and ~40 cases in 050m/089/091/093 depend on that baseline. Serves ORG-001 + ORG-002 so the customerProfile scope has a customer to open and the scope-wide (not per-customer) case has a second customer. seed-sales-rep.mjs wipes its rep layout preferences of BOTH generations on every reseed (disposable by design — see scripts/seed-data/sales-rep/sales-rep-layout-specs.mjs). Login password: SR_REP_PASSWORD (never committed); runtime GUIDs in aliases.<env>.json."
   },
   "LOYALTY_ZERO_USER": {
     "_inline": true,
@@ -12270,5 +12270,118 @@
     ],
     "is_administrator": false,
     "user_type": "Manager"
+  },
+  "BD_STATS": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "fields": {
+      "email": "buyers.STATS.email",
+      "passwordVar": "buyers.STATS.passwordVar",
+      "store": "buyers.STATS.expected.store",
+      "currency": "buyers.STATS.expected.currency",
+      "expectedCount": "buyers.STATS.expected.today.count",
+      "expectedTotal": "buyers.STATS.expected.today.total",
+      "expectedAverage": "buyers.STATS.expected.today.average",
+      "expectedExcludedCount": "buyers.STATS.expected.today.excludedCount",
+      "allStoresCount": "buyers.STATS.expected.allStores.count",
+      "allStoresTotal": "buyers.STATS.expected.allStores.total",
+      "orgName": "orgs.STATS",
+      "cmpCountChangePercent": "buyers.STATS.expected.comparison.countChangePercent",
+      "cmpTotalChangePercent": "buyers.STATS.expected.comparison.totalChangePercent",
+      "cmpTotalChange": "buyers.STATS.expected.comparison.totalChange"
+    },
+    "notes": "VCST-6078 buyer dashboard — two creation waves (comparison count +50% vs revenue -66.69%) + flag-cancelled, status-\"Cancelled\" (IsCancelled=false), prototype and off-org orders, all distinct totals. Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_LARGE": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "fields": {
+      "email": "buyers.LARGE.email",
+      "passwordVar": "buyers.LARGE.passwordVar",
+      "store": "buyers.LARGE.expected.store",
+      "currency": "buyers.LARGE.expected.currency",
+      "expectedCount": "buyers.LARGE.expected.today.count",
+      "expectedTotal": "buyers.LARGE.expected.today.total",
+      "expectedAverage": "buyers.LARGE.expected.today.average",
+      "expectedExcludedCount": "buyers.LARGE.expected.today.excludedCount",
+      "allStoresCount": "buyers.LARGE.expected.allStores.count",
+      "allStoresTotal": "buyers.LARGE.expected.allStores.total",
+      "orgName": "orgs.LARGE"
+    },
+    "notes": "VCST-6078 buyer dashboard — AOV >= $1,000,000 (card overflow, VCST-6714/A-F13). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_EUR": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "fields": {
+      "email": "buyers.EUR.email",
+      "passwordVar": "buyers.EUR.passwordVar",
+      "store": "buyers.EUR.expected.store",
+      "currency": "buyers.EUR.expected.currency",
+      "expectedCount": "buyers.EUR.expected.today.count",
+      "expectedTotal": "buyers.EUR.expected.today.total",
+      "expectedAverage": "buyers.EUR.expected.today.average",
+      "expectedExcludedCount": "buyers.EUR.expected.today.excludedCount",
+      "allStoresCount": "buyers.EUR.expected.allStores.count",
+      "allStoresTotal": "buyers.EUR.expected.allStores.total",
+      "orgName": "orgs.EUR",
+      "eurTotal": "buyers.EUR.expected.todayInEur.total",
+      "eurAverage": "buyers.EUR.expected.todayInEur.average"
+    },
+    "notes": "VCST-6078 buyer dashboard — orders in EUR and USD, converted at the platform rate (contact currency EUR). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_TWOSTORE": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "fields": {
+      "email": "buyers.TWOSTORE.email",
+      "passwordVar": "buyers.TWOSTORE.passwordVar",
+      "store": "buyers.TWOSTORE.expected.store",
+      "currency": "buyers.TWOSTORE.expected.currency",
+      "expectedCount": "buyers.TWOSTORE.expected.today.count",
+      "expectedTotal": "buyers.TWOSTORE.expected.today.total",
+      "expectedAverage": "buyers.TWOSTORE.expected.today.average",
+      "expectedExcludedCount": "buyers.TWOSTORE.expected.today.excludedCount",
+      "allStoresCount": "buyers.TWOSTORE.expected.allStores.count",
+      "allStoresTotal": "buyers.TWOSTORE.expected.allStores.total",
+      "orgName": "orgs.TWOSTORE",
+      "secondStore": "buyers.TWOSTORE.secondStore"
+    },
+    "notes": "VCST-6078 buyer dashboard — orders in B2B-store and a second store (store scoping A-F1). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_NOORG": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "fields": {
+      "email": "buyers.NOORG.email",
+      "passwordVar": "buyers.NOORG.passwordVar",
+      "store": "buyers.NOORG.expected.store",
+      "currency": "buyers.NOORG.expected.currency",
+      "expectedCount": "buyers.NOORG.expected.today.count",
+      "expectedTotal": "buyers.NOORG.expected.today.total",
+      "expectedAverage": "buyers.NOORG.expected.today.average",
+      "expectedExcludedCount": "buyers.NOORG.expected.today.excludedCount",
+      "allStoresCount": "buyers.NOORG.expected.allStores.count",
+      "allStoresTotal": "buyers.NOORG.expected.allStores.total"
+    },
+    "notes": "VCST-6078 buyer dashboard — personal buyer with NO organization; one order stamped with another org (no-org scope, #7). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_UNCFG": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "fields": {
+      "email": "buyers.UNCFG.email",
+      "passwordVar": "buyers.UNCFG.passwordVar",
+      "store": "buyers.UNCFG.expected.store",
+      "currency": "buyers.UNCFG.expected.currency",
+      "expectedCount": "buyers.UNCFG.expected.today.count",
+      "expectedTotal": "buyers.UNCFG.expected.today.total",
+      "expectedAverage": "buyers.UNCFG.expected.today.average",
+      "expectedExcludedCount": "buyers.UNCFG.expected.today.excludedCount",
+      "allStoresCount": "buyers.UNCFG.expected.allStores.count",
+      "allStoresTotal": "buyers.UNCFG.expected.allStores.total",
+      "orgName": "orgs.UNCFG"
+    },
+    "notes": "VCST-6078 buyer dashboard — one order in XTS, a currency removed from the platform after the order was placed (excludedCount; VCST-6535 order-list risk isolated here). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
   }
 }

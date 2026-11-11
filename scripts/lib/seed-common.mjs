@@ -543,10 +543,11 @@ export async function orderLacksProductImages(api, order) {
  * page shifts with every catalog change). Each carries its min/max order quantity (re-read when the
  * search projection did not carry it, so a quantity check never judges an unread limit) and, for
  * inventory-tracked products, `availableQuantity` = Σ(inStock − reserved) across fulfillment centers.
- * Pair with orders-specs.mjs `fitsLineQuantity` to pick a product per line.
+ * Pair with orders-specs.mjs `fitsLineQuantity` to pick a product per line. `catalogId` scopes the
+ * search to one catalog (e.g. the store's own catalog, so the line is buyable in that store).
  */
-export async function discoverLineCandidates(api, count) {
-  const found = await discoverCatalogProducts(api, count, { sort: 'code:asc', realOnly: true });
+export async function discoverLineCandidates(api, count, { catalogId = null } = {}) {
+  const found = await discoverCatalogProducts(api, count, { sort: 'code:asc', realOnly: true, catalogId });
   const unread = found.filter((p) => p.minQuantity == null || p.maxQuantity == null || p.trackInventory == null);
   if (unread.length) {
     const full = await readProductsById(api, unread.map((p) => p.id));
