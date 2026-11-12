@@ -59,7 +59,7 @@ Three files describe a domain, one question each (`.claude/skills/qa-test-mind-m
 
 A target case stamped `DataProfile:` whose state the stand may lack: print its plan
 (`npm run models:check -- --plan <profile-id>`); if the user approved seeding in step 4, run
-`/qa-seed-data --profile <profile-id>` before dispatching. Without it, a case that comes back BLOCKED on
+`/qa-seed-data --profile <profile-id>` before the scoped run (`verify.md` 5a). Without it, a case that comes back BLOCKED on
 missing data is an environment finding, not a case defect.
 
 ## Report

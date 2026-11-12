@@ -112,6 +112,6 @@ Step 5 — Also check test repo changes:
 | `PR <owner/repo>#N`, `VCST-XXXX`, `module <name>`, `diff`, `changelog <ver>` | Yes | Yes | Yes | Yes | Yes | Yes |
 | `suite <ids>`, `domain <name>` | Yes | Skip | Yes | Yes | Yes | Yes |
 
-Phase 5 is SKIPPED (with the reason) only when no new or changed case needs a live check, or no browser lane is available — G8 is then not evaluated.
+Phase 5 is SKIPPED (with the reason) only when no new or changed case needs a live check, or no browser lane is available — G8 is then not evaluated, and promotion has no `RUN_ID` to flip from.
 
 ---
