@@ -14,7 +14,7 @@ NOTE: invite acceptance needs the invite link from the mailbox — if no mailbox
 
 --- SCREEN: Invite Modal ---
 [ACT] fill 'Email' field with a fresh AGENT-TEST- address (e.g. AGENT-TEST-invite-$TS_SUFFIX@yopmail.com)
-[ACT] select role 'Buyer' from role dropdown
+[ACT] select role 'Purchasing agent' from the role dropdown (by the role name the dialog shows; 'Buyer' is not a role in the live vocabulary)
 [ACT] click 'Send'
 [WAIT] success toast visible OR invite appears as pending in list
 [ASSERT] newly invited member row visible in members list with 'Invited' status badge
@@ -60,7 +60,8 @@ NOTE: invite acceptance needs the invite link from the mailbox — if no mailbox
 [ACT] click 'Remove' or 'Delete' action on that row
 [WAIT] confirmation dialog appears
 [ACT] click confirm ('Remove member' or 'Yes' button)
-[WAIT] success toast and member removed from list
+[WAIT] success toast visible
+[ASSERT] the AGENT-TEST- member row STAYS in the list and now carries an 'Inactive' badge (Delete sets the member status to Inactive; the row is not removed)
 
 --- SCREEN: Verify Access Revoked (removed member session) ---
 [PRE:CLEAR_SESSION]
@@ -70,18 +71,19 @@ NOTE: invite acceptance needs the invite link from the mailbox — if no mailbox
 [ACT] click 'Sign in'
 [WAIT] login completes; storefront home loads
 [NAV] {{FRONT_URL}}/company/members
-[WAIT] page load settles","[DOM] Invited member row appears in roster with a status indicator showing 'Invited' after invite is sent
+[WAIT] page load settles
+[ASSERT] the browser ends on {{FRONT_URL}}/account/dashboard, not on the members page","[DOM] Invited member row appears in roster with a status indicator showing 'Invited' after invite is sent
 [DOM] After acceptance: member row status changes from 'Invited' to active (no 'Invited' badge)
 [DOM] After role change: member row shows updated role label (e.g., 'Manager')
 [DOM] After role elevation: /company/members loads (heading ""Company members"" visible), no 403 redirect
-[DOM] After removal: AGENT-TEST- member row is absent from the members list
-[STATE] Removed member cannot access /company/members — page redirects or shows access-denied
-[NAV] Removed member attempting /company/members is redirected away from member management","[API] Invite mutation/REST response errors[] empty; HTTP 200/201 on invite send
+[DOM] After removal: the AGENT-TEST- member row stays in the members list with an 'Inactive' badge - Delete does not remove the row {DOC} (VirtoOZ storefront user guide, Company Members: ""Deleting a member sets their status to Inactive; their row stays in the list"") {OBSERVED} (REG-2026-11-12-1023-W5e)
+[STATE] Removed member cannot access /company/members - the page redirects to /account/dashboard {OBSERVED} (REG-2026-11-12-1023-W5e)
+[NAV] Removed member attempting /company/members is redirected to /account/dashboard {OBSERVED}","[API] Invite mutation/REST response errors[] empty; HTTP 200/201 on invite send
 [API] POST /api/customer/organization-memberships response shows org-scoped role assignment (not global role)
 [CONSOLE] No TypeError or JS errors during invite flow
 [CONSOLE] No TypeError or JS errors during role change
 [NETWORK] No 4xx/5xx on /company/members page loads for authorized sessions
-[ADMIN] Removed user's membership record no longer appears in POST /api/customer/organization-memberships/search {userId} for TechFlow org","Invite modal fails to open, 4xx on invite send, spinner visible >8s after invite submission, member row stays 'Invited' after 60s, role save yields 4xx, member management page returns 403 for elevated member, removal confirmation dialog does not appear, removed member still sees /company/members after removal","[PRE:CLEAR_SESSION]
+[ADMIN] Removed user's membership record is still returned by POST /api/customer/organization-memberships/search {userId} for TechFlow org, with status Deleted (the storefront badge reads 'Inactive') {OBSERVED}","Invite modal fails to open, 4xx on invite send, spinner visible >8s after invite submission, member row stays 'Invited' after 60s, role save yields 4xx, member management page returns 403 for elevated member, removal confirmation dialog does not appear, the member row vanishes from the roster after Delete instead of staying with an 'Inactive' badge, removed member keeps access to /company/members (no redirect to /account/dashboard)","[PRE:CLEAR_SESSION]
 Remove AGENT-TEST- invited user from TechFlow org if test did not complete removal step (use Admin SPA or POST /api/customer/organization-memberships/{id}/delete or UI Remove).
 Sign out of all sessions.","VCST-5028 | paths: /company/members,/sign-up [P5:BLOCKED-login]","Draft"
 "COMP-E2E-002","Role-Gated Capabilities — Org Admin vs Restricted Member","Company E2E > Role Gating > [JOURNEY]","Critical","BL-B2B-005, BL-B2B-007, BL-AUTH-005","ECL-7.3","[PRE:CLEAR_SESSION]
@@ -1058,11 +1060,11 @@ NOTE: Pre-existing org members without a membership row show count=0 in the widg
 [NETWORK] No 4xx/5xx on widget blade open or lock/unlock actions","'Organization memberships' widget absent from contact blade (not deployed), widget count = 0 even AFTER seeding the membership (genuine back-fill/widget defect — count=0 with no seed attempted is BLOCKED, not a failure), Lock click triggers 4xx, Status not updating after lock, global account locked after org lock (BL-AUTH-012 violation), Unlock fails (Status stuck at Locked)","Ensure TechFlow membership is unlocked (Status=Active) after test regardless of outcome:
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
 [PRE:CLEAR_SESSION]","VCST-5028 | paths: AdminSPA:Contacts>OrganizationMemberships-widget,REST:lock/unlock [P5:admin-NX]","Draft"
-"COMP-E2E-024","Single-Org User With a Blocked Default-Org Membership Is Permanently Locked Out — Pending Invite Unreachable Behind /account/dashboard (P0 Root Cause)","Company E2E > Org-Scoped Lockout > Single-Org Blast Radius > [JOURNEY]","Critical","BL-B2B-005; BL-AUTH-013","ECL-3.1, ECL-10.2","[PRE:CLEAR_SESSION]
-VCST-5281 P0 root cause: contact.organizationId (the persisted default org that login pins the active session context to) is never validated against BlockingStatuses, while contact.organizations correctly excludes blocked orgs. A user with exactly ONE org membership has no alternate Approved org to fall back to — login pins them to the blocked org, and EVERY org-scoped route (incl. /account/dashboard, the ONLY page hosting pending-invites-widget.vue) returns Forbidden inside an HTTP 200. Since the invite email's only call-to-action points at /account/dashboard, the pending invite that would let this user reach a working org can NEVER be accepted through the UI — it is an inescapable dead end reachable only via direct REST/GraphQL intervention. A fresh AGENT-TEST- single-org member is created in Steps and its one membership is forced blocked.
-CORRECTION (test-defect fix, REG-2026-08-26-0943 triage): the fixture's single membership is put into a blocking STATUS (BL-AUTH-013 STATUS axis, via a full-replace PUT) rather than IsLocked — POST .../lock only sets IsLocked, which is a distinct axis from OrganizationMembership.Status and does not drive contact.organizationId's BlockingStatuses check; using it left this case's premise unconstructed (it passed while proving nothing).","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, org_id=@td(MULTI_ORG_TF_BR.org_techflow_id), new_member_password={{DEFAULT_TEST_PASSWORD}}","--- SCREEN: Fixture Setup (REST) ---
+"COMP-E2E-024","Single-Org User With a Rejected Membership Signs In With No Organization - Dashboard Renders and a Pending Invite Can Be Accepted (VCST-5281 Regression Guard)","Company E2E > Org-Scoped Lockout > Single-Org Blast Radius > [JOURNEY]","High","BL-B2B-005; BL-AUTH-013; BL-AUTH-015; BL-AUTH-016","ECL-3.1, ECL-10.2","[PRE:CLEAR_SESSION]
+VCST-5281 (Done) fixed the former dead end: a user whose only membership is blocked used to be pinned to that org, and every org-scoped route incl. /account/dashboard (the only host of pending-invites-widget.vue) returned Forbidden, so a pending invite could not be accepted. Since the fix, and per BL-AUTH-016, such a user signs in with NO organization: the dashboard renders, org reads are Forbidden, own data only (KB-CFF49BB0). This case guards against regression of that dead end. A fresh AGENT-TEST- member is created in Steps: its only TechFlow membership is forced to status Rejected (STATUS axis, BL-AUTH-013, full-replace PUT - not IsLocked), and a pending (Invited) BuildRight invitation exists. The contact is associated with BuildRight so that accepting the invitation makes the org enumerable (a membership row alone does not enumerate an org, KB-606A3302).
+Observed 2026-11-12 on vcst (Platform 3.1097.0, Customer 3.1033.0): a Rejected-only user signs in with no organization (REG-2026-11-12-1023-W5e, REG-2026-11-12-0837-W5b run notes).","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, org_id=@td(MULTI_ORG_TF_BR.org_techflow_id), org_id_2=@td(ORG_BUILDRIGHT.platform_id), new_member_password={{DEFAULT_TEST_PASSWORD}}","--- SCREEN: Fixture Setup (REST) ---
 [SETUP] Generate timestamp suffix: e2e024-{epoch_ms} — capture as $TS_SUFFIX
-[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""SingleOrgLockout024"", ""memberType"": ""Contact"", ""organizations"": [""@td(MULTI_ORG_TF_BR.org_techflow_id)""]} — capture response id as $MEMBER_ID
+[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""SingleOrgLockout024"", ""memberType"": ""Contact"", ""organizations"": [""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""@td(ORG_BUILDRIGHT.platform_id)""]} — capture response id as $MEMBER_ID
 [ASSERT] [STATUS] 200/201; $MEMBER_ID is a non-empty GUID
 [SETUP] via REST POST {{BACK_URL}}/api/platform/security/users/create: {""userName"": ""AGENT-TEST-e2e024-$TS_SUFFIX@yopmail.com"", ""email"": ""AGENT-TEST-e2e024-$TS_SUFFIX@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""$MEMBER_ID"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""} (Note: this route returns {succeeded,errors} with NO id field)
 [ASSERT] [STATUS] 200/201; $USER_ID is a non-empty GUID
@@ -1072,38 +1074,48 @@ CORRECTION (test-defect fix, REG-2026-08-26-0943 triage): the fixture's single m
 [ASSERT] [STATUS] 200/201
 [SETUP] via REST PUT {{BACK_URL}}/api/customer/organization-memberships/$MEMBERSHIP_ID — FULL REPLACE body (PUT replaces the whole entity — every field must be echoed, per scripts/lib/user-provision.mjs ensureOrgMembershipModern): {""id"": ""$MEMBERSHIP_ID"", ""userId"": ""$USER_ID"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}], ""isLocked"": false, ""status"": ""Rejected""} — force this single membership's STATUS (not IsLocked) into a blocking value; VCST-5281's P0 axis is contact.organizationId vs BlockingStatuses, which the IsLocked/lock endpoint does not drive
 [ASSERT] [STATUS] 200
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(ORG_BUILDRIGHT.platform_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} - capture response id as $BR_MEMBERSHIP_ID
+[ASSERT] [STATUS] 200/201
+[SETUP] via REST PUT {{BACK_URL}}/api/customer/organization-memberships/$BR_MEMBERSHIP_ID - FULL REPLACE body echoing every field: {""id"": ""$BR_MEMBERSHIP_ID"", ""userId"": ""$USER_ID"", ""organizationId"": ""@td(ORG_BUILDRIGHT.platform_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}], ""isLocked"": false, ""status"": ""Invited""} - the pending invitation to a second org
+[ASSERT] [STATUS] 200
 --- SCREEN: Login (single org, forced-blocked) ---
 [NAV] {{FRONT_URL}}/sign-in
 [ACT] fill [data-test-id=""email-input""] with AGENT-TEST-e2e024-$TS_SUFFIX@yopmail.com
 [ACT] fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [ACT] click [data-test-id=""login-button""]
-[WAIT] response settles — login succeeds (password grant is not org-scoped)
---- SCREEN: Dashboard Unreachable (the only screen the invite email links to) ---
+[WAIT] response settles - sign-in succeeds with no organization (BL-AUTH-016)
+[ASSERT] the header shows no organization (no org name, no org switcher) {BL}
+--- SCREEN: Dashboard Renders With No Organization ---
 [NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] page load settles
-[ASSERT] the dashboard shows a Forbidden/403 state — pending-invites-widget.vue never mounts because its host page itself is blocked
-[ASSERT] there is NO org switcher escape hatch available (single-org user — no alternate Approved org exists to select)
---- LAYER: API (confirm Forbidden-inside-200, cross-layer) ---
+[ASSERT] the dashboard renders its own-data content; NO Forbidden / blocked-content state
+[ASSERT] the pending-invitations widget is present and lists the pending BuildRight invitation {SPEC}
+--- LAYER: API (no-organization context, cross-layer) ---
 [GQL-OP dashboard_context]
  query { me { contact { id organizationId organizations { totalCount } } } }
 [GQL-EXEC dashboard_context]
 Authorization: Bearer <session token from the login above>
-[ASSERT] [STATUS] 200 (HTTP transport)
-[ASSERT] the response's errors[] is non-empty (an authorization/forbidden error) OR the org-scoped fields resolve to null/forbidden — confirming Forbidden lives INSIDE a 200, not as a 4xx
---- SCREEN: Confirm the invite truly cannot be accepted through any storefront UI path ---
-[NAV] {{FRONT_URL}}/account/dashboard
-[WAIT] page settles again
-[ASSERT] no alternate UI affordance (menu item, banner link, retry button) leads anywhere but the same Forbidden state — the invite is genuinely unreachable without direct backend intervention","[DOM] /account/dashboard shows a Forbidden/blocked-content indicator visible in the main content area for this single-org user {SPEC}
-[STATE] pending-invites-widget.vue never renders — its only host page is itself inaccessible {SPEC}
-[STATE] No recovery path exists inside the storefront UI for a single-org user pinned to a blocked default org — this is the P0, not P1, blast radius {BL}
-[STATE] The underlying GraphQL/REST call for org-scoped context returns an authorization failure while HTTP transport reports 200 {OBSERVED}","[API] me query (or GetPageContext) returns errors[] non-empty / null org-scoped fields with HTTP 200
-[CONSOLE] no unhandled JS TypeError from the Forbidden render path
-[NETWORK] the /account/dashboard page load itself is HTTP 200 (never a 4xx/5xx) despite the content being blocked — this is what makes the defect silent to naive status-code monitoring","/account/dashboard loads normally instead of showing Forbidden (defect already fixed — reconfirm live before treating as a failure of this case); an org switcher or alternate recovery UI unexpectedly appears for this single-org user (would mean the blast radius is less severe than documented); the GraphQL/REST call returns a clean 4xx instead of 200-with-errors (a different, less silent failure mode than the one under test)","[SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-e2e024-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281; p0_blast_radius.single_org_user","Draft"
-"COMP-E2E-025","Multi-Org User With a Blocked Default-Org Membership Recovers Full Access Via the Switcher — Cross-Layer Verification","Company E2E > Org-Scoped Lockout > Multi-Org Recovery > [JOURNEY]","High","BL-B2B-005; BL-B2B-001","ECL-14.3, ECL-10.2","[PRE:CLEAR_SESSION]
-VCST-5281 P1 blast radius (p0_blast_radius.multi_org_user): the same forced-context defect as COMP-E2E-024, but a multi-org user is misrouted, not stuck — the header account menu and org switcher remain functional on the Forbidden landing page, so selecting an Approved org recovers access without signing out. This case is the cross-layer (GraphQL + REST) companion to AUTH-043 (which asserts the UI-only mechanics of the same recovery): here the recovery is additionally confirmed against the me query's decoded permission/org context, not just DOM state. A fresh AGENT-TEST- member with 2 org memberships is created in Steps; the persisted default org is forced blocked, the second stays Approved.
-CORRECTION (test-defect fix, REG-2026-08-26-0943 triage): the persisted-default TechFlow membership is put into a blocking STATUS (BL-AUTH-013 STATUS axis, via a full-replace PUT) rather than IsLocked — POST .../lock only sets IsLocked, a distinct axis from OrganizationMembership.Status that does not drive contact.organizationId's BlockingStatuses check.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, org_id_1=@td(MULTI_ORG_TF_BR.org_techflow_id), org_id_2=@td(ORG_BUILDRIGHT.platform_id), new_member_password={{DEFAULT_TEST_PASSWORD}}","--- SCREEN: Fixture Setup (REST) ---
+[ASSERT] [STATUS] 200 and errors[] is empty
+[ASSERT] me.contact.organizationId is null and me.contact.organizations.totalCount == 0 (the Rejected and Invited orgs are both blocked) {OBSERVED}
+--- SCREEN: Accept the pending invitation from this dashboard ---
+[ACT] in the pending-invitations widget, accept the BuildRight invitation (the widget's accept action, by its visible label)
+[WAIT] acceptance completes; the dashboard refreshes
+[ASSERT] BuildRight now appears as the user's organization (header / org switcher) {SPEC}
+[GQL-OP dashboard_context_after]
+ query { me { contact { organizationId organizations { totalCount } } } }
+[GQL-EXEC dashboard_context_after]
+Authorization: Bearer <session token after the acceptance (re-issue if the membership write revoked the old one)>
+[ASSERT] errors[] empty; BuildRight is present in the user's organizations {SPEC}","[DOM] after sign-in the header shows no organization {BL} (BL-AUTH-016: no organization resolved is a successful sign-in with no org context)
+[DOM] /account/dashboard renders with NO Forbidden / blocked-content indicator {OBSERVED} (REG-2026-11-12-1023-W5e; KB-CFF49BB0)
+[STATE] the pending-invitations widget renders on /account/dashboard and lists the pending invitation {SPEC} (VCST-5281: the invite email's call-to-action points at /account/dashboard)
+[STATE] me.contact.organizationId is null and me.contact.organizations.totalCount == 0 while every membership is blocked {OBSERVED}
+[STATE] accepting the pending invitation from this dashboard makes the BuildRight org appear for the user {SPEC} (not yet observed end to end - confirm live)","[API] me query: HTTP 200, errors[] empty, contact.organizationId null, organizations.totalCount 0
+[CONSOLE] no unhandled JS TypeError while the dashboard renders with no organization
+[NETWORK] /account/dashboard load is HTTP 200 with no 4xx/5xx on the dashboard's own requests","A Forbidden / blocked-content state or a pinned-org dead end on /account/dashboard comes back (regression of VCST-5281); the pending-invitations widget is missing for a user with a pending invite; the invitation cannot be accepted from the dashboard; sign-in is refused instead of succeeding with no organization; me query returns errors[] or a non-null organizationId while every membership is blocked","[SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$BR_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-e2e024-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281 (Done, fixed); BL-AUTH-016; KB-CFF49BB0; KB-606A3302","Draft"
+"COMP-E2E-025","Multi-Org User With a Rejected Default-Org Membership Falls Back to the Accessible Org on Sign-In - Cross-Layer Verification","Company E2E > Org-Scoped Lockout > Multi-Org Recovery > [JOURNEY]","High","BL-B2B-005; BL-B2B-001; BL-AUTH-016","ECL-14.3, ECL-10.2","[PRE:CLEAR_SESSION]
+Cross-layer (GraphQL + REST) companion to AUTH-043. A fresh AGENT-TEST- member is associated with BOTH orgs (contact organizations = [TechFlow, BuildRight]) and holds two memberships; before the flip me.contact.organizations.totalCount must be 2. TechFlow (the persisted default org) is then forced to status Rejected (STATUS axis, BL-AUTH-013, full-replace PUT) while BuildRight stays Approved. Per BL-AUTH-016 a credential sign-in falls back to the first accessible org, so the user lands on BuildRight with no Forbidden state. The post-sign-in state for exactly this fixture (one Rejected + one Approved org) has NOT been observed yet - those assertions are {HYPOTHESIS} and need live confirmation (VCST-5281 is fixed; the former Forbidden-then-switcher premise is gone).","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, org_id_1=@td(MULTI_ORG_TF_BR.org_techflow_id), org_id_2=@td(ORG_BUILDRIGHT.platform_id), new_member_password={{DEFAULT_TEST_PASSWORD}}","--- SCREEN: Fixture Setup (REST) ---
 [SETUP] Generate timestamp suffix: e2e025-{epoch_ms} — capture as $TS_SUFFIX
-[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""MultiOrgRecover025"", ""memberType"": ""Contact"", ""organizations"": [""@td(MULTI_ORG_TF_BR.org_techflow_id)""]} — capture response id as $MEMBER_ID
+[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""MultiOrgRecover025"", ""memberType"": ""Contact"", ""organizations"": [""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""@td(ORG_BUILDRIGHT.platform_id)""]} — capture response id as $MEMBER_ID
 [ASSERT] [STATUS] 200/201; $MEMBER_ID is a non-empty GUID
 [SETUP] via REST POST {{BACK_URL}}/api/platform/security/users/create: {""userName"": ""AGENT-TEST-e2e025-$TS_SUFFIX@yopmail.com"", ""email"": ""AGENT-TEST-e2e025-$TS_SUFFIX@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""$MEMBER_ID"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""} (Note: this route returns {succeeded,errors} with NO id field)
 [ASSERT] [STATUS] 200/201; $USER_ID is a non-empty GUID
@@ -1113,6 +1125,13 @@ CORRECTION (test-defect fix, REG-2026-08-26-0943 triage): the persisted-default 
 [ASSERT] [STATUS] 200/201
 [SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(ORG_BUILDRIGHT.platform_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $BR_MEMBERSHIP_ID (stays Approved — the recovery target)
 [ASSERT] [STATUS] 200/201
+[HTTP] POST {{BACK_URL}}/connect/token - form body: grant_type=password, username=AGENT-TEST-e2e025-$TS_SUFFIX@yopmail.com, password={{DEFAULT_TEST_PASSWORD}}, storeId=B2B-store - capture access_token as $PRE_TOKEN
+[ASSERT] [STATUS] 200
+[GQL-OP precondition_orgs]
+ query { me { contact { id organizations { totalCount } } } }
+[GQL-EXEC precondition_orgs]
+Authorization: Bearer $PRE_TOKEN
+[ASSERT] [STATUS] 200, errors[] empty, and me.contact.organizations.totalCount == 2 (both orgs enumerated BEFORE the TechFlow status flip) {OBSERVED}
 [SETUP] via REST PUT {{BACK_URL}}/api/customer/organization-memberships/$TF_MEMBERSHIP_ID — FULL REPLACE body (PUT replaces the whole entity — every field must be echoed, per scripts/lib/user-provision.mjs ensureOrgMembershipModern): {""id"": ""$TF_MEMBERSHIP_ID"", ""userId"": ""$USER_ID"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}], ""isLocked"": false, ""status"": ""Rejected""} — force the persisted-default TechFlow membership's STATUS (not IsLocked) into a blocking value; VCST-5281's axis is contact.organizationId vs BlockingStatuses, which the IsLocked/lock endpoint does not drive
 [ASSERT] [STATUS] 200
 --- SCREEN: Login and Forced-Blocked Landing ---
@@ -1121,34 +1140,21 @@ CORRECTION (test-defect fix, REG-2026-08-26-0943 triage): the persisted-default 
 [ACT] fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
 [ACT] click [data-test-id=""login-button""]
 [WAIT] response settles
-[ASSERT] the landing page shows Forbidden/blocked content (pinned to blocked TechFlow)
-[ASSERT] the header account menu / org switcher control is still visible
---- LAYER: API (confirm Forbidden-inside-200 for TechFlow context) ---
-[GQL-OP techflow_context]
- query { me { permissions contact { id organizationId } } }
-[GQL-EXEC techflow_context]
+[ASSERT] verify whether the landing page renders without a Forbidden state (TechFlow is Rejected, BuildRight is accessible; BL-AUTH-016 fallback) {HYPOTHESIS}
+[ASSERT] verify whether the header shows BuildRight as the active organization {HYPOTHESIS}
+--- LAYER: API (post-sign-in organization context) ---
+[GQL-OP post_signin_context]
+ query { me { permissions contact { id organizationId organizations { totalCount } } } }
+[GQL-EXEC post_signin_context]
 Authorization: Bearer <session token from login>
-[ASSERT] [STATUS] 200
-[ASSERT] errors[] non-empty OR org-scoped fields are null/forbidden for the pinned TechFlow context
---- SCREEN: Recover Via Switcher ---
-[ACT] open the org switcher
-[ASSERT] BuildRight is present and selectable
-[ACT] select BuildRight
-[WAIT] context switch completes; header shows BuildRight
-[ASSERT] the main content area now loads successfully
---- LAYER: API (confirm recovery is real, not just cosmetic) ---
-[GQL-OP buildright_context]
- query { me { permissions contact { id organizationId } } }
-[GQL-EXEC buildright_context]
-Authorization: Bearer <session token after the BuildRight switch>
-[ASSERT] [STATUS] 200
-[ASSERT] errors[] is empty and contact.organizationId now resolves to the BuildRight org id — the switch genuinely changed the active org context server-side, not just in the header label","[DOM] a Forbidden/blocked-content indicator is visible on the landing page while pinned to blocked TechFlow {SPEC}
-[DOM] the header account menu / org switcher control remains visible and clickable during the Forbidden landing {SPEC}
-[STATE] me query for the TechFlow (blocked) context returns errors[]/nulls despite HTTP 200 {OBSERVED}
-[STATE] After switching to BuildRight, me query returns errors[] empty with organizationId matching BuildRight — the recovery is server-side real, not a client-only redraw {OBSERVED}","[API] TechFlow-context me query: HTTP 200, errors[] non-empty or org-scoped fields null
-[API] BuildRight-context me query: HTTP 200, errors[] empty, contact.organizationId = BuildRight org id
-[CONSOLE] no unhandled JS errors across the switch
-[NETWORK] no 4xx/5xx on either me query or the switch request itself","Switcher fails to render or throws on the Forbidden landing page (would reclassify this as P0, matching COMP-E2E-024); BuildRight absent from the switcher despite being Approved; post-switch me query still shows errors[] or the wrong organizationId (cosmetic-only recovery — the underlying context never actually changed); recovery requires sign-out/sign-in instead of same-session switch","[SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$TF_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$BR_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-e2e025-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281; p0_blast_radius.multi_org_user; complements AUTH-043 (033) UI-only check","Draft"
+[ASSERT] [STATUS] 200 and verify whether errors[] is empty {HYPOTHESIS}
+[ASSERT] verify whether contact.organizationId resolves to the BuildRight org id (the accessible org), not TechFlow {HYPOTHESIS}
+[ASSERT] verify whether organizations excludes the Rejected TechFlow org {HYPOTHESIS}","[STATE] before the TechFlow status flip me.contact.organizations.totalCount == 2 {OBSERVED}
+[DOM] verify whether, with TechFlow Rejected and BuildRight Approved, the landing page renders with no Forbidden state and the header shows BuildRight {HYPOTHESIS} (BL-AUTH-016 fallback to the accessible org; this exact state not yet observed)
+[STATE] verify whether the post-sign-in me query returns errors[] empty with contact.organizationId == BuildRight org id {HYPOTHESIS}","[API] pre-flip me query: HTTP 200, errors[] empty, organizations.totalCount == 2
+[API] post-sign-in me query: HTTP 200; verify whether errors[] is empty and contact.organizationId is the BuildRight org id {HYPOTHESIS}
+[CONSOLE] no unhandled JS errors on sign-in and landing
+[NETWORK] no 4xx/5xx on the sign-in, me query or landing requests","Pre-flip organizations.totalCount is not 2 (fixture not built - BLOCKED, not FAIL); sign-in is refused or lands on a Forbidden state although BuildRight is Approved (the BL-AUTH-016 fallback failed); the active org stays the Rejected TechFlow; the me query shows errors[] or the TechFlow org id post-sign-in","[SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$TF_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$BR_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-e2e025-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281 (Done, fixed); BL-AUTH-016; complements AUTH-043 (033) UI-only check","Draft"
 "COMP-E2E-026","Existing Customer Invited to a Second Organization — Invite Link Carries No Query Parameters, Cannot Complete Acceptance (Finding E, Storefront Side)","Company E2E > Member Lifecycle > Existing-User Invite Link > [Regression]","High","BL-B2B-009","ECL-10.2","[PRE:CLEAR_SESSION]
 Reviewer finding E on vc-frontend#2399: the storefront always builds urlSuffix = router.resolve({name:'ConfirmInvitation'}).path (i.e. the bare '/confirm-invitation' path with no query string) for BOTH inviteUser and resendOrganizationInvite. confirm-invitation.vue reads userId/email/token/organizationId as route QUERY parameters (this PR added organizationId alongside the pre-existing userId/email/token) and uses them to complete either a NEW registration or, per this PR, pass organizationId through at submission. The backend's InviteCustomerService.SendExistingUserInviteNotification uses this urlSuffix VERBATIM with no id/email/token appended for an ALREADY-REGISTERED customer being invited to a 2nd org — so their invite email link lands on a bare /confirm-invitation with NO query string at all. This case owns the STOREFRONT-SIDE symptom only (the backend notification-content defect is out of this suite's ownership — flagged to the backend specialist separately). An existing, already-registered TechFlow member is invited to BuildRight (a 2nd org) in Steps; the case then loads the exact link shape the existing-user notification sends.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, existing_user_email=@td(TECHFLOW_BUYER.email), existing_user_password=@td(TECHFLOW_BUYER.password), buildright_admin_email=@td(BUILDRIGHT_ADMIN.email), buildright_admin_password=@td(BUILDRIGHT_ADMIN.password)","--- SCREEN: Confirm the fixture is an EXISTING, already-registered user ---
 [PRE:CLEAR_SESSION]
