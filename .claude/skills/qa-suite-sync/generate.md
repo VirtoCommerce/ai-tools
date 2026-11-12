@@ -79,7 +79,7 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
    Run the case as written: a GraphQL document, header or cookie the row names but does not spell out is a
    `CASE_DEFECT` (write it into the row), and a stand mechanic you need (an instance pin, journal reading) is
    taken from the creator or the kb, never improvised silently.
-   The proof is evidence for the author, not the grounding: the row stays `Draft` and Phase 5 still checks it
-   independently. Why: VCST-6597, 4 of 27 cases came back from Phase 5 with defects a single author run finds.
+   The proof is evidence for the author, not the grounding: the row stays `Draft` and Phase 5's scoped run
+   still executes it independently (`verify.md` 5a). Why: VCST-6597, 4 of 27 cases came back from Phase 5 with defects a single author run finds.
 
 ---
