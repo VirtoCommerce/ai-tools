@@ -18,6 +18,7 @@
  * The create/delete path is scripts/lib/disposable-customer.mjs — the same one the Playwright fixture
  * `disposableCustomer` uses. Never prints a password. Exit 2 = refused (env guard, bad arguments).
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { argv } from "node:process";
 import { api, assertSafeTarget, auth, STORE_ID } from "../lib/seed-common.mjs";
 import {
