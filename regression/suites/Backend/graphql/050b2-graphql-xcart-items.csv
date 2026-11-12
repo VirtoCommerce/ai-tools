@@ -44,7 +44,47 @@ CRI-GQL-057,"createOrderFromCart — Org Member Happy Path (B2B)","GraphQL > xCa
 [DATA label=create_order] data.createOrderFromCart.number is non-null
 [DATA label=create_order] data.createOrderFromCart.status is non-null
 [DATA label=create_order] data.createOrderFromCart.organizationId is non-null","[EVIDENCE] verify data.createOrderFromCart.organizationId matches me.contact.organizationId (orgId persisted on order)","errors[] non-empty; organizationId null on order (org context lost); set_shipment rejects due to wrong countryCode; HTTP 500",Creates real order — cancel via Admin API if needed,"xAPI; BL-CHK-001; order-creation-matrix.md; Fixed authoring debt (TLC-2026-05-15-2316, 2026-05-15)",synced
-CRI-GQL-058,"createOrderFromCart — Cross-Org Cart Isolation","GraphQL > xCart > User Context > Security",Critical,BL-CHK-001; BL-GQL-001; BL-GQL-004; BL-B2B-001,ECL-10.2; ECL-2.1,"BLOCKED (P0 SECURITY HOLE — REQUIRES UNBLOCK). Cross-org cart isolation verification needs a second-org user that the runner can authenticate as via [AUTH role=ORG_USER_2]. Current env pool: ORG_USER=Emily (TechFlow); USER/USER2=personal. UNBLOCK STEPS: (1) Provision ORG_USER_2_EMAIL + ORG_USER_2_PASSWORD in .env.vcst (suggested: agent-user-pool slot 3 carlos.rodriguez at BuildRight per test-data/users/agent-user-pool.csv); (2) Add ORG_USER_2 inline alias in test-data/aliases.json with email_env=ORG_USER_2_EMAIL/password_env=ORG_USER_2_PASSWORD; (3) Update Steps to [AUTH role=ORG_USER] for cart-create then re-AUTH as ORG_USER_2 for the cross-org createOrderFromCart attempt. Similar blocker to WL-022. OWNER: QA env owner + runner maintainer.","—","[MANUAL-BLOCKED] See Preconditions for unblock steps. Legacy suite 050b CRI-GQL-058 runs this via GraphiQL.","[MANUAL] blocked on user-pool aliases","[EVIDENCE] Track as Draft in runner","User B creates order from User A's cart (P0 security breach)",Cancel via Admin API if accidental order created,xAPI; legacy 050b CRI-GQL-058; BL-B2B-001; runner-feature: multi-org-auth,Draft
+CRI-GQL-058,createOrderFromCart — Cross-Org Cart Isolation,GraphQL > xCart > User Context > Security,Critical,BL-CHK-001; BL-GQL-001; BL-GQL-004; BL-B2B-001,ECL-10.2; ECL-2.1,"Runner-native, two organizations. TECHFLOW_BUYER (USR-007, TechFlow) owns a real named cart that could be ordered (line, shipment, manual payment; validationErrors empty is asserted, so a refusal cannot be blamed on an invalid cart). BUILDRIGHT_BUYER (USR-009, BuildRight — a different organization) then calls createOrderFromCart with that cart id. The owner's read-back decides: an order placed from the cart would consume it. Both are CSV-backed aliases (test-data/b2b/users.csv) seeded by seed:b2b; no env var of their own.",cart_name=AGENT-TEST-ORDER-058-XORG,"[AUTH role=TECHFLOW_BUYER]
+[GQL-OP owner_me]
+  query { me { id contact { organizationId } } }
+[GQL-EXEC owner_me]
+[GQL-CAPTURE owner_me.data.me.id → OWNER_ID]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{OWNER_ID}}"" cartName: ""{{cart_name}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP set_shipment]
+  mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{OWNER_ID}}"" cartName: ""{{cart_name}}"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""USA"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id } }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{OWNER_ID}}"" cartName: ""{{cart_name}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+[GQL-EXEC set_payment]
+[GQL-OP pre_check]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{OWNER_ID}}"" currencyCode: ""USD"" cartName: ""{{cart_name}}"") { id itemsCount validationErrors(ruleSet: ""*"") { errorCode } } }
+[GQL-EXEC pre_check]
+[AUTH role=BUILDRIGHT_BUYER]
+[GQL-OP attacker_me]
+  query { me { id contact { organizationId } } }
+[GQL-EXEC attacker_me]
+[GQL-OP cross_org_order]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
+[GQL-EXEC cross_org_order]
+[AUTH role=TECHFLOW_BUYER]
+[GQL-OP read_back]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{OWNER_ID}}"" currencyCode: ""USD"" cartName: ""{{cart_name}}"") { id itemsCount } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup]
+  mutation { removeCart(command: { cartId: ""{{CART_ID}}"" userId: ""{{OWNER_ID}}"" }) }
+[GQL-EXEC cleanup]","[ERRORS label=pre_check] errors[] empty {OBSERVED}
+[DATA label=pre_check] data.cart.id = {{CART_ID}} {OBSERVED}
+[COUNT label=pre_check] data.cart.validationErrors.length = 0 {OBSERVED}
+[DATA label=attacker_me] data.me.contact.organizationId is non-null {OBSERVED}
+[ERRORS label=cross_org_order] errors[] non-empty {BL} (BL-GQL-004)
+[DATA label=cross_org_order] errors[0].extensions.code = Forbidden {BL} (BL-GQL-004)
+[NULL label=cross_org_order] data.createOrderFromCart {BL} (BL-GQL-004)
+[ERRORS label=read_back] errors[] empty {OBSERVED}
+[DATA label=read_back] data.cart.id = {{CART_ID}} {BL} (BL-GQL-004)
+[DATA label=read_back] data.cart.itemsCount = 1 {BL} (BL-GQL-004)","[EVIDENCE] owner_me and attacker_me must report DIFFERENT organizationId — if the two fixtures ever land in one org this is no longer a cross-org probe. The refusal is HTTP 200 with errors[] (xAPI contract); errors[0].message carries no cart contents, owner id or stack trace.","errors[] empty or data.createOrderFromCart non-null on cross_org_order (another organization's buyer placed an order from a foreign cart — P0); refusal returned but read_back finds no cart or a different cart id (the cart was consumed); pre_check validationErrors non-empty (the cart was not orderable — fix the setup, do not pass the case); owner and attacker in the same organization (fixture drift)","inline — the last step removes the cart under the owner's token (the runner's Cleanup column runs only [AUTH]/[REST] blocks). If cross_org_order ever returns an order, cancel it in Admin: it is a real order","xAPI; legacy 050b CRI-GQL-058; BL-B2B-001; BL-GQL-004; runner-feature: multi-org-auth | Archetype:SCOPE · Technique:SEC · Probe:SEC-OBJ | Rewritten: 2026-11-12 SEC pilot (VCST-6840) — unblocked: TECHFLOW_BUYER owns the cart, the new BUILDRIGHT_BUYER alias (USR-009) is the foreign-org caller; the ORG_USER_2 env pair the old unblock note asked for is not needed",Draft
 CRI-GQL-061,"xCart — unSelectCartItems Unselects One of Multiple Items","GraphQL > xCart > selectCartItems",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Add item, call unSelectAllCartItems to get items[] synchronously from mutation response, capture first item ID, then call selectCartItems and assert selectedForCheckout=true (roundtrip). Avoids cart-query eventual consistency by using mutation response for ID capture.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }

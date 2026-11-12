@@ -3532,5 +3532,29 @@
     "email": "AGENT-TEST-mcp-norole@test.virtocommerce.com",
     "role_id": null,
     "role_name": null
+  },
+  "BUILDRIGHT_BUYER": {
+    "platform_id": "0637fc92-83f4-47e2-89f9-211dc4d997ce"
+  },
+  "SHELL_SEARCH_NOREAD": {
+    "_inline": true,
+    "platform_id": "1488a034-8ad8-493a-a7c3-8e93f6afd858",
+    "user_id": "1488a034-8ad8-493a-a7c3-8e93f6afd858",
+    "role_id": "AGENT-TEST-Shell-Search-NoRead",
+    "userName": "AGENT-TEST-shell-search-noread@test.virtocommerce.com"
+  },
+  "RESTRICTED_USER": {
+    "_inline": true,
+    "platform_id": "98eef412-c00d-43f8-8eab-31fc0c2121e6",
+    "user_id": "98eef412-c00d-43f8-8eab-31fc0c2121e6",
+    "role_id": "AGENT-TEST-Task-ReadOnly",
+    "userName": "AGENT-TEST-task-readonly@test.virtocommerce.com"
+  },
+  "SHELL_SEARCH_READ": {
+    "_inline": true,
+    "platform_id": "43fdfa4f-da32-41c4-87b2-7256587b12b4",
+    "user_id": "43fdfa4f-da32-41c4-87b2-7256587b12b4",
+    "role_id": "AGENT-TEST-Shell-Search-Read",
+    "userName": "AGENT-TEST-shell-search-read@test.virtocommerce.com"
   }
 }
