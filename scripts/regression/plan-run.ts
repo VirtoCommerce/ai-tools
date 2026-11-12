@@ -32,6 +32,7 @@
  *   npm run regression:plan -- smoke --preflight --preflight-out <path>   # also write the RegressionPreflight JSON to <path>
  *   npm run regression:plan -- smoke --preflight --run-id <RUN_ID>        # this run's own test-run-status.json is not a lock
  *   npm run regression:plan -- smoke --preflight --accept drift:<id>[,…]  # "proceed as is" on those drift BLOCKs (WARN)
+ *   npm run regression:plan -- 042 --preflight --release sprint-26-22   # + the release's delivery check (release:delivery --write)
  *   npm run regression:plan -- smoke --preflight --run-blocked   # run the cases the pre-flight predicts will BLOCK (default: recorded BLOCKED, not run)
  *   npm run regression:plan -- 042,078 --cases critical[,high]            # size only those tiers (same filter as suites:filter)
  *   npm run regression:plan -- 042,078 --ids SMK-008,SMK-014              # size an exact case set
@@ -71,6 +72,7 @@ function parseArgs(argv: string[]): {
   preflightOut: string | null;
   runId: string | null;
   accept: string[];
+  release: string | null;
   runBlocked: boolean;
   cases: string[];
   alsoIds: string[];
@@ -78,7 +80,7 @@ function parseArgs(argv: string[]): {
 } {
   const args = argv.filter((a) => a !== "--");
   const flags = new Set(args.filter((a) => a.startsWith("--")));
-  const valued = new Set(["--preflight-out", "--run-id", "--accept", "--browsers", "--fastpath", "--deterministic", "--cases", "--also-ids", "--ids"]);
+  const valued = new Set(["--preflight-out", "--run-id", "--accept", "--release", "--browsers", "--fastpath", "--deterministic", "--cases", "--also-ids", "--ids"]);
   const positional = args.filter((a, i) => !a.startsWith("--") && !valued.has(args[i - 1]));
 
   const numFlag = (name: string, fallback: number): number => {
@@ -99,6 +101,7 @@ function parseArgs(argv: string[]): {
     preflightOut: valueOf("--preflight-out"),
     runId: valueOf("--run-id"),
     accept: listOf("--accept"),
+    release: valueOf("--release"),
     cases: listOf("--cases"),
     alsoIds: listOf("--also-ids"),
     ids: listOf("--ids"),
@@ -131,7 +134,7 @@ function scopeCases(suites: readonly ManifestSuite[], sel: { tiers: string[]; al
 }
 
 async function main(): Promise<void> {
-  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept, runBlocked, cases, alsoIds, ids } = parseArgs(process.argv.slice(2));
+  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept, release, runBlocked, cases, alsoIds, ids } = parseArgs(process.argv.slice(2));
   // Same rules `suites:filter` applies to the same flags.
   if (ids.length > 0 && (cases.length > 0 || alsoIds.length > 0)) {
     console.error("--ids selects an exact case set; --cases (optionally with --also-ids) selects a tier — pass one or the other, never both");
@@ -147,9 +150,9 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   // D9: only a drift BLOCK can be "proceeded as is"; anything else is a usage error, never a silent no-op.
-  const notDrift = accept.filter((a) => !a.startsWith("drift:"));
+  const notDrift = accept.filter((a) => !a.startsWith("drift:") && !(release && a.startsWith("delivery:")));
   if (notDrift.length > 0) {
-    console.error(`--accept takes drift:<id> only — not acceptable: ${notDrift.join(", ")}`);
+    console.error(`--accept takes drift:<id> (and, with --release, delivery:<KEY>) only — not acceptable: ${notDrift.join(", ")}`);
     process.exit(1);
   }
   const manifest = loadManifest();
@@ -197,7 +200,7 @@ async function main(): Promise<void> {
       manifestProblems: problems.map((p) => ({ suiteId: p.suiteId, kind: p.kind, detail: p.detail })),
       root: process.cwd(), ...(runId ? { runId } : {}), accept,
       browserSuites: suites.filter((s) => classifyLane(s) === "browser").map((s) => s.id),
-      skipBlocked: !runBlocked,
+      skipBlocked: !runBlocked, ...(release ? { release } : {}),
     });
     // Off the plan: a required module is not deployed, or every case needs a password nobody has.
     const gated = new Set([...pf.gating.gated, ...pf.secrets.gated].map((g) => g.suite));

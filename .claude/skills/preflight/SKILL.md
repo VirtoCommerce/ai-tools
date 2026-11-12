@@ -32,7 +32,12 @@ Keep the JSON; the consumer stores it as the `preflight` block of its `summary.j
 
 **Build-scoped (`regression`, `smoke`)** runs the regression planner instead:
 
-    npm run regression:plan -- <selection> --preflight --json [--run-id <RUN_ID>] [--preflight-out reports/regression/<RUN_ID>/preflight.json] [--accept drift:<id>,…]
+    npm run regression:plan -- <selection> --preflight --json [--run-id <RUN_ID>] [--preflight-out reports/regression/<RUN_ID>/preflight.json] [--accept drift:<id>,…] [--release <release> [--accept delivery:<KEY>,…]]
+
+A wave of a release passes `--release`: the release's `delivery.json` (`npm run release:delivery -- <release> --write`)
+must describe the stand as it is now, and its `delivery:*` rows join `checks[]` — a `PARTIAL` ticket (one repo's half
+deployed, another's not) BLOCKs, a sprint ticket not on the stand BLOCKs until accepted. Show them first
+([`waves.md`](../qa-run/waves.md) Step 0 item 4).
 
 Its JSON carries the pre-flight under `preflight` (same `checks[]`, `verdict`, `facts`) plus the plan.
 Exit `2` NOT READY · `1` the selection itself cannot run (unknown id, missing CSV, no executor) · `3`
