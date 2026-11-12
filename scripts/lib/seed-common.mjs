@@ -903,6 +903,31 @@ export async function ensureStoreWhiteLabeling(api, { storeId = STORE_ID, row = 
   log(`  ✓ Store-level WL theme on ${storeId}: ${from ? `"${from}" → ` : ''}"${theme}"`);
 }
 
+/**
+ * Turn the store's VirtoPages.Enable on in the `store` object (raise-only, never off). While it is off —
+ * the setting's default — slugInfo resolves no Page Builder page, so every published page 404s even
+ * though it is indexed as Published (@kb(KB-48CBEB82)). Returns true when it changed the object.
+ */
+export function enableVirtoPages(store) {
+  store.settings ||= [];
+  const vp = store.settings.find((s) => s.name === 'VirtoPages.Enable');
+  if (!vp) { store.settings.push({ name: 'VirtoPages.Enable', valueType: 'Boolean', value: true }); return true; }
+  if (vp.value === true) return false;
+  vp.value = true;
+  return true;
+}
+
+/** For the seeders that publish Page Builder pages: make sure the store serves them (whole-store PUT). */
+export async function ensureVirtoPagesEnabled(api, storeId = STORE_ID) {
+  const store = await api('GET', `/api/stores/${encodeURIComponent(storeId)}`, null, { expectStatus: [200, 204, 404] });
+  if (!store?.id) { log(`  ⚠ store ${storeId} not found — VirtoPages.Enable not checked; its pages will not resolve`); return false; }
+  if (!enableVirtoPages(store)) { verbose(`VirtoPages.Enable already on for ${storeId}`); return false; }
+  if (DRY_RUN) { log(`  [DRY] would turn VirtoPages.Enable on for store ${storeId}`); return true; }
+  await api('PUT', '/api/stores', store, { expectStatus: [200, 204] });
+  log(`  ✓ VirtoPages.Enable turned on for store ${storeId} (Page Builder pages do not resolve without it)`);
+  return true;
+}
+
 /** Map a stores.csv row's flag columns → VC store settings (booleans kept even when false). */
 export function storeSettingsFromRow(row) {
   const bool = (v) => /^true$/i.test(String(v ?? ''));
@@ -1043,12 +1068,7 @@ export async function ensureStore(api, { storeId = STORE_ID, catalogId = null, e
     if (desiredEmail && store.email !== desiredEmail) { store.email = desiredEmail; changed = true; }
     // Raise-only, unlike the other settings (written on create only): a store this seeder did not create
     // (start-local's B2B-store) has VirtoPages.Enable off, and then no Page Builder page resolves.
-    if (/^true$/i.test(String(row?.virtopages_enabled ?? ''))) {
-      store.settings ||= [];
-      const vp = store.settings.find((s) => s.name === 'VirtoPages.Enable');
-      if (!vp) { store.settings.push({ name: 'VirtoPages.Enable', valueType: 'Boolean', value: true }); changed = true; }
-      else if (vp.value !== true) { vp.value = true; changed = true; }
-    }
+    if (/^true$/i.test(String(row?.virtopages_enabled ?? '')) && enableVirtoPages(store)) changed = true;
     if (await applyFulfillmentCenters(api, store)) changed = true;
     if (changed && !DRY_RUN) {
       try {

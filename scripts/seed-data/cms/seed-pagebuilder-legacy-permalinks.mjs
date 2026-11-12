@@ -23,7 +23,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, ONLY, loadAliases, BACK_URL, ADMIN, ADMIN_PASSWORD,
-  uploadAsset, writeEnvAliasOverride, verifyRemoved, resetSecurityPassword,
+  uploadAsset, writeEnvAliasOverride, verifyRemoved, resetSecurityPassword, ensureVirtoPagesEnabled,
 } from '../../lib/seed-common.mjs';
 import { resolvePassword } from '../../lib/user-provision.mjs';
 import {
@@ -225,7 +225,11 @@ async function main() {
   assertSafeTarget();
   await auth();
   log(`VCST-6443 legacy permalinks on ${ENV}: ${SPECS.length} page(s)${WANT_USER ? ' + no-create user' : ''}${DRY_RUN ? ' [DRY RUN]' : ''}`);
-  if (TEARDOWN) await teardown(); else await seed();
+  if (TEARDOWN) await teardown();
+  else {
+    for (const storeId of new Set(SPECS.map((s) => s.storeId).filter(Boolean))) await ensureVirtoPagesEnabled(api, storeId);
+    await seed();
+  }
   log(DRY_RUN ? 'DRY RUN complete.' : (TEARDOWN ? 'Teardown complete.' : 'Seed complete.'));
 }
 
