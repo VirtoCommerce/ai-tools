@@ -530,16 +530,36 @@ WISH-018,createCartFromWishlist — Empty Wishlist Behavior,GraphQL > Wishlist >
 [DATA label=cart_empty] data.createCartFromWishlist.id is non-null
 [COUNT label=cart_empty] data.createCartFromWishlist.itemsCount == 0
 [ERRORS label=cleanup_remove] errors[] empty","[EVIDENCE] Empty-wishlist contract: errors[] empty, server returns a structured cart object with itemsCount=0 (rather than null). NO HTTP 500.","HTTP 500; stack trace in errors[]; server crash; silent null cart creation (data.createCartFromWishlist is null instead of {id, itemsCount=0}); itemsCount > 0 (would mean phantom items leaked from elsewhere)",none — inline cleanup,xAPI; graphql-schema.md — Mutation.createCartFromWishlist error contract,Automated
-WISH-019,addWishlistItem — Without Authentication,GraphQL > Wishlist > Auth,Critical,BL-GQL-004,ECL-2.1; ECL-10.2,Runner-native. No [AUTH] block — attempts addWishlistItem anonymously. Expects authentication error or silent null.,zero_guid=00000000-0000-0000-0000-000000000000,"[GQL-OP add_noauth]
-  mutation {
-    addWishlistItem(command: {
-      listId: ""00000000-0000-0000-0000-000000000000""
-      productId: ""00000000-0000-0000-0000-000000000000""
-      quantity: 1
-    }) { id itemsCount }
-  }
-[GQL-EXEC add_noauth]","[ERRORS label=add_noauth] errors[] non-empty
-[DATA label=add_noauth] data.addWishlistItem is null","[EVIDENCE] Auth-required contract: anonymous request returns errors[] non-empty AND data.addWishlistItem null. NO mutation succeeds, NO internal IDs/stack traces/SQL hints leaked in errors[].",Mutation succeeds without auth (data returned with non-null); errors[] empty (would mean silent auth bypass — P0); HTTP 500; unhandled exception; stack trace leaks in errors[],none — no wishlist created,VCST-21; xAPI; graphql-schema.md — Mutation.addWishlistItem BL-GQL-004,Automated
+WISH-019,addWishlistItem — anonymous call on a REAL list is refused and the list is unchanged,GraphQL > Wishlist > Auth,Critical,BL-GQL-004,ECL-2.1; ECL-10.2,"Runner-native. USER2 creates a real list with one line (quantity 1), then the case drops the token with [AUTH role=ANONYMOUS] and calls addWishlistItem on that list for the same product. A refusal against a dummy GUID (this case's earlier form) cannot show that a real list stayed untouched: KB-CD99436F observed a refused addWishlistItem (Unauthorized for an anonymous caller) still raising the existing line's quantity, on x-cart 3.1037.0-pr-141. The owner's read-back is what decides.",list_name=AGENT-TEST-WL-019-ANON,"[AUTH role=USER2]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" listName: ""{{list_name}}"" }) { id } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP add_own]
+  mutation { addWishlistItem(command: { listId: ""{{LIST_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_own]
+[AUTH role=ANONYMOUS]
+[GQL-OP add_noauth]
+  mutation { addWishlistItem(command: { listId: ""{{LIST_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_noauth]
+[AUTH role=USER2]
+[GQL-OP read_back]
+  query { wishlist(listId: ""{{LIST_ID}}"") { id itemsCount items { productId quantity } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC cleanup]","[ERRORS label=add_own] errors[] empty {OBSERVED}
+[DATA label=add_own] data.addWishlistItem.itemsCount = 1 {OBSERVED}
+[ERRORS label=add_noauth] errors[] non-empty {BL} (BL-GQL-004)
+[DATA label=add_noauth] errors[0].extensions.code = Unauthorized {BL} (BL-GQL-004)
+[NULL label=add_noauth] data.addWishlistItem {BL} (BL-GQL-004)
+[ERRORS label=read_back] errors[] empty {OBSERVED}
+[DATA label=read_back] data.wishlist.itemsCount = 1 {BL} (BL-GQL-004)
+[DATA label=read_back] data.wishlist.items[?productId=@td(BUYABLE_NO_MIN_QTY.id)].quantity = 1 {BL} (BL-GQL-004)","[EVIDENCE] The refusal is HTTP 200 with errors[] (xAPI contract). errors[0].message carries no list name, owner id or stack trace. The read-back runs under the OWNER's token — the anonymous caller's own view cannot prove nothing was written.",errors[] empty on add_noauth (anonymous write accepted — P0); add_noauth refused but read_back quantity is 2 (refused call still persisted — the KB-CD99436F shape); itemsCount changed; 5xx or stack trace in errors[0].message,inline — the last step removes the list under the owner's token (the runner's Cleanup column runs only [AUTH]/[REST] blocks); AGENT-TEST- prefix lets teardown sweep a list an aborted run left behind,VCST-21; xAPI; graphql-schema.md — Mutation.addWishlistItem; BL-GQL-004; KB-CD99436F | Archetype:SESSION · Technique:SEC · Probe:SEC-IDENT | Rewritten: 2026-11-12 SEC pilot (VCST-6840) — dummy GUID replaced by a real list + owner read-back,Automated
 WISH-020,wishlist Query — Cross-User Access Denial,GraphQL > Wishlist > Auth,High,BL-GQL-004,ECL-2.1; ECL-10.2,Two-user scenario — requires a second role alias (USER2 — personal account in aliases.json). ORG_USER creates the list then USER2 attempts to read it.,—,"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -606,7 +626,9 @@ WISH-022,createWishlist with scope=Organization — Cross-Org Denial,GraphQL > W
   mutation { removeWishlist(command: { listId: ""{{ORG_LIST_ID}}"" }) }
 [GQL-EXEC cleanup]","[ERRORS label=create_org_list] errors[] empty {OBSERVED}
 [ERRORS label=crossorg_reads_org_list] errors[] non-empty {OBSERVED}
-[DATA label=crossorg_reads_org_list] data.wishlist is null {OBSERVED}","[EVIDENCE] foreign_me.contact.organizationId must DIFFER from TF_ORG_ID — if the two fixtures ever land in the same org the denial becomes vacuous. The denial arrives as HTTP 200 with errors[] code Forbidden, not a 4xx.",cross-org data leak: a foreign-org user reads an Organization-scope list (data.wishlist non-null); errors[] empty on the cross-org read; ACME_ORG_ID equals TF_ORG_ID (fixture drift — no longer a cross-org test),inline — removeWishlist under the owning admin's auth,VCST-1416; VCST-21; xAPI; legacy 050h WISH-022; runner-feature: multi-org-auth,Draft
+[DATA label=crossorg_reads_org_list] data.wishlist is null {OBSERVED}
+[DATA label=crossorg_reads_org_list] errors[0].extensions.code = Forbidden {OBSERVED} (KB-2F64A447)
+[DATA label=crossorg_reads_org_list] errors[0].message matches /^Access denied\.?$/ {OBSERVED} (KB-2F64A447)","[EVIDENCE] foreign_me.contact.organizationId must DIFFER from TF_ORG_ID — if the two fixtures ever land in the same org the denial becomes vacuous. The denial arrives as HTTP 200 with errors[] code Forbidden, not a 4xx.","cross-org data leak: a foreign-org user reads an Organization-scope list (data.wishlist non-null); errors[] empty on the cross-org read; ACME_ORG_ID equals TF_ORG_ID (fixture drift — no longer a cross-org test); the refusal message names the list, its owner or its items (a refusal that discloses what it refuses)",inline — removeWishlist under the owning admin's auth,"VCST-1416; VCST-21; xAPI; legacy 050h WISH-022; runner-feature: multi-org-auth | Archetype:SCOPE · Technique:SEC · Probe:SEC-OBJ | Rewritten: 2026-11-12 SEC pilot (VCST-6840) — added the third leg of the refusal (code Forbidden, generic message, nothing of the list disclosed); still Draft: the TechFlow/Acme fixture logins fail on vcst (login_failed, 2026-11-12), so no live proof yet",Draft
 WISH-023,wishlists Query with scope=Organization — Org Isolation,GraphQL > Wishlist > B2B,High,BL-B2B-001,ECL-2.1; ECL-10.2,"Runner-native. TECHFLOW_ADMIN (USR-006) and TECHFLOW_BUYER (USR-007) are two DIFFERENT users in the SAME org (ORG-002 TechFlow); ACME_BUYER (USR-002) is in a DIFFERENT org (ORG-001 Acme). All three are CSV-backed aliases in test-data/aliases.json and resolve for [AUTH role=…] via graphql-auth.ts resolveRole(), which reads each role's own email/password alias fields — no _inline alias and no extra .env var is required. (Do not write a literal resolver token in this prose: td:validate scans every cell and an illustrative one fails to resolve.) Checks the wishlists() ENUMERATION in both directions: the same-org member's list set contains the org list, the foreign-org member's does not. (WISH-021 covers access by id; this case covers enumeration.)",list_name=AGENT-TEST-WL-023-ORG,"[AUTH role=TECHFLOW_ADMIN]
 [GQL-OP admin_me]
   query { me { id } }
@@ -664,7 +686,9 @@ WISH-024,Private Wishlist — Cross-User Access Denial (B2B),GraphQL > Wishlist 
 [DATA label=create_private_list] data.createWishlist.scope = Private {OBSERVED}
 [DATA label=buyer_me] data.me.contact.organizationId = {{TF_ORG_ID}} {OBSERVED}
 [ERRORS label=sameorg_reads_private] errors[] non-empty {OBSERVED}
-[DATA label=sameorg_reads_private] data.wishlist is null {OBSERVED}","[EVIDENCE] createWishlist with NO scope argument must persist scope Private — if the default ever became Organization the denial below would be testing the wrong thing. buyer_me must be in the SAME org as the owner, otherwise this collapses into WISH-022's cross-org case.",a private list is exposed to a same-org sibling (data.wishlist non-null); errors[] empty on the sibling read; createWishlist defaults to a scope other than Private,inline — removeWishlist under the owning admin's auth,VCST-1416; VCST-21; xAPI; legacy 050h WISH-024; runner-feature: multi-org-auth,Draft
+[DATA label=sameorg_reads_private] data.wishlist is null {OBSERVED}
+[DATA label=sameorg_reads_private] errors[0].extensions.code = Forbidden {OBSERVED} (KB-2F64A447)
+[DATA label=sameorg_reads_private] errors[0].message matches /^Access denied\.?$/ {OBSERVED} (KB-2F64A447)","[EVIDENCE] createWishlist with NO scope argument must persist scope Private — if the default ever became Organization the denial below would be testing the wrong thing. buyer_me must be in the SAME org as the owner, otherwise this collapses into WISH-022's cross-org case.","a private list is exposed to a same-org sibling (data.wishlist non-null); errors[] empty on the sibling read; createWishlist defaults to a scope other than Private; the refusal message names the list, its owner or its items (a refusal that discloses what it refuses)",inline — removeWishlist under the owning admin's auth,"VCST-1416; VCST-21; xAPI; legacy 050h WISH-024; runner-feature: multi-org-auth | Archetype:SCOPE · Technique:SEC · Probe:SEC-OBJ | Rewritten: 2026-11-12 SEC pilot (VCST-6840) — added the third leg of the refusal (code Forbidden, generic message, nothing of the list disclosed); still Draft: the TechFlow/Acme fixture logins fail on vcst (login_failed, 2026-11-12), so no live proof yet",Draft
 WISH-025,Personal Account — Private Wishlist OK But Cannot See Org Lists,GraphQL > Wishlist > B2B,High,BL-AUTH-004,ECL-2.1; ECL-10.2,"Runner-native. USER2 is a personal account (no org membership). Creates a private wishlist, then attempts to read an ORG_USER's org-scope list — should be denied.",—,"[AUTH role=ORG_USER]
 [GQL-OP org_me]
   query { me { id } }
