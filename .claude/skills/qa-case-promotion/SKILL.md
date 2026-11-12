@@ -38,7 +38,9 @@ BLOCKED means the suites in scope are not in a state to receive new cases, so do
 
 ## 1 — Harvest, then re-derive eligibility independently (do NOT trust the hand-off)
 
-**Harvest first** when a run executed the cases (this is what a `PR-007` hold routed here needs): take the
+**After a `qa-suite-sync` run the harvest is already done** (its `verify.md` 5c retagged the PASSED cases
+from the scoped run): skip to the re-derivation below. **Otherwise harvest first** when a run executed the
+cases (this is what a `PR-007` hold routed here needs): take the
 step-2 snapshot now, run `/qa-review-tests file <suite.csv> --verify --fix`, then resolve each remaining
 `{HYPOTHESIS}` — `.claude/knowledge/execution/regression-promotion.md` §The full procedure, steps 1–2. A
 refuted behaviour is ENV-008, never `{OBSERVED}`.
@@ -118,7 +120,9 @@ clobber an existing `Synced:` / `Audited:` / `Corrected:` stamp.
 ## 4i — Flip in place (in-suite source only; the rows are never re-appended)
 
 - **`Automated` from a run.** `npm run tc:promote -- <RUN_ID> --ids <approved ids>` (dry run), then the
-  same with `--apply`. `<RUN_ID>` is `--run-id` when given, else `latest`. It writes `Draft → Automated`
+  same with `--apply`. `<RUN_ID>` is `--run-id` when given; else, after a `qa-suite-sync` run, **each of its
+  Phase 5 scoped runs** (`qa-suite-sync/verify.md` 5a) — one `tc:promote` per `RUN_ID`, `--ids` = the
+  approved cases that run last executed; else `latest`. It writes `Draft → Automated`
   from that run's results and holds what it cannot ground with a `PR-*` code (`PR-002`: the run did not
   execute the case).
 - **`Reviewed` for the cases the run says nothing against** — each approved case held at `PR-002` (not in
