@@ -7,6 +7,10 @@
 **Sprint dates:** 2026-11-02 – 2026-11-16 *(quoted from the Jira sprint object `VCST Sprint 26-22`, id 2949, board 126)*
 **Flags:** `--frontend`. Only `vc-frontend` PRs were reviewed; module PRs were not fetched. The waves cover the §5.1.1 Frontend suites only.
 
+> **Update 2026-11-12 (`--update`).** The scope did not change: no Story, Bug or Task of the sprint turned Done after 2026-11-11. Two things moved:
+> - **Build.** `vcst` now serves theme **`2.62.0-alpha.2647`** (`vc-frontend` `dev` @ `0315ecbd`, vc-deploy-dev#7097, 2026-11-11 17:12 UTC) and the **Xapi release 3.1031.0** (vc-deploy-dev#7098) in place of the x-api#70 PR build. alpha.2647 carries #2552, #2633, #2634, #2642 and #2652, so VCST-6079, VCST-6253, VCST-6254 and VCST-6698 are no longer `NOT_DEPLOYED` — the domain waves ran their cases on alpha.2647. Only W0 and the first W2 run were on alpha.2642. The build notes below are the 2026-11-11 reading.
+> - **WX.** Besides the five sign-in suites it now holds the 35 env-wide cases W1, W3, W4 and W6 deferred (store settings, the shared pickup-location set, a shared price, the missions toggle, an appsettings flag). The list: `regression/releases/sprint-26-22/PLAN.md` §WX.
+
 > **⚠ This sprint is still OPEN.** The plan was built on 2026-11-11, five days before the sprint closes. Of 179 issues, **78 are Done**. The rest include 8 Tasks and 4 Stories In review, 9 Tasks and 6 Stories In progress, 5 Tested, and 8 Testing or Ready for test. The scope below is the **Done** set. Re-run `/qa-test-plan 26-22 --update` after the sprint closes.
 
 > **The deployed theme is behind `dev`, and `dev` CI is red.** Build read on 2026-11-11 (`vc-deploy-dev@vcst-qa` manifest, `/api/platform/modules`, `theme-ci.yml` runs):
@@ -403,7 +407,7 @@ build. A later deploy changes the build under the run; record it in the wave's `
 
 1. **W0 green** on the deployed build: `042` passes on theme `2.62.0-alpha.2642` + Platform 3.1097.0 + Xapi `3.1031.0-pr-70-108f`. A red W0 stops every wave.
 2. **Build recorded:** each wave's `report.md` names the theme alpha and the Xapi build it ran on. If a newer green alpha is deployed during the freeze, `--update` the plan before the next wave starts.
-3. **Sign-in settings:** `MultiFactorAuthentication` and `OtpSignIn.Enabled` are at their defaults (off) before W1–W6. Only WX changes them, and it restores them in Cleanup.
+3. **Sign-in settings:** `MultiFactorAuthentication` and `OtpSignIn.Enabled` are at their defaults (off) before W1–W6. Only WX changes them — and, since the 2026-11-12 update, the other env-wide settings in `PLAN.md` §WX — and it restores each in Cleanup.
 4. **Fixtures seeded** per §8, by the owner of the wave that consumes them, before the wave starts.
 5. **Personas per owner:** two owners never sign in as the same account (contract §7.1); each wave's `state.json` names its personas.
 
