@@ -4,7 +4,7 @@
 
 Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst · 3.1097.0 · 2.62.0-alpha.2642 · Xapi is the PR build 3.1031.0-pr-70-108f (vc-module-x-api#70, VCST-4717), deployed by vc-deploy-dev#7095
 
-**Executed 486 · PASS 294 · FAIL 18 · BLOCKED 97** · ledger 196 rows
+**Executed 769 · PASS 396 · FAIL 38 · BLOCKED 137** · ledger 257 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -14,7 +14,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | W3 | Cart, checkout & addresses | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
 | W5 | Company & organization | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W6 | UI kit, design tokens, a11y & i18n (Bridge) | Elena Kutasina | CLAIMED | — | — | — | — | — | — | 0 | — |
+| W6 | UI kit, design tokens, a11y & i18n (Bridge) | Elena Kutasina | TRIAGED | 283 | 283 | 102 | 20 | 40 | 0 | 61 | REG-2026-11-12-0431-W6 REG-2026-11-12-0729-W6 |
 | WX | Exclusive window — sign-in settings | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
 ## Triage verdicts
@@ -22,13 +22,13 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | Verdict | Rows |
 |---|---|
 | REAL_BUG | 4 |
-| BY_DESIGN | 78 |
-| TEST_DEFECT | 56 |
-| DATA | 14 |
-| ENV_CONFIG | 30 |
-| NOT_TESTABLE | 5 |
-| DUPLICATE | 7 |
-| PENDING_DECISION | 2 |
+| BY_DESIGN | 81 |
+| TEST_DEFECT | 74 |
+| DATA | 34 |
+| ENV_CONFIG | 33 |
+| NOT_TESTABLE | 8 |
+| DUPLICATE | 15 |
+| PENDING_DECISION | 8 |
 
 ## Decisions pending
 
@@ -36,5 +36,11 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 |---|---|---|---|
 | W1 | AUTH-009 | Duplicate email on /sign-up is rejected inline with no sign-in / reset suggestion | Elena Kutasina |
 | W4 | CMP-031 | Below md (200/400% zoom) row Pin and info-tooltip controls are display:none with no substitute | Elena Kutasina |
+| W6 | LAYOUT-CNT-006 | Product title "WF-3620" counted as a mid-word wrap | triage · Elena Kutasina |
+| W6 | MSNF-068 | A mission with no translation for the locale shows its internal name, description is blank | triage · Elena Kutasina |
+| W6 | MSNF-099 | Deleted-product SKU target: 3 of 4 assertions fail (placeholder title/link) | triage · Elena Kutasina |
+| W6 | MSNF-100 | Unbuyable in-stock SKU target shows an in-stock badge with a disabled stepper | triage · Elena Kutasina |
+| W6 | MSNF-101 | Over-stock quantity counted in totals (observed on a substitute target) | triage · Elena Kutasina |
+| W6 | MSNF-102 | An ended mission not yet swept reads "0 days left" with a live Open mission control | triage · Elena Kutasina |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
