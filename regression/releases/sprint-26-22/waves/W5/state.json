@@ -1,7 +1,8 @@
 {
  "wave": "W5",
- "owner": null,
- "status": "NOT_STARTED",
+ "owner": "Aleksandra Mitricheva",
+ "status": "CLAIMED",
  "runIds": [],
- "updatedAt": "2026-11-11"
+ "updatedAt": "2026-11-12",
+ "personas": "B2B fixture accounts MULTI_ORG_TF_BR, MULTI_ORG_TF_BR_ALT, ORG_ASSOC_ONLY_NO_GLOBAL, ORG_TF_ONLY_INVITEE, TECHFLOW_ADMIN, TECHFLOW_BUYER, BUILDRIGHT_ADMIN, ACME_ADMIN, ACME_BUYER, ACME_VIEWER (test-data/aliases.json, b2b/users) + ORG_USER (test-emily.johnson), MULTI_ORG_USER, USER, PERSONAL_USER_VIRTO and ADMIN, as resolved from Aleksandra Mitricheva's .env.local via config.js; shared with W3 (MULTI_ORG_TF_BR, TECHFLOW_ADMIN, ORG_USER), so W5 runs only after W3 finished its run; 008 changes TechFlow/BuildRight membership and roles (org-wide) — nobody re-seeds the B2B org fixtures on vcst while W5 runs"
 }
