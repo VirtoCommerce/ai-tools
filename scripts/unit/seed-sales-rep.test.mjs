@@ -12,7 +12,7 @@ import { resetSecurityPassword } from '../../scripts/lib/seed-common.mjs';
 import { resolveRole, roleByKey } from '../../scripts/lib/user-roles.mjs';
 import { roleUsers, hasStaleLockout } from '../../scripts/lib/user-provision.mjs';
 import {
-  LAYOUT_REP, LAYOUT_PREF_PREFIX, LAYOUT_SCOPES, layoutPreferenceName, isLayoutPreference, GUID_RE, repFixtureStatus,
+  LAYOUT_REP, LAYOUT_SCOPES, layoutPreferenceName, isLayoutPreference, GUID_RE, repFixtureStatus,
 } from '../../scripts/seed-data/sales-rep/sales-rep-layout-specs.mjs';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -85,23 +85,19 @@ test('the SR org-roles are NOT provisioned by the generic personal-user seeder (
 
 // ── VCST-5367 saved-layout fixture (sales-rep-layout-specs.mjs) ───────────────
 
-test('layoutPreferenceName builds SalesRepLayout.{scope}[.{storeId}]', () => {
-  assert.equal(layoutPreferenceName('dashboard'), 'SalesRepLayout.dashboard');
-  assert.equal(layoutPreferenceName('customerProfile', 'B2B-store'), 'SalesRepLayout.customerProfile.B2B-store');
-  assert.equal(LAYOUT_PREF_PREFIX, 'SalesRepLayout');
-  assert.deepEqual(LAYOUT_SCOPES, ['dashboard', 'customerProfile']);
-});
-
-test('isLayoutPreference sweeps every layout key shape and nothing else', () => {
+// The declared names/scopes are owned by td:validate:sales-rep [7] (FOURTH RULE); this covers the matcher.
+test('isLayoutPreference sweeps both layout key generations and nothing else', () => {
   for (const scope of LAYOUT_SCOPES) {
     assert.equal(isLayoutPreference(layoutPreferenceName(scope)), true);
     assert.equal(isLayoutPreference(layoutPreferenceName(scope, 'B2B-store')), true);
   }
-  // a future scope / suffix still gets swept (prefix match, not an exact-key list)
+  // current key: scope matched case-insensitively (X-Frontend reads it that way)
+  assert.equal(isLayoutPreference('layout.SALESREPDASHBOARD.B2B-store'), true);
+  // legacy key: any scope / suffix under the rep-only SalesRepLayout namespace
   assert.equal(isLayoutPreference('SalesRepLayout.someNewScope.Electronics'), true);
   assert.equal(isLayoutPreference('SalesRepLayout'), true);
-  // unrelated preferences must survive teardown
-  for (const foreign of ['SalesRepLayoutOther', 'Layout.dashboard', 'PersistedGridState', '', null]) {
+  // unrelated preferences — including other X-Frontend Layout.* scopes — must survive teardown
+  for (const foreign of ['SalesRepLayoutOther', 'Layout.dashboard', 'Layout.salesRepDashboardX', 'Layout', 'PersistedGridState', '', null]) {
     assert.equal(isLayoutPreference(foreign), false, `must not match ${JSON.stringify(foreign)}`);
   }
 });
