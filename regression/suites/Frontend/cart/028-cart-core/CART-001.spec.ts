@@ -1,31 +1,37 @@
 // CART-001 — the executable twin of row CART-001 in ../028-cart-core.csv. The CSV row is the truth for
 // WHAT is checked (Preconditions, Steps, Assertions, Cross_Layer_Checks); this file is HOW. A failure
 // here is fixed in this file or reported as a product finding — never by editing the row's expectation.
-import { test, expect } from "../../../../lib/fixtures.js";
+import { test, expect, type DisposableCustomer } from "../../../../lib/fixtures.js";
 import { env, td } from "../../../../lib/data.js";
 import { cartQuantity, resetCart, watchCartTraffic } from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
 
-const ROLE = "USER_DEFAULT";
+// [PRE:DISPOSABLE_CUSTOMER:personal]: a personal customer created for this test and deleted after it (the
+// disposableCustomer fixture), so no shared account is signed in, locked or left with cart state.
+let customer: DisposableCustomer | undefined;
 
 /** The header cart link reads "<count><label>" with no separator ("1Cart"); match the leading count only. */
 const badgeShows = (count: number) => new RegExp(`^\\s*${count}(?!\\d)`);
 
 // Cleanup: "Remove added item from cart".
 test.afterEach(async ({ apiAs }) => {
-  await resetCart(await apiAs(ROLE));
+  if (customer) await resetCart(await apiAs(customer));
+  customer = undefined;
 });
 
-test("CART-001: Add to Cart - From Product Page", async ({ signedInAs, apiAs }) => {
+test("CART-001: Add to Cart - From Product Page", async ({ page, apiAs, signInHere, disposableCustomer }) => {
+  const user = (customer = await disposableCustomer("personal"));
   const sku = td("@td(BUYABLE_NO_MIN_QTY.sku)");
   const productId = td("@td(BUYABLE_NO_MIN_QTY.id)");
   const productSlug = td("@td(BUYABLE_NO_MIN_QTY.slug)");
 
   // [PRE:RESET_CART] before the session opens, so the header renders the emptied cart.
-  const api = await apiAs(ROLE);
+  const api = await apiAs(user);
   await resetCart(api);
-  // [PRE:SIGNIN_AS:USER_DEFAULT]
-  const page = await signedInAs(ROLE);
+  // [PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
+  await page.goto(env("FRONT_URL"));
+  await signInHere(page, user);
+  await page.goto(env("FRONT_URL"));
   const traffic = watchCartTraffic(page);
   const cartLink = page.getByRole("navigation", { name: "Main menu" }).getByRole("link", { name: /cart/i });
 

@@ -533,8 +533,8 @@ rules:
       - A change ticket and its code produce tokens at `grant_type=mfa`, or a sign-in ticket confirms a change.
     status: ACTIVE
     verified:
-      date: 2026-11-04
-      by: REG-2026-11-04-1531
+      date: 2026-11-12
+      by: REG-2026-11-12-1252
   - id: BL-AUTH-023
     title: An MFA mode set to Required by the administrator cannot be changed from the storefront
     rule: |-
@@ -556,8 +556,8 @@ rules:
       - A storefront mutation changes a mode the administrator set to Required.
     status: ACTIVE
     verified:
-      date: 2026-11-04
-      by: REG-2026-11-04-1531
+      date: 2026-11-12
+      by: REG-2026-11-12-1252
   - id: BL-AUTH-024
     title: An impersonated session cannot change MFA
     rule: |-
