@@ -4,7 +4,7 @@
 
 Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst · 3.1097.0 · 2.62.0-alpha.2642 · Xapi is the PR build 3.1031.0-pr-70-108f (vc-module-x-api#70, VCST-4717), deployed by vc-deploy-dev#7095
 
-**Executed 1461 · PASS 809 · FAIL 70 · BLOCKED 271** · ledger 539 rows
+**Executed 1461 · PASS 812 · FAIL 70 · BLOCKED 267** · ledger 536 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -14,7 +14,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | W3 | Cart, checkout & addresses | Elena Kutasina | TRIAGED | 304 | 275 | 110 | 28 | 29 | 0 | 165 | REG-2026-11-12-0714-W3 |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
 | W5 | Company & organization | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W6 | UI kit, design tokens, a11y & i18n (Bridge) | Elena Kutasina | TRIAGED | 283 | 283 | 102 | 20 | 40 | 0 | 61 | REG-2026-11-12-0431-W6 REG-2026-11-12-0729-W6 |
+| W6 | UI kit, design tokens, a11y & i18n (Bridge) | Elena Kutasina | TRIAGED | 283 | 283 | 105 | 20 | 36 | 0 | 58 | REG-2026-11-12-0431-W6 REG-2026-11-12-0729-W6 REG-2026-11-12-0846-W6 |
 | WX | Exclusive window — sign-in settings | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
 ## Triage verdicts
@@ -23,8 +23,8 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 |---|---|
 | REAL_BUG | 11 |
 | BY_DESIGN | 186 |
-| TEST_DEFECT | 145 |
-| DATA | 59 |
+| TEST_DEFECT | 148 |
+| DATA | 53 |
 | ENV_CONFIG | 54 |
 | NOT_TESTABLE | 49 |
 | DUPLICATE | 17 |
