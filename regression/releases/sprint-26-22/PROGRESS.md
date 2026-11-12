@@ -4,14 +4,14 @@
 
 Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst · 3.1097.0 · 2.62.0-alpha.2642 · Xapi is the PR build 3.1031.0-pr-70-108f (vc-module-x-api#70, VCST-4717), deployed by vc-deploy-dev#7095
 
-**Executed 486 · PASS 294 · FAIL 18 · BLOCKED 97** · ledger 196 rows
+**Executed 761 · PASS 404 · FAIL 46 · BLOCKED 126** · ledger 361 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 34 | 34 | 27 | 0 | 2 | 0 | 11 | REG-2026-11-11-1825-W0 |
 | W1 | Authentication — sign-in, session, security | Elena Kutasina | TRIAGED | 159 | 159 | 81 | 5 | 48 | 0 | 78 | REG-2026-11-12-0000-W1 |
 | W2 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W3 | Cart, checkout & addresses | Elena Kutasina | CLAIMED | — | — | — | — | — | — | 0 | — |
+| W3 | Cart, checkout & addresses | Elena Kutasina | TRIAGED | 304 | 275 | 110 | 28 | 29 | 0 | 165 | REG-2026-11-12-0714-W3 |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
 | W5 | Company & organization | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | UI kit, design tokens, a11y & i18n (Bridge) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -21,20 +21,46 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 4 |
-| BY_DESIGN | 78 |
-| TEST_DEFECT | 56 |
-| DATA | 14 |
-| ENV_CONFIG | 30 |
-| NOT_TESTABLE | 5 |
+| REAL_BUG | 10 |
+| BY_DESIGN | 181 |
+| TEST_DEFECT | 83 |
+| DATA | 23 |
+| ENV_CONFIG | 35 |
+| NOT_TESTABLE | 10 |
 | DUPLICATE | 7 |
-| PENDING_DECISION | 2 |
+| PENDING_DECISION | 12 |
+
+## Not run yet
+
+| Wave | Suites | Cases | Why |
+|---|---|---|---|
+| W3 | 081 | 29 | not run yet (as of REG-2026-11-12-0714-W3) |
+
+## Real bugs awaiting filing
+
+| Wave | Case | Summary | New in release | Note |
+|---|---|---|---|---|
+| W3 | QUOTE-026 | Approving a quote with an out-of-stock line places the order with no warning; stock goes negative | no |  |
+| W3 | BOPIS-096 | After Load more the pickup map keeps only page-1 markers | unknown |  |
+| W3 | BOPIS-100 | Pickup map (375 px Map tab) keeps only page-1 markers after Load more | unknown | same defect as BOPIS-096, file once |
+| W3 | CHK-089 | Address popup: deleting the search text leaves the list filtered with no Clear | unknown |  |
+| W3 | CHK-096 | No-match address search says 'You do not have any addresses yet' although 5 exist | unknown |  |
 
 ## Decisions pending
 
 | Wave | Case | Question | Who decides |
 |---|---|---|---|
 | W1 | AUTH-009 | Duplicate email on /sign-up is rejected inline with no sign-in / reset suggestion | Elena Kutasina |
+| W3 | QUOTE-011 | Expired quote stays Proposal sent with no expiry shown; Approve / Decline enabled | product (Elena Kutasina to route) |
+| W3 | QUOTE-022 | Approving a quote past its expirationDate places an order (CO261112-00011) | product (Elena Kutasina to route) |
+| W3 | QUOTE-023 | Quote expiry date is never rendered although xAPI returns it | product (Elena Kutasina to route) |
+| W3 | CHK-027 | ZIP ABCDE accepted for a USA address | product (Elena Kutasina to route) |
+| W3 | CHK-004 | Required-field checks pass; ZIP format not validated | product (Elena Kutasina to route) |
+| W3 | CART-051 | Switching cart currency drops the selected delivery method | product (Elena Kutasina to route) |
+| W3 | CHK-106 | Duplicate-address warning not shown; the case depends on open question OQ-8 | product (OQ-8) |
+| W3 | BOPIS-011 | Pickup map shows no on-screen zoom +/- buttons (keyboard zoom works) | Elena Kutasina |
+| W3 | QUOTE-031 | /account/quotes has no date filter (KB-BB991364); regression cases for VCST-4892 | Elena Kutasina |
+| W3 | QUOTE-032 | /account/quotes has no date filter (KB-BB991364); regression cases for VCST-4892 | Elena Kutasina |
 | W4 | CMP-031 | Below md (200/400% zoom) row Pin and info-tooltip controls are display:none with no substitute | Elena Kutasina |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
