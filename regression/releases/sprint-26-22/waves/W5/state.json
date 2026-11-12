@@ -1,35 +1,35 @@
 {
-  "wave": "W5",
-  "owner": "Aleksandra Mitricheva",
-  "status": "TRIAGED",
-  "runIds": [
-    "REG-2026-11-12-0725-W5",
-    "REG-2026-11-12-0837-W5b",
-    "REG-2026-11-12-0914-W5c",
-    "REG-2026-11-12-1008-W5d",
-    "REG-2026-11-12-1023-W5e",
-    "REG-2026-11-12-1214-W5f",
-    "REG-2026-11-12-1235-W5g",
-    "REG-2026-11-12-1248-W5h",
-    "REG-2026-11-12-1315-W5i"
-  ],
-  "updatedAt": "2026-11-12",
-  "personas": "B2B fixture accounts MULTI_ORG_TF_BR, MULTI_ORG_TF_BR_ALT, ORG_ASSOC_ONLY_NO_GLOBAL, ORG_TF_ONLY_INVITEE, TECHFLOW_ADMIN, TECHFLOW_BUYER, BUILDRIGHT_ADMIN, ACME_ADMIN, ACME_BUYER, ACME_VIEWER (test-data/aliases.json, b2b/users) + ORG_USER (test-emily.johnson), MULTI_ORG_USER, USER, PERSONAL_USER_VIRTO and ADMIN, as resolved from Aleksandra Mitricheva's .env.local via config.js; shared with W3 (MULTI_ORG_TF_BR, TECHFLOW_ADMIN, ORG_USER), so W5 runs only after W3 finished its run; 008 changes TechFlow/BuildRight membership and roles (org-wide) — nobody re-seeds the B2B org fixtures on vcst while W5 runs",
-  "totals": {
-    "planned": 141,
-    "executed": 141,
-    "pass": 122,
-    "fail": 4,
-    "blocked": 5,
-    "skipped": 10,
-    "ambiguous": 0
-  },
-  "untriaged": 0,
-  "evidence": "Aleksandra Mitricheva machine: C:/tmp/wt-s2622-W5/reports/regression/<runId>/ (gitignored); evidence packages under REG-2026-11-12-0914-W5c/evidence/B2C-MBR-025 and REG-2026-11-12-0837-W5b/evidence/B2C-ORG-051/orgscope",
-  "reports": {
-    "W5": {
-      "subtask": "112981",
-      "release": "112982"
-    }
+ "wave": "W5",
+ "owner": "Aleksandra Mitricheva",
+ "status": "TRIAGED",
+ "runIds": [
+  "REG-2026-11-12-0725-W5",
+  "REG-2026-11-12-0837-W5b",
+  "REG-2026-11-12-0914-W5c",
+  "REG-2026-11-12-1008-W5d",
+  "REG-2026-11-12-1023-W5e",
+  "REG-2026-11-12-1214-W5f",
+  "REG-2026-11-12-1235-W5g",
+  "REG-2026-11-12-1248-W5h",
+  "REG-2026-11-12-1315-W5i"
+ ],
+ "updatedAt": "2026-11-12",
+ "personas": "B2B fixture accounts MULTI_ORG_TF_BR, MULTI_ORG_TF_BR_ALT, ORG_ASSOC_ONLY_NO_GLOBAL, ORG_TF_ONLY_INVITEE, TECHFLOW_ADMIN, TECHFLOW_BUYER, BUILDRIGHT_ADMIN, ACME_ADMIN, ACME_BUYER, ACME_VIEWER (test-data/aliases.json, b2b/users) + ORG_USER (test-emily.johnson), MULTI_ORG_USER, USER, PERSONAL_USER_VIRTO and ADMIN, as resolved from Aleksandra Mitricheva's .env.local via config.js; shared with W3 (MULTI_ORG_TF_BR, TECHFLOW_ADMIN, ORG_USER), so W5 runs only after W3 finished its run; 008 changes TechFlow/BuildRight membership and roles (org-wide) — nobody re-seeds the B2B org fixtures on vcst while W5 runs",
+ "totals": {
+  "planned": 141,
+  "executed": 141,
+  "pass": 122,
+  "fail": 4,
+  "blocked": 5,
+  "skipped": 10,
+  "ambiguous": 0
+ },
+ "untriaged": 0,
+ "evidence": "Aleksandra Mitricheva machine: C:/tmp/wt-s2622-W5/reports/regression/<runId>/ (gitignored); evidence packages under REG-2026-11-12-0914-W5c/evidence/B2C-MBR-025 and REG-2026-11-12-0837-W5b/evidence/B2C-ORG-051/orgscope",
+ "reports": {
+  "W5": {
+   "subtask": "112981",
+   "release": "112982"
   }
+ }
 }
