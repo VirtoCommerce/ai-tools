@@ -21,13 +21,13 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 12 |
+| REAL_BUG | 11 |
 | BY_DESIGN | 186 |
 | TEST_DEFECT | 159 |
 | DATA | 56 |
 | ENV_CONFIG | 55 |
 | NOT_TESTABLE | 52 |
-| DUPLICATE | 19 |
+| DUPLICATE | 20 |
 | PENDING_DECISION | 18 |
 
 ## Not run yet
@@ -35,13 +35,6 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | Wave | Suites | Cases | Why |
 |---|---|---|---|
 | W3 | 081 | 29 | not run yet (as of REG-2026-11-12-0714-W3) |
-
-## Real bugs awaiting filing
-
-| Wave | Case | Summary | New in release | Note |
-|---|---|---|---|---|
-| W5 | B2C-MBR-031 | Role filter on /company/members offers Store manager which returns zero members (dead-end facet) | no |  |
-| W5 | B2C-MBR-025 | Role filter dead end plus an empty-state assertion that misreads PR #2354 | no | same defect as B2C-MBR-031 — file once; repair the empty-state assertion |
 
 ## Decisions pending
 

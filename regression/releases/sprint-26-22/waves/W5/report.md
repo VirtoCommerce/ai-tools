@@ -26,10 +26,10 @@ Five runs, each replacing the earlier result of the cases it re-ran:
 
 ## FAIL by verdict
 
-- **REAL_BUG (1 defect, not new in this sprint, DRAFT):** B2C-MBR-031 (+ B2C-MBR-025) — the `/company/members`
+- **REAL_BUG (1 defect, not new in this sprint) — VCST-6823 (Low):** B2C-MBR-031 (+ B2C-MBR-025) — the `/company/members`
   Role filter offers "Store manager", which returns no members. `organization.contactRoles` aggregates roles over every
-  membership record of the org, `organization.contacts` lists only contacts linked to it; on TechFlow 10 of 29
-  memberships have an unlinked contact. Route: `vc-module-profile-experience-api`, P3. Replaces the stale draft
+  membership record of the org, `organization.contacts` lists only contacts linked to it; on TechFlow 9 of 29
+  memberships have an unlinked contact; no storefront or Admin flow creates that state (only a direct membership POST). Route: `vc-module-profile-experience-api`. Supersedes the stale draft
   `reports/bugs/open/medium/BUG-members-role-facet-static-list.md` (blamed a static vc-frontend list). Evidence:
   `reports/regression/REG-2026-11-12-0914-W5c/evidence/B2C-MBR-025/` (owner's machine). kb KB-356A2FB9.
 - **DUPLICATE:** COMP-E2E-022 → **VCST-5314** (500 with raw SQL on membership create without `userId`; orphan
