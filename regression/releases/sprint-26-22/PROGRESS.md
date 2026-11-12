@@ -4,13 +4,13 @@
 
 Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst · 3.1097.0 · 2.62.0-alpha.2642 · Xapi is the PR build 3.1031.0-pr-70-108f (vc-module-x-api#70, VCST-4717), deployed by vc-deploy-dev#7095
 
-**Executed 761 · PASS 404 · FAIL 46 · BLOCKED 126** · ledger 361 rows
+**Executed 1178 · PASS 707 · FAIL 50 · BLOCKED 231** · ledger 478 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 34 | 34 | 27 | 0 | 2 | 0 | 11 | REG-2026-11-11-1825-W0 |
-| W1 | Authentication — sign-in, session, security | Elena Kutasina | TRIAGED | 159 | 159 | 81 | 5 | 48 | 0 | 78 | REG-2026-11-12-0000-W1 |
-| W2 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W1 | Authentication — sign-in, session, security | Elena Kutasina | DONE | 159 | 159 | 81 | 5 | 48 | 0 | 78 | REG-2026-11-12-0000-W1 |
+| W2 | Sales Rep hub | Elena Kutasina | TRIAGED | 417 | 417 | 303 | 4 | 105 | 0 | 117 | REG-2026-11-11-1938-W2 REG-2026-11-11-2018-W2 REG-2026-11-11-2227-W2 REG-2026-11-11-2211-W2 |
 | W3 | Cart, checkout & addresses | Elena Kutasina | TRIAGED | 304 | 275 | 110 | 28 | 29 | 0 | 165 | REG-2026-11-12-0714-W3 |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
 | W5 | Company & organization | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -21,13 +21,13 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 10 |
-| BY_DESIGN | 181 |
-| TEST_DEFECT | 83 |
-| DATA | 23 |
-| ENV_CONFIG | 35 |
-| NOT_TESTABLE | 10 |
-| DUPLICATE | 7 |
+| REAL_BUG | 11 |
+| BY_DESIGN | 183 |
+| TEST_DEFECT | 127 |
+| DATA | 39 |
+| ENV_CONFIG | 51 |
+| NOT_TESTABLE | 46 |
+| DUPLICATE | 9 |
 | PENDING_DECISION | 12 |
 
 ## Not run yet
@@ -50,7 +50,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Wave | Case | Question | Who decides |
 |---|---|---|---|
-| W1 | AUTH-009 | Duplicate email on /sign-up is rejected inline with no sign-in / reset suggestion | Elena Kutasina |
+| W2 | SR-TK-022 | Due dates month heading clipped at 1440px in es and pt; pt weekday headers also overlap | pending · Elena Kutasina |
 | W3 | QUOTE-011 | Expired quote stays Proposal sent with no expiry shown; Approve / Decline enabled | product (Elena Kutasina to route) |
 | W3 | QUOTE-022 | Approving a quote past its expirationDate places an order (CO261112-00011) | product (Elena Kutasina to route) |
 | W3 | QUOTE-023 | Quote expiry date is never rendered although xAPI returns it | product (Elena Kutasina to route) |
@@ -61,6 +61,6 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | W3 | BOPIS-011 | Pickup map shows no on-screen zoom +/- buttons (keyboard zoom works) | Elena Kutasina |
 | W3 | QUOTE-031 | /account/quotes has no date filter (KB-BB991364); regression cases for VCST-4892 | Elena Kutasina |
 | W3 | QUOTE-032 | /account/quotes has no date filter (KB-BB991364); regression cases for VCST-4892 | Elena Kutasina |
-| W4 | CMP-031 | Below md (200/400% zoom) row Pin and info-tooltip controls are display:none with no substitute | Elena Kutasina |
+| W4 | CMP-031 | Below md (200/400% zoom) row Pin and info-tooltip controls are display:none with no substitute | product / design (Elena Kutasina could not decide, 2026-11-12) |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
