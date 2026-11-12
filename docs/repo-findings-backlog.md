@@ -457,6 +457,20 @@ so the spread yields `{"0":"j","1":"i","2":"r","3":"a","comment_id":"…"}`. Fix
 `{ name: j.tracker, comment_id }` (or write the id to `tracker_comment.id`, the field the summaries already use).
 Repaired by hand in the VCST-6442 summary.
 
+## 2026-11-09 — found during the Stable 16 W7 run (vcptcore_regression)
+
+**`release:report --post` keeps a stale release dashboard.** `scripts/tracker/comment.mjs` `attachFiles()` treats an
+`--attach` image with the same file name as the same image (no size check — only `--attach-file`/`--attach-video`
+pass `matchSize`). The release dashboard is re-rendered under a fixed name (`stable-<N>-<W>-release.png`), so every
+later `--post` amends the comment but keeps the first upload: on VCST-6042 the W7 comment showed the 10:57 render
+(42 649 B) while the current render was 43 071 B. Fix: give the release PNG a content- or run-scoped name (as the
+per-run PNGs already have), or upload a changed same-name image and reference it by attachment id.
+
+**Loyalty balance mode written through the settings API does not take effect until the store is saved.**
+`POST /api/platform/settings/v2/tenant/Store/<store>/values` for `Loyalty.LoyaltyBalanceCalculationMode` read back the
+new value, but accruals kept the old mode until a platform restart or an Admin store save (KB-0761662A). Suite 075f
+and any seeder that switch the mode via that API therefore do not switch it; they need a store save after the write.
+
 ## 2026-11-12 — found during the Sprint 26-22 W5 regression (vcst)
 
 **`seed:membership-lock:verify` reads V6 by a stale hardcoded membership id.** It looks up

@@ -44,6 +44,14 @@
     "037": [
       { "kind": "storeSetting", "name": "Shipping.Bopis.GoogleMaps.Enabled", "equals": true, "cases": ["BOPIS-080", "BOPIS-109"], "why": "the pickup-location map in the cart" }
     ],
+    "040a": [
+      { "kind": "deployConfig", "name": "platform.config.Payments__Skyflow__vaultId", "nonEmpty": true, "level": "block", "cases": ["PAY-SKY-001", "PAY-SKY-002", "PAY-SKY-003", "PAY-SKY-004", "PAY-SKY-005", "PAY-SAVED-001", "PAY-SKTOK-001", "PAY-SKY-006", "PAY-SKY-007", "PAY-SKY-008", "PAY-SKY-009", "PAY-SKY-010", "PAY-SKY-011", "PAY-SKY-012", "PAY-SKY-013", "PAY-SKY-014", "PAY-SKY-015", "PAY-SKY-016", "PAY-SKY-017", "PAY-SKY-018", "PAY-SKY-019", "PAY-SKY-020", "PAY-SAVED-002", "PAY-SAVED-003", "PAY-SAVED-004", "PAY-SAVED-005", "PAY-SAVED-006", "PAY-SKY-021", "PAY-SKY-022"], "why": "Skyflow vault not configured on the stand: the card form stays on Loading and initializeCartPayment fails (Stable 16 W7 on vcptcore-regression); set on vcst-qa" },
+      { "kind": "deployConfig", "name": "platform.secretConfig.Payments__Skyflow__PaymentFormAccount__clientID", "nonEmpty": true, "level": "block", "cases": ["PAY-SKY-001", "PAY-SKY-002", "PAY-SKY-003", "PAY-SKY-004", "PAY-SKY-005", "PAY-SAVED-001", "PAY-SKTOK-001", "PAY-SKY-006", "PAY-SKY-007", "PAY-SKY-008", "PAY-SKY-009", "PAY-SKY-010", "PAY-SKY-011", "PAY-SKY-012", "PAY-SKY-013", "PAY-SKY-014", "PAY-SKY-015", "PAY-SKY-016", "PAY-SKY-017", "PAY-SKY-018", "PAY-SKY-019", "PAY-SKY-020", "PAY-SAVED-002", "PAY-SAVED-003", "PAY-SAVED-004", "PAY-SAVED-005", "PAY-SAVED-006", "PAY-SKY-021", "PAY-SKY-022"], "why": "Skyflow payment-form service account, as on vcst-qa" }
+    ],
+    "040c": [
+      { "kind": "deployConfig", "name": "platform.config.Payments__Datatrans__MerchantId", "nonEmpty": true, "level": "block", "cases": ["PAY-DT-001", "PAY-DT-002", "PAY-DT-003", "PAY-DT-004", "PAY-DT-005", "PAY-DT-006", "PAY-DT-007", "PAY-DT-008"], "why": "Datatrans merchant not configured on the stand, so B2B-store does not offer it (Stable 16 W7 on vcptcore-regression); set on vcst-qa" },
+      { "kind": "deployConfig", "name": "platform.secretConfig.Payments__Datatrans__Secret", "nonEmpty": true, "level": "block", "cases": ["PAY-DT-001", "PAY-DT-002", "PAY-DT-003", "PAY-DT-004", "PAY-DT-005", "PAY-DT-006", "PAY-DT-007", "PAY-DT-008"], "why": "Datatrans merchant secret, as on vcst-qa" }
+    ],
     "041": [
       { "kind": "paymentMethod", "name": "SkyflowPaymentMethod", "equals": true, "cases": ["PAY-UX-001", "PAY-UX-002", "PAY-PERF-001", "PAY-DECLINE-001", "PAY-DECLINE-002", "PAY-DECLINE-003", "PAY-DECLINE-004", "PAY-DECLINE-005", "PAY-XLAY-001", "PAY-DECLINE-006", "PAY-DECLINE-007", "PAY-SWITCH-001", "PAY-DECLINE-008"], "why": "card payment through Skyflow" }
     ],

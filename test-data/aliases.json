@@ -11963,6 +11963,30 @@
     },
     "notes": "L10N-ROUTE-001/002 (suite 046): a TOP-LEVEL storefront category whose slug starts with a supported 2-letter locale code (de), with the SAME slug in every store language so a language switch keeps the slug and only the prefix changes - the slug-eating defect (VCST-5144) is then the only way the URL can differ. Seeded by scripts/seed-data/catalog/seed-locale-slug-category.mjs (npm run seed:locale-slug); guard npm run td:validate:locale-slug; category_id only in aliases.<env>.json."
   },
+  "RESTRICTED_USER": {
+    "seed": "seed:rbac",
+    "_inline": true,
+    "_comment": "Suite 085 TASK-016 persona: a back-office Manager account whose only role grants task:access + task:read (no task:create or any other task write). The Tasks app opens, but Add/Create must be absent or disabled and POST /api/task-management must answer 403. Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs (TASK_READONLY_*); seed: npm run seed:rbac -- --only RESTRICTED_USER (add --verify for the live /currentuser proof); drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only RESTRICTED_USER. Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json. The PASSWORD is a {{RESTRICTED_USER_PASSWORD}} secret from .env.local (never committed).",
+    "email": "AGENT-TEST-task-readonly@test.virtocommerce.com",
+    "login": "AGENT-TEST-task-readonly@test.virtocommerce.com",
+    "password": "{{RESTRICTED_USER_PASSWORD}}",
+    "password_var": "RESTRICTED_USER_PASSWORD",
+    "role": "AGENT-TEST-Task-ReadOnly",
+    "permissions": [
+      "task:access",
+      "task:read"
+    ],
+    "excluded_permission": "task:create",
+    "excluded_permissions": [
+      "task:create",
+      "task:update",
+      "task:delete",
+      "task:finish",
+      "task:attachment:management"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
   "SR_REP_CALL": {
     "_inline": true,
     "seed": "seed:sales-rep-call",
