@@ -13,7 +13,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | W2 | Sales Rep hub | Elena Kutasina | TRIAGED | 417 | 417 | 303 | 4 | 105 | 0 | 117 | REG-2026-11-11-1938-W2 REG-2026-11-11-2018-W2 REG-2026-11-11-2227-W2 REG-2026-11-11-2211-W2 |
 | W3 | Cart, checkout & addresses | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
-| W5 | Company & organization | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W5 | Company & organization | Aleksandra Mitricheva | CLAIMED | — | — | — | — | — | — | 0 | — |
 | W6 | UI kit, design tokens, a11y & i18n (Bridge) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | WX | Exclusive window — sign-in settings | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
