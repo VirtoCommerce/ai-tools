@@ -1,7 +1,28 @@
 {
  "wave": "W6",
- "owner": null,
- "status": "NOT_STARTED",
- "runIds": [],
- "updatedAt": "2026-11-11"
+ "owner": "Elena Kutasina",
+ "status": "TRIAGED",
+ "runIds": [
+  "REG-2026-11-12-0431-W6",
+  "REG-2026-11-12-0729-W6",
+  "REG-2026-11-12-0846-W6"
+ ],
+ "updatedAt": "2026-11-12",
+ "personas": "REG-2026-11-12-0431-W6 (W3 held USER_DEFAULT): 045/046 on slot-3 qa-agent-slot3 (AGENT_SLOT3_PASSWORD), 070/071 no sign-in. REG-2026-11-12-0729-W6 (after W3): 083c on its declared personas USER_DEFAULT, USER, LOYALTY_VIP_USER, LOY_PERSONAL_NOORG and the 045 re-runs on USER_DEFAULT; no B2B organization account (W5). From Elena Kutasina's .env.local via config.js.",
+ "totals": {
+  "planned": 283,
+  "executed": 283,
+  "pass": 105,
+  "fail": 20,
+  "blocked": 36,
+  "skipped": 119,
+  "ambiguous": 3
+ },
+ "untriaged": 0,
+ "reports": {
+  "W6": {
+   "subtask": "112976",
+   "release": "112977"
+  }
+ }
 }
