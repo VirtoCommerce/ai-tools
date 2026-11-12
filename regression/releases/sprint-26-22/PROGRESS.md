@@ -9,7 +9,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 34 | 34 | 27 | 0 | 2 | 0 | 11 | REG-2026-11-11-1825-W0 |
-| W1 | Authentication — sign-in, session, security | Elena Kutasina | TRIAGED | 159 | 159 | 81 | 5 | 48 | 0 | 78 | REG-2026-11-12-0000-W1 |
+| W1 | Authentication — sign-in, session, security | Elena Kutasina | DONE | 159 | 159 | 81 | 5 | 48 | 0 | 78 | REG-2026-11-12-0000-W1 |
 | W2 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W3 | Cart, checkout & addresses | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
@@ -23,18 +23,17 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 |---|---|
 | REAL_BUG | 4 |
 | BY_DESIGN | 78 |
-| TEST_DEFECT | 56 |
+| TEST_DEFECT | 57 |
 | DATA | 14 |
 | ENV_CONFIG | 30 |
 | NOT_TESTABLE | 5 |
 | DUPLICATE | 7 |
-| PENDING_DECISION | 2 |
+| PENDING_DECISION | 1 |
 
 ## Decisions pending
 
 | Wave | Case | Question | Who decides |
 |---|---|---|---|
-| W1 | AUTH-009 | Duplicate email on /sign-up is rejected inline with no sign-in / reset suggestion | Elena Kutasina |
-| W4 | CMP-031 | Below md (200/400% zoom) row Pin and info-tooltip controls are display:none with no substitute | Elena Kutasina |
+| W4 | CMP-031 | Below md (200/400% zoom) row Pin and info-tooltip controls are display:none with no substitute | product / design (Elena Kutasina could not decide, 2026-11-12) |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
