@@ -54,7 +54,7 @@ code, so the fix has an objective red→green proof. This is **Gate 2** of the a
 | Mount throws "Need to install vue-i18n" / "injection not found" | component needs a global plugin (i18n / router / Pinia / `$cfg`) | stub/provide it in `global.plugins` / `global.provide` / `vi.mock` — see `vitest-patterns.md` |
 | New test passes immediately (never red) | STR/RCA doesn't match the code path | re-investigate the seam; a "red" you never saw is not a repro |
 | Async assertion flaky / sees stale value | reactivity/promise not flushed | `await nextTick()` / `await flushPromises()` before asserting |
-| Lint/type error on the new test file | ESLint error-level + strict TS | fix it in the test; never disable a rule |
+| Lint/type error on the new test file | ESLint (local only — not in CI) + strict TS | fix it in the test; never disable a rule |
 
 ## Hard rules
 - **Only ADD tests/stories.** Never edit or delete an existing test or `*.stories.ts` to reproduce or

@@ -36,8 +36,8 @@ existing style** over imposing newer idioms.
   schema (a typo no-ops to `undefined`).
 
 ## Build hygiene (these fail CI if violated)
-- **ESLint is error-level** (vue, ts, sonarjs, tailwind, vuejs-accessibility) — fix lint in your code;
-  never disable a rule or touch `eslint.config.js`.
+- **ESLint** (vue, ts, sonarjs, tailwind, vuejs-accessibility) is not run in upstream CI, so your local
+  `lint` is the only check — fix lint in your code; never disable a rule or touch `eslint.config.js`.
 - **No dependency adds/upgrades**, no `yarn.lock` changes, no Prettier reflow of untouched lines.
 - **a11y matters** — `vuejs-accessibility` rules are on; keep `alt`, labels, roles intact when editing
   templates.

@@ -86,6 +86,14 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
    the added test (so **new-code** coverage holds). Flag likely Sonar findings now → REQUEST_CHANGES, so
    the fix doesn't bounce at G5.
 
+10. **The checkout's own rules held** (`skills/vue-fix/repo-own-rules.md`) — read the checkout's
+   `AGENTS.md` and every `.claude/rules/*.md` whose `paths:` matches a changed file, and judge the added
+   lines against them; moved or copied lines count as added. Its hook does not run in `.fix-workspace/`,
+   so check by hand what it would block. A new public UI-kit prop / slot / emit / `--vc-*` token →
+   REQUEST_CHANGES (hand-off: the repo wants such names agreed first). The dev ran the checks those rules
+   name for the touched files, and typechecked with the repo's command — a bare `vue-tsc --noEmit` checks
+   nothing upstream, so it is no evidence. Cite the rule file and section for each finding.
+
 Reuse the built-in `/code-review` skill for mechanical diff inspection, but the GO/NO-GO is the
 VC-specific checklist above.
 

@@ -67,7 +67,8 @@ export const REPO_PROFILES: Record<RepoKind, RepoProfile> = {
     language: "ts",
     installCmd: "yarn install --frozen-lockfile || npm ci || npm install",
     buildCmd: "yarn build || npm run build",
-    typecheckCmd: "yarn typecheck || npx vue-tsc --noEmit",
+    // Not `vue-tsc --noEmit`: vc-frontend's root tsconfig is `"files": []` + project references, so it checks nothing.
+    typecheckCmd: "yarn validate:types || npx vue-tsc --build --force",
     lintCmd: "yarn lint || npm run lint",
     testCmd: "yarn test:unit || npx vitest run",
     defaultBranch: "dev",

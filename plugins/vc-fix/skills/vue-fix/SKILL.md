@@ -10,6 +10,7 @@ the typecheck + lint + test (+ build) gate. This is **Gate 3** of `.claude/rules
 
 ## Preconditions
 - Source checked out in `.fix-workspace/vc-frontend/` on branch `claude/qa-autofix/<ticket-key>` (base `dev`).
+- The checkout's own agent rules (`AGENTS.md`, matching `.claude/rules/*.md`) are read — `repo-own-rules.md`.
 - A NEW failing vitest test exists (Gate 2) or trivial-skip is justified.
 
 ## Steps
@@ -19,9 +20,11 @@ the typecheck + lint + test (+ build) gate. This is **Gate 3** of `.claude/rules
 2. **Implement the smallest correct change** to product code only. See `vue-fix-patterns.md` and
    `vue3-best-practices.md`. Match the file's existing style (`<script setup lang="ts">`, Composition
    API, `defineProps<…>()`/`defineEmits<…>()`). Two build-hygiene facts that bite:
-   - **ESLint runs error-level** (vue + ts + sonarjs + tailwind + a11y, flat config) — a new lint error
-     in your fix **fails CI**. Fix the warning; never disable a rule or edit `eslint.config.js`.
-   - **`vue-tsc` typecheck is strict** — a new type error fails CI. Type it correctly; don't `@ts-ignore`.
+   - **ESLint** (vue + ts + sonarjs + tailwind + a11y, flat config) is **not run in upstream CI** — only
+     pre-commit — so your local `lint` is the only place a new warning or error shows. Fix it; never
+     disable a rule or edit `eslint.config.js`.
+   - **`vue-tsc` typecheck is strict** — a new type error fails CI (`yarn build` runs it). Type it
+     correctly; don't `@ts-ignore`.
    - **No dependency / `yarn.lock` change**, no formatting churn, no edits to generated
      `core/api/graphql/**/types.ts`.
 3. **Green — fast inner loop first** (repro test only), then the affected suite:
@@ -32,11 +35,12 @@ the typecheck + lint + test (+ build) gate. This is **Gate 3** of `.claude/rules
    Repro test passes; **ALL pre-existing tests/stories still pass and are UNMODIFIED**.
 4. **Gate — full verification** (all must pass), per `REPO_PROFILES.frontend`:
    ```
-   yarn typecheck || npx vue-tsc --noEmit
+   yarn validate:types || npx vue-tsc --build --force   # never bare `vue-tsc --noEmit`: checks 0 files upstream
    yarn lint      || npm run lint
    yarn test:unit || npx vitest run
    yarn build     || npm run build      # run if the change could affect the build; skip only for trivial, well-covered changes (say so)
    ```
+   Plus every check the checkout's own rules name for the files you touched (`repo-own-rules.md`).
    The repo's PR CI also runs a **SonarCloud quality gate** (G5) — keep the changed lines clean (no new
    bug / vuln / unreviewed hotspot; no unhandled null, unawaited promise, swallowed error, missing i18n
    key) and cover the new code so **new-code** thresholds hold. Self-review for it now; re-confirm at G5.
@@ -60,6 +64,7 @@ the typecheck + lint + test (+ build) gate. This is **Gate 3** of `.claude/rules
 - If the correct fix is unclear or risky → `FIX_STATUS: FAILED`, don't push speculative changes.
 
 ## References
+- `repo-own-rules.md` — reading the checkout's own `AGENTS.md` / `.claude/rules/`, and how they apply in `/qa-fix`
 - `vue-fix-patterns.md` — common VC storefront fix shapes (reactivity, watch, prop, v-model, i18n, $cfg, GraphQL field, store)
 - `vue3-best-practices.md` — modern Vue 3 / TS idioms + build hygiene within a minimal diff
 - `.claude/rules/quality-gates.md` — G3 (green), G4 (review), G5 (CI + SonarCloud), G7 (no auto-merge)

@@ -541,7 +541,7 @@ export function kindToolchain(kind) {
     return {
       install: "yarn install --frozen-lockfile || npm ci || npm install",
       build: "yarn build || npm run build",
-      typecheck: "yarn typecheck || npx vue-tsc --noEmit",
+      typecheck: "yarn validate:types || npx vue-tsc --build --force",
       lint: "yarn lint || npm run lint",
       test: "yarn test:unit || npx vitest run",
     };

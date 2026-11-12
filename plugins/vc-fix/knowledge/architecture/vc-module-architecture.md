@@ -20,7 +20,7 @@ commands. Do not invent commands — read the profile for the routed repo's `kin
 |------|-------|------|---------|-------|-----------------------|
 | `module` | `vc-module-*`, `vc-module-x-*` | C# | `dotnet restore -p:NuGetAudit=false` | `dotnet build -c Debug -p:NuGetAudit=false` | `dotnet test --nologo -p:NuGetAudit=false` |
 | `platform` | `vc-platform` | C# | same as module | same as module | same, but **scoped to one test project** (`tests/` has 7 incl. benchmarks — never test the repo root) |
-| `frontend` | `vc-frontend` | TS | `yarn install --frozen-lockfile \|\| npm ci` | `yarn build` | `yarn test:unit \|\| npx vitest run` (+ `vue-tsc --noEmit`, lint) |
+| `frontend` | `vc-frontend` | TS | `yarn install --frozen-lockfile \|\| npm ci` | `yarn build` | `yarn test:unit \|\| npx vitest run` (+ `yarn validate:types`, lint) |
 
 `-p:NuGetAudit=false` is mandatory: every modern module sets `TreatWarningsAsErrors=true`, so NuGet
 audit warnings (NU1903) fail a vanilla restore **on the unmodified dev branch**. CLI-only — never

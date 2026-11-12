@@ -8,6 +8,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A storefront fix typechecks for real and follows the repo's own agent rules — `vc-fix` `0.18.7`, `vc-init` `0.6.1` — 2026-11-12
+
+### Fixed
+
+- `/qa-fix` Gate 3 typechecked a `vc-frontend` fix with `yarn typecheck || npx vue-tsc --noEmit`. vc-frontend has
+  no `typecheck` script, and its root `tsconfig.json` is `"files": []` plus project references, so the fallback
+  checked zero files and exited 0 — every storefront fix passed its typecheck without one. The default
+  (`REPO_PROFILES.frontend`, and vc-init's `kindToolchain` that seeds a client storefront's profile) is now
+  `yarn validate:types || npx vue-tsc --build --force`; `/vue-fix`, `fullstack-frontend`, the PR-body checklist and
+  the architecture notes follow. A client profile written before this keeps the old command until
+  `/project-init` re-derives it.
+- The notes said a new ESLint error fails vc-frontend CI. It does not: ESLint runs only pre-commit there, so the
+  local `lint` is the only place it shows.
+
+### Added
+
+- `skills/vue-fix/repo-own-rules.md`: `fullstack-frontend` reads the checkout's own `AGENTS.md`, `CLAUDE.md` and
+  the `.claude/rules/*.md` matching its files before the repro, and runs the checks they name. They are read in
+  the checkout, never copied here. Their edit-guard hook does not run in `.fix-workspace/`, so it is kept by hand,
+  and a fix that needs new public UI-kit API is a hand-off. `frontend-reviewer` checklist item 10 checks it.
+
 ## A host-governed project asks where the agent may create test data — `vc-init` `0.6.0`, `vc-fix` `0.18.6` — 2026-11-11
 
 ### Changed
