@@ -1,8 +1,26 @@
 {
  "wave": "W1",
  "owner": "Elena Kutasina",
- "status": "CLAIMED",
- "runIds": [],
- "updatedAt": "2026-11-11",
- "personas": "USER_DEFAULT = qa-user-01, SUPPORT_AGENT, ADMIN, TECHFLOW_BUYER, BUILDRIGHT_ADMIN, NO_IMPERSONATE_OPERATOR and lane account qa-agent-slot1 (playwright-chrome only), from Elena Kutasina's .env.local via config.js; one case (033) signs in as SR_REP_PRIMARY, shared with W2 on edge — a parallel owner must not use these accounts"
+ "status": "TRIAGED",
+ "runIds": [
+  "REG-2026-11-12-0000-W1"
+ ],
+ "updatedAt": "2026-11-12",
+ "personas": "USER_DEFAULT = qa-user-01, SUPPORT_AGENT, ADMIN, TECHFLOW_BUYER, BUILDRIGHT_ADMIN, NO_IMPERSONATE_OPERATOR and lane account qa-agent-slot1 (playwright-chrome only), from Elena Kutasina's .env.local via config.js; one case (033) signs in as SR_REP_PRIMARY, shared with W2 on edge — a parallel owner must not use these accounts",
+ "totals": {
+  "planned": 159,
+  "executed": 159,
+  "pass": 81,
+  "fail": 5,
+  "blocked": 48,
+  "skipped": 25,
+  "ambiguous": 0
+ },
+ "untriaged": 0,
+ "reports": {
+  "W1": {
+   "subtask": "112964",
+   "release": "112965"
+  }
+ }
 }
