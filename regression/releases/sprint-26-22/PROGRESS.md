@@ -4,13 +4,13 @@
 
 Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst · 3.1097.0 · 2.62.0-alpha.2642 · Xapi is the PR build 3.1031.0-pr-70-108f (vc-module-x-api#70, VCST-4717), deployed by vc-deploy-dev#7095
 
-**Executed 486 · PASS 294 · FAIL 18 · BLOCKED 97** · ledger 196 rows
+**Executed 903 · PASS 597 · FAIL 22 · BLOCKED 202** · ledger 313 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 34 | 34 | 27 | 0 | 2 | 0 | 11 | REG-2026-11-11-1825-W0 |
 | W1 | Authentication — sign-in, session, security | Elena Kutasina | DONE | 159 | 159 | 81 | 5 | 48 | 0 | 78 | REG-2026-11-12-0000-W1 |
-| W2 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W2 | Sales Rep hub | Elena Kutasina | TRIAGED | 417 | 417 | 303 | 4 | 105 | 0 | 117 | REG-2026-11-11-1938-W2 REG-2026-11-11-2018-W2 REG-2026-11-11-2227-W2 REG-2026-11-11-2211-W2 |
 | W3 | Cart, checkout & addresses | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
 | W5 | Company & organization | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -21,19 +21,20 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 4 |
-| BY_DESIGN | 78 |
-| TEST_DEFECT | 57 |
-| DATA | 14 |
-| ENV_CONFIG | 30 |
-| NOT_TESTABLE | 5 |
-| DUPLICATE | 7 |
-| PENDING_DECISION | 1 |
+| REAL_BUG | 5 |
+| BY_DESIGN | 80 |
+| TEST_DEFECT | 100 |
+| DATA | 30 |
+| ENV_CONFIG | 46 |
+| NOT_TESTABLE | 41 |
+| DUPLICATE | 9 |
+| PENDING_DECISION | 2 |
 
 ## Decisions pending
 
 | Wave | Case | Question | Who decides |
 |---|---|---|---|
+| W2 | SR-TK-022 | Due dates month heading clipped at 1440px in es and pt; pt weekday headers also overlap | pending · Elena Kutasina |
 | W4 | CMP-031 | Below md (200/400% zoom) row Pin and info-tooltip controls are display:none with no substitute | product / design (Elena Kutasina could not decide, 2026-11-12) |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
