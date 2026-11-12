@@ -1,11 +1,11 @@
 {
   "wave": "W4",
   "owner": "Elena Kutasina",
-  "status": "TRIAGED",
+  "status": "DONE",
   "runIds": [
     "REG-2026-11-11-1939-W4"
   ],
-  "updatedAt": "2026-11-11",
+  "updatedAt": "2026-11-12",
   "personas": "USER_DEFAULT = qa-user-01, ORG_USER_DEFAULT = acme_store_maintainer_1, WISH_TWO_STORE_CUSTOMER, MULTI_ORG_TF_BR_ALT and lane account qa-agent-slot1 (playwright-chrome only), as resolved from Elena Kutasina's .env.local via config.js; W2 runs in parallel on SR_REP_* / ACME_BUYER / slot 3 — a parallel owner must not use these accounts",
   "totals": {
     "planned": 293,
