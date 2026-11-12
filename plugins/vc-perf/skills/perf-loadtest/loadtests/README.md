@@ -26,7 +26,22 @@ loadtests/run.sh smoke    # 1 VU × 3 iterations — liveness + first numbers
 loadtests/run.sh steady   # open-model ramp 0→RATE/s over 10s, hold 120s (HOLD to stretch)
 
 SCENARIO=cart-read-loop loadtests/run.sh steady   # read-path subject (see «Scenarios»)
+
+loadtests/run.sh steady --env-file .vc-perf/run.env --k6 /opt/k6/k6   # knobs from a file, k6 off PATH
 ```
+
+**`--env-file <path>`** carries the knobs below as `KEY=VALUE` lines (blank lines and `#` comments
+allowed, values literal — no quotes stripped, no expansion; file values override the inherited
+environment). It exists for callers that cannot put variables on the command itself — see the
+Claude Code sandbox note below. The file is parsed, never sourced: a knob `run.sh` reads itself is
+validated (an empty value there means "not set by the file" — the environment or the default
+applies), and any other name reaches **k6 only** (`-e NAME=VALUE` → `__ENV`), never a process
+environment — so scenario-specific knobs of a `PAYLOAD_DIR` payload work without listing them
+anywhere. Refused, loudly, with the file line: `K6` (an executable path — pass **`--k6 <path>`**, so
+it stays in the command text), credential-like names (`*PASSWORD*`, `*PASSWD*`, `*SECRET*`,
+`*TOKEN*`, `*CREDENTIAL*`, `*APIKEY*`, `*_KEY`, `*_KEY_*`, `*_PAT`, `PERF_API_USER` — file values
+reach k6 through argv, which `ps` shows; keep credentials in the environment), `PROFILE` /
+`SUMMARY_PATH` (set by `run.sh`), and duplicates.
 
 Knobs (env): `SCENARIO` (scenario basename under `scenarios/`, default `cart-order-loop`;
 non-default scenarios write to `results/<scenario>/<profile>/`) ·
@@ -54,7 +69,9 @@ them across items — the realistic-mix band; setup logs how many were actually 
 `STORE_ID` (your store id) · `CURRENCY_CODE` / `CULTURE_NAME` (store currency and culture,
 defaults `USD` / `en-US`) · `USER_POOL` (multi-user concurrency, see below) ·
 `SEED_PASSWORD` / `SEED_EMAIL_FORMAT` ·
-`K6` (k6 binary path — default `k6` on PATH; set it to an off-PATH binary) ·
+`K6` (k6 binary path — default `k6` on PATH; set it to an off-PATH binary; `--k6 <path>` overrides
+it — an env file cannot set it, so with `--env-file` the path comes from `--k6` or the inherited
+environment) ·
 `PAYLOAD_DIR` (a consumer-owned dir with `scenarios/` (+ optional `queries/`) to run instead of the
 bundled ones — the harness combines it with the plugin's generic `lib/` + `config.js` in a temp
 run-dir; use this rather than editing the install, see `../SKILL.md`) ·
@@ -86,10 +103,13 @@ time interval contains it, which requires non-overlapping requests.
 
 ```bash
 aspire otel spans backend --apphost "$AH" --follow --format Json --non-interactive > spans.json &
-OP_TAG=1 ITERATIONS=6 loadtests/run.sh smoke        # 1 VU, sequential
+loadtests/run.sh smoke --env-file <abs path>   # file: OP_TAG=1, ITERATIONS=6 + your knobs; 1 VU, sequential
 kill %1
 node ../perf-trace/perftools/op_attrib.mjs spans.json --last   # paths relative to skills/perf-loadtest/
 ```
+
+In Claude Code, make each line its own Bash call — the capture with `run_in_background`, `run.sh`
+bare — so the `run.sh` call still matches its sandbox exclusion (see the sandbox note below).
 
 ## User pool (multi-user concurrency)
 
@@ -114,6 +134,18 @@ USER_POOL=50 RATE=20 loadtests/run.sh steady
 > it normally. Do **NOT** pass `dangerouslyDisableSandbox` (it doesn't help here and breaks AF_UNIX
 > for sibling tooling like `dotnet-trace`). For L3 trace capture during the load window, see the
 > `perf-trace` skill's `perftools/README.md` → "Agentic run".
+>
+> **Pass knobs with `--env-file`, never on the command.** The exclusion applies only when the
+> *whole* Bash call matches it: `RATE=5 <pluginRoot>/…/run.sh steady`, `export RATE=5; …/run.sh
+> steady` and `set -a; . file; …/run.sh steady` all run **sandboxed** (measured on Claude Code
+> 2.1.278+), and fail as `connection refused` against a backend that is up. Write the knobs to a
+> file in one call, then run `<pluginRoot>/skills/perf-loadtest/loadtests/run.sh steady --env-file
+> <abs path> [--k6 <abs path>]` bare in the next. Credentials stay in the session environment, which
+> the excluded process inherits. A quick check that a call really ran outside: with
+> `PAYLOAD_DIR=<a dir that has a scenarios/ subdir>` and `SCENARIO=nope` in the file, `run.sh`
+> stops on the missing scenario before
+> any load, and the path in that error is its temp run-dir — `/tmp/tmp.*` outside the sandbox, under
+> the sandbox's own `$TMPDIR` inside.
 
 ## Scenarios
 

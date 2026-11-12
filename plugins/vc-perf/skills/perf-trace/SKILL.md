@@ -55,10 +55,13 @@ routinely reorders the candidate list before any code is touched.
 
 ```bash
 aspire otel spans backend --apphost "$AH" --follow --format Json --non-interactive > spans.json &
-OP_TAG=1 ITERATIONS=6 <loadtests>/run.sh smoke     # OP_TAG labels each request ?op=<name>; 1 VU
+<loadtests>/run.sh smoke --env-file <abs path>   # file: OP_TAG=1 (labels each request ?op=<name>), ITERATIONS=6; 1 VU
 kill %1
 node $pluginRoot/skills/perf-trace/perftools/op_attrib.mjs spans.json --last
 ```
+
+Each line is its own Bash call in Claude Code (the capture via `run_in_background`, `run.sh` bare
+— a variable on its command line re-sandboxes it; `<loadtests>/README.md`, sandbox note).
 
 Requires **1 VU** (`smoke`): attribution is by time containment, so requests must not overlap — the
 tool counts overlaps and refuses rather than emitting meaningless numbers. Details and the three
