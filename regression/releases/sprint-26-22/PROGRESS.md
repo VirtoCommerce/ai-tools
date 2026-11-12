@@ -11,7 +11,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | W0 | Smoke gate | Elena Kutasina | DONE | 34 | 34 | 27 | 0 | 2 | 0 | 11 | REG-2026-11-11-1825-W0 |
 | W1 | Authentication — sign-in, session, security | Elena Kutasina | DONE | 159 | 159 | 81 | 5 | 48 | 0 | 78 | REG-2026-11-12-0000-W1 |
 | W2 | Sales Rep hub | Elena Kutasina | TRIAGED | 417 | 417 | 303 | 4 | 105 | 0 | 117 | REG-2026-11-11-1938-W2 REG-2026-11-11-2018-W2 REG-2026-11-11-2227-W2 REG-2026-11-11-2211-W2 |
-| W3 | Cart, checkout & addresses | Elena Kutasina | TRIAGED | 304 | 275 | 110 | 28 | 29 | 0 | 165 | REG-2026-11-12-0714-W3 |
+| W3 | Cart, checkout & addresses | Elena Kutasina | DONE | 304 | 275 | 110 | 28 | 29 | 0 | 165 | REG-2026-11-12-0714-W3 |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
 | W5 | Company & organization | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | UI kit, design tokens, a11y & i18n (Bridge) | Elena Kutasina | TRIAGED | 283 | 283 | 105 | 20 | 36 | 0 | 58 | REG-2026-11-12-0431-W6 REG-2026-11-12-0729-W6 REG-2026-11-12-0846-W6 |
@@ -21,13 +21,13 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 11 |
+| REAL_BUG | 10 |
 | BY_DESIGN | 186 |
 | TEST_DEFECT | 148 |
 | DATA | 53 |
 | ENV_CONFIG | 54 |
 | NOT_TESTABLE | 49 |
-| DUPLICATE | 17 |
+| DUPLICATE | 18 |
 | PENDING_DECISION | 18 |
 
 ## Not run yet
@@ -35,16 +35,6 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | Wave | Suites | Cases | Why |
 |---|---|---|---|
 | W3 | 081 | 29 | not run yet (as of REG-2026-11-12-0714-W3) |
-
-## Real bugs awaiting filing
-
-| Wave | Case | Summary | New in release | Note |
-|---|---|---|---|---|
-| W3 | QUOTE-026 | Approving a quote with an out-of-stock line places the order with no warning; stock goes negative | no |  |
-| W3 | BOPIS-096 | After Load more the pickup map keeps only page-1 markers | unknown |  |
-| W3 | BOPIS-100 | Pickup map (375 px Map tab) keeps only page-1 markers after Load more | unknown | same defect as BOPIS-096, file once |
-| W3 | CHK-089 | Address popup: deleting the search text leaves the list filtered with no Clear | unknown |  |
-| W3 | CHK-096 | No-match address search says 'You do not have any addresses yet' although 5 exist | unknown |  |
 
 ## Decisions pending
 
