@@ -6,8 +6,8 @@ import type { APIRequestContext, Page } from "@playwright/test";
 import { test, expect, type DisposableCustomer } from "../../../../lib/fixtures.js";
 import { env, td } from "../../../../lib/data.js";
 
-// The row signs in as USER2 (a personal customer); the spec runs on a disposable personal customer
-// created for this test and deleted after it, so no other run can lock the account or touch its carts.
+// [PRE:DISPOSABLE_CUSTOMER:personal]: a personal customer created for this test and deleted after it (the
+// disposableCustomer fixture), so no shared account is signed in, locked or left with cart state.
 let account: DisposableCustomer | undefined;
 const GUEST_CART = "AGENT-TEST-MERGEAUTH-BR-GUEST";
 const TARGET_CART = "AGENT-TEST-MERGEAUTH-BR-TARGET";
@@ -100,10 +100,10 @@ test("CART-125: Cart Merge - A Signed-In Customer Can Still Merge a Guest Cart E
   page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text()); });
   page.on("response", (r) => { if (new URL(r.url()).pathname.endsWith("/graphql")) statuses.push(r.status()); });
 
-  // [API] read the signed-in token from localStorage "auth" -> USER2_TOKEN
+  // [API] read the signed-in token from localStorage "auth" -> CUSTOMER_TOKEN
   const userToken = await sessionToken(page);
 
-  // [API] signed-in me { id userName } -> USER2_ID
+  // [API] signed-in me { id userName } -> CUSTOMER_ID
   const me = await call(page.request, `{ me { id userName } }`, {}, userToken);
   const userId = me.body.data?.me?.id as string;
   const sessionUserId = await page.evaluate(() => localStorage.getItem("user-id"));

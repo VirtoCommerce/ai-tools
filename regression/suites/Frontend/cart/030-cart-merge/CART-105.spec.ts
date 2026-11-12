@@ -6,8 +6,8 @@ import { env, td } from "../../../../lib/data.js";
 import { addFromPdp, resetCart, watchCartTraffic } from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
 
-// The row signs in as USER_DEFAULT (a personal customer); the spec runs on a disposable personal customer
-// created for this test and deleted after it, so no other run can lock the account or touch its cart.
+// [PRE:DISPOSABLE_CUSTOMER:personal]: a personal customer created for this test and deleted after it (the
+// disposableCustomer fixture), so no shared account is signed in, locked or left with cart state.
 let customer: DisposableCustomer | undefined;
 
 // Cleanup: "none (verify cart state)" in the row; the cart is still reset so the next case starts empty.
@@ -36,7 +36,7 @@ test("CART-105: Cart Merge - Smart Merge Failure Handling", async ({ page, apiAs
   await addFromPdp(page, product);
   const guestAdds = traffic.cartMutations.slice(addedFrom);
 
-  // [ACT] sign in as USER_DEFAULT (normal merge) — in THIS session, so the storefront's sign-in merge runs.
+  // [ACT] sign in as the disposable customer (normal merge) — in THIS session, so the storefront's sign-in merge runs.
   await signInHere(page, user);
 
   // [NAV] navigate to {{FRONT_URL}}/cart

@@ -13,12 +13,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { env } from "./data.js";
 import { acquireToken, resolveRole, type RoleCredentials } from "../../scripts/lib/graphql-auth.js";
+import { password as ephemeralPassword } from "../../scripts/lib/loyalty-ephemeral-account.mjs";
 import {
-  createEphemeralAccount,
-  deleteEphemeralAccount,
-  newHandle,
-  password as ephemeralPassword,
-} from "../../scripts/lib/loyalty-ephemeral-account.mjs";
+  DISPOSABLE_PREFIX,
+  createDisposableCustomer,
+  deleteDisposableCustomer,
+  type DisposableCustomerRecord,
+} from "../../scripts/lib/disposable-customer.mjs";
 import {
   EMAIL_SELECTORS,
   PWD_SELECTORS,
@@ -32,22 +33,17 @@ import {
  */
 const HAR_URL_FILTER = /^(?!.*\/connect\/token(?:[?#]|$)).*$/;
 
-/** Every disposable customer and organization a spec mints starts with this; a crashed run's leftovers are swept by it. */
-export const DISPOSABLE_PREFIX = "AGENT-TEST-SPEC-";
+/** Every disposable customer and organization starts with this; a crashed run's leftovers are swept by it. */
+export { DISPOSABLE_PREFIX };
 
 /**
  * A storefront customer created for ONE test and deleted after it: `personal` (no organization) or
  * `orgMember` (the only member of an organization created for it). Nothing else signs in as it, so no
  * other run can lock it, fill its cart or change its state. Its password is the ephemeral-account one
- * (DEFAULT_TEST_PASSWORD), resolved in this module and never handed to a spec.
+ * (DEFAULT_TEST_PASSWORD), resolved in this module and never handed to a spec. Created and deleted by
+ * scripts/lib/disposable-customer.mjs — the same path the agent lane's `[PRE:DISPOSABLE_CUSTOMER]` uses.
  */
-export interface DisposableCustomer {
-  kind: "personal" | "orgMember";
-  email: string;
-  userId: string;
-  memberId: string;
-  organizationId?: string;
-}
+export type DisposableCustomer = DisposableCustomerRecord;
 
 /** Who an auth fixture acts as: a role alias from test-data/aliases.json, or a disposable customer. */
 export type Who = string | DisposableCustomer;
@@ -212,45 +208,23 @@ export const test = base.extend<{
   },
 
   /**
-   * Creates a customer for this test only — see DisposableCustomer — through the create path the
-   * seeders use (scripts/lib/loyalty-ephemeral-account.mjs: contact, account, approve, password). An
+   * Creates a customer for this test only — see DisposableCustomer — through
+   * scripts/lib/disposable-customer.mjs (the same create path the agent lane's CLI uses). An
    * `orgMember` also gets its own organization. Teardown deletes the account, the contact and the
    * organization after every afterEach hook has run, so a spec's own cart cleanup can still sign in. A
-   * crashed run leaves `AGENT-TEST-SPEC-*` behind; sweepEphemeralAccounts with DISPOSABLE_PREFIX reclaims it.
+   * crashed run leaves `AGENT-TEST-SPEC-*` behind; `npm run td:customer -- sweep` reclaims it.
    */
   disposableCustomer: async ({}, use) => {
     const api = await adminApi();
     const made: DisposableCustomer[] = [];
     try {
       await use(async (kind) => {
-        let organizationId: string | undefined;
-        if (kind === "orgMember") {
-          const name = newHandle(`${DISPOSABLE_PREFIX}ORG-`);
-          const org = await api("POST", "/api/members", { memberType: "Organization", name, status: "Approved" }, { expectStatus: [200, 201] });
-          organizationId = org.id as string;
-        }
-        try {
-          const account = await createEphemeralAccount(api, {
-            prefix: DISPOSABLE_PREFIX,
-            storeId: env("STORE_ID"),
-            withOrg: false,
-            organizationId,
-            firstName: "Agent",
-            lastName: kind === "orgMember" ? "OrgMember" : "Personal",
-          });
-          const customer: DisposableCustomer = { kind, email: account.email, userId: account.userId, memberId: account.memberId, organizationId };
-          made.push(customer);
-          return customer;
-        } catch (e) {
-          if (organizationId) await api("DELETE", `/api/members?ids=${organizationId}`, null, { expectStatus: [200, 204, 404] });
-          throw e;
-        }
+        const customer = await createDisposableCustomer(api, { kind, storeId: env("STORE_ID") });
+        made.push(customer);
+        return customer;
       });
     } finally {
-      for (const c of made) {
-        await deleteEphemeralAccount(api, { email: c.email, memberId: c.memberId, prefix: DISPOSABLE_PREFIX });
-        if (c.organizationId) await api("DELETE", `/api/members?ids=${c.organizationId}`, null, { expectStatus: [200, 204, 404] });
-      }
+      for (const c of made) await deleteDisposableCustomer(api, c);
     }
   },
 

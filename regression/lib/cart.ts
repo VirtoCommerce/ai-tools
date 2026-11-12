@@ -88,10 +88,11 @@ export async function addToCart(api: APIRequestContext, sku: string, qty: number
   );
   const product = products.items.find((p) => p.code === sku);
   if (!product) throw new Error(`cart: no product with code ${sku} in store ${ctx.storeId}`);
-  const { cart } = await gql<{ cart: { id: string } }>(api, CART, ctx);
+  // A brand-new account has no cart yet: addItem without a cartId creates the user's current cart.
+  const { cart } = await gql<{ cart: { id: string } | null }>(api, CART, ctx);
   const { addItem } = await gql<{
     addItem: { items: Array<{ productId: string; quantity: number }>; validationErrors: Array<{ errorCode: string }> };
-  }>(api, ADD_ITEM, { command: { ...ctx, cartId: cart.id, productId: product.id, quantity: qty } });
+  }>(api, ADD_ITEM, { command: { ...ctx, ...(cart?.id ? { cartId: cart.id } : {}), productId: product.id, quantity: qty } });
   const line = addItem.items.find((i) => i.productId === product.id);
   if (!line || line.quantity < qty) {
     const codes = addItem.validationErrors.map((e) => e.errorCode).join(", ") || "no validation error";

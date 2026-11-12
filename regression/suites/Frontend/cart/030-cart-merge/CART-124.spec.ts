@@ -6,8 +6,8 @@ import { test, expect, type DisposableCustomer } from "../../../../lib/fixtures.
 import { env, td } from "../../../../lib/data.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
 
-// The row signs in as USER2 (a personal customer); the spec's victim is a disposable personal customer
-// created for this test and deleted after it, so no other run can lock the account or touch its carts.
+// [PRE:DISPOSABLE_CUSTOMER:personal]: a personal customer created for this test and deleted after it (the
+// disposableCustomer fixture), so no shared account is signed in, locked or left with cart state.
 let victimAccount: DisposableCustomer | undefined;
 const VICTIM_CART = "AGENT-TEST-MERGEAUTH-BR-VICTIM";
 const ANON_TARGET_CART = "AGENT-TEST-MERGEAUTH-BR-ANONTARGET";
@@ -82,7 +82,7 @@ test("CART-124: Cart Merge - A Guest Session Cannot Merge a Signed-In Customer's
   page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text()); });
   page.on("response", (r) => { if (new URL(r.url()).pathname.endsWith("/graphql")) statuses.push(r.status()); });
 
-  // [API] read the signed-in token from localStorage "auth" -> USER2_TOKEN
+  // [API] read the signed-in token from localStorage "auth" -> CUSTOMER_TOKEN
   const userToken = await sessionToken(page);
 
   // [API] signed-in me { id userName } -> VICTIM_USER_ID; discover one in-stock product -> PRODUCT_ID

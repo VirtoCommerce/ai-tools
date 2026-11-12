@@ -16,8 +16,8 @@ import {
 } from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
 
-// The row signs in as USER_DEFAULT (a personal customer); the spec runs on a disposable personal customer
-// created for this test and deleted after it, so no other run can lock the account or touch its cart.
+// [PRE:DISPOSABLE_CUSTOMER:personal]: a personal customer created for this test and deleted after it (the
+// disposableCustomer fixture), so no shared account is signed in, locked or left with cart state.
 let customer: DisposableCustomer | undefined;
 
 /** The stock the PDP buy box shows: the "In stock" badge (that is its title) renders the quantity. */
