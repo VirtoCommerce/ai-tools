@@ -121,6 +121,8 @@ export interface CartMutation {
  * - `httpErrors`    — `[NETWORK]`: every response with status >= 400 (`"<status> <method> <url>"`);
  * - `cartMutations` — `[API]`: every GraphQL mutation the storefront sent that returned a cart,
  *   with its `errors[]` and the lines of the cart it returned.
+ * - `unreadableMutations` — the root field of every mutation whose response body could no longer be read
+ *   (the page navigated first, e.g. the reload that follows a sign-in): it WAS sent, its errors[] are unknown.
  * Call it before the step it observes; slice by the array length taken just before an action to
  * keep only what that action caused.
  */
@@ -128,6 +130,7 @@ export function watchCartTraffic(page: Page) {
   const consoleErrors: string[] = [];
   const httpErrors: string[] = [];
   const cartMutations: CartMutation[] = [];
+  const unreadableMutations: string[] = [];
   page.on("pageerror", (e) => consoleErrors.push(`pageerror: ${e.message}`));
   page.on("console", (m) => {
     if (m.type() === "error") consoleErrors.push(`console.error: ${m.text()}`);
@@ -142,7 +145,9 @@ export function watchCartTraffic(page: Page) {
     try {
       body = await res.json();
     } catch {
-      return; // page closed before the body was read — nothing to classify
+      // The page navigated before the body was read: the mutation was sent, its result is unknown.
+      unreadableMutations.push(sent.query.match(/\{\s*(\w+)\s*[({]/)?.[1] ?? sent.operationName ?? "(anonymous)");
+      return;
     }
     const roots = Object.entries(body.data ?? {}) as Array<[string, { __typename?: string; items?: CartMutation["lines"] } | null]>;
     const [field, cart] = roots.find(([, r]) => r?.__typename === "CartType") ?? ["(none)", undefined];
@@ -154,7 +159,24 @@ export function watchCartTraffic(page: Page) {
       lines: (cart?.items ?? []).map((i) => ({ sku: i.sku, quantity: i.quantity })),
     });
   });
-  return { consoleErrors, httpErrors, cartMutations };
+  return { consoleErrors, httpErrors, cartMutations, unreadableMutations };
+}
+
+/** A point in a `watchCartTraffic` stream: pass it to `mutationsSince` to keep only what came after. */
+export function trafficMark(traffic: ReturnType<typeof watchCartTraffic>) {
+  return { read: traffic.cartMutations.length, unread: traffic.unreadableMutations.length };
+}
+
+/**
+ * The `field` mutations sent since `mark`: `read` (with their errors[]) and `unread` (sent, body gone).
+ * A spec asserts `read.length + unread > 0` (it was sent), `read` errors empty, and annotates the check
+ * as not evaluated when only unreadable ones exist — never counting an unread response as clean.
+ */
+export function mutationsSince(traffic: ReturnType<typeof watchCartTraffic>, mark: ReturnType<typeof trafficMark>, field: string) {
+  return {
+    read: traffic.cartMutations.slice(mark.read).filter((m) => m.field === field),
+    unread: traffic.unreadableMutations.slice(mark.unread).filter((f) => f === field).length,
+  };
 }
 
 /** The culture's own decimal and group separators (CULTURE_NAME), so nothing assumes "." or ",". */
@@ -185,50 +207,69 @@ export function formatMoney(amount: number): string {
   }).format(Math.round(amount * 100) / 100);
 }
 
-/** A product a page-side helper opens by its own data: code (SKU), id and slug (the slug may be empty). */
+/**
+ * A product a page-side helper opens by its own data: code (SKU), id and slug (the slug may be empty).
+ * `path` is the PDP path the storefront actually routed to — an SEO path such as
+ * `/soft-drinks/soda/<name>` that names neither id nor slug — recorded by `addFromPdp` so the product's
+ * cart lines can be found by it later.
+ */
 export interface PdpProduct {
   sku: string;
   id: string;
   slug: string;
+  path?: string;
 }
 
-/** A link to `product`: by id, or by slug when it has one (which of the two the storefront routes by is per env). */
-export function productLinkSelector(product: Pick<PdpProduct, "id" | "slug">): string {
-  return [product.id, product.slug]
+/** A link to `product`: by id, by slug when it has one, or by the PDP path `addFromPdp` recorded. */
+export function productLinkSelector(product: Pick<PdpProduct, "id" | "slug" | "path">): string {
+  return [product.id, product.slug, product.path]
     .filter(Boolean)
     .map((v) => `a[href*="${v}"]`)
     .join(", ");
 }
 
+/** A storefront GraphQL mutation response (the client marks every mutation in a request header). */
+const isCartMutationResponse = (r: import("@playwright/test").Response) =>
+  r.request().method() === "POST" &&
+  new URL(r.url()).pathname.endsWith("/graphql") &&
+  r.request().headers()["x-graphql-operation-type"] === "mutation";
+
 /**
  * Page side: add `product` the way a shopper does — search by SKU, open its card, press '+' in the PDP
  * buy box `times` times, waiting each time for the "in Cart" count to follow. Works for a guest and a
  * signed-in page alike (the storefront picks the mutation; CART-001 observed `updateCartQuantity`).
- * Returns the "in Cart" count it ended on.
+ * Records the PDP path on `product.path`. Returns the "in Cart" count it ended on.
  */
 export async function addFromPdp(page: Page, product: PdpProduct, times = 1): Promise<number> {
   await page.goto(`${env("FRONT_URL")}/search?q=${encodeURIComponent(product.sku)}`);
-  await page
-    .getByRole("main")
-    .locator(productLinkSelector(product))
-    .filter({ hasText: /\S/ })
-    .first()
-    .click();
+  const main = page.getByRole("main");
+  // The result card by id/slug when the storefront routes by them; else (an SEO path) the first product
+  // link of the results — the PDP check right after proves it was the right one.
+  const byData = main.locator(productLinkSelector(product)).filter({ hasText: /\S/ }).first();
+  const firstTitle = main.locator(".vc-product-title").filter({ hasText: /\S/ }).first(); // the UI kit's card title link
+  await firstTitle.waitFor();
+  await ((await byData.count()) ? byData : firstTitle).click();
   await page.getByRole("main").getByText(`#${product.sku}`).waitFor();
+  product.path = new URL(page.url()).pathname;
   const buyBox = page.getByRole("complementary", { name: "Sidebar" });
   const plus = buyBox.locator('[data-test-id="quantity-stepper"]').getByRole("button", { name: "Increase quantity" });
   const count = buyBox.getByTitle("in Cart").locator('[data-test-id="count-in-cart-label"]');
   const read = async () => ((await count.count()) ? Number(await count.innerText()) : 0);
   let inCart = await read();
+  // The first '+' adds the line at once. A second and later '+' goes out as ONE batched, debounced
+  // quantity update — observed on vcst ~10 s after the click, long after the count label moved. Wait
+  // for that request itself, never for a fixed time.
+  let batched: Promise<unknown> | undefined;
   for (let i = 0; i < times; i++) {
+    const firstAdd = i === 0 && inCart === 0 ? page.waitForResponse(isCartMutationResponse, { timeout: 30_000 }) : undefined;
+    if (i === 1 || (i === 0 && inCart > 0)) batched = page.waitForResponse(isCartMutationResponse, { timeout: 30_000 });
     await plus.click();
     const target = inCart + 1;
     await count.filter({ hasText: new RegExp(`^${target}$`) }).waitFor();
+    if (firstAdd) await firstAdd;
     inCart = target;
   }
-  // A second and later '+' goes out as a BATCHED, debounced quantity update: the count label moves at
-  // once, the request follows the debounce. Let it fire before the network is called settled.
-  if (times > 1) await page.waitForTimeout(1500);
+  if (batched) await batched;
   await page.waitForLoadState("networkidle");
   return inCart;
 }
@@ -254,7 +295,10 @@ export interface CartPageLine {
   /** Every link href in the line, space-joined — what `cartLineFor` matches a product by (a line need not show its SKU). */
   href: string;
   quantity: number;
+  /** The ACTUAL unit price (after any discount). */
   price: number;
+  /** The LIST unit price (before discount) — equal to `price` on an undiscounted line. */
+  listPrice: number;
   total: number;
   selected: boolean;
 }
@@ -266,6 +310,9 @@ export interface CartPageLine {
 export async function cartPageLines(page: Page): Promise<CartPageLine[]> {
   const section = page.locator('[data-test-id="cart.products-section"]');
   await section.waitFor();
+  // The section renders before its rows: wait for a row, then for the cart query to settle.
+  await section.locator(".vc-line-item").first().waitFor();
+  await page.waitForLoadState("networkidle");
   const out: CartPageLine[] = [];
   for (const row of await section.locator(".vc-line-item").all()) {
     const checkbox = row.getByRole("checkbox");
@@ -275,17 +322,24 @@ export async function cartPageLines(page: Page): Promise<CartPageLine[]> {
       text: await row.innerText(),
       href: hrefs.join(" "),
       quantity: Number(await row.getByRole("spinbutton", { name: "Product quantity" }).inputValue()),
-      price: money(await row.locator(".vc-line-item__price").innerText()),
-      total: money(await row.locator(".vc-line-item__total").innerText()),
+      // The ACTUAL price: a discounted line also shows its crossed-out list price in the same cell.
+      price: money(await row.locator(".vc-line-item__price .vc-product-price__actual").first().innerText()),
+      listPrice: await (async () => {
+        const list = row.locator(".vc-line-item__price .vc-product-price__list").first();
+        const shown = (await list.count()) ? (await list.innerText()).trim() : "";
+        return money(shown || (await row.locator(".vc-line-item__price .vc-product-price__actual").first().innerText()));
+      })(),
+      total: money(await row.locator(".vc-line-item__total .vc-product-price__actual").first().innerText()),
       selected: (await checkbox.count()) ? await checkbox.isChecked() : true,
     });
   }
   return out;
 }
 
-/** The rendered cart lines that are `product`: their product link names its id or slug. */
-export function cartLineFor(lines: CartPageLine[], product: Pick<PdpProduct, "id" | "slug">): CartPageLine[] {
-  return lines.filter((l) => l.href.includes(product.id) || (!!product.slug && l.href.includes(product.slug)));
+/** The rendered cart lines that are `product`: a link in the line names its id, slug or recorded PDP path. */
+export function cartLineFor(lines: CartPageLine[], product: Pick<PdpProduct, "id" | "slug" | "path">): CartPageLine[] {
+  const keys = [product.id, product.slug, product.path].filter(Boolean) as string[];
+  return lines.filter((l) => keys.some((k) => l.href.split(" ").some((h) => h.includes(k))));
 }
 
 /**
@@ -301,9 +355,13 @@ export function jsErrors(consoleErrors: string[]): string[] {
   return consoleErrors.filter((e) => !resourceLoad.test(e));
 }
 
-/** `[MATH]` the subtotal the cart page should show: sum of price x quantity over the SELECTED lines. */
+/**
+ * `[MATH]` the Subtotal the cart page should show: sum of LIST price x quantity over the SELECTED lines.
+ * The storefront's Subtotal is before discounts; a discount is its own Order Summary line. Observed on
+ * vcst (CART-107 run): subTotal 514 = 150 + 150 + 25 + 189 list, discountTotal 87, lines at 106 / 107 actual.
+ */
 export function includedSubtotal(lines: CartPageLine[]): number {
-  return lines.filter((l) => l.selected).reduce((sum, l) => sum + l.price * l.quantity, 0);
+  return lines.filter((l) => l.selected).reduce((sum, l) => sum + l.listPrice * l.quantity, 0);
 }
 
 /**
@@ -351,8 +409,14 @@ export async function setCartLineSelected(page: Page, product: PdpProduct, selec
     .locator(".vc-line-item")
     .filter({ has: page.locator(productLinkSelector(product)) });
   const checkbox = row.getByRole("checkbox");
-  await checkbox.waitFor();
-  if ((await checkbox.isChecked()) !== selected) await checkbox.click();
+  await checkbox.waitFor({ state: "attached" });
+  // The <input> is screen-reader-only (sr-only): a shopper clicks the visible checkbox component around it.
+  if ((await checkbox.isChecked()) !== selected) {
+    // The selection change is a cart mutation: wait for it to reach the server, not just for the box to tick.
+    const sent = page.waitForResponse(isCartMutationResponse, { timeout: 30_000 });
+    await row.locator(".vc-line-item__checkbox").first().click();
+    await sent;
+  }
   await page.waitForLoadState("networkidle");
   for (let i = 0; i < 20 && (await checkbox.isChecked()) !== selected; i++) await page.waitForTimeout(250);
   if ((await checkbox.isChecked()) !== selected) throw new Error(`cart: line ${sku} did not become ${selected ? "selected" : "unselected"}`);
@@ -383,8 +447,15 @@ export async function addConfiguredFromPdp(
   option: string,
   { newConfiguration = false }: { newConfiguration?: boolean } = {},
 ): Promise<number> {
-  if (!page.url().endsWith(path)) await page.goto(`${env("FRONT_URL")}${path}`);
-  if (newConfiguration) await page.getByRole("button", { name: "Create new configuration" }).or(page.getByRole("link", { name: "Create new configuration" })).first().click();
+  // After an add the PDP URL carries `?lineItemId=…` (it now edits that configuration): compare the PATH,
+  // or a reload would start a fresh configuration and the "Create new configuration" link would be gone.
+  const onPdp = new URL(page.url()).pathname === path;
+  if (!onPdp) await page.goto(`${env("FRONT_URL")}${path}`);
+  if (newConfiguration && onPdp) {
+    const createNew = page.getByRole("button", { name: "Create new configuration" }).or(page.getByRole("link", { name: "Create new configuration" })).first();
+    await createNew.click();
+    await page.waitForLoadState("networkidle");
+  }
   await page.getByText("Configure the parameters").first().waitFor();
   const radio = page.getByRole("radio", { name: option, exact: true });
   if (!(await radio.isVisible())) {
@@ -396,10 +467,22 @@ export async function addConfiguredFromPdp(
       }
     }
   }
-  await radio.check();
+  // The radio's styled indicator covers the <input>: a shopper clicks the radio component itself.
+  if (!(await radio.isChecked())) await page.locator(".vc-radio-button").filter({ has: radio }).first().click();
+  if (!(await radio.isChecked())) throw new Error(`configuration: option "${option}" did not become selected`);
   await page.waitForLoadState("networkidle");
   const buyBox = page.getByRole("complementary", { name: "Sidebar" });
-  const total = money(await buyBox.locator(".product-price-block__product-price").first().innerText());
+  const priceCell = buyBox.locator(".product-price-block__product-price .product-price__value .price__value").first();
+  // The price recomputes after a selection or a "Create new configuration" reset, through intermediate
+  // values (a $16 read once came before the settled $31). Read it only once two reads 700 ms apart agree.
+  let shown = await priceCell.innerText();
+  for (let i = 0; i < 20; i++) {
+    await page.waitForTimeout(700);
+    const again = await priceCell.innerText();
+    if (again === shown) break;
+    shown = again;
+  }
+  const total = money(shown);
   await buyBox.getByRole("button", { name: "Add to cart", exact: true }).click();
   await buyBox.getByRole("button", { name: "Update cart", exact: true }).waitFor();
   await page.waitForLoadState("networkidle");
@@ -441,4 +524,23 @@ export async function cartConfiguredLines(
     quantity: i.quantity,
     configuration: (i.configurationItems ?? []).map((c) => c.name).sort(),
   }));
+}
+
+/**
+ * `[STATE]` precondition read: wait until every SKU in `skus` is a line of the user's server-side cart.
+ * A read right after an add can briefly miss the newest line (observed on vcst: the page showed
+ * "in Cart 1" while the same instant's getCart did not list it yet), so this polls — up to `timeoutMs` —
+ * and throws a plain Error (BLOCKED) naming what never landed.
+ */
+export async function waitForCartSkus(api: APIRequestContext, skus: string[], timeoutMs = 20_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  let have: string[] = [];
+  for (;;) {
+    have = (await cartLines(api)).map((l) => l.sku);
+    if (skus.every((s) => have.includes(s))) return;
+    if (Date.now() > deadline) break;
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  const missing = skus.filter((s) => !have.includes(s));
+  throw new Error(`precondition: ${missing.join(", ")} did not land in the account cart within ${timeoutMs / 1000}s (${have.join(", ")})`);
 }

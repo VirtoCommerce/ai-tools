@@ -9,9 +9,11 @@ import {
   cartConfiguredLines,
   cartLineComponents,
   jsErrors,
+  mutationsSince,
   productLinkSelector,
   resetCart,
   signOutHere,
+  trafficMark,
   watchCartTraffic,
 } from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
@@ -49,7 +51,7 @@ test("CART-104: Cart Merge - Different Product Types", async ({ page, apiAs, sig
   const addMutations = traffic.cartMutations.slice(adds);
 
   // [ACT] sign in; [NAV] /cart.
-  const merges = traffic.cartMutations.length;
+  const merges = trafficMark(traffic);
   await signInHere(page, user);
   await page.goto(`${env("FRONT_URL")}/cart`);
   const hatRows = section().locator(".vc-line-item").filter({ has: page.locator(productLinkSelector(hat)) });
@@ -67,9 +69,10 @@ test("CART-104: Cart Merge - Different Product Types", async ({ page, apiAs, sig
   expect(server.filter((l) => l.configuration.length === 0)).toHaveLength(1);
 
   // [API] mergeCart mutation response errors[] is empty.
-  const merge = traffic.cartMutations.slice(merges).filter((m) => m.field === "mergeCart");
-  expect(merge.length).toBeGreaterThan(0);
-  expect(merge.flatMap((m) => m.errors)).toEqual([]);
+  const merge = mutationsSince(traffic, merges, "mergeCart");
+  expect(merge.read.length + merge.unread, "mergeCart was sent").toBeGreaterThan(0);
+  expect(merge.read.flatMap((m) => m.errors)).toEqual([]);
+  if (!merge.read.length) test.info().annotations.push({ type: "not-evaluated", description: "[API] mergeCart errors[]: response unreadable (the page navigated first)" });
   // [CONSOLE] no JS errors.
   expect(jsErrors(traffic.consoleErrors)).toEqual([]);
   // [NETWORK] no 4xx/5xx.

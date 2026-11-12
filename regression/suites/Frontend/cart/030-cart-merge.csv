@@ -24,7 +24,8 @@ Product available in stock; user is not yet registered; browsing store anonymous
 [API] addItem mutation response errors[] is empty",guest items lost after registration; cart empty for new account; qty mismatch after merge,Remove items from cart; delete test account if needed,C389651; VCST-2976,Manual
 CART-101,Cart Merge - No Duplicate SKUs,Cart > Merge,High,"BL-CART-008, BL-CART-007","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Same Product A exists in both anonymous cart and registered user cart; user currently signed out","url={{FRONT_URL}}
+Same Product A exists in both anonymous cart and registered user cart; user currently signed out
+Executable spec (030-cart-merge/CART-101.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [ACT] add Product A to cart with qty=2
@@ -69,7 +70,8 @@ password={{EUR_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest with U
 [API] addItem mutation response errors[] is empty",mixed currencies in merged cart; USD prices shown instead of EUR; products silently dropped without warning; cart totals in wrong currency,Remove items from cart,C398784; VCST-2961,Manual
 CART-103,Cart Merge - Persists After Logout and Re-login,Cart > Merge,High,BL-CART-008,"ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Anonymous user adds products; user logs in (merge happens); merged cart established","url={{FRONT_URL}}
+Anonymous user adds products; user logs in (merge happens); merged cart established
+Executable spec (030-cart-merge/CART-103.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add Product B to cart as guest
@@ -94,7 +96,8 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [API] addItem mutation response errors[] is empty",merged items lost after logout; cart empty on re-login; items duplicated after re-login; subtotal mismatch,Remove items from cart,C398785; VCST-2977,Manual
 CART-104,Cart Merge - Different Product Types,Cart > Merge,Medium,"BL-CART-008, BL-CART-007","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: A configurable product with selectable variant (size or color, not just quantity) must exist in QA catalog and B2B virtual catalog. Set @td(CFG_HAT.slug) env var. Simple product {{TEST_SKU}} also required. Registered user {{USER_EMAIL}} logged in.","url={{FRONT_URL}}
+SEED REQUIRED: A configurable product with selectable variant (size or color, not just quantity) must exist in QA catalog and B2B virtual catalog. Set @td(CFG_HAT.slug) env var. Simple product {{TEST_SKU}} also required. Registered user {{USER_EMAIL}} logged in.
+Executable spec (030-cart-merge/CART-104.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [ACT] add a configurable product (with size/color variant selected) to cart
@@ -119,7 +122,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [API] addItem mutation response errors[] is empty",configurable product loses variant attributes after merge; simple product missing; product types confused or swapped,Remove items from cart,C398786,Manual
 CART-105,Cart Merge - Smart Merge Failure Handling,Cart > Merge,Medium,BL-CART-008,"ECL-7.3, ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Normal (non-malformed) sign-in merge flow only. The API-negative half (malformed mergeCart mutation) is split out to CART-118 — a browser lane cannot exercise a deliberately malformed GraphQL payload as part of a UI journey. Split: 2026-09-07 (REG-2026-09-07-1342).","url={{FRONT_URL}}
+Normal (non-malformed) sign-in merge flow only. The API-negative half (malformed mergeCart mutation) is split out to CART-118 — a browser lane cannot exercise a deliberately malformed GraphQL payload as part of a UI journey. Split: 2026-09-07 (REG-2026-09-07-1342).
+Executable spec (030-cart-merge/CART-105.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add products to cart as anonymous user
@@ -132,7 +136,8 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [API] addItem mutation response errors[] is empty",page crashes on sign-in; cart inaccessible after login,none (verify cart state),C396997 | Split: 2026-09-07 (REG-2026-09-07-1342) — API-negative malformed-mutation assertion moved to CART-118 (browser lane cannot execute it as part of a UI journey),Manual
 CART-106,Cart Merge Selection - Empty Cart + Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Default 'Selected for checkout' = ON in store settings; Cart1 (user) is empty; Cart2 (guest) has items with all selected","url={{FRONT_URL}}
+Default 'Selected for checkout' = ON in store settings; Cart1 (user) is empty; Cart2 (guest) has items with all selected
+Executable spec (030-cart-merge/CART-106.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [ASSERT] ensure cart is empty
@@ -157,7 +162,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [API] addItem mutation response errors[] is empty",items not selected after merge; Proceed to Checkout disabled; items missing from merged cart,Remove items from cart,C389850,Manual
 CART-107,Cart Merge Selection - Both Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Default 'Selected for checkout' = ON; Cart1 (user) has items all selected; Cart2 (guest) has items all selected","url={{FRONT_URL}}
+Default 'Selected for checkout' = ON; Cart1 (user) has items all selected; Cart2 (guest) has items all selected
+Executable spec (030-cart-merge/CART-107.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [ACT] add items to cart (all selected)
@@ -180,7 +186,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [API] addItem mutation response errors[] is empty",some items deselected after merge; Order Summary only includes partial items; items missing,Remove items from cart,C389851,Manual
 CART-108,Cart Merge Selection - Both Unselected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Precondition: store setting 'Default selected for checkout' = ON (verify in Admin > Stores > Cart Settings). User has items manually unselected via checkbox; guest has items manually unselected. If store setting differs from ON, this case is N/A.","url={{FRONT_URL}}
+Precondition: store setting 'Default selected for checkout' = ON (verify in Admin > Stores > Cart Settings). User has items manually unselected via checkbox; guest has items manually unselected. If store setting differs from ON, this case is N/A.
+Executable spec (030-cart-merge/CART-108.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [ACT] add items to cart
@@ -207,7 +214,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 CART-109,Cart Merge Selection - Selected + Unselected (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Preconditions note: state from CART-108 (same guest+user merge mechanics; CART-108 unselects items in BOTH carts, this case keeps the USER cart items selected and only unselects the GUEST cart — part of the same pairwise selection-state matrix, kept independently executable).
-Default 'Selected for checkout' = ON; Cart1 (user) has all items selected; Cart2 (guest) has all items unselected","url={{FRONT_URL}}
+Default 'Selected for checkout' = ON; Cart1 (user) has all items selected; Cart2 (guest) has all items unselected
+Executable spec (030-cart-merge/CART-109.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [ACT] add items to cart (keep selected)
@@ -233,7 +241,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [API] addItem mutation response errors[] is empty",all items forced to same selection state; Order Summary wrong; selection states swapped,Remove items from cart,C389853,Manual
 CART-110,Cart Merge Selection - Mixed + Mixed (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Precondition: store setting 'Default selected for checkout' = ON (verify in Admin > Stores > Cart Settings). Cart1 (user) has mix of selected and unselected items; Cart2 (guest) has mix of selected and unselected items. If store setting differs, this case is N/A.","url={{FRONT_URL}}
+Precondition: store setting 'Default selected for checkout' = ON (verify in Admin > Stores > Cart Settings). Cart1 (user) has mix of selected and unselected items; Cart2 (guest) has mix of selected and unselected items. If store setting differs, this case is N/A.
+Executable spec (030-cart-merge/CART-110.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [ACT] add 3+ items to cart
@@ -329,7 +338,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [API] addItem mutation response errors[] is empty",per-item selection lost; all forced to unselected; Order Summary wrong,Remove items from cart; restore store setting to ON,C389920,Manual
 CART-114,"Cart Merge - Configurable Product, Different Options Create Separate Lines",Cart > Merge,High,"BL-CART-008, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:RESET_CART]
-SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available with at least 2 selectable Product-section options in the REQUIRED 'Color *' section (observed 2026-07-27: 'Black hat', 'Green hat' (default-selected), 'Red hat', 'Beige hat'). Resolve the PDP via @td(CFG_HAT.url) — never hand-compose /product/<sku>, which renders a client-side soft-404 behind HTTP 200. Registered user {{USER_EMAIL}} exists with empty persisted cart. NOTE: do NOT hardcode option prices — env catalog data may change; assert structural invariants (distinct lines, distinct totals) instead.","url={{FRONT_URL}}
+SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available with at least 2 selectable Product-section options in the REQUIRED 'Color *' section (observed 2026-07-27: 'Black hat', 'Green hat' (default-selected), 'Red hat', 'Beige hat'). Resolve the PDP via @td(CFG_HAT.url) — never hand-compose /product/<sku>, which renders a client-side soft-404 behind HTTP 200. Registered user {{USER_EMAIL}} exists with empty persisted cart. NOTE: do NOT hardcode option prices — env catalog data may change; assert structural invariants (distinct lines, distinct totals) instead.
+Executable spec (030-cart-merge/CART-114.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 hat_slug=@td(CFG_HAT.slug)
@@ -372,7 +382,8 @@ optionB=Green hat","[NAV] navigate to {{FRONT_URL}} as guest (unauthenticated se
 [API] add-to-cart (configured item) mutation response errors[] is empty",2 lines collapsed into 1 with summed qty after merge; configurationItems mismatched or swapped between lines; one configuration dropped silently; cart badge shows 1 instead of 2 after sign-in,Remove all items from cart,GAP-CART-MERGE-CFG-001; VCST-4071,Manual
 CART-115,Cart Merge - Same Configurable Product Same Configuration Stays Separate Lines (VCST-5053),Cart > Merge,High,"BL-CART-008, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available; user {{USER_EMAIL}} starts with empty persisted cart. The user-cart configuration and the guest-cart configuration MUST be byte-identical (same option in the REQUIRED 'Color *' section, same/empty 'Your text' section, same 'Print' state). Observed 2026-07-27: sections are 'Color *' (required), 'Print', 'Your text'. DESIGN (VCST-5053, vc-module-x-cart >=3.1012.0): configured line items ALWAYS stay separate lines on merge — identical configs are NOT consolidated or quantity-summed (CartAggregate.InnerAddLineItemAsync short-circuits on IsConfigured; no config-content equality exists). Assert two separate lines, not a summed single line.","url={{FRONT_URL}}
+SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available; user {{USER_EMAIL}} starts with empty persisted cart. The user-cart configuration and the guest-cart configuration MUST be byte-identical (same option in the REQUIRED 'Color *' section, same/empty 'Your text' section, same 'Print' state). Observed 2026-07-27: sections are 'Color *' (required), 'Print', 'Your text'. DESIGN (VCST-5053, vc-module-x-cart >=3.1012.0): configured line items ALWAYS stay separate lines on merge — identical configs are NOT consolidated or quantity-summed (CartAggregate.InnerAddLineItemAsync short-circuits on IsConfigured; no config-content equality exists). Assert two separate lines, not a summed single line.
+Executable spec (030-cart-merge/CART-115.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 hat_url={{FRONT_URL}}@td(CFG_HAT.url)
@@ -413,7 +424,8 @@ option=Black hat","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [API] add-to-cart (configured item) mutation response errors[] is empty","two configured lines collapsed into one summed line (pre-VCST-5053 behavior, now incorrect); line count not equal to 2; configuration option lost or replaced on merge",Remove items from cart,GAP-CART-MERGE-CFG-002; VCST-5053,Manual
 CART-116,"Cart Merge - Configurable Product, Different Configs Across User and Guest Carts",Cart > Merge,Medium,"BL-CART-008, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: Configurable Hat product (alias CFG_HAT) with at least 2 distinct Product-section options. User {{USER_EMAIL}} starts with empty persisted cart.","url={{FRONT_URL}}
+SEED REQUIRED: Configurable Hat product (alias CFG_HAT) with at least 2 distinct Product-section options. User {{USER_EMAIL}} starts with empty persisted cart.
+Executable spec (030-cart-merge/CART-116.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 hat_url={{FRONT_URL}}@td(CFG_HAT.url)
@@ -452,7 +464,8 @@ optionB=Green hat","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [API] add-to-cart (configured item) mutation response errors[] is empty",2 configurations collapsed into 1 line after merge; configuration data swapped or lost between lines; one of the two lines dropped; quantities summed instead of separate lines preserved,Remove items from cart,GAP-CART-MERGE-CFG-003,Manual
 CART-098,"Cart Merge - Combined Quantity Exceeding Available Stock Is Retained But Explicitly Flagged, Not Silently Oversold (Boundary)",Cart > Merge,High,"BL-CART-001, BL-CART-008","ECL-2.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: low-stock fixture @td(PROD_LOW_STOCK.sku) (stock <= 10) exists in catalog and B2B virtual catalog. Registered user {{USER_EMAIL}} starts with this SKU already in their account cart at a quantity such that adding the guest-cart quantity on merge would exceed available stock. Design Technique: Boundary Value Analysis (merge-time quantity summation crossing the stock ceiling).","url={{FRONT_URL}}
+SEED REQUIRED: low-stock fixture @td(PROD_LOW_STOCK.sku) (stock <= 10) exists in catalog and B2B virtual catalog. Registered user {{USER_EMAIL}} starts with this SKU already in their account cart at a quantity such that adding the guest-cart quantity on merge would exceed available stock. Design Technique: Boundary Value Analysis (merge-time quantity summation crossing the stock ceiling).
+Executable spec (030-cart-merge/CART-098.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 low_stock_sku=@td(PROD_LOW_STOCK.sku)","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
@@ -485,7 +498,8 @@ password={{USER_PASSWORD}}","[API] send a mergeCart GraphQL mutation to {{BACK_U
 [WAIT] wait for the mutation response","[API] malformed mergeCart response carries errors[] with a descriptive validation message referencing the missing required argument, never empty {SPEC}
 [STATE] the response is HTTP 400 or HTTP 200, and in both cases carries a structured GraphQL error body, never a raw HTTP 500 Internal Server Error {OBSERVED} (the server answers a GraphQL validation error with 400 + errors[]; a 200 with errors[] is equally acceptable)","[NETWORK] response status is 400 or 200, not 500
 [API] errors[] is populated with a descriptive message referencing the missing argument, not empty",HTTP 500 with no structured error body; errors[] empty despite the missing required argument; generic/non-descriptive error message; stack trace or internal detail leaked in errors[0].message,none (no mutation succeeds — nothing to roll back),"C396997 | Split from: CART-105 (2026-09-07, REG-2026-09-07-1342) | Archetype:FALLBACK · Technique:EG | Promoted: REG-2026-09-07-2225 (2026-09-07) | Corrected: VCST-6042 (2026-10-21) — ASSERTION_DEFECT (run REG-2026-10-15-W3): the case required HTTP 200; the server returns 400 with a structured errors[] for a GraphQL validation error, so the status is now 400 or 200-with-errors[] (never 500). Required-argument rejection by the schema: KB-9139A1A3",Automated
-CART-124,"Cart Merge - A Guest Session Cannot Merge a Signed-In Customer's Cart (API, mergeCart Unauthorized)",Cart > Merge > Authorization,Critical,BL-CART-016; BL-GQL-004; BL-GQL-001,ECL-10.2,"Browser lane, storefront GraphQL proxy {{FRONT_URL}}/graphql called from the page (browser_evaluate / fetch). The anonymous caller cannot be expressed in the GraphQL runner (an [AUTH role=] line is required to acquire a token and none can drop it mid-case), so this case lives in the browser lane. The victim cart is a NAMED AGENT-TEST- cart of USER2 created in-case; no default cart is touched. SIGNED-IN calls carry the session token explicitly: the storefront keeps it in localStorage key ""auth"" (access_token), not in a cookie, so a plain page fetch() is ANONYMOUS even while signed in — me then returns a fresh guest (userName Anonymous) and addItem creates a GUEST cart (isAnonymous = true), which the VCST-6185 fix lets anyone merge by design (false FAIL, VCST-6818). Catches: VCST-6185 (pre-fix an anonymous caller merged another customer's cart and deleted it).",url={{FRONT_URL}}; user={{USER2_EMAIL}}; password={{USER2_PASSWORD}}; victim_cart=AGENT-TEST-MERGEAUTH-BR-VICTIM; anon_target_cart=AGENT-TEST-MERGEAUTH-BR-ANONTARGET; product=live-discover (first in-stock product of the B2B virtual catalog),"[PRE:CLEAR_SESSION]
+CART-124,"Cart Merge - A Guest Session Cannot Merge a Signed-In Customer's Cart (API, mergeCart Unauthorized)",Cart > Merge > Authorization,Critical,BL-CART-016; BL-GQL-004; BL-GQL-001,ECL-10.2,"Browser lane, storefront GraphQL proxy {{FRONT_URL}}/graphql called from the page (browser_evaluate / fetch). The anonymous caller cannot be expressed in the GraphQL runner (an [AUTH role=] line is required to acquire a token and none can drop it mid-case), so this case lives in the browser lane. The victim cart is a NAMED AGENT-TEST- cart of USER2 created in-case; no default cart is touched. SIGNED-IN calls carry the session token explicitly: the storefront keeps it in localStorage key ""auth"" (access_token), not in a cookie, so a plain page fetch() is ANONYMOUS even while signed in — me then returns a fresh guest (userName Anonymous) and addItem creates a GUEST cart (isAnonymous = true), which the VCST-6185 fix lets anyone merge by design (false FAIL, VCST-6818). Catches: VCST-6185 (pre-fix an anonymous caller merged another customer's cart and deleted it).
+Executable spec (030-cart-merge/CART-124.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.",url={{FRONT_URL}}; user={{USER2_EMAIL}}; password={{USER2_PASSWORD}}; victim_cart=AGENT-TEST-MERGEAUTH-BR-VICTIM; anon_target_cart=AGENT-TEST-MERGEAUTH-BR-ANONTARGET; product=live-discover (first in-stock product of the B2B virtual catalog),"[PRE:CLEAR_SESSION]
 [NAV] open {{FRONT_URL}}/sign-in
 [WAIT] the page loads on the one-time-code view
 [ACT] click ""Sign in with a password instead"" (data-test-id otp-email-switch-to-password-link)
@@ -524,7 +538,8 @@ CART-124,"Cart Merge - A Guest Session Cannot Merge a Signed-In Customer's Cart 
 [API] the addItem and removeCart setup mutations return errors[] empty {OBSERVED} (VCST-6185)
 [NETWORK] no 5xx on /graphql during the case {OBSERVED} (VCST-6185)","[CONSOLE] no new JS errors beyond the storefront's known image/service-worker 404s
 [EVIDENCE] errors[0].message carries no cart contents, owner id or stack trace",errors[] empty on the anonymous mergeCart (the guest merged a signed-in customer's cart — VCST-6185); the victim cart gone or its item missing after the call; the victim's product present in the anonymous target; any 5xx,"removeCart on the victim cart (last API step); the anonymous target cart is never created when the merge is refused, but a leftover AGENT-TEST-MERGEAUTH-BR-ANONTARGET is swept by the AGENT-TEST- teardown; sign out and clear the session","VCST-6185; vc-module-x-cart#153; Mutation.mergeCart; KB-EB4DECDC | Archetype:SCOPE · Technique:EG · Catches:VCST-6185 | Observed: VF-VCST-6185 vcst 2026-11-03 XCart 3.1045.0-pr-153-ec03 (anonymous caller, no Authorization and with the anonymous-session token — Unauthorized 3/3, victim intact); red: vcptcore XCart 3.1044.0 merged and deleted the victim cart. Walked live 2026-11-03 vcst (qa-suite-sync Phase 5, playwright-firefox, theme 2.62.0-pr-2600): all five assertions confirmed, evidence phase5/CART-119-120-browser-evidence.json; sign-in opens on the one-time-code view; anonymous id = localStorage user-id | Promoted: VCST-6185 (2026-11-03) | Fixture names separated from 050b3 (2026-11-03) | VCST-6818 (2026-11-12): the W3 FAIL (REG-2026-11-12-0714-W3) traced to setup calls sent as a plain page fetch without the token — me returned a guest and the victim was a guest cart (isAnonymous = true, exempt by design); re-checked live on XCart 3.1046.0 with a real customer victim: Unauthorized, victim intact. Signed-in steps now send the bearer and guard isAnonymous = false",Reviewed
-CART-125,Cart Merge - A Signed-In Customer Can Still Merge a Guest Cart Explicitly by secondCartId (isAnonymous exemption),Cart > Merge > Authorization,High,BL-CART-016; BL-CART-008; BL-GQL-004,ECL-10.2,"Browser lane, storefront GraphQL proxy called from the page. Positive control for the VCST-6185 fix: a guest cart (server-set isAnonymous) is exempt from the cart-access check, so an authorization fix that is too strict would break it. The guest cart is created by an ANONYMOUS call (no Authorization, credentials omitted) under a fresh random guest userId, NOT the browser session's own guest id: a cart under the session's id becomes the guest's current cart and the storefront's own sign-in MergeCart consumes it into the signed-in user's DEFAULT cart. No step touches a default cart. Named AGENT-TEST- carts only. SIGNED-IN calls carry the session token explicitly (localStorage key ""auth"", access_token): a plain page fetch() is anonymous even while signed in, and then the 'signed-in' merge is really a guest merging a guest cart — a vacuous PASS that never exercises the signed-in path (found with VCST-6818). Catches: VCST-6185 (over-reach regression guard).","url={{FRONT_URL}}; user={{USER2_EMAIL}}; password={{USER2_PASSWORD}}; guest_cart=AGENT-TEST-MERGEAUTH-BR-GUEST; target_cart=AGENT-TEST-MERGEAUTH-BR-TARGET; guest_user_id=random-data GUID, fresh per run (never the session's localStorage user-id); product=live-discover (first in-stock product of the B2B virtual catalog)","[PRE:CLEAR_SESSION]
+CART-125,Cart Merge - A Signed-In Customer Can Still Merge a Guest Cart Explicitly by secondCartId (isAnonymous exemption),Cart > Merge > Authorization,High,BL-CART-016; BL-CART-008; BL-GQL-004,ECL-10.2,"Browser lane, storefront GraphQL proxy called from the page. Positive control for the VCST-6185 fix: a guest cart (server-set isAnonymous) is exempt from the cart-access check, so an authorization fix that is too strict would break it. The guest cart is created by an ANONYMOUS call (no Authorization, credentials omitted) under a fresh random guest userId, NOT the browser session's own guest id: a cart under the session's id becomes the guest's current cart and the storefront's own sign-in MergeCart consumes it into the signed-in user's DEFAULT cart. No step touches a default cart. Named AGENT-TEST- carts only. SIGNED-IN calls carry the session token explicitly (localStorage key ""auth"", access_token): a plain page fetch() is anonymous even while signed in, and then the 'signed-in' merge is really a guest merging a guest cart — a vacuous PASS that never exercises the signed-in path (found with VCST-6818). Catches: VCST-6185 (over-reach regression guard).
+Executable spec (030-cart-merge/CART-125.spec.ts): runs on a disposable personal customer (AGENT-TEST-SPEC-*, created before the test and deleted after it) instead of the account named here, so no other run can lock that account or touch its cart.","url={{FRONT_URL}}; user={{USER2_EMAIL}}; password={{USER2_PASSWORD}}; guest_cart=AGENT-TEST-MERGEAUTH-BR-GUEST; target_cart=AGENT-TEST-MERGEAUTH-BR-TARGET; guest_user_id=random-data GUID, fresh per run (never the session's localStorage user-id); product=live-discover (first in-stock product of the B2B virtual catalog)","[PRE:CLEAR_SESSION]
 [NAV] open {{FRONT_URL}} as a guest
 [API] anonymous call (no Authorization header, credentials omitted) POST {{FRONT_URL}}/graphql: discover two different in-stock products -> PRODUCT_ID, PRODUCT_2_ID; generate a fresh random GUID -> GUEST_USER_ID (random-data; not the session's own user-id)
 [API] same anonymous call: addItem(command: { cartName: ""AGENT-TEST-MERGEAUTH-BR-GUEST"", storeId, userId: GUEST_USER_ID, productId: PRODUCT_ID, quantity: 1 }) { id itemsCount } -> capture GUEST_CART_ID; the cart reads back with isAnonymous = true

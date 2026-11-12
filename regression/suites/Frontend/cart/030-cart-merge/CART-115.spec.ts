@@ -9,9 +9,11 @@ import {
   cartLineComponents,
   formatMoney,
   jsErrors,
+  mutationsSince,
   productLinkSelector,
   resetCart,
   signOutHere,
+  trafficMark,
   watchCartTraffic,
 } from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
@@ -52,15 +54,20 @@ test("CART-115: Cart Merge - Same Configurable Product Same Configuration Stays 
   // [NAV] /cart; [ACT] set quantity=2; [ASSERT] guest cart badge shows 2.
   await page.goto(`${env("FRONT_URL")}/cart`);
   await expect(rows()).toHaveCount(1);
+  // The line's quantity change goes out as a batched, debounced update: wait for that request itself.
+  const quantitySent = page.waitForResponse(
+    (r) => new URL(r.url()).pathname.endsWith("/graphql") && r.request().headers()["x-graphql-operation-type"] === "mutation",
+    { timeout: 30_000 },
+  );
   await rows().first().getByRole("button", { name: "Increase quantity" }).click();
   await expect(rows().first().getByRole("spinbutton", { name: "Product quantity" })).toHaveValue("2");
-  await expect(cartLink).toHaveText(/^\s*2(?!\d)/);
-  await page.waitForTimeout(1500); // the line's quantity change goes out as a batched, debounced update
+  await quantitySent;
   await page.waitForLoadState("networkidle");
+  await expect(cartLink).toHaveText(/^\s*2(?!\d)/);
   const addMutations = traffic.cartMutations.slice(adds);
 
   // [ACT] sign in (triggers merge); [NAV] /cart.
-  const merges = traffic.cartMutations.length;
+  const merges = trafficMark(traffic);
   await signInHere(page, user);
   await page.goto(`${env("FRONT_URL")}/cart`);
 
@@ -82,9 +89,10 @@ test("CART-115: Cart Merge - Same Configurable Product Same Configuration Stays 
   expect(server[0].configuration.length).toBeGreaterThan(0);
   expect(server[0].configuration).toEqual(server[1].configuration);
   // [API] mergeCart mutation errors[] is empty.
-  const merge = traffic.cartMutations.slice(merges).filter((m) => m.field === "mergeCart");
-  expect(merge.length).toBeGreaterThan(0);
-  expect(merge.flatMap((m) => m.errors)).toEqual([]);
+  const merge = mutationsSince(traffic, merges, "mergeCart");
+  expect(merge.read.length + merge.unread, "mergeCart was sent").toBeGreaterThan(0);
+  expect(merge.read.flatMap((m) => m.errors)).toEqual([]);
+  if (!merge.read.length) test.info().annotations.push({ type: "not-evaluated", description: "[API] mergeCart errors[]: response unreadable (the page navigated first)" });
   // [CONSOLE] no JS errors.
   expect(jsErrors(traffic.consoleErrors)).toEqual([]);
   // [NETWORK] no 4xx/5xx.

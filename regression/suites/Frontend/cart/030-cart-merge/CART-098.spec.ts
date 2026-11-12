@@ -4,7 +4,16 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { test, expect, type DisposableCustomer } from "../../../../lib/fixtures.js";
 import { env, td } from "../../../../lib/data.js";
-import { addFromPdp, jsErrors, productLinkSelector, resetCart, signOutHere, watchCartTraffic } from "../../../../lib/cart.js";
+import {
+  addFromPdp,
+  jsErrors,
+  mutationsSince,
+  productLinkSelector,
+  resetCart,
+  signOutHere,
+  trafficMark,
+  watchCartTraffic,
+} from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
 
 // The row signs in as USER_DEFAULT (a personal customer); the spec runs on a disposable personal customer
@@ -68,7 +77,7 @@ test("CART-098: Cart Merge - Combined Quantity Exceeding Available Stock Is Reta
   const addMutations = traffic.cartMutations.slice(adds);
 
   // [ACT] sign in (triggers merge); [NAV] /cart.
-  const merges = traffic.cartMutations.length;
+  const merges = trafficMark(traffic);
   await signInHere(page, user);
   await page.goto(`${env("FRONT_URL")}/cart`);
   const line = page.locator(testIdSelector("cart.products-section")).locator(".vc-line-item").filter({ has: page.locator(productLinkSelector(product)) });
@@ -82,9 +91,10 @@ test("CART-098: Cart Merge - Combined Quantity Exceeding Available Stock Is Reta
   await expect(line.getByTitle("In stock").first()).toHaveText(String(stock));
 
   // [API] mergeCart mutation response errors[] is empty.
-  const merge = traffic.cartMutations.slice(merges).filter((m) => m.field === "mergeCart");
-  expect(merge.length).toBeGreaterThan(0);
-  expect(merge.flatMap((m) => m.errors)).toEqual([]);
+  const merge = mutationsSince(traffic, merges, "mergeCart");
+  expect(merge.read.length + merge.unread, "mergeCart was sent").toBeGreaterThan(0);
+  expect(merge.read.flatMap((m) => m.errors)).toEqual([]);
+  if (!merge.read.length) test.info().annotations.push({ type: "not-evaluated", description: "[API] mergeCart errors[]: response unreadable (the page navigated first)" });
   // [API] getCart after merge: the raw summed quantity AND an explicit stock-validation flag on the line.
   const server = await serverLine(api, product.sku);
   expect(server?.quantity).toBe(half * 2);

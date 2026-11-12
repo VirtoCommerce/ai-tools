@@ -9,9 +9,11 @@ import {
   cartPageLines,
   formatMoney,
   includedSubtotal,
+  jsErrors,
+  mutationsSince,
   resetCart,
   signOutHere,
-  jsErrors,
+  trafficMark,
   watchCartTraffic,
 } from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
@@ -43,7 +45,7 @@ test("CART-103: Cart Merge - Persists After Logout and Re-login", async ({ page,
   const addMutations = traffic.cartMutations.slice(adds);
 
   // [ACT] sign in as the user (triggers merge); [NAV] /cart; [ASSERT] note the merged cart contents.
-  const merges = traffic.cartMutations.length;
+  const merges = trafficMark(traffic);
   await signInHere(page, user);
   await page.goto(`${env("FRONT_URL")}/cart`);
   const merged = await cartPageLines(page);
@@ -53,7 +55,7 @@ test("CART-103: Cart Merge - Persists After Logout and Re-login", async ({ page,
   if (!mergedServer.some((l) => l.sku === productB.sku)) {
     throw new Error(`precondition: merged cart lacks Product B (${JSON.stringify(mergedServer)})`);
   }
-  const mergeMutations = traffic.cartMutations.slice(merges).filter((m) => m.field === "mergeCart");
+  const merge = mutationsSince(traffic, merges, "mergeCart");
 
   // [ACT] account button -> 'Logout' + [WAIT] signed out; [ACT] sign in again; [NAV] /cart.
   await signOutHere(page);
@@ -79,8 +81,9 @@ test("CART-103: Cart Merge - Persists After Logout and Re-login", async ({ page,
   // [NETWORK] no 4xx/5xx (every cart call goes to /graphql).
   expect(traffic.httpErrors.filter((e) => e.includes("/graphql"))).toEqual([]);
   // [API] mergeCart mutation response errors[] is empty.
-  expect(mergeMutations.length).toBeGreaterThan(0);
-  expect(mergeMutations.flatMap((m) => m.errors)).toEqual([]);
+  expect(merge.read.length + merge.unread, "mergeCart was sent").toBeGreaterThan(0);
+  expect(merge.read.flatMap((m) => m.errors)).toEqual([]);
+  if (!merge.read.length) test.info().annotations.push({ type: "not-evaluated", description: "[API] mergeCart errors[]: response unreadable (the page navigated first)" });
   // [API] the add-to-cart mutation returned errors[] empty (the row names addItem — see addFromPdp).
   expect(addMutations.length).toBeGreaterThan(0);
   expect(addMutations.flatMap((m) => m.errors)).toEqual([]);

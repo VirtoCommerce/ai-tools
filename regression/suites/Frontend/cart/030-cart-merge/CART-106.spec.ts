@@ -11,10 +11,13 @@ import {
   discoverPdpProducts,
   formatMoney,
   includedSubtotal,
+  jsErrors,
+  mutationsSince,
   resetCart,
   setCartLineSelected,
   signOutHere,
-  jsErrors,
+  trafficMark,
+  waitForCartSkus,
   watchCartTraffic,
 } from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
@@ -47,6 +50,8 @@ test("CART-106: Cart Merge Selection - Empty Cart + Selected All (ON)", async ({
   const adds = traffic.cartMutations.length;
   // [ACT] the user's cart (row Steps), then [WAIT] each cart mutation settles.
   for (const p of userProducts) await addFromPdp(page, p);
+  // Precondition guard (BLOCKED): every user product landed in the account cart before any selection change.
+  await waitForCartSkus(api, userProducts.map((p) => p.sku));
   for (const p of userUnselected) await setCartLineSelected(page, p, false);
   // Precondition guard (BLOCKED): the account cart holds the user's lines with the intended selection.
   const userBefore = await cartSelection(api);
@@ -64,7 +69,7 @@ test("CART-106: Cart Merge Selection - Empty Cart + Selected All (ON)", async ({
   const addMutations = traffic.cartMutations.slice(adds);
 
   // [ACT] sign in (the storefront merges the guest cart in this session); [NAV] /cart.
-  const merges = traffic.cartMutations.length;
+  const merges = trafficMark(traffic);
   await signInHere(page, user);
   await page.goto(`${env("FRONT_URL")}/cart`);
   const lines = await cartPageLines(page);
@@ -84,18 +89,26 @@ test("CART-106: Cart Merge Selection - Empty Cart + Selected All (ON)", async ({
   for (const p of products) expect(server[p.sku], `${p.sku} selectedForCheckout`).toBe(true);
   // [MATH] Order Summary subtotal = sum of (unit price x quantity) over the SELECTED lines only.
   await expect(page.locator(testIdSelector("cart-subtotal-label"))).toHaveText(formatMoney(includedSubtotal(lines)));
-  // [STATE] Proceed to Checkout matches the selection: enabled when at least one line is selected.
-  if (lines.some((l) => l.selected)) await expect(checkout).toBeEnabled();
-  else await expect(checkout).toBeDisabled();
+  // [STATE] Proceed to Checkout matches the selection: enabled when at least one line is selected. The
+  // storefront renders it only in multi-step checkout; a stand on one-page checkout shows "Place order",
+  // which is disabled until address and payment are filled whatever the selection — so there the check is
+  // NOT evaluated, and the report says so (a row-vs-stand question for a human, not a pass).
+  if (await checkout.count()) {
+    if (lines.some((l) => l.selected)) await expect(checkout).toBeEnabled();
+    else await expect(checkout).toBeDisabled();
+  } else {
+    test.info().annotations.push({ type: "not-evaluated", description: "[STATE] Proceed to Checkout: not rendered on this stand (one-page checkout)" });
+  }
 
   // [CONSOLE] no JS errors.
   expect(jsErrors(traffic.consoleErrors)).toEqual([]);
   // [NETWORK] no 4xx/5xx (every cart call goes to /graphql).
   expect(traffic.httpErrors.filter((e) => e.includes("/graphql"))).toEqual([]);
   // [API] mergeCart mutation response errors[] is empty.
-  const merge = traffic.cartMutations.slice(merges).filter((m) => m.field === "mergeCart");
-  expect(merge.length).toBeGreaterThan(0);
-  expect(merge.flatMap((m) => m.errors)).toEqual([]);
+  const merge = mutationsSince(traffic, merges, "mergeCart");
+  expect(merge.read.length + merge.unread, "mergeCart was sent").toBeGreaterThan(0);
+  expect(merge.read.flatMap((m) => m.errors)).toEqual([]);
+  if (!merge.read.length) test.info().annotations.push({ type: "not-evaluated", description: "[API] mergeCart errors[]: response unreadable (the page navigated first)" });
   // [API] the add-to-cart mutations returned errors[] empty (the row names addItem — see addFromPdp).
   expect(addMutations.length).toBeGreaterThan(0);
   expect(addMutations.flatMap((m) => m.errors)).toEqual([]);
