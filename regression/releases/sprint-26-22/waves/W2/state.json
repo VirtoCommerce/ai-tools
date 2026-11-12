@@ -1,30 +1,30 @@
 {
- "wave": "W2",
- "owner": "Elena Kutasina",
- "status": "TRIAGED",
- "runIds": [
-  "REG-2026-11-11-1938-W2",
-  "REG-2026-11-11-2018-W2",
-  "REG-2026-11-11-2227-W2",
-  "REG-2026-11-11-2211-W2"
- ],
- "updatedAt": "2026-11-12",
- "personas": "sales-rep fixture accounts SR_REP_* (agent-test-sr-*@example.com, test-data/sales-rep/sales-reps.csv) + ACME_* buyers (ACME_BUYER, ACME_BUYER2, ACME_ADMIN) + MULTI_ORG_TF_BR, and lane accounts qa-agent-slot1..3@virtocommerce.com, as resolved from Elena Kutasina's .env.local via config.js; the SR_* accounts are wave-wide fixtures — nobody re-seeds seed:sales-rep / seed:sales-rep-tasks on vcst while W2 runs",
- "totals": {
-  "planned": 417,
-  "executed": 417,
-  "pass": 303,
-  "fail": 4,
-  "blocked": 105,
-  "skipped": 5,
-  "ambiguous": 0
- },
- "untriaged": 0,
- "evidence": "reports/regression/REG-2026-11-11-2018-W2/ and REG-2026-11-11-1938-W2/ (root cause evidence/SR-HD-001/) on Elena Kutasina's machine, worktree vc-mcp-w2-2622",
- "reports": {
-  "W2": {
-   "subtask": "112968",
-   "release": "112969"
+  "wave": "W2",
+  "owner": "Elena Kutasina",
+  "status": "DONE",
+  "runIds": [
+    "REG-2026-11-11-1938-W2",
+    "REG-2026-11-11-2018-W2",
+    "REG-2026-11-11-2227-W2",
+    "REG-2026-11-11-2211-W2"
+  ],
+  "updatedAt": "2026-11-12",
+  "personas": "sales-rep fixture accounts SR_REP_* (agent-test-sr-*@example.com, test-data/sales-rep/sales-reps.csv) + ACME_* buyers (ACME_BUYER, ACME_BUYER2, ACME_ADMIN) + MULTI_ORG_TF_BR, and lane accounts qa-agent-slot1..3@virtocommerce.com, as resolved from Elena Kutasina's .env.local via config.js; the SR_* accounts are wave-wide fixtures — nobody re-seeds seed:sales-rep / seed:sales-rep-tasks on vcst while W2 runs",
+  "totals": {
+    "planned": 417,
+    "executed": 417,
+    "pass": 303,
+    "fail": 4,
+    "blocked": 105,
+    "skipped": 5,
+    "ambiguous": 0
+  },
+  "untriaged": 0,
+  "evidence": "reports/regression/REG-2026-11-11-2018-W2/ and REG-2026-11-11-1938-W2/ (root cause evidence/SR-HD-001/) on Elena Kutasina's machine, worktree vc-mcp-w2-2622",
+  "reports": {
+    "W2": {
+      "subtask": "112968",
+      "release": "112969"
+    }
   }
- }
 }
