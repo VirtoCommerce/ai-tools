@@ -4,7 +4,7 @@
 
 Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst · 3.1097.0 · 2.62.0-alpha.2642 · Xapi is the PR build 3.1031.0-pr-70-108f (vc-module-x-api#70, VCST-4717), deployed by vc-deploy-dev#7095
 
-**Executed 903 · PASS 597 · FAIL 22 · BLOCKED 202** · ledger 313 rows
+**Executed 1044 · PASS 707 · FAIL 34 · BLOCKED 211** · ledger 334 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -13,7 +13,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | W2 | Sales Rep hub | Elena Kutasina | TRIAGED | 417 | 417 | 303 | 4 | 105 | 0 | 117 | REG-2026-11-11-1938-W2 REG-2026-11-11-2018-W2 REG-2026-11-11-2227-W2 REG-2026-11-11-2211-W2 |
 | W3 | Cart, checkout & addresses | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
-| W5 | Company & organization | Aleksandra Mitricheva | CLAIMED | — | — | — | — | — | — | 0 | — |
+| W5 | Company & organization | Aleksandra Mitricheva | TRIAGED | 141 | 141 | 110 | 12 | 9 | 0 | 21 | REG-2026-11-12-0725-W5 REG-2026-11-12-0837-W5b REG-2026-11-12-0914-W5c REG-2026-11-12-1008-W5d REG-2026-11-12-1023-W5e |
 | W6 | UI kit, design tokens, a11y & i18n (Bridge) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | WX | Exclusive window — sign-in settings | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
@@ -21,14 +21,21 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 5 |
+| REAL_BUG | 7 |
 | BY_DESIGN | 80 |
-| TEST_DEFECT | 100 |
-| DATA | 30 |
-| ENV_CONFIG | 46 |
-| NOT_TESTABLE | 41 |
-| DUPLICATE | 9 |
+| TEST_DEFECT | 111 |
+| DATA | 33 |
+| ENV_CONFIG | 47 |
+| NOT_TESTABLE | 44 |
+| DUPLICATE | 10 |
 | PENDING_DECISION | 2 |
+
+## Real bugs awaiting filing
+
+| Wave | Case | Summary | New in release | Note |
+|---|---|---|---|---|
+| W5 | B2C-MBR-031 | Role filter on /company/members offers Store manager which returns zero members (dead-end facet) | no |  |
+| W5 | B2C-MBR-025 | Role filter dead end plus an empty-state assertion that misreads PR #2354 | no | same defect as B2C-MBR-031 — file once; repair the empty-state assertion |
 
 ## Decisions pending
 
