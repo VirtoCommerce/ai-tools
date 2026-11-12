@@ -491,6 +491,11 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Storefront ↔ Admin consistency: promotion visible in storefront matches Admin configuration (discount amount, conditions)
 
 ## 28. Security
+
+> A generic baseline. For a ticket, derive the checks from its own operations, ids and fields with
+> the SEC technique — `qa-test-design/security-abuse-cases.md` — and author a case wherever its four
+> questions say one is needed.
+
 - [ ] PCI compliance: payment card fields rendered in isolated iframes, card data not in DOM/localStorage/network requests
 - [ ] XSS prevention: user-generated content (search queries, addresses, product reviews) sanitized — no script execution
 - [ ] CSRF protection: state-changing requests include anti-forgery tokens

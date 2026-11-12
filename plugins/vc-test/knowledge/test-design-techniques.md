@@ -18,6 +18,7 @@ run time (never against a hardcoded list).
 | `PW` | Pairwise / t-way combinatorial | §6 |
 | `CT` | Classification Tree | `examples/classification-tree-products.md` |
 | `EG` | Error Guessing | §7 |
+| `SEC` | Security abuse cases — the trust-boundary walk over FLOW's links | `security-abuse-cases.md` |
 
 Adding a token means adding a section here first. 34 suite rows already carry organic
 `Technique:` stamps — this formalizes that convention rather than inventing one.
@@ -37,6 +38,7 @@ Use this table to pick the right technique(s) for the feature under test. Most f
 | Mature feature, looking for edge cases | Error Guessing | Leverages domain knowledge to target likely failure points |
 | New or unknown feature | EP + BVA + Error Guessing | Baseline systematic coverage plus exploratory edge cases |
 | **Any feature that changes state — run this FIRST** | **FLOW** (§1a) | Names the chain of value the feature delivers, so the other techniques have a link to refine. Skipping it yields per-screen field checks that pass while the feature is broken |
+| A chain link takes a client-sent identifier, a money/owner value, free text shown to another actor, an anonymous or token-link entry, a permission gate, or a credential or session change | **SEC** (`security-abuse-cases.md`), after FLOW | Security defects pass every happy-path case by construction; only a refusal at the server, sent with the attacker's own identity, finds them. Cases only where its four questions say they are needed |
 | Integration or E2E testing | FLOW first, then layer the rest | FLOW supplies the journey and the variants × links matrix; EP for inputs, ST for lifecycles, DT for rules refine each crossing |
 
 **Combining techniques:** Start with EP + BVA to establish baseline coverage, then layer additional techniques based on feature characteristics. Track which technique produced each test case for traceability.

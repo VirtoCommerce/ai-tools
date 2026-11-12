@@ -1,6 +1,6 @@
 ---
 name: qa-test-design
-description: "[QA Method] Test design techniques: value-chain flow coverage (FLOW — run first), equivalence partitioning, BVA, decision tables, state transitions, pairwise, error guessing."
+description: "[QA Method] Test design techniques: value-chain flow coverage (FLOW — run first), equivalence partitioning, BVA, decision tables, state transitions, pairwise, error guessing, security abuse cases (SEC)."
 argument-hint: "feature name | technique name | VCST-XXXX"
 
 ---
@@ -19,7 +19,7 @@ Apply formal test design techniques to systematically derive test cases with max
 
 ## Execution
 
-1. **Read the techniques reference:** Load `test-design-techniques.md` from this skill folder for full technique descriptions, selection guide, and generic VC examples. Then load relevant files from `examples/` subfolder for applied examples with real QA product mappings (9 files: `ep-configurable-sections.md`, `bva-configurable-boundaries.md`, `pairwise-product-toggles.md`, `pairwise-store-settings.md`, `decision-table-promo-configurable.md`, `decision-table-b2b-visibility.md`, `state-transition-mid-session.md`, `classification-tree-products.md`, `error-guessing-configurable.md`).
+1. **Read the techniques reference:** Load `test-design-techniques.md` from this skill folder for full technique descriptions, selection guide, and generic VC examples. Then load relevant files from `examples/` subfolder for applied examples with real QA product mappings (9 files: `ep-configurable-sections.md`, `bva-configurable-boundaries.md`, `pairwise-product-toggles.md`, `pairwise-store-settings.md`, `decision-table-promo-configurable.md`, `decision-table-b2b-visibility.md`, `state-transition-mid-session.md`, `classification-tree-products.md`, `error-guessing-configurable.md`). When step 3 picks **SEC**, also load `security-abuse-cases.md`.
 
 2. **Model the VALUE CHAIN before anything else — `test-design-techniques.md` §1a (FLOW).**
    - If a JIRA ticket is provided, fetch details via Atlassian MCP; if a feature name, identify the
@@ -44,6 +44,9 @@ Apply formal test design techniques to systematically derive test cases with max
    - **Complex business rules with conditions** → Decision Table
    - **Feature has lifecycle states** → State Transition Testing
    - **Many parameters, too many combos** → Pairwise / Combinatorial
+   - **A chain link crosses a trust boundary** (client-sent id, money/owner value, free text shown to
+     another actor, anonymous or token-link entry, permission gate, credential or session change) → **SEC** (`security-abuse-cases.md`),
+     after FLOW — a case only where its four questions say the check is needed, and then always
    - **Mature feature, looking for edge cases** → Error Guessing
    - **New or unknown feature** → Start with EP + BVA, then Error Guessing
 
@@ -96,3 +99,7 @@ Apply formal test design techniques to systematically derive test cases with max
 - State transition testing is mandatory for any feature with a lifecycle (orders, quotes, returns)
 - Document which technique was applied to each test case for traceability
 - Never skip negative test cases — invalid inputs and transitions are where bugs hide
+- **Where a security check is needed, a case is written; where it is not, none is.** SEC's four
+  questions (`security-abuse-cases.md`) decide which: the probe applies, the ticket changed the
+  crossing, no case covers it yet, and a wrong answer costs money, data, PII or privilege. A needed
+  probe is never downgraded to a checklist line or a note
