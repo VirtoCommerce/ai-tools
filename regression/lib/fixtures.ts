@@ -61,9 +61,30 @@ function credsFor(who: Who): RoleCredentials {
 
 type AdminApi = (method: string, path: string, body?: unknown, opts?: { expectStatus?: number[] }) => Promise<any>;
 
+/**
+ * acquireToken, with the one failure a password grant cannot get past named plainly: while the stand's
+ * GLOBAL MFA is on (an MFA suite run switches it on, e.g. VCST-6688 on 2026-11-12), /connect/token answers
+ * every password grant with a `twoFactorToken` — no account, admin included, can sign in. Reported as
+ * that (a BLOCKED setup, D8), not as a raw token dump that reads like a credentials problem.
+ */
+async function tokenFor(creds: RoleCredentials, opts: Parameters<typeof acquireToken>[1]) {
+  try {
+    return await acquireToken(creds, opts);
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg.includes("twoFactorToken")) {
+      throw new Error(
+        `${env("BACK_URL")} requires a second factor for every sign-in right now (global MFA is on — usually an MFA ` +
+          `suite run). Password sign-in for "${creds.role}" cannot proceed; re-run once MFA is off again.`,
+      );
+    }
+    throw e;
+  }
+}
+
 /** The platform admin API in the shape the seeders' account helpers take: (method, path, body, { expectStatus }). */
 async function adminApi(): Promise<AdminApi> {
-  const token = await acquireToken(resolveRole("ADMIN", join(ROOT, "test-data")), { backUrl: env("BACK_URL") });
+  const token = await tokenFor(resolveRole("ADMIN", join(ROOT, "test-data")), { backUrl: env("BACK_URL") });
   return async (method, path, body = null, { expectStatus = [200] } = {}) => {
     const res = await fetch(`${env("BACK_URL")}${path}`, {
       method,
@@ -232,7 +253,7 @@ export const test = base.extend<{
     const opened: APIRequestContext[] = [];
     await use(async (who: Who) => {
       const creds = credsFor(who);
-      const token = await acquireToken(creds, { backUrl: env("BACK_URL"), storeId: env("STORE_ID") });
+      const token = await tokenFor(creds, { backUrl: env("BACK_URL"), storeId: env("STORE_ID") });
       const api = await request.newContext({
         baseURL: env("BACK_URL"),
         extraHTTPHeaders: { Authorization: `Bearer ${token.accessToken}` },

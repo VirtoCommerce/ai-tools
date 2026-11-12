@@ -257,20 +257,43 @@ export async function addFromPdp(page: Page, product: PdpProduct, times = 1): Pr
   const count = buyBox.getByTitle("in Cart").locator('[data-test-id="count-in-cart-label"]');
   const read = async () => ((await count.count()) ? Number(await count.innerText()) : 0);
   let inCart = await read();
-  // The first '+' adds the line at once. A second and later '+' goes out as ONE batched, debounced
-  // quantity update — observed on vcst ~10 s after the click, long after the count label moved. Wait
-  // for that request itself, never for a fixed time.
-  let batched: Promise<unknown> | undefined;
-  for (let i = 0; i < times; i++) {
-    const firstAdd = i === 0 && inCart === 0 ? page.waitForResponse(isCartMutationResponse, { timeout: 30_000 }) : undefined;
-    if (i === 1 || (i === 0 && inCart > 0)) batched = page.waitForResponse(isCartMutationResponse, { timeout: 30_000 });
-    await plus.click();
-    const target = inCart + 1;
-    await count.filter({ hasText: new RegExp(`^${target}$`) }).waitFor();
-    if (firstAdd) await firstAdd;
-    inCart = target;
+  if (times === 0) return inCart;
+  // The first '+' adds the line at once; later ones go out as batched, debounced quantity updates —
+  // observed on vcst ~10 s after the click, and split over MORE than one request when the clicks span a
+  // debounce window (CART-098 once merged 2+2 instead of 3+3 because only the first was awaited). So the
+  // helper does not count requests: it records the quantity every cart response reports for this SKU
+  // and returns only once the SERVER reports the final count.
+  const reported: number[] = [];
+  const onResponse = async (r: import("@playwright/test").Response) => {
+    if (!isCartMutationResponse(r)) return;
+    try {
+      const body = (await r.json()) as { data?: Record<string, { items?: Array<{ sku?: string; quantity?: number }> } | null> };
+      for (const root of Object.values(body.data ?? {})) {
+        const line = root?.items?.find((i) => i.sku === product.sku);
+        if (line?.quantity != null) reported.push(line.quantity);
+      }
+    } catch {
+      /* body gone (navigation) — nothing to record */
+    }
+  };
+  page.on("response", onResponse);
+  try {
+    for (let i = 0; i < times; i++) {
+      await plus.click();
+      const target = inCart + 1;
+      await count.filter({ hasText: new RegExp(`^${target}$`) }).waitFor();
+      inCart = target;
+    }
+    const deadline = Date.now() + 30_000;
+    while (reported.at(-1) !== inCart) {
+      if (Date.now() > deadline) {
+        throw new Error(`cart: ${product.sku} — the server never reported quantity ${inCart} (last reported: ${reported.at(-1) ?? "none"})`);
+      }
+      await page.waitForTimeout(250);
+    }
+  } finally {
+    page.off("response", onResponse);
   }
-  if (batched) await batched;
   await page.waitForLoadState("networkidle");
   return inCart;
 }
