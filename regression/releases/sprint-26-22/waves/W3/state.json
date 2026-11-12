@@ -1,7 +1,35 @@
 {
  "wave": "W3",
- "owner": null,
- "status": "NOT_STARTED",
- "runIds": [],
- "updatedAt": "2026-11-11"
+ "owner": "Elena Kutasina",
+ "status": "TRIAGED",
+ "runIds": [
+  "REG-2026-11-12-0714-W3"
+ ],
+ "updatedAt": "2026-11-12",
+ "personas": "USER_DEFAULT = qa-user-01, ORG_USER_DEFAULT = acme_store_maintainer_1, TECHFLOW_ADMIN / ORG_USER = test-emily.johnson (slot 2 B2B account), MULTI_ORG_TF_BR, LOYALTY_VIP_USER, USER2 and lane account qa-agent-slot1 (playwright-chrome only), from Elena Kutasina's .env.local via config.js; W2 runs in parallel on SR_REP_* / ACME_BUYER / slot 3 — a parallel owner must not use these accounts",
+ "totals": {
+  "planned": 304,
+  "executed": 275,
+  "pass": 110,
+  "fail": 28,
+  "blocked": 29,
+  "skipped": 108,
+  "ambiguous": 0
+ },
+ "untriaged": 0,
+ "notRun": [
+  {
+   "suites": [
+    "081"
+   ],
+   "cases": 29,
+   "reason": "not run yet (as of REG-2026-11-12-0714-W3)"
+  }
+ ],
+ "reports": {
+  "W3": {
+   "subtask": "112970",
+   "release": "112971"
+  }
+ }
 }
