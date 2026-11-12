@@ -11,7 +11,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | W0 | Smoke gate | Elena Kutasina | DONE | 34 | 34 | 27 | 0 | 2 | 0 | 11 | REG-2026-11-11-1825-W0 |
 | W1 | Authentication — sign-in, session, security | Elena Kutasina | TRIAGED | 159 | 159 | 81 | 5 | 48 | 0 | 78 | REG-2026-11-12-0000-W1 |
 | W2 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W3 | Cart, checkout & addresses | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W3 | Cart, checkout & addresses | Elena Kutasina | CLAIMED | — | — | — | — | — | — | 0 | — |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
 | W5 | Company & organization | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | UI kit, design tokens, a11y & i18n (Bridge) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
