@@ -4,7 +4,7 @@
 
 Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst · 3.1097.0 · 2.62.0-alpha.2647 · Updated 2026-11-12 (--update): theme alpha.2647 = vc-frontend dev 0315ecbd (vc-deploy-dev#7097, 2026-11-11 17:12 UTC; carries #2552, #2633, #2634, #2642, #2652); Xapi release 3.1031.0 (vc-deploy-dev#7098) replaced the PR build 3.1031.0-pr-70-108f (vc-deploy-dev#7095); BackgroundJobs 3.1055.0. W0 and the first W2 run were on alpha.2642.
 
-**Executed 1489 · PASS 836 · FAIL 71 · BLOCKED 267** · ledger 543 rows
+**Executed 1630 · PASS 946 · FAIL 83 · BLOCKED 276** · ledger 564 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -13,7 +13,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | W2 | Sales Rep hub | Elena Kutasina | DONE | 417 | 417 | 303 | 4 | 105 | 0 | 117 | REG-2026-11-11-1938-W2 REG-2026-11-11-2018-W2 REG-2026-11-11-2227-W2 REG-2026-11-11-2211-W2 |
 | W3 | Cart, checkout & addresses | Elena Kutasina | DONE | 304 | 275 | 110 | 28 | 29 | 0 | 165 | REG-2026-11-12-0714-W3 |
 | W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
-| W5 | Company & organization | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W5 | Company & organization | Aleksandra Mitricheva | TRIAGED | 141 | 141 | 110 | 12 | 9 | 0 | 21 | REG-2026-11-12-0725-W5 REG-2026-11-12-0837-W5b REG-2026-11-12-0914-W5c REG-2026-11-12-1008-W5d REG-2026-11-12-1023-W5e |
 | W6 | UI kit, design tokens, a11y & i18n (Bridge) | Elena Kutasina | DONE | 283 | 283 | 105 | 20 | 36 | 0 | 58 | REG-2026-11-12-0431-W6 REG-2026-11-12-0729-W6 REG-2026-11-12-0846-W6 |
 | WX | Exclusive window — sign-in settings and env-wide cases | Elena Kutasina | DONE | 518 | 28 | 24 | 1 | 0 | 0 | 7 | REG-2026-11-12-1014-WXpre REG-2026-11-12-1133-WX |
 
@@ -21,13 +21,13 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 10 |
+| REAL_BUG | 11 |
 | BY_DESIGN | 186 |
-| TEST_DEFECT | 150 |
-| DATA | 53 |
-| ENV_CONFIG | 54 |
-| NOT_TESTABLE | 52 |
-| DUPLICATE | 19 |
+| TEST_DEFECT | 161 |
+| DATA | 56 |
+| ENV_CONFIG | 55 |
+| NOT_TESTABLE | 55 |
+| DUPLICATE | 21 |
 | PENDING_DECISION | 19 |
 
 ## Not run yet
