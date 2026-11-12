@@ -27,8 +27,11 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
    **ownership-agnostic**: the one repo may be a native `VirtoCommerce/*` module **or** a client custom
    module (per `project-profile.json`) — review the diff the same way; the PR target/host is the
    orchestrator's concern, not a review criterion.
-2. **No existing-test edits** — `git diff` touches NO pre-existing test method/file except to ADD new
-   ones. Any edit/delete of an existing `*Tests*` / `*.spec.*` → REQUEST_CHANGES.
+2. **No existing-test edits; the repro where §G2 placement puts it** — pre-existing test files only GAIN
+   cases (`git diff --numstat`: 0 deleted lines, and no line inserted into an existing case's body). Any
+   edit/delete of an existing test → REQUEST_CHANGES. So is a new test file when the type already has a
+   test class the case belongs in, or a committed test for a change with no logic that the repo's rules
+   say needs none (`quality-gates.md` §G2 placement).
 3. **Red→green real, and about the SYMPTOM** — a NEW test encodes the STR/RCA (or a narrow trivial-skip
    is justified), and what it OBSERVES is what the ticket's *Actual result* describes. Check the dev's
    three declarations: `PROOF_MEDIUM` (where the red was observed), `PROOF_PROVENANCE` (`built-diff`

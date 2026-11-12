@@ -29,6 +29,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   the checkout, never copied here. Their edit-guard hook does not run in `.fix-workspace/`, so it is kept by hand,
   and a fix that needs new public UI-kit API is a hand-off. `frontend-reviewer` checklist item 10 checks it.
 
+### Changed
+
+- **Tier A:** G2 always asked for a NEW test and G3 forbade touching any test file
+  (`git diff --name-only`), so a fix agent could not add a case to the subject's existing test file and
+  wrote a second, duplicate one beside it, with the repo's own setup copied in. It also committed a
+  test for markup / style / copy changes that vc-frontend's own rules say need none, and named files
+  `*.spec.ts` where that repo uses `*.test.ts`. New `quality-gates.md` §G2 placement (both copies): the
+  red→green proof stays mandatory, but the repro is a **new case in the subject's existing test file**
+  when it has one (added lines only, checked by `git diff --numstat`: 0 deleted lines), a new file only
+  when there is none and the change is logic, and an **uncommitted scratch test** with its result in the
+  PR body when the change has no logic and the repo's rules say it needs no test. Both developers, both
+  reviewers, `/vue-unit-test`, `/dotnet-unit-test`, `shared-instructions.md` rule 2, `when-to-write-a-test.md`
+  RULE 4 and the root `CLAUDE.md` exception follow.
+
 ## A host-governed project asks where the agent may create test data — `vc-init` `0.6.0`, `vc-fix` `0.18.6` — 2026-11-11
 
 ### Changed

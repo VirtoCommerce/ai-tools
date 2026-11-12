@@ -86,7 +86,8 @@ Invoke the development skills:
    so activating any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md` §Fast
    local navigation & editing).
 4. **Reproduce (red) — in the medium the symptom is observed in** (`quality-gates.md` G2 MEDIUM RULE).
-   Add a NEW test asserting expected behavior; confirm it fails. Trivial-skip only for a one-line
+   Add a NEW test case asserting expected behavior — in the type's existing test class when it has one,
+   committed or not per `quality-gates.md` §G2 placement; confirm it fails. Trivial-skip only for a one-line
    guard/typo/off-by-one **with no rendered-DOM symptom**, or a change with no observable behaviour at
    all (note in PR body). **Admin SPA rendered-DOM symptom** — layout/CSS **or** wrong/literal/missing/
    stale rendered content, an element absent or not updating: scaffold the visual render harness
@@ -144,7 +145,7 @@ for Admin SPA layout/CSS proof you *scaffold* the render harness (`/angular-admi
 and delegate the browser render/screenshot to `qa-backend-expert`.
 
 ### Hard rules
-Single repo · never modify existing tests (ADD only) · minimal diff · no breaking changes (contract /
+Single repo · never modify existing tests (ADD only; a new case in an existing file is an ADD) · minimal diff · no breaking changes (contract /
 schema / migration / manifest / dep-bump) · no secrets · preserve BL-* · **open a PR, never merge it**.
 Full list: `knowledge/agents/developers/shared-instructions.md`. If the fix is unclear/risky/cross-module →
 `FIX_STATUS: FAILED`, don't push speculative changes.

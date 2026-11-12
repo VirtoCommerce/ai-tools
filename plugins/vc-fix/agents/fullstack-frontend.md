@@ -127,15 +127,14 @@ Invoke the development skills:
    the `@/` → `client-app/` alias (or anything in `node_modules`) until install has run, so activating
    any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md` §Fast local
    navigation & editing). **Then read the checkout's own agent rules** — `skills/vue-fix/repo-own-rules.md`.
-4. **Reproduce (red)** — add a NEW `*.spec.ts` asserting expected behavior; confirm it fails by running
-   **only that spec file** — `npx vitest run <path/to/new.spec.ts>`. Trivial-skip only for a one-line
-   template/typo/binding with no assertable logic (note in PR body + manual verification steps).
+4. **Reproduce (red)** — a NEW test case asserting expected behavior, placed per `quality-gates.md`
+   §G2 placement (a case in the subject's existing `*.test.ts`; a new file only when none; uncommitted
+   scratch for a no-logic change); confirm it fails running **only that file** — `npx vitest run <file>`.
 5. **Fix (green)** — smallest correct change to product code, matching `<script setup>` + Composition
    API + TS idioms; re-run **the same scoped spec** until green. **Existing tests/stories UNMODIFIED** —
-   prove this with `git diff --name-only` (no `*.test.*`/`*.spec.*`/`*.stories.*` files edited). "Still
-   green" is GUARANTEED by not editing them + your scoped spec passing — **do NOT re-run the whole suite
-   to "confirm no regression"** (a diff that can't reach a test can't regress it; run #3 built + ran all
-   1637 for nothing).
+   their files only gain cases (`git diff --numstat`: 0 deleted lines). "Still green" is GUARANTEED by
+   not editing them + your scoped spec passing — **do NOT re-run the whole suite to "confirm no
+   regression"** (a diff that can't reach a test can't regress it).
    > **Green-gate for a template-/style-only `.vue` diff = `vue-tsc` (typecheck) + lint + the scoped
    > red→green spec. That's it.** `yarn build` and the full `test:unit` suite are **NOT** part of the gate
    > for such a diff — do not run them (see step 6). They ARE required only when the diff changes `<script>`

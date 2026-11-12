@@ -31,9 +31,12 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
    file is confined to that sub-app's declared path — anything touching the module's C#, legacy AngularJS
    Admin UI, or a different sub-app in the same diff → REQUEST_CHANGES (that's cross-scope even though
    it's technically one repo). The PR target/host is the orchestrator's concern, not a review criterion.
-2. **No existing-test/story edits** — `git diff` touches NO pre-existing `*.spec.ts` / `*.test.ts` /
-   `*.stories.ts` (storefront) or `tests/*.test.ts` (a module sub-app) method or file except to ADD new
-   ones. Any edit/delete of an existing test or story → REQUEST_CHANGES.
+2. **No existing-test/story edits; the repro where §G2 placement puts it** — pre-existing `*.test.ts` /
+   `*.spec.ts` / `*.stories.ts` (storefront) or `tests/*.test.ts` (a module sub-app) files only GAIN
+   cases (`git diff --numstat`: 0 deleted lines, and no line inserted into an existing case's body). Any
+   edit/delete of an existing test or story → REQUEST_CHANGES. So is a new test file beside a subject that
+   already has one, a `*.spec.ts` where the repo uses `*.test.ts`, or a committed test for a markup /
+   style / copy change the repo's rules say needs none (`quality-gates.md` §G2 placement).
 3. **Red→green real, and about the SYMPTOM** — a NEW vitest test (storefront) or `tsx --test` test
    (a module sub-app via `/vc-shell-fix` Path 1) encodes the STR/RCA, and what it OBSERVES is what the
    ticket's *Actual result* describes (`quality-gates.md` G2 MEDIUM RULE). Check `PROOF_MEDIUM`,
