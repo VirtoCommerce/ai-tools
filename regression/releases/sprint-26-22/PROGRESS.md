@@ -12,7 +12,7 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 | W1 | Authentication — sign-in, session, security | Elena Kutasina | TRIAGED | 159 | 159 | 81 | 5 | 48 | 0 | 78 | REG-2026-11-12-0000-W1 |
 | W2 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W3 | Cart, checkout & addresses | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W4 | Catalog, search, compare & analytics | Elena Kutasina | TRIAGED | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
+| W4 | Catalog, search, compare & analytics | Elena Kutasina | DONE | 293 | 293 | 186 | 13 | 47 | 0 | 107 | REG-2026-11-11-1939-W4 |
 | W5 | Company & organization | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | UI kit, design tokens, a11y & i18n (Bridge) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | WX | Exclusive window — sign-in settings | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -21,22 +21,14 @@ Ticket: VCST-6644 · Sprint: Sprint26-22 2026-11-02 – 2026-11-16 · Env: vcst 
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 7 |
+| REAL_BUG | 4 |
 | BY_DESIGN | 78 |
-| TEST_DEFECT | 53 |
+| TEST_DEFECT | 56 |
 | DATA | 14 |
 | ENV_CONFIG | 30 |
 | NOT_TESTABLE | 5 |
 | DUPLICATE | 7 |
 | PENDING_DECISION | 2 |
-
-## Real bugs awaiting filing
-
-| Wave | Case | Summary | New in release | Note |
-|---|---|---|---|---|
-| W1 | SEC-AUTH-005 | /account/change-password shows no notice that other sessions will be signed out | no |  |
-| W1 | AUTH-069 | /account/change-password shows no notice that other sessions will be signed out | no | same defect as SEC-AUTH-005, file once |
-| W4 | GA-027 | Re-paying an unpaid order from the order page sends a GA4 purchase event | no |  |
 
 ## Decisions pending
 
