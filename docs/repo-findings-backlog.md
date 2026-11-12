@@ -456,3 +456,17 @@ AUTH-013, 022, 048–051, 054–056, 061, 069, 073; 082 IMP-008, 010–013, 016,
 so the spread yields `{"0":"j","1":"i","2":"r","3":"a","comment_id":"…"}`. Fix: when `j.tracker` is a string, keep it as
 `{ name: j.tracker, comment_id }` (or write the id to `tracker_comment.id`, the field the summaries already use).
 Repaired by hand in the VCST-6442 summary.
+
+## 2026-11-12 — found during the Sprint 26-22 W5 regression (vcst)
+
+**`seed:membership-lock:verify` reads V6 by a stale hardcoded membership id.** It looks up
+`IMPERSONATE_TARGET_BLOCKED`'s membership as `e693f711487f44958105745fc5a12c60`, which no longer exists on vcst, so it
+prints "✗ V6 IS NO LONGER LOCKED — suite 082 depends on it" and then "VERIFY OK". The account's only membership is
+`9bde8cca-…` (created 2026-09-19), Approved and locked — V6 is intact. Fix: resolve V6 at run time by the account
+(`organization-memberships/search` by the user id), never a pinned id; and make a missing V6 fail `--verify` instead of
+printing OK after the ✗ line. `scripts/seed-data/b2b/membership-lock-specs.mjs` `V6_IS_READ_ONLY`.
+
+**`suites:merge` replaced runner-written results with all-BLOCKED `lane_lost` envelopes** (run
+REG-2026-11-12-0837-W5b) when run over all-browser suites whose runners had written `suite-<ID>-results.json` directly;
+the orchestrator rebuilt them from `suite-<ID>-cases.jsonl` and the runners' `bugs[]` were lost. Fix: `suites:merge`
+should refuse (or no-op) when no machine fragment exists and a canonical results file is already present.
