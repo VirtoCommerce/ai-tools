@@ -69,7 +69,8 @@ dotnet run $pluginRoot/skills/perf-trace/perftools/cpuparse.cs /abs/path/to/resu
 ```
 
 L2 (k6) needs no special handling: the `run.sh` invocation is in the allowlist, so it dials the backend
-fine — just run it (no sandbox-disable).
+fine — just run it bare, knobs in `--env-file` (no sandbox-disable; a variable on the command itself
+re-sandboxes it — `../../perf-loadtest/loadtests/README.md`, sandbox note).
 
 ## Which tool for which question
 
@@ -173,10 +174,13 @@ to learn "how many searches does one `addOrUpdateCartShipment` issue?".
 ```bash
 # paths relative to skills/perf-trace/ (as with the dotnet run examples above)
 aspire otel spans backend --apphost "$AH" --follow --format Json --non-interactive > spans.json &
-OP_TAG=1 ITERATIONS=6 ../perf-loadtest/loadtests/run.sh smoke   # 1 VU — see the condition below
+../perf-loadtest/loadtests/run.sh smoke --env-file <abs path>   # file: OP_TAG=1, ITERATIONS=6; 1 VU — see the condition below
 kill %1
 node perftools/op_attrib.mjs spans.json --last [--rows]
 ```
+
+In Claude Code each line is its own Bash call — the capture via `run_in_background`, `run.sh` bare
+(see the L2 note under "Agentic run").
 
 Output: calls issued per request per operation (ES / SQL / Redis / outbound HTTP, median), where
 each operation's **time** goes per backend, each operation's share of wall time, ES calls split by
