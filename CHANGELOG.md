@@ -12,37 +12,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ### Added
 
-- `run.sh --env-file <path>`. Claude Code exempts `run.sh` from its sandbox only when the whole Bash call
-  matches the `excludedCommands` entry, and since 2.1.278 `X=1 run.sh`, `export X; run.sh` and a sourced env
-  file all run sandboxed, where k6 reports `connection refused` against a backend that is up. The file is parsed,
-  never sourced: knobs `run.sh` reads itself are validated (an empty value counts as unset), every other name
-  goes to k6 only as `-e NAME=VALUE` and never into a process environment — so the file cannot set
-  `LD_PRELOAD` / `BASH_ENV` / `PATH` for anything the unsandboxed script starts, and a `PAYLOAD_DIR` payload's own
-  knobs need no plugin change. Refused with the file line: `K6`, credential-like names (`-e` values show in
-  `ps`), `PROFILE` / `SUMMARY_PATH`, duplicates.
-- `run.sh --k6 <path>`: the k6 binary, kept in the reviewed command text rather than in the file.
+- `run.sh --env-file <path>` and `--k6 <path>`. Since Claude Code 2.1.278, variables on the `run.sh` command
+  (`X=1 run.sh`, `export X; run.sh`) put it back in the sandbox, where k6 cannot reach the backend. The file is
+  parsed, never sourced; names `run.sh` does not use reach k6 only. Details: `loadtests/README.md`.
 
 ### Fixed
 
-- `TRACE=1` skipped its capture silently on a published platform started as `dotnet
-  VirtoCommerce.Platform.Web.dll` (no `bin/` in the path). The platform name now matches as a whole argv token of
-  the apphost or of the `dotnet` host; `dotnet run` / `watch` launchers and shell command lines that only mention
-  the name stay excluded; `ps -ww` keeps a long command line from being cut to `$COLUMNS`.
+- `TRACE=1` silently skipped the capture on a platform started as `dotnet VirtoCommerce.Platform.Web.dll`.
 
 ### Changed
 
-- Agent-facing recipes in `perf-loadtest`, `perf-trace`, `perf-loop` and `perf-init` pass knobs through
-  `--env-file` instead of variables on the `run.sh` command; the loadtests README sandbox note says why and gives a
-  zero-load check that tells a sandboxed call from an exempt one.
-
-### Verified
-
-- Every refusal, CRLF and comment lines, the k6 argv and the k6 child environment checked against a fake k6;
-  `-e` overriding an inherited variable checked against real k6.
-- Pid discovery checked on synthetic `ps` lines (apphost, `dotnet <dll>`, `dotnet exec`, paths with spaces,
-  `dotnet run` / `watch`, shell wrappers, neighbour names) and through `run.sh` against a release-shaped process.
-- Used end to end for a before/after allocation A/B on a published platform: both captures attached to the app
-  process, which the previous pattern could not find.
+- Agent-facing recipes pass knobs through `--env-file`.
 
 ---
 
