@@ -31,7 +31,7 @@
  *                                   distinct products make the default cap bite.
  *
  * NON-GOALS (deliberate, do not "fix"):
- *   · No `SalesRepLayout.*` CustomerPreference is seeded. The row-cap cases start from the
+ *   · No rep layout CustomerPreference (`Layout.salesRep*` / legacy `SalesRepLayout.*`) is seeded. The row-cap cases start from the
  *     never-saved (null) layout baseline and SAVE it themselves; seeding one would destroy the
  *     precondition. This module creates ORDERS ONLY.
  *   · SR_REP_PRIMARY's orders are untouched — this fixture set is attributed exclusively to

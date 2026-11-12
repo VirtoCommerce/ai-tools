@@ -158,3 +158,203 @@ XFE-GQL-061,xFrontend — store + pageContext Combined Bootstrap Returns Consist
 [DATA label=page_ctx_init] data.pageContext.store.storeId is non-null
 [DATA label=page_ctx_init] data.pageContext.store.defaultLanguage.cultureName is non-null
 [DATA label=page_ctx_init] data.pageContext.store.defaultCurrency.code is non-null",[EVIDENCE] Both queries return non-null storeId for same {{STORE_ID}}. pageContext includes defaultLanguage + defaultCurrency for i18n bootstrap. No mismatch between the two queries confirms consistent resolver.,store_init errors[] non-empty; page_ctx_init errors[] non-empty; pageContext.store storeId different from store_init storeId (routing inconsistency); HTTP 500 on either query,none — read-only,VCST-4642,Draft
+XFE-GQL-062,"orderStatistics — no argument can point it at another customer, organization or user; anonymous is Unauthorized",GraphQL > X-Frontend > Statistics and layout,Critical,BL-SR-002,,"Runner-native for the aliased reads; the schema-invalid probes are raw REST posts to /graphql because the runner validates every [GQL-OP] against the introspected schema BEFORE sending and an unknown argument would never reach the server. Caller USER_DEFAULT (an AcmeCorp maintainer). orderStatistics(storeId, currencyCode, cultureName) takes NO customer, organization or user argument: the customer and the organization come from the token, so no argument can point it at another account (README, {SPEC}). The 'other account' values are the seeded buyer BD_STATS (ids from the env alias overlay).",other_customer=@td(BD_STATS.contact_id); other_org=@td(BD_STATS.org_id); other_user=@td(BD_STATS.user_id); store={{STORE_ID}},"[REST-OP anon]
+POST {{BACK_URL}}/graphql
+Content-Type: application/json
+Body: {""query"": ""query { orderStatistics { currencyCode } }""}
+[REST-EXEC anon]
+[AUTH role=USER_DEFAULT]
+[REST-OP arg_customer]
+POST {{BACK_URL}}/graphql
+Content-Type: application/json
+Body: {""query"": ""query { orderStatistics(customerId: \""{{other_customer}}\"") { currencyCode } }""}
+[REST-EXEC arg_customer]
+[REST-OP arg_org]
+POST {{BACK_URL}}/graphql
+Content-Type: application/json
+Body: {""query"": ""query { orderStatistics(organizationId: \""{{other_org}}\"") { currencyCode } }""}
+[REST-EXEC arg_org]
+[REST-OP arg_user]
+POST {{BACK_URL}}/graphql
+Content-Type: application/json
+Body: {""query"": ""query { orderStatistics(userId: \""{{other_user}}\"") { currencyCode } }""}
+[REST-EXEC arg_user]
+[GQL-OP own]
+query { orderStatistics(storeId: ""{{store}}"") { currencyCode period(from: ""2000-01-01T00:00:00Z"", to: ""2099-12-31T23:59:59Z"") { count } } }
+[GQL-EXEC own]","[DATA label=anon] body.errors.0.extensions.code = Unauthorized {SPEC}
+[NULL label=anon] body.data.orderStatistics {SPEC}
+[ERRORS label=arg_customer] HTTP 400 {OBSERVED}
+[DATA label=arg_customer] body.errors.0.extensions.code = KNOWN_ARGUMENT_NAMES {OBSERVED}
+[DATA label=arg_customer] body.errors.0.message matches /customerId/i {SPEC}
+[NULL label=arg_customer] body.data {SPEC}
+[DATA label=arg_org] body.errors.0.message matches /organizationId/i {SPEC}
+[DATA label=arg_user] body.errors.0.message matches /userId/i {SPEC}
+[ERRORS label=own] errors[] empty {SPEC}
+[DATA label=own] data.orderStatistics.period.count is non-null {SPEC}","[API] errors[] is empty in every labelled call that does not expect an error; the expected errors of the labelled calls anon, arg_customer, arg_org and arg_user are asserted above and excluded here
+[NETWORK] no 4xx/5xx on /graphql other than the answers of the labelled calls anon, arg_customer, arg_org and arg_user that this case provokes",a figure of another customer or organization is returned for a forbidden argument; the anonymous call returns figures; a 500 instead of a validation or authorization error,none (read-only),"VCST-6078 · Archetype:SCOPE · Technique:DT | Role: buyer, guest · Probe:VC-API-010 · BSC-3 anonymous refusal; the storefront twin is ORD-DASH-026",Draft
+XFE-GQL-063,"orderStatistics — unknown currency code returns a validation error, not a 500",GraphQL > X-Frontend > Statistics and layout,High,BL-ORD-010,,"Runner-native. Caller USER_DEFAULT. An unknown currency code must come back as a validation error, not a server error (VC-API-010: odd input -> 500). The error shape is asserted, not only its existence.",store={{STORE_ID}},"[AUTH role=USER_DEFAULT]
+[GQL-OP bad]
+query { orderStatistics(storeId: ""{{store}}"", currencyCode: ""ZZZ"") { currencyCode period(from: ""2000-01-01T00:00:00Z"", to: ""2099-12-31T23:59:59Z"") { count total { amount } } } }
+[GQL-EXEC bad]
+[GQL-OP ok]
+query { orderStatistics(storeId: ""{{store}}"", currencyCode: ""USD"") { currencyCode period(from: ""2000-01-01T00:00:00Z"", to: ""2099-12-31T23:59:59Z"") { count } } }
+[GQL-EXEC ok]","[ERRORS label=bad] errors[] non-empty {SPEC}
+[DATA label=bad] errors.0.message matches /ZZZ|currency/i {SPEC}
+[DATA label=bad] errors.0.message matches /^(?!.*(Exception|StackTrace| at )).*$/s {SPEC}
+[NULL label=bad] data.orderStatistics.period {SPEC}
+[ERRORS label=ok] errors[] empty {SPEC}
+[DATA label=ok] data.orderStatistics.currencyCode = USD {SPEC}","[API] errors[] is empty in every labelled call that does not expect an error; the expected errors of the labelled call bad are asserted above and excluded here
+[NETWORK] no 4xx/5xx on /graphql other than the answers of the labelled call bad that this case provokes",HTTP 500 or an internal exception text for a bad currency code; the bad code silently falls back to the store currency and returns figures,none (read-only),VCST-6078 · Archetype:FALLBACK · Technique:EG | Probe:VC-API-010 · Technique:EG,Draft
+XFE-GQL-064,saveLayout — invalid documents are rejected and nothing is saved,GraphQL > X-Frontend > Statistics and layout,High,BL-SR-024,,"Runner-native. Caller USER2 (AcmeCorp). Every invalid document is rejected and NOTHING is saved: the document's modifiedDate is read before and after, and the layout read-back must be unchanged (VC-API-009: a success-shaped write that saved nothing, or an invalid layout that did). Uses the dedicated scope AgentTestInvalid (valid pattern [A-Za-z][A-Za-z0-9]{0,63}) so no real dashboard is touched; the document is first created by a valid save. The size limits (20 regions, 50 blocks, 50 settings, a setting value up to 4096 bytes of JSON; seen in the section-D live run, {OBSERVED} context only) are NOT probed here - a follow-up row once the limits are confirmed from the README.",scope=AgentTestInvalid; store={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP seed]
+mutation SaveLayout($command: InputLayout!) { saveLayout(command: $command) { schemaVersion modifiedDate } }
+[GQL-VARS seed] {""command"": {""scope"": ""{{scope}}"", ""storeId"": ""{{store}}"", ""schemaVersion"": 1, ""regions"": [{""id"": ""stats"", ""blocks"": [{""id"": ""probeA"", ""type"": ""probe"", ""hidden"": false, ""settings"": []}]}]}}
+[GQL-EXEC seed]
+[GQL-CAPTURE seed.data.saveLayout.modifiedDate → MOD_SEED]
+[GQL-OP dup]
+mutation SaveLayout($command: InputLayout!) { saveLayout(command: $command) { schemaVersion } }
+[GQL-VARS dup] {""command"": {""scope"": ""{{scope}}"", ""storeId"": ""{{store}}"", ""schemaVersion"": 1, ""regions"": [{""id"": ""stats"", ""blocks"": [{""id"": ""X"", ""type"": ""probe"", ""hidden"": false, ""settings"": []}, {""id"": ""x"", ""type"": ""probe"", ""hidden"": false, ""settings"": []}]}]}}
+[GQL-EXEC dup]
+[GQL-OP badscope]
+mutation SaveLayout($command: InputLayout!) { saveLayout(command: $command) { schemaVersion } }
+[GQL-VARS badscope] {""command"": {""scope"": ""bad scope!"", ""storeId"": ""{{store}}"", ""schemaVersion"": 1, ""regions"": []}}
+[GQL-EXEC badscope]
+[GQL-OP badstore]
+mutation SaveLayout($command: InputLayout!) { saveLayout(command: $command) { schemaVersion } }
+[GQL-VARS badstore] {""command"": {""scope"": ""{{scope}}"", ""storeId"": ""AGENT-TEST-NO-SUCH-STORE"", ""schemaVersion"": 1, ""regions"": []}}
+[GQL-EXEC badstore]
+[GQL-OP readback]
+query { layout(scope: ""{{scope}}"", storeId: ""{{store}}"") { schemaVersion modifiedDate regions { id blocks { id } } } }
+[GQL-EXEC readback]","[ERRORS label=seed] errors[] empty {SPEC}
+[ERRORS label=dup] errors[] non-empty {SPEC}
+[NULL label=dup] data.saveLayout {SPEC}
+[ERRORS label=badscope] errors[] non-empty {SPEC}
+[NULL label=badscope] data.saveLayout {SPEC}
+[ERRORS label=badstore] errors[] non-empty {SPEC}
+[NULL label=badstore] data.saveLayout {SPEC}
+[ERRORS label=readback] errors[] empty {SPEC}
+[COUNT label=readback] data.layout.regions.0.blocks.length = 1 {SPEC}
+[DATA label=readback] data.layout.regions.0.blocks.0.id = probeA {SPEC}
+[DATA label=readback] data.layout.modifiedDate = {{MOD_SEED}} {SPEC}","[API] errors[] is empty in every labelled call that does not expect an error; the expected errors of the labelled calls dup, badscope and badstore are asserted above and excluded here
+[NETWORK] no 4xx/5xx on /graphql other than the answers of the labelled calls dup, badscope and badstore that this case provokes",a rejected save answers 200 with data and changes the stored document; an invalid document breaks the dashboard; a duplicate block id differing only in case is accepted,"none (full replace of the case's own scope; a stored layout cannot be deleted, so the AgentTestInvalid document stays - harmless, never rendered)",VCST-6078 · Archetype:SILENT · Technique:BVA | Probe:VC-API-009 · Technique:BVA · follow-up: size-limit probes (20/50/50/4096) once confirmed from the README,Draft
+XFE-GQL-065,saveLayout — the 21st layout of one user is refused,GraphQL > X-Frontend > Statistics and layout,Medium,,,"Runner-native but sent as a raw REST post (one aliased mutation of 21 saves, which GraphQL runs in order) so the 21st distinct scope is the one that fails. A user may hold at most 20 layouts (X-Frontend README; the developer's 'not run' list). The cap is counted at save time WITHOUT a lock (dev note M1), so the case is single-writer. The caller is the dedicated persona BD_NOORG: a stored layout cannot be deleted, so this buyer is at the cap after the first run and is used by no other layout case; a re-run re-saves the same 20 scopes (allowed) and the 21st is refused again.",store={{STORE_ID}},"[AUTH role=BD_NOORG]
+[REST-OP cap]
+POST {{BACK_URL}}/graphql
+Content-Type: application/json
+Body: {""query"": ""mutation { a01: saveLayout(command: {scope: \""AgentTestCap01\"", schemaVersion: 1, regions: []}) { schemaVersion } a02: saveLayout(command: {scope: \""AgentTestCap02\"", schemaVersion: 1, regions: []}) { schemaVersion } a03: saveLayout(command: {scope: \""AgentTestCap03\"", schemaVersion: 1, regions: []}) { schemaVersion } a04: saveLayout(command: {scope: \""AgentTestCap04\"", schemaVersion: 1, regions: []}) { schemaVersion } a05: saveLayout(command: {scope: \""AgentTestCap05\"", schemaVersion: 1, regions: []}) { schemaVersion } a06: saveLayout(command: {scope: \""AgentTestCap06\"", schemaVersion: 1, regions: []}) { schemaVersion } a07: saveLayout(command: {scope: \""AgentTestCap07\"", schemaVersion: 1, regions: []}) { schemaVersion } a08: saveLayout(command: {scope: \""AgentTestCap08\"", schemaVersion: 1, regions: []}) { schemaVersion } a09: saveLayout(command: {scope: \""AgentTestCap09\"", schemaVersion: 1, regions: []}) { schemaVersion } a10: saveLayout(command: {scope: \""AgentTestCap10\"", schemaVersion: 1, regions: []}) { schemaVersion } a11: saveLayout(command: {scope: \""AgentTestCap11\"", schemaVersion: 1, regions: []}) { schemaVersion } a12: saveLayout(command: {scope: \""AgentTestCap12\"", schemaVersion: 1, regions: []}) { schemaVersion } a13: saveLayout(command: {scope: \""AgentTestCap13\"", schemaVersion: 1, regions: []}) { schemaVersion } a14: saveLayout(command: {scope: \""AgentTestCap14\"", schemaVersion: 1, regions: []}) { schemaVersion } a15: saveLayout(command: {scope: \""AgentTestCap15\"", schemaVersion: 1, regions: []}) { schemaVersion } a16: saveLayout(command: {scope: \""AgentTestCap16\"", schemaVersion: 1, regions: []}) { schemaVersion } a17: saveLayout(command: {scope: \""AgentTestCap17\"", schemaVersion: 1, regions: []}) { schemaVersion } a18: saveLayout(command: {scope: \""AgentTestCap18\"", schemaVersion: 1, regions: []}) { schemaVersion } a19: saveLayout(command: {scope: \""AgentTestCap19\"", schemaVersion: 1, regions: []}) { schemaVersion } a20: saveLayout(command: {scope: \""AgentTestCap20\"", schemaVersion: 1, regions: []}) { schemaVersion } a21: saveLayout(command: {scope: \""AgentTestCap21\"", schemaVersion: 1, regions: []}) { schemaVersion } }""}
+[REST-EXEC cap]
+[REST-OP cap_read]
+POST {{BACK_URL}}/graphql
+Content-Type: application/json
+Body: {""query"": ""query { l01: layout(scope: \""AgentTestCap01\"") { schemaVersion } l02: layout(scope: \""AgentTestCap02\"") { schemaVersion } l03: layout(scope: \""AgentTestCap03\"") { schemaVersion } l04: layout(scope: \""AgentTestCap04\"") { schemaVersion } l05: layout(scope: \""AgentTestCap05\"") { schemaVersion } l06: layout(scope: \""AgentTestCap06\"") { schemaVersion } l07: layout(scope: \""AgentTestCap07\"") { schemaVersion } l08: layout(scope: \""AgentTestCap08\"") { schemaVersion } l09: layout(scope: \""AgentTestCap09\"") { schemaVersion } l10: layout(scope: \""AgentTestCap10\"") { schemaVersion } l11: layout(scope: \""AgentTestCap11\"") { schemaVersion } l12: layout(scope: \""AgentTestCap12\"") { schemaVersion } l13: layout(scope: \""AgentTestCap13\"") { schemaVersion } l14: layout(scope: \""AgentTestCap14\"") { schemaVersion } l15: layout(scope: \""AgentTestCap15\"") { schemaVersion } l16: layout(scope: \""AgentTestCap16\"") { schemaVersion } l17: layout(scope: \""AgentTestCap17\"") { schemaVersion } l18: layout(scope: \""AgentTestCap18\"") { schemaVersion } l19: layout(scope: \""AgentTestCap19\"") { schemaVersion } l20: layout(scope: \""AgentTestCap20\"") { schemaVersion } l21: layout(scope: \""AgentTestCap21\"") { schemaVersion } }""}
+[REST-EXEC cap_read]","[COUNT label=cap] body.errors.length = 1 {SPEC}
+[DATA label=cap] body.errors.0.path.0 = a21 {SPEC}
+[NULL label=cap] body.data.a21 {SPEC}
+[DATA label=cap] body.data.a01.schemaVersion = 1 {SPEC}
+[DATA label=cap] body.data.a20.schemaVersion = 1 {SPEC}
+[DATA label=cap_read] body.data.l01.schemaVersion = 1 {SPEC}
+[DATA label=cap_read] body.data.l20.schemaVersion = 1 {SPEC}
+[NULL label=cap_read] body.data.l21 {SPEC}","[API] errors[] is empty in every labelled call that does not expect an error; the expected errors of the labelled call cap (its 21st mutation) are asserted above and excluded here
+[NETWORK] no 4xx/5xx on /graphql other than the answers of the labelled call cap (its 21st mutation) that this case provokes",the cap is not enforced and a 21st layout is stored; the cap refuses an earlier layout; the refusal is a 200 whose data says success,none - cannot be undone through the API; the dedicated persona stays at the cap by design,VCST-6078 · Archetype:CONFIG · Technique:BVA | Probe:VC-API-009 · dev note M1 (no lock at the cap) · Technique:BVA,Draft
+XFE-GQL-066,layout — one user never reads another user's or another (real) store's layout,GraphQL > X-Frontend > Statistics and layout,High,BL-SR-015,,"Runner-native. User A = USER2 (AcmeCorp), user B = MULTI_ORG_USER. The layout is stored under a per-user preference keyed Layout.{scope}.{storeId} on the TOKEN user, so no argument can read another user's document and another store's key is a different document (BL-SR-015 ported, now X-Frontend). Uses the dedicated scope AgentTestIsolation, so no real dashboard is touched.",scope=AgentTestIsolation; store={{STORE_ID}}; store_other={{STORE_ID_SECONDARY}},"[AUTH role=USER2]
+[GQL-OP save_a]
+mutation SaveLayout($command: InputLayout!) { saveLayout(command: $command) { schemaVersion } }
+[GQL-VARS save_a] {""command"": {""scope"": ""{{scope}}"", ""storeId"": ""{{store}}"", ""schemaVersion"": 1, ""regions"": [{""id"": ""stats"", ""blocks"": [{""id"": ""probeA"", ""type"": ""probe"", ""hidden"": false, ""settings"": []}]}]}}
+[GQL-EXEC save_a]
+[GQL-OP read_a]
+query { layout(scope: ""{{scope}}"", storeId: ""{{store}}"") { regions { id blocks { id } } } }
+[GQL-EXEC read_a]
+[GQL-OP read_a_other_store]
+query { layout(scope: ""{{scope}}"", storeId: ""{{store_other}}"") { schemaVersion } }
+[GQL-EXEC read_a_other_store]
+[AUTH role=MULTI_ORG_USER]
+[GQL-OP read_b]
+query { layout(scope: ""{{scope}}"", storeId: ""{{store}}"") { schemaVersion } }
+[GQL-EXEC read_b]","[ERRORS label=save_a] errors[] empty {SPEC}
+[ERRORS label=read_a] errors[] empty {SPEC}
+[DATA label=read_a] data.layout.regions.0.blocks.0.id = probeA {SPEC}
+[ERRORS label=read_a_other_store] errors[] empty {SPEC}
+[NULL label=read_a_other_store] data.layout {SPEC}
+[ERRORS label=read_b] errors[] empty {SPEC}
+[NULL label=read_b] data.layout {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",user B reads user A's arrangement; a different store key returns user A's document,none (user A's AgentTestIsolation document is overwritten by each run; user B writes nothing),"VCST-6078 · Archetype:SCOPE · Technique:DT | Role: buyer A, buyer B · BL-SR-015 (ported) · Technique:DT · the rep-scope twin is 050m SR-GQL-102 (repaired)",Draft
+XFE-GQL-067,salesRepLayout and saveSalesRepLayout no longer exist,GraphQL > X-Frontend > Statistics and layout,Medium,,,"Runner-native for the positive read; the removed operations are probed with raw REST posts to the SalesRep scoped endpoint, because the runner would refuse an unknown field at schema validation. vc-module-sales-rep#24 removed salesRepLayout and saveSalesRepLayout; the hub reads and writes layouts through layout/saveLayout of X-Frontend (rep scopes salesRepDashboard, salesRepCustomerProfile). Rep layouts saved under the old API are NOT migrated (decision, not a defect). Caller SALES_REP.",store={{STORE_ID}},"[AUTH role=SALES_REP]
+[REST-OP old_read]
+POST {{BACK_URL}}/graphql/sales-rep
+Content-Type: application/json
+Body: {""query"": ""query { salesRepLayout(scope: \""salesRepDashboard\"") { schemaVersion } }""}
+[REST-EXEC old_read]
+[REST-OP old_save]
+POST {{BACK_URL}}/graphql/sales-rep
+Content-Type: application/json
+Body: {""query"": ""mutation { saveSalesRepLayout(command: {scope: \""salesRepDashboard\"", schemaVersion: 1, regions: []}) { schemaVersion } }""}
+[REST-EXEC old_save]
+[GQL-OP new_read]
+query { layout(scope: ""salesRepDashboard"", storeId: ""{{store}}"") { schemaVersion } }
+[GQL-EXEC new_read]","[ERRORS label=old_read] HTTP 400 {OBSERVED}
+[DATA label=old_read] body.errors.0.extensions.code = FIELDS_ON_CORRECT_TYPE {OBSERVED}
+[DATA label=old_read] body.errors.0.message matches /salesRepLayout/ {SPEC}
+[NULL label=old_read] body.data {SPEC}
+[DATA label=old_save] body.errors.0.message matches /saveSalesRepLayout/ {SPEC}
+[NULL label=old_save] body.data {SPEC}
+[ERRORS label=new_read] errors[] empty {SPEC}","[API] errors[] is empty in every labelled call that does not expect an error; the expected errors of the labelled calls old_read and old_save are asserted above and excluded here
+[NETWORK] no 4xx/5xx on /graphql other than the answers of the labelled calls old_read and old_save that this case provokes",the removed operations are still callable and write layouts nobody reads; the new read fails for a rep,none (read-only; the unknown-field errors write nothing),VCST-6078 · Archetype:CONFIG · Technique:EP | Role: rep · vc-module-sales-rep#24 · Technique:EP · validation errors answer HTTP 400 ({OBSERVED}),Draft
+XFE-GQL-068,layout — the read ignores scope case and answers null for an invalid scope or unknown store while the same inputs are rejected on save,GraphQL > X-Frontend > Statistics and layout,High,BL-SR-020,,"Runner-native. Caller USER2. PROMOTED from the discovery lane (SBTM scenario 7, {OBSERVED} 2026-11-09): the READ path is lenient - the scope is matched case-insensitively and an invalid scope or an unknown store answers null with no error - while the WRITE path rejects the same inputs with only a generic message ('Error trying to resolve field saveLayout'). Whether the read should validate like the write is an OPEN question for the PO; this case pins the written asymmetry so a change is noticed, and it asserts the write-side REFUSAL (the part the {SPEC} requires). Dedicated scope AgentTestScopeCase.",scope=AgentTestScopeCase; store={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP seed]
+mutation SaveLayout($command: InputLayout!) { saveLayout(command: $command) { schemaVersion } }
+[GQL-VARS seed] {""command"": {""scope"": ""{{scope}}"", ""storeId"": ""{{store}}"", ""schemaVersion"": 1, ""regions"": [{""id"": ""stats"", ""blocks"": [{""id"": ""probeA"", ""type"": ""probe"", ""hidden"": false, ""settings"": []}]}]}}
+[GQL-EXEC seed]
+[GQL-OP read_lower]
+query { layout(scope: ""agenttestscopecase"", storeId: ""{{store}}"") { regions { blocks { id } } } }
+[GQL-EXEC read_lower]
+[GQL-OP read_bad_scope]
+query { layout(scope: ""bad scope!"", storeId: ""{{store}}"") { schemaVersion } }
+[GQL-EXEC read_bad_scope]
+[GQL-OP read_bad_store]
+query { layout(scope: ""{{scope}}"", storeId: ""AGENT-TEST-NO-SUCH-STORE"") { schemaVersion } }
+[GQL-EXEC read_bad_store]
+[GQL-OP save_bad_scope]
+mutation SaveLayout($command: InputLayout!) { saveLayout(command: $command) { schemaVersion } }
+[GQL-VARS save_bad_scope] {""command"": {""scope"": ""bad scope!"", ""storeId"": ""{{store}}"", ""schemaVersion"": 1, ""regions"": []}}
+[GQL-EXEC save_bad_scope]
+[GQL-OP save_bad_store]
+mutation SaveLayout($command: InputLayout!) { saveLayout(command: $command) { schemaVersion } }
+[GQL-VARS save_bad_store] {""command"": {""scope"": ""{{scope}}"", ""storeId"": ""AGENT-TEST-NO-SUCH-STORE"", ""schemaVersion"": 1, ""regions"": []}}
+[GQL-EXEC save_bad_store]","[ERRORS label=seed] errors[] empty {SPEC}
+[ERRORS label=read_lower] errors[] empty {OBSERVED}
+[DATA label=read_lower] data.layout.regions.0.blocks.0.id = probeA {OBSERVED}
+[ERRORS label=read_bad_scope] errors[] empty {OBSERVED}
+[NULL label=read_bad_scope] data.layout {OBSERVED}
+[NULL label=read_bad_store] data.layout {OBSERVED}
+[ERRORS label=save_bad_scope] errors[] non-empty {SPEC}
+[NULL label=save_bad_scope] data.saveLayout {SPEC}
+[ERRORS label=save_bad_store] errors[] non-empty {SPEC}
+[NULL label=save_bad_store] data.saveLayout {SPEC}","[API] errors[] is empty in every labelled call that does not expect an error; the expected errors of the labelled calls save_bad_scope and save_bad_store are asserted above and excluded here
+[NETWORK] no 4xx/5xx on /graphql other than the answers of the labelled calls save_bad_scope and save_bad_store that this case provokes",a bad scope or store is saved; the case-insensitive read returns a different document than the one saved,none (the case's own scope is overwritten by each run),VCST-6078 · Archetype:SILENT · Technique:BVA | Probe:VC-API-009 · Technique:BVA · promoted from SBTM scenario 7 · Open question (PO): should the read validate the scope like the write? Is the generic write error message acceptable?,Draft
+XFE-GQL-069,orderStatistics comparison — count change and revenue change diverge on the two seeded creation waves,GraphQL > X-Frontend > Statistics and layout,High,BL-ORD-010,,"Runner-native. Caller BD_STATS (seeded buyer). The buyer's orders were created in two WAVES whose real instants the seeder wrote to the env alias overlay (windows.prev / windows.cur): current wave count 3 vs previous wave count 2 gives a COUNT change of +50 % while revenue falls -66.69 %. createdDate cannot be back-dated (KB-971BC129), so this divergence is decidable only here, never on the storefront. The card shows the count change only; the response also carries a total and an average change, which must be different numbers.",prev_from=@td(BD_STATS.windows.prev.from); prev_to=@td(BD_STATS.windows.prev.to); cur_from=@td(BD_STATS.windows.cur.from); cur_to=@td(BD_STATS.windows.cur.to); count_pct=@td(BD_STATS.cmpCountChangePercent); total_pct=@td(BD_STATS.cmpTotalChangePercent); store={{STORE_ID}},"[AUTH role=BD_STATS]
+[GQL-OP cmp]
+query { orderStatistics(storeId: ""{{store}}"", currencyCode: ""USD"") { comparison(current: {from: ""{{cur_from}}"", to: ""{{cur_to}}""}, previous: {from: ""{{prev_from}}"", to: ""{{prev_to}}""}) { countChange countChangePercent totalChangePercent totalChange { amount } } } }
+[GQL-EXEC cmp]","[ERRORS label=cmp] errors[] empty {SPEC}
+[DATA label=cmp] data.orderStatistics.comparison.countChangePercent ≈ {{count_pct}} {SPEC}
+[DATA label=cmp] data.orderStatistics.comparison.totalChangePercent ≈ {{total_pct}} {SPEC}
+[DATA label=cmp] data.orderStatistics.comparison.countChange > 0 {SPEC}
+[DATA label=cmp] data.orderStatistics.comparison.totalChange.amount < 0 {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",the percent a buyer sees is computed on revenue while the card says orders; one measure is copied into the other,none (read-only),VCST-6078 · Archetype:MONEY · Technique:EP | Archetype:MONEY · data limit KB-971BC129 (no back-dating) · Technique:EP,Draft
+XFE-GQL-070,"orderStatistics — an order whose currency was removed is excluded with a count, not an error",GraphQL > X-Frontend > Statistics and layout,Medium,,,"Runner-native. Caller BD_UNCFG (one order in XTS, a currency removed from the platform after the order). The statistics exclude the unconvertible order and report it (excludedCount, excludedCurrencies) instead of failing. This buyer's xAPI order LIST fails for the same reason (VCST-6535 class) - that is NOT asserted here.",expected_count=@td(BD_UNCFG.expectedCount); expected_total=@td(BD_UNCFG.expectedTotal); expected_excluded=@td(BD_UNCFG.expectedExcludedCount); store={{STORE_ID}},"[AUTH role=BD_UNCFG]
+[GQL-OP stats]
+query { orderStatistics(storeId: ""{{store}}"", currencyCode: ""USD"") { currencyCode period(from: ""2000-01-01T00:00:00Z"", to: ""2099-12-31T23:59:59Z"") { count total { amount } excludedCount excludedCurrencies } } }
+[GQL-EXEC stats]","[ERRORS label=stats] errors[] empty {SPEC}
+[DATA label=stats] data.orderStatistics.period.count = {{expected_count}} {SPEC}
+[DATA label=stats] data.orderStatistics.period.total.amount ≈ {{expected_total}} {SPEC}
+[DATA label=stats] data.orderStatistics.period.excludedCount = {{expected_excluded}} {SPEC}
+[COUNT label=stats] data.orderStatistics.period.excludedCurrencies.length = 1 {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",the whole statistics query fails for a removed currency; the order vanishes from the totals with no excluded count,none (read-only),VCST-6078 · Archetype:FALLBACK · Technique:EG | Probe:VCST-6535 · Technique:EG,Draft
+XFE-GQL-071,"orderStatistics — flag-cancelled, prototype and other-organization orders are counted nowhere",GraphQL > X-Frontend > Statistics and layout,High,BL-ORD-009,,"Runner-native. Caller BD_STATS (seeded buyer). The buyer has, besides ordinary orders: one IsCancelled order, one prototype and one order stamped with another organization (all three excluded) and one order whose STATUS reads Cancelled without the flag (counted - open PO question A-F2). The expected count, total and average are DERIVED by the seeder (expectedCount / expectedTotal / expectedAverage). A wide window is used so the case does not depend on the run date; the store scope is {{STORE_ID}} only.",expected_count=@td(BD_STATS.expectedCount); expected_total=@td(BD_STATS.expectedTotal); expected_avg=@td(BD_STATS.expectedAverage); store={{STORE_ID}},"[AUTH role=BD_STATS]
+[GQL-OP stats]
+query { orderStatistics(storeId: ""{{store}}"", currencyCode: ""USD"") { period(from: ""2000-01-01T00:00:00Z"", to: ""2099-12-31T23:59:59Z"") { count total { amount } average { amount } excludedCount } } }
+[GQL-EXEC stats]","[ERRORS label=stats] errors[] empty {SPEC}
+[DATA label=stats] data.orderStatistics.period.count = {{expected_count}} {SPEC}
+[DATA label=stats] data.orderStatistics.period.total.amount ≈ {{expected_total}} {SPEC}
+[DATA label=stats] data.orderStatistics.period.average.amount ≈ {{expected_avg}} {SPEC}
+[DATA label=stats] data.orderStatistics.period.excludedCount = 0 {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","a cancelled or prototype order, or an order of another organization, inflates the totals",none (read-only),VCST-6078 · Archetype:MONEY · Technique:DT | Archetype:MONEY · Open question (PO): a status-named Cancelled order without the flag is counted (A-F2) · Technique:DT,Draft

@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-11-10",
-    "totalSuites": 179,
+    "generated": "2026-11-11",
+    "totalSuites": 180,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1575,7 +1575,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 10,
+      "testCount": 20,
       "estimatedMinutes": 5,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1587,7 +1587,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 10,
+        "machine": 20,
         "browser": 0,
         "manual": 0
       }
@@ -3647,7 +3647,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 79,
+      "testCount": 80,
       "estimatedMinutes": 51,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -4432,6 +4432,34 @@
         "VirtoCommerce.Xapi"
       ],
       "notes": "ON-DEMAND ONLY — excluded from every selection that would otherwise include it (backend, full, sprint, concern:api); run as /qa-regression 119 when ApplicationInsights, BackgroundJobs, Xapi or a stand's telemetry config changes. VCST-4717 (Migrate Application Insights to Azure Monitor OpenTelemetry). Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) - without it every telemetry assertion is unverifiable, not failing. Every KQL step carries a control on the run's own generated operation name (AgentTestObs + random) over a relative window; OBS-004 and OBS-006 deliberately judge all stand traffic in the window (any unnamed /graphql request or classic-SDK item is a defect), the operation name starts with AgentTestObs (GraphQL names cannot carry the AGENT-TEST- hyphen), fires >=14 calls (sampling keeps ~50%, less under bursts) and carries a control assertion so a zero cannot be an ingestion gap; ingestion lag is 2-5 min, poll up to 10 min until the case's own control holds, never until any row appears. SPAN/TABLE NOTES: on the OpenTelemetry exporter use `contains` not `has` on sdkVersion (`has` is term-based and misses otel1.15.3); named GraphQL operations are recorded as `POST graphql/<OperationName>`, plain POST /graphql is not recorded. OBS-001 is the regression catcher for the fixed round-1 url-shape bug. Cases for open findings (BackgroundJobs metrics, SQL ignore list, exceptions.operation_Name, itemCount vs sample_rate), AuditLog (VCST-6006), the REST https scheme check, and the deployment-level checks (no module / no connection string / RoleName) are held out of the suite until they can pass; they are added back when fixed."
+    },
+    {
+      "id": "120",
+      "name": "Orders - Account dashboard (storefront, live data)",
+      "file": "regression/suites/Frontend/orders/120-account-dashboard-storefront.csv",
+      "domain": "purchase-flow",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 35,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "orders",
+        "frontend",
+        "dashboard",
+        "statistics",
+        "layout",
+        "journey",
+        "sprint"
+      ],
+      "requiresModules": [
+        "orders"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-6078 (vc-frontend#2552, vc-module-x-frontend#12, vc-module-order#507). Buyer /account/dashboard: four stat cards + My recent orders + Edit layout. ORD-DASH-001 is the [JOURNEY] case. Personas BD_* are seeded by `npm run seed:buyer-dashboard` (guard `npm run td:validate:buyer-dashboard`). Clock/time-zone rows (003-005, 011, 024, 025) need a separate emulated-clock context; the failure rows (017, 018, 027) intercept /graphql, so run on a Chromium lane. Layout rows change per-user stored layouts (not deletable); ORD-DASH-013 is one-shot per seeded buyer.",
+      "clickDriven": true
     }
   ],
   "selections": {
