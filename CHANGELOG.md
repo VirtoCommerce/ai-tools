@@ -8,6 +8,43 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A storefront fix typechecks for real and follows the repo's own agent rules — `vc-fix` `0.18.7`, `vc-init` `0.6.1` — 2026-11-12
+
+### Fixed
+
+- `/qa-fix` Gate 3 typechecked a `vc-frontend` fix with `yarn typecheck || npx vue-tsc --noEmit`. vc-frontend has
+  no `typecheck` script, and its root `tsconfig.json` is `"files": []` plus project references, so the fallback
+  checked zero files and exited 0 — every storefront fix passed its typecheck without one. The default
+  (`REPO_PROFILES.frontend`, and vc-init's `kindToolchain` that seeds a client storefront's profile) is now
+  `yarn validate:types || npx vue-tsc --build --force`; `/vue-fix`, `fullstack-frontend`, the PR-body checklist and
+  the architecture notes follow. A client profile written before this keeps the old command until
+  `/project-init` re-derives it.
+- The notes said a new ESLint error fails vc-frontend CI. It does not: ESLint runs only pre-commit there, so the
+  local `lint` is the only place it shows.
+
+### Added
+
+- `skills/vue-fix/repo-own-rules.md`: `fullstack-frontend` reads the checkout's own `AGENTS.md`, `CLAUDE.md` and
+  the `.claude/rules/*.md` matching its files before the repro, and runs the checks they name. They are read in
+  the checkout, never copied here. Their edit-guard hook does not run in `.fix-workspace/`, so it is kept by hand,
+  and a fix that needs new public UI-kit API is a hand-off. `frontend-reviewer` checklist item 10 checks it.
+
+### Changed
+
+- **Tier A:** G2 always asked for a NEW test and G3 forbade touching any test file
+  (`git diff --name-only`), so a fix agent could not add a case to the subject's existing test file and
+  wrote a second, duplicate one beside it, with the repo's own setup copied in. It also committed a
+  test for markup / style / copy changes that vc-frontend's own rules say need none, and named files
+  `*.spec.ts` where that repo uses `*.test.ts`. New `quality-gates.md` §G2 placement (both copies): the
+  red→green proof stays mandatory, but the repro is a **new case in the subject's existing test file**
+  when it has one (added lines only, checked by `git diff --numstat`: 0 deleted lines), a new file only
+  when there is none and the change is logic, and an **uncommitted scratch test** with its result in the
+  PR body when the change has no logic and the repo's rules say it needs no test. Both developers, both
+  reviewers, `/vue-unit-test`, `/dotnet-unit-test`, `shared-instructions.md` rule 2, `when-to-write-a-test.md`
+  RULE 4 and the root `CLAUDE.md` exception follow.
+
+---
+
 ## `run.sh` takes its knobs from a file, and `TRACE=1` finds a published platform — `vc-perf` `0.5.0` — 2026-11-12
 
 ### Added

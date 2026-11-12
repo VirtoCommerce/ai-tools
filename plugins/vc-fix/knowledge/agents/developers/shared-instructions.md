@@ -294,7 +294,9 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
 1. **Single repo.** All changed files in ONE allowed repo. Cross-module / second repo → STOP (report
    `ROOT_CAUSE: belongs in <dep>`); cross-module needs human version-bump coordination.
 2. **Never modify or delete an existing test** — only ADD. An existing test going red after the fix =
-   contract conflict → STOP, do not edit the test.
+   contract conflict → STOP, do not edit the test. Adding a new case to an existing test file is an
+   ADD, and it is the preferred home for the repro; whether the repro is committed at all is
+   `.claude/rules/quality-gates.md` §G2 placement.
 3. **Minimal diff.** No refactors, no nuget/dep bumps, no formatting churn, no unrelated files.
    **Comments: brief, only when necessary.** Don't narrate the change or restate what the code
    already says; add a comment only for genuinely non-obvious *why* (a subtle guard, a workaround, a
@@ -333,7 +335,8 @@ A tool call succeeding is not proof the fix is correct — **verify your own wor
 `FIX_STATUS` / `REVIEW` marker.** This is a hard rule for both roles.
 - **Developer:** confirm the repro test genuinely fails on unfixed code and passes after the fix (a real
   observed red→green, not assumed); re-run typecheck / lint / the scoped spec and READ the output;
-  `git diff --name-only` to confirm ONE repo, added-only tests, and no stray/scratch files leaked; re-read
+  `git diff --name-only` to confirm ONE repo and no stray/scratch files leaked, and `git diff --numstat`
+  that pre-existing test files lost no lines (§G2 placement); re-read
   the final diff for minimality before you push. After the PR, poll CI and read the logs — never assume
   green (see §After the PR).
 - **Reviewer:** actually read the diff against every G4 criterion — do not APPROVE on the developer's

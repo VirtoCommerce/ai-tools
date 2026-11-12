@@ -97,7 +97,9 @@ one of them.
 None of the above touches `/qa-fix`. A confirmed bug still gets a **new failing test that reproduces
 it** before any fix, per `quality-gates.md` G2 — including the MEDIUM RULE about *where* the red is
 observed. That test is derived from the ticket's Actual result, not from the code, so it satisfies
-RULE 2 by construction. It is the one place where "write a test" is unconditional.
+RULE 2 by construction. It is the one place where "prove it with a test" is unconditional. Whether
+the reproduction is **committed** — as a new case in the subject's existing test file, a new file, or
+not at all for a change with no logic — is decided by `quality-gates.md` §G2 placement.
 
 ## The committed corpus — kept on evidence, 2026-10-01
 

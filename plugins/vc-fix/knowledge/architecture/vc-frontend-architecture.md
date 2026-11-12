@@ -18,15 +18,21 @@ lint/test commands. Do not invent commands — read the profile for the routed r
 
 | Kind | Repo | Lang | Install | Build | Test (red→green gate) | Typecheck | Lint |
 |------|------|------|---------|-------|-----------------------|-----------|------|
-| `frontend` | `vc-frontend` | TS | `yarn install --frozen-lockfile \|\| npm ci \|\| npm install` | `yarn build \|\| npm run build` | `yarn test:unit \|\| npx vitest run` | `yarn typecheck \|\| npx vue-tsc --noEmit` | `yarn lint \|\| npm run lint` |
+| `frontend` | `vc-frontend` | TS | `yarn install --frozen-lockfile \|\| npm ci \|\| npm install` | `yarn build \|\| npm run build` | `yarn test:unit \|\| npx vitest run` | `yarn validate:types \|\| npx vue-tsc --build --force` | `yarn lint \|\| npm run lint` |
 
 - **Default base branch is `dev`** (not `main`/`master`) — overridden by live `gh repo view` detection
   in `checkoutForFix`. The package name is `vc-theme-b2b-vue`.
 - **Yarn 4 (Berry)** + Node `>=22.12 <23`. `yarn precheck` runs ahead of most scripts — let it.
 - **There IS a real test harness** (vitest) — unlike the module Admin SPA, which has none. So there is
-  **no scratch harness** for storefront bugs: write a normal `*.spec.ts` / `*.test.ts`.
-- A NEW lint or `vue-tsc` error your fix introduces **fails CI** (ESLint runs error-level, SonarCloud
-  gate is on). Fix the warning in your own code; never disable a rule or edit config to suppress it.
+  **no scratch harness** for storefront bugs: write a normal `*.test.ts` case. A markup / style / copy
+  change with no logic keeps that test uncommitted (`quality-gates.md` §G2 placement).
+- A NEW `vue-tsc` error your fix introduces **fails CI** (`yarn build` runs `validate:types`; SonarCloud
+  gate is on). **ESLint is not run in CI** — only pre-commit — so a local `lint` is the only place a new
+  lint error shows. Fix it in your own code; never disable a rule or edit config to suppress it.
+- **Bare `vue-tsc --noEmit` checks nothing here:** the root `tsconfig.json` is `"files": []` plus project
+  references. Typecheck with `yarn validate:types` (or `vue-tsc --build --force`).
+- **The repo ships its own agent rules** (`AGENTS.md`, `CLAUDE.md`, `.claude/rules/`) — read them in the
+  checkout, never copy them here: `skills/vue-fix/repo-own-rules.md`.
 
 ## 2. vc-frontend repo layout
 
@@ -58,10 +64,11 @@ sonar-project.properties  # SonarCloud: VirtoCommerce_vc-theme-b2b-vue
 
 - **Component files** are co-located: `vc-foo.vue` + `vc-foo.stories.ts` (+ `vc-foo.types.d.ts`).
   Components are globally registered (`client-app/ui-kit/index.ts`) and named `Vc<Name>`.
-- **Tests** live next to their subject as `*.spec.ts` / `*.test.ts`. Composables already have unit
-  tests (e.g. `client-app/ui-kit/composables/useDateField.test.ts` — read it for the house style).
-  UI-kit components mostly have **stories, not unit specs** — adding a focused component `*.spec.ts` is
-  in-scope and welcome for a fix.
+- **Tests** live next to their subject as `*.test.ts` (the repo's own `tests.md` rule: no `.spec.ts`).
+  Composables already have unit tests (e.g. `client-app/ui-kit/composables/useDateField.test.ts` —
+  read it for the house style); a repro for a subject that has one is a new case in that file. UI-kit
+  components mostly have **stories, not unit tests** — a new component `*.test.ts` is in scope when the
+  fix changes logic (`quality-gates.md` §G2 placement).
 - **The `@/` alias maps to `client-app/`** (see `tsconfig` `paths` + `vitest.config` `resolve.alias`).
   Imports look like `import { useDateField } from "@/ui-kit/composables"`.
 
@@ -83,7 +90,7 @@ route/page  →  component (.vue)  →  composable (use*)  →  store / provide-
 
 - **Component / UI logic:** `mount` / `shallowMount` from `@vue/test-utils` (or
   `@testing-library/vue`), asserting rendered output / emitted events / `data-test-id` state. Confirm
-  **red** filtered by file path (`npx vitest run path/to/the.spec.ts`; test names carry no ticket key). See `/vue-unit-test`
+  **red** filtered by file path (`npx vitest run path/to/the.test.ts`; test names carry no ticket key). See `/vue-unit-test`
   `vitest-patterns.md`.
 - **Composable / util (pure logic):** call the function directly; wrap reactive composables in
   `effectScope()` (as `useDateField.test.ts` does). Prefer this over a full mount when the bug is in

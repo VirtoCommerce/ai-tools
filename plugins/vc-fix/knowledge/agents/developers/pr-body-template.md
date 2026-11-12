@@ -128,7 +128,7 @@ embedded frontend sub-app (`moduleFrontendSubApps`).
 | `{SECTIONS}` | §Consumer sections — backend | §Consumer sections — storefront | same as storefront |
 | `{TEST}` | `` `<TestClass.Method>` in `<test project>` `` (xUnit) | `` `<path/to.spec.ts>` `` (vitest) | `` `<path/to/test>` `` (the sub-app's own `tsx --test`, or the ephemeral vitest harness) |
 | `{HARNESS EVIDENCE}` | see §Harness evidence | omit | see §Harness evidence |
-| `{CHECKLIST}` | `  - dotnet build -c Debug — <result>`<br>`  - dotnet test (affected project) — <result>` | `  - vue-tsc --noEmit — <result>`<br>`  - lint — <result>`<br>`  - vitest (new + affected) — <result>`<br>`  - build — <result>` | the same four as storefront, run in `<subApp.path>` with the sub-app's own scripts |
+| `{CHECKLIST}` | `  - dotnet build -c Debug — <result>`<br>`  - dotnet test (affected project) — <result>` | `  - typecheck (yarn validate:types) — <result>`<br>`  - lint — <result>`<br>`  - vitest (new + affected) — <result>`<br>`  - build — <result>` | the same four as storefront, run in `<subApp.path>` with the sub-app's own scripts |
 | `{DEPLOY WARNING}` | **always** — §Deploy verification | **only if the bug has a visual aspect** — §Visual verification | same as storefront |
 | `{REVIEWER FOCUS}` | migration notes | BL-UI cells touched | BL-UI cells touched |
 | `{DEPLOY GATE}` | ` + deploy verification` | omit | omit |
