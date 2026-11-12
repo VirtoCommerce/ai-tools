@@ -93,19 +93,19 @@ with `npm run regression:plan -- <name>`.
 
 ### By Priority / scope
 
-| Selection | Suites | CI Command |
-|-----------|--------|------------|
-| `smoke` | 042, 078, 078b, 078c, 078d | `npm run ci:smoke` |
-| `critical` | 042, 078, 078b, 078c, 078d, 039, 044, 049 | `npm run ci:critical` |
-| `sprint` | `/qa-regression sprint`: plan-driven via `docs/Sprint plans/sprint-*-summary.json` (`--no-plan` → all P0+P1). The CI runner uses the manifest rule (all minus excludes) | — |
-| `full` | All suites minus the manifest's excludes | `npm run ci:full` |
+| Selection | Suites | Run |
+|-----------|--------|-----|
+| `smoke` | 042, 078, 078b, 078c, 078d | `/qa-regression smoke` |
+| `critical` | 042, 078, 078b, 078c, 078d, 039, 044, 049 | `/qa-regression critical` |
+| `sprint` | Plan-driven via `docs/Sprint plans/sprint-*-summary.json` (`--no-plan` → all P0+P1) | `/qa-regression sprint` |
+| `full` | All suites minus the manifest's excludes | `/qa-regression full` |
 
 ### By Layer
 
-| Selection | Suites | CI Command |
-|-----------|--------|------------|
-| `frontend` | `Frontend/` suites minus the manifest's excludes | `npm run ci:frontend` |
-| `backend` | `Backend/` suites minus the manifest's excludes | `npm run ci:backend` |
+| Selection | Suites | Run |
+|-----------|--------|-----|
+| `frontend` | `Frontend/` suites minus the manifest's excludes | `/qa-regression frontend` |
+| `backend` | `Backend/` suites minus the manifest's excludes | `/qa-regression backend` |
 
 ### Module / feature groups
 

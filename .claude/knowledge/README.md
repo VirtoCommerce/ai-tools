@@ -149,7 +149,7 @@ row is the file's own opening line, so a wrong row is fixed in that file, not he
 | [`performance-thresholds.md`](./execution/performance-thresholds.md) | Unified performance criteria for storefront, API, and admin testing. |
 | [`quality-gates.md`](./execution/quality-gates.md) | This file is the only place the auto-fix gate ladder lives. |
 | [`regression-lanes.md`](./execution/regression-lanes.md) | Regression — per-case lane routing, case filter, executability |
-| [`regression-pipelines.md`](./execution/regression-pipelines.md) | Regression — pipelines: CI via Agent SDK, monitoring twin, staleness-audit twin |
+| [`regression-pipelines.md`](./execution/regression-pipelines.md) | Regression — pipelines: interactive orchestration, monitoring, staleness audit |
 | [`regression-promotion.md`](./execution/regression-promotion.md) | Regression — post-run promotion (Draft → Automated) |
 | [`regression-scaffold.md`](./execution/regression-scaffold.md) | Regression — pre-authoring scaffold (tc:alloc / tc:scaffold) |
 | [`regression-selection.md`](./execution/regression-selection.md) | Regression — change-scoped selection, existing-coverage triage, post-run triage |

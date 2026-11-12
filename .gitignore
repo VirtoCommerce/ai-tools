@@ -65,6 +65,10 @@ project-profile.json
 !test-data/**/*.webp
 !test-data/**/*.mp4
 !test-data/**/*.zip
+# ...but a fixture that only tests a SIZE limit is generated, never committed (npm run td:gen:uploads,
+# scripts/test-data/gen-upload-size-fixtures.mjs). td:validate DV-026 fails any test-data/ binary over 1 MiB.
+test-data/uploads/large_test.png
+test-data/uploads/oversize_test.png
 
 # Per-FAIL failure traces (network + parsed stack traces) — disposable evidence
 # referenced from the report; may carry redacted-but-sensitive bodies, and this
@@ -113,13 +117,6 @@ test-data/aliases.localhost.json
 .design-source/
 # Auto-fix module discovery + dependency-graph cache (rebuilt from gh on TTL)
 plugins/vc-fix/skills/qa-fix-routing/.module-registry.cache.json
-
-# Scheduled test-case staleness audit (ci/run-suite-audit.ts). Entirely ephemeral:
-# .claude/rules/reports.md has NO report category for a test-case review, so the
-# audit narrative ships in the PR BODY and the only durable artifact is the CSV
-# diff itself. Everything under here is pipeline working data (the agent
-# transcript, the generated PR body, the commit message, summary.json).
-reports/suite-audit/
 
 # Online monitoring (App Insights) — fingerprint dedup state is local working state, not a report.
 reports/monitoring/.seen-fingerprints.json

@@ -1,9 +1,22 @@
 {
  "wave": "W4",
- "owner": null,
- "status": "NOT_STARTED",
- "runIds": [],
- "notRun": [],
+ "owner": "Aleksandra Mitricheva",
+ "status": "TRIAGED",
+ "runIds": [
+  "REG-2026-11-09-1635-W4"
+ ],
+ "personas": "Lane accounts qa-agent-slot1/2/3 (agent-user-pool.csv, one per browser lane) wherever a case does not name a persona; returns suites use their own AGENT-TEST seeded personas (ORG_RET_*, seed:returns:org) plus newly seeded RETURNS_AGENT_NO_AUTHORIZE and PERSONAL_USER_VIRTO accounts; cases that name USER/ORG_USER/EUR_USER/MULTI_ORG_USER use the shared .env.vcptcore_regression accounts (also used by W0-W3)",
  "handovers": [],
- "updatedAt": "2026-10-16"
+ "updatedAt": "2026-11-10",
+ "totals": {
+  "planned": 624,
+  "executed": 624,
+  "pass": 329,
+  "fail": 119,
+  "blocked": 141,
+  "skipped": 35,
+  "ambiguous": 0
+ },
+ "untriaged": 0,
+ "evidence": "local: reports/regression/REG-2026-11-09-1635-W4/ on the owner machine (screenshots, traces, evidence/MAINTAINER-PERMS, evidence/CUST-093)"
 }

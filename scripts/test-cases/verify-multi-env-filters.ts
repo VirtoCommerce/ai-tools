@@ -1,7 +1,7 @@
 /**
  * Offline verifier for multi-env suite-filter pipeline.
  *
- * Re-implements the exact filter chain from `ci/run-regression.ts`
+ * Re-implements the exact filter chain from `ci/lib/suite-manifest.ts`
  * (`applyMultiEnvFilters`) and replays it against the manifest for a set
  * of scenarios. Produces a deterministic report of kept/skipped suites
  * per scenario, with skip-reasons grouped by gate.
@@ -24,7 +24,7 @@ import { readFileSync, existsSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 
 // ---------------------------------------------------------------------------
-// Manifest types (mirrors ci/run-regression.ts)
+// Manifest types (mirrors ci/lib/suite-manifest.ts)
 // ---------------------------------------------------------------------------
 
 interface ManifestSuite {
@@ -70,7 +70,7 @@ interface Manifest {
 const ENV_RISK_RANK: Record<string, number> = { dev: 0, test: 1, staging: 2, production: 3 };
 
 // ---------------------------------------------------------------------------
-// Filter logic (verbatim port of ci/run-regression.ts applyMultiEnvFilters)
+// Filter logic (verbatim port of ci/lib/suite-manifest.ts applyMultiEnvFilters)
 // ---------------------------------------------------------------------------
 
 interface FilterContext {

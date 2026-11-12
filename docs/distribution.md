@@ -1,128 +1,83 @@
-# VC QA Plugin — Distribution
+# Distribution
 
-How the plugin reaches Virto Commerce customers, what we ship, and how we version.
+How the ai-tools tooling reaches Virto Commerce teams and customers, what ships, and how it is versioned.
 
-> **Status:** Pre-v1.0 (currently v0.6.0). Distribution mechanism is **finalized below** for the v0.x → v1.0.0 path. Subject to refinement based on Phase 4 pilot feedback.
->
-> **Update:** `.claude-plugin/marketplace.json` lists the plugins under `plugins/` (read it for which), not
-> `vc-qa`. Everything below describes `vc-qa`'s distribution model, which
-> still applies to its on-disk content but is not currently reachable via `/plugin install` — customers
-> get it only via a direct clone, not the marketplace.
+> **Status:** pre-v1.0. Each plugin carries its own `0.x` version and tag (below); read the manifests rather than a
+> number here, which goes stale.
 
-## Distribution Decision
+## What ships, and how
 
-The plugin ships as a **hybrid package**:
+| What | Mechanism | Who uses it |
+|------|-----------|-------------|
+| **Marketplace plugins** — `vc-init`, `vc-secrets`, `vc-fix`, `vc-test` (preview), `vc-perf`, `vc-frontend`; the list is [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json) | Claude Code plugin manager: `/plugin marketplace add VirtoCommerce/ai-tools`, then `/plugin install <name>@ai-tools`. Each plugin is self-contained under `plugins/<name>/` and installs its own npm dependencies on session start. | Customers and the VC team, in any project folder |
+| **The full `vc-qa` toolset** — ticket testing, regression, BA analysis, the reference suites, test-data framework | **Direct clone** of this repo. Its agents, skills, commands, hooks and knowledge are project-scoped under `.claude/` and load automatically in the checkout; `scripts/`, `ci/` and `config/` run via `npm run <script>`. Not listed in the marketplace and not packaged as a plugin. | The VC QA team |
 
-| Layer | Mechanism | Why |
-|-------|-----------|-----|
-| **Agents, skills, commands, knowledge files** (repo root: `agents/`, `skills/`, `commands/`, `knowledge/`) | **Claude Code plugin** via the plugin manager | Matches how Claude Code natively discovers and loads these artifacts (discovery is non-recursive, so they live at the plugin root). Customers add it once; Claude Code handles updates. No git operations on the customer side. |
-| **Scripts, CI orchestrators, schemas, templates** (`scripts/`, `ci/`, `config/`, `templates/`) | **Ship in the same git-cloned plugin repo** | These are Node.js entry points run via `npm run <script>` from the plugin checkout (e.g. `npm run ci:regression`). Onboarding is the `/project-init` command. There is no separately-published npm package; `npm install` in the checkout pulls their dependencies. |
-| **Regression suite CSVs, knowledge files** (`regression/suites/`, `knowledge/`) | **Bundled in both layers** | Customers need these files locally to run suites. They're the plugin's actual value — VC-specific BLs + suites. |
-| **Customer's own config** (`.env.{env}`, `.env.local`, `test-data/aliases.json`, `test-data/aliases.{env}.json`) | **Customer's repo (gitignored or per-env-committed)** | Never ships with the plugin. Customer scaffolds it via `/project-init`. |
+**Install order.** `vc-init` first: it holds `/project-init`, is the only writer of `project-profile.json`, and pulls
+in `vc-secrets`. Every plugin that reads the profile (`vc-fix`, `vc-test`, `vc-perf`) depends on it and stops with
+"run /project-init" until the profile exists. Step by step: [`onboarding.md`](onboarding.md) and
+[`../plugins/vc-init/README.md`](../plugins/vc-init/README.md).
 
-### Why hybrid?
+## The customer's own config never ships
 
-A pure-npm package would force customers to wire up `.claude/` paths manually. A pure-Claude-Code-plugin would lose the npm script ergonomics. Hybrid keeps both natural.
+`/project-init` writes it into the customer's project, gitignored unless noted: `project-profile.json`, `.env.<env>`
+(URLs and identifiers, no secret; committable in their own repo), `.env.test-env` (the default env), `.env.local`
+(the tracker connection and any test-user passwords not kept in vc-secrets), `.claude/vc-secrets.local.json` (which
+secrets the project declares, no values), `.mcp.json`, `.claude/settings.local.json` (`VC_RUN` and `VC_SECRETS`
+paths) and the committed `.claude/rules/vc-browser.md`. Tokens live only in vc-secrets (the OS credential store or
+Azure Key Vault). Per-env test-data overrides go in `test-data/aliases.<env>.json`.
 
 ### Why not a git submodule?
 
-Considered and rejected. Submodules are operationally painful at customer scale: pinning, updates, conflict resolution all require git fluency that we shouldn't assume of QA leads. The Claude Code plugin manager handles "update to latest" with one click.
+Considered and rejected. Submodules are operationally painful at customer scale: pinning, updates and conflict
+resolution all require git fluency we shouldn't assume of QA leads. The plugin manager updates with one action.
 
 ### Why not a fork?
 
-The previous default ("just `git clone` and edit") doesn't scale past one or two customers — every customer's edits diverge from upstream, methodology drifts, and bugfixes don't propagate. The whole point of the plugin is to keep Tier A and Tier B byte-identical across customers (see [`docs/versioning.md`](versioning.md) for the freeze contract).
+"Just `git clone` and edit" doesn't scale past one or two customers: every customer's edits diverge from upstream,
+methodology drifts, and bugfixes don't propagate. The plugins keep Tier A and Tier B identical across customers
+(see [`versioning.md`](versioning.md) for the freeze contract).
 
-## Package Layout (customer view, after install)
-
-```
-customer-vc-qa/                  # the plugin, installed locally
-├── package.json                 # npm scripts entry
-├── agents/                      # 18 agents (QA 10 + BA 4 + Developers 4), flat *.md
-├── skills/                      # 32 skills (each skills/<name>/SKILL.md)
-├── commands/                    # 23 slash commands
-├── knowledge/                   # 28 shared reference files + agents/ team instructions
-├── hooks/                       # hooks.json + enforce-real-user.mjs
-├── .claude/
-│   ├── rules/                   # report rules, test-data policy
-│   └── architecture/            # TIER.md
-├── ci/                          # orchestrators (regression, full-cycle)
-├── scripts/                     # validators, resolvers, taggers
-├── bootstrap/                   # install.ts (customer onboarding)
-├── templates/                   # .env.local.template, aliases.{env}.json.template
-├── docs/                        # onboarding, configuration, versioning, this file
-├── config/                      # browser MCP configs, test-suites manifest
-├── regression/suites/           # 110 suites (Frontend/ + Backend/ + _release; see config/test-suites.json)
-└── test-data/                   # base aliases.json + sample seed CSVs
-                                 # ↑ Customer-overridable via aliases.{env}.json
-
-# Customer-edited, lives alongside but not in the plugin install dir:
-.env.local                       # gitignored secrets (cross-env via suffix promotion)
-.env.qa                          # per-env config
-.env.staging                     # per-env config
-.env.prod                        # per-env config
-test-data/aliases.qa.json        # per-env entity overrides (optional)
-test-data/aliases.staging.json
-test-data/aliases.prod.json
-tests/                           # customer's own ticket evidence
-reports/                         # customer's bugs + regression reports
-```
-
-## Versioning
-
-See [`docs/versioning.md`](versioning.md) for the full contract.
-
-- **Pre-v1.0** (`0.x.y`): plugin under development. Breaking changes possible at any minor bump. Pin a specific version.
-- **v1.0+**: Tier A frozen. Customers pin a version range like `^1.0`. Plugin manager auto-updates within the range.
-
-## Update Cadence
-
-| Type | Cadence | What changes |
-|------|---------|--------------|
-| Patch (`1.0.x`) | As needed | Bug fixes, doc updates. No customer action required. |
-| Minor (`1.x.0`) | Quarterly | New capabilities, new env vars (safe defaults), new suites, new BLs. Customers read changelog, no config edit. |
-| Major (`x.0.0`) | Rare (~yearly) | Breaking changes. Migration guide in `docs/migrations/v{N}.md` shipped alongside. |
-
-## Support Model
-
-**Pre-v1.0:** Best-effort via GitHub Issues. No SLA.
-
-**Post-v1.0 (paid tier, pricing TBD):**
-- Tier 0: Self-serve docs (`docs/onboarding.md`, troubleshooting in same).
-- Tier 1: Public GitHub Issues + plugin docs (free for all VC customers).
-- Tier 2: Direct customer support via VC Slack + email (paid add-on, pricing TBD post-pilot).
-- Tier 3: Dedicated onboarding + custom suite authoring (consulting engagement).
-
-Full triage flow, SLA targets, communication templates, and patch-release workflow in [`./support-runbook.md`](support-runbook.md).
-
-## Versioning Sources of Truth
+## Versioning sources of truth
 
 | File | Authoritative for |
 |------|-------------------|
-| `.claude-plugin/plugin.json` `.version` | **The plugin version** — what Claude Code's plugin loader reads. Must equal `.claude-plugin/marketplace.json` `.version`. |
-| `.claude-plugin/marketplace.json` `.version` | Marketplace listing version. Kept identical to `plugin.json`. |
-| `package.json` `.version` | Internal npm version of the tooling repo; not the plugin version and not customer-facing. |
-| `docs/versioning.md` | What counts as breaking, Tier A artifacts under freeze, customer upgrade path. |
-| `CHANGELOG.md` | Per-release change list (live; Keep-a-Changelog format, `[Unreleased]` on top of v0.6.0). |
+| `plugins/<name>/.claude-plugin/plugin.json` `.version` | **That plugin's version** — what the plugin loader reads. Each plugin versions independently. |
+| `{name}--v{version}` git tag | What a dependency range (`"vc-init": ">=0.4.1"`) resolves against. A version bump without its tag strands dependents ([`release-process.md`](release-process.md) §Step 1 and §Step 5a). |
+| `.claude-plugin/marketplace.json` `.version` | The catalog's version, not any plugin's. |
+| `package.json` `.version` | Internal npm version of the tooling repo; not customer-facing. |
+| [`versioning.md`](versioning.md) | What counts as breaking, Tier A artifacts under freeze, the upgrade path. |
+| [`../CHANGELOG.md`](../CHANGELOG.md) | Per-release change list, each entry naming the plugins and versions it moves. |
 
-## Customer Migration Path (Phase 4 pilot → GA)
+After a plugin upgrade a customer runs `/project-init --check`: it migrates a stale profile to the current schema
+and moves any token an older onboarding left in a file into vc-secrets.
 
-1. **Pre-pilot (now):** plugin lives on `main`, distributed via the `ai-tools` marketplace. No external customers yet.
-2. **Pilot start (v0.1.0):** one friendly VC customer installs from a specific commit SHA. We support them directly through Phase 4.
-3. **Pilot close (v0.2.0):** consolidate pilot feedback into a versioned release. Possibly bump to `0.2.0-beta` for second-customer dogfood.
-4. **GA (v1.0.0):** at least 3 successful customer installs on a stable contract. Tier A gets the freeze stamp. `^1.0` becomes the recommended pin.
-5. **Post-GA:** quarterly minor releases. Major releases paired with migration guides.
+## Update cadence
 
-## Source of Truth: `main`
+| Type | Cadence | What changes |
+|------|---------|--------------|
+| Patch (`x.y.Z`) | As needed | Bug fixes, doc updates. No customer action required. |
+| Minor (`x.Y.0`) | As features land | New capabilities, new env vars (safe defaults), new suites, new BLs. Customers read the changelog. |
+| Major (`X.0.0`) | Rare | Breaking changes, with a migration note in the changelog entry. |
 
-While we're pre-v1.0, `main` IS the canonical source (pin to a tagged release for stability — the branch tip is unstable). Once we cut v1.0:
+## Support model
 
-- Branch becomes a maintenance line for the v1.x series.
-- New work goes to `feature/v2-*` branches as needed.
-- Releases are tagged (`v1.0.0`, `v1.0.1`, etc.) and published via the chosen distribution mechanism.
+**Pre-v1.0:** best-effort via GitHub Issues on this repo, no SLA. `vc-fix`'s `/vc-self-check` can file a
+consent-gated issue built from its own telemetry.
+
+**Post-v1.0 (pricing TBD):**
+- Tier 0: self-serve docs (`docs/onboarding.md`, its troubleshooting section).
+- Tier 1: public GitHub Issues + plugin docs (free for all VC customers).
+- Tier 2: direct support via VC Slack + email (paid add-on).
+- Tier 3: dedicated onboarding + custom suite authoring (consulting engagement).
+
+## Source of truth: `main`
+
+Pre-v1.0, `main` is the canonical source; customers pin a plugin version, not the branch tip. Releases follow
+[`release-process.md`](release-process.md).
 
 ## References
 
-- Plan: [`~/.claude/plans/functional-singing-cosmos.md`](file:///~/.claude/plans/functional-singing-cosmos.md)
-- Versioning contract: [`./versioning.md`](versioning.md)
-- Customer onboarding: [`./onboarding.md`](onboarding.md)
+- Versioning contract: [`versioning.md`](versioning.md)
+- Release steps and tags: [`release-process.md`](release-process.md)
+- Onboarding: [`onboarding.md`](onboarding.md)
 - Tier classification: [`../.claude/architecture/TIER.md`](../.claude/architecture/TIER.md)

@@ -250,3 +250,24 @@ reproductions in product repos are unchanged.
    self-diagnostics delivery, MCP and credential hygiene, the tracker and label hooks), the
    `playwright-lane-configs` guard that `.claude/rules/agents.md` names, and any file the tools cannot
    measure (a subprocess-only subject, or a red baseline).
+
+## 2026-11-11 — re-check for VCST-6637: one file removed, the rest stays on evidence
+
+VCST-6637 asked to delete the tests that re-state declarations. The corpus was checked again, and almost
+nothing qualified, because the 2026-10-01 cut had already removed them:
+
+- **Declaration-only tests: none left.** Of 191 files, the only 10 that import no repo code all run a
+  hook or a script as a subprocess (`session-telemetry*`, `gen-profile`, `reconcile-profile`,
+  `review-pr-allow`, `sync-stdio`, …), so they test behaviour, not data.
+- **Tests added after 2026-10-01: three.** `review-pr-allow.test.mjs` is exempt (permission boundary).
+  `otp-signin-specs.test.mjs`: `td:test-attribution -- otp-signin --max 24` returned **KEEP 6 · DELETE 0**.
+  `push-audience-specs.test.mjs` could not be measured: the first mutation (`orgByKey` `===` → `!==`)
+  put the test into an endless loop, and `td:test-attribution` has no per-probe timeout, so the run hung
+  for 44 minutes and was stopped. Unmeasurable tests are not cut (§2026-10-01, item 3), so it stays.
+  The missing timeout is a tool gap worth fixing before the next measurement.
+- **Removed: `lane-mcp-config.test.ts`.** Its subject, `ci/lib/lane-mcp.ts`, went with the headless
+  runner (`docs/decisions/regression-history.md` §Headless pipelines removed).
+- **Changed: `suite-preflight.test.ts`** now resolves agent definitions in `.claude/agents/`, matching
+  `scripts/regression/plan-run.ts`, because `ci/agents/qa-*.md` were deleted.
+
+`npm test`: 3,918 tests before, 3,909 after (the 9 in `lane-mcp-config.test.ts`), all green.
