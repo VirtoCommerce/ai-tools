@@ -193,16 +193,13 @@ stand `/preflight` (`npm run preflight`: env health, deployed build, MCP availab
 
 ### How Testing Works
 
-Four pipelines:
+Two pipelines:
 
 1. **Interactive MCP-driven** (primary) — tell Claude Code what to test: `/qa-smoke storefront`, `/qa-test VCST-1234`, `/qa-test-fast VCST-1234`, `/vc-test:qa-ticket VCST-1234`, `Use qa-frontend-expert to verify checkout`. Real browser via Playwright MCP → HAR/screenshots/console → reports.
-2. **CI regression** — `ci/run-regression.ts` runs CSV suites headless via the Claude Agent SDK, locally or in Docker (`npm run ci:*`).
-3. **Change-driven full cycle** — `ci/run-full-cycle.ts`: sync stale cases → review → run the affected suites (`npm run ci:cycle`).
-4. **Monitoring** (`/qa-monitoring`, `npm run ci:monitor`) + **auto-fix** (`/qa-fix`) — App Insights triage / bug-fix-to-PR (gate ladder G0–G7, never auto-merges).
+2. **Monitoring** (`/qa-monitoring`) + **auto-fix** (`/qa-fix`) — App Insights triage / bug-fix-to-PR (gate ladder G0–G7, never auto-merges).
 
-> `ci/` and `.github/` are tracked. The GitHub workflows (`full-cycle.yml`, `monitor.yml`, `suite-audit.yml`) have
-> their `cron:` commented out, so none of the test pipelines runs unattended; `gates.yml` (incl. `npm run context:check`)
-> runs on every PR, plus a weekly scheduled pass over its external checks.
+> Regressions run interactively (`/qa-regression`); there is no headless runner. `ci/` holds only the shared planning
+> library and the App Insights probes. `gates.yml` (incl. `npm run context:check`) and `unit-tests.yml` run on every PR.
 
 ### Commands, Skills & Agents
 
@@ -218,8 +215,7 @@ Use an agent by name: `Use the qa-backend-expert to test the Platform API`.
 
 ```bash
 npm run env:check          # Validate env vars (active TEST_ENV)
-npm run ci:smoke           # CI smoke selection   ·  ci:critical / ci:frontend / ci:backend / ci:full
-npm run ci:cycle           # Full pipeline: sync → review → regression
+npm run regression:plan -- smoke   # Resolve a selection to its suites (critical / frontend / backend / full)
 npm run seed[:minimal|:catalog|:full|:teardown]   # Test-data seeding (repo seed scripts; per-domain seed:<name>)
 npm run graphql:validate   # Run GraphQL fixtures  ·  schema:check (drift gate)
 npm run suites:lint        # Manifest selections in sync; prints suite + case totals
@@ -259,7 +255,7 @@ ai-tools/
 │   ├── architecture/     #   TIER.md classification
 │   └── ROUTING.md        #   "New here?" entry point
 ├── config/               # vc-qa: Playwright browser configs + test-suites.json manifest
-├── ci/                   # vc-qa: CI / full-cycle / monitoring / suite-audit pipelines (tracked)
+├── ci/                   # shared regression planning library + App Insights probes (tracked)
 ├── vc/shared/            # vc-qa: VC internal shared data (sprint plans, prompt templates, workshop) — customers ignore
 ├── regression/suites/    # vc-qa: CSV suites under Frontend/ + Backend/, module-aligned dirs (`npm run suites:lint` prints the totals)
 ├── test-data/            # vc-qa: Alias registry + CSV fixtures
@@ -275,7 +271,7 @@ ai-tools/
 
 CSV suites in enriched agent-native format, organized under `Frontend/<module>/` and `Backend/<module>/`. **Authoritative definitions + selection groups live in [`config/test-suites.json`](config/test-suites.json)** (groups: `smoke`, `critical`, `frontend`, `backend`, `sprint`, `full`, plus module/feature-aligned groups like `catalog`, `orders`, `returns`, `b2b`, `payment`, `loyalty`, `sales-rep` — `npm run regression:plan -- <name>` resolves one). Per-module index: [`regression/suites/README.md`](regression/suites/README.md).
 
-Priority is per suite — the `priority` field in the manifest, shown beside every suite in the [per-module index](regression/suites/README.md). The `critical` selection that `ci:critical` runs is a curated subset of the P0 suites, not all of them: `npm run regression:plan -- critical` lists it.
+Priority is per suite — the `priority` field in the manifest, shown beside every suite in the [per-module index](regression/suites/README.md). The `critical` selection is a curated subset of the P0 suites, not all of them: `npm run regression:plan -- critical` lists it.
 
 Authoring guides: browser-mode tags ([`test-runner-tags.md`](.claude/knowledge/execution/test-runner-tags.md)) · GraphQL ([`graphql-test-cases-runner.md`](.claude/knowledge/api/graphql-test-cases-runner.md)) · test data ([`.claude/rules/test-data.md`](.claude/rules/test-data.md)) · cases that catch bugs ([`cases-that-catch-bugs.md`](.claude/knowledge/execution/cases-that-catch-bugs.md)).
 
