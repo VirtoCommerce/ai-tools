@@ -446,6 +446,7 @@
     "kb:stands": "node scripts/kb/core/stands.mjs --check",
     "kb:build-history": "node scripts/kb/build-history.mjs",
     "kb:normalize-evidence": "node scripts/kb/normalize-evidence.mjs",
+    "td:customer": "node scripts/seed-data/disposable-customer.mjs",
     "seed:variant-picker": "node scripts/seed-data/products/seed-variant-picker.mjs",
     "seed:variant-picker:teardown": "node scripts/seed-data/products/seed-variant-picker.mjs --teardown",
     "td:validate:variant-picker": "node scripts/seed-data/products/validate-variant-picker-data.mjs",
