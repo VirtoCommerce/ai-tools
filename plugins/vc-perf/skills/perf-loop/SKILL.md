@@ -103,11 +103,12 @@ State which axis your hypothesis is about BEFORE measuring, and report results p
   and shares are trustworthy, absolute numbers are not.
 - **Claude Code sandbox (the full loop runs from inside a CC session — no host terminal):** the
   tools work because they are in `sandbox.excludedCommands` (`curl:*`, `dotnet:*`, `k6:*`,
-  `bash …/run.sh:*`, `bash …/l3-capture.sh:*`, `dotnet-trace:*`), which run them OUTSIDE the
+  `<pluginRoot>/…/run.sh:*`, `bash …/l3-capture.sh:*`, `dotnet-trace:*`), which run them OUTSIDE the
   seccomp. **NEVER pass
   `dangerouslyDisableSandbox: true`** — counter-intuitively it makes AF_UNIX `socket()` fail EPERM
   and breaks `dotnet-trace` (a bare, non-excluded `dotnet-trace` also fails `SocketException(13)`).
-  Run `run.sh` normally (k6 dials localhost fine); invoke dotnet-trace via the excluded `dotnet`
+  Run `run.sh` bare, knobs in `--env-file` — a variable on the command itself re-sandboxes it
+  (`loadtests/README.md`, sandbox note) — and k6 dials localhost fine; invoke dotnet-trace via the excluded `dotnet`
   host and attach with `--diagnostic-port <socket>,connect` (NOT `-p <pid>` — the PID namespace
   hides the host pid); `-o` must be absolute (`$TMPDIR` is empty in the excluded env). Full recipe
   + `l3-capture.sh`: the `perf-trace` skill's `perftools/README.md` → "Agentic run".
