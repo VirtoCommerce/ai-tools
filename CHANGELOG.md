@@ -8,7 +8,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-<<<<<<< HEAD
 ## A storefront fix typechecks for real and follows the repo's own agent rules — `vc-fix` `0.18.7`, `vc-init` `0.6.1` — 2026-11-12
 
 ### Fixed
@@ -43,7 +42,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   PR body when the change has no logic and the repo's rules say it needs no test. Both developers, both
   reviewers, `/vue-unit-test`, `/dotnet-unit-test`, `shared-instructions.md` rule 2, `when-to-write-a-test.md`
   RULE 4 and the root `CLAUDE.md` exception follow.
-=======
+
+---
+
 ## `run.sh` takes its knobs from a file, and `TRACE=1` finds a published platform — `vc-perf` `0.5.0` — 2026-11-12
 
 ### Added
@@ -61,7 +62,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 - Agent-facing recipes pass knobs through `--env-file`.
 
 ---
->>>>>>> origin/main
 
 ## A host-governed project asks where the agent may create test data — `vc-init` `0.6.0`, `vc-fix` `0.18.6` — 2026-11-11
 
