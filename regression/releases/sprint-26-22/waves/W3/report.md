@@ -45,3 +45,9 @@ Sprint changes verified: address add / edit / select after vc-frontend#2424 (car
 
 - 015 quote fixtures were re-seeded mid-run (`npm run seed:quotes -- --slot 1`), rewriting quote ids in `test-data/aliases.vcst.json`.
 - Stand data left: orders CO261112-00002…00011, quotes RFQ261112-00001/00002, list AGENT-TEST-QUOTE-015-list, AGENT-TEST anonymous carts. CO261112-00003 sits in Payment required after a "successfully submitted" checkout (unconfirmed).
+
+## Closed (2026-11-12)
+
+W3 set to **DONE**. Every real bug is filed after a live re-check: **VCST-6818** (Highest, new — anonymous `mergeCart`), VCST-6819 (pickup map, Low), VCST-6820 and VCST-6821 (address popup search, Low), VCST-6822 (quote approve with out-of-stock line, Low — re-verified on a disposable AGENT-TEST organization while W5 ran, all fixtures deleted).
+Still pending a **product decision** (rows stay `PENDING_DECISION`): quote expiry (QUOTE-011/022/023), ZIP format (CHK-004/027), delivery method on currency switch (CART-051), duplicate-address check (CHK-106), map zoom (BOPIS-011), quote date filter (QUOTE-031/032).
+Everything else open is marked `DEFERRED` in `ledger.csv` (fixtures, stale cases, manual cases, WX cases).
