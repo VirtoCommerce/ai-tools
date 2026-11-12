@@ -1,5 +1,11 @@
 # BUG — /company/members Role facet is a static list: omits inherited roles members hold, offers roles nobody holds · Medium
 
+## Status: CLOSED
+**Closed 2026-11-12 — superseded by VCST-6823.** The static vc-frontend list this report blamed no longer exists
+(VCST-5450 made the facet dynamic; org-level roles now appear). The remaining dead-end role comes from xAPI
+`organization.contactRoles` counting memberships of unlinked contacts — see
+`reports/bugs/open/low/BUG-Members-Role-Filter-Offers-Role-Held-Only-By-Unlinked-Membership-VCST-6823.md`.
+
 **Env:** vcst-qa @ Platform 3.1051.0 · Customer 3.1021.0-pr-312-2257 · ProfileExperienceApi 3.1015.0-pr-141-d7d8 · Theme 2.55.0-pr-2399-845a
 **Found by:** `/qa-regression` REG-2026-07-30-1040, suite 008 (B2C-MBR-031; AC-2 half also seen in B2C-MBR-025) · triaged `REAL_BUG`
 **BL:** BL-B2B-005 · Story EPIC-5239-05 AC-1 + AC-2
