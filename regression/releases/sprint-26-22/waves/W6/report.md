@@ -58,3 +58,7 @@
 - Mission expiry sweep: DUE-00 left the list within ~18 min of its end date.
 - State restored: noorg cart line re-added at qty 1; the item added for 045's precondition removed. The two seeder orders for USER stay (mission progress).
 - 118 Manual cases (all of 070/071, most of 045/046, 083c MSNF-064) need a human pass or automation.
+
+## Closed (DONE) 2026-11-12
+
+Every open ledger item is deferred by Elena Kutasina: `.spec` twins, missions and variant-picker seeders (`seed:missions-e2e` and `seed:variant-picker` fail on vcst), Storybook, BL-UI-006 vs SC 2.5.8, case repairs (MSNF-010/044/056; persona USER for MSNF-019/087/090/091/096), PO decisions (LAYOUT-CNT-006, MSNF-068, MSNF-099…102), and MSNF-004/005 to the WX window.
