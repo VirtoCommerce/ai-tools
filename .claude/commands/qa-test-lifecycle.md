@@ -27,7 +27,7 @@ read the file, do not invoke it through the Skill tool.
 | Input | Read and follow |
 |---|---|
 | `PR <owner/repo>#N`, `module <name>`, `diff`, `changelog <ver>`, `suite <ids>`, `domain <name>` | [`qa-suite-sync`](../skills/qa-suite-sync/SKILL.md) |
-| `VCST-XXXX` | [`qa-suite-sync`](../skills/qa-suite-sync/SKILL.md), then [`qa-case-promotion`](../skills/qa-case-promotion/SKILL.md) for the same ticket (it stops by itself when the ticket has nothing in `Draft`) — skip promotion when the sync verdict is NEEDS FIXES or BLOCKED |
+| `VCST-XXXX` | [`qa-suite-sync`](../skills/qa-suite-sync/SKILL.md), then [`qa-case-promotion`](../skills/qa-case-promotion/SKILL.md) for the same ticket, from the sync's Phase 5 scoped run(s) (it stops by itself when the ticket has nothing in `Draft`) — skip promotion when the sync verdict is NEEDS FIXES or BLOCKED |
 | `promote VCST-XXXX [--run-id <RUN_ID\|latest>]` | [`qa-case-promotion`](../skills/qa-case-promotion/SKILL.md) only |
 
 ## Rules
