@@ -31,8 +31,13 @@ SEC is **REQUIRED** when any link of the chain (§1a) has at least one of:
 | T3 | persists free text that a **different** actor or surface later renders | address, comment, invite message, org name, product review, import file |
 | T4 | is reachable anonymously, or through a token-bearing link | sign-in, registration, password reset, invite acceptance, payment return URL |
 | T5 | is gated by a role or permission | anything Part 0r of the Test Model already covers |
+| T6 | changes a credential or a session | password change, sign-out, lockout / unlock, 2FA or passkey enrolment, login on behalf and its exit |
 
-None of T1–T5 holds ⇒ write one line in the model: `SEC: N/A — <which T fails and why>`. That line is
+T6 is listed on its own because a credential change often carries no identifier (the server takes the
+user from the token), so T1 does not fire, and it is not a role gate, so T5 does not either — yet it is
+where an account is taken over or kept after it should have been lost.
+
+None of T1–T6 holds ⇒ write one line in the model: `SEC: N/A — <which T fails and why>`. That line is
 reviewable; silence is not.
 
 ## Derivation procedure
@@ -77,10 +82,10 @@ the model's archetype column says which shape the case hunts.
 
 | Probe | Applies on | What the case does | Archetype |
 |---|---|---|---|
-| `SEC-IDENT` | every crossing that needs a signed-in user | Call the operation with **no token, an expired one, and one issued before sign-out / password change / lockout** | `SESSION` |
+| `SEC-IDENT` | every crossing that needs a signed-in user; T6 | Call the operation with **no token, an expired one, and one issued before sign-out / password change / lockout**. On T6, check the user's **other** sessions too — another browser, a refresh token, an API token: after the change they are refused, unless the AC says they survive | `SESSION` |
 | `SEC-AUTHZ` | T5 | The role refusal set — **owned by Test Model §Part 0r** (four rules, `Not allowed` line, refusal at the server with that role's own token). SEC only checks the cell is filled; it adds no second copy | `SCOPE` |
 | `SEC-OBJ` | T1 | Replace **every** identifier in the request, one at a time, with one the caller does not own: another user in the same org, another org, another store | `SCOPE` |
-| `SEC-TAMPER` | T2 | Replay the request with a server-owned value changed: lower price, negative or fractional quantity, another currency, someone else's `customerId`, a role above the caller's, a status skip, an external `returnUrl` | `TAMPER` |
+| `SEC-TAMPER` | T2, T6 | Replay the request with a server-owned value changed: lower price, negative or fractional quantity, another currency, someone else's `customerId`, a role above the caller's, a status skip, an external `returnUrl`. On T6: send the change **without the current password or second factor**, or with a wrong one — the server checks it, not only the form | `TAMPER` |
 | `SEC-INJECT` | T3 | Persist a marker payload (script, HTML, CSV formula, query syntax) and **observe it on the surface where it is rendered later** — not on the form that accepted it (§1a rule: a link is crossed only by an observation on its far side) | `INJECT` |
 | `SEC-EXPOSE` | every crossing that returns data | Read what the response, the error and the related objects carry beyond what the caller is entitled to; check that a refusal message does not reveal whether the object or account exists | `EXPOSE` |
 | `SEC-REPEAT` | one-shot effects: coupon, invite, reset link, redemption, payment return | Use it twice, and fire it N times at once | `REPLAY` / `RACE` |

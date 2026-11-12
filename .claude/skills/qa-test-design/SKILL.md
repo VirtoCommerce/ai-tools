@@ -45,7 +45,7 @@ Apply formal test design techniques to systematically derive test cases with max
    - **Feature has lifecycle states** → State Transition Testing
    - **Many parameters, too many combos** → Pairwise / Combinatorial
    - **A chain link crosses a trust boundary** (client-sent id, money/owner value, free text shown to
-     another actor, anonymous or token-link entry, permission gate) → **SEC** (`security-abuse-cases.md`),
+     another actor, anonymous or token-link entry, permission gate, credential or session change) → **SEC** (`security-abuse-cases.md`),
      after FLOW — a case only where its four questions say the check is needed, and then always
    - **Mature feature, looking for edge cases** → Error Guessing
    - **New or unknown feature** → Start with EP + BVA, then Error Guessing
