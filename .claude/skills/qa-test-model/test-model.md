@@ -320,6 +320,9 @@ Both vocabularies are closed and the appender validates against them, so a role 
   does not add one — a role scenario is a journey per actor (`FLOW`), and its `Not allowed` set is a
   decision table over actor × operation (`DT`, whose own §4 names permission checks). Reach for `PW` only
   when the matrix is genuinely `role × org × owner × operation` and too large to enumerate (§6).
+  `SEC` ([`security-abuse-cases.md`](../qa-test-design/security-abuse-cases.md)) is not a role token
+  either: it owns the probes *around* the role refusal — a foreign object id, a tampered value,
+  injected text, a dead credential — and leaves this section's refusals where they are.
 
 ### The shape
 
