@@ -922,6 +922,8 @@ export function storeSettingsFromRow(row) {
   addText('Loyalty.Mode', row.loyalty_mode);
   addText('Loyalty.Currency', row.loyalty_currency);
   addBool('WhiteLabeling.WhiteLabelingEnabled', row.whitelabeling_enabled);
+  // Off (the descriptor default) ⇒ slugInfo resolves no Page Builder page, so every published page 404s.
+  addBool('VirtoPages.Enable', row.virtopages_enabled);
   addText('Customer.ContactDefaultStatus', row.contact_default_status);
   addText('Customer.OrganizationDefaultStatus', row.org_default_status);
   return out;
@@ -1039,6 +1041,14 @@ export async function ensureStore(api, { storeId = STORE_ID, catalogId = null, e
     // Reconciled the same way as url, so an env whose email was nulled (e.g. by a partial body sent to
     // this whole-entity PUT — see the 2026-08-27 incident) is REPAIRED by a re-seed, not just preserved.
     if (desiredEmail && store.email !== desiredEmail) { store.email = desiredEmail; changed = true; }
+    // Raise-only, unlike the other settings (written on create only): a store this seeder did not create
+    // (start-local's B2B-store) has VirtoPages.Enable off, and then no Page Builder page resolves.
+    if (/^true$/i.test(String(row?.virtopages_enabled ?? ''))) {
+      store.settings ||= [];
+      const vp = store.settings.find((s) => s.name === 'VirtoPages.Enable');
+      if (!vp) { store.settings.push({ name: 'VirtoPages.Enable', valueType: 'Boolean', value: true }); changed = true; }
+      else if (vp.value !== true) { vp.value = true; changed = true; }
+    }
     if (await applyFulfillmentCenters(api, store)) changed = true;
     if (changed && !DRY_RUN) {
       try {
