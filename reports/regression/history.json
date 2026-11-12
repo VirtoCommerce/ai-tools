@@ -6163,5 +6163,37 @@
     "pass_rate": 100,
     "duration_minutes": 14.52,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-12-1252",
+    "date": "2026-11-12",
+    "suiteId": "110a",
+    "suiteName": "MFA modes: REST, xAPI and Backoffice",
+    "environment": "localhost",
+    "browser": "playwright-edge",
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 9.06,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-12-1252",
+    "date": "2026-11-12",
+    "suiteId": "111",
+    "suiteName": "Auth MFA Sign-In (storefront)",
+    "environment": "localhost",
+    "browser": "playwright-chrome",
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 7.53,
+    "mode": "interactive"
   }
 ]
