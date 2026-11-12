@@ -1,7 +1,8 @@
 {
  "wave": "W6",
- "owner": null,
- "status": "NOT_STARTED",
+ "owner": "Elena Kutasina",
+ "status": "CLAIMED",
  "runIds": [],
- "updatedAt": "2026-11-11"
+ "updatedAt": "2026-11-12",
+ "personas": "Run-level overrides on playwright-edge slot 3 only: USER_DEFAULT -> qa-agent-slot3 (AGENT_SLOT3_PASSWORD) in 045/046; ORG_USER_DEFAULT -> slot-3 B2B account in BuildRight (B2B_USER_PASSWORD) in 070/071 if BuildRight has no whitelabeling; WL_USER_*, LOY_PERSONAL_NOORG as declared. 083c USER_DEFAULT/USER/LOYALTY_VIP_USER (per-user mission fixtures) wait until W3, which holds USER_DEFAULT, ORG_USER_DEFAULT and LOYALTY_VIP_USER, finishes. From Elena Kutasina's .env.local via config.js."
 }
