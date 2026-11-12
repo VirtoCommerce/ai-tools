@@ -1,7 +1,8 @@
 {
- "wave": "WX",
- "owner": null,
- "status": "NOT_STARTED",
- "runIds": [],
- "updatedAt": "2026-11-11"
+  "wave": "WX",
+  "owner": "Elena Kutasina",
+  "status": "CLAIMED",
+  "runIds": [],
+  "updatedAt": "2026-11-12",
+  "personas": "Sprint-scope window only (decided by Elena Kutasina 2026-11-12): 111 MFASF-015..022 + 110 MFA-004/005/027 (110 is outside WX in release.json, run here because it flips the same MFA setting); 114 PKS-001..008/010/011/014/015/017..024 ran early in REG-2026-11-12-1014-WXpre (no setting change). Sign-in settings before the window, restored after: store B2B-store OtpSignIn.Enabled=true, MultiFactorAuthentication.StoreMode=CustomerChoice; platform MultiFactorAuthentication.Enabled=false. Personas from Elena Kutasina .env.local via config.js."
 }
