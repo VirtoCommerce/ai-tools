@@ -1370,6 +1370,19 @@
       "org_id": "org_id"
     }
   },
+  "BUILDRIGHT_BUYER": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-009"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "org_id": "org_id"
+    }
+  },
   "ACMEWEST_ADMIN": {
     "file": "b2b/users",
     "filter": {

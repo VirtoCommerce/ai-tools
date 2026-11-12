@@ -1436,8 +1436,8 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 14,
-        "browser": 2,
+        "machine": 15,
+        "browser": 1,
         "manual": 0
       }
     },
