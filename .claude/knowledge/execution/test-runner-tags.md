@@ -45,8 +45,9 @@ two-role storefront case was inexpressible.
 
 | Tag | Action |
 |-----|--------|
+| `[PRE:DISPOSABLE_CUSTOMER:<kind>]` | Create a customer for THIS case only (`personal`, or `orgMember` in its own new organization) with `npm run td:customer -- create --kind <kind>`; delete it at Cleanup (`-- delete --email <email>`). Does not sign in. Use it instead of a shared account whenever the case does not depend on that account's data |
 | `[PRE:SIGNOUT]` | Sign out via account-menu popup if currently signed in |
-| `[PRE:SIGNIN_AS:<alias>]` | Sign in as the user resolved from `<alias>` (e.g., `TECHFLOW_ADMIN`, `USER2`, `USER_DEFAULT`); sign out first if different user is active |
+| `[PRE:SIGNIN_AS:<alias>]` | Sign in as the user resolved from `<alias>` (e.g., `TECHFLOW_ADMIN`, `USER2`, `USER_DEFAULT`); sign out first if different user is active. The reserved alias `DISPOSABLE_CUSTOMER` is the account `[PRE:DISPOSABLE_CUSTOMER]` created |
 | `[PRE:SWITCH_ORG:<alias>]` | Switch to the org identified by `<alias>` via org-switcher UI; execute after sign-in |
 | `[PRE:RESET_CART]` | Clear all items from the cart via UI; proceed even if clear partially fails |
 | `[PRE:CLEAR_SESSION]` | Full sign-out + fresh page load to purge session; use at user-context block boundaries |
@@ -55,7 +56,7 @@ two-role storefront case was inexpressible.
 
 **Canonical tag order WITHIN ONE CLUSTER** (a cluster is a run of `[PRE:*]` lines with no step between
 them — the `Preconditions` cell is one cluster; each actor segment in `Steps` is another):
-`[PRE:CLEAR_SESSION]` → `[PRE:SIGNOUT]` → `[PRE:SIGNIN_AS]` → `[PRE:SWITCH_ORG]` → `[PRE:RESET_CART]` → `[PRE:CLEAR_CACHE]` → `[PRE:VERIFY_AUTH]`
+`[PRE:DISPOSABLE_CUSTOMER]` → `[PRE:CLEAR_SESSION]` → `[PRE:SIGNOUT]` → `[PRE:SIGNIN_AS]` → `[PRE:SWITCH_ORG]` → `[PRE:RESET_CART]` → `[PRE:CLEAR_CACHE]` → `[PRE:VERIFY_AUTH]`
 
 The order is relative *within* a cluster; it says nothing about how many clusters a case may have.
 Mark each Steps-cell cluster with a `--- SCREEN: <actor or surface> ---` divider, the marker the corpus
@@ -63,7 +64,7 @@ already uses and `lint-test-cases.ts` already exempts from the per-line tag rule
 
 **Idempotency rule:** Detect state before acting. If required state is already met, skip the action and proceed.
 
-**Failure policy — and it differs by WHERE the tag sits.** In `Preconditions`: `[PRE:SIGNIN_AS]`,
+**Failure policy — and it differs by WHERE the tag sits.** In `Preconditions`: `[PRE:DISPOSABLE_CUSTOMER]`, `[PRE:SIGNIN_AS]`,
 `[PRE:SIGNOUT]`, `[PRE:SWITCH_ORG]`, `[PRE:CLEAR_SESSION]`, `[PRE:CLEAR_CACHE]` and `[PRE:VERIFY_AUTH]`
 failures → **BLOCKED**; `[PRE:RESET_CART]` failure → **log warning only**, do NOT block.
 

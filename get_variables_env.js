@@ -20,6 +20,7 @@ const report = (name) => {
 [
     'FRONT_URL',
     'BACK_URL',
+    'ADMIN_SHELL_URL',
     'VIRTO_START_FRONT',
     'VIRTO_START_BACK',
     'STORYBOOK_URL',
