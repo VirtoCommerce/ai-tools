@@ -1,5 +1,7 @@
 // Auth fixtures for the executable .spec suites: `signedInAs(role)` -> a signed-in storefront Page,
-// `apiAs(role)` -> an authenticated Platform-API request context.
+// `apiAs(role)` -> an authenticated Platform-API request context, `signInHere(page, role)` -> signs in
+// the page that is ALREADY open (a guest session), so what the storefront does at sign-in (the cart
+// merge) happens in that session.
 //
 // Credentials never pass through a spec. They are resolved in THIS module, in process, by the same
 // door the GraphQL runner uses (resolveRole -> acquireToken); `env()` refuses secret-shaped names on
@@ -10,8 +12,90 @@ import { existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { env } from "./data.js";
-import { acquireToken, resolveRole } from "../../scripts/lib/graphql-auth.js";
-import { EMAIL_SELECTORS, PWD_SELECTORS } from "../../scripts/lib/sign-in-selectors.js";
+import { acquireToken, resolveRole, type RoleCredentials } from "../../scripts/lib/graphql-auth.js";
+import { password as ephemeralPassword } from "../../scripts/lib/loyalty-ephemeral-account.mjs";
+import {
+  DISPOSABLE_PREFIX,
+  createDisposableCustomer,
+  deleteDisposableCustomer,
+  type DisposableCustomerRecord,
+} from "../../scripts/lib/disposable-customer.mjs";
+import {
+  EMAIL_SELECTORS,
+  PWD_SELECTORS,
+  SUBMIT_SELECTORS,
+  SWITCH_TO_PASSWORD_SELECTORS,
+} from "../../scripts/lib/sign-in-selectors.js";
+
+/**
+ * Every request except the storefront's token endpoint: a password sign-in POSTs the password to
+ * `/connect/token`, so that one request is never written into a HAR (signInHere signs in IN the page).
+ */
+const HAR_URL_FILTER = /^(?!.*\/connect\/token(?:[?#]|$)).*$/;
+
+/** Every disposable customer and organization starts with this; a crashed run's leftovers are swept by it. */
+export { DISPOSABLE_PREFIX };
+
+/**
+ * A storefront customer created for ONE test and deleted after it: `personal` (no organization) or
+ * `orgMember` (the only member of an organization created for it). Nothing else signs in as it, so no
+ * other run can lock it, fill its cart or change its state. Its password is the ephemeral-account one
+ * (DEFAULT_TEST_PASSWORD), resolved in this module and never handed to a spec. Created and deleted by
+ * scripts/lib/disposable-customer.mjs — the same path the agent lane's `[PRE:DISPOSABLE_CUSTOMER]` uses.
+ */
+export type DisposableCustomer = DisposableCustomerRecord;
+
+/** Who an auth fixture acts as: a role alias from test-data/aliases.json, or a disposable customer. */
+export type Who = string | DisposableCustomer;
+
+function credsFor(who: Who): RoleCredentials {
+  if (typeof who === "string") return resolveRole(who, join(ROOT, "test-data"));
+  return {
+    role: who.email,
+    email: who.email,
+    password: ephemeralPassword(),
+    storeId: env("STORE_ID"),
+    organizationId: who.organizationId,
+  };
+}
+
+type AdminApi = (method: string, path: string, body?: unknown, opts?: { expectStatus?: number[] }) => Promise<any>;
+
+/**
+ * acquireToken, with the one failure a password grant cannot get past named plainly: while the stand's
+ * GLOBAL MFA is on (an MFA suite run switches it on, e.g. VCST-6688 on 2026-11-12), /connect/token answers
+ * every password grant with a `twoFactorToken` — no account, admin included, can sign in. Reported as
+ * that (a BLOCKED setup, D8), not as a raw token dump that reads like a credentials problem.
+ */
+async function tokenFor(creds: RoleCredentials, opts: Parameters<typeof acquireToken>[1]) {
+  try {
+    return await acquireToken(creds, opts);
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg.includes("twoFactorToken")) {
+      throw new Error(
+        `${env("BACK_URL")} requires a second factor for every sign-in right now (global MFA is on — usually an MFA ` +
+          `suite run). Password sign-in for "${creds.role}" cannot proceed; re-run once MFA is off again.`,
+      );
+    }
+    throw e;
+  }
+}
+
+/** The platform admin API in the shape the seeders' account helpers take: (method, path, body, { expectStatus }). */
+async function adminApi(): Promise<AdminApi> {
+  const token = await tokenFor(resolveRole("ADMIN", join(ROOT, "test-data")), { backUrl: env("BACK_URL") });
+  return async (method, path, body = null, { expectStatus = [200] } = {}) => {
+    const res = await fetch(`${env("BACK_URL")}${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token.accessToken}`, "Content-Type": "application/json" },
+      body: body == null ? undefined : JSON.stringify(body),
+    });
+    if (!expectStatus.includes(res.status)) throw new Error(`admin ${method} ${path} -> HTTP ${res.status}`);
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  };
+}
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const STATE_DIR = join(ROOT, "test-results", "auth");
@@ -58,13 +142,18 @@ async function onSignInPage(page: Page): Promise<boolean> {
 
 export const test = base.extend<{
   signedInAs: (role: string) => Promise<Page>;
-  apiAs: (role: string) => Promise<APIRequestContext>;
+  apiAs: (who: Who) => Promise<APIRequestContext>;
+  signInHere: (page: Page, who: Who) => Promise<void>;
+  disposableCustomer: (kind: DisposableCustomer["kind"]) => Promise<DisposableCustomer>;
 }>({
   // Spec §5: HAR is captured for EVERY spec. The built-in `context` is built from `contextOptions`,
   // so adding recordHar here covers an anonymous spec that uses the plain `page` fixture too.
   // viewport / locale stay the project's (playwright.config.ts) — they are not re-stated here.
   contextOptions: async ({ contextOptions }, use, testInfo) => {
-    await use({ ...contextOptions, recordHar: { path: testInfo.outputPath("session.har"), content: "embed" } });
+    await use({
+      ...contextOptions,
+      recordHar: { path: testInfo.outputPath("session.har"), content: "embed", urlFilter: HAR_URL_FILTER },
+    });
   },
 
   /**
@@ -85,7 +174,7 @@ export const test = base.extend<{
         // browser.newContext() inside a test (Playwright's own before/after-create hooks), so none is repeated here.
         const context = await browser.newContext({
           storageState,
-          recordHar: { path: testInfo.outputPath(har), content: "embed" },
+          recordHar: { path: testInfo.outputPath(har), content: "embed", urlFilter: HAR_URL_FILTER },
         });
         const page = await context.newPage();
         opened.push({ context });
@@ -99,11 +188,72 @@ export const test = base.extend<{
     for (const { context } of opened) await context.close(); // flushes the HAR
   },
 
+  /**
+   * Signs in `page` — the guest page a test already drove — through the storefront's own password
+   * form, so the storefront's sign-in side effects (the guest-to-account cart merge) run in THAT
+   * session; `signedInAs` cannot do this, it opens a new context from a saved session. Leaves the page
+   * wherever the storefront lands after sign-in, network settled. Never sends a password through a
+   * spec: it is resolved here (resolveRole) and typed straight into the field. It stays out of the
+   * evidence: the HAR filter drops `/connect/token`, and the trace is paused for the sign-in itself
+   * (stopChunk without a path discards that chunk, so a trace retained on failure starts after it).
+   * A failure throws a plain Error: a fixture error, so D8 classes it BLOCKED, never a product FAIL.
+   */
+  signInHere: async ({}, use) => {
+    await use(async (page: Page, who: Who) => {
+      const creds = credsFor(who);
+      const role = creds.role;
+      const tracing = page.context().tracing;
+      const paused = await tracing.stopChunk().then(() => true, () => false); // false: no trace running
+      try {
+        await page.goto(`${env("FRONT_URL")}/sign-in`, { waitUntil: "networkidle" });
+        // The page opens on the one-time-code form on current builds; the password form sits behind a link.
+        await page.locator([...SWITCH_TO_PASSWORD_SELECTORS, ...EMAIL_SELECTORS].join(", ")).first()
+          .waitFor({ state: "visible", timeout: 20_000 });
+        const toPassword = page.locator(SWITCH_TO_PASSWORD_SELECTORS.join(", ")).first();
+        if (await toPassword.isVisible()) await toPassword.click();
+        const email = page.locator(EMAIL_SELECTORS.join(", ")).first();
+        await email.waitFor({ state: "visible", timeout: 20_000 });
+        await email.fill(creds.email);
+        await page.locator(PWD_SELECTORS.join(", ")).first().fill(creds.password);
+        await Promise.all([
+          page.waitForURL((u) => !u.pathname.includes("/sign-in"), { timeout: 45_000 }),
+          page.locator(SUBMIT_SELECTORS.join(", ")).first().click(),
+        ]).catch(() => {
+          throw new Error(`signInHere(${role}): still on /sign-in after submitting the password form`);
+        });
+        await page.waitForLoadState("networkidle");
+      } finally {
+        if (paused) await tracing.startChunk();
+      }
+    });
+  },
+
+  /**
+   * Creates a customer for this test only — see DisposableCustomer — through
+   * scripts/lib/disposable-customer.mjs (the same create path the agent lane's CLI uses). An
+   * `orgMember` also gets its own organization. Teardown deletes the account, the contact and the
+   * organization after every afterEach hook has run, so a spec's own cart cleanup can still sign in. A
+   * crashed run leaves `AGENT-TEST-SPEC-*` behind; `npm run td:customer -- sweep` reclaims it.
+   */
+  disposableCustomer: async ({}, use) => {
+    const api = await adminApi();
+    const made: DisposableCustomer[] = [];
+    try {
+      await use(async (kind) => {
+        const customer = await createDisposableCustomer(api, { kind, storeId: env("STORE_ID") });
+        made.push(customer);
+        return customer;
+      });
+    } finally {
+      for (const c of made) await deleteDisposableCustomer(api, c);
+    }
+  },
+
   apiAs: async ({}, use) => {
     const opened: APIRequestContext[] = [];
-    await use(async (role: string) => {
-      const creds = resolveRole(role, join(ROOT, "test-data"));
-      const token = await acquireToken(creds, { backUrl: env("BACK_URL"), storeId: env("STORE_ID") });
+    await use(async (who: Who) => {
+      const creds = credsFor(who);
+      const token = await tokenFor(creds, { backUrl: env("BACK_URL"), storeId: env("STORE_ID") });
       const api = await request.newContext({
         baseURL: env("BACK_URL"),
         extraHTTPHeaders: { Authorization: `Bearer ${token.accessToken}` },

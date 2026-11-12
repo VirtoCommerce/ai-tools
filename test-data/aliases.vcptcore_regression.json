@@ -1813,5 +1813,311 @@
     "user_id": "74a99c21-a9fb-4261-a1fa-9c2d904729e4",
     "role_id": "AGENT-TEST-Task-ReadOnly",
     "userName": "AGENT-TEST-task-readonly@test.virtocommerce.com"
+  },
+  "PERSONAL_NON_ORG_USER": {
+    "email": "agent-test-personal-virto-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "e6267e8c-b70d-4c82-99f0-887b57534b34",
+    "contactId": "957b5de9-0c2c-4b5c-a885-02c0f2a99b5e"
+  },
+  "ORG_RET_VIEWER_ORG": {
+    "id": "b487daea-7ab5-44dd-9102-6be02c8d7b2a"
+  },
+  "ORG_RET_ORGROLE_ORG": {
+    "id": "1b444af4-916b-468e-8eb4-bf0337b16f4f"
+  },
+  "ORG_RET_OTHER_ORG": {
+    "id": "f23999a0-5c0c-4dc8-870a-83f19d37348e"
+  },
+  "ORG_RET_SAME_ADDRESS_ORG": {
+    "id": "ee54ae71-39c3-4274-9bd6-e085fbdf43b1"
+  },
+  "ORG_RET_NOEMAIL_ORG": {
+    "id": "e71ef241-397e-44cd-9e5a-cef5450d7641"
+  },
+  "ORG_RET_LONG_NAME_ORG": {
+    "id": "dba448cf-73b6-44d4-97c7-8971ebc8cff5"
+  },
+  "ORG_RET_HOME_ORG": {
+    "id": "dcb43a30-62d6-4a6c-ac8a-2bfc9e21f005"
+  },
+  "ORG_RET_EMPTY_ORG": {
+    "id": "7846a5ca-2208-4fee-b268-39a73edc11c6"
+  },
+  "ORG_RET_RENAME_ORG": {
+    "id": "ef2c0c48-2ed9-459d-bfa9-d83e69e3a7ba"
+  },
+  "ORG_RET_BUYER": {
+    "userId": "3a228fc7-ab02-472d-ba63-ab394b67c7de",
+    "contactId": "193b3988-dfd8-4f53-ae79-e6a9b1a6475a",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "c8ee3cfb-d86a-4a19-9ec2-8c4dd7ead9dd",
+    "orderId": "db55746c-8cec-4899-aaa6-36838dff574c",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER",
+    "orderOrganizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "lineAItemId": "3ac02900-a327-4563-8cc7-fd3e3e509381",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "c9d77855-72ca-4666-87b8-328c71d0e82e",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25,
+    "spare1OrderId": "f6a4ae57-38ae-4579-95e3-8e83d8bba595",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-1",
+    "spare1LineAItemId": "c7d1a8a0-0718-41cc-a89a-0c6192813ea1",
+    "spare1LineBItemId": "e680c428-2b28-4f83-8772-936b2e3f6290",
+    "spare2OrderId": "af8515ba-a1be-4d94-8857-e75cb7247ed2",
+    "spare2OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-2",
+    "spare2LineAItemId": "2f605e5e-13fb-4766-a605-3e62be64b195",
+    "spare2LineBItemId": "4e1a4a4c-5624-4e72-b569-0f75762e2526",
+    "spare3OrderId": "7243285d-ad84-4a8e-ae75-ffbb8a114daa",
+    "spare3OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-3",
+    "spare3LineAItemId": "d8253f86-f31d-44b8-ac35-24df2cf8c6d2",
+    "spare3LineBItemId": "d04e0a72-c138-462d-85f9-cb0be94303be",
+    "spare4OrderId": "1df0c034-82c5-47b8-ab1d-68cb26a7c4af",
+    "spare4OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-4",
+    "spare4LineAItemId": "5ec610a2-e39f-4e85-a641-affdb6531d71",
+    "spare4LineBItemId": "511eca23-5dc3-47c6-bf29-7b3b728a0d90",
+    "spare5OrderId": "1e84288c-4a9f-44c8-9902-a706794eeb13",
+    "spare5OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-5",
+    "spare5LineAItemId": "d046a36d-3fc3-44dd-a991-e0ac3ac1ad88",
+    "spare5LineBItemId": "2a62420d-69cf-4e62-90f1-e654e6fdd2fa",
+    "spare6OrderId": "f8430a2b-a2b3-46c0-8c09-b69ed32b99dd",
+    "spare6OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-6",
+    "spare6LineAItemId": "4f1acf11-0195-46a1-b963-158d9916ba8d",
+    "spare6LineBItemId": "b881f5ea-1bdb-4aa2-996a-3a82f5316b62",
+    "spare7OrderId": "4c199b4b-e253-4a71-986a-3208bc7afd37",
+    "spare7OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-7",
+    "spare7LineAItemId": "d9b65760-cb32-4060-a8f8-457f5dcfdb37",
+    "spare7LineBItemId": "6e08dd7e-638c-4bbe-9bfb-ce903be5fb26"
+  },
+  "ORG_RET_LEAVER": {
+    "userId": "dc26e822-861e-456b-833a-3071fb2649fd",
+    "contactId": "0a45d07d-3e62-4583-be4c-1411d6a29567",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "04f9ae0e-a20e-48dc-aa61-b4250ea36245",
+    "orderId": "3b940bfa-2640-4800-a521-bff192745617",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-LEAVER",
+    "orderOrganizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "lineAItemId": "34dbc8ed-ab67-4780-9a00-4ce4b7d48416",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "18247a8d-9fb4-49b0-bdca-fd910bdf09ae",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_HOLDER_GLOBAL": {
+    "userId": "9e6b37ca-280b-4b30-a786-d18c90549dc7",
+    "contactId": "d59a462b-577a-42a9-a47d-432f3cba18a7",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "a7719ac7-9912-4abe-9ecb-73fe4a599eda"
+  },
+  "ORG_RET_HOLDER_MEMBERSHIP": {
+    "userId": "8a5d3d38-f765-4648-8b95-cff56c3eed63",
+    "contactId": "8facd23d-a712-4693-98b5-3a0f324880a2",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "ed90df19-c13f-4d2e-8bca-92cbc96ef9b3",
+    "orderId": "fdab1b78-b6ad-4b8b-b50b-746f693293bb",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-HOLDER-MEMBERSHIP",
+    "orderOrganizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "lineAItemId": "c11fdf9c-cdc8-47be-a11f-046fef77a693",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "2cbd4f48-ff56-401b-b7cf-6c33e77d81ed",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_HOLDER_SUBMIT": {
+    "userId": "ddb9221d-e38e-4f6a-8c6b-5486a13ad015",
+    "contactId": "8739cb5c-36f7-4c98-968f-43d8846a5cbd",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "38b28708-4f3d-4b37-864f-4ad2d74baf98"
+  },
+  "ORG_RET_HOLDER_LOCKED": {
+    "userId": "d5493ab8-a5db-4912-9403-33c847b29cae",
+    "contactId": "313287d2-6f04-4a9b-94a8-693731442b1f",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "f3b06214-f2bd-4b51-bf86-02acf289acc8"
+  },
+  "ORG_RET_HOLDER_INVITED": {
+    "userId": "6fc86992-718e-4a1d-8aff-8c9d4dc47fc9",
+    "contactId": "a8e84d72-d62e-4416-921b-cb56803af9ac",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "451c400d-a54a-4e68-a94b-2129145ff597"
+  },
+  "ORG_RET_HOLDER_REJECTED": {
+    "userId": "165c38a7-1ddd-4aa6-9e0c-f2cb8a2f988c",
+    "contactId": "fdeee370-f991-49f4-8f08-ab84b19f2b99",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "8aaf6a20-3821-4e0f-98ce-392a21d00623"
+  },
+  "ORG_RET_HOLDER_DELETED": {
+    "userId": "bd208edf-928c-494b-acd3-7e7490de8be6",
+    "contactId": "f8dbb32f-a8fc-48b0-bfa5-6e1f8dde34bd",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "44e147e8-5716-4a21-be23-1d5fe762a5e2"
+  },
+  "ORG_RET_BUYER_NOEMAIL": {
+    "userId": "9fa1cd09-15ec-4959-ac88-85240e2e6de9",
+    "contactId": "cae9d6a5-0cc7-4bb5-8180-efcc00537e04",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "c728f51c-b493-4817-a328-c9c8b5ee05bd",
+    "orderId": "efdd1621-e183-49a3-a573-59e6468a40db",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-NOEMAIL",
+    "orderOrganizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "lineAItemId": "1ebce0fa-a706-4790-853c-3e3e9bbcff0c",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "28b4b840-936d-4ca5-841c-f79bbd0929de",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_MULTI_ORG": {
+    "userId": "c27fea15-3ba6-4cf3-b25f-1218e0ee0974",
+    "contactId": "9da81451-6b24-44c7-b0c6-00800aa21651",
+    "organizationId": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "membershipId": "30572b1a-e235-4f18-a3f4-b08ef18400c6",
+    "org_x_id": "dcb43a30-62d6-4a6c-ac8a-2bfc9e21f005",
+    "org_y_id": "b487daea-7ab5-44dd-9102-6be02c8d7b2a",
+    "org_x_membership_id": "5ee977e4-5a34-476b-93af-76dd3e76982d",
+    "org_y_membership_id": "30572b1a-e235-4f18-a3f4-b08ef18400c6",
+    "orderId": "88566e34-26c0-4d39-b3f8-1c96ff48b465",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-MULTI",
+    "orderOrganizationId": "dcb43a30-62d6-4a6c-ac8a-2bfc9e21f005",
+    "lineAItemId": "b4d90c77-bd19-4162-83ff-b50ba6c5ec73",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "98468337-fd8f-4590-b432-9d3b6a8001c1",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_HOLDER_ORGROLE": {
+    "userId": "e3301248-ca13-4b2f-a2f4-02e4dbb9ee44",
+    "contactId": "567286a0-8753-4261-b471-60a1e152aa32",
+    "organizationId": "1b444af4-916b-468e-8eb4-bf0337b16f4f",
+    "membershipId": "d2a314d6-12c7-4714-82dc-3cd4e8ec38a9"
+  },
+  "ORG_RET_ORGROLE_BUYER": {
+    "userId": "a8c93a15-d6fc-40a6-9254-e01ad6a1e5ea",
+    "contactId": "a2038da9-229f-423f-8311-1beac81ec283",
+    "organizationId": "1b444af4-916b-468e-8eb4-bf0337b16f4f",
+    "membershipId": "056b91bc-5d36-4b94-a2c8-7d3f22b11b6e",
+    "orderId": "0862d1bc-78e4-4cc0-939c-e7ca7c7a7462",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER",
+    "orderOrganizationId": "1b444af4-916b-468e-8eb4-bf0337b16f4f",
+    "lineAItemId": "d3dd68aa-640a-4b55-afcd-ad376c6d3a1a",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "27731d1a-138e-4a0b-aeb4-e57bd636dedc",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25,
+    "spare1OrderId": "d5ef6b6a-93f2-42cb-8d29-359cb8637d35",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER-SPARE-1",
+    "spare1LineAItemId": "ba4d6cb3-ed8a-438b-940e-fd73a1b54568",
+    "spare1LineBItemId": "edce7ce4-99f1-4d2d-80ab-e76763c6bc35"
+  },
+  "ORG_RET_OTHER_BUYER": {
+    "userId": "e7033726-6536-43bf-980c-161602644985",
+    "contactId": "334e9fc8-01c1-403a-9ae3-c764bf82f82f",
+    "organizationId": "f23999a0-5c0c-4dc8-870a-83f19d37348e",
+    "membershipId": "84232d79-bacc-4329-a4b7-56a7b42b2ef0",
+    "orderId": "3fcc3c2a-48f5-45ff-a384-7a5e0d4554c3",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER",
+    "orderOrganizationId": "f23999a0-5c0c-4dc8-870a-83f19d37348e",
+    "lineAItemId": "7e489d2e-a896-4e0c-a1f9-80b935a43cd1",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "64e5de29-ead6-4ba3-9c69-915bdaeda476",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25,
+    "spare1OrderId": "e8c527a7-a2b8-4e3e-b85f-e84fd7f0f1db",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER-SPARE-1",
+    "spare1LineAItemId": "f0bc5938-4819-4f8c-ae52-34b5f4061cfa",
+    "spare1LineBItemId": "508d3827-d9e1-4e9f-873a-8fe6d1b80e2d"
+  },
+  "ORG_RET_SAME_ADDRESS_BUYER": {
+    "userId": "a52d991f-d77c-403e-b8a9-8129ecae4ef6",
+    "contactId": "67cb2a75-fc19-4302-b1a9-7e94fe6bb707",
+    "organizationId": "ee54ae71-39c3-4274-9bd6-e085fbdf43b1",
+    "membershipId": "57f9741e-b801-4064-93fc-388c6de62506",
+    "orderId": "70f9828e-40b6-47d4-99f7-87e06d7f7dcf",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-SAME-ADDRESS-BUYER",
+    "orderOrganizationId": "ee54ae71-39c3-4274-9bd6-e085fbdf43b1",
+    "lineAItemId": "00a3e1d0-dc1b-4ebc-b4a1-33d8deb03094",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "aa552ddf-a7ac-48ca-9572-9331c153102d",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_NOEMAIL_ORG_BUYER": {
+    "userId": "8ba93b25-e112-4a70-9d8d-9dbfea71d3f0",
+    "contactId": "59b227e0-33c8-46f9-97ed-df24407bf617",
+    "organizationId": "e71ef241-397e-44cd-9e5a-cef5450d7641",
+    "membershipId": "486c0b66-50dc-4a62-a6fd-29d7ba804e28",
+    "orderId": "3ee8f890-4c83-455c-874d-a3ee4f705f80",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-NOEMAIL-ORG-BUYER",
+    "orderOrganizationId": "e71ef241-397e-44cd-9e5a-cef5450d7641",
+    "lineAItemId": "df29da68-7be9-42e3-a058-4918a2a83220",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "71b0e574-a0a2-4373-8467-e61b303be636",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_LONG_NAME_BUYER": {
+    "userId": "40b09c5b-521e-4cea-9bd0-c20f4fa2f492",
+    "contactId": "71b226f5-b2e6-4c5c-a20c-7570c6be6ebd",
+    "organizationId": "dba448cf-73b6-44d4-97c7-8971ebc8cff5",
+    "membershipId": "a8e87675-5eb1-46bd-ab21-d89d7941f674",
+    "orderId": "938fd39e-0ca0-4bad-8f3e-37757cfe6a68",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER",
+    "orderOrganizationId": "dba448cf-73b6-44d4-97c7-8971ebc8cff5",
+    "lineAItemId": "0128c265-9275-4525-a6c1-3a7ca5eb6409",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "626d0527-15eb-4018-92b2-90c81b2a8e39",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25,
+    "spare1OrderId": "56391af1-ad8e-4bb0-a2e4-20333032f405",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER-SPARE-1",
+    "spare1LineAItemId": "9fdb5cab-77b9-4396-90f6-5adc37e660c7",
+    "spare1LineBItemId": "448215a4-44cc-4b06-9fc1-67a292a91d29"
+  },
+  "ORG_RET_EMPTY_HOLDER": {
+    "userId": "a606be63-9066-4ea5-82b9-02077faa125b",
+    "contactId": "e2eadffd-e5fe-48b2-9911-b2c2da3716da",
+    "organizationId": "7846a5ca-2208-4fee-b268-39a73edc11c6",
+    "membershipId": "be625524-c3ce-4560-b652-47906a44a988"
+  },
+  "ORG_RET_RENAME_BUYER": {
+    "userId": "5065ae02-f1f2-45a6-a969-ef6641887e39",
+    "contactId": "9e57a6db-a957-426d-a555-41eca12bb79e",
+    "organizationId": "ef2c0c48-2ed9-459d-bfa9-d83e69e3a7ba",
+    "membershipId": "eb6e5f31-a253-4c5c-b4cf-a56ae06596d8",
+    "orderId": "99c71662-6685-46b5-aa5d-9995af90de4f",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-RENAME-BUYER",
+    "orderOrganizationId": "ef2c0c48-2ed9-459d-bfa9-d83e69e3a7ba",
+    "lineAItemId": "2359c4c5-6da0-427b-abd9-e239a1fc63bc",
+    "lineASku": "DDR-234304561",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "ea6e9dfd-25d5-4561-b313-42e3e5e4f495",
+    "lineBSku": "41MY01",
+    "lineBOrderedQuantity": 25
+  },
+  "ORG_RET_OTHER_ORG_RETURN": {
+    "id": "0a4ddc03-05ad-4b41-8839-0e279ad7c5cc",
+    "number": "RET261016-00001",
+    "status": "Requested",
+    "orderId": "3fcc3c2a-48f5-45ff-a384-7a5e0d4554c3",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER"
+  },
+  "ORG_RET_OTHER_STORE_RETURN": {
+    "id": "6d463236-f308-4c2a-804c-f405a2442507",
+    "number": "RET261016-00002",
+    "status": "Requested",
+    "storeId": "Electronics",
+    "orderId": "4c199b4b-e253-4a71-986a-3208bc7afd37",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-7"
   }
 }

@@ -20,13 +20,14 @@
  *   1. Owner contact for ACME (distinct from the reps) + enrich ACME org (ownerId, businessCategory, address).
  *   2. 5 sales reps + their served-org memberships (POST /api/sales-rep).
  *   3. Block SR_REP_BLOCKED's account; lock SR_REP_LOCKED's ACME membership;
- *      wipe the DISPOSABLE-layout rep's persisted SalesRepLayout.* preferences (VCST-5367).
+ *      wipe the DISPOSABLE-layout rep's persisted layout preferences, both key generations (VCST-5367).
  *   4. Orders per org across stores + statuses (POST /api/order/customerOrders).
  *   5. Write-back: contact/user/membership/owner GUIDs -> aliases.<env>.json, and SR_UNSERVED_ORG (the
  *      first paging org, written only after checking it exists, SR_REP_PAGING serves it, SR_REP_PRIMARY does not).
  *
- * VCST-5367 saved layout: `salesRepLayout`/`saveSalesRepLayout` persist a Customer-module
- * CustomerPreference named `SalesRepLayout.{scope}[.{storeId}]` on the CALLER'S OWN user id. Only
+ * VCST-5367 saved layout: a Customer-module CustomerPreference on the CALLER'S OWN user id — CURRENT
+ * `Layout.{salesRepDashboard|salesRepCustomerProfile}[.{storeId}]` (X-Frontend layout/saveLayout, Sales Rep PR #24+),
+ * LEGACY `SalesRepLayout.{scope}[.{storeId}]` (salesRepLayout/saveSalesRepLayout, older builds); both are swept. Only
  * SR_REP_LAYOUT's is disposable (allowlist in sales-rep-layout-specs.mjs) — the seeder resets it to
  * never-saved on every reseed so the "never saved => query returns null" precondition is reproducible,
  * and SR_REP_PRIMARY's null baseline (relied on by ~40 cases) is never written.
@@ -37,10 +38,11 @@
 import {
   assertSafeTarget, auth, api, log, verbose, loadCsv, loadAliases,
   writeEnvAliasOverride, syncEnvAliases, csvBool, DRY_RUN, TEARDOWN, ONLY, STORE_ID, verifyRemoved,
-  discoverCatalogProducts, orderLacksProductImages, resetSecurityPassword, idsParam,
+  discoverCatalogProducts, orderLacksProductImages, resetSecurityPassword,
+  findCustomerPreferences, resetCustomerPreferences,
 } from '../../lib/seed-common.mjs';
 import {
-  parseServedOrgs, isDisposableLayoutRep, isLayoutPreference, LAYOUT_PREF_PREFIX, LAYOUT_SCOPES,
+  parseServedOrgs, isDisposableLayoutRep, isLayoutPreference, LAYOUT_SCOPES,
   repFixtureStatus, PAGING_ORG_PREFIX, pagingOrgName, UNSERVED_ORG,
 } from './sales-rep-layout-specs.mjs';
 // The rolling-window + recency rules for test-data/sales-rep/sales-rep-orders.csv. `windowDaysFor` /
@@ -162,39 +164,18 @@ async function clearRepStaleLockout(email, status) {
   return true;
 }
 
-/* ── VCST-5367 persisted layout (CustomerPreference SalesRepLayout.{scope}[.{storeId}]) ───────────
+/* ── VCST-5367 persisted layout (CustomerPreference Layout.{salesRep*}[.{storeId}] | legacy SalesRepLayout.*) ──
  * The layout the storefront saves is a Customer-module preference on the CALLER'S OWN ApplicationUser,
  * reachable from this seeder via POST /api/customer-preferences/search + DELETE /api/customer-preferences.
  * Deleting the rep does NOT cascade it (the row is keyed on the security account, not the Contact), so
  * the seeder wipes it explicitly — forward (restore the never-saved precondition) and at teardown
  * (zero residue). Only reps on the DISPOSABLE_LAYOUT_REP_KEYS allowlist are ever touched. */
 
-/** The rep's persisted SalesRepLayout.* preference rows ([] when none / module route absent). */
-async function findLayoutPreferences(userId) {
-  if (!userId) return [];
-  const res = await api('POST', '/api/customer-preferences/search', { userId, take: 100 }, { expectStatus: [200, 201, 404] });
-  return (res?.results || res?.items || []).filter((p) => isLayoutPreference(p?.name));
-}
+/** The rep's persisted layout preference rows, both generations (isLayoutPreference) ([] when none / module route absent). */
+const findLayoutPreferences = (userId) => findCustomerPreferences(api, userId, isLayoutPreference);
 
-/** Delete every SalesRepLayout.* row for a rep, so salesRepLayout(scope:…) resolves to null again. */
-async function resetLayoutPreferences(userId, label) {
-  if (!userId) {
-    // In --dry-run a not-yet-created rep has no account, which is expected — not a warning.
-    const msg = `${label} — no ApplicationUser id resolved, cannot reset ${LAYOUT_PREF_PREFIX}.* preferences`;
-    if (DRY_RUN) verbose(msg); else log(`  WARN: ${msg}`);
-    return 0;
-  }
-  const rows = await findLayoutPreferences(userId);
-  if (rows.length === 0) {
-    verbose(`${label}: no ${LAYOUT_PREF_PREFIX}.* preference — already never-saved (${LAYOUT_SCOPES.join(' / ')} resolve to null)`);
-    return 0;
-  }
-  const names = rows.map((r) => r.name).join(', ');
-  if (DRY_RUN) { log(`  ${label}: would delete ${rows.length} ${LAYOUT_PREF_PREFIX}.* preference(s): ${names}`); return rows.length; }
-  await api('DELETE', `/api/customer-preferences?${idsParam(rows.map((r) => r.id))}`, null, { expectStatus: [200, 204] });
-  log(`  ${label}: layout reset to never-saved — deleted ${rows.length} preference(s) (${names})`);
-  return rows.length;
-}
+/** Delete every rep layout row (Layout.salesRep* + legacy SalesRepLayout.*) so layout(scope:…) / salesRepLayout(scope:…) resolve to null again. */
+const resetLayoutPreferences = (userId, label) => resetCustomerPreferences(api, userId, isLayoutPreference, `${label} rep layout (${LAYOUT_SCOPES.join(' / ')})`);
 
 /** Create/resolve N dedicated paging orgs (no orders, no pinned id) served by a paging rep. Idempotent by name. */
 async function ensurePagingOrgs(n) {
@@ -595,8 +576,8 @@ async function teardown(orgs) {
   for (const { repKey, uid } of layoutResidue) {
     const residue = await verifyRemoved(() => findLayoutPreferences(uid));
     log(residue === 0
-      ? `  verifyRemoved: ${repKey} has zero ${LAYOUT_PREF_PREFIX}.* residue`
-      : `  WARN verifyRemoved: ${repKey} still has ${residue} ${LAYOUT_PREF_PREFIX}.* preference(s)`);
+      ? `  verifyRemoved: ${repKey} has zero rep layout residue`
+      : `  WARN verifyRemoved: ${repKey} still has ${residue} rep layout preference(s)`);
   }
   // Also confirm the rep's LOGIN ACCOUNT went with it (the module cascades Contact -> ApplicationUser;
   // a leftover account would keep the email taken and re-seed a rep that cannot be re-created).

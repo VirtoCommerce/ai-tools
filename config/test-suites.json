@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-11-09",
-    "totalSuites": 177,
+    "generated": "2026-11-12",
+    "totalSuites": 179,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -78,7 +78,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 29,
+      "testCount": 30,
       "estimatedMinutes": 13,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -98,7 +98,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 32,
+      "testCount": 33,
       "estimatedMinutes": 24,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -796,7 +796,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 61,
+      "testCount": 64,
       "estimatedMinutes": 41,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1575,7 +1575,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 10,
+      "testCount": 20,
       "estimatedMinutes": 5,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1587,7 +1587,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 10,
+        "machine": 20,
         "browser": 0,
         "manual": 0
       }
@@ -3662,7 +3662,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 79,
+      "testCount": 80,
       "estimatedMinutes": 51,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3729,7 +3729,7 @@
         "VirtoCommerce.OpenTelemetry",
         "VirtoCommerce.ApplicationInsights"
       ],
-      "notes": "VCST-5544. Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) — without it every telemetry assertion is unverifiable, not failing. Adaptive sampling on the AI resource (~1-in-8) means a single request may leave no telemetry: repeat >=14x or disable sampling before concluding a signal is absent. 4 cases are Manual (InputCaptureMode matrix + bridge-off + breaking-change communication) and need an ISOLATED stand: the settings bind through a cached IOptions and are read only at startup, so each change is an appsettings edit + platform restart. Excluded from the backend/full selections until /qa-test 5g promotion — 19 cases are still Draft and UCPO-005/014/018 intentionally document defects that are OPEN. RESOLUTION RULES (apply to every case in this suite). <SEARCH_TERM>: live-discover a term that returns >=1 product ON THIS env (POST /api/catalog/search/products; take a word from a returned product name) and never hardcode it — the former literal \"bolt\" returned 0 products on a fashion catalog, so the suite did not port between environments. REST context: every /ucp/v1 call also needs context:{currency:{{CURRENCY_CODE}},language:{{CULTURE_NAME}}}; without it even a valid store can return INVALID_OPERATION, because the MCP path defaults it and REST does not. Exception observed 2026-10-13 on vcptcore-regression (UCP 3.1010.0): a catalog search WITHOUT store_id and without context returned 200, because UCP__DefaultStoreId/UCP__DefaultCurrency are configured there - send context anyway so the suite ports between environments. SPAN TYPE: on an OpenTelemetry-exporter build every internal span exports as type=\"InProc\", so filtering on type in (\"UCP\",\"XAPI\",\"MCP\",\"VirtoCommerce\") returns ZERO rows and reads as a telemetry blackout — discriminate on the span NAME prefix (\"UCP \" / \"XAPI \" / \"VC \") or on customDimensions[\"vc.dependency.system\"]. SAMPLING: measured 2026-09-17 at microsoft.sample_rate=50 (not the ~1-in-8 recorded earlier), dropping to 33/25/20 under bursts — fire >=20 requests paced ~0.7s apart before claiming a signal is absent, and state how many you fired."
+      "notes": "VCST-5544. Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) — without it every telemetry assertion is unverifiable, not failing. Adaptive sampling on the AI resource (~1-in-8) means a single request may leave no telemetry: repeat >=14x or disable sampling before concluding a signal is absent. 4 cases are Manual (InputCaptureMode matrix + bridge-off + breaking-change communication) and need an ISOLATED stand: the settings bind through a cached IOptions and are read only at startup, so each change is an appsettings edit + platform restart. Excluded from the `backend` selection ONLY (selections.backend.exclude); NOT excluded from `full`, `sprint` or `concern:api`, so those still run it (until /qa-test lifecycle promotion) — 19 cases are still Draft and UCPO-005/014/018 intentionally document defects that are OPEN. RESOLUTION RULES (apply to every case in this suite). <SEARCH_TERM>: live-discover a term that returns >=1 product ON THIS env (POST /api/catalog/search/products; take a word from a returned product name) and never hardcode it — the former literal \"bolt\" returned 0 products on a fashion catalog, so the suite did not port between environments. REST context: every /ucp/v1 call also needs context:{currency:{{CURRENCY_CODE}},language:{{CULTURE_NAME}}}; without it even a valid store can return INVALID_OPERATION, because the MCP path defaults it and REST does not. Exception observed 2026-10-13 on vcptcore-regression (UCP 3.1010.0): a catalog search WITHOUT store_id and without context returned 200, because UCP__DefaultStoreId/UCP__DefaultCurrency are configured there - send context anyway so the suite ports between environments. SPAN TYPE: on an OpenTelemetry-exporter build every internal span exports as type=\"InProc\", so filtering on type in (\"UCP\",\"XAPI\",\"MCP\",\"VirtoCommerce\") returns ZERO rows and reads as a telemetry blackout — discriminate on the span NAME prefix (\"UCP \" / \"XAPI \" / \"VC \") or on customDimensions[\"vc.dependency.system\"]. SAMPLING: measured 2026-09-17 at microsoft.sample_rate=50 (not the ~1-in-8 recorded earlier), dropping to 33/25/20 under bursts — fire >=20 requests paced ~0.7s apart before claiming a signal is absent, and state how many you fired."
     },
     {
       "id": "095",
@@ -3910,7 +3910,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 42,
+      "testCount": 57,
       "estimatedMinutes": 90,
       "agent": "qa-backend-expert",
       "tags": [
@@ -3925,12 +3925,12 @@
       "requiresModules": [
         "VirtoCommerce.UCP"
       ],
-      "notes": "VCST-5378. First value-chain suite for UCP — 094 is telemetry-only and touches none of the chain (domain map .claude/knowledge/domain/ucp.md, test model reports/ba/test-models/VCST-5378-2026-09-22.md). MACHINE LANE, REG-2026-09-23-M6: 31 pass / 0 fail / 1 blocked over the 32 machine-classified cases (the 4 browser-lane cases run separately). The one blocked is UCPA-021 BY DESIGN — see below. Excluded from the backend/full selections until /qa-test lifecycle promotion, same as 094. Case-id prefix UCPA- (094 owns UCPO-). BL-UCP is declared and deliberately EMPTY (business-logic.md Domain 25) — cases cite only delegated invariants (BL-AUTH-*, BL-B2B-*, BL-CART-*, BL-CHK-*) or carry no Business_Rule at all; never cite a BL-UCP-* id. RESOLUTION RULES. MCP endpoint is {{FRONT_URL}}/ucp/mcp — STOREFRONT host only; the Platform host cannot mint a token whose audience matches (domain map amendment 2026-09-17). Token recipe: POST {{FRONT_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}} (camelCase — store_id fails), username, password, resource={{FRONT_URL}}/ucp/mcp. <SEARCH_TERM>: live-discover per the same rule as suite 094 — never hardcode a query string. UCPA-004/008 (authenticated B2C, org-free) are BLOCKED pending a data-prep pass: no B2C-store fixture account exists yet (test model Part 0r) — do not substitute an org-scoped account. UCPA-016/017 (assortment scoping / contract pricing) are the FIRST decidable pass on this domain: @td(UCP_CONTRACT_PRODUCT), @td(UCP_CONTRACT_CONTROL_PRODUCT), @td(UCP_ORG_ONLY_PRODUCT) and @td(UCP_CONTRACT_BUYER) were seeded 2026-09-22 (scripts/seed-data/pricing/seed-org-contract-pricing.mjs) specifically to close the FIXTURE-GAP that made these UNDECIDABLE before. Ground truth as of 2026-09-22 (re-verify before treating any of these as stale): anonymous-handoff first-attempt restore 17/17; expired/consumed/forged handoff tokens return IDENTICAL 400 payloads (code/message/empty details) — a case cannot assert 'expired' as distinguishable from the other two causes; UCPA-013's guest-checkout-disabled config variant is BLOCKED pending an isolated stand (same reasoning as 094's 4 Manual cases). MACHINE-LANE RUN NOTE (2026-09-23). Run it as `npm run suites:lanes -- 102 --run-id <id>` then `npm run suites:machine -- 102 --run-id <id>`. UCPA-021 observes the 15-minute handoff-token TTL and therefore asks for [WAIT seconds=960]; the runner REFUSES any wait over GQL_MAX_WAIT_SECONDS (default 300) rather than truncating it, so in a normal batch that case reports BLOCKED, which is the honest outcome — capped at 300 s it used to assert the expired-token 400, which an UNEXPIRED token also returns, and so scored PASS in 314 s without ever crossing its boundary. To actually exercise it: GQL_MAX_WAIT_SECONDS=1000, ~16 minutes of wall-clock, outside the batch. AUTHORING NOTE: every MCP response is enveloped and the envelope differs per tool (create_cart -> body.cart, create_checkout -> body.checkout.cart, handoff_checkout -> body.result.checkout, any failure -> a flat body.is_error/code/status_code/message). 7 of the 10 non-passing cases in the previous run were nothing but a wrong envelope level, so confirm every path by running the case once with UCP_DEBUG=1 rather than by reading it (.claude/knowledge/api/graphql-test-cases-runner.md, THE ENVELOPE RULE). VCST-6054 STOCK CASES (UCPA-032..042): they need the PR 9 inventory refusal contract, and UCPA-042 is the only case that MUTATES stock — it owns the shared PROD_STOCK_DROP fixture for its whole run, so never run it in parallel with another consumer; if a run aborts between the drop and the restore, `TEST_ENV=vcst npm run seed:products -- --only PROD-113` resets it. PROD_LOW_STOCK and PROD_OOS stay read-only.",
+      "notes": "VCST-5378. First value-chain suite for UCP — 094 is telemetry-only and touches none of the chain (domain map .claude/knowledge/domain/ucp.md, test model reports/ba/test-models/VCST-5378-2026-09-22.md). MACHINE LANE, REG-2026-09-23-M6: 31 pass / 0 fail / 1 blocked over the 32 machine-classified cases (the 4 browser-lane cases run separately). The one blocked is UCPA-021 BY DESIGN — see below. Excluded from the `backend` selection ONLY (selections.backend.exclude), as 094 is; it is NOT excluded from `full`, `sprint`, `concern:api` or `domain:ucp`, so those still run it. Case-id prefix UCPA- (094 owns UCPO-). BL-UCP is declared and deliberately EMPTY (business-logic.md Domain 25) — cases cite only delegated invariants (BL-AUTH-*, BL-B2B-*, BL-CART-*, BL-CHK-*) or carry no Business_Rule at all; never cite a BL-UCP-* id. RESOLUTION RULES. MCP endpoint is {{FRONT_URL}}/ucp/mcp — STOREFRONT host only; the Platform host cannot mint a token whose audience matches (domain map amendment 2026-09-17). Token recipe: POST {{FRONT_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}} (camelCase — store_id fails), username, password, resource={{FRONT_URL}}/ucp/mcp. <SEARCH_TERM>: live-discover per the same rule as suite 094 — never hardcode a query string. UCPA-004/008 (authenticated B2C, org-free) are BLOCKED pending a data-prep pass: no B2C-store fixture account exists yet (test model Part 0r) — do not substitute an org-scoped account. UCPA-016/017 (assortment scoping / contract pricing) are the FIRST decidable pass on this domain: @td(UCP_CONTRACT_PRODUCT), @td(UCP_CONTRACT_CONTROL_PRODUCT), @td(UCP_ORG_ONLY_PRODUCT) and @td(UCP_CONTRACT_BUYER) were seeded 2026-09-22 (scripts/seed-data/pricing/seed-org-contract-pricing.mjs) specifically to close the FIXTURE-GAP that made these UNDECIDABLE before. Ground truth as of 2026-09-22 (re-verify before treating any of these as stale): anonymous-handoff first-attempt restore 17/17; expired/consumed/forged handoff tokens return IDENTICAL 400 payloads (code/message/empty details) — a case cannot assert 'expired' as distinguishable from the other two causes; UCPA-013's guest-checkout-disabled config variant is BLOCKED pending an isolated stand (same reasoning as 094's 4 Manual cases). MACHINE-LANE RUN NOTE (2026-09-23). Run it as `npm run suites:lanes -- 102 --run-id <id>` then `npm run suites:machine -- 102 --run-id <id>`. UCPA-021 observes the 15-minute handoff-token TTL and therefore asks for [WAIT seconds=960]; the runner REFUSES any wait over GQL_MAX_WAIT_SECONDS (default 300) rather than truncating it, so in a normal batch that case reports BLOCKED, which is the honest outcome — capped at 300 s it used to assert the expired-token 400, which an UNEXPIRED token also returns, and so scored PASS in 314 s without ever crossing its boundary. To actually exercise it: GQL_MAX_WAIT_SECONDS=1000, ~16 minutes of wall-clock, outside the batch. AUTHORING NOTE: every MCP response is enveloped and the envelope differs per tool (create_cart -> body.cart, create_checkout -> body.checkout.cart, handoff_checkout -> body.result.checkout, any failure -> a flat body.is_error/code/status_code/message). 7 of the 10 non-passing cases in the previous run were nothing but a wrong envelope level, so confirm every path by running the case once with UCP_DEBUG=1 rather than by reading it (.claude/knowledge/api/graphql-test-cases-runner.md, THE ENVELOPE RULE). VCST-6054 STOCK CASES (UCPA-032..042): they need the PR 9 inventory refusal contract, and UCPA-042 is the only case that MUTATES stock — it owns the shared PROD_STOCK_DROP fixture for its whole run, so never run it in parallel with another consumer; if a run aborts between the drop and the restore, `TEST_ENV=vcst npm run seed:products -- --only PROD-113` resets it. PROD_LOW_STOCK and PROD_OOS stay read-only. VCST-6155 AMENDMENT (UCP 3.1011.0-pr-13-5de2 on VirtoCommerce.MCP 3.1000.0-pr-1-df74, platform 3.1096.0; the build pins in the per-case Preconditions are historic). {OBSERVED 2026-11-10, vcst-qa} the token recipe above no longer yields an accepted token: UCPA-009 on the machine lane (run VCST-6155-token-probe-20261110) minted the storefront password-grant UCP token with no mint failure logged, and /ucp/mcp then answered 401 identity_required \"The access token was not issued to an MCP client. Connect the MCP client with a user's sign-in.\" to link_buyer_identity and to search_products (the runner sends the UCP-audience token and falls back to the xAPI token only when that mint throws, which did not happen). Expected per vc-module-mcp#1 §Authentication {SPEC}. PRE-DECLARED TRIAGE RULE: a 401 at /ucp/mcp after an [AUTH] block (or after a hand-written [AUTH] POST /connect/token step) is a runner-token TEST_DEFECT/ENV, never a product bug, until scripts/lib/graphql-auth.ts and the ucpToken mint in scripts/graphql/graphql-runner.ts use an OAuth authorization-code + PKCE helper for a registered public client; it BLOCKS those rows, it does not fail them, and no row's expected value is rewritten for it. Anonymous rows are unaffected. UCPA-043..056 were added for VCST-6155 (agent-lane, Draft; UCPA-055 Manual; UCPA-056 = buyer isolation across organizations, two buyer tokens); where they authenticate they need the same helper. CONTRACT (round 2 sync 2026-11-10): tool arguments are cited from the GENERATED .claude/knowledge/api/ucp-schema.md (kept current by `npm run ucp:schema:check`, probed by `ucp:schema:probe`) and the tool descriptions and annotations of the ucp scope from the GENERATED .claude/knowledge/api/mcp-schema.md (`npm run mcp:schema:check`); a case never transcribes a tool list, count or argument. UCPA-046 and UCPA-048 were retargeted to the documented behaviour of this storefront (cancel_cart empties the anonymous cart and a repeat succeeds; cancel_checkout is refused as not supported; KB-7158995B): the generic-UCP expectation was dropped because the tool descriptions say it is not implemented, a documented design rather than a broken build. UCPA-057 (resolve_country) added.",
       "clickDriven": true,
       "lanes": {
-        "machine": 38,
-        "browser": 4,
-        "manual": 0
+        "machine": 21,
+        "browser": 34,
+        "manual": 2
       }
     },
     {
@@ -4152,7 +4152,7 @@
       "file": "regression/suites/Backend/api/110a-mfa-modes-api-backoffice.csv",
       "layer": "backend",
       "concern": "api",
-      "testCount": 40,
+      "testCount": 43,
       "estimatedMinutes": 200,
       "agent": "qa-backend-expert",
       "domain": "auth-security",
@@ -4178,7 +4178,7 @@
       "file": "regression/suites/Frontend/auth/111-auth-mfa-sign-in.csv",
       "layer": "frontend",
       "concern": "functional",
-      "testCount": 22,
+      "testCount": 23,
       "estimatedMinutes": 90,
       "agent": "qa-frontend-expert",
       "domain": "auth-security",
@@ -4391,6 +4391,64 @@
       "customerApplicability": "reference",
       "notes": "VCST-6475 (vc-module-sanity PR #4, build 3.1004.0-pr-4-f7a8). Sanity content feeds Virto Pages through a full index rebuild or a signed webhook (POST /api/pages/sanity). SAN-001 is the [JOURNEY] case. REST/xAPI only: the Admin SPA settings blade was not exercised (SAN-004 emulates its save through the settings API). Env-scoped by requiresModules; select it by id (`117`). Shares exclusiveGroup search-index:IndexationJob with 061/061b because every rebuild case starts a full Pages IndexationJob. Data: npm run seed:sanity / seed:sanity:teardown, guard npm run td:validate:sanity; the signed webhook helper is scripts/seed-data/sanity/sign-webhook.mjs. Needs Sanity:WebhookSecrets and a Sanity:Secrets entry qaToken on the stand (without them the webhook cases are BLOCKED, never FAIL). Every rebuild case has a precondition: the Pages module caches the full-rebuild change list for 10 min (VCST-6586), so publish a page through the webhook first or wait. Settings are written with POST /api/platform/settings (clear with \"\", null does not clear) and restored in Cleanup. No BL-* invariant exists for the sanity domain yet. Promoted from runs REG-2026-10-28-1005/-1018/-1031 on vcptcore; SAN-021 (platform log) stays Manual.",
       "exclusiveGroup": "search-index:IndexationJob"
+    },
+    {
+      "id": "118",
+      "name": "MCP — agents: sign-in, tools, approval, kill switch, audit and connected agents (admin scope)",
+      "file": "regression/suites/Backend/mcp/118-mcp-agents.csv",
+      "domain": "mcp",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 58,
+      "estimatedMinutes": 150,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "mcp",
+        "oauth",
+        "approval",
+        "audit",
+        "kill-switch",
+        "admin-shell",
+        "connected-agents",
+        "agents"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.MCP"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal",
+      "exclusiveGroup": "platform-setting:MCP.Tools.Disabled",
+      "clickDriven": true,
+      "notes": "VCST-6155 (vc-module-mcp#1 @df74972, vc-module-ucp#13 @5de2fc9, platform 3.1096.0). Model reports/tickets/Sprint26-23/VCST-6155/vcst/test-model.md (S1-S58, BSC-1..5; round 2 added MCP-032..051 and amended MCP-010/029/031). MCP-001 is the [JOURNEY] case. EVERY CASE IS AGENT-LANE (Draft, except MCP-016 which is Manual): an agent reaches /admin/mcp with an OAuth authorization-code + PKCE token, and scripts/lib/graphql-auth.ts (the runner's only token source) mints password grants, which the MCP module is expected to refuse (vc-module-mcp#1 §Authentication {SPEC}; observed on the runner path for /ucp/mcp on 2026-11-10 - see suite 102 - not yet observed for /admin/mcp) - so no case here is machine-lane until an authorization-code helper exists. EXCLUDED from the backend, full, sprint and concern:api selections until promotion (selections.<name>.exclude), as 110/111 are: name 118 explicitly and run it ALONE. SHARED STAND RULES: (1) never approve a pending change - restart_platform is the only approval tool on vcst and approving it restarts the stand; the approve path is MCP-016 (Manual, disposable stand ONLY, hard first-step guard) and the declined-approve probe MCP-027 (guarded by switching restart_platform off first); (2) MCP.Tools.Disabled is stand-wide: MCP-011, MCP-012, MCP-018, MCP-027 and MCP-051 read it, flip it and restore it in the same case, never beside another lane on /admin/mcp; (3) Disconnect only the seeded users' agents (the MCP_OPERATOR, MCP_APPROVER, MCP_MANAGER and MCP_NOROLE aliases), never the super-admin's or it-operator-qa's; (4) the stand owner authorised ONE real reset_platform_cache: MCP-010 (the no-elicitation step C) and MCP-032 (cell E) share one RESET_BUDGET and at 0 those steps are BLOCKED, never FAIL. The one reset was ALREADY consumed by the VCST-6155 checklist run (C-66, 4a-BE, 14:25:25Z), so RESET_BUDGET is 0 for that round-2 C1 and both are BLOCKED there; a later run needs a fresh operator OK, and with a budget of 1 MCP-032 cell E runs first; (5) MCP-033 locks and unlocks the MCP_MANAGER user (POST api/platform/security/users/{id}/lock|unlock - a PUT of lockoutEnd locks nothing) and MCP-034 and MCP-030 edit the AGENT-TEST-MCP-Approver role (PUT api/platform/security/roles): all restore in Cleanup, run serially, never on admin or it-operator-qa; MCP-039 needs App Insights READ (BLOCKED without it) and MCP-042's expiry steps are BLOCKED when the access-token lifetime exceeds 900 s. Fixtures: `npm run seed:mcp-security` / `npm run seed:mcp-security:teardown`, drift guard `npm run td:validate:mcp-security`. Expected tool sets and counts are derived at run time (GET api/mcp/tools, the role's permission set, GET /api/platform/modules), never typed. BL-MCP is undeclared and BL-UCP is empty: the cases cite {SPEC} (ticket 2026-11-08 scenarios, PR bodies, module README) plus the delegated BL-AUTH-005/014/017, BL-PLAT-001/002; where the spec is silent the assertion is a {HYPOTHESIS} question, legal at Draft only. Cases that encode a SPEC expectation the 3x session did not see met (MCP-012 prompts under a switched-off scope, MCP-028 author visibility) keep the spec expectation: never rewrite them to the build. Not testable on vcst-qa (stated, never silent): Marketing sample and store-limited [McpPermission]; vendor scope with a vendor module; custom AddMcpScope; MCP:Scopes:*:Hosts; MCP:Scopes:ucp:Enabled=false; closed UCP catalog; approve-and-execute; concurrent approve; 72 h expiry and MCP.Cleanup; [McpSensitive] on an approval tool. CONTRACT (round 2 sync 2026-11-10): the tools, their arguments (`*` = required) and the prompts these cases call are the GENERATED contract .claude/knowledge/api/mcp-schema.md (scopes, per-scope tool catalog with read-only / destructive / approval flags, Part 2 admin tool arguments and prompts; kept current by `npm run mcp:schema:check`) - the cases cite it and never transcribe a tool list, count or argument; MCP-006 and MCP-012 read the prompt set from prompts/list at run time. Round 2 sync: the approval tools take `change_id` (not `id`); MCP-052..058 close the coverage gaps found by comparing the cases with that contract (get_platform_health, list_failed_jobs, search_errors, get_environment_profile called directly, and the capacity_review, production_readiness, incident_rca and is_it_us_or_virto prompts); a missing required PROMPT argument answering -32603 is a known non-defect, recorded and not asserted."
+    },
+    {
+      "id": "120",
+      "name": "Orders - Account dashboard (storefront, live data)",
+      "file": "regression/suites/Frontend/orders/120-account-dashboard-storefront.csv",
+      "domain": "purchase-flow",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 35,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "orders",
+        "frontend",
+        "dashboard",
+        "statistics",
+        "layout",
+        "journey",
+        "sprint"
+      ],
+      "requiresModules": [
+        "orders"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-6078 (vc-frontend#2552, vc-module-x-frontend#12, vc-module-order#507). Buyer /account/dashboard: four stat cards + My recent orders + Edit layout. ORD-DASH-001 is the [JOURNEY] case. Personas BD_* are seeded by `npm run seed:buyer-dashboard` (guard `npm run td:validate:buyer-dashboard`). Clock/time-zone rows (003-005, 011, 024, 025) need a separate emulated-clock context; the failure rows (017, 018, 027) intercept /graphql, so run on a Chromium lane. Layout rows change per-user stored layouts (not deletable); ORD-DASH-013 is one-shot per seeded buyer.",
+      "clickDriven": true
     }
   ],
   "selections": {
@@ -4545,7 +4603,8 @@
         "102",
         "108",
         "110",
-        "110a"
+        "110a",
+        "118"
       ]
     },
     "sprint": {
@@ -4575,7 +4634,8 @@
         "110",
         "110a",
         "111",
-        "112"
+        "112",
+        "118"
       ]
     },
     "full": {
@@ -4598,7 +4658,8 @@
         "110",
         "110a",
         "111",
-        "112"
+        "112",
+        "118"
       ]
     },
     "sales-rep": {
@@ -4682,7 +4743,8 @@
         "050m",
         "050m2",
         "110",
-        "110a"
+        "110a",
+        "118"
       ]
     },
     "concern:admin": {

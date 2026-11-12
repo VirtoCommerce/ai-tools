@@ -435,15 +435,15 @@ Org user logged in, /company/info page accessible, user has permission to add ad
 [API] updateMemberAddresses mutation returns errors[] for HTML payloads (EnableNoHtmlTagsValidation active)
 [DOM] Company Info page renders all address fields as text nodes, not HTML
 [NET] No successful mutation call when HTML tags present in fields","XSS payload accepted and saved to address table; <script> or <img> tag rendered on /company/info page; alert dialog fires; HTML stored verbatim in address fields; 'Some of the addresses are not valid' toast NOT shown (mutation succeeds with XSS data)","delete test address from org via Actions menu","VCST-4803 verified — company info address XSS server-side rejected","Reviewed"
-"B2C-ORG-040","Org Switcher Drops ALL Organizations for a Multi-Org User With Blocking Global Contact Status (No Membership Override)","B2C Features > Organization > Switcher Visibility > [Regression]","Critical","BL-B2B-005","ECL-2.3","[PRE:CLEAR_SESSION]
-Reviewer finding A on vc-frontend#2399 (useUserOrganizations.ts:50 — getOrganizations now passes statuses:[ContactStatus.Approved]). Server-side, ContactType.ResolveMyOrganizationIdsByStatusAsync filters in-memory on EffectiveStatus = membership.Status ?? contact.Status ?? 'Approved'. With NO per-membership override (the norm — 132/132 OrganizationMembership rows have status=null per testing-checklist.md), EffectiveStatus falls through entirely to the GLOBAL contact.Status. A user whose global contact.Status is a non-empty, non-Approved value (e.g. 'Locked') therefore has EVERY organization filtered out of the switcher's own list — even though useUser.ts's isMultiOrganization gate reads the UNFILTERED me.contact.organizations.totalCount (no statuses arg), so the switcher control still RENDERS (isMultiOrganization=true) but its list is empty. A fresh AGENT-TEST- member with 2 active org memberships (no per-membership status override) is created in Steps, then its global contact status is forced to a blocking value.","front_url={{FRONT_URL}}, org_id_1=@td(MULTI_ORG_TF_BR.org_techflow_id), org_id_2=@td(ORG_BUILDRIGHT.platform_id), new_member_password={{DEFAULT_TEST_PASSWORD}}","[SETUP] Generate timestamp suffix: org040-{epoch_ms} — capture as $TS_SUFFIX
-[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""SwitcherDropsAll040"", ""memberType"": ""Contact""} — capture response id as $MEMBER_ID
-[ASSERT] [STATUS] 200/201; $MEMBER_ID is a non-empty GUID
+B2C-ORG-040,Org Switcher Drops ALL Organizations for a Multi-Org User With Blocking Global Contact Status (No Membership Override),B2C Features > Organization > Switcher Visibility > [Regression],Critical,BL-B2B-005,ECL-2.3,"[PRE:CLEAR_SESSION]
+Reviewer finding A on vc-frontend#2399 (useUserOrganizations.ts:50 — getOrganizations now passes statuses:[ContactStatus.Approved]). Server-side, ContactType.ResolveMyOrganizationIdsByStatusAsync filters in-memory on EffectiveStatus = membership.Status ?? contact.Status ?? 'Approved'. With NO per-membership override (the norm — 132/132 OrganizationMembership rows have status=null per testing-checklist.md), EffectiveStatus falls through entirely to the GLOBAL contact.Status. A user whose global contact.Status is a non-empty, non-Approved value (e.g. 'Locked') therefore has EVERY organization filtered out of the switcher's own list — even though useUser.ts's isMultiOrganization gate reads the UNFILTERED me.contact.organizations.totalCount (no statuses arg), so the switcher control still RENDERS (isMultiOrganization=true) but its list is empty. A fresh AGENT-TEST- member with 2 active org memberships (no per-membership status override) is created in Steps, then its global contact status is forced to a blocking value.","front_url={{FRONT_URL}}, org_id_1=@td(MULTI_ORG_TF_BR.org_techflow_id), org_id_2=@td(MULTI_ORG_TF_BR.org_buildright_id), new_member_password={{DEFAULT_TEST_PASSWORD}}","[SETUP] Generate timestamp suffix: org040-{epoch_ms} — capture as $TS_SUFFIX
+[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""SwitcherDropsAll040"", ""memberType"": ""Contact"", ""organizations"": [""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""@td(MULTI_ORG_TF_BR.org_buildright_id)""]} — capture response id as $MEMBER_ID
+[ASSERT] [STATUS] 200/201; $MEMBER_ID is a non-empty GUID (the contact carries `organizations` = [TechFlow, BuildRight]: a REST-created contact without it is not enumerated or listed — KB-EB6191B8, KB-535E2E31)
 [SETUP] via REST POST {{BACK_URL}}/api/platform/security/users/create: {""userName"": ""AGENT-TEST-org040-$TS_SUFFIX@yopmail.com"", ""email"": ""AGENT-TEST-org040-$TS_SUFFIX@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""$MEMBER_ID"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""} — capture response id as $USER_ID
 [ASSERT] [STATUS] 200/201; $USER_ID is a non-empty GUID
 [SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $TF_MEMBERSHIP_ID (deliberately NO status override on this membership)
 [ASSERT] [STATUS] 200/201
-[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(ORG_BUILDRIGHT.platform_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $BR_MEMBERSHIP_ID (deliberately NO status override)
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_buildright_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $BR_MEMBERSHIP_ID (deliberately NO status override)
 [ASSERT] [STATUS] 200/201
 [NAV] {{FRONT_URL}}/sign-in
 [ACT] fill [data-test-id=""email-input""] with AGENT-TEST-org040-$TS_SUFFIX@yopmail.com
@@ -453,6 +453,7 @@ Reviewer finding A on vc-frontend#2399 (useUserOrganizations.ts:50 — getOrgani
 [ASSERT] org switcher control is visible in the header (isMultiOrganization=true from the UNFILTERED totalCount=2) — capture this as the BASELINE (healthy) state
 [ACT] open the org switcher
 [ASSERT] the switcher list shows both TechFlow and BuildRight (baseline, before the global status is blocked)
+[ASSERT] precondition: GraphQL `me { contact { organizations { totalCount } } }` with this user's token returns organizations.totalCount == 2 — if it is not 2 the fixture is invalid (BLOCKED, not FAIL) and the status change below proves nothing
 [SETUP] via REST PUT {{BACK_URL}}/api/members: {""id"": ""$MEMBER_ID"", ""memberType"": ""Contact"", ""status"": ""Locked""} (force the GLOBAL contact.Status to a blocking value — NOT a per-membership lock; confirm the field name/shape live against the module source before trusting this payload, per testing-checklist.md conditions #40/#41)
 [ASSERT] [STATUS] 200 on the status update
 [PRE:CLEAR_SESSION]
@@ -469,7 +470,7 @@ Reviewer finding A on vc-frontend#2399 (useUserOrganizations.ts:50 — getOrgani
 [STATE] This reproduces the 'switcher stuck in its no-results empty state' symptom for a user who is not literally single-org — the account still legitimately belongs to 2 orgs {SPEC}","[API] GetOrganizations (getOrganizations.graphql, statuses:['Approved']) response items is EMPTY for this user after the global status change, while me.contact.organizations.totalCount (unfiltered) still reports 2
 [CONSOLE] no uncaught JS errors when the switcher renders its empty list
 [NETWORK] no 4xx/5xx on the GetOrganizations query itself (this is a silent filtering behavior, not an error)","Switcher list still shows both orgs after the global status change (fix already applied — reconfirm live before treating as a failure of this case); switcher control disappears entirely instead of rendering empty (a different, also-broken variant); login itself is rejected (would indicate a different regression than the one under test — see suite 031 AUTH-073 for the registration-time root cause of this same global-status defect)","[SAVE] Restore $MEMBER_ID's global contact.Status via REST PUT {{BACK_URL}}/api/members: {""id"": ""$MEMBER_ID"", ""memberType"": ""Contact"", ""status"": ""Approved""} (or delete the fixture entirely in the next step)
-[SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$TF_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$BR_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-org040-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281; PR review finding A on vc-frontend#2399 (useUserOrganizations.ts statuses filter); testing-checklist.md conditions #40/#41","Draft"
+[SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$TF_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$BR_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-org040-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID",VCST-5281; PR review finding A on vc-frontend#2399 (useUserOrganizations.ts statuses filter); testing-checklist.md conditions #40/#41,Draft
 B2C-ORG-041,"Org Switcher — Locked Membership Renders Disabled With A Padlock, And Exposes No Tooltip Or Accessible Locked Name (known divergence F2)",B2C Features > Organization > Switcher Lock Axis,Critical,"BL-B2B-005, BL-AUTH-013",ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
 The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
@@ -576,7 +577,7 @@ HONEST LIMIT, stated rather than left for a green result to imply: the isMultiOr
 [NETWORK] no 4xx/5xx on /graphql","the switcher disappears once only one organization is selectable (the gate started reading the selectable count); the option count changes across the lock; [selected] moves to a different organization without any user action; both options end up disabled (this is the V7 shape, not V8 — re-check which state the seeder actually applied)","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
 Then `npm run seed:membership-lock:verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
 Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:BOUNDARY · Technique:BVA,Draft
-B2C-ORG-045,Org Switcher — All Memberships Locked Redirects To /403 With Every Row Disabled Including [selected],B2C Features > Organization > Switcher Lock Axis,Critical,"BL-AUTH-015, BL-B2B-001",ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+B2C-ORG-045,"Org Switcher — All Memberships Locked Signs In With No Organization: Dashboard Renders, Every Option Disabled, No Org Data Exposed",B2C Features > Organization > Switcher Lock Axis,Critical,"BL-AUTH-015, BL-AUTH-016, BL-B2B-001",ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
 The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
 The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every step opens the account menu first. Desktop only — mobile parity is B2C-ORG-047.
@@ -587,7 +588,7 @@ V7 lands IsCurrentlyLocked=true on every leg, which terminates the account's ses
 [PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
 [VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/account/dashboard
-[WAIT] the navigation settles — a redirect is expected
+[WAIT] the navigation settles — no redirect is expected
 [ACT] record the landing URL
 [ACT] record every console message produced by the navigation
 [ACT] click the account button in the top header (data-test-id=""account-button"")
@@ -596,16 +597,21 @@ V7 lands IsCurrentlyLocked=true on every leg, which terminates the account's ses
 [ACT] record the disabled state of each option
 [ACT] record which option carries [selected]
 [ACT] record whether the element data-test-id=""organizations-empty-list"" is present in the popover
-[ACT] record whether any empty-state or contact-an-administrator copy is present anywhere on the page","[NAV] loading /account/dashboard lands the browser on /403 {OBSERVED}
-[DOM] the Account-menu popover still renders listbox 'Organizations' on /403 — the switcher is rendered, not withheld {OBSERVED}
-[COUNT] every option in the listbox is disabled — 2 of 2 — including the option that also carries [selected] {OBSERVED}
-[DOM] no empty-state and no contact-an-administrator message is present: the element data-test-id=""organizations-empty-list"" is absent, and the component's only empty state remains its search no-results branch {OBSERVED}
-[REL] the [selected] option is disabled exactly like the others, so the recovery escape hatch that AUTH-043 (suite 033) relies on does not exist in this state — the user has no in-product way out {OBSERVED}
-[COUNT] zero selectable options exist anywhere on the page {OBSERVED}","[API] the account-page query returns HTTP 200 with a non-empty errors[] carrying 'Access denied.' — the denial arrives inside the GraphQL envelope, not as an HTTP error
-[CONSOLE] exactly one ApolloError 'Access denied.' is logged on the /403 redirect; this console error is EXPECTED in this state and is not an incidental failure. No other uncaught exception is permitted
-[NETWORK] no 4xx/5xx on /graphql","/account/dashboard renders normally (the dead-end did not reproduce — re-run --verify and confirm V7 actually applied before treating this as a failure); an empty state or a contact-an-administrator message appears (product decided AC-6 — that is a change to record, and this case's fourth assertion must be updated); the [selected] option is NOT disabled (the escape hatch was restored — a fix, record it); a redirect to /sign-in instead of /403 (the session was evicted, which is a different behaviour than the one measured 2026-09-09); more than one distinct console error class on the redirect","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
+[ACT] record whether any empty-state or contact-an-administrator copy is present anywhere on the page
+[ACT] record whether the page shows any organization data (organization orders, a Corporate sidebar section)
+[ACT] read the signed-in user's me.contact from the storefront's GetMe response (or GraphQL `me { contact { organizationId organizations { totalCount } } }` with the page's own token): record organizationId and organizations.totalCount
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] the navigation settles; record the landing URL and whether any /company/* content rendered","[NAV] loading /account/dashboard (fresh sign-in, every membership locked) lands on /account/dashboard and the page renders — no redirect to /403 and no blank render {OBSERVED} (BL-AUTH-016: a sign-in with no accessible organization succeeds with no organization; KB-78188952, KB-CFF49BB0)
+[DOM] the Account-menu popover renders listbox 'Organizations' with one option per organization (2 of 2) {OBSERVED}
+[COUNT] every option in the listbox is disabled — 2 of 2 — and none carries [selected] {OBSERVED}
+[DOM] no empty-state and no contact-an-administrator message is present: the element data-test-id=""organizations-empty-list"" is absent {OBSERVED}
+[COUNT] zero selectable options exist anywhere on the page {OBSERVED}
+[STATE] me.contact.organizationId is null while me.contact.organizations.totalCount is 2 — the user keeps both memberships but has no active organization {OBSERVED} (BL-AUTH-015: the chain resolves nothing)
+[DOM] no organization data is shown: no organization orders, no Corporate sidebar section, and /company/info redirects to /account/dashboard instead of rendering company content {OBSERVED}","[API] organization-scoped reads are refused server-side: organizationOrders and organization(id) for either organization return errors[] with extensions.code 'Forbidden'; only the user's own data (own orders, own profile) is returned {OBSERVED} (KB-CFF49BB0)
+[CONSOLE] zero uncaught exceptions; a handled GraphQL 'Forbidden' error for a refused org-scoped read is permitted but must not be an uncaught exception
+[NETWORK] no 4xx/5xx on /graphql (the refusal arrives inside the GraphQL envelope at HTTP 200)","a redirect to /403 (the retired dead-end behaviour has come back — the all-locked user must land on the dashboard with no organization); ANY organization data shown in this state (organization orders, /company/* content, a Corporate sidebar section, organization-scoped widgets populated) = access-control regression, file as a bug; an option is selectable or carries [selected] (a locked organization became selectable or active); me.contact.organizationId is non-null (a locked organization was put in context); a redirect to /sign-in instead of the dashboard (the session was evicted — different behaviour from the observed one); an empty state or a contact-an-administrator message appears (product decided AC-6 — record the change and update the fourth assertion); an uncaught exception in the console; /account/dashboard renders blank or behind an error boundary (first confirm V7 applied via --verify)","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
 Then `npm run seed:membership-lock:verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
-Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:LIFECYCLE · Technique:EG · open P0 BUG-multiorg-no-self-recovery-when-pinned-org-blocked (VCST-5281) — same dead-end class reached through the LOCK axis · cross-ref AUTH-043 (033),Draft
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).","VCST-5317 · Archetype:LIFECYCLE · Technique:EG · BL-AUTH-015/016 · KB-78188952, KB-CFF49BB0 (all-locked sign-in lands with no organization; observed vcst Platform 3.1097.0, theme 2.62.0-alpha.2647, REG-2026-11-12-0837-W5b) · re-baselined Sprint 26-22 W5: the /403 dead-end expectation is retired · cross-ref AUTH-043 (033)",Draft
 B2C-ORG-046,Org Switcher — Locking A Sibling Organization Does Not Evict The Live Storefront Session,B2C Features > Organization > Switcher Lock Axis,High,BL-AUTH-012,ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
 The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
@@ -739,7 +745,7 @@ V4 leaves IsCurrentlyLocked=false, so it does NOT terminate sessions.","front_ur
 [NETWORK] no 4xx/5xx on /graphql","the row renders disabled at an expired LockoutEnd — the raw-IsLocked read, which is VCST-5374's exact defect class re-appearing on the switcher surface; the two samples disagree (a stale cache generation is user-visible, which is a different and weaker defect than the predicate bug); the row is missing from the list entirely; the seeder's read-back shows isLocked and isCurrentlyLocked agreeing (the fixture never reached V4 — BLOCKED, not FAIL)","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
 Then `npm run seed:membership-lock:verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
 Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).","VCST-5317 · Archetype:BOUNDARY · Technique:BVA · VCST-5374 (the same IsLocked vs IsCurrentlyLocked confusion, already filed once as a user-visible bug) · regression-guarded contract-side by PRF-GQL-080",Draft
-B2C-ORG-050,Org Switcher — Browser Back Out Of The All-Locked /403 Restores No Working Account Page And No Selectable Row [UIP-BACK],B2C Features > Organization > Switcher Lock Axis,High,"BL-AUTH-015, BL-B2B-005",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+B2C-ORG-050,Org Switcher — Browser Back Out Of The All-Locked Dashboard Restores No Stale Organization Content And No Selectable Row [UIP-BACK],B2C Features > Organization > Switcher Lock Axis,High,"BL-AUTH-015, BL-AUTH-016, BL-B2B-005",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
 Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
 The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
@@ -749,27 +755,30 @@ The probe: browser Back out of the dead-end. There is no completed submit or pay
 [PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
 [VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/account/dashboard
-[WAIT] the navigation settles and the browser lands on /403
+[WAIT] the navigation settles and the browser lands on /account/dashboard (no /403 is expected in the all-locked state)
 [ACT] click the account button in the top header (data-test-id=""account-button"")
 [WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the BEFORE landing URL
 [ACT] record the BEFORE option set of listbox 'Organizations'
 [ACT] record the disabled state of each BEFORE option
 [ACT] record which BEFORE option carries [selected]
 [ACT] close the Account-menu popover
+[NAV] {{FRONT_URL}}/account/orders — an in-session navigation so Back has a real history entry to return to
+[WAIT] the navigation settles
 [KEY] browser Back (Alt+ArrowLeft)
 [WAIT] the navigation settles; record the landing URL
 [ACT] click the account button in the top header (data-test-id=""account-button"")
 [WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
 [ACT] record the AFTER option set of listbox 'Organizations'
 [ACT] record the disabled state of each AFTER option
-[ACT] record which AFTER option carries [selected]","[NAV] after Back the browser is not sitting on a working /account/** page — it either stays on /403 or re-redirects to /403 {OBSERVED}
-[REL] the Account-menu listbox state after Back is identical to the state before Back: same option count, every option disabled, including the one carrying [selected] {OBSERVED}
-[DOM] no pre-lock render of the account dashboard is present after Back — stale organization-scoped content from the back/forward cache is absent {OBSERVED}
-[COUNT] zero selectable options exist at any point in the Back navigation {OBSERVED}","[API] the account-page query returns HTTP 200 with a non-empty errors[] carrying 'Access denied.' — the denial arrives inside the GraphQL envelope
-[CONSOLE] the ApolloError 'Access denied.' is EXPECTED in the all-locked state and is not an incidental failure; no other uncaught exception is permitted
-[NETWORK] no 4xx/5xx on /graphql",Back renders a populated account dashboard (a stale pre-lock page restored from bfcache — the user appears to have access they do not); Back lands on a blank page or an error boundary instead of /403; an option becomes selectable after Back; a second distinct console error class appears on the Back navigation,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
-Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:REPLAY · Technique:EG · Probe:UIP-BACK,Draft
-B2C-ORG-051,Org Switcher — Deep-Linking An Org-Scoped Account Page Renders With A Locked Sibling And Reaches /403 When Every Membership Is Locked [UIP-DEEP],B2C Features > Organization > Switcher Lock Axis,High,"BL-AUTH-015, BL-B2B-007",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+[ACT] record which AFTER option carries [selected]","[NAV] after Back the browser is on a rendered /account/** page of the no-organization context (/account/dashboard) — never /403, never a blank page, never an error boundary {OBSERVED}
+[REL] the Account-menu listbox state after Back is identical to the state BEFORE Back: same option count (2), every option disabled, none carrying [selected] {OBSERVED}
+[DOM] no stale pre-lock organization-scoped content is restored from the back/forward cache: no organization orders, no Corporate sidebar section, no /company/* content {OBSERVED}
+[COUNT] zero selectable options exist at any point in the Back navigation {OBSERVED}","[API] after Back, organization-scoped reads are still refused ('Forbidden' in errors[] at HTTP 200) and me.contact.organizationId is still null — Back does not restore an organization context {OBSERVED} (KB-CFF49BB0)
+[CONSOLE] no uncaught exception on the Back navigation; a handled GraphQL 'Forbidden' error is permitted
+[NETWORK] no 4xx/5xx on /graphql",Back lands on /403 (the retired dead-end has come back); Back renders organization data or an organization-scoped dashboard from the bfcache (a stale pre-lock page — the user appears to have access they do not); Back lands on a blank page or an error boundary; an option becomes selectable or carries [selected] after Back; the BEFORE and AFTER listbox states differ; a second distinct console error class appears on the Back navigation,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).","VCST-5317 · Archetype:REPLAY · Technique:EG · Probe:UIP-BACK · re-baselined Sprint 26-22 W5 without /403: BL-AUTH-016, KB-78188952, KB-CFF49BB0",Draft
+B2C-ORG-051,Org Switcher — Deep-Linking /account/orders Renders With A Locked Sibling And Renders In No-Organization Context (Own Orders Only) When Every Membership Is Locked [UIP-DEEP],B2C Features > Organization > Switcher Lock Axis,High,"BL-AUTH-015, BL-AUTH-016, BL-B2B-007",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
 Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
 The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
@@ -790,13 +799,15 @@ V7 terminates sessions, so the second leg re-authenticates after the lock.","fro
 [WAIT] the navigation settles
 [ACT] record the landing URL of the all-locked leg
 [ACT] record whether anything rendered on the all-locked leg
+[ACT] record the orders listed on the all-locked leg and whether any is an organization order (an order of the locked organizations placed by someone else)
 [ACT] record every console message on the all-locked leg","[DOM] with only the sibling membership locked, the deep-linked /account/orders page renders its own content: the orders view is present, and an error boundary is absent {OBSERVED}
-[NAV] with every membership locked, the same deep link lands on /403 {OBSERVED}
-[REL] neither deep link renders empty at HTTP 200: each one either shows its own content or performs a redirect — the page never silently renders nothing {OBSERVED}
-[COUNT] zero uncaught exceptions across both deep links; the ApolloError 'Access denied.' logged on the all-locked leg is a handled GraphQL error, not an uncaught exception {OBSERVED}","[API] the account-page query returns HTTP 200 with a non-empty errors[] carrying 'Access denied.' — the denial arrives inside the GraphQL envelope
-[CONSOLE] the ApolloError 'Access denied.' is EXPECTED in the all-locked state and is not an incidental failure; no other uncaught exception is permitted
-[NETWORK] no 4xx/5xx on /graphql",the deep link renders a blank page or an error boundary on either leg; the all-locked leg renders account content (access without the guard); the locked-sibling leg redirects away (access lost in the organization the user can still use); an uncaught exception in the console on either leg,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
-Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:SCOPE · Technique:EG · Probe:UIP-DEEP,Draft
+[NAV] with every membership locked, the same deep link renders the Orders view in no-organization context at /account/orders — no redirect to /403 {OBSERVED} (BL-AUTH-016; KB-CFF49BB0)
+[COUNT] with every membership locked, the Orders view lists only the signed-in user's own orders (none for this fixture account) and no organization order of either locked organization is shown; the All/My orders tabs are hidden {OBSERVED}
+[REL] neither deep link renders empty at HTTP 200 with nothing on the page: each one shows its own content — the page never silently renders nothing {OBSERVED}
+[COUNT] zero uncaught exceptions on both legs and zero console errors on the all-locked leg {OBSERVED}","[API] on the all-locked leg the page calls only user-scoped operations (GetOrders for the user's own id) and returns HTTP 200 with errors[] empty; a direct organizationOrders read for either locked organization returns 'Forbidden' {OBSERVED} (evidence REG-2026-11-12-0837-W5b, B2C-ORG-051 orgscope)
+[CONSOLE] no console errors and no uncaught exception on either leg
+[NETWORK] no 4xx/5xx on /graphql","the all-locked leg redirects to /403 (the retired dead-end has come back); the all-locked leg lists any organization order or shows the All orders tab or organization-scoped content (access without the guard — an access-control regression, file as a bug); the deep link renders a blank page or an error boundary on either leg; the locked-sibling leg redirects away (access lost in the organization the user can still use); an uncaught exception or a console error on either leg","MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).","VCST-5317 · Archetype:SCOPE · Technique:EG · Probe:UIP-DEEP · re-baselined Sprint 26-22 W5 without /403 or 'Access denied.': BL-AUTH-016, KB-78188952, KB-CFF49BB0",Draft
 B2C-ORG-052,Org Switcher — Refreshing With The Account Menu Open Re-Renders The Locked Row Identically And Leaves The Active Org Unchanged [UIP-REFRESH],B2C Features > Organization > Switcher Lock Axis,High,BL-B2B-005,ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
 Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
@@ -954,7 +965,9 @@ Sign out via the storefront account-menu popup (click the user name in the top h
 B2C-ORG-057,Org Switcher — Every Organization Option Stays Present And Reachable At 200% And 400% Zoom With No Horizontal Overflow [UIP-VIEW],B2C Features > Organization > Switcher Lock Axis,High,"BL-UI-004, BL-UI-006",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
 Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
-The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop popover at 100% only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+Zoom method: browser zoom is emulated by the WCAG 1.4.10 CSS-viewport equivalence on a 1280x900 window — 100% = 1280x900, 200% = 640x450, 400% = 320x225 (set with the viewport-resize tool, not the browser's own zoom).
+Below desktop width the Account-menu popover is not rendered: the organization switcher is the mobile menu — burger -> Corporate -> 'My organizations' (a radio group with the same option set, locked organization disabled with a lock icon) — KB-0E67A697. Only the 100% baseline uses the desktop popover listbox 'Organizations'.
 The probe: zoom and viewport pressure. The dark-preset half of UIP-VIEW is covered separately by B2C-ORG-064, so this row is the zoom and overflow half.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
 [SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
 [PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
@@ -962,36 +975,36 @@ The probe: zoom and viewport pressure. The dark-preset half of UIP-VIEW is cover
 [NAV] {{FRONT_URL}}/account/dashboard
 [ACT] click the account button in the top header (data-test-id=""account-button"")
 [WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
-[ACT] record the 100%-zoom baseline option set of listbox 'Organizations'
+[ACT] record the 100%-zoom baseline option set of the desktop listbox 'Organizations'
 [ACT] record which 100%-zoom option is disabled
 [ACT] record which 100%-zoom option carries [selected]
-[ACT] set browser zoom to 200%
+[VIEWPORT] 640x450 — emulates 200% zoom (WCAG 1.4.10 CSS-viewport equivalence)
 [REFLOW]
-[ACT] click the account button in the top header (data-test-id=""account-button"")
-[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] open the burger menu, expand Corporate and open 'My organizations'
+[WAIT] the radio group of organizations is rendered
 [PROBE:OVERFLOW]
-[PROBE:TOUCH] the Account-menu popover
+[PROBE:TOUCH] the 'My organizations' option rows (measure each option's ROW/label hit area; ignore visually hidden native radio inputs)
 [ACT] record the option set at 200% zoom
 [ACT] record which option is disabled at 200% zoom
-[KEY] press ArrowDown through listbox 'Organizations' at 200% zoom
-[ACT] record whether every option was reachable by that ArrowDown walk
-[ACT] set browser zoom to 400%
+[KEY] press ArrowDown through the 'My organizations' radio group at 200% zoom
+[ACT] record whether every enabled option was reachable by that ArrowDown walk
+[VIEWPORT] 320x225 — emulates 400% zoom (WCAG 1.4.10 CSS-viewport equivalence)
 [REFLOW]
-[ACT] click the account button in the top header (data-test-id=""account-button"")
-[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] open the burger menu, expand Corporate and open 'My organizations'
+[WAIT] the radio group of organizations is rendered (options below the fold are reached by vertical scroll)
 [PROBE:OVERFLOW]
 [ACT] record the option set at 400% zoom
-[KEY] press ArrowDown through listbox 'Organizations' at 400% zoom
-[ACT] record whether every option was reachable by that ArrowDown walk
-[ACT] restore browser zoom to 100%","[REL] the option set at 200% zoom contains every option present at 100%, and the disabled option is the same one {OBSERVED}
+[KEY] press ArrowDown through the 'My organizations' radio group at 400% zoom
+[ACT] record whether every enabled option was reachable by that ArrowDown walk
+[VIEWPORT] 1280x900 — restore 100%","[REL] the option set at 200% zoom (mobile 'My organizations' group) contains every option present at the 100% desktop listbox, and the disabled option is the same one {OBSERVED}
 [REL] the option set at 400% zoom contains every option present at 100% {OBSERVED}
 [OVERFLOW] horizontal == false at 200% and at 400% {BL} (BL-UI-004)
-[TOUCH] belowAA == 0 across the popover's interactive controls {BL} (BL-UI-006)
-[REL] every option reachable by ArrowDown at 100% is still reachable by ArrowDown at 400% — zoom clips nothing out of the keyboard path {OBSERVED}","[API] the GetMe / GetOrganizations responses carry errors[] empty
+[TOUCH] belowAA == 0 across the option ROWS / labels of 'My organizations' at 200%: a target counts as below AA only if its row/label hit area (getBoundingClientRect incl. padding) is under 24x24 CSS px AND it fails the WCAG 2.5.8 spacing exception (a 24 px circle centred on the target does not intersect a neighbouring target's circle); visually hidden native radio inputs (1x1) are not counted {BL} (BL-UI-006)
+[REL] every enabled option reachable by ArrowDown at 100% is still reachable by ArrowDown at 200% and 400%; the disabled option is unreachable at every size — zoom clips nothing out of the keyboard path {OBSERVED}","[API] the GetMe / GetOrganizations responses carry errors[] empty
 [CONSOLE] no TypeError and no uncaught exception on the surface under test
-[NETWORK] no 4xx/5xx on /graphql",an option is clipped out of view or off the popover at 200% or 400%; the page scrolls horizontally at either zoom level; the popover renders off-screen; an option present at 100% is missing at 400%; the disabled option changes with zoom,"Restore browser zoom to 100% before finishing, so the next case does not inherit it.
+[NETWORK] no 4xx/5xx on /graphql",an option is clipped out of view or unreachable (vertical scroll included) at 200% or 400%; the page scrolls horizontally at either zoom level; the 'My organizations' panel renders off-screen; an option present at 100% is missing at 400%; the disabled option changes with zoom; an option row below 24x24 that ALSO fails the 2.5.8 spacing exception (a real BL-UI-006 defect — a row under 24 px that passes the spacing exception is not a failure),"Restore the viewport to 1280x900 (100%) before finishing, so the next case does not inherit it.
 MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
-Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:RENDER · Technique:EG · Probe:UIP-VIEW · dark-preset half is B2C-ORG-064,Draft
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).","VCST-5317 · Archetype:RENDER · Technique:EG · Probe:UIP-VIEW · dark-preset half is B2C-ORG-064 · re-baselined Sprint 26-22 W5: KB-0E67A697, BL-UI-006 (WCAG 2.5.8 spacing exception), run REG-2026-11-12-1023-W5e",Draft
 B2C-ORG-058,Org Switcher — Opening The Account Menu On A Throttled Network Does Not Shift The Locked Row Into Place [STATE-STRESS: Loading],B2C Features > Organization > Switcher Lock Axis,High,"BL-UI-001, BL-UI-003",ECL-10.2,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
 Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.

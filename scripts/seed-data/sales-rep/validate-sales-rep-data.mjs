@@ -21,8 +21,9 @@
  *      spec's email/store, serves >= MIN_SERVED_ORGS_FOR_LAYOUT DISTINCT orgs, and is the ONLY
  *      disposable-layout rep — SR_REP_PRIMARY must never be on that allowlist (its never-saved null
  *      baseline is shared by ~40 cases in 050m/089/091/093);
- *  [7] the layout preference-name model has not drifted (SalesRepLayout.{scope}[.{storeId}] and the
- *      prefix matcher the seeder sweeps with).
+ *  [7] the layout preference-name model has not drifted: CURRENT Layout.{salesRep scope}[.{storeId}]
+ *      (X-Frontend saveLayout; scopes obey [A-Za-z][A-Za-z0-9]{0,63}, matched case-insensitively) and
+ *      LEGACY SalesRepLayout.{scope}[.{storeId}] are both swept, and nothing else is.
  *  [8] SR_UNSERVED_ORG stays decidable: an inline alias with BLANK id/platform_id in the committed file,
  *      whose `name` is one of the paging orgs UNSERVED_ORG.servedBy actually gets (pagingOrgName(k),
  *      1 <= k <= its PAGING:N), while UNSERVED_ORG.notServedBy serves only explicit org keys, never
@@ -36,6 +37,7 @@ import { fileURLToPath } from 'node:url';
 import {
   LAYOUT_REP, MIN_SERVED_ORGS_FOR_LAYOUT, DISPOSABLE_LAYOUT_REP_KEYS, isDisposableLayoutRep,
   LAYOUT_PREF_PREFIX, LAYOUT_SCOPES, layoutPreferenceName, isLayoutPreference,
+  LEGACY_LAYOUT_PREF_PREFIX, LEGACY_LAYOUT_SCOPES, legacyLayoutPreferenceName,
   parseServedOrgs, SALES_REPS_COLUMNS, RUNTIME_ID_COLUMNS, GUID_RE, REP_EMAIL_RE,
   REQUIRED_ALIAS_FIELDS, PAGING_ORG_PREFIX, pagingOrgName, UNSERVED_ORG,
 } from './sales-rep-layout-specs.mjs';
@@ -169,14 +171,23 @@ for (const shared of ['SR_REP_PRIMARY', 'SR_REP_ACME2', 'SR_REP_LOCKED', 'SR_REP
   if (isDisposableLayoutRep(shared)) fail(`${shared} must NOT be treated as a disposable-layout rep — the seeder would wipe a layout other suites depend on (SR_REP_PRIMARY's null baseline backs ~40 cases)`);
 }
 
-// [7] preference-name model
-if (layoutPreferenceName('dashboard') !== `${LAYOUT_PREF_PREFIX}.dashboard`) fail(`layoutPreferenceName drifted: ${layoutPreferenceName('dashboard')}`);
-if (layoutPreferenceName('dashboard', 'B2B-store') !== `${LAYOUT_PREF_PREFIX}.dashboard.B2B-store`) fail(`store-scoped layoutPreferenceName drifted: ${layoutPreferenceName('dashboard', 'B2B-store')}`);
+// [7] preference-name model — CURRENT (X-Frontend Layout.*) and LEGACY (SalesRepLayout.*) are both swept
+const [scope0] = LAYOUT_SCOPES;
+if (layoutPreferenceName(scope0, 'B2B-store') !== `${LAYOUT_PREF_PREFIX}.${scope0}.B2B-store`) fail(`store-scoped layoutPreferenceName drifted: ${layoutPreferenceName(scope0, 'B2B-store')}`);
+if (legacyLayoutPreferenceName('dashboard', 'B2B-store') !== `${LEGACY_LAYOUT_PREF_PREFIX}.dashboard.B2B-store`) fail(`legacyLayoutPreferenceName drifted: ${legacyLayoutPreferenceName('dashboard', 'B2B-store')}`);
+// X-Frontend's scope rule: an invalid scope is not an error on read — layout() just returns null, so a
+// typo here would leave the seeder sweeping a key the storefront never writes.
 for (const scope of LAYOUT_SCOPES) {
-  if (!isLayoutPreference(layoutPreferenceName(scope))) fail(`isLayoutPreference does not match its own key for scope ${scope}`);
-  if (!isLayoutPreference(layoutPreferenceName(scope, 'B2B-store'))) fail(`isLayoutPreference does not match the store-scoped key for scope ${scope}`);
+  if (!/^[A-Za-z][A-Za-z0-9]{0,63}$/.test(scope)) fail(`layout scope "${scope}" breaks the X-Frontend scope rule [A-Za-z][A-Za-z0-9]{0,63}`);
 }
-for (const foreign of ['SalesRepLayoutOther', 'Layout.dashboard', 'PersistedGridState', '']) {
+for (const [scopes, nameOf, gen] of [[LAYOUT_SCOPES, layoutPreferenceName, 'current'], [LEGACY_LAYOUT_SCOPES, legacyLayoutPreferenceName, 'legacy']]) {
+  for (const scope of scopes) {
+    if (!isLayoutPreference(nameOf(scope))) fail(`isLayoutPreference does not match the ${gen} key for scope ${scope}`);
+    if (!isLayoutPreference(nameOf(scope, 'B2B-store'))) fail(`isLayoutPreference does not match the ${gen} store-scoped key for scope ${scope}`);
+  }
+}
+if (!isLayoutPreference(layoutPreferenceName(scope0.toLowerCase(), 'B2B-store'))) fail(`isLayoutPreference must match ${scope0} case-insensitively (X-Frontend reads the scope that way)`);
+for (const foreign of ['SalesRepLayoutOther', 'Layout.dashboard', 'Layout.accountDashboard.B2B-store', `${LAYOUT_PREF_PREFIX}.${scope0}X`, 'Layout', 'PersistedGridState', '']) {
   if (isLayoutPreference(foreign)) fail(`isLayoutPreference must NOT match "${foreign}" — teardown would delete an unrelated CustomerPreference`);
 }
 

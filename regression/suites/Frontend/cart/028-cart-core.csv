@@ -1,9 +1,11 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-CART-001,Add to Cart - From Product Page,Cart > Add,Critical,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-001,Add to Cart - From Product Page,Cart > Add,Critical,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
 [PRE:RESET_CART]
-User logged in, product available and in stock, on product detail page","url={{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+User logged in, product available and in stock, on product detail page
+Runs on a DISPOSABLE personal customer: [PRE:DISPOSABLE_CUSTOMER:personal] creates it for this case (npm run td:customer -- create) and Cleanup deletes it, so no shared account is signed in, locked or left with cart state. The executable spec gets the same account from the disposableCustomer fixture.","url={{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
 [ACT] click the matching product card for @td(BUYABLE_NO_MIN_QTY.sku) to open its PDP
 [WAIT] wait for the PDP to load
 [ASSERT] verify quantity spinbutton visible on PDP
@@ -13,7 +15,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABL
 [STATE] product appears in cart
 [STATE] verify cart badge count incremented","[API] updateCartQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors after add-to-cart click
-[NETWORK] no 4xx/5xx on cart API requests",cart badge stuck at 0; success notification never appears; '+' stepper button not visible or stays in loading state,Remove added item from cart,VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (PDP stepper — no toast wired); Docs: N/A — implementation-detail,Automated
+[NETWORK] no 4xx/5xx on cart API requests",cart badge stuck at 0; success notification never appears; '+' stepper button not visible or stays in loading state,Remove added item from cart; delete the disposable customer (npm run td:customer -- delete --email <email>),VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (PDP stepper — no toast wired); Docs: N/A — implementation-detail,Automated
 CART-002,Add to Cart - From Category List,Cart > Add,High,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in, category page with products visible, quick-add available on product cards","url={{FRONT_URL}}
@@ -72,23 +74,27 @@ password={{USER_PASSWORD}}","[ACT] click the 'Cart' link in the site header
 [NAV] URL is {{FRONT_URL}}/cart after clicking the header 'Cart' link {OBSERVED}
 [FORMAT] prices formatted to 2 decimal places {OBSERVED}","[CONSOLE] no JS errors on cart page load
 [NETWORK] no 4xx/5xx on cart data fetch",header 'Cart' link does not navigate to /cart; items missing from the cart page; images broken; prices show $0.00 or NaN,none,"VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/components (vc-line-item; header Cart link -> /cart, no mini-cart); Docs: N/A — implementation-detail: DOM class naming",Automated
-CART-006,Update Quantity - Increase,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-006,Update Quantity - Increase,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
 [PRE:RESET_CART]
-Product in cart with qty=1, user on cart page","url={{FRONT_URL}}/cart
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+Product in cart with qty=1, user on cart page
+Runs on a DISPOSABLE personal customer: [PRE:DISPOSABLE_CUSTOMER:personal] creates it for this case (npm run td:customer -- create) and Cleanup deletes it, so no shared account is signed in, locked or left with cart state. The executable spec gets the same account from the disposableCustomer fixture.","url={{FRONT_URL}}/cart
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD","[NAV] navigate to {{FRONT_URL}}/cart
 [ACT] click '+' (Increase quantity) button on line item
 [WAIT] wait for quantity to update and totals to recalculate","[DOM] line item quantity shows ""2""
 [MATH] line total = unit price × 2 (2 decimal places)
 [MATH] cart subtotal = sum of all updated line totals
 [STATE] verify quantity incremented to 2","[API] changeCartItemsQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",quantity does not increment; line total stays at unit price; subtotal not recalculated,Restore item quantity to 1 or remove item,VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeFullCartItemsQuantity (field changeCartItemsQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
-CART-007,Update Quantity - Decrease,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx",quantity does not increment; line total stays at unit price; subtotal not recalculated,Restore item quantity to 1 or remove item; delete the disposable customer (npm run td:customer -- delete --email <email>),VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeFullCartItemsQuantity (field changeCartItemsQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
+CART-007,Update Quantity - Decrease,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
 [PRE:RESET_CART]
-Product in cart with qty > 1 (e.g., qty=2), user on cart page","url={{FRONT_URL}}/cart
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+Product in cart with qty > 1 (e.g., qty=2), user on cart page
+Runs on a DISPOSABLE personal customer: [PRE:DISPOSABLE_CUSTOMER:personal] creates it for this case (npm run td:customer -- create) and Cleanup deletes it, so no shared account is signed in, locked or left with cart state. The executable spec gets the same account from the disposableCustomer fixture.","url={{FRONT_URL}}/cart
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD","[NAV] navigate to {{FRONT_URL}}/cart
 [ACT] click '-' (Decrease quantity) button on line item
 [WAIT] wait for quantity to update and totals to recalculate","[DOM] line item quantity shows ""1""
 [DOM] '-' (Decrease quantity) button is disabled at qty=1
@@ -97,7 +103,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] verify quantity decremented to 1
 [STATE] verify '-' (Decrease quantity) is disabled when qty=1","[API] changeCartItemsQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",quantity goes below 1; '-' button active at qty=1; totals not recalculated,Restore or remove item,VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeFullCartItemsQuantity (field changeCartItemsQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
+[NETWORK] no 4xx/5xx",quantity goes below 1; '-' button active at qty=1; totals not recalculated,Restore or remove item; delete the disposable customer (npm run td:customer -- delete --email <email>),VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeFullCartItemsQuantity (field changeCartItemsQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
 CART-008,Update Quantity - Direct Input,Cart > Update,Medium,BL-CART-002,"ECL-3.1, ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart, user on cart page","url={{FRONT_URL}}/cart
@@ -259,18 +265,20 @@ password={{USER_PASSWORD}}","[NAV] navigate to category listing page on {{FRONT_
 [STATE] count line items for this product SKU","[API] addItem/changeCartItemQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx",duplicate line items created for same SKU+same currency; PDP shows 0 instead of 1; total qty wrong; two line items in cart,Remove item from cart,"QS-PDP-006; Synced: VCST-5101 (2026-06-09); Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (server-side qty sync, same-currency coalescing); Docs: N/A — implementation-detail",Manual
-CART-034,Quantity Stepper - Cart Page Minimum is 1,Cart > Quantity Stepper,High,BL-CART-001,ECL-3.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-034,Quantity Stepper - Cart Page Minimum is 1,Cart > Quantity Stepper,High,BL-CART-001,ECL-3.1,"[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
 [PRE:RESET_CART]
-Product in cart with qty=1; on {{FRONT_URL}}/cart page","url={{FRONT_URL}}/cart
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+Product in cart with qty=1; on {{FRONT_URL}}/cart page
+Runs on a DISPOSABLE personal customer: [PRE:DISPOSABLE_CUSTOMER:personal] creates it for this case (npm run td:customer -- create) and Cleanup deletes it, so no shared account is signed in, locked or left with cart state. The executable spec gets the same account from the disposableCustomer fixture.","url={{FRONT_URL}}/cart
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD","[NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] verify spinbutton shows '1' for line item
 [ASSERT] observe 'Decrease quantity' button state
 [ACT] attempt to click '-' (Decrease quantity) button
 [WAIT] wait for quantity to update and totals to recalculate","[DOM] spinbutton shows '1'
 [DOM] 'Decrease quantity' button is disabled at qty=1 on cart page
 [STATE] quantity cannot go below 1 via stepper on cart page (use 'Remove from cart' to delete)","[CONSOLE] no JS errors on disabled button interaction
-[NETWORK] no API call fired when disabled button clicked",'-' button enabled at qty=1; clicking '-' removes item instead of blocking; qty goes to 0 on cart page,none,QS-BVA-003; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (allowZero=false on cart page — Decrease disabled at qty=1); Docs: N/A — implementation-detail,Manual
+[NETWORK] no API call fired when disabled button clicked",'-' button enabled at qty=1; clicking '-' removes item instead of blocking; qty goes to 0 on cart page,none; delete the disposable customer (npm run td:customer -- delete --email <email>),QS-BVA-003; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (allowZero=false on cart page — Decrease disabled at qty=1); Docs: N/A — implementation-detail,Manual
 CART-035,Quantity Stepper - Direct Input Updates Cart and Totals,Cart > Quantity Stepper,High,BL-CART-002,"ECL-3.1, ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart with qty=1; on cart page or PDP","url={{FRONT_URL}}/cart
@@ -1233,3 +1241,109 @@ mutation { addItem(command: { storeId: ""{{STORE_ID}}"", userId: ""{ANON_ID}"", 
 [STATE] CHECKED_1 is the opposite of CHECKED_0 (clicking the label toggles it) and CHECKED_2 is the opposite of CHECKED_1 {SPEC} (VCST-6374: still toggles)
 [STATE] BILL_ACCNAME_1 equals BILL_ACCNAME: toggling does not change the name {BL} (BL-A11Y-002)","[CONSOLE] no JS error on /cart
 [NETWORK] no 4xx/5xx on /graphql","accessible name or aria-label equal to the raw key ""billingAddressEqualsShipping""; the label no longer toggles the box (broken for/id pair); the name changing after a toggle; the name attribute removed so the form field is lost",removeCart for the anonymous cart (ANON_ID); clear the session,"VCST-6374; vc-frontend PR #2587 (not merged at authoring); KB-ADF1DE84 | Archetype:RENDER · Technique:EG · Purpose:FUNC · Catches:VCST-6374 | Observed: PR #2587 build 2.62.0-pr-2587-9940-99407d1d verified locally 2026-11-09, not deployed; the shipped theme 2.62.0-pr-2640 still carries the reverted names (KB-ADF1DE84) | Fails on every stand until #2587 deploys (expected, not a weakened assertion)",Draft
+CART-130,Quantity Stepper - Cart Line: Backspace-Clearing the Field Digit by Digit Never Commits or Restores a Half-Deleted Quantity,Cart > Quantity Stepper,Critical,BL-CART-001,"ECL-5.3, ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Cart is empty before Steps run; this case adds @td(BUYABLE_NO_MIN_QTY.sku) (an unconstrained simple B2B product: minQuantity=1, maxQuantity=0/unlimited, no variation gate, availableQuantity well above 345) as the line item under test via an explicit add-to-cart sequence in Steps. {{TEST_SKU}} is NOT used - it is a 6-variation product gated behind option selection with no inline stepper. Stock guard: if after the 234 commit the line shows an inline maximum/insufficient-stock message, the case ends BLOCKED:<CONDITION_NOT_MET> (stock drift), never PASS or FAIL. The cart page quantity minimum is 1 (allowZero=false, see CART-034): 'becomes 0' is not reachable on this surface, so this case does not assert it. VCST-6768 reproduces signed-in and anonymous; this case runs signed-in on the cart line, and a separate anonymous case covers the same defect on the product page.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+target_sku=@td(BUYABLE_NO_MIN_QTY.sku)
+typed_quantity=234 (a three-digit value whose partials 23 and 2 differ from the starting 1 and from the final 234)","[NAV] navigate to a search listing for @td(BUYABLE_NO_MIN_QTY.sku): {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] click '+' (Increase quantity) on the product card of @td(BUYABLE_NO_MIN_QTY.sku) so it is in the cart with qty=1
+[WAIT] wait for the cart mutation to settle (cart badge shows the new line)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify one line item for @td(BUYABLE_NO_MIN_QTY.sku) with its quantity spinbutton showing 1
+[KEY] record the unit price as UNIT
+[ACT] click the quantity spinbutton on that line to focus it
+[WAIT] wait for the spinbutton to be focused
+[KEY] press Control+a to select all its content
+[ACT] set its value to 234 in ONE input event (fill / paste, not key by key)
+[KEY] press Tab to blur the field
+[WAIT] wait until the line total shows UNIT x 234 AND the Order Summary subtotal equals the sum of all line totals, and both hold unchanged for 3 s (up to 15 s); otherwise BLOCKED:<CONDITION_NOT_MET>
+[ASSERT] verify the spinbutton shows 234 and no inline maximum message is rendered (otherwise BLOCKED:<CONDITION_NOT_MET>)
+[KEY] record the line total as TOTAL_234 and the Order Summary subtotal as SUB_234
+[KEY] start recording every POST {{FRONT_URL}}/graphql request whose operationName is ChangeFullCartItemsQuantity or UpdateShortCartItemQuantity (its variables quantity value goes into the list QTY_SENT); the list starts empty here
+[ACT] click the quantity spinbutton to focus it
+[WAIT] wait for the spinbutton to be focused
+[KEY] press ArrowRight four times so the caret is after the last digit (End does not move the caret in a number field, so each Backspace removes exactly one digit from the right)
+[KEY] press Backspace three times back to back in one action (234 -> 23 -> 2 -> empty), no wait between the presses
+[KEY] immediately after the third Backspace, before any wait, record whether the spinbutton is empty and focused as V_EMPTY
+[WAIT] wait 2s with the field still focused
+[KEY] record the line total as TOTAL_EMPTY, the subtotal as SUB_EMPTY and the current QTY_SENT as QTY_SENT_PRE_BLUR
+[ACT] click outside the field (the page heading) to blur it
+[WAIT] wait 2s for any commit to settle
+[KEY] record the value the spinbutton shows as V_BLUR, the line total as TOTAL_BLUR, the subtotal as SUB_BLUR and the full QTY_SENT
+[NAV] reload {{FRONT_URL}}/cart
+[KEY] record the persisted line quantity as V_RELOAD and the line total as TOTAL_RELOAD (a missing line is recorded as 'line removed')","[STATE] V_EMPTY is true: the field is empty and focused right after the third Backspace, recorded before any wait because a commit of 2 arrives about 1 s later and would turn the field to 2 (the precondition of the defect, so a pass below is not vacuous) {SPEC} (VCST-6768 Steps 3)
+[MATH] TOTAL_EMPTY = UNIT x 234 and SUB_EMPTY = SUB_234 (two decimals): an empty, still-focused field is not a quantity and changes nothing in the cart {SPEC} (VCST-6768 Expected: the cart quantity does not change to partial values while typing/clearing; Actual on a second browser: about 1 s after the third Backspace, with the field still focused, ChangeFullCartItemsQuantity quantity 2 is sent and the field shows 2)
+[STATE] V_BLUR is neither 23 nor 2: after blur the field never shows a half-deleted value the user did not choose as a quantity {SPEC} (VCST-6768 Expected: never shows a value the user did not enter)
+[STATE] V_BLUR is 234 (reverted to the value it had before editing) or 1 (the cart page minimum), and V_BLUR is not empty {HYPOTHESIS} (VCST-6768: the empty->0 versus revert-to-previous choice is an OPEN PO decision (VCST-6768), so only the invariants every candidate outcome shares are asserted as {SPEC}; the choice itself is {HYPOTHESIS}; on /cart 0 is unreachable, so a 0, or a removed line, is reported to the PO as the other candidate, not failed)
+[STATE] V_RELOAD equals V_BLUR: the field and the persisted cart quantity agree after a reload {SPEC} (VCST-6768 Expected; the same value must not live in two places)
+[MATH] TOTAL_RELOAD = UNIT x V_RELOAD (two decimals) and the Order Summary subtotal = the sum of the line totals {BL} (BL-CART-001: totals follow the persisted quantity)
+[NETWORK] no request in QTY_SENT carries quantity 23 or 2 (a strict prefix of the typed 234): no cart mutation is built from an intermediate Backspace state {SPEC} (VCST-6768 Expected; Actual: ChangeFullCartItemsQuantity quantity:4 while focused and empty)","[API] every ChangeFullCartItemsQuantity response in QTY_SENT has errors[] empty
+[CONSOLE] no JS errors during the Backspace sequence and the blur
+[NETWORK] no 4xx/5xx on /graphql during the window",line total or subtotal changes while the field is empty and focused; spinbutton shows 2 or 23 after blur (half-deleted value restored by normalize()); ChangeFullCartItemsQuantity with quantity 23 or 2 in the request log; reload shows 2 or 23; field and reload quantity disagree,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,"VCST-6768; Archetype:FALLBACK · Technique:ST · Purpose:FUNC · Catches:VCST-6768; no BL-* states that only the final value of a quantity edit may commit (BL-CART-001 is cited for the persisted-quantity-and-totals half only; candidate in the run's blProposals); Source: VirtoCommerce/vc-frontend@dev client-app/ui-kit/components/organisms/quantity-stepper/vc-quantity-stepper.vue (watch(model) writes every non-empty value into lastNonEmptyValue; normalize() on blur restores it when the model is undefined) + client-app/shared/common/components/quantity-control.vue (watch(stepperQuantity) -> handleStepperChange emits update:cartItemQuantity per value); kb KB-9314E8DA (SUSPECTED DEFECT, proof the commit-before-blur reproduces on /cart, never an expected result); kb KB-98A231B6 (PDP and card stepper send UpdateShortCartItemQuantity, /cart line sends ChangeFullCartItemsQuantity); Docs: StorefrontUserGuide is silent on empty-field and partial-typing behaviour, so no {DOC} tag is possible; Synced: VCST-6768 verify round 1 (2026-11-10); Synced: VCST-6768 verify round 2 (2026-11-10)",Draft
+CART-131,"Quantity Stepper - Cart Line: Typing a Quantity Key by Key Sends Only the Final Value, Never a Partial One",Cart > Quantity Stepper,High,BL-CART-001,"ECL-5.1, ECL-5.3, ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Cart is empty before Steps run; this case adds @td(BUYABLE_NO_MIN_QTY.sku) (an unconstrained simple B2B product: minQuantity=1, maxQuantity=0/unlimited, no variation gate, availableQuantity well above 345) as the line item under test via an explicit add-to-cart sequence in Steps. {{TEST_SKU}} is NOT used - it is a 6-variation product gated behind option selection with no inline stepper. Stock guard: if after the 234 commit the line shows an inline maximum/insufficient-stock message, the case ends BLOCKED:<CONDITION_NOT_MET> (stock drift), never PASS or FAIL. This is the typing half of VCST-6768 (partial values 45 and 56 reached the cart while the user was still typing); the clearing half is CART-130. Pacing matters: on the QA build the /cart line commits about one second after the last keystroke (digits typed 600 ms apart were coalesced into one request, digits typed 1200 ms apart sent 2, 23 and 234 as three requests), so the digits are typed 1500 ms apart; at a fast typist's pace the case would pass without exercising the defect. KB-9314E8DA records the same commit-on-input on /cart as a suspected defect, so it is never an expected result here.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+target_sku=@td(BUYABLE_NO_MIN_QTY.sku)
+typed_quantity=234","[NAV] navigate to a search listing for @td(BUYABLE_NO_MIN_QTY.sku): {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] click '+' (Increase quantity) on the product card of @td(BUYABLE_NO_MIN_QTY.sku) so it is in the cart with qty=1
+[WAIT] wait for the cart mutation to settle
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify one line item for @td(BUYABLE_NO_MIN_QTY.sku) with its quantity spinbutton showing 1
+[KEY] record the unit price as UNIT and the line total as TOTAL_1
+[KEY] start recording every POST {{FRONT_URL}}/graphql request whose operationName is ChangeFullCartItemsQuantity or UpdateShortCartItemQuantity (its variables quantity value goes into the list QTY_SENT); the list starts empty here
+[ACT] triple-click (or double-click) the quantity spinbutton so its whole content is selected (Control+a does not select the content of this number field)
+[WAIT] wait for the spinbutton to be focused
+[ACT] type 234 into the focused spinbutton one digit at a time with a 1500 ms pause between the digits (a slow typist: the pause must exceed the cart line's commit delay so a commit can fire between digits)
+[WAIT] wait 2s with the field still focused (no blur, no Enter)
+[KEY] record the line total as TOTAL_TYPING, the subtotal as SUB_TYPING and the current QTY_SENT as QTY_SENT_PRE_BLUR
+[KEY] press Tab to blur the field
+[WAIT] wait 2s for the commit to settle
+[KEY] record the spinbutton value as V_BLUR and the full QTY_SENT
+[NAV] reload {{FRONT_URL}}/cart
+[KEY] record the persisted line quantity as V_RELOAD and the line total as TOTAL_RELOAD","[NETWORK] no request in QTY_SENT carries quantity 2 or 23: an intermediate keystroke value never reaches the cart {SPEC} (VCST-6768 Expected: the cart quantity does not change to partial values while typing; Actual: partial values 45 and 56 sent)
+[NETWORK] every request in QTY_SENT carries quantity 234, i.e. the set of quantities sent is a subset of {234}: a commit on pause or on blur is allowed, a commit of anything else is not {SPEC} (VCST-6768)
+[MATH] TOTAL_TYPING = TOTAL_1 or TOTAL_TYPING = UNIT x 234 (two decimals), and TOTAL_TYPING is neither UNIT x 2 nor UNIT x 23: while typing, the line total only ever shows the old or the final amount {SPEC} (VCST-6768 Expected)
+[STATE] V_BLUR is 234 and V_RELOAD is 234: the typed value is the one that lands {SPEC} (VCST-6768 Step 2: type 456, click outside, the cart holds the typed value)
+[MATH] TOTAL_RELOAD = UNIT x 234 (two decimals) {BL} (BL-CART-001: totals follow the persisted quantity)","[API] every cart quantity mutation response in QTY_SENT has errors[] empty
+[CONSOLE] no JS errors while typing
+[NETWORK] no 4xx/5xx on /graphql during the window",ChangeFullCartItemsQuantity with quantity 2 or 23 in the request log; line total shows UNIT x 2 or UNIT x 23 while the field is still focused; final persisted quantity differs from 234 after a stale partial response lands last,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,"VCST-6768; Archetype:RACE · Technique:EG · Purpose:FUNC · Catches:VCST-6768; RACE is the nearest token: a commit is built from the field before the user has finished the edit (ordering of edit and commit), and the vocabulary is not extended per case; no BL-* states the commit-on-final-value rule (BL-CART-001 cited for the totals half only); Source: VirtoCommerce/vc-frontend@dev client-app/ui-kit/components/organisms/quantity-stepper/vc-quantity-stepper.vue (watch(model) writes every non-empty value into lastNonEmptyValue; normalize() on blur restores it when the model is undefined) + client-app/shared/common/components/quantity-control.vue (watch(stepperQuantity) -> handleStepperChange emits update:cartItemQuantity per value); kb KB-9314E8DA (SUSPECTED DEFECT, proof the commit-before-blur reproduces on /cart, never an expected result); kb KB-98A231B6 (PDP and card stepper send UpdateShortCartItemQuantity, /cart line sends ChangeFullCartItemsQuantity); Docs: StorefrontUserGuide is silent on empty-field and partial-typing behaviour, so no {DOC} tag is possible; Synced: VCST-6768 verify round 1 (2026-11-10)",Draft
+CART-132,Quantity Stepper - Cart Line: Select-All Then Backspace Then Blur Leaves a Valid Quantity and Sends No Partial Value,Cart > Quantity Stepper,High,BL-CART-001,"ECL-5.3, ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Cart is empty before Steps run; this case adds @td(BUYABLE_NO_MIN_QTY.sku) (an unconstrained simple B2B product: minQuantity=1, maxQuantity=0/unlimited, no variation gate, availableQuantity well above 345) as the line item under test via an explicit add-to-cart sequence in Steps. {{TEST_SKU}} is NOT used - it is a 6-variation product gated behind option selection with no inline stepper. Stock guard: if after the 234 commit the line shows an inline maximum/insufficient-stock message, the case ends BLOCKED:<CONDITION_NOT_MET> (stock drift), never PASS or FAIL. This is the control path of VCST-6768: clearing in one step (select-all + Backspace) is reported NOT to reproduce the defect (field goes back to the old value, nothing sent), so it gives the end state the digit-by-digit path of CART-130 must also reach. It is a path-parity guard, not a bug-catcher on the current build.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+target_sku=@td(BUYABLE_NO_MIN_QTY.sku)
+typed_quantity=234","[NAV] navigate to a search listing for @td(BUYABLE_NO_MIN_QTY.sku): {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] click '+' (Increase quantity) on the product card of @td(BUYABLE_NO_MIN_QTY.sku) so it is in the cart with qty=1
+[WAIT] wait for the cart mutation to settle
+[NAV] navigate to {{FRONT_URL}}/cart
+[KEY] record the unit price as UNIT
+[ACT] click the quantity spinbutton to focus it
+[WAIT] wait for the spinbutton to be focused
+[KEY] press Control+a to select all its content
+[ACT] set its value to 234 in ONE input event (fill / paste, not key by key)
+[KEY] press Tab to blur the field
+[WAIT] wait until the line total shows UNIT x 234 AND the Order Summary subtotal equals the sum of all line totals, and both hold unchanged for 3 s (up to 15 s); otherwise BLOCKED:<CONDITION_NOT_MET>
+[ASSERT] verify the spinbutton shows 234 and no inline maximum message is rendered (otherwise BLOCKED:<CONDITION_NOT_MET>)
+[KEY] record the line total as TOTAL_234
+[KEY] start recording every POST {{FRONT_URL}}/graphql request whose operationName is ChangeFullCartItemsQuantity or UpdateShortCartItemQuantity (variables quantity values go into QTY_SENT); the list starts empty here
+[ACT] triple-click (or double-click) the quantity spinbutton so its whole content is selected (Control+a does not select the content of this number field)
+[WAIT] wait for the spinbutton to be focused
+[KEY] press Backspace once (the field is empty in a single step)
+[WAIT] wait 2s with the field focused and empty
+[KEY] record the line total as TOTAL_EMPTY
+[ACT] click outside the field (the page heading) to blur it
+[WAIT] wait 2s
+[KEY] record the value the spinbutton shows as V_BLUR and the full QTY_SENT
+[NAV] reload {{FRONT_URL}}/cart
+[KEY] record the persisted line quantity as V_RELOAD","[STATE] V_BLUR is not empty and is neither 23 nor 2: a blank quantity field is never left behind {SPEC} (VCST-6768 Expected: the empty field becomes 0 or goes back to the previous value, never a value the user did not enter)
+[MATH] TOTAL_EMPTY = TOTAL_234: an empty focused field changes no cart amount {SPEC} (VCST-6768 Expected)
+[NETWORK] every request in QTY_SENT carries 234 or the cart page minimum 1, never a number that is neither: no cart mutation is built from an empty or partial state {SPEC} (VCST-6768 Expected)
+[STATE] V_BLUR is 234 and QTY_SENT is empty (the value reverts, nothing is sent) {OBSERVED} (2026-11-10, vcst, theme 2.62.0-pr-2629: reported in VCST-6768 and reproduced on two browsers; an observation, not an expected result, because the empty->0 versus revert-to-previous choice is an OPEN PO decision (VCST-6768), so only the invariants every candidate outcome shares are asserted as {SPEC}; the choice itself is {HYPOTHESIS}, so a change of this behaviour is re-observed and reported, never silently updated)
+[STATE] V_RELOAD equals V_BLUR: field and persisted quantity agree {SPEC} (VCST-6768 Expected)","[API] every cart quantity mutation response in QTY_SENT has errors[] empty
+[CONSOLE] no JS errors during the clear and the blur
+[NETWORK] no 4xx/5xx on /graphql during the window",field left blank after blur; field shows a number the user never entered; cart amounts change while the field is empty; a cart mutation with a quantity that is neither 234 nor 1; reload quantity differs from the field,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,"VCST-6768; Archetype:PARITY · Technique:EP · Purpose:FUNC · Catches:VCST-6768; PARITY: two edit paths (one-step clear, digit-by-digit clear in CART-130) must end in the same valid state; no BL-* states the empty-field rule (BL-CART-001 cited as the nearest rule for the cart-line quantity input); Source: VirtoCommerce/vc-frontend@dev client-app/ui-kit/components/organisms/quantity-stepper/vc-quantity-stepper.vue (watch(model) writes every non-empty value into lastNonEmptyValue; normalize() on blur restores it when the model is undefined) + client-app/shared/common/components/quantity-control.vue (watch(stepperQuantity) -> handleStepperChange emits update:cartItemQuantity per value); kb KB-9314E8DA (SUSPECTED DEFECT, proof the commit-before-blur reproduces on /cart, never an expected result); kb KB-98A231B6 (PDP and card stepper send UpdateShortCartItemQuantity, /cart line sends ChangeFullCartItemsQuantity); Docs: StorefrontUserGuide is silent on empty-field and partial-typing behaviour, so no {DOC} tag is possible; Synced: VCST-6768 verify round 1 (2026-11-10); Synced: VCST-6768 verify round 2 (2026-11-10)",Draft

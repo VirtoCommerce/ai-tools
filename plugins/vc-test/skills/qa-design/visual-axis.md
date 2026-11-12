@@ -58,6 +58,12 @@ the old rule it was `true` purely because `layer: storefront`, which taught noth
 optimistic removal plus a 1000 ms debounce), which is row-churn signal 3. A reader can now contradict that;
 before, they could only observe that the ticket was on the storefront.
 
+**Same step, the design copy.** When `visual_surface` is `true` and the ticket links a Claude Design
+project (`claude.ai/design/p/<uuid>`) with no `.design-source/<uuid>/` on disk, ask the operator now,
+once, before any dispatch — the question and the headless exception:
+[`claude-design-verification.md`](claude-design-verification.md) §Missing copy. Found at Step 4 it
+costs the whole run's wait; found here it costs one command.
+
 ---
 
 
@@ -192,7 +198,8 @@ severity: `triage.md` §7a (in this repository: `.claude/skills/qa-test/triage.m
 Two arrays rather than one severity field, because that is what makes the blocking rule auditable from the
 artifact instead of only from this prose.
 
-**`SKIPPED` is a legitimate outcome, not an error.** No local copy of the ticket's project and no usable
+**`SKIPPED` is a legitimate outcome, not an error** — but only after the operator was asked at §1 and
+declined, or in a headless run. No local copy of the ticket's project and no usable
 artifact (`design:extract` exit `2`) ⇒ the `vs. DESIGN` axis records `SKIPPED` + the reason — naming the
 folder to fill, `.design-source/<uuid>/` — and the other two axes carry on. Same discipline as `tokens:check` (in this repository: `npm run tokens:check`)
 exiting `2` on an unreachable source rather than passing. A non-zero `unresolved` count from the extractor

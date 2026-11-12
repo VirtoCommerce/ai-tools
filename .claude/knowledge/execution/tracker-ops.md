@@ -262,7 +262,7 @@ refuses the create call without a valid set and names what is missing.
 | Who found it | Labels |
 |---|---|
 | Claude, while testing a ticket (`/qa-test`, `/qa-test-fast`, exploratory) | `found-by-agent` + `found-in-testing` |
-| Claude, in a regression run (`/qa-regression`, `ci:regression`, triage of a run) | `found-by-agent` + `found-in-regression` |
+| Claude, in a regression run (`/qa-regression`, triage of a run) | `found-by-agent` + `found-in-regression` |
 | A person — the user saying "I found this, file it", a Teams/partner report | `reported-by-human` |
 
 The labels go in the create call's `labels` parameter where the tool has one (the claude.ai connector), else

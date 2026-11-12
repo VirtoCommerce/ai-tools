@@ -94,6 +94,11 @@ export function fromQaTest(path) {
     toFix: (s.to_fix ?? []).map((t, i) => ({
       id: t.id ?? `F-${i + 1}`, what: String(t.what ?? "").replace(/\s+/g, " ").trim() || "(untitled)",
       severity: t.severity ?? "", ref: t.ref ?? "", status: t.status ?? "open", report: t.report ?? "",
+      repro: t.repro ?? null,
+      // `blocking: false` = fix it in this ticket, but it does not hold the verdict (an operator decision).
+      blocking: t.blocking !== false,
+      impact: String(t.repro?.impact ?? "").replace(/\s+/g, " ").trim(),
+      repo: String(t.repro?.repo ?? "").replace(/\s+/g, " ").trim(),
     })),
     // Proposed to the operator and not created (unanswered or skipped): still named, never dropped.
     suggested: (s.suggested_tickets ?? []).map(t => ({
@@ -276,6 +281,61 @@ export function requireLede(m, ledeMax) {
   return { ...m, lede: s };
 }
 
+// The "What to fix" table: ONE row per To-fix finding — what is broken (and why it matters), how to
+// reproduce it, expected → actual, and where to fix it — so the whole comment reads in one screen.
+// A check is named by its TITLE (`found_by`), never an internal id (C-74, MCP-044). Cells hold line
+// breaks as `<br>`, which each dialect turns into its own (wiki `\\`, HTML <br/>). Emitted as RAW rows
+// (`{{{.}}}`), so every value is escaped here with the engine's own `cell` rules.
+// "Evidence": an optional response snippet per To-fix row (`repro.snippet` = { caption, lang, text }) —
+// the server's own answer as confirmation, shown as a code block under the table. RAW lines; the text is
+// copied verbatim inside a fence (each dialect renders it as code, never as Markdown).
+function snippetLines(toFix) {
+  const out = [];
+  for (const t of toFix) {
+    const sn = t.repro?.snippet;
+    if (!sn || typeof sn.text !== "string" || !sn.text.trim()) continue;
+    const cap = String(sn.caption ?? "").replace(/\s+/g, " ").replace(/\|/g, "/").trim();
+    out.push(`**${t.id}**${cap ? ` — ${cap}` : ""}`, "```" + String(sn.lang ?? "").replace(/\W/g, ""),
+      ...sn.text.replace(/\r\n/g, "\n").replace(/```/g, "'''").trimEnd().split("\n"), "```", "");
+  }
+  return out;
+}
+
+function fixRows(toFix) {
+  const v = s => String(s ?? "").replace(/\s*\r?\n\s*/g, " ").replace(/\|/g, "/").replace(/\{\{|\}\}/g, x => `${x[0]} ${x[1]}`).trim();
+  return toFix.map(t => {
+    const r = t.repro && typeof t.repro === "object" ? t.repro : {};
+    const what = [v(t.what), r.impact ? `_${v(r.impact)}_` : "", t.blocking === false ? "*Not a blocker for this ticket*" : ""].filter(Boolean).join("<br>");
+    const steps = (Array.isArray(r.steps) ? r.steps : []).map((x, i) => `${i + 1}. ${v(x)}`);
+    const found = (Array.isArray(r.found_by) ? r.found_by : []).map(v).filter(Boolean);
+    const how = [...steps, ...found.map(x => `Check: ${x}`)].join("<br>") || (t.ref ? v(t.ref) : "—");
+    const exp = [r.expected ? `✅ ${v(r.expected)}` : "", r.actual ? `❌ ${v(r.actual)}` : ""].filter(Boolean).join("<br>") || "—";
+    const where = [v(r.repo), v(r.file || r.where)].filter(Boolean).join("<br>") || "—";
+    return `| ${v(t.id)} | ${what} | ${how} | ${exp} | ${where} |`;
+  });
+}
+
+// The verdict panel's headline and the closing "Next step" — derived from the verdict and the To-fix
+// count, so the reader sees in one line whether the ticket can go on and what has to happen first.
+function verdictText(m) {
+  // Only blocking rows count toward "must be fixed before … can pass"; a non-blocking row still shows in the table.
+  const blocking = (m.toFix ?? []).filter(x => x.blocking !== false);
+  const n = blocking.length;
+  const t = m.ticket ?? "the ticket";
+  // Rows are in priority order, not id order, so a range ("F-1…F-4") would misname them: list the ids.
+  const ids = blocking.map(x => x.id).join(", ");
+  switch (m.verdict) {
+    case "FAIL": return {
+      ALERT: "danger",
+      HEADLINE: n ? `Not ready — ${n} defect${n > 1 ? "s" : ""} must be fixed before ${t} can pass` : `Not ready — ${t} failed testing`,
+      NEXT_STEP: n ? `Fix ${ids}, then move the ticket to Ready for test. QA re-runs the checks named in the table.` : "Fix the failures below and send the ticket back to QA.",
+    };
+    case "BLOCKED": return { ALERT: "warning", HEADLINE: `Blocked — testing of ${t} could not finish`, NEXT_STEP: "Remove the blocker named above; QA resumes testing." };
+    case "PASS_WITH_NOTES": return { ALERT: "note", HEADLINE: `Passed with notes — ${t} can go on`, NEXT_STEP: n ? `Fix ${ids} in this ticket or a follow-up.` : "No action needed in this ticket." };
+    default: return { ALERT: "success", HEADLINE: `Passed — ${t} can go on`, NEXT_STEP: "No action needed in this ticket." };
+  }
+}
+
 export function templateData(m, dialect = "markdown") {
   return {
     ICON: m.icon, VERDICT_LABEL: m.verdictLabel, LEDE: m.lede, TICKET: m.ticket ?? "", RUN_ID: m.runLabel ?? "",
@@ -285,6 +345,9 @@ export function templateData(m, dialect = "markdown") {
     AREAS: m.areas ?? [], QUESTIONS: m.questions ?? [], BUGS: m.bugs, TO_FIX: m.toFix ?? [], SUGGESTED: m.suggested ?? [], NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
     // An empty side-effect table means "looked, found nothing" only when the run got that far.
     ISSUES_NONE: m.verdict === "BLOCKED" ? "Not checked — the verification was blocked" : "Nothing found nearby",
+    FIX_ROWS: fixRows(m.toFix ?? []),
+    SNIPPETS: snippetLines(m.toFix ?? []),
+    ...verdictText(m),
     SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],
     PAGE_URL: m.pageUrl ?? null,
   };

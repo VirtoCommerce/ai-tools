@@ -4806,7 +4806,7 @@
       "fullName": "full_name",
       "store": "store"
     },
-    "_notes": "VCST-5367 saved-layout rep — the ONLY rep whose persisted layout (salesRepLayout/saveSalesRepLayout; CustomerPreference SalesRepLayout.{scope}[.{storeId}] on the caller's own user id) the 091/093 drag/hide/Save cases may mutate. Use this alias, NOT SR_REP_PRIMARY, in any case that Saves a layout: primary's both scopes are verified never-saved (null) and ~40 cases in 050m/089/091/093 depend on that baseline. Serves ORG-001 + ORG-002 so the customerProfile scope has a customer to open and the scope-wide (not per-customer) case has a second customer. seed-sales-rep.mjs wipes its SalesRepLayout.* preferences on every reseed (disposable by design — see scripts/seed-data/sales-rep/sales-rep-layout-specs.mjs). Login password: SR_REP_PASSWORD (never committed); runtime GUIDs in aliases.<env>.json."
+    "_notes": "VCST-5367 saved-layout rep — the ONLY rep whose persisted layout the 091/093 drag/hide/Save cases may mutate. Layout = a CustomerPreference on the caller's own user id: CURRENT X-Frontend layout/saveLayout (Sales Rep PR #24+) -> Layout.{salesRepDashboard|salesRepCustomerProfile}[.{storeId}]; LEGACY salesRepLayout/saveSalesRepLayout (older builds) -> SalesRepLayout.{dashboard|customerProfile}[.{storeId}]; old rows are not migrated. Use this alias, NOT SR_REP_PRIMARY, in any case that Saves a layout: primary's both scopes are verified never-saved (null) and ~40 cases in 050m/089/091/093 depend on that baseline. Serves ORG-001 + ORG-002 so the customerProfile scope has a customer to open and the scope-wide (not per-customer) case has a second customer. seed-sales-rep.mjs wipes its rep layout preferences of BOTH generations on every reseed (disposable by design — see scripts/seed-data/sales-rep/sales-rep-layout-specs.mjs). Login password: SR_REP_PASSWORD (never committed); runtime GUIDs in aliases.<env>.json."
   },
   "LOYALTY_ZERO_USER": {
     "_inline": true,
@@ -11604,58 +11604,6 @@
     "previousValue": "",
     "owned": ""
   },
-  "PUNCHOUT_CONFIG_DEFAULTS": {
-    "_inline": true,
-    "_notes": "VCST-5888 Punchout configuration DEFAULTS (Punchout:Configurations app setting at yml position 3, vc-deploy-dev#7011 — no REST read-back). One of the default-methods TRIAD that differ ONLY in their default method codes on ONE store: PUNCHOUT_CONFIG_0 (no codes, T17a) / THIS (codes of ACTIVE store methods, T1 methods + T4) / PUNCHOUT_CONFIG_BADCODES (codes that exist nowhere, T17b). Read the expected methods from defaultShipmentMethodCode / defaultPaymentMethodCode; defaultMethodsActive is re-checked live by the seeder (POST /api/shipping/search + /api/payment/search for storeId). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_DEFAULTS_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_DEFAULTS_VCPTCORE_QA1), promoted by config.js. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay (npm run seed:punchout; live re-check seed:punchout:verify, which also proves the secret live with a setup for PUNCHOUT_MAPPING_REQUISITION → cXML 200 + StartPage, session only, no cart). Guard npm run td:validate:punchout; spec punchout-specs.mjs (CONFIG_SPECS, DEFAULT_METHODS_TRIAD). POSITION vs INDEX: this alias has NO index — \"position\" is its yml positional index on the current deployment; the legacy PUNCHOUT_CONFIG_3 (index 3) is RETIRED and unrelated: since vc-deploy-dev#7011 yml position 3 is PUNCHOUT_CONFIG_DEFAULTS and 4 is PUNCHOUT_CONFIG_BADCODES — cite these aliases, never a number. On every env without a declared deployment these fields resolve to \"\" (a clear miss).",
-    "seed": "seed:punchout",
-    "position": 3,
-    "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_DEFAULTS}}",
-    "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_DEFAULTS",
-    "purpose": "same store as config 0; DefaultShipmentMethodCode + DefaultPaymentMethodCode name methods ACTIVE on that store — the OrderRequest applies them (VCST-5888 T1 methods / T4)",
-    "configurationId": "",
-    "deployed": "",
-    "storeId": "",
-    "storeExists": "",
-    "senderDomain": "",
-    "senderDomainCheck": "",
-    "allowedReturnUrl": "",
-    "returnUrlCheck": "",
-    "tokenLifetime": "",
-    "sessionLifetime": "",
-    "tokenLifetimeMinutes": "",
-    "sessionLifetimeMinutes": "",
-    "defaultShipmentMethodCode": "",
-    "defaultPaymentMethodCode": "",
-    "defaultMethodsDeclared": "",
-    "defaultMethodsActive": "",
-    "source": ""
-  },
-  "PUNCHOUT_CONFIG_BADCODES": {
-    "_inline": true,
-    "_notes": "VCST-5888 Punchout configuration BADCODES (Punchout:Configurations app setting at yml position 4, vc-deploy-dev#7011 — no REST read-back). One of the default-methods TRIAD (see PUNCHOUT_CONFIG_DEFAULTS): same store, but its default shipment/payment codes are AGENT-TEST- prefixed and exist on no store — defaultMethodsActive=false is re-checked live (neither code is a method of the store). It has no SenderDomain, so any Credential domain passes the sender check. sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_BADCODES_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_BADCODES_VCPTCORE_QA1), promoted by config.js. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay (npm run seed:punchout; live re-check seed:punchout:verify, which also proves the secret live with a setup for PUNCHOUT_MAPPING_REQUISITION → cXML 200 + StartPage, session only, no cart). Guard npm run td:validate:punchout; spec punchout-specs.mjs (CONFIG_SPECS, DEFAULT_METHODS_TRIAD). POSITION vs INDEX: this alias has NO index — \"position\" is its yml positional index on the current deployment; the legacy PUNCHOUT_CONFIG_3 (index 3) is RETIRED and unrelated: since vc-deploy-dev#7011 yml position 3 is PUNCHOUT_CONFIG_DEFAULTS and 4 is PUNCHOUT_CONFIG_BADCODES — cite these aliases, never a number. On every env without a declared deployment these fields resolve to \"\" (a clear miss).",
-    "seed": "seed:punchout",
-    "position": 4,
-    "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_BADCODES}}",
-    "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_BADCODES",
-    "purpose": "same store as config 0; default method codes that match NO method of that store (VCST-5888 T17b)",
-    "configurationId": "",
-    "deployed": "",
-    "storeId": "",
-    "storeExists": "",
-    "senderDomain": "",
-    "senderDomainCheck": "",
-    "allowedReturnUrl": "",
-    "returnUrlCheck": "",
-    "tokenLifetime": "",
-    "sessionLifetime": "",
-    "tokenLifetimeMinutes": "",
-    "sessionLifetimeMinutes": "",
-    "defaultShipmentMethodCode": "",
-    "defaultPaymentMethodCode": "",
-    "defaultMethodsDeclared": "",
-    "defaultMethodsActive": "",
-    "source": ""
-  },
   "PB_6443_LEGACY_S6": {
     "_inline": true,
     "seed": "seed:pb-legacy-permalinks",
@@ -12235,5 +12183,254 @@
     "contact_P2C": "",
     "default_href": "",
     "_notes": "VCST-6256 P2. PAGE 2: the 11th org by name (the rep has no orders, so the default rule ties and the handler orders by name) — the only row on page 2 at 10 per page, with an owner phone +1-555-110-1100. Backs \"numbers reloaded when the page changes\". expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "MCP_OPERATOR": {
+    "seed": "seed:mcp-security",
+    "_inline": true,
+    "_comment": "VCST-6155 (MCP module, back-office /admin/mcp) Manager account, isAdministrator=false, emailConfirmed, not locked out — holds the stand-owned role \"IT Platform Operator\" (System Operations tools: systemoperations:diagnostics:read, cache:reset, platform:module:manage + mcp:audit:read; NO mcp:approve, NO mcp:manage). Requests tool calls, cannot approve them. The seeder READS that shared role and fails if it drifted — never writes or deletes it; where it is missing it falls back to AGENT-TEST-MCP-Operator and says so. Single source of truth: scripts/seed-data/platform/mcp-security-specs.mjs; seed: npm run seed:mcp-security -- --verify; drift-guard: npm run td:validate:mcp-security; teardown: npm run seed:mcp-security:teardown. Runtime id/platform_id/role_id resolve from aliases.<env>.json. The PASSWORD is the {{DEFAULT_TEST_PASSWORD}} secret (Playwright lane NAME: DEFAULT_TEST_PASSWORD_<ENV>).",
+    "email": "AGENT-TEST-mcp-operator@test.virtocommerce.com",
+    "login": "AGENT-TEST-mcp-operator@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "role": "IT Platform Operator",
+    "permissions": [
+      "systemoperations:diagnostics:read",
+      "cache:reset",
+      "platform:module:manage",
+      "mcp:audit:read"
+    ],
+    "excluded_permissions": [
+      "mcp:approve",
+      "mcp:manage"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "MCP_APPROVER": {
+    "seed": "seed:mcp-security",
+    "_inline": true,
+    "_comment": "VCST-6155 (MCP module, back-office /admin/mcp) Manager account, isAdministrator=false, emailConfirmed, not locked out — role AGENT-TEST-MCP-Approver: mcp:approve + mcp:audit:read, NO System Operations tool permission, NO mcp:manage. A different user from MCP_OPERATOR, so approver-is-not-requester can fail. Single source of truth: scripts/seed-data/platform/mcp-security-specs.mjs; seed: npm run seed:mcp-security -- --verify; drift-guard: npm run td:validate:mcp-security; teardown: npm run seed:mcp-security:teardown. Runtime id/platform_id/role_id resolve from aliases.<env>.json. The PASSWORD is the {{DEFAULT_TEST_PASSWORD}} secret (Playwright lane NAME: DEFAULT_TEST_PASSWORD_<ENV>).",
+    "email": "AGENT-TEST-mcp-approver@test.virtocommerce.com",
+    "login": "AGENT-TEST-mcp-approver@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "role": "AGENT-TEST-MCP-Approver",
+    "permissions": [
+      "mcp:approve",
+      "mcp:audit:read"
+    ],
+    "excluded_permissions": [
+      "systemoperations:diagnostics:read",
+      "cache:reset",
+      "platform:module:manage",
+      "mcp:manage"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "MCP_MANAGER": {
+    "seed": "seed:mcp-security",
+    "_inline": true,
+    "_comment": "VCST-6155 (MCP module, back-office /admin/mcp) Manager account, isAdministrator=false, emailConfirmed, not locked out — role AGENT-TEST-MCP-Manager: mcp:manage + mcp:audit:read (tool switches / connected agents of everyone), NO mcp:approve, NO tool permission. Single source of truth: scripts/seed-data/platform/mcp-security-specs.mjs; seed: npm run seed:mcp-security -- --verify; drift-guard: npm run td:validate:mcp-security; teardown: npm run seed:mcp-security:teardown. Runtime id/platform_id/role_id resolve from aliases.<env>.json. The PASSWORD is the {{DEFAULT_TEST_PASSWORD}} secret (Playwright lane NAME: DEFAULT_TEST_PASSWORD_<ENV>).",
+    "email": "AGENT-TEST-mcp-manager@test.virtocommerce.com",
+    "login": "AGENT-TEST-mcp-manager@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "role": "AGENT-TEST-MCP-Manager",
+    "permissions": [
+      "mcp:manage",
+      "mcp:audit:read"
+    ],
+    "excluded_permissions": [
+      "systemoperations:diagnostics:read",
+      "cache:reset",
+      "platform:module:manage",
+      "mcp:approve"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "MCP_NOROLE": {
+    "seed": "seed:mcp-security",
+    "_inline": true,
+    "_comment": "VCST-6155 (MCP module, back-office /admin/mcp) Manager account, isAdministrator=false, emailConfirmed, not locked out — NO role and no permission: the negative for \"a user without the role sees no System Operations tools\". Single source of truth: scripts/seed-data/platform/mcp-security-specs.mjs; seed: npm run seed:mcp-security -- --verify; drift-guard: npm run td:validate:mcp-security; teardown: npm run seed:mcp-security:teardown. Runtime id/platform_id/role_id resolve from aliases.<env>.json. The PASSWORD is the {{DEFAULT_TEST_PASSWORD}} secret (Playwright lane NAME: DEFAULT_TEST_PASSWORD_<ENV>).",
+    "email": "AGENT-TEST-mcp-norole@test.virtocommerce.com",
+    "login": "AGENT-TEST-mcp-norole@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "role": null,
+    "permissions": [],
+    "excluded_permissions": [
+      "systemoperations:diagnostics:read",
+      "cache:reset",
+      "platform:module:manage",
+      "mcp:approve",
+      "mcp:manage",
+      "mcp:audit:read"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "RESTRICTED_USER": {
+    "seed": "seed:rbac",
+    "_inline": true,
+    "_comment": "Suite 085 TASK-016 persona: a back-office Manager account whose only role grants task:access + task:read (no task:create or any other task write). The Tasks app opens, but Add/Create must be absent or disabled and POST /api/task-management must answer 403. Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs (TASK_READONLY_*); seed: npm run seed:rbac -- --only RESTRICTED_USER (add --verify for the live /currentuser proof); drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only RESTRICTED_USER. Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json. The PASSWORD is a {{RESTRICTED_USER_PASSWORD}} secret from .env.local (never committed).",
+    "email": "AGENT-TEST-task-readonly@test.virtocommerce.com",
+    "login": "AGENT-TEST-task-readonly@test.virtocommerce.com",
+    "password": "{{RESTRICTED_USER_PASSWORD}}",
+    "password_var": "RESTRICTED_USER_PASSWORD",
+    "role": "AGENT-TEST-Task-ReadOnly",
+    "permissions": [
+      "task:access",
+      "task:read"
+    ],
+    "excluded_permission": "task:create",
+    "excluded_permissions": [
+      "task:create",
+      "task:update",
+      "task:delete",
+      "task:finish",
+      "task:attachment:management"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "BD_STATS": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "seed": "seed:buyer-dashboard",
+    "fields": {
+      "email": "buyers.STATS.email",
+      "passwordVar": "buyers.STATS.passwordVar",
+      "store": "buyers.STATS.expected.store",
+      "currency": "buyers.STATS.expected.currency",
+      "expectedCount": "buyers.STATS.expected.today.count",
+      "expectedTotal": "buyers.STATS.expected.today.total",
+      "expectedAverage": "buyers.STATS.expected.today.average",
+      "expectedExcludedCount": "buyers.STATS.expected.today.excludedCount",
+      "allStoresCount": "buyers.STATS.expected.allStores.count",
+      "allStoresTotal": "buyers.STATS.expected.allStores.total",
+      "orgName": "orgs.STATS",
+      "cmpCountChangePercent": "buyers.STATS.expected.comparison.countChangePercent",
+      "cmpTotalChangePercent": "buyers.STATS.expected.comparison.totalChangePercent",
+      "cmpTotalChange": "buyers.STATS.expected.comparison.totalChange"
+    },
+    "notes": "VCST-6078 buyer dashboard — two creation waves (comparison count +50% vs revenue -66.69%) + flag-cancelled, status-\"Cancelled\" (IsCancelled=false), prototype and off-org orders, all distinct totals. Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_LARGE": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "seed": "seed:buyer-dashboard",
+    "fields": {
+      "email": "buyers.LARGE.email",
+      "passwordVar": "buyers.LARGE.passwordVar",
+      "store": "buyers.LARGE.expected.store",
+      "currency": "buyers.LARGE.expected.currency",
+      "expectedCount": "buyers.LARGE.expected.today.count",
+      "expectedTotal": "buyers.LARGE.expected.today.total",
+      "expectedAverage": "buyers.LARGE.expected.today.average",
+      "expectedExcludedCount": "buyers.LARGE.expected.today.excludedCount",
+      "allStoresCount": "buyers.LARGE.expected.allStores.count",
+      "allStoresTotal": "buyers.LARGE.expected.allStores.total",
+      "orgName": "orgs.LARGE"
+    },
+    "notes": "VCST-6078 buyer dashboard — AOV >= $1,000,000 (card overflow, VCST-6714/A-F13). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_EUR": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "seed": "seed:buyer-dashboard",
+    "fields": {
+      "email": "buyers.EUR.email",
+      "passwordVar": "buyers.EUR.passwordVar",
+      "store": "buyers.EUR.expected.store",
+      "currency": "buyers.EUR.expected.currency",
+      "expectedCount": "buyers.EUR.expected.today.count",
+      "expectedTotal": "buyers.EUR.expected.today.total",
+      "expectedAverage": "buyers.EUR.expected.today.average",
+      "expectedExcludedCount": "buyers.EUR.expected.today.excludedCount",
+      "allStoresCount": "buyers.EUR.expected.allStores.count",
+      "allStoresTotal": "buyers.EUR.expected.allStores.total",
+      "orgName": "orgs.EUR",
+      "eurTotal": "buyers.EUR.expected.todayInEur.total",
+      "eurAverage": "buyers.EUR.expected.todayInEur.average"
+    },
+    "notes": "VCST-6078 buyer dashboard — orders in EUR and USD, converted at the platform rate (contact currency EUR). The fixture declares figures at its fxRate; when the env's live EUR rate differs, the seeder writes the env-correct expectedTotal / expectedAverage / allStoresTotal / eurTotal / eurAverage to aliases.<env>.json, which wins over the fixture. Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_TWOSTORE": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "seed": "seed:buyer-dashboard",
+    "fields": {
+      "email": "buyers.TWOSTORE.email",
+      "passwordVar": "buyers.TWOSTORE.passwordVar",
+      "store": "buyers.TWOSTORE.expected.store",
+      "currency": "buyers.TWOSTORE.expected.currency",
+      "expectedCount": "buyers.TWOSTORE.expected.today.count",
+      "expectedTotal": "buyers.TWOSTORE.expected.today.total",
+      "expectedAverage": "buyers.TWOSTORE.expected.today.average",
+      "expectedExcludedCount": "buyers.TWOSTORE.expected.today.excludedCount",
+      "allStoresCount": "buyers.TWOSTORE.expected.allStores.count",
+      "allStoresTotal": "buyers.TWOSTORE.expected.allStores.total",
+      "orgName": "orgs.TWOSTORE",
+      "secondStore": "buyers.TWOSTORE.secondStore"
+    },
+    "notes": "VCST-6078 buyer dashboard — orders in B2B-store and a second store (store scoping A-F1). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_NOORG": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "seed": "seed:buyer-dashboard",
+    "fields": {
+      "email": "buyers.NOORG.email",
+      "passwordVar": "buyers.NOORG.passwordVar",
+      "store": "buyers.NOORG.expected.store",
+      "currency": "buyers.NOORG.expected.currency",
+      "expectedCount": "buyers.NOORG.expected.today.count",
+      "expectedTotal": "buyers.NOORG.expected.today.total",
+      "expectedAverage": "buyers.NOORG.expected.today.average",
+      "expectedExcludedCount": "buyers.NOORG.expected.today.excludedCount",
+      "allStoresCount": "buyers.NOORG.expected.allStores.count",
+      "allStoresTotal": "buyers.NOORG.expected.allStores.total"
+    },
+    "notes": "VCST-6078 buyer dashboard — personal buyer with NO organization; one order stamped with another org (no-org scope, #7). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_UNCFG": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "seed": "seed:buyer-dashboard",
+    "fields": {
+      "email": "buyers.UNCFG.email",
+      "passwordVar": "buyers.UNCFG.passwordVar",
+      "store": "buyers.UNCFG.expected.store",
+      "currency": "buyers.UNCFG.expected.currency",
+      "expectedCount": "buyers.UNCFG.expected.today.count",
+      "expectedTotal": "buyers.UNCFG.expected.today.total",
+      "expectedAverage": "buyers.UNCFG.expected.today.average",
+      "expectedExcludedCount": "buyers.UNCFG.expected.today.excludedCount",
+      "allStoresCount": "buyers.UNCFG.expected.allStores.count",
+      "allStoresTotal": "buyers.UNCFG.expected.allStores.total",
+      "orgName": "orgs.UNCFG"
+    },
+    "notes": "VCST-6078 buyer dashboard — one order in XTS, a currency removed from the platform after the order was placed (excludedCount; VCST-6535 order-list risk isolated here). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned; every order lands at the seed instant, so storefront deltas have a zero baseline). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate, windows.prev/cur.from/to for orderStatistics comparison) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "BD_LAYOUT": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/buyer-dashboard",
+    "seed": "seed:buyer-dashboard",
+    "fields": {
+      "email": "buyers.LAYOUT.email",
+      "passwordVar": "buyers.LAYOUT.passwordVar",
+      "store": "buyers.LAYOUT.expected.store",
+      "currency": "buyers.LAYOUT.expected.currency",
+      "expectedCount": "buyers.LAYOUT.expected.today.count",
+      "expectedTotal": "buyers.LAYOUT.expected.today.total",
+      "expectedAverage": "buyers.LAYOUT.expected.today.average",
+      "expectedExcludedCount": "buyers.LAYOUT.expected.today.excludedCount",
+      "allStoresCount": "buyers.LAYOUT.expected.allStores.count",
+      "allStoresTotal": "buyers.LAYOUT.expected.allStores.total",
+      "orgName": "orgs.LAYOUT"
+    },
+    "notes": "VCST-6078 buyer dashboard — the disposable saved-layout buyer: the ONLY BD_* buyer whose account-dashboard layout (X-Frontend saveLayout, scope accountDashboard -> CustomerPreference Layout.accountDashboard[.{storeId}]) a case may change — status checkboxes, hidden cards, Max rows. Use it, NOT another BD_* buyer, in any case that Saves a layout. Six orders in B2B-store: New x2, Processing x2, Completed x1, Cancelled x1 (status only, IsCancelled=false — so it is still counted and the status facet offers a Cancelled tab). seed-buyer-dashboard.mjs deletes every BD_* buyer's account-dashboard layout preference on each (re)seed and at teardown, so every buyer starts never-saved (layout = null). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
   }
 }

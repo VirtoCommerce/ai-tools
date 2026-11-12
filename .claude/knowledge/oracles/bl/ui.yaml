@@ -37,8 +37,8 @@ rules:
     violation_signal: 'Computed values that map to **no** Tailwind scale step (e.g. `"13px"`, `"27px"`, `"41px"`). Note: spacing in vc-frontend is applied via Tailwind utility classes / `theme()` refs, **not** `--spacing-*` CSS variables (those do not exist in the codebase).'
     status: ACTIVE
     verified:
-      date: 2026-10-29
-      by: REG-2026-10-28-1915
+      date: 2026-11-10
+      by: REG-2026-11-09-1635-W4
   - id: BL-UI-003
     title: No state-induced layout shift
     rule: Hover, focus, validation-message insertion, badge/counter updates, and skeleton → content swap MUST NOT move adjacent elements. A border that appears on hover must use `outline` (which does not affect layout) OR reserve its space with a transparent border in the default state. A counter widening from 1-digit to 3-digit must not push siblings.
@@ -51,8 +51,8 @@ rules:
     violation_signal: Neighbor moves on hover. Form below a field jumps when validation error inserts. Cart-icon badge change shifts navbar items. Skeleton dimensions ≠ resolved content → snap on load.
     status: ACTIVE
     verified:
-      date: 2026-10-15
-      by: REG-2026-10-15-1115
+      date: 2026-11-10
+      by: REG-2026-11-09-1635-W4
   - id: BL-UI-004
     title: Content boundary
     rule: "Text and child elements MUST stay inside their container at every supported viewport. Long content must wrap, truncate with ellipsis, or scroll — never overflow silently and never be clipped by `overflow: hidden` without an explicit ellipsis indicator. Horizontal scrolling on the document at any tested viewport (the derived `AUDIT_VIEWPORTS_PX` sweep, never a hand-picked list) is a bug unless the scrolling element is itself an intentional horizontal scroller (e.g., a data table)."
@@ -139,4 +139,5 @@ rules:
       kind: manual
       ref: From the first field of the surface, walk `Tab` through every control and assert each interactive element receives focus in DOM order and shows a visible focus indicator (`outline` or `box-shadow` resolving to something other than none while focused). For each tab- or toggle-like control assert `role`, `aria-selected`/`aria-expanded`, and an accessible name; activate each with `Enter` and `Space`. Inside any embedded code editor press `Tab` and assert focus can still leave the editor. Assert every iframe has a non-empty `title`. Sample the surface's own text and icon foreground/background pairs and compute contrast ratios against the 4.5:1 / 3:1 thresholds.
     violation_signal: "A tab strip built from non-semantic list items with click handlers and no `role`/`tabindex`/`aria-selected` — a `Tab` walk skips it entirely and assistive technology cannot report which tab is active. A styled `<button>` resolving `outline-style: none` and `box-shadow: none` while focused. An embedded editor where `Tab` inserts indentation with no escape binding, trapping focus. An iframe whose `title` is null. A 12 px label whose foreground/background pair measures below 4.5:1."
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] ORD-102 failed in REG-2026-11-09-1635-W4"

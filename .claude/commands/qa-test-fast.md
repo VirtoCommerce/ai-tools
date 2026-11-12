@@ -83,7 +83,9 @@ Full briefs, merge rules and the context bundle:
      gaps, as one gated bundle
 2. **Join.** The bundle is the context. Its `blockers[]` decide deployment, and if it names a GraphQL
    operation, run both contract-refresh commands
-   ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1).
+   ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1). A Claude Design link with no
+   local copy (its `connector-unavailable` gap) ⇒ ask the operator to import it now, once
+   ([`claude-design-verification.md`](../../plugins/vc-test/skills/qa-design/claude-design-verification.md) §Missing copy).
 3. **Strategy.** Run [`/vc-test:qa-test-strategy`](../../plugins/vc-test/skills/qa-test-strategy/SKILL.md) with the bundle: step 1's
    second round count (the bundle's `signals[]`), then step 2 onward — its gate, then one approval question ([`context-wave.md`](../skills/qa-test-fast/context-wave.md)
    §Strategy). Its STOP is this run's STOP. The approved round decides which artifacts below run.

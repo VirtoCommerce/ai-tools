@@ -1,32 +1,49 @@
 {
-  "runId": "REG-2026-11-05-1740",
+  "runId": "REG-2026-11-12-1252",
   "status": "completed",
-  "startedAt": "2026-11-05T16:41:03.321Z",
-  "windowStart": "2026-11-05T16:41:03.321Z",
-  "selection": "106",
-  "env": "vcst",
-  "scoped": true,
-  "cases": "ids",
-  "ids": [
-    "SR-TK-043",
-    "SR-TK-044",
-    "SR-TK-048",
-    "SR-TK-057"
-  ],
-  "purpose": "VCST-6157 re-run on ff13 of the cases REG-2026-11-05-1651 blocked on the stale edge bundle (VCST-6676) + SR-TK-057 rewritten for the ff13 container-query toolbar",
-  "plan": "reports/regression/REG-2026-11-05-1740/preflight.json",
+  "startedAt": "2026-11-12T11:53:15.858Z",
+  "env": "localhost",
+  "frontUrl": "http://localhost",
+  "ticket": "VCST-6688",
+  "selection": "110a,111",
+  "casesFilter": {
+    "ids": [
+      "MFA-048",
+      "MFA-049",
+      "MFA-054",
+      "MFA-064",
+      "MFA-073",
+      "MFA-074",
+      "MFA-075",
+      "MFASF-015",
+      "MFASF-023"
+    ]
+  },
   "suites": {
-    "106": {
+    "111": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-firefox",
-      "total": 4,
-      "startedAt": "2026-11-05T16:41:57.130Z",
-      "pass": 4,
+      "cases": 2,
+      "estimatedMinutes": 8,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-12T12:05:22Z",
+      "pass": 2,
       "fail": 0,
       "blocked": 0,
-      "finishedAt": "2026-11-05T16:58:21.182Z"
+      "finishedAt": "2026-11-12T12:14:12Z"
+    },
+    "110a": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 7,
+      "estimatedMinutes": 33,
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-12T11:54:43Z",
+      "pass": 7,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-12T12:05:22Z"
     }
   },
-  "finishedAt": "2026-11-05T16:58:38.177Z"
+  "finishedAt": "2026-11-12T12:14:36.779Z"
 }
