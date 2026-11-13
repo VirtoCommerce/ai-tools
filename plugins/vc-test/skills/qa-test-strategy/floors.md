@@ -134,7 +134,7 @@ The stale rows are listed in the strategy's Artifacts row with their reason and 
 In the strategy it is computed from the planned `RUN` rows; at close-out, from what ran. The label is for people reading reports. No rule, floor or gate reads it, so it cannot drift from what ran.
 It never appears in a risk row; a risk carries **effort** (`low` / `medium` / `high`, D12).
 
-## Clause 11 — every strategy; clauses 12–13 — vc-test runs
+## Clause 11 — every strategy; clauses 12–13 — vc-test runs; clause 15 — every strategy
 
 The script half of SKILL.md §Gate clauses 11–13. **Clause 11 runs on every strategy** — `/qa-test`, `/qa-test-fast` and vc-test alike (U57 and U58 are general rules). It reads the `Project risks:` line; an item is a `P<n>` that starts the line or follows a `·` or a sentence end (`.` or `;`), so a `P95 2s` inside an item is not an item. 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
 
@@ -168,3 +168,7 @@ A vc-test run lists its scenarios in `### Scenarios` (columns `S | Class | What 
 - **(c)** `Class` is a number 1–6, U60's six classes in its order; anything else ⇒ `13: S-1 Class "7" is not 1–6`.
 
 **6e under vc-test.** With a change map, 6e no longer requires `Test model` RUN for a MODEL risk — the scenarios carry it, so write `SKIP — scenarios cover the MODEL risks`; check (b) is the replacement. `Test model` RUN with no MODEL risk is still refused. Without a change map, 6e and clause 13 behave as before (no `### Scenarios` heading is read or required).
+
+### 15 — an account on every risk
+
+The Approach table's `Lane · agent · account` cell: its third `·` segment is the account the risk is checked as — a test-user KEY (`ORG_USER`), `guest`, `deny:<permission> <KEY|P-n>` (that member, without the permission) or `P-n` when the stand has none. **15a** every row names one in that form (a `none` lane and a `TBD — strategy agent` cell are exempt; clause 14 owns TBD). **15b** F13 fired ⇒ a risk whose Source carries `floor:F13` has a `deny:` account. **15c** every `P-n` an account names is on the `Project risks:` line. Whether `deny:` names the permission the diff checks is the model-owned half.

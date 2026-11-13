@@ -24,6 +24,8 @@ const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-
 // A fired floor here needs its OWN risk: Source carries the token `floor:<id>`, technique is MODEL (M10). A risk carries
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
+// Clause 15: a test-user KEY, guest, deny:<permission> <KEY|P-n>, or P-n (floors.md §15).
+const ACCOUNT = /^(?:[A-Z][A-Z0-9_]*|guest|P\d+|deny:\S+\s+(?:[A-Z][A-Z0-9_]*|P\d+))$/;
 // Clause 12 (U59): a hotspot whose risk text says the code holds state — a limiter, a counter, a cache, a lockout — is
 // only decided on the stand if the stand's scale (instances, replicas, restarts) is part of the question.
 export const STATE_HOTSPOT = /\b(limit(?:er|s)?|attempts?|counter|throttl\w*|rate[- ]?limit\w*|cach(?:e|ed|ing)|lockout|locked out|in[- ]memory|session state)\b/i;
@@ -180,7 +182,7 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
     for (const s of new Set((bundle.known?.cases_at_risk ?? []).map((c) => c?.suite).filter(Boolean).map(String)))
       if (!new RegExp(`(?<!\\w)${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?!\\w)`).test(outOfScope)) errors.push(`6h: suite ${s} is at risk (known.cases_at_risk) but Out of scope does not name it`);
   for (const x of risks) {
-    const own = Object.keys(MODEL_RISK_FOR).filter((id) => names(x, id));
+    const own = [...Object.keys(MODEL_RISK_FOR), "F13"].filter((id) => names(x, id));
     if (own.length > 1) errors.push(`6f: ${x.r} carries ${own.map((id) => `floor:${id}`).join(" and ")} — one floor, one risk (M10)`);
   }
 
@@ -241,6 +243,21 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
       else if (want && risk.level && RANK.indexOf(risk.level) < RANK.indexOf(want)) errors.push(`14: ${pb} is ${severity}, but ${risk.r}'s Level is ${risk.level} — a prior bug's risk is never below its severity`);
     }
   }
+  // 15, every strategy: the account each risk is checked as — the third `·` segment of the lane cell (floors.md §15).
+  // A `none` lane runs nothing; a TBD cell is clause 14's. F13 fired ⇒ a floor:F13 risk checked as `deny:`.
+  const projectIds = new Set(projectLine.match(/\bP\d+\b/g) ?? []);
+  for (const a of approach) {
+    const parts = a.lane.split("·").map((p) => p.trim());
+    if (/^none\b/i.test(parts[0]) || a.lane.includes("TBD — strategy agent")) continue;
+    const acc = parts[2] ?? "";
+    if (!acc) { errors.push(`15a: ${a.r} lane cell has no account — add '· <KEY | guest | deny:<permission> <KEY|P-n> | P-n>' (floors.md §15)`); continue; }
+    if (!ACCOUNT.test(acc)) { errors.push(`15a: ${a.r} account "${acc}" is not KEY, guest, deny:<permission> <KEY|P-n> or P-n`); continue; }
+    const p = /\bP\d+$/.exec(acc)?.[0];
+    if (p && !projectIds.has(p)) errors.push(`15c: ${a.r} account names ${p}, which is not on the 'Project risks:' line`);
+  }
+  const accountOf = (r) => approach.find((a) => a.r === r)?.lane.split("·")[2]?.trim() ?? "";
+  if (fired.includes("F13") && !risks.some((x) => names(x, "F13") && /^deny:/.test(accountOf(x.r))))
+    errors.push("15b: F13 fired but no risk carries floor:F13 with a deny:<permission> account");
   const tbd = sec.split("\n").filter((l) => l.includes("TBD — strategy agent"));
   if (tbd.length) errors.push(`14: ${tbd.length} line(s) still read 'TBD — strategy agent' (first: ${tbd[0].trim().slice(0, 80)})`);
   const lines = sec.trimEnd().split("\n").length;
