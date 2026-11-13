@@ -9,12 +9,13 @@
 // and `.env.local`; password-named body fields are masked even without them.
 //
 // Fail-soft: never blocks a tool call or the session; it prints one line when it masked something.
-import { harFilesIn, projectHarTargets, scrubHarFileSync } from "../bridge/har-scrub.mjs";
+import { harFilesIn, projectHarTargets, scrubHarFileSync, sweepStaleTmp } from "../bridge/har-scrub.mjs";
 import { envFilePasswordValues } from "../skills/project-init/lib/passwords.mjs";
 
 try {
   const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
   const { harPaths, secrets } = projectHarTargets(root, { passwordValues: envFilePasswordValues });
+  sweepStaleTmp(harPaths);
   let masked = 0;
   for (const file of harFilesIn(harPaths)) {
     const r = scrubHarFileSync(file, { secrets });

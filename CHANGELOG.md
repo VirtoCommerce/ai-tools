@@ -22,7 +22,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   holds: at start, after every HAR write (`browser_close`) and at exit.
 - A lane started straight from `.mcp.json` (`npx @playwright/mcp … --secrets <file>`) is covered by the new
   `hooks/scrub-har.mjs` (`SessionStart`, and `PostToolUse` on `mcp__playwright-*__browser_close`), with values from the
-  project's `.env.playwright.*` and `.env.local`. A `.har-scrub.json` stamp beside the HAR skips an unchanged file.
+  project's `.env.playwright.*` and `.env.local`. Only a file with something to mask is rewritten, and not when it changed
+  since it was read. A `.har-scrub.json` stamp (size, mtime, a short salted tag per value) skips a file until it changes or a
+  scrubber knows a value it was not scrubbed with.
 
 ## Every strategy risk names the account it is checked as — `vc-test` `0.17.0`, `vc-fix` `0.18.8` — 2026-11-13
 

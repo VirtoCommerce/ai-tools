@@ -3,10 +3,10 @@
 // `POST /api/platform/security/login/` and the storefront's form `POST /connect/token`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { configArg, configHarPath, createHarScrubber, harFilesIn, harForms, projectHarTargets, scrubHarFile, scrubHarFileSync, scrubHarText, watchHarDirs } from "./har-scrub.mjs";
+import { configArg, configHarPath, createHarScrubber, harFilesIn, harForms, projectHarTargets, scrubHarFile, scrubHarFileSync, scrubHarText, sweepStaleTmp, watchHarDirs } from "./har-scrub.mjs";
 import { MASK } from "./redact.mjs";
 import { envFilePasswordValues } from "../skills/project-init/lib/passwords.mjs";
 
@@ -177,4 +177,49 @@ test("a running lane scrubs the HAR left from before, and the one Playwright wri
   lane.close();
   const out = readFileSync(file, "utf8");
   assert.ok(!out.includes(PW) && !out.includes(encodeURIComponent(STOREFRONT_PW)));
+});
+
+test("a numeric password field is masked, and a value escaped twice inside a JSON body is found", () => {
+  const pin = entry("POST", "https://stand.example/api/pin", { request: { postData: { mimeType: "application/json", text: JSON.stringify({ user: "u", password: 123456 }) } } });
+  const nested = entry("POST", "https://stand.example/api/x", { request: { postData: { mimeType: "application/json", text: JSON.stringify({ credentials: { secret: PW } }) } } });
+  const echoJson = entry("GET", "https://stand.example/me", { response: { content: { size: 10, mimeType: "application/json", text: JSON.stringify({ echoed: PW }) } } });
+  const { text, masked } = scrubHarText(har([pin, nested, echoJson]), [PW]);
+  assert.equal(masked, 3);
+  const [p, n, e] = JSON.parse(text).log.entries;
+  assert.deepEqual(JSON.parse(p.request.postData.text), { user: "u", password: MASK });
+  assert.deepEqual(JSON.parse(n.request.postData.text), { credentials: { secret: MASK } });
+  assert.deepEqual(JSON.parse(e.response.content.text), { echoed: MASK });
+});
+
+test("a file scrubbed without a value is scanned again by a scrubber that knows it; a clean file is not rewritten", async () => {
+  const PW_IN_HAR = JSON.stringify(PW).slice(1, -1); // how the echo spells it inside the HAR
+  const { file } = tmpHar(har([adminLogin, echo]));
+  assert.equal(scrubHarFileSync(file).status, "scrubbed"); // the hook: fields only
+  assert.ok(readFileSync(file, "utf8").includes(PW_IN_HAR)); // the echoed value is still there
+  assert.equal(scrubHarFileSync(file).status, "skipped");
+  const r = await scrubHarFile(file, { secrets: [PW] }); // the bridge: knows the value
+  assert.equal(r.status, "scrubbed");
+  assert.ok(!readFileSync(file, "utf8").includes(PW_IN_HAR));
+  // Both scrubs are now on the stamp: neither scans it again.
+  assert.equal((await scrubHarFile(file, { secrets: [PW] })).status, "skipped");
+  assert.equal(scrubHarFileSync(file).status, "skipped");
+  // The stamp holds a short tag, never the value.
+  assert.ok(!readFileSync(join(file, "..", ".har-scrub.json"), "utf8").includes(PW));
+  const clean = tmpHar(har([oauthCode]));
+  const before = statSync(clean.file).mtimeMs;
+  assert.equal((await scrubHarFile(clean.file, { secrets: [PW] })).status, "clean");
+  assert.equal(statSync(clean.file).mtimeMs, before);
+  assert.deepEqual(readdirSync(clean.dir).filter((f) => f.endsWith(".tmp")), []);
+});
+
+test("temp files left by a scrub cut short are swept once they are stale", () => {
+  const { dir, file } = tmpHar(har([oauthCode]));
+  const stale = join(dir, "session.har.123.1.scrub.tmp");
+  const fresh = join(dir, "session.har.123.2.scrub.tmp");
+  writeFileSync(stale, "x");
+  writeFileSync(fresh, "x");
+  const old = new Date(Date.now() - 60 * 60 * 1000);
+  utimesSync(stale, old, old);
+  assert.equal(sweepStaleTmp([file]), 1);
+  assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith(".tmp")), ["session.har.123.2.scrub.tmp"]);
 });

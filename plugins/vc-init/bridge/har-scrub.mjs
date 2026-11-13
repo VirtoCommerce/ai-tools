@@ -21,14 +21,19 @@
  * shutting down), so a scrub runs after that write and never during it: a file that does not end as
  * complete JSON is reported `incomplete` and left alone. Lane HARs reach hundreds of MB, so the file is
  * streamed: a JSON scanner splits it into its records and only a record that mentions both `postData`
- * and a password-like name is parsed. The result replaces the file through a temp file + rename, only
- * when something was masked. A `.har-scrub.json` stamp beside the HAR remembers the size and mtime of the
- * last scrubbed version, so an unchanged file is not scanned again.
+ * and a password-like name is parsed. A first pass only counts; only a file with something to mask is
+ * written again (temp file + rename), and the rename is dropped when the HAR changed since it was read
+ * (Playwright rewrote it, or another scrubber got there first). A `.har-scrub.json` stamp beside the HAR
+ * remembers the size and mtime of the last scrubbed version and a short salted tag of each value it was
+ * scrubbed with, so a file is scanned again only when it changed or a scrubber knows a value it was not
+ * scrubbed with (the hook knows the env files' values, the bridge also those in vc-secrets).
  */
+import { createHmac, randomBytes } from "node:crypto";
+import { once } from "node:events";
 import { closeSync, createReadStream, createWriteStream, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, renameSync, statSync, unlinkSync, writeFileSync, writeSync, watch as fsWatch } from "node:fs";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { StringDecoder } from "node:string_decoder";
-import { MASK, secretForms } from "./redact.mjs";
+import { MASK, redactText, secretForms } from "./redact.mjs";
 
 /** A body field or form parameter whose value is a password. */
 export const FIELD_RE = /pass(?:word|wd)|^pwd$|^client_secret$/i;
@@ -40,7 +45,15 @@ const STAMP = ".har-scrub.json";
 /** The spellings pass 2 masks, longest first. Pure. */
 export function harForms(secrets) {
   const all = new Set();
-  for (const s of secrets || []) for (const f of secretForms(s)) if (f.length >= MIN_FORM) all.add(f);
+  for (const s of secrets || []) {
+    for (const f of secretForms(s)) {
+      if (f.length < MIN_FORM) continue;
+      all.add(f);
+      // A value inside a JSON body that is itself a HAR string is escaped twice.
+      const twice = JSON.stringify(f).slice(1, -1);
+      if (twice !== f) all.add(twice);
+    }
+  }
   return [...all].sort((a, b) => b.length - a.length);
 }
 
@@ -50,7 +63,7 @@ function maskJson(node) {
     for (const v of node) n += maskJson(v);
   } else if (node && typeof node === "object") {
     for (const [k, v] of Object.entries(node)) {
-      if (typeof v === "string" && v && v !== MASK && FIELD_RE.test(k)) {
+      if (((typeof v === "string" && v && v !== MASK) || typeof v === "number") && FIELD_RE.test(k)) {
         node[k] = MASK;
         n++;
       } else n += maskJson(v);
@@ -128,16 +141,11 @@ export function maskEntry(entry) {
   return n;
 }
 
+const countMasks = (t) => t.split(MASK).length - 1;
+
 function maskForms(text, forms) {
-  let out = text;
-  let n = 0;
-  for (const f of forms) {
-    if (!out.includes(f)) continue;
-    const parts = out.split(f);
-    n += parts.length - 1;
-    out = parts.join(MASK);
-  }
-  return { text: out, masked: n };
+  const out = redactText(text, forms);
+  return { text: out, masked: out === text ? 0 : countMasks(out) - countMasks(text) };
 }
 
 /** Both passes over one serialized HAR record. Pure. @returns {{ text: string, masked: number }} */
@@ -225,34 +233,61 @@ function stampPath(file) {
   return join(dirname(file), STAMP);
 }
 
-function readStamps(file) {
+function readStampFile(file) {
   try {
-    return JSON.parse(readFileSync(stampPath(file), "utf8")) || {};
+    const j = JSON.parse(readFileSync(stampPath(file), "utf8"));
+    if (j && typeof j.salt === "string" && j.files && typeof j.files === "object") return j;
   } catch {
-    return {};
+    /* none yet, or unreadable — start over */
+  }
+  return { salt: randomBytes(16).toString("hex"), files: {} };
+}
+
+/**
+ * A 32-bit salted tag per value pass 2 can use: enough to tell "scrubbed with this value" apart, too
+ * short (many values share a tag) to confirm a guessed password against.
+ */
+function tagsFor(secrets, salt) {
+  const vals = [...new Set((secrets || []).filter((v) => harForms([v]).length))];
+  return vals.map((v) => createHmac("sha256", salt).update(String(v)).digest("hex").slice(0, 8));
+}
+
+const sameStat = (a, b) => !!a && !!b && a.size === b.size && a.mtimeMs === b.mtimeMs;
+
+function statOrNull(file) {
+  try {
+    return statSync(file);
+  } catch {
+    return null;
   }
 }
 
-function writeStamp(file) {
+/** The tags a file's stamp carries, if the stamp describes `st` (the version about to be read). */
+function carriedTags(file, st) {
+  const entry = readStampFile(file).files[basename(file)];
+  return sameStat(entry, st) && Array.isArray(entry.tags) ? entry.tags : [];
+}
+
+function writeStamp(file, secrets, carried) {
   try {
     const st = statSync(file);
-    const stamps = readStamps(file);
-    stamps[basename(file)] = { size: st.size, mtimeMs: st.mtimeMs };
-    writeFileSync(stampPath(file), JSON.stringify(stamps, null, 2));
+    const stamp = readStampFile(file);
+    const tags = [...new Set([...carried, ...tagsFor(secrets, stamp.salt)])];
+    stamp.files[basename(file)] = { size: st.size, mtimeMs: st.mtimeMs, tags };
+    writeFileSync(stampPath(file), JSON.stringify(stamp, null, 2));
   } catch {
     /* a missing stamp only costs a re-scan */
   }
 }
 
-/** Whether `file` is unchanged since its last scrub. */
-export function isStamped(file) {
-  try {
-    const st = statSync(file);
-    const s = readStamps(file)[basename(file)];
-    return !!s && s.size === st.size && s.mtimeMs === st.mtimeMs;
-  } catch {
-    return false;
-  }
+/** Whether `file` is unchanged since a scrub that knew every one of `secrets`. */
+export function isStamped(file, secrets = []) {
+  const st = statOrNull(file);
+  const stamp = readStampFile(file);
+  const entry = stamp.files[basename(file)];
+  if (!st || !sameStat(entry, st)) return false;
+  const have = new Set(Array.isArray(entry.tags) ? entry.tags : []);
+  return tagsFor(secrets, stamp.salt).every((t) => have.has(t));
 }
 
 function replace(tmp, file) {
@@ -271,81 +306,150 @@ function replace(tmp, file) {
   }
 }
 
-function settle(file, tmp, result) {
+/** Temp files of scrubs in flight in this process — an exit handler removes what they leave. */
+const activeTmps = new Set();
+const dropTmp = (tmp) => {
+  activeTmps.delete(tmp);
+  try { unlinkSync(tmp); } catch { /* already gone, or renamed */ }
+};
+const tmpFor = (file) => {
+  const tmp = `${file}.${process.pid}.${Date.now()}.scrub.tmp`;
+  activeTmps.add(tmp);
+  return tmp;
+};
+const TMP_RE = /\.scrub\.tmp$/;
+
+/** The outcome once the file has been read (and, when something was masked, rewritten into `tmp`). */
+function settle(file, tmp, result, before, secrets, carried) {
   if (!result.complete) {
-    try { unlinkSync(tmp); } catch { /* already gone */ }
+    if (tmp) dropTmp(tmp);
     return { status: "incomplete", masked: 0 };
   }
+  // Rewritten since it was read: Playwright wrote a new HAR, or another scrubber replaced it.
+  if (!sameStat(statOrNull(file), before)) {
+    if (tmp) dropTmp(tmp);
+    return { status: "changed", masked: 0 };
+  }
   if (!result.masked) {
-    try { unlinkSync(tmp); } catch { /* already gone */ }
-    writeStamp(file);
+    if (tmp) dropTmp(tmp);
+    writeStamp(file, secrets, carried);
     return { status: "clean", masked: 0 };
   }
   replace(tmp, file);
-  writeStamp(file);
+  activeTmps.delete(tmp);
+  writeStamp(file, secrets, carried);
   return { status: "scrubbed", masked: result.masked };
 }
 
-const tmpFor = (file) => `${file}.${process.pid}.${Date.now()}.scrub.tmp`;
-
 /**
- * Scrub one HAR file in place (streamed).
- * @returns {Promise<{ status: "missing"|"skipped"|"incomplete"|"clean"|"scrubbed"|"error", masked: number, error?: string }>}
+ * Scrub one HAR file in place (streamed): a counting pass, then a writing pass only when there is
+ * something to mask.
+ * @returns {Promise<{ status: "missing"|"skipped"|"incomplete"|"changed"|"clean"|"scrubbed"|"error", masked: number, error?: string }>}
  */
 export async function scrubHarFile(file, { secrets = [], force = false, highWaterMark = 1 << 22 } = {}) {
   if (!existsSync(file)) return { status: "missing", masked: 0 };
-  if (!force && isStamped(file)) return { status: "skipped", masked: 0 };
-  const tmp = tmpFor(file);
-  const s = createHarScrubber(harForms(secrets));
+  if (!force && isStamped(file, secrets)) return { status: "skipped", masked: 0 };
+  const forms = harForms(secrets);
+  let tmp;
   try {
+    const before = statSync(file);
+    const carried = carriedTags(file, before);
+    const count = createHarScrubber(forms);
+    for await (const chunk of createReadStream(file, { encoding: "utf8", highWaterMark })) count.push(chunk);
+    const counted = count.end();
+    if (!counted.complete || !counted.masked) return settle(file, null, counted, before, secrets, carried);
+    tmp = tmpFor(file);
+    const s = createHarScrubber(forms);
     const out = createWriteStream(tmp, { encoding: "utf8" });
     const done = new Promise((ok, fail) => {
       out.on("finish", ok);
       out.on("error", fail);
     });
+    done.catch(() => {}); // a write error is returned below, never left unhandled
     for await (const chunk of createReadStream(file, { encoding: "utf8", highWaterMark })) {
       const text = s.push(chunk);
-      if (text && !out.write(text)) await new Promise((ok) => out.once("drain", ok));
+      // An error already emitted never brings 'drain': race the wait against the stream's outcome.
+      if (text && !out.write(text)) await Promise.race([once(out, "drain"), done]);
     }
     out.end();
     await done;
-    return settle(file, tmp, s.end());
+    return settle(file, tmp, s.end(), before, secrets, carried);
   } catch (e) {
-    try { unlinkSync(tmp); } catch { /* never created */ }
+    if (tmp) dropTmp(tmp);
     return { status: "error", masked: 0, error: e.message };
   }
 }
 
-/** The same, synchronously — for a process `exit` handler, where nothing asynchronous runs. */
-export function scrubHarFileSync(file, { secrets = [], force = false, chunkBytes = 1 << 22 } = {}) {
-  if (!existsSync(file)) return { status: "missing", masked: 0 };
-  if (!force && isStamped(file)) return { status: "skipped", masked: 0 };
-  const tmp = tmpFor(file);
-  const s = createHarScrubber(harForms(secrets));
+function readEachSync(file, chunkBytes, fn) {
   const decoder = new StringDecoder("utf8");
-  let fin;
-  let fout;
+  const fd = openSync(file, "r");
   try {
-    fin = openSync(file, "r");
-    fout = openSync(tmp, "w");
     const buf = Buffer.alloc(chunkBytes);
     for (;;) {
-      const n = readSync(fin, buf, 0, buf.length, null);
+      const n = readSync(fd, buf, 0, buf.length, null);
       if (!n) break;
-      const text = s.push(decoder.write(buf.subarray(0, n)));
-      if (text) writeSync(fout, text);
+      fn(decoder.write(buf.subarray(0, n)));
     }
-    const tail = s.push(decoder.end());
-    if (tail) writeSync(fout, tail);
-    closeSync(fin);
+    fn(decoder.end());
+  } finally {
+    closeSync(fd);
+  }
+}
+
+/** The same, synchronously — for a process `exit` handler and the hook, where nothing asynchronous runs. */
+export function scrubHarFileSync(file, { secrets = [], force = false, chunkBytes = 1 << 22 } = {}) {
+  if (!existsSync(file)) return { status: "missing", masked: 0 };
+  if (!force && isStamped(file, secrets)) return { status: "skipped", masked: 0 };
+  const forms = harForms(secrets);
+  let tmp;
+  let fout;
+  try {
+    const before = statSync(file);
+    const carried = carriedTags(file, before);
+    const count = createHarScrubber(forms);
+    readEachSync(file, chunkBytes, (t) => count.push(t));
+    const counted = count.end();
+    if (!counted.complete || !counted.masked) return settle(file, null, counted, before, secrets, carried);
+    tmp = tmpFor(file);
+    fout = openSync(tmp, "w");
+    const s = createHarScrubber(forms);
+    readEachSync(file, chunkBytes, (t) => {
+      const text = s.push(t);
+      if (text) writeSync(fout, text);
+    });
     closeSync(fout);
-    fin = fout = undefined;
-    return settle(file, tmp, s.end());
+    fout = undefined;
+    return settle(file, tmp, s.end(), before, secrets, carried);
   } catch (e) {
-    for (const fd of [fin, fout]) if (fd !== undefined) try { closeSync(fd); } catch { /* closed */ }
-    try { unlinkSync(tmp); } catch { /* never created */ }
+    if (fout !== undefined) try { closeSync(fout); } catch { /* closed */ }
+    if (tmp) dropTmp(tmp);
     return { status: "error", masked: 0, error: e.message };
   }
+}
+
+/** Remove `*.scrub.tmp` files older than `maxAgeMs` beside the given HAR paths — left by a scrub cut short. */
+export function sweepStaleTmp(harPaths, maxAgeMs = 10 * 60 * 1000) {
+  let removed = 0;
+  for (const dir of new Set(harPaths.map((p) => dirname(p)))) {
+    let names = [];
+    try {
+      names = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    for (const f of names) {
+      if (!TMP_RE.test(f)) continue;
+      const st = statOrNull(join(dir, f));
+      if (!st || Date.now() - st.mtimeMs < maxAgeMs) continue;
+      try {
+        unlinkSync(join(dir, f));
+        removed++;
+      } catch {
+        /* in use — next time */
+      }
+    }
+  }
+  return removed;
 }
 
 /** `recordHar.path` of a Playwright MCP config file, absolute (relative paths resolve against `cwd`), or null. */
@@ -405,10 +509,11 @@ export function watchHarDirs(harPaths, { secrets = [], watch = fsWatch, onResult
     scrubHarFile(file, { secrets }).then((r) => {
       running.delete(file);
       onResult(file, r);
-      // Playwright is still writing it: look again shortly, a bounded number of times.
-      if (r.status === "incomplete" && tries < 20) schedule(file, tries + 1);
+      // Playwright is still writing it, or it changed under the scrub: look again, a bounded number of times.
+      if ((r.status === "incomplete" || r.status === "changed") && tries < 20) schedule(file, tries + 1);
     });
   };
+  sweepStaleTmp(harPaths);
   for (const f of harFilesIn(harPaths)) run(f);
   const watchers = [];
   for (const dir of new Set(harPaths.map((p) => dirname(p)))) {
@@ -426,6 +531,8 @@ export function watchHarDirs(harPaths, { secrets = [], watch = fsWatch, onResult
   }
   const atExit = () => {
     for (const t of timers.values()) clearTimeout(t);
+    // An async scrub cut short by the exit leaves its temp file; the sync scrub below redoes its work.
+    for (const tmp of [...activeTmps]) dropTmp(tmp);
     for (const f of harFilesIn(harPaths)) onResult(f, scrubHarFileSync(f, { secrets }));
   };
   process.on("exit", atExit);
