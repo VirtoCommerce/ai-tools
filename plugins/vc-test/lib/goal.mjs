@@ -134,6 +134,9 @@ const stored = (dir, p) => {
   return rel && !rel.startsWith("..") && !isAbsolute(rel) ? posix(rel) : posix(p);
 };
 
+/** OAuth keys SECRET_NAME does not match: an authorization code and a PKCE verifier are never stored (exact key, any case). */
+const OAUTH_SECRET_KEYS = new Set(["code", "code_verifier"]);
+
 /** The secret-named parameter KEYS of a URL's query and fragment (never their values): a token pasted from a HAR. */
 function secretUrlKeys(url) {
   const hash = url.indexOf("#");
@@ -146,7 +149,7 @@ function secretUrlKeys(url) {
     const raw = part.split("=")[0];
     let key = raw;
     try { key = decodeURIComponent(raw.split("+").join(" ")); } catch { /* keep the raw spelling */ }
-    if (key && SECRET_NAME.test(key) && !keys.includes(key)) keys.push(key);
+    if (key && (SECRET_NAME.test(key) || OAUTH_SECRET_KEYS.has(key.toLowerCase())) && !keys.includes(key)) keys.push(key);
   }
   return keys;
 }
