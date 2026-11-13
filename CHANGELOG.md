@@ -37,11 +37,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   and flow surfaces and the brief carries the tasks. Think-aloud, five-second and first-click tests are marked as
   human-session methods the agent recommends and never runs; a UX finding is no longer "must be filed" by the
   agent.
-- **Persona tests.** New `skills/qa-design/personas.md`: a catalog — first-time guest, returning customer, B2B
-  buyer, approver / org admin, restricted member, acting on behalf, mobile shopper, keyboard / screen-reader user,
-  other-locale shopper — where each persona sets the account, entry point, device and how the agent acts. Each
-  `vs. USER` task runs as its own actor plus one contrast persona the change puts at risk (capped at three per
-  task, six runs in all), and the runs are compared: a restricted member reaching data it must not see is a
+- **Persona tests, derived from the ticket.** New `skills/qa-design/personas.md`: a persona is an archetype (how
+  the person behaves — first-time guest, returning customer, B2B buyer, approver, restricted member, acting on
+  behalf, mobile, keyboard / screen reader, other locale) plus the segments the feature splits users by, read from
+  the ACs, the diff (role and permission checks, branches on tier / currency / org / locale) and the feature's
+  settings. Every persona names its source. Segments run as pairs that must diverge (VIP vs zero balance, with vs
+  without a permission, own vs another org); a pair that behaves the same is a `FAIL` when an AC states the
+  difference. The account is the stand key carrying the segment, checked live before the task. A contrast
+  archetype by the change's risk is the fallback when the ticket names no segment. Capped at three personas per
+  task, six runs in all, and the runs are compared: a restricted member reaching data it must not see is a
   `FAIL` reported as access control; a dead end instead of a clear denial, or one persona needing far more steps,
   is `ADVISORY`. A persona with no account on the stand is `NOT RUN`, never signed in as someone else.
 - Storybook story discovery starts from `{STORYBOOK_URL}/index.json`, which a fork's Storybook serves too, before

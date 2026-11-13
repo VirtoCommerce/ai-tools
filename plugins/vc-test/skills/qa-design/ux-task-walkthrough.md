@@ -14,10 +14,10 @@ them?* — and answers it from what was on the screen, never from the DOM, the s
   the page's primary job — what a user comes to that route to do (a PDP: choose a variant and add it to the cart;
   a cart: change a quantity and reach checkout). Write each as the user would say it: *"reorder what I bought last
   month"*, never *"click #reorder-btn"*.
-- **Personas.** Each task runs as its own actor plus one contrast persona the change puts at risk — the catalog,
-  the account for each, the matrix and its cap: [`personas.md`](personas.md). A persona sets the account, the
+- **Personas.** Derived from the ticket — its actors, the roles and segments the diff and settings split users
+  by — as archetype + segments, run in pairs that must behave differently: [`personas.md`](personas.md). A persona sets the account, the
   entry point, the device and how you act; never sign in as another persona to make a task possible.
-- **Where the user starts.** Where that persona would (its row in [`personas.md`](personas.md) §1): the home page, a search, the account menu, the link an
+- **Where the user starts.** Where that persona would (its archetype in [`personas.md`](personas.md) §2): the home page, a search, the account menu, the link an
   email or notification gives them. A deep URL only when a user would really have it (a bookmark, a shared
   link) — say which.
 
@@ -39,7 +39,7 @@ them?* — and answers it from what was on the screen, never from the DOM, the s
    `NOT RUN — read-only stand` for that last step; everything before it still counts.
 6. **On the persona's device** — desktop, the narrowest width of the viewport sweep
    ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure) for the mobile shopper, keyboard only for
-   the keyboard / screen-reader user ([`personas.md`](personas.md) §1).
+   the keyboard / screen-reader user ([`personas.md`](personas.md) §2).
 
 ## 3. What to observe at every step
 
@@ -71,7 +71,7 @@ invariant FAIL on the same step outranks a UX finding, and the axis never rescue
 
 ## 5. What you return
 
-One row per task **and persona**, then one row per finding, then the persona matrix ([`personas.md`](personas.md) §5):
+One row per task **and persona**, then one row per finding, then the personas and their matrix ([`personas.md`](personas.md) §6):
 
 ```
 | Task | Persona | Completed | Steps (taken / intended) | Verdict |
