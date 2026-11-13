@@ -7,8 +7,9 @@
 // output is scrubbed of the stored token values, the code, the project's secret values and token shapes.
 // The HAR also holds the sign-in POST with the plaintext password: only `log.entries[i].request.url` and
 // `log.entries[i].response.headers` are ever read — never a postData, never a response body.
-// A token is sent only to the origin of its issuer, its resource, its audience, or the current env's BACK_URL or
-// FRONT_URL, over https (or loopback), and a redirect is never followed: a URL elsewhere is refused, so a page cannot
+// A token is sent only to the origin of its issuer, its audience, the current env's BACK_URL or FRONT_URL, or its
+// resource when that is one of those or a host an approved S1/S2 checkpoint names (the agent chose the resource at
+// `start`), over https (or loopback), and a redirect is never followed: a URL elsewhere is refused, so a page cannot
 // talk the agent into shipping it out.
 // CLI (every command takes --dir <runDir> --persona <name>; persona matches /^[a-z0-9-]{1,32}$/):
 //   start --issuer <url> --client <id> --redirect <uri> [--resource <uri>] [--scope "openid offline_access"] → { persona, url, restarted }
@@ -18,7 +19,7 @@
 //     every request after initialize sends MCP-Protocol-Version = the version initialize answered). No message with the
 //     request's id ⇒ { status, result: null, error: "no response with the request id" } — never another message.
 //   http --method GET|POST|DELETE --url <url> [--body-file <json>]      → { status, body }
-//   purge                    → { purged: n } (removes <runDir>/.tokens/; --persona optional)
+//   purge                    → { purged: n } (removes <runDir>/.tokens/; with --persona only that persona's files)
 //   A 401 from mcp/http prints { status, error } — the WWW-Authenticate `error` value only; nothing is refreshed.
 //   A URL carrying a user name or password is a usage error. Every request, body included, times out after 30 s (exit 3).
 // Prints ONE JSON object. Exit 0 done · 1 usage · 2 refused (a server or HAR said no; `errors` names why) · 3 could not run
@@ -29,8 +30,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, s
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { knowledgeSecretValues, scrubValues } from "./knowledge-store.mjs";
-import { argOf, currentEnv, outputRoot } from "./paths.mjs";
-import { loadLayeredEnv } from "../scripts/lib/load-layered-env.mjs";
+import { argOf, outputRoot } from "./paths.mjs";
+import { hostAllowed, loadGoal, standUrls } from "./goal.mjs";
 
 const PERSONA_RE = /^[a-z0-9-]{1,32}$/;
 const TRIM = 4000;
@@ -234,36 +235,23 @@ function callbackIn(harPath, pkce) {
   return found.get("code");
 }
 
-// ---- where a token may go: the issuer's, the resource's or the audience's origin, and nowhere else ----
-/**
- * BACK_URL and FRONT_URL of the current env, through vc-test's own layered loader — and nothing else: the loader
- * writes every layer (passwords included) into process.env, so the environment is put back exactly as it was before
- * this returns. A missing variable, or an env that will not load, contributes nothing.
- */
-function standUrls() {
-  const before = { ...process.env };
-  try {
-    loadLayeredEnv(currentEnv());
-    return [process.env.BACK_URL, process.env.FRONT_URL];
-  } catch {
-    return [];
-  } finally {
-    for (const k of Object.keys(process.env)) if (!(k in before)) delete process.env[k];
-    Object.assign(process.env, before);
-  }
-}
-// The stand's own hosts are allowed so the method can prove a token is REFUSED by another endpoint of the same stand.
-function allowedOrigins(tok) {
+// ---- where a token may go: the issuer's or the audience's origin, the stand's, an approved resource — nowhere else ----
+// The stand's own hosts (goal.mjs standUrls) are allowed so the method can prove a token is REFUSED by another
+// endpoint of the same stand. The resource is the agent's own `start --resource` argument, so it counts only when it
+// is a host the run may touch (goal.mjs hostAllowed: the stand, or a host an approved S1/S2 note names).
+function allowedOrigins(tok, goal) {
+  const stand = standUrls();
   const out = new Set();
-  for (const raw of [tok.issuer, tok.resource, ...asArray(claimsOf(tok.access_token)?.aud), ...standUrls()]) {
+  for (const raw of [tok.issuer, ...asArray(claimsOf(tok.access_token)?.aud), ...stand]) {
     try { out.add(new URL(raw).origin); } catch { /* not a URL */ }
   }
+  if (tok.resource && hostAllowed(goal, tok.resource, stand)) { try { out.add(new URL(tok.resource).origin); } catch { /* not a URL */ } }
   return out;
 }
-function target(argv, tok) {
+function target(argv, tok, dir) {
   const u = safeUrl(need(argv, "url"), "--url");
-  const allowed = allowedOrigins(tok);
-  if (!allowed.has(u.origin)) throw refuse(`--url ${u.origin} is not this token's issuer, resource or audience, nor this stand's BACK_URL or FRONT_URL (${[...allowed].join(", ")})`);
+  const allowed = allowedOrigins(tok, loadGoal(dir));
+  if (!allowed.has(u.origin)) throw refuse(`--url ${u.origin} is not this token's issuer or audience, this stand's BACK_URL or FRONT_URL, nor a resource on a host approved at S1/S2 (${[...allowed].join(", ")})`);
   return u;
 }
 function loadToken(dir, p) {
@@ -299,7 +287,7 @@ function rpcMessage(text, id) {
 
 async function mcp(argv, dir, p) {
   const tok = loadToken(dir, p);
-  const url = target(argv, tok);
+  const url = target(argv, tok, dir);
   const method = need(argv, "method");
   const params = readJsonFile(argv, "params-file") ?? {};
   const headers = { "Content-Type": "application/json", Accept: "application/json, text/event-stream", Authorization: `Bearer ${tok.access_token}` };
@@ -320,8 +308,15 @@ async function mcp(argv, dir, p) {
   await drop(note);
   const res = await post({ jsonrpc: "2.0", id: 2, method, params }, session);
   if (res.status === 401) { await drop(res); return { status: 401, step: method, error: wwwError(res) }; }
-  const msg = rpcMessage(await textOf(res), 2);
+  const resText = await textOf(res);
+  const msg = rpcMessage(resText, 2);
   if (sid) { try { const d = await request(url, { method: "DELETE", headers: { ...headers, ...session } }, "mcp"); await drop(d); } catch { /* best effort */ } }
+  // A refusal (403, 400 …) carries no JSON-RPC message of ours: its body is the observation, as at initialize.
+  if (!msg && res.status !== 200) {
+    let parsed = resText;
+    try { parsed = JSON.parse(resText); } catch { /* a text body */ }
+    const b = shown(parsed);
+    return { status: res.status, step: method, result: b.value, ...(b.trimmed ? { trimmed: true } : {}) }; }
   if (!msg) return { status: res.status, result: null, error: NO_RESPONSE };
   if (msg.error) return { status: res.status, error: shown(msg.error).value };
   const s = shown(msg?.result ?? null);
@@ -332,7 +327,7 @@ async function http(argv, dir, p) {
   const method = need(argv, "method").toUpperCase();
   if (!["GET", "POST", "DELETE"].includes(method)) throw usage("--method must be GET, POST or DELETE");
   const tok = loadToken(dir, p);
-  const url = target(argv, tok);
+  const url = target(argv, tok, dir);
   const body = readJsonFile(argv, "body-file");
   const headers = { Accept: "application/json", Authorization: `Bearer ${tok.access_token}` };
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -366,6 +361,12 @@ async function run(argv) {
   holdStored(dir);
   if (cmd === "purge") {
     const tdir = tokensDir(dir);
+    if (argOf(argv, "persona") !== undefined) { // one persona: its token and any unredeemed sign-in, nobody else's
+      const p = persona(argv);
+      const files = [tokenFile(dir, p), pkceFile(dir, p)].filter((f) => existsSync(f));
+      for (const f of files) rmSync(f, { force: true });
+      return { purged: files.length };
+    }
     let n = 0;
     try { n = readdirSync(tdir).filter((f) => f.endsWith(".json")).length; } catch { /* nothing to purge */ }
     rmSync(tdir, { recursive: true, force: true });

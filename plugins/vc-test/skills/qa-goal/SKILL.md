@@ -239,5 +239,5 @@ changed expectation) · **not deployed**.
 
 **The abort close** — any run that ends without a judged verdict: write `verdict.md` headed `<KEY> — STOPPED AT BUDGET — not
 judged`, `<KEY> — BLOCKED`, or `<KEY> — STOPPED at <stop> — not judged`, listing each AC's state as recorded; then
-step 9.1 and 9.3–9.6; `check --before close` names the missing judge — report "not judged". No judge, no knowledge
+step 9.1 and 9.3–9.6, 9.5 with `--abort`; `check --before close` names the missing judge — report "not judged". No judge, no knowledge
 write-back, no S3.

@@ -73,10 +73,12 @@ only in `<dir>/.tokens/` and are deleted at close. **You never see, store or pas
    - **Read `status`, not the exit code**: a 401 exits 0 with `{ status: 401, error }` — the `WWW-Authenticate`
      error only. That is an observation (the negative control of an audience criterion, say), not a failure of the
      command. An `mcp` answer with `result: null` and `error: "no response with the request id"` means the server
-     sent no reply to the call — an observation too, never read as an empty result.
+     answered 200 with no reply to the call — an observation too, never read as an empty result. Any other status
+     with no reply (a 403 refusal, say) prints `{ status, step, result }`, the body as `result`.
    - **A non-zero exit** leaves only `{ ok: false, errors }` in the output file, no evidence: read its `errors`,
      then delete the file.
-   - Exit 2 "`--url` … is not this token's issuer, resource or audience, nor this stand's BACK_URL or FRONT_URL" ⇒
+   - Exit 2 "`--url` … is not this token's issuer or audience, this stand's BACK_URL or FRONT_URL, nor a resource on
+     a host approved at S1/S2" ⇒
      the script refused to send the token there, by design. Never work around it; that refusal is not evidence
      about the product.
    - A result over 4,000 characters comes back with `trimmed: true`: check the criterion with a narrower call.

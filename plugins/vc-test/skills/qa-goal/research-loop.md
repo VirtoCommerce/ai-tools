@@ -82,8 +82,8 @@ Go down the list; go back up whenever a lower source raises a question a higher 
    `<dir>/in/replay-<n>.json` `{ "method": "GET", "url": "<url>", "expectStatus": <the status you observed> }` →
    `node <plugin>/lib/goal.mjs replay add --dir <dir> --file <dir>/in/replay-<n>.json` → `{ id }`; then
    `node <plugin>/lib/goal.mjs replay --dir <dir> --id <RP-n>` → `{ status, expectStatus, match }` — `match: true`
-   before you cite it. `replay add` exit 2 ⇒ the URL carries credentials or a secret-named parameter: a replay is
-   unauthenticated, so this probe is not one. `replay` exit 3 ⇒ the stand did not answer: say so, cite the file.
+   before you cite it. `replay add` exit 2 ⇒ the URL carries credentials or a secret-named parameter (a replay is
+   unauthenticated, so this probe is not one), or its host is not one the run may touch. `replay` exit 3 ⇒ the stand did not answer: say so, cite the file.
    A signed-in read is not research — it is the test loop, after S2 ([`recipes/oauth-code-flow.md`](recipes/oauth-code-flow.md)).
 5. **Source code** — at the version the stand runs: the PR diffs in the bundle, and the repository at the deployed
    tag or sha (the bundle's deployment facts), read as in 3. Last, because code says what the build does, not what

@@ -4,7 +4,8 @@
 // What an agent hands over goes through a FILE it wrote with an editor tool (`--file <json>`), never JSON on a command
 // line: the text comes from a ticket or a page, and a quote in it would break — or inject into — a shell command.
 // Every input is, in this order: refused if a key is a forbidden field name (token, authorization, password, cookie),
-// refused if any string is JWT-shaped (exit 2, nothing written), scrubbed of the project's secret values and token
+// refused if any string is JWT- or JWE-shaped or holds a value oauth-code.mjs keeps in the run's `.tokens/` (exit 2,
+// nothing written), scrubbed of the project's secret values and token
 // shapes (knowledge-store.mjs), merged into the journal, checked against the schema, and only then saved (atomic).
 // A path inside the run's `.tokens/` (an evidence path, `judge --file`, `close`'s two paths) is refused, never echoed.
 // CLI: node goal.mjs <command> …; prints ONE JSON object. Exit 0 done · 1 usage · 2 refused (`errors` names every
@@ -14,22 +15,27 @@
 //   ac add --file <json> → { id } · ac set --id AC-n --file <json>
 //   strategy set --file <json>                        (an array of risks; replaces the strategy)
 //   finding add --file <json> → { id } · finding set --id F-n --file <json>
-//   replay add --file <json> → { id } · replay --id RP-n → { id, status, expectStatus, match } (GET/HEAD, no credentials)
+//   replay add --file <json> → { id } · replay --id RP-n → { id, status, expectStatus, match } (GET/HEAD, no credentials,
+//     only to a host the run may touch: the stand's BACK_URL/FRONT_URL, or a host an approved S1/S2 note names)
 //   check --before strategy|write|verdict|close [--what <label>]   → { ok, errors, warnings }; exit 2 when a gate fails
 //   checkpoint --stop S1|S2|S3 --decision approved|rejected|edited --who <name> [--note <text>]
-//   cost --file <json> · judge --verdict APPROVE|REJECT --file <judge.md> · close --write-zones <path> --teardown <path>
+//   cost --file <json> · judge --verdict APPROVE|REJECT --file <judge.md> (must equal the file's last `VERDICT:` line)
+//   close --write-zones <path> --teardown <path> [--abort]  (refused with no judge verdict unless --abort)
 //   every command but init takes --dir <runDir>.
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { knowledgeSecretValues, scrubValues } from "./knowledge-store.mjs";
 import { argOf, outputRoot, workDir, currentEnv } from "./paths.mjs";
+import { loadLayeredEnv } from "../scripts/lib/load-layered-env.mjs";
 import { SECRET_NAME } from "../skills/ticket-context/lib/scrub.mjs";
+import { validate } from "../skills/ticket-context/lib/schema.mjs";
 
 export const GOAL_FILE = "goal.json";
 const SCHEMA = JSON.parse(readFileSync(new URL("./goal.schema.json", import.meta.url), "utf8"));
 const FORBIDDEN = new Set(SCHEMA["x-forbiddenFieldNames"].map((n) => n.toLowerCase()));
-const JWT = /eyJ[\w-]+\.eyJ[\w-]+\./;
+// A signed JWT (`eyJ<hdr>.eyJ<payload>.`) or an encrypted one (JWE: five segments, the key segment may be empty).
+const JWT = /eyJ[\w-]+\.(?:eyJ[\w-]+\.|[\w-]*\.[\w-]+\.[\w-]+\.[\w-]+)/;
 const USAGE = "usage: goal.mjs init|contract|ac|strategy|finding|replay|check|checkpoint|cost|judge|close … --dir <runDir> (init: --key <KEY> [--env <env>] [--new])";
 
 /** A refusal carries every reason; exit 1 is a usage error, 2 a refusal, 3 an I/O failure. */
@@ -55,51 +61,9 @@ export function saveGoal(dir, goal) {
   renameSync(tmp, join(dir, GOAL_FILE));
 }
 
-// ---- schema validation: the subset goal.schema.json uses (type, enum, required, additionalProperties, items, $ref, bounds) ----
-const typeOk = (t, v) => {
-  switch (t) {
-    case "null": return v === null;
-    case "array": return Array.isArray(v);
-    case "object": return v !== null && typeof v === "object" && !Array.isArray(v);
-    case "integer": return Number.isInteger(v);
-    case "number": return typeof v === "number" && Number.isFinite(v);
-    default: return typeof v === t;
-  }
-};
-
-function check(schema, value, path, errors) {
-  const types = schema.type === undefined ? null : [].concat(schema.type);
-  if (types && value === null && types.includes("null")) return;
-  if (types && !types.some((t) => typeOk(t, value))) {
-    const object = types.filter((t) => t !== "null");
-    errors.push(`${path}: expected ${object.join(" or ")}, got ${value === null ? "null" : Array.isArray(value) ? "array" : typeof value}`);
-    return;
-  }
-  if (schema.$ref) check(SCHEMA.$defs[schema.$ref.replace("#/$defs/", "")], value, path, errors);
-  if (schema.enum && !schema.enum.includes(value)) errors.push(`${path}: "${value}" is not one of ${schema.enum.join(", ")}`);
-  if (typeof value === "string") {
-    if (schema.minLength !== undefined && value.length < schema.minLength) errors.push(`${path}: must not be empty`);
-    if (schema.pattern && !new RegExp(schema.pattern).test(value)) errors.push(`${path}: "${value}" does not match ${schema.pattern}`);
-  }
-  if (typeof value === "number") {
-    if (schema.minimum !== undefined && value < schema.minimum) errors.push(`${path}: ${value} is below ${schema.minimum}`);
-    if (schema.maximum !== undefined && value > schema.maximum) errors.push(`${path}: ${value} is above ${schema.maximum}`);
-  }
-  if (Array.isArray(value) && schema.items) value.forEach((v, i) => check(schema.items, v, `${path}[${i}]`, errors));
-  if (typeOk("object", value) && (schema.properties || schema.required)) {
-    for (const r of schema.required ?? []) if (!(r in value)) errors.push(`${path}: missing required field "${r}"`);
-    for (const [k, v] of Object.entries(value)) {
-      if (schema.properties?.[k]) check(schema.properties[k], v, `${path}.${k}`, errors);
-      else if (schema.additionalProperties === false) errors.push(`${path}: unknown field "${k}"`);
-    }
-  }
-}
-
-/** Every reason the journal does not fit the schema, or []. */
+/** Every reason the journal does not fit the schema, or [] — the plugin's one schema-subset validator. */
 export function validateGoal(goal) {
-  const errors = [];
-  check(SCHEMA, goal, "goal", errors);
-  return errors;
+  return validate(goal, SCHEMA, SCHEMA, "goal");
 }
 
 // ---- what is allowed to be stored ----
@@ -109,13 +73,72 @@ function walk(v, onKey, onString, path) {
   else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) { onKey(k, `${path}.${k}`); walk(x, onKey, onString, `${path}.${k}`); }
 }
 
-/** Input that may not be stored at all: a forbidden field name, a JWT-shaped value. Every reason, not the first. */
-export function refusals(input) {
+/**
+ * Input that may not be stored at all: a forbidden field name, a JWT/JWE-shaped value, or one of `held` (the values
+ * this run's `.tokens/` holds — an opaque refresh token has no shape to match). Every reason, not the first.
+ */
+export function refusals(input, held = []) {
   const errors = [];
   walk(input, (k, p) => { if (FORBIDDEN.has(k.toLowerCase())) errors.push(`${p}: a field named "${k}" is never stored`); },
-    (s, p) => { if (JWT.test(s)) errors.push(`${p}: token-shaped value refused — a token is never stored; describe it instead`); }, "input");
+    (s, p) => {
+      if (JWT.test(s) || held.some((v) => s.includes(v))) errors.push(`${p}: token-shaped value refused — a token is never stored; describe it instead`);
+    }, "input");
   return errors;
 }
+
+/** Every secret oauth-code.mjs keeps in the run's `.tokens/` (verifier, access, refresh and id token); unreadable ⇒ skipped. */
+function storedTokenValues(dir) {
+  const tdir = join(dir, ".tokens");
+  let names = [];
+  try { names = readdirSync(tdir); } catch { return []; }
+  const out = [];
+  for (const n of names.filter((x) => x.endsWith(".json"))) {
+    let o;
+    try { o = JSON.parse(readFileSync(join(tdir, n), "utf8")); } catch { continue; }
+    for (const k of ["verifier", "access_token", "refresh_token", "id_token"]) if (typeof o?.[k] === "string" && o[k].length >= 8) out.push(o[k]);
+  }
+  return out;
+}
+
+// ---- the hosts a run may touch (skills/qa-goal/research-loop.md §The hosts a run may touch) ----
+/**
+ * BACK_URL and FRONT_URL of the current env, through vc-test's own layered loader — and nothing else: the loader
+ * writes every layer (passwords included) into process.env, so the environment is put back exactly as it was before
+ * this returns. A missing variable, or an env that will not load, contributes nothing.
+ */
+export function standUrls() {
+  const before = { ...process.env };
+  try {
+    loadLayeredEnv(currentEnv());
+    return [process.env.BACK_URL, process.env.FRONT_URL];
+  } catch {
+    return [];
+  } finally {
+    for (const k of Object.keys(process.env)) if (!(k in before)) delete process.env[k];
+    Object.assign(process.env, before);
+  }
+}
+
+/** The hosts an approved S1 or S2 checkpoint names in its note (`hosts: a.example,b.example:8443`), lowercased. */
+export function approvedHosts(goal) {
+  const out = new Set();
+  for (const c of goal?.checkpoints ?? []) {
+    if (!["S1", "S2"].includes(c.stop) || c.decision !== "approved") continue;
+    const m = /^\s*hosts:\s*(.*)$/i.exec(c.note ?? "");
+    for (const h of (m?.[1] ?? "").split(",").map((x) => x.trim().toLowerCase())) if (h && h !== "none") out.add(h);
+  }
+  return out;
+}
+
+/** True when `url` is on the stand's BACK_URL/FRONT_URL origin or on a host an approved S1/S2 note names. */
+export function hostAllowed(goal, url, stand = standUrls()) {
+  let u;
+  try { u = new URL(url); } catch { return false; }
+  for (const s of stand) { try { if (new URL(s).origin === u.origin) return true; } catch { /* not a URL */ } }
+  const approved = approvedHosts(goal);
+  return approved.has(u.host.toLowerCase()) || approved.has(u.hostname.toLowerCase());
+}
+const NOT_A_RUN_HOST = "the URL's host is not one this run may touch (the stand's BACK_URL or FRONT_URL, or a host approved at S1/S2)";
 
 /** The input with the project's secret values and token shapes masked in every string (keys stay). */
 function scrubbed(input, secrets) {
@@ -232,7 +255,7 @@ function init(argv) {
 /** One command that changes the journal: refuse bad input, mutate a copy, validate the whole, save. */
 function mutate(argv, input, apply) {
   const dir = dirOf(argv);
-  const errors = refusals(input);
+  const errors = refusals(input, storedTokenValues(dir));
   if (errors.length) throw refuse(...errors);
   const goal = loadGoal(dir);
   const clean = scrubbed(input, knowledgeSecretValues(outputRoot()));
@@ -338,11 +361,13 @@ export function checkGoal(goal, stage, { dir, what } = {}) {
 async function runReplay(argv) {
   const dir = dirOf(argv);
   const id = need(argv, "id");
-  const r = (loadGoal(dir).replays ?? []).find((x) => x.id === id);
+  const goal = loadGoal(dir);
+  const r = (goal.replays ?? []).find((x) => x.id === id);
   if (!r) throw refuse(`no replay ${id}`);
   // The journal may have been edited by hand since `replay add` checked it: check again before any request leaves.
   if (r.method !== "GET" && r.method !== "HEAD") throw refuse(`${id}: only GET and HEAD are replayed`);
   if (typeof r.url !== "string" || !/^https?:\/\//.test(r.url)) throw refuse(`${id}: the URL must be http(s)`);
+  if (!hostAllowed(goal, r.url)) throw refuse(`${id}: ${NOT_A_RUN_HOST}`);
   if (/^https?:\/\/[^/?#]*@/.test(r.url)) throw refuse(`${id}: a URL with credentials in it is never replayed`);
   const keys = secretUrlKeys(r.url);
   if (keys.length) throw refuse(...keys.map((k) => `${id}: the URL carries a secret-named parameter "${k}" — a replay is unauthenticated`));
@@ -448,6 +473,7 @@ function cli(argv) {
           if (/^https?:\/\/[^/?#]*@/.test(c.url)) throw refuse("replay: a URL with credentials in it is never stored");
           const keys = secretUrlKeys(c.url);
           if (keys.length) throw refuse(...keys.map((k) => `replay: the URL carries a secret-named parameter "${k}" — a replay is unauthenticated; remove it`));
+          if (!hostAllowed(g, c.url)) throw refuse(`replay: ${NOT_A_RUN_HOST}`);
         }
         const r = { ...c, id: nextId("RP", g.replays) };
         g.replays.push(r);
@@ -472,6 +498,10 @@ function cli(argv) {
       refuseTokenPaths(dir, "judge", [file, abs]); // before any existence check: a token file is not even probed
       if (!insideRun(dir, abs) || abs === resolve(dir)) throw refuse("judge file must be inside the run folder");
       if (!existsSync(abs) || !statSync(abs).isFile()) throw refuse("judge file not found in the run folder");
+      // The verdict recorded is the judge's own: the last `VERDICT:` line of its saved reply, never the drafter's word.
+      const said = [...readFileSync(abs, "utf8").matchAll(/^\s*VERDICT:\s*(APPROVE|REJECT)\b/gm)].map((m) => m[1]).at(-1);
+      if (!said) throw refuse("judge file has no VERDICT: line — record nothing; dispatch the judge again");
+      if (said !== verdict) throw refuse(`--verdict ${verdict} is not the judge file's VERDICT: ${said}`);
       return mutate(argv, { verdict, path: posix(relative(resolve(dir), abs)) }, (g, c) => {
         g.judge = { verdict: c.verdict, at: now(), path: c.path };
         return { verdict: c.verdict };
@@ -480,8 +510,10 @@ function cli(argv) {
     case "close": {
       const writeZones = need(argv, "write-zones");
       const teardown = need(argv, "teardown");
+      const abort = argv.includes("--abort");
       return mutate(argv, { writeZones, teardown }, (g, c, dir) => {
         refuseTokenPaths(dir, "close", [c.writeZones, c.teardown]);
+        if (!abort && !g.judge?.verdict) throw refuse("no judge verdict recorded — a run that ends without one closes with --abort (the abort close)");
         g.closed = { writeZones: stored(dir, c.writeZones), teardown: stored(dir, c.teardown), at: now() };
       });
     }

@@ -14,21 +14,21 @@
     "createdAt": { "type": "string", "minLength": 1 },
     "goal": { "type": "string" },
     "done": { "type": "string" },
-    "budget": { "type": ["object", "null"], "$ref": "#/$defs/budget" },
+    "budget": { "$ref": "#/$defs/budget" },
     "stops": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "contract": { "type": ["object", "null"], "$ref": "#/$defs/contract" },
+    "contract": { "$ref": "#/$defs/contract" },
     "acs": { "type": "array", "items": { "$ref": "#/$defs/ac" } },
     "strategy": { "type": "array", "items": { "$ref": "#/$defs/risk" } },
     "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
     "replays": { "type": "array", "items": { "$ref": "#/$defs/replay" } },
     "checkpoints": { "type": "array", "items": { "$ref": "#/$defs/checkpoint" } },
-    "judge": { "type": ["object", "null"], "$ref": "#/$defs/judge" },
-    "cost": { "type": ["object", "null"], "$ref": "#/$defs/cost" },
-    "closed": { "type": ["object", "null"], "$ref": "#/$defs/closed" }
+    "judge": { "$ref": "#/$defs/judge" },
+    "cost": { "$ref": "#/$defs/cost" },
+    "closed": { "$ref": "#/$defs/closed" }
   },
   "$defs": {
     "budget": {
-      "type": "object",
+      "type": ["object", "null"],
       "additionalProperties": false,
       "required": ["tokens", "wallMin", "researchShare"],
       "properties": {
@@ -38,7 +38,7 @@
       }
     },
     "contract": {
-      "type": "object",
+      "type": ["object", "null"],
       "additionalProperties": false,
       "required": ["approvedBy", "approvedAt"],
       "properties": {
@@ -127,7 +127,7 @@
       }
     },
     "judge": {
-      "type": "object",
+      "type": ["object", "null"],
       "additionalProperties": false,
       "required": ["verdict", "at", "path"],
       "properties": {
@@ -138,7 +138,7 @@
     },
     "cost": {
       "description": "The total of a run-cost.mjs reading: input-equivalent tokens and minutes.",
-      "type": "object",
+      "type": ["object", "null"],
       "additionalProperties": false,
       "properties": {
         "input": { "type": "number", "minimum": 0 },
@@ -151,7 +151,7 @@
       }
     },
     "closed": {
-      "type": "object",
+      "type": ["object", "null"],
       "additionalProperties": false,
       "required": ["writeZones", "teardown", "at"],
       "properties": {

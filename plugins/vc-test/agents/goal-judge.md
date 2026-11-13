@@ -71,7 +71,7 @@ You write nothing and change nothing.
   REJECT reason for the AC or finding that cites that replay. Exit 3 is a network failure: write the replay as
   "not replayed: <reason as printed>" — that is neither a match nor a mismatch, and an AC whose only support is a
   replay you could not run does not hold until the evidence files alone carry it. A replay **refused** for any
-  other reason (unknown id, method not GET/HEAD, credentials in the URL, a secret-named URL parameter; exit 1 or 2)
+  other reason (unknown id, method not GET/HEAD, credentials in the URL, a secret-named URL parameter, a host the run may not touch; exit 1 or 2)
   is a REJECT reason quoted as printed (you cannot see why it was refused).
 
 ## How you re-derive

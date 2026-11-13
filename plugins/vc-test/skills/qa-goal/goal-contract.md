@@ -78,7 +78,7 @@ and ask the person with its options (AskUserQuestion):
      the gate that fired; carry on where the run was.
    - **(b) STOP AT BUDGET** — the abort close (SKILL.md §Stops): `verdict.md` headed
      `# <KEY> — STOPPED AT BUDGET — not judged`, one line per AC with its recorded state (`open` included) and the
-     findings as recorded; then `oauth-code.mjs purge`, `write-zones.mjs check`, `teardown.mjs`, `goal.mjs close`.
+     findings as recorded; then `oauth-code.mjs purge`, `write-zones.mjs check`, `teardown.mjs`, `goal.mjs close --abort`.
      No judge, no knowledge write-back, no S3.
    Never set open ACs to GAP "budget reached" to reach a verdict: a verdict past the budget cannot be judged.
 2. **"A write would be needed on a stand that is not writable."** (`capabilities.json` `stand.writable` false, or
