@@ -10,7 +10,7 @@ them?* — and answers it from what was on the screen, never from the DOM, the s
 
 ## 1. The task and the person
 
-- **Tasks (1–3; one on a FAST path).** From the brief. Else from the ticket's ACs ("as a <role> I want <goal>" → one task each). Else
+- **Tasks (1–3; one on the short path).** From the brief. Else from the ticket's ACs ("as a <role> I want <goal>" → one task each). Else
   the page's primary job — what a user comes to that route to do (a PDP: choose a variant and add it to the cart;
   a cart: change a quantity and reach checkout). Write each as the user would say it: *"reorder what I bought last
   month"*, never *"click #reorder-btn"*.

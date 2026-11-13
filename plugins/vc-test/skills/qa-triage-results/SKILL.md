@@ -1,6 +1,6 @@
 ---
 name: qa-triage-results
-description: "[QA Methodology] Triage a completed regression run's non-passing cases (FAIL / BLOCKED / SKIPPED) — or, with `ticket <KEY>`, the non-passing rows of a /qa-test or /qa-test-fast testing-checklist.md (checklist, exploratory and visual findings): collect each + its evidence (trace, screenshots, console, network) + the failing CSV or checklist row, dedup + flag flaky, classify each into real-product-bug vs test-defect (bad steps / bad assertion / stale test data / stale test) vs flaky/env/known, investigate the real ones live with vc-fix:qa-investigate, then route test-defects to /qa-review-tests --fix and draft bug reports (ticket mode returns them to the caller instead). Detect-classify-verify-report only — never files a tracker ticket, never triggers /qa-fix. Used by /qa-test 5-triage, /qa-test-fast Stage 3, and when asked to triage a finished run."
+description: "[QA Methodology] Triage a completed regression run's non-passing cases (FAIL / BLOCKED / SKIPPED) — or, with `ticket <KEY>`, the non-passing rows of a /qa-test testing-checklist.md (checklist, exploratory and visual findings): collect each + its evidence (trace, screenshots, console, network) + the failing CSV or checklist row, dedup + flag flaky, classify each into real-product-bug vs test-defect (bad steps / bad assertion / stale test data / stale test) vs flaky/env/known, investigate the real ones live with vc-fix:qa-investigate, then route test-defects to /qa-review-tests --fix and draft bug reports (ticket mode returns them to the caller instead). Detect-classify-verify-report only — never files a tracker ticket, never triggers /qa-fix. Used by /qa-test 5-triage and when asked to triage a finished run."
 argument-hint: "[RUN_ID | latest | ticket <KEY>] [--fix] [--verify] [--min-severity P0|P1|P2|P3]"
 ---
 
@@ -15,7 +15,7 @@ The owner of this flow is **the session that invokes it (in this repository: `qa
 /qa-triage-results REG-2026-07-14-0018          # Triage a specific run
 /qa-triage-results REG-2026-07-14-0018 --verify # Force live repro for ALL real-bug candidates (not just HIGH-confidence)
 /qa-triage-results latest --fix --verify        # Full: verify all candidates + apply fixes + draft bugs
-/qa-triage-results ticket VCST-1234 --verify    # Ticket mode: a /qa-test or /qa-test-fast run's testing-checklist.md
+/qa-triage-results ticket VCST-1234 --verify    # Ticket mode: a /qa-test run's testing-checklist.md
 ```
 
 From the plugin the command is `/vc-test:qa-triage-results` (in this repository `/qa-triage-results` is a shim to it).

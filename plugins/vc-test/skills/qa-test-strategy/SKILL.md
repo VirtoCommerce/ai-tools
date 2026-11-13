@@ -17,7 +17,7 @@ Why this shape (HTSM, ISTQB, ISO/IEC/IEEE 29119-3, agent research):
 | The floors, the staleness check, the depth label, clause 15 (the account per risk) | [`floors.md`](floors.md) |
 | Rounds: what counts, the cap of three, what round N reads from N−1 | [`rounds.md`](rounds.md) |
 | The file's shape | [`template.md`](template.md) |
-| How it is entered: from `/qa-test-fast`, or standalone | [`entry.md`](entry.md) |
+| How it is entered: from `/qa-test`, or standalone | [`entry.md`](entry.md) |
 | Reconcile at close-out (the caller's step) | [`reconcile.md`](reconcile.md) |
 
 ## Who chooses — the orchestrator, inline
@@ -27,7 +27,7 @@ The orchestrator that gathered the context writes the strategy, or hands one age
 fact is silently dropped (in this repository: `.claude/knowledge/execution/regression-suites.md` §Working concurrently on suites).
 Independence belongs at the **check**, not the choice: the user approves, a verifier re-derives the gate when a risk is Critical, and other agents execute.
 
-How a caller enters it — from `/qa-test-fast`, or standalone — is [`entry.md`](entry.md).
+How a caller enters it — from `/qa-test`, or standalone — is [`entry.md`](entry.md).
 
 ## Inputs
 
@@ -180,7 +180,7 @@ no risk on it below Medium, F7's F5 on, F8's token audit, that `floor:F10`'s ris
 Nothing in this step writes to the tracker. **After approval the strategy is a contract:** a risk the run
 discovers, or an approach that has to change, is appended to the round's Amendments with its reason.
 
-## Reconcile — at close-out, before the verdict (used by `/qa-test-fast` Stage 3, and the single `/qa-test` next)
+## Reconcile — at close-out, before the verdict (used by `/qa-test` Stage 5)
 
 The caller's close-out steps: [`reconcile.md`](reconcile.md).
 

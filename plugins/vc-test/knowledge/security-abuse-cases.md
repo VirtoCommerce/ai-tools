@@ -133,7 +133,7 @@ matches a leaking build certifies the leak.
   expectation, names the bug, and stays `Draft` until the fix lands (this repository's `test-model.md` rule 3).
 - **One probe, one case, one crossing.** `SEC-OBJ` on three identifiers is three cases — a single case
   swapping all three passes as soon as any one check refuses, and hides the two that do not.
-- **FAST / strategy runs** turn the needed probes into checklist rows for the run (no cases are written
+- **A `/qa-test` run** turns the needed probes into checklist rows for the run (no cases are written
   in the run, D2); the cases are authored at this repository's `/qa-test-lifecycle`. The probe is closed only when its
   case exists.
 - **Each case carries** `Technique:SEC` and `Archetype:<token>` in `References`, plus the probe id

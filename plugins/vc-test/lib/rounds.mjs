@@ -1,7 +1,7 @@
 // plugins/vc-test/lib/rounds.mjs — a ticket's round number and the cap of three, decided by script BEFORE any context is
 // gathered (spec §3 Rounds, D6; method: skills/qa-test-strategy/rounds.md). A round is one QA verdict on one build, and it
 // is seen by up to four sources that must not be counted twice: a `## Round N` section of test-strategy.md, a round
-// record (`rounds/round-<N>.json`), a `summary.json` (every git version of it, and the ones /qa-test-fast wrote), and a
+// record (`rounds/round-<N>.json`), a `summary.json` (every git version of it, and the ones the older fast path wrote), and a
 // verdict comment in the ticket-context bundle's signals[]. A verdict comment whose sha matches no closed round is a new
 // round (a distinct build); a sha-less one is the comment of the newest closed round dated at or before it, and a round
 // of its own only when no closed round precedes it (vc-test posts no tracker comment: a summary posted after `close`

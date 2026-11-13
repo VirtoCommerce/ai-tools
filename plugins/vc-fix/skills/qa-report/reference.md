@@ -110,7 +110,7 @@ An entry that is not an object, in `rows`, `areas`, `notTested` or `context`, is
 
 ## Out of scope: the round-delta comment
 
-`/qa-test --iterate` still amends with a hand-typed round-delta block (`.claude/skills/qa-test/modes.md`).
+A re-test round's delta block is still hand-typed (`--same-round`, `tracker-ops.md` §0 rule 5).
 Deliberately not a `qa-report` kind on this branch: giving it one is a feature, not a fix.
 
 ## Why no hook
@@ -123,8 +123,7 @@ skill is the step; `render.mjs` is the deterministic part it calls.
 
 | Caller | Call |
 |---|---|
-| `/qa-test` 5-report | `qa-report <TICKET> --kind test --lede "…" --confirmed` |
-| `/qa-test-fast` | `qa-report <TICKET> --kind test --lede "…"` from its own `summary.json`, **no `--confirmed`**: it hands the question to `qa-report`, which asks once |
+| `/qa-test` Close | `qa-report <TICKET> --kind test --extra <extra.json>` from the run's `summary.json`, **no `--confirmed`**: it hands the question to `qa-report`, which asks once |
 | `/qa-verify-fix` Step 6 | `qa-report <TICKET> --kind fix --lede "…" --confirmed` |
 | `/qa-regression` | `qa-report <RUN_ID> --verdict <v> [--ticket K] --lede "…"` |
 | `/qa-smoke` | `qa-report <RUN_ID> --verdict <v> --lede "…"` |

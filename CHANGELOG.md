@@ -8,6 +8,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Single strategy-driven `/qa-test` — `vc-test` `0.17.2`, `vc-fix` `0.18.10` — 2026-11-13
+
+Design: [`docs/superpowers/specs/2026-11-13-qa-test-single-design.md`](docs/superpowers/specs/2026-11-13-qa-test-single-design.md).
+
+### Removed
+
+- **BREAKING:** `/qa-test-fast` is gone, and `/qa-test` no longer has a FAST and a FULL path. One command,
+  `/qa-test <TICKET> [<env>] [--yes] [--dry-run]`, runs context → an approved `/vc-test:qa-test-strategy` → only the
+  artifacts the strategy marks `RUN` → close-out. **Migration:** call `/qa-test <TICKET>` where you called
+  `/qa-test-fast <TICKET>`. A feature name, `PR #N` or several keys now stop with one
+  line; `--iterate`, `--epic`, `--visual`, `--contract`, `--coverage`, `--axes` and `--release-regression` print one
+  line saying the flag is gone and the run continues without it (the strategy's artifact rows decide what runs).
+- `vc-test` is now required by `/qa-test` (≥ 0.17.1 at its Stage 0); the files only the two-path flow read are deleted
+  from `.claude/skills/qa-test/`.
+
+### Changed
+
+- `vc-test` `0.17.2`: text and comments name the single `/qa-test` (`/qa-test-fast`, "FAST/FULL" and the deleted
+  `.claude/skills/qa-test/*` files are no longer cited; the visual axis is decided by the strategy's `Visual lane`
+  row, not by a flag); `lib/route.mjs`'s `technical-change` `next` reads `/qa-test <KEY> (scoped regression), then
+  /qa-test-lifecycle <KEY> (case sync)`; `ticket-context` asks the repository's preflight for the `ticket` profile
+  (`ticket-fast` stays accepted there as an alias); the knowledge copies are back in step with their sources.
+- `vc-fix` `0.18.10`: `qa-report`, `qa-bug`, `qa-verify-fix`, `tracker-ops.md`, `run-env.md` and the agents README
+  name the single `/qa-test` (a re-test round amends only its own delta comment, never a published verdict).
+- `/qa-test` writes `candidate_cases` and `stale_cases` into the run's `summary.json`; `qa-suite-sync` (reached through
+  `/qa-test-lifecycle <TICKET>`) reads both as sync targets and gaps to author.
+
 ## /vc-test:qa-goal — goal-driven testing with an independent judge — `vc-test` `0.18.0` — 2026-11-13
 
 ### Added

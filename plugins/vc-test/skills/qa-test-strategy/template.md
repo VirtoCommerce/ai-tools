@@ -41,7 +41,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 <!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL:<PIXEL|DESIGN|PROBE|CONTENT>, several comma-separated as VISUAL:DESIGN,PIXEL (floors.md §VISUAL) · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
 <!-- account: a test-user KEY · guest · deny:<permission> <KEY|P-n> — that member without the permission (F13) · spec (a committed .spec) · P-n when the stand has none · several joined by + (floors.md §15). -->
 
-<!-- VC-TEST ONLY — delete outside vc-test: a /qa-test or /qa-test-fast strategy drops this whole block (the heading,
+<!-- VC-TEST ONLY — delete outside vc-test: a /qa-test strategy drops this whole block (the heading,
      the table and this comment). Under vc-test it is required (clause 13, floors.md §13); the list is generated before
      the risks, so add the R-n to Why likely. -->
 ### Scenarios

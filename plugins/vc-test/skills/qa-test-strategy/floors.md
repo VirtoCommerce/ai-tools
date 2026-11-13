@@ -17,7 +17,7 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 | F2 | a Story whose surface purpose is `UNDECLARED` in the domain map §1 ([`domain-map.md`](../../knowledge/domain-map.md)) | a purpose risk with technique `MODEL` whose Source carries `floor:F2`, + exploratory, whatever else holds |
 | F3 | a rendering file in the diff ([`visual-axis.md`](../qa-design/visual-axis.md) §1 source 1) — a lower bound, see below | visual lane |
 | F4 | a revenue-critical flow is touched (cart, checkout, payment, pricing, orders) | no risk on it below Medium |
-| F5 | the bundle's `known.cases_at_risk` is non-empty (`/vc-test:ticket-context` block 4 ran `regression:select` over the changed files; the strategy adds `npm run tc:scope -- --domain <slug> --observable <each observable the diff or an AC moves>` where path tokens miss (in this repository: `/qa-test-fast`'s `.claude/knowledge/execution/regression-selection.md`)) | coverage triage + a regression run over those cases, **after the staleness check below**. Under vc-test (`--change-map`) the requirement is the list, not the run: every suite at risk, their residual risk and `/qa-regression <suites>` in Out of scope, the row `SKIP` (gate 6h, vc-test U7); fired on doubt, Out of scope names the failed lookup instead of the suites |
+| F5 | the bundle's `known.cases_at_risk` is non-empty (`/vc-test:ticket-context` block 4 ran `regression:select` over the changed files; the strategy adds `npm run tc:scope -- --domain <slug> --observable <each observable the diff or an AC moves>` where path tokens miss (in this repository: `.claude/knowledge/execution/regression-selection.md`)) | coverage triage + a regression run over those cases, **after the staleness check below**. Under vc-test (`--change-map`) the requirement is the list, not the run: every suite at risk, their residual risk and `/qa-regression <suites>` in Out of scope, the row `SKIP` (gate 6h, vc-test U7); fired on doubt, Out of scope names the failed lookup instead of the suites |
 | F6 | a `NOT DEPLOYED:` line in the bundle's `blockers[]` — a counted PR whose build the stand does not carry. A `DEPLOYMENT UNKNOWN:` line (no live source for that layer, or not checked) does **not** fire it | **BLOCKED** before any browser opens. `UNKNOWN` is not blocked: the run proceeds and the verdict says "deployment unverified", quoting the line |
 | F7 | `Review task` — no ACs | oracles from the diff only; F5 on by default (the strategy's job: the script fires F7 but does not touch F5) |
 | F8 | the change IS the design system or the token layer (`ui-kit`, [`ui-kit-class.md`](../../knowledge/ui-kit-class.md)) | F3 + token audit + a risk whose technique names `PIXEL` when the change modifies an existing ui-kit file (§VISUAL); fails closed |
@@ -115,7 +115,7 @@ known broken before VCST-5884's round 3. So the selected cases are checked first
 
 1. `npm run tc:scope` over the change — rows it disposes `REPAIR` are stale. A `RE-BASE` row is **not**:
    its old assertion is exactly what the change must be run against, so it stays in the run and its
-   result is settled at triage (in this repository: `/qa-test-fast`'s `.claude/skills/qa-test/coverage-triage.md` §3a).
+   result is settled at triage (in this repository: `.claude/knowledge/execution/regression-selection.md` §Existing-Coverage Triage).
 2. `npm run suites:executability:check` — rows it marks non-executable.
 3. A field, operation, route or selector the diff **renames or removes**, grepped in the selected rows.
 4. From round 2 on: the previous round's triage `test-defect` ids.
@@ -136,7 +136,7 @@ It never appears in a risk row; a risk carries **effort** (`low` / `medium` / `h
 
 ## Clause 11 — every strategy; clauses 12–13 — vc-test runs; clause 15 — every strategy
 
-The script half of SKILL.md §Gate's clauses from 11 on. **Clause 11 runs on every strategy** — `/qa-test`, `/qa-test-fast` and vc-test alike (U57 and U58 are general rules). It reads the `Project risks:` line; an item is a `P<n>` that starts the line or follows a `·` or a sentence end (`.` or `;`), so a `P95 2s` inside an item is not an item. 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
+The script half of SKILL.md §Gate's clauses from 11 on. **Clause 11 runs on every strategy** — `/qa-test` and vc-test alike (U57 and U58 are general rules). It reads the `Project risks:` line; an item is a `P<n>` that starts the line or follows a `·` or a sentence end (`.` or `;`), so a `P95 2s` inside an item is not an item. 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
 
 ### 11a — a project risk is not a product risk (U58)
 

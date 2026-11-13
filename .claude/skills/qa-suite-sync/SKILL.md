@@ -119,7 +119,7 @@ The verdict is advisory: the user makes the go/no-go.
 | Before a regression run with recent code changes | `/qa-test-lifecycle PR <owner/repo>#N` or `/qa-test-lifecycle diff` |
 | After a platform release | `/qa-test-lifecycle changelog <version>` |
 | A suite or domain needs review, gap-filling and a live check | `/qa-test-lifecycle suite <ids>` / `domain <name>` |
-| After a `/qa-test` run authored new cases | `/qa-test-lifecycle promote VCST-XXXX` (`qa-case-promotion`) |
+| After a `/qa-test` run | `/qa-test-lifecycle <TICKET>` (sync, author, promote) — `promote VCST-XXXX` alone only flips `Draft` cases (`qa-case-promotion`) |
 | A whole suite's assertions may have gone stale, not tied to one change | `/qa-review-tests suite <ID> --triangulate` — this skill triangulates only the cases a change touched (4a-bis) |
 | Which suite is most overdue for triangulation | `/qa-review-tests stale` (or `npm run tc:audit:queue`) |
 
