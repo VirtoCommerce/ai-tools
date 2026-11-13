@@ -25,7 +25,7 @@ const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
 // Clause 15: a test-user KEY, guest, deny:<permission> <KEY|P-n>, or P-n (floors.md §15).
-const ACCOUNT = /^(?:[A-Z][A-Z0-9_]*|guest|P\d+|deny:\S+\s+(?:[A-Z][A-Z0-9_]*|P\d+))$/;
+const ACCOUNT = /^(?:[A-Z][A-Z0-9_]*|guest|P-?\d+|deny:\S+\s+(?:[A-Z][A-Z0-9_]*|P-?\d+))$/;
 // Clause 12 (U59): a hotspot whose risk text says the code holds state — a limiter, a counter, a cache, a lockout — is
 // only decided on the stand if the stand's scale (instances, replicas, restarts) is part of the question.
 export const STATE_HOTSPOT = /\b(limit(?:er|s)?|attempts?|counter|throttl\w*|rate[- ]?limit\w*|cach(?:e|ed|ing)|lockout|locked out|in[- ]memory|session state)\b/i;
@@ -244,17 +244,17 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
     }
   }
   // 15, every strategy: the account each risk is checked as — the third `·` segment of the lane cell (floors.md §15).
-  // A `none` lane runs nothing; a TBD cell is clause 14's. F13 fired ⇒ a floor:F13 risk checked as `deny:`.
+  // A `none` or `SKIP` lane runs nothing; a TBD cell is clause 14's. F13 fired ⇒ a floor:F13 risk checked as `deny:`.
   const projectIds = new Set(projectLine.match(/\bP\d+\b/g) ?? []);
   for (const a of approach) {
     const parts = a.lane.split("·").map((p) => p.trim());
-    if (/^none\b/i.test(parts[0]) || a.lane.includes("TBD — strategy agent")) continue;
+    if (/^(?:none|skip)\b/i.test(parts[0]) || a.lane.includes("TBD — strategy agent")) continue;
     const acc = parts[2] ?? "";
     if (!acc) { errors.push(`15a: ${a.r} lane cell has no account — add '· <KEY | guest | deny:<permission> <KEY|P-n> | P-n>' (floors.md §15)`); continue; }
     const accs = acc.split("+").map((p) => p.trim()); // several actors on one risk: ORG_USER + ORG_ADMIN
     const bad = accs.find((p) => !ACCOUNT.test(p));
     if (bad !== undefined) { errors.push(`15a: ${a.r} account "${bad}" is not KEY, guest, deny:<permission> <KEY|P-n> or P-n (several joined by +)`); continue; }
-    for (const p of accs.map((x) => /\bP\d+$/.exec(x)?.[0]).filter(Boolean))
+    for (const p of accs.map((x) => /\bP-?\d+$/.exec(x)?.[0].replace("-", "")).filter(Boolean))
       if (!projectIds.has(p)) errors.push(`15c: ${a.r} account names ${p}, which is not on the 'Project risks:' line`);
   }
   const accountsOf = (r) => (approach.find((a) => a.r === r)?.lane.split("·")[2] ?? "").split("+").map((p) => p.trim());
