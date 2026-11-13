@@ -8,7 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## Single strategy-driven `/qa-test` — `vc-test` `0.17.2`, `vc-fix` `0.18.10` — 2026-11-13
+## Single strategy-driven `/qa-test` — `vc-test` `0.18.1`, `vc-fix` `0.18.10` — 2026-11-13
 
 Design: [`docs/superpowers/specs/2026-11-13-qa-test-single-design.md`](docs/superpowers/specs/2026-11-13-qa-test-single-design.md).
 
@@ -25,7 +25,7 @@ Design: [`docs/superpowers/specs/2026-11-13-qa-test-single-design.md`](docs/supe
 
 ### Changed
 
-- `vc-test` `0.17.2`: text and comments name the single `/qa-test` (`/qa-test-fast`, "FAST/FULL" and the deleted
+- `vc-test` `0.18.1`: text and comments name the single `/qa-test` (`/qa-test-fast`, "FAST/FULL" and the deleted
   `.claude/skills/qa-test/*` files are no longer cited; the visual axis is decided by the strategy's `Visual lane`
   row, not by a flag); `lib/route.mjs`'s `technical-change` `next` reads `/qa-test <KEY> (scoped regression), then
   /qa-test-lifecycle <KEY> (case sync)`; `ticket-context` asks the repository's preflight for the `ticket` profile
