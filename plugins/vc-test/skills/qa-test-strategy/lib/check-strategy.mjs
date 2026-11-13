@@ -251,12 +251,14 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
     if (/^none\b/i.test(parts[0]) || a.lane.includes("TBD — strategy agent")) continue;
     const acc = parts[2] ?? "";
     if (!acc) { errors.push(`15a: ${a.r} lane cell has no account — add '· <KEY | guest | deny:<permission> <KEY|P-n> | P-n>' (floors.md §15)`); continue; }
-    if (!ACCOUNT.test(acc)) { errors.push(`15a: ${a.r} account "${acc}" is not KEY, guest, deny:<permission> <KEY|P-n> or P-n`); continue; }
-    const p = /\bP\d+$/.exec(acc)?.[0];
-    if (p && !projectIds.has(p)) errors.push(`15c: ${a.r} account names ${p}, which is not on the 'Project risks:' line`);
+    const accs = acc.split("+").map((p) => p.trim()); // several actors on one risk: ORG_USER + ORG_ADMIN
+    const bad = accs.find((p) => !ACCOUNT.test(p));
+    if (bad !== undefined) { errors.push(`15a: ${a.r} account "${bad}" is not KEY, guest, deny:<permission> <KEY|P-n> or P-n (several joined by +)`); continue; }
+    for (const p of accs.map((x) => /\bP\d+$/.exec(x)?.[0]).filter(Boolean))
+      if (!projectIds.has(p)) errors.push(`15c: ${a.r} account names ${p}, which is not on the 'Project risks:' line`);
   }
-  const accountOf = (r) => approach.find((a) => a.r === r)?.lane.split("·")[2]?.trim() ?? "";
-  if (fired.includes("F13") && !risks.some((x) => names(x, "F13") && /^deny:/.test(accountOf(x.r))))
+  const accountsOf = (r) => (approach.find((a) => a.r === r)?.lane.split("·")[2] ?? "").split("+").map((p) => p.trim());
+  if (fired.includes("F13") && !risks.some((x) => names(x, "F13") && accountsOf(x.r).some((p) => p.startsWith("deny:"))))
     errors.push("15b: F13 fired but no risk carries floor:F13 with a deny:<permission> account");
   const tbd = sec.split("\n").filter((l) => l.includes("TBD — strategy agent"));
   if (tbd.length) errors.push(`14: ${tbd.length} line(s) still read 'TBD — strategy agent' (first: ${tbd[0].trim().slice(0, 80)})`);
