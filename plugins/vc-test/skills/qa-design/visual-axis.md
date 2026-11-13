@@ -76,7 +76,7 @@ costs the whole run's wait; found here it costs one command.
 | **Admin SPA blade** | a11y · design-system | `vc-test:ui-ux-expert` | the blade under change; `vs. DESIGN` only if the design project covers admin |
 | **`api` / `module` / `platform` only** | none | — | — the lane does not dispatch |
 
-The three axes, and where each is specified:
+The axes, and where each is specified:
 
 | Axis | What it asserts | Specification |
 |---|---|---|

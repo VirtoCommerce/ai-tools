@@ -27,7 +27,8 @@ hand.
 
 A visual finding's effect on the verdict is set by
 [`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §3: a `BL-UI` FAIL blocks, an a11y FAIL on a
-functional ticket is filed standalone, and `vs. DESIGN` drift only advises.
+functional ticket is filed standalone, a `vs. USER` task a user cannot complete blocks while its friction advises,
+and `vs. DESIGN` drift only advises.
 
 Before calling a finding a product bug, the investigation must check the back office for the value it
 depends on and query VirtoOZ for the documented behaviour ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules →

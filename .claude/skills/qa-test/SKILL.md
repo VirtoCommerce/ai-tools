@@ -172,7 +172,7 @@ lane when `visual_surface: true`** — the one documented exception, reasoned in
 
 `visual_surface` is derived at `1b` item 2c, recorded with its sources, and replaces the undefined
 *"UI/component"* trigger this table used to carry — a phrase no gate ever checked was applied. The lane's
-targets, the three axes it runs, the verdict vocabulary and the browser-budget ordering all live in
+targets, the axes it runs, the verdict vocabulary and the browser-budget ordering all live in
 [`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md); **do not restate them here.**
 
 Each ticket-agent prompt must carry: the ticket ID; **Artifact B** checklist; **test data** (the `@td()`/`{{VAR}}` the cases use, confirmed seeded — never
