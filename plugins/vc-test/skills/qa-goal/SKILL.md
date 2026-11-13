@@ -24,7 +24,7 @@ alternate — the rails do not move.
   prefix every `node` command of the run with `TEST_ENV=<env> `**, so every script reads the same stand and work dir.
 - `<dir>` is the run folder `goal.mjs init` prints (`.vc-fix/vc-test/<KEY>/<env>/goal/<runId>/`); evidence goes to
   `<dir>/evidence/`, the JSON you hand a script to `<dir>/in/<name>.json`.
-- `<who>` is the person's name as they give it at S1, else `git config user.name`.
+- `<who>` is the person's name as they give it at S1, else `git config user.name`, always single-quoted.
 - `goal.mjs` and `oauth-code.mjs` print one JSON object. Exit `0` done · `1` usage (fix the call) · `2` refused or
   gate failed (fix every reason in `errors`, never one at a time) · `3` could not run (I/O, network). Other scripts:
   as each step says.
@@ -54,7 +54,8 @@ alternate — the rails do not move.
    is `true`, and record each entity at once:
    `node <plugin>/lib/ledger.mjs append --key <KEY> --by qa-goal --item <AC-n> --entity <type> --id <platform id>`
    (a setting, an `other`: `<plugin>/briefs/ledger.md`). Exit 1 ⇒ fix what it names and append again; a line you
-   could not record goes in the verdict's Data section.
+   could not record goes in the verdict's Data section. **Before the first write**, the ledger check of
+   [`derived-acs.md`](derived-acs.md) §Before the first data write; it fails ⇒ the stand is read-only for this run.
 6. **Medium or worse is reproduced twice** — a second, independent run from a clean start (a new page, a new
    request), both kept as evidence, `reproduced: 2`. A Low finding is one evidence entry and one line: no
    investigation.
@@ -93,6 +94,7 @@ alternate — the rails do not move.
 4. `node <plugin>/lib/capabilities.mjs --key <KEY> --mcp <the MCP servers this session has, comma-separated>` →
    `.vc-fix/vc-test/<KEY>/<env>/capabilities.json`. Read `stand.writable` + `reason`, the `playwright-*` lanes,
    `kb`, `virtooz`, `governed`, `knowledgeStore.path`, `tracker`, `host`. A profile error exits 2 or 3 ⇒ as 0.1.
+   Then the stand's origins: [`research-loop.md`](research-loop.md) §The hosts a run may touch.
 5. Not resumed: `node <plugin>/lib/write-zones.mjs snapshot --key <KEY> --run-dir <dir>`. Exit 1 or 3 ⇒ note its
    line and go on: the close reports "write zones: not checked". Resumed: no new snapshot — the first one stands.
 6. The budget in force: rail 10's `run-cost.mjs` command → its `budget` object (`tokens`, `minutes`, `source`).
@@ -107,10 +109,12 @@ tool — or ask the person for one line when none is available. Draft per [`goal
 into `<dir>/in/contract.json`, then `node <plugin>/lib/goal.mjs contract --dir <dir> --file <dir>/in/contract.json`.
 
 **S1** — AskUserQuestion showing the goal, the done-criterion, the budget (tokens, wall minutes, research share),
-the stand and whether it is writable (`stand.reason`), the lanes, and the stop list. Answers:
+the stand and whether it is writable (`stand.reason`), its origins and any extra stand host the run will touch, the
+lanes, and the stop list. Answers:
 
 - *Approve* ⇒ `goal.mjs contract --dir <dir> --approve --who <who>`, then
-  `goal.mjs checkpoint --dir <dir> --stop S1 --decision approved --who <who>`.
+  `goal.mjs checkpoint --dir <dir> --stop S1 --decision approved --who <who> --note 'hosts: <host>,<host>'` (the
+  approved extra hosts — host names only — or `--note 'hosts: none'`).
 - *Edit* ⇒ change the file, `contract --file` again (it clears the approval), `checkpoint --stop S1 --decision
   edited --who <who>`, ask again.
 - *Reject* ⇒ `checkpoint --stop S1 --decision rejected --who <who>`, then the abort close (§Stops).
@@ -139,9 +143,10 @@ path, or the research share of the budget is spent and what is still unknown is 
    source or no risk, an unknown AC id); a budget error ⇒ the budget stop.
 4. Rail 10's cost reading. **S2** — AskUserQuestion with one table of the criteria (id, text, source, `addedAt`)
    and one of the risks (priority, ACs, technique, oracle, account), what research left unknown, the data the run
-   will create (or "none — read-only stand"), and the spend so far. *Approve* ⇒
-   `goal.mjs checkpoint --dir <dir> --stop S2 --decision approved --who <who>`. *Edit* ⇒ change through `ac add`
-   / `strategy set`, gate again, `checkpoint --stop S2 --decision edited --who <who>`, ask again. *Reject* ⇒
+   will create (or "none — read-only stand"), any host beyond those approved at S1, and the spend so far.
+   *Approve* ⇒ `goal.mjs checkpoint --dir <dir> --stop S2 --decision approved --who <who> [--note 'hosts: <new>']`. *Edit* ⇒ add, reword
+   or drop criteria per [`derived-acs.md`](derived-acs.md) §Changing a criterion at S2, `strategy set`, gate again,
+   `checkpoint --stop S2 --decision edited --who <who>`, ask again. *Reject* ⇒
    `checkpoint --stop S2 --decision rejected --who <who>`, then the abort close.
 
 ### 5 — Test loop
@@ -156,8 +161,9 @@ Risks in priority order, inline, on the approved strategy and accounts:
 - **A finding** — severity per `<plugin>/knowledge/risk-prioritization-framework.md` §2. Medium or worse ⇒ reproduce it a second time
   first (rail 6). Then `<dir>/in/f-<n>.json` (same §Recording) → `goal.mjs finding add --dir <dir> --file
   <dir>/in/f-<n>.json` → `{ id }`, and `ac set` that AC's `findings` with the id added. The second run does not
-  reproduce it ⇒ record it as `Low`, `inScope: false`, title `Not reproduced: …`, both attempts in `evidence` — noted,
-  never deciding. No source says it should not happen ⇒ not a defect: a note on the AC, not a finding.
+  reproduce it ⇒ keep the observed severity, `reproduced: 1`; the verdict gate fails on it, so reproduce it again;
+  still not ⇒ `inScope: false`, title prefixed `UNCONFIRMED (seen once):`, and ask the person (retry with them, or the abort close) — the gate counts every
+  Medium+ finding, in scope or not, so step 7 stays blocked until it reproduces. Never lower a severity. No source says it should not happen ⇒ not a defect: a note on the AC, not a finding.
 - **A new branch** — a criterion found while testing is added per [`derived-acs.md`](derived-acs.md) §Found while
   testing (`addedAt: during-test`, `addedReason`); inside an approved risk ⇒ add it to that risk's `acs` and
   `strategy set` again; outside the approved scope ⇒ S2 again for it (step 4.3–4.4) before it is tested.
@@ -167,11 +173,9 @@ Risks in priority order, inline, on the approved strategy and accounts:
 
 ### 6 — Triage
 
-Not `/vc-test:qa-triage-results` (its ticket mode reads a checklist this run does not write). For every finding:
-`inScope` — does it break an approved AC of this ticket, or something it touched? (out of scope ⇒ listed, never
-deciding); `severity`; `docCheck` names a real source; a Medium-or-worse has `reproduced: 2` with both runs in
-`evidence`. A finding that fails one of these is fixed through `finding set` (the whole `evidence[]`), never by
-lowering its severity to dodge the gate.
+Inline, not `/vc-test:qa-triage-results`. Per finding: `inScope` (does it break an approved AC, or what the ticket
+touched? out of scope ⇒ listed, never deciding); `severity`; `docCheck` names a real source; Medium+ has
+`reproduced: 2` with both runs in `evidence`. Fix a miss through `finding set` — never by lowering a severity.
 
 ### 7 — Draft verdict
 
@@ -216,16 +220,9 @@ again none ⇒ STOP, hand to the person.
 5. `node <plugin>/lib/goal.mjs close --dir <dir> --write-zones <dir>/write-zones.json --teardown <dir>/teardown.json`.
 6. `node <plugin>/lib/goal.mjs check --dir <dir> --before close` — exit 0; exit 2 ⇒ its errors go into the report.
 7. Print `verdict.md`'s first two lines and its path.
-8. **S3 — outward writes**, each proposed on its own and done only on a yes. Labels are unique per write —
-   `bug:F-<n>`, `comment:<n>` — because an approved S3 is never consumed: a reused label passes on an old approval.
-   AskUserQuestion with the exact proposal: for an in-scope Medium-or-worse finding, the bug (title, severity,
-   evidence paths, `<KEY>` as the link); for the tracker, a paste-ready comment (≤ 15 lines: verdict, criteria
-   table, findings, judge result, run id). A status change is never offered. Yes ⇒
-   `goal.mjs checkpoint --dir <dir> --stop S3 --decision approved --who <who> --note <label>`, then
-   `goal.mjs check --dir <dir> --before write --what <label>`; exit 0 ⇒ `bug:F-<n>`:
-   `/vc-fix:qa-bug "<finding title> — evidence: <dir>/evidence/<files>" --link <KEY> --confirmed`; `comment:<n>`:
-   print the text for the person to paste — you never post it. Exit 2 ⇒ write nothing. No ⇒
-   `checkpoint --stop S3 --decision rejected --who <who> --note <label>`.
+8. **S3 — outward writes**, each proposed on its own, under a label unique to it (`bug:F-<n>`, `comment:<n>`), and
+   done only on a yes after `goal.mjs check --before write --what <label>` exits 0: [`goal-contract.md`](goal-contract.md)
+   §S3. A bug goes through `/vc-fix:qa-bug`; a comment is paste-ready text you never post; no status change.
 
 ## Stops
 
@@ -233,10 +230,11 @@ again none ⇒ STOP, hand to the person.
 write). Each asks once and records its checkpoint.
 
 **Any time** — stop, name it, and ask the person with the options in [`goal-contract.md`](goal-contract.md) §The
-stop list: **budget** (a cost reading over the budget, or a gate's budget error) · **read-only stand** (a check
-needs a write and `stand.writable` is false) · **docs contradiction** (live behaviour contradicts the docs — a
-finding to confirm, never a changed expectation) · **not deployed** (a `NOT DEPLOYED:` blocker — BLOCKED on deploy).
+stop list: **budget** (a cost reading over the budget, or a gate's budget error — raise it, or STOP AT BUDGET;
+never a judged verdict past the budget) · **read-only stand** (a check needs a write the stand cannot take) ·
+**docs contradiction** (a finding to confirm, never a changed expectation) · **not deployed** (BLOCKED on deploy).
 
-**The abort close** — any run that ends before step 8: write `verdict.md` (BLOCKED or "stopped at <stop>", with
-what is recorded), then step 9.1 and 9.3–9.6; `check --before close` names the missing judge — report "not judged:
-stopped at <stop>". Nothing goes out, and nothing is written back from an unjudged run.
+**The abort close** — any run that ends without a judged verdict: write `verdict.md` headed `<KEY> — STOPPED AT BUDGET — not
+judged`, `<KEY> — BLOCKED`, or `<KEY> — STOPPED at <stop> — not judged`, listing each AC's state as recorded; then
+step 9.1 and 9.3–9.6; `check --before close` names the missing judge — report "not judged". No judge, no knowledge
+write-back, no S3.

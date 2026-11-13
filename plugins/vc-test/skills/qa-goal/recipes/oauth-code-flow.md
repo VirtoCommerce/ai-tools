@@ -14,6 +14,10 @@ only in `<dir>/.tokens/` and are deleted at close. **You never see, store or pas
   resource's `/.well-known/oauth-protected-resource` read as an unauthenticated probe (its
   `authorization_servers`), the client registration the project documents. Never guessed. A client that needs a
   secret ⇒ the criterion is GAP, reason "confidential OAuth client — out of scope".
+- **Hosts.** The issuer, the resource and every `--url` are hosts the run may touch ([`research-loop.md`](../research-loop.md)
+  §The hosts a run may touch): the platform issuer is on `BACK_URL`; any other host needs S1 or S2 approval first.
+  Every URL and value is single-quoted on the command line; one taken from ticket or page text that holds a `'` is
+  not used.
 - **A persona per account** of the approved strategy — `^[a-z0-9-]{1,32}$`: `admin`, `buyer-a`, `no-perm`. Each is
   one sign-in with one account; a negative control is its own persona with its own account.
 - **The lane's HAR path** — read the lane's config, `config/mcp-playwright-<lane>.config.json` in the project:
@@ -25,7 +29,7 @@ only in `<dir>/.tokens/` and are deleted at close. **You never see, store or pas
 ## The sequence — one persona
 
 1. **Start.**
-   `node <plugin>/lib/oauth-code.mjs start --dir <dir> --persona <p> --issuer <issuer> --client <client id> --redirect <redirect uri> [--resource <resource>] [--scope "openid offline_access"]`
+   `node <plugin>/lib/oauth-code.mjs start --dir <dir> --persona <p> --issuer '<issuer>' --client '<client id>' --redirect '<redirect uri>' [--resource '<resource>'] [--scope 'openid offline_access']`
    → `{ persona, url, restarted }`. `restarted: true` replaced an earlier unredeemed start of that persona — fine.
    Exit 1 ⇒ fix the call (a persona outside the pattern, a URL with a user name or password in it). Exit 2 ⇒ the
    issuer refused (no PKCE `S256`, a bad discovery document): a GAP or a finding, by its `errors`. Exit 3 ⇒ the
@@ -53,10 +57,10 @@ only in `<dir>/.tokens/` and are deleted at close. **You never see, store or pas
    - a token-endpoint refusal (its `error` fields) ⇒ a GAP or a finding, by what research says should happen.
    Exit 3 ⇒ the token endpoint did not answer.
 6. **Call as the persona.**
-   - MCP: `node <plugin>/lib/oauth-code.mjs mcp --dir <dir> --persona <p> --url <mcp endpoint> --method <json-rpc method> [--params-file <dir>/in/params-<n>.json] > <dir>/evidence/<AC-n>-<p>-<what>.json`
+   - MCP: `node <plugin>/lib/oauth-code.mjs mcp --dir <dir> --persona <p> --url '<mcp endpoint>' --method '<json-rpc method>' [--params-file <dir>/in/params-<n>.json] > <dir>/evidence/<AC-n>-<p>-<what>.json`
      → `{ status, result }` (it runs `initialize`, `notifications/initialized`, then the method). A params file is
      the JSON-RPC `params`, written with the editor tool — `tools/call`: `{ "name": "<tool>", "arguments": { … } }`.
-   - HTTP: `node <plugin>/lib/oauth-code.mjs http --dir <dir> --persona <p> --method GET|POST|DELETE --url <url> [--body-file <dir>/in/body-<n>.json] > <dir>/evidence/<AC-n>-<p>-<what>.json`
+   - HTTP: `node <plugin>/lib/oauth-code.mjs http --dir <dir> --persona <p> --method GET|POST|DELETE --url '<url>' [--body-file <dir>/in/body-<n>.json] > <dir>/evidence/<AC-n>-<p>-<what>.json`
      → `{ status, body }` (a redirect is reported, never followed: `location`).
    - **Read `status`, not the exit code**: a 401 exits 0 with `{ status: 401, error }` — the `WWW-Authenticate`
      error only. That is an observation (the negative control of an audience criterion, say), not a failure of the

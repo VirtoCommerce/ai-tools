@@ -98,10 +98,43 @@ opened it ("F-2 showed the token is accepted by a second endpoint"). Without the
 
 - **Inside the approved scope** — it tests the goal and a risk S2 already approved (same surface, same accounts,
   no new data): add it, put its id into that risk's `acs`, `strategy set` again, test it.
-- **Outside the approved scope** — a new surface, a new account, data the S2 table did not announce, or a component
-  the goal does not name: add it, add or extend a risk, `check --before strategy`, and **ask S2 again** for it
-  before it is tested (`checkpoint --stop S2 --decision approved|edited|rejected`). Rejected ⇒ it becomes GAP,
-  reason "outside the approved scope — not approved at S2".
+- **Outside the approved scope** — a new surface, a new account, data the S2 table did not announce, a host not
+  approved at S1, or a component the goal does not name: add it, add or extend a risk, `check --before strategy`,
+  and **ask S2 again** for it before it is tested (`checkpoint --stop S2 --decision approved|edited|rejected`).
+  Rejected ⇒ it becomes GAP, reason "outside the approved scope — not approved at S2".
+
+## Changing a criterion at S2
+
+`goal.mjs` has no delete, and `ac set` cannot change `text` or `source`. So a criterion is never removed or edited
+in place — it is closed with a recorded reason, and a dropped or replaced criterion **stays in its risk's `acs`**, so
+the strategy gate still passes. Both are listed in the verdict under "Not tested, and why".
+
+- **Reworded** (the person changes what AC-n says, or its source) —
+  1. `ac add` the new text: `{ "text": "<new>", "source": "<its source>", "addedAt": "<AC-n's own addedAt: contract or research>", "addedReason": "reworded at S2 from AC-<n>" }` → `AC-<m>`;
+  2. `ac set --id AC-<n>` with `{ "status": "GAP", "gapReason": "replaced by AC-<m> at S2 (<who>)" }`;
+  3. add `AC-<m>` to the same risk's `acs` in `<dir>/in/strategy.json`, keep `AC-<n>` there, `strategy set`.
+- **Dropped** (the person removes AC-n) — `ac set --id AC-<n>` with
+  `{ "status": "GAP", "gapReason": "dropped at S2 by <who>: <the person's reason>" }`; it stays in its risk.
+- **Added** — `ac add` as in §The file for `ac add`, and into a risk.
+
+Then `check --before strategy`, and S2 is asked again on the new tables (`checkpoint --stop S2 --decision edited`
+for the round that changed them). The judge accepts these GAPs because the person's decision is recorded in them.
+
+## Before the first data write
+
+`ledger.mjs append` needs `config.js` in the project root (exit 3 without it), and `teardown.mjs` needs
+`config.js` and `scripts/lib/seed-common.mjs` there — a client project often has neither. So before the run
+creates or changes the first entity, even on a stand `capabilities.json` calls writable:
+
+```
+node <plugin>/lib/ledger.mjs types && test -f config.js && test -f scripts/lib/seed-common.mjs
+```
+
+(`ledger.mjs types` exits before its own `config.js` check, so the two `test -f` carry that half.) Exit 0 ⇒ go on.
+Anything else ⇒ **the stand is read-only for this run**: say so once ("the ledger or teardown cannot run here —
+`<which file is missing>`"), and every write that would have been needed takes the read-only stop
+([`goal-contract.md`](goal-contract.md) §The stop list, 2). Never create data that the ledger cannot record or the
+teardown cannot remove.
 
 ## Recording (step 5)
 
@@ -123,7 +156,7 @@ opened it ("F-2 showed the token is accepted by a second endpoint"). Without the
   says in a note which part passed.
 - `GAP` needs a `gapReason` the journal or a file supports: not deployed; no data and a read-only stand; a lane
   unavailable; a stop that fired; a confidential OAuth client (out of scope); a read the host-governed project does
-  not allow; outside the approved scope and not approved. "Out of time" with budget left, or "not applicable"
+  not allow; outside the approved scope and not approved; reworded or dropped at S2 (§Changing a criterion at S2). "Out of time" with budget left, or "not applicable"
   without why, is not a reason.
 
 **A finding** — `<dir>/in/f-<n>.json`, then `goal.mjs finding add --dir <dir> --file …` → `{ id }`:
