@@ -36,8 +36,16 @@ REJECT reason (name the file, never quote the value).
 `addedReason`, `status`, `evidence[]`, `gapReason`, `findings[]`), `strategy[]` (`id`, `risk`, `priority`, `acs[]`,
 `technique`, `oracle`, `account`), `findings[]` (`id`, `severity`, `title`, `ac`, `inScope`, `evidence[]`,
 `reproduced`, `docCheck`, `kbRef`), `replays[]`, `checkpoints[]`. Then `DRAFT`, and every evidence file the journal
-names — open them; a path in the journal is a claim, the file is the evidence. Use `Read`, `Grep`, `Glob` only
-inside `DIR`.
+names — open them; a path in the journal is a claim, the file is the evidence. Use `Read`, `Grep` and `Glob` only
+on `goal.json`, `DRAFT`, `judge.path` (below) and the evidence paths the journal names — never recursively over
+`DIR`, so `.tokens/` is never walked.
+
+**Which round is this?** If `goal.json` `judge` is already set to a REJECT, this is round 2: read only the file at
+`judge.path` to count the round and to quote the earlier reasons. Re-derive every AC and finding yourself and never
+inherit a result from it. If `judge` is null, this is round 1.
+
+**Evidence with no `path`** (a recorded `cmd` with a `digest` and a `note`) is judged on its note and digest alone;
+by itself it cannot carry a discriminating or control claim.
 
 ## What you run — two command shapes, nothing else
 
@@ -58,7 +66,9 @@ You write nothing and change nothing.
   `{ id, status, expectStatus, match }`. Run it for **every** id in `replays[]`, one call each. `match: false` is a
   REJECT reason for the AC or finding that cites that replay. Exit 3 is a network failure: write the replay as
   "not replayed: <reason as printed>" — that is neither a match nor a mismatch, and an AC whose only support is a
-  replay you could not run does not hold until the evidence files alone carry it.
+  replay you could not run does not hold until the evidence files alone carry it. A replay **refused** for any
+  other reason (unknown id, method not GET/HEAD, credentials in the URL, a secret-named URL parameter; exit 1 or 2)
+  is a REJECT reason quoted as printed: it means the journal was hand-edited.
 
 ## How you re-derive
 
@@ -115,6 +125,6 @@ REASONS carries each AC and finding line plus the one-line done-criterion note.
 ## The loop — one round
 
 On REJECT, your REASONS and FIX go back to the drafter, never to you to apply. You are dispatched again on the
-corrected run folder: re-verify from scratch (the gate again, the replays again, every file again), never on a
-"fixed it" claim. **You do not lower the bar on the second round.** Still not APPROVE after that one re-verify ⇒
+corrected run folder (the journal's `judge` then points at your earlier output): re-verify from scratch (the gate
+again, the replays again, every file again), never on a "fixed it" claim. **You do not lower the bar on the second round.** Still not APPROVE after that one re-verify ⇒
 say **STOP — hand to a human** in REASONS, with both rounds' reasons, rather than approving.
