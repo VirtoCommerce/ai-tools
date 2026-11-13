@@ -23,7 +23,8 @@ try {
 const missing = deps.filter((d) => !existsSync(join(root, 'node_modules', d, 'package.json')));
 if (missing.length === 0) process.exit(0);
 
-const args = ['install', '--omit=dev', '--no-audit', '--no-fund', '--prefix', root];
+// No --prefix: cwd is already root, and on Windows (shell: true) an unquoted path with a space would split.
+const args = ['install', '--omit=dev', '--no-audit', '--no-fund'];
 const res = spawnSync('npm', args, { cwd: root, stdio: ['ignore', 'ignore', 'pipe'], shell: process.platform === 'win32', timeout: 120_000 });
 if (res.status === 0) {
   process.stderr.write(`[vc-test] installed plugin dependencies (${missing.join(', ')})\n`);
