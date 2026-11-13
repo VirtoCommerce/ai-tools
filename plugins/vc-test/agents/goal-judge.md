@@ -37,7 +37,7 @@ REJECT reason (name the file, never quote the value).
 `<DIR>/goal.json` — the contract (`goal`, `done`, `budget`), `acs[]` (`id`, `text`, `source`, `addedAt`,
 `addedReason`, `status`, `evidence[]`, `gapReason`, `findings[]`), `strategy[]` (`id`, `risk`, `priority`, `acs[]`,
 `technique`, `oracle`, `account`), `findings[]` (`id`, `severity`, `title`, `ac`, `inScope`, `evidence[]`,
-`reproduced`, `docCheck`, `kbRef`), `replays[]`, `checkpoints[]`. Then `DRAFT`, and every evidence file the journal
+`reproduced`, `fixPriority`, `fixPriorityReason`, `fixPriorityBy`, `docCheck`, `kbRef`), `replays[]`, `checkpoints[]`. Then `DRAFT`, and every evidence file the journal
 names — open them; a path in the journal is a claim, the file is the evidence. Use `Read`, `Grep` and `Glob` only
 on `goal.json`, `DRAFT`, `judge.path` (below) and the evidence paths the journal names — never recursively over
 `DIR`, so `.tokens/` is never walked. **A path whose first segment under `DIR` is `.tokens` (any case, also reached
@@ -100,24 +100,25 @@ You write nothing and change nothing.
    - An AC added `during-test` needs its `addedReason`; one added without it does not hold.
 4. **Per finding** (every one): `reproducible` or `not`.
    - Its `evidence[]` must let a reader see the defect without trusting the run: open each file.
-   - A finding of **Medium or worse** needs two reproductions — `reproduced` at 2 or more AND the evidence showing
+   - A finding of **Medium or worse**, or with a fix priority of **P0/P1**, needs two reproductions — `reproduced` at 2 or more AND the evidence showing
      both. Fewer ⇒ `not`.
    - `docCheck` must name the source that says the behaviour should not happen (a doc page, an AC, an oracle id, a
      source file). Empty, or a source that does not say it ⇒ `not`: a surprise is not a defect.
    - An `inScope: false` finding must not be driving the verdict's pass or fail, only listed as noticed.
-   - An in-scope finding carries a `priority` a person confirmed (`priorityBy`; the gate checks both are there) and a
-     `priorityReason` that gives grounds — blast radius, a workaround, revenue or security at risk — not a restated
-     severity. A reason that does not support its priority ⇒ `not`.
+   - An in-scope finding carries a `fixPriority` a person confirmed (`fixPriorityBy`) and a `fixPriorityReason` that
+     gives grounds — blast radius, a workaround, revenue or security at risk — not a restated severity (the gate
+     checks all three are there). A reason that does not support its fix priority ⇒ `not`, and its FIX is "ask the
+     person again: <why>" — never a fix priority of your own: that decision is theirs.
 5. **The draft follows from the journal.** Every status, count and finding the draft states matches `goal.json`;
    it asserts nothing the journal lacks; it leaves out no FAIL, GAP or Medium-or-worse finding the journal holds; a
    caveat the journal records (a GAP, an unreproduced finding, a read-only env) is not softened. **The verdict
-   word** turns on an in-scope finding's confirmed **priority**, never its severity alone: FAIL when an AC is FAIL
+   word** turns on an in-scope finding's confirmed **fix priority**, never its severity alone: FAIL when an AC is FAIL
    or PARTIAL or an in-scope P0/P1 finding stands; PASS only when every AC is PASS or an S2 GAP and no in-scope
    finding stands; any other GAP, or an in-scope P2/P3 finding, makes it PASS WITH NOTES; every AC GAP is BLOCKED.
    A PASS over any other GAP does not follow.
 6. **The done-criterion is met.** Read `done` from the contract and test it as written against the journal. **Done
    is not the verdict word:** the default done-criterion is met when every AC is PASS or FAIL with evidence, or a
-   GAP you judged honest in step 3 — an S2 GAP included — with every Medium-or-worse finding reproduced twice; the
+   GAP you judged honest in step 3 — an S2 GAP included — with every Medium-or-worse or fix-priority P0/P1 finding reproduced twice; the
    verdict word is step 5's. A criterion the person added is tested as written; a done-criterion met only by
    lowering it is not met. An APPROVE states, in one line, how it was met.
 

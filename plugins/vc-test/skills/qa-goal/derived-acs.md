@@ -168,16 +168,21 @@ teardown cannot remove.
 ```
 
 `id` is assigned, never given. `finding set --id <F-n>` changes fields later (send the whole `evidence[]`).
-
-**Priority (step 6), in-scope findings only** — severity says how bad, priority says **when it must be fixed**:
-P0/P1 now (the verdict is FAIL), P2/P3 later (PASS WITH NOTES). Either way a Medium-or-worse one is proposed as a
-bug at S3, with its priority. Propose it from
-`<plugin>/knowledge/risk-prioritization-framework.md` §2 (Priority and the Severity-Priority Interaction: blast
-radius, workaround, revenue or security at risk) — a Critical with a narrow blast radius and a workaround can be P1;
-a High that blocks every user is P0. `finding set` `{ "priority": "P0|P1|P2|P3", "priorityReason": "<the grounds,
-one line>" }`. Then ask the person **once**, one AskUserQuestion: per finding its id, title, severity, the proposed
-priority and its reason; they confirm or change each. Record what they chose — `finding set` with the person's
-`priority` and `"priorityBy": "<who>"`, the reason kept or replaced by theirs. Never set `priorityBy` without that
-answer: `check --before verdict` fails an in-scope finding without both fields.
 `reproduced` counts independent runs that showed it, each with its own evidence entry. `kbRef` is added at the
 write-back ([`research-loop.md`](research-loop.md) §Write-back).
+
+**Fix priority (step 6), in-scope findings only** — severity says how bad, the fix priority says **when it must
+be fixed**: P0/P1 now (the verdict is FAIL), P2/P3 later (PASS WITH NOTES). Either way the finding is proposed as a
+bug at S3, with its fix priority. Propose it from `<plugin>/knowledge/risk-prioritization-framework.md` §2 (Priority
+and the Severity-Priority Interaction: blast radius, workaround, revenue or security at risk) — a Critical with a
+narrow blast radius and a workaround can be P1; a High that blocks every user is P0. `finding set`
+`{ "fixPriority": "P0|P1|P2|P3", "fixPriorityReason": "<the grounds, one line>" }`. Then ask the person **once**, one
+AskUserQuestion: per finding its id, title, severity, the proposed fix priority and its reason; they confirm or
+change each. Record their answer with `finding set`: their `fixPriority`, `"fixPriorityBy": "<who>"`, and — when they
+changed it — `fixPriorityReason` in their words (ask why if they did not say). `fixPriorityBy` comes only from that
+answer: `finding add` refuses it, and a `finding set` that changes the severity, scope or title drops it — ask again.
+
+- **Confirmed P0/P1 fails the ticket, so it is reproduced twice** (rail 6), whatever its severity: a Low seen once
+  gets its second clean-start run before the verdict.
+- **A judge FIX on a fix priority is the person's, not yours** (step 8): ask them again with the judge's reason and
+  record their answer as above. Never change a confirmed fix priority yourself.

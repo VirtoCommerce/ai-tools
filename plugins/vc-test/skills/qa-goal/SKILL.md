@@ -62,8 +62,8 @@ alternate — the rails do not move.
    (a setting, an `other`: `<plugin>/briefs/ledger.md`). Exit 1 ⇒ fix what it names and append again; a line you
    could not record goes in the verdict's Data section. **Before the first write**, the ledger check of
    [`derived-acs.md`](derived-acs.md) §Before the first data write; it fails ⇒ the stand is read-only for this run.
-6. **Medium or worse is reproduced twice** — a second, independent run from a clean start (a new page, a new
-   request), both kept as evidence, `reproduced: 2`. A Low finding is one evidence entry and one line: no
+6. **Medium or worse, or fix priority P0/P1, is reproduced twice** — a second, independent run from a clean start (a new page, a new
+   request), both kept as evidence, `reproduced: 2`. A Low P2/P3 finding is one evidence entry and one line: no
    investigation.
 7. **Product claims are checked before they are written** ([`research-loop.md`](research-loop.md) §Docs check).
    Live behaviour that contradicts the docs is a **finding to confirm** — never a silent change of an expectation.
@@ -170,8 +170,7 @@ Inline, not `/vc-test:qa-triage-results`. Per finding: `inScope` (does it break 
 touched? out of scope ⇒ listed, never deciding; an `UNCONFIRMED (seen once):` finding keeps `inScope: false` — step 5
 set it); `severity`; `docCheck` names a real source; Medium+ has
 `reproduced: 2` with both runs in `evidence`. Fix a miss through `finding set` — never by lowering a severity.
-**Priority** of each in-scope finding (fix now P0/P1, or later): the run proposes, a person confirms in one
-question — [`derived-acs.md`](derived-acs.md) §Recording.
+**Fix priority** per in-scope finding: the run proposes, a person confirms — [`derived-acs.md`](derived-acs.md) §Recording.
 
 ### 7 — Draft verdict
 
@@ -193,7 +192,7 @@ second dispatch, so the judge sees round 1. A reply with no `VERDICT:` line ⇒ 
 again none ⇒ STOP, hand to the person.
 
 - **APPROVE** ⇒ append `## Judge` — `APPROVE (round <n>) — judge-<n>.md` — to `verdict.md`. Step 9.
-- **REJECT, round 1** ⇒ apply each `FIX` through `goal.mjs` (re-test where it asks), rewrite `verdict.md`, step 7
+- **REJECT, round 1** ⇒ apply each `FIX` through `goal.mjs` (re-test where asked; a fix-priority FIX: ask the person), rewrite `verdict.md`, step 7
   again (7.1 first: re-record the cost before the gate), then a **new** judge agent for round 2. Never argue with a reason; never pass it your fixes.
 - **REJECT, round 2** ⇒ STOP: hand both `judge-1.md` and `judge-2.md` to the person; the verdict carries
   `## Judge — REJECT twice, handed to a person`. Close as step 9, writing back only the facts of ACs round 2 marked
@@ -217,11 +216,9 @@ again none ⇒ STOP, hand to the person.
 5. `node <plugin>/lib/goal.mjs close --dir <dir> --write-zones <dir>/write-zones.json --teardown <dir>/teardown.json`.
 6. `node <plugin>/lib/goal.mjs check --dir <dir> --before close` — exit 0; exit 2 ⇒ its errors go into the report.
 7. Print `verdict.md`'s first two lines and its path.
-8. **S3 — outward writes**, each proposed on its own, under a label unique to it (`bug:F-<n>`, `comment:<n>`), and
-   done only on a yes after `goal.mjs check --before write --what '<label>'` exits 0: [`goal-contract.md`](goal-contract.md)
-   §S3. A bug is filed from the judged evidence, never a fresh investigation: a package in `<dir>/bugs/F-<n>/`
-   (§The bug package), then `/vc-fix:qa-bug … --evidence "<dir>/bugs/F-<n>" --link '<KEY>' --confirmed`; a slot the
-   journal cannot fill ⇒ paste-ready bug text instead. A comment is paste-ready text you never post; no status change.
+8. **S3 — outward writes**, each proposed on its own under a label unique to it (`bug:F-<n>`, `comment:<n>`) and done
+   only on a yes after `goal.mjs check --before write --what '<label>'` exits 0: [`goal-contract.md`](goal-contract.md)
+   §S3 — a bug from the judged evidence, never a fresh investigation; a comment you never post; no status change.
 
 ## Stops
 
