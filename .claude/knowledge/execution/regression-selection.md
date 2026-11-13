@@ -198,8 +198,8 @@ slice's unstamped nodes (`TM-014`) are not hits; they are the gap list authoring
 | Disposition | The row is | Action | Timing |
 |---|---|---|---|
 | **`CONFIRMED`** | still correct under the change | nothing | — |
-| **`REPAIR`** | **mechanically** stale — a renamed selector, a moved route, a removed arg, a dead `@td()` alias — so it cannot execute at all | `/qa-review-tests file <suite> --fix` (reached through `/qa-test-lifecycle`), under its write-scope ceiling + revert-on-regression; the row is **stale** for a `/qa-test` run and does not enter it | fixed **before** the run, then **executed by the next one** |
-| **`RE-BASE`** | asserting an **expected value** the change contradicts | keep the assertion as it stands; the row **stays in the run's regression selection** | resolved **by** the run, at triage |
+| **`REPAIR`** | **mechanically** stale — a renamed selector, a moved route, a removed arg, a dead `@td()` alias — so it cannot execute at all | `/qa-review-tests file <suite> --fix`, under its write-scope ceiling + revert-on-regression. **For `/qa-test`** the row is **stale**: never edited, never run — a `stale_cases` entry (with its reason) for `/qa-test-lifecycle`. **For `qa-suite-sync`** it is its own work: it applies the repair | repaired **by lifecycle**, **before** any run; first executed by lifecycle's live verify, or by the next run |
+| **`RE-BASE`** | asserting an **expected value** the change contradicts | keep the assertion as it stands; the row **is carried into the run's regression selection** (`--ids`) — the run's observation decides which side is right | resolved **by** the run, at triage |
 | **`SUPERSEDED`** | asserting a surface the change removes | a proposal, recorded — never an edit | human |
 
 #### The `REPAIR` / `RE-BASE` split is the load-bearing rule
@@ -225,11 +225,15 @@ same run that then reports the green. The split is exactly the line between the 
 
 #### Two hard rules
 
-**A `FILTERED_OUT` row disposed `REPAIR` or `RE-BASE` must be carried into the run's regression selection**
-(`--ids`) — or be `CONFIRMED`/`SUPERSEDED` with a stated reason. A repaired-but-unrun row is the same
-invisible class as an undisposed `RE-BASE`: until a run executes it, nothing has verified that the case can
-now reach its own assertion. A `RE-BASE` that never executes is precisely the invisible class this triage
-exists to find.
+**A `RE-BASE` row — a `FILTERED_OUT` one above all — must be carried into the run's regression selection**
+(`--ids`), or be `CONFIRMED`/`SUPERSEDED` with a stated reason: the run is the only thing that can settle
+it, and a `RE-BASE` that never executes is precisely the invisible class this triage exists to find.
+
+**A `REPAIR` row is never carried into a `/qa-test` run.** It cannot execute until it is repaired, and
+`/qa-test` never repairs: the row goes to `stale_cases` for `/qa-test-lifecycle` and the run executes the
+rest. A repaired-but-unrun row is the same invisible class, so the repair is not finished at the edit — it
+is finished when lifecycle's live verify (or the next run) has executed the row and shown that it now reaches
+its own assertion. For `qa-suite-sync`, which makes the repair, that verify is part of its own work.
 
 **Triage files no bug.** A `tc:scope` hit is a claim about a **test case**, never about the product. A real
 defect found while triaging goes through the ordinary route: the fault model if it belongs there, triage
