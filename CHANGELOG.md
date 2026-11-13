@@ -8,6 +8,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## /vc-test:qa-goal — goal-driven testing with an independent judge — `vc-test` `0.18.0` — 2026-11-13
+
+### Added
+
+- `/vc-test:qa-goal <KEY> [<env>]` (preview): for a ticket a fixed pipeline cannot test — no acceptance criteria, a change in
+  a component the ticket does not link, research before any test. A person agrees a goal and a checkable done-criterion (S1),
+  the run researches, derives the criteria with their sources plus a strategy (S2, one approval), tests with re-planning,
+  drafts the verdict from the journal, has `vc-test:goal-judge` re-derive it (two rounds at most), closes, and proposes each
+  outward write on its own (S3). Nothing goes out by itself and a status is never changed.
+- `lib/goal.mjs` (the journal `goal.json` and its only writer, with stage gates; scrubs every stored string and refuses a
+  token shape), `lib/oauth-code.mjs` (an authorization-code + PKCE sign-in through a Playwright lane in which the agent never
+  holds a secret), `agents/goal-judge.md`, and the skill `qa-goal` with its contract, research-loop, derived-criteria and
+  OAuth-recipe files.
+
+### Changed
+
+- `/vc-test:qa-ticket` prints a one-line hint, and continues, when the bundle has no ACs or names a component no PR touches.
+
 ## Lane HAR files keep no sign-in password — `vc-init` `0.7.0` — 2026-11-13
 
 ### Fixed

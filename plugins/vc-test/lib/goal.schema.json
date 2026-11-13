@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "goal.json — the journal of one /vc-test:qa-goal run",
+  "description": "Written only by lib/goal.mjs. No token, code, password or cookie is ever stored: x-forbiddenFieldNames lists the keys goal.mjs refuses at any depth, and a JWT-shaped value is refused wherever it appears.",
+  "x-forbiddenFieldNames": ["token", "authorization", "password", "cookie"],
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "key", "env", "runId", "createdAt", "goal", "done", "budget", "stops", "contract", "acs", "strategy", "findings", "replays", "checkpoints", "judge", "cost", "closed"],
+  "properties": {
+    "schema": { "type": "integer", "enum": [1] },
+    "key": { "type": "string", "minLength": 1 },
+    "env": { "type": "string", "minLength": 1 },
+    "runId": { "type": "string", "pattern": "^\\d{8}T\\d{6}Z(-\\d+)?$" },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "goal": { "type": "string" },
+    "done": { "type": "string" },
+    "budget": { "$ref": "#/$defs/budget" },
+    "stops": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "contract": { "$ref": "#/$defs/contract" },
+    "acs": { "type": "array", "items": { "$ref": "#/$defs/ac" } },
+    "strategy": { "type": "array", "items": { "$ref": "#/$defs/risk" } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "replays": { "type": "array", "items": { "$ref": "#/$defs/replay" } },
+    "checkpoints": { "type": "array", "items": { "$ref": "#/$defs/checkpoint" } },
+    "judge": { "$ref": "#/$defs/judge" },
+    "cost": { "$ref": "#/$defs/cost" },
+    "closed": { "$ref": "#/$defs/closed" }
+  },
+  "$defs": {
+    "budget": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["tokens", "wallMin", "researchShare"],
+      "properties": {
+        "tokens": { "type": "integer", "minimum": 1 },
+        "wallMin": { "type": "number", "minimum": 1 },
+        "researchShare": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "contract": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["approvedBy", "approvedAt"],
+      "properties": {
+        "approvedBy": { "type": "string", "minLength": 1 },
+        "approvedAt": { "type": "string", "minLength": 1 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["note"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "cmd": { "type": "string", "minLength": 1 },
+        "digest": { "type": "string", "minLength": 1 },
+        "note": { "type": "string" }
+      }
+    },
+    "ac": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text", "source", "addedAt", "status", "evidence", "findings"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^AC-\\d+$" },
+        "text": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "pattern": "^(ticket|observed|(material|pr|doc):.+)$" },
+        "addedAt": { "type": "string", "enum": ["contract", "research", "during-test"] },
+        "addedReason": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "PASS", "FAIL", "PARTIAL", "GAP"] },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "gapReason": { "type": "string" },
+        "findings": { "type": "array", "items": { "type": "string", "pattern": "^F-\\d+$" } }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "risk", "priority", "acs", "technique", "oracle", "account"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^R-\\d+$" },
+        "risk": { "type": "string", "minLength": 1 },
+        "priority": { "type": "string", "enum": ["Critical", "High", "Medium", "Low"] },
+        "acs": { "type": "array", "items": { "type": "string", "pattern": "^AC-\\d+$" } },
+        "technique": { "type": "string", "minLength": 1 },
+        "oracle": { "type": "string", "minLength": 1 },
+        "account": { "type": "string", "minLength": 1 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "title", "ac", "inScope", "evidence", "reproduced"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^F-\\d+$" },
+        "severity": { "type": "string", "enum": ["Critical", "High", "Medium", "Low"] },
+        "title": { "type": "string", "minLength": 1 },
+        "ac": { "type": "string", "pattern": "^AC-\\d+$" },
+        "inScope": { "type": "boolean" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "reproduced": { "type": "integer", "minimum": 0 },
+        "docCheck": { "type": "string" },
+        "kbRef": { "type": "string" }
+      }
+    },
+    "replay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "method", "url", "expectStatus"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^RP-\\d+$" },
+        "method": { "type": "string", "enum": ["GET", "HEAD"] },
+        "url": { "type": "string", "pattern": "^https?://" },
+        "expectStatus": { "type": "integer", "minimum": 100, "maximum": 599 }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stop", "decision", "who", "at"],
+      "properties": {
+        "stop": { "type": "string", "enum": ["S1", "S2", "S3"] },
+        "decision": { "type": "string", "enum": ["approved", "rejected", "edited"] },
+        "who": { "type": "string", "minLength": 1 },
+        "at": { "type": "string", "minLength": 1 },
+        "note": { "type": "string" }
+      }
+    },
+    "judge": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["verdict", "at", "path"],
+      "properties": {
+        "verdict": { "type": "string", "enum": ["APPROVE", "REJECT"] },
+        "at": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 }
+      }
+    },
+    "cost": {
+      "description": "The total of a run-cost.mjs reading: input-equivalent tokens and minutes.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "input": { "type": "number", "minimum": 0 },
+        "cacheCreation": { "type": "number", "minimum": 0 },
+        "cacheRead": { "type": "number", "minimum": 0 },
+        "output": { "type": "number", "minimum": 0 },
+        "inputTotal": { "type": "number", "minimum": 0 },
+        "activeMin": { "type": "number", "minimum": 0 },
+        "wallMin": { "type": "number", "minimum": 0 }
+      }
+    },
+    "closed": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["writeZones", "teardown", "at"],
+      "properties": {
+        "writeZones": { "type": "string", "minLength": 1 },
+        "teardown": { "type": "string", "minLength": 1 },
+        "at": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

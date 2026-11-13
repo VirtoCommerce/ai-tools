@@ -2604,20 +2604,20 @@
     "windowDaysAtSeed": 30
   },
   "RETURNS_ORDER_ADMIN_073": {
-    "id": "87589c18-61ad-4fc6-9de2-98399dcf846e",
+    "id": "47583507-d053-45ce-be65-1242f977836c",
     "number": "AGENT-TEST-ORD-RET-ADM073",
-    "lineXItemId": "f37d48fa-ba1d-43f4-94cb-2649c3da9bbd",
-    "lineAItemId": "f37d48fa-ba1d-43f4-94cb-2649c3da9bbd",
+    "lineXItemId": "8d9f0921-f7d9-4eee-9082-7d1f6421c7cc",
+    "lineAItemId": "8d9f0921-f7d9-4eee-9082-7d1f6421c7cc",
     "lineASku": "566903892",
     "lineAOrderedQuantity": 20,
     "lineADeliveredQuantity": 20,
-    "lineBItemId": "2edcdb63-fc03-4f37-bc7c-2afd002e9540",
+    "lineBItemId": "07f4e3ba-717d-46ab-8718-19cd4dfbb21f",
     "lineBSku": "568171770",
     "lineBOrderedQuantity": 25,
     "lineBDeliveredQuantity": 25,
-    "seededAt": "2026-10-14T13:56:16.423Z",
+    "seededAt": "2026-11-13T15:14:14.728Z",
     "deliveryDates": {
-      "S1": "2026-10-14T13:56:16.423Z"
+      "S1": "2026-11-13T15:14:14.728Z"
     },
     "windowDaysAtSeed": 30
   },
@@ -2629,7 +2629,7 @@
     "cancelledSku": "55557702",
     "lineYProductId": "ca255c81f8254865956c1d714f2ef457",
     "lineYSku": "568171770",
-    "seededAt": "2026-11-11T12:06:40.083Z"
+    "seededAt": "2026-11-13T15:14:14.728Z"
   },
   "RETURNS_AUTH_PARTIAL_LINE": {
     "orderId": "e68a28fe-da51-4847-972a-891aea574d5f",

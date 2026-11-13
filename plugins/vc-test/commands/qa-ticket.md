@@ -77,7 +77,8 @@ without `--full`: `node <plugin>/lib/route.mjs --bundle <BUNDLE> [--prepare <PRE
 diffs in `PREPARE` let it see a page git records as a rename). `technical-change` ⇒ STOP:
 print its `reason` and its `shape.signals`, name `next` (the scoped regression plus the sync of the existing cases), and
 say `--full` runs the scenario hunt anyway. A `NOT DEPLOYED:` line in `blockers[]` ⇒ BLOCKED on deploy: write
-`verdict.md` with it and stop.
+`verdict.md` with it and stop. The bundle's `acs` empty, or a blocker / gap naming a component no PR touches ⇒ print
+"Looks like a ticket for `/vc-test:qa-goal` (no ACs / unlinked component)" and continue; never start it.
 
 ## 2 — Change map, then scenarios
 
