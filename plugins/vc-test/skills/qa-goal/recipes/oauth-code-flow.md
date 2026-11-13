@@ -53,13 +53,19 @@ only in `<dir>/.tokens/` and are deleted at close. **You never see, store or pas
    that is not a JWT). Check that `sub`/`name` is the persona's account and `aud` the resource. A `sub`/`name` of
    another account is a **procedure error**, not a finding (the sign-in reached the wrong session): delete the
    claims file and restart that persona from step 1. A wrong `aud` is a finding, not a retry.
-   On a non-zero exit the output file holds only `{ ok: false, errors }`, no evidence: read its `errors`, then
-   delete it. Exit 2:
-   - "close the lane page so the HAR is written" ⇒ step 4, then step 5 again;
-   - "no callback for this persona's state" ⇒ the sign-in did not reach the redirect (wrong account, a consent
-     refused, another sign-in on the lane since): from step 1 again;
-   - "the callback's iss is not the issuer this sign-in started with" ⇒ a finding (`SEC`), not a retry;
-   - a token-endpoint refusal (its `error` fields) ⇒ a GAP or a finding, by what research says should happen.
+   On a non-zero exit the output file holds `{ ok: false, errors }` — plus, for a token-endpoint refusal, the
+   server's `error` and `error_description` — already scrubbed, and no claims. Read it, then act by the outcome
+   below. **When the outcome is a finding or a GAP, that file is its evidence:** rename it to
+   `"<dir>/evidence/<AC-n>-<p>-redeem-refused-<k>.json"` (`<k>` = 1, 2, … per reproduction: a Medium-or-worse
+   finding needs two) and cite it in the finding (or the GAP's `evidence`). Delete it only when the outcome is a
+   retry. Exit 2:
+   - "close the lane page so the HAR is written" ⇒ a retry: delete the file, step 4, then step 5 again;
+   - "no callback for this persona's state" ⇒ a retry — the sign-in did not reach the redirect (wrong account, a
+     consent refused, another sign-in on the lane since): delete the file, from step 1 again;
+   - "the callback's iss is not the issuer this sign-in started with" ⇒ a finding (`SEC`), not a retry: keep the
+     file as its evidence;
+   - a token-endpoint refusal (its `error` fields) ⇒ a GAP or a finding, by what research says should happen:
+     keep the file as its evidence either way.
    Exit 3:
    - "the HAR … is too large to read" or "… is unreadable" ⇒ closing the page again never fixes it: from step 1
      again — step 2's `browser_close` starts the fresh context with a small HAR;
@@ -75,8 +81,10 @@ only in `<dir>/.tokens/` and are deleted at close. **You never see, store or pas
      command. An `mcp` answer with `result: null` and `error: "no response with the request id"` means the server
      answered 200 with no reply to the call — an observation too, never read as an empty result. Any other status
      with no reply (a 403 refusal, say) prints `{ status, step, result }`, the body as `result`.
-   - **A non-zero exit** leaves only `{ ok: false, errors }` in the output file, no evidence: read its `errors`,
-     then delete the file.
+   - **A non-zero exit** leaves `{ ok: false, errors }` in the output file (already scrubbed): read its `errors`.
+     The refusal and the timeout below are not evidence about the product, so delete the file; if a criterion
+     nevertheless turns on that outcome (a GAP "the endpoint did not answer within 30 s", say), keep the file as
+     that GAP's evidence instead of deleting it.
    - Exit 2 "`--url` … is not this token's issuer or audience, this stand's BACK_URL or FRONT_URL, nor a resource on
      a host approved at S1/S2" ⇒
      the script refused to send the token there, by design. Never work around it; that refusal is not evidence
