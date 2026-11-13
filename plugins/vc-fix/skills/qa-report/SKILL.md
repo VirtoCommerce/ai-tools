@@ -73,7 +73,7 @@ Load the `artifact-design` skill, then:
 ## 4. Ask once — unless the caller already holds consent
 
 Show the comment text and `chars/budget`. Invoked with `--confirmed` (the calling pipeline's own step
-already decided to post — `/qa-test` Close, `/qa-verify-fix` Step 6) ⇒ skip the question. Otherwise ask
+already decided to post — `/qa-verify-fix` Step 6) ⇒ skip the question. Otherwise ask
 once: *"Post this to <TICKET>?"* No ticket (a run with no `--ticket`) ⇒ show it and stop; nothing is posted.
 
 ## 5. Post or amend — ONE comment per ticket per round
