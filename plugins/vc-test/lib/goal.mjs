@@ -14,7 +14,9 @@
 //   contract --file <json> | contract --approve --who <name>
 //   ac add --file <json> → { id } · ac set --id AC-n --file <json>
 //   strategy set --file <json>                        (an array of risks; replaces the strategy)
-//   finding add --file <json> → { id } · finding set --id F-n --file <json>
+//   finding add --file <json> → { id } · finding set --id F-n --file <json>  (an in-scope finding needs fixPriority,
+//     fixPriorityReason and fixPriorityBy before the verdict gate passes; fixPriorityBy is never given at add, and a
+//     set that changes severity, inScope or title drops it: the person is asked again)
 //   replay add --file <json> → { id } · replay --id RP-n → { id, status, expectStatus, match } (GET/HEAD, no credentials,
 //     only to a host the run may touch: the stand's BACK_URL/FRONT_URL, or a host an approved S1/S2 note names)
 //   check --before strategy|write|verdict|close [--what <label>]   → { ok, errors, warnings }; exit 2 when a gate fails
@@ -340,7 +342,13 @@ export function checkGoal(goal, stage, { dir, what } = {}) {
       if (!(f.evidence ?? []).length) errors.push(`${f.id}: no evidence`);
       if (outside(f.evidence)) errors.push(`${f.id}: evidence outside the run folder`);
       if (tokens(f.evidence)) errors.push(`${f.id}: evidence inside the run's .tokens/ folder`);
-      if (f.inScope === true && ["Critical", "High", "Medium"].includes(f.severity) && !(f.reproduced >= 2)) errors.push(`${f.id}: Medium or worse needs reproduced ≥ 2`);
+      // Reproduced twice: Medium or worse, and any finding that fails the ticket (fix now, P0/P1) whatever its severity.
+      const decides = ["Critical", "High", "Medium"].includes(f.severity) || ["P0", "P1"].includes(f.fixPriority);
+      if (f.inScope === true && decides && !(f.reproduced >= 2)) errors.push(`${f.id}: Medium or worse, or fix priority P0/P1, needs reproduced ≥ 2`);
+      // In scope, the verdict turns on the fix priority (now P0/P1, later P2/P3): proposed by the run, confirmed by a person.
+      if (f.inScope === true && !f.fixPriority) errors.push(`${f.id}: in scope without a fixPriority`);
+      if (f.inScope === true && f.fixPriority && !f.fixPriorityReason) errors.push(`${f.id}: fixPriority without fixPriorityReason`);
+      if (f.inScope === true && f.fixPriority && !f.fixPriorityBy) errors.push(`${f.id}: fixPriority not confirmed by a person (fixPriorityBy)`);
       if (!known.has(f.ac)) errors.push(`${f.id}: unknown AC ${f.ac}`);
     }
     if (!approved("S2")) errors.push("no approved S2 checkpoint");
@@ -436,6 +444,7 @@ function cli(argv) {
       if (sub === "add") {
         return mutate(argv, objectInput(readFileArg(argv), "finding"), (g, c, dir) => {
           if ("id" in c) throw refuse("finding add: the id is assigned, not given");
+          if ("fixPriorityBy" in c) throw refuse("finding add: fixPriorityBy is the person's answer at triage — `finding set` it after asking");
           refuseTokenPaths(dir, "finding add", evidencePaths(c));
           const f = { id: nextId("F", g.findings), evidence: [], reproduced: 0, ...c };
           g.findings.push(f);
@@ -448,7 +457,10 @@ function cli(argv) {
           const f = setById(g.findings, id, "F", "finding");
           refuseTokenPaths(dir, `finding set ${id}`, evidencePaths(c));
           if ("id" in c) throw refuse("finding set: the id cannot be changed");
+          // A confirmation holds for the finding the person saw: a new severity, scope or title is asked again.
+          const changed = ["severity", "inScope", "title"].some((k) => k in c && c[k] !== f[k]);
           Object.assign(f, c);
+          if (changed && !("fixPriorityBy" in c)) delete f.fixPriorityBy;
           return { id };
         });
       }

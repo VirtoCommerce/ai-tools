@@ -38,7 +38,7 @@ itself says. One goal per run: two outcomes that do not share a path are two run
 Default, and the floor — a person may add to it, never go under it:
 
 > Every acceptance criterion is PASS or FAIL with evidence in the run folder, or GAP with an honest reason; every
-> Medium-or-worse finding is reproduced twice; the verdict is judged by goal-judge.
+> Medium-or-worse or fix-priority P0/P1 finding is reproduced twice; the verdict is judged by goal-judge.
 
 It must be decidable from `goal.json` and the files it names, because the judge tests it as written. Words like
 "thoroughly", "fully" or "looks good" are not checkable. An addition names something the journal can show
@@ -112,8 +112,8 @@ Each write is proposed on its own and done only on a yes. Its label is unique to
 (the n-th comment proposed) — because an approved S3 is never consumed: a reused label would pass on an old
 approval.
 
-1. AskUserQuestion with the exact proposal. For an in-scope Medium-or-worse finding: the bug — title, severity,
-   evidence paths, `<KEY>` as the link. For the tracker: the comment text, paste-ready, ≤ 15 lines (verdict, the
+1. AskUserQuestion with the exact proposal. For each in-scope finding: the bug — title, severity,
+   the confirmed fix priority, evidence paths, `<KEY>` as the link. For the tracker: the comment text, paste-ready, ≤ 15 lines (verdict, the
    criteria table, findings, the judge result, the run id). A status change is never offered (out of scope).
 2. **Yes** ⇒ `node "<plugin>/lib/goal.mjs" checkpoint --dir "<dir>" --stop S3 --decision approved --who '<who>' --note '<label>'`,
    then `node "<plugin>/lib/goal.mjs" check --dir "<dir>" --before write --what '<label>'`. Exit 0 ⇒
@@ -174,7 +174,7 @@ anything to fill one.
 | AC-1 <short> | pr:<repo>#<n> | PASS | evidence/<file> |
 
 ## Findings
-- F-1 <severity> <title> — AC-n · reproduced <n> · in scope | noticed
+- F-1 <severity> <fix priority> <title> — AC-n · reproduced <n> · in scope | noticed
 
 ## Not tested, and why
 - AC-n — <gapReason>
@@ -191,13 +191,14 @@ Bundle <path> · Journal <dir>/goal.json · kb <read | not read (reason)> · PRs
 ```
 
 `## Judge` is appended after step 8, never before. The decision, per `verdict-rules.md` §Decide the verdict, mapped
-to this journal (Critical/High stand for its P0/P1):
+to this journal. An in-scope finding decides by its **fix priority** (`fixPriority`) — now or later, confirmed by a person at step 6
+([`derived-acs.md`](derived-acs.md) §Recording) — never by its severity alone:
 
 | Verdict | When |
 |---|---|
-| **FAIL** | an AC is FAIL or PARTIAL, or an in-scope Critical or High finding |
-| **PASS** | every AC PASS or a GAP replaced or dropped at S2; no other GAP; no in-scope finding of any severity |
-| **PASS WITH NOTES** | no FAIL/PARTIAL and no in-scope Critical/High, but a GAP other than an S2 one, or an in-scope Medium/Low finding, remains |
+| **FAIL** | an AC is FAIL or PARTIAL, or an in-scope P0 or P1 finding |
+| **PASS** | every AC PASS or a GAP replaced or dropped at S2; no other GAP; no in-scope finding |
+| **PASS WITH NOTES** | no FAIL/PARTIAL and no in-scope P0/P1, but a GAP other than an S2 one, or an in-scope P2/P3 finding, remains |
 | **BLOCKED** | not deployed, every AC GAP, or (at close) a file outside the write zones |
 
 An out-of-scope finding never moves the verdict; it is listed. "Deployment unverified" (a `DEPLOYMENT UNKNOWN:`
