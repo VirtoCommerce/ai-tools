@@ -18,7 +18,9 @@
 //   http --method GET|POST|DELETE --url <url> [--body-file <json>]      → { status, body }
 //   purge                    → { purged: n } (removes <runDir>/.tokens/; --persona optional)
 //   A 401 from mcp/http prints { status, error } — the WWW-Authenticate `error` value only; nothing is refreshed.
+//   A URL carrying a user name or password is a usage error. Every request, body included, times out after 30 s (exit 3).
 // Prints ONE JSON object. Exit 0 done · 1 usage · 2 refused (a server or HAR said no; `errors` names why) · 3 could not run.
+// Imported, `cli(argv)` returns and throws values that are already scrubbed.
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -92,6 +94,8 @@ const isLoopback = (u) => ["localhost", "127.0.0.1", "[::1]"].includes(u.hostnam
 function safeUrl(raw, what) {
   let u;
   try { u = new URL(raw); } catch { throw usage(`${what} is not a URL`); }
+  // fetch would refuse it anyway — with an error message that quotes the whole URL, password included
+  if (u.username || u.password) throw usage(`${what} must not carry a user name or password`);
   if (u.protocol !== "https:" && !(u.protocol === "http:" && isLoopback(u))) throw refuse(`${what} must be https (http only on loopback)`);
   return u;
 }
@@ -99,15 +103,31 @@ const b64u = (buf) => Buffer.from(buf).toString("base64url");
 // One trailing slash is normalised on both sides (`https://host/` vs `https://host`); otherwise strict.
 const sameIssuer = (a, b) => String(a ?? "").replace(/\/$/, "") === String(b ?? "").replace(/\/$/, "");
 
+// Every request and its body read share one deadline: a stalled endpoint or an SSE stream left open must not hang a
+// run. The env override exists for the temporary tests only.
+const TIMEOUT_MS = Number.parseInt(process.env.VC_TEST_OAUTH_TIMEOUT_MS ?? "", 10) > 0 ? Number.parseInt(process.env.VC_TEST_OAUTH_TIMEOUT_MS, 10) : 30_000;
+/** A failure names the step and an error code — never `e.message`, which can quote the URL. */
+function failed(e, what) {
+  if (e?.name === "TimeoutError" || e?.name === "AbortError") return cannot(`${what} timed out after ${TIMEOUT_MS / 1000} s`);
+  return cannot(`${what}: ${e?.cause?.code ?? e?.code ?? e?.name ?? "failed"}`);
+}
 async function request(url, init, what) {
   try {
-    return await fetch(url, { ...init, redirect: "manual" });
+    const res = await fetch(url, { ...init, redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
+    res.what = what;
+    return res;
   } catch (e) {
-    throw cannot(`${what}: ${e.cause?.code ?? e.message}`);
+    throw failed(e, what);
   }
 }
+async function textOf(res) {
+  try { return await res.text(); } catch (e) { throw failed(e, res.what); }
+}
+async function drop(res) {
+  try { await res.body?.cancel(); } catch { /* already aborted */ }
+}
 async function jsonOf(res) {
-  const text = await res.text();
+  const text = await textOf(res);
   try { return JSON.parse(text); } catch { return null; }
 }
 
@@ -115,7 +135,7 @@ async function discover(issuer) {
   const base = issuer.href.replace(/\/+$/, "");
   for (const path of ["/.well-known/openid-configuration", "/.well-known/oauth-authorization-server"]) {
     const res = await request(`${base}${path}`, { headers: { Accept: "application/json" } }, "discovery");
-    if (res.status !== 200) { await res.body?.cancel(); continue; }
+    if (res.status !== 200) { await drop(res); continue; }
     const doc = await jsonOf(res);
     if (doc?.authorization_endpoint && doc?.token_endpoint) return doc;
   }
@@ -268,16 +288,16 @@ async function mcp(argv, dir, p) {
   const headers = { "Content-Type": "application/json", Accept: "application/json, text/event-stream", Authorization: `Bearer ${tok.access_token}` };
   const post = async (body, sid) => request(url, { method: "POST", headers: sid ? { ...headers, "Mcp-Session-Id": sid } : headers, body: JSON.stringify(body) }, "mcp");
   const init = await post({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: MCP_PROTOCOL, capabilities: {}, clientInfo: { name: "vc-test-qa-goal", version: "1" } } });
-  if (init.status === 401) { await init.body?.cancel(); return { status: 401, step: "initialize", error: wwwError(init) }; }
-  const initText = await init.text();
+  if (init.status === 401) { await drop(init); return { status: 401, step: "initialize", error: wwwError(init) }; }
+  const initText = await textOf(init);
   if (init.status !== 200) return { status: init.status, step: "initialize", result: shown(rpcMessage(initText, 1) ?? initText).value };
   const sid = init.headers.get("mcp-session-id") ?? undefined;
   const note = await post({ jsonrpc: "2.0", method: "notifications/initialized" }, sid);
-  await note.body?.cancel();
+  await drop(note);
   const res = await post({ jsonrpc: "2.0", id: 2, method, params }, sid);
-  if (res.status === 401) { await res.body?.cancel(); return { status: 401, step: method, error: wwwError(res) }; }
-  const msg = rpcMessage(await res.text(), 2);
-  if (sid) { try { const d = await request(url, { method: "DELETE", headers: { ...headers, "Mcp-Session-Id": sid } }, "mcp"); await d.body?.cancel(); } catch { /* best effort */ } }
+  if (res.status === 401) { await drop(res); return { status: 401, step: method, error: wwwError(res) }; }
+  const msg = rpcMessage(await textOf(res), 2);
+  if (sid) { try { const d = await request(url, { method: "DELETE", headers: { ...headers, "Mcp-Session-Id": sid } }, "mcp"); await drop(d); } catch { /* best effort */ } }
   if (msg?.error) return { status: res.status, error: shown(msg.error).value };
   const s = shown(msg?.result ?? null);
   return { status: res.status, result: s.value, ...(s.trimmed ? { trimmed: true } : {}) };
@@ -292,8 +312,8 @@ async function http(argv, dir, p) {
   const headers = { Accept: "application/json", Authorization: `Bearer ${tok.access_token}` };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   const res = await request(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) }, "http");
-  if (res.status === 401) { await res.body?.cancel(); return { status: 401, error: wwwError(res) }; }
-  const text = await res.text();
+  if (res.status === 401) { await drop(res); return { status: 401, error: wwwError(res) }; }
+  const text = await textOf(res);
   let parsed = text;
   try { parsed = JSON.parse(text); } catch { /* a text body */ }
   const s = shown(parsed);
@@ -301,7 +321,20 @@ async function http(argv, dir, p) {
   return { status: res.status, body: s.value, ...(s.trimmed ? { trimmed: true } : {}), ...(location ? { location: shown(location).value } : {}) };
 }
 
+/**
+ * The library entry: what it returns AND every error it throws are already scrubbed, so an importer that prints
+ * either cannot echo a code, verifier or token. An unexpected error becomes exit 3 with its scrubbed message.
+ */
 export async function cli(argv) {
+  try {
+    return scrubbed(await run(argv));
+  } catch (e) {
+    if (e instanceof OAuthError) throw new OAuthError(e.exit, e.errors.map((m) => scrub(m)), scrubbed(e.extra));
+    throw new OAuthError(3, [scrub(String(e?.message ?? e))]);
+  }
+}
+
+async function run(argv) {
   const [cmd] = argv;
   if (!["start", "redeem", "refresh", "mcp", "http", "purge"].includes(cmd)) throw usage(USAGE);
   const dir = runDir(argv);
@@ -382,6 +415,13 @@ function scrub(text) {
   }
   return scrubValues(text, [...held, ...projectSecrets]);
 }
+/** Every string inside a returned or thrown value, scrubbed; the shape is kept. */
+function scrubbed(v) {
+  if (typeof v === "string") return scrub(v);
+  if (Array.isArray(v)) return v.map(scrubbed);
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, scrubbed(x)]));
+  return v;
+}
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   let out;
@@ -389,9 +429,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   try {
     out = await cli(process.argv.slice(2));
   } catch (e) {
-    if (e instanceof OAuthError) { out = { ok: false, errors: e.errors, ...e.extra }; exit = e.exit; }
-    else { out = { ok: false, errors: [String(e?.message ?? e)] }; exit = 3; }
+    out = { ok: false, errors: e.errors ?? [String(e?.message ?? e)], ...e.extra };
+    exit = e.exit ?? 3;
   }
-  console.log(scrub(JSON.stringify(out, null, 2)));
+  console.log(scrub(JSON.stringify(out, null, 2))); // a second pass over the whole text: cli already scrubbed it
   process.exitCode = exit;
 }
