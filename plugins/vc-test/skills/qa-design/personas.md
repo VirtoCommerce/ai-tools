@@ -10,6 +10,32 @@ person behaves) **plus the segments the feature behaves differently for** (§1 �
 second organization, a missing permission). A fixed list knows nothing about the feature, so it cannot hold
 the one customer the change breaks for.
 
+## 0. The project's own personas come first
+
+A client knows its users better than this plugin: a dealer's purchaser, a branch manager, a buyer on a framework
+contract. A project keeps them in **its own knowledge store** — `<store>/personas.md`, where `<store>` is
+`test.knowledgeStore` in `project-profile.json` (default `qa-knowledge/` at the project root; vc-test's
+`lib/knowledge-store.mjs`). The store is the project's: it never reaches the public `kb`, so a client's
+personas, segments and account names are safe there. Its shape:
+
+```markdown
+## Archetypes            — same columns as §2; a name that matches a §2 row replaces it, a new name adds one
+| Persona | Account | Starts at | Device | Acts like | Succeeds when |
+
+## Segments              — the attributes this project's features split users by
+| Segment | Values | Where it shows in the product | Where a ticket names it (AC words, code identifiers) |
+
+## Accounts              — persona (or archetype · segment) → test-user KEY per stand
+| Persona | <env> | <env> |
+```
+
+**Precedence, per item:** the brief › the project file › this plugin's catalog (§2). Read the project file before
+§1, and derive with its archetypes and its segment vocabulary. No file, or no store configured ⇒ this plugin's
+catalog alone, and the return says so.
+
+**You never write the project file.** A segment or archetype the ticket shows and the file lacks is returned as a
+**proposed persona** (§6) with its source; a person adds it.
+
 ## 1. Deriving personas from the ticket
 
 Read, in this order, and write down every **segment** — an attribute of the user that changes what the feature
@@ -20,6 +46,7 @@ does or shows:
 | The ACs and the story | the **actors** ("as a <role> I want…") and the conditions they name ("when the balance is zero") | approver; buyer with zero loyalty balance |
 | The diff | **roles and permissions** checked (a new permission, a role guard, `v-if` on a role) and **branches on a user attribute** (tier, currency, org type, store, locale, contract) | `canApproveOrders` ⇒ a member with it and one without |
 | The feature's configuration | settings that split users: a mode per organization, a per-store flag, a price list per customer group | `LoyaltyBalanceCalculationMode = Organization` ⇒ two members of one org vs a member of another |
+| The project's segment vocabulary (§0) | the attributes this project already knows split its users, matched against the AC words and code identifiers it lists | `contractType` in the diff ⇒ a framework-contract buyer |
 | The domain knowledge the run has | known segments of that domain (in this repository: `.claude/knowledge/domain/<slug>.md` actors) | sales rep with no customers |
 
 Then build each persona as **archetype + segments**, for example *B2B buyer · VIP tier*, *Restricted member ·
@@ -32,8 +59,8 @@ risk (§4), and say *"no segments in the ticket"*.
 ## 2. Archetypes — how the person behaves
 
 Generic to B2B and B2C commerce, so it holds on the platform project and on a client fork alike. An archetype
-gives the behaviour; the segments from §1 give the data it carries. A brief may name the project's own
-archetypes; they take the same columns.
+gives the behaviour; the segments from §1 give the data it carries. The project's own archetypes (§0) replace
+a row of the same name and add new ones.
 
 | Persona | Account | Starts at | Device | Acts like | Succeeds when |
 |---|---|---|---|---|---|
@@ -54,7 +81,7 @@ persona cannot finish is a `vs. USER` FAIL even when every control passes axe.
 ## 3. The account for a persona
 
 The brief names a test-user **KEY** for each persona (`<KEY>_LOGIN` / `<KEY>_PASSWORD`, signed in as the agent's
-§2 Signing in says). No key named ⇒ choose from the `<KEY>_LOGIN` entries in the stand's `.env.<env>` the one
+§2 Signing in says); else the project file's §0 Accounts table for this stand. Neither ⇒ choose from the `<KEY>_LOGIN` entries in the stand's `.env.<env>` the one
 whose name carries **both the archetype's role and the persona's segments** (a VIP-tier buyer ⇒ a key naming
 loyalty VIP, not just any user); none fits, or two do ⇒ ask the dispatcher. Then **check the segment live**
 before the task — the tier, balance, currency or organization the account actually has on this stand — because a
@@ -104,7 +131,10 @@ Compare the runs of one task across its personas. These are findings no single r
 
 ## 6. In the return
 
-First the derived personas — one line each: `<archetype> · <segments> — source: <AC n | diff file:line |
-setting> — account <KEY> (segment checked live: yes/no)`. Each task row then carries its persona, and the task
+First where the personas came from — `project personas: <store>/personas.md` or `project personas: none (plugin
+catalog)`. Then the derived personas — one line each: `<archetype> · <segments> — source: <AC n | diff file:line |
+setting> — account <KEY> (segment checked live: yes/no)`. Then **proposed personas**, if any — a segment or
+archetype the ticket showed and the project file lacks, each with its source and the row to add — for a person to
+add to the project file; never written by you. Each task row then carries its persona, and the task
 table ends with the matrix — one line per task:
 `<task>: <persona> completed (n steps) · <persona> FAIL at step k · <persona> NOT RUN (<reason>)`.

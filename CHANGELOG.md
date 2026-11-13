@@ -44,7 +44,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   settings. Every persona names its source. Segments run as pairs that must diverge (VIP vs zero balance, with vs
   without a permission, own vs another org); a pair that behaves the same is a `FAIL` when an AC states the
   difference. The account is the stand key carrying the segment, checked live before the task. A contrast
-  archetype by the change's risk is the fallback when the ticket names no segment. Capped at three personas per
+  archetype by the change's risk is the fallback when the ticket names no segment. A project keeps its own
+  archetypes, segment vocabulary and persona → account map in its knowledge store (`<store>/personas.md`,
+  `test.knowledgeStore`, never the public kb); they take precedence over the plugin's catalog, and a segment the
+  ticket shows that the file lacks comes back as a proposed persona for a person to add. Capped at three personas per
   task, six runs in all, and the runs are compared: a restricted member reaching data it must not see is a
   `FAIL` reported as access control; a dead end instead of a clear denial, or one persona needing far more steps,
   is `ADVISORY`. A persona with no account on the stand is `NOT RUN`, never signed in as someone else.
