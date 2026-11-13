@@ -18,8 +18,8 @@
 //   checkpoint --stop S1|S2|S3 --decision approved|rejected|edited --who <name> [--note <text>]
 //   cost --file <json> · judge --verdict APPROVE|REJECT --file <judge.md> · close --write-zones <path> --teardown <path>
 //   every command but init takes --dir <runDir>.
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { knowledgeSecretValues, scrubValues } from "./knowledge-store.mjs";
 import { argOf, outputRoot, workDir, currentEnv } from "./paths.mjs";
@@ -240,7 +240,7 @@ const PCT = (n, of) => Math.round((n / of) * 100);
 /** An evidence path counts only when it resolves inside the run folder (a relative path is read against it). */
 const insideRun = (dir, p) => {
   const rel = relative(resolve(dir), resolve(dir, p));
-  return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+  return rel === "" || (rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel)); // a segment, not a prefix: `..cache/x` is inside
 };
 
 function budgetFindings(goal, enforce) {
@@ -295,7 +295,7 @@ export function checkGoal(goal, stage, { dir, what } = {}) {
       if (!f.severity) errors.push(`${f.id}: no severity`);
       if (!(f.evidence ?? []).length) errors.push(`${f.id}: no evidence`);
       if (outside(f.evidence)) errors.push(`${f.id}: evidence outside the run folder`);
-      if (["Critical", "High", "Medium"].includes(f.severity) && !(f.reproduced >= 2)) errors.push(`${f.id}: Medium or worse needs reproduced ≥ 2`);
+      if (f.inScope === true && ["Critical", "High", "Medium"].includes(f.severity) && !(f.reproduced >= 2)) errors.push(`${f.id}: Medium or worse needs reproduced ≥ 2`);
       if (!known.has(f.ac)) errors.push(`${f.id}: unknown AC ${f.ac}`);
     }
     if (!approved("S2")) errors.push("no approved S2 checkpoint");
@@ -440,9 +440,14 @@ function cli(argv) {
     case "judge": {
       const verdict = need(argv, "verdict");
       const file = need(argv, "file");
-      return mutate(argv, { verdict }, (g, c, dir) => {
-        if (!existsSync(file)) throw refuse(`judge file not found: ${file}`);
-        g.judge = { verdict: c.verdict, at: now(), path: stored(dir, file) };
+      const dir = dirOf(argv);
+      // The judge's notes are a file INSIDE the run folder (a relative --file is read against it); the journal keeps the
+      // run-relative path, and that path goes through the same refusal + scrub as every other input. Messages never echo it.
+      const abs = resolve(dir, file);
+      if (!insideRun(dir, abs) || abs === resolve(dir)) throw refuse("judge file must be inside the run folder");
+      if (!existsSync(abs) || !statSync(abs).isFile()) throw refuse("judge file not found in the run folder");
+      return mutate(argv, { verdict, path: posix(relative(resolve(dir), abs)) }, (g, c) => {
+        g.judge = { verdict: c.verdict, at: now(), path: c.path };
         return { verdict: c.verdict };
       });
     }
