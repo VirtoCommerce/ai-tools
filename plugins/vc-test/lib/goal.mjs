@@ -14,7 +14,8 @@
 //   contract --file <json> | contract --approve --who <name>
 //   ac add --file <json> → { id } · ac set --id AC-n --file <json>
 //   strategy set --file <json>                        (an array of risks; replaces the strategy)
-//   finding add --file <json> → { id } · finding set --id F-n --file <json>
+//   finding add --file <json> → { id } · finding set --id F-n --file <json>  (an in-scope finding needs priority +
+//     priorityBy before the verdict gate passes)
 //   replay add --file <json> → { id } · replay --id RP-n → { id, status, expectStatus, match } (GET/HEAD, no credentials,
 //     only to a host the run may touch: the stand's BACK_URL/FRONT_URL, or a host an approved S1/S2 note names)
 //   check --before strategy|write|verdict|close [--what <label>]   → { ok, errors, warnings }; exit 2 when a gate fails
@@ -341,6 +342,9 @@ export function checkGoal(goal, stage, { dir, what } = {}) {
       if (outside(f.evidence)) errors.push(`${f.id}: evidence outside the run folder`);
       if (tokens(f.evidence)) errors.push(`${f.id}: evidence inside the run's .tokens/ folder`);
       if (f.inScope === true && ["Critical", "High", "Medium"].includes(f.severity) && !(f.reproduced >= 2)) errors.push(`${f.id}: Medium or worse needs reproduced ≥ 2`);
+      // In scope, the verdict turns on priority (fix now P0/P1 or later P2/P3): proposed by the run, confirmed by a person.
+      if (f.inScope === true && !f.priority) errors.push(`${f.id}: in scope without a priority`);
+      if (f.inScope === true && f.priority && !f.priorityBy) errors.push(`${f.id}: priority not confirmed by a person (priorityBy)`);
       if (!known.has(f.ac)) errors.push(`${f.id}: unknown AC ${f.ac}`);
     }
     if (!approved("S2")) errors.push("no approved S2 checkpoint");

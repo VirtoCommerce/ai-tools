@@ -170,6 +170,8 @@ Inline, not `/vc-test:qa-triage-results`. Per finding: `inScope` (does it break 
 touched? out of scope ⇒ listed, never deciding; an `UNCONFIRMED (seen once):` finding keeps `inScope: false` — step 5
 set it); `severity`; `docCheck` names a real source; Medium+ has
 `reproduced: 2` with both runs in `evidence`. Fix a miss through `finding set` — never by lowering a severity.
+**Priority** of each in-scope finding (fix now P0/P1, or later): the run proposes, a person confirms in one
+question — [`derived-acs.md`](derived-acs.md) §Recording.
 
 ### 7 — Draft verdict
 

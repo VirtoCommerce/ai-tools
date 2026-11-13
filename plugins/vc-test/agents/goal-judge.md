@@ -105,12 +105,16 @@ You write nothing and change nothing.
    - `docCheck` must name the source that says the behaviour should not happen (a doc page, an AC, an oracle id, a
      source file). Empty, or a source that does not say it ⇒ `not`: a surprise is not a defect.
    - An `inScope: false` finding must not be driving the verdict's pass or fail, only listed as noticed.
+   - An in-scope finding carries a `priority` a person confirmed (`priorityBy`; the gate checks both are there) and a
+     `priorityReason` that gives grounds — blast radius, a workaround, revenue or security at risk — not a restated
+     severity. A reason that does not support its priority ⇒ `not`.
 5. **The draft follows from the journal.** Every status, count and finding the draft states matches `goal.json`;
    it asserts nothing the journal lacks; it leaves out no FAIL, GAP or Medium-or-worse finding the journal holds; a
    caveat the journal records (a GAP, an unreproduced finding, a read-only env) is not softened. **The verdict
-   word:** FAIL when an AC is FAIL or PARTIAL or an in-scope Critical/High finding stands; PASS only when every
-   AC is PASS or an S2 GAP and no in-scope Critical/High finding stands; any other GAP, or an in-scope Medium/Low
-   finding, makes it PASS WITH NOTES; every AC GAP is BLOCKED. A PASS over any other GAP does not follow.
+   word** turns on an in-scope finding's confirmed **priority**, never its severity alone: FAIL when an AC is FAIL
+   or PARTIAL or an in-scope P0/P1 finding stands; PASS only when every AC is PASS or an S2 GAP and no in-scope
+   finding stands; any other GAP, or an in-scope P2/P3 finding, makes it PASS WITH NOTES; every AC GAP is BLOCKED.
+   A PASS over any other GAP does not follow.
 6. **The done-criterion is met.** Read `done` from the contract and test it as written against the journal. **Done
    is not the verdict word:** the default done-criterion is met when every AC is PASS or FAIL with evidence, or a
    GAP you judged honest in step 3 — an S2 GAP included — with every Medium-or-worse finding reproduced twice; the

@@ -99,6 +99,9 @@
         "inScope": { "type": "boolean" },
         "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
         "reproduced": { "type": "integer", "minimum": 0 },
+        "priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
+        "priorityReason": { "type": "string", "minLength": 1 },
+        "priorityBy": { "type": "string", "minLength": 1 },
         "docCheck": { "type": "string" },
         "kbRef": { "type": "string" }
       }
