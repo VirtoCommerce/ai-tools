@@ -32,6 +32,7 @@ The verdict's cost line says "resumed — earlier sessions deducted from their l
 | `contract` null | 1 |
 | no `S2` checkpoint `approved` | 2 (re-read, not re-derived), then 3 while `in/research.md` has `open` items, else 4 |
 | an AC `open` | 2, then 5 |
+| an in-scope finding without `fixPriorityBy` | 2, then 6 (the fix-priority question) |
 | `judge` null | 2, then 7 |
 | `judge` REJECT, only `judge-1.md` on disk | 8, its round-1 REJECT |
 | `judge` REJECT, `judge-1.md` and `judge-2.md` on disk | 8, its REJECT-twice stop — never the normal close |

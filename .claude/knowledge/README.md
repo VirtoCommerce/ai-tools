@@ -164,7 +164,7 @@ row is the file's own opening line, so a wrong row is fixed in that file, not he
 | [`test-plan/sprint-mode.md`](./execution/test-plan/sprint-mode.md) | Read by /qa-test-plan when the argument is a sprint (SprintXX-YY, XX-YY, current, last). |
 | [`test-plan/stable-mode.md`](./execution/test-plan/stable-mode.md) | Read by /qa-test-plan when the argument is stable <N>. |
 | [`test-runner-tags.md`](./execution/test-runner-tags.md) | Shared reference for test-runner-agent.md. |
-| [`ticket-routing.md`](./execution/ticket-routing.md) | This file is the only place the ticket→flow routing matrix lives. |
+| [`ticket-routing.md`](./execution/ticket-routing.md) | This file is the only place the ticket→job routing matrix lives. |
 | [`ticket-status-transitions.md`](./execution/ticket-status-transitions.md) | This file is the only place the status state machine lives. |
 | [`tracker-ops.md`](./execution/tracker-ops.md) | Single reference for the interactive bug-lifecycle commands (/qa-bug, /qa-fix, /qa-verify-fix) so none of them hardcode Jira + GitHub + VirtoCommerce. |
 | [`when-to-write-a-test.md`](./execution/when-to-write-a-test.md) | Repo-wide. The test-data-specific half lives in test-data-authoring.md §7a; the bug-fix half is quality-gates.md G2 and is unaffected by anything… |

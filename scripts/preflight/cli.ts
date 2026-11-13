@@ -24,7 +24,7 @@ if (envFlag !== undefined) {
   if (!findEnv(envFlag, { root: ROOT, ticket })) { console.error(`✗ --env: no .env.${envFlag} in ${lookedIn(envFlag, { root: ROOT, ticket })}`); process.exit(1); }
   process.env.TEST_ENV = envFlag;
 }
-// `ticket-fast` was retired 2026-11-13: vc-test before 0.18.1 still asks for it, and it is now `ticket`.
+// `ticket-fast` was retired 2026-11-13: vc-test before 0.18.2 still asks for it, and it is now `ticket`.
 const forArgv = argv.map((a, i) => (argv[i - 1] === "--for" && a === "ticket-fast" ? "ticket" : a));
 const forFlag = enumFlag(forArgv, "--for", CHANGE_FOR) as ChangeFor | undefined;
 if (!forFlag) { console.error(`✗ --for is required: ${CHANGE_FOR.join(" | ")}`); process.exit(1); }
