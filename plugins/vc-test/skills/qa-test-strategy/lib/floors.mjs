@@ -28,7 +28,7 @@ const ORG = /organizationId|organization_id|xapi:my_organization|my_organization
 // F13 — the change checks access: a role or permission guard named in the diff surface. An AC actor is not one.
 // Case-sensitive on purpose: `Permissions.Approve` is a guard, `permissions.ts` / `permissions.length` are not.
 export const ACCESS_GUARD = /\[Authorize\b|\bPermissions?\.[A-Z]\w*|\b[Hh]as(?:Any)?Permissions?\b|\b[Cc]heckPermissions?\b|\b[Ii]sAuthorized\b|\$can\(|Authoriz(?:ation)?(?:Handler|Requirement)\b|\bAuthorizeAsync\b|\bv-if="[^"]*\b(?:[Rr]ole|[Pp]ermission|isCorporateMember|isOrganizationMaintainer)/;
-const F13_REQUIRES = ["a risk with Source floor:F13 whose account is deny:<permission> <KEY|P-n> — derive the roles by skills/qa-design/personas.md §1"];
+const F13_REQUIRES = ["a risk with Source floor:F13 whose account is deny:<permission> <KEY|P-n> — derive the roles by skills/qa-design/personas.md §1, the KEY per floors.md §15"];
 // F11 — configuration (test-model redesign §5a, layers 1–3).
 const CONFIG = /ModuleConstants\.Settings|settingsManager|SettingsManager|store\.settings|\$cfg\./;
 // F11 — a settings entry is the CHANGE agent's prose; only a named key is a signal. A dotted PascalCase key
@@ -209,8 +209,11 @@ function baseFloors(bundle, { domainMapText, p01Names, changeMap }) {
   const perm = prs.flatMap(settingsOf).find((s) => /permission/i.test(s));
   const guard = surface.match(ACCESS_GUARD);
   const accessSpots = Array.isArray(spots) ? spots.filter((h) => zoneOf(h)?.toLowerCase() === "access").map((h) => h?.id ?? "?") : [];
-  const f13 = diffFloor("F13", perm ? `permission: ${perm.slice(0, 60)}` : guard ? `access guard: ${guard[0]}`
-    : accessSpots.length ? `access hotspot: ${accessSpots.slice(0, 5).join(", ")}` : null, "no access check in the diff surface", F13_REQUIRES);
+  const f13signal = perm ? `permission: ${perm.slice(0, 60)}` : guard ? `access guard: ${guard[0]}`
+    : accessSpots.length ? `access hotspot: ${accessSpots.slice(0, 5).join(", ")}` : null;
+  // On doubt no permission is known: Out of scope naming F13 answers it (clause 15b), never an invented deny risk.
+  const f13 = diffFloor("F13", f13signal, "no access check in the diff surface", f13signal ? F13_REQUIRES
+    : ["a floor:F13 deny: risk if the unread diff checks access, else Out of scope naming F13 and the unread diff (clause 15b)"]);
 
   return { product_prs: prs.length, floors: [f1, f2, f3, f4, f5, f6, f7, f8,
     floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11, f12, f13] };

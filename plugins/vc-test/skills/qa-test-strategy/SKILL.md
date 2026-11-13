@@ -17,6 +17,8 @@ Why this shape (HTSM, ISTQB, ISO/IEC/IEEE 29119-3, agent research):
 | The floors, the staleness check, the depth label, clause 15 (the account per risk) | [`floors.md`](floors.md) |
 | Rounds: what counts, the cap of three, what round N reads from N−1 | [`rounds.md`](rounds.md) |
 | The file's shape | [`template.md`](template.md) |
+| How it is entered: from `/qa-test-fast`, or standalone | [`entry.md`](entry.md) |
+| Reconcile at close-out (the caller's step) | [`reconcile.md`](reconcile.md) |
 
 ## Who chooses — the orchestrator, inline
 
@@ -25,23 +27,7 @@ The orchestrator that gathered the context writes the strategy, or hands one age
 fact is silently dropped (in this repository: `.claude/knowledge/execution/regression-suites.md` §Working concurrently on suites).
 Independence belongs at the **check**, not the choice: the user approves, a verifier re-derives the gate when a risk is Critical, and other agents execute.
 
-**From `/qa-test-fast` (in this repository: `.claude/commands/qa-test-fast.md`):** it counts the round at its Step 0 (step 1's local-evidence
-half) and calls this skill after its Stage-1 join with the bundle it already has. Here, run step 1's **second** count
-(the bundle's `signals[]` verdict comments — a fourth round ⇒ the same STOP), then steps 2 onward — never a second
-`/preflight` or `/vc-test:ticket-context`. A same-build re-run picks up the approved round instead of rewriting it (D7). The approved file's path is what it passes to
-`/qa-test-model --strategy`.
-
-**Standalone:** `npm run run:use -- <KEY>` binds the env and the run folder
-([`run-dir.mjs`](../../scripts/lib/run-dir.mjs)), then procedure step 1 (Round) **first**, from local evidence only —
-the run folders it lists and `git log --all`, never its own tracker fetch; a fourth round ⇒ STOP with the
-escalation and nothing else runs (D6: no context, no strategy, no browser). The QA verdict comments are counted
-once the bundle exists, from its `signals[]`; a fourth round found there ⇒ the same STOP. Then `/preflight ticket --ticket <KEY>`
-(no `--expect`: deployment is the bundle's) for the sprint, env health and kb hits →
-`/vc-test:ticket-context <KEY> --domain <slug> --kb-hits <ids>` → steps 2 onward → approval → STOP. A `/vc-test:ticket-context` STOP is this skill's STOP, quoted verbatim.
-`--domain` absent ⇒ resolve it **before** `/vc-test:ticket-context`, as
-`/qa-test-fast` (in this repository) Step 0 item 4 does: it is fixed when that runs (its
-cache key; `known` reads it from `prepare.json`). None resolves ⇒ run without one; F2 and F5 then fire on
-doubt, which is correct. A later run on the same build reuses the approved file.
+How a caller enters it — from `/qa-test-fast`, or standalone — is [`entry.md`](entry.md).
 
 ## Inputs
 
@@ -109,7 +95,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
    | Artifact | `RUN` when |
    |---|---|
-   | Test model | **if and only if** a risk has technique `MODEL` (M9); it expands only those risks. Otherwise `SKIP — no MODEL risk`: the checklist and the exploratory charter read this strategy for every risk the model does not expand. Round ≥ 2: **amend**, never rebuild |
+   | Test model | **if and only if** a risk has technique `MODEL` (M9); it expands only those risks. Otherwise `SKIP — no MODEL risk`: the checklist and the exploratory charter read this strategy for every risk the model does not expand. Round ≥ 2: **amend**, never rebuild. vc-test: `SKIP — scenarios cover the MODEL risks` ([`floors.md`](floors.md) §13) |
    | Mind map | the model runs **and** the domain map is `PRESENT` |
    | Checklist | always — every item names its `R-n` |
    | Exploratory | the mix is reactive. **First** when a High/Critical risk rests on a `{HYPOTHESIS}` oracle or the feature is new; otherwise **alongside** the checklist (D3). Box per [`exploratory-box.md`](../../knowledge/exploratory-box.md) |
@@ -196,17 +182,7 @@ discovers, or an approach that has to change, is appended to the round's Amendme
 
 ## Reconcile — at close-out, before the verdict (used by `/qa-test-fast` Stage 3, and the single `/qa-test` next)
 
-Not an entry of this skill: the caller runs these steps inline at close-out to fill the round's
-reconciliation:
-
-- One row per in-scope risk, plus one per amendment: planned → what ran (checklist item ids, charter
-  items, lane, regression case ids) → result → deviation and its reason.
-- A planned risk that did not run and has no reason ⇒ back to execution, or listed under *Not tested, and
-  why*. It is never dropped; in round 3 it goes to the escalation.
-- A High or Critical risk without a result **caps the verdict**: not `PASS`
-  ([verdict-rules](verdict-rules.md) §Decide the verdict).
-- Copy the counts, the round, the depth label and the candidate cases into `summary.json.strategy`
-  (in this repository: keys from `.claude/templates/qa-test-summary.schema.json`).
+The caller's close-out steps: [`reconcile.md`](reconcile.md).
 
 ## Rationalization table
 
@@ -215,7 +191,7 @@ reconciliation:
 | "The ticket is tiny — skip the strategy." | A tiny ticket gets a short strategy with depth `light`. Its out-of-scope list is still what a reviewer needs. |
 | "It touches three layers, so it is deep." | Layers raise L×I; only a High/Critical risk or P0/P1 fires F1 (D8). |
 | "A subagent can write the strategy from my summary." | It would decide from a summary. Hand it the bundle path, or write it yourself. |
-| "Approval slows the run down." | One question, once. `--yes` where nobody is watching. |
+| "Approval slows the run down." | One question, once. `--yes` is the caller's flag; without it and with nobody to ask, STOP. |
 | "Run the whole regression the floor asks for." | Stale cases first go to `/qa-test-lifecycle` (D11); a run over them manufactures FAILs. |
 | "This is round 4, but the fix is tiny." | Three rounds is the cap (D6). The ticket goes to people. |
 | "Exploratory found a new risk — just test it." | Amend first, then test it, so reconciliation sees it. |

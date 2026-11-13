@@ -91,7 +91,7 @@ reproduction contradicts a PASS row — amends a recorded verdict instead of ret
 Note that filing and failing are separate decisions: a `Medium` files (5-file) without failing the ticket.
 
 **The visual axis reaches this table through `BL-UI-*` only.** *"all `BL-*` verified"* and *"an IN-SCOPE
-P0/P1 bug"* carry `BL-UI-006/007` — a clipped, overlapping or unreachable control is functional breakage of
+P0/P1 bug"* carry `BL-UI-*` — a clipped or overlapping control (BL-UI-004 Content boundary), one too small or keyboard-unreachable (BL-UI-006 Touch target size, BL-UI-007 keyboard-operable admin chrome) is functional breakage of
 the surface the story shipped, so it fails the ticket by the rules already here and needs no new row.
 
 **Two visual classes are deliberately NOT in this table:**

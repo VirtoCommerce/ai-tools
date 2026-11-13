@@ -96,6 +96,6 @@ complete it; you never start a new one.
   unless the user names one.
 - **Round 3** says in its mission that it is the last; its Out of scope is the ticket's residual risk (rounds.md §At
   most three).
-- **Gate:** step 3 above — `check-strategy.mjs` with `--change-map` and `--capabilities`, clauses 1–14, until it exits 0
+- **Gate:** step 3 above — `check-strategy.mjs` with `--change-map` and `--capabilities`, every clause, until it exits 0
   (clause 14: the Prior bugs table, each PB's risk not below its severity, no `TBD` left); the verifier on a Critical risk.
 - **Return** the strategy path, the gate result and the verifier verdict — no approval summary.

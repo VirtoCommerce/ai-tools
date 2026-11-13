@@ -26,7 +26,7 @@ Change map: <the --change-map path | none>
 ### Risks
 | R | What a customer would see if this is wrong | Source | L×I | Level |
 |---|---|---|---|---|
-| R1 | <…> | <AC-n · file:line · VC-n · bug key · carried from Round N−1 R-n · floor:F2 / floor:F10 / floor:F11 when this is that floor's MODEL risk — one floor per risk> | <n> | <Critical/High/Medium/Low> |
+| R1 | <…> | <AC-n · file:line · VC-n · bug key · carried from Round N−1 R-n · floor:<id> when this is a fired floor's own risk (floors.md) — one floor per risk> | <n> | <Critical/High/Medium/Low> |
 
 Project risks: P1 <risk> → <mitigation | accepted>.
 
@@ -62,6 +62,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 |---|---|
 | Test model | RUN (new \| amend <path>) — iff a risk has technique MODEL \| SKIP — no MODEL risk \| SKIP — scenarios cover the MODEL risks (vc-test) |
 | Mind map | RUN \| SKIP — <reason> |
+| Scenarios | RUN — S-1…S-n (vc-test only; delete the row outside vc-test) |
 | Checklist | RUN (always) |
 | Exploratory | RUN <box> min, FIRST \| ALONGSIDE — charter: <R-ids> \| SKIP — <reason> |
 | Visual lane | RUN (F3/F8) — instruments: <DESIGN, PROBE, CONTENT as the VISUAL risks name them; PIXEL runs as its own item, whatever this row says> \| SKIP — <reason> |

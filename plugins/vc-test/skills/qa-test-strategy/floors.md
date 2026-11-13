@@ -136,7 +136,7 @@ It never appears in a risk row; a risk carries **effort** (`low` / `medium` / `h
 
 ## Clause 11 — every strategy; clauses 12–13 — vc-test runs; clause 15 — every strategy
 
-The script half of SKILL.md §Gate clauses 11–13. **Clause 11 runs on every strategy** — `/qa-test`, `/qa-test-fast` and vc-test alike (U57 and U58 are general rules). It reads the `Project risks:` line; an item is a `P<n>` that starts the line or follows a `·` or a sentence end (`.` or `;`), so a `P95 2s` inside an item is not an item. 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
+The script half of SKILL.md §Gate's clauses from 11 on. **Clause 11 runs on every strategy** — `/qa-test`, `/qa-test-fast` and vc-test alike (U57 and U58 are general rules). It reads the `Project risks:` line; an item is a `P<n>` that starts the line or follows a `·` or a sentence end (`.` or `;`), so a `P95 2s` inside an item is not an item. 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
 
 ### 11a — a project risk is not a product risk (U58)
 
