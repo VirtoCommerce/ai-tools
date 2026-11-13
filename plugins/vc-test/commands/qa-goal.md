@@ -26,7 +26,7 @@ commands come from.
    (as `/vc-test:init` says), then this step again.
 2. `date -u +%FT%TZ` → `<start>`, the `--since` of every `run-cost.mjs` reading.
 3. `node <plugin>/lib/goal.mjs init --key <KEY> [--env <env>]` → `{ dir, runId, resumed }`. `resumed: true` ⇒ the
-   skill's resume table (step 0.3); `--new` only when the person asks for a fresh run.
+   skill's step 0.3 (`resume.md`: the earlier spend first, then where to go on); `--new` only when the person asks for a fresh run.
 4. `node <plugin>/lib/capabilities.mjs --key <KEY> --mcp <this session's MCP servers>` → `capabilities.json`.
 5. Not resumed: `node <plugin>/lib/write-zones.mjs snapshot --key <KEY> --run-dir <dir>`.
 6. The budget in force (skill step 0.6, rail 10's `run-cost.mjs`).

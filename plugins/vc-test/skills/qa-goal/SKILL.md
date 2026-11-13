@@ -12,6 +12,7 @@ alternate — the rails do not move.
 | Need | Read |
 |---|---|
 | Writing the goal, the done-criterion, the budget, the stop list (step 1) | [`goal-contract.md`](goal-contract.md) |
+| A resumed run: the earlier spend, where to go on (step 0.3) | [`resume.md`](resume.md) |
 | Sources in order, read-only probes, when research is done, knowledge write-back (steps 3, 9) | [`research-loop.md`](research-loop.md) |
 | Deriving criteria: source, discrimination, controls, criteria found while testing (steps 4, 5) | [`derived-acs.md`](derived-acs.md) |
 | A user's OAuth token through a lane, then calls as that user (step 5) | [`recipes/oauth-code-flow.md`](recipes/oauth-code-flow.md) |
@@ -45,7 +46,9 @@ alternate — the rails do not move.
    describe the value, never paste it. You never read `<dir>/.tokens/` or a lane HAR.
 3. **Testing is inline by default.** A browser-heavy branch may go to one specialist (`vc-fix:qa-frontend-expert`,
    `vc-fix:qa-backend-expert`) on its own lane. Its brief: the lane, `PLUGIN`, `DIR`, the AC ids and strategy rows,
-   "evidence to `<dir>/evidence/`; return per AC result, evidence paths, a one-line note; never run `goal.mjs`", and
+   "evidence to `<dir>/evidence/`; return per AC result, evidence paths, a one-line note; never run `goal.mjs`",
+   rails 2, 4, 6 and 8 and [`research-loop.md`](research-loop.md) §The hosts a run may touch pasted in (it cannot
+   read this skill), "a question you would ask comes back as the question plus the assumption you made", and
    `<plugin>/briefs/ledger.md` when it may create data. You record what it returns. ≤ 3 browser agents, one per
    lane. Every dispatch's description is `[vc-test:<step>] <KEY>` (`run-cost.mjs` counts by it).
 4. **Browser: Playwright lanes only** (`mcp__playwright-<lane>__*`). The login comes from the env, typed as text; a
@@ -81,20 +84,8 @@ alternate — the rails do not move.
    "<plugin>"` once, then this step again.
 2. `date -u +%FT%TZ` → `<start>`.
 3. `node <plugin>/lib/goal.mjs init --key <KEY> [--env <env>]` → `{ dir, runId, resumed }`. Exit 1 ⇒ STOP with its
-   error (not a ticket key or env). `--new` only when the person asks for a fresh run. `resumed: true` ⇒ Read
-   `goal.json` and resume at the first row that holds:
-
-   | Journal | Resume at |
-   |---|---|
-   | `contract` null | 1 |
-   | no `S2` checkpoint `approved` | 2 (re-read, not re-derived), then 3 while `in/research.md` has `open` items, else 4 |
-   | an AC `open` | 2, then 5 |
-   | `judge` null | 2, then 7 |
-   | `judge` REJECT, only `judge-1.md` on disk | 8, its round-1 REJECT |
-   | `judge` REJECT, `judge-1.md` and `judge-2.md` on disk | 8, its REJECT-twice stop — never the normal close |
-   | `closed` null | 9 |
-
-   A resumed run's cost covers this session only — say so in the verdict's cost line.
+   error (not a ticket key or env). `--new` only when the person asks for a fresh run. `resumed: true` ⇒
+   [`resume.md`](resume.md): carry the earlier sessions' spend into the budget first, then resume where it says.
 4. `node <plugin>/lib/capabilities.mjs --key <KEY> --mcp <the MCP servers this session has, comma-separated>` →
    `.vc-fix/vc-test/<KEY>/<env>/capabilities.json`. Read `stand.writable` + `reason`, the `playwright-*` lanes,
    `kb`, `virtooz`, `governed`, `knowledgeStore.path`, `tracker`, `host`. A profile error exits 2 or 3 ⇒ as 0.1.
@@ -176,7 +167,8 @@ Risks in priority order, inline, on the approved strategy and accounts:
 ### 6 — Triage
 
 Inline, not `/vc-test:qa-triage-results`. Per finding: `inScope` (does it break an approved AC, or what the ticket
-touched? out of scope ⇒ listed, never deciding); `severity`; `docCheck` names a real source; Medium+ has
+touched? out of scope ⇒ listed, never deciding; an `UNCONFIRMED (seen once):` finding keeps `inScope: false` — step 5
+set it); `severity`; `docCheck` names a real source; Medium+ has
 `reproduced: 2` with both runs in `evidence`. Fix a miss through `finding set` — never by lowering a severity.
 
 ### 7 — Draft verdict
@@ -193,7 +185,8 @@ touched? out of scope ⇒ listed, never deciding); `severity`; `docCheck` names 
 Dispatch `vc-test:goal-judge`, fresh, description `[vc-test:judge] <KEY>`, with exactly `PLUGIN` = `<plugin>`,
 `DIR` = `<dir>`, `DRAFT` = `<dir>/verdict.md` — never your summary, a reading of the evidence, or a token. Save its
 reply **verbatim** to `<dir>/judge-<round>.md`, then
-`node <plugin>/lib/goal.mjs judge --dir <dir> --verdict <APPROVE|REJECT> --file <dir>/judge-<round>.md` — before any
+`node <plugin>/lib/goal.mjs judge --dir <dir> --verdict <APPROVE|REJECT> --file <dir>/judge-<round>.md`, `--verdict` copied
+from the reply's own `VERDICT:` line (a mismatch is refused) — before any
 second dispatch, so the judge sees round 1. A reply with no `VERDICT:` line ⇒ record nothing, one fresh dispatch;
 again none ⇒ STOP, hand to the person.
 

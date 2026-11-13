@@ -63,7 +63,8 @@ nor PASS. Any other honest GAP meets the done-criterion and makes the verdict PA
 - `goal.mjs check --before strategy` and `--before verdict` fail when a reading is over the budget; every check
   warns past 80 %. The budget is the profile's measure of one run — it is never stretched silently. Because the
   verdict gate enforces it (and the judge runs that gate), **no judged verdict exists past the budget**: over it,
-  the only ways on are a raised budget or STOP AT BUDGET (§The stop list, 1).
+  the only ways on are a raised budget or STOP AT BUDGET (§The stop list, 1). A resumed run deducts the earlier
+  sessions' recorded spend from the budget before it goes on ([`resume.md`](resume.md) §1).
 
 ## The stop list
 
@@ -195,7 +196,7 @@ to this journal (Critical/High stand for its P0/P1):
 | Verdict | When |
 |---|---|
 | **FAIL** | an AC is FAIL or PARTIAL, or an in-scope Critical or High finding |
-| **PASS** | every AC PASS or a GAP replaced or dropped at S2; no other GAP; no in-scope Critical or High finding |
+| **PASS** | every AC PASS or a GAP replaced or dropped at S2; no other GAP; no in-scope finding of any severity |
 | **PASS WITH NOTES** | no FAIL/PARTIAL and no in-scope Critical/High, but a GAP other than an S2 one, or an in-scope Medium/Low finding, remains |
 | **BLOCKED** | not deployed, every AC GAP, or (at close) a file outside the write zones |
 
