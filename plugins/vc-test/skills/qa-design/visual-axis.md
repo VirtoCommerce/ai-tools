@@ -71,17 +71,18 @@ costs the whole run's wait; found here it costs one command.
 
 | Ticket surface | Axes that run | Executor | Target resolved from |
 |---|---|---|---|
-| **Storefront page or flow** | a11y · design-system · `vs. DESIGN` | `vc-test:ui-ux-expert` | the route(s) the ticket changes |
+| **Storefront page or flow** | a11y · design-system · `vs. DESIGN` · `vs. USER` | `vc-test:ui-ux-expert` | the route(s) the ticket changes; `vs. USER` the tasks its ACs give a user |
 | **Storefront component** | a11y · design-system · `vs. DESIGN` | `vc-test:ui-ux-expert` | the component, **dual** Storybook + storefront (the two surfaces catch different bug classes) |
 | **Admin SPA blade** | a11y · design-system | `vc-test:ui-ux-expert` | the blade under change; `vs. DESIGN` only if the design project covers admin |
 | **`api` / `module` / `platform` only** | none | — | — the lane does not dispatch |
 
-The three axes, and where each is specified:
+The axes, and where each is specified:
 
 | Axis | What it asserts | Specification |
 |---|---|---|
 | **a11y** | WCAG 2.2 AA + `BL-A11Y-001..004` (all **P1**) — keyboard operability, accessible naming, contrast, axe-clean. `BL-UI-006` touch targets rides along, since 2.5.8 measures it anyway | [`wcag-accessibility-checklist.md`](../../knowledge/wcag-accessibility-checklist.md) (in this repository: the `qa-accessibility` skill, `.claude/skills/qa-accessibility/`) |
 | **design-system** | live resolved custom properties vs the generated token set; no hardcoded colour/spacing literals; sized-control token + aspect equality | [`design-system-consistency.md`](design-system-consistency.md) |
+| **`vs. USER`** | a real user can do the task: 1–3 tasks from the ACs, done as their persona from the user's own entry point, judged by completion, steps and friction — never by the DOM or the spec | [`ux-task-walkthrough.md`](ux-task-walkthrough.md) |
 | **`vs. DESIGN`** | declared tokens · control geometry · icon name→glyph parity, diffed against the Claude Design project **named by the ticket's own Prototype link** (no global default — `DESIGN_SYSTEM_PROJECT_ID` was removed 2026-09-03; a ticket with no design link ⇒ `SKIPPED`) | [`claude-design-verification.md`](claude-design-verification.md) |
 
 ### Dispatch the agent — the agent invokes the `vc-test:qa-design` skill
@@ -106,7 +107,11 @@ The brief carries: the `Skill vc-test:qa-design` instruction above · the resolv
 plus the artboard its `file=` param names** (there is no `DESIGN_SYSTEM_PROJECT_ID` to inherit — removed
 2026-09-03; if the ticket carries no design link, the brief says so and the axis returns `SKIPPED`) · the
 `BL-A11Y-*` / `BL-UI-*` invariant **text** (not just the IDs) · the screenshot path · the verdict vocabulary
-below.
+below · for a page or flow, **the user tasks** for `vs. USER` — one per AC a user acts out, in the user's words, with the
+persona each belongs to and its account KEY, plus any contrast persona the run must cover (none given ⇒ the agent
+derives them from the ticket, [`personas.md`](personas.md) §1, §3–§4) · the path — FAST or FULL — and, in a vc-test
+run, `KEY` and `<plugin>/briefs/ledger.md`, so a task that creates data records it for teardown (none ⇒ the agent
+stops before the committing step).
 
 **Two things the brief MUST also carry, each of which cost a real run when it did not.**
 
@@ -188,6 +193,8 @@ severity: `triage.md` §7a (in this repository: `.claude/skills/qa-test/triage.m
 | `BL-A11Y-*` **FAIL**, ticket is *about* accessibility | `visual.invariant_failures[]` | **Yes** — the carve-out: an a11y/WCAG remediation ticket, ACs naming an accessibility outcome, or a `/qa-accessibility` run. The test is the ticket's own ACs, never the finding's severity |
 | `PIXEL` **regression** (an unintended change, `/qa-visual-regression`'s `triage.md` (in this repository: `.claude/skills/qa-visual-regression/triage.md`)) | `visual.pixel.regressions[]` | **Yes** — an ordinary finding, like a `BL-UI` FAIL |
 | `PIXEL` **intended** / **noise** | `visual.pixel` | No — each row names the AC or PR line that intends the change, or the re-shoot that cleared it |
+| `vs. USER` **FAIL** — the task could not be completed | `visual.ux_findings[]` | **Yes** — an ordinary finding: a user who cannot finish is a defect, whatever the invariants say |
+| `vs. USER` **ADVISORY** — completed with friction (severity 2–3) | `visual.ux_findings[]` | **No** — reported at its real severity |
 | `vs. DESIGN` **DRIFT** / **MISSING** | `visual.advisory[]` | **No** — recorded and reported, never blocking |
 | **UNSPEC** | `visual.advisory[]` | No — a design project is rarely exhaustive; failing "not in the spec" turns the axis into ignored noise |
 | **KNOWN_DIVERGENCE** | `visual.advisory[]` | No — the spec itself declares it unshipped. Also never a clean PASS |
@@ -212,8 +219,8 @@ than as a PASS:
 - **Screen-reader output** — there is no NVDA/JAWS/VoiceOver hookup in the toolkit.
 - **Five of the six WCAG 2.2 additions** (2.4.11 · 2.5.7 · 3.2.6 · 3.3.7 · 3.3.8) — axe covers only 2.5.8,
   and nascently. A clean axe run says nothing about the other five.
-- **Non-gated themes** — a11y conclusions hold for **Coffee + Red** only; `purple-pink` / `watermelon` are
-  known-unsupported and are visual-only.
+- **Non-gated themes** — a11y conclusions hold for the gated presets only ([`a11y-audit.md`](a11y-audit.md) §Theme scope;
+  vc-frontend: Coffee + Red); the rest are visual-only.
 
 ---
 
@@ -229,7 +236,10 @@ visual lane waits for the next wave when none is free: the rule `plan-run` appli
 and never two agents on one lane. The **max-3-concurrent** cap still binds across every lane.
 
 When the checklist agents + regression lanes + this lane exceed 3, run in this order and **state the order
-chosen**: checklist track → visual lane → regression. The ticket verdict is the priority, and the visual
+chosen**: checklist track → visual lane → regression. **`vs. USER` is the costly part of this lane:** each task
+is a full pass in the browser, per persona. A FAST path runs one task as its own actor; a FULL path up to six task
+runs ([`personas.md`](personas.md) §4). Count them in the run's budget, and when the budget is short, drop contrast
+personas before tasks — and say which. The ticket verdict is the priority, and the visual
 lane feeds it (5-verdict) while regression feeds the release gate (5-report).
 
 **`/qa-test-fast` Stage 2** already holds up to three lanes (two checklist runners + exploratory). When

@@ -107,6 +107,9 @@ the surface the story shipped, so it fails the ticket by the rules already here 
 - **A `vs. DESIGN` `DRIFT`/`MISSING`.** Advisory; it appears in the 5-report report and
   `summary.json.visual.advisory[]` and **never moves this verdict.** A run whose only visual finding is
   spec drift is still a PASS.
+- **A `vs. USER` task.** One a real user **cannot complete** fails this verdict like a `BL-UI` FAIL; one
+  completed with friction is `ADVISORY` at its real severity and never moves it
+  ([`ux-task-walkthrough.md`](../qa-design/ux-task-walkthrough.md) §4).
 
 ## Shape
 

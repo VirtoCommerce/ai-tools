@@ -124,6 +124,8 @@ what makes the axis safe to switch on:
 |---|---|---|
 | A **`BL-UI-*` invariant FAIL** (layout, overflow, alignment, CLS) | an ordinary finding — classified, provenanced, severity-graded, filed at 5-file under the existing floor, and able to fail 5-verdict | `summary.json.visual.invariant_failures[]` |
 | A **`BL-A11Y-*` invariant FAIL** on a **functional / feature / E2E** ticket | **never blocks** — filed as its **own standalone ticket** (§7a) | `visual.a11y_findings[]` |
+| A **`vs. USER` `FAIL`** — a real user cannot complete the task | an ordinary finding, like a `BL-UI` FAIL — able to fail 5-verdict | `visual.ux_findings[]` |
+| A **`vs. USER` `ADVISORY`** — completed with friction | **advisory** at its real severity — reported, never fails 5-verdict | `visual.ux_findings[]` |
 | A **`vs. DESIGN` `DRIFT` / `MISSING` / `UNSPEC` / `KNOWN_DIVERGENCE`** | **advisory** — reported, never filed by this rule, **never** fails 5-verdict | `visual.advisory[]` |
 | **`AMBIGUOUS`** — the spec contradicts an invariant or a WCAG criterion | escalate to the human in the 5-report report; **never** resolve it by obeying the spec | `visual.advisory[]` + named in the report |
 | **`SKIPPED` / `INCONCLUSIVE`** (no design source on disk; axe blocked by CSP) | an absent measurement | `visual.axes.*.skipped_reason` — **never** reported as clean |

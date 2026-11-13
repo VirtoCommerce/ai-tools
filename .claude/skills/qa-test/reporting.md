@@ -181,7 +181,7 @@ regression result + triage summary + **Scope Exclusions**, business rules verifi
 provenance + relationship), below-floor findings, release-gate recommendation, and the screenshot folder
 path.
 
-**Plus, when `visual_surface: true`, one Visual axis line** — the three axes with their verdicts, the
+**Plus, when `visual_surface: true`, one Visual axis line** — each axis with its verdict, the
 invariant failures, the advisory count, and **any axis that was `SKIPPED`/`INCONCLUSIVE`, with its reason**.
 State a skip explicitly: an omitted axis reads as a clean one, which is the failure this axis exists to stop.
 When `visual_surface` derived `false`, say so in the same one line rather than dropping the section — *not

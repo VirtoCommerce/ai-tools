@@ -4,7 +4,7 @@ A supporting file of [`SKILL.md`](SKILL.md), moved here verbatim from the former
 
 > **Terminal command:** `/vc-test:qa-design <component | page | flow>` (in this repository the `/qa-design` shim) — see [`SKILL.md`](SKILL.md) Steps 1–5. They parse the argument, resolve audit scope from [critical-ui-scope.md](../../knowledge/critical-ui-scope.md), and dispatch `vc-test:ui-ux-expert`; this file is the methodology library it consults.
 
-Validate design system consistency and run UX heuristic evaluations against the active Coffee theme tokens, `BL-UI-*` invariants ([`<plugin>/knowledge/bl-ui.md`](../../knowledge/bl-ui.md) (in this repository: `npm run bl:extract -- --domain ui`)), and Nielsen's 10 usability heuristics.
+Validate design system consistency and run UX heuristic evaluations against the active theme's tokens (vc-frontend: Coffee; a `client` fork: its own), `BL-UI-*` invariants ([`<plugin>/knowledge/bl-ui.md`](../../knowledge/bl-ui.md) (in this repository: `npm run bl:extract -- --domain ui`)), and Nielsen's 10 usability heuristics.
 
 ## Usage
 
@@ -67,7 +67,7 @@ For every page audit, enumerate and audit each applicable state separately:
 |-------|---------|------------------|
 | **Loading / skeleton** | Throttle network (Fast 3G) or block xAPI response | BL-UI-001 (CLS), BL-UI-001 refinement (skeleton-count parity) |
 | **Empty** | Sign in to account with no orders / wishlists / cart items | BL-UI-002 (empty-state copy spacing), BL-UI-006 (CTA size) |
-| **Error / disabled** | Cart with a disabled / unavailable product (Capri-Sun, SHOT in vcst-qa); order with payment-failed status | PROPOSED-BL-UI-007 occlusion (pass the message's own selector if outside the default alert set), WCAG 4.1.3 alert-semantics (is the warning announced?), BL-UI-004 overflow on alert text |
+| **Error / disabled** | Cart with a disabled / unavailable product (a vcst-qa example: Capri-Sun, SHOT — elsewhere find one live, [`project-facts.md`](project-facts.md)); order with payment-failed status | PROPOSED-BL-UI-007 occlusion (pass the message's own selector if outside the default alert set), WCAG 4.1.3 alert-semantics (is the warning announced?), BL-UI-004 overflow on alert text |
 | **Multi-item / overflow** | Cart with 10+ line items; order with long product titles; address with long company name | BL-UI-004 overflow, BL-UI-005 alignment |
 | **Form-validation error** | Submit form with invalid email / empty required / weak password | BL-UI-003 state-shift (validation message insertion), BL-UI-004 (long error text wrap) |
 | **Auth-required action when anonymous** | Click "Place Order" / "Save list" while signed out | BL-UI-003 (modal insertion), BL-UI-006 (modal CTA size) |
@@ -107,6 +107,7 @@ For **any control with a declared size** (slider handles, avatars, icon buttons,
 
 ### UX Heuristic Evaluation
 
+0. **Test as a real user first** — a page or flow target runs the task walkthrough ([`ux-task-walkthrough.md`](ux-task-walkthrough.md)): 1–3 user tasks, the persona's account, the user's own entry point, judged by whether the task gets done. The steps below name *why* a recorded step was hard.
 1. **Navigate the target flow** on the Playwright lane your brief names, which the run assigns (in this repository: `.claude/rules/agents.md`).
 2. **Walk Nielsen's 10** — questions and concrete VC examples in [ux-heuristic-evaluation.md](ux-heuristic-evaluation.md).
 3. **Rate severity 0–4** per finding using the rubric in `ux-heuristic-evaluation.md` (0 = not an issue, 4 = catastrophe). Promote one level on revenue-critical surfaces (checkout / payment / add-to-cart / registration).
@@ -138,7 +139,7 @@ do not hand-roll the snippets, same rule as `measure-layout.mjs` (`node <plugin>
    unreadable table header, a prose row, a partially-parsing size scale each become an `unresolved`
    entry with a reason and contribute no expectation.
 3. **Diff against measured live values** (from the browser, never from the spec) at each width the spec's
-   artboards were drawn at, and on the Coffee + Red presets — `designTokenAuditSnippet` / `iconParityAuditSnippet` /
+   artboards were drawn at, and on the gated presets ([`a11y-audit.md`](a11y-audit.md) §Theme scope) — `designTokenAuditSnippet` / `iconParityAuditSnippet` /
    `componentGeometryAuditSnippet` / `propertyAuditSnippet` (change-table rows: you name the selector +
    metric per row), then the matching `classify*`, then `summarizeDesignFindings`.
 
@@ -197,7 +198,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 
 ## Rules
 
-- **Read live tokens, never hardcode** — Coffee is multi-preset (6 light + 3 dark variants); a token's resolved value varies per preset. Hardcoded hex values in this skill or in audits will be wrong half the time.
+- **Read live tokens, never hardcode** — vc-frontend's Coffee is multi-preset (6 light + 3 dark variants), and a fork ships its own theme; a token's resolved value varies per preset. Hardcoded hex values in this skill or in audits will be wrong half the time.
 - **Cite the BL / WCAG / ECL ID** for every finding where one applies. Findings without citations decay into vague design debate. For proposed-but-not-promoted invariants, cite as `PROPOSED-BL-UI-NNN`; their audit logic lives in `<plugin>/lib/design/measure-layout.mjs` (in this repository: `scripts/lib/measure-layout.ts`, the canonical TypeScript it is generated from) until promoted into the BL oracle (`ui`).
 - **Audit across the derived viewport sweep** ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure), never a hand-listed set; some tokens override at breakpoint boundaries.
 - **Audit at multiple states** — run the State-Stress Pass; default-only audits miss state-specific defects (F-CART-006 was missed precisely because the default state had no disabled product visible).
@@ -205,7 +206,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 - **For any sized control, assert token equality + aspect ratio, never a threshold** — a dimension that clears "≥ / no-overflow" gates can still be the wrong size or shape (VCST-5413: 34×28 oval slider handle vs 18×18 circle). Use `sizedControlAuditSnippet(selector, {tokenVar\|expectedPx, square\|ratio})` + `classifySizedControl()`: assert `rendered === token` **and** `width === height` (or the intended ratio); cross-check Storybook vs storefront (size drift between the two = cascade-override red flag); and capture one confirmation screenshot of the integrated control even on PASS.
 - **Icons need the non-text-contrast audit, not the text one** — `contrastAuditSnippet` skips glyphs; run `nonTextContrastAuditSnippet()` (WCAG 1.4.11, 3:1, disabled-exempt) for any icon-bearing surface. A warning styled like an alert but with no `role=alert`/`aria-live` is unannounced — check with `alertSemanticsAuditSnippet()` (WCAG 4.1.3).
 - **A scripted-focus miss is not a focus-ring failure** — `focusIndicatorAudit` `indeterminate` items (where `:focus-visible` didn't trigger) are WARN, not FAIL; confirm with a real keyboard-Tab pass before filing (VCST-4400 lesson).
-- **UX heuristic findings ≥ 3** must be filed as bugs (P1 or higher).
+- **UX findings carry their real severity** (3–4 is P1 or higher) and go back to the dispatcher; they are filed only through §Findings → Filings, with the operator's yes.
 - **The design spec is not the top authority** — precedence is `BL-UI invariant > design spec > UX heuristic`. A BL-UI violation is a FAIL even when the implementation matches the design; a spec that conflicts with an invariant or a WCAG criterion is `AMBIGUOUS` → escalate, never silently obey.
 - **A skipped design axis is never a pass** — no readable design source on disk means `designAxisSkipped(reason)`, reported explicitly. `UNSPEC` is likewise never a failure: a design project is rarely exhaustive, and failing "not in the spec" turns the axis into ignored noise.
 - **The design source is named, never discovered — and the name comes from the TICKET.** Resolve it from the ticket's own Prototype link (or an explicit `--design <uuid>`) and extract from a copy of exactly that project; a name match diffs against whatever it happened to find. Diffing the storefront against the wrong design system is worse than not running the axis, because every token reads as DRIFT and the report looks substantive. **A global default is a species of the same error**, which is why `DESIGN_SYSTEM_PROJECT_ID` is gone: it stays correct only until a second prototype exists, and then it is wrong *silently* — VCST-5735's ticket linked one project while the env var named another, both holding the same filename, the env var's copy older. Prefer a stated `SKIPPED` over any inherited id.

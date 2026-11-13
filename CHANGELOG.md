@@ -8,6 +8,74 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The visual lane works the same on a client fork as on vc-frontend — `vc-test` `0.15.0` — 2026-11-12
+
+### Changed
+
+- **`ui-ux-expert` is thin and general.** The agent body keeps only role, boot, hard rules, procedure and return
+  shape (an agent definition is paid on every dispatch; `wc -c` shows the size). The invariants cheat sheet, design-system notes, severity
+  table, escalation triggers, action/observation space and the `/qa-storybook` vs `/qa-accessibility` boundary move
+  verbatim to `skills/qa-design/lane-reference.md`.
+- **A FAIL goes back to the dispatcher.** The agent files a bug only when its brief says so; it used to say "file
+  bug" while reporting to its dispatcher, and `visual-axis.md` §3 routes findings through triage.
+- Removed the line that made every EU-reachable WCAG violation P0/P1; it contradicted the severity table, which
+  already grades A11y Critical P0 for legal risk.
+
+### Added
+
+- `skills/qa-design/project-facts.md`: project type (`platform` or `client`, from `project-profile.json`; no
+  profile ⇒ `client`) and one table of every value that differs per project — storefront repo and code host,
+  source layout, component names, Storybook, gated presets, tokens, measurement scales, the critical-UI matrix,
+  example test data, the `kb`, the tracker — with vc-frontend's value, the client source and the fallback. The
+  agent and the skill files cite it instead of naming vc-frontend's value.
+- **`vs. USER` — usability tested as a real user.** New `skills/qa-design/ux-task-walkthrough.md`: on a storefront
+  page or flow, the agent does 1–3 user tasks (from the brief, else the ACs, else the page's primary job) as the
+  persona they belong to, from the user's own entry point, using only what is on screen. It is judged by whether
+  the task gets done: a task that cannot be completed is a `FAIL` that triages like a `BL-UI` FAIL; friction
+  (missing feedback, unclear labels, lost input, unconfirmed deletes, extra steps, dead ends) is `ADVISORY` at its
+  real severity. Writes run to the end only on a stand declared writable and only where the run keeps a ledger
+  (every created entity recorded, so teardown removes it); elsewhere the committing step is `NOT RUN`. A FAST path
+  runs one task as its own actor; personas and pairs are FULL-path. `visual.axes.user` and `visual.ux_findings[]`
+  are declared in `.claude/templates/qa-test-summary.schema.json`. `visual-axis.md` schedules it for page
+  and flow surfaces and the brief carries the tasks. Think-aloud, five-second and first-click tests are marked as
+  human-session methods the agent recommends and never runs; a UX finding is no longer "must be filed" by the
+  agent.
+- **Persona tests, derived from the ticket.** New `skills/qa-design/personas.md`: a persona is an archetype (how
+  the person behaves — first-time guest, returning customer, B2B buyer, approver, restricted member, acting on
+  behalf, mobile, keyboard / screen reader, other locale) plus the segments the feature splits users by, read from
+  the ACs, the diff (role and permission checks, branches on tier / currency / org / locale) and the feature's
+  settings. Every persona names its source. Segments run as pairs that must diverge (VIP vs zero balance, with vs
+  without a permission, own vs another org); a pair that behaves the same is a `FAIL` when an AC states the
+  difference. The account is the stand key carrying the segment, checked live before the task. A contrast
+  archetype by the change's risk is the fallback when the ticket names no segment. A project keeps its own
+  archetypes, segment vocabulary and persona → account map in its knowledge store (`<store>/personas.md`,
+  `test.knowledgeStore`, never the public kb); they take precedence over the plugin's catalog, and a segment the
+  ticket shows that the file lacks comes back as a proposed persona for a person to add. Capped at three personas per
+  task, six runs in all, and the runs are compared: a restricted member reaching data it must not see is a
+  `FAIL` reported as access control; a dead end instead of a clear denial, or one persona needing far more steps,
+  is `ADVISORY`. A persona with no account on the stand is `NOT RUN`, never signed in as someone else.
+- Storybook story discovery starts from `{STORYBOOK_URL}/index.json`, which a fork's Storybook serves too, before
+  vc-frontend's title convention.
+
+### Fixed
+
+- **A client install no longer reads or writes the public `kb`.** The agent's kb steps run only on `platform` and
+  return `kb: not read (client install)` otherwise — the rule `lib/knowledge-store.mjs` and
+  `ticket-context/known-ground.md` already hold. On `platform`, the kb tools are loaded with `ToolSearch` before
+  the first call, and the write step cites the capture contract.
+- Source search for a component's usages, file and story was hard-wired to `VirtoCommerce/vc-frontend`; on a
+  client project it now searches the fork named in the profile (`repos.client[]`, `kind: "frontend"`), and on
+  Azure Repos greps a local checkout or says the step did not run.
+- "Gate a11y on Coffee + Red" was stated six times; it is one rule in `a11y-audit.md` §Theme scope — the brief's
+  presets, else Coffee + Red where the fork still ships them, else its default theme — and the report names the
+  presets it gated.
+- The measurement scales the plugin ships (`SPACING_GRID`, UI-kit sizes) are vc-frontend's: on a client fork a
+  finding that depends on one is WARN until checked against the fork's own config, instead of a phantom FAIL.
+- The off-matrix "consider adding to `critical-ui-scope.md`" suggestion is not made on a client project — that
+  file ships with the plugin.
+- `BL-CAT-001` is named as not shipped in `knowledge/bl-ui.md`; UI invariants cover every `BL-UI-*` / `BL-A11Y-*`;
+  `BL-UI-006` keeps its 24–43 px WARN band; the `SKIPPED` label matches `claude-design-verification.md` §1.
+
 ## A storefront fix typechecks for real and follows the repo's own agent rules — `vc-fix` `0.18.7`, `vc-init` `0.6.1` — 2026-11-12
 
 ### Fixed

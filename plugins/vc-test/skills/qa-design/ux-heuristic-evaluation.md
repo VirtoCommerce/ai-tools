@@ -196,7 +196,9 @@ Title: UX evaluation for [Feature/Flow]
     - FAQ link in footer (easy to find)
 ```
 
-## UX Testing Methods
+## For a human session — recommended, never run by the agent
+
+Think-aloud, five-second and first-click tests need real participants; an agent that "runs" them is answering its own question. When a finding turns on comprehension, first glance or expectation, the agent returns `NOT RUN — needs a human session` with the question to ask. The agent's own method is the task walkthrough: [`ux-task-walkthrough.md`](ux-task-walkthrough.md) — use the heuristics below to name *why* a step it records was hard.
 
 ```markdown
 1. Think-Aloud Testing (Manual):
@@ -224,7 +226,7 @@ Title: UX evaluation for [Feature/Flow]
      - Moments of confusion
    [] Recommend improvements for friction points
 
-5. Cognitive Walkthrough:
+5. Cognitive Walkthrough (the agent runs this one, as a real user doing a task: ux-task-walkthrough.md):
    [] For each step in flow, ask:
      - Will user know what to do?
      - Can user see how to do it?

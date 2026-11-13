@@ -60,4 +60,4 @@ A supporting file of [`SKILL.md`](SKILL.md): the templates of its Step 4, moved 
 table is replaced by one line — `SKIPPED — <reason>` — and the axis is never reported as PASS. When
 `--design` was not passed, say `Design axis: not requested` so a reader can tell that apart from a skip.
 
-**Off-Matrix Note (if applicable):** "{Target} is not in critical-ui-scope.md. Consider promoting it." Same applies when a Storybook story is missing for an off-matrix component.
+**Off-Matrix Note (if applicable):** "{Target} is not in critical-ui-scope.md. Consider promoting it." (On a `client` project: "not in the plugin's vc-frontend matrix" — no promote suggestion.) Same applies when a Storybook story is missing for an off-matrix component.

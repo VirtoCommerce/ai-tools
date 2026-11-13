@@ -1,7 +1,7 @@
 # Storybook workflow — how `vc-test:ui-ux-expert` audits a component in Storybook
 
-Read by `vc-test:ui-ux-expert` before a Storybook pass (its body points here). Storybook is the vc-frontend UI kit's;
-a customer with a different storefront codebase brings its own.
+Read by `vc-test:ui-ux-expert` before a Storybook pass (its body points here). The workflow is Storybook-generic; the Storybook
+is the project's ([`project-facts.md`](project-facts.md) row *Storybook*) — vc-frontend's UI kit on `platform`, the fork's on `client`.
 
 ## Storybook Testing Workflow (10 steps)
 
@@ -10,7 +10,7 @@ a customer with a different storefront codebase brings its own.
 1. **CONTROLS TAB**: Document all props. Test each: default, all enum options, booleans, edge values (empty, very long, 0, negative)
 2. **ACCESSIBILITY (axe-core via addon-a11y + programmatic re-run)**: Read the addon panel for violation count; then run axe programmatically against the story iframe (recipes in [`wcag-accessibility-checklist.md`](../../knowledge/wcag-accessibility-checklist.md)) — for each finding note WCAG 2.2 criterion ID, severity, affected element. Filter out `best-practice` tag results (advisory, not WCAG failures). Surface `incomplete` items as manual-verification needed.
 3. **INTERACTIONS / ACTIONS**: For stories with `play` functions, verify expected events fire (`fn()` spies from `storybook/test`) and disabled state emits no events. See `play-function-patterns.md` for canonical patterns (in this repository: `.claude/skills/qa-storybook/play-function-patterns.md`).
-4. **THEME PRESET**: Capture **Default + Coffee + Red** for visual diff. **Run a11y assertions on Coffee AND Red** — those are the two WCAG-gated presets in this project; the rest are visual-only. In Storybook, select a preset via the `themePreset` global (`?globals=themePreset:red;darkMode:light`) and **confirm it actually applied before asserting** — the preset is loaded by an async dynamic import, so poll until `getComputedStyle(document.documentElement).getPropertyValue("--color-primary-500")` matches the preset (Red = `#e52121`). Theme switch must not break layout (no FOUC, no token drift).
+4. **THEME PRESET**: Capture Default + each gated preset for visual diff; **run a11y assertions on the gated presets only** ([`a11y-audit.md`](a11y-audit.md) §Theme scope — vc-frontend: Coffee and Red); the rest are visual-only. In Storybook, select a preset via the `themePreset` global (`?globals=themePreset:red;darkMode:light`) and **confirm it actually applied before asserting** — the preset is loaded by an async dynamic import, so poll until `getComputedStyle(document.documentElement).getPropertyValue("--color-primary-500")` matches the preset (Red = `#e52121`). Theme switch must not break layout (no FOUC, no token drift).
 5. **RESPONSIVE**: the derived sweep ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure). Layout adapts, text readable. Touch targets: **≥ 24×24 CSS px (WCAG 2.5.8 AA gate)** for any viewport, ≥ 8 px gap on ≤ 768 px (`BL-UI-006`). 44×44 (AAA) is advisory, never a FAIL.
 6. **INTERACTIVE STATES**: Hover, focus, active, disabled, loading, error — all render correctly. Focus indicator ≥ 3:1 against background (WCAG 1.4.11).
 7. **CROSS-BROWSER**: Critical components (VcAddToCart, VcProductCard, VcButton, VcTable) in Chrome + Firefox + Edge. WebKit on Windows: NOT supported — use Edge.
@@ -20,7 +20,9 @@ a customer with a different storefront codebase brings its own.
 
 **Determinism (mandatory for stable baselines):** Await `document.fonts.ready` before screenshotting, set `parameters.chromatic.pauseAnimationAtEnd: true` per story (or disable CSS transitions in the test preview), mock `Date`/`Math.random`/timers, stub network with MSW. Without these, baselines flicker and CI flakes. **Caveat — hosted Storybook is a production build (`vite build`), so `import.meta.env.DEV === false`**: never verify DEV-only `console.warn` gates against hosted Storybook (; lesson: VCST-4892 NEW-4 retraction).
 
-## Component Library — 55 Components, Atomic Design
+## Component Library — vc-frontend's, Atomic Design
+
+vc-frontend's library as last measured — a snapshot for choosing what to audit first, not a count to assert. The live list is `{STORYBOOK_URL}/index.json`; on a `client` fork read that instead, and rank by its story counts the same way.
 
 **ATOMS (18):** VcBadge (16 stories), VcCheckbox, VcDialog, VcIcon, VcPriceDisplay, VcRadioButton, VcSwitch, VcTypography, VcLabel, VcInputDetails, VcProperty, VcProductTitle, VcProductActions, VcScrollbar, VcMarkdownRender, VcCarouselPagination, VcVariantPickerGroup
 

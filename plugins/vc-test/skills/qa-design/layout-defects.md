@@ -17,7 +17,7 @@ Layout defects rarely appear in a static screenshot of the default story. They e
 | **Counter / badge change** (single-digit → 3-digit) | Pill widens and pushes adjacent elements |
 | **Validation error inserted** under a field | Form below jumps; bottom-aligned CTAs move |
 | **Viewport sweep** (§Viewport sweep procedure) | Stuck horizontal scroll, sticky double-stacks, dead zones in the fluid band between two breakpoint edges |
-| **Theme switch** (Default ↔ Coffee) | FOUC, padding tokens diverge, contrast regression |
+| **Theme switch** (Default ↔ each gated preset, [`a11y-audit.md`](a11y-audit.md) §Theme scope) | FOUC, padding tokens diverge, contrast regression |
 | **RTL / long-locale** | Layout assumed LTR or short labels |
 | **3-state rapid switch** (loading → loaded → empty) | Flicker / flash / shift between transitions |
 
@@ -59,7 +59,7 @@ Static screenshots miss most layout bugs. Measure, don't eyeball. The shared "mi
 | Skeleton → content shift | Skeleton `rect` vs resolved-content `rect` | Δ > 1 px any axis → FAIL |
 | Image-load shift | Cache-disable reload, read CLS | Image contribution > 0 → FAIL (missing width/height or aspect-ratio) |
 | Font swap (FOIT/FOUT) | Network-throttled reload | Text reflows after webfont arrives → FAIL |
-| Theme switch FOUC | Default → Coffee toggle, watch first 500 ms | Any flash of unstyled / mis-styled content → FAIL |
+| Theme switch FOUC | Default → gated-preset toggle, watch first 500 ms | Any flash of unstyled / mis-styled content → FAIL |
 
 **Viewport sweep procedure:**
 
