@@ -8,6 +8,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Lane HAR files keep no sign-in password — `vc-init` `0.7.0` — 2026-11-13
+
+### Fixed
+
+- The Playwright lanes' `recordHar` (`content: "embed"`) wrote the sign-in request body with the typed password in plain
+  text: the Admin SPA's `POST /api/platform/security/login` (JSON `password`) and the storefront's `POST /connect/token`
+  (form `password=`). The lane masks the value in its responses, not on disk. `bridge/har-scrub.mjs` now masks every
+  password-named body field (JSON at any depth, form text and `params[]`, multipart) and every known password value
+  (6+ characters, in each spelling the bridge redactor knows) anywhere in the HAR. The rest of the capture stays
+  byte for byte. A HAR still being written is left alone.
+- A lane run through the bridge (`bridge/playwright-mcp.mjs`) scrubs its HAR directory in-process with the values it
+  holds: at start, after every HAR write (`browser_close`) and at exit.
+- A lane started straight from `.mcp.json` (`npx @playwright/mcp … --secrets <file>`) is covered by the new
+  `hooks/scrub-har.mjs` (`SessionStart`, and `PostToolUse` on `mcp__playwright-*__browser_close`), with values from the
+  project's `.env.playwright.*` and `.env.local`. A `.har-scrub.json` stamp beside the HAR skips an unchanged file.
+
 ## Every strategy risk names the account it is checked as — `vc-test` `0.17.0`, `vc-fix` `0.18.8` — 2026-11-13
 
 ### Added
