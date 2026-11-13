@@ -135,3 +135,12 @@ test("only a declared platform project may write to the platform store (no proje
   assert.throws(() => writeKnowledge(cfg, { kind: "rules", slug: "x", text: "a: 1", target: "platform" }), /platform write refused/);
   assert.equal(storeConfig({ schemaVersion: 3, projectType: "platform" }, { root }).platformWritable, true);
 });
+
+test("a client's personas file lands in its own store, never the platform store", () => {
+  const { root, cfg } = project({ projectType: "client" });
+  const { path } = writeKnowledge(cfg, { kind: "personas", slug: "project", text: "## Archetypes\n" });
+  assert.equal(path, join(root, "qa-knowledge", "personas.md"));
+  const forced = { ...cfg, platform: join(root, "platform") };
+  assert.throws(() => writeKnowledge(forced, { kind: "personas", slug: "project", text: "x", target: "platform" }), /platform write refused/);
+  assert.equal(existsSync(join(root, "platform")), false);
+});

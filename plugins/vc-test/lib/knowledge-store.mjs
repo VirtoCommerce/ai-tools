@@ -20,6 +20,7 @@ export const KINDS = Object.freeze({
   "test-doc": "tests/<slug>.md",
   aliases: "test-data/aliases.json",
   observed: "observed/<slug>.json",
+  personas: "personas.md", // one file per store; the slug is not part of the path (as aliases)
 });
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
