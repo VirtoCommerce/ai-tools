@@ -14,16 +14,15 @@ Why this shape (HTSM, ISTQB, ISO/IEC/IEEE 29119-3, agent research):
 
 | Need | Read |
 |---|---|
-| The floors F1–F12, the staleness check, the depth label | [`floors.md`](floors.md) |
+| The floors, the staleness check, the depth label, clause 15 (the account per risk) | [`floors.md`](floors.md) |
 | Rounds: what counts, the cap of three, what round N reads from N−1 | [`rounds.md`](rounds.md) |
 | The file's shape | [`template.md`](template.md) |
 
 ## Who chooses — the orchestrator, inline
 
-The orchestrator that gathered the context writes the strategy. **Never dispatch it to a subagent:**
-choosing needs the whole bundle at once, and a brief carries only a summary of it (the measured loss —
-a fact relayed to a subagent and silently dropped — is recorded
-(in this repository: `.claude/knowledge/execution/regression-suites.md` §Working concurrently on suites)).
+The orchestrator that gathered the context writes the strategy, or hands one agent the bundle **path** (vc-test's
+`briefs/strategy.md`). **Never dispatch it with a summary:** choosing needs the whole bundle at once, and a relayed
+fact is silently dropped (in this repository: `.claude/knowledge/execution/regression-suites.md` §Working concurrently on suites).
 Independence belongs at the **check**, not the choice: the user approves, a verifier re-derives the gate when a risk is Critical, and other agents execute.
 
 **From `/qa-test-fast` (in this repository: `.claude/commands/qa-test-fast.md`):** it counts the round at its Step 0 (step 1's local-evidence
@@ -102,8 +101,8 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    - **Oracle with its authority**: `{SPEC}` / `{BL}` / `{DOC}` / `{OBSERVED}` / `{HYPOTHESIS}`
      ([`oracle-authority.md`](../../knowledge/oracle-authority.md)). A `{HYPOTHESIS}` oracle never decides
      PASS/FAIL: the risk goes to the charter, or the row names what would ground it. A High/Critical risk on a `{HYPOTHESIS}` oracle takes `MODEL`.
-   - **Layer and tool, lane and agent** — lanes per [`plan-run.mjs`](../../lib/plan-run.mjs): ≤ 3 browser
-     lanes a wave, never two agents on one lane.
+   - **Layer and tool, lane, agent and account** — lanes per [`plan-run.mjs`](../../lib/plan-run.mjs): ≤ 3 browser
+     lanes a wave, never two agents on one lane; the account per [`floors.md`](floors.md) §15.
    - **Effort** — `low` / `medium` / `high`, from the risk level (D12). Never the words of the depth label.
 9. **Artifacts** — every row plain `RUN` (the gate reads the cell's first word) or `SKIP — <observable reason>`, starting from the floors
    ([`floors.md`](floors.md)): the strategy may add to a floor, never go under it.
@@ -150,13 +149,13 @@ Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--
 file). These remain yours, alongside 7, 9 and 11a's semantic half: clause 1's carry-over, clause 6's naming of the not-fired floors with their
 signals, clause 4's `{authority}` tag on each oracle, and what a fired floor requires beyond an artifact — F4's
 no risk on it below Medium, F7's F5 on, F8's token audit, that `floor:F10`'s risk is about org context and
-`floor:F11`'s about configuration, that a `deny:` account names the permission the diff checks, and F11's stand values under Inputs. Every clause holds before approval; a failure is fixed, never noted.
+`floor:F11`'s about configuration, each account chosen per [`floors.md`](floors.md) §15 (a `deny:` KEY lacks the permission the diff checks), and F11's stand values under Inputs. Every clause holds before approval; a failure is fixed, never noted.
 
 1. The round is counted and ≤ 3; round ≥ 2 carries over every unresulted risk of round N−1 (no
    reconciliation filled ⇒ all its risks are unresulted).
 2. Every AC maps to a risk, or is out of scope with a reason (method rules apply).
 3. Every diff hotspot the bundle names maps to a risk, or is out of scope with a reason.
-4. Every risk has a technique, an oracle with its authority, a lane and an effort.
+4. Every risk has a technique, an oracle with its authority, a lane with its account and an effort.
 5. No `{HYPOTHESIS}` oracle decides a pass/fail row.
 6. Every floor is named fired or not, with its signal; nothing a fired floor requires is `SKIP` but as 6s allows.
    F2/F10/F11 fired ⇒ a `MODEL` risk whose Source carries `floor:<id>` (M10).
@@ -175,6 +174,7 @@ no risk on it below Medium, F7's F5 on, F8's token audit, that `floor:F10`'s ris
 12. With a change map, a hotspot that holds state is cited by a `SCALE` risk or a "single instance" Out-of-scope line.
 13. With a change map: a `### Scenarios` table, each scenario citing a registered risk with Class 1–6, each `MODEL` risk with a scenario ([`floors.md`](floors.md) §13).
 14. A vc-test round ≥ 2: a `### Prior bugs` table, each PB on an R not below its Severity; no `TBD — strategy agent` line left ([`rounds.md`](rounds.md)).
+15. Every risk names its account; F13 fired ⇒ a `deny:` risk ([`floors.md`](floors.md) §15).
 
 ## Approval — one question, every run (D4)
 
@@ -214,7 +214,7 @@ reconciliation:
 |---|---|
 | "The ticket is tiny — skip the strategy." | A tiny ticket gets a short strategy with depth `light`. Its out-of-scope list is still what a reviewer needs. |
 | "It touches three layers, so it is deep." | Layers raise L×I; only a High/Critical risk or P0/P1 fires F1 (D8). |
-| "A subagent can write the strategy while I do something else." | It would decide from a summary of the context. Choosing is the orchestrator's job. |
+| "A subagent can write the strategy from my summary." | It would decide from a summary. Hand it the bundle path, or write it yourself. |
 | "Approval slows the run down." | One question, once. `--yes` where nobody is watching. |
 | "Run the whole regression the floor asks for." | Stale cases first go to `/qa-test-lifecycle` (D11); a run over them manufactures FAILs. |
 | "This is round 4, but the fix is tiny." | Three rounds is the cap (D6). The ticket goes to people. |

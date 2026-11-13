@@ -490,6 +490,13 @@ const SCENARIOS_HEAD = "| S | Class | What it does | Bug it hunts | Why likely |
 const PRIOR_HEAD = "| PB | Bug | Severity | Found | Reproduction | R |\n|---|---|---|---|---|---|";
 const RECON_HEAD = "| R | Planned | Ran (item ids · charter · lane · case ids) | Result | Deviation — reason |\n|---|---|---|---|---|";
 
+/** A carried Approach row from before clause 15 has no account: its lane cell gets a TBD the strategy agent fills. */
+const withAccount = ({ line, cells }) => {
+  const lane = cells[4] ?? "";
+  if (lane.split("·").length >= 3 || /^skip/i.test(lane) || /BLOCKED/.test(lane) || lane.includes(TBD)) return line;
+  return `| ${cells.map((c, i) => (i === 4 ? `${lane} · ${TBD}` : c)).join(" | ")} |`;
+};
+
 /** How a prior bug is reproduced (P4): its .spec through the runner, else its package on a browser lane, else nothing. */
 function proofOf(b) {
   if (b.spec) return { repro: `spec ${b.spec}`, layer: "spec · Playwright runner", lane: "node · playwright test · spec", effort: "low" };
@@ -524,14 +531,15 @@ export function appendRound({ strategyMd, delta, env, date, changeMapPath = null
     const row = riskRows.find((x) => x.cells[0] === r);
     if (!row) {
       risks.push(`| ${r} | ${TBD} (Round ${p} ${r} is in no Risks row) | carried from Round ${p} ${r} | — | ${TBD} |`);
-      approach.push(`| ${r} | ${TBD} | — | — | — | — |`);
+      approach.push(`| ${r} | ${TBD} | — | — | ${TBD} | — |`);
       continue;
     }
     const [, what = "", source = "", li = "", level = ""] = row.cells;
     const tokens = source.split("·").map((t) => t.trim()).filter((t) => t && !/^carried from Round\b/i.test(t));
     risks.push(`| ${r} | ${what} | ${[...tokens, `carried from Round ${p} ${r}`].join(" · ")} | ${li} | ${level} |`);
     carriedText.set(what, r);
-    approach.push(approachRows.find((x) => x.cells[0] === r)?.line ?? `| ${r} | ${TBD} | — | — | — | — |`);
+    const prevRow = approachRows.find((x) => x.cells[0] === r);
+    approach.push(prevRow ? withAccount(prevRow) : `| ${r} | ${TBD} | — | — | ${TBD} | — |`);
   }
   for (const b of delta.priorBugs ?? []) {
     const what = `${cell(b.title)} is fixed, and nothing next to it broke`;
