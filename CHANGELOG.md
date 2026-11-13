@@ -30,7 +30,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 ### Changed
 
 - **`ui-ux-expert` is thin and general.** The agent body keeps only role, boot, hard rules, procedure and return
-  shape (18,565 → 10,986 chars, paid on every dispatch). The invariants cheat sheet, design-system notes, severity
+  shape (an agent definition is paid on every dispatch; `wc -c` shows the size). The invariants cheat sheet, design-system notes, severity
   table, escalation triggers, action/observation space and the `/qa-storybook` vs `/qa-accessibility` boundary move
   verbatim to `skills/qa-design/lane-reference.md`.
 - **A FAIL goes back to the dispatcher.** The agent files a bug only when its brief says so; it used to say "file
@@ -50,7 +50,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   persona they belong to, from the user's own entry point, using only what is on screen. It is judged by whether
   the task gets done: a task that cannot be completed is a `FAIL` that triages like a `BL-UI` FAIL; friction
   (missing feedback, unclear labels, lost input, unconfirmed deletes, extra steps, dead ends) is `ADVISORY` at its
-  real severity. Writes run to the end only on a stand declared writable. `visual-axis.md` schedules it for page
+  real severity. Writes run to the end only on a stand declared writable and only where the run keeps a ledger
+  (every created entity recorded, so teardown removes it); elsewhere the committing step is `NOT RUN`. A FAST path
+  runs one task as its own actor; personas and pairs are FULL-path. `visual.axes.user` and `visual.ux_findings[]`
+  are declared in `.claude/templates/qa-test-summary.schema.json`. `visual-axis.md` schedules it for page
   and flow surfaces and the brief carries the tasks. Think-aloud, five-second and first-click tests are marked as
   human-session methods the agent recommends and never runs; a UX finding is no longer "must be filed" by the
   agent.

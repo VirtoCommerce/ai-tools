@@ -109,7 +109,9 @@ plus the artboard its `file=` param names** (there is no `DESIGN_SYSTEM_PROJECT_
 `BL-A11Y-*` / `BL-UI-*` invariant **text** (not just the IDs) · the screenshot path · the verdict vocabulary
 below · for a page or flow, **the user tasks** for `vs. USER` — one per AC a user acts out, in the user's words, with the
 persona each belongs to and its account KEY, plus any contrast persona the run must cover (none given ⇒ the agent
-derives them from the ticket, [`personas.md`](personas.md) §1, §3–§4).
+derives them from the ticket, [`personas.md`](personas.md) §1, §3–§4) · the path — FAST or FULL — and, in a vc-test
+run, `KEY` and `<plugin>/briefs/ledger.md`, so a task that creates data records it for teardown (none ⇒ the agent
+stops before the committing step).
 
 **Two things the brief MUST also carry, each of which cost a real run when it did not.**
 
@@ -240,7 +242,10 @@ visual lane waits for the next wave when none is free: the rule `plan-run` appli
 and never two agents on one lane. The **max-3-concurrent** cap still binds across every lane.
 
 When the checklist agents + regression lanes + this lane exceed 3, run in this order and **state the order
-chosen**: checklist track → visual lane → regression. The ticket verdict is the priority, and the visual
+chosen**: checklist track → visual lane → regression. **`vs. USER` is the costly part of this lane:** each task
+is a full pass in the browser, per persona. A FAST path runs one task as its own actor; a FULL path up to six task
+runs ([`personas.md`](personas.md) §4). Count them in the run's budget, and when the budget is short, drop contrast
+personas before tasks — and say which. The ticket verdict is the priority, and the visual
 lane feeds it (5-verdict) while regression feeds the release gate (5-report).
 
 **`/qa-test-fast` Stage 2** already holds up to three lanes (two checklist runners + exploratory). When
