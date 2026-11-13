@@ -212,8 +212,8 @@ than as a PASS:
 - **Screen-reader output** — there is no NVDA/JAWS/VoiceOver hookup in the toolkit.
 - **Five of the six WCAG 2.2 additions** (2.4.11 · 2.5.7 · 3.2.6 · 3.3.7 · 3.3.8) — axe covers only 2.5.8,
   and nascently. A clean axe run says nothing about the other five.
-- **Non-gated themes** — a11y conclusions hold for **Coffee + Red** only; `purple-pink` / `watermelon` are
-  known-unsupported and are visual-only.
+- **Non-gated themes** — a11y conclusions hold for the gated presets only ([`a11y-audit.md`](a11y-audit.md) §Theme scope;
+  vc-frontend: Coffee + Red); the rest are visual-only.
 
 ---
 

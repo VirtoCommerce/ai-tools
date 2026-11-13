@@ -10,7 +10,7 @@ Produce a real audit, not a generic "audit all six" fallback.
 
 1. **Resolve selector + render-location:**
    - Check [storefront-selectors.md](../../knowledge/storefront-selectors.md) for the component name. Many vc-frontend components are documented there even if not in the critical matrix.
-   - If not found → use GitHub MCP `search_code` against `VirtoCommerce/vc-frontend` for the component file (e.g., `VcDatePicker.vue`, `VcAlert.vue`). Extract `data-test-id` / root class from the template. Then `search_code` for usages of `<VcDatePicker` to find which pages render it.
+   - If not found → search the storefront repo — on a `client` project (`project-profile.json` `projectType`) the `repos.client[]` entry with `kind: "frontend"`, else `VirtoCommerce/vc-frontend`; on Azure Repos (`host: "azure-repos"`) grep a local checkout of it instead, and with none, say the source step did not run (GitHub MCP `search_code` on GitHub) for the component file (e.g., `VcDatePicker.vue`, `VcAlert.vue`). Extract `data-test-id` / root class from the template. Then `search_code` for usages of `<VcDatePicker` to find which pages render it.
    - If still ambiguous → ask: "I couldn't find a confirmed render location for `{Component}`. Provide a page URL where it's visible, or say `discover` and I'll have ui-ux-expert explore the storefront to find it."
    - On `discover` → dispatch `vc-test:ui-ux-expert` with a discovery charter (visit `/sign-up`, `/cart`, `/checkout`, account pages); capture the first page that renders the component plus the verified selector.
 
@@ -27,7 +27,7 @@ Produce a real audit, not a generic "audit all six" fallback.
 
    Uncertain cases → run the union of definitely-applicable invariants and report which were skipped + why. User can re-run with `--all` for full coverage.
 
-3. **Warn + offer to promote** — print: "`{Component}` is off-matrix. Audited with heuristic invariant scope: [list]." After audit, if findings exist or the component appears in audit history ≥ 3 times, suggest: "Consider adding to [critical-ui-scope.md](../../knowledge/critical-ui-scope.md) so it's regression-protected." Never auto-edit the matrix.
+3. **Warn + offer to promote** — print: "`{Component}` is off-matrix. Audited with heuristic invariant scope: [list]." After audit, if findings exist or the component appears in audit history ≥ 3 times, suggest: "Consider adding to [critical-ui-scope.md](../../knowledge/critical-ui-scope.md) so it's regression-protected." On a `client` project, say it only in the report: the matrix ships with the plugin. Never auto-edit the matrix.
 
 **Case C — Off-matrix page:** Apply default page-level invariants (BL-UI-001 CLS + 002 spacing-anchor + 004 overflow + 006 touch). Print "off-matrix page" warning + promote-suggestion.
 
@@ -41,17 +41,17 @@ Skip this step if:
 - Target is a page or flow (Storybook hosts components, not pages).
 - User passed `--storefront-only`.
 
-Otherwise, discover the Storybook URL using **convention first, GitHub fallback**:
+Otherwise, discover the Storybook URL using **convention first, source fallback**:
 
 1. **Convention** — try `{STORYBOOK_URL}/?path=/story/{atomic-level}-{component-kebab}--default`. Atomic Design levels in vc-frontend Storybook: `atoms`, `molecules`, `organisms`, `templates`. Component name is kebab-cased (`VcTable` → `vc-table`). Example: `https://storybook.example.com/?path=/story/organisms-vc-table--default`. Send a HEAD request — if the iframe loads, use it.
 
-2. **GitHub fallback** — if convention 404s, use GitHub MCP `search_code` against `VirtoCommerce/vc-frontend` for `{Component}.stories.ts` (e.g., `VcDatePicker.stories.ts`). Read the file to extract:
+2. **Source fallback** — if convention 404s, search the storefront repo (as in §Step 2 above) for `{Component}.stories.ts` (e.g., `VcDatePicker.stories.ts`). Read the file to extract:
    - The `title` field (e.g., `'Atoms/VcDatePicker'`) → maps to `?path=/story/atoms-vc-date-picker--{first-story-name}`.
    - The first exported story name (defaults to `Default` or `Primary`).
    - Construct the URL accordingly.
 
-3. **Skip Storybook phase** — if neither convention nor GitHub finds a story:
+3. **Skip Storybook phase** — if neither convention nor the source search finds a story:
    - Print: "No Storybook story found for `{Component}`. Running storefront-only."
    - Suggest at audit end: "Consider adding a Storybook story for `{Component}` so it can be audited in isolation."
 
-`STORYBOOK_URL` comes from env (`config.js` / `.env`); never hardcode.
+`STORYBOOK_URL` comes from the env (in this repository: `config.js` / `.env`); never hardcode. None declared ⇒ skip the Storybook phase with that reason.

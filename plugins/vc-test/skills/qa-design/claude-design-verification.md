@@ -235,7 +235,7 @@ Two consequences of the same fact, pointing the other way:
 
 Measured values come **from the browser, never from the spec**. Run at each width the spec's
 artboards were drawn at (the layout invariants keep the full sweep, `layout-defects.md`) and on
-the WCAG-gated presets (Coffee, Red) — a token diff is preset-dependent.
+the gated presets (`a11y-audit.md` §Theme scope) — a token diff is preset-dependent.
 
 1. `browser_evaluate(designTokenAuditSnippet(spec))` → `classifyDesignToken(result, { unresolved })`
 2. `browser_evaluate(iconParityAuditSnippet(spec, selector, { surface }))` →

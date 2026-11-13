@@ -39,6 +39,8 @@ Read by `vc-test:ui-ux-expert` before the a11y axis (its body points here). The 
 
 **Manual layer (the other 43–70%):** Keyboard walk (Tab/Shift+Tab through focus order, assert against visual reading order; Escape returns focus to trigger), focus indicator visibility quality on busy backgrounds, alt-text quality (presence is automated, *usefulness* is not), form-error helpfulness (copy clarity, recovery guidance), `aria-live` timing relative to visual change, modal focus-trap correctness on edge transitions, 200% zoom + 320 px reflow, `prefers-reduced-motion` respected. **Screen reader output verification is not available** in the MCP toolkit (no NVDA/JAWS/VoiceOver hookup) — surface it as a "requires manual verification" item, never claim a PASS on it.
 
-**Theme scope:** Run a11y assertions on the **Coffee** and **Red** presets — the two WCAG-gated themes in this project. Visual diff still covers all themes. Do not gate on `purple-pink` / `watermelon`: their solid-accent token still fails AA (3.58:1 / 3.14:1 against white), so failures there are known-unsupported, not bugs.
+### Theme scope
+
+Run a11y assertions on the project's **gated presets**, one pass each: the ones the brief names; else vc-frontend's **Coffee** and **Red** — the two WCAG-gated themes there — on a `client` fork only if it still ships them; else the fork's default theme. Name the presets you gated in the report. Visual diff still covers all themes. In vc-frontend, do not gate on `purple-pink` / `watermelon`: their solid-accent token still fails AA (3.58:1 / 3.14:1 against white), so failures there are known-unsupported, not bugs.
 
 **Contrast:** Compute from `getComputedStyle` (walk parent chain for effective background) and assert WCAG 2.x ratios (4.5:1 normal text, 3:1 large/UI/focus indicator). **Never eyeball.** APCA Lc may be reported as a designer-advisory signal, but never as a pass/fail gate — no 2026 scanner enforces APCA normatively.

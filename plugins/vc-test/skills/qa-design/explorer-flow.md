@@ -6,11 +6,11 @@ A supporting file of [`SKILL.md`](SKILL.md): Step 3 Phase B for a **component** 
 
 1. **Find where the component is used across the storefront** — produce a confirmed candidate list, then pick up to 3 contexts.
 
-   **Step 1.1 — Source-code grep (authoritative)** via GitHub MCP `search_code` against `VirtoCommerce/vc-frontend`:
+   **Step 1.1 — Source-code grep (authoritative)** in the storefront repo — on a `client` project (`project-profile.json` `projectType`) the `repos.client[]` entry with `kind: "frontend"`, else `VirtoCommerce/vc-frontend`; on Azure Repos (`host: "azure-repos"`) grep a local checkout of it instead, and with none, say the source step did not run. `<repo>` below is that repo; on GitHub, via GitHub MCP `search_code`:
 
    ```
-   search_code(query="<{Component} repo:VirtoCommerce/vc-frontend", per_page=30)
-   search_code(query="{Component} repo:VirtoCommerce/vc-frontend extension:vue", per_page=30)
+   search_code(query="<{Component} repo:<repo>", per_page=30)
+   search_code(query="{Component} repo:<repo> extension:vue", per_page=30)
    ```
 
    The first query catches `<VcTable …>` PascalCase usage. The second catches kebab-case usage `<vc-table …>` and dynamic mounts. Combine results, dedupe by file path.

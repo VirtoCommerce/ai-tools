@@ -4,7 +4,7 @@ A supporting file of [`SKILL.md`](SKILL.md), moved here verbatim from the former
 
 > **Terminal command:** `/vc-test:qa-design <component | page | flow>` (in this repository the `/qa-design` shim) — see [`SKILL.md`](SKILL.md) Steps 1–5. They parse the argument, resolve audit scope from [critical-ui-scope.md](../../knowledge/critical-ui-scope.md), and dispatch `vc-test:ui-ux-expert`; this file is the methodology library it consults.
 
-Validate design system consistency and run UX heuristic evaluations against the active Coffee theme tokens, `BL-UI-*` invariants ([`<plugin>/knowledge/bl-ui.md`](../../knowledge/bl-ui.md) (in this repository: `npm run bl:extract -- --domain ui`)), and Nielsen's 10 usability heuristics.
+Validate design system consistency and run UX heuristic evaluations against the active theme's tokens (vc-frontend: Coffee; a `client` fork: its own), `BL-UI-*` invariants ([`<plugin>/knowledge/bl-ui.md`](../../knowledge/bl-ui.md) (in this repository: `npm run bl:extract -- --domain ui`)), and Nielsen's 10 usability heuristics.
 
 ## Usage
 
@@ -67,7 +67,7 @@ For every page audit, enumerate and audit each applicable state separately:
 |-------|---------|------------------|
 | **Loading / skeleton** | Throttle network (Fast 3G) or block xAPI response | BL-UI-001 (CLS), BL-UI-001 refinement (skeleton-count parity) |
 | **Empty** | Sign in to account with no orders / wishlists / cart items | BL-UI-002 (empty-state copy spacing), BL-UI-006 (CTA size) |
-| **Error / disabled** | Cart with a disabled / unavailable product (Capri-Sun, SHOT in vcst-qa); order with payment-failed status | PROPOSED-BL-UI-007 occlusion (pass the message's own selector if outside the default alert set), WCAG 4.1.3 alert-semantics (is the warning announced?), BL-UI-004 overflow on alert text |
+| **Error / disabled** | Cart with a disabled / unavailable product (a vcst-qa example: Capri-Sun, SHOT — elsewhere, find one live); order with payment-failed status | PROPOSED-BL-UI-007 occlusion (pass the message's own selector if outside the default alert set), WCAG 4.1.3 alert-semantics (is the warning announced?), BL-UI-004 overflow on alert text |
 | **Multi-item / overflow** | Cart with 10+ line items; order with long product titles; address with long company name | BL-UI-004 overflow, BL-UI-005 alignment |
 | **Form-validation error** | Submit form with invalid email / empty required / weak password | BL-UI-003 state-shift (validation message insertion), BL-UI-004 (long error text wrap) |
 | **Auth-required action when anonymous** | Click "Place Order" / "Save list" while signed out | BL-UI-003 (modal insertion), BL-UI-006 (modal CTA size) |
@@ -138,7 +138,7 @@ do not hand-roll the snippets, same rule as `measure-layout.mjs` (`node <plugin>
    unreadable table header, a prose row, a partially-parsing size scale each become an `unresolved`
    entry with a reason and contribute no expectation.
 3. **Diff against measured live values** (from the browser, never from the spec) at each width the spec's
-   artboards were drawn at, and on the Coffee + Red presets — `designTokenAuditSnippet` / `iconParityAuditSnippet` /
+   artboards were drawn at, and on the gated presets ([`a11y-audit.md`](a11y-audit.md) §Theme scope) — `designTokenAuditSnippet` / `iconParityAuditSnippet` /
    `componentGeometryAuditSnippet` / `propertyAuditSnippet` (change-table rows: you name the selector +
    metric per row), then the matching `classify*`, then `summarizeDesignFindings`.
 
@@ -197,7 +197,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 
 ## Rules
 
-- **Read live tokens, never hardcode** — Coffee is multi-preset (6 light + 3 dark variants); a token's resolved value varies per preset. Hardcoded hex values in this skill or in audits will be wrong half the time.
+- **Read live tokens, never hardcode** — vc-frontend's Coffee is multi-preset (6 light + 3 dark variants), and a fork ships its own theme; a token's resolved value varies per preset. Hardcoded hex values in this skill or in audits will be wrong half the time.
 - **Cite the BL / WCAG / ECL ID** for every finding where one applies. Findings without citations decay into vague design debate. For proposed-but-not-promoted invariants, cite as `PROPOSED-BL-UI-NNN`; their audit logic lives in `<plugin>/lib/design/measure-layout.mjs` (in this repository: `scripts/lib/measure-layout.ts`, the canonical TypeScript it is generated from) until promoted into the BL oracle (`ui`).
 - **Audit across the derived viewport sweep** ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure), never a hand-listed set; some tokens override at breakpoint boundaries.
 - **Audit at multiple states** — run the State-Stress Pass; default-only audits miss state-specific defects (F-CART-006 was missed precisely because the default state had no disabled product visible).
