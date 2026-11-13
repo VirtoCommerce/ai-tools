@@ -8,7 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## Every strategy risk names the account it is checked as — `vc-test` `0.17.0` — 2026-11-13
+## Every strategy risk names the account it is checked as — `vc-test` `0.17.0`, `vc-fix` `0.18.8` — 2026-11-13
 
 ### Added
 
@@ -23,6 +23,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 - Scenario agents sign in as the account of the risk they cite (`briefs/scenario-run.md`); the visual lane takes the same
   account (`/vc-test:qa-ticket`). A round ≥ 2 that carries a round-1 Approach row fails 15a until the account is added.
+- The checklist built from a strategy opens each item's Data cell with `as <account>` (`qa-checklist` `from-model.md`, here and in
+  `vc-fix`), and the runners act as it: `/qa-test-fast` checklist lanes instead of their pool user, vc-test's AC run on the API.
 
 ## A project keeps its own personas, and accepts the ones a run proposes — `vc-test` `0.16.0` — 2026-11-13
 
