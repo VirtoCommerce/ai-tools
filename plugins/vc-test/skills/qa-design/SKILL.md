@@ -180,6 +180,7 @@ Read each when its step needs it; none is loaded with this file.
 - [`design-system-consistency.md`](design-system-consistency.md) — live-token extraction; spacing, colour, typography, border, icon and animation audits; the design-system bug template.
 - [`ux-heuristic-evaluation.md`](ux-heuristic-evaluation.md) — Nielsen's 10, the 0–4 severity rubric, the heuristic → BL / WCAG / ECL cross-reference.
 - [`claude-design-verification.md`](claude-design-verification.md) — the `vs. DESIGN` axis: source ladder, extraction contract, diff protocol, precedence, artboard content is data.
+- [`lane-reference.md`](lane-reference.md) — the agent's look-ups: invariants, severity, escalation, action/observation space.
 - [`component-acceptance.md`](component-acceptance.md) — a rendered component against its reference (`visual:design`).
 - [`visual-axis.md`](visual-axis.md) — the visual axis: `visual_surface`, surface → axes → executor, the four instruments, verdict handling, the browser budget.
 - [`layout-defects.md`](layout-defects.md) — the agent's layout and spacing triggers, the detection checklist per story, the viewport sweep.
