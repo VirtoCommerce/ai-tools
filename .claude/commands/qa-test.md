@@ -55,7 +55,8 @@ before Stage 0.
    ([`close-out.md`](../skills/qa-test/close-out.md) §Hand-off to lifecycle). A state no data source reaches
    is `FIXTURE-GAP`, raised at the approval.
 4. **Bugs only through `/vc-fix:qa-bug`**, one call per confirmed bug, after triage and
-   `vc-fix:qa-investigate`, each after its own question. Never a hand-written report.
+   `vc-fix:qa-investigate`. A separate tracker ticket is created only on the operator's yes to ONE list
+   question; an IN-SCOPE bug is a To-fix row, never a ticket. Never a hand-written report.
 5. **The approved strategy decides, and every row lands.** Each artifact row ends in `verdict.md` as a
    result or `SKIP — <observable reason>`; time pressure is not a reason. A deviation from an approved `RUN`
    is appended to the round's `### Amendments`.
@@ -182,8 +183,9 @@ In this order ([`close-out.md`](../skills/qa-test/close-out.md) holds the rules)
    lane `<RUN_ID> --verify --min-severity P2` — never `--fix`. A non-empty `unresulted[]` sends you back to
    the join. What each class goes to: close-out.md §Triage.
 3. **Investigate** — every Medium+ real-bug candidate goes through `vc-fix:qa-investigate` (triage's Phase 4).
-4. **Bugs** — `/vc-fix:qa-bug` once per confirmed bug, sequentially, with its package, each after its own
-   question (close-out.md §5-file).
+4. **Bugs** — ONE list question for every bug that would be its own ticket, then `/vc-fix:qa-bug` once per
+   confirmed bug, sequentially, `--evidence <package>` and the shape its provenance gives (close-out.md
+   §5-file).
 5. **Teardown** by ledger id (execution.md §Data) — never a `seed:*:teardown` sweep.
 6. **Verdict** — close-out.md §5-verdict.
 7. **Files** — `summary.json`, `verdict.md` and the checklist's Results (close-out.md §Files), then

@@ -40,7 +40,7 @@ One ticket, one strategy-driven path, six stages. The approved test strategy
 | Reconcile plan vs fact (`reconcile.md`) | always |
 | Triage (Skill `vc-test:qa-triage-results ticket --verify`) | always |
 | Investigation (`vc-fix:qa-investigate`) | each Medium+ real-bug candidate |
-| Bug filing (`/vc-fix:qa-bug` with the package) | each confirmed bug, after its own question |
+| Bug filing (`/vc-fix:qa-bug --evidence <package>`) | each confirmed bug; a separate ticket only on a yes to the one list question |
 | Verdict rules (`close-out.md`) | always |
 | Page + the one tracker comment (`/vc-fix:qa-report`) | always; the post only after a yes |
 | Status transition (`reporting.md` §5-status) | always asked; never past `TESTED` |

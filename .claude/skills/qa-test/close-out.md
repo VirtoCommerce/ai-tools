@@ -44,23 +44,22 @@ the documented behaviour ([`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules �
 
 ## 5-file. File bugs — through `/vc-fix:qa-bug`, with a severity floor
 
-Call `/vc-fix:qa-bug "<one-line defect>"` once per **confirmed** bug, sequentially (it may take a browser
-lane). Give it, **as file paths**:
-- **the `vc-fix:qa-investigate` package** (`evidence-index.md`, `root-cause.md`, screenshots, HAR,
-  console/network lines). Say that the bug is already reproduced and investigated, so `qa-bug` reuses the
-  package for its reproduction and its 4-layer validation and does not dispatch a second repro
-  ([`routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief)
-- the checklist item, charter item or regression case it came from
-- the ledger ids of the data involved
-- the build versions from Stage 0
-- the run folder `{RUN_DIR}`, so the report and its screenshots land in its `bugs/`
-- `found-by:agent-testing <ticket-key>` — left out only for a bug the user brought in, which `qa-bug` then
-  records as a human's (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files)
+**Order:** grade (triage) → the floor → provenance → **ONE list question** for every bug that would become
+its own tracker item → one `/vc-fix:qa-bug` call per confirmed bug at or above the floor, sequentially (it may
+take a browser lane), each with the arguments its row in §The tracker step names. `qa-bug` does what this
+flow must not do by hand: the duplicate check, the report from the package, owning-repo resolution (the
+`/qa-fix` hand-off block) and the report file. **Cite the path it returns; never move or rewrite its report.**
+`vc-fix` not installed ⇒ STOP at this step: tell the user to run `/plugin install vc-fix@ai-tools` and keep
+the drafts in chat — never a hand-written report.
 
-`qa-bug` does what this flow must not do by hand: the duplicate check, the 4-layer validation (from the
-package), owning-repo resolution (the `/qa-fix` hand-off block) and the report file. **Cite the path it
-returns; never move or rewrite its report.** `vc-fix` not installed ⇒ STOP at this step: tell the user to
-run `/plugin install vc-fix@ai-tools` and keep the drafts in chat — never a hand-written report.
+**Every call carries:**
+- **`--evidence <package dir>`** — the `vc-fix:qa-investigate` package triage returned. `qa-bug` then writes
+  the report from it and re-checks nothing: no second reproduction, no second 4-layer validation
+  (its `bug-from-package.md`).
+- `found-by:agent-testing <ticket-key>` — left out only for a bug the user brought in, which `qa-bug` then
+  records as a human's (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files).
+- in the brief: the checklist item, charter item or regression case it came from, the ledger ids of the data
+  involved, and the run folder `{RUN_DIR}`, so the report lands in its `bugs/<severity>/`.
 
 ### The floor: `Critical` / `High` / `Medium` only
 
@@ -73,26 +72,31 @@ run `/plugin install vc-fix@ai-tools` and keep the drafts in chat — never a ha
 
 Severity is graded once, at triage, and never re-graded here to move a finding across the line. **A `Low` is
 dropped from the TRACKER, never from the RUN:** its evidence stays in the run folder, and
-`summary.json.bugs_not_filed` names it, one entry each. Escalate above the floor only on an explicit human
-instruction in this run, never in bulk.
+`summary.json.bugs_not_filed` names it, one entry each, and it gets no `qa-bug` call. Escalate above the floor
+only on an explicit human instruction in this run, never in bulk.
 
 ### The tracker step — by provenance, and only on a yes
 
-| Provenance ([`triage.md`](triage.md) §4) | Tracker step |
-|---|---|
-| **IN-SCOPE** | **A row in the ticket's To-fix table — no tracker item, never a Sub-task.** The finding goes to `summary.json.to_fix[]` (`id` `F-<n>`, `what`, `severity`, `ref` = the failing item, `report` = the path `qa-bug` returned, `repro` = `{ impact, repo, file, where, steps[], expected, actual, found_by[] }`, short — `found_by` names the check by TITLE, never by id), and the comment renders it in **What to fix and how to reproduce** |
-| **PRE-EXISTING** | **Link only** — `/vc-fix:qa-bug … link-only:<existing-bug-key>`, linked to the ticket |
-| **OUT-OF-SCOPE incidental** | Its **own standalone ticket** + a *related* link, created only on the operator's yes |
-| **`BL-A11Y-*` on a functional / feature / E2E ticket** | Its **own standalone ticket** + a *related* link, at its **real severity**; never a To-fix row, and it does **not** fail the verdict ([`triage.md`](triage.md) §7a) |
+`qa-bug`'s Step 5 creates the tracker ticket and, without `--confirmed`, asks the operator itself. So every
+call says which of three shapes it is — never leave Step 5 to its default:
 
-Anything that would become its own tracker item is **proposed, one line per item** — what, severity, the
-suggested type (`Bug` / `Task` / `Story`) and why it is not a To-fix row — and asked once as a list the
-operator answers per item (create · put in To fix · skip). An unanswered item stays a draft and is named in
-the comment under **Suggested separate tickets**. Never a Sub-task, in any answer.
+| Provenance ([`triage.md`](triage.md) §4) | `/vc-fix:qa-bug` call | Tracker result |
+|---|---|---|
+| **IN-SCOPE** | `"<defect>" --evidence <dir> found-by:agent-testing <TICKET>`, and the brief says: **stop after Step 4 and do not ask** (Step 5 never runs) | **A row in the ticket's To-fix table — no tracker item, never a Sub-task.** The finding goes to `summary.json.to_fix[]` (`id` `F-<n>`, `what`, `severity`, `ref` = the failing item, `report` = the path `qa-bug` returned, `repro` = `{ impact, repo, file, where, steps[], expected, actual, found_by[] }`, short — `found_by` names the check by TITLE, never by id), and the comment renders it in **What to fix and how to reproduce** |
+| **PRE-EXISTING** (triage's dedup matched an open bug) | **no call** — `qa-bug` has no link-only mode, and filing again would make a duplicate | named in `verdict.md`'s Bugs list as `pre-existing <existing-bug-key>` and in the comment; nothing is created or linked in the tracker, so it is no `bugs_filed` entry |
+| **OUT-OF-SCOPE incidental** · **`BL-A11Y-*` on a functional / feature / E2E ticket** · a finding that looks like its own Task or Story | after the operator's **create** on the list question: `"<defect>" --evidence <dir> --link <TICKET> --confirmed found-by:agent-testing <TICKET>` — `--link` relates the new bug to the ticket, `--confirmed` carries that one yes so Step 5 does not ask again | its **own standalone ticket**, related to the ticket. A `BL-A11Y-*` keeps its **real severity**, is never a To-fix row, and does **not** fail the verdict ([`triage.md`](triage.md) §7a) |
+
+**The list question — one `AskUserQuestion`, asked once, before the calls.** Every bug in the third row is
+proposed in one line — what, severity, the suggested type (`Bug` / `Task` / `Story`) and why it is not a
+To-fix row — and the operator answers per item: **create** (the third row's call) · **put in To fix** (the
+IN-SCOPE call) · **skip** (the IN-SCOPE call shape — report only, stop after Step 4 — and the item is named in
+the comment under **Suggested separate tickets**). An unanswered item is a skip. `--confirmed` covers the
+create only: a duplicate `qa-bug` finds in the tracker is still its own question. Never a Sub-task, in any
+answer.
 
 **Gate (inline):** every IN-SCOPE bug at or above the floor is a `to_fix[]` row and none was created in the
-tracker; every PRE-EXISTING match is linked, not re-filed; every `Low` is in `bugs_not_filed`; no real bug was
-downgraded to a test defect; no severity moved since triage.
+tracker; no PRE-EXISTING match was filed again; every ticket created has the operator's **create**; every
+`Low` is in `bugs_not_filed`; no real bug was downgraded to a test defect; no severity moved since triage.
 
 ## 5-verdict. Reconcile AC & DoD, then decide the verdict
 
