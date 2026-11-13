@@ -8,6 +8,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Lane HAR files keep no sign-in password — `vc-init` `0.7.0` — 2026-11-13
+
+### Fixed
+
+- The Playwright lanes' `recordHar` (`content: "embed"`) wrote the sign-in request body with the typed password in plain
+  text: the Admin SPA's `POST /api/platform/security/login` (JSON `password`) and the storefront's `POST /connect/token`
+  (form `password=`). The lane masks the value in its responses, not on disk. `bridge/har-scrub.mjs` now masks every
+  password-named body field (JSON at any depth, form text and `params[]`, multipart) and every known password value
+  (6+ characters, in each spelling the bridge redactor knows and its form-body spelling) anywhere in the HAR. A record
+  with nothing to mask stays byte for byte; one with a masked field is written back as compact JSON. A HAR still
+  being written is left alone. Session tokens and cookies (`Authorization` headers, the `/connect/token` response)
+  stay in the HAR: it is still not a file to share.
+- A lane run through the bridge (`bridge/playwright-mcp.mjs`) scrubs its HAR directory in-process with the values it
+  holds: at start, after every HAR write (`browser_close`) and at exit.
+- A lane started straight from `.mcp.json` (`npx @playwright/mcp … --secrets <file>`) is covered by the new
+  `hooks/scrub-har.mjs` (`SessionStart`, and `PostToolUse` on `mcp__playwright-*__browser_close`), with values from the
+  project's `.env.playwright.*` and `.env.local`. Only a file with something to mask is rewritten, and not when it changed
+  since it was read (checked again before every rename retry). A `.har-scrub.json` stamp (size, mtime, a tag per value)
+  skips a file until it changes or a scrubber knows a value it was not scrubbed with. The tag is an HMAC keyed with
+  `~/.claude/plugins/data/vc-init-ai-tools/har-scrub.key`, never stored beside the HAR, so a stamp copied with a HAR
+  cannot be used to test a guessed password.
+
 ## vc-test installs its own dependencies at session start — `vc-test` `0.17.1`, `vc-fix` `0.18.9`, `vc-init` `0.6.2` — 2026-11-13
 
 ### Fixed
