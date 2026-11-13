@@ -6,6 +6,7 @@
 // Every input is, in this order: refused if a key is a forbidden field name (token, authorization, password, cookie),
 // refused if any string is JWT-shaped (exit 2, nothing written), scrubbed of the project's secret values and token
 // shapes (knowledge-store.mjs), merged into the journal, checked against the schema, and only then saved (atomic).
+// A path inside the run's `.tokens/` (an evidence path, `judge --file`, `close`'s two paths) is refused, never echoed.
 // CLI: node goal.mjs <command> …; prints ONE JSON object. Exit 0 done · 1 usage · 2 refused (`errors` names every
 // reason) · 3 could not run (I/O).
 //   init --key <KEY> [--env <env>] [--new]            → { dir, runId, resumed }  (resumes the newest unclosed run)
@@ -134,6 +135,24 @@ const stored = (dir, p) => {
   const rel = relative(resolve(dir), resolve(p));
   return rel && !rel.startsWith("..") && !isAbsolute(rel) ? posix(rel) : posix(p);
 };
+
+/**
+ * True when a path lands in the run's `.tokens/` folder — its first run-relative segment is `.tokens` (any case: the
+ * Windows file system does not tell `.Tokens` apart). A relative path is read against the run folder AND against the
+ * working directory, so neither reading reaches a token file. The one check every stored path goes through.
+ */
+export function inTokens(dir, p) {
+  if (typeof p !== "string" || !p) return false;
+  return [resolve(dir, p), resolve(p)].some((abs) => {
+    const first = relative(resolve(dir), abs).split(/[\\/]/)[0];
+    return first.toLowerCase() === ".tokens";
+  });
+}
+/** Refuses (exit 2) when any path is inside `.tokens/`; the message names where, never the path. */
+function refuseTokenPaths(dir, where, paths) {
+  if (paths.some((p) => inTokens(dir, p))) throw refuse(`${where}: a path inside the run's .tokens/ folder is never stored`);
+}
+const evidencePaths = (c) => (Array.isArray(c?.evidence) ? c.evidence.map((e) => e?.path) : []);
 
 /** OAuth keys SECRET_NAME does not match: an authorization code and a PKCE verifier are never stored (exact key, any case). */
 const OAUTH_SECRET_KEYS = new Set(["code", "code_verifier"]);
@@ -285,16 +304,19 @@ export function checkGoal(goal, stage, { dir, what } = {}) {
 
   if (stage === "verdict") {
     const outside = (list) => (list ?? []).some((e) => typeof e.path === "string" && !insideRun(dir, e.path));
+    const tokens = (list) => (list ?? []).some((e) => inTokens(dir, e?.path));
     for (const a of acs) {
       if (a.status === "open") errors.push(`${a.id}: still open`);
       if (a.status === "GAP" && !a.gapReason) errors.push(`${a.id}: GAP without gapReason`);
       if (["PASS", "FAIL", "PARTIAL"].includes(a.status) && !(a.evidence ?? []).length) errors.push(`${a.id}: ${a.status} without evidence`);
       if (outside(a.evidence)) errors.push(`${a.id}: evidence outside the run folder`);
+      if (tokens(a.evidence)) errors.push(`${a.id}: evidence inside the run's .tokens/ folder`);
     }
     for (const f of goal.findings ?? []) {
       if (!f.severity) errors.push(`${f.id}: no severity`);
       if (!(f.evidence ?? []).length) errors.push(`${f.id}: no evidence`);
       if (outside(f.evidence)) errors.push(`${f.id}: evidence outside the run folder`);
+      if (tokens(f.evidence)) errors.push(`${f.id}: evidence inside the run's .tokens/ folder`);
       if (f.inScope === true && ["Critical", "High", "Medium"].includes(f.severity) && !(f.reproduced >= 2)) errors.push(`${f.id}: Medium or worse needs reproduced ≥ 2`);
       if (!known.has(f.ac)) errors.push(`${f.id}: unknown AC ${f.ac}`);
     }
@@ -368,8 +390,9 @@ function cli(argv) {
       }
       if (sub === "set") {
         const id = need(argv, "id");
-        return mutate(argv, objectInput(readFileArg(argv), "ac"), (g, c) => {
+        return mutate(argv, objectInput(readFileArg(argv), "ac"), (g, c, dir) => {
           const ac = setById(g.acs, id, "AC", "criterion");
+          refuseTokenPaths(dir, `ac set ${id}`, evidencePaths(c));
           const extra = Object.keys(c).filter((k) => !["status", "evidence", "gapReason", "findings"].includes(k));
           if (extra.length) throw refuse(...extra.map((k) => `ac set: "${k}" cannot be changed (status, evidence, gapReason, findings)`));
           Object.assign(ac, c);
@@ -386,8 +409,9 @@ function cli(argv) {
     }
     case "finding": {
       if (sub === "add") {
-        return mutate(argv, objectInput(readFileArg(argv), "finding"), (g, c) => {
+        return mutate(argv, objectInput(readFileArg(argv), "finding"), (g, c, dir) => {
           if ("id" in c) throw refuse("finding add: the id is assigned, not given");
+          refuseTokenPaths(dir, "finding add", evidencePaths(c));
           const f = { id: nextId("F", g.findings), evidence: [], reproduced: 0, ...c };
           g.findings.push(f);
           return { id: f.id };
@@ -395,8 +419,9 @@ function cli(argv) {
       }
       if (sub === "set") {
         const id = need(argv, "id");
-        return mutate(argv, objectInput(readFileArg(argv), "finding"), (g, c) => {
+        return mutate(argv, objectInput(readFileArg(argv), "finding"), (g, c, dir) => {
           const f = setById(g.findings, id, "F", "finding");
+          refuseTokenPaths(dir, `finding set ${id}`, evidencePaths(c));
           if ("id" in c) throw refuse("finding set: the id cannot be changed");
           Object.assign(f, c);
           return { id };
@@ -444,6 +469,7 @@ function cli(argv) {
       // The judge's notes are a file INSIDE the run folder (a relative --file is read against it); the journal keeps the
       // run-relative path, and that path goes through the same refusal + scrub as every other input. Messages never echo it.
       const abs = resolve(dir, file);
+      refuseTokenPaths(dir, "judge", [file, abs]); // before any existence check: a token file is not even probed
       if (!insideRun(dir, abs) || abs === resolve(dir)) throw refuse("judge file must be inside the run folder");
       if (!existsSync(abs) || !statSync(abs).isFile()) throw refuse("judge file not found in the run folder");
       return mutate(argv, { verdict, path: posix(relative(resolve(dir), abs)) }, (g, c) => {
@@ -455,6 +481,7 @@ function cli(argv) {
       const writeZones = need(argv, "write-zones");
       const teardown = need(argv, "teardown");
       return mutate(argv, { writeZones, teardown }, (g, c, dir) => {
+        refuseTokenPaths(dir, "close", [c.writeZones, c.teardown]);
         g.closed = { writeZones: stored(dir, c.writeZones), teardown: stored(dir, c.teardown), at: now() };
       });
     }
