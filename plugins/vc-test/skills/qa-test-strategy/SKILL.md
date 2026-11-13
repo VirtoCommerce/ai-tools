@@ -81,8 +81,8 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    [`risk-prioritization-framework.md`](../../knowledge/risk-prioritization-framework.md). Layer and
    domain counts **raise a risk's L×I** — they never fire a floor on their own (D8). **Project risks**
    (stand not on the PR's build, fixture gap, missing role, no free lane, stale cases) each get a
-   mitigation or an explicit `accepted`. F2 fired ⇒ a purpose risk, F10 ⇒ an org-context risk, F11 ⇒ a
-   configuration risk, each with technique `MODEL` and **its own row**: its Source carries `floor:F10`, and no risk carries two `floor:` tokens — the model gates each group separately (M10).
+   mitigation or an explicit `accepted`. Each fired floor's required risk is in the `floors.mjs`
+   output (`requires`), each **its own row**: Source carries `floor:<id>`, and no risk carries two `floor:` tokens (M10).
 7. **Strategy mix** — mark each ISTQB type used or not, with the reason:
 
    | Type | On when |
@@ -146,11 +146,11 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
 ## Gate — before approval
 
-Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>] [--capabilities <path>]`; it computes the floors, checks clauses 1–6s, 8 and 10–14, and exits 1 with the failing clause numbers (2 on an unreadable
+Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>] [--capabilities <path>]`; it computes the floors, checks clauses 1–6s, 8 and 10–15, and exits 1 with the failing clause numbers (2 on an unreadable
 file). These remain yours, alongside 7, 9 and 11a's semantic half: clause 1's carry-over, clause 6's naming of the not-fired floors with their
 signals, clause 4's `{authority}` tag on each oracle, and what a fired floor requires beyond an artifact — F4's
 no risk on it below Medium, F7's F5 on, F8's token audit, that `floor:F10`'s risk is about org context and
-`floor:F11`'s about configuration, and F11's stand values under Inputs. Every clause holds before approval; a failure is fixed, never noted.
+`floor:F11`'s about configuration, that a `deny:` account names the permission the diff checks, and F11's stand values under Inputs. Every clause holds before approval; a failure is fixed, never noted.
 
 1. The round is counted and ≤ 3; round ≥ 2 carries over every unresulted risk of round N−1 (no
    reconciliation filled ⇒ all its risks are unresulted).

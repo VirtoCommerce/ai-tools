@@ -38,7 +38,7 @@ description: `[vc-test:scenario:S-n] <KEY>` (U66: the run's cost is counted per 
   when `stand.writable` is `true`, else `BLOCKED — stand not declared writable`. Every entity and every setting
   change goes into the ledger at once, as `ledger.md` says, with `--by scenario:S-n`.
 - **Browser** only when `LANE` names one, and only that server's tools — one session, yours alone. Sign in through
-  the lane's secrets by bare key name, never a password value. No `LANE` ⇒ no browser.
+  the lane's secrets by bare key name, never a password value, as the account your risk's Approach row names (`Lane · agent · account`; `deny:<permission> <KEY>` is that KEY, which lacks the permission). No `LANE` ⇒ no browser.
 - **What the platform does** (how to reach a state, where an artifact is delivered): ask the kb first —
   `mcp__kb__kb_ask` (load it with `ToolSearch`), else `npm run kb -- ask "<q>"`, the endpoint or page path in the
   question. A kb entry tells you how to reach a state; it is never the oracle.
