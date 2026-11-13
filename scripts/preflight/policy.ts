@@ -11,8 +11,8 @@ import { priorRunDirs, resolveSprint, runLayout } from "../lib/run-dir.mjs";
 
 export { resolveSprint };
 
-export type ChangeFor = "ticket" | "ticket-fast" | "exploratory" | "lifecycle" | "domain-map" | "ba";
-export const CHANGE_FOR: readonly ChangeFor[] = ["ticket", "ticket-fast", "exploratory", "lifecycle", "domain-map", "ba"];
+export type ChangeFor = "ticket" | "exploratory" | "lifecycle" | "domain-map" | "ba";
+export const CHANGE_FOR: readonly ChangeFor[] = ["ticket", "exploratory", "lifecycle", "domain-map", "ba"];
 export type Status = "OK" | "WARN" | "BLOCK" | "UNKNOWN";
 export type Who = "me" | "me, with OK" | "you";
 export interface Check {
@@ -30,7 +30,7 @@ export interface PolicyInput {
   sprint: string | null; duplicate: Duplicate | null;
 }
 
-const isTicket = (f: ChangeFor) => f === "ticket" || f === "ticket-fast";
+const isTicket = (f: ChangeFor) => f === "ticket";
 /** A stand on this machine runs the ticket's own build: nothing deploys to it, /qa-deploy-pr refuses it. */
 const isLocalStand = (f: EnvFacts) => isUnknown(f.declared) && f.declared.unknown === LOCAL_STAND;
 /** What brings the change under test onto the stand. */
@@ -39,7 +39,7 @@ const deployAdvice = (i: PolicyInput) => isLocalStand(i.facts)
   : `/qa-deploy-pr ${i.ticket ?? "<KEY>"}, or wait`;
 /** `--expect` names the storefront theme rather than a module: its repo, its artifact name or the manifest key. */
 export const isThemeId = (id: string) => /^(vc-frontend|vc-theme[\w-]*|theme|themeb2bvue|virtocommerce\.theme)$/i.test(id);
-const DUP_WINDOW_MIN: Record<ChangeFor, number | null> = { "ticket": 120, "ticket-fast": 120, "exploratory": 1440, "lifecycle": 1440, "domain-map": null, "ba": null };
+const DUP_WINDOW_MIN: Record<ChangeFor, number | null> = { "ticket": 120, "exploratory": 1440, "lifecycle": 1440, "domain-map": null, "ba": null };
 const SECRET = /PASSWORD|TOKEN|SECRET|KEY/;
 
 const ok = (id: string, found: string): Check => ({ id, status: "OK", found, who: null, do: null, diagnose: [] });

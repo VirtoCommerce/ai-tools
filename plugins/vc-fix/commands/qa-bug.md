@@ -84,7 +84,7 @@ no search.
 - Use qa-testing-expert to navigate to the same page and verify
 
 **Who found it — decide now, write it on the report's line 4.** An agent flow that saw the failure in its own
-run passes `found-by:agent-testing <TICKET>` (`/qa-test`, `/qa-test-fast`, exploratory) or
+run passes `found-by:agent-testing <TICKET>` (`/qa-test`, exploratory) or
 `found-by:agent-regression <RUN_ID>` (a regression run or its triage); write it as
 `**Found by:** agent — testing <TICKET>` / `**Found by:** agent — regression <RUN_ID>`. Anything else — a person's
 description, a ticket key or screenshot a user handed over, no argument — is `**Found by:** human`. Step 5's

@@ -24,9 +24,11 @@ if (envFlag !== undefined) {
   if (!findEnv(envFlag, { root: ROOT, ticket })) { console.error(`✗ --env: no .env.${envFlag} in ${lookedIn(envFlag, { root: ROOT, ticket })}`); process.exit(1); }
   process.env.TEST_ENV = envFlag;
 }
-const forFlag = enumFlag(argv, "--for", CHANGE_FOR) as ChangeFor | undefined;
+// `ticket-fast` was retired 2026-11-13: vc-test before 0.18.2 still asks for it, and it is now `ticket`.
+const forArgv = argv.map((a, i) => (argv[i - 1] === "--for" && a === "ticket-fast" ? "ticket" : a));
+const forFlag = enumFlag(forArgv, "--for", CHANGE_FOR) as ChangeFor | undefined;
 if (!forFlag) { console.error(`✗ --for is required: ${CHANGE_FOR.join(" | ")}`); process.exit(1); }
-if ((forFlag === "ticket" || forFlag === "ticket-fast") && !ticket) { console.error("✗ --for ticket needs --ticket <KEY>"); process.exit(1); }
+if (forFlag === "ticket" && !ticket) { console.error("✗ --for ticket needs --ticket <KEY>"); process.exit(1); }
 if (ticket) process.env.QA_TICKET = ticket; // every loader below fills QA_ENV_PATH's <ticket> with the run's ticket
 const domain = flagValue(argv, "--domain");
 const components = (flagValue(argv, "--components") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -43,7 +45,7 @@ try {
   const facts = await getEnvFacts({ components, storefront: argv.includes("--storefront"), now });
   const mcpJson = readMcpJson(ROOT);
   const mcp = { ...checkMcpStatic(forFlag, loadMcpRequirements(ROOT), mcpJson.json), jsonError: mcpJson.error };
-  const sprint = forFlag === "ticket" || forFlag === "ticket-fast" ? resolveSprint(ROOT) : null;
+  const sprint = forFlag === "ticket" ? resolveSprint(ROOT) : null;
   const duplicate = findDuplicate(ROOT, forFlag, { ticket, domain, env: facts.env, now });
   const checks = buildChecks({ for: forFlag, ticket, domain, expect, facts, mcp, sprint, duplicate });
   const verdict = isBlocking(checks) ? "NOT READY" : "READY";

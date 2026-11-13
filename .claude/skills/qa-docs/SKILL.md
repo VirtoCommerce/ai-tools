@@ -1,6 +1,6 @@
 ---
 name: qa-docs
-description: "[QA Method] Use when a ticket in status Tested or Done needs its documentation: ONE document — What's new, How to set it up, How it works — built from the run's PASS rows and real stand screenshots, posted as ONE Jira comment, plus a ≤30 s Motion film a person exports and attaches. Called by /qa-test FULL and its technical-change flow at 5-docs; run by hand after the /qa-test FAST path or /vc-test:qa-ticket. `release` mode aggregates the What's new sections of a sprint or version. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
+description: "[QA Method] Use when a ticket in status Tested or Done needs its documentation: ONE document — What's new, How to set it up, How it works — built from the run's PASS rows and real stand screenshots, posted as ONE Jira comment, plus a ≤30 s Motion film a person exports and attaches. Called by /qa-test at its Stage 5 docs step; run by hand after /vc-test:qa-ticket. `release` mode aggregates the What's new sections of a sprint or version. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
 argument-hint: "<TICKET> [--video [<file.mp4>]] | release --sprint <SprintXX-XX> | release --version <X.Y.Z>"
 ---
 
@@ -25,9 +25,8 @@ states how the platform behaves — so it carries the `kb` read step (2) and wri
 | `/qa-docs <TICKET> --video [<file.mp4>]` | attach the exported film and amend the comment: [`media.md`](media.md) §Hand-off |
 | `/qa-docs release --sprint <S>` · `--version <V>` | the aggregate: [`release.md`](release.md) §Aggregate |
 
-`/qa-test` FULL and its technical-change flow call `/qa-docs <TICKET>` at their 5-docs step, after
-5-status; on `--iterate`, once, at loop exit. The `/qa-test` FAST path and `/vc-test:qa-ticket` do not
-call it — QA runs it by hand when the ticket needs documentation.
+`/qa-test` calls `/qa-docs <TICKET>` at its docs step, after the status hop, when the ticket ends in Tested or
+Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the ticket needs documentation.
 
 ## Steps
 
@@ -56,7 +55,7 @@ call it — QA runs it by hand when the ticket needs documentation.
    field) and find one whose first line is **`Documentation — <TICKET>`** (wiki `h2.` or Markdown `##`),
    or the `comment_id` that `documentation.json` already holds. Also count as documentation the old 5-docs
    format — *For shoppers* / *For administrators* sections, sometimes one comment per audience — and any
-   comment that is plainly a user guide for this ticket in another shape (a hand-written one after a FAST run);
+   comment that is plainly a user guide for this ticket in another shape (a hand-written one);
    when unsure, show it and ask.
    - **Found** ⇒ say so, with its author and date, and ask once: **update that comment** (the steps below,
      then step 6 amends it — `--doc --amend <its id> --same-round "documentation update"`) or **leave it**

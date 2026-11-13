@@ -16,7 +16,7 @@
  *   a STALE map FAILS      — a map read as current while describing a build that has moved does more
  *                            damage than no map, because it arrives with a written artifact's authority.
  *   a MISSING map PASSES   — 12 of 13 domains have none. A hard gate on absence would stop every ticket
- *                            in the repo. `/qa-test` RECOMMENDS a map for an all-layer FULL run and
+ *                            in the repo. `/qa-test` BUILDS a missing map at Stage 1 and
  *                            records `Domain map: ABSENT` when there is none; absence is written down,
  *                            not blocked.
  *
@@ -176,7 +176,7 @@ if (json) {
   for (const f of findings) console.log(`  ${f.code}  ${basename(f.file)}  ${f.msg}`);
   if (!findings.length) console.log("[domain:check] OK — every map is fresh and well-formed");
   if (!maps.length) {
-    console.log("[domain:check] no maps yet — that is NOT a failure. `/qa-test` recommends one for an all-layer FULL run.");
+    console.log("[domain:check] no maps yet — that is NOT a failure. `/qa-test` builds one at Stage 1.");
   }
 }
 

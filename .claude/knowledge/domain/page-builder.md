@@ -332,7 +332,7 @@ this is new information this pass (see D6).
   fully built and live** (§2), and a full 28-scenario test DESIGN exists (VCST-4933 test model), and
   a live exploratory+scripted run against it produced 4 confirmed bugs — but **none of that reached
   a committed regression-suite row**. The VCST-4933 run's own `summary.json` states this directly:
-  `"new_cases_authored": 0`, with `regression.c1.skipped_reason` explaining that Artifact A's
+  `"new_cases_authored": 0`, with `regression.c1.skipped_reason` explaining that that run's
   corpus-triage step found no existing 059/060/060b row asserting any Shared-Components observable,
   so there was nothing to repair or extend. **This is a hole, not a deliberate exclusion, and it is
   now a MORE surprising hole than in rev1** — because the test design, fixtures and even bug reports

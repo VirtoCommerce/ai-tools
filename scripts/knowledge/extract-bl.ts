@@ -6,7 +6,7 @@
  * per-dispatch reads: ~41 briefs across the agent corpus point at
  * `.claude/knowledge/oracles/business-logic.md` by PATH. Every agent that follows one reads the whole
  * oracle — every invariant in it — to use the three or four that touch its domain. A
- * `/qa-test` FULL run dispatches many such agents, and each pays it again in its own context.
+ * `/qa-test` run dispatches many such agents, and each pays it again in its own context.
  *
  * The fix is not to shrink the oracle: it is the single source of truth and every invariant in it is
  * load-bearing somewhere. The fix is to stop shipping ALL of it to an agent that needs ONE domain.

@@ -107,7 +107,7 @@ Before starting a run, check for recent duplicate runs to avoid waste:
 | Verify fix | Same ticket verified | 4h | Warn user, show previous result |
 | Coverage gen | Same scope generated | 7d | Warn user, show previous report |
 
-`/qa-test`, `/qa-test-fast`, `/qa-exploratory` and `/qa-test-lifecycle` run the duplicate check through
+`/qa-test`, `/qa-exploratory` and `/qa-test-lifecycle` run the duplicate check through
 [`/preflight`](../skills/preflight/SKILL.md), whose windows live in `scripts/preflight/policy.ts`.
 
 **How to check:** Read `reports/` directory for recent `{RUN_ID}` files matching the scope. For JIRA-based checks, query Atlassian MCP for recent comments on the ticket.
@@ -213,7 +213,7 @@ mistake in opposite directions.
 
 PRs in `vc-frontend` and `vc-module-*` are deployed to QA **while still open** (not merged). Testing happens before merge.
 
-For `/qa-test PR #NNN` and `/qa-verify-fix`:
+For a ticket's PRs under `/qa-test` and for `/qa-verify-fix`:
 
 1. Get PR details: `gh pr view <number> --json title,state,headRefName,labels` — note the branch and any CI build artifact version (often in PR description or CI checks)
 2. Identify which module/theme the PR belongs to (from the repo name)
@@ -225,9 +225,8 @@ For `/qa-test PR #NNN` and `/qa-verify-fix`:
 
 | Command | Verification Level |
 |---------|-------------------|
-| `/qa-test PR #NNN` | Full — confirm PR is deployed (module version matches) |
 | `/qa-verify-fix` | Full — confirm fix PR is deployed before testing |
-| `/qa-test VCST-XXXX` | Standard — record platform + relevant module versions |
+| `/qa-test VCST-XXXX` | Full — confirm each of the ticket's PRs is deployed (module version matches); a PR that is not is BLOCKED-on-deploy, never a FAIL |
 | `/qa-smoke` | Standard — record platform + theme versions in report |
 | `/qa-regression` | Standard — record full deploy state (platform + theme + all modules) |
 | `/qa-exploratory` | Light — record platform + theme versions |

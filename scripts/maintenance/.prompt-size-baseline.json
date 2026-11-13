@@ -1,19 +1,18 @@
 {
-  ".claude/agents/qa-testing-expert.md": 19205,
-  ".claude/commands/qa-exploratory.md": 24984,
-  ".claude/commands/qa-regression.md": 35861,
-  ".claude/commands/qa-test.md": 54804,
+  ".claude/agents/qa-testing-expert.md": 19177,
+  ".claude/commands/qa-exploratory.md": 24919,
+  ".claude/commands/qa-regression.md": 35436,
   ".claude/skills/project-init/SKILL.md": 27244,
   ".claude/skills/qa-hotfix-check/SKILL.md": 22678,
   ".claude/skills/qa-local-env/SKILL.md": 25190,
   ".claude/skills/qa-review-oracles/SKILL.md": 23273,
-  ".claude/skills/qa-review-tests/SKILL.md": 42119,
+  ".claude/skills/qa-review-tests/SKILL.md": 41919,
   ".claude/skills/qa-seed-data/SKILL.md": 32249,
-  ".claude/skills/qa-test-cases-generator/SKILL.md": 41945,
+  ".claude/skills/qa-test-cases-generator/SKILL.md": 41943,
   ".claude/skills/vc-self-check/SKILL.md": 27380,
   "plugins/vc-fix/commands/qa-bug.md": 47000,
   "plugins/vc-fix/commands/qa-fix.md": 36070,
   "plugins/vc-fix/commands/qa-verify-fix.md": 33475,
   "plugins/vc-fix/skills/vc-self-check/SKILL.md": 21399,
-  "plugins/vc-init/skills/project-init/SKILL.md": 109033
+  "plugins/vc-init/skills/project-init/SKILL.md": 109008
 }

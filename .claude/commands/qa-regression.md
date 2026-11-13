@@ -40,8 +40,8 @@ each suite's resolved CSV is narrowed by `npm run suites:filter` *before* `suite
 
 - **Tiers:** `critical` · `high` · `medium` · `low`, or a comma list. `P0`/`P1`/`P2`/`P3` are accepted
   as spellings of the same four tiers — the alias table `append-test-cases-to-suite.ts` already uses.
-- **`--also-ids <ids>`** keeps named cases whatever their priority. (**Note:** `/qa-test` does not use this at all — its new `Draft` cases and its `2a` `RE-BASE` rows run as an exact `--ids` set at Step 4 (C1), and it runs no tier sweep of its own since `5r`/C2 was removed 2026-09-10. `--also-ids` is for any caller that genuinely wants a tier union plus named cases — including **this** command run deliberately as the release-scoped Critical sweep `/qa-test` no longer performs.) It is how a caller runs its own
-  newly authored `Draft` cases alongside the Critical slice — they are in scope by construction.
+- **`--also-ids <ids>`** keeps named cases whatever their priority. (**Note:** `/qa-test` does not use this at all — its Stage 4 regression lane runs the strategy's non-stale cases as an exact `--ids` set, and it runs no tier sweep of its own. `--also-ids` is for any caller that genuinely wants a tier union plus named cases — including **this** command run deliberately as the release-scoped Critical sweep.) It is how a caller runs its own
+  named cases alongside the Critical slice — they are in scope by construction.
 - **Why:** `Critical` is 883 of the 3,969 canonical-header cases (~22%) and ~23% of the estimated
   minutes, which is what puts a change-scoped run inside a 40-minute window. Pair it with
   `npm run regression:select -- --target 40` to bound the suite list as well as the case list.
@@ -56,11 +56,9 @@ those case ids and nothing else. The two are **mutually exclusive** (as is `--al
 and an exact set answer different questions, and accepting both leaves "did `--ids` narrow the tier or
 add to it?" unanswerable from the invocation.
 
-- **Its callers are `/qa-test` Step 4 (the C1 exact-set run) and Step 5-loop**, plus **a human cutting a
-  release** — since `/qa-test` stopped running a release-scoped sweep of its own (2026-09-10), a deliberate
-  `--cases critical` invocation of this command is the only thing that produces one. Round N+1 of the
-  `--iterate` loop re-runs *only* the previously-failed cases, as its own run
-  ([`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5-loop).
+- **Its callers are `/qa-test` Stage 4 (the regression lane's exact-set run)**, plus **a human cutting a
+  release** — `/qa-test` runs no release-scoped sweep of its own, so a deliberate `--cases critical`
+  invocation of this command is the only thing that produces one.
 - **It reads no `Priority` at all**, so an unreadable one is *not* reported on this path — nothing
   consulted it, and naming it would manufacture a coverage hole that does not exist.
 - **Most suites in the selection will contribute zero cases**, which is normal here rather than
@@ -92,7 +90,7 @@ There is **one** orchestrator: `regression-orchestrator`, dispatched via the Tas
 - **`--seed=<profile>`** — Pre-seed test data via `/qa-seed-data <profile>` **before** the regression run begins. Valid profiles are the ones `/qa-seed-data` declares — `bootstrap`, `minimal`, `catalog`, `b2b`, `pricing`, `inventory`, `loyalty`, `promotions`, `bopis`, `configurable`, `users`, `full` (`teardown` is the `--teardown` flag's job, not a seed profile). If that list and this one ever disagree, `/qa-seed-data` wins. Executes as Step 0.5 (see pipeline below). Skip if already seeded for the same session.
 - **`--teardown`** — After the regression run completes (pass or fail), invoke `/qa-seed-data teardown` to remove all `AGENT-TEST-*` entities. Use with short-lived seed data; skip if other agents are sharing the seeded entities.
 - **`--promote`** — After the report, apply the post-run `Draft → Automated` flip for the cases this run executed green (Step 6.5). Still takes **one** explicit approval — `--promote` opts into the write, it does not bypass the human. Without it Step 6.5 still runs, but **dry**: it prints the per-case decision into the report and writes no CSV.
-- **`--no-promote`** — Skip Step 6.5 entirely, stated in one line. **This is what a DELEGATED run passes** — `/qa-test` `4c` (the C1 exact set) and `5-loop` both do.
+- **`--no-promote`** — Skip Step 6.5 entirely, stated in one line. **This is what a DELEGATED run passes** — `/qa-test`'s Stage 4 regression lane does.
 - **`--no-plan`** — Only meaningful with `sprint` selection. Skips the sprint plan lookup and falls back to the static `sprint` selection group from `config/test-suites.json`. Use when running a generic sprint-scope regression that's not tied to a specific Done sprint plan.
 - **`--frontend` / `--backend`** — Only meaningful with `sprint` / `sprint:XX-YY` selection. After resolving the plan's `suitesActivated[]`, keep only the suites in that layer — `--frontend` → the plan's §5.1.1 Frontend suites (`regression/suites/Frontend/`), `--backend` → its §5.1.2 Backend suites (`regression/suites/Backend/`). Classified by the layer directory each suite's CSV lives under in `config/test-suites.json`. Mutually exclusive; omit both to run the full plan. (These are sprint-scope **modifiers** — distinct from the top-level `frontend`/`backend` selections, which run *all* suites in a layer regardless of any sprint plan.)
 
@@ -272,11 +270,9 @@ the row is linted at its **target** status — and that hold is the correct answ
 **No verifier dispatch.** 6.5's only write is `tc:promote:apply`'s — deterministic, re-derivable from
 the run, field-compared before it lands. The `verify:gate --gate 5g` ratification belongs to **`qa-case-promotion`**.
 
-**A DELEGATED run never promotes.** When another command invoked this one — `/qa-test` `4c` (the C1
-exact set) or `5-loop` — the caller passes `--no-promote` and this step is skipped. `/qa-test`'s own
-promotion step (`5g`) was removed on 2026-09-10 for a **placement** reason that promoting inside its C1
-run would re-create exactly: the cases are minutes old, their assertions unharvested, and the run's
-close-out not yet delivered. **The flag is passed by the caller, never inferred here** — a step that
+**A DELEGATED run never promotes.** When another command invoked this one — `/qa-test`'s Stage 4 regression
+lane — the caller passes `--no-promote` and this step is skipped: promoting inside a run the ticket's
+close-out has not yet delivered would flip cases on a verdict nobody has read. **The flag is passed by the caller, never inferred here** — a step that
 decides for itself whether it is "really" delegated is one that will eventually decide wrong.
 
 
@@ -379,7 +375,7 @@ count and predicted makespan.
 - Always write test-run-status.json (external tools + the live HTML dashboard monitor it — update it at each state change)
 - **Always auto-launch the live dashboard watcher (Step 3) — every run, every mode, without asking.** Spawn `npm run report:regression:watch -- --run-id {RUN_ID}` in the background immediately after writing `test-run-status.json` and before dispatching any suite agent. Never wait for the user to request it or ask whether to launch it — it applies to browser-pool runs and single runner-native suites (e.g. 050m) equally.
 - **Split the suite-by-suite results by layer.** The Step 6 report's results table is written as two subsections — `Frontend Suites` (`regression/suites/Frontend/`) and `Backend Suites` (`regression/suites/Backend/`) — classified by the layer directory each suite's CSV lives under in `config/test-suites.json`, each with its own pass/fail sub-total. Loyalty splits across layers (083/083b → Frontend; 075/075b/075c → Backend); admin/GraphQL suites (050*, 0XX admin) → Backend.
-- **Post-run promotion (Step 6.5) is surfaced on every direct run, written only on `--promote`.** The dry `tc:promote` is read-only and deterministic; the apply takes one human approval, and `Draft → Automated` is never automatic. A run delegated by `/qa-test` (`4c`, `5-loop`) passes `--no-promote` and skips it. 6.5 never harvests assertions — a `{HYPOTHESIS}` hold (`PR-007`) is routed to `qa-case-promotion`, not resolved here
+- **Post-run promotion (Step 6.5) is surfaced on every direct run, written only on `--promote`.** The dry `tc:promote` is read-only and deterministic; the apply takes one human approval, and `Draft → Automated` is never automatic. A run delegated by `/qa-test` (its Stage 4 regression lane) passes `--no-promote` and skips it. 6.5 never harvests assertions — a `{HYPOTHESIS}` hold (`PR-007`) is routed to `qa-case-promotion`, not resolved here
 - Read URLs from .env via `config.js`, never hardcode
 - If >50% suites fail, flag as critical_failure — suggest `/qa-triage-results latest` to classify the failures (real bug vs stale test), or `/qa-test-lifecycle diff` to sync against recent code changes
 - If a browser fails to launch, retry with fallback chain (see Browser Pool table above)

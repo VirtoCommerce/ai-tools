@@ -14,7 +14,7 @@ const P01_DEFAULT = ["p0", "p1", "highest", "high", "blocker", "critical"];
 const projectRoot = () => resolve(process.env.VC_FIX_HOME || process.cwd());
 // qa-design/visual-axis.md §1 source 1 — a rendering file.
 const VISUAL = /\.(vue|scss|css|html)$|\/Scripts\/.*\.html$|\/icons?\/|design-tokens?|_tokens?\.scss$/i; // not a bare "token": TokenService.cs is not a rendering file
-// ticket-routing.md §5c — the change IS the design system.
+// floors.md F8 — the change IS the design system (the `ui-kit` class).
 const UI_KIT = /client-app\/ui-kit\/|_ui-kit-tokens\.scss$|\/_colors\.scss$|\/_dark\.scss$|\/preflight\.scss$|client-app\/assets\/presets\/[^/]+\.json$|\.storybook\/|storybook-styles\/|\.stories\./i;
 // F4 — revenue-critical flows, matched on names only (paths, operations, endpoints, settings, components, domains),
 // never on prose. No word boundary: `shopping_cart.vue`, `CartController`, `addItemToCart` are revenue flows too.
@@ -187,7 +187,7 @@ function baseFloors(bundle, { domainMapText, p01Names, changeMap }) {
   // Fails closed on what was NOT read; a ui-kit path in the part that was read still fires it.
   const f8 = kit.length ? floor("F8", true, `ui-kit files: ${kit.slice(0, 3).join(", ")}${existing.length ? "" : " (all added: a new surface, no PIXEL)"}`,
     ["visual lane", "token audit", ...(existing.length ? [PIXEL_REQUIREMENT] : [])])
-    : floor("F8", false, diffUnread ? `${diffUnread} — F8 fails closed (ticket-routing §5c)` : "no ui-kit file");
+    : floor("F8", false, diffUnread ? `${diffUnread} — F8 fails closed` : "no ui-kit file");
 
   const org = surface.match(ORG);
   const f10 = diffFloor("F10", org ? `org context: ${org[0]}` : null, "no org context in the diff surface", ["an org-context risk with technique MODEL, Source carrying floor:F10"]);

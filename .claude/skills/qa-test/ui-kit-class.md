@@ -1,14 +1,14 @@
 # The UI-kit shape class — what changes when the change IS the design system
 
-**This file is the only place the `ui-kit` shape class is specified.**
-[`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5c owns the *routing* decision — when the
-class applies, what it skips, which axes it defaults ON — and **cites this file** for how to actually run one.
-`commands/qa-test.md` cites both and restates neither, the same discipline
-[`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) holds for the visual axis.
+**This file is the only place the `ui-kit` shape class is specified.** The test strategy's floor F8
+recognises the class and fails closed: without a positive signal the change is not `ui-kit`. The signals are
+a diff under the UI kit, a design-token partial, a theme-preset JSON, or Storybook config or styles; a ticket
+naming a kit primitive, a design token, or a WCAG criterion with no single owning page; or **a removed or
+renamed public custom property**, which puts the reach beyond the diff by construction.
 
-**The class is a third classifier, orthogonal to FLOW and EFFORT.** It never moves a ticket between paths.
-What it changes is the *deliverable* — Artifact A, the `3-cases` gate and `4c`/C1 are skipped, so the
-checklist is the run's entire durable output — and the two axes that come on by default.
+**The class changes no job and no verdict rule.** What it changes is what the run looks at — the visual lane,
+a token audit and a `PIXEL` risk come with F8 — and what the checklist must carry: no `/qa-test` run writes a
+suite case, so the checklist is the run's entire durable output.
 
 It exists because a UI-kit change inverts the pipeline's central assumption. Every other ticket is *a
 feature on a surface*; this one is **the surface itself**, arriving with no ACs, no owning page, no domain,
@@ -158,8 +158,8 @@ what else it moved.
 
 ## 7. The checklist is the ONLY durable record, so a blank row is a defect
 
-With Artifact A skipped there is no case corpus to fall back on and no `4c` run to point at. Everything this
-run knows is in [Artifact B](authoring.md) or it is lost.
+A `/qa-test` run writes no case, so there is no new case to fall back on. Everything this run knows is in
+its testing checklist or it is lost.
 
 Two rules follow, and the close-out gate **REJECTed VCST-5653 on both of them** before approving it:
 
@@ -169,9 +169,8 @@ Two rules follow, and the close-out gate **REJECTed VCST-5653 on both of them** 
    part of the finding — a verifier cannot reproduce the number without it, and an unreproducible number
    is a claim.
 
-**The regression block §5c requires — the `C1` skip, the gate as `not-assessed`, the one-line coverage
-statement — is a ROUTING record and is stated there, not here.** What this file adds is the axis record
-below.
+**The regression record is the strategy's `Coverage triage + regression` row** — its result, or `SKIP` with
+its reason — and is stated there, not here. What this file adds is the axis record below.
 
 **Populate `summary.json.visual.axes.design_system` — for this class it is never legitimately empty.**
 The schema already carries the field (*live resolved custom properties vs the generated token set, no
@@ -236,7 +235,7 @@ design-system class: [`design-system-consistency.md`](../../../plugins/vc-test/s
 ## 11. What this class does NOT cover
 
 **vc-shell / Vendor Portal is a separate product and none of the above applies to it.** It has its own
-hosted Storybook, which is exactly why the exclusion has to be written down — the §5c detection signals
+hosted Storybook, which is exactly why the exclusion has to be written down — the detection signals above
 would otherwise swallow it. No Coffee theme, no gated-preset set, no `BL-UI` invariant scope, no storefront
 selectors, no regression suites. A vc-shell UI task is not a `ui-kit` shape class ticket; see
 [`plugins/vc-fix/skills/vc-shell-fix/SKILL.md`](../../../plugins/vc-fix/skills/vc-shell-fix/SKILL.md) and the VC-SHELL section of `vc-bug-catalog.md`.
@@ -247,5 +246,4 @@ their owners — [`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/vi
 change being the kit itself.
 
 **And it changes no verdict rule.** `5-verdict`'s reconciliation still gates the verdict, the severity floor at `5-file` is unchanged, and
-the class never supplies a release recommendation — with C1 skipped the Feature Release Gate is
-`not-assessed`, never a pass.
+the class never supplies a release recommendation.

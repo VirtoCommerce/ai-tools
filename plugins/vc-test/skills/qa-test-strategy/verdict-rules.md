@@ -1,13 +1,13 @@
 # Verdict rules
 
 The rules that turn a run's results into its verdict. They moved here from this repository's `/qa-test` close-out
-(§5-verdict.1 and §5-verdict.2) and from the `/qa-test-fast` verdict step (the `verdict.md` shape), with the meaning
+(§5-verdict.1 and §5-verdict.2) and from the older fast-path verdict step (the `verdict.md` shape), with the meaning
 of today (spec B6): only outbound references changed.
 
 Labels kept verbatim from this repository's `/qa-test`: `5-verdict.1` = §Reconcile, `5-verdict.2` = §Decide the verdict,
 `5-triage` = the run's triage, `C1` = the ticket's regression (Artifact C1), `Step 4` = the run's execution step.
-§Reconcile is `/qa-test`'s close-out procedure, kept word for word: its `1a`/`1d`/`1e` steps, Artifact B, FULL/FAST,
-`npm run verify:gate`, `compute-metrics.ts`, `ui-ux-expert` and `/qa-regression` exist only in this repository. A vc-test
+§Reconcile keeps the wording of the two-path `/qa-test` it moved from, so its `1a`/`1d`/`1e` labels, Artifact B and FULL/FAST are
+those of that flow and are read as the next section says. `npm run verify:gate`, `compute-metrics.ts`, `ui-ux-expert` and `/qa-regression` exist only in this repository. A vc-test
 run takes its reconciliation from `trace.mjs` (SKILL.md §Reconcile — at close-out) and reads §Decide the verdict and §Shape.
 
 ## Reconcile — AC & DoD vs implementation
@@ -15,18 +15,18 @@ run takes its reconciliation from `trace.mjs` (SKILL.md §Reconcile — at close
 `1d` compared each AC to the *diff* — a hypothesis. This phase closes it against what the agents observed
 **live** (the authoritative AC↔implementation check) and adds the DoD confirmation the `1e` model deferred.
 
-### Where the conditions come from, per path
+### Where the conditions come from
 
-This phase runs on **both** paths — it is what produces the verdict, so 5-verdict has nothing to decide without it.
-But FAST builds neither a `1d` AC table nor a `1e` Test Model, so read every `1d`/`1e` reference below as:
+This phase always runs — it is what produces the verdict, so 5-verdict has nothing to decide without it.
+A run builds no separate `1d` AC table, and a `1e` Test Model exists only when the strategy marked it `RUN`, so read every
+`1d`/`1e` reference below as:
 
-- **FULL** — the `1d` AC table (story ACs + gap-ACs) and the `1e` Test Model's `DoD:` field.
-- **FAST** — the atomic conditions taken straight from `1a`'s ticket ACs, which are the same conditions
-  Artifact B's checklist was built from. The **executed checklist is the condition inventory**, and its
-  per-item verdicts are the evidence. DoD comes from the ticket if it declares one, else `none stated` →
-  `dod_pct: null`.
+- the atomic conditions taken straight from the bundle's ACs, which are the same conditions the checklist was built
+  from. The **executed checklist is the condition inventory**, and its per-item verdicts are the evidence;
+- DoD from the Test Model's `DoD:` field when a model ran, else from the ticket if it declares one, else
+  `none stated` → `dod_pct: null`.
 
-**Do not invent a Test Model table to reconcile against on FAST, and do not skip the reconciliation for want
+**Do not invent a Test Model table to reconcile against when no model ran, and do not skip the reconciliation for want
 of one** — either would silently degrade the AC-coverage percentage the Feature Release Gate consumes.
 
 ### The three moves

@@ -1,30 +1,26 @@
 # The Test Model is a FAULT model
 
-The method of [`/qa-test-model`](SKILL.md), the only builder of a Test Model — `/qa-test` FULL invokes it
-at Step 1e, `/qa-test-fast` in Stage 1. The skill is the procedure; this file is *why*, and the judgment
+The method of [`/qa-test-model`](SKILL.md), the only builder of a Test Model — `/qa-test` invokes it
+at Stage 3 when the strategy's `Test model` row is `RUN`. The skill is the procedure; this file is *why*, and the judgment
 rules the gate cannot mechanise. Fill-in shape:
 [`.claude/templates/test-model.md`](../../templates/test-model.md).
 
 ## What it is for
 
-Distil `1c` context + `1d` story analysis + `1a` scope/domains into one structured model — the fault model
-Step 3 authors cases from. It answers *"how can this feature be wrong, and what would catch each way?"*,
+Distil the ticket context bundle, the story analysis and the scope/domains into one structured model — the fault model
+the checklist items and any later case are derived from. It answers *"how can this feature be wrong, and what would catch each way?"*,
 **not** *"is every acceptance criterion represented?"* Coverage is necessary but it is not the goal, and a
 model that only traces ACs produces a suite that confirms the feature instead of attacking it.
 
-**Required for every Epic and substantial feature, and for every Story except one narrow case; not built on
-the FAST path at all.** The model is what makes the ticket's context understandable and its documentation
-adequate — a job a P2 config tweak does not have. A FAST run states in one line that no model was built
-and proceeds to the Artifact B checklist.
+**Built when the approved strategy's `Test model` row is `RUN`** — it runs if and only if a risk has technique `MODEL`,
+and the strategy's floors decide that, not a ticket type. The model is what makes the ticket's context understandable and
+its documentation adequate — a job a P2 config tweak does not have, so a strategy with no `MODEL` risk builds none and the
+checklist is the run's record.
 
-**The one narrow case, and the guard on it.** A Story narrow on all six of
-[`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5b's tokens routes FAST and therefore
-builds no model — **unless this surface's purpose is `UNDECLARED`, which sends it back to FULL whatever
-the six say.** That guard exists because of reason 2 below: Part 0 is the only place a surface's purpose
-and reverse edges are ever declared, and a Story is the only thing that writes one. A narrow story on an
-undeclared surface is exactly the run that would have declared it, so letting that one take FAST defers
-the declaration indefinitely while looking like a saving. Where Part 0 already exists, the story is
-refining a known mechanism and FAST is honest.
+**The guard on a skipped model.** Part 0 is the only place a surface's purpose and reverse edges are ever declared, and a
+Story is the only thing that writes one, so a surface whose purpose is `UNDECLARED` is a `MODEL` risk whatever else holds
+(`floors.md` F2 in the vc-test strategy skill). A narrow story on an undeclared surface is exactly the run that would have
+declared it; skipping the model there defers the declaration indefinitely while looking like a saving.
 
 ## Part 0 comes first, and the chain is drawn
 
@@ -110,11 +106,11 @@ reasons it cannot be a terminal dump:
    existing model, so "reused" was an aspiration: `reports/ba/test-models/` already carries
    `VCST-5346-2026-08-28.md` **and** `VCST-5346-2026-09-02.md` — one ticket, one surface, two fault
    models, which is the fork the section below forbids arriving by a different door. **Find the prior
-   model** — the ticket's own in its run folders, the surface's in `reports/ba/test-models/` (`1b` item 2-map lists it and the `1c` brief carries the path), then
+   model** — the ticket's own in its run folders, the surface's in `reports/ba/test-models/` (`run:use` and the domain map list them), then
    apply whichever of the **two** rules fits. They are not one rule, and the ticket-keyed filename is what
    makes conflating them easy:
 
-   - **The same ticket, a later `--iterate` round** → **amend that file in place**, never a second dated
+   - **The same ticket, a later round** → **amend that file in place**, never a second dated
      sibling (§One ticket, one model file).
    - **A different ticket on the same surface** → its own **new** `<TICKET>-<date>.md`, which names the
      predecessor in its `Prior model:` header and **carries Part 0 forward**: chain, diagrams, variants and
@@ -126,15 +122,15 @@ reasons it cannot be a terminal dump:
      forward, never re-derived"* governs the **next ticket**.
    - **The domain has a mind map** (`.claude/knowledge/domain/<name>.mind-map.json`, `/qa-test-mind-map`)
      → Part 0 **cites** its node ids in the `Mind map:` header line instead of copying the chain and
-     states from a predecessor, and each case-plan row names its node as `behavior` (persisted as a
-     `Behavior:` stamp by `scaffold-rows.ts`). A disagreement with a node is DRIFT for
+     states from a predecessor, and each case-plan row (written later by `/qa-test-lifecycle`) names its node as `behavior`
+     (persisted as a `Behavior:` stamp by `scaffold-rows.ts`). A disagreement with a node is DRIFT for
      `/qa-test-mind-map update` — never a silent re-draw in this model.
 3. A file is **lintable in principle** — Part 0, the five fault-model parts and the resolved sweeps could
    be checked rather than asserted. **`npm run model:lint` is not implemented**, so today this third reason <!-- doclint:may-not-exist -->
    is an intention, not a gate: do not cite it as though a script were enforcing it. The live deterministic
-   gates are `tc:scaffold` over the authoring plan (1e-plan) and the appender at Step 3.
+   gate is `tc:scaffold` over the authoring plan, run when `/qa-test-lifecycle` authors cases.
 
-### One ticket, one model file — even across `--iterate` rounds
+### One ticket, one model file — even across rounds
 
 `<date>` is **round 1’s** date (the run’s `date` field), and a later round **amends that same file**.
 A same-day round 2 would otherwise collide on the exact path, and a `-r2` sibling is worse than a
@@ -144,26 +140,24 @@ two files for one fault model means that carry-forward picks one at random.
 An amendment is a `## Round N` section of 5–15 lines (the 80–160-line band is per model, not per round)
 and may do exactly three things:
 
-1. mark a hypothesis **CONFIRMED**, with the bug key 5-file filed for it;
+1. mark a hypothesis **CONFIRMED**, with the bug key `/vc-fix:qa-bug` filed for it;
 2. mark one **CLEARED-by-fix**, with the round it went green and the prerelease it went green on;
 3. **add rows for mechanisms the FIX’s diff introduces** — a fix is a change, and it earns the same
-   fault-model treatment the original change got. This is the loop’s one genuinely new coverage
+   fault-model treatment the original change got. This is a later round’s one genuinely new coverage
    obligation, and skipping it is how a fix ships untested.
 
-**One more case, outside the `--iterate` loop — a same-ticket re-run on an UNCHANGED diff** (the
+**One more case — a same-ticket re-run on an UNCHANGED diff** (the
 standalone `/qa-test-model`). There is no fix to model, so none of the three applies. What the
 re-run's gate can still find is an **input the first run missed**: an AC that lives in a custom field,
 an attachment nobody opened. That is recorded as a `## Round N — correction` section, one line per
 corrected clause, and the clause is fixed in place. Nothing else in the file moves.
 
 It may **not** rewrite Part 0. The value chain does not change because a bug was fixed; if it would,
-the fix changed the mechanism, and that is a new ticket rather than a round. The `1e` gate (§The gate)
-re-fires **only on the amendment’s new rows** — inline, no verifier, exactly like the original
-`Model complete | 1e | inline` gate. Round bookkeeping lives in
-`summary.json.iterations.per_round[].artifacts.model_amendment`; the loop contract is
-[`modes.md`](../qa-test/modes.md) §5-loop §Artifact refresh between rounds.
+the fix changed the mechanism, and that is a new ticket rather than a round. The model gate (§The gate)
+re-fires **only on the amendment’s new rows** — inline, no verifier, exactly like the original gate. Round bookkeeping
+lives in the strategy's `## Round N` sections.
 
-The AC table and DoD checklist stay terminal-only; the Artifact B checklist goes to the ticket folder.
+The AC table and DoD checklist stay terminal-only; the testing checklist goes to the ticket folder.
 
 ## The eight rules that make the scenario table a fault model
 
@@ -347,8 +341,8 @@ actors.
 `test-management-specialist` authors the e2e suite cases from this section alongside the `Test scenarios`
 table. **Each `Not allowed` item becomes its own case** — that is the coverage this section exists to buy,
 and it is the row most likely to be deferred as "negative testing we can add later". Target suite is the
-layer's e2e suite (`concern: e2e` in `config/test-suites.json`). Handoff contract:
-[`authoring.md`](../qa-test/authoring.md) §Artifact A.
+layer's e2e suite (`concern: e2e` in `config/test-suites.json`). Authoring contract:
+[`qa-test-cases-generator`](../qa-test-cases-generator/SKILL.md).
 
 ## Strategy mode — the model of a strategy's `MODEL` risks
 
@@ -432,18 +426,17 @@ the reason when the run may not change it — never a silent skip.
 
 **Ticket mode** (no `--strategy`); a strategy-mode model is gated by §Strategy mode instead.
 "Scenarios enumerated" was the old bar and it cannot be wrong. These can. **This list is the normative
-one** — the command's `1e` gate line is its compact checklist, so a clause added or reworded here is
-changed there in the same edit. The count is stated in exactly two places, this heading and that
-checklist (plus the command's gate-table row); **every other file cites the gate without a number**,
+one** — `/qa-test` Stage 3 checks the gate by citing it, never by copying it. The count is stated in exactly one place, this
+heading; **every other file cites the gate without a number**,
 deliberately — three of them once carried `twelve-clause` and all three were stale the moment a
 clause was added (`.claude/rules/test-data.md` §GOLDEN RULE). **`11b` is a clause NAME, not a
-numbering accident** — the command, the template and `domain-map.md` all cite it as `11b`, and it is
+numbering accident** — the template and `domain-map.md` cite it as `11b`, and it is
 nested under 11 because the two read the same token.
 
-1. Ticket **flow + type + path** set (flow = `feature-test` — a `verify-fix` / `hotfix-verify` route never
-   reaches 1e); ACs decomposed to **atomic conditions**; **BL/ECL/domains** and **risk areas** present.
+1. Ticket **job + type** set (job = `test` — a `verify-fix` / `hotfix-verify` route never
+   reaches the model); ACs decomposed to **atomic conditions**; **BL/ECL/domains** and **risk areas** present.
 2. `Value chain` names every link from trigger to what it unlocks, in the user's words, **and the
-   `flowchart` is in the file**. A chain that cannot be written is the finding — go back to `1c`/`1d` rather
+   `flowchart` is in the file**. A chain that cannot be written is the finding — go back to the ticket context rather
    than compensating with per-screen scenarios. A cross-layer or async chain also carries the
    `sequenceDiagram`; a lifecycle or a reversible effect also carries the `stateDiagram-v2`.
 3. `Mechanism coverage matrix` published with **no blank cells** — each variant × link cell holds a scenario
@@ -463,7 +456,7 @@ nested under 11 because the two read the same token.
    blanks, no "TBD", no hypothesis that merely restates the step ("check that X works").
 9. Every oracle is `{BL-…}`/`{SPEC}`/`{DOC}` — or, if `{OBSERVED}`/`{HYPOTHESIS}`, the row says what would
    make it a real oracle. An expected value read off the live system is not an oracle. **A `{DOC}` oracle
-   citing a GraphQL field, arg or response shape must rest on the snapshot `1b` item 2d refreshed *this
+   citing a GraphQL field, arg or response shape must rest on the snapshot the contract refresh (`/qa-test` Stage 3) wrote *this
    run*** — a field name from an unrefreshed `graphql-schema.md` is an expected value of unknown age, and
    when 2d recorded `UNKNOWN` those oracles are `{HYPOTHESIS}`
    ([`contract-refresh.md`](../qa-test/contract-refresh.md) §3). Fixture drift 2d reported on an op the ticket's own
@@ -497,28 +490,26 @@ contradictable while "the matrix is complete" is not:
 [`docs/decisions/qa-test-evolution.md`](../../../docs/decisions/qa-test-evolution.md) ·
 [`knowledge/domain/domain-map.md`](../../knowledge/domain/domain-map.md).
 
-**Both read the `domain_map` token (2g); neither re-derives it** ([`axes.md`](../qa-test/axes.md)).
+**Both read the domain map's state; neither re-derives it** (`/qa-test` §0 Route, domain slug).
 `PRESENT`/`STALE` ⇒ both bind against the map's inventory, and on `STALE` a variant resolving only to a
-stale surface is recorded as such rather than treated as confirmed. **A map built in this run by `1c-map`
+stale surface is recorded as such rather than treated as confirmed. **A map built in this run by `/qa-domain-map` (Stage 1)
 is `PRESENT` here** — it passed the same gate before it was written — and carries `built_in_run: true`.
 `ABSENT`/`unresolved` ⇒ both are
 satisfied by recording `Domain map: ABSENT — chain position unverified`; absence is **written down, not
-blocked**. `1e` is also where 2g's provisional all-layer answer is CONFIRMED — Part 0 now exists, so set
-`domain_map.all_layer_confirmed_at: "1e-confirmed"` and correct `all_layer_chain` if the chain disagrees
-with the `1b` guess. That correction is the axis working, not a defect.
+blocked**. Part 0 is also where the domain's all-layer chain is CONFIRMED: if the chain disagrees with the
+map's, correct it in the model and record the drift for `/qa-domain-map`. That correction is the gate working, not a defect.
 
 A missing atomic condition or `ba-system-analyzer` risk area is added before moving on. No fresh-`qa-lead`
 dispatch here — this is the doer's own completeness check.
 
 ### Why clauses 11, 11b and 4 exist — the three the other nine cannot replace
 
-`commands/qa-test.md` §1e lists the twelve as a checklist and cites this section for the argument.
 Each of these three was added after a measured run in which every OTHER clause passed.
 
 **These two catch what the other ten cannot: every one of clauses 1–10 passes on a narrow chain.** 11
 makes the omission contradictable — naming the links you did *not* cover invites challenge, "the matrix is
 complete" does not. 11b stops a **false-premise case**: a variant that resolves to no enumerated surface.
-The measured run behind both is VCST-5317: a FULL run with three verifier gates, a 17-scenario model and
+The measured run behind both is VCST-5317: a run with three verifier gates, a 17-scenario model and
 34 authored cases, all matrix cells filled, which never asked *is this chain a slice of a larger
 mechanism?* — its chain covered one predicate on one control, of a feature spanning 35 suites and 585
 cases across three layers. It also authored a Critical case asserting a component *does not exist* (the
@@ -535,9 +526,9 @@ one model on VCST-5735 and both presented as a full matrix —
 [`skills/qa-test-model/test-model.md`](test-model.md) §The matrix is only a check.
 
 **The sweeps are present here and RESOLVED at Step 2 — the two are different gates and the ordering is
-not negotiable.** Step 2 is what loads the `VC-*` catalog entries and the `UIP-*` probe set, so a `1e` gate
+not negotiable.** Step 2 is what loads the `VC-*` catalog entries and the `UIP-*` probe set, so the model gate
 demanding them resolved would demand an answer from inputs that have not been read yet (the template marks
-all four rows *"filled in Step 2"* for exactly this reason). What `1e` owns is that the rows **exist**, so
+all four rows *"filled in Step 2"* for exactly this reason). What the model gate owns is that the rows **exist**, so
 Step 2 cannot quietly skip a sweep nobody wrote a line for.
 
 ## Worked references

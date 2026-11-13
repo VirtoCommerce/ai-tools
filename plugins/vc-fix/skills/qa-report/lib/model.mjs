@@ -90,7 +90,7 @@ export function fromQaTest(path) {
     bugs: (s.bugs_filed ?? []).map(b => bugEntry(
       b.key, b.title ?? "", b.severity ?? "", (b.relationship ?? "").replace(/\s+(?:of\s+)?[A-Z]+-\d+$/, ""))),
     // An in-scope finding is the ticket's own unfinished work, not a tracker item: one row each, and
-    // `status` only once an --iterate round has re-run it ("still failing at round 2", "green on <PR>").
+    // `status` only once a re-test round has re-run it ("still failing at round 2", "green on <PR>").
     toFix: (s.to_fix ?? []).map((t, i) => ({
       id: t.id ?? `F-${i + 1}`, what: String(t.what ?? "").replace(/\s+/g, " ").trim() || "(untitled)",
       severity: t.severity ?? "", ref: t.ref ?? "", status: t.status ?? "open", report: t.report ?? "",

@@ -46,7 +46,7 @@
    `npm run suites:filter -- … --ids <IDs> --out … --scope-out …` selects precisely those cases and
    reads no `Priority` at all — so an unreadable one is *not* a finding on this path (nothing
    consulted it). It is mutually exclusive with `--priority`/`--also-ids`, and it is what
-   `/qa-test` `5-loop`'s RED→GREEN track re-runs exactly the previously-failed cases. **An
+   a re-run of exactly the previously-failed cases (a new `/qa-test` round) uses. **An
    empty `tiers` in the sidecar therefore means *ids-only*, never *unfiltered*** — `sourceCases` is
    still the denominator, and `--scope-out` is just as mandatory. On an ids-only run **most suites in
    the selection legitimately contribute zero cases**, so the zero-kept line stops being an edge case

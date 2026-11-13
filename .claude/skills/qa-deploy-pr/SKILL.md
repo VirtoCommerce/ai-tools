@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # /qa-deploy-pr — deploy a change's PR artifacts to the test env
 
-`/qa-test PR #N` and `/qa-verify-fix <ticket-key>` both need the change **live on the test
+`/qa-test <TICKET>` (its PRs come from the ticket context) and `/qa-verify-fix <ticket-key>` both need the change **live on the test
 environment** before they test/verify — today they only *detect* whether it is deployed and
 warn-and-wait. This skill closes that gap. A real change is rarely one PR: a feature/fix spans
 a module + its xAPI + the storefront, each with its own fresh CI prerelease artifact. This

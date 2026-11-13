@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /qa-deploy-pr — Deploy a change's PR artifacts to the test env
 
-Close the "artifact not deployed" gap that `/qa-test PR #N` and `/qa-verify-fix <ticket-key>`
+Close the "artifact not deployed" gap that `/qa-test <TICKET>` (its PRs come from the ticket context) and `/qa-verify-fix <ticket-key>`
 only detect-and-wait on today. A change usually spans several PRs (a module + its xAPI + the
 storefront); this **gathers every fresh CI prerelease artifact and repins them together, in one
 manifest update**, on the env's `vc-deploy-dev` branch — then a **human merges** to deploy.

@@ -138,7 +138,7 @@ for (const f of files) {
       if (!target) continue;                              // DOC-003 owns a missing file
       const hs = headings(target);
       if (!hs) continue;
-      // A citation may trail into prose ("§Artifact A says ..."), so a match on the first two
+      // A citation may trail into prose ("§Existing-Coverage Triage says ..."), so a match on the first two
       // words of the cited name counts — the point is that the section EXISTS, not that the
       // sentence stopped at the right word.
       const prefix = want.split(/\s+/).slice(0, 2).join(' ');

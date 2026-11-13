@@ -8,7 +8,7 @@
  *   npm run tc:scope -- --suite 091,093 --observable salesRepOrders --cases critical
  *
  * WHY THIS EXISTS. `/qa-test` read the existing corpus in exactly one direction — "which suites
- * cover this, so I author only the gaps" (`skills/qa-test/authoring.md` §Artifact A) — and never in
+ * cover this, so I author only the gaps" — and never in
  * the other: "which existing rows does this change make WRONG?". So a stale case was reachable only
  * by FAILING at Step 4 and being triaged at 5-triage. That is reactive by construction, and three
  * independent things stop the failure ever happening:
@@ -600,7 +600,7 @@ export function formatReport(r: ScopeResult, args: Args): string {
 
   if (r.hits.length > 0) {
     L.push("");
-    L.push("At-risk rows — classify each, then dispose per skills/qa-test/coverage-triage.md §3:");
+    L.push("At-risk rows — classify each, then dispose per .claude/knowledge/execution/regression-selection.md §Existing-Coverage Triage:");
     const bySuite = new Map<string, CoverageHit[]>();
     for (const h of r.hits) bySuite.set(h.suiteId, [...(bySuite.get(h.suiteId) ?? []), h]);
     for (const [suiteId, rows] of [...bySuite.entries()].sort()) {

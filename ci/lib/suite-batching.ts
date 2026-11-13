@@ -7,7 +7,7 @@
 //
 // WHY NOT ONE AGENT PER LANE, which is what the 2026-09-07 audit's §6 item 9 actually proposed.
 // That would be 3 sessions of ~1,230 cases. The corpus's own measurement is an artefactual-BLOCKED
-// rate of **19.9% overall and 28.6% on suites of 81+ cases** (`skills/qa-test/coverage-triage.md`):
+// rate of **19.9% overall and 28.6% on suites of 81+ cases** (`.claude/knowledge/execution/regression-selection.md` §Existing-Coverage Triage):
 // session length is the driver, so item 9 as written buys tokens by degrading the verdict — in the
 // pipeline whose only product is a verdict. A bound is what makes the saving safe to take.
 //
