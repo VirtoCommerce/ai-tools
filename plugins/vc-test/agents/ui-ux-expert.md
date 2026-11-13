@@ -33,7 +33,7 @@ In the skill's base directory unless marked `<plugin>/knowledge/`.
 | the a11y axis | `a11y-audit.md`, then `<plugin>/knowledge/wcag-accessibility-checklist.md` (the recipes) |
 | the design-system axis | `design-system-consistency.md`, `lane-reference.md` §Design system |
 | the `vs. DESIGN` axis | `claude-design-verification.md` — §3 the diff protocol, §4 precedence |
-| a page or flow: the `vs. USER` axis | `ux-task-walkthrough.md` — tasks, persona, real-user rules, what to observe, severity by task outcome |
+| a page or flow: the `vs. USER` axis | `ux-task-walkthrough.md` — tasks, real-user rules, what to observe, severity by task outcome; `personas.md` — who each task runs as, their account, and what only a second persona shows |
 | naming why a step was hard | `ux-heuristic-evaluation.md` (Nielsen's 10, the severity rubric) |
 | anything that differs per project — storefront repo, Storybook, presets, scales, matrix, kb (platform vs a client fork) | `project-facts.md` |
 | choosing what to audit — hints on a `client` fork (`project-facts.md`) (`npm run scope:validate`, in this repository, checks cell→case references only and gates nothing) | `<plugin>/knowledge/critical-ui-scope.md`, `<plugin>/knowledge/storefront-selectors.md`, `<plugin>/knowledge/storefront-config-flags.md` |

@@ -108,7 +108,8 @@ plus the artboard its `file=` param names** (there is no `DESIGN_SYSTEM_PROJECT_
 2026-09-03; if the ticket carries no design link, the brief says so and the axis returns `SKIPPED`) · the
 `BL-A11Y-*` / `BL-UI-*` invariant **text** (not just the IDs) · the screenshot path · the verdict vocabulary
 below · for a page or flow, **the user tasks** for `vs. USER` — one per AC a user acts out, in the user's words, with the
-persona each belongs to (none given ⇒ the agent derives them, [`ux-task-walkthrough.md`](ux-task-walkthrough.md) §1).
+persona each belongs to and its account KEY, plus any contrast persona the run must cover (none given ⇒ the agent
+derives them, [`personas.md`](personas.md) §2–§3).
 
 **Two things the brief MUST also carry, each of which cost a real run when it did not.**
 

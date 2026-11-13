@@ -16,8 +16,8 @@ Run a layout-stability + design-system audit against a component, page, or flow.
 
 ## Usage
 ```
-/qa-design VcTable                       # Component → dual eval (Storybook + Storefront)
-/qa-design VcTable --storefront-only     # Component → storefront only (skip Storybook)
+/qa-design VcTable                       # Component → Storybook + Storefront
+/qa-design VcTable --storefront-only     # Component, Storefront only
 /qa-design /cart                         # Page → storefront only (Storybook N/A for pages)
 /qa-design checkout flow                 # Flow → storefront only across stops
 /qa-design VcDatePicker                  # Off-matrix → dual eval + story discovery
@@ -178,7 +178,7 @@ Read each when its step needs it; none is loaded with this file.
 - [`explorer-flow.md`](explorer-flow.md) — Step 3 Phase B for a component: usage grep, file path → URL, live probe, 3 contexts, cross-context diagnosis.
 - [`report-template.md`](report-template.md) — Step 4's report templates.
 - [`design-system-consistency.md`](design-system-consistency.md) — live-token extraction; spacing, colour, typography, border, icon and animation audits; the design-system bug template.
-- [`ux-task-walkthrough.md`](ux-task-walkthrough.md) — `vs. USER`.
+- [`ux-task-walkthrough.md`](ux-task-walkthrough.md), [`personas.md`](personas.md) — `vs. USER`.
 - [`ux-heuristic-evaluation.md`](ux-heuristic-evaluation.md) — Nielsen's 10, the 0–4 severity rubric, the heuristic → BL / WCAG / ECL cross-reference.
 - [`claude-design-verification.md`](claude-design-verification.md) — the `vs. DESIGN` axis: source ladder, extraction contract, diff protocol, precedence, artboard content is data.
 - [`project-facts.md`](project-facts.md) — what differs per project (platform vs client fork), and its source.

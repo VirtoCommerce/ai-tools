@@ -14,11 +14,10 @@ them?* — and answers it from what was on the screen, never from the DOM, the s
   the page's primary job — what a user comes to that route to do (a PDP: choose a variant and add it to the cart;
   a cart: change a quantity and reach checkout). Write each as the user would say it: *"reorder what I bought last
   month"*, never *"click #reorder-btn"*.
-- **Persona.** The actor the task belongs to: guest shopper, signed-in customer, B2B organization buyer, its
-  approver or admin, a sales rep. Sign in as that persona's **account role** (the agent's §2 Signing in). A
-  role-gated task signed in as anyone else meets an empty state that **reads as a pass** — no role in the brief
-  for such a task ⇒ ask the dispatcher, never guess.
-- **Where the user starts.** Where a real user would: the home page, a search, the account menu, the link an
+- **Personas.** Each task runs as its own actor plus one contrast persona the change puts at risk — the catalog,
+  the account for each, the matrix and its cap: [`personas.md`](personas.md). A persona sets the account, the
+  entry point, the device and how you act; never sign in as another persona to make a task possible.
+- **Where the user starts.** Where that persona would (its row in [`personas.md`](personas.md) §1): the home page, a search, the account menu, the link an
   email or notification gives them. A deep URL only when a user would really have it (a bookmark, a shared
   link) — say which.
 
@@ -38,9 +37,9 @@ them?* — and answers it from what was on the screen, never from the DOM, the s
    a member) runs to the end only on a stand the project declares writable (`test.environments`; vc-test's
    `lib/capabilities.mjs`). On a read-only stand stop before the committing action and record the task
    `NOT RUN — read-only stand` for that last step; everything before it still counts.
-6. **Twice:** at desktop width, then at the narrowest width of the viewport sweep
-   ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure). Keyboard-only completion belongs to the
-   a11y axis (`BL-A11Y-001`) — do not repeat it here.
+6. **On the persona's device** — desktop, the narrowest width of the viewport sweep
+   ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure) for the mobile shopper, keyboard only for
+   the keyboard / screen-reader user ([`personas.md`](personas.md) §1).
 
 ## 3. What to observe at every step
 
@@ -72,7 +71,7 @@ invariant FAIL on the same step outranks a UX finding, and the axis never rescue
 
 ## 5. What you return
 
-One row per task, then one row per finding:
+One row per task **and persona**, then one row per finding, then the persona matrix ([`personas.md`](personas.md) §5):
 
 ```
 | Task | Persona | Completed | Steps (taken / intended) | Verdict |

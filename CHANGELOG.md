@@ -37,6 +37,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   and flow surfaces and the brief carries the tasks. Think-aloud, five-second and first-click tests are marked as
   human-session methods the agent recommends and never runs; a UX finding is no longer "must be filed" by the
   agent.
+- **Persona tests.** New `skills/qa-design/personas.md`: a catalog — first-time guest, returning customer, B2B
+  buyer, approver / org admin, restricted member, acting on behalf, mobile shopper, keyboard / screen-reader user,
+  other-locale shopper — where each persona sets the account, entry point, device and how the agent acts. Each
+  `vs. USER` task runs as its own actor plus one contrast persona the change puts at risk (capped at three per
+  task, six runs in all), and the runs are compared: a restricted member reaching data it must not see is a
+  `FAIL` reported as access control; a dead end instead of a clear denial, or one persona needing far more steps,
+  is `ADVISORY`. A persona with no account on the stand is `NOT RUN`, never signed in as someone else.
 - Storybook story discovery starts from `{STORYBOOK_URL}/index.json`, which a fork's Storybook serves too, before
   vc-frontend's title convention.
 
