@@ -8,6 +8,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## vc-test installs its own dependencies at session start — `vc-test` `0.17.1`, `vc-fix` `0.18.9`, `vc-init` `0.6.2` — 2026-11-13
+
+### Fixed
+
+- `vc-test` ships a `SessionStart` hook (`hooks/ensure-deps.mjs`, the same one `vc-fix` and `vc-init` carry) that runs
+  `npm install --omit=dev` in the plugin folder when a dependency from its `package.json` is missing. A marketplace
+  install or `/plugin update` creates a fresh cache folder without `node_modules`, so `/vc-test:ticket-context`
+  failed with `ERR_MODULE_NOT_FOUND: dotenv` until someone ran `npm install` there by hand. Fail-soft: a failed
+  install prints the manual command and never blocks the session.
+- `ensure-deps.mjs` in `vc-test`, `vc-fix` and `vc-init` no longer passes `--prefix <plugin root>` to npm: it already runs
+  there, and on Windows (`shell: true`) the unquoted path split at a space (a profile such as `C:\Users\John Smith`),
+  so the install failed and the plugin kept failing with `ERR_MODULE_NOT_FOUND`.
+
 ## Every strategy risk names the account it is checked as — `vc-test` `0.17.0`, `vc-fix` `0.18.8` — 2026-11-13
 
 ### Added
