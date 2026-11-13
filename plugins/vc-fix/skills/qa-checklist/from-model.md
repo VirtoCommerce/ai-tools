@@ -77,6 +77,9 @@ The strategy is the authority for **what** is tested; the model only details its
 - **Every in-scope risk is an item or an omission line.** A risk whose technique is not `MODEL` becomes
   items straight from the strategy: its *what a customer would see* is the Condition, its Approach row's
   oracle and authority the Oracle, its layer the lane (step 6), its Data cell the data strategy (step 5).
+  The Data cell opens with the account the risk is checked as, from its Approach `Lane · agent · account`
+  cell: `as ORG_USER · @td(…)` (`as guest`, `as deny:<permission> <KEY>`, `as P3`, `as A + B` copied as written).
+  A `MODEL` risk's scenario items take it the same way.
   The technique shapes the items — `DT` one per rule, `BVA` the boundaries, `ST` the transitions.
 - **A `MODEL` risk is reached through the model's scenario rows** (step 2), which carry its `R<n>` — the rows of
   the model section headed with this strategy round, plus the earlier rows that section declares still valid. An

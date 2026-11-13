@@ -1,4 +1,4 @@
-// plugins/vc-test/skills/qa-test-strategy/lib/floors.mjs — the floors F1–F12, computed from the /ticket-context bundle.
+// plugins/vc-test/skills/qa-test-strategy/lib/floors.mjs — the floors F1–F13, computed from the /ticket-context bundle.
 // R2 of the /qa-test redesign: a floor is a gate rule, never a model judgment. This script reads signals; it
 // never chooses a risk. F9 (doubt ⇒ the floor applies) is built in: a signal that cannot be read fires its floor.
 import { existsSync, readFileSync } from "node:fs";
@@ -25,6 +25,13 @@ const REVENUE = [/cart|checkout|payments?|pric(?:e|es|ing)|quotes?/i, /(?<![A-Za
 const PARTIAL = /^pr:([^:]+)(?::[^:]+)*:(diff|patches|files)$/;
 // F10 — B2B org context (test-model redesign §5).
 const ORG = /organizationId|organization_id|xapi:my_organization|my_organization|\/organizations?\b|sales-rep|salesrep|loginOnBehalf|CanImpersonate|impersonat/i;
+// F13 — the change checks a PERMISSION. Role names are a project's own (a client renames or adds roles), so a role name or
+// an AC actor is never a signal; the platform's permission checks are. Case-sensitive on purpose: `XApiPermissions.CanX`
+// and `Permissions.Approve` are permissions, `permissions.ts` / `permissions.length` are not. Grounded in vc-platform
+// (`PermissionAuthorizationRequirement`, `…AuthorizationHandler`, `AuthorizeAsync`, `HasGlobalPermission`) and vc-frontend
+// (`checkPermissions(XApiPermissions.…)`, `$can($permissions.xApi.…)`).
+export const ACCESS_GUARD = /\[Authorize\b|Permissions?\.[A-Z]\w*|\$permissions\.|\bHasGlobalPermission\b|\b[Cc]heckPermissions?\(|\$can\(|Authoriz(?:ation)?(?:Handler|Requirement)\b|\bAuthorizeAsync\b/;
+const F13_REQUIRES = ["a risk with Source floor:F13 whose account is deny:<permission> <KEY|P-n> — the KEY chosen by the permissions it holds on the stand, never by its role name (floors.md §15)"];
 // F11 — configuration (test-model redesign §5a, layers 1–3).
 const CONFIG = /ModuleConstants\.Settings|settingsManager|SettingsManager|store\.settings|\$cfg\./;
 // F11 — a settings entry is the CHANGE agent's prose; only a named key is a signal. A dotted PascalCase key
@@ -202,8 +209,17 @@ function baseFloors(bundle, { domainMapText, p01Names, changeMap }) {
     : floor("F12", zoned.length > 0, zoned.length ? `significant-zone hotspots: ${zoned.slice(0, 5).map((h) => `${h?.id ?? "?"} (${zoneOf(h) ?? "no zone — doubt"})`).join(", ")}`
       : "no hotspot in a significant zone", f12req);
 
+  const perm = prs.flatMap(settingsOf).find((s) => /permission/i.test(s));
+  const guard = surface.match(ACCESS_GUARD);
+  const accessSpots = Array.isArray(spots) ? spots.filter((h) => zoneOf(h)?.toLowerCase() === "access").map((h) => h?.id ?? "?") : [];
+  const f13signal = perm ? `permission: ${perm.slice(0, 60)}` : guard ? `access guard: ${guard[0]}`
+    : accessSpots.length ? `access hotspot: ${accessSpots.slice(0, 5).join(", ")}` : null;
+  // On doubt no permission is known: Out of scope naming F13 answers it (clause 15b), never an invented deny risk.
+  const f13 = diffFloor("F13", f13signal, "no access check in the diff surface", f13signal ? F13_REQUIRES
+    : ["a floor:F13 deny: risk if the unread diff checks access, else Out of scope naming F13 and the unread diff (clause 15b)"]);
+
   return { product_prs: prs.length, floors: [f1, f2, f3, f4, f5, f6, f7, f8,
-    floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11, f12] };
+    floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11, f12, f13] };
 }
 
 /** A JSON file, or one line naming the file and the reason, then exit 2 — never a stack trace. */

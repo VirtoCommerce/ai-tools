@@ -1,4 +1,4 @@
-# Floors F1–F12, the staleness check, and the depth label
+# Floors F1–F13, the staleness check, and the depth label
 
 **Floors are deterministic.** Each is computed by `lib/floors.mjs` from the `/vc-test:ticket-context` bundle; this table is what the
 script implements and what a reviewer checks it against. F1's register half (a High/Critical risk) is checked by
@@ -25,6 +25,7 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 | F10 | the change surface names org context: an `organizationId`-style argument, `xapi:my_organization:*`, an org route or list, `/graphql/sales-rep` or a `sales-rep:*` permission, `loginOnBehalf` / `CanImpersonate` / `/account/impersonate` | an org-context risk with technique `MODEL` whose Source carries `floor:F10` |
 | F11 | the PR adds or changes a setting (a settings entry names its key — see below), a hidden-behaviour row answers `yes` for `feature-flags` / `default-values`, or the diff reads one (`ModuleConstants.Settings`, `settingsManager`, `store.settings`, `$cfg.`) (§5a) | a configuration risk with technique `MODEL` whose Source carries `floor:F11`, + the stand's values in Inputs (`npm run store:caps -- --settings` / `--store` for public settings, the admin REST API for the rest — SKILL.md step 2) |
 | F12 | vc-test's layer-0 change map (`--change-map`) has a hotspot whose `zone` is not `none` — access, money, data, order state, buyer path. Without a change map it never fires (vc-test spec U47); with one, a map with no hotspots list or a hotspot with no zone fires it (F9). The strategy's `Change map:` line names the map (gate clause 6g) | exploratory, its charter covering those hotspots |
+| F13 | the change checks a **permission**: a settings entry names a permission, the diff surface holds a permission check (`[Authorize`, `…Permissions.<Name>` such as `XApiPermissions.CanEditOrganization`, `$permissions.`, `$can(`, `checkPermissions(`, `HasGlobalPermission`, an `…AuthorizationHandler` or `…AuthorizationRequirement`, `AuthorizeAsync`), or the change map has a hotspot in zone `access`. A role name or an AC actor is not a signal: roles are each project's own, permissions are the platform's | a risk whose Source carries `floor:F13`, checked as `deny:<permission> <KEY|P-n>` — a member without that permission (clause 15b); the roles by [`personas.md`](../qa-design/personas.md) §1, the KEY per §3 and §15 |
 
 ## Unavailable
 
@@ -77,9 +78,9 @@ not have — a change that declares no visual effect or moves shared UI), `DESIG
 - **F9 is built into every floor except F8, F4 and F6:** a floor that cannot be read fires, with a `doubt:`
   signal. That is: no priority (F1), no type (F2, F7 — then F7 requires only F5 on), a domain map that is not
   `PRESENT` (F2), F5 when no case is at risk (a `known.domain` gap or a failed `known.tc:scope` /
-  `known.regression:select` lookup), and F3, F10, F11 as the next bullet says. **F4** needs a named flow to apply and **F6** needs
+  `known.regression:select` lookup), and F3, F10, F11, F13 as the next bullet says. **F4** needs a named flow to apply and **F6** needs
   a `NOT DEPLOYED:` line: both read only what was read, and neither doubts.
-- **F3, F10, F11: a positive signal first.** Each is computed from the part of the diff that was read, and when
+- **F3, F10, F11, F13: a positive signal first.** Each is computed from the part of the diff that was read, and when
   it matches, the floor fires with that signal. Only when nothing read matches **and** part of the diff is
   unread does it fire with `doubt:`; "not fired" needs the whole diff read. The diff is (partly) unread on:
   a whole-PR gap on a product PR, a `change` / `change.*` gap except `change.deployed` (even beside a read PR;
@@ -133,9 +134,9 @@ The stale rows are listed in the strategy's Artifacts row with their reason and 
 In the strategy it is computed from the planned `RUN` rows; at close-out, from what ran. The label is for people reading reports. No rule, floor or gate reads it, so it cannot drift from what ran.
 It never appears in a risk row; a risk carries **effort** (`low` / `medium` / `high`, D12).
 
-## Clause 11 — every strategy; clauses 12–13 — vc-test runs
+## Clause 11 — every strategy; clauses 12–13 — vc-test runs; clause 15 — every strategy
 
-The script half of SKILL.md §Gate clauses 11–13. **Clause 11 runs on every strategy** — `/qa-test`, `/qa-test-fast` and vc-test alike (U57 and U58 are general rules). It reads the `Project risks:` line; an item is a `P<n>` that starts the line or follows a `·` or a sentence end (`.` or `;`), so a `P95 2s` inside an item is not an item. 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
+The script half of SKILL.md §Gate's clauses from 11 on. **Clause 11 runs on every strategy** — `/qa-test`, `/qa-test-fast` and vc-test alike (U57 and U58 are general rules). It reads the `Project risks:` line; an item is a `P<n>` that starts the line or follows a `·` or a sentence end (`.` or `;`), so a `P95 2s` inside an item is not an item. 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
 
 ### 11a — a project risk is not a product risk (U58)
 
@@ -167,3 +168,9 @@ A vc-test run lists its scenarios in `### Scenarios` (columns `S | Class | What 
 - **(c)** `Class` is a number 1–6, U60's six classes in its order; anything else ⇒ `13: S-1 Class "7" is not 1–6`.
 
 **6e under vc-test.** With a change map, 6e no longer requires `Test model` RUN for a MODEL risk — the scenarios carry it, so write `SKIP — scenarios cover the MODEL risks`; check (b) is the replacement. `Test model` RUN with no MODEL risk is still refused. Without a change map, 6e and clause 13 behave as before (no `### Scenarios` heading is read or required).
+
+### 15 — an account on every risk
+
+The Approach table's `Lane · agent · account` cell: its last `·` segment is the account the risk is checked as — a test-user KEY (`ORG_USER`), `guest`, `deny:<permission> <KEY|P-n>` (that member, without the permission), `spec` for a committed .spec (it signs in itself), or `P-n` when the stand has none; several actors on one risk are joined by `+` (`ORG_USER + ORG_ADMIN`). **15a** every row names one in that form (a `SKIP` lane, a `BLOCKED` row and a `TBD — strategy agent` cell are exempt; clause 14 owns TBD, and `rounds.mjs append` gives a carried row with no account one; a `none · ac-checks` row is not exempt — the AC run calls as its account). **15b** F13 fired ⇒ a risk whose Source carries `floor:F13` has a `deny:` account; fired only on doubt (no permission is known), Out of scope naming F13 and the unread diff answers it instead. **15c** every `P-n` an account names is on the `Project risks:` line.
+
+**Choosing the KEY** (the model-owned half, re-derived by the verifier): by the **permissions** the account holds on the stand, never by a role name — a client project names and composes its roles its own way, so the same role name can carry other permissions there. The KEY per [`personas.md`](../qa-design/personas.md) §3 — a key name is a claim, so the account's permissions are checked on the stand at entry. A `deny:` KEY must **lack** the permission there (holds it ⇒ another KEY, or `P-n`), and the permission is the one the diff checks. **Two risks that can run in the same wave never share a KEY** when either writes what that account owns (cart, orders, lists, profile): `plan-run.mjs` keeps waves apart only by lane and settings, so give each its own KEY; a stand with one such account makes the second risk `P-n` — the pool exists for this ([`live-discovery.md`](../../knowledge/live-discovery.md) §Test isolation in parallel runs).

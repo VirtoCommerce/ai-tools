@@ -69,6 +69,7 @@ import { validate } from "../skills/ticket-context/lib/schema.mjs";
 import { prEntry, prKey } from "../skills/ticket-context/lib/compose.mjs";
 import { rows as tableRows } from "./strategy-artifacts.mjs";
 import { priorRunDirs } from "../scripts/lib/run-dir.mjs";
+import { accountExempt, hasAccount } from "../skills/qa-test-strategy/lib/check-strategy.mjs";
 
 const CAP = 3;
 const ESCALATE_TO = "the developer, the PO and the QA lead";
@@ -485,15 +486,22 @@ const cell = (s) => String(s ?? "").replace(/\|/g, "/").replace(/\s+/g, " ").tri
 const rawRows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-]+$/.test(l)).slice(1).map((line) => ({ line, cells: line.split("|").slice(1, -1).map((c) => c.trim()) }));
 const blockOf = (sec, heading) => new RegExp(`^### ${heading}[ \\t]*\\n([\\s\\S]*?)(?=\\n### |(?![\\s\\S]))`, "m").exec(sec)?.[1] ?? "";
 const RISKS_HEAD = "| R | What a customer would see if this is wrong | Source | L×I | Level |\n|---|---|---|---|---|";
-const APPROACH_HEAD = "| R | Technique / approach | Oracle {authority} | Layer · tool | Lane · agent | Effort |\n|---|---|---|---|---|---|";
+const APPROACH_HEAD = "| R | Technique / approach | Oracle {authority} | Layer · tool | Lane · agent · account | Effort |\n|---|---|---|---|---|---|";
 const SCENARIOS_HEAD = "| S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes |\n|---|---|---|---|---|---|---|---|";
 const PRIOR_HEAD = "| PB | Bug | Severity | Found | Reproduction | R |\n|---|---|---|---|---|---|";
 const RECON_HEAD = "| R | Planned | Ran (item ids · charter · lane · case ids) | Result | Deviation — reason |\n|---|---|---|---|---|";
 
+/** A carried Approach row with no valid account (drafted before clause 15) gets a TBD the strategy agent fills. */
+const withAccount = ({ line, cells }) => {
+  const lane = cells[4] ?? "";
+  if (accountExempt(lane) || hasAccount(lane)) return line; // the gate's own test (check-strategy.mjs clause 15)
+  return `| ${cells.map((c, i) => (i === 4 ? `${lane} · ${TBD}` : c)).join(" | ")} |`;
+};
+
 /** How a prior bug is reproduced (P4): its .spec through the runner, else its package on a browser lane, else nothing. */
 function proofOf(b) {
-  if (b.spec) return { repro: `spec ${b.spec}`, layer: "spec · Playwright runner", lane: "node · playwright test", effort: "low" };
-  if (b.package) return { repro: `package ${b.package}`, layer: "the package's layer · Playwright", lane: "chrome · qa-frontend-expert", effort: "medium" };
+  if (b.spec) return { repro: `spec ${b.spec}`, layer: "spec · Playwright runner", lane: "node · playwright test · spec", effort: "low" };
+  if (b.package) return { repro: `package ${b.package}`, layer: "the package's layer · Playwright", lane: `chrome · qa-frontend-expert · ${TBD}`, effort: "medium" };
   return { repro: "none", layer: "—", lane: "none · BLOCKED — no reproduction recorded", effort: "low" };
 }
 
@@ -524,14 +532,15 @@ export function appendRound({ strategyMd, delta, env, date, changeMapPath = null
     const row = riskRows.find((x) => x.cells[0] === r);
     if (!row) {
       risks.push(`| ${r} | ${TBD} (Round ${p} ${r} is in no Risks row) | carried from Round ${p} ${r} | — | ${TBD} |`);
-      approach.push(`| ${r} | ${TBD} | — | — | — | — |`);
+      approach.push(`| ${r} | ${TBD} | — | — | ${TBD} | — |`);
       continue;
     }
     const [, what = "", source = "", li = "", level = ""] = row.cells;
     const tokens = source.split("·").map((t) => t.trim()).filter((t) => t && !/^carried from Round\b/i.test(t));
     risks.push(`| ${r} | ${what} | ${[...tokens, `carried from Round ${p} ${r}`].join(" · ")} | ${li} | ${level} |`);
     carriedText.set(what, r);
-    approach.push(approachRows.find((x) => x.cells[0] === r)?.line ?? `| ${r} | ${TBD} | — | — | — | — |`);
+    const prevRow = approachRows.find((x) => x.cells[0] === r);
+    approach.push(prevRow ? withAccount(prevRow) : `| ${r} | ${TBD} | — | — | ${TBD} | — |`);
   }
   for (const b of delta.priorBugs ?? []) {
     const what = `${cell(b.title)} is fixed, and nothing next to it broke`;
