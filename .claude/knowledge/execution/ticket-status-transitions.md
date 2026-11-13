@@ -53,7 +53,7 @@ Everything below is that sentence's edge cases.
 
 | | Opening hop | Closing hop |
 |---|---|---|
-| **Where** | **Stage 0, immediately after the ticket routes to the `test` job** — before preflight, and long before the first agent is dispatched | 5-status, strictly **after** the report is posted |
+| **Where** | **Stage 0, once the run is accepted** — after routing to the `test` job, preflight and the same-build re-run question, and long before the first agent is dispatched | 5-status, strictly **after** the report is posted |
 | **To** | the ticket's in-testing status, discovered live | `TESTED` / `REOPEN` / nothing — §4 |
 | **Confirm?** | **No.** It is the direct, reversible consequence of the operator invoking the command, and asking adds a prompt to every run for a move the operator already implied | **Yes — ask.** It is terminal for the run, it notifies watchers, and `REOPEN` hands work to another team. The one place `/qa-test` writes a verdict onto someone else's board |
 | **Skip when** | tracker MCP unconfigured · already in-testing · no such transition exists · `--dry-run` | tracker MCP unconfigured · the flow is `hotfix-verify` (§6) |
