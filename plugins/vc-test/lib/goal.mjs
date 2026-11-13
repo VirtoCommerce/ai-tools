@@ -13,7 +13,8 @@
 //   ac add --file <json> → { id } · ac set --id AC-n --file <json>
 //   strategy set --file <json>                        (an array of risks; replaces the strategy)
 //   finding add --file <json> → { id } · finding set --id F-n --file <json>
-//   replay add --file <json> → { id }
+//   replay add --file <json> → { id } · replay --id RP-n → { id, status, expectStatus, match } (GET/HEAD, no credentials)
+//   check --before strategy|write|verdict|close [--what <label>]   → { ok, errors, warnings }; exit 2 when a gate fails
 //   checkpoint --stop S1|S2|S3 --decision approved|rejected|edited --who <name> [--note <text>]
 //   cost --file <json> · judge --verdict APPROVE|REJECT --file <judge.md> · close --write-zones <path> --teardown <path>
 //   every command but init takes --dir <runDir>.
@@ -28,11 +29,11 @@ export const GOAL_FILE = "goal.json";
 const SCHEMA = JSON.parse(readFileSync(new URL("./goal.schema.json", import.meta.url), "utf8"));
 const FORBIDDEN = new Set(SCHEMA["x-forbiddenFieldNames"].map((n) => n.toLowerCase()));
 const JWT = /eyJ[\w-]+\.eyJ[\w-]+\./;
-const USAGE = "usage: goal.mjs init|contract|ac|strategy|finding|replay|checkpoint|cost|judge|close … --dir <runDir> (init: --key <KEY> [--env <env>] [--new])";
+const USAGE = "usage: goal.mjs init|contract|ac|strategy|finding|replay|check|checkpoint|cost|judge|close … --dir <runDir> (init: --key <KEY> [--env <env>] [--new])";
 
 /** A refusal carries every reason; exit 1 is a usage error, 2 a refusal, 3 an I/O failure. */
 class GoalError extends Error {
-  constructor(exit, errors) { super(errors[0]); this.exit = exit; this.errors = errors; }
+  constructor(exit, errors, extra = {}) { super(errors[0]); this.exit = exit; this.errors = errors; this.extra = extra; }
 }
 const refuse = (...errors) => new GoalError(2, errors);
 const usage = (msg) => new GoalError(1, [msg]);
@@ -232,6 +233,108 @@ function setById(list, id, prefix, what) {
   return item;
 }
 
+// ---- the stage gates ----
+const STAGES = ["strategy", "write", "verdict", "close"];
+const PCT = (n, of) => Math.round((n / of) * 100);
+
+/** An evidence path counts only when it resolves inside the run folder (a relative path is read against it). */
+const insideRun = (dir, p) => {
+  const rel = relative(resolve(dir), resolve(dir, p));
+  return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+};
+
+function budgetFindings(goal, enforce) {
+  const errors = [];
+  const warnings = [];
+  const { budget, cost } = goal;
+  if (!budget || !cost) return { errors, warnings };
+  const meter = (used, limit, what, unit) => {
+    if (typeof used !== "number" || typeof limit !== "number" || limit <= 0) return;
+    const text = `${what} ${used} of ${limit} ${unit} (${PCT(used, limit)} %)`;
+    if (used > limit) (enforce ? errors : warnings).push(`${what} budget exceeded: ${used} of ${limit} ${unit} (${PCT(used, limit)} %)`);
+    else if (used > limit * 0.8) warnings.push(`${text} — over 80 % of the budget`);
+  };
+  meter(cost.inputTotal, budget.tokens, "token", "tokens");
+  meter(cost.wallMin, budget.wallMin, "wall-clock", "min");
+  return { errors, warnings };
+}
+
+/**
+ * The gate before a stage. `{ ok, errors, warnings }`; every reason is named, none is a crash on a fresh journal
+ * (budget, cost, contract, judge and closed are null until their command ran).
+ */
+export function checkGoal(goal, stage, { dir, what } = {}) {
+  if (!STAGES.includes(stage)) throw usage(`--before must be one of ${STAGES.join(", ")}`);
+  const errors = [];
+  const acs = goal.acs ?? [];
+  const known = new Set(acs.map((a) => a.id));
+  const approved = (stop, note) => (goal.checkpoints ?? []).some((c) => c.stop === stop && c.decision === "approved" && (note === undefined || c.note === note));
+
+  if (stage === "strategy") {
+    if (!goal.contract?.approvedAt) errors.push("contract not approved");
+    if (acs.length < 1) errors.push("no acceptance criteria");
+    const covered = new Set((goal.strategy ?? []).flatMap((r) => r.acs ?? []));
+    for (const a of acs) {
+      if (!a.source) errors.push(`${a.id}: no source`);
+      if (!covered.has(a.id)) errors.push(`${a.id}: not covered by any strategy risk`);
+    }
+    for (const r of goal.strategy ?? []) for (const id of r.acs ?? []) if (!known.has(id)) errors.push(`${r.id}: unknown AC ${id}`);
+  }
+
+  if (stage === "write" && !approved("S3", what)) errors.push("no approved S3 checkpoint for this write");
+
+  if (stage === "verdict") {
+    const outside = (list) => (list ?? []).some((e) => typeof e.path === "string" && !insideRun(dir, e.path));
+    for (const a of acs) {
+      if (a.status === "open") errors.push(`${a.id}: still open`);
+      if (a.status === "GAP" && !a.gapReason) errors.push(`${a.id}: GAP without gapReason`);
+      if (["PASS", "FAIL", "PARTIAL"].includes(a.status) && !(a.evidence ?? []).length) errors.push(`${a.id}: ${a.status} without evidence`);
+      if (outside(a.evidence)) errors.push(`${a.id}: evidence outside the run folder`);
+    }
+    for (const f of goal.findings ?? []) {
+      if (!f.severity) errors.push(`${f.id}: no severity`);
+      if (!(f.evidence ?? []).length) errors.push(`${f.id}: no evidence`);
+      if (outside(f.evidence)) errors.push(`${f.id}: evidence outside the run folder`);
+      if (["Critical", "High", "Medium"].includes(f.severity) && !(f.reproduced >= 2)) errors.push(`${f.id}: Medium or worse needs reproduced ≥ 2`);
+      if (!known.has(f.ac)) errors.push(`${f.id}: unknown AC ${f.ac}`);
+    }
+    if (!approved("S2")) errors.push("no approved S2 checkpoint");
+    if (!goal.cost) errors.push("cost not recorded");
+  }
+
+  if (stage === "close") {
+    if (!goal.judge?.verdict) errors.push("judge verdict not recorded");
+    if (!goal.closed?.writeZones) errors.push("closed.writeZones not recorded");
+    if (!goal.closed?.teardown) errors.push("closed.teardown not recorded");
+  }
+
+  const budget = budgetFindings(goal, stage === "strategy" || stage === "verdict");
+  return { ok: errors.length + budget.errors.length === 0, errors: [...errors, ...budget.errors], warnings: budget.warnings };
+}
+
+/** One read-only request of a stored replay; what it prints is the status, never the URL. */
+async function runReplay(argv) {
+  const dir = dirOf(argv);
+  const id = need(argv, "id");
+  const r = (loadGoal(dir).replays ?? []).find((x) => x.id === id);
+  if (!r) throw refuse(`no replay ${id}`);
+  // The journal may have been edited by hand since `replay add` checked it: check again before any request leaves.
+  if (r.method !== "GET" && r.method !== "HEAD") throw refuse(`${id}: only GET and HEAD are replayed`);
+  if (typeof r.url !== "string" || !/^https?:\/\//.test(r.url)) throw refuse(`${id}: the URL must be http(s)`);
+  if (/^https?:\/\/[^/?#]*@/.test(r.url)) throw refuse(`${id}: a URL with credentials in it is never replayed`);
+  const keys = secretUrlKeys(r.url);
+  if (keys.length) throw refuse(...keys.map((k) => `${id}: the URL carries a secret-named parameter "${k}" — a replay is unauthenticated`));
+  let res;
+  try {
+    // No Authorization, no cookie, no body; a redirect is reported as the server's own answer, never followed.
+    res = await fetch(r.url, { method: r.method, redirect: "manual", signal: AbortSignal.timeout(20000) });
+  } catch (e) {
+    throw new GoalError(3, [`${id}: the request failed (${e?.name ?? "Error"}: ${e?.cause?.code ?? "no response"})`]);
+  }
+  try { await res.body?.cancel(); } catch { /* the status is what matters */ }
+  return { id, status: res.status, expectStatus: r.expectStatus, match: res.status === r.expectStatus };
+}
+
 function cli(argv) {
   const [cmd, sub] = argv;
   switch (cmd) {
@@ -301,8 +404,20 @@ function cli(argv) {
       }
       throw usage("finding add --file <json> | finding set --id F-n --file <json>");
     }
+    case "check": {
+      const dir = dirOf(argv);
+      const stage = need(argv, "before");
+      if (!STAGES.includes(stage)) throw usage(`--before must be one of ${STAGES.join(", ")}`);
+      const what = stage === "write" ? need(argv, "what") : undefined;
+      const result = checkGoal(loadGoal(dir), stage, { dir, what });
+      if (!result.ok) throw new GoalError(2, result.errors, { warnings: result.warnings });
+      return result;
+    }
     case "replay": {
-      if (sub !== "add") throw usage("replay add --file <json>");
+      if (sub !== "add") {
+        if (argv.includes("--id")) return runReplay(argv);
+        throw usage("replay add --file <json> | replay --dir <runDir> --id RP-n");
+      }
       return mutate(argv, objectInput(readFileArg(argv), "replay"), (g, c) => {
         if (typeof c.url === "string") {
           if (/^https?:\/\/[^/?#]*@/.test(c.url)) throw refuse("replay: a URL with credentials in it is never stored");
@@ -344,10 +459,10 @@ function cli(argv) {
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   try {
-    console.log(JSON.stringify(cli(process.argv.slice(2)), null, 2));
+    console.log(JSON.stringify(await cli(process.argv.slice(2)), null, 2));
   } catch (e) {
     if (e instanceof GoalError) {
-      console.log(JSON.stringify({ ok: false, errors: e.errors }, null, 2));
+      console.log(JSON.stringify({ ok: false, errors: e.errors, ...e.extra }, null, 2));
       process.exit(e.exit);
     }
     console.log(JSON.stringify({ ok: false, errors: [e.message] }));
