@@ -8,6 +8,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## /vc-test:qa-goal decides the verdict by a person-confirmed fix priority — `vc-test` `0.18.1` — 2026-11-13
+
+### Changed
+
+- An in-scope finding now decides the qa-goal verdict by its **fix priority**, not by its severity alone, as
+  `qa-test-strategy`'s `verdict-rules.md` does: FAIL on an in-scope P0/P1 (fix now), PASS WITH NOTES on P2/P3 (fix later),
+  PASS with no in-scope finding. 0.18.0 read Critical/High as P0/P1, though `risk-prioritization-framework.md` §2 says a
+  Critical is not always P0.
+- The run proposes each in-scope finding's `fixPriority` and `fixPriorityReason` at triage (step 6) from that framework; a
+  person confirms or changes them in one question, recorded as `fixPriorityBy`. `goal.mjs check --before verdict` fails an
+  in-scope finding without all three. `finding add` refuses `fixPriorityBy`, and a `finding set` that changes the severity,
+  scope or title drops it, so the person is asked again. A judge FIX on a fix priority goes back to the person.
+- A finding confirmed P0/P1 is reproduced twice whatever its severity, and S3 proposes a bug for every in-scope finding,
+  with its fix priority.
+- A run started on 0.18.0 and resumed on 0.18.1 asks the fix-priority question before its verdict (`resume.md`).
+
 ## /vc-test:qa-goal — goal-driven testing with an independent judge — `vc-test` `0.18.0` — 2026-11-13
 
 ### Added
