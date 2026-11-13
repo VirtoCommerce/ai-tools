@@ -71,7 +71,7 @@ costs the whole run's wait; found here it costs one command.
 
 | Ticket surface | Axes that run | Executor | Target resolved from |
 |---|---|---|---|
-| **Storefront page or flow** | a11y · design-system · `vs. DESIGN` | `vc-test:ui-ux-expert` | the route(s) the ticket changes |
+| **Storefront page or flow** | a11y · design-system · `vs. DESIGN` · `vs. USER` | `vc-test:ui-ux-expert` | the route(s) the ticket changes; `vs. USER` the tasks its ACs give a user |
 | **Storefront component** | a11y · design-system · `vs. DESIGN` | `vc-test:ui-ux-expert` | the component, **dual** Storybook + storefront (the two surfaces catch different bug classes) |
 | **Admin SPA blade** | a11y · design-system | `vc-test:ui-ux-expert` | the blade under change; `vs. DESIGN` only if the design project covers admin |
 | **`api` / `module` / `platform` only** | none | — | — the lane does not dispatch |
@@ -82,6 +82,7 @@ The three axes, and where each is specified:
 |---|---|---|
 | **a11y** | WCAG 2.2 AA + `BL-A11Y-001..004` (all **P1**) — keyboard operability, accessible naming, contrast, axe-clean. `BL-UI-006` touch targets rides along, since 2.5.8 measures it anyway | [`wcag-accessibility-checklist.md`](../../knowledge/wcag-accessibility-checklist.md) (in this repository: the `qa-accessibility` skill, `.claude/skills/qa-accessibility/`) |
 | **design-system** | live resolved custom properties vs the generated token set; no hardcoded colour/spacing literals; sized-control token + aspect equality | [`design-system-consistency.md`](design-system-consistency.md) |
+| **`vs. USER`** | a real user can do the task: 1–3 tasks from the ACs, done as their persona from the user's own entry point, judged by completion, steps and friction — never by the DOM or the spec | [`ux-task-walkthrough.md`](ux-task-walkthrough.md) |
 | **`vs. DESIGN`** | declared tokens · control geometry · icon name→glyph parity, diffed against the Claude Design project **named by the ticket's own Prototype link** (no global default — `DESIGN_SYSTEM_PROJECT_ID` was removed 2026-09-03; a ticket with no design link ⇒ `SKIPPED`) | [`claude-design-verification.md`](claude-design-verification.md) |
 
 ### Dispatch the agent — the agent invokes the `vc-test:qa-design` skill
@@ -106,7 +107,8 @@ The brief carries: the `Skill vc-test:qa-design` instruction above · the resolv
 plus the artboard its `file=` param names** (there is no `DESIGN_SYSTEM_PROJECT_ID` to inherit — removed
 2026-09-03; if the ticket carries no design link, the brief says so and the axis returns `SKIPPED`) · the
 `BL-A11Y-*` / `BL-UI-*` invariant **text** (not just the IDs) · the screenshot path · the verdict vocabulary
-below.
+below · for a page or flow, **the user tasks** for `vs. USER` — one per AC a user acts out, in the user's words, with the
+persona each belongs to (none given ⇒ the agent derives them, [`ux-task-walkthrough.md`](ux-task-walkthrough.md) §1).
 
 **Two things the brief MUST also carry, each of which cost a real run when it did not.**
 
@@ -188,6 +190,8 @@ severity: `triage.md` §7a (in this repository: `.claude/skills/qa-test/triage.m
 | `BL-A11Y-*` **FAIL**, ticket is *about* accessibility | `visual.invariant_failures[]` | **Yes** — the carve-out: an a11y/WCAG remediation ticket, ACs naming an accessibility outcome, or a `/qa-accessibility` run. The test is the ticket's own ACs, never the finding's severity |
 | `PIXEL` **regression** (an unintended change, `/qa-visual-regression`'s `triage.md` (in this repository: `.claude/skills/qa-visual-regression/triage.md`)) | `visual.pixel.regressions[]` | **Yes** — an ordinary finding, like a `BL-UI` FAIL |
 | `PIXEL` **intended** / **noise** | `visual.pixel` | No — each row names the AC or PR line that intends the change, or the re-shoot that cleared it |
+| `vs. USER` **FAIL** — the task could not be completed | `visual.ux_findings[]` | **Yes** — an ordinary finding: a user who cannot finish is a defect, whatever the invariants say |
+| `vs. USER` **ADVISORY** — completed with friction (severity 2–3) | `visual.ux_findings[]` | **No** — reported at its real severity |
 | `vs. DESIGN` **DRIFT** / **MISSING** | `visual.advisory[]` | **No** — recorded and reported, never blocking |
 | **UNSPEC** | `visual.advisory[]` | No — a design project is rarely exhaustive; failing "not in the spec" turns the axis into ignored noise |
 | **KNOWN_DIVERGENCE** | `visual.advisory[]` | No — the spec itself declares it unshipped. Also never a clean PASS |

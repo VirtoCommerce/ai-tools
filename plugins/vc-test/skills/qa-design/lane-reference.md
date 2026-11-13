@@ -54,6 +54,7 @@ Where layout bugs hide, the WCAG 2.2 AA table, the component library and Nielsen
 | **Hover/Focus-induced Shift** | Neighbor moves when component is hovered, focused, or its badge/counter updates | Medium |
 | **Skeleton Mismatch** | Skeleton dimensions ≠ resolved content → snap on load | Medium |
 | **Responsive** | Layout breaks at breakpoint, touch target < 24 px, < 8 px gap between interactives | High (P0 if checkout) |
+| **User task (`vs. USER`)** | The task cannot be completed / completed only by workaround / with hesitation | By task outcome — [`ux-task-walkthrough.md`](ux-task-walkthrough.md) §4 (4 = FAIL; 3 and 2 = ADVISORY) |
 | **Theme** | Component broken in a gated theme preset (vc-frontend: Coffee), FOUC | Medium |
 
 ## Escalation

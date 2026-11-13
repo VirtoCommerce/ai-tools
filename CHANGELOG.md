@@ -28,6 +28,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   source layout, component names, Storybook, gated presets, tokens, measurement scales, the critical-UI matrix,
   example test data, the `kb`, the tracker — with vc-frontend's value, the client source and the fallback. The
   agent and the skill files cite it instead of naming vc-frontend's value.
+- **`vs. USER` — usability tested as a real user.** New `skills/qa-design/ux-task-walkthrough.md`: on a storefront
+  page or flow, the agent does 1–3 user tasks (from the brief, else the ACs, else the page's primary job) as the
+  persona they belong to, from the user's own entry point, using only what is on screen. It is judged by whether
+  the task gets done: a task that cannot be completed is a `FAIL` that triages like a `BL-UI` FAIL; friction
+  (missing feedback, unclear labels, lost input, unconfirmed deletes, extra steps, dead ends) is `ADVISORY` at its
+  real severity. Writes run to the end only on a stand declared writable. `visual-axis.md` schedules it for page
+  and flow surfaces and the brief carries the tasks. Think-aloud, five-second and first-click tests are marked as
+  human-session methods the agent recommends and never runs; a UX finding is no longer "must be filed" by the
+  agent.
 - Storybook story discovery starts from `{STORYBOOK_URL}/index.json`, which a fork's Storybook serves too, before
   vc-frontend's title convention.
 
