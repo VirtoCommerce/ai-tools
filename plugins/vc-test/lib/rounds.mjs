@@ -69,6 +69,7 @@ import { validate } from "../skills/ticket-context/lib/schema.mjs";
 import { prEntry, prKey } from "../skills/ticket-context/lib/compose.mjs";
 import { rows as tableRows } from "./strategy-artifacts.mjs";
 import { priorRunDirs } from "../scripts/lib/run-dir.mjs";
+import { accountExempt, hasAccount } from "../skills/qa-test-strategy/lib/check-strategy.mjs";
 
 const CAP = 3;
 const ESCALATE_TO = "the developer, the PO and the QA lead";
@@ -490,10 +491,10 @@ const SCENARIOS_HEAD = "| S | Class | What it does | Bug it hunts | Why likely |
 const PRIOR_HEAD = "| PB | Bug | Severity | Found | Reproduction | R |\n|---|---|---|---|---|---|";
 const RECON_HEAD = "| R | Planned | Ran (item ids · charter · lane · case ids) | Result | Deviation — reason |\n|---|---|---|---|---|";
 
-/** A carried Approach row from before clause 15 has no account: its lane cell gets a TBD the strategy agent fills. */
+/** A carried Approach row with no valid account (drafted before clause 15) gets a TBD the strategy agent fills. */
 const withAccount = ({ line, cells }) => {
   const lane = cells[4] ?? "";
-  if (lane.split("·").length >= 3 || /^skip/i.test(lane) || /BLOCKED/.test(lane) || lane.includes(TBD)) return line;
+  if (accountExempt(lane) || hasAccount(lane)) return line; // the gate's own test (check-strategy.mjs clause 15)
   return `| ${cells.map((c, i) => (i === 4 ? `${lane} · ${TBD}` : c)).join(" | ")} |`;
 };
 

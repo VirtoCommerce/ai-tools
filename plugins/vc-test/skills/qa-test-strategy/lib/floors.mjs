@@ -31,7 +31,7 @@ const ORG = /organizationId|organization_id|xapi:my_organization|my_organization
 // (`PermissionAuthorizationRequirement`, `…AuthorizationHandler`, `AuthorizeAsync`, `HasGlobalPermission`) and vc-frontend
 // (`checkPermissions(XApiPermissions.…)`, `$can($permissions.xApi.…)`).
 export const ACCESS_GUARD = /\[Authorize\b|Permissions?\.[A-Z]\w*|\$permissions\.|\bHasGlobalPermission\b|\b[Cc]heckPermissions?\(|\$can\(|Authoriz(?:ation)?(?:Handler|Requirement)\b|\bAuthorizeAsync\b/;
-const F13_REQUIRES = ["a risk with Source floor:F13 whose account is deny:<permission> <KEY|P-n> — derive the roles by skills/qa-design/personas.md §1, the KEY per floors.md §15"];
+const F13_REQUIRES = ["a risk with Source floor:F13 whose account is deny:<permission> <KEY|P-n> — the KEY chosen by the permissions it holds on the stand, never by its role name (floors.md §15)"];
 // F11 — configuration (test-model redesign §5a, layers 1–3).
 const CONFIG = /ModuleConstants\.Settings|settingsManager|SettingsManager|store\.settings|\$cfg\./;
 // F11 — a settings entry is the CHANGE agent's prose; only a named key is a signal. A dotted PascalCase key
