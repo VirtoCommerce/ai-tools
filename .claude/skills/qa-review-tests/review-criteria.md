@@ -183,7 +183,7 @@ Ensures assertions can be objectively evaluated as PASS or FAIL with no human ju
 **The rule.** A Frontend suite carries at least one case marked `[JOURNEY]` (in `Title` or `Section`)
 or stamped `Technique:FLOW` in `References` — a case that traverses the feature's whole value chain in
 one run, on the surface a customer actually uses. Chain and technique: `/qa-test-design`
-`test-design-techniques.md` §1a; the model field it comes from is `/qa-test` Step 1e Part 0.
+`test-design-techniques.md` §1a; the model field it comes from is `/qa-test-model`'s Part 0.
 
 **Detection:** the suite path is under `Frontend/`, it has ≥1 case, and no case carries either marker.
 

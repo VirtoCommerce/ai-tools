@@ -88,7 +88,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-bug` — Reproduce, document, optionally file
 - `/qa-fix` — Autonomous fix of an already-filed bug: G0 triage → G1 single-repo route → reproduce-as-test → minimal fix → review → PR → **STOP for human review** (never auto-merges)
 - `/qa-verify-fix` — Reproduce the original bug, confirm the fix, regression checks, transition the ticket (stops at TESTED)
-- `/qa-deploy-pr` — Gather every fresh CI prerelease artifact a change produced and deploy them together in ONE `vc-deploy-dev` manifest update. Unblocks `/qa-test PR #N` and `/qa-verify-fix`
+- `/qa-deploy-pr` — Gather every fresh CI prerelease artifact a change produced and deploy them together in ONE `vc-deploy-dev` manifest update. Unblocks `/qa-test <TICKET>` and `/qa-verify-fix`
 - `/qa-env-upgrade` — Compare an env's `vc-deploy-dev` manifest with the latest releases (`modules_v3.json` + `vc-platform`), move PR/alpha pins to the release that contains them, ask where none does, and open ONE deploy PR on a yes. Never merges
 - `/qa-bundle-check` → `/qa-hotfix` → `/qa-hotfix-check` — the three-link hotfix chain: find bundles missing a shipped patch → cherry-pick onto `support/<X.Y>` and release → deliver onto the deployed envs and close the ticket
 - `/qa-monitoring` — App Insights: query → dedup by fingerprint → triage → live repro → report. Detect-and-report only.
@@ -256,7 +256,7 @@ post-edit typecheck).
 | `/qa-regression` | `/qa-coverage-gap` | Gap analysis validates suite completeness before a run |
 | `/qa-bug` | `/qa-investigate`, `/qa-defect` | Bug command uses the investigation flow + defect templates |
 | `/qa-fix` | `/qa-bug` (upstream), `/qa-verify-fix` (downstream) | `/qa-bug` files the ticket → `/qa-fix` triages, fixes, opens a PR (STOP for human review) → after merge `/qa-verify-fix` closes the loop. Gate ladder: `.claude/knowledge/execution/quality-gates.md` |
-| `/qa-fix` | `/qa-deploy-pr` | A PR's prerelease has to be deployed before `/qa-test PR #N` or `/qa-verify-fix` can see the change |
+| `/qa-fix` | `/qa-deploy-pr` | A PR's prerelease has to be deployed before `/qa-test <TICKET>` (its PRs come from the ticket context) or `/qa-verify-fix` can see the change |
 | `/qa-fix` | `/qa-bundle-check` → `/qa-hotfix` → `/qa-hotfix-check` | After a fix ships to master: find the bundles that lack it → cherry-pick + release → deliver onto the deployed envs |
 | `/qa-monitoring` | `/qa-bug`, `/qa-fix` | Monitoring drafts confirmed bugs → a human picks them up (monitoring never files a ticket or auto-fixes) |
 | `/qa-teams-watch` | `/qa-fix` | Teams-reported defects are filed as VCST Bugs and labelled so `/qa-fix` can pick them up |

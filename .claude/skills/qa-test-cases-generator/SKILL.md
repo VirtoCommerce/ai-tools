@@ -122,7 +122,7 @@ Each layer produces its own test case block with layer-appropriate tags from `te
 
 For each requirement/checklist item/BDD scenario:
 
-1. **Author the `[JOURNEY]` case FIRST, from the model's value chain** (`/qa-test` Step 1e Part 0 →
+1. **Author the `[JOURNEY]` case FIRST, from the model's value chain** (`/qa-test-model` Part 0 →
    `/qa-test-design` `test-design-techniques.md` §1a). It traverses the WHOLE chain in one run — trigger →
    effect → persisted state → the surface the customer sees it on → what it unlocks — through the UI a
    customer actually uses, with data that makes every link's outcome decidable. Stamp it

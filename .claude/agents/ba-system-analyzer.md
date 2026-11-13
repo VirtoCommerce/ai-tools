@@ -148,10 +148,10 @@ Combine code analysis, GitHub module research, and live UI exploration to recons
 - Pricing & promotions
 - Content management
 
-### 5a. Feature Value-Chain Reconstruction (the `/qa-test` 1e Part 0 deliverable)
+### 5a. Feature Value-Chain Reconstruction (the `/qa-test-model` Part 0 deliverable)
 
 §5 above reconstructs the product's **standing** journeys. This one reconstructs **the mechanism of the
-feature under analysis**, end to end, and it is what `/qa-test` Step 1e Part 0 consumes. An inventory of
+feature under analysis**, end to end, and it is what `/qa-test-model` Part 0 consumes. An inventory of
 screens is not a substitute: it tells the test designer what the feature *renders*, never what it *does*,
 and a suite built from it can pass in full while the feature does not work.
 
