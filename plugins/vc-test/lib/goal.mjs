@@ -22,6 +22,7 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { knowledgeSecretValues, scrubValues } from "./knowledge-store.mjs";
 import { argOf, outputRoot, workDir, currentEnv } from "./paths.mjs";
+import { SECRET_NAME } from "../skills/ticket-context/lib/scrub.mjs";
 
 export const GOAL_FILE = "goal.json";
 const SCHEMA = JSON.parse(readFileSync(new URL("./goal.schema.json", import.meta.url), "utf8"));
@@ -132,6 +133,23 @@ const stored = (dir, p) => {
   const rel = relative(resolve(dir), resolve(p));
   return rel && !rel.startsWith("..") && !isAbsolute(rel) ? posix(rel) : posix(p);
 };
+
+/** The secret-named parameter KEYS of a URL's query and fragment (never their values): a token pasted from a HAR. */
+function secretUrlKeys(url) {
+  const hash = url.indexOf("#");
+  const beforeHash = hash < 0 ? url : url.slice(0, hash);
+  const q = beforeHash.indexOf("?");
+  const query = q < 0 ? "" : beforeHash.slice(q + 1);
+  const fragment = hash < 0 ? "" : url.slice(hash + 1); // a fragment is `a=b&c=d`, or a hash route `/page?a=b`
+  const keys = [];
+  for (const part of `${query}&${fragment.split("?").join("&")}`.split("&")) {
+    const raw = part.split("=")[0];
+    let key = raw;
+    try { key = decodeURIComponent(raw.split("+").join(" ")); } catch { /* keep the raw spelling */ }
+    if (key && SECRET_NAME.test(key) && !keys.includes(key)) keys.push(key);
+  }
+  return keys;
+}
 
 function readFileArg(argv) {
   const file = argOf(argv, "file");
@@ -283,7 +301,11 @@ function cli(argv) {
     case "replay": {
       if (sub !== "add") throw usage("replay add --file <json>");
       return mutate(argv, objectInput(readFileArg(argv), "replay"), (g, c) => {
-        if (typeof c.url === "string" && /^https?:\/\/[^/?#]*@/.test(c.url)) throw refuse("replay: a URL with credentials in it is never stored");
+        if (typeof c.url === "string") {
+          if (/^https?:\/\/[^/?#]*@/.test(c.url)) throw refuse("replay: a URL with credentials in it is never stored");
+          const keys = secretUrlKeys(c.url);
+          if (keys.length) throw refuse(...keys.map((k) => `replay: the URL carries a secret-named parameter "${k}" — a replay is unauthenticated; remove it`));
+        }
         const r = { ...c, id: nextId("RP", g.replays) };
         g.replays.push(r);
         return { id: r.id };
