@@ -168,5 +168,16 @@ teardown cannot remove.
 ```
 
 `id` is assigned, never given. `finding set --id <F-n>` changes fields later (send the whole `evidence[]`).
+
+**Priority (step 6), in-scope findings only** — severity says how bad, priority says **when it must be fixed**:
+P0/P1 now (the verdict is FAIL), P2/P3 later (PASS WITH NOTES). Either way a Medium-or-worse one is proposed as a
+bug at S3, with its priority. Propose it from
+`<plugin>/knowledge/risk-prioritization-framework.md` §2 (Priority and the Severity-Priority Interaction: blast
+radius, workaround, revenue or security at risk) — a Critical with a narrow blast radius and a workaround can be P1;
+a High that blocks every user is P0. `finding set` `{ "priority": "P0|P1|P2|P3", "priorityReason": "<the grounds,
+one line>" }`. Then ask the person **once**, one AskUserQuestion: per finding its id, title, severity, the proposed
+priority and its reason; they confirm or change each. Record what they chose — `finding set` with the person's
+`priority` and `"priorityBy": "<who>"`, the reason kept or replaced by theirs. Never set `priorityBy` without that
+answer: `check --before verdict` fails an in-scope finding without both fields.
 `reproduced` counts independent runs that showed it, each with its own evidence entry. `kbRef` is added at the
 write-back ([`research-loop.md`](research-loop.md) §Write-back).
