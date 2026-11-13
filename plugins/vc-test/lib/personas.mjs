@@ -61,15 +61,20 @@ function locate(lines) {
   lines.forEach((line, i) => {
     const h = /^##\s+(.*)$/.exec(line);
     if (h) {
-      const name = (/^[A-Za-z]+/.exec(h[1].trim())?.[0] ?? "").toLowerCase(); // `## Accounts — a note` is Accounts
-      current = Object.prototype.hasOwnProperty.call(SECTIONS, name) ? name : null;
-      if (current) found[current] = { heading: i, header: -1, rule: -1, rows: [], end: i };
+      const word = (/^[A-Za-z]+/.exec(h[1].trim())?.[0] ?? "").toLowerCase(); // `## Accounts — a note` is Accounts
+      const name = [word, `${word}s`].find((w) => Object.prototype.hasOwnProperty.call(SECTIONS, w)); // `## Archetype` too
+      current = name && !found[name] ? name : null; // a repeated heading adds nothing
+      if (current) found[current] = { heading: i, header: -1, rule: -1, rows: [], end: i, closed: false };
       return;
     }
     if (!current) return;
     const cells = cellsOf(line);
     const sec = found[current];
-    if (!cells) return;
+    if (sec.closed) return;
+    if (!cells) {
+      if (sec.header >= 0) sec.closed = true; // the section's table ended: a later table is prose, not rows
+      return;
+    }
     if (sec.header < 0) sec.header = i;
     else if (sec.rule < 0 && isRule(cells)) sec.rule = i;
     else sec.rows.push(i);
@@ -93,8 +98,12 @@ export function addRow(text, section, row, { replace = false } = {}) {
   const clean = headerRow(cells);
   const lines = String(text).replace(/\s+$/, "").split("\n");
   const sec = locate(lines)[section];
-  if (!sec || sec.header < 0) {
+  if (!sec) {
     lines.push("", `## ${title(section)}`, "", headerRow(cols), ruleRow(cols), clean);
+    return { text: `${lines.join("\n")}\n`, replaced: false };
+  }
+  if (sec.header < 0) { // a heading with no table yet: the table goes under it, never a second heading
+    lines.splice(sec.heading + 1, 0, "", headerRow(cols), ruleRow(cols), clean);
     return { text: `${lines.join("\n")}\n`, replaced: false };
   }
   const key = section === "accounts" ? (c) => `${c[0]}\u0000${c[1]}`.toLowerCase() : (c) => c[0].toLowerCase();
@@ -145,8 +154,8 @@ function cli(argv) {
     let row = argOf(argv, "row");
     if (rowFile) {
       try { row = readFileSync(rowFile, "utf8").trim(); } catch (e) { throw Object.assign(new Error(`cannot read --row-file ${rowFile}: ${e.message}`), { exit: 1 }); }
-      if (row.includes("\n")) throw Object.assign(new Error("--row-file holds one row: one line"), { exit: 1 });
     }
+    if (row && row.includes("\n")) throw Object.assign(new Error("one row: one line"), { exit: 1 });
     if (!section || !row) throw Object.assign(new Error("--add needs --section and --row-file (or --row)"), { exit: 1 });
     let result;
     try {

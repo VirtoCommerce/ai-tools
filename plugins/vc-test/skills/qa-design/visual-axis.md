@@ -209,7 +209,7 @@ artifact instead of only from this prose.
 in the report and ask the operator once (one multi-select); for each accepted one write its row to
 `.vc-fix/vc-test/persona-row.md` with the editor tool and run `node <plugin>/lib/personas.mjs --add --section
 <section> --row-file .vc-fix/vc-test/persona-row.md` — never the row on the command line ([`personas.md`](personas.md)
-§0). Headless ⇒ list them, add none.
+§0) — and delete the file after the last one. Headless ⇒ list them, add none.
 
 **`SKIPPED` is a legitimate outcome, not an error** — but only after the operator was asked at §1 and
 declined, or in a headless run. No local copy of the ticket's project and no usable
