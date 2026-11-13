@@ -161,9 +161,10 @@ Risks in priority order, inline, on the approved strategy and accounts:
 - **A finding** — severity per `<plugin>/knowledge/risk-prioritization-framework.md` §2. Medium or worse ⇒ reproduce it a second time
   first (rail 6). Then `<dir>/in/f-<n>.json` (same §Recording) → `goal.mjs finding add --dir <dir> --file
   <dir>/in/f-<n>.json` → `{ id }`, and `ac set` that AC's `findings` with the id added. The second run does not
-  reproduce it ⇒ keep the observed severity, `reproduced: 1`; the verdict gate fails on it, so reproduce it again;
-  still not ⇒ `inScope: false`, title prefixed `UNCONFIRMED (seen once):`, and ask the person (retry with them, or the abort close) — the gate counts every
-  Medium+ finding, in scope or not, so step 7 stays blocked until it reproduces. Never lower a severity. No source says it should not happen ⇒ not a defect: a note on the AC, not a finding.
+  reproduce it ⇒ keep the observed severity, `reproduced: 1`, and try once more; still not ⇒ `inScope: false`, title
+  prefixed `UNCONFIRMED (seen once):`. It does not block the verdict (the gate's reproduction rule covers in-scope
+  findings only); list it for the person in the verdict and at S3. Never lower a severity. No source says it should
+  not happen ⇒ not a defect: a note on the AC, not a finding.
 - **A new branch** — a criterion found while testing is added per [`derived-acs.md`](derived-acs.md) §Found while
   testing (`addedAt: during-test`, `addedReason`); inside an approved risk ⇒ add it to that risk's `acs` and
   `strategy set` again; outside the approved scope ⇒ S2 again for it (step 4.3–4.4) before it is tested.

@@ -90,7 +90,8 @@ You write nothing and change nothing.
    - **Is a GAP honest?** A `gapReason` must be a real reason the AC could not be tested (no data, not deployed,
      a lane that was unavailable, a stop that fired) that you can see supported by the journal or a file — not
      "out of time" with budget left, and not "not applicable" without saying why. A GAP that hides an AC the
-     environment could have tested does not hold.
+     environment could have tested does not hold. A criterion reworded or dropped at S2 is an honest GAP when its
+     `gapReason` names the person and an `S2` checkpoint exists in `checkpoints[]`.
    - **FAIL and PARTIAL** hold only when the evidence shows the failure and what part passed.
    - An AC added `during-test` needs its `addedReason`; one added without it does not hold.
 4. **Per finding** (every one): `reproducible` or `not`.
