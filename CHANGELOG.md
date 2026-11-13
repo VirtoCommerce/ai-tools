@@ -8,6 +8,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The visual lane works the same on a client fork as on vc-frontend — `vc-test` `0.15.0` — 2026-11-12
+
+### Changed
+
+- **`ui-ux-expert` is thin and general.** The agent body keeps only role, boot, hard rules, procedure and return
+  shape (18,565 → 10,986 chars, paid on every dispatch). The invariants cheat sheet, design-system notes, severity
+  table, escalation triggers, action/observation space and the `/qa-storybook` vs `/qa-accessibility` boundary move
+  verbatim to `skills/qa-design/lane-reference.md`.
+- **A FAIL goes back to the dispatcher.** The agent files a bug only when its brief says so; it used to say "file
+  bug" while reporting to its dispatcher, and `visual-axis.md` §3 routes findings through triage.
+- Removed the line that made every EU-reachable WCAG violation P0/P1; it contradicted the severity table, which
+  already grades A11y Critical P0 for legal risk.
+
+### Added
+
+- `skills/qa-design/project-facts.md`: project type (`platform` or `client`, from `project-profile.json`; no
+  profile ⇒ `client`) and one table of every value that differs per project — storefront repo and code host,
+  source layout, component names, Storybook, gated presets, tokens, measurement scales, the critical-UI matrix,
+  example test data, the `kb`, the tracker — with vc-frontend's value, the client source and the fallback. The
+  agent and the skill files cite it instead of naming vc-frontend's value.
+- Storybook story discovery starts from `{STORYBOOK_URL}/index.json`, which a fork's Storybook serves too, before
+  vc-frontend's title convention.
+
+### Fixed
+
+- **A client install no longer reads or writes the public `kb`.** The agent's kb steps run only on `platform` and
+  return `kb: not read (client install)` otherwise — the rule `lib/knowledge-store.mjs` and
+  `ticket-context/known-ground.md` already hold. On `platform`, the kb tools are loaded with `ToolSearch` before
+  the first call, and the write step cites the capture contract.
+- Source search for a component's usages, file and story was hard-wired to `VirtoCommerce/vc-frontend`; on a
+  client project it now searches the fork named in the profile (`repos.client[]`, `kind: "frontend"`), and on
+  Azure Repos greps a local checkout or says the step did not run.
+- "Gate a11y on Coffee + Red" was stated six times; it is one rule in `a11y-audit.md` §Theme scope — the brief's
+  presets, else Coffee + Red where the fork still ships them, else its default theme — and the report names the
+  presets it gated.
+- The measurement scales the plugin ships (`SPACING_GRID`, UI-kit sizes) are vc-frontend's: on a client fork a
+  finding that depends on one is WARN until checked against the fork's own config, instead of a phantom FAIL.
+- The off-matrix "consider adding to `critical-ui-scope.md`" suggestion is not made on a client project — that
+  file ships with the plugin.
+- `BL-CAT-001` is named as not shipped in `knowledge/bl-ui.md`; UI invariants cover every `BL-UI-*` / `BL-A11Y-*`;
+  `BL-UI-006` keeps its 24–43 px WARN band; the `SKIPPED` label matches `claude-design-verification.md` §1.
+
 ## A storefront fix typechecks for real and follows the repo's own agent rules — `vc-fix` `0.18.7`, `vc-init` `0.6.1` — 2026-11-12
 
 ### Fixed
