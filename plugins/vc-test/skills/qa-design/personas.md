@@ -25,16 +25,20 @@ personas, segments and account names are safe there. Its shape:
 ## Segments              — the attributes this project's features split users by
 | Segment | Values | Where it shows in the product | Where a ticket names it (AC words, code identifiers) |
 
-## Accounts              — persona (or archetype · segment) → test-user KEY per stand
-| Persona | <env> | <env> |
+## Accounts              — persona (or archetype · segment) → test-user KEY, one row per stand
+| Persona | Env | Key |
 ```
+
+The file is kept with `node <plugin>/lib/personas.mjs`: `--show` prints it, `--init` creates it empty, `--add
+--section archetypes|segments|accounts --row '| … |'` adds one row (`--replace` changes a row of the same name). It
+writes only into the project store, scrubbed of the project's secret values, through `lib/knowledge-store.mjs`.
 
 **Precedence, per item:** the brief › the project file › this plugin's catalog (§2). Read the project file before
 §1, and derive with its archetypes and its segment vocabulary. No file, or no store configured ⇒ this plugin's
 catalog alone, and the return says so.
 
 **You never write the project file.** A segment or archetype the ticket shows and the file lacks is returned as a
-**proposed persona** (§6) with its source; a person adds it.
+**proposed persona** (§6) with its source; the run's dispatcher shows it to the operator and adds it on a yes.
 
 ## 1. Deriving personas from the ticket
 
@@ -134,7 +138,7 @@ Compare the runs of one task across its personas. These are findings no single r
 First where the personas came from — `project personas: <store>/personas.md` or `project personas: none (plugin
 catalog)`. Then the derived personas — one line each: `<archetype> · <segments> — source: <AC n | diff file:line |
 setting> — account <KEY> (segment checked live: yes/no)`. Then **proposed personas**, if any — a segment or
-archetype the ticket showed and the project file lacks, each with its source and the row to add — for a person to
-add to the project file; never written by you. Each task row then carries its persona, and the task
+archetype the ticket showed and the project file lacks, each with its source and the exact `--section` and
+`--row` for `personas.mjs --add` — for the operator to accept; never written by you. Each task row then carries its persona, and the task
 table ends with the matrix — one line per task:
 `<task>: <persona> completed (n steps) · <persona> FAIL at step k · <persona> NOT RUN (<reason>)`.

@@ -203,6 +203,10 @@ severity: `triage.md` §7a (in this repository: `.claude/skills/qa-test/triage.m
 Two arrays rather than one severity field, because that is what makes the blocking rule auditable from the
 artifact instead of only from this prose.
 
+**Proposed personas** in the agent's return ([`personas.md`](personas.md) §6) are the project's to keep: list them
+in the report and ask the operator once (one multi-select); for each accepted one run
+`node <plugin>/lib/personas.mjs --add --section <section> --row '<row>'`. Headless ⇒ list them, add none.
+
 **`SKIPPED` is a legitimate outcome, not an error** — but only after the operator was asked at §1 and
 declined, or in a headless run. No local copy of the ticket's project and no usable
 artifact (`design:extract` exit `2`) ⇒ the `vs. DESIGN` axis records `SKIPPED` + the reason — naming the
