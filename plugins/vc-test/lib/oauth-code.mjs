@@ -14,15 +14,18 @@
 //   start --issuer <url> --client <id> --redirect <uri> [--resource <uri>] [--scope "openid offline_access"] → { persona, url, restarted }
 //   redeem --har <path>      → { persona, aud, iss, sub, name, roles, permissions, expiresIn, hasRefresh }
 //   refresh                  → the same claim summary (invalid_grant deletes the persona's token file)
-//   mcp --url <mcp url> --method <jsonrpc method> [--params-file <json>] → { status, result } (initialize + initialized + call)
+//   mcp --url <mcp url> --method <jsonrpc method> [--params-file <json>] → { status, result } (initialize + initialized + call;
+//     every request after initialize sends MCP-Protocol-Version = the version initialize answered). No message with the
+//     request's id ⇒ { status, result: null, error: "no response with the request id" } — never another message.
 //   http --method GET|POST|DELETE --url <url> [--body-file <json>]      → { status, body }
 //   purge                    → { purged: n } (removes <runDir>/.tokens/; --persona optional)
 //   A 401 from mcp/http prints { status, error } — the WWW-Authenticate `error` value only; nothing is refreshed.
 //   A URL carrying a user name or password is a usage error. Every request, body included, times out after 30 s (exit 3).
-// Prints ONE JSON object. Exit 0 done · 1 usage · 2 refused (a server or HAR said no; `errors` names why) · 3 could not run.
+// Prints ONE JSON object. Exit 0 done · 1 usage · 2 refused (a server or HAR said no; `errors` names why) · 3 could not run
+// (a HAR over 400 MB or unreadable is 3, not 2: close the lane and sign in again in a fresh context).
 // Imported, `cli(argv)` returns and throws values that are already scrubbed.
 import { createHash, randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { knowledgeSecretValues, scrubValues } from "./knowledge-store.mjs";
@@ -186,10 +189,20 @@ function stored(prev, doc) {
 }
 
 // ---- the HAR: only request.url and response.headers, and only the callback carrying this persona's state ----
+// A HAR that cannot be read (too large for one string, an I/O error) is exit 3, and closing the page again never fixes
+// it: the lane's context has grown, so the next sign-in starts in a fresh one. A HAR that is not complete JSON is
+// exit 2: the page is still open and the HAR not yet written.
+const MAX_HAR_BYTES = 400 * 1024 * 1024;
+const FRESH_CONTEXT = "close the lane (browser_close) so the next sign-in starts in a fresh context with a small HAR, then sign in again from `start`";
 function callbackIn(harPath, pkce) {
   if (!existsSync(harPath)) throw refuse(`no HAR at ${harPath} — ${CLOSE_PAGE}`);
+  let size;
+  try { size = statSync(harPath).size; } catch (e) { throw cannot(`the HAR at ${harPath} is unreadable (${e?.code ?? "stat failed"}) — ${FRESH_CONTEXT}`); }
+  if (size > MAX_HAR_BYTES) throw cannot(`the HAR at ${harPath} is too large to read (${Math.round(size / 1048576)} MB, over 400 MB) — ${FRESH_CONTEXT}`);
+  let text;
+  try { text = readFileSync(harPath, "utf8"); } catch (e) { throw cannot(`the HAR at ${harPath} is unreadable (${e?.code ?? "read failed"}) — ${FRESH_CONTEXT}`); }
   let har;
-  try { har = JSON.parse(readFileSync(harPath, "utf8")); } catch { throw refuse(`the HAR at ${harPath} is not complete JSON — ${CLOSE_PAGE}`); }
+  try { har = JSON.parse(text); } catch { throw refuse(`the HAR at ${harPath} is not complete JSON — ${CLOSE_PAGE}`); }
   const entries = har?.log?.entries;
   if (!Array.isArray(entries)) throw refuse(`the HAR at ${harPath} has no log.entries — ${CLOSE_PAGE}`);
   const redirect = new URL(pkce.redirect);
@@ -273,11 +286,15 @@ function shown(value) {
   try { return { value: JSON.parse(s) }; } catch { return { value: s }; }
 }
 
-/** A Streamable HTTP response is JSON, or SSE whose `data:` lines carry the messages: ours is the one with our id. */
+/**
+ * A Streamable HTTP response is JSON, or SSE whose `data:` lines carry the messages: ours is the one whose `id` is the
+ * request's. None ⇒ null — never another message (a notification on the same stream is not the answer).
+ */
+const NO_RESPONSE = "no response with the request id";
 function rpcMessage(text, id) {
   const datas = text.split(/\r?\n/).filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim());
   const docs = (datas.length ? datas : [text]).map((d) => { try { return JSON.parse(d); } catch { return null; } }).filter(Boolean);
-  return docs.find((d) => d.id === id) ?? docs.at(-1) ?? null;
+  return docs.find((d) => d && d.id === id) ?? null;
 }
 
 async function mcp(argv, dir, p) {
@@ -286,19 +303,27 @@ async function mcp(argv, dir, p) {
   const method = need(argv, "method");
   const params = readJsonFile(argv, "params-file") ?? {};
   const headers = { "Content-Type": "application/json", Accept: "application/json, text/event-stream", Authorization: `Bearer ${tok.access_token}` };
-  const post = async (body, sid) => request(url, { method: "POST", headers: sid ? { ...headers, "Mcp-Session-Id": sid } : headers, body: JSON.stringify(body) }, "mcp");
+  const post = async (body, session = {}) => request(url, { method: "POST", headers: { ...headers, ...session }, body: JSON.stringify(body) }, "mcp");
   const init = await post({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: MCP_PROTOCOL, capabilities: {}, clientInfo: { name: "vc-test-qa-goal", version: "1" } } });
   if (init.status === 401) { await drop(init); return { status: 401, step: "initialize", error: wwwError(init) }; }
   const initText = await textOf(init);
-  if (init.status !== 200) return { status: init.status, step: "initialize", result: shown(rpcMessage(initText, 1) ?? initText).value };
+  const initMsg = rpcMessage(initText, 1);
+  if (init.status !== 200) return { status: init.status, step: "initialize", result: shown(initMsg ?? initText).value };
+  if (!initMsg) return { status: init.status, step: "initialize", result: null, error: NO_RESPONSE };
+  if (initMsg.error) return { status: init.status, step: "initialize", error: shown(initMsg.error).value };
+  // Every request after initialize carries the version the server answered with (ours when it names none or an odd one).
+  const negotiated = initMsg.result?.protocolVersion;
+  const version = typeof negotiated === "string" && /^[\w.-]{1,32}$/.test(negotiated) ? negotiated : MCP_PROTOCOL;
   const sid = init.headers.get("mcp-session-id") ?? undefined;
-  const note = await post({ jsonrpc: "2.0", method: "notifications/initialized" }, sid);
+  const session = { "MCP-Protocol-Version": version, ...(sid ? { "Mcp-Session-Id": sid } : {}) };
+  const note = await post({ jsonrpc: "2.0", method: "notifications/initialized" }, session);
   await drop(note);
-  const res = await post({ jsonrpc: "2.0", id: 2, method, params }, sid);
+  const res = await post({ jsonrpc: "2.0", id: 2, method, params }, session);
   if (res.status === 401) { await drop(res); return { status: 401, step: method, error: wwwError(res) }; }
   const msg = rpcMessage(await textOf(res), 2);
-  if (sid) { try { const d = await request(url, { method: "DELETE", headers: { ...headers, "Mcp-Session-Id": sid } }, "mcp"); await drop(d); } catch { /* best effort */ } }
-  if (msg?.error) return { status: res.status, error: shown(msg.error).value };
+  if (sid) { try { const d = await request(url, { method: "DELETE", headers: { ...headers, ...session } }, "mcp"); await drop(d); } catch { /* best effort */ } }
+  if (!msg) return { status: res.status, result: null, error: NO_RESPONSE };
+  if (msg.error) return { status: res.status, error: shown(msg.error).value };
   const s = shown(msg?.result ?? null);
   return { status: res.status, result: s.value, ...(s.trimmed ? { trimmed: true } : {}) };
 }
