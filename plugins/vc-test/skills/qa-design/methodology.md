@@ -67,7 +67,7 @@ For every page audit, enumerate and audit each applicable state separately:
 |-------|---------|------------------|
 | **Loading / skeleton** | Throttle network (Fast 3G) or block xAPI response | BL-UI-001 (CLS), BL-UI-001 refinement (skeleton-count parity) |
 | **Empty** | Sign in to account with no orders / wishlists / cart items | BL-UI-002 (empty-state copy spacing), BL-UI-006 (CTA size) |
-| **Error / disabled** | Cart with a disabled / unavailable product (a vcst-qa example: Capri-Sun, SHOT — elsewhere, find one live); order with payment-failed status | PROPOSED-BL-UI-007 occlusion (pass the message's own selector if outside the default alert set), WCAG 4.1.3 alert-semantics (is the warning announced?), BL-UI-004 overflow on alert text |
+| **Error / disabled** | Cart with a disabled / unavailable product (a vcst-qa example: Capri-Sun, SHOT — elsewhere find one live, [`project-facts.md`](project-facts.md)); order with payment-failed status | PROPOSED-BL-UI-007 occlusion (pass the message's own selector if outside the default alert set), WCAG 4.1.3 alert-semantics (is the warning announced?), BL-UI-004 overflow on alert text |
 | **Multi-item / overflow** | Cart with 10+ line items; order with long product titles; address with long company name | BL-UI-004 overflow, BL-UI-005 alignment |
 | **Form-validation error** | Submit form with invalid email / empty required / weak password | BL-UI-003 state-shift (validation message insertion), BL-UI-004 (long error text wrap) |
 | **Auth-required action when anonymous** | Click "Place Order" / "Save list" while signed out | BL-UI-003 (modal insertion), BL-UI-006 (modal CTA size) |

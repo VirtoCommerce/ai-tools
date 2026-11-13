@@ -1,7 +1,7 @@
 # Storybook workflow — how `vc-test:ui-ux-expert` audits a component in Storybook
 
-Read by `vc-test:ui-ux-expert` before a Storybook pass (its body points here). Storybook is the vc-frontend UI kit's;
-a customer with a different storefront codebase brings its own.
+Read by `vc-test:ui-ux-expert` before a Storybook pass (its body points here). The workflow is Storybook-generic; the Storybook
+is the project's ([`project-facts.md`](project-facts.md) row *Storybook*) — vc-frontend's UI kit on `platform`, the fork's on `client`.
 
 ## Storybook Testing Workflow (10 steps)
 
@@ -20,7 +20,9 @@ a customer with a different storefront codebase brings its own.
 
 **Determinism (mandatory for stable baselines):** Await `document.fonts.ready` before screenshotting, set `parameters.chromatic.pauseAnimationAtEnd: true` per story (or disable CSS transitions in the test preview), mock `Date`/`Math.random`/timers, stub network with MSW. Without these, baselines flicker and CI flakes. **Caveat — hosted Storybook is a production build (`vite build`), so `import.meta.env.DEV === false`**: never verify DEV-only `console.warn` gates against hosted Storybook (; lesson: VCST-4892 NEW-4 retraction).
 
-## Component Library — 55 Components, Atomic Design
+## Component Library — vc-frontend's, Atomic Design
+
+vc-frontend's library as last measured — a snapshot for choosing what to audit first, not a count to assert. The live list is `{STORYBOOK_URL}/index.json`; on a `client` fork read that instead, and rank by its story counts the same way.
 
 **ATOMS (18):** VcBadge (16 stories), VcCheckbox, VcDialog, VcIcon, VcPriceDisplay, VcRadioButton, VcSwitch, VcTypography, VcLabel, VcInputDetails, VcProperty, VcProductTitle, VcProductActions, VcScrollbar, VcMarkdownRender, VcCarouselPagination, VcVariantPickerGroup
 

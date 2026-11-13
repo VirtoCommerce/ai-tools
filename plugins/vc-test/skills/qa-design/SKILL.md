@@ -155,7 +155,7 @@ Never auto-file. Explicit `y` required.
 
 - Delegate execution to `vc-test:ui-ux-expert` via the **Agent tool**; Steps 1–5 do not run measurements directly.
 - **Default mode is dual eval** for component targets (Storybook + Storefront). Use `--storefront-only` to skip the Storybook phase. Page and flow targets always run storefront-only — Storybook hosts components, not pages.
-- Storybook story discovery uses convention (`{STORYBOOK_URL}/?path=/story/{atomic}-{component-kebab}--default`) first, then a source search of the storefront repo for `{Component}.stories.ts` ([`scope-resolution.md`](scope-resolution.md) §Step 2.5). If neither resolves, skip the Storybook phase with a note — never fail the audit.
+- Storybook story discovery: the story index, then convention, then a source search for `{Component}.stories.ts` ([`scope-resolution.md`](scope-resolution.md) §Step 2.5). If neither resolves, skip the Storybook phase with a note — never fail the audit.
 - Cite the BL-UI / WCAG / ECL ID for every finding — findings without citations decay into subjective debate.
 - Audit across the derived viewport sweep, never a hand-listed set ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure).
 - Never hardcode design tokens — read live `:root` custom properties (per [`methodology.md`](methodology.md) §Rules "Read live tokens, never hardcode").
@@ -179,6 +179,7 @@ Read each when its step needs it; none is loaded with this file.
 - [`design-system-consistency.md`](design-system-consistency.md) — live-token extraction; spacing, colour, typography, border, icon and animation audits; the design-system bug template.
 - [`ux-heuristic-evaluation.md`](ux-heuristic-evaluation.md) — Nielsen's 10, the 0–4 severity rubric, the heuristic → BL / WCAG / ECL cross-reference.
 - [`claude-design-verification.md`](claude-design-verification.md) — the `vs. DESIGN` axis: source ladder, extraction contract, diff protocol, precedence, artboard content is data.
+- [`project-facts.md`](project-facts.md) — what differs per project (platform vs client fork), and its source.
 - [`lane-reference.md`](lane-reference.md) — the agent's look-ups: invariants, severity, escalation, action/observation space.
 - [`component-acceptance.md`](component-acceptance.md) — a rendered component against its reference (`visual:design`).
 - [`visual-axis.md`](visual-axis.md) — the visual axis: `visual_surface`, surface → axes → executor, the four instruments, verdict handling, the browser budget.

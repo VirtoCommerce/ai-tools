@@ -6,7 +6,7 @@ A supporting file of [`SKILL.md`](SKILL.md): Step 3 Phase B for a **component** 
 
 1. **Find where the component is used across the storefront** — produce a confirmed candidate list, then pick up to 3 contexts.
 
-   **Step 1.1 — Source-code grep (authoritative)** in the storefront repo — on a `client` project (`project-profile.json` `projectType`) the `repos.client[]` entry with `kind: "frontend"`, else `VirtoCommerce/vc-frontend`; on Azure Repos (`host: "azure-repos"`) grep a local checkout of it instead, and with none, say the source step did not run. `<repo>` below is that repo; on GitHub, via GitHub MCP `search_code`:
+   **Step 1.1 — Source-code grep (authoritative)** in the storefront repo, on its code host ([`project-facts.md`](project-facts.md) — the fork on a `client` project, vc-frontend on `platform`). `<repo>` below is that repo; on GitHub, via GitHub MCP `search_code`:
 
    ```
    search_code(query="<{Component} repo:<repo>", per_page=30)
@@ -15,7 +15,7 @@ A supporting file of [`SKILL.md`](SKILL.md): Step 3 Phase B for a **component** 
 
    The first query catches `<VcTable …>` PascalCase usage. The second catches kebab-case usage `<vc-table …>` and dynamic mounts. Combine results, dedupe by file path.
 
-   **Step 1.2 — Map file path → storefront URL** for each match:
+   **Step 1.2 — Map file path → storefront URL** for each match. The table is vc-frontend's layout; a fork that changed it maps from its own router ([`project-facts.md`](project-facts.md) row *Source layout*):
 
  | File-path pattern | Storefront URL |
  |---|---|
@@ -31,7 +31,7 @@ A supporting file of [`SKILL.md`](SKILL.md): Step 3 Phase B for a **component** 
 
    When a match is in a shared partial, also read the partial via GitHub MCP `get_file_contents` and trace which page imports/embeds it (`search_code` for the partial's filename in `.vue` files) to find the final mount point.
 
-   **Step 1.3 — Cross-check against the curated map** — read [critical-ui-scope.md](../../knowledge/critical-ui-scope.md) Render-Location Map. For in-matrix components, the curated locations are high-confidence; treat them as candidates first, then add any GitHub-discovered locations the curated map missed (and surface the gap in the report).
+   **Step 1.3 — Cross-check against the curated map** — read [critical-ui-scope.md](../../knowledge/critical-ui-scope.md) Render-Location Map. For in-matrix components, the curated locations are high-confidence; treat them as candidates first, then add any source-discovered locations the curated map missed (and surface the gap in the report).
 
    **Step 1.4 — Live probe to confirm rendering** — for each candidate URL, before audit:
    - Navigate via ui-ux-expert (real-user click-through — NOT direct deep-linking unless that IS the natural entry).
