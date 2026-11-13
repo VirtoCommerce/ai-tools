@@ -25,9 +25,12 @@ const REVENUE = [/cart|checkout|payments?|pric(?:e|es|ing)|quotes?/i, /(?<![A-Za
 const PARTIAL = /^pr:([^:]+)(?::[^:]+)*:(diff|patches|files)$/;
 // F10 — B2B org context (test-model redesign §5).
 const ORG = /organizationId|organization_id|xapi:my_organization|my_organization|\/organizations?\b|sales-rep|salesrep|loginOnBehalf|CanImpersonate|impersonat/i;
-// F13 — the change checks access: a role or permission guard named in the diff surface. An AC actor is not one.
-// Case-sensitive on purpose: `Permissions.Approve` is a guard, `permissions.ts` / `permissions.length` are not.
-export const ACCESS_GUARD = /\[Authorize\b|\bPermissions?\.[A-Z]\w*|\b[Hh]as(?:Any)?Permissions?\b|\b[Cc]heckPermissions?\b|\b[Ii]sAuthorized\b|\$can\(|Authoriz(?:ation)?(?:Handler|Requirement)\b|\bAuthorizeAsync\b|\bv-if="[^"]*\b(?:[Rr]ole|[Pp]ermission|isCorporateMember|isOrganizationMaintainer)/;
+// F13 — the change checks a PERMISSION. Role names are a project's own (a client renames or adds roles), so a role name or
+// an AC actor is never a signal; the platform's permission checks are. Case-sensitive on purpose: `XApiPermissions.CanX`
+// and `Permissions.Approve` are permissions, `permissions.ts` / `permissions.length` are not. Grounded in vc-platform
+// (`PermissionAuthorizationRequirement`, `…AuthorizationHandler`, `AuthorizeAsync`, `HasGlobalPermission`) and vc-frontend
+// (`checkPermissions(XApiPermissions.…)`, `$can($permissions.xApi.…)`).
+export const ACCESS_GUARD = /\[Authorize\b|Permissions?\.[A-Z]\w*|\$permissions\.|\bHasGlobalPermission\b|\b[Cc]heckPermissions?\(|\$can\(|Authoriz(?:ation)?(?:Handler|Requirement)\b|\bAuthorizeAsync\b/;
 const F13_REQUIRES = ["a risk with Source floor:F13 whose account is deny:<permission> <KEY|P-n> — derive the roles by skills/qa-design/personas.md §1, the KEY per floors.md §15"];
 // F11 — configuration (test-model redesign §5a, layers 1–3).
 const CONFIG = /ModuleConstants\.Settings|settingsManager|SettingsManager|store\.settings|\$cfg\./;
