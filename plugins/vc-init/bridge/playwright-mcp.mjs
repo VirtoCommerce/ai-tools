@@ -27,7 +27,10 @@
  *   printed `<secret>ADMIN_PASSWORD</secret>` — no value in any response, no file anywhere.
  *
  * A `--secrets` argument and PLAYWRIGHT_MCP_SECRETS_FILE are refused / dropped: they would put a file
- * back. The IPv4-first DNS hint gen-mcp gives the other servers through NODE_OPTIONS (#220) is set here
+ * back. Playwright MCP masks a typed password in its responses, not in the HAR the lane's `recordHar`
+ * writes — the sign-in request's body holds the value — so this process, the one place that knows the
+ * values, keeps that HAR's directory scrubbed (bridge/har-scrub.mjs): at start, after every HAR write
+ * and at exit. The IPv4-first DNS hint gen-mcp gives the other servers through NODE_OPTIONS (#220) is set here
  * in-process, because vc-secrets refuses a NODE_OPTIONS key in a declaration.
  */
 import dns from "node:dns";
@@ -35,6 +38,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { delimiter, join } from "node:path";
 import { ENV_NAME_RE, envFilePasswords, isPasswordName } from "../skills/project-init/lib/passwords.mjs";
+import { configArg, configHarPath, watchHarDirs } from "./har-scrub.mjs";
 
 const SPEC_RE = /^@playwright\/mcp@(\d+\.\d+\.\d+(?:-[\w.]+)?)$/;
 
@@ -139,6 +143,17 @@ export async function runPlaywrightMcp(argv) {
   }
   const secrets = { ...fromFile, ...fromVcSecrets };
   if (!Object.keys(secrets).length) say("started without a password — the agent cannot log in on this lane (check the env's secrets: vc-secrets doctor)");
+  // The lane's HAR holds the sign-in request: take the values (and any password-named field) out of it.
+  const har = configHarPath(configArg(args) || "", process.cwd());
+  if (har) {
+    watchHarDirs([har], {
+      secrets: Object.values(secrets),
+      onResult: (file, r) => {
+        if (r.status === "scrubbed") say(`masked ${r.masked} secret value(s) in ${file}`);
+        else if (r.status === "error") say(`could not scrub ${file}: ${r.error}`);
+      },
+    });
+  }
   try {
     dns.setDefaultResultOrder("ipv4first");
   } catch {
