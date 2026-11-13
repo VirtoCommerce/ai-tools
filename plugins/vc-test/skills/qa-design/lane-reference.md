@@ -20,11 +20,16 @@ Canonical definitions: `BL-UI-*` (`<plugin>/knowledge/bl-ui.md`; in this reposit
 | `BL-UI-005` | Aligned horizontal groups | Vertical-center drift ≤ 1 px, row-height drift ≤ 1 px |
 | `BL-UI-006` | Mobile touch targets (≤ 768 px) | < 24 × 24 FAIL · 24–43 WARN (AAA, cross-check UI-kit sizes) · ≥ 8 px gap |
 
+On a `client` fork, `BL-UI-002` and `BL-UI-006` thresholds that come from vc-frontend's scales (`SPACING_GRID`, `UI_KIT_BUTTON_SIZES_PX`) are WARN until checked against the fork's own config — see the agent's §2 Hard rules.
+
 A component that violates a business invariant (wrong price format, missing stock indicator, incorrect checkout state) OR a UI / a11y invariant (any `BL-UI-*` or `BL-A11Y-*` in `bl-ui.md`) is a FAIL regardless of design match.
 
 ## Design system
 
 ### Design System: Coffee Theme
+
+vc-frontend's default theme. On a `client` fork the fork's own theme takes its place: read its tokens live, never these names.
+
 
 Key patterns: CSS custom properties for all design tokens. Color palettes (primary, secondary, success, warning, danger, info). Typography scale (h1-h6, body, caption). Spacing on the derived `SPACING_GRID` (`BL-UI-002` above), never a hand-listed grid. Border radius and shadow tokens (`--radius-*`, `--shadow-*`; `design-system-consistency.md` §Border radius & shadows).
 - **Theme switching** may cause FOUC if CSS variables load late — this is a bug
@@ -49,7 +54,7 @@ Where layout bugs hide, the WCAG 2.2 AA table, the component library and Nielsen
 | **Hover/Focus-induced Shift** | Neighbor moves when component is hovered, focused, or its badge/counter updates | Medium |
 | **Skeleton Mismatch** | Skeleton dimensions ≠ resolved content → snap on load | Medium |
 | **Responsive** | Layout breaks at breakpoint, touch target < 24 px, < 8 px gap between interactives | High (P0 if checkout) |
-| **Theme** | Component broken in Coffee theme, FOUC | Medium |
+| **Theme** | Component broken in a gated theme preset (vc-frontend: Coffee), FOUC | Medium |
 
 ## Escalation
 
@@ -60,7 +65,7 @@ In addition to the shared triggers:
 - Color contrast < 3:1 on critical UI (checkout, payment, errors)
 - Authentication regressed (WCAG 3.3.8) — paste blocked on password/OTP, password-manager autofill broken, CAPTCHA without non-cognitive alternative
 - Sticky / floating element covers focused checkout or sign-in field (WCAG 2.4.11)
-- Revenue-critical component broken (VcAddToCart, VcQuantityStepper, VcProductCard)
+- Revenue-critical component broken (add to cart, quantity stepper, product card — vc-frontend: VcAddToCart, VcQuantityStepper, VcProductCard; a fork may rename or replace them)
 
 ## Action space
 
