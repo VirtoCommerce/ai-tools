@@ -164,6 +164,6 @@ question decides filing; each one filed ⇒ at once `node <plugin>/lib/rounds.mj
 <id>=<KEY>`. A `verdict.json` bug with `priorBug` is skipped: it is already filed (P6). Then
 `node <plugin>/lib/rounds.mjs close --key <TICKET> --run-dir <RUN_DIR> --bundle <BUNDLE>`. Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and
 its `manual`, `unknown`, `foreign` lists; 3 ⇒ the stand is not writable: all manual. Print `verdict.md`'s first two
-lines and path.
+lines and path. The visual lane returned **proposed personas**? Offer them once, add the accepted ones: `skills/qa-design/visual-axis.md` §3.
 
 Ticket in Tested or Done? Run `/qa-docs <TICKET>` for its documentation, where that skill is installed.

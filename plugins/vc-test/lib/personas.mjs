@@ -7,8 +7,13 @@
 // CLI (from the project root):
 //   node <plugin>/lib/personas.mjs --show
 //   node <plugin>/lib/personas.mjs --init
-//   node <plugin>/lib/personas.mjs --add --section archetypes|segments|accounts --row '| a | b | … |' [--replace]
+//   node <plugin>/lib/personas.mjs --add --section archetypes|segments|accounts --row-file <file> [--replace]
+//     <file> holds the one table row, `| a | b | … |`. A row is written to a file with an editor tool, never put on a
+//     command line: its text comes from a ticket, and a quote in it would break — or inject into — a shell command.
+//     `--row '| … |'` is still accepted for a person typing in a terminal.
+//   A cell may hold `\|` for a literal pipe. Two --add runs at once: the later write wins (read, change, rename).
 // Prints one JSON object. Exit 0 done · 1 refused (bad row, duplicate without --replace) · 2/3 profile missing/unreadable.
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { readKnowledge, storeConfig, writeKnowledge } from "./knowledge-store.mjs";
 import { argOf, outputRoot } from "./paths.mjs";
@@ -44,7 +49,7 @@ export function skeleton() {
 export function cellsOf(line) {
   const t = String(line).trim();
   if (!t.startsWith("|") || !t.endsWith("|") || t.length < 2) return null;
-  return t.slice(1, -1).split("|").map((c) => c.trim());
+  return t.slice(1, -1).split(/(?<!\\)\|/).map((c) => c.trim());
 }
 
 const isRule = (cells) => cells.every((c) => /^:?-{3,}:?$/.test(c));
@@ -54,9 +59,9 @@ function locate(lines) {
   const found = {};
   let current = null;
   lines.forEach((line, i) => {
-    const h = /^##\s+(.+?)\s*$/.exec(line);
+    const h = /^##\s+(.*)$/.exec(line);
     if (h) {
-      const name = h[1].toLowerCase();
+      const name = (/^[A-Za-z]+/.exec(h[1].trim())?.[0] ?? "").toLowerCase(); // `## Accounts — a note` is Accounts
       current = Object.prototype.hasOwnProperty.call(SECTIONS, name) ? name : null;
       if (current) found[current] = { heading: i, header: -1, rule: -1, rows: [], end: i };
       return;
@@ -99,7 +104,12 @@ export function addRow(text, section, row, { replace = false } = {}) {
     lines[same] = clean;
     return { text: `${lines.join("\n")}\n`, replaced: true };
   }
-  const after = Math.max(sec.rule, sec.header, ...sec.rows);
+  if (sec.rule < 0) { // a header with no |---| line is not a table yet: add the rule first
+    lines.splice(sec.header + 1, 0, ruleRow(cols));
+    sec.rule = sec.header + 1;
+    sec.rows = sec.rows.map((i) => i + 1);
+  }
+  const after = Math.max(sec.rule, ...sec.rows);
   lines.splice(after + 1, 0, clean);
   return { text: `${lines.join("\n")}\n`, replaced: false };
 }
@@ -131,8 +141,13 @@ function cli(argv) {
   }
   if (argv.includes("--add")) {
     const section = argOf(argv, "section");
-    const row = argOf(argv, "row");
-    if (!section || !row) throw Object.assign(new Error("--add needs --section and --row"), { exit: 1 });
+    const rowFile = argOf(argv, "row-file");
+    let row = argOf(argv, "row");
+    if (rowFile) {
+      try { row = readFileSync(rowFile, "utf8").trim(); } catch (e) { throw Object.assign(new Error(`cannot read --row-file ${rowFile}: ${e.message}`), { exit: 1 }); }
+      if (row.includes("\n")) throw Object.assign(new Error("--row-file holds one row: one line"), { exit: 1 });
+    }
+    if (!section || !row) throw Object.assign(new Error("--add needs --section and --row-file (or --row)"), { exit: 1 });
     let result;
     try {
       result = addRow(current() ?? skeleton(), section, row, { replace: argv.includes("--replace") });
@@ -142,7 +157,7 @@ function cli(argv) {
     const { path } = writeKnowledge(cfg, { kind: "personas", slug: SLUG, text: result.text });
     return { written: true, path, section, replaced: result.replaced };
   }
-  throw Object.assign(new Error("usage: personas.mjs --show | --init | --add --section <archetypes|segments|accounts> --row '| … |' [--replace]"), { exit: 1 });
+  throw Object.assign(new Error("usage: personas.mjs --show | --init | --add --section <archetypes|segments|accounts> --row-file <file> [--replace]"), { exit: 1 });
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
@@ -150,6 +165,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
     console.log(JSON.stringify(cli(process.argv.slice(2)), null, 2));
   } catch (e) {
     console.log(JSON.stringify({ error: e.message }));
-    process.exit(e.exit ?? e.code ?? 1);
+    const code = e.exit ?? e.code; // a ProfileError carries 2 or 3; an fs error's code is a string (EACCES)
+    process.exit(Number.isInteger(code) ? code : 1);
   }
 }

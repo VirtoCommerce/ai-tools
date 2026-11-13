@@ -20,6 +20,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   its own store.
 - `/vc-test:init` step 6a offers to start the file. When the visual lane returns proposed personas, the dispatcher
   lists them and adds the ones the operator accepts (`skills/qa-design/visual-axis.md` §3); headless, it adds none.
+- A row is passed in a file (`--row-file`), never on the command line: its text comes from a ticket, and a quote in
+  it would break or inject into a shell command. A cell may hold `\|`; a section is found by its heading's first
+  word (`## Accounts — a note`); a table header with no `|---|` gets one; a file-system error exits 1 with JSON.
+  The offer to add proposed personas is in `/vc-test:qa-ticket` human point 2 and `/vc-test:qa-design` Step 5.
 
 ## The visual lane works the same on a client fork as on vc-frontend — `vc-test` `0.15.0` — 2026-11-12
 

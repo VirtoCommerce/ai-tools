@@ -42,8 +42,9 @@ vc-init owns `project-profile.json`; this command only fills vc-test's own block
    `written` ⇒ STOP with its JSON.
 6a. **Personas.** `node <plugin>/lib/personas.mjs --show`. No file ⇒ ask once: *Keep this project's own personas
    (archetypes, the segments your features split users by, which test account is which persona)?* Yes ⇒
-   `node <plugin>/lib/personas.mjs --init`, then ask for rows only if the operator has them now, adding each with
-   `--add --section <archetypes|segments|accounts> --row '| … |'`. The visual lane proposes more as tickets show them
+   `node <plugin>/lib/personas.mjs --init`, then ask for rows only if the operator has them now: write each row to
+   `.vc-fix/vc-test/persona-row.md` with the editor tool, then `--add --section <archetypes|segments|accounts>
+   --row-file .vc-fix/vc-test/persona-row.md` — never the row on the command line. The visual lane proposes more as tickets show them
    (`skills/qa-design/personas.md` §0). Never ask for a password here.
 7. **Accounts.** For each entry in step 5's `gaps`: one line, `<env> has no <role> account — run <fix>`. Never
    ask for a login or a password here.
