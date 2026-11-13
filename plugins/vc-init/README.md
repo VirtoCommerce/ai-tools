@@ -100,7 +100,8 @@ storefront users (typically admins in vc-secrets, users in `.env.local`, which i
 **The lane HAR keeps no password.** The lane masks a typed password in its responses, but its `recordHar`
 captures the sign-in request's body (`POST /api/platform/security/login`, `POST /connect/token`). Either
 way the HAR is scrubbed (`bridge/har-scrub.mjs`): password-named body fields and every known password value
-become `«redacted»`, the rest of the traffic stays. A bridged lane does it in-process: at start, after each
+become `«redacted»`, the rest of the traffic stays — session tokens and cookies included, so a HAR is still not
+a file to share. A bridged lane does it in-process: at start, after each
 `browser_close` and at exit. A lane started straight from `.mcp.json` gets the `hooks/scrub-har.mjs` hook
 after `browser_close` and at session start, with values from `.env.playwright.*` and `.env.local`.
 

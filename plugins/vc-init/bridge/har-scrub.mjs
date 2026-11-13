@@ -24,13 +24,16 @@
  * and a password-like name is parsed. A first pass only counts; only a file with something to mask is
  * written again (temp file + rename), and the rename is dropped when the HAR changed since it was read
  * (Playwright rewrote it, or another scrubber got there first). A `.har-scrub.json` stamp beside the HAR
- * remembers the size and mtime of the last scrubbed version and a short salted tag of each value it was
- * scrubbed with, so a file is scanned again only when it changed or a scrubber knows a value it was not
- * scrubbed with (the hook knows the env files' values, the bridge also those in vc-secrets).
+ * remembers the size and mtime of the last scrubbed version and a tag of each value it was scrubbed with,
+ * so a file is scanned again only when it changed or a scrubber knows a value it was not scrubbed with
+ * (the hook knows the env files' values, the bridge also those in vc-secrets). The tag is an HMAC keyed
+ * with a key kept in the plugin's data folder, never beside the HAR: a stamp copied along with a HAR
+ * must not let anyone test a guessed password against it offline.
  */
 import { createHmac, randomBytes } from "node:crypto";
 import { once } from "node:events";
 import { closeSync, createReadStream, createWriteStream, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, renameSync, statSync, unlinkSync, writeFileSync, writeSync, watch as fsWatch } from "node:fs";
+import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { StringDecoder } from "node:string_decoder";
 import { MASK, redactText, secretForms } from "./redact.mjs";
@@ -46,7 +49,9 @@ const STAMP = ".har-scrub.json";
 export function harForms(secrets) {
   const all = new Set();
   for (const s of secrets || []) {
-    for (const f of secretForms(s)) {
+    // A form body spells the value as URLSearchParams does: `+` for a space, `!'()~` escaped too.
+    const form = new URLSearchParams({ v: String(s ?? "") }).toString().slice(2);
+    for (const f of [...secretForms(s), ...(s && form !== String(s) ? [form] : [])]) {
       if (f.length < MIN_FORM) continue;
       all.add(f);
       // A value inside a JSON body that is itself a HAR string is escaped twice.
@@ -236,20 +241,54 @@ function stampPath(file) {
 function readStampFile(file) {
   try {
     const j = JSON.parse(readFileSync(stampPath(file), "utf8"));
-    if (j && typeof j.salt === "string" && j.files && typeof j.files === "object") return j;
+    // v2: tags keyed outside the HAR folder. An older stamp (a salt beside its tags) is dropped whole.
+    if (j && j.v === 2 && j.files && typeof j.files === "object") return j;
   } catch {
     /* none yet, or unreadable — start over */
   }
-  return { salt: randomBytes(16).toString("hex"), files: {} };
+  return { v: 2, files: {} };
+}
+
+/** Where the tag key lives: vc-init's data folder (`$VC_RUN` lives there too), never a HAR folder. */
+export function tagKeyFile(env = process.env) {
+  return join(env.HOME || homedir(), ".claude", "plugins", "data", "vc-init-ai-tools", "har-scrub.key");
+}
+
+let cachedKey;
+/** The machine's tag key, created on first use; null when it cannot be read or written. */
+function tagKey() {
+  const file = tagKeyFile();
+  if (cachedKey?.file === file) return cachedKey.key;
+  let key = null;
+  for (let attempt = 0; attempt < 2 && !key; attempt++) {
+    try {
+      const k = readFileSync(file, "utf8").trim();
+      if (/^[0-9a-f]{64}$/.test(k)) key = k;
+      else break;
+    } catch {
+      try {
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, randomBytes(32).toString("hex"), { mode: 0o600, flag: "wx" });
+      } catch {
+        /* another scrubber created it first (read it again), or the folder is not writable */
+      }
+    }
+  }
+  cachedKey = { file, key };
+  return key;
 }
 
 /**
- * A 32-bit salted tag per value pass 2 can use: enough to tell "scrubbed with this value" apart, too
- * short (many values share a tag) to confirm a guessed password against.
+ * A tag per value pass 2 can use, keyed with the machine's key: tells "scrubbed with this value" apart,
+ * and is useless to anyone holding only the HAR folder. No key ⇒ null, and no file counts as scrubbed with
+ * a value (a re-scan costs time, never a secret).
  */
-function tagsFor(secrets, salt) {
+function tagsFor(secrets) {
   const vals = [...new Set((secrets || []).filter((v) => harForms([v]).length))];
-  return vals.map((v) => createHmac("sha256", salt).update(String(v)).digest("hex").slice(0, 8));
+  if (!vals.length) return [];
+  const key = tagKey();
+  if (!key) return null;
+  return vals.map((v) => createHmac("sha256", key).update(String(v)).digest("hex").slice(0, 16));
 }
 
 const sameStat = (a, b) => !!a && !!b && a.size === b.size && a.mtimeMs === b.mtimeMs;
@@ -272,7 +311,7 @@ function writeStamp(file, secrets, carried) {
   try {
     const st = statSync(file);
     const stamp = readStampFile(file);
-    const tags = [...new Set([...carried, ...tagsFor(secrets, stamp.salt)])];
+    const tags = [...new Set([...carried, ...(tagsFor(secrets) || [])])];
     stamp.files[basename(file)] = { size: st.size, mtimeMs: st.mtimeMs, tags };
     writeFileSync(stampPath(file), JSON.stringify(stamp, null, 2));
   } catch {
@@ -287,14 +326,19 @@ export function isStamped(file, secrets = []) {
   const entry = stamp.files[basename(file)];
   if (!st || !sameStat(entry, st)) return false;
   const have = new Set(Array.isArray(entry.tags) ? entry.tags : []);
-  return tagsFor(secrets, stamp.salt).every((t) => have.has(t));
+  const want = tagsFor(secrets);
+  return want !== null && want.every((t) => have.has(t));
 }
 
-function replace(tmp, file) {
+/** Rename `tmp` over `file` unless `file` changed since `before`. @returns {boolean} whether it was replaced */
+function replace(tmp, file, before) {
   for (let attempt = 0; ; attempt++) {
+    // Checked again before every attempt: Playwright may write a new HAR while a retry waits, and the
+    // scrubbed old one must not overwrite it.
+    if (!sameStat(statOrNull(file), before)) return false;
     try {
       renameSync(tmp, file);
-      return;
+      return true;
     } catch (e) {
       // Windows: a reader holding the file open makes the rename fail for a moment.
       if (attempt >= 5 || !["EPERM", "EBUSY", "EACCES"].includes(e.code)) throw e;
@@ -335,7 +379,10 @@ function settle(file, tmp, result, before, secrets, carried) {
     writeStamp(file, secrets, carried);
     return { status: "clean", masked: 0 };
   }
-  replace(tmp, file);
+  if (!replace(tmp, file, before)) {
+    dropTmp(tmp);
+    return { status: "changed", masked: 0 };
+  }
   activeTmps.delete(tmp);
   writeStamp(file, secrets, carried);
   return { status: "scrubbed", masked: result.masked };

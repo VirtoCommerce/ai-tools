@@ -6,9 +6,12 @@ import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { configArg, configHarPath, createHarScrubber, harFilesIn, harForms, projectHarTargets, scrubHarFile, scrubHarFileSync, scrubHarText, sweepStaleTmp, watchHarDirs } from "./har-scrub.mjs";
+import { configArg, configHarPath, createHarScrubber, harFilesIn, harForms, projectHarTargets, scrubHarFile, scrubHarFileSync, scrubHarText, sweepStaleTmp, tagKeyFile, watchHarDirs } from "./har-scrub.mjs";
 import { MASK } from "./redact.mjs";
 import { envFilePasswordValues } from "../skills/project-init/lib/passwords.mjs";
+
+// The stamp's tag key lives under HOME: keep the tests' key out of the real home folder.
+process.env.HOME = mkdtempSync(join(tmpdir(), "har-home-"));
 
 const PW = "S3cr3t-pw\"!"; // a quote, to exercise the escaped spellings
 const STOREFRONT_PW = "Shop+Pass 9";
@@ -82,6 +85,13 @@ test("a known value is masked wherever it appears, and a second scrub changes no
   const second = scrubHarText(first.text, [PW]);
   assert.equal(second.masked, 0);
   assert.equal(second.text, first.text);
+});
+
+test("a known value is found in its form-body spelling (`+` for a space, `!` escaped)", () => {
+  const q = new URLSearchParams({ p: STOREFRONT_PW, q: PW }).toString();
+  const redirect = entry("GET", `https://stand.example/after-login?${q}`);
+  const { text } = scrubHarText(har([redirect]), [PW, STOREFRONT_PW]);
+  assert.equal(JSON.parse(text).log.entries[0].request.url, `https://stand.example/after-login?p=${MASK}&q=${MASK}`);
 });
 
 test("a short known value is not used to mask the whole capture", () => {
@@ -203,8 +213,15 @@ test("a file scrubbed without a value is scanned again by a scrubber that knows 
   // Both scrubs are now on the stamp: neither scans it again.
   assert.equal((await scrubHarFile(file, { secrets: [PW] })).status, "skipped");
   assert.equal(scrubHarFileSync(file).status, "skipped");
-  // The stamp holds a short tag, never the value.
-  assert.ok(!readFileSync(join(file, "..", ".har-scrub.json"), "utf8").includes(PW));
+  // The stamp holds a tag, never the value, and nothing to key a guess with: the key is not beside the HAR.
+  const stamp = readFileSync(join(file, "..", ".har-scrub.json"), "utf8");
+  assert.ok(!stamp.includes(PW) && !/"salt"/.test(stamp));
+  assert.ok(existsSync(tagKeyFile()) && !tagKeyFile().startsWith(join(file, "..")));
+  // Another machine's key (another HOME) does not trust this stamp: the value pass runs again.
+  const home = process.env.HOME;
+  process.env.HOME = mkdtempSync(join(tmpdir(), "har-home-"));
+  assert.equal((await scrubHarFile(file, { secrets: [PW] })).status, "clean");
+  process.env.HOME = home;
   const clean = tmpHar(har([oauthCode]));
   const before = statSync(clean.file).mtimeMs;
   assert.equal((await scrubHarFile(clean.file, { secrets: [PW] })).status, "clean");
