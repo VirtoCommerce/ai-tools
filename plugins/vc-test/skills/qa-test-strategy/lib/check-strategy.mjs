@@ -24,8 +24,8 @@ const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-
 // A fired floor here needs its OWN risk: Source carries the token `floor:<id>`, technique is MODEL (M10). A risk carries
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
-// Clause 15: a test-user KEY, guest, deny:<permission> <KEY|P-n>, or P-n (floors.md §15).
-const ACCOUNT = /^(?:[A-Z][A-Z0-9_]*|guest|P-?\d+|deny:\S+\s+(?:[A-Z][A-Z0-9_]*|P-?\d+))$/;
+// Clause 15: a test-user KEY, guest, spec (a committed .spec's own sign-in), deny:<permission> <KEY|P-n>, or P-n (floors.md §15).
+const ACCOUNT = /^(?:[A-Z][A-Z0-9_]*|guest|spec|P-?\d+|deny:\S+\s+(?:[A-Z][A-Z0-9_]*|P-?\d+))$/;
 // Clause 12 (U59): a hotspot whose risk text says the code holds state — a limiter, a counter, a cache, a lockout — is
 // only decided on the stand if the stand's scale (instances, replicas, restarts) is part of the question.
 export const STATE_HOTSPOT = /\b(limit(?:er|s)?|attempts?|counter|throttl\w*|rate[- ]?limit\w*|cach(?:e|ed|ing)|lockout|locked out|in[- ]memory|session state)\b/i;
@@ -193,8 +193,10 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   // behaviour is a product risk with its own row and check (11a), and an AC/doc value is never lowered to "record what
   // was seen" (11b). An item starts the line or follows a `·` or a sentence end, so "P95 2s" inside an item is no item.
   const projectLine = /^Project risks:(.*)$/m.exec(sec)?.[1] ?? "";
-  for (const item of projectLine.split(/(?:·|(?<=[.;]))\s*(?=P\d+\s)/).map((t) => t.trim()).filter((t) => /^P\d+\b/.test(t))) {
-    const id = /^P\d+/.exec(item)[0];
+  const projectItems = projectLine.split(/(?:·|(?<=[.;]))\s*(?=P-?\d+\s)/).map((t) => t.trim()).filter((t) => /^P-?\d+\b/.test(t));
+  const projectIds = new Set(projectItems.map((t) => /^P-?\d+/.exec(t)[0].replace("-", ""))); // clause 15c reads the same items
+  for (const item of projectItems) {
+    const id = /^P-?\d+/.exec(item)[0];
     const anchor = productAnchor(item) ?? SUSPICION_ID.exec(item)?.[0] ?? HELD_STATE.exec(item)?.[0];
     if (anchor) errors.push(`11a: ${id} describes product behaviour (${anchor}) — a product risk with its own check, not a project risk (U58)`);
     const ref = RISK_REF.exec(item)?.[0];
@@ -244,22 +246,26 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
     }
   }
   // 15, every strategy: the account each risk is checked as — the third `·` segment of the lane cell (floors.md §15).
-  // A `none` or `SKIP` lane runs nothing; a TBD cell is clause 14's. F13 fired ⇒ a floor:F13 risk checked as `deny:`.
-  const projectIds = new Set(projectLine.match(/\bP\d+\b/g) ?? []);
+  // A `SKIP` lane and a BLOCKED row run nothing (a `none · ac-checks` row does: the AC run calls as the account); a TBD
+  // cell is clause 14's. The account is the LAST segment, so a `·` inside the agent part is not misread.
+  const accountOf = (lane) => { const parts = lane.split("·").map((p) => p.trim()); return parts.length >= 3 ? parts.at(-1) : ""; };
   for (const a of approach) {
-    const parts = a.lane.split("·").map((p) => p.trim());
-    if (/^(?:none|skip)\b/i.test(parts[0]) || a.lane.includes("TBD — strategy agent")) continue;
-    const acc = parts[2] ?? "";
+    if (/^skip\b/i.test(a.lane.trim()) || /\bBLOCKED\b/.test(a.lane) || a.lane.includes("TBD — strategy agent")) continue;
+    const acc = accountOf(a.lane);
     if (!acc) { errors.push(`15a: ${a.r} lane cell has no account — add '· <KEY | guest | deny:<permission> <KEY|P-n> | P-n>' (floors.md §15)`); continue; }
     const accs = acc.split("+").map((p) => p.trim()); // several actors on one risk: ORG_USER + ORG_ADMIN
     const bad = accs.find((p) => !ACCOUNT.test(p));
-    if (bad !== undefined) { errors.push(`15a: ${a.r} account "${bad}" is not KEY, guest, deny:<permission> <KEY|P-n> or P-n (several joined by +)`); continue; }
+    if (bad !== undefined) { errors.push(`15a: ${a.r} account "${bad}" is not KEY, guest, spec, deny:<permission> <KEY|P-n> or P-n (several joined by +)`); continue; }
     for (const p of accs.map((x) => /\bP-?\d+$/.exec(x)?.[0].replace("-", "")).filter(Boolean))
       if (!projectIds.has(p)) errors.push(`15c: ${a.r} account names ${p}, which is not on the 'Project risks:' line`);
   }
-  const accountsOf = (r) => (approach.find((a) => a.r === r)?.lane.split("·")[2] ?? "").split("+").map((p) => p.trim());
-  if (fired.includes("F13") && !risks.some((x) => names(x, "F13") && accountsOf(x.r).some((p) => p.startsWith("deny:"))))
-    errors.push("15b: F13 fired but no risk carries floor:F13 with a deny:<permission> account");
+  // 15b: F13 fired on its own signal ⇒ a floor:F13 `deny:` risk. Fired only on doubt (part of the diff unread) no permission
+  // is known, so Out of scope naming F13 and what was unread answers it instead of an invented deny risk.
+  const f13 = floors.floors.find((f) => f.id === "F13");
+  const accountsOf = (r) => accountOf(approach.find((a) => a.r === r)?.lane ?? "").split("+").map((p) => p.trim());
+  const denyRisk = risks.some((x) => names(x, "F13") && accountsOf(x.r).some((p) => p.startsWith("deny:")));
+  if (f13?.fired && !denyRisk && !(/^doubt:/.test(f13.signal) && /\bF13\b/.test(outOfScope)))
+    errors.push(`15b: F13 fired (${f13.signal.slice(0, 60)}) but no risk carries floor:F13 with a deny:<permission> account${/^doubt:/.test(f13.signal) ? " — or name F13 and the unread diff in Out of scope" : ""}`);
   const tbd = sec.split("\n").filter((l) => l.includes("TBD — strategy agent"));
   if (tbd.length) errors.push(`14: ${tbd.length} line(s) still read 'TBD — strategy agent' (first: ${tbd[0].trim().slice(0, 80)})`);
   const lines = sec.trimEnd().split("\n").length;

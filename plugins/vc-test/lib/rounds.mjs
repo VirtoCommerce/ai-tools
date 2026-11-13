@@ -492,7 +492,7 @@ const RECON_HEAD = "| R | Planned | Ran (item ids · charter · lane · case ids
 
 /** How a prior bug is reproduced (P4): its .spec through the runner, else its package on a browser lane, else nothing. */
 function proofOf(b) {
-  if (b.spec) return { repro: `spec ${b.spec}`, layer: "spec · Playwright runner", lane: `node · playwright test · ${TBD}`, effort: "low" };
+  if (b.spec) return { repro: `spec ${b.spec}`, layer: "spec · Playwright runner", lane: "node · playwright test · spec", effort: "low" };
   if (b.package) return { repro: `package ${b.package}`, layer: "the package's layer · Playwright", lane: `chrome · qa-frontend-expert · ${TBD}`, effort: "medium" };
   return { repro: "none", layer: "—", lane: "none · BLOCKED — no reproduction recorded", effort: "low" };
 }

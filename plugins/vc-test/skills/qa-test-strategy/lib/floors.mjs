@@ -26,7 +26,8 @@ const PARTIAL = /^pr:([^:]+)(?::[^:]+)*:(diff|patches|files)$/;
 // F10 — B2B org context (test-model redesign §5).
 const ORG = /organizationId|organization_id|xapi:my_organization|my_organization|\/organizations?\b|sales-rep|salesrep|loginOnBehalf|CanImpersonate|impersonat/i;
 // F13 — the change checks access: a role or permission guard named in the diff surface. An AC actor is not one.
-export const ACCESS_GUARD = /\[Authorize\b|\bPermissions?\.[A-Z]\w*|\bhas(?:Any)?Permissions?\b|\bcheckPermissions?\b|\bisAuthorized\b|\$can\(|Authoriz(?:ation)?(?:Handler|Requirement)\b|\bAuthorizeAsync\b|\bv-if="[^"]*\b(?:role|permission|isCorporateMember|isOrganizationMaintainer)/i;
+// Case-sensitive on purpose: `Permissions.Approve` is a guard, `permissions.ts` / `permissions.length` are not.
+export const ACCESS_GUARD = /\[Authorize\b|\bPermissions?\.[A-Z]\w*|\b[Hh]as(?:Any)?Permissions?\b|\b[Cc]heckPermissions?\b|\b[Ii]sAuthorized\b|\$can\(|Authoriz(?:ation)?(?:Handler|Requirement)\b|\bAuthorizeAsync\b|\bv-if="[^"]*\b(?:[Rr]ole|[Pp]ermission|isCorporateMember|isOrganizationMaintainer)/;
 const F13_REQUIRES = ["a risk with Source floor:F13 whose account is deny:<permission> <KEY|P-n> — derive the roles by skills/qa-design/personas.md §1"];
 // F11 — configuration (test-model redesign §5a, layers 1–3).
 const CONFIG = /ModuleConstants\.Settings|settingsManager|SettingsManager|store\.settings|\$cfg\./;

@@ -23,7 +23,9 @@ Use the [`agent-dispatch.md`](../../templates/agent-dispatch.md) structure, **in
 - **Items:** the path to `testing-checklist.md` and the section letter. The runner reads its section
   from the file and nothing else.
 - **Data:** the Data cell of each item is the instruction (§Data below).
-- **Account:** an item whose Data cell opens `as <account>` is done as that account, not the pool user —
+- **Account:** an item whose Data cell opens `as <account>` is done as that account, not the pool user. Two lanes
+  never act as the same KEY in one message (the pool exists for that, [`live-discovery.md`](../../knowledge/execution/live-discovery.md)
+  §Test isolation in parallel runs): give those items to one lane, or run them after the other lane returns.
   `deny:<permission> <KEY>` is that KEY, which lacks the permission; `guest` is signed out; `A + B` are the steps'
   own actors; `as P<n>` is `BLOCKED — no such account on the stand`, never another account. Same on the API.
 - **Shared state:** the checklist header's Rules block. Only the lane it names writes a shared setting,
