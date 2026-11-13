@@ -18,5 +18,11 @@
   "ambiguous": 0
  },
  "untriaged": 0,
- "evidence": "local: reports/regression/REG-2026-11-09-1635-W4/ on the owner machine (screenshots, traces, evidence/MAINTAINER-PERMS, evidence/CUST-093)"
+ "evidence": "local: reports/regression/REG-2026-11-09-1635-W4/ on the owner machine (screenshots, traces, evidence/MAINTAINER-PERMS, evidence/CUST-093)",
+ "reports": {
+  "W4": {
+   "subtask": "113006",
+   "release": "113007"
+  }
+ }
 }
