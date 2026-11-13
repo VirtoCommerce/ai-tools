@@ -35,10 +35,11 @@ Analytical ✔ · Methodical ✔ · Consultative ✔ · Model-based <✔/—: wh
 Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 
 ### Approach per risk
-| R | Technique / approach | Oracle {authority} | Layer · tool | Lane · agent | Effort |
+| R | Technique / approach | Oracle {authority} | Layer · tool | Lane · agent · account | Effort |
 |---|---|---|---|---|---|
-| R1 | FLOW, DT | AC-2 {SPEC} | storefront · Playwright | chrome · qa-frontend-expert | high |
+| R1 | FLOW, DT | AC-2 {SPEC} | storefront · Playwright | chrome · qa-frontend-expert · USER | high |
 <!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL:<PIXEL|DESIGN|PROBE|CONTENT>, several comma-separated as VISUAL:DESIGN,PIXEL (floors.md §VISUAL) · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
+<!-- account: a test-user KEY · guest · deny:<permission> <KEY|P-n> — that member without the permission (F13) · P-n when the stand has none (floors.md §15). -->
 
 <!-- VC-TEST ONLY — delete outside vc-test: a /qa-test or /qa-test-fast strategy drops this whole block (the heading,
      the table and this comment). Under vc-test it is required (clause 13, floors.md §13); the list is generated before
