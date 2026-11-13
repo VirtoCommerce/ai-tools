@@ -2,7 +2,7 @@
 
 > **This file is a pointer. The policy lives in [`.claude/knowledge/execution/reports-policy.md`](../../knowledge/execution/reports-policy.md)** (reachable as `.claude/rules/reports.md §N` — that stub keeps the section numbers).
 >
-> Read it for: the eleven report categories and their paths (§1), where artifacts must NOT go (§1, closing block), severity foldering of `reports/bugs/open/` (§1a), size caps (§2), screenshot rules and per-scope budgets (§5), console/network/HAR evidence (§6), **naming conventions including the `FAIL` marker and `--iterate` round suffix (§7)**, and retention (§9).
+> Read it for: the eleven report categories and their paths (§1), where artifacts must NOT go (§1, closing block), severity foldering of `reports/bugs/open/` (§1a), size caps (§2), screenshot rules and per-scope budgets (§5), console/network/HAR evidence (§6), **naming conventions including the `FAIL` marker and the round suffix (§7)**, and retention (§9).
 >
 > This stub is kept at its original path so the existing references across commands, skills, agent definitions and historical sprint artifacts continue to resolve.
 
@@ -23,7 +23,7 @@ drifted, measured 2026-09-19:
 It also contradicted the policy outright on what `/qa-test` persists — this file said *"only
 `summary.json` persists"*, where `reports-policy.md` §6 requires `summary.json` +
 `testing-checklist.md` + `screenshots/` (+ `design-report.md` when the visual lane ran). An agent
-reading this file named failure screenshots without the `FAIL` marker and never wrote Artifact B.
+reading this file named failure screenshots without the `FAIL` marker and never wrote the testing checklist.
 
 Two of its rules existed nowhere else and were promoted into `reports-policy.md` §1 rather than
 deleted: the `reports/` vs `test-results/` separation, and the "never create `reports/<TICKET>/` at

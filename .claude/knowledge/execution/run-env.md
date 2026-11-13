@@ -2,7 +2,7 @@
 
 A command that runs against a stand takes its env as an optional argument and binds it for its own Claude Code
 session only, so two sessions in one checkout run two envs at the same time and no file another session reads
-is edited. Examples: `/qa-test VCST-6314 vcptcore_dev`, `/qa-test-fast VCST-6314 vcst_6314`,
+is edited. Examples: `/qa-test VCST-6314 vcptcore_dev`, `/qa-exploratory ticket VCST-6314 vcst_6314`,
 `/qa-deploy-pr VCST-6314 vcptcore_dev`. Without one, the run uses the checkout's default (`.env.test-env`,
 else `vcst`). An env is a `.env.<env>` file in the project root, or in a dedicated folder (§Where an env's files
 live) — a ticket's own stand included.
@@ -19,8 +19,8 @@ live) — a ticket's own stand included.
   prints a `⚠ this session was on …` line: show it to the user, who passes the env to stay.
 - **Exit 2 ⇒ STOP** and show its message: an unknown env, or a `TEST_ENV` (or, for `run:use`, a `QA_TICKET` of
   another ticket) in the session's environment that would beat the binding. Never fall back to another env silently.
-- **A command run inline by another keeps the caller's binding** — `/qa-test` running `/vc-fix:qa-verify-fix`
-  for a fix-ready Bug binds once, at its own Step 1a; the inline pipeline does not bind again.
+- **A command run inline by another keeps the caller's binding** — `/qa-test` binds once, at its
+  own Stage 0; the `/qa-exploratory` and `/qa-regression` it runs for the ticket do not bind again.
 - **A subagent never binds.** It shares the session id, so an `env:use` (or `run:use`) there re-binds the caller's whole run —
   `--default` would move it to the checkout's default env mid-run. Its caller passes the env (the brief's
   Environment line, and the argument of a command it hands over: `/qa-exploratory ticket <KEY> <env>`), and a

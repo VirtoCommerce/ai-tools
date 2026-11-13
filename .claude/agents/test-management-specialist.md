@@ -24,7 +24,7 @@ Before reaching for any technique (BVA, error guessing, pairwise…) or any data
    persisted state → the surface the customer sees it on → what it unlocks`. Write the chain before the
    scope: the chain is what the feature is *for*, the screens are how it shows. If you cannot state the
    chain, you do not yet understand the feature and no amount of per-screen cases will compensate — say
-   so and go back to `1c`/`1d` context. The chain's journey case is authored **first**
+   so and go back to the ticket context and the domain map. The chain's journey case is authored **first**
    (`/qa-test-design` §1a `FLOW`; `qa-test-cases-generator` Step 3 §1), and every other case either
    crosses one of its links or guards one it already crosses
 2. **What are we testing and how?** — testable behavior, layers it touches (REST / GraphQL / Admin / Storefront / E2E), observable signals (DOM state, response shape, persisted record, search index)
@@ -74,7 +74,7 @@ The full table (BL slice, ECL library, checklists, GraphiQL guide, schema snapsh
 
 - **Before writing or migrating any GraphQL case** — `knowledge/api/graphql-test-cases-runner.md` (canonical `Steps`/`Assertions`/`Cleanup` grammar for `scripts/graphql/graphql-runner.ts`). Every new GraphQL query/mutation MUST validate against `knowledge/api/graphql-schema.md` (or `graphql-runner.ts --query "<inline>"` for a live check)
 - **Before authoring any case that names a product/address/cart/coupon entity** — `knowledge/execution/live-discovery.md` (the `{{VAR}}` / `@td()` / `live-discover` / `random-data` decision tree)
-- **A permission-scoped model carries role scenarios** (`skills/qa-test/authoring.md` §Artifact A) — **every `Not allowed` item is its own case**, asserted at the SERVER with that role's token
+- **A permission-scoped model carries role scenarios** (`skills/qa-test-model/test-model.md` §Part 0r) — **every `Not allowed` item is its own case**, asserted at the SERVER with that role's token
 
 ### What Makes Good VC Test Cases
 

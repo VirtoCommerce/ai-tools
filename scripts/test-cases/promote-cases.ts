@@ -43,7 +43,7 @@
  *     --ids <ID,ID>          restrict to these case ids (repeatable; comma lists ok). A value that
  *                            names nothing is an ERROR, never "no scoping" — see parseArgs. A SCOPE,
  *                            never a gate: it only shrinks the set considered, and every PR-* rule
- *                            still runs on what it leaves. A multi-round `--iterate` run needs it
+ *                            still runs on what it leaves. A ticket re-tested over several runs needs it
  *                            because a case is promotable from the run that EXECUTED it, so the
  *                            close-out promotes per RUN_ID; without it each invocation considers
  *                            every Draft row in the suite and holds most of them with PR-002,

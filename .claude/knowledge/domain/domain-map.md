@@ -202,7 +202,7 @@ Self-checked by the author; `/qa-domain-map` re-derives it before writing.
 
 | Consumer | Uses it for |
 |---|---|
-| `/qa-test` `1b` `2-map` | read **first**, before per-ticket prior art; absent + all-layer scope ⇒ a **FULL** run BUILDS it at `1c-map` and a FAST run recommends `/qa-domain-map` — never block, either way |
+| `/qa-test` Stage 0 (domain slug) + Stage 1 | read **first**, before per-ticket prior art; absent or `unresolved` ⇒ Stage 1 BUILDS it (`/qa-domain-map <slug>`, in the background) — never block, a failed build is recorded and the run proceeds |
 | `/qa-test` `5-docs-map` | **writes back what the run verified** — new §2 surfaces, a `D*` upgraded live, a `G*` `CLOSED`, a §4 count corrected — into §7, after the verdict. Costs no dispatch; touches `amended:` only |
 | `/qa-test` `1e` clause 11 | the ticket's chain stated as a **slice** of the domain chain — which links it touches *and which it does not*. Absent map ⇒ record `Domain map: ABSENT — chain position unverified` |
 | `/qa-test` `1c` | briefed with the map path; **must report any surface it touched that the map does not list** — that is how each run repays the map instead of only consuming it |

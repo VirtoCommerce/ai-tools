@@ -7,10 +7,10 @@ consumer **cites this file and never restates the table** — changing a rule me
 **Owner: `qa-lead-orchestrator`** (`.claude/agents/qa-lead-orchestrator.md` §Status custodian). A status
 transition is an **outward-facing write to a shared tracker**: it moves work on someone else's board,
 notifies watchers, and on Jira it also gates which transitions are reachable next. So it is an
-orchestration act with a single actor, exactly like dispatching a peer agent (`authoring.md` §3a) and
+orchestration act with a single actor, exactly like dispatching a peer agent and
 like the single-writer apply in `/qa-review-oracles`.
 
-Consumers: `/qa-test` (§1a opening hop, §5f closing hop) · `/qa-verify-fix` · `/qa-fix` ·
+Consumers: `/qa-test` (Stage 0 opening hop, Stage 5 closing hop) · `/qa-verify-fix` · `/qa-fix` ·
 `/qa-hotfix-check` · `/qa-triage-results` and `/qa-monitoring` (both of which transition **nothing**).
 
 > Tracker-agnostic by construction: every transition is resolved **live** against the ticket's own
@@ -33,14 +33,12 @@ Everything below is that sentence's edge cases.
 ```
         <whatever status the ticket was in>
                       │
-                      │  OPENING HOP — 1a, the moment the feature-test route resolves
+                      │  OPENING HOP — Stage 0, the moment the `test` job resolves
                       │  no confirmation · reversible · one line if skipped
                       ▼
-                 in-testing  ◄──────────────┐
-                      │                     │ --iterate: the ticket STAYS here
-                      │                     │ across rounds (one hop, not N)
-                      │                     │
-        ┌─────────────┼─────────────┬───────┴──────────────┐
+                 in-testing
+                      │
+        ┌─────────────┼─────────────┬──────────────────────┐
         │             │             │                      │
   PASS / PASS   │  FAIL       │  BLOCKED             │  (run aborted
   WITH NOTES    │             │                      │   before 5-status)
@@ -55,21 +53,21 @@ Everything below is that sentence's edge cases.
 
 | | Opening hop | Closing hop |
 |---|---|---|
-| **Where** | **`1a`, immediately after the flow routes to `feature-test`** — before `1b`, and long before the first agent is dispatched | 5-status, strictly **after** the report is posted |
+| **Where** | **Stage 0, immediately after the ticket routes to the `test` job** — before preflight, and long before the first agent is dispatched | 5-status, strictly **after** the report is posted |
 | **To** | the ticket's in-testing status, discovered live | `TESTED` / `REOPEN` / nothing — §4 |
 | **Confirm?** | **No.** It is the direct, reversible consequence of the operator invoking the command, and asking adds a prompt to every run for a move the operator already implied | **Yes — ask.** It is terminal for the run, it notifies watchers, and `REOPEN` hands work to another team. The one place `/qa-test` writes a verdict onto someone else's board |
-| **Skip when** | tracker MCP unconfigured · already in-testing · no such transition exists · the target is a bare feature name or a PR | tracker MCP unconfigured · the flow is `hotfix-verify` (§6) |
+| **Skip when** | tracker MCP unconfigured · already in-testing · no such transition exists · `--dry-run` | tracker MCP unconfigured · the flow is `hotfix-verify` (§6) |
 | **On skip** | one line, and a `status_transitions[]` entry with `skipped: <reason>` | same |
 
 **The asymmetry is the point.** Auto-moving *into* testing costs a reversible hop nobody objects to;
 auto-moving a ticket *out* of testing publishes a verdict. Confirmation belongs where the cost is.
 
-**Why the opening hop is at `1a` and not at Step 4, where it used to be.** *In testing* means **QA owns
+**Why the opening hop is at Stage 0 and not at execution, where it used to be.** *In testing* means **QA owns
 this ticket now**, and that is true the moment the run is accepted — not when the first browser opens.
-At Step 4 the ticket sat in READY FOR TEST through `1a`-`3` — context gathering, the Test Model,
-authoring, seeding, the discovery lane — 30+ minutes of real QA work on a FULL run during which the
-board showed the ticket as unclaimed, and nothing stopped a human picking it up for real (`/qa-test`
-`1b`'s duplicate check guards only against *this pipeline* re-testing the same ticket inside 2 h). The
+At execution the ticket sat in READY FOR TEST through context gathering, the strategy and preparation —
+30+ minutes of real QA work during which the board showed the ticket as unclaimed, and nothing stopped a
+human picking it up for real (the preflight duplicate check guards only against *this pipeline* re-testing
+the same ticket inside 2 h). The
 objection to moving it early is that a STOP before execution then leaves the ticket in TESTING having
 tested nothing — which §4 already answers: that is the `BLOCKED` shape, in-testing **plus a comment
 naming why nobody is testing it**, and it is more honest than a ticket reading unclaimed after consuming
@@ -100,45 +98,22 @@ than nice-to-have.
 **Never route through `Cancelled`, `On hold`, or `Done`.** `TESTED` is the terminal state a QA flow may
 reach; `Done` is a release decision and belongs to a human.
 
-## 5. `--iterate` — one closing hop per run, whatever the round count
+## 5. A re-test is a new run — one closing hop per run
 
-The ticket **stays in-testing across rounds** and the closing hop fires **once, at loop exit**. Two
-reasons, both structural: `REOPEN` is the human-handoff signal and a loop about to start another round
-is not handing off; and on Jira a per-round `REOPEN` would flap the ticket *out* of in-testing, which is
-the precondition both closing transitions need. If round 1 skipped the opening hop, the exit round does
-it first (§7).
-
-### 5a. The two-hop rule counts hops on the TICKET UNDER TEST — a linked bug is its own ticket
-
-"At most two moves" is per ticket, not per run. A `--iterate` round entry re-reads the ticket's
-**linked bugs** (a To-fix row has no ticket, so it never hops) and verifies each fix-ready one by running `/qa-verify-fix` inline
-(`.claude/skills/qa-test/modes.md` §Round entry) — and that inline run owns those bugs' hops, exactly as
-§6 already says for the `verify-fix` flow. It changes nothing above: the ticket under test still gets one
-opening hop and one closing hop, and `qa-lead` is still the only actor (§9.1).
-
-Three constraints on a bug's hop, and the first is the one that makes it safe:
-
-1. **`TESTED` only, and only once the fix has SHIPPED to the env** — the bug's fix PR is `MERGED` **and**
-   the owning component's version in the round's *probed* build carries it. The loop otherwise re-tests an
-   **unmerged prerelease**, where no QA state on the bug is honest; either half unproven ⇒ no hop, and say
-   which half. §9.5 is untouched — `Done`/`Cancelled`/`Closed` remain forbidden on a bug as on anything
-   else.
-2. **Only the VERIFIED row hops mid-loop.** `FIX_INCOMPLETE` / `INTERMITTENT` / `NEW_REGRESSION` /
-   `BLOCKED` defer to **loop exit** (`REOPEN` + the failure list). A per-round `REOPEN` on a linked bug
-   flaps it out of in-testing and fires N−1 false handoff notifications — this section's own reasoning,
-   one level down. A bug left in in-testing meanwhile is the §4 `BLOCKED` shape: in-testing **plus the
-   mandatory comment** saying why nobody is closing it.
-3. **Recorded against the bug key.** Each hop and skip appends to `status_transitions[]` (§8) with the
-   bug's key, so "the bug was never moved" and "it was moved and the note was lost" stay
-   distinguishable there too.
+A re-test on a new build is `/qa-test <TICKET>` again, not a loop inside one run: each run makes its own
+opening hop (skipped when the ticket is already in-testing) and its own closing hop, and a round that ends
+`BLOCKED` or is aborted leaves the ticket where §4 says. A fix-ready bug linked to the ticket is verified by
+`/qa-verify-fix` — a run of its own that owns that bug's hops (§6), so the ticket under test still gets one
+opening hop and one closing hop, and `qa-lead` is still the only actor (§9.1). Every hop and skip is recorded
+against the key it moved (§8).
 
 ## 6. Per-flow ownership — three flows, three answers
 
 | Flow | Who transitions |
 |---|---|
-| `feature-test` | **This file** — the two hops above |
-| `verify-fix` | **`/qa-verify-fix` owns its own close-out** (VERIFIED / REOPEN). `/qa-test` §1a runs it inline and adds no hop of its own — two flows transitioning one ticket is how a ticket ends up moved twice for one run |
-| `hotfix-verify` | **Nothing.** §1a STOPs and hands off to `/qa-hotfix-check`, which owns the per-env subtasks and the parent |
+| `test` | **This file** — the two hops above |
+| `verify-fix` | **`/qa-verify-fix` owns its own close-out** (VERIFIED / REOPEN). `/qa-test` Stage 0 STOPs and names it, so it adds no hop of its own — two flows transitioning one ticket is how a ticket ends up moved twice for one run |
+| `hotfix-verify` | **Nothing.** Stage 0 STOPs and hands off to `/qa-hotfix-check`, which owns the per-env subtasks and the parent |
 
 `/qa-triage-results` and `/qa-monitoring` transition nothing and file nothing, by design.
 
@@ -151,10 +126,10 @@ was never only reachability: it tells everyone else on the board that QA started
 states live; if the project genuinely has no testing-like state, record
 `skipped: "no in-testing state in this project"` and move on. **Never invent a state name.**
 
-### 7a. RE-RESOLVE at the closing hop. The list fetched at `1a` is stale by construction.
+### 7a. RE-RESOLVE at the closing hop. The list fetched at Stage 0 is stale by construction.
 
 "Resolved live" is not a property of a run, it is a property of **each hop**: the available transitions
-are a function of the **current** status, so the set fetched at `1a` describes the status the ticket was
+are a function of the **current** status, so the set fetched at Stage 0 describes the status the ticket was
 in *before* the opening hop and cannot name the closing ones. Re-fetch at 5-status, from the in-testing status,
 and match on `to.name` there.
 
@@ -162,10 +137,10 @@ and match on `to.name` there.
 
 | Fetched from | Transitions offered |
 |---|---|
-| `Ready for test` (at `1a`) | Cancelled · On hold · **On QA → Testing** · go to inprogress → In progress |
+| `Ready for test` (at Stage 0) | Cancelled · On hold · **On QA → Testing** · go to inprogress → In progress |
 | `Testing` (at 5-status) | Cancelled · On hold · **Need fixes → Reopen** · **Finish test → Tested** |
 
-Neither closing transition exists in the first list. A run that reuses `1a`'s set at 5-status finds no
+Neither closing transition exists in the first list. A run that reuses Stage 0's set at 5-status finds no
 `REOPEN`-role target, and the nearest-looking candidate — *go to inprogress → In progress* — **is the
 wrong state**: it is the developer's working state, not the QA handoff state, and using it loses the
 "QA rejected this" signal the board reads. The correct target was `Reopen`, reachable only from
@@ -173,7 +148,7 @@ wrong state**: it is the developer's working state, not the QA handoff state, an
 
 ### 7b. The closing hop is effectively IRREVERSIBLE — which is what makes 5-status's "ask first" load-bearing
 
-The §1 diagram's arrow back into in-testing is the `--iterate` loop's, **not** an undo. On the VCST
+A re-test's opening hop back into in-testing is a new run's, **not** an undo. On the VCST
 workflow there is **no transition from `Reopen` back to the in-testing status** — measured the same day,
 the only transitions out of `Reopen` are `Cancelled`, `On hold`, and *take to development → In progress*.
 Recovering the previous state took **three further hops** (`Reopen → In progress → Ready for test →
@@ -196,14 +171,13 @@ Two consequences, and the second is the reason this section exists:
 Every hop **and every skip** appends one entry to **`summary.json.status_transitions[]`**:
 
 ```json
-{ "hop": "opening", "at": "1a", "from": "READY FOR TEST", "to": "TESTING",
+{ "hop": "opening", "at": "0", "from": "READY FOR TEST", "to": "TESTING",
   "transition": "On QA", "confirmed": false, "actor": "qa-lead" }
 { "hop": "closing", "at": "5-status", "from": "TESTING", "to": null, "skipped": "verdict BLOCKED — comment posted, awaiting re-run",
   "confirmed": true, "actor": "qa-lead" }
 ```
 
-`null` for the whole field means **no hop was even attempted** — which is a gap, not a clean run (the
-`axes.md` §2 rule, one level down). An empty array means the run reached the tracker and made no move.
+`null` for the whole field means **no hop was even attempted** — which is a gap, not a clean run. An empty array means the run reached the tracker and made no move.
 
 This is what makes the rest of the file checkable rather than aspirational: before this, a skipped
 transition left **no trace at all** in any artifact, so "the ticket was never moved" and "the ticket

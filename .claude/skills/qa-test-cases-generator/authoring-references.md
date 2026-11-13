@@ -19,7 +19,7 @@ READ-BEFORE triggers (GraphQL cases, entity-naming cases); everything else is pu
 | **Live Discovery + Random Inputs** | `knowledge/execution/live-discovery.md` — **READ THIS BEFORE authoring any case that names a product/address/cart/coupon entity.** Carries the `{{VAR}}` / `@td()` / `live-discover` / `random-data` decision tree, the JS helpers, the CSV-runner recipes and parallel-run isolation. |
 | Live xAPI Schema Snapshot | `knowledge/api/graphql-schema.md` — types/fields/inputs from live introspection. Every new GraphQL query/mutation MUST validate against this (or run `scripts/graphql/graphql-runner.ts --query "<inline>"` for a live check). |
 | Test Case Template (15-col CSV) | `skills/qa-test-cases-generator/test-case-template.md` |
-| **Role scenarios (Part 0r)** | `skills/qa-test/authoring.md` §Artifact A — a permission-scoped model carries role scenarios; **every `Not allowed` item is its own case**, asserted at the SERVER with that role's token |
+| **Role scenarios (Part 0r)** | `skills/qa-test-model/test-model.md` §Part 0r — a permission-scoped model carries role scenarios; **every `Not allowed` item is its own case**, asserted at the SERVER with that role's token |
 
 ## Additional References
 

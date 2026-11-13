@@ -374,8 +374,8 @@ export function buildCanonicalNames(allSections) {
  *
  * The naive `/breaking\s+change/i` matched its own negation — "This release contains **no
  * breaking changes** and is a drop-in upgrade" rendered `⚠ BREAKING`. That stopped being
- * cosmetic once `/qa-test` made the flag a FAST->FULL forcing condition: a false positive
- * silently escalates a P2 tweak into a full Test-Model + authoring + verifier run, and
+ * cosmetic once `/qa-test` made the flag a strategy-floor condition: a false positive
+ * silently escalates a P2 tweak into a test-model + exploratory + regression run, and
  * records a citation that looks sound forever.
  *
  * Recall is kept deliberately wide (no colon required — not every digest writes
