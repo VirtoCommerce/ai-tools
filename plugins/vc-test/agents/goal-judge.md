@@ -40,7 +40,9 @@ REJECT reason (name the file, never quote the value).
 `reproduced`, `docCheck`, `kbRef`), `replays[]`, `checkpoints[]`. Then `DRAFT`, and every evidence file the journal
 names — open them; a path in the journal is a claim, the file is the evidence. Use `Read`, `Grep` and `Glob` only
 on `goal.json`, `DRAFT`, `judge.path` (below) and the evidence paths the journal names — never recursively over
-`DIR`, so `.tokens/` is never walked.
+`DIR`, so `.tokens/` is never walked. **A path whose first segment under `DIR` is `.tokens` (any case, also reached
+through `..`) is never opened** — not as evidence, not as `judge.path`: name the AC, finding or `judge` field that
+points there as a REJECT reason, never the path's file name (the gate reports the evidence case too).
 
 **Which round is this?** If `goal.json` `judge` is already set to a REJECT, this is round 2: also read `judge.path`
 to count the round and quote the earlier reasons, in addition to the files below. Re-derive every AC and finding yourself and never
@@ -91,7 +93,9 @@ You write nothing and change nothing.
      a lane that was unavailable, a stop that fired) that you can see supported by the journal or a file — not
      "out of time" with budget left, and not "not applicable" without saying why. A GAP that hides an AC the
      environment could have tested does not hold. A criterion reworded or dropped at S2 is an honest GAP when its
-     `gapReason` names the person and an `S2` checkpoint exists in `checkpoints[]`.
+     `gapReason` is `replaced by AC-<m> at S2 (<who>)` or `dropped at S2 by <who>: …` and an approved S2
+     checkpoint (`stop: "S2"`, `decision: "approved"`) exists in `checkpoints[]`. Such an **S2 GAP** counts against
+     neither the done-criterion (step 6) nor a PASS verdict (step 5).
    - **FAIL and PARTIAL** hold only when the evidence shows the failure and what part passed.
    - An AC added `during-test` needs its `addedReason`; one added without it does not hold.
 4. **Per finding** (every one): `reproducible` or `not`.
@@ -103,10 +107,15 @@ You write nothing and change nothing.
    - An `inScope: false` finding must not be driving the verdict's pass or fail, only listed as noticed.
 5. **The draft follows from the journal.** Every status, count and finding the draft states matches `goal.json`;
    it asserts nothing the journal lacks; it leaves out no FAIL, GAP or Medium-or-worse finding the journal holds; a
-   caveat the journal records (a GAP, an unreproduced finding, a read-only env) is not softened.
-6. **The done-criterion is met.** Read `done` from the contract and test it as written against the journal. An
-   APPROVE states, in one line, how it was met. A done-criterion met only by lowering it, or by GAPs, is not met
-   unless the contract itself said GAPs are acceptable.
+   caveat the journal records (a GAP, an unreproduced finding, a read-only env) is not softened. **The verdict
+   word:** FAIL when an AC is FAIL or PARTIAL or an in-scope Critical/High finding stands; PASS only when every
+   AC is PASS or an S2 GAP and no in-scope Critical/High finding stands; any other GAP, or an in-scope Medium/Low
+   finding, makes it PASS WITH NOTES; every AC GAP is BLOCKED. A PASS over any other GAP does not follow.
+6. **The done-criterion is met.** Read `done` from the contract and test it as written against the journal. **Done
+   is not the verdict word:** the default done-criterion is met when every AC is PASS or FAIL with evidence, or a
+   GAP you judged honest in step 3 — an S2 GAP included — with every Medium-or-worse finding reproduced twice; the
+   verdict word is step 5's. A criterion the person added is tested as written; a done-criterion met only by
+   lowering it is not met. An APPROVE states, in one line, how it was met.
 
 ## Verdict — the last lines of your reply
 
@@ -122,7 +131,8 @@ CONFIDENCE: HIGH|MEDIUM|LOW
 ```
 
 One `AC-n` bullet per acceptance criterion and one `F-n` bullet per finding, none skipped. APPROVE only when every
-AC holds, every in-scope finding is reproducible, the gate is `ok`, and every run replay matched. For an APPROVE,
+AC holds, every in-scope finding is reproducible, the gate is `ok`, every run replay matched, the draft and its
+verdict word follow from the journal (step 5), and the done-criterion is met (step 6). For an APPROVE,
 REASONS carries each AC and finding line plus the one-line done-criterion note.
 
 ## The loop — one round

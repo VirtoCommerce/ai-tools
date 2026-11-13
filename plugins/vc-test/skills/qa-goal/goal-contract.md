@@ -17,7 +17,7 @@ are derived at step 4 ([`derived-acs.md`](derived-acs.md)) and approved at S2.
 }
 ```
 
-`node <plugin>/lib/goal.mjs contract --dir <dir> --file <dir>/in/contract.json`. Any later `contract --file` clears
+`node "<plugin>/lib/goal.mjs" contract --dir "<dir>" --file "<dir>/in/contract.json"`. Any later `contract --file` clears
 the approval: the edited contract is not the one that was approved, so S1 is asked again.
 
 ## The goal — one sentence, a user-visible outcome
@@ -37,13 +37,19 @@ itself says. One goal per run: two outcomes that do not share a path are two run
 
 Default, and the floor — a person may add to it, never go under it:
 
-> Every acceptance criterion is PASS or FAIL with evidence in the run folder, or GAP with a reason; every
+> Every acceptance criterion is PASS or FAIL with evidence in the run folder, or GAP with an honest reason; every
 > Medium-or-worse finding is reproduced twice; the verdict is judged by goal-judge.
 
 It must be decidable from `goal.json` and the files it names, because the judge tests it as written. Words like
 "thoroughly", "fully" or "looks good" are not checkable. An addition names something the journal can show
 ("…and the negative control of every permission criterion is a second account, not a missing token").
-"GAPs are acceptable" is said only when the person says it — otherwise a done met by GAPs is not met.
+
+**Done is not the verdict word — said once, here and in goal-judge.** The default done-criterion is met when every
+AC is PASS or FAIL with evidence, or GAP with an honest reason (one the journal or a file supports). The VERDICT is
+PASS only when no GAP remains other than a criterion **replaced or dropped at S2** — `gapReason`
+`replaced by AC-<m> at S2 (<who>)` or `dropped at S2 by <who>: …`, with an approved S2 checkpoint in the journal
+([`derived-acs.md`](derived-acs.md) §Changing a criterion at S2). Such a GAP counts against neither the done-criterion
+nor PASS. Any other honest GAP meets the done-criterion and makes the verdict PASS WITH NOTES (§The verdict).
 
 ## The budget
 
@@ -66,9 +72,9 @@ and ask the person with its options (AskUserQuestion):
 
 1. **"Budget reached — a cost reading is over the tokens or wall minutes of the contract."** Exactly two options:
    - **(a) Raise it** — the person names the new numbers. Write them into `<dir>/in/contract.json`, then
-     `goal.mjs contract --dir <dir> --file <dir>/in/contract.json` (this clears the approval),
-     `goal.mjs contract --dir <dir> --approve --who '<who>'`, and
-     `goal.mjs checkpoint --dir <dir> --stop S1 --decision approved --who '<who>' --note 'budget raised'`. Re-run
+     `goal.mjs contract --dir "<dir>" --file "<dir>/in/contract.json"` (this clears the approval),
+     `goal.mjs contract --dir "<dir>" --approve --who '<who>'`, and
+     `goal.mjs checkpoint --dir "<dir>" --stop S1 --decision approved --who '<who>' --note 'budget raised'`. Re-run
      the gate that fired; carry on where the run was.
    - **(b) STOP AT BUDGET** — the abort close (SKILL.md §Stops): `verdict.md` headed
      `# <KEY> — STOPPED AT BUDGET — not judged`, one line per AC with its recorded state (`open` included) and the
@@ -108,13 +114,50 @@ approval.
 1. AskUserQuestion with the exact proposal. For an in-scope Medium-or-worse finding: the bug — title, severity,
    evidence paths, `<KEY>` as the link. For the tracker: the comment text, paste-ready, ≤ 15 lines (verdict, the
    criteria table, findings, the judge result, the run id). A status change is never offered (out of scope).
-2. **Yes** ⇒ `node <plugin>/lib/goal.mjs checkpoint --dir <dir> --stop S3 --decision approved --who '<who>' --note '<label>'`,
-   then `node <plugin>/lib/goal.mjs check --dir <dir> --before write --what '<label>'`. Exit 0 ⇒
-   - `bug:F-<n>` — `/vc-fix:qa-bug "<finding title> — evidence: <dir>/evidence/<files>" --link <KEY> --confirmed`
-     (the person's yes at step 1 is the `--confirmed`);
+2. **Yes** ⇒ `node "<plugin>/lib/goal.mjs" checkpoint --dir "<dir>" --stop S3 --decision approved --who '<who>' --note '<label>'`,
+   then `node "<plugin>/lib/goal.mjs" check --dir "<dir>" --before write --what '<label>'`. Exit 0 ⇒
+   - `bug:F-<n>` — filed from the **judged** evidence, never from a fresh investigation: by now the run's data is
+     torn down and its tokens purged, and a second investigation could reach a second answer. Build the package of
+     §The bug package; complete ⇒
+     `/vc-fix:qa-bug "<finding title>" found-by:agent-testing <KEY> --evidence "<dir>/bugs/F-<n>" --link '<KEY>' --confirmed`
+     (the person's yes at step 1 is the `--confirmed`). It returns a report path, or `INCOMPLETE_PACKAGE: …` /
+     `STALE_PACKAGE: …` — then hand over the paste-ready bug text instead, naming what it said. A slot the package
+     cannot fill ⇒ no `/vc-fix:qa-bug` at all: the paste-ready bug text, the way the comment is handed.
    - `comment:<n>` — print the text for the person to paste. You never post it.
    Exit 2 ⇒ write nothing and say why.
-3. **No** ⇒ `goal.mjs checkpoint --dir <dir> --stop S3 --decision rejected --who '<who>' --note '<label>'`.
+3. **No** ⇒ `goal.mjs checkpoint --dir "<dir>" --stop S3 --decision rejected --who '<who>' --note '<label>'`.
+
+### The bug package — `<dir>/bugs/F-<n>/`
+
+`/vc-fix:qa-bug --evidence` writes its report from an investigation package and from nothing else, and refuses an
+incomplete one. The package contract is vc-fix's `knowledge/execution/bug-from-package.md` §Complete; its slots are
+`skills/qa-investigate/evidence-and-root-cause.md` §0 (`evidence-index.md`) and Part B (`root-cause.md`). `<dir>/bugs/`
+is inside the run folder. Fill it **only** from what the journal records for F-<n> — its `title`, `severity`, `ac`,
+`docCheck`, `reproduced`, `evidence[]` — and the files that evidence names, **copied** (never moved) from
+`<dir>/evidence/` into the package's `screenshots/`, `network/`, `console/` folders. Nothing is captured, probed,
+replayed or looked up again.
+
+- **`evidence-index.md`** — the §0 shape exactly (slot names, headings and row numbers are what qa-bug matches):
+  - `TRACE_ID` — a `Request-Id` / `traceparent` a recorded response shows; `none — the stand sends neither header`
+    only when a recorded response shows its headers without one.
+  - `BUILD_VERSIONS` — the versions the stand's `deployed.json` (in `.vc-fix/vc-test/<KEY>/<env>/`) holds.
+  - `REPRO_RATE` — only when the finding was intermittent.
+  - `## Steps to reproduce` — numbered, as the two recorded runs took them (account, page or call, input, the action).
+  - `## Captured artifacts` — one row per Part A row the copied files fill: 1 Failure-state screenshot · 2 DOM
+    snapshot · 3 Network capture · 4 The failing request (an `oauth-code.mjs` `http` / `mcp` output is one) ·
+    6 Console messages · 7 HAR file — a HAR the run kept in `evidence/`, or `none — the lane records no HAR` only
+    when the lane's config has no `recordHar`; **never the lane's own HAR** (it holds the sign-in) · 5 and 10 when
+    §2 names a server-side layer.
+- **`root-cause.md`** — Part B: §1 Symptom (the finding as observed); §2 Lowest failing layer (one box, "Decided by"
+  citing a row above); §5's first two rows — by-design ruled out by the finding's `docCheck`, env data drift by what
+  the two clean-start runs show; §7 Confidence (one box — LOW names no repo). §3, §4, §6, §8 only where the
+  evidence states it; never a guess.
+
+**A slot the journal and its files cannot fill ⇒ no package and no `/vc-fix:qa-bug`.** That is common: a finding
+seen only through an API or MCP call has no screenshot, DOM snapshot or console capture (rows 1, 2, 6). Hand the
+person the bug as paste-ready text instead — title and severity, env and build, steps, expected (the `docCheck`
+source) against actual, evidence paths, `<KEY>` as the link — and name the slots that were missing. Never re-run
+anything to fill one.
 
 ## The verdict
 
@@ -152,12 +195,13 @@ to this journal (Critical/High stand for its P0/P1):
 | Verdict | When |
 |---|---|
 | **FAIL** | an AC is FAIL or PARTIAL, or an in-scope Critical or High finding |
-| **PASS** | every AC PASS, no in-scope Critical or High finding, no GAP |
-| **PASS WITH NOTES** | no FAIL/PARTIAL and no in-scope Critical/High, but a GAP or an in-scope Medium/Low finding remains |
+| **PASS** | every AC PASS or a GAP replaced or dropped at S2; no other GAP; no in-scope Critical or High finding |
+| **PASS WITH NOTES** | no FAIL/PARTIAL and no in-scope Critical/High, but a GAP other than an S2 one, or an in-scope Medium/Low finding, remains |
 | **BLOCKED** | not deployed, every AC GAP, or (at close) a file outside the write zones |
 
 An out-of-scope finding never moves the verdict; it is listed. "Deployment unverified" (a `DEPLOYMENT UNKNOWN:`
-blocker) is said in the first sentence, never dropped. A criterion reworded or dropped at S2 is listed under "Not
-tested, and why" with its `gapReason`; an `UNCONFIRMED (seen once):` finding is listed under Findings as noticed.
+blocker) is said in the first sentence, never dropped. A criterion reworded or dropped at S2 (§The done-criterion)
+never moves the verdict; it is listed under "Not tested, and why" with its `gapReason`. An `UNCONFIRMED (seen
+once):` finding is listed under Findings as noticed.
 A run that ends without a judged verdict uses an abort-close heading instead (SKILL.md §Stops): only BLOCKED (not
 deployed) comes from this table; it never says PASS, PASS WITH NOTES or FAIL.

@@ -4,7 +4,7 @@ For a criterion that needs a call **as a signed-in user** — an API or an MCP e
 (authorization code + PKCE). You drive the sign-in on a Playwright lane; `<plugin>/lib/oauth-code.mjs` owns
 everything secret: the PKCE verifier, the state, the code it finds in the lane's HAR, and the tokens, which live
 only in `<dir>/.tokens/` and are deleted at close. **You never see, store or pass a token.** Every command takes
-`--dir <dir>` (the folder that holds `goal.json`) and `--persona <name>`, and prints one JSON object.
+`--dir "<dir>"` (the folder that holds `goal.json`) and `--persona <name>`, and prints one JSON object.
 
 ## Before you start
 
@@ -29,13 +29,15 @@ only in `<dir>/.tokens/` and are deleted at close. **You never see, store or pas
 ## The sequence — one persona
 
 1. **Start.**
-   `node <plugin>/lib/oauth-code.mjs start --dir <dir> --persona <p> --issuer '<issuer>' --client '<client id>' --redirect '<redirect uri>' [--resource '<resource>'] [--scope 'openid offline_access']`
+   `node "<plugin>/lib/oauth-code.mjs" start --dir "<dir>" --persona <p> --issuer '<issuer>' --client '<client id>' --redirect '<redirect uri>' [--resource '<resource>'] [--scope 'openid offline_access']`
    → `{ persona, url, restarted }`. `restarted: true` replaced an earlier unredeemed start of that persona — fine.
    Exit 1 ⇒ fix the call (a persona outside the pattern, a URL with a user name or password in it). Exit 2 ⇒ the
    issuer refused (no PKCE `S256`, a bad discovery document): a GAP or a finding, by its `errors`. Exit 3 ⇒ the
    issuer did not answer. The default scope is `openid offline_access`; give `--scope` only when research says the
    API needs another one.
-2. **Navigate.** `mcp__playwright-<lane>__browser_navigate` with `url` = the printed `url`. Do not store the URL
+2. **Navigate, in a fresh context.** First `mcp__playwright-<lane>__browser_close` — every sign-in starts in a
+   fresh, small context: an old context can still hold another account's session, and its HAR grows with every page
+   it saw. Then `mcp__playwright-<lane>__browser_navigate` with `url` = the printed `url`. Do not store the URL
    anywhere (not in a note, not in `research.md`, not as a replay).
 3. **Sign in.** `browser_snapshot` to find the fields. Type the login as plain text — its value from the env
    (`<ROLE>_LOGIN` in `.env.<env>`). Type the password by its **NAME**, as the lane's secrets spell it (SKILL.md
@@ -46,25 +48,34 @@ only in `<dir>/.tokens/` and are deleted at close. **You never see, store or pas
    expected. **A tool response may show the redirect URL with `code=` in it: never copy, store or repeat it.**
 4. **Close.** `mcp__playwright-<lane>__browser_close` — Playwright writes the HAR when the page's context closes.
 5. **Redeem.**
-   `node <plugin>/lib/oauth-code.mjs redeem --dir <dir> --persona <p> --har <the lane's recordHar path> > <dir>/evidence/token-<p>-claims.json`
+   `node "<plugin>/lib/oauth-code.mjs" redeem --dir "<dir>" --persona <p> --har "<the lane's recordHar path>" > "<dir>/evidence/token-<p>-claims.json"`
    → `{ persona, aud, iss, sub, name, roles, permissions, expiresIn, hasRefresh }` (or `opaque: true` for a token
-   that is not a JWT). Check that `sub`/`name` is the account you meant and `aud` the resource: a wrong one is a
-   finding, not a retry. Exit 2:
+   that is not a JWT). Check that `sub`/`name` is the persona's account and `aud` the resource. A `sub`/`name` of
+   another account is a **procedure error**, not a finding (the sign-in reached the wrong session): delete the
+   claims file and restart that persona from step 1. A wrong `aud` is a finding, not a retry.
+   On a non-zero exit the output file holds only `{ ok: false, errors }`, no evidence: read its `errors`, then
+   delete it. Exit 2:
    - "close the lane page so the HAR is written" ⇒ step 4, then step 5 again;
    - "no callback for this persona's state" ⇒ the sign-in did not reach the redirect (wrong account, a consent
      refused, another sign-in on the lane since): from step 1 again;
    - "the callback's iss is not the issuer this sign-in started with" ⇒ a finding (`SEC`), not a retry;
    - a token-endpoint refusal (its `error` fields) ⇒ a GAP or a finding, by what research says should happen.
-   Exit 3 ⇒ the token endpoint did not answer.
+   Exit 3:
+   - "the HAR … is too large to read" or "… is unreadable" ⇒ closing the page again never fixes it: from step 1
+     again — step 2's `browser_close` starts the fresh context with a small HAR;
+   - otherwise the token endpoint did not answer.
 6. **Call as the persona.**
-   - MCP: `node <plugin>/lib/oauth-code.mjs mcp --dir <dir> --persona <p> --url '<mcp endpoint>' --method '<json-rpc method>' [--params-file <dir>/in/params-<n>.json] > <dir>/evidence/<AC-n>-<p>-<what>.json`
+   - MCP: `node "<plugin>/lib/oauth-code.mjs" mcp --dir "<dir>" --persona <p> --url '<mcp endpoint>' --method '<json-rpc method>' [--params-file "<dir>/in/params-<n>.json"] > "<dir>/evidence/<AC-n>-<p>-<what>.json"`
      → `{ status, result }` (it runs `initialize`, `notifications/initialized`, then the method). A params file is
      the JSON-RPC `params`, written with the editor tool — `tools/call`: `{ "name": "<tool>", "arguments": { … } }`.
-   - HTTP: `node <plugin>/lib/oauth-code.mjs http --dir <dir> --persona <p> --method GET|POST|DELETE --url '<url>' [--body-file <dir>/in/body-<n>.json] > <dir>/evidence/<AC-n>-<p>-<what>.json`
+   - HTTP: `node "<plugin>/lib/oauth-code.mjs" http --dir "<dir>" --persona <p> --method GET|POST|DELETE --url '<url>' [--body-file "<dir>/in/body-<n>.json"] > "<dir>/evidence/<AC-n>-<p>-<what>.json"`
      → `{ status, body }` (a redirect is reported, never followed: `location`).
    - **Read `status`, not the exit code**: a 401 exits 0 with `{ status: 401, error }` — the `WWW-Authenticate`
      error only. That is an observation (the negative control of an audience criterion, say), not a failure of the
-     command.
+     command. An `mcp` answer with `result: null` and `error: "no response with the request id"` means the server
+     sent no reply to the call — an observation too, never read as an empty result.
+   - **A non-zero exit** leaves only `{ ok: false, errors }` in the output file, no evidence: read its `errors`,
+     then delete the file.
    - Exit 2 "`--url` … is not this token's issuer, resource or audience, nor this stand's BACK_URL or FRONT_URL" ⇒
      the script refused to send the token there, by design. Never work around it; that refusal is not evidence
      about the product.
@@ -73,9 +84,9 @@ only in `<dir>/.tokens/` and are deleted at close. **You never see, store or pas
      through `ledger.mjs append` (SKILL.md rail 5).
    - Exit 3 ⇒ the endpoint did not answer within 30 s.
 7. **Refresh, only when needed.** A call answers 401 with an expired token (`expiresIn` passed):
-   `node <plugin>/lib/oauth-code.mjs refresh --dir <dir> --persona <p>` → the same claim summary. Nothing refreshes
+   `node "<plugin>/lib/oauth-code.mjs" refresh --dir "<dir>" --persona <p>` → the same claim summary. Nothing refreshes
    by itself. Exit 2 with `invalid_grant` deleted that persona's token: sign in again from step 1.
-8. **Purge at close** — SKILL.md step 9.1: `node <plugin>/lib/oauth-code.mjs purge --dir <dir>` → `{ purged }`.
+8. **Purge at close** — SKILL.md step 9.1: `node "<plugin>/lib/oauth-code.mjs" purge --dir "<dir>"` → `{ purged }`.
    After it no persona can call; a later call means a new sign-in.
 
 ## Never

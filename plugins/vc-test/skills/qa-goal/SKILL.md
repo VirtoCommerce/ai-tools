@@ -24,7 +24,10 @@ alternate — the rails do not move.
   prefix every `node` command of the run with `TEST_ENV=<env> `**, so every script reads the same stand and work dir.
 - `<dir>` is the run folder `goal.mjs init` prints (`.vc-fix/vc-test/<KEY>/<env>/goal/<runId>/`); evidence goes to
   `<dir>/evidence/`, the JSON you hand a script to `<dir>/in/<name>.json`.
-- `<who>` is the person's name as they give it at S1, else `git config user.name`, always single-quoted.
+- `<who>` is the person's name as they give it at S1, else `git config user.name`.
+- **Quoting:** double-quote every path on a command line — `"<dir>"`, `"<plugin>/lib/goal.mjs"`, `"<dir>/in/x.json"`
+  (a Windows path may hold a space); single-quote every value — `'<who>'`, a note, a URL. Commands below show
+  paths bare.
 - `goal.mjs` and `oauth-code.mjs` print one JSON object. Exit `0` done · `1` usage (fix the call) · `2` refused or
   gate failed (fix every reason in `errors`, never one at a time) · `3` could not run (I/O, network). Other scripts:
   as each step says.
@@ -84,10 +87,11 @@ alternate — the rails do not move.
    | Journal | Resume at |
    |---|---|
    | `contract` null | 1 |
-   | no `S2` checkpoint `approved` | 2, then 4 (the context is re-read, not re-derived) |
+   | no `S2` checkpoint `approved` | 2 (re-read, not re-derived), then 3 while `in/research.md` has `open` items, else 4 |
    | an AC `open` | 2, then 5 |
    | `judge` null | 2, then 7 |
    | `judge` REJECT, only `judge-1.md` on disk | 8, its round-1 REJECT |
+   | `judge` REJECT, `judge-1.md` and `judge-2.md` on disk | 8, its REJECT-twice stop — never the normal close |
    | `closed` null | 9 |
 
    A resumed run's cost covers this session only — say so in the verdict's cost line.
@@ -103,14 +107,12 @@ alternate — the rails do not move.
 
 ### 1 — Contract (S1)
 
-Read the ticket's summary and description once — Jira: `node "$VC_RUN" jira get --key <KEY>`; Azure Boards:
+Read the ticket's summary and description once — Jira: `node "$VC_RUN" jira get --key <KEY> --fields summary,description`; Azure Boards:
 `node "$VC_RUN" ado get-workitem --id <KEY>`; a host-governed project (`governed: true`): the tracker server's read
 tool — or ask the person for one line when none is available. Draft per [`goal-contract.md`](goal-contract.md)
 into `<dir>/in/contract.json`, then `node <plugin>/lib/goal.mjs contract --dir <dir> --file <dir>/in/contract.json`.
 
-**S1** — AskUserQuestion showing the goal, the done-criterion, the budget (tokens, wall minutes, research share),
-the stand and whether it is writable (`stand.reason`), its origins and any extra stand host the run will touch, the
-lanes, and the stop list. Answers:
+**S1** — one AskUserQuestion with what [`goal-contract.md`](goal-contract.md) §What S1 shows lists. Answers:
 
 - *Approve* ⇒ `goal.mjs contract --dir <dir> --approve --who <who>`, then
   `goal.mjs checkpoint --dir <dir> --stop S1 --decision approved --who <who> --note 'hosts: <host>,<host>'` (the
@@ -162,8 +164,7 @@ Risks in priority order, inline, on the approved strategy and accounts:
   first (rail 6). Then `<dir>/in/f-<n>.json` (same §Recording) → `goal.mjs finding add --dir <dir> --file
   <dir>/in/f-<n>.json` → `{ id }`, and `ac set` that AC's `findings` with the id added. The second run does not
   reproduce it ⇒ keep the observed severity, `reproduced: 1`, and try once more; still not ⇒ `inScope: false`, title
-  prefixed `UNCONFIRMED (seen once):`. It does not block the verdict (the gate's reproduction rule covers in-scope
-  findings only); list it for the person in the verdict and at S3. Never lower a severity. No source says it should
+  prefixed `UNCONFIRMED (seen once):` — it does not block the verdict; list it in the verdict and at S3. Never lower a severity. No source says it should
   not happen ⇒ not a defect: a note on the AC, not a finding.
 - **A new branch** — a criterion found while testing is added per [`derived-acs.md`](derived-acs.md) §Found while
   testing (`addedAt: during-test`, `addedReason`); inside an approved risk ⇒ add it to that risk's `acs` and
@@ -197,8 +198,8 @@ second dispatch, so the judge sees round 1. A reply with no `VERDICT:` line ⇒ 
 again none ⇒ STOP, hand to the person.
 
 - **APPROVE** ⇒ append `## Judge` — `APPROVE (round <n>) — judge-<n>.md` — to `verdict.md`. Step 9.
-- **REJECT, round 1** ⇒ apply each `FIX` through `goal.mjs` (re-test where it asks), rewrite `verdict.md`, step 7.2
-  again, then a **new** judge agent for round 2. Never argue with a reason; never pass it your fixes.
+- **REJECT, round 1** ⇒ apply each `FIX` through `goal.mjs` (re-test where it asks), rewrite `verdict.md`, step 7
+  again (7.1 first: re-record the cost before the gate), then a **new** judge agent for round 2. Never argue with a reason; never pass it your fixes.
 - **REJECT, round 2** ⇒ STOP: hand both `judge-1.md` and `judge-2.md` to the person; the verdict carries
   `## Judge — REJECT twice, handed to a person`. Close as step 9, writing back only the facts of ACs round 2 marked
   `holds`, and propose no S3 write: the person decides.
@@ -222,18 +223,19 @@ again none ⇒ STOP, hand to the person.
 6. `node <plugin>/lib/goal.mjs check --dir <dir> --before close` — exit 0; exit 2 ⇒ its errors go into the report.
 7. Print `verdict.md`'s first two lines and its path.
 8. **S3 — outward writes**, each proposed on its own, under a label unique to it (`bug:F-<n>`, `comment:<n>`), and
-   done only on a yes after `goal.mjs check --before write --what <label>` exits 0: [`goal-contract.md`](goal-contract.md)
-   §S3. A bug goes through `/vc-fix:qa-bug`; a comment is paste-ready text you never post; no status change.
+   done only on a yes after `goal.mjs check --before write --what '<label>'` exits 0: [`goal-contract.md`](goal-contract.md)
+   §S3. A bug is filed from the judged evidence, never a fresh investigation: a package in `<dir>/bugs/F-<n>/`
+   (§The bug package), then `/vc-fix:qa-bug … --evidence "<dir>/bugs/F-<n>" --link '<KEY>' --confirmed`; a slot the
+   journal cannot fill ⇒ paste-ready bug text instead. A comment is paste-ready text you never post; no status change.
 
 ## Stops
 
 **S1** (step 1), **S2** (step 4, and again for a criterion outside the approved scope), **S3** (step 9.8, per
 write). Each asks once and records its checkpoint.
 
-**Any time** — stop, name it, and ask the person with the options in [`goal-contract.md`](goal-contract.md) §The
-stop list: **budget** (a cost reading over the budget, or a gate's budget error — raise it, or STOP AT BUDGET;
-never a judged verdict past the budget) · **read-only stand** (a check needs a write the stand cannot take) ·
-**docs contradiction** (a finding to confirm, never a changed expectation) · **not deployed** (BLOCKED on deploy).
+**Any time** — stop, name it, and ask the person with the options of [`goal-contract.md`](goal-contract.md) §The
+stop list: **budget** (never a judged verdict past it) · **read-only stand** · **docs contradiction** (never a
+changed expectation) · **not deployed**.
 
 **The abort close** — any run that ends without a judged verdict: write `verdict.md` headed `<KEY> — STOPPED AT BUDGET — not
 judged`, `<KEY> — BLOCKED`, or `<KEY> — STOPPED at <stop> — not judged`, listing each AC's state as recorded; then

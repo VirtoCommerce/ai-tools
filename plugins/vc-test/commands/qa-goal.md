@@ -13,8 +13,10 @@ commands come from.
 - `<TICKET>` is `<KEY>`; `<env>` is the optional second argument. **With `<env>`, prefix every `node` command of the
   run with `TEST_ENV=<env> `** (the skill's Conventions).
 - `<plugin>` is this plugin's folder (`plugins/vc-test` in a checkout). Run every command from the project root.
-- Every state file, evidence file and script input lives in the run folder `<dir>` that `goal.mjs init` prints
-  (`.vc-fix/vc-test/<KEY>/<env>/goal/<runId>/`). Nothing is written elsewhere, and the ticket is never transitioned.
+- `<dir>` is the run folder `goal.mjs init` prints (`.vc-fix/vc-test/<KEY>/<env>/goal/<runId>/`); evidence and
+  script inputs go there. Run state lives in `<dir>` and `.vc-fix/vc-test/<KEY>/<env>/`; the knowledge write-back
+  (Close 2) and an approved S3 bug write elsewhere. The ticket is never transitioned.
+- Double-quote every path on a command line (`"<dir>"` — a Windows path may hold a space); single-quote values.
 - This command starts nothing outward by itself: no tracker post, no bug, no status change without S3.
 
 ## Start — the skill's step 0, in this order
@@ -41,8 +43,11 @@ loop, criteria and strategy with S2, the test loop, triage, the draft verdict, t
 5. `node <plugin>/lib/goal.mjs close --dir <dir> --write-zones <dir>/write-zones.json --teardown <dir>/teardown.json`.
 6. `node <plugin>/lib/goal.mjs check --dir <dir> --before close`.
 7. Print `verdict.md`'s first two lines and its path.
-8. **S3**, one outward write at a time, each under its own label (`bug:F-<n>`, `comment:<n>`): ask first, and act
-   only on a yes after `node <plugin>/lib/goal.mjs check --dir <dir> --before write --what '<label>'` exits 0.
+8. **S3**, one outward write at a time, each under its own label (`bug:F-<n>`, `comment:<n>`), per the skill's
+   `goal-contract.md` §S3: ask first; on a yes record the S3 checkpoint —
+   `node <plugin>/lib/goal.mjs checkpoint --dir <dir> --stop S3 --decision approved --who '<who>' --note '<label>'` —
+   and act only after `node <plugin>/lib/goal.mjs check --dir <dir> --before write --what '<label>'` exits 0. A bug
+   is filed from the judged evidence (§S3's bug package), never a fresh investigation.
 
 The exit-code handling of steps 3, 4 and 6, and the abort close of a run that ends without a judged verdict, are in
 the skill's step 9 and §Stops — follow them there.
