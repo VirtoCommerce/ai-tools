@@ -70,7 +70,7 @@ a row of the same name and add new ones.
 | **Approver / org admin** | the organization's admin or approver | the notification or the company area | desktop | manages members and limits, approves or rejects what buyers submit | the pending item is findable, the decision is one clear action, the buyer's side reflects it |
 | **Restricted member** | a member **without** the permission the task needs | where the permitted persona starts | desktop | tries the same task | it is told clearly that it cannot, and why — the control is hidden or disabled with a reason, never a dead end, an error page or data it must not see |
 | **Acting on behalf** | a sales rep or support agent working for a customer | the customer list or impersonation entry | desktop | does the task for someone else | it always knows whose account, cart and prices it is acting in, and returns to its own |
-| **Mobile shopper** | the task's own actor | the same place as the task's actor | the narrowest sweep width, touch only | taps, never hovers; one thumb; reads what fits on the screen | nothing it needs is hover-only, off-screen or under a sticky element |
+| **Mobile shopper** | the task's own actor | the same place as the task's actor | the `playwright-mobile` lane (`isMobile`, `hasTouch`) when the brief gives it, else the narrowest sweep width on its own lane — then say `touch not emulated` | taps, never hovers; one thumb; reads what fits on the screen | nothing it needs is hover-only, off-screen or under a sticky element |
 | **Keyboard / screen-reader user** | the task's own actor | the same place | desktop, keyboard only | Tab / Shift+Tab / Enter / Space / Esc / arrows; chooses the next step from accessible names in the snapshot alone | the task completes without a pointer, guided by names and announcements, never by position or colour |
 | **Other-locale shopper** | the task's own actor, in a non-default language and currency the stand offers | the same place | desktop | reads the translated labels, enters local formats (address, date, number) | labels are translated and fit, prices and dates are formatted for the locale, local input is accepted |
 
@@ -92,6 +92,10 @@ row is `NOT RUN — no <persona> account on <env>` and the report names the acco
 `/project-init --add-user`). A locale the stand does not offer ⇒ `NOT RUN — locale not on the stand`.
 
 ## 4. Which personas run — pairs first
+
+**On a FAST path** (`/qa-test-fast`, `/qa-test` FAST, `/vc-test:qa-ticket` without `--full`) run **the task's own
+actor only**: one task, one persona, and the pairs and contrast below are listed as `NOT RUN — FAST path` so the
+report shows what a FULL run would add. Everything below is the FULL path (or a brief that asks for it).
 
 1. **Pairs from §1.** A segment the feature treats differently is tested as a **pair that must diverge**: VIP vs
    zero balance, with vs without the permission, own vs another organization, default vs another currency. Equal

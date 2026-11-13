@@ -10,7 +10,7 @@ them?* — and answers it from what was on the screen, never from the DOM, the s
 
 ## 1. The task and the person
 
-- **Tasks (1–3).** From the brief. Else from the ticket's ACs ("as a <role> I want <goal>" → one task each). Else
+- **Tasks (1–3; one on a FAST path).** From the brief. Else from the ticket's ACs ("as a <role> I want <goal>" → one task each). Else
   the page's primary job — what a user comes to that route to do (a PDP: choose a variant and add it to the cart;
   a cart: change a quantity and reach checkout). Write each as the user would say it: *"reorder what I bought last
   month"*, never *"click #reorder-btn"*.
@@ -35,8 +35,12 @@ them?* — and answers it from what was on the screen, never from the DOM, the s
    Inputs are unique `random-data` values with the `AGENT-TEST-` prefix (`<plugin>/knowledge/test-data.md`), never a literal.
 5. **Writes respect the stand.** A task that creates or changes data (places an order, submits a quote, invites
    a member) runs to the end only on a stand the project declares writable (`test.environments`; vc-test's
-   `lib/capabilities.mjs`). On a read-only stand stop before the committing action and record the task
-   `NOT RUN — read-only stand` for that last step; everything before it still counts.
+   `lib/capabilities.mjs`), **and only where the run keeps a ledger**: record every entity you create the moment the
+   platform returns its id, as `<plugin>/briefs/ledger.md` says — teardown removes only what the ledger names, by
+   id, so an order or a member you did not record stays on a shared stand. No ledger for this run (a standalone
+   `/vc-test:qa-design`, this repository's `/qa-test`), or a read-only stand ⇒ stop before the committing action and
+   record the task `NOT RUN — no ledger` or `NOT RUN — read-only stand` for that last step; everything before it
+   still counts.
 6. **On the persona's device** — desktop, the narrowest width of the viewport sweep
    ([`layout-defects.md`](layout-defects.md) §Viewport sweep procedure) for the mobile shopper, keyboard only for
    the keyboard / screen-reader user ([`personas.md`](personas.md) §2).
