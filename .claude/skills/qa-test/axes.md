@@ -81,7 +81,7 @@ unlike any other: the other five *consume* something already in the repo, and 2g
 | **FAST** | recommend `/qa-domain-map <slug>` in one line and proceed | **zero** — one local frontmatter read |
 
 **FAST is untouched, and that is load-bearing.** The FAST promise is *one execution agent*
-([`SKILL.md`](SKILL.md) §Effort routing); 2g adds nothing to it and still cannot regrow the *"both paths,
+(decisions: `docs/decisions/qa-test-evolution.md`); 2g adds nothing to it and still cannot regrow the *"both paths,
 always"* problem §4 exists to prevent. **The axis derives on both paths; only its lane is FULL-only** —
 the same shape as `data_surface`, which derives everywhere and dispatches only where it must.
 
@@ -243,7 +243,7 @@ still derives, because 5-status needs it; `visual` and `contract` do not run at 
 `technical-change.md` §7. Listed here so a reader counting exceptions on this page does not conclude the
 flow simply forgot to declare its axes.
 
-This restores a promise the pipeline had quietly inverted. `SKILL.md` §Effort routing records that the
+This restores a promise the pipeline had quietly inverted. the effort-routing decision records that the
 FAST/FULL split was made precisely because the old design marked everything expensive
 *"both paths, always"* — and by 2026-09-03 that phrase (or its equivalent) had reappeared **15+ times**
 across this surface, one axis at a time, each with a locally reasonable argument. `contract-refresh.md`

@@ -1,73 +1,66 @@
-# Step 5 — the close-out SPINE: reconcile → verdict → release regression → file
+# Stage 5 — Close: triage, filing, the verdict, the files, the comment, the hand-off
 
 > **Before posting any tracker comment, read `knowledge/execution/tracker-ops.md` §0 — the GOLDEN RULE.**
 
-Methodology for `/qa-test` Step 5. The command states the phase order and the gates; this file and its
-three siblings are the detail. **5-triage before 5-verdict is load-bearing:** the verdict is expressed in
-terms of a finding's *provenance* ([`triage.md`](triage.md)) and the AC/DoD state `5-verdict` reconciles before
-it decides (5-verdict.1 below), so neither can be skipped or reordered ahead of it.
+The command fixes the order: reconcile → triage → investigate → `qa-bug` → teardown → **5-verdict** →
+files → page and comment → 5-status → docs → 5-docs-map → kb → run cost → lifecycle question. This file
+holds the rules for the steps that are the repo's; reconcile is vc-test's
+([`reconcile.md`](../../../plugins/vc-test/skills/qa-test-strategy/reconcile.md)), triage is
+`vc-test:qa-triage-results` plus [`triage.md`](triage.md), and 5-status · 5-docs · 5-docs-map are
+[`reporting.md`](reporting.md).
 
-FAST runs 5-triage → 5-verdict → 5-file → 5-report → **5-status**, and stops there; a FAST ticket that needs documentation gets `/qa-docs <ticket-key>` by hand. **5-docs** runs on FULL and the technical-change flow (it calls `/qa-docs`); `5-docs-map` is FULL-only — it writes back what `1c` reported, a step FAST does not run. (**`5r` and `5g` were removed 2026-09-10**; **`5b` was FOLDED INTO `5-verdict` 2026-09-16** — its label is retired, never reused, and the reconciliation itself survives as `5-verdict.1`: [`decisions`](../../../docs/decisions/qa-test-evolution.md) §Folding 5b into 5-verdict.) The reconciliation runs on **both** paths — it is
-what produces the verdict, and dropping it would leave `5-verdict` deciding on nothing.
+## Triage — `qa-triage-results`, then `vc-fix:qa-investigate`
 
-**On an `--iterate` run these phases do not all fire once.** Per round: **5-triage–5-file**, plus a round-delta
-comment, `summary.json`, and an appended checklist section. **Once, at loop exit:** 5-report in full → 5-status → 5-docs → 5-docs-map. So a `--iterate` run posts ONE QA-Complete comment and makes ONE transition, whatever the round count.
-The per-round assignment table — and the reason for each row — is owned by [`modes.md`](modes.md) §5-loop and is
-not restated here. **The phases whose cadence the loop changes** carry a one-line `--iterate` clause
-pointing at it — 5-triage, 5-file, 5-report.1, 5-report.2, 5-report.3, 5-report.4, 5-status and 5-docs. 5-verdict and 5-report.5 run once per round with
-no change, so they carry none. Without the flag, read this file
-straight through.
+The chain is fixed: **triage → investigate → `qa-bug`.** Each link has one owner, and no link is done by
+hand.
 
----
+1. **The input is the checklist.** At the Stage 4 join every exploratory and visual finding became a row with a
+   verdict in `testing-checklist.md`. **Dedupe there, by defect class rather than by surface**: two lanes that
+   saw one defect make one row with two pieces of evidence.
+2. **Invoke the skill `skill: "vc-test:qa-triage-results"` with `ticket <TICKET> --verify --min-severity P2`**
+   ([`plugins/vc-test/skills/qa-triage-results/SKILL.md`](../../../plugins/vc-test/skills/qa-triage-results/SKILL.md) §Usage, its *Ticket mode* paragraph), and for the
+   regression lane with `<RUN_ID> --verify --min-severity P2` — **never `--fix`**, which would edit a suite case.
+   It collects the FAIL / BLOCKED / NOT-RUN rows (the installed plugin's `lib/triage-collect.mjs --ticket <TICKET>`, not this checkout's copy) and classifies them with
+   the regression classifier. Phase 4 then sends **every** Medium-or-worse real-bug candidate to the layer's QA expert, whose
+   brief makes it invoke `vc-fix:qa-investigate` ahead of `qa-bug`. Each one returns `REPRODUCED` /
+   `NOT_REPRODUCED` plus an evidence package.
+3. **Apply what it returns** ([`routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md)
+   §Ticket mode):
 
-## The close-out, in four files
+| Returned class | Goes to |
+|---|---|
+| **Confirmed bug** (`REAL_BUG`, `REPRODUCED`) | `/vc-fix:qa-bug` with its package (§5-file) |
+| **`needs-review`** (did not reproduce; `vc-fix` missing; or the Skill tool refuses `vc-fix:qa-investigate` — an install that predates its unlock: tell the user to run `/plugin update`) | a line in `verdict.md`, never filed |
+| **Below floor** (a `Low` real-bug candidate) | `summary.json.bugs_not_filed`, with its evidence (§5-file) |
+| **Test defect on a checklist item** — a wrong item, stale data, a wrong oracle | fixed in `testing-checklist.md` by you and re-run once, or noted in `verdict.md` |
+| **Test defect on a regression case** | a `stale_cases` entry, reason `failed-as-test-defect` — the case is never edited here |
+| **Env / flaky / known** | the item's Result note, with the evidence that says so. When it stopped a check, also a line under *Not tested, and why* |
+| **By design** | `kb` (confirm or capture) and a line in `verdict.md`. Never a bug |
 
-This file is the **spine**: the phase order above, plus the phase that produces the verdict itself
-(5-verdict — reconcile, then decide) and the one that acts on it (5-file). The rest is one file per job, so a reader opens what the
-step they are in actually needs rather than 680 lines of everything:
+Visual findings and App Insights signals enter by [`triage.md`](triage.md) §1 and §7. Before calling a finding
+a product bug, the investigation checks the back office for the value it depends on and queries VirtoOZ for
+the documented behaviour ([`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*). A non-empty
+`unresulted[]` sends you back to the Stage 4 join.
 
-| File | Owns | Read it when |
-|---|---|---|
-| [`triage.md`](triage.md) | **5-triage** — correlate, validate evidence, classify, provenance, severity, dedup | turning raw results into findings |
-| **this file** | **5-verdict** (a pointer: the rules live in the vc-test plugin's `verdict-rules.md`) · **5-file** — filing | deciding what the run concluded |
-| [`reporting.md`](reporting.md) | **5-report · 5-status · 5-docs · 5-docs-map** — release gate, comment, `summary.json`, checklist, transition, docs, the domain-map write-back | delivering it |
+## 5-file. File bugs — through `/vc-fix:qa-bug`, with a severity floor
 
----
+Call `/vc-fix:qa-bug "<one-line defect>"` once per **confirmed** bug, sequentially (it may take a browser
+lane). Give it, **as file paths**:
+- **the `vc-fix:qa-investigate` package** (`evidence-index.md`, `root-cause.md`, screenshots, HAR,
+  console/network lines). Say that the bug is already reproduced and investigated, so `qa-bug` reuses the
+  package for its reproduction and its 4-layer validation and does not dispatch a second repro
+  ([`routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief)
+- the checklist item, charter item or regression case it came from
+- the ledger ids of the data involved
+- the build versions from Stage 0
+- the run folder `{RUN_DIR}`, so the report and its screenshots land in its `bugs/`
+- `found-by:agent-testing <ticket-key>` — left out only for a bug the user brought in, which `qa-bug` then
+  records as a human's (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files)
 
-
-## 5-verdict. Reconcile AC & DoD, then decide the verdict
-
-One phase, two moves: **5-verdict.1** closes the AC/DoD question against what the run observed, **5-verdict.2** reads the
-verdict off it. They were `5b` and `5c` until 2026-09-16 — two phases with a hard-STOP verifier dispatch
-between them. The dispatch is gone and the reconciliation is not; the letters went with the relabel below.
-
-### 5-verdict.1 Compare AC & DoD vs implementation
-
-*The rules live in the vc-test plugin: `plugins/vc-test/skills/qa-test-strategy/verdict-rules.md` §Reconcile — AC & DoD vs implementation*
-
-### 5-verdict.2 Decide verdict
-
-*The rules live in the vc-test plugin: `plugins/vc-test/skills/qa-test-strategy/verdict-rules.md` §Decide the verdict*
-
----
-
----
-
-## 5-file. File bugs — with confirmation, and a severity floor
-
-File the confirmed, non-duplicate real bugs from 5-triage, each carrying a `## Fix Routing` hint. **Ask before
-filing.** Each filed bug carries `found-by-agent` + `found-in-testing` — or `reported-by-human` for a finding the
-user brought in (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files). Pass
-`found-by:agent-testing <ticket-key>` in every `/vc-fix:qa-bug` call below, except for a finding the user brought in —
-without it `qa-bug` records the bug as a human's.
-
-**`--iterate`: 5-file runs PER ROUND, for new findings only.** A round that files nothing cannot fix
-anything — `/vc-fix:qa-fix` needs a filed ticket — so skipping 5-file in round 2 dead-ends the loop at its own
-precondition. An IN-SCOPE finding needs no ticket of its own: the loop fixes it as `/vc-fix:qa-fix <ticket-key>`
-from its To-fix row. A **CARRIED** finding (5-triage item 4) files nothing; its existing To-fix row is updated
-to the round it still fails at, and a carried finding that went green this round is marked so in its row and
-recorded (the fix is an unmerged prerelease). The floor is unchanged per round: 5-file still does not
-file a `Low` in round 2, which is why below-floor findings stay outside the loop.
+`qa-bug` does what this flow must not do by hand: the duplicate check, the 4-layer validation (from the
+package), owning-repo resolution (the `/qa-fix` hand-off block) and the report file. **Cite the path it
+returns; never move or rewrite its report.** `vc-fix` not installed ⇒ STOP at this step: tell the user to
+run `/plugin install vc-fix@ai-tools` and keep the drafts in chat — never a hand-written report.
 
 ### The floor: `Critical` / `High` / `Medium` only
 
@@ -78,61 +71,108 @@ file a `Low` in round 2, which is why below-floor findings stay outside the loop
 | `Medium` | P2 | **File** |
 | `Low` | P3 | **Do not file** — record it |
 
-It applies to **both** shapes: an IN-SCOPE `Low` gets no To-fix row, and an OUT-OF-SCOPE incidental
-`Low` gets no standalone ticket. Severity is 5-triage item 5's call, already settled at the 5-verdict gate — 5-file applies
-the floor, it does not re-grade to reach it. Nudging a P2 down to P3 to avoid filing, or a P3 up to P2 to
-force it, is the one move this rule must not cause.
+Severity is graded once, at triage, and never re-graded here to move a finding across the line. **A `Low` is
+dropped from the TRACKER, never from the RUN:** its evidence stays in the run folder, and
+`summary.json.bugs_not_filed` names it, one entry each. Escalate above the floor only on an explicit human
+instruction in this run, never in bulk.
 
-### A `Low` is dropped from the TRACKER, never from the RUN
+### The tracker step — by provenance, and only on a yes
 
-Silence is the failure mode this pipeline is built against, so a below-floor finding lands in three places:
-
-1. Its **`{RUN_DIR}/bugs/low/` draft stays** (a below-floor finding is `Low`/P3 by definition, so `low/` is always its folder — `.claude/rules/reports.md` §1a) (5-triage's `--fix` pass wrote it, or write it here). That is the
-   durable record, and what a human promotes from later if the finding recurs or the grade is disputed.
-2. **`summary.json.bugs_not_filed` names it** — one entry each, with the draft path. Since 2026-11-10 the
-   tracker comment does NOT list Lows: it carries only what a developer acts on — the To-fix rows and how to
-   reproduce each (operator decision on VCST-6155). A reviewer reads the Lows in the run folder.
-3. On the **FAST path** the Artifact-B checklist row carries it too, since the checklist is that run's only
-   durable record.
-
-Escalate above the floor only on an explicit human instruction in this run ("file the Low ones too") —
-never on the agent's own judgment, and never in bulk.
-
-### Relationship by provenance
-
-Mechanics: `.claude/knowledge/execution/tracker-ops.md` §5b.
-
-| Provenance | Relationship |
+| Provenance ([`triage.md`](triage.md) §4) | Tracker step |
 |---|---|
-| **IN-SCOPE** | **A row in the ticket's To-fix table — no tracker item, never a Sub-task.** No `/vc-fix:qa-bug` call: the draft stays in `{RUN_DIR}/bugs/<severity>/`, the finding is written to `summary.json.to_fix[]` (`id` `F-<n>`, `what`, `severity`, `ref` = the failing case / checklist item, `report` = the draft, `repro` = `{ impact, repo, file, where, steps[], expected, actual, found_by[] }`, short, from the draft — `found_by` names the check by TITLE, never by id), and 5-report renders it as one row of the comment's **What to fix and how to reproduce** table |
-| **PRE-EXISTING** | **Link only, no new ticket** — `/vc-fix:qa-bug … link-only:<existing-bug-key>`, linked to `<ticket-key>` |
-| **OUT-OF-SCOPE incidental** | Its **own standalone ticket** + a *related* link back to `<ticket-key>` |
-| **`BL-A11Y-*` on a functional / feature / E2E ticket** | Its **own standalone ticket** + a *related* link — the same shape as an OUT-OF-SCOPE incidental, and for the same reason. **Never a To-fix row**: that row asserts this ticket caused it, and an inherited contrast or naming defect was not caused by this story. It keeps its **real severity** (never downgraded to look non-blocking) and does **not** fail 5-verdict ([`triage.md`](triage.md) §7a) |
+| **IN-SCOPE** | **A row in the ticket's To-fix table — no tracker item, never a Sub-task.** The finding goes to `summary.json.to_fix[]` (`id` `F-<n>`, `what`, `severity`, `ref` = the failing item, `report` = the path `qa-bug` returned, `repro` = `{ impact, repo, file, where, steps[], expected, actual, found_by[] }`, short — `found_by` names the check by TITLE, never by id), and the comment renders it in **What to fix and how to reproduce** |
+| **PRE-EXISTING** | **Link only** — `/vc-fix:qa-bug … link-only:<existing-bug-key>`, linked to the ticket |
+| **OUT-OF-SCOPE incidental** | Its **own standalone ticket** + a *related* link, created only on the operator's yes |
+| **`BL-A11Y-*` on a functional / feature / E2E ticket** | Its **own standalone ticket** + a *related* link, at its **real severity**; never a To-fix row, and it does **not** fail the verdict ([`triage.md`](triage.md) §7a) |
 
-### A separate ticket is suggested and asked, never created by default
+Anything that would become its own tracker item is **proposed, one line per item** — what, severity, the
+suggested type (`Bug` / `Task` / `Story`) and why it is not a To-fix row — and asked once as a list the
+operator answers per item (create · put in To fix · skip). An unanswered item stays a draft and is named in
+the comment under **Suggested separate tickets**. Never a Sub-task, in any answer.
 
-The To-fix row is the only shape 5-file produces without a question. **Anything that would become its own
-tracker item** — an OUT-OF-SCOPE or `BL-A11Y-*` bug, or a finding that looks like its own Task or Story (new
-scope, not this ticket's AC) — is **proposed to the operator, one line per item**: what, severity, the
-suggested type (`Bug` / `Task` / `Story`) and why it does not belong in the To-fix table. Ask once, as a
-list the operator answers per item (create · put in To fix · skip). Create only what they said yes to; an
-unanswered or skipped item stays a draft in `{RUN_DIR}/bugs/<severity>/` and is named in the 5-report
-comment under **Suggested separate tickets**. Never create a Sub-task, in any answer.
+**Gate (inline):** every IN-SCOPE bug at or above the floor is a `to_fix[]` row and none was created in the
+tracker; every PRE-EXISTING match is linked, not re-filed; every `Low` is in `bugs_not_filed`; no real bug was
+downgraded to a test defect; no severity moved since triage.
 
-**Every bug reaches `/vc-fix:qa-bug` already investigated.** 5-triage's two `/qa-triage-results` passes ran each
-confirmed bug through `vc-fix:qa-investigate` (its Phase 4). So the chain is always *triage → investigate →
-`qa-bug`*, and 5-file is its last link:
-- **C1 bug** — already drafted by the `--fix` pass. Pass its draft as the basis.
-- **Checklist / exploratory / visual bug** — returned by the `ticket` pass with its package. Call `/vc-fix:qa-bug`
-  with that package, per [`routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief.
+## 5-verdict. Reconcile AC & DoD, then decide the verdict
 
-Neither one is re-investigated. A bug that triage left `needs-review` is not filed. A test-defect still routes to
-`/qa-review-tests <suite> --fix`, never to the tracker.
+Reconcile the strategy first ([`reconcile.md`](../../../plugins/vc-test/skills/qa-test-strategy/reconcile.md)):
+the round's `### Reconciliation`, its cap (a High/Critical risk without a result is never `PASS`), and
+`summary.json.strategy` — never null once a strategy ran. Then two moves, both owned by the vc-test plugin:
 
-**Gate (inline self-check):** every IN-SCOPE bug **at or above the floor** is a `to_fix[]` row and **none** was
-created in the tracker (no Sub-task, no Bug); every PRE-EXISTING
-match is linked, not re-filed; **every below-floor `Low` has a draft AND a line in the 5-report comment** (a `Low`
-in neither place was dropped, the one outcome the floor must not produce); no real bug was downgraded to a
-test-defect; and **no severity moved between 5-triage and here**.
+### 5-verdict.1 Compare AC & DoD vs implementation
 
----
+*The rules live in the vc-test plugin: `plugins/vc-test/skills/qa-test-strategy/verdict-rules.md` §Reconcile — AC & DoD vs implementation*
+
+### 5-verdict.2 Decide verdict
+
+*The rules live in the vc-test plugin: `plugins/vc-test/skills/qa-test-strategy/verdict-rules.md` §Decide the verdict*
+
+`PASS` / `PASS WITH NOTES` / `FAIL` / `BLOCKED`. The conditions it reconciles are the checklist's AC items. A
+`Low` finding never makes a FAIL, and an accessibility finding never blocks a functional ticket. The verdict
+is **recorded** here and **published** by the comment, so a late finding amends a verdict nobody has read yet.
+
+## Files — `{RUN_DIR}` (the run folder, `run-output.md`)
+
+- **`summary.json`** — keys come only from
+  [`../../templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json):
+  - `path: "STRATEGY"`, `flow: "feature-test"` — depth is `strategy.depth_label`
+  - `strategy` — reconciled; `status_transitions[]` — every hop and skip
+  - `regression` — the regression lane's run (`c1`: suites, ids, `run_id`, `pass_rate`), or its `skipped_reason`
+  - `visual` — the visual lane, or `ran: false` + `skipped_reason`; never `null` (a `null` reads as a gap)
+  - `test_data` — the ledger and teardown
+  - `domain_map` — its state, plus the mind-map path and `mind_map_findings[]`
+  - `bugs_filed` / `bugs_not_filed` / `to_fix`
+  - `candidate_cases` / `stale_cases` (§Hand-off to lifecycle)
+  - `tracker.comment_id` — `null` until the comment posts, then the returned id
+  - `report.page_url`, `report.verdict_md`, `report.kb`; `cost` — the run-cost table and its budget line
+
+  Then run `npm run summary:validate`; it must report no new finding. Run it again after the last
+  write-back (comment id, page link, kb ids, cost).
+- **`testing-checklist.md`** — the Result column filled in by you, the only writer.
+- **`triage-report.md`** and the `evidence-*/` investigation packages — written by `qa-triage-results`
+  ticket mode, never by hand.
+- **`verdict.md`** — **≤60 lines, verdict first**, in the shape of
+  `plugins/vc-test/skills/qa-test-strategy/verdict-rules.md` §Shape. Every strategy artifact row appears as a
+  result or `SKIP — <reason>`. Under *Context used* it adds two lines: `budget:` (from `run-cost.mjs`) and
+  `Cases: <n> candidate · <n> stale → /qa-test-lifecycle <TICKET>` (or `none`).
+
+**Mind-map findings** go into `summary.json.domain_map.mind_map_findings[]`: a node the run contradicted, a
+scenario that fit no node, every DRIFT item's `HOLDS`/`RESOLVED` result with its evidence, and an UNVERIFIED
+node the exploratory session established. A DRIFT that holds and whose route `TM-018` flags as unfiled reached
+triage as a FAIL row and went through investigate → `/vc-fix:qa-bug`; the key or path that returned becomes
+the finding's proposed route. They are handed to the next `/qa-test-mind-map update --from <TICKET>`, never
+applied here.
+
+## HTML page and comment
+
+Write the page's extras to `<scratchpad>/extra.json` from `verdict.md`: `lede` = the one sentence — **mandatory**; `rows` = the AC table (`id`, `text`, `result`, `evidence`); `notTested`; `context` = the Data and Context-used lines as `{label, value}`; `shots` ≤ 4. Then run `/vc-fix:qa-report {RUN_DIR}/summary.json --kind test --extra <scratchpad>/extra.json`. It loads `artifact-design`, publishes the page, renders the comment with its link, and asks the one question in §Tracker comment. Skill refused ⇒ the install predates it: `/plugin update`, stop the report step — never type the page or comment by hand.
+
+**Audience: Anyone at Virto Commerce.** The page is read by the ticket's developers and PO through the
+tracker comment's link, so it is shared org-wide, not kept to its author. The Artifact tool publishes
+every page private and cannot change sharing, so after publishing, tell the user in one line to set
+**Share → Anyone at Virto Commerce**, and do it **before** the tracker-comment question: a link to a
+private page reaches no one. Never describe the page as private in the comment or in `verdict.md`.
+
+### Tracker comment
+
+The question, the post and the amend are `qa-report`'s §4–§5: one comment per round, posted only on a yes; a
+same-build re-run amends the recorded id, a new build posts a new comment
+([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0). A UI claim carries its screenshots inline
+(`.claude/rules/reports.md` §5.0). Write the returned id into `summary.json.tracker.comment_id` (the
+`tracker:comment` helper mirrors it). The status hop comes after, in [`reporting.md`](reporting.md) §5-status.
+
+## Hand-off to lifecycle
+
+`/qa-test` reads and runs suite cases; it never writes, edits or deletes one. Two lists in `summary.json`
+carry what the run learned about the corpus to the one command that may change it:
+
+| List | Holds | Item |
+|---|---|---|
+| `stale_cases` | cases at risk that the staleness check, or a run, showed no longer match the build | `{ id, suite, reason }`, `reason` one of `renamed-field` · `removed-selector` · `known-defective` · `failed-as-test-defect` (triage classified a FAIL as a case defect, not a product bug) |
+| `candidate_cases` | checklist items that PASSED and that no suite case covers — a node no case stamps, an integration point, a `PROMOTE` exploratory scenario | `{ checklist_row, risk, behaviour, layer }` |
+
+At close, **after the verdict and the comment**, if either list is non-empty: ONE question — run
+`/qa-test-lifecycle <TICKET>` now, or later. `verdict.md` names the command either way. `/qa-test-lifecycle`
+reads both lists from this run folder's `summary.json`: each stale case becomes a sync target with its reason,
+each candidate a gap to author, and it then promotes.

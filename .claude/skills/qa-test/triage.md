@@ -1,40 +1,33 @@
-# Step 5-triage — triage: correlate → validate evidence → classify → provenance → severity → dedup
+# 5-triage — triage: correlate → validate evidence → classify → provenance → severity → dedup
 
-Split out of [`close-out.md`](close-out.md) — that file is the close-out **spine** (5-verdict · 5-file) and
-cites this one. Read this when you are turning a run's raw results into a list of findings each of which
-has a class, a provenance and a severity.
+[`close-out.md`](close-out.md) §Triage — the calls, and where each returned class goes — is the owner; this file holds
+what triage adds around them. Read it when you are turning a run's raw results into a list of findings each
+of which has a class, a provenance and a severity.
 
-**5-triage runs before 5-verdict, and the order is load-bearing:** the verdict is expressed in terms of a
-finding's provenance (5-triage) and the AC/DoD state `5-verdict` reconciles first (5-verdict.1).
+**Triage runs before 5-verdict, and the order is load-bearing:** the verdict is expressed in terms of a
+finding's provenance (item 4) and the AC/DoD state `5-verdict` reconciles first (5-verdict.1).
 
 ## 5-triage. Triage — correlate → validate evidence → classify → provenance → severity → dedup
 
-Everything the run can surface a finding from is triaged **before** anything is filed: the **C1** run's own
-FAILs, checklist-track agent-reported bugs, the **Step-3x discovery lane's** findings (it files none itself),
-and correlated App-Insights signals. **There is no release-scoped sweep to triage** — `5r`/C2 was removed 2026-09-10; a separate `/qa-regression` run is triaged by its own `/qa-triage-results` against
-this same taxonomy after the verdict is recorded.
+Everything the run can surface a finding from is triaged **before** anything is filed: the checklist runners'
+results, the exploratory and visual lanes' findings (neither files anything itself), the regression lane's
+FAILs, and correlated App-Insights signals. **There is no release-scoped sweep to triage** — a separate
+`/qa-regression` run is triaged by its own `/qa-triage-results` against this same taxonomy.
 
-### 0. Triage the C1 run through `/qa-triage-results`, not from scratch
+### 0. Two calls, one taxonomy
 
-The change-scoped run already has a `RUN_ID` with evidence bundles (`traces/*-FAIL-trace.json`, screenshots,
-HAR). Invoke the Skill tool with **`skill: "vc-test:qa-triage-results"`, args `<RUN_ID> --fix`** instead of re-deriving the taxonomy ad hoc. That
-skill owns: deterministic collection (`triage:collect`), per-batch classification via
-`plugins/vc-test/briefs/triage-classifier.md`, live verification of HIGH-confidence `REAL_BUG`s, auto-application
-of confirmed test-case fixes via `/qa-review-tests --fix` for the *existing* Artifact-C suites (Step 3's own
-`--fix` pass only covers the newly-authored rows), and drafting confirmed bugs into the run folder's `bugs/` ([`routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief).
+`vc-test:qa-triage-results` classifies; nothing here re-derives its taxonomy ad hoc. **Ticket mode** takes
+the checklist (item 3). **The regression lane**, when it ran, has a `RUN_ID` with evidence bundles
+(`traces/*-FAIL-trace.json`, screenshots, HAR): the same skill with `<RUN_ID> --verify --min-severity P2` —
+**never `--fix`**, because a ticket run never edits a suite case. A FAIL it classifies as a test defect is a
+`stale_cases` entry (`failed-as-test-defect`) for `/qa-test-lifecycle`. Two side effects of that call the run
+gets nowhere else: the cross-run **flakiness history** (`triage:history` → `reports/regression/history.json`)
+and the fingerprint dedup store. Fold its `triage-report.md` tables into this phase's finding list — **do not
+reclassify a finding it already resolved.** A lane that did not run is stated, never silently absent.
 
-Two side effects `/qa-test` gets nowhere else: the cross-run **flakiness history**
-(`triage:history` → `reports/regression/history.json`) and the fingerprint dedup store.
-
-Fold its `triage-report.md` tables (confirmed bugs / test-case fixes / dismissed) directly into this
-phase's finding list — **do not reclassify a finding it already resolved.** It never files a tracker ticket;
-5-file owns filing. Skip with a one-line note if C1 was skipped (no new cases and no `RE-BASE` ⇒ no RUN_ID) —
-a skipped track is stated, never silently absent.
-
-**Discovery-lane findings enter here like any other, with one asymmetry worth naming:** the lane explores
+**Exploratory findings enter here like any other, with one asymmetry worth naming:** the lane explores
 adjacent ground by construction, so most of what it surfaces is **PRE-EXISTING** and links rather than
-files. That is not a reason to discount it — a PRE-EXISTING bug found *before* authoring still changes what
-Artifact A asserts, which is the whole reason the lane runs where it does.
+files. That is not a reason to discount it.
 
 ### 1. Correlate App Insights logs for the test window
 
@@ -65,11 +58,11 @@ gets **no separate `BUG-AI-*` draft** — 5-file's `/vc-fix:qa-bug` owns it.
 
 ### 3. Findings that have no RUN_ID — the same command, in `ticket` mode
 
-Item 0 already classified the regression run's own FAILs. The rest — the checklist track (4a), the visual lane
-(4v), the discovery lane (3x) — go through the Skill tool with **`skill: "vc-test:qa-triage-results"`, args `ticket <ticket-key> --verify`**, not an inline
+Item 0 covers the regression lane's own FAILs. The rest — the checklist runners, the visual lane, the
+exploratory lane — go through the Skill tool with **`skill: "vc-test:qa-triage-results"`, args `ticket <ticket-key> --verify --min-severity P2`**, not an inline
 pass. **First, every one of those findings must be a row with a verdict in `testing-checklist.md`** (visual-axis §6
-already requires this for 4v). Ticket mode reads only that file, and a finding that is not in it is never
-triaged. `--verify` sends **every** `REAL_BUG` candidate through `vc-fix:qa-investigate`, not just the
+already requires this for the visual lane). Ticket mode reads only that file, and a finding that is not in it is never
+triaged. `--verify` sends **every** Medium-or-worse `REAL_BUG` candidate through `vc-fix:qa-investigate`, not just the
 HIGH-confidence ones, so each bug that reaches 5-file arrives with an evidence package. What ticket mode returns
 and what this phase does with it: [`routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md) §Ticket mode.
 
@@ -79,8 +72,8 @@ and App-Insights signals. The classes are real product bug vs test-defect (`TEST
 bug is investigated the same way before it is filed: one `vc-fix:qa-investigate` dispatch, as that command's
 Phase 4 runs it.
 
-Ambiguous → **real bug / LOW**, never relabelled as a test-defect. A test-defect routes to
-`/qa-review-tests <suite> --fix`, not a ticket.
+Ambiguous → **real bug / LOW**, never relabelled as a test-defect. A test-defect is never a ticket: on a
+checklist item you fix the item; on a suite case it is a `stale_cases` entry for `/qa-test-lifecycle`.
 
 ### 4. Provenance — per real bug
 
@@ -89,14 +82,7 @@ Ambiguous → **real bug / LOW**, never relabelled as a test-defect. A test-defe
 | **PRE-EXISTING** | dedup match, or reproduces pre-change | link, don't re-file, don't fail this ticket |
 | **IN-SCOPE** | in what this ticket changed | fails this ticket; becomes a row of the ticket's To-fix table at 5-file (no tracker item) |
 | **OUT-OF-SCOPE incidental** | unrelated defect found opportunistically | suggested to the operator as its own ticket + a *related* link, created only on their yes; doesn't fail this ticket unless a P0 revenue-flow break |
-| **CARRIED** (`--iterate` only) | dedup match is a finding **this run recorded in an earlier round** (a `to_fix[]` row) | keeps its original IN-SCOPE provenance **and** severity, so it still fails this ticket; files nothing; its To-fix row is updated to the round it still fails at |
-
 Unclear → treat **IN-SCOPE** (fail-safe).
-
-**`--iterate`:** without the CARRIED row, item 6's dedup matches this run's own round-1 To-fix row and
-the PRE-EXISTING row then says *don't re-file, don't fail this ticket* — wrong twice, since it is this
-ticket’s own unfinished work and it is still failing. Rationale, plus what happens when a carried bug goes
-green: [`modes.md`](modes.md) §5-loop §Three carve-outs.
 
 ### 5. Severity + priority
 
@@ -106,17 +92,13 @@ never re-graded at 5-file to move a finding across the line.
 ### 6. Dedup — every finding, regardless of source
 
 Glob `reports/bugs/**` + all `reports/tickets/Sprint*/` + the ticket's run folders (their `bugs/`), and search the tracker. A match = PRE-EXISTING. A `/qa-triage-results`-confirmed bug
-still needs this tracker-wide check before 5-file can file it.
-
-**`--iterate` — the one exception, and it matters because this item runs AFTER item 4.** A match on a
-finding **this run recorded in an earlier round** is **CARRIED**, never PRE-EXISTING. Dedup re-emits
-`provenance` for every finding, so without this line the item-4 CARRIED call is overwritten one step
-later: the bug stops failing 5-verdict, and the round reports PASS on a defect this same run filed and that is
-still red. Match on the `to_fix[]` row id, not on the symptom — it is this ticket’s own To-fix row.
+still needs this tracker-wide check before 5-file can file it. A match on a `to_fix[]` row of an **earlier
+round of this ticket** is not PRE-EXISTING: it is this ticket's own unfinished work, keeps its IN-SCOPE
+provenance and severity, and still fails it.
 
 ### 7. Visual-lane findings — three classes, and only one of them can fail the ticket
 
-When the Step-4 visual lane ran ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md)), its findings enter this same triage
+When the visual lane ran ([`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md)), its findings enter this same triage
 with **no new class and no new severity ladder** — but they split by what produced them, and the split is
 what makes the axis safe to switch on:
 
@@ -127,7 +109,7 @@ what makes the axis safe to switch on:
 | A **`vs. USER` `FAIL`** — a real user cannot complete the task | an ordinary finding, like a `BL-UI` FAIL — able to fail 5-verdict | `visual.ux_findings[]` |
 | A **`vs. USER` `ADVISORY`** — completed with friction | **advisory** at its real severity — reported, never fails 5-verdict | `visual.ux_findings[]` |
 | A **`vs. DESIGN` `DRIFT` / `MISSING` / `UNSPEC` / `KNOWN_DIVERGENCE`** | **advisory** — reported, never filed by this rule, **never** fails 5-verdict | `visual.advisory[]` |
-| **`AMBIGUOUS`** — the spec contradicts an invariant or a WCAG criterion | escalate to the human in the 5-report report; **never** resolve it by obeying the spec | `visual.advisory[]` + named in the report |
+| **`AMBIGUOUS`** — the spec contradicts an invariant or a WCAG criterion | escalate to the human in `verdict.md` and the page; **never** resolve it by obeying the spec | `visual.advisory[]` + named in the report |
 | **`SKIPPED` / `INCONCLUSIVE`** (no design source on disk; axe blocked by CSP) | an absent measurement | `visual.axes.*.skipped_reason` — **never** reported as clean |
 
 Precedence is `BL-UI / BL-A11Y invariant > design spec > UX heuristic`: **a spec match never rescues an
@@ -158,8 +140,8 @@ severity ladder for everything else.
   the whole point is that severity and blocking are now separate questions. Severity is still graded once,
   at 5-triage, and never re-graded (item 5).
 - **The 5-file severity floor still applies** to whether it is filed at all: `Critical`/`High`/`Medium` file, a
-  `Low` keeps its `reports/bugs/open/low/` draft and its line in the 5-report comment.
-- **It is named in the verdict, not hidden by it.** The 5-report report and the Artifact-B checklist carry the
+  `Low` keeps its line in `summary.json.bugs_not_filed`.
+- **It is named in the verdict, not hidden by it.** The page, `verdict.md` and the checklist carry the
   a11y rows with their verdicts and the standalone ticket keys, so a PASS is never mistaken for *"no
   accessibility problems here"*.
 - **`BL-UI-*` is unchanged and still blocks.** Layout stability, overflow, alignment and CLS are
@@ -169,7 +151,7 @@ severity ladder for everything else.
 **The carve-out — when a11y DOES block.** If accessibility is what the ticket is *for*, it blocks normally:
 an a11y/WCAG remediation ticket, a ticket whose ACs name an accessibility outcome, or a
 `/qa-accessibility` run. The test is the ticket's own ACs, not the finding's severity. State which side of
-the line the ticket fell on in the 5-report report.
+the line the ticket fell on in `verdict.md`.
 
 **Output:** every finding carrying `class` + `provenance` + `severity` + `duplicate-of?`, and every
 `BL-A11Y-*` finding additionally carrying `blocks: false` + its standalone ticket key.

@@ -72,7 +72,7 @@ clears a GRD-001 before a browser lane is spent; exit 1 says the surface is unre
 run then establishes live is a `kb_capture` ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential
 Rules → *Product context*).
 
-Agent routing table and the dispatch minimums: [`SKILL.md`](SKILL.md) §Agent dispatch.
+Agent routing table and the dispatch minimums: [`execution.md`](execution.md) §Runner brief.
 
 ---
 

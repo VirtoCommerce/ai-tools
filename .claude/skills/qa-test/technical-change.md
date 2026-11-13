@@ -40,7 +40,7 @@ records what that dry run corrected, §7a what the routing test did.
   2a  tc:scope -> dispose -> apply REPAIR         coverage-triage.md            [2a ALONE, no authoring]
   B   Artifact B checklist + 1 execution agent    authoring.md                  [CONDITIONAL — §3]
   RG  regression:select -> /qa-regression         §4 below                      *** the flow's own step
-  5-triage → 5-verdict → 5-file → 5-report → 5-status → 5-docs                     commands/qa-test.md §Step 5   [unchanged, FAST cadence]
+  5-triage → 5-verdict → 5-file → 5-report → 5-status → 5-docs                     commands/qa-test.md Stage 5   [unchanged, FAST cadence]
 ```
 
 **Step 5 runs IN FULL, at the FAST cadence** — every phase, minus only the three FULL-only verifier
