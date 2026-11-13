@@ -110,21 +110,22 @@ Measured on VCST-5733 (2026-09-02), three things compound to make sure a stale r
 **EXCLUDES 089/091/093** because no path segment is the literal token `sales-rep` — and it reports
 `unmappedPaths: []`, because the fail-open widening in `suite-selection.ts` fires only when the
 vocabulary matched **nothing**, and `orders`/`account` matched, so selection believes it mapped cleanly
-and never widens. Artifact C then applies `--cases critical`, dropping the High rows where most label and
+and never widens. A change-scoped regression then applies `--cases critical`, dropping the High rows where most label and
 route assertions live (091: 24 High, 093: 29 High). And a row that never executes is never triaged. The
 concrete hole: PR #2444 renames the hub widget to "My recent orders" across 13 locales, and the existing
 suites assert the OLD label **62 times** (093: 43, 091: 19). The Dim-11 rotation is no backstop either —
 almost nothing in the corpus carries an `Audited:` stamp, and **not one** of the rows in the four suites
-the two FULL `/qa-test` runs touched does. The stamped share is a moving number (every append changes
-it, and the append that added this section moved it), so it is measured once in
-[`skills/qa-test/coverage-triage.md`](../../skills/qa-test/coverage-triage.md) §1 and cited from here —
-a count transcribed into four files is wrong in four places at once, silently (§GOLDEN RULE).
+the two `/qa-test` runs touched does. The stamped share is a moving number (every append changes
+it), so it is never written down: re-derive it as `Audited:` occurrences over total rows across
+`regression/suites/**/*.csv` — a count transcribed into several files is wrong in all of them at once,
+silently (§GOLDEN RULE). `/qa-review-tests --triangulate` answers *is this assertion still true*, but nothing
+runs it on a schedule, and a sweep cadence is the wrong one for a change landing today anyway.
 
 | Command | Does |
 |---|---|
 | `npm run tc:scope -- --domain <d>[,<d>] \| --suite <ids> \| --module <m>` | **scope** — from the manifest's own vocabulary; ≥1 required |
 | `… --observable <phrase> [--observable …] \| --oracle <ID>[,<ID>]` | **risk terms** — the moved observable / amended invariant to hunt; ≥1 required. One phrase per `--observable` flag, so a comma stays inside it |
-| `… --cases <tier>[,<tier>] [--also-ids <ids>]` | predict the run Artifact C will actually execute |
+| `… --cases <tier>[,<tier>] [--also-ids <ids>]` | predict the run the plan will actually execute |
 | `… --json` | machine-readable worklist |
 
 Core `scripts/test-cases/scope-existing-coverage.ts`; unit tests
@@ -178,10 +179,95 @@ Measured on VCST-5733: `npm run tc:scope -- --domain sales-rep --observable "Rec
 --observable "All orders" --oracle BL-SR-002 --cases critical` → 7 suites in scope, 358 rows scanned,
 **81 at risk: 35 WILL_RUN · 45 FILTERED_OUT · 1 NOT_EXECUTING**, 81 never audited.
 
-Consumed by `/qa-test` `1b` item 2e (the derived `coverage_surface` token) and by **Artifact A's `2a`
-phase**, which disposes the hits before the same agent authors, on **both paths** and routes each hit to one of four dispositions —
-`CONFIRMED` / `REPAIR` / `RE-BASE` / `SUPERSEDED`. Single source of truth for those:
-`.claude/skills/qa-test/coverage-triage.md`.
+Consumed by **`/qa-test`'s staleness check** (the strategy's F5 — which cases at risk may not run) and by
+**`qa-suite-sync`** (which repairs them). Both route each hit to one of four dispositions, below — this
+file is their single source of truth. `/qa-test` itself never edits a suite CSV: the dispositions that need
+an edit are listed and handed to `/qa-test-lifecycle`.
+
+`FILTERED_OUT` is computable only when the plan carries a priority tier (`--cases`). A scan without one
+cannot filter anything out, so its `0` is **structurally** zero — record it as `not-yet-computable`, never
+as a clean result. The worked example above reports 45 `FILTERED_OUT` *because* it passed `--cases critical`.
+
+### The four dispositions
+
+`tc:scope` produces the worklist; classifying each hit is judgment. The vocabulary is closed and every hit
+takes exactly one value. **When the domain has a mind map, its suspect cases join the worklist** (`TM-017`):
+a case stamped on a DRIFT, OBSOLETE or changed node is a hit even when `tc:scope` did not find it. The
+slice's unstamped nodes (`TM-014`) are not hits; they are the gap list authoring starts from.
+
+| Disposition | The row is | Action | Timing |
+|---|---|---|---|
+| **`CONFIRMED`** | still correct under the change | nothing | — |
+| **`REPAIR`** | **mechanically** stale — a renamed selector, a moved route, a removed arg, a dead `@td()` alias — so it cannot execute at all | `/qa-review-tests file <suite> --fix` (reached through `/qa-test-lifecycle`), under its write-scope ceiling + revert-on-regression; the row is **stale** for a `/qa-test` run and does not enter it | fixed **before** the run, then **executed by the next one** |
+| **`RE-BASE`** | asserting an **expected value** the change contradicts | keep the assertion as it stands; the row **stays in the run's regression selection** | resolved **by** the run, at triage |
+| **`SUPERSEDED`** | asserting a surface the change removes | a proposal, recorded — never an edit | human |
+
+#### The `REPAIR` / `RE-BASE` split is the load-bearing rule
+
+**The change under test is normally an UNMERGED PR** (VCST-5733 tested three at once). Rewriting a case's
+expected value to match the change *before* the run makes the change its own oracle: the case can then only
+pass, whatever the build does. `qa-test-cases-generator` §6 names that failure outright — **no case may
+invert its assertion to certify a known defect** — and it is worse here, because the rewrite happens in the
+same run that then reports the green. The split is exactly the line between the two:
+
+- **`REPAIR` moves the mechanics, not the oracle.** A case that navigates a route that no longer exists, or
+  types into a `data-test-id` that was renamed, is not asserting anything yet — it cannot reach its own
+  assertion. Fixing the path does not touch what the case claims, so it cannot launder a verdict. Leaving it
+  unfixed is not neutral either: it manufactures a BLOCKED that reads as a product failure (the corpus's
+  measured artefactual-BLOCKED class: 19.9% overall, 28.6% on suites of 81+ cases).
+- **`RE-BASE` moves the oracle, so only the run may do it.** The old assertion is kept and executed against
+  the change. If it fails and the new behaviour matches the AC, triage's test-defect path rewrites it,
+  grounded in that run's own evidence (a `{OBSERVED}` that traces to an artifact). If it fails and the new
+  behaviour does *not* match the AC, the old case was right and the finding is a bug. **Both outcomes are
+  reachable, which is the entire point**; a pre-run rewrite makes only the first reachable. A `RE-BASE` is
+  not a deferral — it is the run's most strongly grounded check, an assertion written before the change,
+  executed against the change.
+
+#### Two hard rules
+
+**A `FILTERED_OUT` row disposed `REPAIR` or `RE-BASE` must be carried into the run's regression selection**
+(`--ids`) — or be `CONFIRMED`/`SUPERSEDED` with a stated reason. A repaired-but-unrun row is the same
+invisible class as an undisposed `RE-BASE`: until a run executes it, nothing has verified that the case can
+now reach its own assertion. A `RE-BASE` that never executes is precisely the invisible class this triage
+exists to find.
+
+**Triage files no bug.** A `tc:scope` hit is a claim about a **test case**, never about the product. A real
+defect found while triaging goes through the ordinary route: the fault model if it belongs there, triage
+and the bug report if the run confirms it.
+
+#### What `neverAudited` is, and is not
+
+`counts.neverAudited` is **context, not a verdict**. It is read off the `Audited:` stamp via
+`parseAuditStamp`, so it answers *when was this row last triangulated* (TRI-000's question), never *is it
+right*. On this corpus it is near-universal (81 of 81 hits on the VCST-5733 scan), so treating it as a
+finding would flag everything and therefore nothing. Use it to rank the worklist, never to justify a
+disposition.
+
+### A change with NO domain: `--domain` does not under-run, it runs WIDE and WRONG
+
+**`--domain` is the wrong scope flag for a change that has no domain** — a token-layer, UI-kit or
+design-system change. Scope matching is exact against the manifest's `domain`/`tags`, which is correct when
+the change belongs somewhere; when it belongs *everywhere*, the domains you can name are the ones you
+happened to think of.
+
+Measured on VCST-5653 (a focus-ring token replacement). Scoped `--domain cross-cutting,branding` with six
+observables and three oracles: **18 suites in scope, 447 rows scanned, 26 at risk.** A corpus-wide sweep on
+the same terms: **62 rows across 13 suites** — adding `b2b`, `bopis`, `configurable-products`,
+`customer-reviews`, `loyalty`, `sales-rep`, `search`, `notifications`. **More suites scanned, fewer hits
+found**: the scoped run was not narrow, it was aimed by the wrong vocabulary — and nothing in the output
+says *the axis you scoped by does not apply*, so a `26 at risk` line reads exactly like a `62 at risk` line
+that found less.
+
+So for a domainless change: **pair `tc:scope` with a corpus-wide pass and scope by `--suite` from what that
+returns**, not by `--domain` alone. Record **the literal invocation** — a hit count whose command line is
+unrecorded is a claim a verifier cannot reproduce. Name the zero-contributing suites too; an unlisted suite
+and an empty one read the same. Turning this discipline into a tool behaviour (a `--surface` /
+`--all-domains` mode, or a warning when the diff is `ui-kit/**` or token paths while `--domain` is set) is
+`docs/repo-findings-backlog.md` B-33, and is not implemented.
+
+**It is not a suite audit.** Whether an untouched row has rotted is `/qa-review-tests --triangulate`, one
+suite at a time; this triage asks only what **this change** invalidates, and refuses to run without a risk
+term precisely so the two cannot blur.
 
 ## Visual regression at a release — `PIXEL`, not a suite
 
