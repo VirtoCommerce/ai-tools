@@ -1,4 +1,4 @@
-// plugins/vc-test/skills/qa-test-strategy/lib/floors.mjs — the floors F1–F12, computed from the /ticket-context bundle.
+// plugins/vc-test/skills/qa-test-strategy/lib/floors.mjs — the floors F1–F13, computed from the /ticket-context bundle.
 // R2 of the /qa-test redesign: a floor is a gate rule, never a model judgment. This script reads signals; it
 // never chooses a risk. F9 (doubt ⇒ the floor applies) is built in: a signal that cannot be read fires its floor.
 import { existsSync, readFileSync } from "node:fs";
@@ -25,6 +25,9 @@ const REVENUE = [/cart|checkout|payments?|pric(?:e|es|ing)|quotes?/i, /(?<![A-Za
 const PARTIAL = /^pr:([^:]+)(?::[^:]+)*:(diff|patches|files)$/;
 // F10 — B2B org context (test-model redesign §5).
 const ORG = /organizationId|organization_id|xapi:my_organization|my_organization|\/organizations?\b|sales-rep|salesrep|loginOnBehalf|CanImpersonate|impersonat/i;
+// F13 — the change checks access: a role or permission guard named in the diff surface. An AC actor is not one.
+export const ACCESS_GUARD = /\[Authorize\b|\bPermissions?\.[A-Z]\w*|\bhas(?:Any)?Permissions?\b|\bcheckPermissions?\b|\bisAuthorized\b|\$can\(|\bv-if="[^"]*\b(?:role|permission|isCorporateMember|isOrganizationMaintainer)/i;
+const F13_REQUIRES = ["a risk with Source floor:F13 whose account is deny:<permission> <KEY|P-n> — derive the roles by skills/qa-design/personas.md §1"];
 // F11 — configuration (test-model redesign §5a, layers 1–3).
 const CONFIG = /ModuleConstants\.Settings|settingsManager|SettingsManager|store\.settings|\$cfg\./;
 // F11 — a settings entry is the CHANGE agent's prose; only a named key is a signal. A dotted PascalCase key
@@ -202,8 +205,14 @@ function baseFloors(bundle, { domainMapText, p01Names, changeMap }) {
     : floor("F12", zoned.length > 0, zoned.length ? `significant-zone hotspots: ${zoned.slice(0, 5).map((h) => `${h?.id ?? "?"} (${zoneOf(h) ?? "no zone — doubt"})`).join(", ")}`
       : "no hotspot in a significant zone", f12req);
 
+  const perm = prs.flatMap(settingsOf).find((s) => /permission/i.test(s));
+  const guard = surface.match(ACCESS_GUARD);
+  const accessSpots = Array.isArray(spots) ? spots.filter((h) => zoneOf(h)?.toLowerCase() === "access").map((h) => h?.id ?? "?") : [];
+  const f13 = diffFloor("F13", perm ? `permission: ${perm.slice(0, 60)}` : guard ? `access guard: ${guard[0]}`
+    : accessSpots.length ? `access hotspot: ${accessSpots.slice(0, 5).join(", ")}` : null, "no access check in the diff surface", F13_REQUIRES);
+
   return { product_prs: prs.length, floors: [f1, f2, f3, f4, f5, f6, f7, f8,
-    floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11, f12] };
+    floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11, f12, f13] };
 }
 
 /** A JSON file, or one line naming the file and the reason, then exit 2 — never a stack trace. */

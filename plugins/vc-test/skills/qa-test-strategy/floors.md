@@ -1,4 +1,4 @@
-# Floors F1–F12, the staleness check, and the depth label
+# Floors F1–F13, the staleness check, and the depth label
 
 **Floors are deterministic.** Each is computed by `lib/floors.mjs` from the `/vc-test:ticket-context` bundle; this table is what the
 script implements and what a reviewer checks it against. F1's register half (a High/Critical risk) is checked by
@@ -25,6 +25,7 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 | F10 | the change surface names org context: an `organizationId`-style argument, `xapi:my_organization:*`, an org route or list, `/graphql/sales-rep` or a `sales-rep:*` permission, `loginOnBehalf` / `CanImpersonate` / `/account/impersonate` | an org-context risk with technique `MODEL` whose Source carries `floor:F10` |
 | F11 | the PR adds or changes a setting (a settings entry names its key — see below), a hidden-behaviour row answers `yes` for `feature-flags` / `default-values`, or the diff reads one (`ModuleConstants.Settings`, `settingsManager`, `store.settings`, `$cfg.`) (§5a) | a configuration risk with technique `MODEL` whose Source carries `floor:F11`, + the stand's values in Inputs (`npm run store:caps -- --settings` / `--store` for public settings, the admin REST API for the rest — SKILL.md step 2) |
 | F12 | vc-test's layer-0 change map (`--change-map`) has a hotspot whose `zone` is not `none` — access, money, data, order state, buyer path. Without a change map it never fires (vc-test spec U47); with one, a map with no hotspots list or a hotspot with no zone fires it (F9). The strategy's `Change map:` line names the map (gate clause 6g) | exploratory, its charter covering those hotspots |
+| F13 | the change checks access: a settings entry names a permission, the diff surface holds a role or permission guard (`[Authorize`, `Permissions.`, `hasPermission`, `checkPermissions`, a `v-if` on a role), or the change map has a hotspot in zone `access`. An AC actor is not a signal | a risk whose Source carries `floor:F13`, checked as `deny:<permission> <KEY|P-n>` — a member without that permission (clause 15b); the roles by [`personas.md`](../qa-design/personas.md) §1 |
 
 ## Unavailable
 
@@ -77,9 +78,9 @@ not have — a change that declares no visual effect or moves shared UI), `DESIG
 - **F9 is built into every floor except F8, F4 and F6:** a floor that cannot be read fires, with a `doubt:`
   signal. That is: no priority (F1), no type (F2, F7 — then F7 requires only F5 on), a domain map that is not
   `PRESENT` (F2), F5 when no case is at risk (a `known.domain` gap or a failed `known.tc:scope` /
-  `known.regression:select` lookup), and F3, F10, F11 as the next bullet says. **F4** needs a named flow to apply and **F6** needs
+  `known.regression:select` lookup), and F3, F10, F11, F13 as the next bullet says. **F4** needs a named flow to apply and **F6** needs
   a `NOT DEPLOYED:` line: both read only what was read, and neither doubts.
-- **F3, F10, F11: a positive signal first.** Each is computed from the part of the diff that was read, and when
+- **F3, F10, F11, F13: a positive signal first.** Each is computed from the part of the diff that was read, and when
   it matches, the floor fires with that signal. Only when nothing read matches **and** part of the diff is
   unread does it fire with `doubt:`; "not fired" needs the whole diff read. The diff is (partly) unread on:
   a whole-PR gap on a product PR, a `change` / `change.*` gap except `change.deployed` (even beside a read PR;
