@@ -2,8 +2,8 @@
 // SessionStart: install the plugin's runtime dependencies when the install has none.
 //
 // A marketplace install copies the plugin into the plugin cache without node_modules, so every
-// script that imports a package from package.json (dotenv, used by scripts/lib/load-layered-env.mjs and
-// the $VC_RUN bridge) fails with ERR_MODULE_NOT_FOUND until someone runs npm install by hand
+// script that imports a package from package.json (dotenv, used by scripts/lib/env-layers.mjs, run-dir.mjs
+// and skills/ticket-context/lib/env.mjs) fails with ERR_MODULE_NOT_FOUND until someone runs npm install by hand
 // — and again after every /plugin update, which creates a fresh cache folder.
 //
 // Fail-soft: never blocks the session. A failed install prints the manual command and exits 0.
