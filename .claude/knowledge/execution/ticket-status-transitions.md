@@ -81,7 +81,7 @@ to hand off, and on the `verify-fix` branch it would be the second flow to move 
 
 | Verdict | Transition | Also required |
 |---|---|---|
-| `PASS` / `PASS WITH NOTES` | → **`TESTED`** | Hand to the Feature Release Gate. `PASS WITH NOTES` is a PASS: the notes live in the comment, never in a different transition |
+| `PASS` / `PASS WITH NOTES` | → **`TESTED`** | The close-out goes on: `/qa-docs` (the ticket is now Tested), the domain-map write-back, then the `/qa-test-lifecycle` question for the run's candidate and stale cases. `PASS WITH NOTES` is a PASS: the notes live in the comment, never in a different transition |
 | `FAIL` | → **`REOPEN`** | The comment lists every failure and every filed bug link, **before** the transition |
 | `BLOCKED` | **none — deliberately** | A **mandatory comment** naming the blocker (env / data / dependency / not-deployed), what it blocks, and that the ticket is **awaiting a re-run**. The ticket stays in-testing |
 | run aborted before 5-status (STOP at a gate, operator interrupt) | **none** | The opening hop stays; say so in the chat close-out. Never "tidy up" by reversing it |

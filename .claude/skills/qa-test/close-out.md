@@ -100,9 +100,8 @@ tracker; no PRE-EXISTING match was filed again; every ticket created has the ope
 
 ## 5-verdict. Reconcile AC & DoD, then decide the verdict
 
-Reconcile the strategy first ([`reconcile.md`](../../../plugins/vc-test/skills/qa-test-strategy/reconcile.md)):
-the round's `### Reconciliation`, its cap (a High/Critical risk without a result is never `PASS`), and
-`summary.json.strategy` — never null once a strategy ran. Then two moves, both owned by the vc-test plugin:
+The strategy is already reconciled — the command's Stage 5 order, step 1 (Reconcile) — and the cap it
+recorded binds the verdict decided here. Then two moves, both owned by the vc-test plugin:
 
 ### 5-verdict.1 Compare AC & DoD vs implementation
 
@@ -173,7 +172,7 @@ carry what the run learned about the corpus to the one command that may change i
 
 | List | Holds | Item |
 |---|---|---|
-| `stale_cases` | cases at risk that the staleness check, or a run, showed no longer match the build | `{ id, suite, reason }`, `reason` one of `renamed-field` · `removed-selector` · `known-defective` · `failed-as-test-defect` (triage classified a FAIL as a case defect, not a product bug) |
+| `stale_cases` | cases at risk that the staleness check, or a run, showed no longer match the build | `{ id, suite, reason }`, `reason` one of `renamed-field` · `removed-selector` · `known-defective` · `failed-as-test-defect` (triage classified a FAIL as a case defect, not a product bug) · `non-executable` (a row `suites:executability` flags) · `repair` (a REPAIR disposition: a moved route, a dead `@td()` alias…) |
 | `candidate_cases` | checklist items that PASSED and that no suite case covers — a node no case stamps, an integration point, a `PROMOTE` exploratory scenario | `{ checklist_row, risk, behaviour, layer }` |
 
 At close, **after the verdict and the comment**, if either list is non-empty: ONE question — run

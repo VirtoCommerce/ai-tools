@@ -26,8 +26,8 @@ and the fingerprint dedup store. Fold its `triage-report.md` tables into this ph
 reclassify a finding it already resolved.** A lane that did not run is stated, never silently absent.
 
 **Exploratory findings enter here like any other, with one asymmetry worth naming:** the lane explores
-adjacent ground by construction, so most of what it surfaces is **PRE-EXISTING** and links rather than
-files. That is not a reason to discount it.
+adjacent ground by construction, so most of what it surfaces is **PRE-EXISTING**: the existing key is named, nothing
+is filed or linked. That is not a reason to discount it.
 
 ### 1. Correlate App Insights logs for the test window
 
@@ -79,7 +79,7 @@ checklist item you fix the item; on a suite case it is a `stale_cases` entry for
 
 | Provenance | Means | Effect |
 |---|---|---|
-| **PRE-EXISTING** | dedup match, or reproduces pre-change | link, don't re-file, don't fail this ticket |
+| **PRE-EXISTING** | dedup match, or reproduces pre-change | name the existing key (`verdict.md` + the comment), don't re-file, no tracker write; doesn't fail this ticket |
 | **IN-SCOPE** | in what this ticket changed | fails this ticket; becomes a row of the ticket's To-fix table at 5-file (no tracker item) |
 | **OUT-OF-SCOPE incidental** | unrelated defect found opportunistically | suggested to the operator as its own ticket + a *related* link, created only on their yes; doesn't fail this ticket unless a P0 revenue-flow break |
 Unclear → treat **IN-SCOPE** (fail-safe).

@@ -88,11 +88,21 @@ A `ui-kit` change (floor F8) adds what [`ui-kit-class.md`](ui-kit-class.md) asks
 ## Regression
 
 The strategy's `Coverage triage + regression` row is `RUN` and Stage 3's staleness check left at least one
-case: `/qa-regression <their suite ids> --ids <the non-stale case ids> --no-promote`, dispatch description
-`[vc-test:qa-test.regression]`. `--ids` is the exact set; `--no-promote` keeps `/qa-regression` Step 6.5 from
-promoting anything inside a ticket run. A stale case never enters it — it is a `stale_cases` entry for
-`/qa-test-lifecycle`. Capture the `RUN_ID`, the pass rate and the wall clock for `summary.json.regression`.
-Every case stale ⇒ the lane is not dispatched, and `verdict.md` says why.
+case: `/qa-regression <their suite ids> --ids <the non-stale case ids> --no-promote`. `--ids` is the exact
+set; `--no-promote` keeps `/qa-regression` Step 6.5 from promoting anything inside a ticket run. A stale case
+never enters it — it is a `stale_cases` entry for `/qa-test-lifecycle`. Capture the `RUN_ID`, the pass rate
+and the wall clock for `summary.json.regression`. Every case stale ⇒ the lane is not dispatched, and
+`verdict.md` says why.
+
+**You drive it, beside the other lanes — never hand `/qa-regression` to a subagent.** Its live watcher must be
+owned by the top-level session, because a subagent's background process dies with its turn
+([`qa-regression.md`](../../commands/qa-regression.md) Step 3, Watcher OWNERSHIP). So before Stage 4's
+message, run its pre-dispatch steps inline: Step 0 (`/preflight regression <selection>`), Step 1 (manifest
+and selection), Step 2 (`RUN_ID` and `npm run regression:plan`), Step 3 (the status file, and the watcher in
+your own background). Then put the `regression-orchestrator` dispatch — `--run-id {RUN_ID}` and Step 0's
+`--accept` ids, description prefix `[vc-test:qa-test.regression]` — in the same Stage 4 message as the
+runners; it runs Steps 4–6 and closes the run (`regression:close`). Its browser slots count in the ≤3 lanes.
+While it runs, keep the watcher alive (Step 3's self-heal).
 
 ## Map signals
 

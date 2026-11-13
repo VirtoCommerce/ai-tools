@@ -190,7 +190,8 @@ what the run learned about the corpus to the one command that may change it:
 
 - **`stale_cases`** — cases at risk that the staleness check (or a run) showed no longer match the build:
   `{ id, suite, reason }`, `reason` one of `renamed-field` · `removed-selector` · `known-defective` ·
-  `failed-as-test-defect` (triage classified a FAIL as a case defect, not a product bug).
+  `failed-as-test-defect` (triage classified a FAIL as a case defect, not a product bug) · `non-executable` (a row
+  `suites:executability` flags) · `repair` (a REPAIR disposition: a moved route, a dead `@td()` alias…).
 - **`candidate_cases`** — checklist items that PASSED and that no suite case covers:
   `{ checklist_row, risk, behaviour, layer }`.
 

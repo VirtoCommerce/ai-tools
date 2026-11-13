@@ -28,11 +28,10 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
 2. Extract: summary, components, acceptance criteria, linked PRs, comments
 3. For each linked PR: run the PR analysis above
 4. Map JIRA components to VC modules
-5. **The ticket's own `/qa-test` run, when it left one.** Find its run folder (`npm run --silent run:dir -- --ticket <KEY>`;
-   [`run-output.md`](../../knowledge/execution/run-output.md)) and read the top-level `stale_cases` and `candidate_cases`
-   of its `summary.json` (the nested `strategy.*` copies are an older spelling; either list absent or empty ⇒ nothing
+5. **The ticket's own `/qa-test` run, when it left one.** List its run folders in every env (`npm run --silent run:dir -- --ticket <KEY> --prior`;
+   [`run-output.md`](../../knowledge/execution/run-output.md)) and take the newest `summary.json` carrying either list — read its top-level `stale_cases` and `candidate_cases` (the nested `strategy.*` copies are an older spelling; either list absent or empty ⇒ nothing
    to add). Each `stale_cases` item `{ id, suite, reason }` is a **sync target**: the case `id` in `suite`, carrying its
-   `reason` (`renamed-field` · `removed-selector` · `known-defective` · `failed-as-test-defect`) into Phase 2, and its suite
+   `reason` (`renamed-field` · `removed-selector` · `known-defective` · `failed-as-test-defect` · `non-executable` · `repair`) into Phase 2, and its suite
    joins `affectedSuites`. Each `candidate_cases` item `{ checklist_row, risk, behaviour, layer }` is a **gap to author**
    (Phase 3): the `behaviour` no case stamps, resolved to a suite through `layer` and the domain. Both lists add to the
    scope derived from the PRs above; they never narrow it. `/qa-test` wrote them and changed no case, so each is a claim to

@@ -62,9 +62,11 @@ before Stage 0.
    is appended to the round's `### Amendments`.
 6. **Paths, not content.** Every hand-off is a file in `{RUN_DIR}`; a brief carries paths and the oracle text
    cut per [`dispatch-pack.md`](../skills/qa-test/dispatch-pack.md).
-7. **Every dispatch description starts `[vc-test:qa-test.<step>]`**, `<step>` one of `context`,
-   `domain-map`, `strategy`, `model`, `mind-map`, `checklist`, `runner-fe`, `runner-be`, `exploratory`,
-   `visual`, `regression`, `triage`, `investigate`, `docs` — that is how `run-cost.mjs` counts it.
+7. **Every subagent dispatch's description starts `[vc-test:qa-test.<step>]`**, `<step>` one of
+   `domain-map`, `mind-map`, `runner-fe`, `runner-be`, `exploratory`, `visual`, `regression`, `investigate`,
+   `docs` — that is how `run-cost.mjs` counts it (as `qa-test.<step>`). What runs inline — the context
+   bundle, the strategy, the model, the checklist, triage — takes no tag: it is counted as `orchestrator`,
+   and a subagent a skill dispatches on its own under its own tag or as `other`.
 8. **Budget is reported, never a stop or a question:**
    `node plugins/vc-test/lib/run-cost.mjs --since <start> --budget qa --key <TICKET>` — at the approval and
    at close.
@@ -91,17 +93,17 @@ before Stage 0.
    mission "reproduce and characterize" and names `/vc-fix:qa-fix <TICKET>` as its next step.
 4. **Round.** Count it per [`/vc-test:qa-test-strategy`](../../plugins/vc-test/skills/qa-test-strategy/SKILL.md)
    procedure step 1, from local evidence. A fourth ⇒ **STOP** with that skill's escalation; nothing below runs.
-5. **Opening hop** — [`ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) §3:
-   to in-testing, no confirmation; its skip list applies, and `--dry-run` skips it too. Record it (`at: "0"`).
-6. **Preflight.** [`/preflight`](../skills/preflight/SKILL.md) `ticket --ticket <TICKET> --components <…>`
+5. **Preflight.** [`/preflight`](../skills/preflight/SKILL.md) `ticket --ticket <TICKET> --components <…>`
    — env health, deployed build, `{SPRINT}`, the duplicate check, MCP availability, and the kb ask for this
    run's coordinates (carry its hit ids). No `--expect`: deployment is the bundle's. A `not-deployed:*` row
    is BLOCKED-on-deploy, never a FAIL.
-7. **Prior runs are inputs.** The run folders `run:use` listed, `reports/ba/test-models/<TICKET>-*` and
+6. **Prior runs are inputs.** The run folders `run:use` listed, `reports/ba/test-models/<TICKET>-*` and
    `reports/bugs/**`: a prior model is amended into `{RUN_DIR}/test-model.md`, never forked; prior bugs are
    `qa-bug`'s dedupe baseline; a different build gives context, never results. **A `summary.json` on the
    same build:** show its verdict, date and comment id and ask once whether to re-run (uncommitted files ⇒
-   ask to commit them first); a re-run amends that comment.
+   ask to commit them first); a re-run amends that comment, and a "no" ends the run here with nothing moved.
+7. **Opening hop** — [`ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) §3:
+   to in-testing, no confirmation; its skip list applies, and `--dry-run` skips it too. Record it (`at: "0"`).
 8. **Domain slug.** From the ticket's components and summary, checked with
    `npm run bl:extract -- --has-domain <slug>`. Read the map's state now: a `.claude/knowledge/domain/`
    map whose `domain_slug` matches is `PRESENT` (or `STALE` by `npm run domain:check`), none is `ABSENT`, no
@@ -177,7 +179,7 @@ In this order ([`close-out.md`](../skills/qa-test/close-out.md) holds the rules)
 
 1. **Reconcile** — [`reconcile.md`](../../plugins/vc-test/skills/qa-test-strategy/reconcile.md): fill the
    round's `### Reconciliation`; a High/Critical risk without a result caps the verdict; write
-   `summary.json.strategy`.
+   `summary.json.strategy` (never null once a strategy ran). Done once, here — close-out.md §5-verdict uses it.
 2. **Triage** — App Insights for the test window ([`triage.md`](../skills/qa-test/triage.md) §1); then the
    Skill `vc-test:qa-triage-results`, args `ticket <TICKET> --verify --min-severity P2`, and for the regression
    lane `<RUN_ID> --verify --min-severity P2` — never `--fix`. A non-empty `unresulted[]` sends you back to
