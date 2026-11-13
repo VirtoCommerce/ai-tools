@@ -31,7 +31,7 @@ For a teammate who works in this repo. Every step is detailed further down; this
 4. **`/project-init`** (vc-init) — any env name (`qa`, `staging`, `client_eu`…; if `.env.<name>` already exists it offers to reuse it), Jira + GitHub, PAT, and where test-user passwords live (vc-secrets, recommended, or `.env.local`; asked separately for admins and storefront users). When it pauses, in a **separate terminal** in the repo folder run `node "<VC_SECRETS>" trust` and `node "<VC_SECRETS>" set <name>` for each token and password it lists (`github-pat`, `jira-token`, `admin-password-<env>`, …; the wizard prints the exact commands). Nothing secret goes into the chat. Reply `done`. This repo's own scripts (seeders, the module registry) read passwords from `.env.local`, not through the bridge — keep the admin password there if you run them. Full reference: [`plugins/vc-init/README.md`](../plugins/vc-init/README.md).
 5. **Restart Claude Code** (new `.mcp.json`, `.claude/settings.local.json` with `VC_RUN`/`VC_SECRETS`, the `kb` server). Later: `/project-init --add-env`, `--add-user`, `--check` (after a plugin upgrade).
 6. **Check:** `/project-init --check` — reconciles the profile, moves any plaintext token into vc-secrets, verifies every credential and prints the readiness table. Before work against a stand: `/preflight` (`npm run preflight`) — env health, deployed build, MCP availability.
-7. **Work:** `/qa-test VCST-XXXX`, `/qa-test-fast VCST-XXXX`, `/qa-bug`, `/qa-regression smoke`. Which tool for which job: [`.claude/ROUTING.md`](../.claude/ROUTING.md); how to invoke: [`using-commands-and-skills.md`](using-commands-and-skills.md).
+7. **Work:** `/qa-test VCST-XXXX` (one ticket key; its approved strategy decides the depth), `/qa-bug`, `/qa-regression smoke`. Which tool for which job: [`.claude/ROUTING.md`](../.claude/ROUTING.md); how to invoke: [`using-commands-and-skills.md`](using-commands-and-skills.md).
 
 > **Time:** 5–15 minutes per environment for setup. Days-to-weeks for customer-specific suite authoring (your customizations need your tests).
 >
@@ -64,7 +64,7 @@ You need each of these before you start. If any are missing, the install will fa
 | Two test accounts | One non-admin storefront user, one admin SPA user. | See [Test accounts](#test-accounts) below. |
 | Your customer's JIRA project key (e.g. `ACME`) | For bug filing. Default falls back to `VCST` if not set. | Atlassian → Projects → your project → Settings → Details. |
 | Serena plugin + `uv`/`uvx` | Shared semantic code-navigation for the whole team (enabled in tracked config; install per machine). | `uvx --version`; see [Serena setup](#serena--semantic-code-navigation-whole-team-one-time-per-machine). |
-| `vc-test` plugin | `/qa-test-fast` calls its `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` (enabled in tracked config; install per machine). | `/plugin install vc-test@ai-tools`, then restart Claude Code |
+| `vc-test` plugin | `/qa-test` calls its `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` (`/qa-test` stops without it; enabled in tracked config, install per machine). | `/plugin install vc-test@ai-tools`, then restart Claude Code |
 
 ## Install
 
@@ -318,7 +318,7 @@ Optional (each gates specific skills):
 - **postman** — enables `/qa-postman`, `/qa-api test`
 - **atlassian** — enables `/qa-bug` JIRA filing, `/qa-status`, `/qa-test-plan`
 - **context7** + **VirtoOZ connector** — product docs lookup (`.claude/knowledge/execution/doc-sources.md`)
-- **github** — enables `/qa-test PR #N`, `/ba-analyze`
+- **github** — enables `/ba-analyze` (`/qa-test` reads a ticket's PRs through `$VC_RUN`, not this server)
 - **figma-remote-mcp** — manual fallback only for `/qa-design`; the `vs. DESIGN` axis compares against a Claude Design project (`plugins/vc-test/skills/qa-design/claude-design-verification.md`)
 
 `npm run env:check` will warn if a required MCP server is missing.
