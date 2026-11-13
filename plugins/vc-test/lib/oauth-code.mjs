@@ -7,8 +7,9 @@
 // output is scrubbed of the stored token values, the code, the project's secret values and token shapes.
 // The HAR also holds the sign-in POST with the plaintext password: only `log.entries[i].request.url` and
 // `log.entries[i].response.headers` are ever read — never a postData, never a response body.
-// A token is sent only to the origin of its issuer, its resource or its audience, over https (or loopback), and a
-// redirect is never followed: a URL elsewhere is refused, so a page cannot talk the agent into shipping it out.
+// A token is sent only to the origin of its issuer, its resource, its audience, or the current env's BACK_URL or
+// FRONT_URL, over https (or loopback), and a redirect is never followed: a URL elsewhere is refused, so a page cannot
+// talk the agent into shipping it out.
 // CLI (every command takes --dir <runDir> --persona <name>; persona matches /^[a-z0-9-]{1,32}$/):
 //   start --issuer <url> --client <id> --redirect <uri> [--resource <uri>] [--scope "openid offline_access"] → { persona, url, restarted }
 //   redeem --har <path>      → { persona, aud, iss, sub, name, roles, permissions, expiresIn, hasRefresh }
@@ -23,7 +24,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, w
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { knowledgeSecretValues, scrubValues } from "./knowledge-store.mjs";
-import { argOf, outputRoot } from "./paths.mjs";
+import { argOf, currentEnv, outputRoot } from "./paths.mjs";
+import { loadLayeredEnv } from "../scripts/lib/load-layered-env.mjs";
 
 const PERSONA_RE = /^[a-z0-9-]{1,32}$/;
 const TRIM = 4000;
@@ -94,7 +96,8 @@ function safeUrl(raw, what) {
   return u;
 }
 const b64u = (buf) => Buffer.from(buf).toString("base64url");
-const sameIssuer = (a, b) => String(a ?? "").replace(/\/+$/, "") === String(b ?? "").replace(/\/+$/, "");
+// One trailing slash is normalised on both sides (`https://host/` vs `https://host`); otherwise strict.
+const sameIssuer = (a, b) => String(a ?? "").replace(/\/$/, "") === String(b ?? "").replace(/\/$/, "");
 
 async function request(url, init, what) {
   try {
@@ -199,17 +202,35 @@ function callbackIn(harPath, pkce) {
 }
 
 // ---- where a token may go: the issuer's, the resource's or the audience's origin, and nowhere else ----
+/**
+ * BACK_URL and FRONT_URL of the current env, through vc-test's own layered loader — and nothing else: the loader
+ * writes every layer (passwords included) into process.env, so the environment is put back exactly as it was before
+ * this returns. A missing variable, or an env that will not load, contributes nothing.
+ */
+function standUrls() {
+  const before = { ...process.env };
+  try {
+    loadLayeredEnv(currentEnv());
+    return [process.env.BACK_URL, process.env.FRONT_URL];
+  } catch {
+    return [];
+  } finally {
+    for (const k of Object.keys(process.env)) if (!(k in before)) delete process.env[k];
+    Object.assign(process.env, before);
+  }
+}
+// The stand's own hosts are allowed so the method can prove a token is REFUSED by another endpoint of the same stand.
 function allowedOrigins(tok) {
   const out = new Set();
-  for (const raw of [tok.issuer, tok.resource, ...asArray(claimsOf(tok.access_token)?.aud)]) {
-    try { out.add(new URL(raw).origin); } catch { /* not a URL audience */ }
+  for (const raw of [tok.issuer, tok.resource, ...asArray(claimsOf(tok.access_token)?.aud), ...standUrls()]) {
+    try { out.add(new URL(raw).origin); } catch { /* not a URL */ }
   }
   return out;
 }
 function target(argv, tok) {
   const u = safeUrl(need(argv, "url"), "--url");
   const allowed = allowedOrigins(tok);
-  if (!allowed.has(u.origin)) throw refuse(`--url ${u.origin} is not where this token was issued for (${[...allowed].join(", ")})`);
+  if (!allowed.has(u.origin)) throw refuse(`--url ${u.origin} is not this token's issuer, resource or audience, nor this stand's BACK_URL or FRONT_URL (${[...allowed].join(", ")})`);
   return u;
 }
 function loadToken(dir, p) {
