@@ -82,6 +82,20 @@ interface BundleResult {
   appliedVia?: AppliedVia; // set iff verdict === 'already-applied' — WHICH check established it
   codeApply?: { checked: number; missing: string[] }; // code-level cherry-pick applicability signal
   baseline?: { props: string | null; manifest: string | null; predictedNext: string | null; mismatch: boolean; collision: boolean }; // version baseline the Release-hotfix workflow increments from
+  ci?: CiReadiness; // release CI on the support branch (or, before it exists, on the tag it will be cut from)
+}
+/** Release CI the support line will run with. A support branch cut from an OLD tag inherits that tag's
+ * CI, which can be stale against today's nuget.org / NuGet audit (measured VCST-6663, support/3.1002:
+ * NU1902 failed restore, then the NUGET_KEY push got 403 AFTER the GitHub release was created — a
+ * release with no packages and no version bump). Port the fixes in the SAME push as the cherry-pick. */
+interface CiReadiness {
+  ref: string; workflowPath: string | null;
+  staleNugetKey: boolean;    // pushes NuGet with secrets.NUGET_KEY and has no Trusted Publishing step
+  /** TreatWarningsAsErrors without any NU1902 mitigation: 'fix' when another line of this repo already
+   * needed <NuGetAuditMode> (the failure is known here), 'advisory' otherwise, 'ok' when not applicable. */
+  audit: 'ok' | 'advisory' | 'fix';
+  reference: string | null;      // newest support/* branch already on Trusted Publishing — copy its publish job
+  auditReference: string | null; // newest support/* branch that sets <NuGetAuditMode>
 }
 
 // ── env / token ──────────────────────────────────────────────────────────────
@@ -246,6 +260,8 @@ async function codeApplyCheck(repo: string, files: { path: string; status: strin
 /** Read a file's raw text on a ref, or null if absent. */
 async function rawFile(repo: string, path: string, ref: string): Promise<string | null> {
   const res = await fetch(`https://api.github.com/repos/${OWNER}/${repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(ref)}`, { headers: { ...ghHeaders(), Accept: 'application/vnd.github.raw' } });
+  // A rate limit is not "file absent" — reading it as absent turns every check that follows into a silent pass.
+  if (res.status === 403 || res.status === 429) throw new Error(`GitHub ${res.status} reading ${path}@${ref} (rate limit / auth) — re-run with GIT_TOKEN`);
   return res.status === 200 ? res.text() : null;
 }
 /** Locate the module's manifest (prefer src/**.Web/module.manifest, skip samples/tests). */
@@ -266,6 +282,49 @@ async function branchBaseline(repo: string, branch: string): Promise<{ props: st
   const mTxt = mp ? await rawFile(repo, mp, branch) : null;
   const manifest = mTxt ? (/<version>([^<]+)</.exec(mTxt)?.[1] ?? null) : null;
   return { props, manifest };
+}
+
+/** The Release-hotfix workflow at a ref — matched by file-name suffix like hotfix-release.ts does
+ * (module-/platform-/theme-release-hotfix.yml), never by a fixed list. */
+async function hotfixWorkflowText(repo: string, ref: string): Promise<{ path: string; text: string } | null> {
+  const dir: any[] | null = await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/contents/.github/workflows?ref=${encodeURIComponent(ref)}`);
+  const hit = (dir ?? []).map((f) => f.path as string).find((p) => /-release-hotfix\.ya?ml$/.test(p));
+  if (!hit) return null;
+  const text = await rawFile(repo, hit, ref);
+  return text == null ? null : { path: hit, text };
+}
+/** Trusted Publishing, in either shape VC uses: the inline NuGet/login job, or the central action. */
+const usesTrustedPublishing = (wf: string) => /NuGet\/login@|publish-nuget-central@/.test(wf);
+/** A props file that already neutralises the NU1902-as-error restore failure some other way. */
+const auditMitigated = (props: string) => /<NuGetAuditMode>/.test(props) || /<NuGetAudit>\s*false\s*</i.test(props) || /NU190[234]/.test(props);
+/** Newest support/* branches that already carry each fix — the copy sources, and the evidence that the
+ * team adopted the audit setting (without it, a missing NuGetAuditMode is advisory: most lines restore fine). */
+async function supportLineReferences(repo: string): Promise<{ trustedPublishing: string | null; auditMode: string | null }> {
+  const refs: any[] = (await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/git/matching-refs/heads/support/`)) ?? [];
+  const support = refs.map((r) => (r.ref as string).replace(/^refs\/heads\//, '')).filter((n) => /^support\/\d+\.\d+$/.test(n))
+    .sort((a, b) => { const [, a1, a2] = /(\d+)\.(\d+)$/.exec(a)!.map(Number); const [, b1, b2] = /(\d+)\.(\d+)$/.exec(b)!.map(Number); return b1 - a1 || b2 - a2; });
+  let trustedPublishing: string | null = null, auditMode: string | null = null;
+  for (const name of support.slice(0, 6)) {
+    if (!trustedPublishing) { const wf = await hotfixWorkflowText(repo, name); if (wf && usesTrustedPublishing(wf.text)) trustedPublishing = name; }
+    if (!auditMode) { const p = await rawFile(repo, 'Directory.Build.props', name); if (p && /<NuGetAuditMode>/.test(p)) auditMode = name; }
+    if (trustedPublishing && auditMode) break;
+  }
+  return { trustedPublishing, auditMode };
+}
+type SupportRefs = Awaited<ReturnType<typeof supportLineReferences>>;
+async function ciReadiness(repo: string, ref: string, references: () => Promise<SupportRefs>): Promise<CiReadiness> {
+  const wf = await hotfixWorkflowText(repo, ref);
+  const props = await rawFile(repo, 'Directory.Build.props', ref);
+  const staleNugetKey = !!wf && /secrets\.NUGET_KEY/.test(wf.text) && !usesTrustedPublishing(wf.text);
+  const auditGap = !!props && /<TreatWarningsAsErrors>\s*true\s*</i.test(props) && !auditMitigated(props);
+  const refs = staleNugetKey || auditGap ? await references() : null;
+  return {
+    ref, workflowPath: wf?.path ?? null, staleNugetKey,
+    // ⚠ only where this repo already had to fix it on another line; elsewhere it is a heads-up.
+    audit: !auditGap ? 'ok' : refs?.auditMode ? 'fix' : 'advisory',
+    reference: staleNugetKey ? refs?.trustedPublishing ?? null : null,
+    auditReference: auditGap ? refs?.auditMode ?? null : null,
+  };
 }
 
 /** Split a unified-diff patch into the lines it ADDS and the lines it REMOVES — trimmed, and
@@ -534,6 +593,10 @@ async function main() {
   // Fix-shape check (developer's pre-hotfix checklist, pts 1–3) — repo/task-level, computed once.
   const fixShape = touchedFiles.length ? analyzeFixShape(touchedFiles) : null;
   const bundleResults: BundleResult[] = [];
+  // Looked up once, only when a line needs it. Advisory input: a failed lookup yields "no reference", it never
+  // turns a bundle's verdict into an error (and a rejected promise is not memoized for every later bundle).
+  let referencesPromise: Promise<SupportRefs> | null = null;
+  const getReferences = () => (referencesPromise ??= supportLineReferences(repo).catch(() => ({ trustedPublishing: null, auditMode: null })));
   for (const name of bundleNames) {
     const url = bundleUrlOf(name);
     const base: BundleResult = { bundle: name, bundleUrl: url, pinned: null, line: null, supportBranch: '', supportBranchExists: false, highestOnLine: null, nextHotfix: null, verdict: 'error' };
@@ -547,8 +610,11 @@ async function main() {
       base.line = lineOf(sv);
       base.supportBranch = `support/${lineOf(sv)}`;
       base.supportBranchExists = await branchExists(repo, base.supportBranch);
-      if (!base.supportBranchExists) { bundleResults.push({ ...base, verdict: 'no-support-branch', note: `no ${base.supportBranch} branch — hotfix not physically possible without one` }); continue; }
       const highest = await highestOnLine(repo, sv);
+      // CI the line will release with: the branch's own, or — before it exists — the tag it will be cut from
+      // (highest released X.Y.*, else the pinned tag — the same base step 0 creates the branch from).
+      const ci = await ciReadiness(repo, base.supportBranchExists ? base.supportBranch : tagOf(sv, highest ?? sv.patch), getReferences);
+      if (!base.supportBranchExists) { bundleResults.push({ ...base, ci, verdict: 'no-support-branch', note: `no ${base.supportBranch} branch — hotfix not physically possible without one` }); continue; }
       base.highestOnLine = highest != null ? tagOf(sv, highest) : null;
       base.nextHotfix = highest != null ? tagOf(sv, highest + 1) : null;
       // already on the branch? SHA ancestry → -x trailer → content equivalence (a plain
@@ -570,7 +636,7 @@ async function main() {
         appliedVia === 'sha' ? 'fix commit is an ancestor of the support branch' :
         appliedVia === 'trailer' ? 'a cherry-pick -x trailer on the support branch names the fix commit' :
         appliedVia === 'content' ? `the fix's diff is already present in ${base.supportBranch} (cherry-picked under a new SHA, or the line never had the bug)` : undefined;
-      bundleResults.push({ ...base, verdict: applied ? 'already-applied' : 'ready', appliedVia: appliedVia ?? undefined, codeApply, baseline, note: appliedNote });
+      bundleResults.push({ ...base, verdict: applied ? 'already-applied' : 'ready', appliedVia: appliedVia ?? undefined, codeApply, baseline, ci, note: appliedNote });
     } catch (e: any) {
       bundleResults.push({ ...base, verdict: 'error', note: e.message });
     }
@@ -679,6 +745,24 @@ async function main() {
     }
   }
 
+  // Release CI — what the "Release hotfix" run on this line will hit. Fixed in the SAME push as the cherry-pick,
+  // never discovered from a red run (.claude/skills/qa-hotfix/support-line-ci.md).
+  // Only lines that are about to release: an already-applied bundle releases nothing.
+  const withCi = bundleResults.filter((b) => b.ci && (b.verdict === 'ready' || b.verdict === 'no-support-branch'));
+  const ciTodo = (b: BundleResult) => !!b.ci && (b.ci.staleNugetKey || b.ci.audit === 'fix');
+  if (withCi.length) {
+    console.log(`\nRelease CI (checked on the support branch, or on the tag it will be cut from):`);
+    for (const b of withCi) {
+      const c = b.ci!;
+      if (!c.workflowPath) { console.log(`  ${b.bundle}: ? no Release-hotfix workflow file found on ${c.ref}`); continue; }
+      if (!c.staleNugetKey && c.audit === 'ok') { console.log(`  ${b.bundle}: ✓ ${c.ref} — no stale NuGet push, no unmitigated audit setting`); continue; }
+      if (c.staleNugetKey) console.log(`  ${b.bundle}: ⚠ ${c.ref} pushes NuGet with secrets.NUGET_KEY (nuget.org answers 403 AFTER the GitHub release is created) → port the Trusted Publishing job from ${c.reference ?? 'the newest support/* or dev that has it'}`);
+      if (c.audit === 'fix') console.log(`  ${b.bundle}: ⚠ ${c.ref} has TreatWarningsAsErrors without <NuGetAuditMode>, and ${c.auditReference} already needed it → add <NuGetAuditMode>direct</NuGetAuditMode>`);
+      if (c.audit === 'advisory') console.log(`  ${b.bundle}: ℹ ${c.ref} has TreatWarningsAsErrors without <NuGetAuditMode> — restore fails only if a transitive package has an advisory (NU1902); if the release run fails on it, add <NuGetAuditMode>direct</NuGetAuditMode>`);
+    }
+    if (withCi.some(ciTodo)) console.log(`  Fix every ⚠ in the SAME push as the cherry-pick, before the first release (support-line-ci.md).`);
+  }
+
   // Plan for ready bundles — suppressed while a fix-shape signal is unresolved (STOP + hand off first).
   const ready = fixShapeBlocked ? [] : bundleResults.filter((b) => b.verdict === 'ready');
   if (fixShapeBlocked && bundleResults.some((b) => b.verdict === 'ready')) {
@@ -691,6 +775,7 @@ async function main() {
       console.log(`\n  • ${b.bundle} — line ${b.line} → ${b.nextHotfix}`);
       console.log(`      1. git fetch && git checkout ${b.supportBranch}`);
       console.log(`      2. git cherry-pick ${fixSha}`);
+      if (ciTodo(b)) console.log(`      2b. port the Release-CI fixes flagged above (separate commit, same push)`);
       console.log(`      3. (resolve conflicts if any) → git push origin ${b.supportBranch}`);
       console.log(`      4. npm run hotfix:release -- --repo=${repo} --branch=${b.supportBranch} --expect-commit=${fixSha} --poll`);
     }
@@ -703,6 +788,7 @@ async function main() {
     console.log(`\n⚠ No support branch yet for: ${noBranch.map((b) => `${b.bundle} (need ${b.supportBranch}, base ${b.pinned})`).join(', ')}`);
     console.log(`   Create it first (gated write step 0): branch ${noBranch[0].supportBranch} from the line's base tag`);
     console.log(`   (highest released X.Y.* tag, else the bundle-pinned tag), confirm the base, push, then re-run this precheck.`);
+    if (noBranch.some(ciTodo)) console.log(`   The base tag's Release CI is stale (see "Release CI" above) — the new branch inherits it: port those fixes with the cherry-pick.`);
   }
 
   throw new Exit(blocked ? 1 : 0);

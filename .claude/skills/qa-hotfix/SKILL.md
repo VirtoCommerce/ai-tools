@@ -120,7 +120,7 @@ so it's repo/task-level, not per-bundle):
 | 2 | **No breaking changes** | HEURISTIC flag: touches a contract-bearing file (`module.manifest`, `.csproj`, `Directory.Build.props`, `*Dto.cs`, `Models/`, `Contracts/`, `I*.cs`, `*Client.cs`) | flagged → a **developer MUST confirm** it isn't breaking before proceeding |
 | 3 | **Doesn't bump other modules' dependency versions** | scans the diff for a changed `VirtoCommerce.*` version in a manifest/`.csproj`/props | a raised pin → **STOP + hand off** (a hotfix must not drag dependency versions) |
 | 4 | **cherry-pick applies clean** | the actual `git cherry-pick` at the write step | conflict beyond trivial → **STOP + hand off** |
-| 5 | **`vc-build compress` passes** | the **"Release hotfix" workflow** builds + tests the artifact; `hotfix:release --poll` exits `1` if the run is red | red run → **STOP**: report the run URL + failing step; a re-run needs a new confirmation |
+| 5 | **`vc-build compress` passes** | the **"Release hotfix" workflow** builds + tests the artifact; `hotfix:release --poll` exits `1` if the run is red. Stale line CI (precheck's **Release CI** `⚠`) is fixed in the same push, before the first release: [`support-line-ci.md`](support-line-ci.md) | red run → **STOP**: report the run URL + failing step; a re-run needs a new confirmation |
 | 6 | **Regression environment** | after the release deploys, run regression on the support line | RED → hand off |
 
 Checks 1–3 are mechanized in the precheck (no clone); 4–6 are enforced downstream (write step /
