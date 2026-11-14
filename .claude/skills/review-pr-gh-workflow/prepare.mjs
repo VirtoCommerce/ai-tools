@@ -98,9 +98,11 @@ function scratchDir(arg) {
     if (!rel || rel.startsWith("..") || isAbsolute(rel)) continue;
     const parts = rel.split(sep);
     // parts[1] is this project's slug, as the hook checks it (the hook only lets this script run from
-    // the project directory, so cwd is the project).
+    // the project directory, so cwd is the project) — or, in newer Claude Code, a 16-hex hash this
+    // script cannot tie to the project; the hook then binds reads to the asking session instead.
     if (parts.length === 4 && /^claude(-[\w.-]+)?$/.test(parts[0]) && parts[3] === "scratchpad" &&
-        parts[1].toLowerCase() === realpathSync.native(process.cwd()).replace(/[^A-Za-z0-9]/g, "-").toLowerCase()) return dir;
+        (/^[0-9a-f]{16}$/i.test(parts[1]) ||
+         parts[1].toLowerCase() === realpathSync.native(process.cwd()).replace(/[^A-Za-z0-9]/g, "-").toLowerCase())) return dir;
   }
   die(`not a session scratchpad: ${dir}`);
 }
