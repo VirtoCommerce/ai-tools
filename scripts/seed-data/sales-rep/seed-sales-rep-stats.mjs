@@ -45,6 +45,7 @@ import {
   TOP_SELLER_ORDER, CART_FIXTURES, fixtureCartName, isBorrowedCart, RETIRED_CART_NAMES,
   statsOrderNumber, cartLines, expectedCartSplit, cartSplitDiverges,
   shapedOrderTotal, buildShapedItems, requiredProductSlots, expectedRankings, rankingsDiverge, preferSanelyPriced,
+  buildStatisticsWindows,
 } from './sales-rep-stats-specs.mjs';
 import {
   ROWCAP_ORDERS, ROWCAP_ALIASES, ROWCAP_REP_KEY, ROWCAP_STORE, ROWCAP_PROFILE_ORG_KEY,
@@ -242,6 +243,68 @@ async function seedShapedOrder(spec, orgs, customerId, products) {
   return created?.id || null;
 }
 
+// ---- shared: admin-created fixture orders (row-cap + MTD) -------------------
+
+/** Orders whose number is EXACTLY `number` — the keyword search also returns longer numbers (…-1 hits …-10). */
+async function ordersByNumber(number) {
+  const hit = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 });
+  return (hit?.results || []).filter((o) => o.number === number);
+}
+
+async function deleteOrdersByNumber(numbers, label) {
+  for (const n of numbers) {
+    for (const o of await ordersByNumber(n)) {
+      // `api()` skips the DELETE under --dry-run; the log says so rather than claiming a deletion.
+      await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
+      log(DRY_RUN ? `  [DRY] would delete ${label} ${n}` : `  deleted ${label} ${n}`);
+    }
+  }
+}
+
+async function countOrdersByNumber(numbers) {
+  let n = 0;
+  for (const num of numbers) n += (await ordersByNumber(num)).length;
+  return n;
+}
+
+/** Every line the spec asks for is on the order with its sku, quantity and price (and image, when wanted). */
+function orderLinesMatch(full, items) {
+  return (full?.items || []).length === items.length
+    && items.every((want) => full.items.some((got) => got.sku === want.sku && got.quantity === want.quantity
+      && Math.abs((got.price || 0) - want.price) < 0.01
+      // imageUrl is write-once (PUT ignores it), so a line that should show the product image and
+      // does not is a shape drift the rebuild repairs.
+      && (!want.imageUrl || !!got.imageUrl)));
+}
+
+/**
+ * The POST body of an admin-created fixture order. Same totals lesson as the shaped order: zero the
+ * shipment/payment monetary totals or the platform folds them back into order.Total and the
+ * idempotency check rebuilds on every reseed. `extra` carries per-family fields (e.g. isCancelled).
+ */
+function fixtureOrderBody({ number, storeId, org, customerId, customerName, status, total, items, extra = {} }) {
+  const shipAddr = orderAddress(org, 'Shipping');
+  const billAddr = orderAddress(org, 'Billing');
+  return {
+    number, storeId, organizationId: org.id, organizationName: org.name,
+    customerId, customerName, currency: 'USD', status, ...extra,
+    total, subTotal: total, shippingTotal: 0, shippingTotalWithTax: 0, taxTotal: 0,
+    items, addresses: [shipAddr, billAddr],
+    shipments: [{
+      shipmentMethodCode: 'FixedRate', shipmentMethodOption: 'Ground', currency: 'USD',
+      organizationId: org.id, organizationName: org.name,
+      price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
+      status: 'New', number: `${number}-S1`, deliveryAddress: shipAddr, items: [],
+    }],
+    inPayments: [{
+      gatewayCode: 'DefaultManualPaymentMethod', currency: 'USD',
+      customerId, customerName, organizationId: org.id, organizationName: org.name,
+      sum: total, price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
+      status: 'New', paymentStatus: 'New', number: `${number}-P1`, billingAddress: billAddr,
+    }],
+  };
+}
+
 // ---- fixture 1b: widget row-cap orders for SR_REP_LAYOUT (VCST-5649) -------
 
 /**
@@ -265,15 +328,10 @@ async function seedRowcapOrder(spec, orgs, customerId, products) {
   // Idempotent + self-healing on exactly the properties the acceptance criteria read: attribution
   // (else the order is invisible to salesRepOrders), org (customerProfile scope), status (the tab
   // cases), total, and line shape (the distinct-product count the Top-sellers cap depends on).
-  const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 1 });
-  const existing = (found?.results || [])[0];
+  const existing = (await ordersByNumber(number))[0];
   if (existing) {
     const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
-    const shapeOk = (full?.items || []).length === items.length
-      && items.every((want) => (full.items).some((got) => got.sku === want.sku && got.quantity === want.quantity && Math.abs((got.price || 0) - want.price) < 0.01
-        // imageUrl is write-once (PUT ignores it), so a line that should show the product image and
-        // does not is a shape drift the rebuild below repairs.
-        && (!want.imageUrl || !!got.imageUrl)));
+    const shapeOk = orderLinesMatch(full, items);
     const ok = full?.customerId === customerId
       && full?.organizationId === org.id
       && full?.status === spec.status
@@ -285,28 +343,7 @@ async function seedRowcapOrder(spec, orgs, customerId, products) {
     log(`row-cap order ${number} rebuilding (cust=${full?.customerId === customerId}, org=${full?.organizationId === org.id}, status=${full?.status === spec.status}, shape=${shapeOk})`);
   }
 
-  const shipAddr = orderAddress(org, 'Shipping');
-  const billAddr = orderAddress(org, 'Billing');
-  // Same totals lesson as the shaped order: zero the shipment/payment monetary totals or the
-  // platform folds them back into order.Total and the idempotency check rebuilds on every reseed.
-  const body = {
-    number, storeId: ROWCAP_STORE, organizationId: org.id, organizationName: org.name,
-    customerId, customerName, currency: 'USD', status: spec.status,
-    total, subTotal: total, shippingTotal: 0, shippingTotalWithTax: 0, taxTotal: 0,
-    items, addresses: [shipAddr, billAddr],
-    shipments: [{
-      shipmentMethodCode: 'FixedRate', shipmentMethodOption: 'Ground', currency: 'USD',
-      organizationId: org.id, organizationName: org.name,
-      price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
-      status: 'New', number: `${number}-S1`, deliveryAddress: shipAddr, items: [],
-    }],
-    inPayments: [{
-      gatewayCode: 'DefaultManualPaymentMethod', currency: 'USD',
-      customerId, customerName, organizationId: org.id, organizationName: org.name,
-      sum: total, price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
-      status: 'New', paymentStatus: 'New', number: `${number}-P1`, billingAddress: billAddr,
-    }],
-  };
+  const body = fixtureOrderBody({ number, storeId: ROWCAP_STORE, org, customerId, customerName, status: spec.status, total, items });
   const created = await api('POST', '/api/order/customerOrders', body);
   log(`row-cap order ${number} (${spec.status}, ${spec.orgKey}, $${total}) -> ${created?.id || '(created)'}`);
   return created?.id || null;
@@ -504,44 +541,29 @@ async function seedMtdOrder(spec, orgs, customerId, products) {
   const total = mtdOrderTotal(spec);
   const customerName = mtdCustomerName(spec);
 
+  // createdDate is server-assigned, so an order seeded in an earlier month is a CLOSED-month order:
+  // it still matches on every other field, but it no longer adds to the current month. Keeping it
+  // would leave the month without its fixtures while the seed reports "exists".
+  const monthStart = Date.parse(buildStatisticsWindows().mtd.from);
+  const inCurrentMonth = (full) => Date.parse(full?.createdDate || '') >= monthStart;
   const matches = (full) => full?.customerId === customerId && full?.organizationId === org.id
     && full?.status === spec.status && !!full?.isCancelled === spec.isCancelled && full?.storeId === MTD_STORE
-    && Math.abs((full?.total || 0) - total) < 0.01;
+    && Math.abs((full?.total || 0) - total) < 0.01 && orderLinesMatch(full, items);
 
-  const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 });
-  const existing = (found?.results || []).filter((o) => o.number === number);
+  const existing = await ordersByNumber(number);
   if (existing.length === 1) {
     const full = await api('GET', `/api/order/customerOrders/${existing[0].id}`);
-    if (matches(full)) { log(`MTD order ${number} exists (attribution + org + status + flag + total ok)`); return full; }
-  }
-  for (const o of existing) {
-    await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
-    log(`MTD order ${number} rebuilding (drifted or duplicated)`);
-  }
+    if (matches(full) && inCurrentMonth(full)) { log(`MTD order ${number} exists (attribution + org + status + flag + total + lines + this month ok)`); return full; }
+    log(`MTD order ${number} rebuilding (${inCurrentMonth(full) ? 'drifted' : `created ${full?.createdDate}, before this month`})`);
+  } else if (existing.length > 1) log(`MTD order ${number} rebuilding (${existing.length} duplicates)`);
+  for (const o of existing) await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
   if (DRY_RUN) { log(`  [DRY] would create MTD order ${number} (${spec.variant}, ${spec.orgKey}, ${spec.status}, isCancelled=${spec.isCancelled}, $${total})`); return null; }
 
-  const shipAddr = orderAddress(org, 'Shipping');
-  const billAddr = orderAddress(org, 'Billing');
   const cancelReason = 'AGENT-TEST VCST-6255 flag-cancelled fixture';
-  const body = {
-    number, storeId: MTD_STORE, organizationId: org.id, organizationName: org.name,
-    customerId, customerName, currency: 'USD', status: spec.status,
-    isCancelled: spec.isCancelled, ...(spec.isCancelled ? { cancelReason } : {}),
-    total, subTotal: total, shippingTotal: 0, shippingTotalWithTax: 0, taxTotal: 0,
-    items, addresses: [shipAddr, billAddr],
-    shipments: [{
-      shipmentMethodCode: 'FixedRate', shipmentMethodOption: 'Ground', currency: 'USD',
-      organizationId: org.id, organizationName: org.name,
-      price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
-      status: 'New', number: `${number}-S1`, deliveryAddress: shipAddr, items: [],
-    }],
-    inPayments: [{
-      gatewayCode: 'DefaultManualPaymentMethod', currency: 'USD',
-      customerId, customerName, organizationId: org.id, organizationName: org.name,
-      sum: total, price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
-      status: 'New', paymentStatus: 'New', number: `${number}-P1`, billingAddress: billAddr,
-    }],
-  };
+  const body = fixtureOrderBody({
+    number, storeId: MTD_STORE, org, customerId, customerName, status: spec.status, total, items,
+    extra: { isCancelled: spec.isCancelled, ...(spec.isCancelled ? { cancelReason } : {}) },
+  });
   const created = await api('POST', '/api/order/customerOrders', body);
   let full = created?.id ? await api('GET', `/api/order/customerOrders/${created.id}`) : null;
   if (full && !!full.isCancelled !== spec.isCancelled) {
@@ -550,7 +572,7 @@ async function seedMtdOrder(spec, orgs, customerId, products) {
     full = await api('GET', `/api/order/customerOrders/${created.id}`);
   }
   if (!matches(full)) {
-    throw new Error(`MTD order ${number} read back wrong: cust=${full?.customerId === customerId} org=${full?.organizationId === org.id} status=${full?.status} isCancelled=${full?.isCancelled} total=${full?.total}`);
+    throw new Error(`MTD order ${number} read back wrong: cust=${full?.customerId === customerId} org=${full?.organizationId === org.id} status=${full?.status} isCancelled=${full?.isCancelled} total=${full?.total} lines=${orderLinesMatch(full, items)}`);
   }
   log(`MTD order ${number} (${spec.variant}, ${spec.orgKey}, ${spec.status}, isCancelled=${full.isCancelled}, $${full.total}) -> ${full.id}`);
   return full;
@@ -576,8 +598,14 @@ async function seedMtdOrders(orgs, repUserId, products) {
     const o = byKey[key];
     if (o) writeback[alias] = { id: o.id, number: mtdOrderNumber(key), customerId: o.customerId, createdDate: o.createdDate };
   }
-  const sp = expectedRepDelta('spec'); const cd = expectedRepDelta('code');
-  log(`MTD delta for the rep this month: spec(AC) +${sp.count} / +$${sp.total}  ·  code(observed) +${cd.count} / +$${cd.total}`);
+  // The cases' oracle: what the seed ADDS to the month, per reading, for All and per served org.
+  // Read from the spec module, never from the statistics the page itself renders.
+  const fmt = (orgKey) => {
+    const sp = expectedRepDelta('spec', orgKey); const cd = expectedRepDelta('code', orgKey);
+    return `spec(AC) +${sp.count} / +$${sp.total.toFixed(2)}  ·  code(observed) +${cd.count} / +$${cd.total.toFixed(2)}`;
+  };
+  log(`MTD delta for the rep this month, All customers: ${fmt(null)}`);
+  for (const orgKey of [...new Set(MTD_ORDERS.map((o) => o.orgKey))]) log(`MTD delta for the rep this month, ${orgKey}: ${fmt(orgKey)}`);
   return writeback;
 }
 
@@ -591,21 +619,10 @@ async function teardown(orgs, rep, userId) {
   const runStats = runStatsFamily();
   if (runMtdFamily()) {
     log('TEARDOWN (scoped to MTD) — removing only the AGENT-TEST-SRO-MTD orders');
-    for (const spec of MTD_ORDERS) {
-      const n = mtdOrderNumber(spec.key);
-      const hit = await api('POST', '/api/order/customerOrders/search', { keyword: n, take: 5 });
-      for (const o of (hit?.results || []).filter((x) => x.number === n)) {
-        await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
-        log(DRY_RUN ? `  [DRY] would delete MTD order ${n}` : `  deleted MTD order ${n}`);
-      }
-    }
+    const numbers = MTD_ORDERS.map((s) => mtdOrderNumber(s.key));
+    await deleteOrdersByNumber(numbers, 'MTD order');
     if (DRY_RUN) { log('Teardown complete (dry run — no writes).'); return; }
-    let residue = 0;
-    for (const spec of MTD_ORDERS) {
-      const n = mtdOrderNumber(spec.key);
-      const hit = await api('POST', '/api/order/customerOrders/search', { keyword: n, take: 5 });
-      residue += (hit?.results || []).filter((x) => x.number === n).length;
-    }
+    const residue = await countOrdersByNumber(numbers);
     log(residue === 0 ? '  verifyRemoved: zero residue' : `  WARN verifyRemoved: ${residue} MTD order(s) still present`);
     log('Teardown complete.');
     return;
@@ -661,14 +678,8 @@ async function teardown(orgs, rep, userId) {
 
   // Row-cap orders (VCST-5649) — deleted by their own AGENT-TEST-SRO-ROWCAP- number space, so
   // SR_REP_PRIMARY's AGENT-TEST-SRO-* orders can never be caught by this sweep.
-  for (const spec of runRowcap ? ROWCAP_ORDERS : []) {
-    const n = rowcapOrderNumber(spec.key);
-    const hit = await api('POST', '/api/order/customerOrders/search', { keyword: n, take: 5 });
-    for (const o of (hit?.results || [])) {
-      await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
-      log(DRY_RUN ? `  [DRY] would delete row-cap order ${n}` : `  deleted row-cap order ${n}`);
-    }
-  }
+  const rowcapNumbers = runRowcap ? ROWCAP_ORDERS.map((s) => rowcapOrderNumber(s.key)) : [];
+  await deleteOrdersByNumber(rowcapNumbers, 'row-cap order');
 
   // Zero-residue assert. Meaningless in a dry run — nothing was deleted, so the fixture is still
   // there by design and a WARN would read as a teardown failure.
@@ -686,10 +697,7 @@ async function teardown(orgs, rep, userId) {
     // The cart query answers a fresh, id-less shell for an absent name — only a persisted cart counts.
     if (left?.id && (left.itemsCount || 0) > 0) { residue += 1; log(`  WARN cart ${name} still present after removal`); }
   }
-  for (const spec of runRowcap ? ROWCAP_ORDERS : []) {
-    const hit = await api('POST', '/api/order/customerOrders/search', { keyword: rowcapOrderNumber(spec.key), take: 5 });
-    residue += (hit?.results || []).length;
-  }
+  residue += await countOrdersByNumber(rowcapNumbers);
   log(residue === 0 ? '  verifyRemoved: zero residue' : `  WARN verifyRemoved: ${residue} order(s) still present`);
   log('Teardown complete.');
 }
