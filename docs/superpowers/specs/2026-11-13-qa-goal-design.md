@@ -88,8 +88,14 @@ agent by default; a browser-heavy branch may be handed to a specialist on its ow
 | `lib/goal.schema.json` | the journal's shape |
 | `lib/goal.mjs` | the only writer and checker of `goal.json` |
 | `agents/goal-judge.md` | the independent judge |
-| `lib/artifacts.json` | gains the `qa-goal` entry and its `writes` |
+| `lib/artifacts.json` | gains the `qa-goal` entry and its `writes` — *superseded, see the note below* |
 | `README.md` | file map updated; `plugin.json` minor bump + its `vc-test--v<version>` tag |
+
+**Built differently (plan deviation, `docs/superpowers/plans/2026-11-13-qa-goal.md` §Global Constraints):**
+`lib/artifacts.json` is unchanged — `write-zones.mjs` already allows `.vc-fix/**` through `orchestrator.writes`, and
+an artifact entry without a strategy row would put `plan-run.mjs` at risk. A run lives under `.vc-fix/`
+(`.vc-fix/vc-test/<KEY>/<env>/goal/<runId>/`), and `goal.mjs init` writes the `{"waves":[]}` run plan that
+`write-zones.mjs check` reads.
 
 ### 5.2 The journal — `{RUN_DIR}/goal.json`
 
@@ -132,14 +138,14 @@ and exits 0 clean · 2 blocked (names every failing rule) · 1 usage. Rules it e
    Every claim about product behaviour is checked against the docs source before it is written
    (on the vendor project: VirtoOZ). Research ends when every planned AC has a source and a way to
    test it, or when the budget's research share is spent — then it says what is still unknown.
-4. **Criteria + strategy** — derived ACs into the journal; the strategy through
-   `/vc-test:qa-test-strategy` (its gate, and its `strategy-verifier` on a Critical risk).
-   **S2: the person approves the criteria and the strategy together.**
+4. **Criteria + strategy** — derived ACs into the journal; the strategy as `goal.json.strategy[]` through
+   `goal.mjs strategy set`, gated by `goal.mjs check --before strategy` (every AC covered by a risk) — no call into
+   `/vc-test:qa-test-strategy` (§7). **S2: the person approves the criteria and the strategy together.**
 5. **Test loop** — inline, on the approved strategy. A finding that opens a new branch adds an AC
    with `addedAt: during-test` and a reason; a branch outside the approved scope needs S2 again.
    Data created only on a `writable` env, through `ledger.mjs`.
-6. **Triage** — the in-scope findings through `/vc-test:qa-triage-results` (ticket mode) when there
-   are Medium or worse; Low ones stay as noticed lines.
+6. **Triage** — inline, no triage skill (§7: no `/vc-test:qa-triage-results`): each Medium-or-worse finding
+   is reproduced a second time on the spot and both runs are recorded; Low ones stay as noticed lines.
 7. **Draft verdict** — written from `goal.json` only (`goal.mjs check --before verdict` first).
 8. **Judge** — `goal-judge`, fresh (§5.4). REJECT ⇒ one fix round ⇒ judge again from scratch;
    a second REJECT ⇒ STOP, hand to a person with both verdicts.

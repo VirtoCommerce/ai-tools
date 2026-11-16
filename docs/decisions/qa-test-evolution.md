@@ -349,3 +349,32 @@ label (D12).
 ## `/qa-test-lifecycle` changelog source (moved from the command, 2026-10-29)
 
 Step 1 of the `changelog <version>` input used to be "query Context7 for release notes for the specified version". That corpus does not carry them — its newest version page is Platform **3.917.1** while production is past **3.1050**. Hence the local release ledger first, GitHub Releases to confirm, Context7 only as a stale-ledger fallback (`.claude/skills/qa-test-lifecycle/change-sources.md`).
+
+## Single `/qa-test` (2026-11-13)
+
+**What changed.** `/qa-test` is one path now: the approved `/vc-test:qa-test-strategy` decides which steps a ticket
+gets, and the command only dispatches them. Design `docs/superpowers/specs/2026-11-13-qa-test-single-design.md`; it
+continues the 2026-10-09 strategy redesign (D1–D12), whose decisions are not reopened.
+
+**Removed.**
+- `/qa-test-fast` and its skill; the FAST/FULL paths and the EFFORT axis (depth is the strategy's derived
+  `light`/`standard`/`deep` label, reported, never an input).
+- Artifact A (2a triage + case authoring), `1e-plan` and the `3-cases` verifier — `/qa-test` no longer dispatches
+  `test-management-specialist` and never writes a suite CSV.
+- The `technical-change` flow (the strategy rows decide what a refactor needs).
+- `--iterate` and `--epic`; non-ticket targets (feature name, `PR #N`, several keys) — one ticket key per run.
+- The `--visual` / `--contract` / `--coverage` / `--axes` / `--release-regression` flags, answered with one line.
+
+**Decisions (owner, 2026-11-13).**
+- **E1** One path; the vc-test strategy decides which steps run (approach A).
+- **E2** The 2026-10-09 §8 validation gate is **waived by the owner**: `/qa-test-fast` was the prototype in use, so the old paths are deleted without a further comparison run.
+- **E3** `--iterate` and `--epic` are removed.
+- **E4** Ticket keys only, one per run.
+- **E5** A run never writes a seeder: `FIXTURE-GAP` is raised at approval; seeders come from `/qa-generate-data` + `/qa-seed-data`.
+- **E6** Budget is reported (`run-cost.mjs`, at approval and at close), never a stop or a question.
+- **E7** Case findings reach the corpus through `candidate_cases` + `stale_cases` in `summary.json`; one question at close offers `/qa-test-lifecycle <TICKET>`.
+
+**Sizes (characters).** `.claude/commands/qa-test.md`: 55,735 → 16,451 (its BUDGET-004 baseline entry, 54,804, is gone).
+`.claude/skills/qa-test/`: 321,653 across 16 files → 114,591 across 10.
+
+**Not yet validated.** Live `--dry-run` on a recent Story: not yet run (to be run by the owner before merge).

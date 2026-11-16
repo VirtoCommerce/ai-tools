@@ -326,7 +326,7 @@ export const norm = (s) => s.toLowerCase().replace(/[`*_"]/g, '').trim();
  *
  * A citation is written INSIDE a sentence, so the text after `§` runs on into prose the author never
  * meant as part of the heading: *"`SKILL.md` §Effort routing records that the…"* names the heading
- * "Effort routing, and why the FAST/FULL line sits where it does". The old rule compared the first 25
+ * "Effort routing, and why the budget line sits where it does". The old rule compared the first 25
  * characters of the whole run-on against each heading, which failed on every citation of that shape —
  * 9 of the 18 findings this rule carried were the corpus's own correct citations.
  *

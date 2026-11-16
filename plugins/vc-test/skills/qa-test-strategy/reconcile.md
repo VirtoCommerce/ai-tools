@@ -1,9 +1,9 @@
 # Reconcile — at close-out, before the verdict
 
-Moved from SKILL.md §Reconcile — at close-out, unchanged (used by `/qa-test-fast` Stage 3, and the single `/qa-test` next).
+Moved from SKILL.md §Reconcile — at close-out, unchanged (used by `/qa-test` Stage 5).
 
-Not an entry of this skill: the caller runs these steps inline at close-out to fill the round's
-reconciliation:
+Not an entry of this skill: the caller runs these steps inline at close-out, **after triage** (a triage
+re-run or a return to execution changes results), to fill the round's reconciliation:
 
 - One row per in-scope risk, plus one per amendment: planned → what ran (checklist item ids, charter
   items, lane, regression case ids) → result → deviation and its reason.

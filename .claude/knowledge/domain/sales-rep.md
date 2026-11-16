@@ -1298,7 +1298,7 @@ product did in response, which is why §3c/§3i can state tile arithmetic exactl
 - **D9 corroborated, verdict unchanged:** a second rep (`SR_REP_EXCLUSIVE_TECHFLOW`) read a list shared to TechFlow purely as a TechFlow MEMBER — the rep-as-member structure is what the sharing access check keys on (active org ∈ targets).
 - Not written (hypothesis / not verified live): which org "My organization" binds to for a multi-org rep; member of two targeted orgs; revoke of a no-longer-served org.
 
-### A10 (2026-10-08) — VCST-6077 write-back (5-docs-map, no re-enumeration; `/qa-test --iterate`, 2 rounds)
+### A10 (2026-10-08) — VCST-6077 write-back (5-docs-map, no re-enumeration; 2 rounds)
 
 **Every fact here was observed on an UNMERGED PR prerelease** (vc-frontend #2536, local container → vcst-qa backend, `SalesRep 3.1012.0`). It describes the build that will replace §3i, not the deployed one — §3i, the `/company/calendar` row and G15 are **left unchanged** because they are still true where deployed. **[Rev 4, 2026-11-03: RESOLVED — #2536 merged 2026-10-08; the deployed theme now serves `/company/tasks` and 404s `/company/calendar`. §3i is superseded, the calendar route row is struck, G15 is `CLOSED`. Every A10 bullet below that describes the Tasks page is now an observation of a *deployed* build; the "Not written" list is unchanged.]**
 - §3a **+1 route**: `/company/tasks` (H1/nav/breadcrumb "Tasks"; `/company/calendar` → 404, no redirect) — `CONFIRMED` live.

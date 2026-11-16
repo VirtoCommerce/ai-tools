@@ -195,7 +195,7 @@ stand `/preflight` (`npm run preflight`: env health, deployed build, MCP availab
 
 Two pipelines:
 
-1. **Interactive MCP-driven** (primary) — tell Claude Code what to test: `/qa-smoke storefront`, `/qa-test VCST-1234`, `/qa-test-fast VCST-1234`, `/vc-test:qa-ticket VCST-1234`, `Use qa-frontend-expert to verify checkout`. Real browser via Playwright MCP → HAR/screenshots/console → reports.
+1. **Interactive MCP-driven** (primary) — tell Claude Code what to test: `/qa-smoke storefront`, `/qa-test VCST-1234` (one ticket key; its approved strategy decides how deep the run goes), `/vc-test:qa-ticket VCST-1234`, `Use qa-frontend-expert to verify checkout`. Real browser via Playwright MCP → HAR/screenshots/console → reports.
 2. **Monitoring** (`/qa-monitoring`) + **auto-fix** (`/qa-fix`) — App Insights triage / bug-fix-to-PR (gate ladder G0–G7, never auto-merges).
 
 > Regressions run interactively (`/qa-regression`); there is no headless runner. `ci/` holds only the shared planning
@@ -205,7 +205,7 @@ Two pipelines:
 
 Start at **[`.claude/ROUTING.md`](.claude/ROUTING.md)** — "I want to… → use…". Full argument reference: each command and skill file's own frontmatter (`description` + `argument-hint`), which the harness renders as the `/` menu.
 
-- **Slash commands** (`ls .claude/commands` for the current set; the bug-lifecycle ones — `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/qa-env-check`, `/vc-self-check`, `/vc-feedback` — come from the `vc-fix` plugin, `/project-init` from `vc-init`, `/vc-test:qa-ticket` and `/vc-test:init` from `vc-test`) — `/qa-smoke`, `/qa-test`, `/qa-test-fast`, `/qa-regression`, `/qa-triage-results`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-domain-map`, `/qa-seed-data`, `/qa-deploy-pr`, `/qa-bundle-check`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-design`, `/qa-local-env`, `/qa-onboarding`, `/ba-analyze`, `/code-review-full`, …
+- **Slash commands** (`ls .claude/commands` for the current set; the bug-lifecycle ones — `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/qa-env-check`, `/vc-self-check`, `/vc-feedback` — come from the `vc-fix` plugin, `/project-init` from `vc-init`, `/vc-test:qa-ticket` and `/vc-test:init` from `vc-test`) — `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-triage-results`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-domain-map`, `/qa-seed-data`, `/qa-deploy-pr`, `/qa-bundle-check`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-design`, `/qa-local-env`, `/qa-onboarding`, `/ba-analyze`, `/code-review-full`, …
 - **Skills** in [`skills/`](.claude/skills) — one `skills/<name>/SKILL.md` each, category as a `[Tag]` in the description; see [skills/README.md](.claude/skills/README.md) for how the counts are derived.
 - **Agents** in [`agents/`](.claude/agents) across QA and BA teams; the Developers team ships in `plugins/vc-fix/agents/` — roster in [`.claude/rules/agents.md`](.claude/rules/agents.md). Each parallel agent uses its own browser. Max 3 concurrent browser agents.
 

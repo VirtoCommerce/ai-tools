@@ -104,9 +104,9 @@ row is `NOT RUN — no <persona> account on <env>` and the report names the acco
 
 ## 4. Which personas run — pairs first
 
-**On a FAST path** (`/qa-test-fast`, `/qa-test` FAST, `/vc-test:qa-ticket` without `--full`) run **the task's own
-actor only**: one task, one persona, and the pairs and contrast below are listed as `NOT RUN — FAST path` so the
-report shows what a FULL run would add. Everything below is the FULL path (or a brief that asks for it).
+**On the short path** (`/vc-test:qa-ticket` without `--full`, or a brief that names one task) run **the task's own
+actor only**: one task, one persona, and the pairs and contrast below are listed as `NOT RUN — short path` so the
+report shows what the full path would add. Everything below is the full path (or a brief that asks for it).
 
 1. **Pairs from §1.** A segment the feature treats differently is tested as a **pair that must diverge**: VIP vs
    zero balance, with vs without the permission, own vs another organization, default vs another currency. Equal

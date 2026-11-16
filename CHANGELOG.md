@@ -8,6 +8,67 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Single strategy-driven `/qa-test` — `vc-test` `0.18.2`, `vc-fix` `0.18.10` — 2026-11-13
+
+Design: [`docs/superpowers/specs/2026-11-13-qa-test-single-design.md`](docs/superpowers/specs/2026-11-13-qa-test-single-design.md).
+
+### Removed
+
+- **BREAKING:** `/qa-test-fast` is gone, and `/qa-test` no longer has a FAST and a FULL path. One command,
+  `/qa-test <TICKET> [<env>] [--yes] [--dry-run]`, runs context → an approved `/vc-test:qa-test-strategy` → only the
+  artifacts the strategy marks `RUN` → close-out. **Migration:** call `/qa-test <TICKET>` where you called
+  `/qa-test-fast <TICKET>`. A feature name, `PR #N` or several keys now stop with one
+  line; `--iterate`, `--epic`, `--visual`, `--contract`, `--coverage`, `--axes` and `--release-regression` print one
+  line saying the flag is gone and the run continues without it (the strategy's artifact rows decide what runs).
+- `vc-test` is now required by `/qa-test` (≥ 0.17.1 at its Stage 0); the files only the two-path flow read are deleted
+  from `.claude/skills/qa-test/`.
+
+### Changed
+
+- `vc-test` `0.18.2`: text and comments name the single `/qa-test` (`/qa-test-fast`, "FAST/FULL" and the deleted
+  `.claude/skills/qa-test/*` files are no longer cited; the visual axis is decided by the strategy's `Visual lane`
+  row, not by a flag); `lib/route.mjs`'s `technical-change` `next` reads `/qa-test <KEY> (scoped regression), then
+  /qa-test-lifecycle <KEY> (case sync)`; `ticket-context` asks the repository's preflight for the `ticket` profile
+  (`ticket-fast` stays accepted there as an alias); the knowledge copies are back in step with their sources.
+- `vc-fix` `0.18.10`: `qa-report`, `qa-bug`, `qa-verify-fix`, `tracker-ops.md`, `run-env.md` and the agents README
+  name the single `/qa-test` (a re-test round amends only its own delta comment, never a published verdict).
+- `/qa-test` writes `candidate_cases` and `stale_cases` into the run's `summary.json`; `qa-suite-sync` (reached through
+  `/qa-test-lifecycle <TICKET>`) reads both as sync targets and gaps to author.
+
+## /vc-test:qa-goal decides the verdict by a person-confirmed fix priority — `vc-test` `0.18.1` — 2026-11-13
+
+### Changed
+
+- An in-scope finding now decides the qa-goal verdict by its **fix priority**, not by its severity alone, as
+  `qa-test-strategy`'s `verdict-rules.md` does: FAIL on an in-scope P0/P1 (fix now), PASS WITH NOTES on P2/P3 (fix later),
+  PASS with no in-scope finding. 0.18.0 read Critical/High as P0/P1, though `risk-prioritization-framework.md` §2 says a
+  Critical is not always P0.
+- The run proposes each in-scope finding's `fixPriority` and `fixPriorityReason` at triage (step 6) from that framework; a
+  person confirms or changes them in one question, recorded as `fixPriorityBy`. `goal.mjs check --before verdict` fails an
+  in-scope finding without all three. `finding add` refuses `fixPriorityBy`, and a `finding set` that changes the severity,
+  scope or title drops it, so the person is asked again. A judge FIX on a fix priority goes back to the person.
+- A finding confirmed P0/P1 is reproduced twice whatever its severity, and S3 proposes a bug for every in-scope finding,
+  with its fix priority.
+- A run started on 0.18.0 and resumed on 0.18.1 asks the fix-priority question before its verdict (`resume.md`).
+
+## /vc-test:qa-goal — goal-driven testing with an independent judge — `vc-test` `0.18.0` — 2026-11-13
+
+### Added
+
+- `/vc-test:qa-goal <KEY> [<env>]` (preview): for a ticket a fixed pipeline cannot test — no acceptance criteria, a change in
+  a component the ticket does not link, research before any test. A person agrees a goal and a checkable done-criterion (S1),
+  the run researches, derives the criteria with their sources plus a strategy (S2, one approval), tests with re-planning,
+  drafts the verdict from the journal, has `vc-test:goal-judge` re-derive it (two rounds at most), closes, and proposes each
+  outward write on its own (S3). Nothing goes out by itself and a status is never changed.
+- `lib/goal.mjs` (the journal `goal.json` and its only writer, with stage gates; scrubs every stored string and refuses a
+  token shape), `lib/oauth-code.mjs` (an authorization-code + PKCE sign-in through a Playwright lane in which the agent never
+  holds a secret), `agents/goal-judge.md`, and the skill `qa-goal` with its contract, research-loop, derived-criteria and
+  OAuth-recipe files.
+
+### Changed
+
+- `/vc-test:qa-ticket` prints a one-line hint, and continues, when the bundle has no ACs or names a component no PR touches.
+
 ## Lane HAR files keep no sign-in password — `vc-init` `0.7.0` — 2026-11-13
 
 ### Fixed

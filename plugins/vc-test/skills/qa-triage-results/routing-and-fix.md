@@ -50,13 +50,13 @@ vc-fix and running `/qa-bug`.
 
 ## Ticket mode (`ticket <KEY>`) — returns, never writes
 
-Called by `/qa-test` 5-triage and `/qa-test-fast` Stage 3 on the ticket's `testing-checklist.md`. This mode
+Called by `/qa-test` 5-triage on the ticket's `testing-checklist.md`. This mode
 writes only `triage-report.md` in the ticket folder, and the investigation packages Phase 4 produced. Everything
 else is **returned** to the caller, which is the checklist's single writer and the one caller of `/vc-fix:qa-bug`:
 
 | CLASS | Returned as | The caller then |
 |---|---|---|
-| `REAL_BUG`, investigated, `REPRODUCED` | confirmed bug + package path + severity + owning repo | calls `/vc-fix:qa-bug` once per bug with the package (brief above, Step 1). `found-by:agent-testing <KEY>` replaces `agent-regression`, and filing follows the caller's own rules (`/qa-test` 5-file asks first; `/qa-test-fast` asks per bug) |
+| `REAL_BUG`, investigated, `REPRODUCED` | confirmed bug + package path + severity + owning repo | calls `/vc-fix:qa-bug` once per bug with the package (brief above, Step 1). `found-by:agent-testing <KEY>` replaces `agent-regression`, and filing follows the caller's own rules (`/qa-test` 5-file asks first, once for the whole list) |
 | `REAL_BUG`, `NOT_REPRODUCED` or not investigated | `needs-review` + the reason | lists it, files nothing |
 | `REAL_BUG` below `--min-severity` | `below floor (<SEVERITY>)` + its evidence | lists it once (vc-test: under "Noticed"), investigates and files nothing |
 | `TEST_STEPS_DEFECT` · `ASSERTION_DEFECT` · `TEST_DATA_DEFECT` · `STALE_TEST` | the checklist item + `SUGGESTED_FIX` | fixes the row in `testing-checklist.md` and re-runs it once, or notes it |

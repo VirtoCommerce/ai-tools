@@ -59,5 +59,5 @@ Five decisions, each of which was a live fork:
   planning step, **not a lock** — two sessions allocating against the same tree get the same block, which
   is the shared-tree problem and is answered by agreeing who authors, not by a lockfile.
 
-Consumed by `/qa-test` Step 1e-plan (the gate) and Step 3/3b (scaffold + per-surface fan-out).
+Consumed by `qa-suite-sync` / `/qa-test-lifecycle` when they author cases (`/qa-test` authors none).
 

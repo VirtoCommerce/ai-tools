@@ -17,7 +17,7 @@
  * Fingerprint/flaky store: reports/regression/.triage-fingerprints.json
  * (gitignored local working state, like ci/lib/fingerprint-store.ts).
  *
- * Ticket mode (a /qa-test or /qa-test-fast run's testing-checklist.md, `source: "checklist"`) is not here:
+ * Ticket mode (a /qa-test run's testing-checklist.md, `source: "checklist"`) is not here:
  * it is `plugins/vc-test/lib/triage-collect.mjs`, which the `qa-triage-results` skill in vc-test runs.
  *
  * CLI:
