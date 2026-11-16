@@ -1,0 +1,448 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SR-RPT-001,"[JOURNEY] Rep Opens Reporting From the Hub Menu, Reads Current-Year Figures for All Customers, and Every Tile, Chart Column and Table Row Reconciles With the Seeded Orders",Sales Rep > Reporting > [JOURNEY] > Menu to figures,Critical,"BL-SR-002, BL-SR-001, BL-SR-013","ECL-7.1, ECL-12.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding.
+SR_REP_PRIMARY serves several organizations (N is the served count, never asserted as a literal).","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","--- SCREEN: Hub menu ---
+[NAV] {{FRONT_URL}}/account
+[WAIT] the left rail is rendered
+[CAPTURE] the labels of the items under ""Sales Rep hub"" in rail order (HUB_ITEMS) and the href of ""Reporting"" (REPORTING_HREF)
+[ASSERT] ""Reporting"" is present in HUB_ITEMS before continuing
+--- SCREEN: Reporting, defaults ---
+[ACT] click ""Reporting"" under ""Sales Rep hub""
+[WAIT] the page has finished loading (no spinner on the tiles)
+[CAPTURE] the active period tab (PERIOD_DEFAULT), the selected Customer option text (CUSTOMER_DEFAULT), the card title (CARD_TITLE), the URL (URL_PAGE)
+[ASSERT] PERIOD_DEFAULT is ""Current year"" and CUSTOMER_DEFAULT starts with ""All my customers"" before continuing
+--- SCREEN: Reporting, figures ---
+[CAPTURE] the current-month tile revenue and order count (TILE_REV, TILE_CNT), the current-month column tooltip revenue to date (BAR_REV) and the current month row of the table (TBL_REV, TBL_CNT)
+[CAPTURE] the current-month statistics of SR_REP_PRIMARY read with npm run sales-rep:stats (STAT_REV, STAT_CNT) and the option count of the Customer select (N_OPTIONS)
+--- SCREEN: Reload ---
+[NAV] reload the page
+[WAIT] the page has finished loading
+[CAPTURE] the same tile revenue (TILE_REV_RELOAD) and the URL (URL_RELOAD)","[DOM] ""Reporting"" is the second item of ""Sales Rep hub"", directly after ""Dashboard"" {SPEC}
+[REL] REPORTING_HREF ends with /company/customer-sales and URL_PAGE starts with {{FRONT_URL}}/company/customer-sales {OBSERVED}
+[STATE] CARD_TITLE is the card title and CUSTOMER_DEFAULT reads ""All my customers (N)"" where N equals N_OPTIONS minus the All option {SPEC}
+[REL] TILE_REV, BAR_REV and TBL_REV are equal for the current month, and TILE_CNT equals TBL_CNT {SPEC}
+[REL] TILE_REV equals STAT_REV and TILE_CNT equals STAT_CNT - the rep's own orders only, so the seeded buyer-created and flag-cancelled orders contribute nothing {BL}
+[REL] TILE_REV_RELOAD equals TILE_REV and URL_RELOAD equals URL_PAGE after the reload {SPEC}
+[COUNT] ""Reporting"" items in the left rail == 1 {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the ""Reporting"" item is missing, or sits first or third, in the Sales Rep hub (mid-journey)
+the page loads but the card shows ""Couldn't load the report"" or stays on a spinner (mid-journey)
+tile, chart tooltip and table disagree on the current-month figure after the page settled",none (read-only; the seeded MTD orders stay until teardown --teardown --only MTD),VCST-6255 · Archetype:MONEY · Technique:FLOW,Draft
+SR-RPT-002,"Picking One Served Customer Re-Scopes Every Figure to That Customer and Writes It to the URL, Not the All-Customers Totals",Sales Rep > Reporting > Customer scope,Critical,BL-SR-002,ECL-7.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org_west=@td(ORG_ACMEWEST.name), org_tech=@td(ORG_TECHFLOW.name)","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] the current-month tile revenue and count for All (ALL_REV, ALL_CNT)
+[ACT] click the Customer select
+[WAIT] the options list is open
+[ACT] click the option whose text starts with @td(ORG_ACMEWEST.name)
+[WAIT] the tiles have finished loading
+[CAPTURE] the current-month tile revenue and count (WEST_REV, WEST_CNT) and the URL (URL_WEST)
+[ACT] click the Customer select
+[WAIT] the options list is open
+[ACT] click the option whose text starts with @td(ORG_TECHFLOW.name)
+[WAIT] the tiles have finished loading
+[CAPTURE] the current-month tile revenue and count (TECH_REV, TECH_CNT) and the URL (URL_TECH)
+[NAV] reload the page at URL_TECH
+[CAPTURE] the selected Customer option text after reload (CUSTOMER_RELOAD) and the tile revenue (TECH_REV_RELOAD)","[REL] WEST_REV equals the AcmeWest current-month statistics from npm run sales-rep:stats (the seeded WEST_1 and WEST_2 orders; the flag-cancelled order contributes nothing) {BL}
+[REL] TECH_REV equals the TechFlow current-month statistics from npm run sales-rep:stats {BL}
+[REL] WEST_REV, TECH_REV and ALL_REV are pairwise different {SPEC}
+[STATE] URL_WEST and URL_TECH each carry ?customer= with that organization's id, and the page stays on the Current year tab {SPEC}
+[REL] CUSTOMER_RELOAD names TechFlow and TECH_REV_RELOAD equals TECH_REV - the slice survives a reload {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","choosing a customer leaves the tiles at the All figures or shows the previous customer's figures
+the URL does not change on customer selection (mid-journey)
+the reload falls back to All my customers although ?customer= was present",none (read-only),VCST-6255 · Archetype:SCOPE · Technique:EP,Draft
+SR-RPT-003,"An Order Cancelled With the IsCancelled Flag Adds Nothing to the Month, the Tiles, the Table or the Average Order Value",Sales Rep > Reporting > Order eligibility,High,BL-SR-005,ECL-13.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding. The flag-cancelled order is in AcmeWest with status Processing (not Cancelled) so only the flag can exclude it.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org_west=@td(ORG_ACMEWEST.platform_id), flag_order=@td(SR_MTD_ORDER_FLAG_CANCELLED.number)","[NAV] {{FRONT_URL}}/company/customer-sales?customer=@td(ORG_ACMEWEST.platform_id)
+[WAIT] the page has finished loading
+[CAPTURE] the current-month tile revenue, order count and AOV (REV, CNT, AOV)
+[CAPTURE] the AcmeWest current-month statistics from npm run sales-rep:stats (STAT_REV, STAT_CNT) and the total of @td(SR_MTD_ORDER_FLAG_CANCELLED.number) as shown in its Admin order (FLAG_TOTAL)","[REL] REV equals STAT_REV and CNT equals STAT_CNT {BL}
+[REL] REV does not include FLAG_TOTAL: REV plus FLAG_TOTAL is not equal to any figure on the page {BL}
+[MATH] AOV = REV / CNT of the counted orders only {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the AcmeWest current-month count shows one order more than the statistics probe
+revenue includes the flag-cancelled total
+tile and table include the order while the statistics probe does not",none (read-only),VCST-6255 · Archetype:MONEY · Technique:DT,Draft
+SR-RPT-004,"HELD, SPEC Expectation: An Order Whose Status Is Cancelled but Whose Flag Is False Is Excluded From the Figures While the Page Footnote Says Cancelled Orders Are Excluded",Sales Rep > Reporting > Order eligibility,High,BL-SR-005,ECL-13.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding. HELD AT Draft: the ticket AC4 says Cancelled-status orders are excluded; the backend (BL-SR-005 as amended) and the page exclude only the IsCancelled flag, and live 3x counted the status-only order. The SPEC expectation below is deliberately NOT flipped to the build's behaviour; the open product question is whether the status rule or BL-SR-005 stands. Do not promote until the PO answers.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org_tech=@td(ORG_TECHFLOW.platform_id), status_cancelled_order=@td(SR_MTD_ORDER_STATUS_CANCELLED.number)","[NAV] {{FRONT_URL}}/company/customer-sales?customer=@td(ORG_TECHFLOW.platform_id)
+[WAIT] the page has finished loading
+[CAPTURE] the current-month tile revenue and count (REV, CNT)
+[CAPTURE] the footnote text and the chart note text (NOTE_TEXT)
+[CAPTURE] the TechFlow current-month statistics from npm run sales-rep:stats (STAT_REV, STAT_CNT) and the total of the status-only Cancelled order as shown in its Admin order (SC_TOTAL)","[REL] CNT equals STAT_CNT minus 1 and REV equals STAT_REV minus SC_TOTAL - the Status=Cancelled, flag-false order is not counted {SPEC}
+[DOM] the footnote element under the chart contains the text ""cancelled orders are excluded"" {OBSERVED}
+[REL] what NOTE_TEXT promises (cancelled orders excluded) agrees with the figures shown {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the status-only Cancelled order is part of REV and CNT while NOTE_TEXT says cancelled orders are excluded
+the same order is counted in the TechFlow month, the Current year tile and the AOV",none (read-only),VCST-6255 · Archetype:SILENT · Technique:DT,Draft
+SR-RPT-005,An Order Placed in a Served Organization by a Buyer Is Not Counted in the Rep's Reporting Figures,Sales Rep > Reporting > Creator scope,Critical,BL-SR-002,ECL-7.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding. The buyer-created order is placed in TechFlow by @td(TECHFLOW_BUYER.email), not by the rep.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org_tech=@td(ORG_TECHFLOW.platform_id), buyer_order=@td(SR_MTD_ORDER_OTHER_CREATOR.number)","[NAV] {{FRONT_URL}}/company/customer-sales?customer=@td(ORG_TECHFLOW.platform_id)
+[WAIT] the page has finished loading
+[CAPTURE] the current-month tile revenue and count (REV, CNT)
+[CAPTURE] the TechFlow current-month statistics from npm run sales-rep:stats (STAT_REV, STAT_CNT) and the total of @td(SR_MTD_ORDER_OTHER_CREATOR.number) in its Admin order (BUYER_TOTAL)","[REL] REV equals STAT_REV and CNT equals STAT_CNT - creator-scoped statistics {BL}
+[REL] REV is smaller than STAT_REV + BUYER_TOTAL, i.e. the buyer-created total is not part of REV {BL}
+[STATE] CNT counts only orders whose creator is the signed-in rep {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the TechFlow count includes the buyer-created order
+revenue equals the sum of every order in the organization instead of the rep's own",none (read-only),VCST-6255 · Archetype:SCOPE · Technique:DT,Draft
+SR-RPT-006,"Q3 Period Shows July, August and September Only, With No Current or Upcoming Column and Month Figures Equal to the Month Statistics",Sales Rep > Reporting > Period tabs,High,BL-SR-001,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Today falls after 30 September of the current year so Q3 holds only closed months (time-bound: in January to September use the latest fully past quarter instead). Expected figures are the per-month statistics from npm run sales-rep:stats.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[ACT] click the ""Q3"" period tab
+[WAIT] the tiles and charts have finished loading
+[CAPTURE] the URL (URL_Q3), the month labels of the sales chart (LABELS), the revenue and order count in each month tooltip (JUL, AUG, SEP) and the table rows (TBL_ROWS)
+[CAPTURE] the statistics for July, August and September of the current year from npm run sales-rep:stats (STAT_JUL, STAT_AUG, STAT_SEP)","[STATE] URL_Q3 carries ?period=q3 and the Q3 tab is the active tab {SPEC}
+[COUNT] LABELS has exactly 3 entries: July, August and September, in that order {SPEC}
+[REL] JUL, AUG and SEP equal STAT_JUL, STAT_AUG and STAT_SEP (revenue and count) {SPEC}
+[COUNT] TBL_ROWS has 3 rows and none is marked Current or Upcoming {SPEC}
+[DOM] no solid-in-dashed-outline column and no ""Upcoming"" column is rendered {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","a fourth column or a ""Current"" marker appears on a fully closed quarter
+the months are labelled one month off or carry the previous year
+Q3 revenue of one month matches the neighbouring month's statistics",none (read-only),VCST-6255 · Archetype:BOUNDARY · Technique:EP,Draft
+SR-RPT-007,Rolling Twelve Months Crossing New Year Labels December of Last Year as Last Year and Every Month Matches Its Statistics Window,Sales Rep > Reporting > Period tabs,High,BL-SR-001,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Run on any day outside December and January so the window truly crosses a year boundary (time-bound).","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[ACT] click the 12 months period tab
+[WAIT] the tiles and charts have finished loading
+[CAPTURE] the URL (URL_12M), the twelve column labels with their years (LABELS) and the table rows (TBL_ROWS)
+[CAPTURE] per-month statistics for the twelve months ending with the current month from npm run sales-rep:stats (STATS_BY_MONTH)","[STATE] URL_12M carries ?period=12m {OBSERVED}
+[COUNT] LABELS has 12 entries, ordered oldest to newest, the newest being the current month {SPEC}
+[REL] every month whose calendar year differs from the current year is labelled with last year's year, never this year's {SPEC}
+[REL] each month's revenue and count in the table equal the matching entry of STATS_BY_MONTH {SPEC}
+[DOM] each table row of a month with no orders reads ""$0"" and ""0"" in its cells, none blank, and the text ""Couldn't load the report"" is absent {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","December of last year is labelled with the current year
+the window starts or ends one month off (a month missing, or thirteen columns)
+a month of last year carries a current-year figure",none (read-only),VCST-6255 · Archetype:BOUNDARY · Technique:BVA,Draft
+SR-RPT-008,"A Served Customer With No Orders Renders Zero Revenue, Zero Orders and a Dash for Average Order Value, Never NaN or Infinity",Sales Rep > Reporting > Data shapes,Medium,BL-SR-012,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+@td(ORG_REP_ONLY.name) is served by SR_REP_PRIMARY and holds no orders by design.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org_empty=@td(ORG_REP_ONLY.name)","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[ACT] click the Customer select
+[WAIT] the options list is open
+[ACT] click the option whose text starts with @td(ORG_REP_ONLY.name)
+[WAIT] the tiles have finished loading
+[CAPTURE] all tile values (TILES), the table (TBL) and the AOV chart tooltip of the current month (AOV_TIP)","[DOM] the revenue tiles read ""$0"" and the order-count tiles read ""0"" {SPEC}
+[DOM] the average order value renders ""—"" in the tile, the table and the AOV tooltip {SPEC}
+[COUNT] occurrences of NaN, Infinity or undefined in the card text == 0 {SPEC}
+[STATE] no change badge renders anywhere (no baseline) {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","NaN, Infinity or ""$0"" shown as the average order value
+the card shows ""Couldn't load the report"" for a customer with no orders",none (read-only),VCST-6255 · Archetype:RENDER · Technique:EP,Draft
+SR-RPT-009,"Current Month Shows a Solid To-Date Bar Inside a Dashed Projection Outline, and the Tile Names the Day Count and the Projection",Sales Rep > Reporting > Current month,High,BL-SR-001,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding.
+Run on any day after the first of the month (day 1 projects from one day; keep this case off the 1st to avoid a degenerate ratio).","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org_west=@td(ORG_ACMEWEST.platform_id)","[NAV] {{FRONT_URL}}/company/customer-sales?customer=@td(ORG_ACMEWEST.platform_id)
+[WAIT] the page has finished loading
+[CAPTURE] the current-month tile label (TILE_LABEL), the to-date revenue (TODATE) and today's day of month and the days in the month (DAY, DAYS)
+[ACT] hover the current-month column of the sales chart
+[CAPTURE] the tooltip lines ""Revenue to date"" and ""Projected month end"" (TIP_TODATE, TIP_PROJ)
+[CAPTURE] the sales-chart legend entries (LEGEND_SALES) and whether the current column shows a solid bar inside a dashed outline (HAS_OUTLINE)","[DOM] TILE_LABEL reads ""<Month> to date · day DAY of DAYS"" with DAY equal to today's day of month {OBSERVED}
+[MATH] TIP_PROJ = TIP_TODATE * DAYS / DAY, rounded as displayed {SPEC}
+[REL] TIP_TODATE equals TODATE and equals the AcmeWest current-month statistics revenue {SPEC}
+[DOM] the current-month column is a solid to-date bar inside a dashed outline reaching the projection, and LEGEND_SALES lists ""Projected month end"" {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","DAY or DAYS shown differs from today's date and the month length
+the dashed outline reaches only the to-date height
+TIP_PROJ equals TIP_TODATE",none (read-only),VCST-6255 · Archetype:MONEY · Technique:BVA,Draft
+SR-RPT-010,"Current-Month Tooltip Compares the Projection, Not the To-Date Figure, With the Previous Closed Month",Sales Rep > Reporting > Current month,Medium,BL-SR-003,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding.
+The previous month holds orders (non-zero) so the percentage is defined.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[ACT] hover the current-month column of the sales chart
+[CAPTURE] the tooltip's ""Projected month end"" (PROJ), the ""vs <month>"" percentage (MOM_PCT) and the previous month's revenue shown in its own tooltip (PREV)
+[ACT] hover the previous closed month's column
+[CAPTURE] the number of ""vs"" rows in that tooltip (CLOSED_VS_ROWS)","[MATH] MOM_PCT = (PROJ - PREV) / PREV * 100 to one decimal {SPEC}
+[DOM] the ""vs"" label names the previous calendar month, not the same month last year {SPEC}
+[COUNT] CLOSED_VS_ROWS == 0 - a closed month has no month-over-month row {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","MOM_PCT is computed from the to-date figure
+the label names a month other than the previous one",none (read-only),VCST-6255 · Archetype:MONEY · Technique:DT,Draft
+SR-RPT-011,"Average Order Value Per Month Is Sales Divided by Orders of the Selected Slice, Different for Two Customers and Not Averaged Per Customer",Sales Rep > Reporting > Derived figures,High,BL-SR-001,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding. The seeded AcmeWest and TechFlow AOVs differ by construction (equal AOVs would make this case vacuous).","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org_west=@td(ORG_ACMEWEST.name), org_tech=@td(ORG_TECHFLOW.name)","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] for All: current-month revenue, count and AOV (A_REV, A_CNT, A_AOV)
+[ACT] click the Customer select
+[WAIT] the options list is open
+[ACT] click the option whose text starts with @td(ORG_ACMEWEST.name)
+[WAIT] the tiles have finished loading
+[CAPTURE] revenue, count and AOV (W_REV, W_CNT, W_AOV)
+[ACT] click the Customer select
+[WAIT] the options list is open
+[ACT] click the option whose text starts with @td(ORG_TECHFLOW.name)
+[WAIT] the tiles have finished loading
+[CAPTURE] revenue, count and AOV (T_REV, T_CNT, T_AOV)","[MATH] W_AOV = W_REV / W_CNT and T_AOV = T_REV / T_CNT {SPEC}
+[MATH] A_AOV = A_REV / A_CNT, not the mean of W_AOV and T_AOV {SPEC}
+[REL] W_AOV and T_AOV are different {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A_AOV equals the average of the customers' AOVs
+AOV is shown rounded before the division (revenue / count disagrees on the same row)",none (read-only),VCST-6255 · Archetype:MONEY · Technique:EP,Draft
+SR-RPT-012,"HELD, SPEC Expectation: The Average Order Value Chart Draws the Current Month in the Same Three Column States, Including the Projected Outline",Sales Rep > Reporting > Current month,Medium,BL-SR-013,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding. HELD AT Draft: the ticket says both charts use the same column states (closed / current / upcoming); live 3x showed the AOV chart WITHOUT the projection outline and without ""Projected month end"" in its legend. The SPEC expectation below is kept; the build's behaviour is not asserted.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] the AOV chart legend entries (LEGEND_AOV) and whether its current-month column shows a solid bar inside a dashed outline (AOV_OUTLINE)
+[CAPTURE] the sales chart legend entries (LEGEND_SALES) for comparison","[DOM] the AOV chart current-month column element shows a dashed outline stroke around its solid ""to date"" bar {SPEC}
+[DOM] LEGEND_AOV contains the same ""Projected month end"" entry as LEGEND_SALES {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the AOV chart current column is a plain bar with no dashed outline
+the AOV legend lacks ""Projected month end"" while the sales legend has it",none (read-only),VCST-6255 · Archetype:RENDER · Technique:EP,Draft
+SR-RPT-013,"With No Last-Year Orders Anywhere, No Year-Over-Year Badge Renders and Last-Year Values Read Dash, Never Infinity, NaN or +100%",Sales Rep > Reporting > Derived figures,High,BL-SR-003,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+SR_REP_PRIMARY holds no orders from last year (createdDate is server-assigned, so last-year baselines are unseedable; if the stand does hold last-year orders this case is BLOCKED, not FAIL).","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] every change badge on both charts (BADGES) and the card text (CARD_TEXT)
+[ACT] hover the current-month column of the sales chart
+[CAPTURE] the ""Revenue <month> <last year>"" tooltip row (LY_ROW_CUR)
+[ACT] hover a closed month column of the sales chart
+[CAPTURE] the ""Revenue <month> <last year>"" tooltip row (LY_ROW_CLOSED)","[COUNT] BADGES has 0 entries - a null baseline suppresses the badge {BL}
+[COUNT] occurrences of Infinity, NaN or ""+100%"" in CARD_TEXT == 0 {SPEC}
+[DOM] LY_ROW_CUR and LY_ROW_CLOSED render ""—"" for the last-year value, and the row is present, not omitted {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","a ""+100%"" or Infinity badge appears over a month whose last-year baseline is zero
+the last-year tooltip row shows $0 as if it were a real value",none (read-only),VCST-6255 · Archetype:RENDER · Technique:EP,Draft
+SR-RPT-014,"A Rep Whose Customers Hold No Orders Sees Zeros, Dashes for Average Order Value and No Badges, With No Error Panel",Sales Rep > Reporting > Data shapes,Medium,BL-SR-012,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PAGING]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+SR_REP_PAGING serves customers and no order of its customers was created by the rep (the no-data shape).","front_url={{FRONT_URL}}, email=@td(SR_REP_PAGING.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] all tile values (TILES), the table (TBL), the presence of the error text ""Couldn't load the report"" (ERR_PANEL) and the Customer select text (CUSTOMER_TEXT)","[DOM] revenue and order tiles read $0 and 0, and AOV reads ""—"" {BL}
+[COUNT] change badges == 0 {SPEC}
+[STATE] ERR_PANEL is absent and the charts and table are rendered {SPEC}
+[DOM] CUSTOMER_TEXT starts with ""All my customers"" {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the card shows ""Couldn't load the report"" for a rep that has no orders
+the charts are blank instead of showing zero columns",none (read-only),VCST-6255 · Archetype:FALLBACK · Technique:EP,Draft
+SR-RPT-015,"A Rep Who Serves No Customer Opens a Page That Mounts With a Zero Report and No Error, and the Zero Is Not Presented as a Verified Result",Sales Rep > Reporting > Data shapes,Medium,"BL-SR-011, BL-SR-012",ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+SR_REP_NOCUSTOMERS serves no organization, so statistics is null. {HYPOTHESIS} for the empty-state wording: the ticket gives no text; this case asserts only what is observed (page mounts, All my customers (0), zeros, no error) and records whether an empty-state message exists.","front_url={{FRONT_URL}}, email=@td(SR_REP_NOCUSTOMERS.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] the Customer select text (CUSTOMER_TEXT), the tile values (TILES), the presence of an error panel (ERR_PANEL) and of any empty-state message (EMPTY_MSG)
+[CAPTURE] console errors during the load (CONSOLE_ERRORS)","[DOM] CUSTOMER_TEXT reads ""All my customers (0)"" {OBSERVED}
+[STATE] the page mounts without an error panel (ERR_PANEL absent) {OBSERVED}
+[DOM] the tiles read ""$0"" and ""0"" with no ""NaN"" or ""Infinity"" text {OBSERVED}
+[COUNT] CONSOLE_ERRORS entries caused by the page == 0 {OBSERVED}
+[STATE] EMPTY_MSG is recorded (present or absent) - the SPEC has no empty-state text, so absence is not a failure {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the page does not mount or shows ""Couldn't load the report""
+console shows a TypeError reading a property of null statistics",none (read-only),VCST-6255 · Archetype:FALLBACK · Technique:EP,Draft
+SR-RPT-016,"A Hand-Edited Customer Parameter for an Unserved Organization or Garbage Never Shows Another Organization's Figures, Even Transiently, and Falls Back to All My Customers",Sales Rep > Reporting > Customer scope,Critical,BL-SR-002,ECL-7.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+@td(ORG_SUSPENDED.name) is not served by SR_REP_PRIMARY (established fixture fact).","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, unserved_org=@td(ORG_SUSPENDED.platform_id)","[NAV] {{FRONT_URL}}/company/customer-sales?customer=@td(ORG_SUSPENDED.platform_id)
+[WAIT] the page has finished loading
+[CAPTURE] the Customer select text (SEL_UNSERVED), the tile values (TILES_UNSERVED), the URL (URL_UNSERVED) and the organization names visible anywhere in the card (NAMES_UNSERVED)
+[NAV] {{FRONT_URL}}/company/customer-sales?customer=not-an-org-id
+[WAIT] the page has finished loading
+[CAPTURE] the Customer select text (SEL_GARBAGE), the tile values (TILES_GARBAGE) and the URL (URL_GARBAGE)
+[NAV] {{FRONT_URL}}/company/customer-sales
+[CAPTURE] the All-customers tile values (TILES_ALL)","[DOM] SEL_UNSERVED and SEL_GARBAGE start with ""All my customers"" {BL}
+[REL] TILES_UNSERVED and TILES_GARBAGE equal TILES_ALL - no other organization's figures, at any moment {BL}
+[COUNT] occurrences of the unserved organization's name in NAMES_UNSERVED == 0 {BL}
+[STATE] URL_UNSERVED and URL_GARBAGE no longer carry the invalid ?customer= value {OBSERVED}
+[STATE] no spinner remains after the page settled {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the unserved organization's revenue shows in a tile, even for a moment
+the Customer select shows the unserved organization or a blank value
+the page stays on a spinner",none (read-only),VCST-6255 · Archetype:SCOPE · Technique:EG,Draft
+SR-RPT-017,A Buyer Who Is Not a Sales Rep Sees No Reporting Item and Is Redirected From a Pasted Reporting Link Without Any Figures,Sales Rep > Reporting > Access,Critical,BL-SR-011,ECL-7.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_BUYER]
+Store {{STORE_ID}} (B2B-store). TECHFLOW_BUYER is a loginable non-rep member of a served organization (the ORG_USER account is store-gated out of B2B-store on vcptcore, hence this fixture). BLOCKED, never FAIL, when the account cannot sign in.","front_url={{FRONT_URL}}, email=@td(TECHFLOW_BUYER.email), password=@td(TECHFLOW_BUYER.password)","[NAV] {{FRONT_URL}}/account
+[WAIT] the left rail is rendered
+[CAPTURE] whether ""Sales Rep hub"" or ""Reporting"" appears in the rail (RAIL_HAS_HUB)
+[NAV] {{FRONT_URL}}/company/customer-sales?period=q3
+[WAIT] navigation settles
+[CAPTURE] the final URL (FINAL_URL), whether any revenue tile, chart or the text ""Sales statistics"" is in the DOM (HAS_FIGURES)","[COUNT] RAIL_HAS_HUB == 0 {BL}
+[NAV] FINAL_URL ends with /account/dashboard {OBSERVED}
+[STATE] HAS_FIGURES is false - no figures or chart markup rendered {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the Reporting page mounts for a non-rep
+the rail lists ""Reporting"" or ""Sales Rep hub"" for a buyer
+the redirect lands on a blank page",none (read-only),VCST-6255 · Archetype:SCOPE · Technique:DT · Role:non-rep-buyer,Draft
+SR-RPT-018,"At 375 Pixels the Reporting Page Stacks Without Clipped Labels, the Table Becomes a Stacked List and Nothing Overlaps",Sales Rep > Reporting > Responsive,Medium,"BL-UI-001, BL-UI-003",ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Viewport 375 x 812.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] the document scroll width and the viewport width (SCROLL_W, VIEW_W), the month labels of the charts (LABELS), whether change badges are visible (BADGES_VISIBLE), and whether the data is a table or a stacked list (DATA_FORM)
+[ACT] reload the page
+[CAPTURE] DATA_FORM after the reload (DATA_FORM_RELOAD)","[OVERFLOW] SCROLL_W does not exceed VIEW_W - no horizontal scroll {BL}
+[DOM] each month label element of the charts is fully visible: its text width is not larger than its column width {BL}
+[DOM] the data region is a stacked list element, not a ""table"" element with column headers {OBSERVED}
+[REL] the toolbar controls (period tabs, Customer select) wrap and stay inside the viewport {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","horizontal scrollbar on the page
+month labels overlap or are cut off
+the data table keeps its desktop columns at 375px",none (read-only; restore the desktop viewport),VCST-6255 · Archetype:RENDER · Technique:EP,Draft
+SR-RPT-019,"In Dark Mode and With a Non-Default Theme Preset, Bars, the Projection Outline, the Upcoming Column and Badges Stay Legible",Sales Rep > Reporting > Theme,Medium,BL-A11Y-003,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding.
+Dark mode enabled and a non-default theme preset applied via the storefront settings; record which.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] the computed fill of a closed-month bar, the current-month to-date bar and its dashed outline stroke, the Upcoming column and the axis text, and the page background (COLORS)
+[CAPTURE] the contrast ratio of each of these against the page background (RATIOS)","[REL] the to-date bar, the dashed outline and the Upcoming column are each distinguishable from the card background (contrast of graphical objects at least 3:1) {BL}
+[REL] axis text and badge text meet at least 4.5:1 against their background {BL}
+[DOM] the ""Upcoming"" label is readable {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the dashed outline or the Upcoming column disappears against the dark card
+badge text is unreadable under the preset",none (read-only; reset the theme mode and preset),VCST-6255 · Archetype:RENDER · Technique:EP,Draft
+SR-RPT-020,A Bogus Period Parameter Falls Back to the Current Year Tab Without an Error and With Figures That Agree With the Tab Shown,Sales Rep > Reporting > Period tabs,Medium,BL-SR-009,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales?period=bogus
+[WAIT] the page has finished loading
+[CAPTURE] the active tab (ACTIVE_TAB), the month labels of the sales chart (LABELS), the URL (URL_BOGUS) and any error text (ERR)
+[NAV] {{FRONT_URL}}/company/customer-sales
+[CAPTURE] the month labels of the default view (LABELS_DEFAULT)","[DOM] ACTIVE_TAB is ""Current year"" {OBSERVED}
+[REL] LABELS equal LABELS_DEFAULT - the figures match the tab shown {SPEC}
+[STATE] ERR is absent {SPEC}
+[STATE] URL_BOGUS may keep the invalid value (recorded: observed behaviour keeps it) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","an error panel or a blank card for an unknown period
+the highlighted tab and the figures describe different ranges",none (read-only),VCST-6255 · Archetype:FALLBACK · Technique:EG,Draft
+SR-RPT-021,"The Last-Year Switch Draws a Line on Its Own Chart Only, Hides It When Turned Off and Is Remembered Per Browser Across Reload",Sales Rep > Reporting > Chart controls,Medium,BL-SR-013,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Both switches start off (clear the page's localStorage keys first). The last-year line is all zeros on this stand (unseedable baselines), so the case asserts presence and state, not values.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[ACT] turn on the Last-year switch of the sales chart
+[CAPTURE] the sales chart last-year line present (SALES_LINE_ON) and the AOV chart last-year line present (AOV_LINE_ON_1)
+[NAV] reload the page
+[CAPTURE] both switch states and lines after reload (SALES_AFTER, AOV_AFTER)
+[ACT] turn off the Last-year switch of the sales chart
+[NAV] reload the page
+[CAPTURE] the sales chart switch state (SALES_OFF_AFTER)","[STATE] SALES_LINE_ON is true and AOV_LINE_ON_1 is false - the switches are independent {SPEC}
+[STATE] SALES_AFTER is on and AOV_AFTER is off after the reload - remembered per browser {SPEC}
+[STATE] SALES_OFF_AFTER is off - turning it off is also remembered {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the preference resets on reload
+turning on one chart's switch changes the other chart",remove the Last-year preference keys from localStorage,VCST-6255 · Archetype:LIFECYCLE · Technique:ST,Draft
+SR-RPT-022,The Year-to-Date Figure on Reporting Equals the Hub Dashboard Year-to-Date Figure for the Same Rep at the Same Time,Sales Rep > Reporting > Cross-surface parity,High,BL-SR-002,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+No order is created or changed between the two reads. The Dashboard window is UTC-based and the Reporting windows are browser-local (3x observation, UTC+3): on a stand and day where an order sits in the last hours of a month, the two can legitimately differ, so record the browser timezone.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] the year-to-date revenue and count summed over the Current year months (REP_YTD_REV, REP_YTD_CNT) and the browser timezone offset (TZ)
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the hub dashboard widgets have rendered
+[CAPTURE] the Orders placed YTD card revenue and count (DASH_YTD_REV, DASH_YTD_CNT)","[REL] REP_YTD_REV equals DASH_YTD_REV and REP_YTD_CNT equals DASH_YTD_CNT {BL}
+[REL] when they differ, the difference equals the orders created inside the timezone offset TZ at a month or year boundary, otherwise FAIL {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Reporting and Dashboard disagree on year-to-date for the same rep
+the Reporting total omits the current month",none (read-only),VCST-6255 · Archetype:PARITY · Technique:FLOW,Draft
+SR-RPT-023,"The All Orders Link Opens the Customer Orders List, and the Page Records Whether the Chosen Customer and Period Carry Over",Sales Rep > Reporting > Cross-surface parity,Low,BL-SR-002,ECL-7.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding. The orders list is creator-agnostic (BL-SR-002 half b): its total is expected to differ from the creator-scoped Reporting figure. The ticket layout gives no rule for carrying the slice, so carry-over is recorded and is not a pass criterion.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org_tech=@td(ORG_TECHFLOW.name)","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[ACT] click the Customer select
+[WAIT] the options list is open
+[ACT] click the option whose text starts with @td(ORG_TECHFLOW.name)
+[WAIT] the tiles have finished loading
+[ACT] click the ""Q3"" period tab
+[WAIT] the tiles have finished loading
+[CAPTURE] the Q3 revenue and count for TechFlow (REP_REV, REP_CNT)
+[ACT] click ""All orders →""
+[WAIT] the orders list has rendered
+[CAPTURE] the URL (URL_ORDERS), whether a customer or period filter is applied (FILTER_APPLIED) and the list total (LIST_TOTAL)","[NAV] URL_ORDERS starts with {{FRONT_URL}}/company/customer-orders {SPEC}
+[REL] LIST_TOTAL is not smaller than REP_CNT - the creator-agnostic list contains at least every order the report counted {BL}
+[STATE] FILTER_APPLIED is recorded as observed; its value is not a pass criterion {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the link opens a different page than the customer orders list
+the list holds fewer orders than the report counted",none (read-only),VCST-6255 · Archetype:PARITY · Technique:EG,Draft
+SR-RPT-024,"The Charts Are Reachable and Operable by Keyboard: Tab Enters the Chart, Arrow Keys Move Between Columns, the Tooltip Follows Focus and Escape Dismisses It",Sales Rep > Reporting > Accessibility,Medium,"BL-A11Y-001, BL-A11Y-002",ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Keyboard only for the whole case: no pointer interaction after the page loads.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[KEY] press Tab until focus enters the sales chart
+[CAPTURE] the focused column label and whether its tooltip is visible (FOCUS_1, TIP_1)
+[KEY] press ArrowRight
+[CAPTURE] the focused column label (FOCUS_2) and the tooltip text (TIP_2)
+[KEY] press ArrowRight until the last reachable column
+[CAPTURE] the last focused label (FOCUS_LAST) and whether an Upcoming column took focus (UPCOMING_FOCUSED)
+[KEY] press Escape
+[CAPTURE] whether the tooltip is hidden (TIP_AFTER_ESC)
+[KEY] press Tab until ""Show as table"" and press Enter
+[CAPTURE] whether the table is shown (TABLE_SHOWN)","[STATE] TIP_1 is true - the tooltip shows on keyboard focus {SPEC}
+[REL] FOCUS_2 is the next column after FOCUS_1 {BL}
+[STATE] UPCOMING_FOCUSED is false and FOCUS_LAST is the current month {OBSERVED}
+[STATE] TIP_AFTER_ESC is true (the tooltip is dismissed) {OBSERVED}
+[STATE] TABLE_SHOWN is true - the same data is reachable as a table by keyboard {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Tab skips the whole chart
+the tooltip appears only on mouse hover
+focus is trapped inside the chart",none (read-only),VCST-6255 · Archetype:RENDER · Technique:EP,Draft
+SR-RPT-025,"KPI Tile Money Uses the Same Rounding as the Tooltip and the Table, Not a One-Decimal Compact Form That Drops a Trailing Zero",Sales Rep > Reporting > Formatting,Low,BL-SR-013,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Current-month orders are TIME-TERMINAL (createdDate is server-assigned and the month they land in closes): [PRE] seed them in the run with node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD (orders @td(SR_MTD_ORDER_WEST_1.number), @td(SR_MTD_ORDER_WEST_2.number), @td(SR_MTD_ORDER_TECH_1.number), @td(SR_MTD_ORDER_FLAG_CANCELLED.number), @td(SR_MTD_ORDER_STATUS_CANCELLED.number), @td(SR_MTD_ORDER_OTHER_CREATOR.number)). BLOCKED, never FAIL, when they are absent from the current month. Expected figures are the per-window statistics read with npm run sales-rep:stats, never remembered numbers. A page opened BEFORE the seed keeps old figures until a full reload (3x observation), so open the page after seeding. AcmeWest current month holds a non-integer total by construction (two seeded orders with cents).","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org_west=@td(ORG_ACMEWEST.platform_id)","[NAV] {{FRONT_URL}}/company/customer-sales?customer=@td(ORG_ACMEWEST.platform_id)
+[WAIT] the page has finished loading
+[CAPTURE] the current-month revenue text in the tile (TILE_TXT), the tooltip (TIP_TXT), the table row (TBL_TXT) and the axis label of the Average line (AXIS_TXT)","[FORMAT] TILE_TXT shows currency with a consistent decimal rule: either two decimals with a trailing zero kept, or the same whole-dollar rounding as TIP_TXT and TBL_TXT {SPEC}
+[REL] the three renderings round to the same value {SPEC}
+[FORMAT] no money value in the tile row ends in a single decimal digit (such as $400.8) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the tile reads a one-decimal amount (for example $400.8) while the tooltip reads $401
+the three surfaces round the same amount to different values",none (read-only),VCST-6255 · Archetype:RENDER · Technique:EP,Draft
+SR-RPT-026,"The ""Show as Table"" Control and the Two Last-Year Switches Expose a Role, a Pressed or Expanded State and a Distinct Accessible Name",Sales Rep > Reporting > Accessibility,Low,"BL-A11Y-001, BL-A11Y-002",ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] the accessibility snapshot entries for ""Show as table"" (TABLE_NODE) and for both Last-year switches (SWITCH_1, SWITCH_2) with role, name and checked or expanded state
+[ACT] activate ""Show as table""
+[CAPTURE] TABLE_NODE_AFTER","[STATE] TABLE_NODE has an interactive role (button or switch) {BL}
+[STATE] TABLE_NODE exposes a pressed, checked or expanded state that changes in TABLE_NODE_AFTER {BL}
+[REL] the accessible names of SWITCH_1 and SWITCH_2 are different and name their chart {BL}
+[STATE] each switch exposes a checked state {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","""Show as table"" is a generic element with no role or state
+both switches share one accessible name",none (read-only),VCST-6255 · Archetype:RENDER · Technique:EP,Draft
+SR-RPT-027,While the Statistics Query Is Loading the Figures Are Marked Busy and Are Not Presented as a Real Zero Report,Sales Rep > Reporting > Loading and errors,Low,"BL-SR-012, BL-A11Y-002",ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Throttle the network or delay the SalesRepMonthlyOrderStatistics request so the loading state lasts at least 3 seconds.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[CAPTURE] immediately while loading: the visual state of the tiles (spinner or dimmed) (VISUAL_LOADING) and the accessibility snapshot of the tiles (A11Y_LOADING) with any busy or status flag
+[WAIT] the load completes
+[CAPTURE] A11Y_DONE","[STATE] A11Y_LOADING carries a busy flag or a status text such as loading on the tile region {BL}
+[DOM] A11Y_LOADING does not present ""$0 / 0 / —"" as the only content {BL}
+[STATE] VISUAL_LOADING shows a dimmed or spinner state {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the accessibility tree reads $0 / 0 / — during loading with no busy flag
+the loading state lasts several seconds with no status text",none (read-only; remove the throttle),VCST-6255 · Archetype:FALLBACK · Technique:EG,Draft
+SR-RPT-028,"Early in the Month the Month-Over-Month Percentage Is Either Suppressed or Meaningful, Never a Misleading Minus 100 Percent From a Zero Projection",Sales Rep > Reporting > Current month,Low,BL-SR-003,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Time-bound: run on days 1 to 5 of a month in which the rep has no order yet (otherwise BLOCKED). The SPEC defines the percentage but is silent on near-empty projections; the last assertion is a {HYPOTHESIS} question, not a requirement.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[ACT] hover the current-month column of the sales chart
+[CAPTURE] ""Projected month end"" (PROJ), the ""vs <month>"" row (MOM_ROW) and the previous month revenue (PREV)","[MATH] when MOM_ROW is shown, MOM_ROW = (PROJ - PREV) / PREV * 100 to one decimal {SPEC}
+[STATE] when PROJ is 0 the tooltip does not present a percentage as a verdict on the month - recorded as observed {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","""vs Oct -100.0%"" on a day when the month has barely started
+the tooltip percentage disagrees with (projection - previous) / previous",none (read-only),VCST-6255 · Archetype:MONEY · Technique:BVA,Draft
+SR-RPT-029,"A Failed Statistics Query Shows the ""Couldn't Load the Report"" Panel, Keeps the Toolbar Usable and Leaves No Stale Figures",Sales Rep > Reporting > Loading and errors,Medium,BL-SR-012,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+Block the POST /graphql request whose operation is SalesRepMonthlyOrderStatistics for one load (network interception), then allow it.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/customer-sales (with the request blocked)
+[WAIT] the page settles
+[CAPTURE] the card text (CARD_ERR), tile values if any (TILES_ERR) and whether the period tabs and Customer select are enabled (TOOLBAR_OK)
+[ACT] remove the request block
+[ACT] click the ""Q3"" period tab
+[WAIT] the page has finished loading
+[CAPTURE] the card text (CARD_OK) and the tile values (TILES_OK)","[DOM] CARD_ERR contains ""Couldn't load the report"" {OBSERVED}
+[COUNT] money values in TILES_ERR == 0 - no stale or placeholder figures presented as a result {BL}
+[STATE] TOOLBAR_OK is true {SPEC}
+[STATE] CARD_OK shows the Q3 figures and no error text - the page recovers {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","figures of an earlier view stay on screen after the query failed
+the toolbar is disabled so the page cannot recover",none (read-only; remove the request block),VCST-6255 · Archetype:FALLBACK · Technique:EG,Draft
+SR-RPT-030,In Non-English Cultures the Reporting Menu Item and Page Strings Are Translated and No Raw Translation Key Shows,Sales Rep > Reporting > Localization,Medium,BL-SR-013,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Store {{STORE_ID}} (B2B-store), SalesRep.Enabled=true, the sales-rep plugin that ships the Reporting page (route /company/customer-sales; VCST-6668 moved it off the ticket's /company/reporting) deployed.
+The store has the de-DE and es-ES cultures; if a culture is absent the case is BLOCKED for that culture (not FAIL). Closes the gap that the existing hub label-translation check records the rail but does not check that the new Reporting label is translated.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account
+[ACT] switch the language to German
+[WAIT] the rail is rendered
+[CAPTURE] the hub rail text (RAIL_DE)
+[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] the page has finished loading
+[CAPTURE] the page text (PAGE_DE) and the tooltip text of a closed month (TIP_DE)
+[ACT] switch the language to Spanish
+[CAPTURE] RAIL_ES, PAGE_ES and TIP_ES likewise","[COUNT] occurrences of a dotted i18n key token (matches /sales_rep\.[a-z_.]+/i or /^[A-Z_]+\.[A-Z_.]+$/ or the literal PAGE.TITLE) in RAIL_DE, PAGE_DE, TIP_DE, RAIL_ES, PAGE_ES and TIP_ES == 0 {BL}
+[REL] the Reporting rail label in RAIL_DE and RAIL_ES differs from the English ""Reporting"" unless the translated word is identical in that language {SPEC}
+[REL] PAGE_DE and PAGE_ES contain no English card title ""Sales statistics"" or tooltip label ""Projected month end"" {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","a raw key such as Sales_rep.reporting.* in the rail or the card
+the card stays in English after the switch",none (read-only; switch the language back to English),VCST-6255 · Archetype:RENDER · Technique:EP,Draft
