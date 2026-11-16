@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadRegistry } from "../../../lib/strategy-artifacts.mjs";
+import { shapeOf } from "../../../lib/route.mjs";
 
 // The tracker's names for P0/P1 come from project-profile.json `tracker.p0p1Priorities` (an array of names); with no
 // profile entry, this default (Jira's Highest/High plus the P0/P1/Blocker/Critical spellings). A name not listed reads as P2+.
@@ -105,6 +106,10 @@ function applyCapabilities(floors, bundle, caps) {
   });
 }
 
+/** A non-Bug ticket whose change has the technical-change shape — the same test route.mjs uses to route it. */
+const isRefactor = (bundle, fields) => !!bundle.change && String(fields.type ?? "").toLowerCase() !== "bug"
+  && shapeOf(bundle).shape === "technical-change";
+
 /** A PR closed without merge never shipped: it is not change surface (check-bundle counts it out the same way). */
 export const isAbandoned = (p) => p.state === "closed" && p.merged === false;
 
@@ -170,6 +175,10 @@ function baseFloors(bundle, { domainMapText, p01Names, changeMap }) {
   const failedLookup = gaps.find((g) => g.where === "known.domain" || g.where.startsWith("known.tc:scope") || g.where.startsWith("known.regression:select"));
   const f5 = atRisk.length > 0 ? floor("F5", true, `${atRisk.length} suite(s) at risk: ${atRisk.slice(0, 5).map((c) => c.suite).join(", ")}`, ["coverage triage + regression after the staleness check"])
     : failedLookup ? floor("F5", true, `doubt: ${failedLookup.where} (${failedLookup.reason})`, ["coverage triage + regression after the staleness check"])
+    // A refactor (route.mjs `shapeOf`: every refactor signal resolves) has no ACs to aim a checklist at: the regression
+    // over its blast radius IS its test, so "0 suites at risk by path" is a lookup to widen, not a clean result.
+    : isRefactor(bundle, fields) ? floor("F5", true, "refactor (technical-change shape) with 0 suite(s) at risk by path: the blast radius is looked up, not assumed empty",
+      ["coverage triage + regression after the staleness check", "tc:scope --domain widening; still no suite ⇒ Out of scope names the refactor's missing regression"])
     : floor("F5", false, "0 suite(s) at risk", ["coverage triage + regression after the staleness check"]);
 
   const notDeployed = (bundle.blockers ?? []).filter((b) => /^NOT DEPLOYED:/.test(b));

@@ -2,7 +2,8 @@
 
 > **Before posting any tracker comment, read `knowledge/execution/tracker-ops.md` §0 — the GOLDEN RULE.**
 
-The command fixes the order: reconcile → triage → investigate → `qa-bug` → teardown → **5-verdict** →
+The command fixes the order: triage → investigate → reconcile (results are final only after triage) →
+`qa-bug` → teardown → **5-verdict** →
 files → page and comment → 5-status → docs → 5-docs-map → kb → run cost → lifecycle question. This file
 holds the rules for the steps that are the repo's; reconcile is vc-test's
 ([`reconcile.md`](../../../plugins/vc-test/skills/qa-test-strategy/reconcile.md)), triage is
@@ -100,7 +101,7 @@ tracker; no PRE-EXISTING match was filed again; every ticket created has the ope
 
 ## 5-verdict. Reconcile AC & DoD, then decide the verdict
 
-The strategy is already reconciled — the command's Stage 5 order, step 1 (Reconcile) — and the cap it
+The strategy is already reconciled — the command's Stage 5 order, step 3 (Reconcile, after triage) — and the cap it
 recorded binds the verdict decided here. Then two moves, both owned by the vc-test plugin:
 
 ### 5-verdict.1 Compare AC & DoD vs implementation
@@ -119,7 +120,15 @@ is **recorded** here and **published** by the comment, so a late finding amends 
 
 - **`summary.json`** — keys come only from
   [`../../templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json):
+  - `ticket`, `date`, `environment`, `verdict` — required by `summary:validate`
   - `path: "STRATEGY"`, `flow: "feature-test"` — depth is `strategy.depth_label`
+  - `build` — `platform`, `theme`, `relevant_modules`, and `build.deployed` as Stage 0's preflight and the
+    bundle's per-PR deployment probed it (`UNKNOWN` is legal, a guess is not). `/qa-docs` reads
+    `build.deployed`; without it, 5-docs treats the change as not deployed
+  - `total_cases` / `passed` / `failed` / `blocked` — the executed checklist items plus the regression lane's
+    cases; the tracker comment's "N checks" line is rendered from them
+  - `suggested_tickets` — every finding offered as its own ticket that was not created (the *Suggested
+    separate tickets* table renders only from it)
   - `strategy` — reconciled; `status_transitions[]` — every hop and skip
   - `regression` — the regression lane's run (`c1`: suites, ids, `run_id`, `pass_rate`), or its `skipped_reason`
   - `visual` — the visual lane, or `ran: false` + `skipped_reason`; never `null` (a `null` reads as a gap)

@@ -18,9 +18,9 @@ stage names. Diagram: `docs/qa-test-flow.md`.
              ── --dry-run stops here
  3 PREPARE   only the rows marked RUN: contract refresh · test model · mind map · staleness check of
              cases at risk → checklist (every item names its R-n)
- 4 EXECUTE   ≤3 browser lanes: checklist runners ‖ exploratory (first or alongside, D3) ‖ visual ‖ regression
-             of the selected, non-stale cases
- 5 CLOSE     reconcile → triage → investigate → qa-bug → verdict → summary.json + verdict.md
+ 4 EXECUTE   ≤3 browser lanes: checklist runners ‖ exploratory (first or alongside, D3) ‖ visual
+             → then regression of the selected, non-stale cases (it takes all three lanes)
+ 5 CLOSE     triage → investigate → reconcile → qa-bug → verdict → summary.json + verdict.md
              → qa-report (page + ONE comment, after a yes) → status (confirmed) → docs → kb → candidate cases
 ```
 
@@ -155,7 +155,9 @@ Only the rows marked `RUN`; independent ones in one message.
 **Gate, inline, before any browser opens** — fix a failure here, never carry it as a note: the strategy's
 gate is green and its `Status:` is not `DRAFT`; a model that ran has every gate line `PASS`/`FIXED`; every
 in-scope risk, scenario row and node is an item or an omission line; every item has a Data cell
-(`FIXTURE-GAP` with its reason counts); every artifact row is produced or `SKIP` with its reason.
+(`FIXTURE-GAP` with its reason counts); every artifact row is produced or `SKIP` with its reason. A
+`FIXTURE-GAP` the approved strategy did not list (the model or the checklist found it) goes to `### Amendments`
+and is shown to the operator before Stage 4, with the same two answers as Stage 2.
 
 ## 4 — Execute
 
@@ -169,7 +171,8 @@ in-scope risk, scenario row and node is an item or an omission line; every item 
 - **Visual** — `Visual lane: RUN`: `vc-test:ui-ux-expert` on the free lane; its brief's first line invokes the
   Skill `vc-test:qa-design` (§Visual).
 - **Regression** — `Coverage triage + regression: RUN` and at least one non-stale case:
-  `/qa-regression <suites> --ids <non-stale case ids> --no-promote` (§Regression); its lanes count in the ≤3.
+  `/qa-regression <suites> --ids <non-stale case ids> --no-promote`, in its own message **after** every lane
+  above has returned — it takes all three browser slots and pool accounts (§Regression).
 - **Data** is made as each item's Data cell says (§Data); the ledger stays open through Stage 5.
 - **Join** — every bullet of §Join gate. You write the Results into the checklist; runners never edit it.
 
@@ -177,14 +180,16 @@ in-scope risk, scenario row and node is an item or an omission line; every item 
 
 In this order ([`close-out.md`](../skills/qa-test/close-out.md) holds the rules):
 
-1. **Reconcile** — [`reconcile.md`](../../plugins/vc-test/skills/qa-test-strategy/reconcile.md): fill the
-   round's `### Reconciliation`; a High/Critical risk without a result caps the verdict; write
-   `summary.json.strategy` (never null once a strategy ran). Done once, here — close-out.md §5-verdict uses it.
-2. **Triage** — App Insights for the test window ([`triage.md`](../skills/qa-test/triage.md) §1); then the
+1. **Triage** — App Insights for the test window ([`triage.md`](../skills/qa-test/triage.md) §1); then the
    Skill `vc-test:qa-triage-results`, args `ticket <TICKET> --verify --min-severity P2`, and for the regression
    lane `<RUN_ID> --verify --min-severity P2` — never `--fix`. A non-empty `unresulted[]` sends you back to
    the join. What each class goes to: close-out.md §Triage.
-3. **Investigate** — every Medium+ real-bug candidate goes through `vc-fix:qa-investigate` (triage's Phase 4).
+2. **Investigate** — every Medium+ real-bug candidate goes through `vc-fix:qa-investigate` (triage's Phase 4).
+3. **Reconcile** — only now, when triage's re-runs and returns to the join are over and every result is
+   final: [`reconcile.md`](../../plugins/vc-test/skills/qa-test-strategy/reconcile.md) fills the round's
+   `### Reconciliation`; a High/Critical risk without a result caps the verdict; write `summary.json.strategy`
+   (never null once a strategy ran). Done once, here — close-out.md §5-verdict uses it. A result that changes
+   after this point means reconcile again.
 4. **Bugs** — ONE list question for every bug that would be its own ticket, then `/vc-fix:qa-bug` once per
    confirmed bug, sequentially, `--evidence <package>` and the shape its provenance gives (close-out.md
    §5-file).

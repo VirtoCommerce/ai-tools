@@ -14,9 +14,9 @@ One ticket, one strategy-driven path, six stages. The approved test strategy
              ── --dry-run stops here
  3 PREPARE   only the rows marked RUN: contract refresh · test model · mind map · staleness check of
              cases at risk → checklist (every item names its R-n)
- 4 EXECUTE   ≤3 browser lanes: checklist runners ‖ exploratory (first or alongside, D3) ‖ visual ‖ regression
-             of the selected, non-stale cases
- 5 CLOSE     reconcile → triage → investigate → qa-bug → verdict → summary.json + verdict.md
+ 4 EXECUTE   ≤3 browser lanes: checklist runners ‖ exploratory (first or alongside, D3) ‖ visual
+             → then regression of the selected, non-stale cases (it takes all three lanes)
+ 5 CLOSE     triage → investigate → reconcile → qa-bug → verdict → summary.json + verdict.md
              → qa-report (page + ONE comment, after a yes) → status (confirmed) → docs → kb → candidate cases
 ```
 

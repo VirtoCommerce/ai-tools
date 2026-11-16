@@ -73,8 +73,10 @@ Resolve via the 16-status map in `skills/qa-defect/defect-lifecycle-workflow.md`
 | **Sub-task** | any | **inherit parent** | Resolve the parent work item and re-enter this matrix as the **parent's** type × status. |
 
 **A refactor, a migration, a dependency or runtime bump is a `test` job.** It has no row of its own: the
-strategy's floors (F5) make its strategy regression-averse — it runs the blast radius, not a checklist aimed
-at acceptance criteria that do not exist. Stale cases it leaves behind are not repaired by `/qa-test`; they
+strategy's F5 fires on the change's refactor shape even when no case is at risk by path
+([`floors.md`](../../../plugins/vc-test/skills/qa-test-strategy/floors.md) F5), so it runs the blast radius
+(widened by `tc:scope --domain`), not a checklist aimed at acceptance criteria that do not exist; a blast
+radius that still holds no suite is named in Out of scope, never passed silently. Stale cases it leaves behind are not repaired by `/qa-test`; they
 go to `/qa-test-lifecycle`.
 
 ---

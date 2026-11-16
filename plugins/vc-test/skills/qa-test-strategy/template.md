@@ -72,7 +72,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 | Case authoring | never in the run (D2) — candidate cases are listed at close-out |
 
 ### Data
-<per risk or global: existing @td() alias · live-discover · create in the case (FIFTH RULE) · seeder named by a Data cell>
+<per risk or global: existing @td() alias · live-discover · create in the case (FIFTH RULE) · seeder named by a Data cell · FIXTURE-GAP: <the state no source reaches>>
 Must differ: <which values must differ for R-n to be decidable> · Before redeploy: <records to create on the old build, or none>
 
 ### Out of scope

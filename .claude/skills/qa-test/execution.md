@@ -11,11 +11,11 @@ its own browser session and its own pool user. Count the live lanes before every
 | Admin + API | always | `qa-backend-expert` | `playwright-edge` | `@td(AGENT_POOL_SLOT_3.*)` | the Admin/REST/GraphQL section |
 | Exploratory | `Exploratory: RUN` | `qa-testing-expert` | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.*)` | `/qa-exploratory ticket <TICKET> <env>` |
 | Visual | `Visual lane: RUN` | `vc-test:ui-ux-expert` | the Playwright lane left free (else the first to return) | the account role the brief names (§Visual) | the `vc-test:qa-design` skill's axes |
-| Regression | `Coverage triage + regression: RUN`, ≥1 non-stale case | `/qa-regression`'s runners | the lanes its plan takes — counted in the three | the suites' own fixtures | the non-stale cases at risk (§Regression) |
+| Regression | `Coverage triage + regression: RUN`, ≥1 non-stale case | `/qa-regression`'s runners | all three, once the other lanes have returned (§Regression) | the suites' own fixtures | the non-stale cases at risk (§Regression) |
 
 **When the three lanes are full, yield in this order:** an Exploratory row marked **first** (it is upstream
-of what the runners check) → the checklist runners (they are the verdict's evidence) → visual → regression
-(released last; triage joins on everything). State the order chosen.
+of what the runners check) → the checklist runners (they are the verdict's evidence) → visual. Regression is
+not in this queue: it starts only when all of them have returned (§Regression). State the order chosen.
 
 The pool slots are the ones in [`../../knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
 §Test isolation in parallel runs. A checklist with a cross-layer section gives it to the lane that
@@ -94,15 +94,20 @@ never enters it — it is a `stale_cases` entry for `/qa-test-lifecycle`. Captur
 and the wall clock for `summary.json.regression`. Every case stale ⇒ the lane is not dispatched, and
 `verdict.md` says why.
 
-**You drive it, beside the other lanes — never hand `/qa-regression` to a subagent.** Its live watcher must be
-owned by the top-level session, because a subagent's background process dies with its turn
-([`qa-regression.md`](../../commands/qa-regression.md) Step 3, Watcher OWNERSHIP). So before Stage 4's
-message, run its pre-dispatch steps inline: Step 0 (`/preflight regression <selection>`), Step 1 (manifest
-and selection), Step 2 (`RUN_ID` and `npm run regression:plan`), Step 3 (the status file, and the watcher in
-your own background). Then put the `regression-orchestrator` dispatch — `--run-id {RUN_ID}` and Step 0's
-`--accept` ids, description prefix `[vc-test:qa-test.regression]` — in the same Stage 4 message as the
-runners; it runs Steps 4–6 and closes the run (`regression:close`). Its browser slots count in the ≤3 lanes.
-While it runs, keep the watcher alive (Step 3's self-heal).
+**It runs AFTER the other lanes, never beside them.** `/qa-regression` fills all three browser slots and the
+three seeded pool accounts (`qa-regression.md` Step 4, `{{LANE_ID}}`) and has no flag that leaves a slot or an
+account to someone else — beside the runners it would put a second agent on `playwright-chrome` /
+`playwright-edge` and on `AGENT_POOL_SLOT_1` / `_3`. So it is dispatched in its own message once every
+checklist runner, the exploratory lane and the visual lane have returned.
+
+**You drive it — never hand `/qa-regression` to a subagent.** Its live watcher must be owned by the
+top-level session, because a subagent's background process dies with its turn
+([`qa-regression.md`](../../commands/qa-regression.md) Step 3, Watcher OWNERSHIP). So, when the other lanes
+have returned, run its pre-dispatch steps inline: Step 0 (`/preflight regression <selection>`), Step 1
+(manifest and selection), Step 2 (`RUN_ID` and `npm run regression:plan`), Step 3 (the status file, and the
+watcher in your own background). Then dispatch `regression-orchestrator` — `--run-id {RUN_ID}` and Step 0's
+`--accept` ids, description prefix `[vc-test:qa-test.regression]`; it runs Steps 4–6 and closes the run
+(`regression:close`). While it runs, keep the watcher alive (Step 3's self-heal).
 
 ## Map signals
 
