@@ -60,6 +60,10 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 | `LIFECYCLE` | Illegal state transition accepted, or a legal one missing its cascade / side effect | Is the invalid transition rejected *explicitly*, not silently ignored? |
 | `CONFIG` | Behaviour diverges on a flag, setting, or environment that the test never varied | Does this still hold with the flag off — and is "off" a clean absence or an error? |
 | `FALLBACK` | A missing or wrong default — absent template, unrecognized enum treated as benign, null read as zero | What happens when the value is absent, unrecognized, or new? |
+| `SESSION` | A credential outlives its validity — no token, an expired one, or one issued before sign-out / password change / lockout is still honoured; a used, revoked or expired one-time link still works | Is the request refused with a dead credential, and does a one-time link die after first use? |
+| `TAMPER` | The server trusts a value it should own — price, quantity, currency, owner id, role, status, redirect target sent by the client and accepted | Replay the request with that value changed: is it rejected or recomputed, never applied? |
+| `INJECT` | Untrusted input reaches an interpreter or renderer unescaped — script or HTML on another actor's page, a formula in an export, query syntax in a filter | Does the payload come back as text on the surface where it is rendered later? |
+| `EXPOSE` | The response, error or a nested object discloses more than the caller is entitled to, or answers "does this exist?" for something the caller may not see | Is every field returned one this caller may read, and does "not yours" read the same as "not found"? |
 | `RENDER` | Visual / interaction affordance — contrast, layout shift, target size, keyboard reachability, responsive re-mount | Is it perceivable and operable at every viewport and by keyboard alone? |
 
 **Non-defect entries** — these are false-positive guards, never scenario candidates:

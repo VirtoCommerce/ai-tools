@@ -8,19 +8,27 @@
  *
  * WHY A DEDICATED REP
  * -------------------
- * VCST-5367 added a per-user PERSISTED layout — `salesRepLayout` / `saveSalesRepLayout` on the scoped
- * `POST /graphql/sales-rep` — stored as a Customer-module `CustomerPreference` named
- * `SalesRepLayout.{scope}[.{storeId}]` on the CALLER'S OWN user id. The storefront cases (091/093)
- * drag, hide and **Save** blocks, i.e. they MUTATE that preference.
+ * VCST-5367 added a per-user PERSISTED layout, stored as a Customer-module `CustomerPreference` on the
+ * CALLER'S OWN user id. Two generations exist on the QA stands at the same time:
+ *   - CURRENT (vc-module-sales-rep PR #24 + X-Frontend): the generic X-Frontend `layout` / `saveLayout`
+ *     on `/graphql`, preference `Layout.{scope}[.{storeId}]`, rep scopes `salesRepDashboard` /
+ *     `salesRepCustomerProfile` (scope rule `[A-Za-z][A-Za-z0-9]{0,63}`, read case-insensitively; the
+ *     20-layout cap counts only `Layout.*` rows). `salesRepLayout` / `saveSalesRepLayout` are gone and
+ *     old rows are NOT migrated (kb KB-6AF444D9, observed on vcptcore_qa1 2026-11-09).
+ *   - LEGACY (stands still on a pre-PR-#24 Sales Rep build): `salesRepLayout` / `saveSalesRepLayout` on
+ *     `POST /graphql/sales-rep`, preference `SalesRepLayout.{scope}[.{storeId}]`, scopes `dashboard` /
+ *     `customerProfile`.
+ * The seeder sweeps BOTH (`isLayoutPreference`), so it needs no per-env switch. The storefront cases
+ * (091/093) drag, hide and **Save** blocks, i.e. they MUTATE that preference.
  *
  * `SR_REP_PRIMARY` is the shared happy-path rep that ~40 cases across 050m/089/091/093 depend on, and
  * its layout is verified NEVER-SAVED (both scopes resolve to `null` on vcptcore-qa, 2026-08-04). If
  * layout cases wrote it, those cases would become order-dependent and the "never saved ⇒ query returns
  * null" precondition would stop being reproducible. Hence `SR_REP_LAYOUT`: a rep whose persisted
- * layout is DISPOSABLE — the seeder wipes its `SalesRepLayout.*` preferences on every reseed, so each
+ * layout is DISPOSABLE — the seeder wipes its rep layout preferences (both generations) on every reseed, so each
  * run starts from the same never-saved baseline, and the primary rep is never touched.
  *
- * TWO SERVED ORGS ARE LOAD-BEARING, not decoration: the `customerProfile` scope needs a customer to
+ * TWO SERVED ORGS ARE LOAD-BEARING, not decoration: the customer-profile scope needs a customer to
  * open, and one case proves the saved layout is SCOPE-wide rather than per-customer (arrange on
  * customer A → open customer B → same arrangement). That needs a second served org.
  */
@@ -47,27 +55,42 @@ export const DISPOSABLE_LAYOUT_REP_KEYS = [LAYOUT_REP.repKey];
 /** True when the seeder may reset this rep's persisted layout preferences. */
 export const isDisposableLayoutRep = (repKey) => DISPOSABLE_LAYOUT_REP_KEYS.includes(String(repKey || '').trim());
 
-/** CustomerPreference name prefix VCST-5367 stores the layout under. */
-export const LAYOUT_PREF_PREFIX = 'SalesRepLayout';
+/** CURRENT: the X-Frontend `saveLayout` preference prefix (vc-module-sales-rep PR #24 onward). */
+export const LAYOUT_PREF_PREFIX = 'Layout';
 
-/** The layout scopes the storefront persists independently (one preference row each). */
-export const LAYOUT_SCOPES = ['dashboard', 'customerProfile'];
+/** CURRENT: the rep layout scopes the storefront persists independently (one preference row each). */
+export const LAYOUT_SCOPES = ['salesRepDashboard', 'salesRepCustomerProfile'];
 
-/**
- * The CustomerPreference name for a scope: `SalesRepLayout.{scope}` or, store-scoped,
- * `SalesRepLayout.{scope}.{storeId}` (PURE).
- */
+/** LEGACY: the VCST-5367 `saveSalesRepLayout` prefix and scopes (Sales Rep builds before PR #24). */
+export const LEGACY_LAYOUT_PREF_PREFIX = 'SalesRepLayout';
+export const LEGACY_LAYOUT_SCOPES = ['dashboard', 'customerProfile'];
+
+const withStore = (base, storeId) => (storeId ? `${base}.${storeId}` : base);
+
+/** CURRENT preference name: `Layout.{scope}` or, store-scoped, `Layout.{scope}.{storeId}` (PURE). */
 export function layoutPreferenceName(scope, storeId = '') {
-  const base = `${LAYOUT_PREF_PREFIX}.${scope}`;
-  return storeId ? `${base}.${storeId}` : base;
+  return withStore(`${LAYOUT_PREF_PREFIX}.${scope}`, storeId);
 }
 
+/** LEGACY preference name: `SalesRepLayout.{scope}[.{storeId}]` (PURE). */
+export function legacyLayoutPreferenceName(scope, storeId = '') {
+  return withStore(`${LEGACY_LAYOUT_PREF_PREFIX}.${scope}`, storeId);
+}
+
+// CURRENT rows: only the REP scopes, case-insensitive (X-Frontend reads the scope case-insensitively).
+// `Layout.*` is X-Frontend's generic store — another scope on the same account (a buyer
+// `Layout.dashboard`, say) is not this fixture's to delete.
+const CURRENT_LAYOUT_RE = new RegExp(`^${LAYOUT_PREF_PREFIX}\\.(${LAYOUT_SCOPES.join('|')})(\\.|$)`, 'i');
+// LEGACY rows: the whole `SalesRepLayout` namespace was rep-only, so it is matched by prefix.
+const LEGACY_LAYOUT_RE = new RegExp(`^${LEGACY_LAYOUT_PREF_PREFIX}(\\.|$)`);
+
 /**
- * True when a CustomerPreference row is a VCST-5367 layout row — matched by PREFIX, not by an exact
- * key, so a change in the store-scoping suffix (or a new scope) still gets swept (PURE).
+ * True when a CustomerPreference row is a REP layout row of EITHER generation (PURE), so one reseed
+ * restores never-saved on a stand running the current build and on one still on the legacy build.
  */
 export function isLayoutPreference(name) {
-  return new RegExp(`^${LAYOUT_PREF_PREFIX}(\\.|$)`).test(String(name || '').trim());
+  const n = String(name || '').trim();
+  return CURRENT_LAYOUT_RE.test(n) || LEGACY_LAYOUT_RE.test(n);
 }
 
 /**

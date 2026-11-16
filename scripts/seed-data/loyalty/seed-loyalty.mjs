@@ -39,7 +39,9 @@ const NAME_PREFIX = 'AGENT-TEST';
 
 // Map the CSV customer_group to the platform user-group name used by UserGroupIsCondition.
 // null = no group restriction (all customers → AnyUserGroupCondition). Verified live on vcst-qa.
-const GROUP_NAME = { all: null, vip: 'VIP', wholesaler: 'Wholesaler' };
+// 'none' = leave the skeleton's condition block EMPTY — the 075 CRUD fixture for an Order loyalty
+// program ("Default" type in the Admin SPA's type picker) whose Conditions section must start empty.
+const GROUP_NAME = { all: null, vip: 'VIP', wholesaler: 'Wholesaler', none: undefined };
 
 async function searchPrograms() {
   const r = await api('POST', '/api/loyalty-programs/search', { take: 100 }, { expectStatus: [200, 201] });
@@ -67,6 +69,7 @@ function conditionNode(group) {
  * we set that block's children to the right condition node.
  */
 function setEligibility(expr, group) {
+  if (group === undefined) return; // customer_group=none: no eligibility condition at all
   const blocks = (expr?.children || []).filter((c) => c?.id === 'BlockLoyaltyCondition');
   if (!blocks.length) { log(`  ⚠ dynamicExpression has no BlockLoyaltyCondition — eligibility not set`); return; }
   for (const block of blocks) block.children = [conditionNode(group)];
@@ -132,8 +135,10 @@ async function seed() {
     }
 
     const programType = row.program_type || 'ProductPoints';
-    const group = GROUP_NAME[(row.customer_group || 'all').toLowerCase()];
-    const groupLabel = group === null ? 'all customers' : `group=${group}`;
+    const groupKey = (row.customer_group || 'all').toLowerCase();
+    if (!(groupKey in GROUP_NAME)) throw new Error(`${row.program_id}: unknown customer_group "${row.customer_group}"`);
+    const group = GROUP_NAME[groupKey];
+    const groupLabel = group === null ? 'all customers' : group === undefined ? 'no conditions' : `group=${group}`;
     const factorRows = allFactors.filter((f) => f.program_id === row.program_id);
     const startDate = isoFromOffset(row.start_offset_days);
     const endDate = isoFromOffset(row.end_offset_days);

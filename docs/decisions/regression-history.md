@@ -312,3 +312,38 @@ wasted and has to be redone. Confirmed six times independently.
 suite `027` is
 282 KB (~78k tokens) against a 200k window, and a single `browser_snapshot` costs 10-30k, so an
 inlined suite starves the very evidence the run exists to collect.
+
+## Headless pipelines removed (VCST-6637, 2026-11-11)
+
+**What went.** The four Claude Agent SDK runners — `ci/run-regression.ts`, `ci/run-full-cycle.ts`,
+`ci/run-monitor.ts`, `ci/run-suite-audit.ts` — plus `ci/notify-teams.ts`, `ci/Dockerfile`, the CI copies
+of the QA agents (`ci/agents/qa-*.md`, `ci-sync-agent.md`, `ci-lifecycle-agent.md`), the runner-only libs
+(`deterministic-lane.ts`, `lane-mcp.ts`, `fingerprint-store.ts`), the CI lane config
+`ci/config/mcp-playwright-chrome.ci.json`, the 15 `ci:*` npm scripts, and four workflows: `full-cycle.yml`,
+`monitor.yml`, `suite-audit.yml` and `customer-template.yml`.
+
+**Why — measured, not assumed.**
+
+| Pipeline | GitHub runs, ever | Runs from Claude sessions, 2026-10-05 → 2026-11-11 |
+|---|---|---|
+| `full-cycle.yml` | 1, manual, 2026-03-21 | 0 |
+| `monitor.yml` | 1, manual, 2026-06-06 — **failed** | 0 |
+| `suite-audit.yml` | 0 | 0 |
+| `customer-template.yml` | 0 (a template customers copy) | — |
+| `ci:*` npm scripts | — | 0 |
+
+Every `cron:` had been commented out since the 2026-09-07 audit, and `regression.yml` had already gone on
+2026-09-08 for the same reason. Phases 1–2 of `run-full-cycle.ts` were also broken: they passed
+`--ci --skip-*`, which `/qa-test-lifecycle` refuses since its split into `qa-suite-sync` +
+`qa-case-promotion`, so they synced and reviewed nothing. The runners still cost maintenance (their own
+agent copies, a lane config, a tsconfig scope, docs in the always-loaded tier) for a capability nobody used.
+
+**What stayed, and why.** `ci/lib/` is the planning library `scripts/regression/*` imports
+(`suite-manifest`, `run-plan`, `scheduler`, `suite-caps`, `suite-batching`, `lane-classifier`,
+`manifest-preflight`, `affected-suites`). `ci/monitoring/queries/*.kql` and
+`ci/agents/monitor-triage-agent.md` are read by `/qa-monitoring`, `/qa-regression`, `/qa-smoke` and
+`/qa-test` triage. `ci/lib/appinsights.ts` moved to `scripts/lib/appinsights.ts`, because suites 094 and
+118 query App Insights through it. `plan-run.ts` now looks for agent definitions in `.claude/agents/`.
+
+**Before re-creating a headless runner,** name who will run it and how often. A pipeline nobody
+dispatches decays silently: `monitor.yml`'s one run failed and nobody noticed for five months.

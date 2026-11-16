@@ -28,6 +28,10 @@
  *            universe with no positive example. This fixture supplies one, with every SEO field the
  *            case reads populated.
  *
+ *   CAT-GQL-153  OTHER CATALOG WITH PROPERTIES (OTHER_CATALOG, below). Reuses CAT-038's unlinked
+ *            physical catalog and gives it properties the store's catalog does not have, so a
+ *            Query.properties catalogIds filter that leaks out of the store returns a DIFFERENT set.
+ *
  * NAMING: everything carries AGENT-TEST- so `/qa-seed-data teardown` sweeps exactly these.
  * RUNTIME IDS: category/product GUIDs are server-assigned → aliases.<env>.json only, never committed.
  */
@@ -104,6 +108,54 @@ export const SEO_PRODUCT = {
    */
   get url() { return storefrontPathForAdHoc(this.categoryPath, this.name); },
 };
+
+/**
+ * CAT-GQL-153 — a catalog OUTSIDE the store that owns properties the store's catalog does not have.
+ *
+ * The case asks `Query.properties(storeId, filter:"catalogIds:<this catalog>")` and asserts the
+ * answer equals the unfiltered store answer. That only discriminates when the two catalogs' property
+ * sets DIFFER: a broken build that honours the caller's catalogIds then returns THESE properties
+ * instead of the store's. So the properties carry AGENT_TEST_ names no store catalog uses, and the
+ * seeder proves live that the store's own answer contains none of them. At least one is catalog-level
+ * (type Catalog) — the case queries types [CATALOG, CATEGORY, PRODUCT, VARIATION].
+ *
+ * It reuses EXCLUDED_CATALOG: that catalog is physical and deliberately unlinked from the store, which
+ * is exactly "another catalog". A property definition does not touch CAT-038's excluded product.
+ * Property names are code-like identifiers (letters, digits, underscores), hence AGENT_TEST_.
+ */
+export const OTHER_CATALOG = {
+  aliasName: 'CATALOG_OTHER_WITH_PROPERTIES',
+  get name() { return EXCLUDED_CATALOG.name; },
+  propertyPrefix: 'AGENT_TEST_',
+  properties: [
+    { name: 'AGENT_TEST_OTHER_CATALOG_SCOPE', type: 'Catalog', valueType: 'ShortText' },
+    { name: 'AGENT_TEST_OTHER_PRODUCT_SCOPE', type: 'Product', valueType: 'ShortText' },
+  ],
+};
+
+/** POST /api/catalog/properties body for one OTHER_CATALOG property (204, no body). Pure. */
+export function buildOtherCatalogPropertyBody(prop, catalogId) {
+  return {
+    isNew: true, name: prop.name, catalogId, type: prop.type, valueType: prop.valueType,
+    dictionary: false, required: false, multivalue: false, multilanguage: false,
+  };
+}
+
+/**
+ * The divergence CAT-GQL-153 depends on, given the property names the store's own Query.properties
+ * returns and the properties the other catalog carries live. Pure. Returns problem strings.
+ */
+export function otherCatalogDivergence(storePropertyNames, otherCatalogProperties) {
+  const store = new Set(storePropertyNames || []);
+  const have = new Set((otherCatalogProperties || []).map((p) => p.name));
+  const problems = [];
+  for (const p of OTHER_CATALOG.properties) {
+    if (!have.has(p.name)) problems.push(`${OTHER_CATALOG.aliasName}: property ${p.name} is not on the catalog`);
+    if (store.has(p.name)) problems.push(`${OTHER_CATALOG.aliasName}: the store's own Query.properties already returns ${p.name} — the two sets no longer differ, so a build that honours catalogIds gives the same answer as one that ignores it`);
+  }
+  if (!store.size) problems.push(`${OTHER_CATALOG.aliasName}: the store's Query.properties returned nothing — no baseline to differ from`);
+  return problems;
+}
 
 export const ALL_FIXTURES = [EMPTY_CATEGORY, EXCLUDED_PRODUCT, SEO_PRODUCT];
 
@@ -203,6 +255,15 @@ export function validateFixtureShape() {
   for (const p of [EXCLUDED_PRODUCT, SEO_PRODUCT]) {
     if (!Number.isFinite(p.listPrice) || p.listPrice <= 0) problems.push(`${p.aliasName}: listPrice must be a positive number`);
     if (!Number.isFinite(p.stockQty) || p.stockQty <= 0) problems.push(`${p.aliasName}: stockQty must be positive or the card renders unbuyable`);
+  }
+
+  // CAT-GQL-153 — the other catalog's properties must be distinguishable from any store property.
+  const names = OTHER_CATALOG.properties.map((p) => p.name);
+  if (!names.length) problems.push(`${OTHER_CATALOG.aliasName}: declares no property — the filtered and unfiltered answers cannot differ`);
+  if (new Set(names).size !== names.length) problems.push(`${OTHER_CATALOG.aliasName}: duplicate property names`);
+  if (!OTHER_CATALOG.properties.some((p) => p.type === 'Catalog')) problems.push(`${OTHER_CATALOG.aliasName}: needs at least one catalog-level (type Catalog) property`);
+  for (const n of names) {
+    if (!n.startsWith(OTHER_CATALOG.propertyPrefix) || !/^[0-9A-Za-z_]+$/.test(n)) problems.push(`${OTHER_CATALOG.aliasName}: property "${n}" must be an ${OTHER_CATALOG.propertyPrefix}* identifier (letters, digits, underscores) — a name a store catalog could share makes the two sets overlap`);
   }
 
   return problems;

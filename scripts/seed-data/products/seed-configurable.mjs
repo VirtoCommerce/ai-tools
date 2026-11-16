@@ -265,6 +265,9 @@ async function ensureProduct(catalogId, categoryId, body) {
   }
 }
 async function ensurePrice(priceListId, productId, listPrice, salePrice = null) {
+  // A $0 ("no surcharge") option gets NO price row: the pricing API refuses list <= 0 with 400
+  // "List price must be greater than 0" (kb KB-52C3F83E), which used to abort the whole spec.
+  if (!(Number(listPrice) > 0)) { verbose(`· no price row for ${productId} (list ${listPrice})`); return; }
   const price = { pricelistId: priceListId, productId, list: Number(listPrice), currency: 'USD', minQuantity: 1 };
   if (salePrice != null) price.sale = Number(salePrice);
   await api('PUT', '/api/products/prices', [{ productId, prices: [price] }], { expectStatus: [200, 204] });
@@ -636,7 +639,7 @@ async function main() {
   }
 
   const ok = seeded.filter(s => !s.error).length;
-  console.log(`\n✅ ${ok}/${seeded.length} CFG products seeded`);
+  console.log(`\n${ok === seeded.length ? '✅' : '❌'} ${ok}/${seeded.length} CFG products seeded`);
   for (const s of seeded) {
     if (s.error) { console.log(`  ❌ ${s.csvId}: ${s.error.slice(0, 120)}`); continue; }
     const deps = (s.sections || []).filter(x => x.dependsOnSectionId).length;
@@ -650,6 +653,8 @@ async function main() {
       verbose(`  §${sec.displayOrder} ${sec.name} (${sec.type}) req=${sec.isRequired} ${extra}`);
     }
   }
+  // A failed spec fails the run, so seed:bootstrap reports this step as warn, not ok.
+  if (ok < seeded.length) process.exitCode = 1;
 }
 
 // ── Teardown ─────────────────────────────────────────────────────────────────

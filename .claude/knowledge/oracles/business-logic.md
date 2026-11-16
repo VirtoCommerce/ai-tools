@@ -511,6 +511,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/Fundamentals/Security/authorization/global-permissions.md (published) — modules declare access/read/create/update/delete (+extensions) permissions; [Authorize] enforces them on API methods.
 - **Source:** Platform docs "Global permissions" (the module permission template is `access/read/create/update/delete`; Orders extends it with `read_prices`) + `vc-platform` `ClaimsPrincipalExtensions.cs:61-71` (`HasGlobalPermission` = reserved-administrator short-circuit, else the permission claim must be held) + `vc-module-customer` `ModuleConstants.cs:14-34` (base 5 plus a module-specific `invite`, and a separate organization-membership permission group) with `OrganizationMembershipController.cs:22,34,80,92,119,129,137` gating each action by permission. Live-confirmed on the environment: the registered permission catalog is dominated by the base-5 verbs across every module group, `export` appears only on the few modules that support data export, and a storefront-scoped token carrying no platform permission claims received 403 from three permission-gated admin endpoints. The Admin-SPA button-visibility half of `Verify` was not re-observed this run (docs + source cover the UI-gating mechanism).
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MCP-029 failed in REG-2026-11-10-1438-VCST6155-C1r2
 
 ### BL-AUTH-006: Role hierarchy `[P1-data]`
 - **Rule:** Virto Commerce roles are independent permission-claim sets, **NOT** a built-in inheritance hierarchy — a role has exactly the permissions assigned to it and does not automatically inherit a lower role's permissions. The role entity carries no parent, base, extends, or child field of any kind. Three names are **reserved system roles** carried on the account rather than rows in the role list (administrator, manager, customer); every other role is **per-deployment data** — role names and their permission sets are created per deployment and must be read from the environment, never assumed to exist. Administrator power is a **short-circuit, not inheritance**: a principal in the reserved administrator system role passes every global permission check without holding the claim, while everyone else must hold the specific permission claim. Within that model: An Administrator can perform any action. Store Managers can manage their assigned store(s) but not platform settings. Customers can only access their own data — a storefront account is an account category, not a platform role, and typically holds no platform role at all (its rights arrive as organization-scoped claims). Anonymous users are limited to browsing (if `anonymousUsersAllowed = true`) — an unauthenticated state, not a role.
@@ -575,6 +576,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-5028 (Done) — story: access blocks scoped to one organization must not lock the user globally (old handler set the global lockout).
 - **Source:** VCST-5496 (Done) — fixed a contact with one locked org membership being unable to obtain a token for any org.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] B2C-ORG-046, B2C-ORG-053, B2C-ORG-068, ORGROLE-014 failed in REG-2026-11-09-1635-W4
 
 ### BL-AUTH-013: Org-scoped access refusal is distinct from global lockout, and per-cause `[P1-data]`
 - **Rule:** An org-scoped refusal from `/connect/token` MUST carry `error: invalid_grant` plus a **cause-specific `code`** — never a global lockout code (`user_is_locked_out` / `user_is_temporary_locked_out`). There are **two independent refusal axes**, each with its own code(s):
@@ -591,6 +593,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-5374 (Done) — fix kept the org-block path (user_is_locked_in_organization) distinct from global lockout codes.
 - **Source:** VCST-6132 — description (cases table: removed from the org → invalid_organization_id, membership locked → user_is_locked_in_organization, Invited / Rejected / Deleted → the corresponding org error, when no fallback applies) + Dmitry Grishin QA comment 2026-10-14 (credential sign-ins fall back, an explicit refresh_token switch still fails; Rejected in every org → the membership-status error). Live on the VCST-6132 build: Rejected / Invited / Deleted in every org returned user_is_rejected_in_organization / user_invitation_pending_in_organization / user_is_removed_from_organization, one errors[] entry each, identical on otp_email and password; refresh_token to a removed org returned invalid_organization_id.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] CUST-112, PRF-GQL-080 failed in REG-2026-11-09-1635-W4
 
 ### BL-AUTH-014: Admin/Platform API cookie-auth challenge returns a status code, never a login-page redirect `[P1-data]`
 - **Rule:** When cookie authentication challenges a request whose path's first segment is `api` (case-insensitive; a path that merely starts with the string "api", e.g. `/apiary/...`, does NOT match) or that carries the header `X-Requested-With: XMLHttpRequest`, the response is a direct status code — 401 if unauthenticated, 403 if authenticated but forbidden — with no `Location` header and no login-page HTML body. Any other cookie-authentication challenge (e.g. the OIDC `/connect/authorize` flow) still issues a 302 redirect to the login page, so browser-driven authorization flows are unaffected.
@@ -619,6 +622,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** `vc-module-customer` `OrganizationAccessResolver.cs:14-40` (steps 3–5) and `:42-79` (the two-axis predicate; the skip at `:48-51` is keyed on an absent userId or empty organization list, and the per-org branch at `:64-77` evaluates a null membership through the contact-status fallthrough) + `OrganizationIdRequestValidator.cs:136-151` (steps 1–2) + `OrganizationMembership.cs:22,26-34` (`IsCurrentlyLocked`, `ResolveEffectiveStatus`) + `ModuleConstants.cs:51-54` (blocking statuses) + `CurrentOrganizationIdTokenRequestHandler.cs:16-43` (the write-back, and its impersonation skip). Live-confirmed on the environment: step-1 precedence over the stored org; a stored current org honoured over the first-listed org; a zero-membership-row contact resolving and accepting an explicit org; all three blocking-status single-org fixtures signing in with no explicit org and receiving no organization claim; and the write-back observed moving a contact's stored org, after which the next no-org grant resolved the new value. The ordering **between** steps 3 and 4 remains source-only — no fixture carries a default organization, so it was not isolated live. Docs axis: N/A — the published guides describe multi-organization switching as a feature but no resolution order, accessibility predicate, or persistence; the behaviour shipped in the change under audit (waived).
 - **Source:** VCST-5496 (Done) — fixed org auto-resolution (Current, then Default, then first org) ignoring the user's other active orgs when the resolved one was locked.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] B2C-ORG-045, B2C-ORG-050, B2C-ORG-051 failed in REG-2026-11-09-1635-W4
 
 ### BL-AUTH-016: An org refusal is a single code, lock-first, and only when no fallback remains `[P0-revenue]`
 - **Rule:** When the requested organization is one the user is associated with but cannot currently access, the outcome is decided in this order:
@@ -661,6 +665,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** vc-platform `src/VirtoCommerce.Platform.Web/Controllers/Api/SecurityController.cs` — `Login([FromBody] LoginRequest request)` guards `if (request?.UserName == null || request.Password == null) { return BadRequest(); }` before any user lookup. The source evidence is this one endpoint; the Rule generalizes it on the strength of the documented platform-wide convention.
 - **Source:** VCST-5623 (Done) — fixed POST /api/platform/security/login returning 500 instead of 400 on null/empty credential fields or body.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MCP-038 failed in REG-2026-11-10-1438-VCST6155-C1r2
 
 ### BL-AUTH-018: An expired password is enforced only on a password sign-in `[P0-security]`
 - **Rule:** The password-expiry state (`passwordExpired`, set when `User:MaxPasswordAge` runs out or an admin forces a change on next sign-in) is a property of the **password**, so it is enforced only on a session that was signed in **with that password**.
@@ -683,6 +688,83 @@ Read `passwordExpired` from `me` in the same session as the sign-in, never from 
 - **Source:** `vc-module-x-api` `src/VirtoCommerce.Xapi.Data/Services/UserManagerCore.cs` `CheckUserState` — `user.PasswordExpired && !isExternalSignIn && !isImpersonated` → `AuthorizationError.PasswordExpired()`; `vc-module-profile-experience-api` `Schemas/UserType.cs` `GetPasswordExpired` and `Schemas/ProfileSchema.cs` use the same condition. Only SSO and impersonation are exempt, so passkey and OTP sign-in violate the rule (VCST-6630).
 - **Trust:** DECLARED
 - **Lifecycle:** SUSPECT — [bug] VCST-6630 — passkey and email-code sign-in force a password change: the code exempts SSO and impersonation only.
+
+### BL-AUTH-019: A store set to Disabled skips the MFA code only for its own non-Backoffice customers `[P0-security]`
+- **Rule:** A password sign-in to the token endpoint that names a store whose `MultiFactorAuthentication.StoreMode` is `Disabled` goes through without the emailed code **only** when the user is that store's own customer (`ApplicationUser.StoreId` is the store) **and** is not a Backoffice account.
+  - Everyone else follows the global `MultiFactorAuthentication.Enabled` there: administrators, users of type `Administrator` or `Manager`, users the platform admin-UI access policy admits to the Backoffice, users of other stores and users without a store.
+  - A `Disabled` store never relaxes the code for an account it does not own.
+- **Verify:** Global MFA on (a whole-stand window), a disposable store in StoreMode Disabled (mfa-fixtures creator).
+  - The store's own role-less customer naming the store → tokens in one step.
+  - A Manager, and a customer of another store, naming the same store → `two_factor_required`.
+Cases MFA-033 and MFA-062 (suite 110a).
+- **Violation signal:** - A Manager, an administrator or a customer of another store gets tokens without the code by naming a Disabled store while global MFA is on.
+- The Disabled store's own role-less customer is asked for the code.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — Configuration, MultiFactorAuthentication.StoreMode: Disabled: the code is not required from the store's own customers; Backoffice accounts and the users of other stores or without a store follow MultiFactorAuthentication.Enabled there. No VirtoOZ page describes MFA yet.
+- **Source:** VCST-6597 comment 112620 (VCST-6530 merged into the story) — the Disabled store mode skips the code only for the store's own customers that are not Backoffice accounts; administrators, managers, Backoffice users and users of other stores follow the global setting there. A Backoffice account is IsAdministrator, the Administrator / Manager user type, or the platform IAdminUIAccessPolicy.
+- **Source:** Open product question VCST-6686: under the default access policy a customer holding any organization role (storefront permissions) counts as a Backoffice account, so it is asked in its own Disabled store.
+- **Trust:** DECLARED
+
+### BL-AUTH-020: The user's own store applies to every password sign-in, whatever store the request names `[P0-security]`
+- **Rule:** Tokens are not bound to the store named in the token request, so a password sign-in also requires the emailed code when the **user's own store** (`ApplicationUser.StoreId`) requires it — by its store mode, or by the user's or organization's MFA mode in an `AdminManaged` / `CustomerChoice` store.
+  - Omitting `storeId`, naming another store, or naming an unknown store never skips a code the user's own store requires.
+- **Verify:** A customer of a store in StoreMode Enabled (global MFA off): password grants with no `storeId`, with another store's id and with an unknown id → each answers `two_factor_required`. Case MFA-036 (and MFA-037 for the user / organization modes of the own store), suite 110a.
+- **Violation signal:** - A customer of a store that requires the code gets tokens in one step by omitting `storeId` or naming another or an unknown store.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — Configuration: the user's own store (ApplicationUser.StoreId) applies too; a user whose own store requires the code can't skip it by signing in without a store, or by naming another store that doesn't require it.
+- **Source:** VCST-6597 comment 112608 (VCST-6495 fixed in the story) — a password sign-in requires the code when the store named in the request requires it, or when the user's own store requires it; a user can no longer skip the code by leaving storeId out or naming another store.
+- **Trust:** DECLARED
+
+### BL-AUTH-021: An organization that requires MFA covers every member, and outranks the member's own mode `[P0-security]`
+- **Rule:** In a store whose `MultiFactorAuthentication.StoreMode` is `AdminManaged` or `CustomerChoice`, a user needs the emailed code when **any** organization of the user's contact requires it (mode `Required`, or `Enabled` in a `CustomerChoice` store), whatever the user's own mode is.
+  - While an organization requires the code, the member cannot turn it off for themselves.
+- **Verify:** A CustomerChoice / AdminManaged store, an organization set to Required by the administrator, two members whose own mode is Off → both members' password sign-ins answer `two_factor_required` and `mfaSettings.requiredBy` is `Organization`; the organization set back to Off → one step again. Case MFA-040 (suite 110a), MFASF-018 (suite 111).
+- **Violation signal:** - A member of an organization that requires the code signs in without it.
+- A member's own mode Off overrides the organization's requirement.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — User and organization modes: a user needs the code when their own mode or the mode of any of their contact's organizations requires it; the organization comes first.
+- **Source:** VCST-6597 description — Modes of a user and an organization: the organization requirement comes first: a member can't turn it off with their own switch.
+- **Source:** VCST-6687: the xAPI accepts updateMfaUserMode from such a member (the stored user mode changes) although the sign-in is still asked — the requirement holds, the API guard is missing.
+- **Trust:** DECLARED
+
+### BL-AUTH-022: Every storefront change of an MFA mode is confirmed with an emailed code, and a change code never signs in `[P0-security]`
+- **Rule:** A customer or organization maintainer changes an MFA mode in the storefront only with a fresh emailed code: `requestMfaChangeCode` issues a change ticket, and the change mutation needs that ticket and its code.
+  - A change ticket cannot be redeemed for a sign-in, and a sign-in ticket cannot confirm a change.
+  - A ticket issued to another user is refused.
+- **Verify:** A CustomerChoice store, a confirmed customer: a change ticket at `grant_type=mfa`, a sign-in ticket at `updateMfaUserMode`, and another user's change ticket → each refused `invalid_two_factor_token`; the same-purpose control succeeds. Cases MFA-047, MFA-053 (suite 110a).
+- **Violation signal:** - A mode changes without a valid change code.
+- A change ticket and its code produce tokens at `grant_type=mfa`, or a sign-in ticket confirms a change.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — Storefront (xAPI): every change is confirmed with a code, so a stolen session can't turn MFA off; a token issued to confirm a mode change can't be redeemed for a sign-in.
+- **Source:** VCST-6597 description — Rules: every storefront change is confirmed with an email code (step-up): requestMfaChangeCode, then the change mutation with the two-factor token and the code. The change token can't be used to sign in, and a sign-in token can't confirm a change.
+- **Trust:** DECLARED
+
+### BL-AUTH-023: An MFA mode set to Required by the administrator cannot be changed from the storefront `[P0-security]`
+- **Rule:** When the administrator sets a user's or an organization's MFA mode to `Required`, the storefront shows it read-only and the change mutations are refused (`mfa_locked_by_administrator`); only the Backoffice can lift it.
+- **Verify:** A CustomerChoice store, a customer set to Required in the Backoffice → `mfaSettings.canChangeUserMode` is `false` and `updateMfaUserMode` answers `mfa_locked_by_administrator` with the mode unchanged; the same for an organization with `updateMfaOrganizationMode`. Cases MFA-049 (suite 110a), MFASF-017 (suite 111).
+- **Violation signal:** - A storefront mutation changes a mode the administrator set to Required.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — User and organization modes table: Required is set by the administrator only, and the storefront can't turn it off.
+- **Source:** VCST-6597 description — Modes: Required (set by the administrator; can't be turned off in the storefront).
+- **Trust:** DECLARED
+
+### BL-AUTH-024: An impersonated session cannot change MFA `[P0-security]`
+- **Rule:** A session obtained through Login on behalf cannot change the impersonated user's or organization's MFA mode: the change mutations are refused and the storefront shows no switch.
+- **Verify:** A CustomerChoice store, an operator with Login on behalf and a target in the same organization: with the impersonated token, `updateMfaUserMode` and `updateMfaOrganizationMode` answer `Forbidden` and the target's mode is unchanged; the target's own session can change it. Case MFA-056 (suite 110a).
+- **Violation signal:** - An impersonated token turns the target's (or its organization's) MFA off or on.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Source:** VCST-6597 description — Rules: impersonated sessions can't change MFA.
+- **Trust:** DECLARED
+
+### BL-AUTH-025: The Backoffice sign-in follows only the global MFA setting `[P0-security]`
+- **Rule:** Whether the Backoffice sign-in asks for the emailed code is decided by the global `MultiFactorAuthentication.Enabled` alone, for every user. Store modes and user / organization MFA modes never relax or add the code on the Backoffice sign-in.
+- **Verify:** Global MFA off, a user set to Required and own store Enabled → the Backoffice sign-in completes without a code; global MFA on, the user's own store Disabled → the Backoffice sign-in asks for the code. Suite 110 (MFA-001 / MFA-016 family).
+- **Violation signal:** - A store mode or a user / organization mode changes whether the Backoffice sign-in asks for the code.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-mfa README (PR #3) — the Backoffice sign-in has no token request and follows only the global setting, for every user.
+- **Source:** VCST-6597 description — Rules: the Backoffice sign-in still follows only the global setting.
+- **Source:** VCST-5904 comment 112278 — Backoffice sign-in: the global setting only.
+- **Trust:** DECLARED
 
 ---
 
@@ -751,6 +833,7 @@ Read `passwordExpired` from `me` in the same session as the sign-in, never from 
 - **Source:** VCST-5028 (Done) — roles must be scoped to a single organization so a user can hold different roles in different organizations
 - **Source:** VCST-5401 (Done) — fixed an org membership role leaking into the global account; per-org permissions must come only for the active org
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] B2C-ORG-051, CUST-112, RET-ORG-001, RET-ORG-002, RET-ORG-005, RET-ORG-042, RET-ORG-043, RET-ORG-044 failed in REG-2026-11-09-1635-W4
 
 ### BL-B2B-008: Org-scoped role change mutates only the target org's membership `[P1-data]`
 - **Rule:** Changing a member's role in org X (`changeOrganizationContactRole(memberId, roleIds)` or REST `PUT /api/customer/organization-memberships/{id}`) MUST update only the (userId, orgX) `OrganizationMembership.Roles`. Other orgs' membership records and the global `ApplicationUser.Roles` MUST be unchanged. (VCST-5028 — guards against the old handler that replaced global roles.)
@@ -760,6 +843,7 @@ Read `passwordExpired` from `me` in the same session as the sign-in, never from 
 - **Docs:** platform/user-guide/docs/contacts/managing-organization-roles.md (published) — membership roles are assigned per individual per organization via the memberships widget
 - **Source:** VCST-5028 (Done) — roles scoped to one organization, governing an org without affecting the user's access elsewhere
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] ORGROLE-014 failed in REG-2026-11-09-1635-W4
 
 ### BL-B2B-009: Inviting a member creates a per-org membership, not a global role `[P1-data]`
 - **Rule:** Inviting a user into org X with a role MUST create an `OrganizationMembership` for (newUserId, orgX) with that role; the global `ApplicationUser.Roles` MUST NOT be modified. After acceptance, `GET /api/customer/organization-memberships/user/{userId}/count` ≥ 1. (VCST-5028.)
@@ -770,6 +854,7 @@ Read `passwordExpired` from `me` in the same session as the sign-in, never from 
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/inviteUser.md (published) — invite takes organizationId and roleIds to assign
 - **Source:** VCST-5028 (Done) — roles scoped per organization rather than on the global account
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] CUST-077, CUST-090, PRF-GQL-073, PRF-GQL-074, PRF-GQL-075 failed in REG-2026-11-09-1635-W4
 
 ### BL-B2B-010: Self-service company registration grants org-membership roles only, never global roles `[P1-data]`
 - **Rule:** Self-service company registration (storefront `/sign-up`, "Organization" account type) MUST create the `Organization`, the registrant `Contact`, and an `OrganizationMembership` for (newUserId, newOrg) carrying the registrant's org role(s) (e.g. org-maintainer); the registration flow MUST NOT write any platform security role to the global `ApplicationUser.Roles`. This is the registration-time counterpart of BL-B2B-009 (which covers the invite path). (VCST-5028.)
@@ -846,6 +931,7 @@ Read `passwordExpired` from `me` in the same session as the sign-in, never from 
 - **Source:** VCST-5441 (Done) — fixed dictionary setting (whitelist) not persisting when cleared to empty
 - **Source:** VCST-5450 (Done 2026-09-01; released customer 3.1023.0, profile-experience-api 3.1017.0, platform 3.1063.0) — AC #4: related XAPI should accept only whitelisted roles; other roles should be rejected
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] ORGROLE-009, ORGROLE-010, ORGROLE-011, ORGROLE-012 failed in REG-2026-11-09-1635-W4
 
 ### BL-B2B-012: Declining or revoking an invite changes a status — it never deletes the membership row `[P1-data]`
 - **Rule:** The membership lifecycle is **status transitions on a persistent row**, not row creation/deletion:
@@ -860,6 +946,7 @@ Read `passwordExpired` from `me` in the same session as the sign-in, never from 
 - **Source:** `vc-module-profile-experience-api` `RejectOrganizationInviteCommandHandler.Handle` (a single `SetStatusAsync(..., Rejected)` — no row delete, no mutation of the contact's organizations) + `vc-module-customer` `InviteCustomerService` `RevokeInviteAsync` (`SetStatusAsync(..., Deleted)`), `InviteExistingUserToOrganization` (the `ReinvitableStatuses.Contains(...)` gate, else already-a-member) and `ModuleConstants.MembershipStatuses` (`BlockingStatuses` = {Invited, Rejected, Deleted}; `ReinvitableStatuses` = {Rejected, Deleted}). Live-confirmed on the environment: memberships at rest at `Rejected` and at `Deleted` are both still present in the organization's member list (rendered under an inactive label) and their users still resolve as associated contacts. The **mutation** half is now **live-confirmed** (2026-08-25): a membership created at `Invited` and rejected by the invitee resolved to `Rejected` on an authoritative admin re-read, with the row still present. Note the mutation's own **response payload** reports the stale pre-write value (`Approved`, the BL-B2B-013 default) — the write is correct, the returned projection is not; tracked separately as a response-shape defect. Docs axis: N/A — the published storefront guide documents inviting and block/unblock/delete of members but has no accept/decline-invitation surface at all, and names no status vocabulary (waived).
 - **Source:** VCST-5281 (Done) — invite existing customers to multiple organizations with membership-based statuses
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] RET-ORG-003 failed in REG-2026-11-09-1635-W4
 
 ### BL-B2B-013: Membership status resolves per-org-first, then contact, then `Approved` `[P1-data]`
 - **Rule:** A membership's **effective status** is resolved by a three-tier fallback — `ResolveEffectiveStatus(membershipStatus, memberStatus)`:
@@ -875,6 +962,7 @@ Read `passwordExpired` from `me` in the same session as the sign-in, never from 
 - **Docs:** platform/user-guide/docs/contacts/managing-organization-membership-status.md (published) — values Approved/Invited/Rejected/Deleted; 'Inherit from member' sentinel; Approved full access, others block
 - **Source:** `vc-module-customer` `OrganizationMembership.ResolveEffectiveStatus` (the three tiers) and `IsCurrentlyLocked` (the separate lock axis) + `ModuleConstants.MembershipStatuses` (`ManuallySelectableStatuses` / `BlockingStatuses` / `ReinvitableStatuses`) and the `OrganizationMembershipStatuses` setting descriptor (`IsDictionary = true`, `DefaultValue = Approved`, `AllowedValues = ManuallySelectableStatuses`). Live-confirmed on the environment: a membership at `Rejected` whose contact was `Approved` resolved to the membership's value (the org was excluded from access), i.e. tier 1 beats tier 2; and the member list rendered the lock axis as its own label distinct from every status label. Tiers 2 and 3 (inherit-from-contact, and the terminal `Approved`) are **source-only this run**. Docs axis: N/A — the published guide documents that Customer statuses are configurable dictionaries but names no membership-status value, default, or resolution order (waived).
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] B2C-ORG-068, RET-ORG-003 failed in REG-2026-11-09-1635-W4
 
 ---
 
@@ -1287,6 +1375,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Docs:** platform/user-guide/docs/notifications/notification-log.md (published) — sent notifications are recorded in the Notification activity feed
 - **Source:** vc-module-order `SendNotificationsOrderChangedEventHandler.Handle(OrderChangedEvent)` — `SendOrderNotifications`-gated, `IsNewlyAdded` → one `OrderCreateEmailNotification` via `BackgroundJob.Enqueue` → `ScheduleSendNotificationAsync`; failures surface in the Admin Notification activity feed (attempt count / status).
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] RET-AUTH-009, RET-AUTH-028, RET-AUTH-029, RET-AUTH-030 failed in REG-2026-11-09-1635-W4
 
 ### BL-NOTIF-002: Email content matches order data `[P1-data]`
 - **Rule:** Order confirmation email content must match the actual order: order number, item names, quantities, prices, subtotal, shipping cost, tax, and grand total. The email uses the same currency as the order. Personalization tokens (customer name, shipping address) must be resolved — no `{{customerName}}` or blank fields.
@@ -1474,7 +1563,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Trust:** INFERRED
 
 ### BL-UI-004: Content boundary `[P2-ux]`
-- **Rule:** Text and child elements MUST stay inside their container at every supported viewport. Long content must wrap, truncate with ellipsis, or scroll — never overflow silently and never be clipped by `overflow: hidden` without an explicit ellipsis indicator. Horizontal scrolling on the document at any tested viewport (375 / 768 / 1024 / 1280 / 1920) is a bug unless the scrolling element is itself an intentional horizontal scroller (e.g., a data table).
+- **Rule:** Text and child elements MUST stay inside their container at every supported viewport. Long content must wrap, truncate with ellipsis, or scroll — never overflow silently and never be clipped by `overflow: hidden` without an explicit ellipsis indicator. Horizontal scrolling on the document at any tested viewport (the derived `AUDIT_VIEWPORTS_PX` sweep, never a hand-picked list) is a bug unless the scrolling element is itself an intentional horizontal scroller (e.g., a data table).
 - **Verify:** Inject stress content (80-char product title, 12-digit SKU, German-equivalent label, 4-digit quantity). At each viewport, run `LAYOUT_SNIPPETS.overflowAudit` — checks `document.documentElement.scrollWidth > window.innerWidth` (horizontal overflow) and for each suspect element `el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY === 'hidden'` (silent clipping).
 - **Violation signal:** Page scrolls horizontally at 375 px. Product title is cut off mid-character with no `…`. Card stretches to fit the longest sibling's text, breaking grid alignment. Locale labels (German `Versandadresse`) overflow into adjacent column.
 - **Agents:** ui-ux-expert, qa-frontend-expert, qa-backend-expert
@@ -1519,6 +1608,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Source:** VCST-5862 (Done) — admin (vc-shell) light-theme text contrast violations (1.4.3)
 - **Source:** VCST-5671 (Done) — admin scheduler overflow popover not keyboard/AT reachable (2.1.1, 4.1.2)
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] ORD-102 failed in REG-2026-11-09-1635-W4
 
 ---
 
@@ -1534,6 +1624,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/best-practices.md (docs) — responses typically return HTTP 200 even when errors occur; inspect errors[] in the body
 - **Source:** VP-6664 (Done) — unauthorized user query returned an unhandled error instead of a structured Access denied error; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] PRF-GQL-066, PRF-GQL-067, PRF-GQL-068, PRF-GQL-069, RET-ORG-001, RET-ORG-042 failed in REG-2026-11-09-1635-W4
 
 ### BL-GQL-002: GraphQL query performance thresholds `[P2-ux]`
 - **Rule:** Happy-path GraphQL operations against the xAPI complete within target wall-clock thresholds measured from request-send to response-received: simple single-resolver queries (`me`, `categories(first:1)`, flat `orders(first:10)`) **< 500 ms**; deep nested queries (`orders { items addresses inPayments shipments }`) **< 1000 ms**; introspection (`__schema { types }`) **< 1000 ms**. Thresholds are environment-specific — these are baselines for one deployment; other environments may differ.
@@ -1560,6 +1651,16 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Source:** VP-7417 (Done) — expired-token request returned 200 with Access denied body; expected HTTP 401
 - **Trust:** DECLARED
 - **Lifecycle:** SUSPECT — The Violation signal treats HTTP 401/403 as a violation, but troubleshooting.md lists 401 for a missing/invalid token and VP-7417 (Done) expected 401 for an expired token; the transport-vs-resolver split for invalid/expired tokens needs re-checking.
+
+### BL-GQL-005: xAPI list-query filters narrow the result, never widen the server-enforced scope `[P0-security]`
+- **Rule:** On xAPI list queries (`carts`, `quotes`, `backInStockSubscriptions`, `customerReviews`, `properties`), caller-supplied `filter` / `keyword` terms may narrow the result but never widen the server-enforced scope — the caller's own user, organization, store, catalog, and the moderation status (storefront reviews are Approved-only). A term that names a scope field (an owner or customer id, an organization id, a catalog id, a review status) or a scope mode flag must not change which records are returned. Terms that name a legitimate filter field (a cart name, a cart status, a product id) still narrow.
+- **Verify:** Per query, call it as a signed-in buyer unfiltered, then with a filter or keyword naming a scope field of someone else — carts `customerIds:<other buyer> customerOrOrganization:true organizationId:<other org>`, quotes `customerId:<other buyer>` / `organizationId:<other org>`, backInStockSubscriptions keyword `userId:<other buyer>`, customerReviews `reviewStatus:New` / `reviewStatus:Rejected`, properties `catalogIds:<other catalog>` — plus once as a buyer with no organization and once as an anonymous caller where the query allows it. The filtered result must equal the unfiltered one in count and ids (or be a subset of it), and a second term that is a legitimate filter field must still narrow it. Record build version and entity ids.
+- **Violation signal:** A filtered call returns a record the same caller does not see unfiltered — another buyer's or organization's cart, quote or back-in-stock subscription; a New or Rejected review; a property of a catalog outside the store; or a count larger than the unfiltered count.
+- **Agents:** qa-backend-expert, test-runner-agent, regression-orchestrator, test-management-specialist, qa-testing-expert
+- **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/queries/carts.md (docs) — `filter` is "a filter condition to narrow down the carts based on specific criteria"
+- **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Reviews/Queries/customerReviews.md (docs) — `filter` is "additional filters to narrow down the reviews based on specific criteria"
+- **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [bug] VCST-6251 — caller filter/keyword terms overwrite handler-set scope in carts, quotes, back-in-stock, customer reviews and catalog properties; fix PRs open, not merged
 
 ---
 
@@ -2304,6 +2405,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** vc-platform `src/VirtoCommerce.Platform.Security/CustomRoleManager.cs` — `CreateAsync`, `UpdateInternalAsync` and `DeleteAsync` each call `SecurityCacheRegion.ExpireRegion()` on success, invalidating cached role/permission lookups platform-wide on every role mutation.
 - **Source:** VP-8379 (Done) — a role assigned to users could not be deleted (nor its users); fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MCP-030, MCP-034 failed in REG-2026-11-10-1438-VCST6155-C1r2
 
 ### BL-PLAT-002: Account lock or deletion is authoritative over every credential and session tied to it `[P1-data]`
 - **Rule:** A user's Locked or Deleted account state overrides every authentication surface bound to that account, regardless of that credential's own individual flag. An API key's own active flag is not sufficient to authenticate — the owning account must also exist, be allowed to sign in, and not be locked out; a locked or deleted owning account causes API-key authentication to fail even though the key itself is active. Locking (setting a non-empty lockout end) or deleting a user account immediately terminates every active session and token issued to that account — a currently-signed-in session does not survive an administrator locking or deleting the account.
@@ -2578,30 +2680,30 @@ ticket or a docs page disputes (`status`).
 | Cart | BL-CART-001–016 | 16 | 6 | 10 | 0 | 8 | 2 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
-| Users & Authentication | BL-AUTH-001–018 | 18 | 6 | 11 | 1 | 11 | 6 |
-| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
+| Users & Authentication | BL-AUTH-001–025 | 25 | 13 | 11 | 1 | 18 | 11 |
+| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 9 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 3 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
 | BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 0 |
-| Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 3 |
+| Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 4 |
 | Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 | 1 | 0 |
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 3 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
-| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 4 |
-| GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 2 |
+| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 5 |
+| GraphQL xAPI Contract | BL-GQL-001–005 | 5 | 2 | 2 | 1 | 3 | 4 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
 | Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 11 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
-| Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
+| Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 1 |
 | Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 0 |
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **234** | **67** | **128** | **39** | **126** | **60** |
+| **Total** | | **242** | **75** | **128** | **39** | **134** | **76** |

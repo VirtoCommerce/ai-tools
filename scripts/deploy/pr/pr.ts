@@ -3,7 +3,7 @@
  *
  * Gather ALL the fresh CI pre-release artifacts a change produced (across several
  * vc-module-* repos + vc-platform + vc-frontend) and pin them TOGETHER, in ONE manifest
- * update, onto a test environment's vc-deploy-dev branch — so `/qa-test PR #N` and
+ * update, onto a test environment's vc-deploy-dev branch — so a ticket's `/qa-test` run and
  * `/qa-verify-fix VCST-XXXX` have the change actually live before they test/verify.
  *
  * A real change is rarely one PR: a feature/fix spans a module + its xAPI + the storefront.

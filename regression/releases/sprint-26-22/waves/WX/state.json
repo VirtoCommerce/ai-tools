@@ -1,0 +1,50 @@
+{
+ "wave": "WX",
+ "owner": "Elena Kutasina",
+ "status": "DONE",
+ "runIds": [
+  "REG-2026-11-12-1014-WXpre",
+  "REG-2026-11-12-1133-WX"
+ ],
+ "updatedAt": "2026-11-12",
+ "personas": "Sprint-scope window only (decided by Elena Kutasina 2026-11-12): 111 MFASF-015..022 + 110 MFA-004/005/027 (110 is outside WX in release.json, run here because it flips the same MFA setting); 114 PKS-001..008/010/011/014/015/017..024 ran early in REG-2026-11-12-1014-WXpre (no setting change). Sign-in settings before the window, restored after: store B2B-store OtpSignIn.Enabled=true, MultiFactorAuthentication.StoreMode=CustomerChoice; platform MultiFactorAuthentication.Enabled=false. Personas from Elena Kutasina .env.local via config.js.",
+ "totals": {
+  "planned": 518,
+  "executed": 28,
+  "pass": 24,
+  "fail": 1,
+  "blocked": 0,
+  "skipped": 0,
+  "ambiguous": 3
+ },
+ "untriaged": 0,
+ "notRun": [
+  {
+   "suites": [
+    "104",
+    "111",
+    "114",
+    "114a",
+    "114b",
+    "031",
+    "032",
+    "033",
+    "044",
+    "029",
+    "036",
+    "002",
+    "004",
+    "005",
+    "083c"
+   ],
+   "cases": 490,
+   "reason": "not run yet (as of REG-2026-11-12-1133-WX)"
+  }
+ ],
+ "reports": {
+  "WX": {
+   "subtask": "112984",
+   "release": "112985"
+  }
+ }
+}

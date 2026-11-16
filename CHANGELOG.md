@@ -8,6 +8,433 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Single strategy-driven `/qa-test` — `vc-test` `0.18.2`, `vc-fix` `0.18.10` — 2026-11-13
+
+Design: [`docs/superpowers/specs/2026-11-13-qa-test-single-design.md`](docs/superpowers/specs/2026-11-13-qa-test-single-design.md).
+
+### Removed
+
+- **BREAKING:** `/qa-test-fast` is gone, and `/qa-test` no longer has a FAST and a FULL path. One command,
+  `/qa-test <TICKET> [<env>] [--yes] [--dry-run]`, runs context → an approved `/vc-test:qa-test-strategy` → only the
+  artifacts the strategy marks `RUN` → close-out. **Migration:** call `/qa-test <TICKET>` where you called
+  `/qa-test-fast <TICKET>`. A feature name, `PR #N` or several keys now stop with one
+  line; `--iterate`, `--epic`, `--visual`, `--contract`, `--coverage`, `--axes` and `--release-regression` print one
+  line saying the flag is gone and the run continues without it (the strategy's artifact rows decide what runs).
+- `vc-test` is now required by `/qa-test` (≥ 0.17.1 at its Stage 0); the files only the two-path flow read are deleted
+  from `.claude/skills/qa-test/`.
+
+### Changed
+
+- `vc-test` `0.18.2`: text and comments name the single `/qa-test` (`/qa-test-fast`, "FAST/FULL" and the deleted
+  `.claude/skills/qa-test/*` files are no longer cited; the visual axis is decided by the strategy's `Visual lane`
+  row, not by a flag); `lib/route.mjs`'s `technical-change` `next` reads `/qa-test <KEY> (scoped regression), then
+  /qa-test-lifecycle <KEY> (case sync)`; `ticket-context` asks the repository's preflight for the `ticket` profile
+  (`ticket-fast` stays accepted there as an alias); the knowledge copies are back in step with their sources.
+- `vc-fix` `0.18.10`: `qa-report`, `qa-bug`, `qa-verify-fix`, `tracker-ops.md`, `run-env.md` and the agents README
+  name the single `/qa-test` (a re-test round amends only its own delta comment, never a published verdict).
+- `/qa-test` writes `candidate_cases` and `stale_cases` into the run's `summary.json`; `qa-suite-sync` (reached through
+  `/qa-test-lifecycle <TICKET>`) reads both as sync targets and gaps to author.
+
+## /vc-test:qa-goal decides the verdict by a person-confirmed fix priority — `vc-test` `0.18.1` — 2026-11-13
+
+### Changed
+
+- An in-scope finding now decides the qa-goal verdict by its **fix priority**, not by its severity alone, as
+  `qa-test-strategy`'s `verdict-rules.md` does: FAIL on an in-scope P0/P1 (fix now), PASS WITH NOTES on P2/P3 (fix later),
+  PASS with no in-scope finding. 0.18.0 read Critical/High as P0/P1, though `risk-prioritization-framework.md` §2 says a
+  Critical is not always P0.
+- The run proposes each in-scope finding's `fixPriority` and `fixPriorityReason` at triage (step 6) from that framework; a
+  person confirms or changes them in one question, recorded as `fixPriorityBy`. `goal.mjs check --before verdict` fails an
+  in-scope finding without all three. `finding add` refuses `fixPriorityBy`, and a `finding set` that changes the severity,
+  scope or title drops it, so the person is asked again. A judge FIX on a fix priority goes back to the person.
+- A finding confirmed P0/P1 is reproduced twice whatever its severity, and S3 proposes a bug for every in-scope finding,
+  with its fix priority.
+- A run started on 0.18.0 and resumed on 0.18.1 asks the fix-priority question before its verdict (`resume.md`).
+
+## /vc-test:qa-goal — goal-driven testing with an independent judge — `vc-test` `0.18.0` — 2026-11-13
+
+### Added
+
+- `/vc-test:qa-goal <KEY> [<env>]` (preview): for a ticket a fixed pipeline cannot test — no acceptance criteria, a change in
+  a component the ticket does not link, research before any test. A person agrees a goal and a checkable done-criterion (S1),
+  the run researches, derives the criteria with their sources plus a strategy (S2, one approval), tests with re-planning,
+  drafts the verdict from the journal, has `vc-test:goal-judge` re-derive it (two rounds at most), closes, and proposes each
+  outward write on its own (S3). Nothing goes out by itself and a status is never changed.
+- `lib/goal.mjs` (the journal `goal.json` and its only writer, with stage gates; scrubs every stored string and refuses a
+  token shape), `lib/oauth-code.mjs` (an authorization-code + PKCE sign-in through a Playwright lane in which the agent never
+  holds a secret), `agents/goal-judge.md`, and the skill `qa-goal` with its contract, research-loop, derived-criteria and
+  OAuth-recipe files.
+
+### Changed
+
+- `/vc-test:qa-ticket` prints a one-line hint, and continues, when the bundle has no ACs or names a component no PR touches.
+
+## Lane HAR files keep no sign-in password — `vc-init` `0.7.0` — 2026-11-13
+
+### Fixed
+
+- The Playwright lanes' `recordHar` (`content: "embed"`) wrote the sign-in request body with the typed password in plain
+  text: the Admin SPA's `POST /api/platform/security/login` (JSON `password`) and the storefront's `POST /connect/token`
+  (form `password=`). The lane masks the value in its responses, not on disk. `bridge/har-scrub.mjs` now masks every
+  password-named body field (JSON at any depth, form text and `params[]`, multipart) and every known password value
+  (6+ characters, in each spelling the bridge redactor knows and its form-body spelling) anywhere in the HAR. A record
+  with nothing to mask stays byte for byte; one with a masked field is written back as compact JSON. A HAR still
+  being written is left alone. Session tokens and cookies (`Authorization` headers, the `/connect/token` response)
+  stay in the HAR: it is still not a file to share.
+- A lane run through the bridge (`bridge/playwright-mcp.mjs`) scrubs its HAR directory in-process with the values it
+  holds: at start, after every HAR write (`browser_close`) and at exit.
+- A lane started straight from `.mcp.json` (`npx @playwright/mcp … --secrets <file>`) is covered by the new
+  `hooks/scrub-har.mjs` (`SessionStart`, and `PostToolUse` on `mcp__playwright-*__browser_close`), with values from the
+  project's `.env.playwright.*` and `.env.local`. Only a file with something to mask is rewritten, and not when it changed
+  since it was read (checked again before every rename retry). A `.har-scrub.json` stamp (size, mtime, a tag per value)
+  skips a file until it changes or a scrubber knows a value it was not scrubbed with. The tag is an HMAC keyed with
+  `~/.claude/plugins/data/vc-init-ai-tools/har-scrub.key`, never stored beside the HAR, so a stamp copied with a HAR
+  cannot be used to test a guessed password.
+
+## vc-test installs its own dependencies at session start — `vc-test` `0.17.1`, `vc-fix` `0.18.9`, `vc-init` `0.6.2` — 2026-11-13
+
+### Fixed
+
+- `vc-test` ships a `SessionStart` hook (`hooks/ensure-deps.mjs`, the same one `vc-fix` and `vc-init` carry) that runs
+  `npm install --omit=dev` in the plugin folder when a dependency from its `package.json` is missing. A marketplace
+  install or `/plugin update` creates a fresh cache folder without `node_modules`, so `/vc-test:ticket-context`
+  failed with `ERR_MODULE_NOT_FOUND: dotenv` until someone ran `npm install` there by hand. Fail-soft: a failed
+  install prints the manual command and never blocks the session.
+- `ensure-deps.mjs` in `vc-test`, `vc-fix` and `vc-init` no longer passes `--prefix <plugin root>` to npm: it already runs
+  there, and on Windows (`shell: true`) the unquoted path split at a space (a profile such as `C:\Users\John Smith`),
+  so the install failed and the plugin kept failing with `ERR_MODULE_NOT_FOUND`.
+
+## Every strategy risk names the account it is checked as — `vc-test` `0.17.0`, `vc-fix` `0.18.8` — 2026-11-13
+
+### Added
+
+- Floor **F13** (`floors.mjs`): the change checks access — a permission in the PR's settings entries, a role or permission
+  guard in the diff surface, or a change-map hotspot in zone `access`. Fired ⇒ a risk with `floor:F13` checked as
+  `deny:<permission> <KEY>`, the member without that permission.
+- Gate clause **15** (`check-strategy.mjs`), every strategy: the Approach cell is `Lane · agent · account`; the account is a
+  test-user KEY, `guest`, `deny:<permission> <KEY|P-n>` or `P-n` (several joined by `+`), and every `P-n` is a project risk.
+  A role-gated page opened as the wrong account shows its empty state, which reads as a PASS.
+
+### Changed
+
+- Scenario agents sign in as the account of the risk they cite (`briefs/scenario-run.md`); the visual lane takes the same
+  account (`/vc-test:qa-ticket`). A round ≥ 2 that carries a round-1 Approach row fails 15a until the account is added.
+- The checklist built from a strategy opens each item's Data cell with `as <account>` (`qa-checklist` `from-model.md`, here and in
+  `vc-fix`), and the runners act as it: `/qa-test-fast` checklist lanes instead of their pool user, vc-test's AC run on the API.
+
+## A project keeps its own personas, and accepts the ones a run proposes — `vc-test` `0.16.0` — 2026-11-13
+
+### Added
+
+- `lib/personas.mjs` keeps the project's own personas file (`<store>/personas.md` in its knowledge store:
+  archetypes, segments, persona → account per stand): `--show`, `--init`, `--add --section … --row-file <file>`
+  (`--replace` to change a row of the same name; a duplicate is refused otherwise). Every write goes through
+  `knowledge-store.mjs` — the project store only, scrubbed of the project's secret values, never the platform store.
+- `knowledge-store.mjs` has a `personas` kind; its committed router test checks a client's personas file stays in
+  its own store.
+- `/vc-test:init` step 6a offers to start the file. When the visual lane returns proposed personas, the dispatcher
+  lists them and adds the ones the operator accepts (`skills/qa-design/visual-axis.md` §3); headless, it adds none.
+- A row is passed in a file (`--row-file`), never on the command line: its text comes from a ticket, and a quote in
+  it would break or inject into a shell command. A cell may hold `\|`; a section is found by its heading's first
+  word (`## Accounts — a note`); a table header with no `|---|` gets one; a file-system error exits 1 with JSON.
+  The offer to add proposed personas is in `/vc-test:qa-ticket` human point 2 and `/vc-test:qa-design` Step 5.
+  A heading in the singular (`## Archetype`) is read; only a section's first table holds its rows; the row file
+  is deleted after use.
+
+## The visual lane works the same on a client fork as on vc-frontend — `vc-test` `0.15.0` — 2026-11-12
+
+### Changed
+
+- **`ui-ux-expert` is thin and general.** The agent body keeps only role, boot, hard rules, procedure and return
+  shape (an agent definition is paid on every dispatch; `wc -c` shows the size). The invariants cheat sheet, design-system notes, severity
+  table, escalation triggers, action/observation space and the `/qa-storybook` vs `/qa-accessibility` boundary move
+  verbatim to `skills/qa-design/lane-reference.md`.
+- **A FAIL goes back to the dispatcher.** The agent files a bug only when its brief says so; it used to say "file
+  bug" while reporting to its dispatcher, and `visual-axis.md` §3 routes findings through triage.
+- Removed the line that made every EU-reachable WCAG violation P0/P1; it contradicted the severity table, which
+  already grades A11y Critical P0 for legal risk.
+
+### Added
+
+- `skills/qa-design/project-facts.md`: project type (`platform` or `client`, from `project-profile.json`; no
+  profile ⇒ `client`) and one table of every value that differs per project — storefront repo and code host,
+  source layout, component names, Storybook, gated presets, tokens, measurement scales, the critical-UI matrix,
+  example test data, the `kb`, the tracker — with vc-frontend's value, the client source and the fallback. The
+  agent and the skill files cite it instead of naming vc-frontend's value.
+- **`vs. USER` — usability tested as a real user.** New `skills/qa-design/ux-task-walkthrough.md`: on a storefront
+  page or flow, the agent does 1–3 user tasks (from the brief, else the ACs, else the page's primary job) as the
+  persona they belong to, from the user's own entry point, using only what is on screen. It is judged by whether
+  the task gets done: a task that cannot be completed is a `FAIL` that triages like a `BL-UI` FAIL; friction
+  (missing feedback, unclear labels, lost input, unconfirmed deletes, extra steps, dead ends) is `ADVISORY` at its
+  real severity. Writes run to the end only on a stand declared writable and only where the run keeps a ledger
+  (every created entity recorded, so teardown removes it); elsewhere the committing step is `NOT RUN`. A FAST path
+  runs one task as its own actor; personas and pairs are FULL-path. `visual.axes.user` and `visual.ux_findings[]`
+  are declared in `.claude/templates/qa-test-summary.schema.json`. `visual-axis.md` schedules it for page
+  and flow surfaces and the brief carries the tasks. Think-aloud, five-second and first-click tests are marked as
+  human-session methods the agent recommends and never runs; a UX finding is no longer "must be filed" by the
+  agent.
+- **Persona tests, derived from the ticket.** New `skills/qa-design/personas.md`: a persona is an archetype (how
+  the person behaves — first-time guest, returning customer, B2B buyer, approver, restricted member, acting on
+  behalf, mobile, keyboard / screen reader, other locale) plus the segments the feature splits users by, read from
+  the ACs, the diff (role and permission checks, branches on tier / currency / org / locale) and the feature's
+  settings. Every persona names its source. Segments run as pairs that must diverge (VIP vs zero balance, with vs
+  without a permission, own vs another org); a pair that behaves the same is a `FAIL` when an AC states the
+  difference. The account is the stand key carrying the segment, checked live before the task. A contrast
+  archetype by the change's risk is the fallback when the ticket names no segment. A project keeps its own
+  archetypes, segment vocabulary and persona → account map in its knowledge store (`<store>/personas.md`,
+  `test.knowledgeStore`, never the public kb); they take precedence over the plugin's catalog, and a segment the
+  ticket shows that the file lacks comes back as a proposed persona for a person to add. Capped at three personas per
+  task, six runs in all, and the runs are compared: a restricted member reaching data it must not see is a
+  `FAIL` reported as access control; a dead end instead of a clear denial, or one persona needing far more steps,
+  is `ADVISORY`. A persona with no account on the stand is `NOT RUN`, never signed in as someone else.
+- Storybook story discovery starts from `{STORYBOOK_URL}/index.json`, which a fork's Storybook serves too, before
+  vc-frontend's title convention.
+
+### Fixed
+
+- **A client install no longer reads or writes the public `kb`.** The agent's kb steps run only on `platform` and
+  return `kb: not read (client install)` otherwise — the rule `lib/knowledge-store.mjs` and
+  `ticket-context/known-ground.md` already hold. On `platform`, the kb tools are loaded with `ToolSearch` before
+  the first call, and the write step cites the capture contract.
+- Source search for a component's usages, file and story was hard-wired to `VirtoCommerce/vc-frontend`; on a
+  client project it now searches the fork named in the profile (`repos.client[]`, `kind: "frontend"`), and on
+  Azure Repos greps a local checkout or says the step did not run.
+- "Gate a11y on Coffee + Red" was stated six times; it is one rule in `a11y-audit.md` §Theme scope — the brief's
+  presets, else Coffee + Red where the fork still ships them, else its default theme — and the report names the
+  presets it gated.
+- The measurement scales the plugin ships (`SPACING_GRID`, UI-kit sizes) are vc-frontend's: on a client fork a
+  finding that depends on one is WARN until checked against the fork's own config, instead of a phantom FAIL.
+- The off-matrix "consider adding to `critical-ui-scope.md`" suggestion is not made on a client project — that
+  file ships with the plugin.
+- `BL-CAT-001` is named as not shipped in `knowledge/bl-ui.md`; UI invariants cover every `BL-UI-*` / `BL-A11Y-*`;
+  `BL-UI-006` keeps its 24–43 px WARN band; the `SKIPPED` label matches `claude-design-verification.md` §1.
+
+## A storefront fix typechecks for real and follows the repo's own agent rules — `vc-fix` `0.18.7`, `vc-init` `0.6.1` — 2026-11-12
+
+### Fixed
+
+- `/qa-fix` Gate 3 typechecked a `vc-frontend` fix with `yarn typecheck || npx vue-tsc --noEmit`. vc-frontend has
+  no `typecheck` script, and its root `tsconfig.json` is `"files": []` plus project references, so the fallback
+  checked zero files and exited 0 — every storefront fix passed its typecheck without one. The default
+  (`REPO_PROFILES.frontend`, and vc-init's `kindToolchain` that seeds a client storefront's profile) is now
+  `yarn validate:types || npx vue-tsc --build --force`; `/vue-fix`, `fullstack-frontend`, the PR-body checklist and
+  the architecture notes follow. A client profile written before this keeps the old command until
+  `/project-init` re-derives it.
+- The notes said a new ESLint error fails vc-frontend CI. It does not: ESLint runs only pre-commit there, so the
+  local `lint` is the only place it shows.
+
+### Added
+
+- `skills/vue-fix/repo-own-rules.md`: `fullstack-frontend` reads the checkout's own `AGENTS.md`, `CLAUDE.md` and
+  the `.claude/rules/*.md` matching its files before the repro, and runs the checks they name. They are read in
+  the checkout, never copied here. Their edit-guard hook does not run in `.fix-workspace/`, so it is kept by hand,
+  and a fix that needs new public UI-kit API is a hand-off. `frontend-reviewer` checklist item 10 checks it.
+
+### Changed
+
+- **Tier A:** G2 always asked for a NEW test and G3 forbade touching any test file
+  (`git diff --name-only`), so a fix agent could not add a case to the subject's existing test file and
+  wrote a second, duplicate one beside it, with the repo's own setup copied in. It also committed a
+  test for markup / style / copy changes that vc-frontend's own rules say need none, and named files
+  `*.spec.ts` where that repo uses `*.test.ts`. New `quality-gates.md` §G2 placement (both copies): the
+  red→green proof stays mandatory, but the repro is a **new case in the subject's existing test file**
+  when it has one (added lines only, checked by `git diff --numstat`: 0 deleted lines), a new file only
+  when there is none and the change is logic, and an **uncommitted scratch test** with its result in the
+  PR body when the change has no logic and the repo's rules say it needs no test. Both developers, both
+  reviewers, `/vue-unit-test`, `/dotnet-unit-test`, `shared-instructions.md` rule 2, `when-to-write-a-test.md`
+  RULE 4 and the root `CLAUDE.md` exception follow.
+
+---
+
+## `run.sh` takes its knobs from a file, and `TRACE=1` finds a published platform — `vc-perf` `0.5.0` — 2026-11-12
+
+### Added
+
+- `run.sh --env-file <path>` and `--k6 <path>`. Since Claude Code 2.1.278, variables on the `run.sh` command
+  (`X=1 run.sh`, `export X; run.sh`) put it back in the sandbox, where k6 cannot reach the backend. The file is
+  parsed, never sourced; names `run.sh` does not use reach k6 only. Details: `loadtests/README.md`.
+
+### Fixed
+
+- `TRACE=1` silently skipped the capture on a platform started as `dotnet VirtoCommerce.Platform.Web.dll`.
+
+### Changed
+
+- Agent-facing recipes pass knobs through `--env-file`.
+
+---
+
+## A host-governed project asks where the agent may create test data — `vc-init` `0.6.0`, `vc-fix` `0.18.6` — 2026-11-11
+
+### Changed
+
+- On a host-governed project, `/project-init` wrote `governance.stand: { writable: false }` without asking.
+  vc-test's `standOf()` checks that flag after the per-env declaration, so an operator who told
+  `/vc-test:init` that `qa` may be written to still got every run on `qa` treated as read-only — even where the
+  host's rules allow the agent to create its own test entities on QA (they forbid other people's entities, direct
+  database / search-index writes and production). The question round of `host-governed.md` step 3 now asks:
+  *"On which environments may the agent create its own test data?"* — multi-select over the host's
+  environments (detect-governance's new `standQuestion`: always 2–4 options — up to three envs, the host's or,
+  without password slots, the project's own, never a production-looking one — plus **"Nowhere — read-only"**,
+  the Recommended default; `more` names the envs that did not fit).
+- New `gen-profile --gov-stand-envs <host env>,…|none` writes `governance.stand = { writable: <any listed>,
+  envs: [...] }`. `writable` is the project-wide ceiling; which of our envs a run writes to stays vc-test's
+  `test.environments.<env>.writable`, and a run writes only where both say yes. Absent ⇒ the recorded answer is
+  kept; a host never asked stays `{ writable: false, envs: null }` — the old safe behaviour. The ticked values
+  are ONE comma-joined answer; "none" together with an env, or a non-string `--set` value (`true`, a number), is
+  refused (as is `null`, which would read as "never asked"), and a production-looking env gets a warning line
+  (gen-profile, only where the answer is recorded) or a `warnings` entry (reconcile, shown by `--check` Step B).
+  The hand-off names the envs where the agent may create test data.
+- **No `/vc-test:init` needed for it.** gen-profile (new `lib/test-stands.mjs`) declares the answer to vc-test
+  per env, in the shape vc-test's own init writes: `test.environments.<env> = { writable: <its host env is
+  listed>, backUrl: <BACK_URL of .env.<env>> }`, other keys of an existing entry and of the `test` block kept.
+  An env not listed is declared read-only, so the answer is enforced per env by vc-test's existing run check
+  (`standOf()`), not only as the project-wide flag. `default-env.mjs` — already run after the env files are written
+  in onboarding step 4, `--add-env` and `--check` Step C — declares every env on disk each time (`testStands`
+  lines), so a new env or a changed BACK_URL needs no step of its own. A new answer (`--gov-stand-envs`, a
+  `--check` answer) re-applies to every env; otherwise an env's existing `writable` — a later `/vc-test:init`
+  choice — is kept while the env's stand stays the same. When its BACK_URL changes it follows the answer again and
+  a line names the move (`old → new`), so a writable choice never follows an env name to another stand (vc-test's
+  `backUrl` pin). A front's own `.env.development` / `.env.production` (no BACK_URL, not allowed) is not declared,
+  and a vc-test reader of another shape degrades to the NOT-declared line instead of failing gen-profile. The URL is read with vc-test's own env reader (root
+  `.env.<env>` + QA_ENV_PATH folders), so it is the one its run check loads; without vc-test installed nothing is
+  declared, and a vc-test whose reader cannot be loaded gets a "NOT declared" line instead of silence. An env
+  recorded before its BACK_URL existed follows the answer once the URL appears. The URL is read without a ticket's
+  own `<ticket>` folder, so it does not depend on the session's bound ticket. Only on a host-governed project with an
+  answer.
+- **Schema:** `governance.stand.envs` (`string[] | null`, default `null`) added to `PROFILE_DEFAULTS` and the
+  `.d.mts` typings in vc-init and in vc-fix's reader copy — a host-governed project's field only: reconcile
+  treats it as conditional on `governance.host` (never added to, and pruned from, a no-host profile), and
+  gen-profile writes none without a host. No `schemaVersion` change. `[]` = asked, nowhere; `null` = never asked.
+- `/project-init --check`: a host-governed profile with `stand.writable` not `true` and no `envs` (every profile
+  written before 0.6.0) is reported as a `pending` decision `governance.stand.envs`, with the question and the
+  host's environments as options; the answer goes back as `reconcile-profile.mjs --write --set
+  governance.stand.envs=<envs>|none`. No full re-run of the interview. A `writable: true` set by hand is kept and
+  not asked again.
+- vc-fix `knowledge/execution/host-governance.md` rule 3: stands are read-only unless the operator said
+  otherwise; `true` allows only the agent's own test data on `stand.envs`, and the host's rules still win.
+- Unchanged: a project with no host (`governance.host: null`) stays `writable: true`; the Jira / GitHub flows do
+  not touch the field.
+
+### Verified
+
+- A temporary script (deleted): the governance block with and without the flag; `gen-profile` host without the
+  flag ⇒ `{false, null}`, with `qa` ⇒ `{true, ["qa"]}`, a same-host re-run keeps it, `--merge --gov-stand-envs
+  none` ⇒ `{false, []}`; a no-host profile ⇒ `writable: true` before and after `--governance none`; reconcile of
+  a pre-0.6.0 host profile ⇒ `pending`, `--set …=qa,uat` / `=none` resolves it and a second pass asks nothing; a
+  hand-set `writable: true` is not pending; a no-host profile gets no question and refuses the `--set`.
+  `node --test plugins/vc-init/bridge/*.test.mjs` 94/94; `scripts/unit/{gen-profile,reconcile-profile,
+  gen-mcp-secret-hygiene}.test.mjs` 35/35.
+
+---
+
+## A ticket's Claude Design project is imported, not silently skipped — `vc-test` `0.14.0` — 2026-11-10
+
+### Added
+
+- `design:import` (`plugins/vc-test/lib/design/design-import.mjs`, generated from
+  `scripts/layout/design-import.ts`; in this repository `npm run design:import`): takes the ticket's
+  `claude.ai/design/p/<uuid>?file=…` link and a downloaded zip or folder, puts the copy in
+  `.design-source/<uuid>/` with a `.source.json` (project, `file=` artboard, anchor), and exits `2`
+  without writing when the copy lacks the artboard the link names. Before it, the copy had to be unpacked by
+  hand into a folder named after a UUID from the link, and in practice was not.
+
+### Changed
+
+- A ticket that links a Claude Design project with no local copy now stops the run once, before dispatch, and
+  asks (`claude-design-verification.md` §Missing copy): *I downloaded it* — the run itself imports the path
+  given, or the newest `.zip` in Downloads; *Pull it for me* — the operator types `/design-sync` and the run
+  pulls the screen's files; or continue without the design. The operator never needs to know the command, the
+  UUID or the folder. Asked at `/qa-test` `1b`, `/qa-test-fast` Stage 1's Join, `/vc-test:qa-design` before
+  Step 3; headless runs still record `SKIPPED`. Previously the design axis was skipped silently and the gap
+  was visible only in the report.
+- The source policy (`claude-design-verification.md` §Filling the local copy) names the two imports a person
+  may start: `design:import`, or a pull through an operator-started `/design-sync` (read methods only, main
+  session only). A QA run still never calls `DesignSync` itself. It also records what a pull measured on
+  2026-11-10: `get_file` truncates at 256 KiB, and a project reported `moveState: moved` to a Claude artifact.
+
+### Verified
+
+- A temporary run of the generated `design-import.mjs` against a Windows-made zip with a wrapper folder,
+  a folder, a bare uuid, a missing artboard (exit `2`, nothing written), an existing copy without
+  `--force` (exit `1`) and a foreign link (exit `1`), deleted before commit. `vc-test:design:check`,
+  `context:check` and `tsc` pass.
+
+## An Azure Boards profile keeps numeric ticket keys without a tracker scan — `vc-init` `0.5.5` — 2026-11-10
+
+### Fixed
+
+- `gen-profile.mjs` wrote `tracker.ticketKeyFormat: "prefixed"` (the Jira default) for an Azure Boards project
+  whenever it ran without `--tracker-json` — always on a host-governed project, where `discover-tracker.mjs`
+  stands down. Readers then took a bare work-item id (`8944`) for a Jira key: vc-test's ticket context and vc-fix
+  `/qa-verify-fix` read the explicit field. The ticket key facts now follow `tracker.kind` when tracker-json
+  does not set them: Azure `numeric` + `crossLinkToken: "AB#"`, Jira `prefixed` + `""` — the values
+  `discover-tracker` emits for each kind.
+- A value carried by `--tracker-json` always wins — unless that file is a scan of the OTHER tracker (a leftover
+  `tracker.json` after a Jira ⇄ Azure switch): it is then ignored with a warning instead of baking the wrong
+  tracker's key format and status model into the profile.
+- The cross-link token is replaced only when it holds one of the derived values (`""` / `"AB#"`), so any other
+  token the operator set survives. A token set to `""` by hand cannot be told from the default and becomes `"AB#"`
+  on Azure.
+- A profile already written with the wrong format is corrected by a fresh `/project-init` run or by
+  `gen-profile --merge`, which prints the change. `/project-init --check` does not correct it: it goes through
+  `reconcile-profile.mjs`, which does not touch the key format.
+- Universal: Jira projects and Azure projects scanned by `discover-tracker` write the same values as before.
+
+## A client project gets its default env at onboarding — `vc-init` `0.5.4` — 2026-11-10
+
+### Fixed
+
+- `/project-init` sets `.env.test-env` (`TEST_ENV=<env>`), the env a command run without one uses. Before, a
+  client project had only `.env.<its env>`, so every such command (`run-folder.mjs use <TICKET>`, the first step of
+  `/vc-test:qa-ticket`) fell back to the built-in `vcst` and stopped on `unknown env "vcst"`. Nothing is left to
+  set up by hand:
+  - **one env** — written by itself;
+  - **several envs** — ONE question, *which env do commands use by default?*: the project's envs, the recommended
+    one first — never a production-looking one (`prod`, `production`, `prd`, `live`); qa / test / dev / staging
+    before uat; on a host-governed project, one the host keeps test-user slots for;
+  - **an existing file** — kept, never rewritten, no question.
+  An answer that names no env of the project is asked again; choosing a production-looking env is written with a
+  warning; with every env production-looking, none is recommended. A lone production-looking env is not made the
+  default unasked: the question offers it and "No default environment" — declining leaves `.env.test-env` holding
+  only a comment line, so resolvers find no `TEST_ENV` and `--check` does not ask again (our Playwright lanes, which take no env per command, still start for the only env with stored passwords, as without the file — the output says so). An answer that arrives
+  after the file was written is reported as not applied.
+- The step is the new `default-env.mjs`, run once every env of the run exists (`scaffold-env --no-default`), in
+  §3a, `--add-env` and `--check` Step C — so a project onboarded before 0.5.4 gets the file, or the question, from
+  `/project-init --check`. The host-governed flow scaffolds all its envs first and then takes the same step.
+- The file is written only when git ignores it and does not track it; `.env.test-env` joins the `.gitignore` block
+  onboarding writes, and an older project gets only that one entry, in its own block.
+- An existing file is checked: UTF-16 (Windows PowerShell 5.1's `>`), no `TEST_ENV` line, an env with no
+  `.env.<env>` beside it, an `export` prefix, or several lines with different values are reported as
+  `kept, but …` with the fix. It is read as dotenv reads it (a UTF-8 BOM is dropped, the last line wins).
+- Only an `.env.<x>` holding `BACK_URL` counts as an env, so a Vite / Next repo's `.env.development` /
+  `.env.production` is not one.
+- The hint after a switch: with vc-secrets passwords, restart Claude Code (our Playwright lanes read their env's
+  passwords from `.env.test-env` at start). On a host-governed project the browser servers and passwords are the
+  host's and do not read the file, so only how to switch is said.
+- `scaffold-env.mjs` run on its own (by hand, in CI) keeps its behaviour: one env is written, several are
+  `skipped` with a one-line instruction (never `echo … >`, never a scaffold-env re-run); `--primary` chooses.
+- Universal: a project with one env, Jira / GitHub projects and projects without a governing plugin behave as
+  before. The resolvers and their `vcst` default are unchanged.
+
+## The triage collector reads the visual lane's verdict words — `vc-test` `0.13.2` — 2026-11-06
+
+### Fixed
+
+- `checklistVerdict()` in `plugins/vc-test/lib/triage-collect.mjs` stripped every `_` before matching a
+  checklist verdict, so `KNOWN_DIVERGENCE` (`skills/qa-design/visual-axis.md`) became `KNOWNDIVERGENCE`, and
+  `NOT_RUN` / `NOT_BUILT` / `PASS_WITH_NOTES` were unreadable too; ticket-mode triage left those rows in
+  `unresulted[]`. An underscore now reads as a space (as `lib/rounds.mjs` already does) and a markdown `\`
+  escape is dropped. Also read now: `CONFIRMED` and `MET` as a pass, `NOT-MET` as a fail, `AMBIGUOUS` as
+  blocked (it escalates). `vs. DESIGN` `MISSING` moves from FAIL to advisory, where visual-axis.md puts it with
+  `DRIFT`. Observed on the VCST-6289 run, where 11 of 40 checklist rows were unreadable until the verdicts
+  were reworded.
+
+### Verified
+
+- A temporary `node --test` over the verdict cells (plain, bold, code, `_x_` / `__x__` emphasis, `\_` escapes,
+  every accepted verdict word, and non-verdicts such as `CONTRADICTS` and `PASSWORD reset`), deleted before commit.
+
 ## A `|thumbnail!` screenshot is no longer reported as not rendered — `vc-fix` `0.18.4` — 2026-11-02
 
 ### Fixed

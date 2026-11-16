@@ -16,9 +16,9 @@ codes, and severities; a restated copy here would drift, and has. Delegate by *d
 | Dimensions | Where they run in this pipeline |
 |---|---|
 | **1–7, 9, 10** — structure, determinism, completeness, testability, data validity, BL/ECL + requirement traceability, duplication, technique coverage, assertion grounding | **Here (Phase 4a)**, static, no browser. Start with the deterministic core: `npm run suites:review -- <csv>` (dims 1–7, 9, 10 as exact rules, plus `TRI-000` stamp staleness), then spend LLM effort only on the judgment rules it can't decide |
-| **8** — live environment verification | **Phase 5** (`qa-testing-expert`, `playwright-firefox`) |
-| **10 (live half)** — grounding `{HYPOTHESIS}`/unconfirmed-`{SPEC}` → `{OBSERVED}` | **Phase 5** — static 4a only *detects* an ungrounded assertion; only the live pass can ground it |
-| **11** — behavioral triangulation (*is the asserted behavior still TRUE?*) | **Not run wholesale by this pipeline.** Phase 2's change signal is a *candidate*, not confirmation — see 4a-bis below. A full suite sweep is `/qa-review-tests suite <ID> --triangulate` or its scheduled twin `ci/run-suite-audit.ts` |
+| **8** — live environment verification | **Phase 5** — the 5a scoped run executes every target; 5b (`qa-testing-expert`, `playwright-firefox`) covers the rest (`verify.md`) |
+| **10 (live half)** — grounding `{HYPOTHESIS}`/unconfirmed-`{SPEC}` → `{OBSERVED}` | **Phase 5c** — the harvest from the 5a run's PASSED cases; static 4a only *detects* an ungrounded assertion |
+| **11** — behavioral triangulation (*is the asserted behavior still TRUE?*) | **Not run wholesale by this pipeline.** Phase 2's change signal is a *candidate*, not confirmation — see 4a-bis below. A full suite sweep is `/qa-review-tests suite <ID> --triangulate` |
 
 Also run, per the skill's Step 3/3.5: `npx tsx scripts/test-data/validate-td-refs.ts` (DV-013…020) and
 `npm run graphql:lint-labels -- <csv>` for every GraphQL suite (DV-019).

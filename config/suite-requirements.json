@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "What a suite's cases need from the stand that the suite CSV cannot express: a store setting, a platform setting, a payment method, a key in vc-deploy-dev infra/environments.yml (headers, FileUpload scopes, KnownAssetHosts). Read by the regression pre-flight (scripts/regression/requirements.ts) before every run and every release wave; personas ([PRE:SIGNIN_AS:*]) and fixtures (@td()) are derived from the CSVs and are NOT declared here.",
-    "kinds": "storeSetting · platformSetting · paymentMethod (isActive) · deployConfig (dotted path in the env's block of infra/environments.yml; prefix:true for an indexed list) · uploadScope (a FileUpload__Scopes__N__Scope value)",
+    "kinds": "storeSetting · platformSetting · paymentMethod (isActive) · deployConfig (dotted path in the env's block of infra/environments.yml; prefix:true for an indexed list) · uploadScope (a FileUpload__Scopes__N__Scope value) · contract (a generated contract snapshot the cases cite — mcp-schema | ucp-schema; runs its --check read-only, drift is a WARN whose remedy is the refresh then a re-read of the cases, never an automatic refresh)",
     "match": "equals · notEquals · nonEmpty · allowedIncludes (platformSetting: values its dictionary must offer) · (none = must be set). level: warn (default — the named cases will BLOCK) or block (the suite cannot run meaningfully).",
     "personas": "personas: a persona or @td() fixture alias (or PREFIX*) → the module it needs. Without that module on the stand its cases are NOT DEPLOYED: they leave the plan (not run, not counted, not triaged), like a suite whose requiresModules is not deployed.",
     "skip": "Every case a WARN/BLOCK row names is recorded BLOCKED with that row's reason and NOT run (regression:plan --run-blocked runs them anyway).",
@@ -13,6 +13,16 @@
     "SR_*": { "module": "VirtoCommerce.SalesRep", "why": "the sales-rep personas are rep contacts of the SalesRep module (seed:sales-rep → /api/sales-rep/*)" }
   },
   "suites": {
+    "094": [
+      { "kind": "contract", "name": "ucp-schema", "why": "cases cite .claude/knowledge/api/ucp-schema.md for the /ucp/mcp tools and arguments; drift means a case may assert a tool or argument that moved" }
+    ],
+    "102": [
+      { "kind": "contract", "name": "ucp-schema", "why": "cases cite .claude/knowledge/api/ucp-schema.md for the /ucp/mcp tools and arguments; drift means a case may assert a tool or argument that moved" },
+      { "kind": "contract", "name": "mcp-schema", "why": "the ucp scope tool catalog (names, read-only/destructive flags) lives in .claude/knowledge/api/mcp-schema.md" }
+    ],
+    "118": [
+      { "kind": "contract", "name": "mcp-schema", "why": "cases cite .claude/knowledge/api/mcp-schema.md for scopes, tool sets, flags and /admin/mcp arguments; drift means a case may assert a tool, argument or scope that moved" }
+    ],
     "001": [
       { "kind": "storeSetting", "name": "Catalog.BrandStoreSetting.BrandsEnabled", "equals": true, "cases": ["CAT-035", "CAT-036", "CAT-037"], "why": "the /brands page and brand facets" }
     ],
@@ -34,8 +44,28 @@
     "037": [
       { "kind": "storeSetting", "name": "Shipping.Bopis.GoogleMaps.Enabled", "equals": true, "cases": ["BOPIS-080", "BOPIS-109"], "why": "the pickup-location map in the cart" }
     ],
+    "040a": [
+      { "kind": "deployConfig", "name": "platform.config.Payments__Skyflow__vaultId", "nonEmpty": true, "level": "block", "cases": ["PAY-SKY-001", "PAY-SKY-002", "PAY-SKY-003", "PAY-SKY-004", "PAY-SKY-005", "PAY-SAVED-001", "PAY-SKTOK-001", "PAY-SKY-006", "PAY-SKY-007", "PAY-SKY-008", "PAY-SKY-009", "PAY-SKY-010", "PAY-SKY-011", "PAY-SKY-012", "PAY-SKY-013", "PAY-SKY-014", "PAY-SKY-015", "PAY-SKY-016", "PAY-SKY-017", "PAY-SKY-018", "PAY-SKY-019", "PAY-SKY-020", "PAY-SAVED-002", "PAY-SAVED-003", "PAY-SAVED-004", "PAY-SAVED-005", "PAY-SAVED-006", "PAY-SKY-021", "PAY-SKY-022"], "why": "Skyflow vault not configured on the stand: the card form stays on Loading and initializeCartPayment fails (Stable 16 W7 on vcptcore-regression); set on vcst-qa" },
+      { "kind": "deployConfig", "name": "platform.secretConfig.Payments__Skyflow__PaymentFormAccount__clientID", "nonEmpty": true, "level": "block", "cases": ["PAY-SKY-001", "PAY-SKY-002", "PAY-SKY-003", "PAY-SKY-004", "PAY-SKY-005", "PAY-SAVED-001", "PAY-SKTOK-001", "PAY-SKY-006", "PAY-SKY-007", "PAY-SKY-008", "PAY-SKY-009", "PAY-SKY-010", "PAY-SKY-011", "PAY-SKY-012", "PAY-SKY-013", "PAY-SKY-014", "PAY-SKY-015", "PAY-SKY-016", "PAY-SKY-017", "PAY-SKY-018", "PAY-SKY-019", "PAY-SKY-020", "PAY-SAVED-002", "PAY-SAVED-003", "PAY-SAVED-004", "PAY-SAVED-005", "PAY-SAVED-006", "PAY-SKY-021", "PAY-SKY-022"], "why": "Skyflow payment-form service account, as on vcst-qa" }
+    ],
+    "040c": [
+      { "kind": "deployConfig", "name": "platform.config.Payments__Datatrans__MerchantId", "nonEmpty": true, "level": "block", "cases": ["PAY-DT-001", "PAY-DT-002", "PAY-DT-003", "PAY-DT-004", "PAY-DT-005", "PAY-DT-006", "PAY-DT-007", "PAY-DT-008"], "why": "Datatrans merchant not configured on the stand, so B2B-store does not offer it (Stable 16 W7 on vcptcore-regression); set on vcst-qa" },
+      { "kind": "deployConfig", "name": "platform.secretConfig.Payments__Datatrans__Secret", "nonEmpty": true, "level": "block", "cases": ["PAY-DT-001", "PAY-DT-002", "PAY-DT-003", "PAY-DT-004", "PAY-DT-005", "PAY-DT-006", "PAY-DT-007", "PAY-DT-008"], "why": "Datatrans merchant secret, as on vcst-qa" }
+    ],
     "041": [
       { "kind": "paymentMethod", "name": "SkyflowPaymentMethod", "equals": true, "cases": ["PAY-UX-001", "PAY-UX-002", "PAY-PERF-001", "PAY-DECLINE-001", "PAY-DECLINE-002", "PAY-DECLINE-003", "PAY-DECLINE-004", "PAY-DECLINE-005", "PAY-XLAY-001", "PAY-DECLINE-006", "PAY-DECLINE-007", "PAY-SWITCH-001", "PAY-DECLINE-008"], "why": "card payment through Skyflow" }
+    ],
+    "044": [
+      { "kind": "paymentMethod", "name": "CyberSourcePaymentMethod", "equals": true, "cases": ["SEC-PCI-001", "SEC-PCI-002", "SEC-PCI-003", "SEC-PCI-004", "SEC-PCI-006"], "why": "the CyberSource card form whose PCI handling these cases inspect (inactive on vcptcore_regression B2B-store, stable-16 W6)" },
+      { "kind": "deployConfig", "name": "platform.secretConfig.Payments__CyberSource__MerchantId", "nonEmpty": true, "cases": ["SEC-PCI-001", "SEC-PCI-002", "SEC-PCI-003", "SEC-PCI-004", "SEC-PCI-006"], "why": "without merchant credentials the CyberSource card form cannot get its capture context (absent on vcptcore-regression, stable-16 W6)" },
+      { "kind": "deployConfig", "name": "platform.secretConfig.Payments__CyberSource__MerchantKeyId", "nonEmpty": true, "cases": ["SEC-PCI-001", "SEC-PCI-002", "SEC-PCI-003", "SEC-PCI-004", "SEC-PCI-006"], "why": "CyberSource merchant credentials, as on vcst-qa and vcptcore-qa" },
+      { "kind": "deployConfig", "name": "platform.secretConfig.Payments__CyberSource__MerchantSecretKey", "nonEmpty": true, "cases": ["SEC-PCI-001", "SEC-PCI-002", "SEC-PCI-003", "SEC-PCI-004", "SEC-PCI-006"], "why": "CyberSource merchant credentials, as on vcst-qa and vcptcore-qa" },
+      { "kind": "deployConfig", "name": "platform.config.Authorization__EnablePersistentStorageTokenValidation", "equals": true, "cases": ["SEC-AUTH-004"], "why": "a password change revokes existing access tokens only when they are validated against storage (stateless by default, KB-7564A9BF)" }
+    ],
+    "048c": [
+      { "kind": "storeLanguage", "name": "pt", "cases": ["LAYOUT-STR-002", "LAYOUT-STR-004", "LAYOUT-STR-007", "LAYOUT-CNT-005", "LAYOUT-CNT-006"], "why": "the /pt/… pages these cases open; without the language they render the 404 page (stable-16 W6: STR-004 measured the 404, the rest timed out)" },
+      { "kind": "storeCurrency", "name": "PTS", "cases": ["LAYOUT-CNT-005"], "why": "the points currency picked in the header currency selector" },
+      { "kind": "storeCurrency", "name": "CZK", "cases": ["LAYOUT-CNT-008"], "why": "a currency offered in the header with no price list, for the catalog empty state" }
     ],
     "042": [
       { "kind": "storeSetting", "name": "Quotes.EnableQuotes", "equals": true, "cases": ["SMK-005"], "why": "/account/quotes for an organization maintainer" },

@@ -1,43 +1,97 @@
 {
-  "generatedIso": "2026-10-30T12:05:03.451Z",
-  "rev": 2,
+  "generatedIso": "2026-11-09T10:03:26.591Z",
+  "rev": 3,
   "monthsFull": 6,
   "source": {
     "rss": "https://www.virtocommerce.org/c/news-digest/15.rss",
     "categoryId": 15,
     "itemsInWindow": 25,
-    "oldestInWindow": "2024-12",
+    "oldestInWindow": "2025-01",
     "fetchNote": null
   },
   "latestByComponent": {
+    "Platform": {
+      "version": "3.1092.0",
+      "month": "2026-11",
+      "repo": "vc-platform",
+      "previousVersion": "3.1071.0"
+    },
+    "Admin AngularJS": {
+      "version": "3.1092.0",
+      "month": "2026-11",
+      "repo": "vc-module-admin-angular-js",
+      "previousVersion": null
+    },
+    "Admin Shell": {
+      "version": "3.1000.0",
+      "month": "2026-11",
+      "repo": "vc-module-admin-shell",
+      "previousVersion": null
+    },
+    "OTP": {
+      "version": "3.1000.0",
+      "month": "2026-11",
+      "repo": "vc-module-otp",
+      "previousVersion": null
+    },
+    "Frontend": {
+      "version": "2.61.0",
+      "month": "2026-11",
+      "repo": "vc-frontend",
+      "previousVersion": "2.58.0"
+    },
+    "Passkeys": {
+      "version": "3.1000.0",
+      "month": "2026-11",
+      "repo": "vc-module-passkeys",
+      "previousVersion": null
+    },
+    "MFA": {
+      "version": "3.1000.0",
+      "month": "2026-11",
+      "repo": "vc-module-mfa",
+      "previousVersion": null
+    },
+    "Return": {
+      "version": "3.1005.0",
+      "month": "2026-11",
+      "repo": "vc-module-return",
+      "previousVersion": null
+    },
+    "UCP": {
+      "version": "3.1006.0",
+      "month": "2026-11",
+      "repo": "vc-module-ucp",
+      "previousVersion": "3.1005.0"
+    },
+    "Catalog": {
+      "version": "3.1046.0",
+      "month": "2026-11",
+      "repo": "vc-module-catalog",
+      "previousVersion": "3.1044.0"
+    },
+    "Sales Rep": {
+      "version": "3.1015.0",
+      "month": "2026-11",
+      "repo": "vc-module-sales-rep",
+      "previousVersion": "3.1009.0"
+    },
+    "Page Builder": {
+      "version": "3.1039.0",
+      "month": "2026-11",
+      "repo": "vc-module-pagebuilder",
+      "previousVersion": "3.1026.0"
+    },
+    "Sanity": {
+      "version": "3.1004.0",
+      "month": "2026-11",
+      "repo": "vc-module-sanity",
+      "previousVersion": "3.1001.0"
+    },
     "Loyalty": {
       "version": "3.1008.0",
       "month": "2026-10",
       "repo": "vc-module-loyalty",
-      "previousVersion": null
-    },
-    "Frontend": {
-      "version": "2.58.0",
-      "month": "2026-10",
-      "repo": "vc-frontend",
-      "previousVersion": null
-    },
-    "Platform": {
-      "version": "3.1071.0",
-      "month": "2026-10",
-      "repo": "vc-platform",
-      "previousVersion": null
-    },
-    "Page Builder": {
-      "version": "3.1026.0",
-      "month": "2026-10",
-      "repo": "vc-module-pagebuilder",
-      "previousVersion": null
-    },
-    "Sales Rep": {
-      "version": "3.1009.0",
-      "month": "2026-10",
-      "repo": "vc-module-sales-rep",
       "previousVersion": null
     },
     "Order": {
@@ -52,12 +106,6 @@
       "repo": "vc-module-customer",
       "previousVersion": null
     },
-    "Catalog": {
-      "version": "3.1044.0",
-      "month": "2026-10",
-      "repo": "vc-module-catalog",
-      "previousVersion": null
-    },
     "Core": {
       "version": "3.1008.0",
       "month": "2026-10",
@@ -68,12 +116,6 @@
       "version": "3.1005.0",
       "month": "2026-09",
       "repo": "vc-module-inventory",
-      "previousVersion": null
-    },
-    "UCP": {
-      "version": "3.1005.0",
-      "month": "2026-09",
-      "repo": "vc-module-ucp",
       "previousVersion": null
     },
     "Backup and Restore": {
@@ -170,12 +212,6 @@
       "version": "3.1001.0",
       "month": "2026-06",
       "repo": "vc-module-builder-io",
-      "previousVersion": null
-    },
-    "Sanity": {
-      "version": "3.1001.0",
-      "month": "2026-06",
-      "repo": "vc-module-sanity",
       "previousVersion": null
     },
     "Contentful": {
@@ -336,6 +372,392 @@
     }
   },
   "digests": [
+    {
+      "month": "2026-11",
+      "kind": "monthly",
+      "topicId": 867,
+      "url": "https://www.virtocommerce.org/t/867",
+      "title": "Virto’s Release Notes | November 2026",
+      "publishedIso": "2026-11-02T14:04:24.000Z",
+      "updatedIso": "2026-11-03T12:57:56.409Z",
+      "bodyHash": "sha256:845fffe753086c6fd1dc609f831ccb89",
+      "features": [
+        {
+          "title": "Admin UI moves into its own module, with a choice of UI modes",
+          "components": [
+            {
+              "name": "Platform",
+              "version": "3.1092.0",
+              "repo": "vc-platform",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-platform/releases/tag/3.1092.0"
+            },
+            {
+              "name": "Admin AngularJS",
+              "version": "3.1092.0",
+              "repo": "vc-module-admin-angular-js",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-admin-angular-js/releases/tag/3.1092.0"
+            },
+            {
+              "name": "Admin Shell",
+              "version": "3.1000.0",
+              "repo": "vc-module-admin-shell",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-admin-shell/releases/tag/3.1000.0"
+            }
+          ],
+          "summary": "The admin UI is now separated from the Platform core and delivered as an independent, replaceable module. This change allows Virto Commerce to develop and release new admin UI implementations independently while continuing to maintain…",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1530-admin-ui-moves-into-its-own-module-with-a-choice-of-ui-modes-platform-310920httpsgithubcomvirtocommercevc-platformreleasestag310920-admin-angularjs-310920httpsgithubcomvirtocommercevc-module-admin-angular-jsreleasestag310920-1st_place_medal-admin-shell-310000httpsgithubcomvirtocommercevc-module-admin-shellreleasestag310000-3"
+        },
+        {
+          "title": "OTP sign-in by email",
+          "components": [
+            {
+              "name": "OTP",
+              "version": "3.1000.0",
+              "repo": "vc-module-otp",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-otp/releases/tag/3.1000.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.59.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.59.0"
+            }
+          ],
+          "summary": "A returning customer can now sign in with a one-time code emailed to them instead of only a password, and a store admin turns OTP sign-in on or off per store from the store’s settings. The Platform picked up supporting grant-type…",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/otp/overview",
+            "https://docs.virtocommerce.org/platform/user-guide/latest/otp/enabling-otp",
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/registration_and_signing_in/sign-in/"
+          ],
+          "breaking": false,
+          "anchor": "p-1530-h-1st_place_medal-otp-sign-in-by-email-otp-310000httpsgithubcomvirtocommercevc-module-otpreleasestag310000-frontend-2590httpsgithubcomvirtocommercevc-frontendreleasestag2590-4"
+        },
+        {
+          "title": "Passkey sign-in, no password needed",
+          "components": [
+            {
+              "name": "Passkeys",
+              "version": "3.1000.0",
+              "repo": "vc-module-passkeys",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-passkeys/releases/tag/3.1000.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.61.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.61.0"
+            }
+          ],
+          "summary": "A shopper can register a passkey (WebAuthn) on their device. Passkeys are a safer alternative to passwords. They use cryptographic keys linked to the legitimate website: the private key stays securely on the user’s device and is never…",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1530-h-1st_place_medal-passkey-sign-in-no-password-needed-passkeys-310000httpsgithubcomvirtocommercevc-module-passkeysreleasestag310000-frontend-2610httpsgithubcomvirtocommercevc-frontendreleasestag2610-5"
+        },
+        {
+          "title": "Multi-factor authentication for store and backoffice",
+          "components": [
+            {
+              "name": "MFA",
+              "version": "3.1000.0",
+              "repo": "vc-module-mfa",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-mfa/releases/tag/3.1000.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.61.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.61.0"
+            }
+          ],
+          "summary": "A password sign-in can now be followed by a one-time code sent by email as a second factor, for both the Frontend and the Backoffice. The Platform added matching extension points for two-factor sign-in in the same window.",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1530-h-1st_place_medal-multi-factor-authentication-for-store-and-backoffice-mfa-310000httpsgithubcomvirtocommercevc-module-mfareleasestag310000-frontend-2610httpsgithubcomvirtocommercevc-frontendreleasestag2610-6"
+        },
+        {
+          "title": "Every return decision now reaches the buyer in-app",
+          "components": [
+            {
+              "name": "Return",
+              "version": "3.1003.0",
+              "repo": "vc-module-return",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-return/releases/tag/3.1003.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.59.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.59.0"
+            }
+          ],
+          "summary": "A buyer can now request a return of all or some order items.",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/account/returns/",
+            "https://docs.virtocommerce.org/platform/user-guide/latest/return/managing-returns/"
+          ],
+          "breaking": false,
+          "anchor": "p-1530-every-return-decision-now-reaches-the-buyer-in-app-returns-310030httpsgithubcomvirtocommercevc-module-returnreleasestag310030-frontend-2590httpsgithubcomvirtocommercevc-frontendreleasestag2590-7"
+        },
+        {
+          "title": "Organization maintainers see every return in their organization",
+          "components": [
+            {
+              "name": "Return",
+              "version": "3.1005.0",
+              "repo": "vc-module-return",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-return/releases/tag/3.1005.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.60.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.60.0"
+            }
+          ],
+          "summary": "An organization maintainer now has a read-only Organization returns tab next to My returns , listing every return a colleague in the organization has filed, filterable by status the same way as My returns .",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1530-organization-maintainers-see-every-return-in-their-organization-returns-310050httpsgithubcomvirtocommercevc-module-returnreleasestag310050-frontend-2600httpsgithubcomvirtocommercevc-frontendreleasestag2600-8"
+        },
+        {
+          "title": "AI agent’s checkout",
+          "components": [
+            {
+              "name": "UCP",
+              "version": "3.1006.0",
+              "repo": "vc-module-ucp",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-ucp/releases/tag/3.1006.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.59.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.59.0"
+            }
+          ],
+          "summary": "When the buyer asks AI agent to use their account, the agent signs them in and builds the cart under their identity.",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1530-ai-agents-checkout-ucp-310060httpsgithubcomvirtocommercevc-module-ucpreleasestag310060-frontend-2590httpsgithubcomvirtocommercevc-frontendreleasestag2590-9"
+        },
+        {
+          "title": "Barcode scanner improved",
+          "components": [
+            {
+              "name": "Catalog",
+              "version": "3.1046.0",
+              "repo": "vc-module-catalog",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.1046.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.59.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.59.0"
+            }
+          ],
+          "summary": "The barcode scanner search mode can be configured:",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/catalog/configuring-barcode-scanner-search/#configure-barcode-scanner-search-mode"
+          ],
+          "breaking": false,
+          "anchor": "p-1530-barcode-scanner-improved-catalog-310460httpsgithubcomvirtocommercevc-module-catalogreleasestag310460-frontend-2590httpsgithubcomvirtocommercevc-frontendreleasestag2590-10"
+        },
+        {
+          "title": "Share list with several customers, with your message saved",
+          "components": [
+            {
+              "name": "Sales Rep",
+              "version": "3.1012.0",
+              "repo": "vc-module-sales-rep",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-sales-rep/releases/tag/3.1012.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.59.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.59.0"
+            }
+          ],
+          "summary": "A sales rep can now share one list with several customers at once from a multiselect picker, instead of sharing it one customer at a time. A custom message added to a share is now saved and shown again when the share dialog is reopened…",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/account/lists"
+          ],
+          "breaking": false,
+          "anchor": "p-1530-share-list-with-several-customers-with-your-message-saved-sales-rep-310120httpsgithubcomvirtocommercevc-module-sales-repreleasestag310120-frontend-2590httpsgithubcomvirtocommercevc-frontendreleasestag2590-11"
+        },
+        {
+          "title": "Sales rep tasks get a cleaner layout",
+          "components": [
+            {
+              "name": "Frontend",
+              "version": "2.60.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.60.0"
+            }
+          ],
+          "summary": "The Calendar segment has been renamed to the Tasks in the Sales Rep Hub section. now matches the rest of the hub: the task list is a zebra table and status chips follow the same style used on Orders.",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/account/sales-rep-hub/#tasks"
+          ],
+          "breaking": false,
+          "anchor": "p-1530-sales-rep-tasks-get-a-cleaner-layout-frontend-2600httpsgithubcomvirtocommercevc-frontendreleasestag2600-12"
+        },
+        {
+          "title": "Activity summary",
+          "components": [
+            {
+              "name": "Sales Rep",
+              "version": "3.1015.0",
+              "repo": "vc-module-sales-rep",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-sales-rep/releases/tag/3.1015.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.61.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.61.0"
+            }
+          ],
+          "summary": "A sales rep can now see their activity for their customers directly in the Sales Rep Hub, through a new Activities page. The page also shows their searches, logging attempts, and products viewed.",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1530-activity-summary-sales-rep-310150httpsgithubcomvirtocommercevc-module-sales-repreleasestag310150-frontend-2610httpsgithubcomvirtocommercevc-frontendreleasestag2610-13"
+        },
+        {
+          "title": "Asset Library improved",
+          "components": [
+            {
+              "name": "Page Builder",
+              "version": "3.1035.0",
+              "repo": "vc-module-pagebuilder",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-pagebuilder/releases/tag/3.1035.0"
+            }
+          ],
+          "summary": "The search through the Assets library covers the whole current folder, not its sub-folders. A folder loads 20 files at a time. The paginator has been added to the bottom to move between pages.",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/page-builder/manage-pages-via-office/#manage-assets"
+          ],
+          "breaking": false,
+          "anchor": "p-1530-asset-library-improved-page-builder-310350httpsgithubcomvirtocommercevc-module-pagebuilderreleasestag310350-14"
+        },
+        {
+          "title": "Multi-language pages",
+          "components": [
+            {
+              "name": "Page Builder",
+              "version": "3.1039.0",
+              "repo": "vc-module-pagebuilder",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-pagebuilder/releases/tag/3.1039.0"
+            }
+          ],
+          "summary": "A content manager can now build a page once and link a translation per language instead of maintaining a separate page per locale: a Multilanguage Page can be published or archived as a set, converted from an existing Landing page, and…",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1530-multi-language-pages-page-builder-310390httpsgithubcomvirtocommercevc-module-pagebuilderreleasestag310390-15"
+        },
+        {
+          "title": "Sanity indexing hardened against replay and leaked keys",
+          "components": [
+            {
+              "name": "Sanity",
+              "version": "3.1004.0",
+              "repo": "vc-module-sanity",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-sanity/releases/tag/3.1004.0"
+            }
+          ],
+          "summary": "The Sanity CMS integration now validates its incoming webhook by signature instead of a key embedded in the URL, rejects replayed requests, resolves secrets by name instead of storing them in the database, and validates input before it…",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1530-sanity-indexing-hardened-against-replay-and-leaked-keys-sanity-310040httpsgithubcomvirtocommercevc-module-sanityreleasestag310040-16"
+        },
+        {
+          "title": "Platform caches now report hit and miss rates",
+          "components": [
+            {
+              "name": "Platform",
+              "version": "3.1082.0",
+              "repo": "vc-platform",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-platform/releases/tag/3.1082.0"
+            }
+          ],
+          "summary": "The platform now counts every cache hit and miss and reports it to OpenTelemetry, so a cache whose key never matches is visible instead of silently behaving like a working one.",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/developer-guide/latest/Fundamentals/Caching/01-overview",
+            "https://docs.virtocommerce.org/platform/developer-guide/latest/Extensibility/opentelemetry"
+          ],
+          "breaking": false,
+          "anchor": "p-1530-platform-caches-now-report-hit-and-miss-rates-platform-310820httpsgithubcomvirtocommercevc-platformreleasestag310820-17"
+        },
+        {
+          "title": "Sales Rep Hub ships as the first Module Federation plugin",
+          "components": [
+            {
+              "name": "Frontend",
+              "version": "2.60.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.60.0"
+            }
+          ],
+          "summary": "The Sales Rep Hub is the first module to ship its own storefront UI as a Module Federation plugin instead of living inside the Frontend theme itself, loaded only when the module is installed and the store setting is on, at zero bundle…",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/developer-guide/latest/modules-architecture/module-federation"
+          ],
+          "breaking": false,
+          "anchor": "p-1530-h-1st_place_medal-sales-rep-hub-ships-as-the-first-module-federation-plugin-frontend-2600httpsgithubcomvirtocommercevc-frontendreleasestag2600-18"
+        },
+        {
+          "title": "Product configurations checklist",
+          "components": [
+            {
+              "name": "Frontend",
+              "version": "2.60.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.60.0"
+            }
+          ],
+          "summary": "On a configurable product, the Price widget now lists every configuration option by state (done, required, or optional). A buyer can see exactly why Add to cart is still disabled.",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/shopping/products-purchase-options/#configure-products"
+          ],
+          "breaking": false,
+          "anchor": "p-1530-product-configurations-checklist-frontend-2600httpsgithubcomvirtocommercevc-frontendreleasestag2600-19"
+        },
+        {
+          "title": "Beacon Analytics: markup-driven tracking for CMS blocks",
+          "components": [
+            {
+              "name": "Frontend",
+              "version": "2.60.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.60.0"
+            }
+          ],
+          "summary": "Product-list analytics events can now be declared directly in markup through a beacon tracking layer, so Page Builder content and plain HTML blocks report to Google Analytics without custom tracking code.",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/developer-guide/latest/integrations/google-analytics/ga-events"
+          ],
+          "breaking": false,
+          "anchor": "p-1530-beacon-analytics-markup-driven-tracking-for-cms-blocks-frontend-2600httpsgithubcomvirtocommercevc-frontendreleasestag2600-20"
+        }
+      ],
+      "headingsTotal": 24,
+      "headingsVersioned": 18,
+      "headingsUnparsed": 0,
+      "unparsed": [],
+      "rejectedUrls": [],
+      "sectionsWithoutVersion": [
+        "Stable 16 bundle released",
+        "Frontend Next: a redesigned theme, built alongside the original",
+        "QA",
+        "Marketplace",
+        "VC-Shell",
+        "Knowledge hub"
+      ],
+      "inWindow": true
+    },
     {
       "month": "2026-10",
       "kind": "monthly",
@@ -958,7 +1380,7 @@
       "url": "https://www.virtocommerce.org/t/858",
       "title": "Virto's Release Notes | August 2026",
       "publishedIso": "2026-07-28T15:04:44.000Z",
-      "updatedIso": "2026-08-03T07:11:26.074Z",
+      "updatedIso": null,
       "bodyHash": "sha256:f52142655c4d19d4921f657bd885a734",
       "features": [
         {
@@ -5153,7 +5575,7 @@
         "Marketplace",
         "VC Shell"
       ],
-      "inWindow": true
+      "inWindow": false
     },
     {
       "month": "2024-11",

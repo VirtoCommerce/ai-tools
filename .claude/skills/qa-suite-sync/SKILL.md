@@ -34,11 +34,14 @@ theirs from the path you put in the brief (`briefs.md`).
    deprecations, plus the CONFIRMED stamp refreshes (`briefs.md`). Unapproved items are reported, not written.
 5. **Write the approved removals and deprecations** yourself — through `scripts/retire.ts` (`sync.md`
    *For BROKEN cases*), after the re-dispatch returns and after a snapshot (§Writes).
-6. **Verify live** — [`verify.md`](verify.md): dispatch `qa-testing-expert` on every new or changed case.
+6. **Verify live** — [`verify.md`](verify.md): **5a** one scoped run executes every new or changed case
+   (`/qa-regression <suites> --ids <targets> --no-promote` → one `RUN_ID`); **5b** `qa-testing-expert`
+   checks only what a case run cannot see; **5c** the PASSED targets' tags are harvested from that run.
    SKIPPED only when nothing new or changed is in scope, or no browser lane is available — say which.
-7. **Fix what verification found** — CHANGED labels and `{HYPOTHESIS}` rewrites go back through steps
-   2–6 for those cases only, and UNCHECKED cases (the round's caps ran out) go back to step 6; at most
-   **2** verify→fix rounds, then report what is left. A refuted
+7. **Fix what verification found** — case defects, CHANGED labels and `{HYPOTHESIS}` rewrites go back
+   through steps 2–6 for those cases only, and the fixed cases run again in a new scoped run over **those
+   ids only** (a case whose text changed after its run is not what the run executed — `verify.md` 5a);
+   UNCHECKED 5b items go back to 5b; at most **2** verify→fix rounds, then report what is left. A refuted
    `{SPEC}`/`{DOC}`/`{BL}`/`Catches:` assertion is a bug candidate, never "fixed" (`verify.md` *Filing a bug*).
 8. **Bugs, then the BL sync** — put `bugCandidates[]` to the user as one list and file the confirmed ones
    (`verify.md` *Filing a bug*); then run [`review.md`](review.md) 4c yourself with the bug keys that came
@@ -50,7 +53,9 @@ theirs from the path you put in the brief (`briefs.md`).
 
 When the input was a ticket, `qa-case-promotion` follows for the same ticket — the router runs it; if you
 reached this skill directly, read and follow it yourself after the report (skip it on NEEDS FIXES or
-BLOCKED). Promotion out of `Draft` is not this skill's.
+BLOCKED). Hand it **each step-6/7 `RUN_ID` with the target ids it last executed** — promotion flips from
+those runs, so the cases are not executed a second time to be promoted. Promotion out of `Draft` is not
+this skill's.
 
 ## Writes
 
@@ -85,7 +90,7 @@ BLOCKED). Promotion out of `Draft` is not this skill's.
 | G5: Data Validity | 0 Critical/Blocker findings | Yes |
 | G6: Coverage | BL-* mapping >= 80% for P0/P1 cases; **and every rule the run contradicted is `SUSPECT` with a bug key (4c)** | Recommended |
 | G7: Duplication | No same-layer duplicates | Recommended |
-| G8: Environment | 0 BROKEN findings | Yes (if verified) |
+| G8: Environment | every target executed in a scoped run (5a): PASS, or a FAIL that is a listed bug candidate — never an unclassified FAIL; 0 BROKEN (5b) | Yes (if verified) |
 | G9: Sync | All STALE cases updated, all BROKEN addressed | Yes (if synced) |
 | G10: Assertion Grounding | **0 GRD-001 Blocker/High** + 0 ENV-008. Provenance is **opt-in per case**: a fully-untagged *legacy* case is Informational only (it does not fail this gate), but once a case is **provenance-adopted** (any assertion tagged — i.e. everything Phase 3 generated or Phase 2/4 touched) an untagged sibling is **High** and a `{HYPOTHESIS}` in a past-`Draft` case is a **Blocker** | Yes |
 | G11: Technique Coverage | No feature group (≥3 cases) missing the positive + negative + boundary mix (TC-001) | Recommended |
@@ -114,7 +119,7 @@ The verdict is advisory: the user makes the go/no-go.
 | Before a regression run with recent code changes | `/qa-test-lifecycle PR <owner/repo>#N` or `/qa-test-lifecycle diff` |
 | After a platform release | `/qa-test-lifecycle changelog <version>` |
 | A suite or domain needs review, gap-filling and a live check | `/qa-test-lifecycle suite <ids>` / `domain <name>` |
-| After a `/qa-test` run authored new cases | `/qa-test-lifecycle promote VCST-XXXX` (`qa-case-promotion`) |
+| After a `/qa-test` run | `/qa-test-lifecycle <TICKET>` (sync, author, promote) — `promote VCST-XXXX` alone only flips `Draft` cases (`qa-case-promotion`) |
 | A whole suite's assertions may have gone stale, not tied to one change | `/qa-review-tests suite <ID> --triangulate` — this skill triangulates only the cases a change touched (4a-bis) |
 | Which suite is most overdue for triangulation | `/qa-review-tests stale` (or `npm run tc:audit:queue`) |
 
@@ -136,7 +141,9 @@ The verdict is advisory: the user makes the go/no-go.
 - **Deduplicate** — before generating, check the target suite and related suites for semantic duplicates.
 - **The domain models are read-only here** — the stamps on the run's own cases are the only model links it
   writes; a behaviour it found changed is listed for `/qa-test-mind-map update`, never edited (`models.md`).
-- **One browser at a time** — Phase 5 uses `playwright-firefox` via `qa-testing-expert`.
+- **One browser at a time** — the author proof run (`generate.md` 3c step 9, `playwright-chrome` via
+  `test-management-specialist`), the 5a scoped run (the regression lanes) and the 5b check
+  (`playwright-firefox` via `qa-testing-expert`) run in sequence, never side by side.
 - **URLs come from the env loader** (`config.js` → `process.env`), never hardcoded.
 - **Every write shows a diff summary**; updated cases record `Synced: {source} ({date})` in References.
 - **Module dependencies matter** — when module X changes, check downstream modules too.

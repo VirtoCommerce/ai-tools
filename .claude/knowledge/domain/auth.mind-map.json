@@ -2,13 +2,13 @@
   "$schema": "../../templates/mind-map.schema.json",
   "schema_version": "1.0",
   "domain_slug": "auth",
-  "domain_map_rev": 3,
+  "domain_map_rev": 4,
   "generated": "2026-10-21",
-  "amended": "2026-10-28",
+  "amended": "2026-11-04",
   "metadata": {
     "scope": "Storefront and Admin sign-in (password, emailed code, MFA second factor, passkeys, external IdP, punchout as a method), organization resolution at sign-in, lockout, Admin entry restriction, API challenge, impersonation, managing one's own sign-in methods (passkey keys, password), sign-out and session termination, password reset, sign-in log. Registration, password policy and org membership mechanics are out, as in the domain map.",
-    "built_from": "auth.md rev 2 (§1-§6), BL-AUTH-001..017 (bl:extract --domain auth), suites 031/032/033/082/101/104/105 titles + References + Automation_Status, test models VCST-5748-2026-09-29 and VCST-6132-2026-10-20 Part 0, scripts/seed-data/auth/otp-signin-specs.mjs header, vc-module-mfa#1 / vc-module-otp#3 / vc-frontend#2570 as read for the domain map · UPDATE 2026-10-28 from auth.md rev 3 (Changed since rev 2, §1 links 1-9, §2, §3 D5-D25, §5 G10-G28), suites 110/111 Automated rows with their promoting runs (REG-2026-10-26-1422/1503/1652/1715/1726, all vcst), VCST-5904 round 1 verdict + round 2 checklist/summary + BUG VCST-6506, VCST-6121 vcptcore test-model.md (incl. 3x amendments) + exploratory/SBTM-VCST-6121-2026-10-28.md (run in progress)",
-    "kb_read": "2026-10-21 - impersonate grant self/nested: miss; sign-out /connect/logout: hit KB-761B2013; plus the domain-map pass hits KB-06FE6C8D KB-08CC76A3 KB-3CBA0D5F KB-9AF5645D KB-0080ED6D KB-4E1FD1E8 KB-83483C4E KB-262ADDFB KB-8646A9CB KB-C196A782 KB-CC18E96D KB-3466E783 KB-1D5CC609 KB-D42D6CAA KB-6B10CB0E KB-A3E16349 KB-12E99BF8 KB-EF3CB7FB KB-7A4C260E KB-444EF3F4 KB-CA2AE929 KB-675F86C2 KB-9D80EE6B KB-33B89BDD · 2026-10-28 update: opened KB-7EFFA0AD KB-3BF84A5E KB-12E99BF8 KB-CD356AF4 KB-CA7DBAD0 KB-4E12E506 (verify reads, no capture — no live observation in this pass)",
+    "built_from": "auth.md rev 2 (§1-§6), BL-AUTH-001..017 (bl:extract --domain auth), suites 031/032/033/082/101/104/105 titles + References + Automation_Status, test models VCST-5748-2026-09-29 and VCST-6132-2026-10-20 Part 0, scripts/seed-data/auth/otp-signin-specs.mjs header, vc-module-mfa#1 / vc-module-otp#3 / vc-frontend#2570 as read for the domain map · UPDATE 2026-10-28 from auth.md rev 3 (Changed since rev 2, §1 links 1-9, §2, §3 D5-D25, §5 G10-G28), suites 110/111 Automated rows with their promoting runs (REG-2026-10-26-1422/1503/1652/1715/1726, all vcst), VCST-5904 round 1 verdict + round 2 checklist/summary + BUG VCST-6506, VCST-6121 vcptcore test-model.md (incl. 3x amendments) + exploratory/SBTM-VCST-6121-2026-10-28.md (run in progress) · UPDATE 2026-11-04 from auth.md rev 4 (Changed since rev 3, §1 links 10-13, §2, §3 D26-D36, §5 G29-G41), VCST-6597 description + comments 112561/112608/112620, vc-module-mfa#3 at 1a0f481 (README.md, MfaRequirementService.cs, MfaSelfService.cs), vc-frontend#2622 as read for the domain map; vcst runs MFA 3.1002.0-pr-3-1a0f with global MFA off and no store in AdminManaged/CustomerChoice, so every write path is UNVERIFIED",
+    "kb_read": "2026-10-21 - impersonate grant self/nested: miss; sign-out /connect/logout: hit KB-761B2013; plus the domain-map pass hits KB-06FE6C8D KB-08CC76A3 KB-3CBA0D5F KB-9AF5645D KB-0080ED6D KB-4E1FD1E8 KB-83483C4E KB-262ADDFB KB-8646A9CB KB-C196A782 KB-CC18E96D KB-3466E783 KB-1D5CC609 KB-D42D6CAA KB-6B10CB0E KB-A3E16349 KB-12E99BF8 KB-EF3CB7FB KB-7A4C260E KB-444EF3F4 KB-CA2AE929 KB-675F86C2 KB-9D80EE6B KB-33B89BDD · 2026-10-28 update: opened KB-7EFFA0AD KB-3BF84A5E KB-12E99BF8 KB-CD356AF4 KB-CA7DBAD0 KB-4E12E506 (verify reads, no capture — no live observation in this pass) · 2026-11-04 update: asked \"StoreMode AdminManaged CustomerChoice … mfaSettings\" (kb_none); the domain-map pass captured KB-621637B5 KB-69D90CC1 KB-985D3EED KB-C59DA55D and confirmed KB-12E99BF8 KB-2338B876 on vcst_qa",
     "not_modelled": "No auth data model exists yet, so requires/produces are omitted; the requirement ids are listed in the build result for /qa-test-data-model build. Suite 101 rows are Draft and decide sign-in-log details below the behaviour level; only rows that decide a node are stamped."
   },
   "nodes": [
@@ -954,7 +954,7 @@
         "admin-ui",
         "rest"
       ],
-      "description": "VCST-5904. With MFA required, the password grant answers 400 two_factor_required with a twoFactorToken; the emailed code is exchanged at grant_type=mfa and the token carries amr=mfa. Backoffice: /api/mfa/signin/send|verify and #!/sign-in-code. Required by MultiFactorAuthentication.Enabled or the named store's StoreMode. Released as VirtoCommerce.MFA 3.1000.1.",
+      "description": "VCST-5904. With MFA required, the password grant answers 400 two_factor_required with a twoFactorToken; the emailed code is exchanged at grant_type=mfa and the token carries amr=mfa. Backoffice: /api/mfa/signin/send|verify and #!/sign-in-code. Required by MultiFactorAuthentication.Enabled, by the named store's StoreMode and — from VCST-6597 (PR build) — by the user's own store and, in AdminManaged / CustomerChoice stores, by the user's and their organizations' modes. Released as VirtoCommerce.MFA 3.1000.1.",
       "evidence": [
         {
           "class": "SPEC",
@@ -989,9 +989,28 @@
           "ref": "domain-map:auth@rev3 §2 API",
           "note": "mfa grant and /api/mfa endpoints routed on both vcptcore hosts; global MFA off there",
           "date": "2026-10-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "who requires the code: global, store mode, user mode, organization mode; VCST-6495 own-store rule merged in (comment 112608)",
+          "date": "2026-11-03"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "Configuration: StoreMode values and the own-store rule",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 API",
+          "note": "mfa grant bogus token → invalid_two_factor_token, /api/mfa/resend routed on both vcst hosts; global MFA off",
+          "date": "2026-11-04"
         }
       ],
-      "notes": "Merged 2026-10-26 (vc-module-mfa#1, vc-platform#3133, vc-module-otp#3, vc-frontend#2570). Every observation of the real challenge is from vcst; on vcptcore the module is installed (3.1000.1) and off (domain-map:auth@rev3 §5 G10)."
+      "notes": "Merged 2026-10-26 (vc-module-mfa#1, vc-platform#3133, vc-module-otp#3, vc-frontend#2570). Every observation of the real challenge is from vcst; on vcptcore the module is installed (3.1000.1) and off (domain-map:auth@rev3 §5 G10). 2026-11-04: VCST-6597 (vc-module-mfa#3, OPEN, deployed on vcst as 3.1002.0-pr-3-1a0f) widens who is asked — see the store-mode children, auth.signin.mfa.own-store, auth.signin.mfa.organization-mode and auth.mfa-mode.",
+      "last_verified": "2026-11-04"
     },
     {
       "type": "branch",
@@ -1147,7 +1166,7 @@
       "name": "Global setting and store mode decide who needs a second factor",
       "branch_kind": "state",
       "technique": "DT",
-      "status": "CONFIRMED",
+      "status": "DRIFT",
       "evidence": [
         {
           "class": "SPEC",
@@ -1183,13 +1202,37 @@
           "ref": "VCST-5904",
           "note": "round 2 C3 PASS: global × StoreMode × caller decision table; C31 descriptions reworded to match",
           "date": "2026-10-23"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "StoreMode gains AdminManaged and CustomerChoice; VCST-6530 merged in: Disabled skips the code only for the store's own non-Backoffice customers (comment 112620)",
+          "date": "2026-11-03"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaRequirementService.cs:129",
+          "note": "GetStoreRequirementAsync: a Disabled store is evaluated as Use global setting unless CanSkipCodeInDisabledStoreAsync",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 Admin",
+          "note": "REST: StoreMode allowed values Use global setting, Enabled, Disabled, AdminManaged, CustomerChoice; B2B-store = Disabled, six stores unset (vcst)",
+          "date": "2026-11-04"
         }
       ],
       "requires": [
         "data.auth.store.mfa-required"
       ],
-      "description": "The store NAMED in the request decides for every user: Use global (or unset) follows the global setting, Enabled challenges, Disabled lets the sign-in through — customers and Managers alike. A request with no or an unknown storeId follows the global setting; the Backoffice follows the global setting only. The user's own store is not consulted.",
-      "notes": "Reconciled 2026-10-28 (DRIFT raised by the VCST-5904 test model): the rev-2 SPEC note above, from the vc-module-mfa#1 PR body, said a store relaxes the global setting only for its own customers and that the user's own store is also consulted. Comment 112278, MfaRequirementService and the promoted cases say the named store decides for every user. The deployed StoreMode description said otherwise (VCST-6530) and was reworded on the final build (round 2 C31)."
+      "description": "The store named in the request decides together with the global setting: Use global setting (also unset, unknown or no store) follows MultiFactorAuthentication.Enabled; Enabled challenges everyone; Disabled lets the store's customers in without a code (whose customers: see the DRIFT); AdminManaged and CustomerChoice (VCST-6597) hand the decision to the user and organization modes. The Backoffice follows only the global setting.",
+      "notes": "Reconciled 2026-10-28 (DRIFT raised by the VCST-5904 test model): the rev-2 SPEC note above, from the vc-module-mfa#1 PR body, said a store relaxes the global setting only for its own customers and that the user's own store is also consulted. Comment 112278, MfaRequirementService and the promoted cases say the named store decides for every user. The deployed StoreMode description said otherwise (VCST-6530) and was reworded on the final build (round 2 C31). 2026-11-04 (VCST-6597 update): the 2026-10-28 reconciliation above is reversed on the PR build — the rev-2 PR-body reading (\"a store relaxes the global setting only for its own customers; the user's own store is also consulted\") is what #3 implements. Cases MFA-003 and MFA-026 assert the 3.1000.x behaviour; the StoreMode description (MFA-027) was reworded in 13 locales.",
+      "chain_link": "10",
+      "drift": {
+        "expected": "VCST-6597 comments 112608 / 112620 and vc-module-mfa README at 1a0f481 (Configuration): \"a Disabled store lets in without the code only its own customers (ApplicationUser.StoreId is the store) that are not Backoffice accounts. Everyone else … follows the global setting there\", and the user's own store applies too",
+        "observed": "on MFA 3.1000.x the NAMED store decided for every user: a Disabled store let a Manager and any customer in without a code with global MFA on (REG-2026-10-26-1422 MFA-003 / MFA-026, vcst 2026-10-26; kb:KB-0929D604). vcst now runs the PR build with global MFA off, where both rules answer the same, so the new rule is not observed yet (domain-map:auth@rev4 §3 D26, §5 G32)",
+        "route": "VCST-6597"
+      }
     },
     {
       "type": "branch",
@@ -3209,7 +3252,7 @@
       "requires": [
         "data.auth.account.mfa-user-flag"
       ],
-      "notes": "VCST-5904 test model H-35. MFA-021 is stamped on auth.signin.mfa.off; this node decides it more closely."
+      "notes": "VCST-5904 test model H-35. MFA-021 is stamped on auth.signin.mfa.off; this node decides it more closely. Not the VCST-6597 user MODE: this is the Identity TwoFactorEnabled flag, which requires the code in every store (\"as Identity defines\", README Rules); the mode (auth.mfa-mode) is read only by AdminManaged / CustomerChoice stores."
     },
     {
       "id": "auth.signin.mfa.basic-door",
@@ -3285,7 +3328,7 @@
           "date": "2026-10-22"
         }
       ],
-      "notes": "Recorded door, ABSENT-IN-PRODUCT candidate: switching the requirement on revokes nothing (domain-map:auth@rev3 §1 reverse edges)."
+      "notes": "Recorded door, ABSENT-IN-PRODUCT candidate: switching the requirement on revokes nothing (domain-map:auth@rev3 §1 reverse edges). 2026-11-04: VCST-6597 adds three more ways to switch the requirement on (customer, organization maintainer, administrator mode) with the same lack of revocation — source, domain-map:auth@rev4 §3 D33, §5 G38."
     },
     {
       "id": "auth.signin.mfa.challenge-before-store-rule",
@@ -4423,6 +4466,882 @@
         }
       ],
       "notes": "Suspected product defect, no ticket yet: the rule holds on one surface only (VC-AUTH-004 class; VCST-6121 SBTM bug 3, author question Q3; domain-map:auth@rev3 §3 D19). VCST-6121 run (vcptcore) is IN PROGRESS: its observations are recorded with the run's date, not confirmed by this pass."
+    },
+    {
+      "id": "auth.signin.mfa.store-mode.disabled-own-customers",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A Disabled store skips the code only for its own non-Backoffice customers",
+      "description": "VCST-6530 merged into VCST-6597. With the global setting on, a password grant naming a Disabled store still asks for the code from administrators, Administrator / Manager users, users the Backoffice access policy admits, users of other stores and users without a store; only a customer whose own store is that store goes through. The status API marks such stores isDisabledModeSkipped.",
+      "chain_link": "10",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "requires": [
+        "data.auth.platform.mfa-global-on",
+        "data.auth.store.mfa-disabled",
+        "data.auth.account.admin",
+        "data.auth.account.mfa-run-store-customer",
+        "data.auth.account.store-contact"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112620: Disabled skips only the store's own customers that are not Backoffice accounts",
+          "date": "2026-11-03"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaRequirementService.cs:157",
+          "note": "CanSkipCodeInDisabledStoreAsync + IsBackofficeAccountAsync",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 Admin",
+          "note": "Effective status row \"Disabled → Not required — The store turned it off for its own customers.\" for the user's own store; global off, so the narrowing itself is not exercised",
+          "date": "2026-11-04"
+        }
+      ],
+      "notes": "domain-map:auth@rev4 §3 D26, §5 G32. VCST-6530 stays On hold while its code ships in #3. Needs the global switch on (shared setting)."
+    },
+    {
+      "id": "auth.signin.mfa.store-mode.admin-managed",
+      "type": "branch",
+      "maturity": "new",
+      "name": "An AdminManaged store asks only users and organizations an administrator set to Required",
+      "description": "In an AdminManaged store the code is required when the user's mode or any of their organizations' modes is Required; Enabled and Off ask nothing. The storefront shows the status read-only and refuses every change with mfa_self_service_not_allowed.",
+      "chain_link": "10",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "rest",
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "Store policy table: Admin managed — only users and organizations set to Required; read-only status",
+          "date": "2026-10-30"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaRequirementService.cs:78",
+          "note": "GetChosenRequirement(…, mode == Required)",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenario 8 Passed on a local 3.1091 stand, not on vcst",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "No vcst store is AdminManaged (domain-map:auth@rev4 §2 Admin); needs a store flip — G29.",
+      "requires": [
+        "data.auth.store.mfa-admin-managed",
+        "data.auth.account.mfa-mode-enabled",
+        "data.auth.account.mfa-mode-required"
+      ]
+    },
+    {
+      "id": "auth.signin.mfa.store-mode.customer-choice",
+      "type": "branch",
+      "maturity": "new",
+      "name": "A CustomerChoice store asks users and organizations whose mode is Enabled or Required",
+      "description": "In a CustomerChoice store the code is required when the user's mode or any of their organizations' modes is Enabled or Required. Off is the default, so a store switched to CustomerChoice asks nobody until someone turns it on.",
+      "chain_link": "10",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "rest",
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "Store policy table: Customer choice — user, maintainer or administrator; off by default",
+          "date": "2026-10-30"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaRequirementService.cs:79",
+          "note": "GetChosenRequirement(…, mode is Enabled or Required)",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenarios 2, 5 Passed on a local 3.1091 stand, not on vcst",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "No vcst store is CustomerChoice (domain-map:auth@rev4 §2 Admin); G29 / G30.",
+      "requires": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-mode-enabled"
+      ]
+    },
+    {
+      "id": "auth.signin.mfa.store-mode.modes-ignored",
+      "type": "branch",
+      "maturity": "new",
+      "name": "Stores in Use global setting, Enabled or Disabled ignore user and organization modes",
+      "description": "The feature's off branch: a store that is not AdminManaged or CustomerChoice behaves as before VCST-6597 whatever modes users and organizations hold; the Backoffice sign-in ignores them too.",
+      "chain_link": "10",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "rest",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "User and organization modes: \"Only the stores with AdminManaged or CustomerChoice read them; the other store modes, the global setting and the Backoffice sign-in ignore them.\"",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaRequirementService.cs:149",
+          "note": "non-chosen store modes are evaluated with userMode null and no organization modes",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenario 1 Passed on a local stand",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "What an existing customer who never touches the feature relies on; the 110 / 111 MFA cases are its regression set once a user or organization carries a non-Off mode.",
+      "requires": [
+        "data.auth.store.mfa-disabled",
+        "data.auth.account.mfa-run-store-customer",
+        "data.auth.account.mfa-mode-required"
+      ]
+    },
+    {
+      "id": "auth.signin.mfa.own-store",
+      "type": "branch",
+      "maturity": "new",
+      "name": "The user's own store also applies: omitting or changing storeId does not skip the code",
+      "description": "VCST-6495 merged into VCST-6597. When the named store (or, with no store, the global setting) does not require the code, the user's own store (ApplicationUser.StoreId) is evaluated too, with the user and organization modes when it is AdminManaged / CustomerChoice; if it requires the code, the sign-in is challenged and the status API marks isRequiredByUserStore.",
+      "chain_link": "2",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "rest"
+      ],
+      "requires": [
+        "data.auth.store.mfa-required",
+        "data.auth.account.store-contact"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112608: no storeId / another store / unknown store → code, for a customer of an Enabled store",
+          "date": "2026-11-03"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaRequirementService.cs:58",
+          "note": "GetRequirementAsync falls back to the user's own store when the named store does not require the code",
+          "date": "2026-11-04"
+        }
+      ],
+      "notes": "domain-map:auth@rev4 §3 D27 (the ticket description still states the old limitation), §5 G32. Interacts with auth.signin.mfa.challenge-before-store-rule: a foreign-store request of a user whose own store requires MFA is now challenged by design."
+    },
+    {
+      "id": "auth.signin.mfa.organization-mode",
+      "type": "branch",
+      "maturity": "new",
+      "name": "An organization that requires the code covers every member, whatever the member's own mode",
+      "description": "In an AdminManaged / CustomerChoice store, any organization of the user's contact with a requiring mode makes the code required (requiredBy Organization) before the user's own mode is looked at; the storefront shows the member no personal switch.",
+      "chain_link": "13",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "rest",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "Modes: \"The organization requirement comes first: a member can't turn it off with their own switch.\"",
+          "date": "2026-10-30"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaRequirementService.cs:107",
+          "note": "GetChosenRequirement checks organization modes first",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenarios 5, 7 Passed on a local stand",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "integrates with: b2b-organizations — membership (every organization of the contact counts, including one where the membership is locked: UNVERIFIED). Server side the member's own mode is still changeable — auth.mfa-mode.organization-required-member.",
+      "requires": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.organization.mfa-mode-required"
+      ]
+    },
+    {
+      "id": "auth.state.mfa-mode.off",
+      "type": "state",
+      "maturity": "new",
+      "name": "MFA mode of a user or organization: Off (default)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "User and organization modes table; object settings MultiFactorAuthentication.UserMode / .OrganizationMode",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 Admin",
+          "note": "REST settings: UserMode / OrganizationMode hidden, allowed Off / Enabled / Required, default Off; GET /api/mfa/modes/users/{id} → {\"mode\":\"Off\"} (vcst)",
+          "date": "2026-11-04"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.mfa-mode.enabled",
+      "type": "state",
+      "maturity": "new",
+      "name": "MFA mode of a user or organization: Enabled (storefront-changeable)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "User and organization modes table; object settings MultiFactorAuthentication.UserMode / .OrganizationMode",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 Admin",
+          "note": "REST settings: UserMode / OrganizationMode hidden, allowed Off / Enabled / Required, default Off; GET /api/mfa/modes/users/{id} → {\"mode\":\"Off\"} (vcst)",
+          "date": "2026-11-04"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.mfa-mode.required",
+      "type": "state",
+      "maturity": "new",
+      "name": "MFA mode of a user or organization: Required (administrator, locked in the storefront)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "User and organization modes table; object settings MultiFactorAuthentication.UserMode / .OrganizationMode",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 Admin",
+          "note": "REST settings: UserMode / OrganizationMode hidden, allowed Off / Enabled / Required, default Off; GET /api/mfa/modes/users/{id} → {\"mode\":\"Off\"} (vcst)",
+          "date": "2026-11-04"
+        }
+      ]
+    },
+    {
+      "id": "auth.mfa-mode",
+      "type": "behavior",
+      "maturity": "new",
+      "name": "The MFA mode of a user or an organization is read and changed",
+      "description": "VCST-6597. Storefront (xAPI schema mfa): mfaSettings(storeId, organizationId) reads the store mode, whether and by whom the code is required, the user and organization modes, what the caller may change and the masked destination; requestMfaChangeCode then updateMfaUserMode / updateMfaOrganizationMode change a mode to Enabled or Off with a step-up code. Backoffice: a \"Multi-factor authentication\" widget on the user and organization blades opens a Mode blade (Off / Enabled / Required) with an Effective status table; REST /api/mfa/modes/{users|organizations}/{id}[/status] under mfa:read / mfa:manage.",
+      "chain_link": "11",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "graphql",
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "xAPI, Backoffice, permissions and frontend sections of the description",
+          "date": "2026-10-30"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "Storefront (xAPI), Backoffice and REST API, Permissions",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2",
+          "note": "read half observed on vcst: mfaSettings shape and Unauthorized when anonymous; Backoffice widget + Mode blade + Effective status; REST GET 200 / 401 / 400 / 404",
+          "date": "2026-11-04"
+        }
+      ],
+      "notes": "Writes are UNVERIFIED on every stand we run (domain-map:auth@rev4 §5 G29-G31, G36). Hypothesis for the PO, domain-map D32: a mode change writes no sign-in-log row, sends no notification and raises no event (source) — a maintainer switching MFA off for the whole company tells nobody. integrates with: b2b-organizations — organization roles and Company info; store-settings — StoreMode."
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.read",
+      "name": "A signed-in user reads the MFA settings of a store, and an anonymous caller is refused",
+      "description": "mfaSettings returns storeMode, isRequired, requiredBy (None / Global / Store / Organization / User), userMode, canChangeUserMode, the organization fields when organizationId is given, isProviderAvailable, provider and the masked destination. Anonymous → Unauthorized.",
+      "chain_link": "11",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "requires": [
+        "data.auth.session.signed-in"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaSelfService.cs:106",
+          "note": "GetSettingsCoreAsync",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 API",
+          "note": "introspection of Query.mfaSettings + anonymous Unauthorized; signed-in B2B org admin on B2B-store (Disabled): isRequired false, requiredBy None, canChangeUserMode false (vcst, GetMfaSettings HAR)",
+          "date": "2026-11-04"
+        }
+      ],
+      "notes": "Copy hypothesis, domain-map D30: requiredBy Global shows the Store text (\"The store requires it …\") in the storefront widget — UNVERIFIED live."
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.widget-gate",
+      "name": "The storefront shows the MFA widgets only when the deployed MFA module has the mfa schema and the store lets the user see them",
+      "description": "client-app/modules/mfa registers nothing unless useModules() lists VirtoCommerce.MFA at a version with the schema (3.1000.2+ on the hotfix line, 3.1002.0+); then the Account › Security widget appears when the store is AdminManaged / CustomerChoice or the code is required, and the Company › Info widget only with xapi:my_organization:mfa:manage.",
+      "chain_link": "11",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2622",
+          "note": "client-app/modules/mfa/index.ts SCHEMA_RELEASES and the widget visibility conditions (read for the domain map)",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 Storefront",
+          "note": "/account/security fires GetMfaSettings and shows only Passkeys (B2B-store Disabled); /company/info shows no MFA widget for an org admin (vcst)",
+          "date": "2026-11-04"
+        }
+      ],
+      "notes": "domain-map:auth@rev4 §3 D29: on an older module (vcst before the deploy settled, vcptcore 3.1000.1) the new theme is a silent no-op; needs XAPI.Security.ReturnModuleVersion. D28: no stock organization role holds the permission, so the company widget is unreachable on vcst — an open PO question."
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.customer-change",
+      "name": "A customer turns their own MFA on or off with a step-up code in a CustomerChoice store",
+      "description": "requestMfaChangeCode(storeId) sends a code and returns a change two-factor token; updateMfaUserMode(storeId, enabled, twoFactorToken, code) sets Enabled or Off and returns the new settings; the next password sign-in follows the new mode.",
+      "chain_link": "11",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "state_before": "auth.state.mfa-mode.off",
+      "state_after": "auth.state.mfa-mode.enabled",
+      "requires": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-run-store-customer"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "Rules: every storefront change is confirmed with an email code (step-up)",
+          "date": "2026-10-30"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaSelfService.cs:136",
+          "note": "ChangeUserModeCoreAsync",
+          "date": "2026-11-04"
+        }
+      ],
+      "notes": "domain-map G29. Author scenarios 2, 3 Passed on a local stand only."
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.self-service-not-allowed",
+      "name": "Outside a CustomerChoice store no change code is sent and every change is refused",
+      "description": "requestMfaChangeCode and both update mutations answer mfa_self_service_not_allowed when the store is not CustomerChoice; the refusal comes before any code is sent, so no email and no resend slot is spent.",
+      "chain_link": "11",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "graphql"
+      ],
+      "requires": [
+        "data.auth.session.signed-in"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaSelfService.cs:86",
+          "note": "SendChangeCodeCoreAsync checks the store mode before ChallengeAsync",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenario 8: mutations refused with mfa_self_service_not_allowed",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "Reachable on vcst without a store flip (B2B-store is Disabled), but each probe is a mutation — G36."
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.locked-by-administrator",
+      "name": "A Required mode cannot be changed from the storefront",
+      "description": "A user or organization the administrator set to Required gets canChange* false and mfa_locked_by_administrator from the update mutation; the widget shows the administrator text and no switch.",
+      "chain_link": "11",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaSelfService.cs:139",
+          "note": "Fail(LockedByAdministrator) when the mode is Required",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenarios 4, 7 Passed on a local stand",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "domain-map G31.",
+      "requires": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-mode-required"
+      ]
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.organization-change",
+      "name": "An organization maintainer turns MFA on or off for the whole company with a step-up code",
+      "description": "With xapi:my_organization:mfa:manage and the current organization, updateMfaOrganizationMode sets the organization to Enabled or Off in a CustomerChoice store; every member is then asked at the next password sign-in.",
+      "chain_link": "11",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "state_before": "auth.state.mfa-mode.off",
+      "state_after": "auth.state.mfa-mode.enabled",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaSelfService.cs:155",
+          "note": "ChangeOrganizationModeCoreAsync",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "Rules: organization changes need xapi:my_organization:mfa:manage and the current organization",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "domain-map G30, D28 (no stock role carries the permission). integrates with: b2b-organizations — organization roles.",
+      "requires": [
+        "data.auth.role.org-mfa-manage"
+      ]
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.organization-not-allowed",
+      "name": "A member without the organization permission, or of another organization, cannot change the organization mode",
+      "description": "updateMfaOrganizationMode answers mfa_organization_not_allowed when the caller lacks xapi:my_organization:mfa:manage or the organization is not theirs; the Company › Info widget is not shown.",
+      "chain_link": "11",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "requires": [
+        "data.auth.role.org-mfa-manage",
+        "data.auth.account.no-permission-customer"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaSelfService.cs:158",
+          "note": "Fail(OrganizationNotAllowed) without organizationId or canManageOrganization",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenario 6 Passed on a local stand",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "domain-map G36."
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.organization-required-member",
+      "name": "A member whose organization requires the code can still change their own mode through the API",
+      "description": "The server's canChangeUserMode looks at the store mode and the user's own mode only, so updateMfaUserMode is not refused while the organization requires the code; the stored user mode changes silently and takes effect if the organization later turns MFA off. The widget hides the switch.",
+      "chain_link": "11",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaSelfService.cs:119",
+          "note": "CanChangeUserMode = isCustomerChoice && UserMode != Required",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "domain-map:auth@rev4 §3 D30",
+          "note": "UI guard without an API guard — suspected defect, not filed",
+          "date": "2026-11-04"
+        }
+      ],
+      "notes": "Same class as domain-map D19 (rule enforced on one surface only). G36.",
+      "requires": [
+        "data.auth.organization.mfa-mode-required"
+      ]
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.change-ticket-purpose",
+      "name": "A change code cannot sign in, and a sign-in code cannot confirm a change",
+      "description": "The change two-factor token carries its own purpose and the user it was issued to; a sign-in token or another user's token is refused (invalid_two_factor_token), and a change token is refused at grant_type=mfa.",
+      "chain_link": "11",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "graphql",
+        "rest"
+      ],
+      "requires": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-run-store-customer",
+        "data.auth.mfa-ticket.issued"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaSelfService.cs:51",
+          "note": "VerifyCodeAsync: token user check, then ChangeTicketPurpose",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "\"a token issued to confirm a mode change … can't be redeemed for a sign-in\"",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenario 9 Passed on a local stand",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "G36."
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.wrong-change-code",
+      "name": "A wrong change code is refused with the sign-in code errors and counts toward the shared limits",
+      "description": "A refused change code answers CodeRefused with the sign-in error codes (invalid_code, code_attempts_exceeded, resend_too_soon, lockout …); the change and sign-in code steps share the wrong-code limiter, the resend interval and the account lockout.",
+      "chain_link": "11",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "\"A refused code returns the same error codes as the sign-in.\"",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenario 3: wrong code counts toward the limit; resend blocked within 30 s",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "G36. Interacts with auth.signin.mfa.wrong-code-limit and auth.lockout.temporary.",
+      "requires": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-run-store-customer"
+      ]
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.confirmed-email-needed",
+      "name": "Turning MFA on needs a confirmed email",
+      "description": "Without a provider (unconfirmed email, inactive notification) mfaSettings reports isProviderAvailable false and requestMfaChangeCode is refused with mfa_provider_not_available.",
+      "chain_link": "11",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "requires": [
+        "data.auth.store.mfa-customer-choice",
+        "data.auth.account.mfa-run-store-customer"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "Rules: turning MFA on needs a confirmed email",
+          "date": "2026-10-30"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:src/VirtoCommerce.MFA.Data/Services/MfaSelfService.cs:128",
+          "note": "IsProviderAvailable from GetProviderAsync",
+          "date": "2026-11-04"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.impersonated-refused",
+      "name": "An impersonated session cannot change MFA",
+      "description": "While an operator acts as the user, the MFA change mutations are refused; the widget shows no switch.",
+      "chain_link": "11",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "requires": [
+        "data.auth.session.impersonating"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "Rules: impersonated sessions can't change MFA",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "Not read at source in this pass (the guard is in the xAPI layer). domain-map G37. Compare auth.signin-methods.impersonated-refused."
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.admin-view",
+      "name": "The Backoffice shows a user's or organization's mode and its effective status per store",
+      "description": "AngularJS user blade widget \"Multi-factor authentication\" (value Off) opens the Mode blade: Mode select Off / Enabled / Required, a hint, and an Effective status table (store, store setting, code at sign-in with the reason). The Admin Shell has the same widget in the overflow menu (\"MFA: Off\"). REST GET mode / status under mfa:read: 200, anonymous 401, unknown mode 400, unknown user 404.",
+      "chain_link": "12",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "requires": [
+        "data.auth.account.admin"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 Admin",
+          "note": "AngularJS widget, Mode blade and 7-row Effective status table for a B2B customer; Admin Shell \"MFA: Off\" in the overflow menu (vcst 3.1094 / AdminShell 3.1093)",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 API",
+          "note": "GET /api/mfa/modes/users/{id} 200 {\"mode\":\"Off\"}, /status 200, ?mode=Bogus 400, unknown id 404, anonymous 401 (vcst)",
+          "date": "2026-11-04"
+        }
+      ],
+      "notes": "domain-map D31 (Admin Shell placement). The organization blade widget is not walked (G34)."
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.admin-set",
+      "name": "An administrator sets a user or an organization to Off, Enabled or Required",
+      "description": "With mfa:manage, the Mode blade Save (or PUT /api/mfa/modes/{users|organizations}/{id} {\"mode\": …}) stores the mode; Required locks the storefront switch.",
+      "chain_link": "12",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "state_before": "auth.state.mfa-mode.off",
+      "state_after": "auth.state.mfa-mode.required",
+      "requires": [
+        "data.auth.account.admin",
+        "data.auth.account.mfa-run-store-customer"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "PUT endpoints, mfa:manage",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenarios 4, 7 Passed on a local stand",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "G31. Orphan rows for an unknown or deleted user / organization — G40 (hypothesis)."
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.admin-read-only",
+      "name": "A Backoffice role with mfa:read only sees the mode but cannot change it",
+      "description": "With mfa:read and without mfa:manage the widget and blade show, the Mode select is locked, there is no Save, and PUT answers 403.",
+      "chain_link": "12",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa@1a0f481:README.md",
+          "note": "Permissions table",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenario 10 Partly: no real read-only role; \"QA: please verify with a real role\"",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "G33.",
+      "requires": [
+        "data.auth.operator.mfa-read-only"
+      ]
+    },
+    {
+      "type": "branch",
+      "maturity": "new",
+      "id": "auth.mfa-mode.status-preview",
+      "name": "The Effective status follows the selected mode before it is saved",
+      "description": "Changing the Mode select recalculates the per-store table (\"Preview of the selected mode\"); REST GET …/status?mode=<mode> evaluates a mode without saving it.",
+      "chain_link": "12",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev4 §2 API",
+          "note": "GET …/status?mode=Required → 200, rows unchanged because no vcst store is AdminManaged / CustomerChoice",
+          "date": "2026-11-04"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6597",
+          "note": "comment 112561 scenario 11 Passed on a local stand",
+          "date": "2026-10-30"
+        }
+      ],
+      "notes": "The UI interaction was not exercised (risk of an accidental Save) — G35.",
+      "requires": [
+        "data.auth.account.admin",
+        "data.auth.store.mfa-admin-managed",
+        "data.auth.account.mfa-run-store-customer"
+      ]
     }
   ],
   "edges": [
@@ -5388,6 +6307,223 @@
       "to": "auth.signin-methods.delete.password",
       "type": "affected_by",
       "note": "a deleted password leaves no password sign-in"
+    },
+    {
+      "from": "auth.signin.mfa.store-mode",
+      "to": "auth.signin.mfa.store-mode.disabled-own-customers",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa.store-mode",
+      "to": "auth.signin.mfa.store-mode.admin-managed",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa.store-mode",
+      "to": "auth.signin.mfa.store-mode.customer-choice",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa.store-mode",
+      "to": "auth.signin.mfa.store-mode.modes-ignored",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.own-store",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.organization-mode",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.mfa-mode",
+      "type": "contains"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.mfa-mode",
+      "type": "affected_by",
+      "note": "user and organization modes are inputs to the requirement in AdminManaged / CustomerChoice stores"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.read",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.widget-gate",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.customer-change",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.self-service-not-allowed",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.locked-by-administrator",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.organization-change",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.organization-not-allowed",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.organization-required-member",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.change-ticket-purpose",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.wrong-change-code",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.confirmed-email-needed",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.impersonated-refused",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.admin-view",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.admin-set",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.admin-read-only",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.mfa-mode",
+      "to": "auth.mfa-mode.status-preview",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.state.mfa-mode.off",
+      "to": "auth.state.mfa-mode.enabled",
+      "type": "transitions_to",
+      "via": "auth.mfa-mode.customer-change"
+    },
+    {
+      "from": "auth.state.mfa-mode.enabled",
+      "to": "auth.state.mfa-mode.off",
+      "type": "transitions_to",
+      "via": "auth.mfa-mode.customer-change"
+    },
+    {
+      "from": "auth.state.mfa-mode.off",
+      "to": "auth.state.mfa-mode.enabled",
+      "type": "transitions_to",
+      "via": "auth.mfa-mode.organization-change"
+    },
+    {
+      "from": "auth.state.mfa-mode.enabled",
+      "to": "auth.state.mfa-mode.off",
+      "type": "transitions_to",
+      "via": "auth.mfa-mode.organization-change"
+    },
+    {
+      "from": "auth.state.mfa-mode.off",
+      "to": "auth.state.mfa-mode.required",
+      "type": "transitions_to",
+      "via": "auth.mfa-mode.admin-set"
+    },
+    {
+      "from": "auth.state.mfa-mode.enabled",
+      "to": "auth.state.mfa-mode.required",
+      "type": "transitions_to",
+      "via": "auth.mfa-mode.admin-set"
+    },
+    {
+      "from": "auth.state.mfa-mode.required",
+      "to": "auth.state.mfa-mode.off",
+      "type": "transitions_to",
+      "via": "auth.mfa-mode.admin-set"
+    },
+    {
+      "from": "auth.state.mfa-mode.required",
+      "to": "auth.state.mfa-mode.enabled",
+      "type": "transitions_to",
+      "via": "auth.mfa-mode.admin-set"
+    },
+    {
+      "from": "auth.mfa-mode.customer-change",
+      "to": "auth.signin.mfa.verify-code",
+      "type": "depends_on",
+      "note": "the step-up uses the same code provider and limits as the sign-in"
+    },
+    {
+      "from": "auth.mfa-mode.wrong-change-code",
+      "to": "auth.signin.mfa.wrong-code-limit",
+      "type": "affected_by",
+      "note": "change and sign-in codes share the wrong-code limiter"
+    },
+    {
+      "from": "auth.mfa-mode.wrong-change-code",
+      "to": "auth.lockout.temporary",
+      "type": "affected_by",
+      "note": "wrong change codes count toward the account lockout"
+    },
+    {
+      "from": "auth.signin.mfa.store-mode.customer-choice",
+      "to": "auth.mfa-mode",
+      "type": "depends_on",
+      "note": "the requirement reads the modes this behaviour sets"
+    },
+    {
+      "from": "auth.signin.mfa.store-mode.admin-managed",
+      "to": "auth.mfa-mode.admin-set",
+      "type": "depends_on",
+      "note": "only an administrator can set Required"
+    },
+    {
+      "from": "auth.signin.mfa.organization-mode",
+      "to": "auth.mfa-mode.organization-change",
+      "type": "depends_on",
+      "note": "the organization mode set by a maintainer or an administrator"
+    },
+    {
+      "from": "auth.signin.mfa.pre-switch-sessions",
+      "to": "auth.mfa-mode",
+      "type": "affected_by",
+      "note": "a mode switched on revokes no session (domain-map D33)"
+    },
+    {
+      "from": "auth.mfa-mode.impersonated-refused",
+      "to": "auth.impersonate",
+      "type": "depends_on",
+      "note": "the impersonated session"
     }
   ]
 }

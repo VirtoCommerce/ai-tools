@@ -70,8 +70,13 @@ const TEARDOWN_STEPS = [
   { name: 'returns-org', script: 'orders/seed-org-returns.mjs', args: ['--teardown'] },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', args: ['--teardown'] },
   { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
+  // VCST-6078 buyer dashboard: its own AGENT-TEST-BD buyers, orgs, orders and layout preferences (+ the
+  // temporary XTS currency) — orders reference products + users, so it goes with the order steps.
+  { name: 'buyer-dashboard', script: 'orders/seed-buyer-dashboard.mjs', args: ['--teardown'], required: false },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', args: ['--teardown'] },
+  // VCST-6155 MCP back-office accounts — deletes the four AGENT-TEST-mcp-* users and the AGENT-TEST-MCP-* roles only.
+  { name: 'mcp-security', script: 'platform/seed-mcp-security.mjs', args: ['--teardown'] },
   // VCST-5886 punchout: the OWNED mapping AGENT-TEST-PO-200 + two AGENT-TEST back-office roles/accounts.
   // Before company-users, whose MULTI_ORG persona the mapping points at. Skips (exit 0) where the module is absent.
   { name: 'punchout', script: 'punchout/seed-punchout.mjs', args: ['--teardown'] },
@@ -206,6 +211,9 @@ const STEPS = [
   // Restricted back-office (Manager) RBAC account for CMS-123/124 — read-only Page Builder, no
   // builder:update. Independent of the catalog/user graph (own role + account); optional.
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', required: false, priority: 135 },
+  // VCST-6155 MCP back-office accounts (platform/mcp-security-specs.mjs). Independent; optional — skips
+  // (exit 0) where the MCP / System Operations permissions are not registered.
+  { name: 'mcp-security', script: 'platform/seed-mcp-security.mjs', required: false, priority: 136 },
   // VCST-5886 punchout cXML fixtures — after company-users (100): the mappings point at the USER_EMAIL /
   // MULTI_ORG personas. Optional: VirtoCommerce.Punchout is deployed on vcptcore_qa1 only; elsewhere the
   // seeder prints one skip line and exits 0. Registers (never creates) the /qa-test-owned AGENT-TEST-PO-100.
@@ -217,6 +225,9 @@ const STEPS = [
   // owned by USER_EMAIL, quotes submitted by ORG_USER_EMAIL, and line items point at real catalog
   // products. Optional: quotes need the Quote module deployed + Stores.EnableQuotes on the store.
   { name: 'orders', script: 'orders/seed-order-states.mjs', required: false, priority: 140 },
+  // VCST-6078 buyer dashboard is deliberately NOT seeded here (teardown only): its UNCFG buyer leaves an
+  // order in a removed currency, and an admin order search whose page holds it returns 500 (VCST-6535).
+  // Seed it on purpose with `npm run seed:buyer-dashboard` on a stand that runs suite 120.
   // Sales Rep family. Sits with the order steps because it CREATES orders, and after products (40)
   // for their line items, inventory (70) for fulfillment centers, and company-users (100) for the
   // org graph its reps are given memberships in. Optional: the module is absent on some

@@ -105,7 +105,7 @@ const featureGatedVars = {
             'APPINSIGHTS_APP_ID_BACKEND',
             'APPINSIGHTS_APP_ID_STOREFRONT',
         ],
-        gates: '/qa-monitoring, ci:monitor (App Insights online bug monitoring)',
+        gates: '/qa-monitoring (App Insights online bug monitoring)',
     },
 };
 
@@ -169,6 +169,7 @@ export const env = {
     // Application URLs
     FRONT_URL: getEnvVar('FRONT_URL'),
     BACK_URL: getEnvVar('BACK_URL'),
+    ADMIN_SHELL_URL: getEnvVar('ADMIN_SHELL_URL'),
     VIRTO_START_FRONT: getEnvVar('VIRTO_START_FRONT', ''),       // TODO(qa-agentic-standardization): deprecate; switch consumers to TEST_ENV=virtostart
     VIRTO_START_BACK: getEnvVar('VIRTO_START_BACK', ''),         // TODO(qa-agentic-standardization): deprecate; switch consumers to TEST_ENV=virtostart
     STORYBOOK_URL: getEnvVar('STORYBOOK_URL'),
@@ -219,7 +220,7 @@ export const env = {
     DATATRANCE_CVV: getEnvVar('DATATRANCE_CVV'),
     DATATRANCE_OTP: getEnvVar('DATATRANCE_OTP'),
 
-    // Azure / Application Insights — online bug monitoring (/qa-monitoring, ci:monitor)
+    // Azure / Application Insights — online bug monitoring (/qa-monitoring)
     // Resource IDs are per-env identifiers (Bucket #2, committed in .env.${TEST_ENV});
     // API keys are secrets (Bucket #3, .env.local only). All optional — the monitor
     // flow no-ops with a clear message when the App IDs / keys are unset.

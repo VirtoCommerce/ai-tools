@@ -550,38 +550,59 @@ export const documentSourceRel = (spec) => (spec?.sourceFile ? `${DEMO_UPLOADS_D
 
 /** Tasks. Real business copy — a rep hub whose task list reads "AGENT-TEST-TASK 04" demos nothing. */
 export const DEMO_TASKS = [
-  { key: 'DTSK-P-01', rep: 'DEMO_REP_PRIMARY', name: 'Follow up on Northwind reorder', type: 'Call', priority: 'High', dueInDays: 0, description: 'Margaret confirmed budget; confirm quantities for the Q4 fastener line.' },
-  { key: 'DTSK-P-02', rep: 'DEMO_REP_PRIMARY', name: 'Send Q4 price list to Contoso', type: 'Email', priority: 'High', dueInDays: 0, description: 'Priya asked for the updated list ahead of their planning cycle.' },
-  { key: 'DTSK-P-03', rep: 'DEMO_REP_PRIMARY', name: 'Prepare volume pricing proposal — Fabrikam', type: 'Task', priority: 'Normal', dueInDays: 2, description: 'Model tier breaks at 500 / 1000 / 2500 units.' },
-  { key: 'DTSK-P-04', rep: 'DEMO_REP_PRIMARY', name: 'Quarterly business review — Fabrikam Industrial', type: 'Meeting', priority: 'Normal', dueInDays: 5, description: 'Review service levels and the pending power-station trial.' },
-  { key: 'DTSK-P-05', rep: 'DEMO_REP_PRIMARY', name: 'Chase cancelled order {{order:DORD-CN-02}} with Contoso', type: 'Call', priority: 'Normal', dueInDays: 1, description: 'Understand why the plant buyer cancelled and whether it can be recovered.' },
-  { key: 'DTSK-P-06', rep: 'DEMO_REP_PRIMARY', name: 'Update credit terms for Northwind', type: 'Task', priority: 'Low', dueInDays: 9, description: 'Net-30 extension approved by finance; update the account record.' },
+  { key: 'DTSK-P-01', rep: 'DEMO_REP_PRIMARY', customer: 'DORG-NORTHWIND', name: 'Follow up on Northwind reorder', type: 'Call', priority: 'High', dueInDays: 0, description: 'Margaret confirmed budget; confirm quantities for the Q4 fastener line.' },
+  { key: 'DTSK-P-02', rep: 'DEMO_REP_PRIMARY', customer: 'DORG-CONTOSO', name: 'Send Q4 price list to Contoso', type: 'Email', priority: 'High', dueInDays: 0, description: 'Priya asked for the updated list ahead of their planning cycle.' },
+  { key: 'DTSK-P-03', rep: 'DEMO_REP_PRIMARY', customer: 'DORG-FABRIKAM', name: 'Prepare volume pricing proposal — Fabrikam', type: 'Task', priority: 'Normal', dueInDays: 2, description: 'Model tier breaks at 500 / 1000 / 2500 units.' },
+  { key: 'DTSK-P-04', rep: 'DEMO_REP_PRIMARY', customer: 'DORG-FABRIKAM', name: 'Quarterly business review — Fabrikam Industrial', type: 'Meeting', priority: 'Normal', dueInDays: 5, description: 'Review service levels and the pending power-station trial.' },
+  { key: 'DTSK-P-05', rep: 'DEMO_REP_PRIMARY', customer: 'DORG-CONTOSO', name: 'Chase cancelled order {{order:DORD-CN-02}} with Contoso', type: 'Call', priority: 'Normal', dueInDays: 1, description: 'Understand why the plant buyer cancelled and whether it can be recovered.' },
+  { key: 'DTSK-P-06', rep: 'DEMO_REP_PRIMARY', customer: 'DORG-NORTHWIND', name: 'Update credit terms for Northwind', type: 'Task', priority: 'Low', dueInDays: 9, description: 'Net-30 extension approved by finance; update the account record.' },
   // Overdue (past due, still open) and completed — so every Calendar tab has something in it.
-  { key: 'DTSK-P-07', rep: 'DEMO_REP_PRIMARY', name: 'Call Fabrikam about the Plant 2 outage', type: 'Call', priority: 'High', dueInDays: -3, description: 'Elena asked for a call back on backup power options after last week\'s line stoppage.' },
-  { key: 'DTSK-P-08', rep: 'DEMO_REP_PRIMARY', name: 'Send revised fastener quote to Northwind', type: 'Email', priority: 'Normal', dueInDays: -1, description: 'Daniel is waiting on the Grade 8 pricing before he releases order {{order:DORD-NW-03}}.' },
-  { key: 'DTSK-P-09', rep: 'DEMO_REP_PRIMARY', name: 'Confirm delivery of order {{order:DORD-NW-01}}', type: 'Call', priority: 'Normal', dueInDays: -4, completed: true, description: 'Margaret confirmed the full shipment arrived at the Seattle yard.' },
-  { key: 'DTSK-P-10', rep: 'DEMO_REP_PRIMARY', name: 'Send credit application to Contoso', type: 'Email', priority: 'Normal', dueInDays: -2, completed: true, description: 'Priya returned the signed form the same day.' },
+  { key: 'DTSK-P-07', rep: 'DEMO_REP_PRIMARY', customer: 'DORG-FABRIKAM', name: 'Call Fabrikam about the Plant 2 outage', type: 'Call', priority: 'High', dueInDays: -3, description: 'Elena asked for a call back on backup power options after last week\'s line stoppage.' },
+  { key: 'DTSK-P-08', rep: 'DEMO_REP_PRIMARY', customer: 'DORG-NORTHWIND', name: 'Send revised fastener quote to Northwind', type: 'Email', priority: 'Normal', dueInDays: -1, description: 'Daniel is waiting on the Grade 8 pricing before he releases order {{order:DORD-NW-03}}.' },
+  { key: 'DTSK-P-09', rep: 'DEMO_REP_PRIMARY', customer: 'DORG-NORTHWIND', name: 'Confirm delivery of order {{order:DORD-NW-01}}', type: 'Call', priority: 'Normal', dueInDays: -4, completed: true, description: 'Margaret confirmed the full shipment arrived at the Seattle yard.' },
+  { key: 'DTSK-P-10', rep: 'DEMO_REP_PRIMARY', customer: 'DORG-CONTOSO', name: 'Send credit application to Contoso', type: 'Email', priority: 'Normal', dueInDays: -2, completed: true, description: 'Priya returned the signed form the same day.' },
 
-  { key: 'DTSK-Q-01', rep: 'DEMO_REP_SECOND', name: 'Onboard Wingtip Electrical Supply', type: 'Meeting', priority: 'High', dueInDays: 0, description: 'First full account review with James; walk through the portal.' },
-  { key: 'DTSK-Q-02', rep: 'DEMO_REP_SECOND', name: 'Confirm delivery window for Wingtip order {{order:DORD-WT-02}}', type: 'Call', priority: 'High', dueInDays: 1, description: 'Customer needs delivery before the end of the month.' },
-  { key: 'DTSK-Q-03', rep: 'DEMO_REP_SECOND', name: 'Share safety data sheets with Contoso', type: 'Email', priority: 'Normal', dueInDays: 2, description: 'Plant compliance requested SDS for the lubricant range.' },
-  { key: 'DTSK-Q-04', rep: 'DEMO_REP_SECOND', name: 'Review Contoso account with the co-rep', type: 'Meeting', priority: 'Normal', dueInDays: 3, description: 'Shared account — align on coverage before the next quarter.' },
-  { key: 'DTSK-Q-05', rep: 'DEMO_REP_SECOND', name: 'Prepare Wingtip volume quote', type: 'Task', priority: 'Normal', dueInDays: 6, description: 'Quote the conduit and cabling lines at committed annual volume.' },
+  { key: 'DTSK-Q-01', rep: 'DEMO_REP_SECOND', customer: 'DORG-WINGTIP', name: 'Onboard Wingtip Electrical Supply', type: 'Meeting', priority: 'High', dueInDays: 0, description: 'First full account review with James; walk through the portal.' },
+  { key: 'DTSK-Q-02', rep: 'DEMO_REP_SECOND', customer: 'DORG-WINGTIP', name: 'Confirm delivery window for Wingtip order {{order:DORD-WT-02}}', type: 'Call', priority: 'High', dueInDays: 1, description: 'Customer needs delivery before the end of the month.' },
+  { key: 'DTSK-Q-03', rep: 'DEMO_REP_SECOND', customer: 'DORG-CONTOSO', name: 'Share safety data sheets with Contoso', type: 'Email', priority: 'Normal', dueInDays: 2, description: 'Plant compliance requested SDS for the lubricant range.' },
+  { key: 'DTSK-Q-04', rep: 'DEMO_REP_SECOND', customer: 'DORG-CONTOSO', name: 'Review Contoso account with the co-rep', type: 'Meeting', priority: 'Normal', dueInDays: 3, description: 'Shared account — align on coverage before the next quarter.' },
+  { key: 'DTSK-Q-05', rep: 'DEMO_REP_SECOND', customer: 'DORG-WINGTIP', name: 'Prepare Wingtip volume quote', type: 'Task', priority: 'Normal', dueInDays: 6, description: 'Quote the conduit and cabling lines at committed annual volume.' },
   { key: 'DTSK-Q-06', rep: 'DEMO_REP_SECOND', name: 'Archive closed opportunities', type: 'Task', priority: 'Low', dueInDays: 12, description: 'Housekeeping on last quarter’s pipeline.' },
-  { key: 'DTSK-Q-07', rep: 'DEMO_REP_SECOND', name: 'Resolve invoice query on order {{order:DORD-WT-01}}', type: 'Call', priority: 'High', dueInDays: -2, description: 'James flagged a freight line he did not expect on the invoice.' },
-  { key: 'DTSK-Q-08', rep: 'DEMO_REP_SECOND', name: 'Kick-off call with Wingtip', type: 'Meeting', priority: 'Normal', dueInDays: -5, completed: true, description: 'Introduced the portal and agreed a monthly check-in.' },
-  { key: 'DTSK-Q-09', rep: 'DEMO_REP_SECOND', name: 'Send terms of sale to Contoso', type: 'Email', priority: 'Low', dueInDays: -1, completed: true, description: 'Shared the Terms and Conditions of Sale from the document library.' },
+  { key: 'DTSK-Q-07', rep: 'DEMO_REP_SECOND', customer: 'DORG-WINGTIP', name: 'Resolve invoice query on order {{order:DORD-WT-01}}', type: 'Call', priority: 'High', dueInDays: -2, description: 'James flagged a freight line he did not expect on the invoice.' },
+  { key: 'DTSK-Q-08', rep: 'DEMO_REP_SECOND', customer: 'DORG-WINGTIP', name: 'Kick-off call with Wingtip', type: 'Meeting', priority: 'Normal', dueInDays: -5, completed: true, description: 'Introduced the portal and agreed a monthly check-in.' },
+  { key: 'DTSK-Q-09', rep: 'DEMO_REP_SECOND', customer: 'DORG-CONTOSO', name: 'Send terms of sale to Contoso', type: 'Email', priority: 'Low', dueInDays: -1, completed: true, description: 'Shared the Terms and Conditions of Sale from the document library.' },
 
-  { key: 'DTSK-S-01', rep: 'DEMO_REP_SWITCHER', name: 'Follow up on Drift Inn lobby displays', type: 'Call', priority: 'High', dueInDays: 0, description: 'Noah wants the second batch of front-desk monitors before the season opens.' },
-  { key: 'DTSK-S-02', rep: 'DEMO_REP_SWITCHER', name: 'Send holiday price list to Blue Ridge', type: 'Email', priority: 'High', dueInDays: 0, description: 'Samuel asked for the updated list ahead of their holiday buying.' },
-  { key: 'DTSK-S-03', rep: 'DEMO_REP_SWITCHER', name: 'Size the NAS expansion — Ironwood Industrial', type: 'Task', priority: 'Normal', dueInDays: 2, description: 'Frank needs storage for camera footage from the new night shift.' },
-  { key: 'DTSK-S-04', rep: 'DEMO_REP_SWITCHER', name: 'Quarterly review — Northwind Tools', type: 'Meeting', priority: 'Normal', dueInDays: 4, description: 'Walk Rachel through order history and the volume pricing tiers.' },
-  { key: 'DTSK-S-05', rep: 'DEMO_REP_SWITCHER', name: 'Chase cancelled order {{order:DORD-SW-BLR-02}} with Blue Ridge', type: 'Call', priority: 'Normal', dueInDays: 1, description: 'Hannah cancelled it; find out whether it can be rebooked.' },
-  { key: 'DTSK-S-06', rep: 'DEMO_REP_SWITCHER', name: 'Headset refresh for Lakeview Outfitters', type: 'Task', priority: 'Low', dueInDays: 8, description: 'Replace the store-floor headsets before the spring season.' },
-  { key: 'DTSK-S-07', rep: 'DEMO_REP_SWITCHER', name: 'Call Harbor Light about portal access', type: 'Call', priority: 'High', dueInDays: -2, description: 'Their organization access is locked; confirm who approves the unlock.' },
-  { key: 'DTSK-S-08', rep: 'DEMO_REP_SWITCHER', name: 'Send revised quote to Cedar Point', type: 'Email', priority: 'Normal', dueInDays: -1, description: 'Diego is waiting on pricing before he releases order {{order:DORD-SW-CDP-02}}.' },
-  { key: 'DTSK-S-09', rep: 'DEMO_REP_SWITCHER', name: 'Confirm delivery of order {{order:DORD-SW-DRI-01}}', type: 'Call', priority: 'Normal', dueInDays: -4, completed: true, description: 'Noah confirmed the full delivery arrived at the resort.' },
-  { key: 'DTSK-S-10', rep: 'DEMO_REP_SWITCHER', name: 'Welcome call with Coastal Décor', type: 'Meeting', priority: 'Normal', dueInDays: -6, completed: true, description: 'Introduced the portal to Claire and agreed a monthly check-in.' },
+  { key: 'DTSK-S-01', rep: 'DEMO_REP_SWITCHER', customer: 'DORG-SW-DRIFTINN', name: 'Follow up on Drift Inn lobby displays', type: 'Call', priority: 'High', dueInDays: 0, description: 'Noah wants the second batch of front-desk monitors before the season opens.' },
+  { key: 'DTSK-S-02', rep: 'DEMO_REP_SWITCHER', customer: 'DORG-SW-BLUERIDGE', name: 'Send holiday price list to Blue Ridge', type: 'Email', priority: 'High', dueInDays: 0, description: 'Samuel asked for the updated list ahead of their holiday buying.' },
+  { key: 'DTSK-S-03', rep: 'DEMO_REP_SWITCHER', customer: 'DORG-SW-IRONWOOD', name: 'Size the NAS expansion — Ironwood Industrial', type: 'Task', priority: 'Normal', dueInDays: 2, description: 'Frank needs storage for camera footage from the new night shift.' },
+  { key: 'DTSK-S-04', rep: 'DEMO_REP_SWITCHER', customer: 'DORG-SW-NWTOOLS', name: 'Quarterly review — Northwind Tools', type: 'Meeting', priority: 'Normal', dueInDays: 4, description: 'Walk Rachel through order history and the volume pricing tiers.' },
+  { key: 'DTSK-S-05', rep: 'DEMO_REP_SWITCHER', customer: 'DORG-SW-BLUERIDGE', name: 'Chase cancelled order {{order:DORD-SW-BLR-02}} with Blue Ridge', type: 'Call', priority: 'Normal', dueInDays: 1, description: 'Hannah cancelled it; find out whether it can be rebooked.' },
+  { key: 'DTSK-S-06', rep: 'DEMO_REP_SWITCHER', customer: 'DORG-SW-LAKEVIEW', name: 'Headset refresh for Lakeview Outfitters', type: 'Task', priority: 'Low', dueInDays: 8, description: 'Replace the store-floor headsets before the spring season.' },
+  { key: 'DTSK-S-07', rep: 'DEMO_REP_SWITCHER', customer: 'DORG-SW-HARBORLIGHT', name: 'Call Harbor Light about portal access', type: 'Call', priority: 'High', dueInDays: -2, description: 'Their organization access is locked; confirm who approves the unlock.' },
+  { key: 'DTSK-S-08', rep: 'DEMO_REP_SWITCHER', customer: 'DORG-SW-CEDARPOINT', name: 'Send revised quote to Cedar Point', type: 'Email', priority: 'Normal', dueInDays: -1, description: 'Diego is waiting on pricing before he releases order {{order:DORD-SW-CDP-02}}.' },
+  { key: 'DTSK-S-09', rep: 'DEMO_REP_SWITCHER', customer: 'DORG-SW-DRIFTINN', name: 'Confirm delivery of order {{order:DORD-SW-DRI-01}}', type: 'Call', priority: 'Normal', dueInDays: -4, completed: true, description: 'Noah confirmed the full delivery arrived at the resort.' },
+  { key: 'DTSK-S-10', rep: 'DEMO_REP_SWITCHER', customer: 'DORG-SW-COASTAL', name: 'Welcome call with Coastal Décor', type: 'Meeting', priority: 'Normal', dueInDays: -6, completed: true, description: 'Introduced the portal to Claire and agreed a monthly check-in.' },
+];
+
+/**
+ * Store coupons for the "Promo codes, coupons and vouchers" block of the hub (VCST-6158). salesRepCoupons
+ * lists the store's ACTIVE PUBLIC promotions that carry exactly ONE shared code, minus expired, used-up
+ * and member-bound coupons — the same list for every rep of the store (vc-module-sales-rep README
+ * §Promotion coupons). So these are store-wide, not per customer, and each promotion gets one code.
+ *
+ * Kept out of test-data/promotions/*.csv on purpose: `npm run seed:promotions` seeds every row of
+ * that CSV, and a presentable public coupon on a QA stand changes the exact set suite 091c asserts.
+ *
+ * Distinct end dates (promotion end vs coupon expiry, and one open-ended) so the list's
+ * soonest-to-expire order and its "ends" dates show something. Codes are SR- prefixed so they cannot
+ * collide with a code the store already has; `name` is what renders when the hub language has no
+ * localized value, so it is presentable too.
+ */
+export const DEMO_COUPONS = [
+  { key: 'DCPN-WINTER', code: 'SR-WINTER10', name: 'Winter restock — 10% off', label: '10% off', percent: 10, promoEndsInDays: 45, description: 'Ten percent off the order subtotal for winter restocking orders.' },
+  { key: 'DCPN-YEAREND', code: 'SR-YEAREND5', name: 'Year-end volume deal — 5% off', label: '5% off', percent: 5, couponExpiresInDays: 18, description: 'Five percent off before the year-end budget closes.' },
+  { key: 'DCPN-WELCOME', code: 'SR-WELCOME15', name: 'New account welcome — 15% off', label: '15% off', percent: 15, promoEndsInDays: 90, maxUses: 25, description: 'Fifteen percent off a new customer\'s first portal order.' },
+  { key: 'DCPN-PARTNER', code: 'SR-PARTNER8', name: 'Preferred partner — 8% off', label: '8% off', percent: 8, description: 'Eight percent off for preferred partners, no end date.' },
 ];
 
 // ---- derivations -----------------------------------------------------------
@@ -1004,6 +1025,7 @@ export function demoProblems() {
 
   for (const t of DEMO_TASKS) {
     if (!repByKey(t.rep)) problems.push(`task ${t.key} references unknown rep ${t.rep}`);
+    // createSalesRepTask accepts only an organization the caller serves (VCST-6157); any other id is refused.    if (t.customer && !repByKey(t.rep)?.servedOrgs.includes(t.customer)) problems.push(`task ${t.key} names customer ${t.customer}, which ${t.rep} does not serve`);
     for (const field of [t.name, t.description]) {
       const left = resolveTaskText(field).match(/\{\{[^}]*\}\}/g);
       if (left) problems.push(`task ${t.key} cites ${left.join(', ')} — not a declared DEMO_ORDERS key, so the raw token would render`);
@@ -1018,6 +1040,23 @@ export function demoProblems() {
     if (mine.length && !mine.some((t) => !t.completed && t.dueInDays < 0)) problems.push(`rep ${r.key} has no overdue task — the Overdue tab reads 0`);
     if (mine.length && !mine.some((t) => t.completed)) problems.push(`rep ${r.key} has no completed task — the Completed tab reads 0`);
     for (const k of r.servedOrgs) if (!orgByKey(k)) problems.push(`rep ${r.key} serves unknown org ${k}`);
+  }
+
+  // A rep with any customer link but no task of a SECOND customer cannot show the Customers filter narrowing anything.
+  for (const r of DEMO_REPS) {
+    const customers = new Set(DEMO_TASKS.filter((t) => t.rep === r.key && t.customer).map((t) => t.customer));
+    if (DEMO_TASKS.some((t) => t.rep === r.key) && customers.size < 2) problems.push(`rep ${r.key} has tasks for fewer than two customers — the Customers filter has nothing to narrow`);
+  }
+
+  const codes = DEMO_COUPONS.map((c) => c.code);
+  if (new Set(codes).size !== codes.length) problems.push('DEMO_COUPONS repeats a code');
+  if (DEMO_COUPONS.length < 3) problems.push('fewer than three demo coupons — the coupons block reads as a stub');
+  const endOf = (c) => Math.min(c.promoEndsInDays ?? Infinity, c.couponExpiresInDays ?? Infinity);
+  if (new Set(DEMO_COUPONS.map(endOf)).size !== DEMO_COUPONS.length) problems.push('two demo coupons end on the same day — the soonest-first order shows nothing');
+  for (const c of DEMO_COUPONS) {
+    if (FORBIDDEN_IN_VISIBLE.test(`${c.name} ${c.label} ${c.description} ${c.code}`)) problems.push(`coupon ${c.key} shows AGENT-TEST`);
+    if (!(c.percent > 0 && c.percent < 100)) problems.push(`coupon ${c.key}: percent ${c.percent} is not a discount`);
+    if (endOf(c) <= 0) problems.push(`coupon ${c.key} ends today or earlier — salesRepCoupons drops it`);
   }
 
   for (const [type, key] of [['ORG', 'x'], ['CT', 'x'], ['ORD', 'x']]) {

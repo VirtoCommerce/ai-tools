@@ -24,7 +24,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  EMPTY_CATEGORY, EXCLUDED_PRODUCT, SEO_PRODUCT, RUNTIME_FIELDS,
+  EMPTY_CATEGORY, EXCLUDED_PRODUCT, SEO_PRODUCT, OTHER_CATALOG, RUNTIME_FIELDS,
   validateFixtureShape, validateSeoShape,
 } from './catalog-edge-specs.mjs';
 import { resolveTestEnv } from '../../lib/resolve-test-env.js';
@@ -37,6 +37,7 @@ const ALIAS_CONTRACT = {
   [EMPTY_CATEGORY.aliasName]: ['name', 'code', 'slug', 'url', 'id'],
   [EXCLUDED_PRODUCT.aliasName]: ['sku', 'name', 'slug', 'id'],
   [SEO_PRODUCT.aliasName]: ['sku', 'name', 'slug', 'pageTitle', 'url', 'id'],
+  [OTHER_CATALOG.aliasName]: ['id', 'name'],
 };
 
 const problems = [], notes = [];
@@ -69,6 +70,9 @@ for (const [name, fields] of Object.entries(ALIAS_CONTRACT)) {
     }
   }
   if (!missing.length) ok(`${name}: ${fields.length} contract field(s) present, no committed GUID`);
+}
+if (aliases[OTHER_CATALOG.aliasName] && aliases[OTHER_CATALOG.aliasName].name !== OTHER_CATALOG.name) {
+  fail(`${OTHER_CATALOG.aliasName}.name="${aliases[OTHER_CATALOG.aliasName].name}" != the catalog the seeder puts the properties on ("${OTHER_CATALOG.name}")`);
 }
 
 // 3. Store-relative URLs.

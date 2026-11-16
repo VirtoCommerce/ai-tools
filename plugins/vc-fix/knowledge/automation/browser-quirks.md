@@ -43,8 +43,7 @@ check the two prerequisites below before reopening anything here.
    entry silently swaps the server binary underneath this config: each release bundles its own
    `playwright-core`, which demands a specific browser build, so an unattended bump can fail the lane at
    launch with *"Executable doesn't exist"* and can change actionability behaviour without any config
-   change. The pin must match `package.json`'s devDependency and `PLAYWRIGHT_MCP_PACKAGE` in
-   `ci/lib/lane-mcp.ts`, or interactive runs stop reproducing CI. See `docs/onboarding.md` §Required MCP
+   change. The pin must match `package.json`'s devDependency. See `docs/onboarding.md` §Required MCP
    Servers.
 
 **Symptom (confirmed 6× on the team's Windows machines, 2026-06 → 2026-08):** `browser_click` on the

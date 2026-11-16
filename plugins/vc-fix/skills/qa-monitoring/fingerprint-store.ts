@@ -18,7 +18,7 @@
  * classify reads the *previous* baseline; recordRun updates it. Order matters.
  *
  * Self-contained for the `vc-fix` plugin: the headless REST query client
- * (`ci/lib/appinsights.ts` in the full `vc-qa` plugin, using `@azure/identity`)
+ * (`scripts/lib/appinsights.ts` in the full `vc-qa` plugin, using `@azure/identity`)
  * is not shipped here — `/qa-monitoring` queries via Azure MCP's
  * `applicationinsights` tool directly, so only the row/layer shapes below (kept
  * inline instead of imported) are needed by this store.

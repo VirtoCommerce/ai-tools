@@ -14,6 +14,9 @@
  *        NEVER by signing in: a failed sign-in counts towards the lockout of an account other lanes share.
  *      - fixtures: every `@td(ALIAS.field)`, resolved by the same TestDataResolver the runners use. A miss the
  *        resolver classifies `unseeded` (another env has the value, this one does not) is a seeding gap.
+ *      - generated files: a case that names a file a `td:gen:*` script writes (`GENERATORS` below) while that
+ *        file is missing — a fresh clone, or a pull that untracked it. Flagged with the command that writes it;
+ *        the pre-flight itself writes nothing.
  *   2. DECLARED in `config/suite-requirements.json` — what a CSV cannot express: a store setting, a platform
  *      setting, a payment method, a key in vc-deploy-dev `infra/environments.yml` (headers, FileUpload scopes,
  *      KnownAssetHosts). Each entry names the cases it gates and why.
@@ -24,6 +27,7 @@
  * `"level": "block"`. Anything that could not be read is UNKNOWN, never OK.
  */
 import { existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { parse as parseYaml } from "yaml";
@@ -33,11 +37,41 @@ import { probeCoords } from "../lib/env-facts.ts";
 import { probeAdminToken, type AdminAuth } from "../deploy/lib/live.ts";
 import { ghJson, setToken } from "../deploy/lib/github.ts";
 import type { Check } from "../preflight/policy.ts";
+import { OUTPUTS as UPLOAD_SIZE_OUTPUTS } from "../test-data/gen-upload-size-fixtures.mjs";
 
-export type ReqKind = "storeSetting" | "platformSetting" | "paymentMethod" | "deployConfig" | "uploadScope";
+/** Fixtures a script writes instead of git (test-data-authoring.md §Large fixtures). The npm script is derived from package.json. */
+const GENERATORS: { script: string; outputs: readonly string[] }[] = [
+  { script: "scripts/test-data/gen-upload-size-fixtures.mjs", outputs: UPLOAD_SIZE_OUTPUTS },
+];
+
+export type ReqKind = "storeSetting" | "platformSetting" | "paymentMethod" | "deployConfig" | "uploadScope" | "storeLanguage" | "storeCurrency" | "contract";
+
+/**
+ * contract: a generated contract snapshot the suite's cases cite (`.claude/knowledge/api/<name>.md`). The check runs
+ * its `--check` mode (read-only) against the stand: drift means the cases may assert a tool, argument or scope that
+ * moved. Never a refresh here — refreshing before every run would silently accept the change the snapshot exists to
+ * catch; the remedy row says to refresh and re-read the cases.
+ */
+export const CONTRACTS: Record<string, { script: string; refresh: string }> = {
+  "mcp-schema": { script: "scripts/mcp/refresh-mcp-schema.mjs", refresh: "npm run mcp:schema:refresh" },
+  "ucp-schema": { script: "scripts/ucp/refresh-ucp-schema.mjs", refresh: "npm run ucp:schema:refresh" },
+};
+function checkContract(root: string, env: string, name: string): { ok: boolean; unknown: string | null; detail: string } {
+  const c = CONTRACTS[name];
+  if (!c) return { ok: false, unknown: `no contract named "${name}" (known: ${Object.keys(CONTRACTS).join(", ")})`, detail: "" };
+  const r = spawnSync(process.execPath, [join(root, c.script), "--check"], { cwd: root, env: { ...process.env, TEST_ENV: env }, encoding: "utf8", timeout: 120_000 });
+  const tail = `${r.stdout ?? ""}${r.stderr ?? ""}`.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("[config]"));
+  if (r.status === 0) return { ok: true, unknown: null, detail: tail.find((l) => /OK/.test(l)) ?? "no drift" };
+  if (r.status === 1) return { ok: false, unknown: null, detail: tail.find((l) => /DRIFT|no snapshot/.test(l)) ?? "drift" };
+  return { ok: false, unknown: tail.slice(-1)[0] ?? `check exited ${r.status ?? r.signal}`, detail: "" };
+}
 export interface Requirement {
   kind: ReqKind;
-  /** Setting name · payment method code · yml path (`storefront.headers.X`, `platform.config.KEY`) · upload scope name. */
+  /**
+   * Setting name · payment method code · yml path (`storefront.headers.X`, `platform.config.KEY`) · upload scope name ·
+   * storeLanguage: a culture (`pt-PT`) or a bare language (`pt`, any `pt-*` satisfies it) the store must offer ·
+   * storeCurrency: a currency code (`PTS`) the store must offer.
+   */
   name: string;
   /** The value the cases need. Omitted with `nonEmpty` / `notEquals` / `prefix`. */
   equals?: unknown;
@@ -67,7 +101,9 @@ export interface SuiteFile { id: string; file: string }
 
 // SWITCH_ORG is not here: its alias names an ORGANISATION (`@td(<alias>.name)`, test-execution-preflight.md §SWITCH_ORG),
 // and checking it as an account reports a false "unknown persona" that skips the cases.
-const PERSONA = /\[PRE:(?:SIGNIN_AS|VERIFY_AUTH):([A-Z][A-Z0-9_]+)\]/g;
+// DISPOSABLE_CUSTOMER is not a persona either: it is the account `[PRE:DISPOSABLE_CUSTOMER:<kind>]` creates for the
+// case itself, so there is nothing seeded to check (test-execution-preflight.md §DISPOSABLE_CUSTOMER).
+const PERSONA = /\[PRE:(?:SIGNIN_AS|VERIFY_AUTH):(?!DISPOSABLE_CUSTOMER\])([A-Z][A-Z0-9_]+)\]/g;
 const TD_REF = /@td\(([A-Z][A-Z0-9_]+(?:\.\w+)+)\)/g;
 const VAR = /^\{\{([A-Z0-9_]+)\}\}$/;
 
@@ -88,6 +124,8 @@ export function loadRequirements(root: string): RequirementsFile {
 export function collectCaseNeeds(root: string, suites: SuiteFile[]) {
   const personas = new Map<string, Set<string>>();
   const refs = new Map<string, Set<string>>();
+  const generated = new Map<string, Set<string>>();
+  const outputs = GENERATORS.flatMap((g) => g.outputs.map((rel) => ({ rel, base: rel.split("/").pop()! })));
   const add = (m: Map<string, Set<string>>, k: string, c: string) => (m.get(k) ?? m.set(k, new Set()).get(k)!).add(c);
   const unreadable: string[] = [];
   for (const s of suites) {
@@ -104,9 +142,32 @@ export function collectCaseNeeds(root: string, suites: SuiteFile[]) {
       const key = `${s.id}/${id}`;
       for (const m of text.matchAll(PERSONA)) add(personas, m[1], key);
       for (const m of text.matchAll(TD_REF)) add(refs, m[1], key);
+      // Steps only: a Preconditions list can name a fixture the case never uploads.
+      const steps = r.Steps ?? text;
+      for (const o of outputs) if (steps.includes(o.base)) add(generated, o.rel, key);
     }
   }
-  return { personas, refs, unreadable };
+  return { personas, refs, generated, unreadable };
+}
+
+/** A case names a generated fixture that is not on disk: say which command writes it. Never writes it. */
+export function generatedFixtureChecks(root: string, generated: Map<string, Set<string>>): Check[] {
+  let scripts: Record<string, string> = {};
+  try { scripts = JSON.parse(readFileSync(join(root, "package.json"), "utf-8")).scripts ?? {}; } catch { /* named by path below */ }
+  const checks: Check[] = [];
+  for (const g of GENERATORS) {
+    const missing = g.outputs.filter((rel) => generated.has(rel) && !existsSync(join(root, rel)));
+    if (!missing.length) continue;
+    const npm = Object.keys(scripts).find((k) => scripts[k].includes(g.script));
+    const cmd = npm ? `npm run ${npm}` : `node ${g.script}`;
+    const cases = [...new Set(missing.flatMap((rel) => [...generated.get(rel)!]))].sort();
+    checks.push({
+      id: `generated:${npm ?? g.script}`, status: "WARN", who: "me", diagnose: [], cases,
+      found: `${missing.join(", ")} not on disk — generated, not committed; ${cases.length} case(s) upload it: ${bySuite(cases)}`,
+      do: `${cmd}, then re-run the pre-flight`,
+    });
+  }
+  return checks;
 }
 
 /** "036 (29), 037 (2)" — the affected cases, by suite. */
@@ -325,7 +386,7 @@ function meets(r: Requirement, value: unknown, present: boolean): boolean {
 }
 const want = (r: Requirement) => r.allowedIncludes ? `to offer ${r.allowedIncludes.map((v) => JSON.stringify(v)).join(", ")}` : r.equals !== undefined ? `= ${JSON.stringify(r.equals)}` : r.notEquals !== undefined ? `≠ ${JSON.stringify(r.notEquals)}` : "set";
 
-export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth | null, reqs: { suite: string; r: Requirement }[]): Promise<Check[]> {
+export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth | null, reqs: { suite: string; r: Requirement }[], root: string = process.cwd()): Promise<Check[]> {
   if (!reqs.length) return [];
   const storeId = process.env.STORE_ID || "B2B-store";
   const auth = token ? { ...token.headers, "Content-Type": "application/json" } : null;
@@ -339,7 +400,8 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
     try { const r = await fetch(`${c.backUrl}/api/platform/settings/${encodeURIComponent(name)}`, { headers: auth }); return { status: r.status, body: r.status === 200 ? await r.json().catch(() => null) : null }; } catch { return { status: -1, body: null }; }
   };
   const kinds = new Set(reqs.map((x) => x.r.kind));
-  const store = kinds.has("storeSetting") ? await getJson(`/api/stores/${encodeURIComponent(storeId)}`) : null;
+  const store = kinds.has("storeSetting") || kinds.has("storeLanguage") || kinds.has("storeCurrency")
+    ? await getJson(`/api/stores/${encodeURIComponent(storeId)}`) : null;
   const payments = kinds.has("paymentMethod") ? await getJson(`/api/payment/search`, { method: "POST", body: JSON.stringify({ storeId, take: 100 }) }) : null;
   const yml = kinds.has("deployConfig") || kinds.has("uploadScope") ? await readDeployYml(c) : null;
   const platform = new Map<string, unknown>();
@@ -358,9 +420,31 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
   for (const [, g] of groups) {
     const r = g.r;
     let value: unknown, present = false, unknown: string | null = null, where = "";
+    if (r.kind === "contract") {
+      const cases = g.cases.size ? ` — ${count(g.cases)}: ${bySuite(g.cases)}` : ` — suites ${[...g.suites].join(", ")}`;
+      const res = checkContract(root, env, r.name);
+      const fixC = CONTRACTS[r.name]?.refresh ?? "";
+      const id = `req:contract:${r.name}`;
+      if (res.unknown) out.push({ id, status: "UNKNOWN", found: `${r.name}: not checked (${res.unknown})${cases}`, who: "you", do: `make the check runnable (admin credentials in the env files) and re-run`, diagnose: [] });
+      else if (res.ok) out.push({ id, status: "OK", found: `${r.name}: ${res.detail}${cases}`, who: null, do: null, diagnose: [] });
+      else out.push({ id, status: r.level === "block" ? "BLOCK" : "WARN", found: `${r.name}: ${res.detail} — ${r.why}${cases}`, who: "me, with OK",
+        do: `${fixC} (rewrites the tracked snapshot), then re-read every case that asserts a changed tool, argument or scope before running`, diagnose: [], cases: [...g.cases] });
+      continue;
+    }
     if (r.kind === "storeSetting") {
       if (!store) unknown = `store ${storeId} not readable (admin token?)`;
       else { const s = (store.settings ?? []).find((x: any) => x.name === r.name); present = !!s; value = s ? s.value ?? s.defaultValue : undefined; where = `store ${storeId}`; }
+    } else if (r.kind === "storeLanguage" || r.kind === "storeCurrency") {
+      // The store's own lists: a case that opens /pt/… or picks PTS in the currency selector needs them offered,
+      // or it waits on a 404 page / a missing menu item and times out (stable-16 W6: LAYOUT-STR-002, CNT-005).
+      if (!store) unknown = `store ${storeId} not readable (admin token?)`;
+      else {
+        const list: string[] = (r.kind === "storeLanguage" ? store.languages : store.currencies) ?? [];
+        const target = r.name.toLowerCase();
+        present = list.some((x) => { const v = String(x).toLowerCase(); return v === target || (r.kind === "storeLanguage" && !target.includes("-") && v.split("-")[0] === target); });
+        value = list.join(", ") || "(none)";
+        where = `store ${storeId} ${r.kind === "storeLanguage" ? "languages" : "currencies"}`;
+      }
     } else if (r.kind === "platformSetting") {
       if (!platform.has(r.name)) platform.set(r.name, await getSetting(r.name));
       const got: any = platform.get(r.name), s = got?.body ?? null;
@@ -386,16 +470,26 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
     const dup = [...groups.values()].filter((x) => x.r.kind === r.kind && x.r.name === r.name).length > 1;
     const id = `req:${r.kind}:${r.name}${dup ? `:${want(r)}` : ""}`;
     if (unknown) { out.push({ id, status: "UNKNOWN", found: `${r.name}: not checked (${unknown})${cases}`, who: "you", do: "make it readable (admin credentials / GIT_TOKEN) and re-run", diagnose: [] }); continue; }
-    const ok = r.kind === "uploadScope" ? present : meets(r, value, present);
-    const shown = r.kind === "uploadScope" ? `scopes: ${value}` : present ? `${r.name} = ${JSON.stringify(value)}` : `${r.name} not set`;
+    const listKind = r.kind === "uploadScope" || r.kind === "storeLanguage" || r.kind === "storeCurrency";
+    const ok = listKind ? present : meets(r, value, present);
+    const shown = r.kind === "uploadScope" ? `scopes: ${value}`
+      : r.kind === "storeLanguage" ? `languages: ${value}`
+      : r.kind === "storeCurrency" ? `currencies: ${value}`
+      : present ? `${r.name} = ${JSON.stringify(value)}` : `${r.name} not set`;
+    const needs = r.kind === "uploadScope" ? `scope "${r.name}"`
+      : r.kind === "storeLanguage" ? `language "${r.name}"`
+      : r.kind === "storeCurrency" ? `currency "${r.name}"`
+      : want(r);
     const absent = r.allowedIncludes && Array.isArray(value) ? r.allowedIncludes.filter((v) => !(value as unknown[]).map(norm).includes(norm(v))) : [];
     if (ok) { out.push({ id, status: "OK", found: `${shown} (${where})${cases}`, who: null, do: null, diagnose: [] }); continue; }
     const fix = r.kind === "storeSetting" ? `set ${r.name} ${want(r)} on store ${storeId} (Admin › Stores › ${storeId} › Settings) — a shared-env write`
       : r.kind === "platformSetting" && absent.length ? `add ${absent.map((v) => JSON.stringify(v)).join(", ")} to the allowed values of ${r.name} (Admin › Settings, or PUT /api/platform/settings with the full list) — a shared-env write`
       : r.kind === "platformSetting" ? `set ${r.name} ${want(r)} (Admin › Settings) — a shared-env write`
       : r.kind === "paymentMethod" ? `activate ${r.name} on store ${storeId} (Admin › Stores › ${storeId} › Payment methods), with a working sandbox configuration`
+      : r.kind === "storeLanguage" ? `add ${r.name} to the languages of store ${storeId} (Admin › Stores › ${storeId}) — a shared-env write; the storefront needs its locale bundle too`
+      : r.kind === "storeCurrency" ? `add ${r.name} to the currencies of store ${storeId} (Admin › Stores › ${storeId}) and give it a price list — a shared-env write`
       : `TEST_ENV=${env} npm run deploy:env-config -- --env ${env} --apply — opens ONE vc-deploy-dev PR to ${c.branch} with the value copied from vcst-qa / vcptcore-qa; you merge it (merging deploys)`;
-    out.push({ id, status: r.level === "block" ? "BLOCK" : "WARN", found: `${shown}, needs ${r.kind === "uploadScope" ? `scope "${r.name}"` : want(r)} (${where}): ${r.why}${cases}`,
+    out.push({ id, status: r.level === "block" ? "BLOCK" : "WARN", found: `${shown}, needs ${needs} (${where}): ${r.why}${cases}`,
       who: "me, with OK", do: fix, diagnose: [], cases: [...g.cases] });
   }
   return out;
@@ -433,9 +527,10 @@ export async function requirementChecks(o: { root: string; env: string; suites: 
   for (const s of needs.unreadable) checks.push({ id: `case-needs:${s}`, status: "UNKNOWN", found: `suite ${s}: CSV not readable, its personas and fixtures were not checked`, who: "me", do: "npm run suites:lint", diagnose: [] });
   const installed = c && reqFile.personas ? await installedModules(c, token) : null;
   checks.push(...fixtureChecks(o.root, o.env, needs.refs, { reqs: reqFile.personas, installed }));
+  checks.push(...generatedFixtureChecks(o.root, needs.generated));
   if (c) checks.push(...await laneAccountChecks(o.root, o.env, c, token));
   if (c) checks.push(...await personaChecks(o.root, o.env, c, token, needs.personas, { reqs: reqFile.personas, installed }));
   const declared = o.suites.flatMap((s) => (reqFile.suites[s.id] ?? []).map((r) => ({ suite: s.id, r })));
-  if (c) checks.push(...await declaredChecks(o.env, c, token, declared));
+  if (c) checks.push(...await declaredChecks(o.env, c, token, declared, o.root));
   return checks;
 }

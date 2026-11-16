@@ -174,10 +174,43 @@ CRX-GQL-054,xOrder — createOrderFromCart with Invalid cartId,GraphQL > xOrder 
   }
 [GQL-EXEC create_bogus]","[ERRORS label=create_bogus] errors[] non-empty — cart not found (BL-GQL-001)
 [DATA label=create_bogus] data.createOrderFromCart is null",[EVIDENCE] Error messages don't leak stack traces or internal paths. Well-formed GraphQL error with message + path.,Order created for non-existent cart; HTTP 500; stack trace in errors[].message,none,xAPI; BL-GQL-001 error contract,Automated
-CRX-GQL-055,xOrder — createOrderFromCart Without Auth,GraphQL > xOrder > Negative,Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,Runner-native. No [AUTH] block — attempts createOrderFromCart anonymously. Expects Unauthorized.,—,"[GQL-OP create_noauth]
-  mutation { createOrderFromCart(command: { cartId: ""00000000-0000-0000-0000-000000000002"" }) { id } }
-[GQL-EXEC create_noauth]","[ERRORS label=create_noauth] errors[] non-empty — Unauthorized (BL-GQL-004)
-[DATA label=create_noauth] data.createOrderFromCart is null",[EVIDENCE] errors[].extensions.code = Unauthorized. No sensitive info in messages.,Order created without auth (P0 security); data non-null; HTTP 500,none,xAPI; BL-GQL-004 auth,Automated
+CRX-GQL-055,"xOrder — createOrderFromCart without auth on a REAL, orderable cart is refused; the cart stays and no order is placed",GraphQL > xOrder > Negative,Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. USER2 builds a real named cart that could be ordered (line, shipment, manual payment; validationErrors empty is asserted, so the refusal cannot be blamed on an invalid cart), then the case drops the token with [AUTH role=ANONYMOUS] and calls createOrderFromCart on that cart id. The earlier form of this case used a dummy GUID cart, which cannot show that a real cart stayed unordered. The owner's read-back decides: an order placed from the cart would consume it.",cart_name=AGENT-TEST-ORDER-055-ANON,"[AUTH role=USER2]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""{{cart_name}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP set_shipment]
+  mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""{{cart_name}}"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""USA"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id } }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""{{cart_name}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+[GQL-EXEC set_payment]
+[GQL-OP pre_check]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cartName: ""{{cart_name}}"") { id itemsCount validationErrors(ruleSet: ""*"") { errorCode } } }
+[GQL-EXEC pre_check]
+[AUTH role=ANONYMOUS]
+[GQL-OP create_noauth]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
+[GQL-EXEC create_noauth]
+[AUTH role=USER2]
+[GQL-OP read_back]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cartName: ""{{cart_name}}"") { id itemsCount } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup]
+  mutation { removeCart(command: { cartId: ""{{CART_ID}}"" userId: ""{{USER_ID}}"" }) }
+[GQL-EXEC cleanup]","[ERRORS label=pre_check] errors[] empty {OBSERVED}
+[DATA label=pre_check] data.cart.id = {{CART_ID}} {OBSERVED}
+[COUNT label=pre_check] data.cart.validationErrors.length = 0 {OBSERVED}
+[ERRORS label=create_noauth] errors[] non-empty {BL} (BL-GQL-004)
+[DATA label=create_noauth] errors[0].extensions.code = Unauthorized {BL} (BL-GQL-004)
+[NULL label=create_noauth] data.createOrderFromCart {BL} (BL-GQL-004)
+[ERRORS label=read_back] errors[] empty {OBSERVED}
+[DATA label=read_back] data.cart.id = {{CART_ID}} {BL} (BL-GQL-004)
+[DATA label=read_back] data.cart.itemsCount = 1 {BL} (BL-GQL-004)","[EVIDENCE] The refusal is HTTP 200 with errors[] (xAPI contract). errors[0].message carries no cart contents, owner id or stack trace. The read-back runs under the OWNER's token: the same cart id with its line still present means no order consumed it.","errors[] empty or data.createOrderFromCart non-null on create_noauth (anonymous order placement — P0); refusal returned but read_back finds no cart or a different cart id (the cart was consumed by an order); pre_check validationErrors non-empty (the cart was not orderable — the refusal proves nothing; fix the setup, do not pass the case); 5xx","inline — the last step removes the cart under the owner's token (the runner's Cleanup column runs only [AUTH]/[REST] blocks). If create_noauth ever returns an order, cancel it in Admin: it is a real order",xAPI; BL-GQL-004 auth | Archetype:SESSION · Technique:SEC · Probe:SEC-IDENT | Rewritten: 2026-11-12 SEC pilot (VCST-6840) — dummy GUID cart replaced by a real orderable cart + owner read-back,Automated
 CRX-GQL-095,Catalog — productConfiguration Query,GraphQL > Catalog > productConfiguration,High,BL-GQL-001; BL-GQL-002,ECL-10.2; ECL-2.1,BLOCKED: Requires a configurable product ID (from aliases.json CFG-* entries). productConfiguration query returns ConfigurationSections for a given configurable product.,—,[MANUAL-BLOCKED] Needs configurable product GUID captured at runtime. Legacy suite runs via GraphiQL.,[MANUAL] blocked on configurable product fixture,[EVIDENCE] Track as Draft,—,none — read-only,xAPI; BL-CFG-001,Draft
 CRX-GQL-096,xCart — CartType Full-Field Schema Coverage,GraphQL > xCart > Schema Coverage,High,BL-GQL-002,ECL-2.1,Runner-native. Queries every top-level CartType field from graphql-schema.md including cartTotals (Mixed Cart VCST-5101). Any field rename/removal → DV-009 at runner lint time.,—,"[AUTH role=ORG_USER]
 [GQL-OP setup_me]

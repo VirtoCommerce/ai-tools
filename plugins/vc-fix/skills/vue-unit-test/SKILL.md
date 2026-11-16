@@ -5,8 +5,9 @@ description: "[Development] Reproduce a Virto Commerce vc-frontend storefront bu
 
 # /vue-unit-test — Reproduce a bug as a failing vitest test
 
-Encode a confirmed storefront bug (STR + root cause) as a **new** vitest test that fails on current
-code, so the fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladder
+Encode a confirmed storefront bug (STR + root cause) as a **new** vitest test case that fails on current
+code, so the fix has an objective red→green proof. Where that case lives — the subject's existing test
+file, a new file, or an uncommitted scratch test — is `quality-gates.md` §G2 placement. This is **Gate 2** of the auto-fix ladder
 (`.claude/rules/quality-gates.md`).
 
 ## When to use
@@ -33,14 +34,21 @@ code, so the fix has an objective red→green proof. This is **Gate 2** of the a
    - **UI logic** (rendering, events, conditional display): `mount` / `shallowMount` from
      `@vue/test-utils` (or `@testing-library/vue`), asserting on `data-test-id` / emitted events.
    See `vitest-patterns.md` for both recipes + how to stub i18n / router / Pinia / `$cfg` / GraphQL.
-5. **Write a NEW test** asserting the **expected** behavior. Name it after the **subject + behavior
-   only** (e.g. `describe("VcQuantityInput — clamps to max", …)`) — **never the ticket key** in a
+5. **Write a NEW test case** asserting the **expected** behavior. Name it after the **subject + behavior
+   only** (e.g. `it("clamps to max", …)`) — **never the ticket key** in a
    `describe`/`test` string, file name or comment (`knowledge/agents/developers/shared-instructions.md`
-   §Minimal diff, rule 3a). Add it next to its subject as `*.spec.ts` / `*.test.ts`.
+   §Minimal diff, rule 3a). **Where it goes** (`quality-gates.md` §G2 placement):
+   - the subject already has a test file (`<name>.test.ts` beside it) → add the case **there**, reusing
+     its `mountX()` factory and mocks; change nothing that is already in the file;
+   - no test file and the change is logic → a new file beside the subject, named as the repo names them
+     (vc-frontend: `*.test.ts`, never `.spec.ts` — the checkout's own `tests.md` rule);
+   - the change is markup / style / copy with no logic, and the repo's rules say such a change needs no
+     test → write it as an uncommitted scratch test, delete it before the commit, and put the command and
+     its red/green result in the PR body.
 6. **Confirm RED** — scoped and filtered so the loop stays fast:
    ```
-   npx vitest run path/to/the.spec.ts             # by file
-   npx vitest run path/to/the.spec.ts -t "clamps"  # narrowed by behavior-name substring
+   npx vitest run path/to/the.test.ts             # by file
+   npx vitest run path/to/the.test.ts -t "clamps"  # narrowed by behavior-name substring
    ```
    The new test must fail on current code. **If it passes, the STR/RCA is wrong → re-investigate, do
    not proceed.**
@@ -54,7 +62,7 @@ code, so the fix has an objective red→green proof. This is **Gate 2** of the a
 | Mount throws "Need to install vue-i18n" / "injection not found" | component needs a global plugin (i18n / router / Pinia / `$cfg`) | stub/provide it in `global.plugins` / `global.provide` / `vi.mock` — see `vitest-patterns.md` |
 | New test passes immediately (never red) | STR/RCA doesn't match the code path | re-investigate the seam; a "red" you never saw is not a repro |
 | Async assertion flaky / sees stale value | reactivity/promise not flushed | `await nextTick()` / `await flushPromises()` before asserting |
-| Lint/type error on the new test file | ESLint error-level + strict TS | fix it in the test; never disable a rule |
+| Lint/type error on the new test file | ESLint (local only — not in CI) + strict TS | fix it in the test; never disable a rule |
 
 ## Hard rules
 - **Only ADD tests/stories.** Never edit or delete an existing test or `*.stories.ts` to reproduce or

@@ -23,7 +23,8 @@ Dispatch description: `[vc-test:ac-checks] <KEY>`.
 - Calls go through the repository's own means: GraphQL through the runner and fixtures
   `<plugin>/knowledge/live-discovery.md` describes, REST through `BACK_URL` with the platform's API.
   URLs and accounts come from the env by name (`process.env` after importing `config.js`); never a literal, and
-  never a password in a file, a brief or your output.
+  never a password in a file, a brief or your output. Call as the account the row's Data cell opens with
+  (`as <account>`, read as the **Account** bullet of `scenario-run.md` reads it).
 - **Evidence** for a row is the command you ran and a short excerpt of the response that decides it (status,
   the field and its value). Save a full response to `{RUN_DIR}/ac-checks/<Ref>.json` only for a FAIL.
 - A row you cannot decide by a call — the result needs a look — gets Result `BLOCKED — needs a look (U65: no

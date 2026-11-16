@@ -117,6 +117,8 @@ The alias is resolved through `test-data/aliases.json` (preferred) or the `<ROLE
 
 **No `[AUTH]` line ⇒ the request is sent without an `Authorization` header** (PUBLIC). Use this for `productConfiguration`, anonymous catalog, and any guest flow.
 
+**`[AUTH role=ANONYMOUS]` drops the token mid-case** — every request after it carries no `Authorization` header until the next `[AUTH role=…]`. It is how a case creates a REAL object as its owner and then calls the operation anonymously (SEC-IDENT, `.claude/skills/qa-test-design/security-abuse-cases.md`): a refusal against a dummy GUID cannot show that a real object stayed untouched.
+
 **Never hardcode passwords** in the CSV — always go through `[AUTH role=…]` so credentials come from `.env` at runtime.
 
 #### `org=` — sign the SAME user in under a different organization

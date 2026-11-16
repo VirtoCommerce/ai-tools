@@ -50,7 +50,7 @@ import { orgAlreadyServed, appendServedOrg, removeServedOrg } from './rep-only-o
 import { normalizeMembershipStatus } from '../b2b/membership-alias-specs.mjs';
 import { UPLOAD_SCOPE } from './sales-rep-docs-specs.mjs';
 import {
-  DEMO_ORGS, DEMO_CONTACTS, DEMO_REPS, DEMO_DOCUMENTS, DEMO_TASKS, DEMO_PROFILE, DEMO_LEDGER_KEY,
+  DEMO_ORGS, DEMO_CONTACTS, DEMO_REPS, DEMO_DOCUMENTS, DEMO_TASKS, DEMO_COUPONS, DEMO_PROFILE, DEMO_LEDGER_KEY,
   demoMarker, isDemoMarker, markerSweepInScope, demoProblems,
   buildDemoFileBytes, buildDemoDocumentRequest, buildDemoOrderBody,
   demoOrderNumber, ordersInPostOrder, productNeedByOrg, isDemoSafeProduct,
@@ -638,7 +638,7 @@ const M_UPDATE_TASK = 'mutation($c:InputUpdateSalesRepTask!){updateSalesRepTask(
 const M_TASK_STATUS = 'mutation($c:InputChangeSalesRepTaskStatus!){changeSalesRepTaskStatus(command:$c){id completed}}';
 // The unfiltered list is not guaranteed to include completed tasks, so every filter is read and merged.
 const TASK_FILTERS = ['upcoming', 'overdue', 'completed'];
-const Q_TASKS = (filter) => `{salesRepTasks(first:200, filter:"${filter}"){items{id name description dueDate completed}}}`;
+const Q_TASKS = (filter) => `{salesRepTasks(first:200, filter:"${filter}"){items{id name description dueDate completed customerId}}}`;
 
 /**
  * A rep-scoped token. `storeId` is REQUIRED by this grant. Returns null rather than throwing when
@@ -689,7 +689,7 @@ const dueDate = (days) => {
   return d.toISOString();
 };
 
-async function ensureTasks(reps) {
+async function ensureTasks(reps, orgs) {
   const created = [];
   for (const r of reps) {
     if (r.skipped) continue;
@@ -711,19 +711,33 @@ async function ensureTasks(reps) {
       const name = resolveTaskText(t.name);
       const description = resolveTaskText(t.description);
       const due = dueDate(t.dueInDays);
+      // The customer the task is about (VCST-6157): it fills the Customer column and the Customers filter.
+      const customerId = t.customer ? orgs[t.customer]?.id || null : null;
+      if (t.customer && !customerId) log(`  WARN task ${t.key}: customer ${t.customer} has no live id — the task is created without one`);
       // Ledger id first, so a task whose text changed is UPDATED rather than duplicated; name second,
       // for a lost overlay.
       const prior = live.get(priorId('task', t.key)) || [...live.values()].find((x) => x.name === name);
       let id = prior?.id;
+      // A customer the rep's membership in is LOCKED is not served, and the module answers
+      // "Customer not found." (README §The customer link) — the org-switcher book holds two such
+      // memberships by design. The task is still worth showing, so it is written without the link.
+      const writeTask = async (mutation, c) => {
+        try { return await gql(mutation, { c: { ...c, customerId } }); } catch (e) {
+          if (!customerId || !/Customer not found/i.test(e.message)) throw e;
+          log(`  WARN task ${t.key}: ${t.customer} is not served by ${r.spec.key} right now (locked membership?) — written without a customer`);
+          return gql(mutation, { c: { ...c, customerId: null } });
+        }
+      };
       if (prior) {
         const drift = prior.name !== name || (prior.description || '') !== description
-          || Math.abs(new Date(prior.dueDate) - new Date(due)) > 12 * 3600e3;
+          || Math.abs(new Date(prior.dueDate) - new Date(due)) > 12 * 3600e3
+          || (prior.customerId || null) !== customerId;
         if (drift) {
-          await gql(M_UPDATE_TASK, { c: { id, name, description, type: t.type, priority: t.priority, dueDate: due } });
+          await writeTask(M_UPDATE_TASK, { id, name, description, type: t.type, priority: t.priority, dueDate: due });
           log(`task updated (${r.spec.key}): ${name}`);
         } else verbose(`task "${name}" exists`);
       } else {
-        id = (await gql(M_CREATE_TASK, { c: { name, description, type: t.type, priority: t.priority, dueDate: due } }))?.createSalesRepTask?.id;
+        id = (await writeTask(M_CREATE_TASK, { name, description, type: t.type, priority: t.priority, dueDate: due }))?.createSalesRepTask?.id;
         if (!id) { log(`  WARN task ${t.key}: createSalesRepTask returned no id`); continue; }
         log(`task created (${r.spec.key}): ${name}${t.dueInDays < 0 ? ` — due ${-t.dueInDays} day(s) ago` : ''}`);
       }
@@ -737,6 +751,81 @@ async function ensureTasks(reps) {
     }
   }
   return created;
+}
+
+// ---- store coupons (VCST-6158) ---------------------------------------------
+
+/** End of the UTC day `days` from now; null for no date. Whole days, so a same-day re-seed writes the same value. */
+const endOfDayIn = (days) => {
+  if (days == null) return null;
+  const d = new Date(Date.now() + days * 86400e3);
+  d.setUTCHours(23, 59, 59, 0);
+  return d.toISOString();
+};
+const en = (text) => (text ? { values: { 'en-US': text } } : null);
+
+async function promotionsNamed(name) {
+  const r = await api('POST', '/api/marketing/promotions/search', { keyword: name, take: 50 });
+  return (r?.results || []).filter((p) => p.name === name);
+}
+async function couponsOf(promotionId) {
+  const r = await api('POST', '/api/marketing/promotions/coupons/search', { promotionId, take: 50 });
+  return (r?.results || []).filter((c) => c.promotionId === promotionId);
+}
+
+/**
+ * One active, public promotion per DEMO_COUPONS row on the demo store, with exactly ONE shared code
+ * (salesRepCoupons lists nothing else), a cart-subtotal percentage reward and the Everyone customer
+ * condition. Converges on re-run: found by ledger id or exact name, dates re-anchored, coupon set
+ * reduced to the one declared code.
+ */
+async function ensureCoupons() {
+  const out = [];
+  for (const c of DEMO_COUPONS.filter((x) => only(x.key))) {
+    const endDate = endOfDayIn(c.promoEndsInDays);
+    const expirationDate = endOfDayIn(c.couponExpiresInDays);
+    if (DRY_RUN) { log(`[DRY] would ensure coupon ${c.code} — "${c.name}"${endDate ? `, promotion ends ${endDate.slice(0, 10)}` : ''}${expirationDate ? `, code expires ${expirationDate.slice(0, 10)}` : ''}`); continue; }
+
+    const byLedger = priorId('coupon-promotion', c.key);
+    let promo = byLedger ? await api('GET', `/api/marketing/promotions/${byLedger}`, null, { expectStatus: [200, 204, 404] }) : null;
+    if (!promo?.id) promo = (await promotionsNamed(c.name))[0] || null;
+    if (!promo?.id) {
+      promo = await api('POST', '/api/marketing/promotions', {
+        type: 'DynamicPromotion', name: c.name, description: c.description,
+        isActive: true, isPublic: true, isExclusive: false, priority: 1, storeIds: [STORE_ID],
+      }, { expectStatus: [200, 201] });
+      log(`coupon promotion created: ${c.name}`);
+    }
+
+    const full = await api('GET', `/api/marketing/promotions/${promo.id}`);
+    const block = (id) => full.dynamicExpression?.children?.find((b) => b.id === id);
+    if (!block('BlockReward')) throw new Error(`promotion ${c.name}: no dynamicExpression to configure — set the reward in the Admin UI`);
+    block('BlockCustomerCondition') && (block('BlockCustomerCondition').children = [{ id: 'ConditionIsEveryone', availableChildren: [], children: [] }]);
+    block('BlockCatalogCondition') && (block('BlockCatalogCondition').children = []);
+    block('BlockCartCondition') && (block('BlockCartCondition').children = []);
+    block('BlockReward').children = [{ id: 'RewardCartGetOfRelSubtotal', amount: c.percent, maxLimit: 0, availableChildren: [], children: [] }];
+    Object.assign(full, {
+      name: c.name, description: c.description, isActive: true, isPublic: true, storeIds: [STORE_ID],
+      startDate: full.startDate || null, endDate,
+      localizedDisplayName: en(c.name), localizedLabel: en(c.label), localizedDescription: en(c.description),
+    });
+    await api('PUT', '/api/marketing/promotions', full, { expectStatus: [200, 204] });
+
+    // Exactly one code: a promotion with two is not listable, so a stray one is removed.
+    const live = await couponsOf(promo.id);
+    for (const x of live.filter((x) => x.code !== c.code)) {
+      await api('DELETE', `/api/marketing/promotions/coupons/delete?ids=${encodeURIComponent(x.id)}`, null, { expectStatus: [200, 204, 404] });
+      log(`  removed stray coupon ${x.code} from "${c.name}"`);
+    }
+    const mine = live.find((x) => x.code === c.code);
+    // /coupons/add is an upsert by id, so posting the live coupon keeps its id and usage history.
+    await api('POST', '/api/marketing/promotions/coupons/add', [{
+      ...(mine || {}), promotionId: promo.id, code: c.code, maxUsesNumber: c.maxUses || 0, maxUsesPerUser: 0, expirationDate,
+    }], { expectStatus: [200, 204] });
+    log(`coupon ${mine ? 'updated' : 'created'}: ${c.code} — ${c.name}`);
+    out.push({ type: 'coupon-promotion', key: c.key, id: promo.id, name: c.name, code: c.code });
+  }
+  return out;
 }
 
 // ---- teardown --------------------------------------------------------------
@@ -769,6 +858,21 @@ async function teardown() {
       log(`  tasks: deleted ${mine.length} for ${a.key}`);
     }
   }
+
+  // 1c. Store coupons — ledger ids, then an exact-name sweep for a promotion an interrupted run never
+  //     recorded. Coupons first: deleting a promotion does not cascade them.
+  const couponRows = ent('coupon-promotion');
+  const couponNames = DEMO_COUPONS.filter((c) => only(c.key)).map((c) => c.name);
+  const promoIds = new Set(couponRows.map((r) => r.id));
+  if (!DRY_RUN) for (const name of couponNames) for (const p of await promotionsNamed(name)) promoIds.add(p.id);
+  if (promoIds.size && !DRY_RUN) {
+    for (const id of promoIds) {
+      const cs = await couponsOf(id).catch(() => []);
+      if (cs.length) await api('DELETE', `/api/marketing/promotions/coupons/delete?${idsParam(cs.map((c) => c.id))}`, null, { expectStatus: [200, 204, 404] });
+      await api('DELETE', `/api/marketing/promotions?ids=${encodeURIComponent(id)}`, null, { expectStatus: [200, 204, 404] });
+    }
+    log(`  store coupons: deleted ${promoIds.size} promotion(s) with their codes`);
+  } else if (couponRows.length || DRY_RUN) log(`[DRY] store coupons: would delete ${couponRows.length} recorded promotion(s) + any named ${couponNames.join(' / ')}`);
 
   // 1b. Shared lists — a list is a CART row, so it must go before the members that own it, and it
   //     cannot be swept by marker (a wishlist carries no outerId of ours). Ledger only. Deleted with
@@ -1222,12 +1326,13 @@ async function main() {
     ...await ensureRepCarts(orgs, cartPools, reps, cartCursor),
   ];
   const documents = await ensureDocuments();
-  const tasks = await ensureTasks(reps);
+  const tasks = await ensureTasks(reps, orgs);
+  const coupons = await ensureCoupons();
 
   const entities = [
     ...Object.entries(orgs).map(([key, v]) => ({ type: 'organization', key, id: v.id, name: v.name, marker: demoMarker('ORG', key) })),
     ...Object.entries(contacts).map(([key, v]) => ({ type: 'contact', key, id: v.id, name: v.name, marker: demoMarker('CT', key) })),
-    ...accounts, ...orders, ...documents, ...tasks, ...attachments, ...lists, ...carts,
+    ...accounts, ...orders, ...documents, ...tasks, ...attachments, ...lists, ...carts, ...coupons,
   ];
   // A scoped run (--only) produced a SUBSET, so it MERGES into the ledger instead of replacing it.
   // Replacing it once dropped every contact id; the next full run fell back to a member search the
@@ -1251,7 +1356,7 @@ async function main() {
   log('');
   log(`Demo seeded: ${Object.keys(orgs).length} org(s), ${Object.keys(contacts).length} contact(s), `
     + `${orders.length} order(s), ${documents.length} document(s), ${lists.length} shared list(s), ${carts.filter((c) => c.itemsCount > 0).length} active cart(s), `
-    + `${tasks.length} task(s), ${usable.length} rep(s).`);
+    + `${tasks.length} task(s), ${coupons.length} store coupon(s), ${usable.length} rep(s).`);
   if (skipped.length) log(`${skipped.length} rep(s) skipped — see the SKIP lines above; re-run after fixing to fill them in.`);
   log(DRY_RUN ? 'DRY RUN — no writes were made.' : `Ledger → test-data/aliases.${TEST_ENV}.json[${LEDGER_KEY}]. Commit it.`);
 }

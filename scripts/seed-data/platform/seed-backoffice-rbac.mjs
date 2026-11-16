@@ -46,6 +46,8 @@ import {
   SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT,
   SALESREP_FULL_EXCLUDED_PERMISSIONS, SALESREP_FULL_REQUIRED_PERMISSIONS,
   assertSalesRepFullRolePermissions,
+  TASK_READONLY_ROLE, TASK_READONLY_ACCOUNT, TASK_READONLY_EXCLUDED_PERMISSION, TASK_READONLY_REQUIRED_PERMISSIONS,
+  TASK_READONLY_EXCLUDED_PERMISSIONS, assertTaskReadOnlyRolePermissions,
   CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXCLUDED_PERMISSIONS,
   assertCatalogReadOnlyRolePermissions, CATALOG_CREATE_ENDPOINT, CATALOG_DELETE_ENDPOINT, CATALOG_BY_ID_ENDPOINT,
   roleBody, accountBody, assertRolePermissions, assertCatalogLinkRolePermissions,
@@ -365,6 +367,9 @@ async function verifyEffectivePermissions(account, required, excluded, label) {
 const verifyAccountOps = () => verifyEffectivePermissions(
   SALESREP_ACCOUNTOPS_ACCOUNT, SALESREP_ACCOUNTOPS_REQUIRED_PERMISSIONS, SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSIONS,
   'SalesRep ACCOUNT-OPS (platform:security:update, no customer:update)');
+const verifyTaskReadOnly = () => verifyEffectivePermissions(
+  TASK_READONLY_ACCOUNT, TASK_READONLY_REQUIRED_PERMISSIONS, TASK_READONLY_EXCLUDED_PERMISSIONS,
+  'Task Management READ-ONLY (task:access + task:read, no task:create)');
 const verifyMemberOnly = () => verifyEffectivePermissions(
   SALESREP_MEMBERONLY_ACCOUNT, SALESREP_MEMBERONLY_REQUIRED_PERMISSIONS, SALESREP_MEMBERONLY_EXCLUDED_PERMISSIONS,
   'SalesRep MEMBER-ONLY (customer:update, no platform:security:update)');
@@ -566,6 +571,10 @@ const FIXTURES = [
     role: SHELL_SEARCH_NOREAD_ROLE, account: SHELL_SEARCH_NOREAD_ACCOUNT,
     assertPerms: assertShellSearchNoReadRolePermissions, excluded: SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSIONS.join(', '),
     verify: () => verifyShellSearch(SHELL_SEARCH_NOREAD_ACCOUNT, SHELL_SEARCH_NOREAD_REQUIRED_PERMISSIONS, SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSIONS),
+  },
+  {
+    role: TASK_READONLY_ROLE, account: TASK_READONLY_ACCOUNT,
+    assertPerms: assertTaskReadOnlyRolePermissions, excluded: TASK_READONLY_EXCLUDED_PERMISSION, verify: verifyTaskReadOnly,
   },
   {
     role: SHELL_SEARCH_READ_ROLE, account: SHELL_SEARCH_READ_ACCOUNT,

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # T0 runner: k6 + dotnet-counters, file-first artifacts.
-# Usage: loadtests/run.sh [smoke|steady]
+# Usage: loadtests/run.sh [smoke|steady] [--env-file <path>] [--k6 <path>]
 # Env knobs forwarded to the scenario: BASE_URL, ITEMS, RATE, PRODUCT_ID, PRODUCT_IDS,
 # PRODUCT_FILTER, DISTINCT_PRODUCTS, SKIP_ORDER, STORE_ID. USER_POOL, SEED_PASSWORD,
 # SEED_EMAIL_FORMAT configure the multi-user seeding pool (see README.md). SCENARIO picks
@@ -13,14 +13,137 @@
 # workspace path so artifacts survive plugin updates, see below); TRACE_INT_GRACE (integer seconds
 # to wait for the trace sidecar to honour SIGINT before escalating, default 3 — raise it on a
 # platform where SIGINT cannot reach the collector and SIGTERM would truncate the capture).
+#
+# Options, accepted before or after the profile:
+#   --env-file <path>  KEY=VALUE lines (blank lines and `#` comments allowed; values are literal —
+#                      no quotes stripped, no expansion). For callers that cannot set environment
+#                      variables on the command itself: a Claude Code sandbox exclusion matches only
+#                      a bare command, so `X=1 run.sh …` and `export X; run.sh …` both run sandboxed.
+#                      The file is parsed, NEVER sourced:
+#                      - a knob this script reads (RUNNER_KNOBS below) is validated and assigned,
+#                        overriding an inherited value (an inherited export stays exported); an
+#                        EMPTY value means "not set here" — the environment or the default applies,
+#                        so a generator that prints nothing for a missing profile key stays valid;
+#                      - any other name goes to k6 alone, as `-e NAME=VALUE` (scenario `__ENV`), and
+#                        never enters a process environment — a file cannot set LD_PRELOAD, BASH_ENV
+#                        or PATH for anything this script starts;
+#                      - refused: K6 (it names an executable — use --k6, so the path stays in the
+#                        reviewed command text), credential-like names (file values reach k6 through
+#                        argv, which `ps` shows — keep secrets in the environment), names this script
+#                        sets itself (PROFILE, SUMMARY_PATH), and duplicates.
+#                      File values override the inherited environment.
+#   --k6 <path>        k6 binary path; overrides K6.
 set -euo pipefail
 
 DIR=$(cd "$(dirname "$0")" && pwd)
-PROFILE="${1:-smoke}"
+
+usage_error() {
+    echo "$1" >&2
+    echo "usage: run.sh [smoke|steady] [--env-file <path>] [--k6 <path>]" >&2
+    exit 1
+}
+
+PROFILE=""
+ENV_FILE=""
+K6_ARG=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --env-file)
+            [ $# -ge 2 ] || usage_error "--env-file needs a path"
+            [ -z "$ENV_FILE" ] || usage_error "--env-file given twice"
+            ENV_FILE="$2"
+            shift 2
+            ;;
+        --k6)
+            { [ $# -ge 2 ] && [ -n "$2" ]; } || usage_error "--k6 needs a path"
+            [ -z "$K6_ARG" ] || usage_error "--k6 given twice"
+            K6_ARG="$2"
+            shift 2
+            ;;
+        -*)
+            usage_error "unknown option: '$1'"
+            ;;
+        *)
+            [ -z "$PROFILE" ] || usage_error "unexpected argument: '$1'"
+            PROFILE="$1"
+            shift
+            ;;
+    esac
+done
+PROFILE="${PROFILE:-smoke}"
 if [ "$PROFILE" != "smoke" ] && [ "$PROFILE" != "steady" ]; then
     echo "invalid profile: '$PROFILE' (expected smoke|steady). Pass a scenario via SCENARIO=, not as arg 1." >&2
     exit 1
 fi
+
+# Knobs this script reads itself. OP_TAG is read by the scenarios as well, so it is also forwarded.
+RUNNER_KNOBS=" SCENARIO BASE_URL PAYLOAD_DIR RESULTS_DIR PERF_SHA TRACE NO_COUNTERS TRACE_INT_GRACE PLATFORM_PROCESS OP_TAG "
+# Set by this script on the k6 command line, where a file value would silently win or lose against it.
+RESERVED_KNOBS=" PROFILE SUMMARY_PATH "
+K6_ENV_ARGS=()
+
+valid_runner_knob() {
+    case "$1" in
+        TRACE|NO_COUNTERS)
+            [[ "$2" =~ ^[01]$ ]] ;;
+        TRACE_INT_GRACE)
+            [[ "$2" =~ ^[0-9]+$ ]] ;;
+        PERF_SHA|SCENARIO|PLATFORM_PROCESS)
+            # Each lands in a file name, a path segment or a pgrep pattern: no separators, no regex.
+            [[ "$2" =~ ^[A-Za-z0-9._-]+$ ]] ;;
+        BASE_URL)
+            [[ "$2" =~ ^https?:// ]] ;;
+        *)
+            [ -n "$2" ] ;;
+    esac
+}
+
+env_file_error() {
+    echo "$ENV_FILE:$_lineno: $1" >&2
+    exit 1
+}
+
+if [ -n "$ENV_FILE" ]; then
+    { [ -f "$ENV_FILE" ] && [ -r "$ENV_FILE" ]; } || usage_error "--env-file not readable: $ENV_FILE"
+    _seen=" "
+    _lineno=0
+    while IFS= read -r _line || [ -n "$_line" ]; do
+        _lineno=$((_lineno + 1))
+        _line="${_line%$'\r'}"
+        if [[ "$_line" =~ ^[[:space:]]*(#|$) ]]; then
+            continue
+        fi
+        [[ "$_line" =~ ^([A-Z_][A-Z0-9_]*)=(.*)$ ]] || env_file_error "expected KEY=VALUE with an upper-case KEY"
+        _key="${BASH_REMATCH[1]}"
+        _value="${BASH_REMATCH[2]}"
+        case "$_seen" in *" $_key "*) env_file_error "$_key: set twice" ;; esac
+        _seen="$_seen$_key "
+        case "$RESERVED_KNOBS" in *" $_key "*) env_file_error "$_key: set by run.sh itself" ;; esac
+        if [ "$_key" = "K6" ]; then
+            env_file_error "K6: names an executable — pass --k6 <path> on the command line instead"
+        fi
+        case "$_key" in
+            *PASSWORD*|*PASSWD*|*SECRET*|*TOKEN*|*CREDENTIAL*|*APIKEY*|*_KEY|*_KEY_*|*_PAT|PERF_API_USER)
+                env_file_error "$_key: looks like a credential — keep it in the environment (file values reach k6 through argv, which ps shows)" ;;
+        esac
+        case "$RUNNER_KNOBS" in
+            *" $_key "*)
+                if [ -z "$_value" ]; then
+                    continue
+                fi
+                valid_runner_knob "$_key" "$_value" || env_file_error "$_key: invalid value '$_value'"
+                printf -v "$_key" '%s' "$_value"
+                if [ "$_key" = "OP_TAG" ]; then
+                    K6_ENV_ARGS+=(-e "$_key=$_value")
+                fi
+                ;;
+            *)
+                K6_ENV_ARGS+=(-e "$_key=$_value")
+                ;;
+        esac
+    done < "$ENV_FILE"
+fi
+
 BASE_URL="${BASE_URL:-https://localhost:8090}"
 SCENARIO="${SCENARIO:-cart-order-loop}"
 
@@ -55,7 +178,7 @@ if [ ! -f "$SCENARIO_FILE" ]; then
     exit 1
 fi
 
-K6="${K6:-k6}"
+K6="${K6_ARG:-${K6:-k6}}"
 if ! command -v "$K6" >/dev/null 2>&1 && [ ! -x "$K6" ]; then
     echo "k6 not found — set K6 to the binary path or add k6 to PATH" >&2
     exit 1
@@ -97,9 +220,28 @@ SUMMARY="$OUT/$STAMP-$SHA.summary.json"
 # projects that rename the host.
 PLATFORM_PROCESS="${PLATFORM_PROCESS:-VirtoCommerce.Platform.Web}"
 if command -v pgrep >/dev/null 2>&1; then
-    # pgrep -f matches an extended regex — escape dots so `VirtoCommerce.Platform.Web`
-    # (or any custom name) matches literally and can't attach to a differently-named neighbour.
-    BACKEND_PID=$(pgrep -f "bin/[^ ]*/${PLATFORM_PROCESS//./\\.}" | head -1 || true)
+    # Two launch shapes, both accepted: the apphost from a build output (`…/bin/<cfg>/<tfm>/<name>`)
+    # and a published platform started through the host (`dotnet <name>.dll`, cwd = the publish
+    # dir, no `bin/` anywhere — matching only the first shape left TRACE=1 with no pid, silently).
+    # So the name must be a whole argv token, optionally `.dll`, and it must be either the program
+    # itself or an argument of the `dotnet` host: a shell whose command line merely mentions the
+    # name (an orchestrating `bash -c …`, this script's own caller) is not the app, nor is a
+    # `.csproj`, nor a `dotnet run|watch` launcher. `args` is split on whitespace, so an apphost
+    # under a path with a space is caught by the last rule — the `bin/…/<name>` shape matched before.
+    # `-ww`: without it `ps` cuts `args` to $COLUMNS when that is exported, dropping the `.dll` token.
+    # `[.]` rather than `\.`: the patterns reach awk through ENVIRON, where backslashes survive.
+    _name_re="${PLATFORM_PROCESS//./[.]}"
+    BACKEND_PID=$(ps -ww -eo pid=,args= 2>/dev/null |
+        PROCESS_RE="(^|/)${_name_re}([.]dll)?\$" APPHOST_RE="/bin/[^ ]*/${_name_re}( |\$)" awk '
+        $2 ~ ENVIRON["PROCESS_RE"] { print $1; exit }
+        $2 ~ /(^|\/)(ba|da|k|z)?sh$/ || $3 ~ /(^|\/)(ba|da|k|z)?sh$/ { next }
+        $2 ~ /(^|\/)dotnet(\.exe)?$/ {
+            if ($3 ~ /^(run|watch)$/) { next }
+            for (i = 3; i <= NF; i++) if ($i ~ ENVIRON["PROCESS_RE"]) { print $1; exit }
+            next
+        }
+        $0 ~ ENVIRON["APPHOST_RE"] { print $1; exit }
+    ' || true)
 else
     # Windows/Git Bash has no pgrep — fall back to the dotnet-counters process list.
     BACKEND_PID=$(dotnet-counters ps 2>/dev/null | grep -F "$PLATFORM_PROCESS" | awk '{print $1}' | head -1 || true)
@@ -247,6 +389,7 @@ set +e
     -e PROFILE="$PROFILE" \
     -e BASE_URL="$BASE_URL" \
     -e SUMMARY_PATH="$SUMMARY" \
+    ${K6_ENV_ARGS[@]+"${K6_ENV_ARGS[@]}"} \
     "$SCENARIO_FILE"
 K6_EXIT=$?
 set -e

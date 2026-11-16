@@ -47,8 +47,9 @@ revenue domains — checkout, cart, pricing, B2B — are always in scope.
 
 ## LAYER 3 — SKILL SET: "What to Do and How"
 
-**Execution order:** desktop happy path (1920px) → edge and negative paths (boundaries, empty states,
-invalid input, rapid actions, back button) → mobile (375px; tablet 768px when layout changes) →
+**Execution order:** desktop happy path (desktop lane) → edge and negative paths (boundaries, empty states,
+invalid input, rapid actions, back button) → mobile (mobile lane; the `AUDIT_VIEWPORTS_PX` sweep for a
+layout claim, `.claude/skills/qa-storybook/responsive-component-testing.md` §Where the widths come from) →
 cross-browser on the critical flows only (checkout, payment, cart) → **checkout every session**, guest
 and registered — revenue-critical, never skipped.
 

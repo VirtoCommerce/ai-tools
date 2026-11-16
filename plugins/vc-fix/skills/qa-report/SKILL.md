@@ -1,6 +1,6 @@
 ---
 name: qa-report
-description: "[QA Method] Turn a FINISHED run into its ONE tracker comment (brief, within the template's char budget) and a human-readable HTML report page — after /qa-test, /qa-test-fast, /qa-verify-fix (before/after the fix), /qa-regression and /qa-smoke, or standalone on a ticket key or RUN_ID. The single home of every result-comment template. Renders from the run's machine record, never from memory; asks once, posts once, amends after. Not for bug reports (/qa-bug) or release notes (/ba-analyze docs release)."
+description: "[QA Method] Turn a FINISHED run into its ONE tracker comment (brief, within the template's char budget) and a human-readable HTML report page — after /qa-test, /qa-verify-fix (before/after the fix), /qa-regression and /qa-smoke, or standalone on a ticket key or RUN_ID. The single home of every result-comment template. Renders from the run's machine record, never from memory; asks once, posts once, amends after. Not for bug reports (/qa-bug) or release notes (/ba-analyze docs release)."
 argument-hint: "<TICKET | RUN_ID | path> [--kind test|fix|regression|smoke] [--lede '<sentences>'] [--verdict GO|CONDITIONAL_GO|NO_GO] [--ticket KEY] [--bugs K1,K2] [--extra file.json] [--set KEY=VALUE] [--confirmed]"
 ---
 
@@ -73,7 +73,7 @@ Load the `artifact-design` skill, then:
 ## 4. Ask once — unless the caller already holds consent
 
 Show the comment text and `chars/budget`. Invoked with `--confirmed` (the calling pipeline's own step
-already decided to post — `/qa-test` 5-report, `/qa-verify-fix` Step 6) ⇒ skip the question. Otherwise ask
+already decided to post — `/qa-verify-fix` Step 6) ⇒ skip the question. Otherwise ask
 once: *"Post this to <TICKET>?"* No ticket (a run with no `--ticket`) ⇒ show it and stop; nothing is posted.
 
 ## 5. Post or amend — ONE comment per ticket per round
@@ -82,7 +82,7 @@ once: *"Post this to <TICKET>?"* No ticket (a run with no `--ticket`) ⇒ show i
 post a second comment for the same round. `--artifact` = the `artifact` field of the `--json` output.
 - **ai-tools repo:** `npm run tracker:comment -- --ticket <KEY> --artifact "<artifact>" --body-file <comment>`
   (+ `--attach <shot>` per screenshot when `wiki`; + `--attach-file <page.html>` for a client-project page;
-  `--amend <id>` when an id is already recorded; an `--iterate` amend is `--amend <id> --artifact "<round build>" --same-round "<reason>"`, or the helper treats it as a new round). Never upload with raw REST — both flags dedupe, which makes a retry safe.
+  `--amend <id>` when an id is already recorded; a re-test-round amend is `--amend <id> --artifact "<round build>" --same-round "<reason>"`, or the helper treats it as a new round). Never upload with raw REST — both flags dedupe, which makes a retry safe.
 - **Plugin-only install, Jira:** Atlassian MCP `addCommentToJiraIssue` (pass `commentId` to amend);
   screenshots attach-then-wiki per [`reference.md`](reference.md) §Dialects. **Azure:** `node "$VC_RUN" ado comment --id <n> --text-file <comment.html>` (the token comes from vc-secrets through the bridge).
 - Read the posted comment back; a UI claim's images must render ([`../../.claude/rules/reports.md`](../../.claude/rules/reports.md) §5).

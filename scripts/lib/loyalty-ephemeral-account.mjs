@@ -87,10 +87,13 @@ export function handleAgeHours(handle, now = new Date()) {
  * that was silently normalised, padded or dropped must be visible to the caller instead of asserted
  * by it.
  *
+ * `organizationId` puts the contact straight into that organization (no name lookup) and overrides
+ * `withOrg` / `orgName`.
+ *
  * Returns `{ handle, email, memberId, userId, observedGroups }`.
  */
 export async function createEphemeralAccount(api, {
-  prefix, storeId, withOrg = true, orgName = 'TechFlow', groups = [],
+  prefix, storeId, withOrg = true, orgName = 'TechFlow', organizationId = null, groups = [],
   firstName = 'Agent', lastName = 'LoyZero', dryRun = false, log = () => {}, verbose = () => {},
 } = {}) {
   if (!prefix) throw new Error('createEphemeralAccount needs a sweep prefix');
@@ -105,7 +108,11 @@ export async function createEphemeralAccount(api, {
   }
 
   let organizations = [];
-  if (withOrg) {
+  // `organizationId` names the org directly — for an org the caller has JUST created, which the
+  // keyword search below cannot see until the member index catches up.
+  if (organizationId) {
+    organizations = [organizationId];
+  } else if (withOrg) {
     const r = await api('POST', '/api/members/search', { memberType: 'Organization', keyword: orgName, take: 5 }, { expectStatus: [200, 201] });
     const org = (r?.results || []).find((m) => m?.name === orgName) || (r?.results || [])[0];
     if (!org?.id) {

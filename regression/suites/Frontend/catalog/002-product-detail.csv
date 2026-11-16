@@ -357,3 +357,37 @@ state from CAT-79 (customer holds a wishlist in the current store containing @td
 [STATE] the PDP wishlist marker is scoped to the current store's wishlist only, matching the catalog-grid behavior verified in CAT-79 {SPEC}","[API] the PDP's wishlist-membership lookup is scoped by storeId — the same FindWishlistsByProductsAsync fix exercised by the catalog grid {SPEC}
 [CONSOLE] no uncaught JS errors on PDP load
 [NETWORK] no 4xx/5xx on the wishlist-lookup request",wishlist button shows an in-wishlist state for the storeB-only product's PDP; wishlist button shows the neutral state for the storeA product's PDP; console TypeError on PDP load; test executed on a single-store deployment and reported PASS instead of SKIPPED,none — read-only browse; no state change,VCST-5705 | Promoted: REG-2026-09-07-1342 (2026-09-07),Automated
+CAT-083,Product Detail - Quantity Stepper: Backspace-Clearing the Field Digit by Digit Never Commits or Restores a Half-Deleted Quantity (Anonymous),Catalog > Product > Quantity Stepper,High,BL-CART-001,"ECL-5.3, ECL-7.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNOUT]
+Anonymous session, so the cart starts empty (the ticket's own environment: B2B-store, anonymous cart). The product is @td(BUYABLE_NO_MIN_QTY.sku) (unconstrained simple B2B product: minQuantity=1, maxQuantity=0/unlimited, availableQuantity well above 345). Stock guard: if after the 234 commit the PDP shows an inline maximum/insufficient-stock message, the case ends BLOCKED:<CONDITION_NOT_MET>, never PASS or FAIL.
+PDP surface differs from the cart line (minimum 1): the PDP stepper allows 0 (allowZero=true: decrementing to zero removes the line), so on this surface 'the empty field becomes 0' is reachable and means the line is removed. VCST-6768 reproduces anonymous and signed-in; the signed-in cart-line and listing-card cases cover the other states.","url={{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+target_sku=@td(BUYABLE_NO_MIN_QTY.sku)
+typed_quantity=234","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] click the matching product card for @td(BUYABLE_NO_MIN_QTY.sku) to open its PDP
+[WAIT] wait for the PDP to load
+[ASSERT] verify the spinbutton 'Product quantity' shows 0 and no 'in Cart' indicator is present
+[ACT] click the 'Product quantity' spinbutton to focus it
+[WAIT] wait for the spinbutton to be focused
+[KEY] press Control+a to select all its content
+[ACT] set its value to 234 in ONE input event (fill / paste, not key by key)
+[KEY] press Tab to blur the field
+[WAIT] wait 2s for the add-to-cart mutation to settle
+[ASSERT] verify the spinbutton shows 234 and the 'in Cart' indicator shows 234, with no inline maximum message (otherwise BLOCKED:<CONDITION_NOT_MET>)
+[KEY] start recording every POST {{FRONT_URL}}/graphql request whose operationName is UpdateShortCartItemQuantity or ChangeFullCartItemsQuantity or whose mutation removes the line (variables quantity values go into QTY_SENT); the list starts empty here
+[ACT] click the 'Product quantity' spinbutton to focus it
+[WAIT] wait for the spinbutton to be focused
+[KEY] press ArrowRight four times so the caret is after the last digit (End does not move the caret in a number field, so each Backspace removes exactly one digit from the right)
+[KEY] press Backspace three times back to back in one action (234 -> 23 -> 2 -> empty), no wait between the presses
+[WAIT] wait 2s while the field is still focused and empty
+[KEY] record the 'in Cart' indicator as BADGE_EMPTY (a missing indicator is recorded as 0) and the current QTY_SENT as QTY_SENT_PRE_BLUR
+[ACT] click outside the field (the product title) to blur it
+[WAIT] wait 2s for any commit to settle
+[KEY] record the value the spinbutton shows as V_BLUR, the 'in Cart' indicator as BADGE_BLUR (a missing indicator is recorded as 0) and the full QTY_SENT
+[NAV] navigate to {{FRONT_URL}}/cart
+[KEY] record the quantity of the @td(BUYABLE_NO_MIN_QTY.sku) line as V_CART (an absent line is recorded as 0)","[STATE] BADGE_EMPTY is neither 23 nor 2: an empty, still-focused field does not put a partial quantity in the cart {SPEC} (VCST-6768 Expected: the cart quantity does not change to partial values while typing/clearing)
+[STATE] V_BLUR is neither 23 nor 2 and is not empty: the field never shows a half-deleted value the user did not choose {SPEC} (VCST-6768 Expected: never shows a value the user did not enter; Actual 456 -> 4)
+[STATE] V_BLUR is 0 (empty becomes 0, the line is removed) or 234 (reverts to the value before editing) {HYPOTHESIS} (VCST-6768: the empty->0 versus revert-to-previous choice is an OPEN PO decision (VCST-6768), so only the invariants every candidate outcome shares are asserted as {SPEC}; the choice itself is {HYPOTHESIS}; either outcome is recorded for the PO and neither is failed, every other number fails)
+[STATE] V_BLUR equals BADGE_BLUR equals V_CART, with 0 meaning no indicator and no line: the field, the 'in Cart' indicator and the persisted cart quantity agree {SPEC} (VCST-6768 Actual: field 4, badge 4, cart 4 all showing a value never entered)
+[NETWORK] no request in QTY_SENT carries quantity 23 or 2: no cart mutation is built from an intermediate Backspace state {SPEC} (VCST-6768 Expected; Actual: UpdateShortCartItemQuantity quantity:4 and quantity 56 then 6 on the PDP)","[API] every cart quantity mutation response in QTY_SENT has errors[] empty
+[CONSOLE] no JS errors during the Backspace sequence and the blur
+[NETWORK] no 4xx/5xx on /graphql during the window","spinbutton shows 2 or 23 after blur; 'in Cart' indicator shows 2 or 23 while the field is empty or after blur; UpdateShortCartItemQuantity with quantity 23 or 2 in the request log; field, indicator and cart quantity disagree","Remove @td(BUYABLE_NO_MIN_QTY.sku) from the anonymous cart if still present, then end the anonymous session; no other state change","VCST-6768; Archetype:FALLBACK · Technique:ST · Purpose:FUNC · Catches:VCST-6768; no BL-* states the empty-field rule (BL-CART-001 cited as the nearest rule for the PDP quantity control); Source: VirtoCommerce/vc-frontend@dev client-app/ui-kit/components/organisms/quantity-stepper/vc-quantity-stepper.vue (watch(model) writes every non-empty value into lastNonEmptyValue; normalize() on blur restores it when the model is undefined) + client-app/shared/common/components/quantity-control.vue (watch(stepperQuantity) -> handleStepperChange emits update:cartItemQuantity per value); kb KB-9314E8DA (SUSPECTED DEFECT, proof the commit-before-blur reproduces on /cart, never an expected result); kb KB-98A231B6 (PDP and card stepper send UpdateShortCartItemQuantity, /cart line sends ChangeFullCartItemsQuantity); Docs: StorefrontUserGuide is silent on empty-field and partial-typing behaviour, so no {DOC} tag is possible",Draft

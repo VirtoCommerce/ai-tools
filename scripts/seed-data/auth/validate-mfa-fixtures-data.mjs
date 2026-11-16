@@ -17,7 +17,9 @@
  *   [5] a cloned store would inherit (or be given a resolvable) url/secureUrl — it would capture a
  *       storefront host away from the shared store (observed 2026-10-23, ~7 min on vcst);
  *   [6] a contact body can be built without the bound store's currency + language (GOLDEN RULE: read
- *       from the store, never transcribed), or either source file carries a literal of them.
+ *       from the store, never transcribed), or either source file carries a literal of them;
+ *   [7] a StoreMode is accepted without the stand's allowedValues, or either source file transcribes a
+ *       list of StoreMode values (the three-value list refused the VCST-6597 modes when they shipped).
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
@@ -36,7 +38,7 @@ if (!storeIdFor('abc123').startsWith('AGENT-TEST-MFA-')) problems.push('store id
 
 // [5] a cloned store must never inherit a storefront-binding field (host capture of the shared storefront).
 const src0 = { url: 'https://shared.example', secureUrl: 'https://shared.example', catalog: 'c', currencies: ['USD'], languages: ['en-US'] };
-const body = storeBody('abc123', src0, 'Enabled');
+const body = storeBody('abc123', src0, 'Enabled', ['Enabled']);
 for (const f of STOREFRONT_BINDING_FIELDS) {
   if (body[f] === src0[f] || (body[f] && !/\.invalid$/.test(new URL(body[f]).hostname))) problems.push(`storeBody copies/sets a resolvable ${f} (${body[f]}) — it would capture a storefront host`);
 }
@@ -55,6 +57,14 @@ if (/MultiFactorAuthentication\.Enabled['"`]\s*[,}]|name:\s*['"`]MultiFactorAuth
   problems.push('mfa-fixtures.mjs writes MultiFactorAuthentication.Enabled — the global switch belongs to the orchestrator window, never to the creator');
 }
 if (/password:\s*['"`][^'"`{]/.test(src)) problems.push('mfa-fixtures.mjs carries a literal password — use process.env[PASSWORD_VAR]');
+
+// [7] StoreMode values come from the stand's allowedValues, never from a list in the source.
+let modeWithoutStand = true;
+try { storeBody('abc123', src0, 'Enabled'); } catch { modeWithoutStand = false; }
+if (modeWithoutStand) problems.push("storeBody accepts a StoreMode without the stand's allowedValues — a transcribed mode list crept back in");
+for (const [file, text] of [['mfa-fixtures.mjs', src], ['mfa-fixtures-specs.mjs', specSrc]]) {
+  if (/STORE_MODES\s*=|['"`](AdminManaged|CustomerChoice)['"`]/.test(text)) problems.push(`${file} transcribes StoreMode values — read ${'MultiFactorAuthentication.StoreMode'} allowedValues from the stand`);
+}
 
 console.log(`\ntd:validate:mfa — ${KIND_NAMES.length} kinds\n`);
 problems.forEach((p) => console.log(`  ✗ ${p}`));

@@ -6,7 +6,7 @@
  *
  * LIBRARY (import it from a case runner; call `init()` ONCE — it mints ONE admin token and reuses it):
  *   createMfaStore(runId, { mode = 'Enabled', sourceStoreId = STORE_ID })   → { id, mode }
- *   setMfaStoreMode(runId, mode)                          our store only ('Enabled' | 'Disabled' | 'Use global setting' | null)
+ *   setMfaStoreMode(runId, mode)                          our store only; mode ∈ the stand's StoreMode allowedValues, or null
  *   createMfaAccount({ runId, store, kind, n })           → { kind, email, userId, contactId, storeId, orgs, memberships, target?, passwordVar }
  *   readLatestMfaCode({ email | userId, after, excludeIds, timeoutMs }) → { code, createdDate, status, id, latencyMs }
  *   membership helpers: lockMembership(id, lockoutEnd|null) · unlockMembership(id) · setMembershipStatus(id, status|null)
@@ -58,8 +58,9 @@ import { tmpdir, userInfo } from 'node:os';
 import { assertSafeTarget, auth, useToken, api as rawApi, log, DRY_RUN, STORE_ID, BACK_URL } from '../../lib/seed-common.mjs';
 import { findUserByEmail, searchMemberships } from '../../lib/user-provision.mjs';
 import {
-  KINDS, KIND_NAMES, PASSWORD_VAR, STORE_MODE_SETTING, STORE_MODES, MFA_NOTIFICATION_TYPE, MEMBERSHIP_STATUSES,
-  ORG_ROLE_MEMBER, BACKOFFICE_PERMISSIONS, PREFIX, assertRunId, newRunId, storeIdFor, roleNameFor, orgNameFor,
+  KINDS, KIND_NAMES, PASSWORD_VAR, STORE_MODE_SETTING, MFA_NOTIFICATION_TYPE, MEMBERSHIP_STATUSES,
+  ORG_ROLE_MEMBER, ORG_ROLE_MFA_MANAGER, ORG_MFA_PERMISSION, RUN_ROLES, PREFIX, assertRunId, newRunId, storeIdFor,
+  roleNameFor, roleIdsFor, orgNameFor, assertStoreMode,
   runMarker, emailFor, isRunEmail, isRunName, storeBody, storeModeOf, contactBody, accountBody, accountProblems,
   extractCode, pickLatestRow, jwtClaims, hostOf, issHostOf, parseRefreshFile, refreshFileBody,
 } from './mfa-fixtures-specs.mjs';
@@ -275,6 +276,20 @@ function storeDefaults(storeId) {
 
 /* ── store ───────────────────────────────────────────────────────────────────── */
 
+let _storeModes = null;
+/** The StoreMode values the stand's MFA module allows — read once per process, never transcribed. */
+export function allowedStoreModes() {
+  if (!_storeModes) {
+    _storeModes = (async () => {
+      const s = await api('GET', `/api/platform/settings/${encodeURIComponent(STORE_MODE_SETTING)}`, null, { expectStatus: [200, 204, 404] });
+      const values = s?.allowedValues;
+      if (!Array.isArray(values) || !values.length) throw new Error(`${STORE_MODE_SETTING} has no allowedValues on this stand — is VirtoCommerce.MFA installed?`);
+      return values;
+    })().catch((e) => { _storeModes = null; throw e; });
+  }
+  return _storeModes;
+}
+
 export async function createMfaStore(runId, { mode = 'Enabled', sourceStoreId = STORE_ID } = {}) {
   await init();
   const id = storeIdFor(runId);
@@ -282,7 +297,7 @@ export async function createMfaStore(runId, { mode = 'Enabled', sourceStoreId = 
   if (existing?.id) { record(runId, 'store', id); await setMfaStoreMode(runId, mode); return { id, mode, reused: true }; }
   const source = await api('GET', `/api/stores/${encodeURIComponent(sourceStoreId)}`);
   if (!source?.id) throw new Error(`source store ${sourceStoreId} not found`);
-  await api('POST', '/api/stores', storeBody(runId, source, mode), { expectStatus: [200, 201, 204] });
+  await api('POST', '/api/stores', storeBody(runId, source, mode, await allowedStoreModes()), { expectStatus: [200, 201, 204] });
   record(runId, 'store', id);
   const back = await readStoreMode(id);
   if (!DRY_RUN && back !== (mode ?? null)) {
@@ -301,7 +316,7 @@ export async function readStoreMode(storeId) {
 /** Our store ONLY. A full-store PUT is safe here because the store is ours (never a shared one). */
 export async function setMfaStoreMode(runId, mode) {
   await init();
-  if (mode !== null && !STORE_MODES.includes(mode)) throw new Error(`StoreMode "${mode}" not in ${STORE_MODES.join(' / ')}`);
+  assertStoreMode(mode, await allowedStoreModes());
   const id = storeIdFor(runId); // derived here, never taken from a caller: this can only ever be the run's own store
   const store = await api('GET', `/api/stores/${encodeURIComponent(id)}`);
   if (!store?.id) throw new Error(`store ${id} does not exist`);
@@ -317,9 +332,39 @@ export async function setMfaStoreMode(runId, mode) {
 
 /* ── accounts ────────────────────────────────────────────────────────────────── */
 
-async function ensureBackofficeRole(runId) {
-  const id = roleNameFor(runId);
-  await api('PUT', '/api/platform/security/roles', { id, name: id, permissions: BACKOFFICE_PERMISSIONS.map((name) => ({ name })) }, { expectStatus: [200, 201, 204] });
+let _permissionNames = null;
+/** Every permission name the stand registers — a run role may only name these (fail loud on a missing module). */
+async function permissionNames() {
+  if (!_permissionNames) {
+    const list = await api('GET', '/api/platform/security/permissions');
+    _permissionNames = new Set((Array.isArray(list) ? list : []).map((p) => p?.name || p?.id).filter(Boolean));
+  }
+  return _permissionNames;
+}
+
+/** The permissions of a run role: declared in RUN_ROLES, or (OrgMfa) the member org role's own read live + the company MFA permission. */
+async function runRolePermissions(tag) {
+  if (RUN_ROLES[tag]) return [...RUN_ROLES[tag]];
+  // GET /roles/{x} looks a role up by NAME, and the search omits permissions: find the name by id, then GET it.
+  // The search keyword matches names, not ids — so list every role and match the id.
+  const found = ((await api('POST', '/api/platform/security/roles/search', { take: 1000 }))?.results || [])
+    .find((r) => r.id === ORG_ROLE_MEMBER);
+  const member = found?.name && await api('GET', `/api/platform/security/roles/${encodeURIComponent(found.name)}`, null, { expectStatus: [200, 204, 404] });
+  if (member?.id !== ORG_ROLE_MEMBER) throw new Error(`org role ${ORG_ROLE_MEMBER} not found — the ${tag} run role copies its permissions`);
+  return [...new Set([...(member.permissions || []).map((p) => p.name || p.id).filter(Boolean), ORG_MFA_PERMISSION])];
+}
+
+async function ensureRunRole(runId, tag) {
+  const id = roleNameFor(runId, tag);
+  const permissions = await runRolePermissions(tag);
+  if (!DRY_RUN) {
+    // Only the names we declare are checked: permissions copied from an existing role are the stand's own,
+    // and storefront:* ones are not in GET /permissions at all (measured on vcst 2026-11-04).
+    const known = await permissionNames();
+    const unknown = (RUN_ROLES[tag] ?? [ORG_MFA_PERMISSION]).filter((p) => !known.has(p));
+    if (unknown.length) throw new Error(`run role ${id}: the stand registers no permission ${unknown.join(', ')} — is the module that declares it installed?`);
+  }
+  await api('PUT', '/api/platform/security/roles', { id, name: id, permissions: permissions.map((name) => ({ name })) }, { expectStatus: [200, 201, 204] });
   record(runId, 'role', id);
   return { id, name: id };
 }
@@ -350,7 +395,7 @@ async function ensureMemberships(runId, userId, orgs, roleId) {
     let m = live.find((x) => x.organizationId === o.id);
     if (!m) {
       const posted = await api('POST', '/api/customer/organization-memberships', {
-        userId, organizationId: o.id, organizationName: o.name, roles: [{ roleId, roleName: ORG_ROLE_NAMES[roleId] }], isLocked: false,
+        userId, organizationId: o.id, organizationName: o.name, roles: [{ roleId, roleName: ORG_ROLE_NAMES[roleId] ?? roleId }], isLocked: false,
       }, { expectStatus: [200, 201, 204] });
       m = await readMembership(userId, o.id);
       if (!m?.id) {
@@ -418,7 +463,9 @@ export async function createMfaAccount({ runId, store, kind, n = 0 }) {
   if (k.storeScope === 'mfa' && !storeId) throw new Error(`${kind} is bound to the run's MFA store — pass store (createMfaStore's result)`);
   const email = emailFor(runId, kind, n);
   if (await findUser(email)) throw new Error(`${email} already exists — a runId is single-use (nothing was created)`);
-  const roles = k.backofficeRole ? [await ensureBackofficeRole(runId)] : [];
+  const roles = k.backofficeRole ? [await ensureRunRole(runId, k.backofficeRoleTag)] : [];
+  // The run org role is created on demand; a stock org role id is used as-is.
+  const orgRoleId = k.orgRole === ORG_ROLE_MFA_MANAGER ? (await ensureRunRole(runId, 'OrgMfa')).id : (k.orgRole || ORG_ROLE_MEMBER);
   const orgs = [];
   if (k.orgs >= 1) orgs.push(await ensureOrg(runId, `${kind}${n ? `-${n}` : ''}-A`));
   if (k.orgs >= 2) orgs.push(await ensureOrg(runId, `${kind}${n ? `-${n}` : ''}-B`));
@@ -432,7 +479,7 @@ export async function createMfaAccount({ runId, store, kind, n = 0 }) {
     if (missing.length) flags.gap = { ...(flags.gap || {}), rolesMissing: missing, rolesHeld: held };
   }
   const out = { kind, email, userId: user?.id || '', contactId, storeId, roles: roles.map((r) => r.id), passwordVar: PASSWORD_VAR, orgs, memberships: [] };
-  if (orgs.length && !DRY_RUN) out.memberships = await ensureMemberships(runId, user.id, orgs, k.orgRole || ORG_ROLE_MEMBER);
+  if (orgs.length && !DRY_RUN) out.memberships = await ensureMemberships(runId, user.id, orgs, orgRoleId);
   if (orgs.length === 2 && !DRY_RUN) await setContactOrganization(contactId, { current: orgs[0].id });
   if (k.targetKind && !DRY_RUN) {
     // The pair's other side (KINDS[k.targetKind].sibling === kind), in the SAME orgs on the SAME store.
@@ -585,7 +632,7 @@ async function userStillThere(label, id, http = api) {
  *               an id was claimed (ledger or search), each id is read back BY ID: a run user there is
  *               verified and deleted; an unreadable id is refused (non-zero exit), never counted as gone;
  *   contact/org the member read back by GET is AGENT-TEST-MFA-<runId> by name/firstName or by outerId;
- *   role/store  exactly roleNameFor(runId) / storeIdFor(runId) — the only ids ever deleted;
+ *   role/store  exactly roleIdsFor(runId) / storeIdFor(runId) — the only ids ever deleted;
  *   membership  read back by GET, between a verified run account AND a verified run org.
  * A ledger (or search) candidate that fails is returned in `refused` and is NOT deleted. One that no
  * longer exists is simply gone. `http` is injectable (a fake api proves the refusals without a stand).
@@ -597,7 +644,7 @@ export async function planTeardown(runId, { api: http = api } = {}) {
   const get = (path) => http('GET', path, null, { expectStatus: [200, 204, 404] });
   const marker = runMarker(runId);
   const storeId = storeIdFor(runId);
-  const role = roleNameFor(runId);
+  const roles = roleIdsFor(runId);
   const isRunMember = (m) => !!m && (isRunName(m.name, runId) || isRunName(m.firstName, runId) || String(m.outerId || '').startsWith(`${PREFIX}:${runId}:`));
 
   const ledger = readLedger(runId);
@@ -610,7 +657,7 @@ export async function planTeardown(runId, { api: http = api } = {}) {
   entries.filter((e) => !KNOWN.includes(e?.type)).forEach((e) => refuse(`ledger ${e?.type} ${e?.key}`, 'unknown entry type'));
   const led = (type) => entries.filter((e) => e?.type === type && e.key);
   led('store').filter((e) => e.key !== storeId).forEach((e) => refuse(`ledger store ${e.key}`, `not the run's store ${storeId}`));
-  led('role').filter((e) => e.key !== role).forEach((e) => refuse(`ledger role ${e.key}`, `not the run's role ${role}`));
+  led('role').filter((e) => !roles.includes(e.key)).forEach((e) => refuse(`ledger role ${e.key}`, `not one of the run's roles ${roles.join(', ')}`));
 
   // ── accounts: run-marker name, read back by name; a claimed id must be that account's ──
   const claimed = new Map(); // userName → [claimed ids]
@@ -702,7 +749,7 @@ export async function planTeardown(runId, { api: http = api } = {}) {
     else if (!uid || !userIds.has(uid)) refuse(`membership ${id} (${from})`, `user ${uid ?? '(unknown)'} is not a verified run account`);
     else membershipIds.add(id);
   }
-  return { storeId, role, users, userResidueIds, contactIds, orgIds, membershipIds, refused, ledgerEntries: entries.length };
+  return { storeId, roles, users, userResidueIds, contactIds, orgIds, membershipIds, refused, ledgerEntries: entries.length };
 }
 
 export async function teardown(runId, { api: injected = null } = {}) {
@@ -711,7 +758,7 @@ export async function teardown(runId, { api: injected = null } = {}) {
   const http = injected || api;
   assertRunId(runId);
   const p = await planTeardown(runId, { api: http });
-  const { storeId, role, users, userResidueIds, contactIds, orgIds, membershipIds, refused } = p;
+  const { storeId, roles, users, userResidueIds, contactIds, orgIds, membershipIds, refused } = p;
   refused.forEach((r) => log(`  REFUSED (not deleted) ${r}`));
 
   const del = (path) => http('DELETE', path, null, { expectStatus: [200, 204, 404] });
@@ -720,9 +767,9 @@ export async function teardown(runId, { api: injected = null } = {}) {
   for (const [name, id] of users) if (id) await del(`/api/platform/security/users?names=${encodeURIComponent(name)}`);
   for (const id of contactIds) await del(`/api/members?ids=${encodeURIComponent(id)}`);
   for (const id of orgIds) await del(`/api/members?ids=${encodeURIComponent(id)}`);
-  await del(`/api/platform/security/roles?ids=${encodeURIComponent(role)}`);
+  for (const role of roles) await del(`/api/platform/security/roles?ids=${encodeURIComponent(role)}`);
   await del(`/api/stores?ids=${encodeURIComponent(storeId)}`);
-  log(`teardown ${runId}: ${membershipIds.size} membership(s), ${[...users.values()].filter(Boolean).length} account(s), ${contactIds.size} contact(s), ${orgIds.size} org(s), role, store (ledger: ${p.ledgerEntries} entries; refused: ${refused.length})`);
+  log(`teardown ${runId}: ${membershipIds.size} membership(s), ${[...users.values()].filter(Boolean).length} account(s), ${contactIds.size} contact(s), ${orgIds.size} org(s), roles, store (ledger: ${p.ledgerEntries} entries; refused: ${refused.length})`);
 
   if (DRY_RUN) return refused.length;
   // Residue: read EVERY id back by GET — not through the search index, and an error counts as residue.
@@ -739,7 +786,7 @@ export async function teardown(runId, { api: injected = null } = {}) {
     ...[...membershipIds].map((id) => [`membership ${id}`, `/api/customer/organization-memberships/${encodeURIComponent(id)}`]),
     ...userChecks.filter(([, id]) => !id).map(([label, , path]) => [label, path]),
     ...[...contactIds, ...orgIds].map((id) => [`member ${id}`, `/api/members/${encodeURIComponent(id)}`]),
-    [`role ${role}`, `/api/platform/security/roles/${encodeURIComponent(role)}`],
+    ...roles.map((role) => [`role ${role}`, `/api/platform/security/roles/${encodeURIComponent(role)}`]),
     [`store ${storeId}`, `/api/stores/${encodeURIComponent(storeId)}`],
   ];
   const left = [];

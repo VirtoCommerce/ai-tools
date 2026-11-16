@@ -52,15 +52,25 @@ export async function storybookNeed(ref: PrRef): Promise<StorybookNeed | null> {
   return { needed: c.files.length > 0, ...c, headRef: pr.head?.ref, headSha: pr.head?.sha };
 }
 
-/** The image tag a finished storybook-ci run pushed, read from its `ci` job log; null when none. */
-async function tagFromRun(owner: string, repo: string, runId: number): Promise<string | null> {
+/**
+ * The image tag a finished storybook-ci run pushed, read from its `ci` job log; null when none.
+ * A run pushes the build tag (`…-<sha8>`) AND moving tags (`latest`, `<branch>-linux-latest`), so the
+ * pick is the tag ending with the run's head SHA — a moving tag pinned in image.json redeploys whatever
+ * the branch builds next, and --verify (which matches the SHA suffix) would never see it as deployed.
+ */
+export function pickStorybookTag(log: string, headSha: string): string | null {
+  const sha8 = headSha.slice(0, 8);
+  const tags = [...log.matchAll(/--tag\s+\S+-storybook:([^\s,@]+)/g)].map((m) => m[1]);
+  return tags.find((t) => t.endsWith(`-${sha8}`)) ?? null;
+}
+
+async function tagFromRun(owner: string, repo: string, runId: number, headSha: string): Promise<string | null> {
   const jobs = await ghJson(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}/jobs`);
   for (const job of jobs?.jobs ?? []) {
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/jobs/${job.id}/logs`, { headers: ghHeaders() });
     if (!res.ok) continue;
-    const log = await res.text();
-    const tags = [...log.matchAll(/--tag\s+\S+-storybook:([^\s,@]+)/g)].map((m) => m[1]).filter((t) => t !== 'latest');
-    if (tags.length) return tags[tags.length - 1];
+    const tag = pickStorybookTag(await res.text(), headSha);
+    if (tag) return tag;
   }
   return null;
 }
@@ -74,7 +84,7 @@ async function dispatchRuns(owner: string, repo: string, branch: string): Promis
 export async function existingStorybookTag(ref: PrRef, need: StorybookNeed): Promise<{ tag: string; runUrl: string } | null> {
   for (const run of await dispatchRuns(ref.owner, ref.repo, need.headRef)) {
     if (run.head_sha !== need.headSha || run.conclusion !== 'success') continue;
-    const tag = await tagFromRun(ref.owner, ref.repo, run.id);
+    const tag = await tagFromRun(ref.owner, ref.repo, run.id, run.head_sha);
     if (tag) return { tag, runUrl: run.html_url };
   }
   return null;
@@ -98,8 +108,8 @@ export async function buildStorybook(ref: PrRef, need: StorybookNeed, log: (l: s
   }
   if (!run || run.status !== 'completed') throw new Error(`Storybook CI did not finish in ${Math.round(timeoutMs / 60_000)} min${run ? `: ${run.html_url}` : ''}`);
   if (run.conclusion !== 'success') throw new Error(`Storybook CI ${run.conclusion}: ${run.html_url}`);
-  const tag = await tagFromRun(ref.owner, ref.repo, run.id);
-  if (!tag) throw new Error(`Storybook CI succeeded but no image tag was found in its log: ${run.html_url}`);
+  const tag = await tagFromRun(ref.owner, ref.repo, run.id, run.head_sha);
+  if (!tag) throw new Error(`Storybook CI succeeded but no image tag ending in its head SHA (${String(run.head_sha).slice(0, 8)}) was found in its log: ${run.html_url}`);
   return { tag, runUrl: run.html_url };
 }
 

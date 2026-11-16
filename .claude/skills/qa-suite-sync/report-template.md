@@ -31,7 +31,7 @@ screenshots (`reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`, screenshots only). P
 | 2. Sync | test-management-specialist | Done/Skipped | N stale updated, M broken addressed |
 | 3. Analyze & Generate | test-management-specialist | Done/Skipped | N gaps found, M cases created |
 | 4. Review & Fix | test-management-specialist | Done | N findings (B: X, C: Y, H: Z, M: W) |
-| 5. Verify | qa-testing-expert | Done/Skipped | N verified, X changed, Y broken |
+| 5. Verify | /qa-regression (5a) + qa-testing-expert (5b) | Done/Skipped | RUN_ID(s); N pass, F fail, B blocked; 5b: X changed, Y broken |
 | 6. Verdict | orchestrator | **VERDICT** | Gates: N/M passed |
 
 ## Change Inventory (if change-driven)
@@ -64,10 +64,15 @@ screenshots (`reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`, screenshots only). P
 
 ## Environment Verification (if Phase 5 ran)
 
-UNCHECKED cases (a cap ran out in every round) are listed by ID with Result `UNCHECKED` — never counted as verified.
+**Scoped run(s) (5a)** — every target, with the `RUN_ID` that last executed it (what promotion uses):
 
-| Case ID | URL | Check | Result | Screenshot |
-|---------|-----|-------|--------|------------|
+| Case ID | Suite | RUN_ID | Verdict | Harvested (5c) | Bug candidate |
+|---------|-------|--------|---------|----------------|---------------|
+
+**Residual check (5b)** — UNCHECKED items (a cap ran out in every round) are listed by ID, never counted as verified:
+
+| Case ID / URL | Check | Result | Screenshot |
+|---------------|-------|--------|------------|
 
 ## Remaining Items
 

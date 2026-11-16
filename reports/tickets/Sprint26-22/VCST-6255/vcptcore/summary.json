@@ -139,7 +139,7 @@
       "authored": {
         "suites": {
           "116": "SR-RPT-001..030",
-          "050m": "SR-GQL-177..179"
+          "050m": "SR-GQL-183..185"
         },
         "status": "Draft",
         "held": [
@@ -150,7 +150,7 @@
           "SR-RPT-026: 'Show as table' is a native <details>; the role/expanded half of the case is wrong"
         ]
       },
-      "id_note": "C1 ran these three 050m rows as SR-GQL-163..165; renumbered to SR-GQL-177..179 on rebase (#596 took 163..173)"
+      "id_note": "C1 ran these three 050m rows as SR-GQL-163..165; renumbered to SR-GQL-177..179 on rebase (#596 took 163..173), then to SR-GQL-183..185 on the merge with main (main took 175..182)"
     }
   },
   "discovery": {

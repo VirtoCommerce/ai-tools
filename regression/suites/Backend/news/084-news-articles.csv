@@ -103,7 +103,15 @@ NEWS-012,List Keyword Search Filters Results,News Admin > List,Medium,,,At least
 [GRID] result count badge updates (e.g. '1-1 of 1')
 [DOM] 'Clear' affordance appears and resets the filter","[API] POST {{back_url}}/api/news/search (keyword={{token}}) -> results all match token
 [CONSOLE] no console errors after search","Search does not filter, unrelated rows remain, clear does not reset",none,/api/news/search,Automated
-NEWS-013,Status Filters Return Correct Subsets (Draft/Scheduled/Published/Archived),News Admin > List,Medium,,,"Articles exist in mixed states: a Draft (isPublished=false), a Published (isPublished=true + past/empty date), a Scheduled (isPublished=true + future date), an Archived (isArchived=true), and ideally one published-then-archived article",admin_url={{ADMIN_URL}},"[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+NEWS-013,Status Filters Return Correct Subsets (Draft/Scheduled/Published/Archived),News Admin > List,Medium,,,"Articles exist in mixed states: a Draft (isPublished=false), a Published (isPublished=true + past/empty date), a Scheduled (isPublished=true + future date), an Archived (isArchived=true), and ideally one published-then-archived article",admin_url={{ADMIN_URL}},"[ACT] If no article is Scheduled yet, open a published article
+[ACT] Open its 'Publish settings'
+[ACT] Click the 'Publish date' date field to open its calendar (never type into it: typing throws a RangeError)
+[WAIT] Wait for the calendar to open
+[ACT] Click the calendar gridcell whose data-test-id is dp-YYYY-MM-DD for a FUTURE day (today + 30 days) (use the next-month arrow first if that day is in the next month)
+[WAIT] Wait for the 'Publish date' field to show the picked date
+[ACT] Click 'Save' (touch another field first if Save stays disabled)
+[WAIT] Wait for the save to complete
+[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
 [ACT] click each sidebar filter: Drafts, Scheduled, Published, Archived, All","[GRID] 'Drafts' = NOT published and not archived (isPublished=false && isArchived=false) — keyed on isPublished, independent of publish date
 [GRID] 'Scheduled' = isPublished=true && publishDate>now
 [GRID] 'Published' = isPublished=true && (publishDate==null || publishDate<=now) — NOTE: does NOT exclude archived; a published-then-archived article appears under BOTH 'Published' AND 'Archived' (overlap is by design)
@@ -130,8 +138,14 @@ NEWS-016,"Metadata (Author, Tags) Persists",News Admin > Fields,Medium,,,An edit
 [ACT] add a tag value (en-US)
 [ACT] Save",[FIELD] Author and Tags retain values after reload,"[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> authorId is non-null and localizedTags contains the entered tag
 [CONSOLE] no console errors after Save","Author/tags not persisted, author dropdown empty, save error",[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}},/api/news,Automated
-NEWS-017,Published Article Is Exposed via xAPI newsArticles,News Admin > Cross-Layer,Medium,BL-GQL-002,ECL-2.1,"A published, active, anonymous-scope article exists (NEWS-007 passed)",back_url={{BACK_URL}}; store={{STORE_ID}},"[GQL] POST {{back_url}}/graphql with query: newsArticles(storeId: \""{{store}}\"", languageCode: \""en-US\"", first: 10) { totalCount items { id title publishDate } }","[GQL] response has no errors[] and data.newsArticles is non-null
-[GQL] totalCount >= 1; items carry id, title and publishDate","[API] cross-check: the admin article id created in NEWS-007 corresponds to a newsArticles item (same title)
+NEWS-017,Published Article Is Exposed via xAPI newsArticles,News Admin > Cross-Layer,Medium,BL-GQL-002,ECL-2.1,"A published, active, anonymous-scope article exists in the store (create one through NEWS-007's flow or the Admin UI before the run)",back_url={{BACK_URL}}; store={{STORE_ID}},"[GQL-OP news_list]
+query { newsArticles(storeId: """"{{store}}"""", languageCode: """"en-US"""", first: 10) { totalCount items { id title publishDate } } }
+[GQL-EXEC news_list]","[ERRORS label=news_list] errors[] empty
+[DATA label=news_list] data.newsArticles is non-null
+[DATA label=news_list] data.newsArticles.totalCount >= 1
+[DATA label=news_list] data.newsArticles.items.0.id is non-null
+[DATA label=news_list] data.newsArticles.items.0.title is non-null
+[DATA label=news_list] data.newsArticles.items.0.publishDate is non-null","[API] cross-check: the admin article id created in NEWS-007 corresponds to a newsArticles item (same title)
 [CONSOLE] N/A (API-only)","newsArticles returns errors[] or HTTP 500, published admin article absent from xAPI result, items missing publishDate",none,xAPI Query.newsArticles; CMS-GQL-127/128/129 (050f-graphql-xcms.csv),Automated
 NEWS-018,News Module Reachable from Admin Navigation (More → News),News Admin > Module Load,High,BL-CROSS-003,,Admin logged in (BSM-001 passed); vc-news registered as an embedded app,admin_url={{ADMIN_URL}},"[NAV] {{ADMIN_URL}}/#!/workspace
 [WAIT] admin workspace dashboard loads
@@ -220,14 +234,18 @@ NEWS-029,Close Article Blade Returns to List,News Admin > Navigation,Low,,,"An a
 [ACT] open a saved article
 [ACT] close the article blade via the back/breadcrumb/close control","[BLADE] the article blade closes and focus returns to the 'Articles' list
 [GRID] the list remains rendered and interactive after closing",[CONSOLE] no console errors on blade close,"Close control missing or no-op, list not restored after close, app errors on close",none,NEWS-001,Automated
-NEWS-030,Duplicate SEO Slug Across Articles (negative),News Admin > SEO,High,VC-CMS-001,ECL-2.1,At least one existing published article with a known SEO slug exists,admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-dupe-{{TIMESTAMP}},"[REST-OP] GET an existing published article via {{back_url}}/api/news/search then /api/news/{id}; capture seoInfos[0].semanticUrl -> DUPE_SLUG
+NEWS-030,Duplicate SEO Slug Across Articles Is Accepted and Resolves to One Article,News Admin > SEO,High,VC-CMS-001,ECL-2.1,At least one existing published article with a known SEO slug exists,admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-dupe-{{TIMESTAMP}},"[REST-OP] GET an existing published article via {{back_url}}/api/news/search then /api/news/{id}; capture seoInfos[0].semanticUrl -> DUPE_SLUG
 [NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
 [ACT] create a new article ({{name}}, {{store}}, Anonymous)
 [ACT] SEO -> set URL slug = {{DUPE_SLUG}} (same as the existing article)
 [ACT] set Active and Publish date today
-[ACT] click 'Save'",[VALIDATION] the system should reject or warn about the duplicate slug (slug uniqueness per store/language),"[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> check whether the duplicate semanticUrl was persisted
+[ACT] click 'Save'
+[WAIT] Wait for the save to complete
+[ACT] capture the new article id from the blade URL -> NEWS_ID","[STATE] Save succeeds with no validation error and no block: a slug already used by another article is accepted (duplicate SEO slugs are resolved to ONE best match, never refused at save - same as store and category SEO)
+[API] both articles persist the same semanticUrl (the duplicate is stored, not rewritten or dropped)
+[API] resolving the shared slug (GraphQL slugInfo on the storefront, or GET /api/seoinfos/duplicates) yields exactly ONE article and no error - never two results and never an empty result for a published, active article","[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> semanticUrl equals {{DUPE_SLUG}}
 [CONSOLE] no console errors on save
-[NOTE] expected: duplicate slug blocked/warned. Suspected defect (see NEWS-009): save/clone accepts a duplicate slug silently -> storefront URL collision",Duplicate slug saved with no warning AND both articles publish on the same semanticUrl (URL collision) -> file a bug,[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}},NEWS-009 finding; VC-CMS-001,Semi-Automated
+[NOTE] Expectation corrected 2026-11-09 (Stable 16 W7 triage): the platform documents duplicate SEO slugs as resolved to one best match, not refused (docs + KB-AEDF86B2 store SEO, KB-51C67C3F category SEO); live re-check 2026-11-06: PUT /api/news 200, /api/seoinfos/duplicates [], slugInfo resolved the first article. Optional Low improvement for vc-module-news, not a defect of this case","Save is blocked or shows a validation error for a duplicate slug (contradicts documented behaviour); duplicate semanticUrl is not persisted; resolving the shared slug returns no article or an error for a published active article, or returns more than one",[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}},"NEWS-009 finding; VC-CMS-001; Corrected: 2026-11-09 expectation reject/warn -> accepted + resolved to one (documented behaviour, ledger W7 NEWS-030)",Semi-Automated
 NEWS-031,Name and Slug Accept Special Characters and Long Values,News Admin > Validation,Medium,,ECL-10.2,News module open,"admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}} (variant: 200+ chars and special chars - ampersand, percent, unicode, emoji)","[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
 [ACT] create an article with a very long Name (200+ chars) containing special characters (ampersand, percent, unicode, emoji)
 [ACT] SEO -> enter a slug containing spaces, uppercase and special characters
@@ -237,14 +255,24 @@ NEWS-031,Name and Slug Accept Special Characters and Long Values,News Admin > Va
 [CONSOLE] no console errors on save with special input","Save crashes or 500s on special chars, slug stored with spaces/illegal chars, long Name breaks grid layout, unescaped markup in the list (XSS)",[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}},ECL-10.2,Semi-Automated
 NEWS-032,Published Article with Future Date → Scheduled (auto-returns to Published when date passes),News Admin > Lifecycle,Medium,,ECL-2.1,An article with saved Title+Content that has been Published (isPublished=true) — e.g. via NEWS-007.,admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}},"[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
 [ACT] create article with Title+Content, Save, click 'Publish' (isPublished=true); capture id -> NEWS_ID
-[ACT] Publish settings -> set Publish date to a FUTURE date, then Save. NOTE: changing ONLY the date may leave Save disabled (the datepicker does not mark the form dirty on this build) — touch another field if Save stays disabled.
+[ACT] Open 'Publish settings'
+[ACT] Click the 'Publish date' date field to open its calendar (never type into it: typing throws a RangeError)
+[WAIT] Wait for the calendar to open
+[ACT] Click the calendar gridcell whose data-test-id is dp-YYYY-MM-DD for a FUTURE day (today + 30 days) (use the next-month arrow first if that day is in the next month)
+[WAIT] Wait for the 'Publish date' field to show the picked date
+[ACT] Click 'Save' (changing ONLY the date may leave Save disabled because the datepicker does not mark the form dirty on this build - touch another field if it stays disabled)
+[WAIT] Wait for the save to complete
 [ACT] open 'Scheduled' filter and search {{name}}","[GRID] the published article with a FUTURE publish date appears under 'Scheduled', NOT under 'Published' or 'Drafts'
 [GRID] when the publish date is moved to the past (or the future date passes) the article returns to 'Published' automatically — no re-publish needed","[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> isPublished=true AND publishDate > now while Scheduled
 [CONSOLE] no console errors
 [NOTE] Scheduled = isPublished && publishDate>now; Published = isPublished && (publishDate==null||publishDate<=now). Computed at query time (no background job) — transition is automatic.",Published future-dated article shows as Published (date ignored) or drops to Drafts; Scheduled empty for a published future-dated article; no auto-return to Published when date passes,[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}},NewsArticleSearchService; build quirk: date-only change may not enable Save,Semi-Automated
 NEWS-033,Future Archive Date Does Not Archive Until Date Passes,News Admin > Lifecycle,Medium,,ECL-10.1,A published article exists,admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-futarch-{{TIMESTAMP}},"[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
 [ACT] create and publish article ({{name}}, {{store}})
-[ACT] Publish settings -> set Archive date to a FUTURE date
+[ACT] Open 'Publish settings'
+[ACT] Click the 'Archive date' date field to open its calendar (never type into it: typing throws a RangeError)
+[WAIT] Wait for the calendar to open
+[ACT] Click the calendar gridcell whose data-test-id is dp-YYYY-MM-DD for a FUTURE day (today + 30 days) (use the next-month arrow first if that day is in the next month)
+[WAIT] Wait for the 'Archive date' field to show the picked date
 [ACT] click 'Save'","[STATE] the article remains active / not archived while the archive date is in the future
 [GRID] the article is not listed under 'Archived' yet","[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> archiveDate is in the future; isArchived=false until the date passes
 [CONSOLE] no console errors after save","Article is archived immediately despite a future archive date, or archive date is not persisted",[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}},NEWS-008; ECL-10.1,Semi-Automated

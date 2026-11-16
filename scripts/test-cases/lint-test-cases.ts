@@ -465,6 +465,10 @@ export const PRE_PRIMITIVES = new Set([
   "CLEAR_SESSION",
   "CLEAR_CACHE",
   "VERIFY_AUTH",
+  // `[PRE:DISPOSABLE_CUSTOMER:<personal|orgMember>]` — a customer created for this case and deleted after
+  // it (npm run td:customer; Playwright fixture `disposableCustomer`). Pairs with
+  // `[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]`. Protocol: test-execution-preflight.md §DISPOSABLE_CUSTOMER.
+  "DISPOSABLE_CUSTOMER",
 ]);
 
 const find = (rule: string, severity: Severity, caseId: string, message: string): Finding => ({

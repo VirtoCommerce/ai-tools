@@ -1,37 +1,49 @@
 {
-  "runId": "REG-2026-11-04-0827",
-  "status": "in_progress",
-  "startedAt": "2026-11-04T07:28:00.250Z",
-  "windowStart": "2026-11-04T07:28:00.250Z",
-  "selection": "061,098",
-  "env": "vcst",
-  "scoped": true,
-  "cases": "ids",
-  "ids": [
-    "SRCHA-006",
-    "SRCHA-007",
-    "SRCHA-012",
-    "SRCHA-019",
-    "SRCHA-047",
-    "CMP-004",
-    "CMP-007",
-    "CMP-024",
-    "CMP-032"
-  ],
-  "purpose": "Re-run of the 061 cases fixed by REG-2026-11-03-2035 triage + seed fix, and the 098 cases re-pointed off search (CMP-003 probe)",
-  "plan": "reports/regression/REG-2026-11-04-0827/preflight.json",
+  "runId": "REG-2026-11-12-1252",
+  "status": "completed",
+  "startedAt": "2026-11-12T11:53:15.858Z",
+  "env": "localhost",
+  "frontUrl": "http://localhost",
+  "ticket": "VCST-6688",
+  "selection": "110a,111",
+  "casesFilter": {
+    "ids": [
+      "MFA-048",
+      "MFA-049",
+      "MFA-054",
+      "MFA-064",
+      "MFA-073",
+      "MFA-074",
+      "MFA-075",
+      "MFASF-015",
+      "MFASF-023"
+    ]
+  },
   "suites": {
-    "061": {
-      "status": "running",
+    "111": {
+      "status": "done",
       "lane": "browser",
+      "cases": 2,
+      "estimatedMinutes": 8,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-04T07:29:29.000Z",
-      "total": 5,
-      "note": "attempt1_SRCHA-019_FAIL_retrying_case_alone"
+      "startedAt": "2026-11-12T12:05:22Z",
+      "pass": 2,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-12T12:14:12Z"
     },
-    "098": {
-      "status": "pending",
-      "lane": "browser"
+    "110a": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 7,
+      "estimatedMinutes": 33,
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-12T11:54:43Z",
+      "pass": 7,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-12T12:05:22Z"
     }
-  }
+  },
+  "finishedAt": "2026-11-12T12:14:36.779Z"
 }

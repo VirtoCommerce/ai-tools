@@ -1,0 +1,586 @@
+{
+ "suites": {
+  "044": 34,
+  "045": 30,
+  "046": 31,
+  "048c": 49
+ },
+ "cases": {
+  "044|SEC-PCI-001": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-PCI-002": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-PCI-003": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-PCI-004": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-PCI-005": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-PCI-006": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-PCI-007": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-AUTH-001": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-AUTH-002": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-AUTH-003": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-INPUT-001": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-INPUT-002": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-INPUT-003": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-INPUT-004": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-CSRF-001": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-CORS-001": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-SENSITIVE-001": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-SENSITIVE-002": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-SESSION-001": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-SESSION-002": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-SESSION-003": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-XSS-001": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-XSS-002": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-XSS-003": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-XSS-004": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-CSRF-002": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-CSRF-003": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-VALIDATION-001": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-VALIDATION-002": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-PAT-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-PAT-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-PAT-003": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-AUTH-004": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "044|SEC-AUTH-005": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-KB-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-KB-002": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-KB-003": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-KB-004": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-KB-005": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-SR-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-SR-002": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-SR-003": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-SR-004": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-SR-005": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-ARIA-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-ARIA-002": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-ARIA-003": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-AXE-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-AXE-002": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-CC-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-CC-002": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-CC-003": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-IMG-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-FORM-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-FORM-002": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-TOUCH-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-VCP-001": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-SORT-001": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-SORT-002": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-SORT-003": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-CPN-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-CPN-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-SR-006": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "045|A11Y-CC-004": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-DE-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-DE-002": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-EN-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-ES-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-FR-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-IT-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-PT-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-NO-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-SV-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-FI-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-PL-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-RU-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-JA-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-ZH-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-FLOW-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-FLOW-002": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-ERR-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-DATE-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-NUM-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-TRUNC-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-LAYOUT-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-CURR-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-CURR-002": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-CURR-003": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-CURR-004": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-CURR-005": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-CAT-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-ROUTE-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-ROUTE-002": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-ROUTE-003": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "046|L10N-ROUTE-004": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-CLS-001": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-CLS-002": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-IMG-001": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-IMG-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-SPC-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCBUTTON-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-OVF-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-VPS-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-ALN-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-TGT-001": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-TGT-002": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-SHIFT-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-OVF-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-OVF-004": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-OVF-005": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-OVF-006": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-OVF-003": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-HEADER-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-HEADER-003": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCINPUT-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCINPUT-002": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCEXPANSION-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCEXPANSION-004": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCTABSWITCH-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCBREADCRUMBS-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCTABLE-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCTABLE-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCSIDEBAR-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-PAGE-CLS-DASHBOARD-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCBUTTON-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCBUTTON-003": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCBUTTON-004": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCBUTTON-005": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-COMP-VCBUTTON-006": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-CNT-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-CNT-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-CNT-003": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-CNT-004": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-CNT-005": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-CNT-006": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-CNT-007": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-CNT-008": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-STR-001": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-STR-002": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-STR-003": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-STR-004": {
+   "status": "FAIL",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-STR-005": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-STR-006": {
+   "status": "PASS",
+   "run": "REG-2026-11-05-0023-W6R"
+  },
+  "048c|LAYOUT-STR-007": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-05-0023-W6R"
+  }
+ }
+}

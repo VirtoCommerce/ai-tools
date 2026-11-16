@@ -104,7 +104,7 @@ node -e 'for(const f of process.argv.slice(1))require("fs").readFileSync(f,"utf8
 - `.claude/skills/qa-*` descriptions lead with their `[Category]` tag (`.claude/skills/README.md`).
 - **Invocation control is `disable-model-invocation`.** With it `true`, the description is not in
   the model's context; check instead that no caller needs to invoke it. QA pipelines call each
-  other by name (`/qa-test` 5-triage → `/qa-triage-results`, `/qa-test-lifecycle` Phase 4c →
+  other by name (`/qa-test` Stage 5 triage → `/qa-triage-results`, `/qa-test-lifecycle` Phase 4c →
   `/qa-review-bl`, CI under `ci/`) — such a caller of a disabled skill → MAJOR: the Skill tool cannot run it, and reading the
   `SKILL.md` instead is an unreliable workaround, not a pass.
 - **Routing:** a ticket-driven QA flow agrees with `.claude/knowledge/execution/ticket-routing.md`;

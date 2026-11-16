@@ -46,7 +46,7 @@ Each `IssueInput`:
 - `csvRow` — the failing test case's authored row: `Steps`, `Assertions`,
   `Test_Data`, `Preconditions`, `References`, `Automation_Status`. This is what
   tells a *test* defect from a *product* defect.
-- `source` — `regression` (above) or `checklist`: a `/qa-test` / `/qa-test-fast`
+- `source` — `regression` (above) or `checklist`: a `/qa-test`
   checklist item, collected with `<plugin>/lib/triage-collect.mjs --ticket`. For `checklist`,
   `csvRow` is the checklist row (`Condition`, `Expected`, `Oracle`, `Data`,
   `Result` — whatever that table's headers are), `trace` is null, and the

@@ -136,7 +136,7 @@ When you run a feature, PR-review, module, release or bug-fix-verification workf
 **Test Case Review Approval (ISTQB peer-review gate — your authority):**
 - **APPROVE the promotion flip:** `/qa-review-tests` verdict ≥ PASS WITH WARNINGS, zero Blockers, any Criticals are justified (e.g., known-env limitation), **every assertion grounded** (Dimension 10 / GRD-*: no `{HYPOTHESIS}`/untagged; a new-feature suite has passed `--verify` upgrading its assertions to `{OBSERVED}`), spot-check confirms requirement traceability / independence / P+N+B mix. **Target status:** a case that **ran green under the automated regression runner** (a `/qa-test` Step-4 `/qa-regression` run) is promoted `Draft → Automated`; a case verified only via a manual checklist → `Draft → Reviewed`/`Manual`.
 - **REJECT:** Blockers present, or traceability/independence/technique-coverage spot-check fails — send back to test-management-specialist with specific findings to address
-- **Scope:** only you (or the user) can promote cases. test-management-specialist authors cases and reviews them but never self-promotes. **The flip happens in `qa-case-promotion` or `/qa-regression` Step 6.5, never inside `/qa-test`** (whose `5g` gate was removed 2026-09-10) — and only after *you* (a fresh verifier instance, §Verifier Mode) re-derive G10 from the CSV and the user confirms, so the author never self-certifies; a non-promotable row is reverted out of the suite, never left ungrounded.
+- **Scope:** only you (or the user) can promote cases. test-management-specialist authors cases and reviews them but never self-promotes. **The flip happens in `qa-case-promotion` or `/qa-regression` Step 6.5, never inside `/qa-test`** (which writes no case) — and only after *you* (a fresh verifier instance, §Verifier Mode) re-derive G10 from the CSV and the user confirms, so the author never self-certifies; a non-promotable row is reverted out of the suite, never left ungrounded.
 
 ---
 
@@ -173,11 +173,11 @@ BLOCK ❌      → REOPEN with detailed failure summary
 - High pass rate but critical flow not tested → incomplete coverage
 - Bugs found but no JIRA tickets created → request bug filing
 - Ticket/feature/PR report with zero out-of-scope observations and no discovery-pass note → likely script-only execution; send back for the always-on all-layer pass (shared-instructions §Always-On Bug Detection)
-- A **standalone** `/qa-regression` of a maintained suite ran cases still at `Automation_Status = Draft` → the review gate was bypassed; pause, run `/qa-review-tests`, re-execute only promoted cases. **(Not a red flag inside `/qa-test`:** its Step-3 cases are authored, reviewed and run as `Draft` by design, so a later `/qa-test-lifecycle` pass grounds them and flips `Draft → Automated`.)
+- A **standalone** `/qa-regression` of a maintained suite ran cases still at `Automation_Status = Draft` → the review gate was bypassed; pause, run `/qa-review-tests`, re-execute only promoted cases.
 
-### Verifier Mode — Independent Per-Step Gate (`/qa-test`)
+### Verifier Mode — Independent Per-Step Gate
 
-When dispatched as an independent step verifier (`/qa-test` gates, `qa-case-promotion`), read `knowledge/agents/qa/qa-lead-orchestrator-verifier-mode.md` §Verifier Mode first. **When in doubt, REJECT.**
+When dispatched as an independent step verifier (`qa-case-promotion`), read `knowledge/agents/qa/qa-lead-orchestrator-verifier-mode.md` §Verifier Mode first. **When in doubt, REJECT.**
 
 ### Escalation Triggers (in addition to shared triggers)
 

@@ -1,0 +1,19 @@
+{
+  "pass": 1,
+  "env": "vcst",
+  "prUnderTest": "VirtoCommerce/vc-module-sales-rep#29",
+  "prBuild": "VirtoCommerce.SalesRep_3.1017.0-pr-29-975c",
+  "runningBuild": "SalesRep 3.1018.0-pr-33-04e4 (VCST-6157 pin)",
+  "deployPR": null,
+  "blocker": "needs a pin decision: VCST-6157 (Ready for test) uses the SalesRep -pr-33 pin",
+  "baseline": "cited: ticket description (Development-env startup error, not reproducible on QA stand)",
+  "jiraComments": {
+    "pass1": "112718"
+  },
+  "skipped": [
+    "Step 0.2 /qa-env-check endpoints \u2014 curl from the device VM cannot reach the stand (egress); storefront reachability checked in the built-in browser instead, admin /connect/token not run (no sign-in from automation)",
+    "Step 3-7 \u2014 not reached: Step 2 deploy gate = NOT deployed",
+    "Step 2A Phase A live repro \u2014 startup DI-validation error appears only in Development env"
+  ],
+  "updated": "2026-11-05"
+}

@@ -7,6 +7,23 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/ensure-deps.mjs\"",
             "timeout": 150
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scrub-har.mjs\"",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__playwright-[a-z0-9-]+__browser_close",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scrub-har.mjs\"",
+            "timeout": 120
           }
         ]
       }

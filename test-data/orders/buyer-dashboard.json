@@ -1,0 +1,167 @@
+{
+  "_meta": {
+    "ticket": "VCST-6078",
+    "purpose": "Buyer /account/dashboard statistics (X-Frontend orderStatistics: token customer + token org, store filter, !IsCancelled && !IsPrototype, per-currency fold, unconfigured currency -> excludedCount) + My recent orders.",
+    "seeder": "scripts/seed-data/orders/seed-buyer-dashboard.mjs (npm run seed:buyer-dashboard)",
+    "guard": "scripts/seed-data/orders/validate-buyer-dashboard-data.mjs (npm run td:validate:buyer-dashboard)",
+    "createdDateLimit": "CustomerOrder.createdDate is server-assigned (KB-971BC129): every order lands at the seed instant. Past windows (last week, last month, last year) cannot be populated, so on the storefront every delta has a zero baseline and is not shown. Period-over-period divergence is carried by two creation WAVES (prev, cur) whose real instants the seeder writes to aliases.<env>.json; orderStatistics comparison(current, previous) over those instants is where count and revenue changes disagree.",
+    "expected": "Every expected block is DERIVED by buyer-dashboard-specs.mjs expectedFigures() and checked against these declared values by the guard; edit an order and the guard tells you which expectation moved.",
+    "noRuntimeIds": "No GUID, createdDate or order id lives here: they are written to test-data/aliases.<env>.json by the seeder.",
+    "layout": "The account-dashboard layout (X-Frontend saveLayout, scope accountDashboard) is a CustomerPreference Layout.accountDashboard[.{storeId}] on the buyer's ApplicationUser (KB-AC688064). The seeder deletes it for EVERY buyer on each (re)seed and at teardown, so each starts never-saved. Only the buyer flagged layoutDisposable (LAYOUT) may have its layout changed by a case.",
+    "demoTargets": "Opt-in orders for an EXISTING env persona (resolved from {{emailVar}} / {{passwordVar}}; its org is the org of its storefront token). Seeded ONLY by --only <KEY>, removed by --teardown --only <KEY>; the persona, its org and its carts are never created, changed or deleted. Not part of the default seed."
+  },
+  "orderPrefix": "AGENT-TEST-BD-",
+  "unconfiguredCurrency": { "code": "XTS", "name": "AGENT-TEST unconfigured currency (ISO 4217 test code)", "exchangeRate": 1, "symbol": "XTS" },
+  "orgs": {
+    "STATS": "AGENT-TEST-BD-Org-Stats",
+    "LARGE": "AGENT-TEST-BD-Org-Large",
+    "EUR": "AGENT-TEST-BD-Org-Eur",
+    "TWOSTORE": "AGENT-TEST-BD-Org-TwoStore",
+    "UNCFG": "AGENT-TEST-BD-Org-Uncfg",
+    "LAYOUT": "AGENT-TEST-BD-Org-Layout",
+    "AUX": "AGENT-TEST-BD-Org-Aux"
+  },
+  "buyers": {
+    "STATS": {
+      "email": "agent-test-bd-stats@test-agent.com",
+      "firstName": "AGENT-TEST", "lastName": "BD Stats",
+      "passwordVar": "DEFAULT_TEST_PASSWORD",
+      "org": "STATS", "role": "org-maintainer", "currency": "USD",
+      "orders": [
+        { "key": "STATS-P1", "wave": "prev", "store": "B2B-store", "org": "member", "currency": "USD", "total": 410.25, "status": "New" },
+        { "key": "STATS-P2", "wave": "prev", "store": "B2B-store", "org": "member", "currency": "USD", "total": 490.50, "status": "Processing" },
+        { "key": "STATS-C1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 120.15, "status": "New" },
+        { "key": "STATS-C2", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 79.30, "status": "Completed" },
+        { "key": "STATS-CSTATUS", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 100.55, "status": "Cancelled", "isCancelled": false },
+        { "key": "STATS-CFLAG", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 7777.77, "status": "Cancelled", "isCancelled": true },
+        { "key": "STATS-CPROTO", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 3333.33, "status": "New", "isPrototype": true },
+        { "key": "STATS-COFFORG", "wave": "cur", "store": "B2B-store", "org": "none", "currency": "USD", "total": 2468.02, "status": "New" }
+      ],
+      "expected": {
+        "store": "B2B-store", "currency": "USD",
+        "today": { "count": 5, "total": 1200.75, "average": 240.15, "excludedCount": 0 },
+        "allStores": { "count": 5, "total": 1200.75 },
+        "comparison": { "previous": { "count": 2, "total": 900.75 }, "current": { "count": 3, "total": 300.00 }, "countChange": 1, "countChangePercent": 50, "totalChange": -600.75, "totalChangePercent": -66.69 }
+      }
+    },
+    "LARGE": {
+      "email": "agent-test-bd-large@test-agent.com",
+      "firstName": "AGENT-TEST", "lastName": "BD Large",
+      "passwordVar": "DEFAULT_TEST_PASSWORD",
+      "org": "LARGE", "role": "org-maintainer", "currency": "USD",
+      "orders": [
+        { "key": "LARGE-1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 13473654.86, "status": "New" },
+        { "key": "LARGE-2", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 1026345.14, "status": "Processing" }
+      ],
+      "expected": {
+        "store": "B2B-store", "currency": "USD",
+        "today": { "count": 2, "total": 14500000.00, "average": 7250000.00, "excludedCount": 0 },
+        "allStores": { "count": 2, "total": 14500000.00 }
+      }
+    },
+    "EUR": {
+      "email": "agent-test-bd-eur@test-agent.com",
+      "firstName": "AGENT-TEST", "lastName": "BD Eur",
+      "passwordVar": "DEFAULT_TEST_PASSWORD",
+      "org": "EUR", "role": "org-maintainer", "currency": "EUR",
+      "orders": [
+        { "key": "EUR-E1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "EUR", "total": 250.00, "status": "New" },
+        { "key": "EUR-E2", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "EUR", "total": 99.99, "status": "Processing" },
+        { "key": "EUR-U1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 310.00, "status": "New" }
+      ],
+      "expected": {
+        "store": "B2B-store", "currency": "USD",
+        "fxNote": "EUR->USD by the platform exchangeRate read live at seed time (Money.ConvertTo); declared figures assume rate 1.24 and the guard re-derives them from expected.fxRate.",
+        "fxRate": 1.24,
+        "today": { "count": 3, "total": 743.99, "average": 248.00, "excludedCount": 0 },
+        "todayInEur": { "count": 3, "total": 599.99, "average": 200.00, "excludedCount": 0 },
+        "allStores": { "count": 3, "total": 743.99 }
+      }
+    },
+    "TWOSTORE": {
+      "email": "agent-test-bd-twostore@test-agent.com",
+      "firstName": "AGENT-TEST", "lastName": "BD TwoStore",
+      "passwordVar": "DEFAULT_TEST_PASSWORD",
+      "org": "TWOSTORE", "role": "org-maintainer", "currency": "USD",
+      "secondStore": "New-super",
+      "orders": [
+        { "key": "TWO-B1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 250.40, "status": "New" },
+        { "key": "TWO-B2", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 149.60, "status": "Processing" },
+        { "key": "TWO-N1", "wave": "cur", "store": "New-super", "org": "member", "currency": "USD", "total": 9100.90, "status": "New" }
+      ],
+      "expected": {
+        "store": "B2B-store", "currency": "USD",
+        "today": { "count": 2, "total": 400.00, "average": 200.00, "excludedCount": 0 },
+        "allStores": { "count": 3, "total": 9500.90 }
+      }
+    },
+    "NOORG": {
+      "email": "agent-test-bd-noorg@test-agent.com",
+      "firstName": "AGENT-TEST", "lastName": "BD NoOrg",
+      "passwordVar": "DEFAULT_TEST_PASSWORD",
+      "org": null, "role": null, "currency": "USD",
+      "orders": [
+        { "key": "NOORG-1", "wave": "cur", "store": "B2B-store", "org": "none", "currency": "USD", "total": 64.20, "status": "New" },
+        { "key": "NOORG-2", "wave": "cur", "store": "B2B-store", "org": "none", "currency": "USD", "total": 135.80, "status": "Completed" },
+        { "key": "NOORG-AUX", "wave": "cur", "store": "B2B-store", "org": "AUX", "currency": "USD", "total": 1000.01, "status": "New" }
+      ],
+      "expected": {
+        "store": "B2B-store", "currency": "USD",
+        "scopeNote": "README: orders of the current user, in the token organization WHEN THERE IS ONE; no token org => no organization filter (OrderStatisticsQueryHandler: OrganizationIds = null). The AUX-org order is therefore counted. A build that filters organizationId == null would show 2 / 200.00.",
+        "today": { "count": 3, "total": 1200.01, "average": 400.00, "excludedCount": 0 },
+        "allStores": { "count": 3, "total": 1200.01 }
+      }
+    },
+    "UNCFG": {
+      "email": "agent-test-bd-uncfg@test-agent.com",
+      "firstName": "AGENT-TEST", "lastName": "BD Uncfg",
+      "passwordVar": "DEFAULT_TEST_PASSWORD",
+      "org": "UNCFG", "role": "org-maintainer", "currency": "USD",
+      "orders": [
+        { "key": "UNCFG-U1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 42.42, "status": "New" },
+        { "key": "UNCFG-X1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "XTS", "total": 58.58, "status": "New" }
+      ],
+      "expected": {
+        "store": "B2B-store", "currency": "USD",
+        "today": { "count": 1, "total": 42.42, "average": 42.42, "excludedCount": 1, "excludedCurrencies": ["XTS"] },
+        "allStores": { "count": 1, "total": 42.42 }
+      }
+    },
+    "LAYOUT": {
+      "email": "agent-test-bd-layout@test-agent.com",
+      "firstName": "AGENT-TEST", "lastName": "BD Layout",
+      "passwordVar": "DEFAULT_TEST_PASSWORD",
+      "org": "LAYOUT", "role": "org-maintainer", "currency": "USD",
+      "layoutDisposable": true,
+      "orders": [
+        { "key": "LAYOUT-N1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 215.10, "status": "New" },
+        { "key": "LAYOUT-N2", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 118.90, "status": "New" },
+        { "key": "LAYOUT-P1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 325.20, "status": "Processing" },
+        { "key": "LAYOUT-N3", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 141.80, "status": "New" },
+        { "key": "LAYOUT-D1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 435.30, "status": "Completed" },
+        { "key": "LAYOUT-X1", "wave": "cur", "store": "B2B-store", "org": "member", "currency": "USD", "total": 104.40, "status": "Cancelled", "isCancelled": false }
+      ],
+      "expected": {
+        "store": "B2B-store", "currency": "USD",
+        "statuses": ["Cancelled", "Completed", "New", "Processing"],
+        "layoutNote": "Disposable layout buyer: the ONLY buyer whose saved account-dashboard layout a case may change (status checkboxes, hidden cards, Max rows). Orders span New (3) / Processing (exactly 1, ORD-DASH-033 moves it) / Completed / Cancelled (status-only; IsCancelled=false, so it still counts) so the status facet offers every tab.",
+        "today": { "count": 6, "total": 1340.70, "average": 223.45, "excludedCount": 0 },
+        "allStores": { "count": 6, "total": 1340.70 }
+      }
+    }
+  },
+  "demoTargets": {
+    "JOHN_DEMO": {
+      "purpose": "Make the primary env buyer's own dashboard show non-zero WEEK / MTD for a demo: three plain New USD orders in B2B-store, stamped with the buyer's user id and token org. WEEK/MTD hold for the seed week / month only (createdDate is the seed instant).",
+      "emailVar": "USER_EMAIL", "passwordVar": "USER_PASSWORD",
+      "orderPrefix": "AGENT-TEST-6078-DEMO-",
+      "store": "B2B-store", "currency": "USD", "org": "token",
+      "orders": [
+        { "key": "1", "total": 120.50, "status": "New" },
+        { "key": "2", "total": 245.75, "status": "New" },
+        { "key": "3", "total": 389.00, "status": "New" }
+      ],
+      "expected": { "added": { "count": 3, "total": 755.25, "average": 251.75 } }
+    }
+  }
+}
