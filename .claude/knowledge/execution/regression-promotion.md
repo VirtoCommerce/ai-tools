@@ -19,7 +19,7 @@ was never recorded.
 |---|---|
 | `npm run tc:promote -- [RUN_ID\|latest] [--suite <ID>] [--ids <IDs>]` | dry run: print the per-case decision and the reason for every hold |
 | `npm run tc:promote:apply -- <RUN_ID> [--suite <ID>] [--ids <IDs>]` | write the CSVs, then `suites:sync` + `suites:lint` |
-| `… -- --ids <IDs>` | restrict to these case ids — a **scope, never a gate**: every `PR-*` rule still runs on what it leaves. A multi-round `--iterate` close-out needs it, because a case is promotable from the run that EXECUTED it, so it promotes once per RUN_ID |
+| `… -- --ids <IDs>` | restrict to these case ids — a **scope, never a gate**: every `PR-*` rule still runs on what it leaves. A ticket re-tested over several runs needs it, because a case is promotable from the run that EXECUTED it, so it promotes once per RUN_ID |
 | `… -- --min-green-runs <N>` | require N trailing green runs, not just this one |
 | `… -- --stamp VCST-1234` | stamp `References` with a ticket key instead of the RUN_ID |
 | `… -- --json` | machine-readable decisions, for a skill to relay |
@@ -77,7 +77,7 @@ hand-editing the cell:**
 | Caller | When | Reaches |
 |---|---|---|
 | `/qa-regression` **Step 6.5** | after every **directly invoked** run, against the `RUN_ID` it just produced — dry by default, applied on `--promote`, skipped on `--no-promote` (what a `/qa-test`-delegated run passes) | `Automated`, for cases already grounded. It does no assertion harvest: a `{HYPOTHESIS}` row holds at `PR-007` and is routed to `qa-case-promotion` |
-| **`qa-case-promotion`** | handoff, re-promotion, legacy sources, and the `Draft` cases a `/qa-test` run left behind | `Reviewed` always; `Automated` too when given `--run-id`. The full path — harvest, G10 re-derivation, `verify:gate --gate 5g` ratification (§The full procedure) |
+| **`qa-case-promotion`** | handoff, re-promotion, legacy sources, and the `Draft` cases a `/qa-test-lifecycle` pass wrote | `Reviewed` always; `Automated` too when given `--run-id`. The full path — harvest, G10 re-derivation, `verify:gate --gate 5g` ratification (§The full procedure) |
 
 ## The full procedure — `qa-case-promotion` against a completed `RUN_ID`
 
@@ -89,7 +89,7 @@ hand-editing the cell:**
 
 **Promote per `RUN_ID`, `--ids`-scoped to the cases that run actually executed.** `tc:promote` reads
 `Draft` and writes `Automated` and can **never re-promote**, so a premature flip is irreversible and would
-ground `{OBSERVED}` in a build that was wrong. For a `/qa-test --iterate` run, that means the FINAL round's
+ground `{OBSERVED}` in a build that was wrong. For a ticket tested over several rounds, that means the FINAL round's
 evidence: only the last round describes the code a human is being asked to ship.
 
 The cases are in the suite as `Draft`, grounded and promotable only once a run has executed them live via

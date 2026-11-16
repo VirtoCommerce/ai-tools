@@ -75,7 +75,7 @@ STOPs are this run's; on a host-governed project it reads through the host's ser
 `node <plugin>/lib/keep-prepare.mjs --prepare <prepare_path> --key <TICKET>` → `PREPARE` (none if cached). Round 1,
 without `--full`: `node <plugin>/lib/route.mjs --bundle <BUNDLE> [--prepare <PREPARE>]` (the change's shape; the
 diffs in `PREPARE` let it see a page git records as a rename). `technical-change` ⇒ STOP:
-print its `reason` and its `shape.signals`, name `next` (the scoped regression plus the sync of the existing cases), and
+print its `reason` and its `shape.signals`, name `next` (`/qa-test <KEY>` for the scoped regression, then `/qa-test-lifecycle <KEY>` for the case sync), and
 say `--full` runs the scenario hunt anyway. A `NOT DEPLOYED:` line in `blockers[]` ⇒ BLOCKED on deploy: write
 `verdict.md` with it and stop. The bundle's `acs` empty, or a blocker / gap naming a component no PR touches ⇒ print
 "Looks like a ticket for `/vc-test:qa-goal` (no ACs / unlinked component)" and continue; never start it.

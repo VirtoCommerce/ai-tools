@@ -41,7 +41,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 <!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL:<PIXEL|DESIGN|PROBE|CONTENT>, several comma-separated as VISUAL:DESIGN,PIXEL (floors.md §VISUAL) · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
 <!-- account: a test-user KEY · guest · deny:<permission> <KEY|P-n> — that member without the permission (F13) · spec (a committed .spec) · P-n when the stand has none · several joined by + (floors.md §15). -->
 
-<!-- VC-TEST ONLY — delete outside vc-test: a /qa-test or /qa-test-fast strategy drops this whole block (the heading,
+<!-- VC-TEST ONLY — delete outside vc-test: a /qa-test strategy drops this whole block (the heading,
      the table and this comment). Under vc-test it is required (clause 13, floors.md §13); the list is generated before
      the risks, so add the R-n to Why likely. -->
 ### Scenarios
@@ -72,7 +72,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 | Case authoring | never in the run (D2) — candidate cases are listed at close-out |
 
 ### Data
-<per risk or global: existing @td() alias · live-discover · create in the case (FIFTH RULE) · seeder named by a Data cell>
+<per risk or global: existing @td() alias · live-discover · create in the case (FIFTH RULE) · seeder named by a Data cell · FIXTURE-GAP: <the state no source reaches>>
 Must differ: <which values must differ for R-n to be decidable> · Before redeploy: <records to create on the old build, or none>
 
 ### Out of scope

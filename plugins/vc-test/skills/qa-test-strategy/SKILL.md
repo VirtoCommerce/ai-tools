@@ -17,7 +17,7 @@ Why this shape (HTSM, ISTQB, ISO/IEC/IEEE 29119-3, agent research):
 | The floors, the staleness check, the depth label, clause 15 (the account per risk) | [`floors.md`](floors.md) |
 | Rounds: what counts, the cap of three, what round N reads from N−1 | [`rounds.md`](rounds.md) |
 | The file's shape | [`template.md`](template.md) |
-| How it is entered: from `/qa-test-fast`, or standalone | [`entry.md`](entry.md) |
+| How it is entered: from `/qa-test`, or standalone | [`entry.md`](entry.md) |
 | Reconcile at close-out (the caller's step) | [`reconcile.md`](reconcile.md) |
 
 ## Who chooses — the orchestrator, inline
@@ -27,7 +27,7 @@ The orchestrator that gathered the context writes the strategy, or hands one age
 fact is silently dropped (in this repository: `.claude/knowledge/execution/regression-suites.md` §Working concurrently on suites).
 Independence belongs at the **check**, not the choice: the user approves, a verifier re-derives the gate when a risk is Critical, and other agents execute.
 
-How a caller enters it — from `/qa-test-fast`, or standalone — is [`entry.md`](entry.md).
+How a caller enters it — from `/qa-test`, or standalone — is [`entry.md`](entry.md).
 
 ## Inputs
 
@@ -105,8 +105,10 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    | Verifier | any Critical risk |
    | Case authoring | **never in the run** (D2) — passing items no suite case covers become `candidate cases` for `/qa-test-lifecycle` |
 
-10. **Data** — per risk: an existing `@td()` alias, `live-discover`, created in the case, or a seeder a
-   Data cell names. Name the values that must **differ** for the risk to be decidable
+10. **Data** — per risk, cheapest first: an existing `@td()` alias or `live-discover`, created in the case, or
+   an existing seeder a Data cell names. **None of these reaches the state ⇒ the risk's Data is
+   `FIXTURE-GAP: <the state no source reaches>`** — never an invented alias, never a seeder written in the
+   run. Name the values that must **differ** for the risk to be decidable
    ([`test-data.md`](../../knowledge/test-data.md) SECOND RULE); a state the environment can take
    away is created in the case (FIFTH RULE). Name any record that must be created **before** a redeploy.
 11. **Out of scope** — what is not tested, why, and the residual risk. In round 3 this list is the
@@ -170,7 +172,9 @@ no risk on it below Medium, F7's F5 on, F8's token audit, that `floor:F10`'s ris
    <path> [--change-map <path>] [--capabilities <path>]` — never your floors output. On `REJECT`: apply its
    FIX, re-run the gate, dispatch once more; a second `REJECT` ⇒ **STOP** for a human, before step 2.
 2. **Ask the user once** (AskUserQuestion): the mission, the risk table, the artifacts table, the
-   out-of-scope list and the depth label — not the whole file — plus its path. Options: *Approve* ·
+   out-of-scope list, every `FIXTURE-GAP` risk (step 10) and the depth label — not the whole file — plus its
+   path. A caller may add answers for the gaps (`/qa-test`: seed first, or approve them `BLOCKED —
+   FIXTURE-GAP` in Out of scope); with none, an approved gap is `BLOCKED — FIXTURE-GAP`. Options: *Approve* ·
    *Change* (free text). A change is applied, the gate re-run, and the question asked again. On *Approve*, set
    the section's `Status:` to `APPROVED (<who>, <date>)`, or `CHANGED (<n> edits)` when changes were applied
    first — a later run on the same build finds the approved file by that line.
@@ -180,7 +184,7 @@ no risk on it below Medium, F7's F5 on, F8's token audit, that `floor:F10`'s ris
 Nothing in this step writes to the tracker. **After approval the strategy is a contract:** a risk the run
 discovers, or an approach that has to change, is appended to the round's Amendments with its reason.
 
-## Reconcile — at close-out, before the verdict (used by `/qa-test-fast` Stage 3, and the single `/qa-test` next)
+## Reconcile — at close-out, before the verdict (used by `/qa-test` Stage 5)
 
 The caller's close-out steps: [`reconcile.md`](reconcile.md).
 

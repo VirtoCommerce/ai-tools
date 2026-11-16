@@ -9,7 +9,7 @@
 
 Every technique reference in a Test Model scenario row, and every `Technique:` stamp in a suite
 row's `References`, uses one of these tokens. This table is the single source of truth: the
-`/qa-test` Step 1e model reads it, and `append-test-cases-to-suite.ts` validates against it at
+`/qa-test-model` model reads it, and `append-test-cases-to-suite.ts` validates against it at
 run time (never against a hardcoded list).
 
 | Token | Technique | Section |
@@ -391,7 +391,7 @@ Three consequences that bind when you author:
 3. **The parameter model is the artifact that matters, not the case list.** The interaction rule
    is a statement about parameters, their value classes, and the constraints that make some
    combinations infeasible. If the model is wrong, `t`-way coverage over it means nothing — so
-   review the model first, then generate. This is why `/qa-test` Step 1e requires a
+   review the model first, then generate. This is why `/qa-test-model` requires a
    `Condition space` line before it will accept a scenario table.
 
 **When to use:** Cross-browser testing matrices, configuration testing, permission matrices

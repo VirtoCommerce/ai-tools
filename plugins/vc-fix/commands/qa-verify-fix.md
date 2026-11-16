@@ -88,8 +88,8 @@ Reference `tracker-ops.md` / `project-profile.mjs` — don't restate their conte
    §The run folder: `node "$pluginRoot/scripts/env/run-folder.mjs" use <ticket-key> <env>` when the arguments
    name an env, else `… use <ticket-key>`. Every script below then resolves the env; the output fills each
    brief's environment line, prints `RUN_DIR=…` and lists the ticket's prior run folders. **Run inline by
-   `/qa-test`** ⇒ do not bind: for its own ticket the run folder is that run's; for another ticket (a per-bug
-   verify in `--iterate`) take `node "$pluginRoot/scripts/env/run-folder.mjs" dir --ticket <ticket-key>`.
+   another command** ⇒ do not bind: for its own ticket the run folder is that run's; for another ticket take
+   `node "$pluginRoot/scripts/env/run-folder.mjs" dir --ticket <ticket-key>`.
 1. **`{RUN_DIR}`** is that folder. Every output path below is inside it.
 2. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user — fix may not be deployed or env may be stale.
 3. **Duplicate check** — scan `{RUN_DIR}` for a verification run in the last 4 hours. If found, warn user and show previous verdict.

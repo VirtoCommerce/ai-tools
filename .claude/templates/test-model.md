@@ -1,4 +1,4 @@
-# Test Model template — `/qa-test` Step 1e
+# Test Model template — `/qa-test` Stage 3
 
 Fill-in shape for the durable Test Model written to `{RUN_DIR}/test-model.md`, the ticket's run folder
 (`.claude/rules/reports.md` category 3; promoted by hand as `reports/ba/test-models/<TICKET>-<date>.md`). **The line cap is the `reports-policy.md` §2 row — read it
@@ -12,8 +12,8 @@ in.** This file is the shape only, so it can be copied without carrying the argu
 
 ```
 TEST MODEL — <ticket-key>
-Ticket:      <ticket-key> | Type: Bug/Story/Task/Technical task/Sub-task/Epic | Status role: fix-ready/not-fixed/testable | Flow: feature-test | Priority: P0/P1/P2 | Path: FULL | Changed: Backend / Frontend / Both
-Context:     [FULL: ba-system-analyzer | FAST/inline]
+Ticket:      <ticket-key> | Type: Bug/Story/Task/Technical task/Sub-task/Epic | Status role: fix-ready/not-fixed/testable | Job: test | Priority: P0/P1/P2 | Changed: Backend / Frontend / Both
+Context:     [the /vc-test:ticket-context bundle path]
 Prior model: [reports/ba/test-models/<PREDECESSOR>-<date>.md — the newest model for THIS surface, whose
              Part 0 is carried forward below (chain, diagrams, variants, reverse edges), with any
              correction recorded as drift against it | none — first model for this surface]
@@ -27,8 +27,8 @@ Chain position: [this ticket's chain as a SLICE of the domain chain — the link
              | "unverified — no domain map"]
 Affected surface: [module(s)/repo(s), layer(s), code sites — every one must resolve to a surface the
              domain map enumerates, or be reported as a surface the map is MISSING (clause 11b)]
-Ticket signals: [load-bearing facts from COMMENTS + ATTACHMENTS — real repro, PO/dev clarifications, "fixed in build X"/reopen notes, prior QA findings; screenshot expected-vs-actual, design mockup ref, log/HAR repro]   (from 1a)
-Epic context: [parent Epic + goal; this story's position in the E2E flow; Done siblings = integration seams to cover; In-progress siblings = dependencies/blockers]   (from 1a; "none" if no parent)
+Ticket signals: [load-bearing facts from COMMENTS + ATTACHMENTS — real repro, PO/dev clarifications, "fixed in build X"/reopen notes, prior QA findings; screenshot expected-vs-actual, design mockup ref, log/HAR repro]   (from the context bundle)
+Epic context: [parent Epic + goal; this story's position in the E2E flow; Done siblings = integration seams to cover; In-progress siblings = dependencies/blockers]   (from the context bundle; "none" if no parent)
 Domains:     [Cart, Payment, ...]
 Flows & boundaries: [cart ↔ checkout, ...]
 Risk areas:  [VC-* pain points / historical failures]
@@ -104,10 +104,11 @@ Test scenarios (M rows)
 
 ## Companion: the authoring plan
 
-Step `1e-plan` emits the `Test scenarios` rows as one **authoring plan JSON per target suite** so the
-design decision is machine-checked before any case is written. Shape: the `Plan` interface at the top of
+When `/qa-test-lifecycle` authors cases from this model, `qa-test-cases-generator` emits the `Test scenarios` rows as one
+**authoring plan JSON per target suite** so the design decision is machine-checked before any case is written (`/qa-test`
+itself writes none). Shape: the `Plan` interface at the top of
 [`scripts/test-cases/scaffold-rows.ts`](../../scripts/test-cases/scaffold-rows.ts); gate and rationale in
-[`.claude/skills/qa-test/authoring.md`](../skills/qa-test/authoring.md).
+[`.claude/knowledge/execution/regression-scaffold.md`](../knowledge/execution/regression-scaffold.md).
 
 ```json
 {

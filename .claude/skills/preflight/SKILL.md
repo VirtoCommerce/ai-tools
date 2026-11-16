@@ -1,7 +1,7 @@
 ---
 name: preflight
-description: "Environment and build pre-flight before work against a stand: env health, deployed build, MCP availability, one output form. Use at the start of /qa-test, /qa-test-fast, /qa-exploratory, /qa-test-lifecycle, /qa-domain-map, /ba-analyze, /qa-regression, /qa-smoke. Not for the /qa-test axes 2b–2g, ticket fetching or routing, or per-case [PRE:*] tags."
-argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--env <env>] [--storefront] [--ci]  |  <regression|smoke> <selection: name or ids> [--run-id <RUN_ID>] [--preflight-out <run-folder>/preflight.json] [--accept drift:<id>,…] [--ci]"
+description: "Environment and build pre-flight before work against a stand: env health, deployed build, MCP availability, one output form. Use at the start of /qa-test, /qa-exploratory, /qa-test-lifecycle, /qa-domain-map, /ba-analyze, /qa-regression, /qa-smoke. Not for the /qa-test strategy, ticket fetching or routing, or per-case [PRE:*] tags."
+argument-hint: "<ticket|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--env <env>] [--storefront] [--ci]  |  <regression|smoke> <selection: name or ids> [--run-id <RUN_ID>] [--preflight-out <run-folder>/preflight.json] [--accept drift:<id>,…] [--ci]"
 ---
 
 # /preflight — is this stand fit for the work, and what does it run?
@@ -26,7 +26,7 @@ npm run preflight -- --for <for> [--ticket KEY] [--components A,B] [--domain slu
   `deployed` plus `--expect` read the build off the stand.
 - `--ci` — this skill's own flag (the caller is non-interactive, step 4); never pass it to the CLI, which rejects an unknown flag with exit `1`.
 - Exit `0` READY (warnings allowed) · `2` NOT READY · `1` usage error — fix the flags · `3` the script could not run: report its message and STOP, never improvise the facts by hand.
-- The verdict counts BLOCKs only: `UNKNOWN` rows are listed and counted but do not by themselves make a run NOT READY. The exception is `ticket` / `ticket-fast`: an `--expect` whose deployed state is `UNKNOWN` is a BLOCK.
+- The verdict counts BLOCKs only: `UNKNOWN` rows are listed and counted but do not by themselves make a run NOT READY. The exception is `ticket`: an `--expect` whose deployed state is `UNKNOWN` is a BLOCK.
 
 Keep the JSON; the consumer stores it as the `preflight` block of its `summary.json` or report header. Step 4 re-runs the CLI without `--json` for display (the CLI prints one or the other, never both); if its verdict or rows differ from this run's (a deploy landed), run this step again and store that JSON.
 
@@ -73,7 +73,7 @@ predicted is a missing entry in `config/suite-requirements.json`: add it with th
 
 The CLI sees `.mcp.json` only (levels 1–2; it also matches a server's `mcpKeys` aliases). For every server the consumer marks `REQ` or
 `REQ_FALLBACK` in [`mcp-requirements.json`](mcp-requirements.json) — and every `OPT` server, whatever its
-`when` says (some conditions, like `/qa-test`'s `visual_surface`, are derived only after this skill returns; the consumer applies `when` to the recorded row) — run `ToolSearch` with the server's `toolSearch` query, then
+`when` says (some conditions, like `/qa-test`'s visual lane, are decided only after this skill returns; the consumer applies `when` to the recorded row) — run `ToolSearch` with the server's `toolSearch` query, then
 **one cheap read** through a returned tool: a call that lists or describes and starts nothing. For a browser lane
 (`"lane": true`) the ToolSearch hit is the evidence — any browser read launches a session another agent will need. Record per server
 `{server, level: CONNECTED | ABSENT, via: "mcp" | "fallback:<name>"}`.
@@ -162,5 +162,5 @@ rule, stated in the consumer — not here. One id is defined here because it is 
 
 ## Not this skill
 
-The `/qa-test` axes 2b–2g and its 2-map read · ticket fetch, classification and routing · the
+The `/qa-test` strategy and its domain-map read · ticket fetch, classification and routing · the
 per-case `[PRE:*]` tags ([`test-execution-preflight.md`](../../knowledge/execution/test-execution-preflight.md)).

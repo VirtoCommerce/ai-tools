@@ -33,11 +33,10 @@ deliver one conclusion — and left them to reconcile which version is current.
    shipped new builds, so the people waiting on them must be notified, and an edit notifies nobody. The
    earlier comment stays as that round's record. Name the build: `--artifact "<build under test>"`.
    Without an artifact, a comment older than 12 h (`TRACKER_ROUND_HOURS`) is presumed to be another
-   round. **Exception:** an autonomous `/qa-test --iterate` loop is one round by design and amends with
-   `--same-round "<reason>"` — **but only its own round DELTAS.** A comment that already holds a
-   **published verdict** (the full `QA Complete` template — e.g. round 1 ran without `--iterate` and the
-   loop was entered later) is that round's record: it is never amended across builds, `--same-round` or
-   not. The next round posts a **new** comment, which needs no override because a new build is a new
+   round. **Exception:** `--same-round "<reason>"` amends — **but only a round's own DELTAS** (a
+   "QA re-test — round N" comment, written to be replaced). A comment that already holds a
+   **published verdict** (the full `QA Complete` template) is that round's record: it is never amended across
+   builds, `--same-round` or not. The next round posts a **new** comment, which needs no override because a new build is a new
    round. Enforced by the helper (`VERDICT_OVERWRITE`, `scripts/tracker/round-guard.mjs`): a verdict is
    amendable only on a build **proven** equal to the one it reports.
 
@@ -59,9 +58,9 @@ variable Claude Code does not export), so a checkout was one run forever; `--ame
 and the MCP hooks matched one server name, so a claude.ai Atlassian connector bypassed them. Fixed in
 issue #360 — the round is now keyed on the build under test.
 
-**Measured 2026-10-08, VCST-6077 — rule 5's exception swallowing a verdict:** round 1 ran without
-`--iterate` and posted a full FAIL report with two inline screenshots (comment 111584). Re-entered as
-`--iterate` round 2, the exit round amended it with round 2's PASS WITH NOTES under `--same-round`, which
+**Measured 2026-10-08, VCST-6077 — rule 5's exception swallowing a verdict:** round 1 posted a full FAIL
+report with two inline screenshots (comment 111584). Re-entered as round 2 of an iterate loop (removed
+2026-11-13), the exit round amended it with round 2's PASS WITH NOTES under `--same-round`, which
 short-circuited every amend check — the RED→GREEN record and the images vanished, and an edit notifies
 nobody. The operator caught it; the round-1 body was restored and round 2 re-posted as its own comment.
 `--same-round` now cannot reach a published verdict (`VERDICT_OVERWRITE`).
@@ -236,8 +235,8 @@ guessing custom-field ids.
 
 ## 5b. Bug-filing relationship — To-fix row vs Link vs Standalone
 
-`/qa-test` Step 5-file handles a confirmed bug with one of three relationships to the ticket under test, set by
-that finding's **provenance** (5-triage). This is the contract `/qa-bug` follows when invoked with a relationship
+`/qa-test` Stage 5 (`close-out.md` §5-file) handles a confirmed bug with one of three relationships to the ticket under test, set by
+that finding's **provenance** (triage). This is the contract `/qa-bug` follows when invoked with a relationship
 context (`link-only:<existing-bug-key>`); a standalone `/qa-bug` call (no relationship context) is unaffected and
 keeps creating an ordinary Bug as today.
 
@@ -261,7 +260,7 @@ refuses the create call without a valid set and names what is missing.
 
 | Who found it | Labels |
 |---|---|
-| Claude, while testing a ticket (`/qa-test`, `/qa-test-fast`, exploratory) | `found-by-agent` + `found-in-testing` |
+| Claude, while testing a ticket (`/qa-test`, exploratory) | `found-by-agent` + `found-in-testing` |
 | Claude, in a regression run (`/qa-regression`, triage of a run) | `found-by-agent` + `found-in-regression` |
 | A person — the user saying "I found this, file it", a Teams/partner report | `reported-by-human` |
 

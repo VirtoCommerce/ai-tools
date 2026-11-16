@@ -5,7 +5,7 @@
 
 Every technique reference in a Test Model scenario row, and every `Technique:` stamp in a suite
 row's `References`, uses one of these tokens. This table is the single source of truth: the
-`/qa-test` Step 1e model reads it, and `append-test-cases-to-suite.ts` validates against it at
+`/qa-test-model` model reads it, and `append-test-cases-to-suite.ts` validates against it at
 run time (never against a hardcoded list).
 
 | Token | Technique | Section |
