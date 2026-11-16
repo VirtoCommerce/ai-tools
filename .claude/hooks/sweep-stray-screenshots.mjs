@@ -12,12 +12,18 @@
  * any such loose root image/HAR into the active run's screenshots folder after
  * each subagent (runner) and at session end.
  *
- * The repo keeps NO images in root by convention, so sweeping every loose root
- * *.png/*.jpg/*.jpeg/*.har is safe. Never touches subdirectories. Always exits
- * 0 — a hook must never fail the agent.
+ * Only files git does NOT track are swept. The vc-fix plugin runs this hook
+ * in every project the user opens, not just ai-tools, and a product repo may
+ * commit images in its root (vc-frontend's README `demo.jpg` was moved away,
+ * leaving it deleted in `git status`). A Playwright stray is never tracked, so
+ * skipping tracked files loses nothing. If the root is not a git work tree or
+ * git fails, nothing is swept: we cannot tell a stray from a committed file.
+ * Never touches subdirectories. Always exits 0 — a hook must never fail the
+ * agent.
  */
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
+import { execFileSync } from "node:child_process";
 import { readdirSync, existsSync, mkdirSync, renameSync, readFileSync, statSync } from "node:fs";
 
 const SWEEP_EXT = /\.(png|jpe?g|har)$/i;
@@ -27,9 +33,22 @@ try {
   const root = resolve(here, "..", "..");                    // repo root
 
   // Loose image/HAR files directly in root (non-recursive).
-  const strays = readdirSync(root, { withFileTypes: true })
+  const candidates = readdirSync(root, { withFileTypes: true })
     .filter((e) => e.isFile() && SWEEP_EXT.test(e.name))
     .map((e) => e.name);
+
+  if (candidates.length === 0) process.exit(0);
+
+  // Skip anything git tracks. Throws (→ outer catch → exit 0, nothing moved)
+  // when root is not a git work tree or git is unavailable.
+  const tracked = new Set(
+    execFileSync("git", ["ls-files", "-z", "--", ...candidates], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).split("\0"),
+  );
+  const strays = candidates.filter((name) => !tracked.has(name));
 
   if (strays.length === 0) process.exit(0);
 
