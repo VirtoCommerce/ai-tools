@@ -29,7 +29,7 @@ import {
   collectDeclarations, findPasswordConflicts, findDestructiveOverlaps, findUndeclaredVars,
 } from './credential-specs.mjs';
 import { USER_ROLES } from '../lib/user-roles.mjs';
-import { STORE_EXAMPLE, STORE_FILE, accountVars, readStore, storeValues } from '../lib/test-accounts.mjs';
+import { STORE_FILE, accountVars, readStore, storeValues } from '../lib/test-accounts.mjs';
 import { SEEDED_ACCOUNTS as OTP_ACCOUNTS, PASSWORD_VAR as OTP_PASSWORD_VAR } from './auth/otp-signin-specs.mjs';
 
 /**
@@ -69,21 +69,25 @@ function storeEnvLayers() {
   return Object.keys(store.envs).sort().map((env) => ({ file: `${STORE_FILE} (${env})`, map: storeValues(store, env).values }));
 }
 
-/** Var NAMES documented as meant to exist: the store's template first, then the .env.local template and .env.defaults. */
-function templateVarNames() {
-  const out = new Set();
-  try {
-    const ex = JSON.parse(readFileSync(join(ROOT, STORE_EXAMPLE), 'utf8'));
-    // Every name the template declares: its shared passwords, and what each named account exposes.
-    for (const level of [ex, ...Object.values(ex.envs ?? {})]) {
-      for (const k of Object.keys(level.shared ?? {})) out.add(k);
-      for (const [k, a] of Object.entries(level.accounts ?? {})) {
-        const { loginVars, passwordVar } = accountVars(k, { ...a, password: typeof a.password === 'string' ? a.password : a.password });
-        for (const n of [...loginVars, passwordVar ?? (typeof a.password === 'string' && /^[A-Z][A-Z0-9_]*$/.test(k) ? `${k}_PASSWORD` : null)]) if (n) out.add(n);
-        if (a.password?.use) out.add(a.password.use);
-      }
+/**
+ * Var NAMES known to exist: the role registry's, every name the local store holds (any env, filled or not), then the
+ * .env.local template and .env.defaults. The store's template is only its SHAPE, so it lists no names. Null without a
+ * store (CI, a fresh clone): then the check cannot tell a typo from a name the team's store has.
+ */
+function knownVarNames() {
+  const out = new Set(USER_ROLES.flatMap((r) => [r.passwordVar, ...(r.emailVars ?? [])]).filter(Boolean));
+  let store;
+  try { store = readStore(ROOT); } catch { return null; }
+  if (!store.exists) return null;
+  // Every name the store declares: its shared passwords, and what each named account exposes.
+  for (const level of [store, ...Object.values(store.envs ?? {})]) {
+    for (const k of Object.keys(level.shared ?? {})) out.add(k);
+    for (const [k, a] of Object.entries(level.accounts ?? {})) {
+      const { loginVars, passwordVar } = accountVars(k, a);
+      for (const n of [...loginVars, passwordVar ?? (typeof a.password === 'string' && /^[A-Z][A-Z0-9_]*$/.test(k) ? `${k}_PASSWORD` : null)]) if (n) out.add(n);
+      if (a.password?.use) out.add(a.password.use);
     }
-  } catch { /* no template: the files below still count */ }
+  }
   for (const rel of ['templates/.env.local.template', 'templates/.env.{env}.example', '.env.defaults']) {
     const p = join(ROOT, rel);
     if (!existsSync(p)) continue;
@@ -160,11 +164,12 @@ if (!overlapCount) ok(`destructive role(s) [${DESTRUCTIVE_KEYS.join(', ')}] are 
 
 // ── 5. Advisory: `{{VAR}}` cells whose var isn't documented anywhere ─────────
 console.log('\n[5] Every {{VAR}} password token names a documented variable');
-const known = templateVarNames();
+const known = knownVarNames();
 const allDecls = collectDeclarations({ csvFiles, roleEntries: [...roleEntriesByEnv.values()].flat() });
-const undeclared = findUndeclaredVars(allDecls, known);
-for (const u of undeclared) warn(`${u.origin}: {{${u.varName}}} is not documented in ${STORE_EXAMPLE} — add the name there, so every copy of the store knows it`);
-if (!undeclared.length) ok(`all ${new Set(allDecls.filter((d) => d.ref.startsWith('var:')).map((d) => d.ref)).size} distinct password var(s) are documented`);
+if (!known) warn(`no readable ${STORE_FILE} here (CI or a fresh clone) — {{VAR}} names not checked; npm run creds:check lists the gaps per env`);
+const undeclared = known ? findUndeclaredVars(allDecls, known) : [];
+for (const u of undeclared) warn(`${u.origin}: {{${u.varName}}} is in no env of ${STORE_FILE} and no role — a typo, or a name to add to the store (and to the team's copy)`);
+if (known && !undeclared.length) ok(`all ${new Set(allDecls.filter((d) => d.ref.startsWith('var:')).map((d) => d.ref)).size} distinct password var(s) are known to the store or the roles`);
 
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log('\n=== credential-declaration validation ===');

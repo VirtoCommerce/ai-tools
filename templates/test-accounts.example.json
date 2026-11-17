@@ -1,125 +1,23 @@
 {
-  "//": "TEMPLATE — copy to test-accounts.local.json (gitignored) at the project root, or get the team's copy from its secret store. Every test account's login and password, for every env. `accounts`: an account's login and password side by side — a named one (USER) is what suites call {{USER_EMAIL}} / {{USER_PASSWORD}} (or the names in its `vars`); one keyed by its login is a seeded fixture, and its password { \"use\": NAME } is a shared one. `shared`: passwords many accounts use. The top level is every env; `envs.<env>` beats it (an account field by field; \"\" unsets a shared one). `master`: the one password of every PASSWORDS=master stand. Tokens and API keys never go here (vc-secrets), nor a person's own tracker / code-host login (JIRA_*, GITHUB_*: .env.local). Seeders record every account they create. npm run creds:check shows what is missing, never a value. Design: docs/superpowers/specs/2026-11-17-test-accounts-store-design.md",
+  "//": "TEMPLATE — the SHAPE of test-accounts.local.json (gitignored, project root), not a list of names. Get the team's copy from its secret store, or start from this one; `npm run creds:check [-- <env>]` lists the names the suites, test-data and roles need that an env has no value for (never a value). `accounts`: login and password side by side — a named account (USER) is what suites call {{USER_EMAIL}} / {{USER_PASSWORD}} (or the names in its `vars`); one keyed by its login is a seeded fixture whose password { \"use\": NAME } is a shared one. `role`: user (storefront) or admin (back office), optional. `shared`: passwords many accounts use. The top level is every env; `envs.<env>` beats it (`<env>` = the env's name, as in its .env.<env> file — replace it, or the loader refuses the file) (an account field by field; \"\" unsets a shared one). `master`: the one password of every PASSWORDS=master stand. Tokens and API keys never go here (vc-secrets), nor a person's own tracker / code-host login (JIRA_*, GITHUB_*: .env.local). Seeders record every account they create. Design: docs/superpowers/specs/2026-11-17-test-accounts-store-design.md",
   "version": 2,
   "master": "",
   "shared": {
-    "AGENT_PERSONAL_PASSWORD": "",
-    "AGENT_SLOT1_PASSWORD": "",
-    "AGENT_SLOT2_PASSWORD": "",
-    "AGENT_SLOT3_PASSWORD": "",
-    "B2B_USER_PASSWORD": "",
-    "BROWSEFILTERS_NONE_PASSWORD": "",
-    "BROWSEFILTERS_READ_ONLY_PASSWORD": "",
-    "CATALOG_LINK_RESTRICTED_PASSWORD": "",
-    "CATALOG_READ_ONLY_PASSWORD": "",
-    "DEFAULT_TEST_PASSWORD": "",
-    "PAGEBUILDER_SC_USER_PASSWORD": "",
-    "RESTRICTED_CMS_ADMIN_PASSWORD": "",
-    "RESTRICTED_SALESREP_ADMIN_PASSWORD": "",
-    "RESTRICTED_USER_PASSWORD": "",
-    "SHELL_SEARCH_PASSWORD": "",
-    "SR_DEMO_BUYER_PASSWORD": "",
-    "SR_REP_PASSWORD": "",
-    "TEST_USER_PASSWORD": ""
+    "DEFAULT_TEST_PASSWORD": ""
   },
-  "accounts": {
-    "AGENT1": {
-      "login": "",
-      "password": ""
-    },
-    "LOYALTY_NOBAL_USER": {
-      "login": "",
-      "password": ""
-    },
-    "LOYALTY_WHOLESALE_USER": {
-      "login": "",
-      "password": ""
-    },
-    "RETURNS_AGENT_NO_AUTHORIZE": {
-      "login": "",
-      "password": ""
-    },
-    "SALES_REP_NOCUSTOMERS": {
-      "login": "",
-      "password": {
-        "use": "SR_REP_PASSWORD"
-      }
-    },
-    "SR_DEMO_OPERATOR": {
-      "login": "",
-      "password": ""
-    }
-  },
+  "accounts": {},
   "envs": {
-    "vcst": {
+    "<env>": {
       "shared": {},
       "accounts": {
         "ADMIN": {
           "login": "",
           "password": "",
           "vars": {
-            "login": [
-              "ADMIN_EMAIL",
-              "ADMIN"
-            ]
+            "login": ["ADMIN_EMAIL", "ADMIN"]
           }
-        },
-        "EUR_USER": {
-          "login": "",
-          "password": ""
-        },
-        "IMPERSONATION_ADMIN": {
-          "login": "",
-          "password": ""
-        },
-        "LOCKOUT_TEST": {
-          "login": "",
-          "password": ""
-        },
-        "LOYALTY_VIP_USER": {
-          "login": "",
-          "password": ""
-        },
-        "MULTI_ORG_USER": {
-          "login": "",
-          "password": ""
-        },
-        "ORG_USER": {
-          "login": "",
-          "password": ""
-        },
-        "ORG_USER_VIRTO": {
-          "login": "",
-          "password": "",
-          "vars": {
-            "login": [
-              "ORG_USER_VIRTO"
-            ]
-          }
-        },
-        "PERSONAL_USER_VIRTO": {
-          "login": "",
-          "password": "",
-          "vars": {
-            "login": [
-              "PERSONAL_USER_VIRTO"
-            ]
-          }
-        },
-        "SALES_REP": {
-          "login": "",
-          "password": {
-            "use": "SR_REP_PASSWORD"
-          }
-        },
-        "SR_DEMO_REP_PRIMARY": {
-          "login": ""
         },
         "USER": {
-          "login": "",
-          "password": ""
-        },
-        "USER2": {
           "login": "",
           "password": ""
         },

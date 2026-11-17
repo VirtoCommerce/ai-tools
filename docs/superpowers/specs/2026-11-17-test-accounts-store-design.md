@@ -52,8 +52,10 @@ every seed, and after every env switch, a person added lines to `.env.local` by 
 `scripts/lib/test-accounts.mjs` `storeValues` turns an env's view into the flat variables the loader puts in
 process.env; `storeAccounts` lists every account of an env with its login and password.
 
-The shape, with names and no values, is `templates/test-accounts.example.json` (tracked). It is also what
-`td:validate:credentials` reads as the list of declared names.
+The shape — a few example accounts, no values — is `templates/test-accounts.example.json` (tracked). It lists no
+names: a hand-kept list goes stale. The names an env needs come from the suites, test-data and roles
+(`npm run creds:check -- <env>` lists the ones it has no value for); `td:validate:credentials` checks a `{{VAR}}`
+against the local store and the role registry.
 
 ## 4. Where the store sits in the load order
 
