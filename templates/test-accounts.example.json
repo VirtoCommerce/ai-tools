@@ -1,5 +1,5 @@
 {
-  "//": "TEMPLATE — copy to test-accounts.local.json (gitignored) at the project root, or get the team's copy from its secret store. Every test account's login and password, for every env. `accounts`: an account's login and password side by side — a named one (USER) is what suites call {{USER_EMAIL}} / {{USER_PASSWORD}} (or the names in its `vars`); one keyed by its login is a seeded fixture, and its password { \"use\": NAME } is a shared one. `shared`: passwords many accounts use. The top level is every env; `envs.<env>` beats it (an account field by field; \"\" unsets a shared one). `master`: the one password of every PASSWORDS=master stand. Tokens and API keys never go here (vc-secrets). Seeders record every account they create. npm run creds:check shows what is missing, never a value. Design: docs/superpowers/specs/2026-11-17-test-accounts-store-design.md",
+  "//": "TEMPLATE — copy to test-accounts.local.json (gitignored) at the project root, or get the team's copy from its secret store. Every test account's login and password, for every env. `accounts`: an account's login and password side by side — a named one (USER) is what suites call {{USER_EMAIL}} / {{USER_PASSWORD}} (or the names in its `vars`); one keyed by its login is a seeded fixture, and its password { \"use\": NAME } is a shared one. `shared`: passwords many accounts use. The top level is every env; `envs.<env>` beats it (an account field by field; \"\" unsets a shared one). `master`: the one password of every PASSWORDS=master stand. Tokens and API keys never go here (vc-secrets), nor a person's own tracker / code-host login (JIRA_*, GITHUB_*: .env.local). Seeders record every account they create. npm run creds:check shows what is missing, never a value. Design: docs/superpowers/specs/2026-11-17-test-accounts-store-design.md",
   "version": 2,
   "master": "",
   "shared": {
@@ -24,10 +24,6 @@
   },
   "accounts": {
     "AGENT1": {
-      "login": "",
-      "password": ""
-    },
-    "JIRA": {
       "login": "",
       "password": ""
     },

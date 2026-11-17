@@ -45,8 +45,13 @@ const ENV = /^[a-z0-9_]+$/;
 
 /** A token / API-key-shaped name: vc-secrets', never the store's. */
 export const isTokenShaped = (name) => /TOKEN|API|KEY|SECRET/.test(String(name));
+/**
+ * A person's own account on a tool — the tracker, the code host (`JIRA_EMAIL`, `JIRA_PASSWORD`, `GITHUB_*`, `ADO_*`).
+ * Not a test account: it stays with the person (.env.local, or vc-secrets), never in a store the team passes around.
+ */
+export const isPersonalServiceName = (name) => /^(JIRA|ATLASSIAN|CONFLUENCE|GITHUB|GITLAB|BITBUCKET|GIT|ADO|AZDO|AZURE_DEVOPS)(_|$)/.test(String(name));
 /** A name the store may hold. */
-export const isStoreName = (name) => NAME.test(String(name)) && !isTokenShaped(name);
+export const isStoreName = (name) => NAME.test(String(name)) && !isTokenShaped(name) && !isPersonalServiceName(name);
 /** An account key that is a variable stem (`USER`), not a login. */
 const isNamedKey = (key) => NAME.test(String(key));
 
@@ -106,6 +111,7 @@ export function validateStore(data) {
       const at = `${where}["${key}"]`;
       if (!key.trim()) { out.push(`${where} has an empty key`); continue; }
       if (isNamedKey(key) && isTokenShaped(key)) out.push(`${at} is token/key-shaped — tokens and API keys belong in vc-secrets`);
+      if (isNamedKey(key) && isPersonalServiceName(key)) out.push(`${at} is a person's own tool account (tracker / code host) — it stays in .env.local or vc-secrets, not here`);
       if (!isObj(a)) { out.push(`${at} must be an object { login, password }`); continue; }
       for (const f of Object.keys(a)) if (!['login', 'password', 'vars', '//'].includes(f)) out.push(`${at}.${f} is not a field (login, password, vars)`);
       if (a.login !== undefined && typeof a.login !== 'string') out.push(`${at}.login must be a string`);

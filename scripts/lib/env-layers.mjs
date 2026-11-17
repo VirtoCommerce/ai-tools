@@ -32,7 +32,7 @@ import { basename, isAbsolute, join, resolve } from 'node:path';
 import { parse } from 'dotenv';
 import { TEST_ENV_PATTERN, envSuffix } from './resolve-test-env.js';
 import { TICKET_KEY, globDirs, resolveSprint, sessionRun } from './run-dir.mjs';
-import { STORE_FILE, readStore, storeValues } from './test-accounts.mjs';
+import { STORE_FILE, isPersonalServiceName, readStore, storeValues } from './test-accounts.mjs';
 
 /** Where the master password is (the store's `master`), for messages, and the one name a browser lane types for it. */
 export const MASTER_FILE = `${STORE_FILE} (master)`;
@@ -295,7 +295,7 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
   const { values: credentials, own: storeOwn } = storeValues(store, testEnv);
   const leftovers = [];
   for (const [k, f] of from) {
-    if (f.file && (isLoginSecretName(k) || k in credentials)) leftovers.push({ key: f.pin ?? k, file: f.file });
+    if (f.file && !isPersonalServiceName(k) && (isLoginSecretName(k) || k in credentials)) leftovers.push({ key: f.pin ?? k, file: f.file });
   }
   for (const [k, v] of Object.entries(credentials)) {
     if (held(k)) continue;
