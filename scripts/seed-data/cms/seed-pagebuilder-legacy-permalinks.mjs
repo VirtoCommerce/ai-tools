@@ -25,7 +25,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, ONLY, loadAliases, BACK_URL, ADMIN, ADMIN_PASSWORD,
   uploadAsset, writeEnvAliasOverride, verifyRemoved, resetSecurityPassword, ensureVirtoPagesEnabled,
 } from '../../lib/seed-common.mjs';
-import { accountSet, resolvePassword } from '../../lib/user-provision.mjs';
+import { accountSet, isGeneratedPassword, resolvePassword } from '../../lib/user-provision.mjs';
 import {
   TICKET_PREFIX, PAGE_ALIASES, USER_ALIAS, MODULE_ID, STATUS, EMPTY_CONTENT, pageSpecs, moduleExportJson, restoreManifest,
   buildStoredZip, roleBody, accountBody,
@@ -159,8 +159,12 @@ async function ensureUser() {
     if (user.isAdministrator) { user.isAdministrator = false; dirty = true; }
     if (dirty) await api('PUT', '/api/platform/security/users', user, { expectStatus: [200, 204] });
     // Keep the password on the declared secret so the case can log in (the account is AGENT-TEST only).
-    await resetSecurityPassword(api, USER.login, password);
-    accountSet(USER.login, password);
+    // Never with a GENERATED password (the store has no value for its var): the team may hold the account's real one.
+    if (isGeneratedPassword(password)) log(`  ⚠ ${USER.login}: password NOT reset — the store has no value for ${USER.password_var}`);
+    else {
+      await resetSecurityPassword(api, USER.login, password);
+      accountSet(USER.login, password);
+    }
     log(`  = reused user ${USER.login} (${user.id})${dirty ? ' — role/admin flag reconciled' : ''}`);
   }
   const tok = await rawToken(USER.login, password);

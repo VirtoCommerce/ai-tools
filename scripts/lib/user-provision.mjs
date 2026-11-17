@@ -311,9 +311,15 @@ export function contestedPasswordEmails() {
  * Force the live account's password to the declared value, non-fatally. A seeder run touches
  * dozens of accounts; one account the platform refuses to reset (policy, deleted mid-run) must
  * WARN, not abort the whole seed — resetSecurityPassword itself throws on a non-200.
- * Skips accounts with contested declarations (see contestedPasswordEmails).
+ * Skips accounts with contested declarations (see contestedPasswordEmails), and never forces a password this process
+ * GENERATED (the store had no value for its variable): the account already exists, and on a shared stand the team
+ * holds its real password — a new teammate's empty store must not reset it. Every caller goes through here.
  */
 async function reconcilePasswordSafe(email, password, name) {
+  if (isGeneratedPassword(password)) {
+    console.warn(`    ⚠ password NOT reconciled for ${email}: the store has no value for its password variable on ${TEST_ENV} — get the team's ${STORE_FILE}, or add the value (npm run creds:check -- ${TEST_ENV})`);
+    return false;
+  }
   if (contestedPasswordEmails().has(String(email).toLowerCase())) {
     console.warn(`    ⚠ password NOT reconciled for ${email}: its password is declared more than once with different vars — run \`npm run td:validate:credentials\` and resolve the conflict`);
     return false;
