@@ -17,6 +17,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   images. The plugin runs the hook in every project the user opens, and in a vc-frontend checkout it moved the
   committed README image `demo.jpg` into `reports/_stray-screenshots/`, leaving it deleted in `git status`. The hook
   now skips every file `git ls-files` lists, and sweeps nothing when the root is not a git work tree or git fails.
+  It passes the names to git in batches of at most 8,000 characters: in one call, 1,500 loose files exceeded the
+  Windows command-line limit, git failed, and nothing was ever swept again.
 
 ## Single strategy-driven `/qa-test` — `vc-test` `0.18.2`, `vc-fix` `0.18.10` — 2026-11-13
 

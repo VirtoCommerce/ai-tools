@@ -7,8 +7,9 @@
  * for that case. When a regression runner passes a bare name like
  * `cat016-chip-case.png` instead of the full
  * `reports/regression/<RUN_ID>/screenshots/...` path (test-runner-agent.md §8),
- * the PNG lands loosely in the repo root. `*.png` is gitignored, so it never
- * shows in `git status` — it just accumulates as clutter. This hook relocates
+ * the PNG lands loosely in the repo root. In ai-tools `*.png` is gitignored,
+ * so it never shows in `git status` — it just accumulates as clutter; another
+ * project may not ignore it at all. This hook relocates
  * any such loose root image/HAR into the active run's screenshots folder after
  * each subagent (runner) and at session end.
  *
@@ -26,6 +27,7 @@ import { execFileSync } from "node:child_process";
 import { readdirSync, existsSync, mkdirSync, renameSync, readFileSync, statSync } from "node:fs";
 
 const SWEEP_EXT = /\.(png|jpe?g|har)$/i;
+const GIT_ARGV_BUDGET = 8000; // chars of file names per `git ls-files` call
 
 try {
   // NOT derived from import.meta.url: the plugin is installed outside the
@@ -40,14 +42,29 @@ try {
   if (candidates.length === 0) process.exit(0);
 
   // Skip anything git tracks. Throws (→ outer catch → exit 0, nothing moved)
-  // when root is not a git work tree or git is unavailable.
-  const tracked = new Set(
-    execFileSync("git", ["ls-files", "-z", "--", ...candidates], {
+  // when root is not a git work tree or git is unavailable. Names go to git in
+  // batches: one call with every name fails past the Windows command-line
+  // limit (~32K chars) — 1,500 strays did — and then nothing is ever swept.
+  const tracked = new Set();
+  let batch = [];
+  let batchChars = 0;
+  const lsFiles = () => {
+    if (batch.length === 0) return;
+    const out = execFileSync("git", ["ls-files", "-z", "--", ...batch], {
       cwd: root,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
-    }).split("\0"),
-  );
+    });
+    for (const name of out.split("\0")) tracked.add(name);
+    batch = [];
+    batchChars = 0;
+  };
+  for (const name of candidates) {
+    if (batchChars + name.length + 1 > GIT_ARGV_BUDGET) lsFiles();
+    batch.push(name);
+    batchChars += name.length + 1;
+  }
+  lsFiles();
   const strays = candidates.filter((name) => !tracked.has(name));
 
   if (strays.length === 0) process.exit(0);
