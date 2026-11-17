@@ -30,7 +30,9 @@
 //      CLAUDE_CODE_SESSION_ID (VCST-6091), so the session id comes from the event, and the binding is read from the
 //      project root.
 //   7. A lane that was not started by the launcher (no manifest): it holds no store password — `npm run creds:migrate`
-//      points .mcp.json at the launcher.
+//      points .mcp.json at the launcher. TRANSITION: while .mcp.json still starts the lane with a `--secrets` file
+//      (not migrated yet), that file is what it types from, so the name is let through with a warning — except
+//      MASTER_PASSWORD on a stand not confirmed as a master stand.
 //
 // Rule source: .claude/knowledge/execution/browser-lanes.md §Browser login secrets.
 // Fails OPEN on any error — a hook bug must never block legitimate work — except for the master password (item 5),
@@ -41,6 +43,17 @@ import { readFileSync } from "node:fs";
 const ROOT = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 const MASTER_NAME = "MASTER_PASSWORD";
 const RECONNECT = "reconnect the playwright-* lanes in /mcp (never while a run has browser suites in flight)";
+
+/** Whether .mcp.json still starts `lane` the old way: with a `--secrets` file (or PLAYWRIGHT_MCP_SECRETS_FILE). */
+function legacySecretsLane(lane) {
+  try {
+    const s = JSON.parse(readFileSync(`${ROOT}/.mcp.json`, "utf8")).mcpServers?.[lane];
+    const args = (s?.args ?? []).map(String);
+    return args.some((a) => a === "--secrets" || a.startsWith("--secrets=")) || !!s?.env?.PLAYWRIGHT_MCP_SECRETS_FILE;
+  } catch {
+    return false;
+  }
+}
 
 /** Every string the tool call would type into the page. */
 function typedValues(toolName, input) {
@@ -273,6 +286,21 @@ try {
   const manifests = lib.readLaneManifests(ROOT, lane);
   if (!manifests.length) {
     const named = values.map((v) => v.trim()).find((v) => KEY_SHAPED.test(v) && CREDENTIAL_WORD.test(v));
+    if (named && legacySecretsLane(lane)) {
+      // TRANSITION: a lane .mcp.json still starts with a `--secrets` file (no `npm run creds:migrate` yet) holds that
+      // file's names itself, so a sign-in works — let it through with a nudge. Only the master password stays guarded.
+      if (values.some((v) => v.trim() === MASTER_NAME)) {
+        const stand = sessionStand({ lib });
+        if (!stand || stand.unknown || stand.source === "default" || !stand.master) {
+          process.stdout.write(JSON.stringify({ decision: "block", reason: unconfirmed(MASTER_NAME, stand?.unknown ?? (stand?.master ? `only the ${stand.env} default chose it` : `${stand?.env ?? "this stand"} is not a master stand (PASSWORDS=master)`)) }));
+          process.exit(0);
+        }
+      }
+      process.stdout.write(JSON.stringify({ systemMessage:
+        `${lane} still reads a --secrets file (the old setup). Sign-ins work for now; move to test-accounts.local.json: ` +
+        "npm run creds:migrate, then npm run creds:migrate -- --apply, then restart Claude Code." }));
+      process.exit(0);
+    }
     if (named) {
       process.stdout.write(JSON.stringify({ decision: "block", reason:
         `BLOCKED: ${lane} was not started by scripts/lanes/playwright-lane.mjs, so it holds no password from test-accounts.local.json — "${named}" would be typed literally.\n` +
