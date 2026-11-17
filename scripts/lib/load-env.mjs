@@ -45,10 +45,10 @@ export function loadEnv({ fallback = 'vcst', ambientWins = false, root = ROOT, t
 }
 
 /**
- * The TEST_ENV resolveTestEnv() picks, written back to process.env (TEST_ENV, TEST_ENV_SOURCE) as it writes it — but
- * not its other side effect, `.env.playwright.<env>` exposed in process.env as KEY_<ENV>. For a caller that loads
- * the layers next: `layered` reads that file itself as its lowest layer, and values put in process.env first pass for
- * the environment's, so under `ambientWins` the file's pins beat what CI passed and a `.env.local` pin.
+ * The TEST_ENV resolveTestEnv() picks, written back to process.env (TEST_ENV, TEST_ENV_SOURCE) as it writes it, and
+ * nothing else — for a caller that loads the layers next: values put in process.env first pass for the environment's,
+ * so under `ambientWins` they would beat what CI passed and a `.env.local` pin. The test-account credentials come from
+ * the store (test-accounts.local.json), which `layered` reads itself.
  */
 export function selectTestEnv(fallback = 'vcst') {
   const { env, source } = testEnvChoice(fallback);

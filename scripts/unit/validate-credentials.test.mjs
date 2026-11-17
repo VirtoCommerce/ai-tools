@@ -102,8 +102,8 @@ test('passwordSource / isPasswordDeclared separate a real credential from the fa
   assert.deepEqual(passwordSource('Literal1!'), { kind: 'literal', varName: null });
   assert.deepEqual(passwordSource(''), { kind: 'fallback', varName: null });
   assert.equal(isPasswordDeclared('{{__TP_DECLARED}}'), true);
-  // The load-bearing case: an unset var resolves to PW_FALLBACK, so it must NOT be reconciled onto
-  // a live account — otherwise seeding from an unconfigured machine rewrites every password.
+  // The load-bearing case: an unset var resolves to a password generated in this run, so it must NOT be
+  // reconciled onto a live account — otherwise seeding from a machine without the team's store rewrites every password.
   assert.equal(isPasswordDeclared('{{__TP_UNSET__}}'), false);
   delete process.env.__TP_DECLARED;
 });

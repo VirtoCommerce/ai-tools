@@ -47,6 +47,7 @@ import {
   SEED_PREFIX, PASSWORD_VAR, SEEDED_ACCOUNTS, RETIRED_ACCOUNTS, FOREIGN_STORE_ID,
   contactBody, accountBody, seededProblems, isSeededOuterId, planScope,
 } from './otp-signin-specs.mjs';
+import { accountSet } from '../../lib/user-provision.mjs';
 
 const argv = process.argv.slice(2);
 const VERIFY_ONLY = argv.includes('--verify-only');
@@ -126,6 +127,7 @@ async function ensureAccount(spec, password, overlay, ctx) {
     user = await findUser(spec.email);
     if (!user?.id) throw new Error(`created ${spec.email} but the users search cannot find it`);
     log(`  ✓ create account ${user.id} (${spec.email}) [${user.userType}${user.isAdministrator ? ', admin' : ''}] storeId=${user.storeId ?? 'null'}`);
+    accountSet(spec.email, password, PASSWORD_VAR);
     return { contactId, userId: user.id };
   }
 
@@ -146,13 +148,14 @@ async function ensureAccount(spec, password, overlay, ctx) {
   const put = await api('PUT', '/api/platform/security/users', full, { expectStatus: [200, 204] });
   if (put && put.succeeded === false) throw new Error(`PUT users ${spec.email}: ${JSON.stringify(put.errors)}`);
   if (!await resetSecurityPassword(api, user.userName, password)) throw new Error(`password reset failed for ${spec.email}`);
+  accountSet(spec.email, password, PASSWORD_VAR);
   log(`  ↻ re-armed ${spec.email} (${user.id})`);
   return { contactId, userId: user.id };
 }
 
 async function seed(ctx) {
   const password = process.env[PASSWORD_VAR];
-  if (!password && !DRY_RUN) throw new Error(`${PASSWORD_VAR} is not set (resolve through .env.local) — refusing to seed a fallback password`);
+  if (!password && !DRY_RUN) throw new Error(`${PASSWORD_VAR} is not set (resolve through .env.local) — add it to test-accounts.local.json — refusing to seed a password nobody can read back`);
   if (ctx.foreignExists) throw new Error(`${FOREIGN_STORE_ID} EXISTS on ${TEST_ENV} — the foreign-store fixture would no longer be foreign`);
   const overlay = readOverlay();
   const writeback = {};

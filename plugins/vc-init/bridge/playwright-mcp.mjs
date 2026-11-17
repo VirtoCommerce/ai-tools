@@ -143,14 +143,25 @@ export async function runPlaywrightMcp(argv) {
   }
   const secrets = { ...fromFile, ...fromVcSecrets };
   if (!Object.keys(secrets).length) say("started without a password — the agent cannot log in on this lane (check the env's secrets: vc-secrets doctor)");
+  return startPlaywrightMcp({ pkg, version, args, secrets, say });
+}
+
+/**
+ * Start the pinned package's own CLI in this process with `secrets` ({ NAME: value }) as `config.secrets`, keeping the
+ * lane's HAR scrubbed of their values. Shared by `runPlaywrightMcp` (vc-secrets) and a project's own launcher that
+ * reads its passwords elsewhere (ai-tools: scripts/lanes/playwright-lane.mjs, the test-account store). `pkg`: the
+ * package directory (`findPackage`); `args` must pass `refusal`. Resolves once the server is up.
+ * @returns {Promise<undefined>}
+ */
+export async function startPlaywrightMcp({ pkg, version, args, secrets, say: tell = say }) {
   // The lane's HAR holds the sign-in request: take the values (and any password-named field) out of it.
   const har = configHarPath(configArg(args) || "", process.cwd());
   if (har) {
     watchHarDirs([har], {
       secrets: Object.values(secrets),
       onResult: (file, r) => {
-        if (r.status === "scrubbed") say(`masked ${r.masked} secret value(s) in ${file}`);
-        else if (r.status === "error") say(`could not scrub ${file}: ${r.error}`);
+        if (r.status === "scrubbed") tell(`masked ${r.masked} secret value(s) in ${file}`);
+        else if (r.status === "error") tell(`could not scrub ${file}: ${r.error}`);
       },
     });
   }

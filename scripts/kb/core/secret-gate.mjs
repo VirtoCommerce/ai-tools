@@ -213,9 +213,10 @@ export function secretValuesFrom(text) {
  * `process.cwd()` -- a `kb` invoked from somewhere else would otherwise load no secrets at all and
  * report a clean scan it never performed.
  *
- * Besides the two fixed names, every per-env secrets file `.gitignore` keeps out of git
- * (`.env.<env>.local`, `.env.playwright.<env>`): passwords moved into one of those and out of the
- * fixed names would otherwise leave the gate holding zero values while it reports a clean scan.
+ * Besides the two fixed names — `.env.local` (tokens) and the test-account store
+ * `test-accounts.local.json` (every test account's password) — every per-env secrets file `.gitignore`
+ * keeps out of git (`.env.<env>.local`): passwords moved into one of those and out of the fixed names
+ * would otherwise leave the gate holding zero values while it reports a clean scan.
  */
 export function secretFiles(env = process.env) {
   if (env.VC_MEASURE_SECRETS) return env.VC_MEASURE_SECRETS.split(';').filter(Boolean);
@@ -224,7 +225,18 @@ export function secretFiles(env = process.env) {
   try {
     perEnv = readdirSync(root).filter((n) => /^\.env\.(?:.+\.local|playwright\..+)$/.test(n));
   } catch { /* an unlistable root still gets the two fixed names */ }
-  return [...new Set(['.env.local', '.env.playwright.local', ...perEnv])].map((n) => join(root, n));
+  return [...new Set(['.env.local', 'test-accounts.local.json', ...perEnv])].map((n) => join(root, n));
+}
+
+/** The test-account store is JSON: its values as NAME=value lines, so the line rule reads them. Other files pass. */
+export function storeAsEnvText(file, text) {
+  if (!String(file).endsWith('.json')) return text;
+  try {
+    const d = JSON.parse(text);
+    const out = d.master ? [`MASTER_PASSWORD=${d.master}`] : [];
+    for (const sec of [d.defaults ?? {}, ...Object.values(d.envs ?? {})]) for (const [k, v] of Object.entries(sec)) if (v) out.push(`${k}=${v}`);
+    return out.join('\n');
+  } catch { return ''; }
 }
 
 // ── deployment hosts: not secrets, but not ours to publish either ─────────────────────────────
@@ -348,7 +360,7 @@ export function loadSecrets(env = process.env) {
   for (const f of secretFiles(env)) {
     let text;
     try {
-      text = readFileSync(f, 'utf8');
+      text = storeAsEnvText(f, readFileSync(f, 'utf8'));
     } catch {
       continue; // an absent env file is normal on a machine with no secrets, not an error
     }

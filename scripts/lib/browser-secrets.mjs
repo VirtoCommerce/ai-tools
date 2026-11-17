@@ -1,47 +1,37 @@
 /**
  * scripts/lib/browser-secrets.mjs
- * Which LOGIN-password names the Playwright browser lanes must be able to type, and whether
- * `.env.playwright.local` (the `--secrets` file every playwright-* MCP server loads) registers them.
+ * Which LOGIN-password names the Playwright browser lanes must be able to type, what each lane holds, and whether a
+ * running lane still holds what the credential store (scripts/lib/test-accounts.mjs) says now.
  *
- * Why this exists: that file used to be filled BY HAND, with values that "must equal .env.local".
- * A name a suite types but the file lacks is not an error anywhere — the MCP substitutes only on an
- * exact name match, so the case signs in with the literal name, fails, and is reported BLOCKED hours
- * into a run (2026-10-14, REG-2026-10-14-1556: 089/091 lost 120 of 124 cases to TEST_USER_PASSWORD).
- * The names are DERIVED here from what the repo already declares; the values come from the layered
- * env (`.env.local` is the source the seeders set passwords from), never from this file.
+ * Why the names are derived: a name a suite types but the lane lacks is not an error anywhere — Playwright MCP
+ * substitutes only on an exact name match, so the case signs in with the literal name, fails, and is reported BLOCKED
+ * hours into a run (2026-10-14, REG-2026-10-14-1556: 089/091 lost 120 of 124 cases to TEST_USER_PASSWORD). The names
+ * come from what the repo already declares; the values from each env's layered env, whose credentials are the store's.
  *
- * Pure: reads files, never loads env, never writes, never returns or prints a value except to the
- * one caller that writes the secrets files (`scripts/maintenance/sync-playwright-secrets.mjs`).
- * Callers must load the layered env first (config.js / env-facts) so per-env suffixes are promoted —
- * except for the combined file, whose values `combinedSecretValues` layers per env itself.
+ * A lane (scripts/lanes/playwright-lane.mjs) holds every non-production env's names as NAME_<ENV>, plus
+ * MASTER_PASSWORD, in memory — no file. At start it writes a MANIFEST, `.vc-fix/lanes/<lane>-<pid>.json`: the names
+ * and a salted fingerprint per value, never a value. The secret-token hook, the pre-flight and env:use compare a
+ * manifest with the store to say "reconnect <lane>" when the store changed under it.
+ *
+ * Pure except for the manifest writer: reads files, never loads env, never prints a value; `laneSecrets` returns
+ * values to the one caller that hands them to Playwright MCP.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
-import { parse } from 'dotenv';
+import { createHmac, randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { USER_ROLES } from './user-roles.mjs';
 import { layeredEnv } from './env-core.js';
 import { envSuffix } from './resolve-test-env.js';
-import { dedicatedEnvs, envFolders, isLoginSecretName, knownEnvs, readEnvFile, usesMaster } from './env-layers.mjs';
+import { MASTER_NAME, dedicatedEnvs, envFolders, isLoginSecretName, knownEnvs, readEnvFile, readMaster, usesMaster } from './env-layers.mjs';
 
 export { isLoginSecretName };
 
-export const SECRETS_FILE = '.env.playwright.local';
-/** The header line that stamps which TEST_ENV the values were resolved for. */
-export const ENV_STAMP = /^#\s*generated-for:\s*TEST_ENV=([a-z0-9_]+)\s*$/m;
+/** Where a running lane leaves its manifest. Gitignored (.vc-fix/). */
+export const LANES_DIR = join('.vc-fix', 'lanes');
 
-/**
- * The combined `--secrets` file (`npm run secrets:sync:all`): every env's passwords, each name carrying
- * its env (`ORG_USER_PASSWORD_VCST_QA`), so one set of Playwright lanes serves sessions on several envs
- * with no restart — the env travels in the typed name. Its `# envs:` line is how a reader tells it from
- * a single-env file, whose names are bare.
- */
-export const COMBINED_SECRETS_FILE = '.env.playwright.all';
-const ENVS_LINE = /^# envs: (.*)$/m;
-
-// isLoginSecretName (scripts/lib/env-layers.mjs): a login password NAME, `X_PASSWORD`. Least privilege is the point of
-// a separate file — a page or a prompt injection can make an agent type any registered name — so a token/key-shaped
-// name is never one, whatever it ends with. A per-env suffix (`X_PASSWORD_VCST`) is collapsed by the loader and is
-// not a name a case types.
+// isLoginSecretName (scripts/lib/env-layers.mjs): a login password NAME, `X_PASSWORD`. Least privilege is why a lane
+// holds only these — a page or a prompt injection can make an agent type any registered name — so a token/key-shaped
+// name is never one, whatever it ends with.
 
 /** Every login-password name a text mentions, `{{X_PASSWORD}}` or bare. */
 export function namesInText(text) {
@@ -130,24 +120,6 @@ export function deriveSecretNames(root) {
   return names;
 }
 
-/**
- * What a secrets file holds: whether it exists, the TEST_ENV a single-env file was generated for, the
- * envs a combined file covers (null for a single-env file), and its name → value map.
- * @param {string} root
- * @param {string} [path] the file to read (default: `.env.playwright.local` under `root`)
- */
-export function readSecretsFile(root, path = join(root, SECRETS_FILE)) {
-  if (!existsSync(path)) return { path, exists: false, env: null, envs: null, values: new Map() };
-  const text = readFileSync(path, 'utf8');
-  return { path, exists: true, env: ENV_STAMP.exec(text)?.[1] ?? null, envs: combinedEnvs(text), values: new Map(Object.entries(parse(text))) };
-}
-
-/** The env list of a combined file's `# envs:` line, or null when the text is a single-env file. */
-export function combinedEnvs(text) {
-  const m = ENVS_LINE.exec(String(text));
-  return m ? m[1].split(/\s+/).filter(Boolean) : null;
-}
-
 /** `{ env, name }` of an env-qualified name (`ORG_USER_PASSWORD_VCST_QA`), by the longest env suffix; null when none matches. */
 export function splitQualifiedName(qualified, envs) {
   for (const env of [...envs].sort((a, b) => b.length - a.length)) {
@@ -157,40 +129,11 @@ export function splitQualifiedName(qualified, envs) {
   return null;
 }
 
-/** Claude Code expands `${VAR}` and `${VAR:-default}` in `.mcp.json` args from its own environment; an unset `${VAR}` stays literal. */
-const expandVars = (s) => s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}/g, (whole, name, fallback) => {
-  const value = process.env[name];
-  if (fallback !== undefined) return value || fallback;
-  return value ?? whole;
-});
-
 /**
- * The `--secrets` file the playwright-* servers are started with: the first `--secrets` arg in the nearest
- * `.mcp.json` that declares one, from `root` upwards (a parent workspace's `.mcp.json` may declare the
- * servers). Relative paths resolve against `root`. Null when no `.mcp.json` declares one. With `lane`
- * (e.g. `playwright-edge`), that server's own `--secrets` wins: lanes may read different files.
- */
-export function declaredSecretsFile(root, lane) {
-  for (let dir = resolve(root), prev = null; dir !== prev; prev = dir, dir = dirname(dir)) {
-    let servers;
-    try { servers = JSON.parse(readFileSync(join(dir, '.mcp.json'), 'utf8')).mcpServers ?? {}; } catch { continue; }
-    for (const server of [...(lane && servers[lane] ? [servers[lane]] : []), ...Object.values(servers)]) {
-      const args = server?.args ?? [];
-      const i = args.indexOf('--secrets');
-      if (i !== -1 && args[i + 1]) {
-        const file = expandVars(String(args[i + 1]));
-        return isAbsolute(file) ? file : resolve(root, file);
-      }
-    }
-  }
-  return null;
-}
-
-/**
- * The envs the combined file covers, with the run tickets whose folders define or override each: every `.env.<env>`
- * in the project root (ticket null) and in the QA_ENV_PATH folders, every ticket's (scripts/lib/env-layers.mjs) —
- * except `.env.defaults` / `.env.local` / `.env.backup`, and except an env any of whose layered values or own files
- * says ENV_RISK=production: every lane loads the combined file, and a run never types a production password.
+ * The envs a lane covers, with the run tickets whose folders define or override each: every `.env.<env>` in the
+ * project root (ticket null) and in the QA_ENV_PATH folders, every ticket's (scripts/lib/env-layers.mjs) — except
+ * `.env.defaults` / `.env.local` / `.env.backup`, and except an env any of whose layered values or own files says
+ * ENV_RISK=production: a run never types a production password.
  * @returns {{ envs: string[], excluded: { env: string, reason: string }[], tickets: Map<string, (string | null)[]> }}
  */
 export function combinedEnvCandidates(root, ambient = process.env) {
@@ -199,10 +142,8 @@ export function combinedEnvCandidates(root, ambient = process.env) {
     if (!tickets.has(env)) tickets.set(env, []);
     if (!tickets.get(env).includes(ticket)) tickets.get(env).push(ticket);
   };
-  const dedicated = dedicatedEnvs({ root, ambient });
   for (const env of knownEnvs(root)) add(env, null);
-  for (const d of dedicated) if (!d.secrets) add(d.env, d.ticket);
-  for (const d of dedicated) if (d.secrets && tickets.has(d.env)) add(d.env, d.ticket); // a ticket's passwords for a defined env
+  for (const d of dedicatedEnvs({ root, ambient })) if (!d.secrets) add(d.env, d.ticket);
   const out = [], excluded = [];
   for (const env of [...tickets.keys()].sort()) {
     const risk = tickets.get(env).flatMap((ticket) => {
@@ -216,11 +157,10 @@ export function combinedEnvCandidates(root, ambient = process.env) {
 }
 
 /**
- * Every env's value for each name, keyed `NAME_<ENV>`, from that env's layered env (config.js order) — once per
- * run ticket that defines or overrides it. One key holds one value, so a name whose value differs between them is a
- * CONFLICT, never an entry. A master stand (PASSWORDS=master) gets no entries: its lanes type MASTER_PASSWORD.
- * Only the writer of the combined file may call this: it returns values. A name an env has no value for is listed
- * under that env's `missing`; an env with no value at all is excluded.
+ * Every env's value for each name, keyed `NAME_<ENV>`, from that env's layered env — once per run ticket that defines
+ * or overrides it. One key holds one value, so a name whose value differs between them is a CONFLICT, never an entry.
+ * A master stand (PASSWORDS=master) gets no entries: its lanes type MASTER_PASSWORD. Returns values: only the lane
+ * launcher may use them. A name an env has no value for is listed under that env's `missing`.
  * @param {string} root
  * @param {Iterable<string>} names
  * @param {{ ambient?: Record<string, string | undefined> }} [options] the environment before any loading
@@ -244,7 +184,7 @@ export function combinedSecretValues(root, names, { ambient = process.env } = {}
     if (!have.length) { if (!clash.length) excluded.push({ env, reason: 'no password values' }); continue; }
     for (const n of have) {
       const qualified = n + envSuffix(env);
-      if (entries.has(qualified)) throw new Error(`${qualified} would be written for two envs; rename one of them`);
+      if (entries.has(qualified)) throw new Error(`${qualified} would be registered for two envs; rename one of them`);
       entries.set(qualified, { env, name: n, value: own.map((c) => c.values[n]).find(Boolean) });
     }
     envs.push({ env, written: have.length, missing: sorted.filter((n) => !have.includes(n) && !clash.includes(n)) });
@@ -253,21 +193,82 @@ export function combinedSecretValues(root, names, { ambient = process.env } = {}
 }
 
 /**
- * Classify each name against the loaded env and the file. Values are compared, never returned.
- *   ok         — the file holds the env's value (or the file is the only source: nothing to compare)
- *   unsynced   — the env has a value the file lacks or disagrees with → `npm run secrets:sync`
- *   undeclared — neither the env nor the file has it → a human must add it to .env.local
- * @param {Iterable<string>} names
- * @param {{ values: Map<string, string> }} file
- * @param {Record<string, string | undefined>} env
+ * What a lane holds: every derived name of every non-production env as NAME_<ENV>, and MASTER_PASSWORD when the store
+ * has one. `secrets` carries VALUES — for the launcher (and the checks that fingerprint them) only.
+ * @returns {{ secrets: Map<string, string>, envs: string[], master: { env: string }[], conflicts: { env: string, name: string }[],
+ *   excluded: { env: string, reason: string }[], missing: Map<string, string[]> }}
  */
-export function classifySecretNames(names, file, env = process.env) {
-  /** @type {{ ok: string[], unsynced: string[], undeclared: string[] }} */
-  const out = { ok: [], unsynced: [], undeclared: [] };
-  for (const n of [...new Set(names)].sort()) {
-    const want = env[n], have = file.values.get(n);
-    if (want) (have === want ? out.ok : out.unsynced).push(n);
-    else (have ? out.ok : out.undeclared).push(n);
+export function laneSecrets(root, { ambient = process.env } = {}) {
+  const { entries, envs, excluded, master, conflicts } = combinedSecretValues(root, deriveSecretNames(root).keys(), { ambient });
+  const secrets = new Map([...entries].map(([q, e]) => [q, e.value]));
+  const masterValue = readMaster({ root, ambient }).value;
+  if (masterValue) secrets.set(MASTER_NAME, masterValue);
+  return {
+    secrets,
+    envs: [...new Set([...envs.map((e) => e.env), ...master.map((m) => m.env)])].sort(),
+    master, conflicts, excluded,
+    missing: new Map(envs.map((e) => [e.env, e.missing])),
+  };
+}
+
+/** A salted fingerprint of one value: tells two values apart, never gives one back. */
+export const fingerprint = (salt, value) => createHmac('sha256', salt).update(String(value)).digest('hex').slice(0, 24);
+
+const manifestName = (lane, pid) => `${lane}-${pid}.json`;
+
+/** Write this lane's manifest (names + fingerprints, no value). Returns its path. */
+export function writeLaneManifest(root, lane, secrets, { pid = process.pid, envs = [] } = {}) {
+  const dir = join(root, LANES_DIR);
+  mkdirSync(dir, { recursive: true });
+  const salt = randomBytes(16).toString('hex');
+  const names = Object.fromEntries([...secrets.keys()].sort().map((n) => [n, fingerprint(salt, secrets.get(n))]));
+  const file = join(dir, manifestName(lane, pid));
+  const tmp = `${file}.tmp`;
+  writeFileSync(tmp, `${JSON.stringify({ lane, pid, startedAt: new Date().toISOString(), envs, salt, names }, null, 2)}\n`);
+  renameSync(tmp, file);
+  return file;
+}
+
+/** Remove one manifest (a lane on its way out). */
+export function removeLaneManifest(root, lane, pid = process.pid) {
+  rmSync(join(root, LANES_DIR, manifestName(lane, pid)), { force: true });
+}
+
+const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e?.code === 'EPERM'; } };
+
+/**
+ * The manifests of lanes that are running now (`lane` given: that lane's only), newest first. A manifest whose
+ * process is gone is deleted on the way.
+ */
+export function readLaneManifests(root, lane = null, { isAlive = alive } = {}) {
+  const dir = join(root, LANES_DIR);
+  if (!existsSync(dir)) return [];
+  const out = [];
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith('.json')) continue;
+    let m;
+    try { m = JSON.parse(readFileSync(join(dir, f), 'utf8')); } catch { continue; }
+    if (!m?.lane || !m.pid || !m.names || !m.salt) continue;
+    if (!isAlive(m.pid)) { rmSync(join(dir, f), { force: true }); continue; }
+    if (lane && m.lane !== lane) continue;
+    out.push(m);
   }
-  return out;
+  return out.sort((a, b) => String(b.startedAt).localeCompare(String(a.startedAt)));
+}
+
+/**
+ * How a running lane differs from what the store says now: `stale` — names whose value changed; `absent` — names the
+ * lane should hold now but does not (a seeder added an account); `gone` — names it holds that no longer exist. Values
+ * are compared through the manifest's fingerprints only.
+ * @param {{ salt: string, names: Record<string, string> }} manifest
+ * @param {Map<string, string>} current laneSecrets(root).secrets
+ */
+export function laneDrift(manifest, current) {
+  const stale = [], absent = [], gone = [];
+  for (const [n, v] of current) {
+    if (!(n in manifest.names)) absent.push(n);
+    else if (manifest.names[n] !== fingerprint(manifest.salt, v)) stale.push(n);
+  }
+  for (const n of Object.keys(manifest.names)) if (!current.has(n)) gone.push(n);
+  return { stale: stale.sort(), absent: absent.sort(), gone: gone.sort() };
 }

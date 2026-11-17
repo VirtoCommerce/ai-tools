@@ -57,7 +57,7 @@ import {
 } from '../../lib/seed-common.mjs';
 import {
   setFlags, authenticate, findUserByEmail, ensureMembershipContact, ensureSecurityAccount,
-  searchMemberships, ensureOrgMembership, roleIdByName, deleteUserByEmail, findMemberById, findOrgByName,
+  searchMemberships, ensureOrgMembership, roleIdByName, deleteUserByEmail, findMemberById, findOrgByName, passwordFor,
 } from '../../lib/user-provision.mjs';
 import {
   loadFixture, orderNumber, orderOrgKey, aliasFor, allOrderNumbers, fixtureProblems,
@@ -112,8 +112,8 @@ async function ensureOrg(orgKey, knownId) {
 // ---- buyers ----------------------------------------------------------------
 
 async function ensureBuyer(key, b, orgIds) {
-  const password = process.env[b.passwordVar];
-  if (!password) throw new Error(`${key}: ${b.passwordVar} is not set for TEST_ENV=${TEST_ENV} (import config.js layers / .env.local)`);
+  if (!process.env[b.passwordVar]) throw new Error(`${key}: ${b.passwordVar} has no value for TEST_ENV=${TEST_ENV} in test-accounts.local.json`);
+  const password = passwordFor(b.passwordVar); // the store's value — and the account is recorded with it once set
   const orgId = b.org ? orgIds[b.org] : null;
   const contactId = await ensureMembershipContact(b.email, b.firstName, b.lastName, orgId ? [orgId] : []);
   if (!DRY_RUN) {

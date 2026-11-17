@@ -20,7 +20,7 @@
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
@@ -29,6 +29,7 @@ import {
   collectDeclarations, findPasswordConflicts, findDestructiveOverlaps, findUndeclaredVars,
 } from './credential-specs.mjs';
 import { USER_ROLES } from '../lib/user-roles.mjs';
+import { STORE_EXAMPLE, STORE_FILE, readStore, storeValues } from '../lib/test-accounts.mjs';
 import { SEEDED_ACCOUNTS as OTP_ACCOUNTS, PASSWORD_VAR as OTP_PASSWORD_VAR } from './auth/otp-signin-specs.mjs';
 
 /**
@@ -53,26 +54,28 @@ const readRows = (rel) => {
   return parse(readFileSync(p, 'utf8'), { columns: true, skip_empty_lines: true, trim: true, relax_quotes: true, relax_column_count: true });
 };
 
-/** Parse every committed `.env.*` layer (no secrets there — identities + var NAMES only). */
-function readCommittedEnvLayers() {
-  const layers = [];
-  for (const f of readdirSync(ROOT)) {
-    // `.env.local` / `.env.*.local` are gitignored secret files — never read them here; this guard
-    // must give the same verdict in CI, where they do not exist.
-    if (!f.startsWith('.env') || f.endsWith('.local') || f.endsWith('.template') || f.endsWith('.example')) continue;
-    const map = {};
-    for (const line of readFileSync(join(ROOT, f), 'utf8').split(/\r?\n/)) {
-      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
-      if (m) map[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
-    }
-    layers.push({ file: f, map });
+/**
+ * The role identities per env, from the test-account store (test-accounts.local.json), where every test account's
+ * login lives. Absent (CI, a fresh clone): one empty layer, so the CSV fixtures and the spec-declared destructive
+ * accounts are still checked — the role logins are in no committed file, so they cannot be.
+ */
+function storeEnvLayers() {
+  let store = { exists: false };
+  try { store = readStore(ROOT); } catch (e) { warn(`${STORE_FILE}: ${e.message} — role identities not checked`); }
+  if (!store.exists || !Object.keys(store.envs).length) {
+    warn(`no ${STORE_FILE} here (CI or a fresh clone): the role logins live only there, so [3] and [4] check the CSV and spec fixtures alone`);
+    return [{ file: 'committed fixtures', map: {} }];
   }
-  return layers;
+  return Object.keys(store.envs).sort().map((env) => ({ file: `${STORE_FILE} (${env})`, map: storeValues(store, env).values }));
 }
 
-/** Var NAMES documented in the secrets template — the oracle for "this var is meant to exist". */
+/** Var NAMES documented as meant to exist: the store's template first, then the .env.local template and .env.defaults. */
 function templateVarNames() {
   const out = new Set();
+  try {
+    const ex = JSON.parse(readFileSync(join(ROOT, STORE_EXAMPLE), 'utf8'));
+    for (const sec of [ex.defaults ?? {}, ...Object.values(ex.envs ?? {})]) for (const k of Object.keys(sec)) out.add(k);
+  } catch { /* no template: the files below still count */ }
   for (const rel of ['templates/.env.local.template', 'templates/.env.{env}.example', '.env.defaults']) {
     const p = join(ROOT, rel);
     if (!existsSync(p)) continue;
@@ -98,8 +101,8 @@ for (const src of CSV_CREDENTIAL_SOURCES) {
 
 // ── 2. Resolve role-registry identities from the COMMITTED env layers ────────
 // One role can name a different account per env, so a conflict is evaluated PER ENV LAYER.
-console.log('\n[2] Role-registry identities (per committed env layer)');
-const envLayers = readCommittedEnvLayers();
+console.log(`\n[2] Role-registry identities (per env, from ${STORE_FILE})`);
+const envLayers = storeEnvLayers();
 const roleEntriesByEnv = new Map();
 for (const layer of envLayers) {
   const entries = [];
@@ -152,7 +155,7 @@ console.log('\n[5] Every {{VAR}} password token names a documented variable');
 const known = templateVarNames();
 const allDecls = collectDeclarations({ csvFiles, roleEntries: [...roleEntriesByEnv.values()].flat() });
 const undeclared = findUndeclaredVars(allDecls, known);
-for (const u of undeclared) warn(`${u.origin}: {{${u.varName}}} is not documented in templates/.env.local.template or .env.defaults — it silently degrades to the seeder fallback password ('Password1!') wherever it is unset`);
+for (const u of undeclared) warn(`${u.origin}: {{${u.varName}}} is not documented in ${STORE_EXAMPLE} — add the name there, so every copy of the store knows it`);
 if (!undeclared.length) ok(`all ${new Set(allDecls.filter((d) => d.ref.startsWith('var:')).map((d) => d.ref)).size} distinct password var(s) are documented`);
 
 // ── Summary ─────────────────────────────────────────────────────────────────

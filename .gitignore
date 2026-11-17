@@ -5,7 +5,10 @@ node_modules
 # Layered env files — secrets stay local, per-env scaffolds are committed
 .env.local
 .env.*.local
-# Per-env Playwright MCP secrets (.env.playwright.<env>) hold passwords — never committed
+# THE test-account credential store: every test account's login and password, every env — never committed
+/test-accounts.local.json
+/test-accounts.local.json.*.tmp
+# Legacy per-env Playwright secrets files (npm run creds:migrate deletes them) — never committed
 /.env.playwright.*
 !.env.defaults
 !.env.vcst

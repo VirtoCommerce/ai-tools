@@ -87,11 +87,10 @@ npm run deploy:pr:apply -- <ticket-key> --env=vcst      # a human reviews + merg
 Both QA envs are `BRANCH_MAP` entries, not convention: env name ≠ branch name for either. A new env
 whose branch differs from its name needs a `BRANCH_MAP` row or a `DEPLOY_BRANCH` in its `.env.<env>`.
 
-`--verify`'s live column needs the env's admin password. It is read in `config.js`'s own order: a
-`.env.local` pin in the promotion form first — `ADMIN_PASSWORD_<ENV>` (e.g. `ADMIN_PASSWORD_VCPTCORE`) —
-then `ADMIN_PASSWORD` from the env's own password file `.env.playwright.<env>`, then the
-`ADMIN_PASSWORD_VCPTCORE_<STABLE|REGRESSION>` forms, then generic `ADMIN_PASSWORD`. A missing
-per-env password degrades `--verify` to branch-pin-only (`live` reads `?`), it never fails the run.
+`--verify`'s live column needs the env's admin password (`scripts/deploy/lib/env.ts` `resolveEnvCoords`):
+`--password` if given, else the store's `master` on a `PASSWORDS=master` stand, else `ADMIN_PASSWORD` from
+`test-accounts.local.json` — `envs.<env>.ADMIN_PASSWORD`, falling back to `defaults.ADMIN_PASSWORD`. A missing
+password degrades `--verify` to branch-pin-only (`live` reads `?`), it never fails the run.
 
 **`JIRA_EMAIL` belongs in `.env.local`, next to `JIRA_API_TOKEN`** — they are the two halves of one
 Basic-auth pair. A committed `.env.<env>` copy pins one teammate's identity against every other

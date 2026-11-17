@@ -269,8 +269,8 @@ export async function runPr(args: string[]): Promise<void> {
 
   // The session env as every entry point resolves it (TEST_ENV, else this session's binding, else
   // .env.test-env, else vcst): reading TEST_ENV alone sent a checkout whose env is set only in
-  // .env.test-env to vcst / vcst-qa. selectTestEnv, not resolveTestEnv: the latter puts .env.playwright.<env> in
-  // process.env first, and loadEnvFiles' ambientWins would then let those pins beat what the environment passed.
+  // .env.test-env to vcst / vcst-qa. selectTestEnv writes only TEST_ENV to process.env, so loadEnvFiles' ambientWins
+  // still lets only what the environment passed beat the files.
   const sessionEnv = selectTestEnv('vcst');
   loadEnvFiles(sessionEnv);
   const env = named || sessionEnv;

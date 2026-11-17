@@ -42,6 +42,7 @@ import {
 } from '../seed-data/b2b/membership-alias-specs.mjs';
 import { resolveAllRoles, roleByKey } from './user-roles.mjs';
 import { CSV_CREDENTIAL_SOURCES, collectDeclarations, findPasswordConflicts } from '../seed-data/credential-specs.mjs';
+import { STORE_FILE, generatePassword, recordAccount } from './test-accounts.mjs';
 
 // --- Env: defaults → .env.{ENV} → .env.local, per-env suffix promotion, the QA_ENV_PATH files, the master password ---
 export const { testEnv: TEST_ENV } = loadEnv({ fallback: 'vcst' });
@@ -181,33 +182,78 @@ export async function findContactByEmail(email, { api: http = api } = {}) {
 }
 
 // --- Password resolution (VCST-5406: no secret literals in committed CSVs) ---
-// A CSV password cell of the form `{{VAR}}` resolves from process.env[VAR] (which config.js /
-// this lib have already suffix-promoted per env). A bare literal passes through (back-compat).
-// The localhost-safe fallback lets a fresh clone still seed even before .env.local is filled.
-const PW_FALLBACK = 'Password1!';
-export function resolvePassword(raw, fallback = PW_FALLBACK) {
+// A CSV password cell of the form `{{VAR}}` resolves from process.env[VAR] — the loader's value, which is the
+// test-account store's (test-accounts.local.json) for this TEST_ENV. A bare literal passes through (back-compat); an
+// empty cell is DEFAULT_TEST_PASSWORD's.
+//
+// A VAR the env has no value for gets a password GENERATED for it in this process — one per VAR, never a shared
+// literal.
+//
+// Every account a seeder creates, or sets the password of, goes into the store with its LOGIN: the seeder calls
+// `accountSet(login, password)`, which records `accounts.<TEST_ENV>.<login>` = the VAR its password is under — and,
+// for a generated password, VAR=value itself — so the next run, the lanes and every suite read both. Nothing has to be
+// copied into a file by hand after a seed.
+const generatedFor = new Map(); // VAR → value generated in this process
+const generatedVar = new Map(); // value → VAR, until the store has it
+const resolvedVar = new Map();  // value → the VAR it was resolved from (any password this process handed out)
+
+/** The password for `varName` on this env: its value, else the first alias's, else one generated for `varName`. */
+export function passwordFor(varName, ...aliases) {
+  for (const n of [varName, ...aliases]) if (process.env[n]) { resolvedVar.set(process.env[n], n); return process.env[n]; }
+  if (!generatedFor.has(varName)) {
+    const v = generatePassword();
+    generatedFor.set(varName, v);
+    generatedVar.set(v, varName);
+    resolvedVar.set(v, varName);
+  }
+  return generatedFor.get(varName);
+}
+
+export function resolvePassword(raw) {
   const s = String(raw || '').trim();
   const m = s.match(/^\{\{\s*([A-Z0-9_]+)\s*\}\}$/);
-  if (m) return process.env[m[1]] || fallback;
-  return s || fallback;
+  if (m) return passwordFor(m[1]);
+  return s || passwordFor('DEFAULT_TEST_PASSWORD');
+}
+
+/**
+ * A seeder has just created the account `login`, or set its password, with `value` (a password this module handed
+ * out: resolvePassword / passwordFor). Records the account in the store for TEST_ENV — its login and the VAR its
+ * password is under — and, when `value` was generated because the env had no value for VAR, VAR=value too (exposed in
+ * process.env, and said once). `name`: the VAR, for a seeder that read the password itself. Returns the VAR, or null
+ * when `value` came from no VAR (a literal cell) or on a dry run.
+ */
+export function accountSet(login, value, name) {
+  const varName = name ?? resolvedVar.get(value);
+  if (!varName || !login || DRY_RUN) return null;
+  const generated = generatedVar.has(value);
+  recordAccount(ROOT, TEST_ENV, login, varName, generated ? value : undefined);
+  if (generated) {
+    generatedVar.delete(value);
+    process.env[varName] = value;
+    console.log(`    ✓ ${varName} had no value for ${TEST_ENV}: generated one and recorded it in ${STORE_FILE}` +
+      ' (share the store with the team if this stand is shared)');
+  }
+  if (VERBOSE) console.log(`    ✓ ${login} recorded in ${STORE_FILE} (${TEST_ENV}, password ${varName})`);
+  return varName;
 }
 
 /**
  * Where a resolved password actually CAME from — pure, no side effects.
- *   { kind: 'env',      varName }  → `{{VAR}}` and VAR is set: the CSV declares a real credential
+ *   { kind: 'env',      varName }  → `{{VAR}}` and VAR has a value on this env: the CSV declares a real credential
  *   { kind: 'literal',  varName: null } → a bare literal cell (back-compat)
- *   { kind: 'fallback', varName }  → `{{VAR}}` but VAR is UNSET (or the cell is empty): the value
- *                                    is only PW_FALLBACK, i.e. nothing was actually declared.
+ *   { kind: 'fallback', varName }  → `{{VAR}}` with no value (or an empty cell): the password is one generated in this
+ *                                    process, i.e. nothing was declared.
  *
- * This distinction is what makes password RECONCILIATION safe: an env that hasn't filled
- * .env.local resolves every cell to PW_FALLBACK, and force-writing that onto existing accounts
- * would silently rewrite every seeded credential to 'Password1!'. Only a DECLARED password
- * (env/literal) may be reconciled onto an existing account.
+ * This distinction is what makes password RECONCILIATION safe: an env whose store lacks a variable must never
+ * force a password nobody declared onto existing accounts — the team may hold their real one. Only a DECLARED password
+ * (env/literal) is reconciled onto an existing account; a generated one only ever creates new accounts, and stays
+ * undeclared for the rest of the run that generated it.
  */
 export function passwordSource(raw) {
   const s = String(raw || '').trim();
   const m = s.match(/^\{\{\s*([A-Z0-9_]+)\s*\}\}$/);
-  if (m) return { kind: process.env[m[1]] ? 'env' : 'fallback', varName: m[1] };
+  if (m) return { kind: process.env[m[1]] && !generatedFor.has(m[1]) ? 'env' : 'fallback', varName: m[1] };
   return { kind: s ? 'literal' : 'fallback', varName: null };
 }
 /** True when the CSV cell declares a real credential (so it may be reconciled onto a live account). */
@@ -254,6 +300,7 @@ async function reconcilePasswordSafe(email, password) {
   try {
     const ok = await resetSecurityPassword(api, email, password);
     if (ok && VERBOSE) console.log(`    ↻ password reconciled for ${email}`);
+    if (ok) accountSet(email, password);
     return ok;
   } catch (e) {
     console.warn(`    ⚠ password reconcile failed for ${email}: ${String(e?.message || e).slice(0, 160)}`);
@@ -619,6 +666,7 @@ export async function ensureSecurityAccount(email, password, contactId, status =
   const fresh = await findUserByEmail(email);
   if (!fresh?.id) throw new Error(`created user ${email} but could not resolve its id via GET`);
   console.log(`    ✓ create user  ${fresh.id} (${email})${status && status !== 'Approved' ? ` [${status}]` : ''}`);
+  accountSet(email, password);
   return fresh.id;
 }
 
@@ -1107,7 +1155,7 @@ export function roleUsers() {
   };
   return resolveAllRoles()
     .filter(r => r.kind === 'customer' && r.present)
-    .map(r => { const n = nameFromEmail(r.email); return { email: r.email, password: r.password, first: n.first, last: n.last, source: `env-role:${r.key}`, group: r.group || null, currency: r.currency || null }; });
+    .map(r => { const n = nameFromEmail(r.email); return { email: r.email, password: r.password, passwordVar: r.passwordVar, first: n.first, last: n.last, source: `env-role:${r.key}`, group: r.group || null, currency: r.currency || null }; });
 }
 // Admin-kind env-roles the seeder must CREATE (provision=true) — e.g. IMPERSONATION_ADMIN. The
 // bootstrap ADMIN has no `provision` flag, so it's never (re)created here.
@@ -1127,19 +1175,20 @@ export async function ensureAdminAccount(u) {
   const present = await verifyCreated(api, 'user', res?.id || u.email, { name: u.email });
   if (!present && !DRY_RUN) throw new Error(`create admin ${u.email}: account not found after create`);
   console.log(`    ✓ create admin ${u.email} [${u.source}]`);
+  accountSet(u.email, u.password);
   return 'created';
 }
 export function personalUsers() {
   const out = []; const seen = new Set();
   // `pwDeclared` mirrors isPasswordDeclared() for the non-CSV (env-role) sources: a role's password
   // is declared iff its passwordVar is actually set. Only a declared password is reconciled onto an
-  // existing account (see ensureSecurityAccount / ensurePersonalAccount) — never PW_FALLBACK.
+  // existing account (see ensureSecurityAccount / ensurePersonalAccount) — never a generated one.
   const add = (email, password, first, last, source, status = 'Active', group = null, currency = null, pwDeclared = false) => {
     const e = (email || '').trim(); if (!e.includes('@')) return;
     const k = e.toLowerCase(); if (seen.has(k)) return; seen.add(k);
-    out.push({ email: e, password: password || 'Password1!', first: first || 'QA', last: last || 'User', source, status: status || 'Active', group, currency, pwDeclared: !!pwDeclared });
+    out.push({ email: e, password, first: first || 'QA', last: last || 'User', source, status: status || 'Active', group, currency, pwDeclared: !!pwDeclared });
   };
-  for (const u of roleUsers()) add(u.email, u.password, u.first, u.last, u.source, 'Active', u.group, u.currency, !!u.password);
+  for (const u of roleUsers()) add(u.email, u.password || passwordFor(u.passwordVar), u.first, u.last, u.source, 'Active', u.group, u.currency, !!u.password);
   for (const r of readCsv('test-data/users/agent-user-pool.csv')) {
     if ((r.seeded || '').toLowerCase() === 'false') continue;
     if (r.personal_email && r.personal_email !== 'n/a') add(r.personal_email, resolvePassword(r.personal_password), r.personal_first_name, r.personal_last_name, 'agent-pool', 'Active', null, null, isPasswordDeclared(r.personal_password));
@@ -1199,6 +1248,7 @@ export async function ensurePersonalAccount(u) {
   const present = await verifyCreated(api, 'user', res?.id || contactId, { name: u.email });
   if (!present && !DRY_RUN) throw new Error(`create ${u.email}: account not found after create (verify failed)`);
   console.log(`    ✓ create ${u.email}${u.source?.startsWith('env-role') ? ` [${u.source}]` : ''}${u.group ? ` (group ${u.group})` : ''}${u.currency ? ` (${u.currency})` : ''}`);
+  accountSet(u.email, u.password);
   return 'created';
 }
 

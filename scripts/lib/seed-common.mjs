@@ -203,7 +203,7 @@ export async function auth() {
       throw new Error(
         `auth failed: ${res.status} ${body}
 `
-        + `  ${_TEST_ENV} is a master stand (PASSWORDS=master): ${ADMIN} signs in with MASTER_PASSWORD from .env.playwright.master,
+        + `  ${_TEST_ENV} is a master stand (PASSWORDS=master): ${ADMIN} signs in with MASTER_PASSWORD (the store's "master" in test-accounts.local.json),
 `
         + `  like every test account. Set ${ADMIN}'s password on ${new URL(BACK_URL).host} to the master password, or take
 `

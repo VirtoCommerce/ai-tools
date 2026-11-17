@@ -25,7 +25,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, ONLY, loadAliases, BACK_URL, ADMIN, ADMIN_PASSWORD,
   uploadAsset, writeEnvAliasOverride, verifyRemoved, resetSecurityPassword, ensureVirtoPagesEnabled,
 } from '../../lib/seed-common.mjs';
-import { resolvePassword } from '../../lib/user-provision.mjs';
+import { accountSet, resolvePassword } from '../../lib/user-provision.mjs';
 import {
   TICKET_PREFIX, PAGE_ALIASES, USER_ALIAS, MODULE_ID, STATUS, EMPTY_CONTENT, pageSpecs, moduleExportJson, restoreManifest,
   buildStoredZip, roleBody, accountBody,
@@ -152,6 +152,7 @@ async function ensureUser() {
     if (res && res.succeeded === false) throw new Error(`create ${USER.login}: ${JSON.stringify(res.errors)}`);
     user = await api('GET', `/api/platform/security/users/${encodeURIComponent(USER.login)}`, null, { expectStatus: [200] });
     log(`  + created user ${USER.login} (${user.id})`);
+    accountSet(USER.login, password);
   } else {
     let dirty = false;
     if (!(user.roles || []).some((r) => r.id === role.id)) { user.roles = [{ id: role.id, name: role.name }]; dirty = true; }
@@ -159,6 +160,7 @@ async function ensureUser() {
     if (dirty) await api('PUT', '/api/platform/security/users', user, { expectStatus: [200, 204] });
     // Keep the password on the declared secret so the case can log in (the account is AGENT-TEST only).
     await resetSecurityPassword(api, USER.login, password);
+    accountSet(USER.login, password);
     log(`  = reused user ${USER.login} (${user.id})${dirty ? ' — role/admin flag reconciled' : ''}`);
   }
   const tok = await rawToken(USER.login, password);

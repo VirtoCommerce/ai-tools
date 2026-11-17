@@ -40,6 +40,7 @@ import {
   MAX_COUNT, perfOrderSpec, perfOrderTotal, buildPerfItems, datasetProfile, datasetShortfalls,
   parsePerfOrderIndex, percentile,
 } from './sales-rep-perf-specs.mjs';
+import { passwordFor, accountSet } from '../../lib/user-provision.mjs';
 
 const argv = process.argv.slice(2);
 const argVal = (name, dflt = null) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : dflt);
@@ -51,7 +52,9 @@ const LADDER = argVal('--ladder');
 const BATCH = Math.max(1, parseInt(argVal('--batch', '5'), 10) || 5);
 const TD_CONCURRENCY = Math.max(1, parseInt(argVal('--concurrency', '5'), 10) || 5);
 const VERIFY = argv.includes('--verify');
-const REP_PASSWORD = process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD || 'Password1!';
+// The reps' password: SR_REP_PASSWORD, else TEST_USER_PASSWORD (the store's, for this env); with neither, one is
+// generated, and the store records it with the rep's login once a rep is created or reset with it (accountSet).
+const REP_PASSWORD = passwordFor('SR_REP_PASSWORD', 'TEST_USER_PASSWORD');
 
 const now = () => performance.now();
 const statusOf = (e) => { const m = /→ (\d{3})/.exec(String(e?.message || e)); return m ? parseInt(m[1], 10) : 0; };
@@ -112,6 +115,7 @@ async function ensurePerfRep(orgs) {
       roleId: role.id, isLocked: false, organizations: served,
     });
     log(`rep created: ${PERF_REP.key} (${rep?.id}) role "${role.name}" serving ${served.length} org(s)`);
+    accountSet(PERF_REP.email, REP_PASSWORD);
   } else {
     rep = await api('GET', `/api/sales-rep/${found.id}`);
     const have = new Set((rep?.organizations || []).map((o) => o.organizationId));
@@ -126,6 +130,7 @@ async function ensurePerfRep(orgs) {
       log(`rep ${PERF_REP.key}: healed (${missing.length} membership(s) added${nameDrift ? `, name -> "${rep?.fullName}"` : ''})`);
     } else log(`rep exists: ${PERF_REP.key} (${rep.id}) "${rep.fullName}" serving ${have.size} org(s)`);
     await resetSecurityPassword(api, PERF_REP.email, REP_PASSWORD, { silent: true });
+    accountSet(PERF_REP.email, REP_PASSWORD);
   }
   if (DRY_RUN) return { contactId: rep?.id, userId: null };
   const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(PERF_REP.email)}`, null, { expectStatus: [200, 404] });

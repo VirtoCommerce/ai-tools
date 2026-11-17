@@ -93,7 +93,7 @@ T2–T5 can run in parallel once T1 is merged.
 | D1 | #395 lands first; nothing in this epic re-implements what it adds. |
 | D2 | Stand per task = **both**: developers on a local stack (T6), QA and regression on a leased shared stand (T5). |
 | D3 | Lease store = GitHub Issues in `ai-tools` (§6). |
-| D4 | Passwords' source of truth = vc-secrets (credential store / Key Vault); `.env.playwright.<env>` is a gitignored, generated copy because Playwright MCP takes `--secrets` only as a file. |
+| D4 | **Superseded 2026-11-17** for test accounts by `2026-11-17-test-accounts-store-design.md` (one store, `test-accounts.local.json`; vc-secrets keeps tokens and API keys only). Was: Passwords' source of truth = vc-secrets (credential store / Key Vault); `.env.playwright.<env>` is a gitignored, generated copy because Playwright MCP takes `--secrets` only as a file. |
 | D5 | ~~One local stack per machine (`TEST_ENV=localhost`); parallel local stacks are out of scope.~~ Superseded 2026-10-19 by D6. |
 | D6 | Local stands are the workspace's ticket stands — one per ticket, own ports, a shared database (data interference accepted) — several at once. An env's files may live outside the repo, in `QA_ENV_PATH` folders; a dedicated file beats the repo's key by key. |
 | D7 | One master password (`.env.playwright.master`, `MASTER_PASSWORD`) for every stand that opts in with `PASSWORDS=master`, local and cloud; its lanes type `MASTER_PASSWORD`. Shared stands keep per-env passwords unless the team agrees. |

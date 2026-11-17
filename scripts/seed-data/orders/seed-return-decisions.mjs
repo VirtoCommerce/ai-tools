@@ -42,7 +42,7 @@ import {
   DECISION_BUYER, isDedicatedDecisionBuyer,
 } from './return-decisions-specs.mjs';
 import {
-  authenticate as provisionAuth, ensurePersonalAccount, deleteUserByEmail, findUserByEmail,
+  authenticate as provisionAuth, ensurePersonalAccount, deleteUserByEmail, findUserByEmail, passwordFor,
 } from '../../lib/user-provision.mjs';
 
 const FRESH = process.argv.includes('--fresh');
@@ -84,12 +84,12 @@ async function gqlMutate(label, query, variables, token) {
 /** The env persona `<key>_EMAIL` / `<key>_PASSWORD` (the colleague). */
 const envPersona = (key) => ({ key, email: process.env[`${key}_EMAIL`], password: process.env[`${key}_PASSWORD`] });
 /** The dedicated buyer (DECISION_BUYER) — never an env persona, so never a real mailbox. */
-const buyerPersona = () => ({ key: DECISION_BUYER.alias, email: DECISION_BUYER.email, password: process.env[DECISION_BUYER.passwordVar] });
+const buyerPersona = () => ({ key: DECISION_BUYER.alias, email: DECISION_BUYER.email, password: process.env[DECISION_BUYER.passwordVar] && passwordFor(DECISION_BUYER.passwordVar) });
 
 /** Find-or-create the dedicated buyer: contact + Customer account on STORE_ID, no organization. */
 async function ensureDecisionBuyer() {
   const p = buyerPersona();
-  if (!p.password) throw new Error(`${DECISION_BUYER.passwordVar} is unset in the layered env — refusing to create ${p.email} with a fallback password`);
+  if (!p.password) throw new Error(`${DECISION_BUYER.passwordVar} is unset in the layered env — add it to test-accounts.local.json — refusing to create ${p.email} with a password nobody can read back`);
   await provisionAuth();
   const r = await ensurePersonalAccount({
     email: p.email, password: p.password, first: DECISION_BUYER.firstName, last: DECISION_BUYER.lastName,

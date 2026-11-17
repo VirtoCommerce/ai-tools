@@ -6,12 +6,13 @@
 // scripts/lib/env-layers.mjs `findEnv` finds: the project root's `.env.<env>`, or one in a QA_ENV_PATH folder (a
 // ticket's folder is filled with the run's ticket).
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { parse } from 'dotenv';
 import { envSuffix, sessionEnvFile, testEnvChoice } from './resolve-test-env.js';
 import { loadEnv } from './load-env.mjs';
-import { declaredSecretsFile, readSecretsFile } from './browser-secrets.mjs';
-import { MASTER_FILE, MASTER_NAME, findEnv, knownEnvs as rootEnvs, lookedIn } from './env-layers.mjs';
+import { laneDrift, laneSecrets, readLaneManifests } from './browser-secrets.mjs';
+import { MASTER_NAME, findEnv, knownEnvs as rootEnvs, lookedIn } from './env-layers.mjs';
+import { STORE_FILE } from './test-accounts.mjs';
 
 /** A refusal the CLI prints and exits 2 on. */
 export class BindError extends Error {}
@@ -77,26 +78,21 @@ export function describeSessionEnv({ ticket } = {}) {
   for (const key of ['BACK_URL', 'FRONT_URL', 'ENV_RISK']) lines.push(`  ${key.padEnd(9)} ${process.env[key] ?? '(unset)'}  (${sourceOf(key)})`);
   if (dedicated.length) lines.push(`  dedicated files (they beat the project root's): ${dedicated.map((f) => f.replace(/\\/g, '/')).join(', ')}`);
 
-  const declared = declaredSecretsFile('.');
-  const secrets = declared ? readSecretsFile('.', declared) : readSecretsFile('.');
-  const lanes = basename(secrets.path);
-  const resync = 'npm run secrets:sync:all, then reconnect playwright-* in /mcp';
-  if (master) {
-    const has = secrets.values.get(MASTER_NAME);
-    if (!master.found) lines.push(`  ⚠ passwords: ${testEnv} says PASSWORDS=master, but ${MASTER_FILE} has no ${MASTER_NAME} — create it (one password for every test account on master stands), then ${resync}`);
-    else if (!has) lines.push(`  ⚠ passwords: ${testEnv} uses the master password, but the lanes' ${lanes} has no ${MASTER_NAME} — ${resync}`);
-    else if (has !== process.env[MASTER_NAME]) lines.push(`  ⚠ passwords: ${MASTER_NAME} in the lanes' ${lanes} differs from ${MASTER_FILE} — ${resync}`);
-    else lines.push(`  passwords: type ${MASTER_NAME} in every password field — ${testEnv} uses the master password (PASSWORDS=master); the lanes read ${lanes}`);
-  } else if (!secrets.exists) lines.push(`  passwords: the lanes' --secrets file ${lanes} does not exist — npm run secrets:sync (one env) or secrets:sync:all (every env)`);
-  else if (secrets.envs) {
-    lines.push(secrets.envs.includes(testEnv)
-      ? `  passwords: type NAME${envSuffix(testEnv)} — the lanes read ${lanes}`
-      : `  ⚠ passwords: the lanes' ${lanes} has no ${testEnv} (it covers ${secrets.envs.join(', ') || 'none'}) — npm run secrets:sync:all, then reconnect playwright-* in /mcp`);
+  // The lanes hold every env's passwords from the store as NAME_<ENV> (scripts/lanes/playwright-lane.mjs); a running
+  // lane started before the store changed for this env types old values — say so.
+  const reconnect = 'reconnect playwright-* in /mcp (not while browser suites run)';
+  if (master && !master.found) lines.push(`  ⚠ passwords: ${testEnv} says PASSWORDS=master, but ${STORE_FILE} has no "master" — add it, then ${reconnect}`);
+  else if (master) lines.push(`  passwords: type ${MASTER_NAME} in every password field — ${testEnv} uses the master password (PASSWORDS=master)`);
+  else lines.push(`  passwords: type NAME${envSuffix(testEnv)} — the lanes hold ${STORE_FILE}'s values for every env`);
+  const manifests = readLaneManifests('.');
+  if (!manifests.length) {
+    lines.push('  ⚠ lanes: no playwright-* lane started by scripts/lanes/playwright-lane.mjs is running — npm run creds:migrate, then restart Claude Code');
   } else {
-    lines.push(secrets.env === testEnv
-      ? `  passwords: type the bare NAME — the lanes read ${lanes}, generated for ${testEnv}`
-      : `  ⚠ passwords: the lanes read ${lanes}, generated for ${secrets.env ?? 'an unstamped env'} — a sign-in on ${testEnv} would type that env's passwords. ` +
-        'For sessions on several envs: npm run secrets:sync:all, and point --secrets at .env.playwright.all');
+    const current = laneSecrets('.').secrets;
+    const mine = (n) => (master ? n === MASTER_NAME : n.endsWith(envSuffix(testEnv)));
+    const behind = [...new Set(manifests.filter((m) => { const d = laneDrift(m, current); return [...d.stale, ...d.absent].some(mine); }).map((m) => m.lane))];
+    if (behind.length) lines.push(`  ⚠ lanes: ${behind.join(', ')} started before ${STORE_FILE} changed for ${testEnv} — ${reconnect}`);
+    else if (!master && !manifests.some((m) => (m.envs ?? []).includes(testEnv))) lines.push(`  ⚠ lanes: the running lanes hold no ${testEnv} password — add its accounts to ${STORE_FILE}, then ${reconnect}`);
   }
   return { testEnv, sourceOf, lines };
 }

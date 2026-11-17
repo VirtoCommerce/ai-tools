@@ -108,9 +108,13 @@ test("templates/.mcp.json.example binds every lane config that exists", () => {
     const args = entry.args ?? [];
     assert.ok(args.includes(`config/mcp-playwright-${lane}.config.json`),
       `playwright-${lane} in the template does not point at ${file}`);
-    // A missing --secrets is worse than a crash: playwright-mcp then types the BARE KEY NAME as a
-    // literal, so a login "succeeds" with the wrong string and nothing errors.
-    assert.ok(args.includes("--secrets"), `playwright-${lane} in the template has no --secrets`);
+    // A lane without its passwords is worse than a crash: playwright-mcp then types the KEY NAME as a
+    // literal, so a login "succeeds" with the wrong string and nothing errors. The passwords come from
+    // test-accounts.local.json through the launcher, which must be told which lane it is.
+    const at = args.indexOf("scripts/lanes/playwright-lane.mjs");
+    assert.ok(at !== -1, `playwright-${lane} in the template does not start through scripts/lanes/playwright-lane.mjs`);
+    assert.equal(args[at + 1], `playwright-${lane}`, `playwright-${lane}: the launcher is not given the lane's own name`);
+    assert.ok(!args.includes("--secrets"), `playwright-${lane}: --secrets names a password file; the launcher refuses it`);
   }
 
   // One pinned @playwright/mcp version across every lane — an unpinned or drifting entry swaps the

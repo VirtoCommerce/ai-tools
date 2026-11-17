@@ -24,7 +24,7 @@ export const ROLE_PASSWORD_NAMES = Object.freeze([...new Set(USER_ROLES.map((r) 
 
 /**
  * What config.js would leave in process.env for `testEnv`, computed WITHOUT touching process.env, so
- * one process can hold several envs at once (`secrets:sync --all`, the enforce-secret-token hook). The
+ * one process can hold several envs at once (the Playwright lane launcher, the enforce-secret-token hook). The
  * order is scripts/lib/env-layers.mjs `layered` — the one every loader applies.
  *
  * @param {string} testEnv

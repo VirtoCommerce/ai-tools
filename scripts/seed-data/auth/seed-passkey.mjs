@@ -48,6 +48,7 @@ import {
   orgBody, contactBody, accountBody, accountProblems, isSeededOuterId, seedOuterId, resolveStoreId,
   FOREIGN_STORE_MARKER, pickForeignStore, foreignStoreRejection,
 } from './passkey-specs.mjs';
+import { accountSet } from '../../lib/user-provision.mjs';
 
 const argv = process.argv.slice(2);
 const VERIFY_ONLY = argv.includes('--verify-only');
@@ -270,6 +271,7 @@ async function ensureAccount(spec, ctx) {
   if (!user) {
     const res = await api('POST', '/api/platform/security/users/create', body, { expectStatus: [200, 201] });
     if (res && res.succeeded === false) throw new Error(`users/create ${spec.email}: ${JSON.stringify(res.errors)}`);
+    accountSet(spec.email, password, PASSWORD_VAR);
     if (!DRY_RUN) {
       user = await findUser(spec.email);
       if (!user?.id) throw new Error(`created ${spec.email} but the users search cannot find it`);
@@ -290,6 +292,7 @@ async function ensureAccount(spec, ctx) {
     const put = await api('PUT', '/api/platform/security/users', full, { expectStatus: [200, 204] });
     if (put && put.succeeded === false) throw new Error(`PUT users ${spec.email}: ${JSON.stringify(put.errors)}`);
     if (!await resetSecurityPassword(api, user.userName, password)) throw new Error(`password reset failed for ${spec.email}`);
+    accountSet(spec.email, password, PASSWORD_VAR);
     await clearPasskeys(spec, password);
     log(`  ↻ re-armed ${spec.email} (${user.id})`);
   } else log(`  ↻ would re-arm ${spec.email}`);
@@ -338,7 +341,7 @@ async function resolveForeignStore(overlay) {
 
 async function seed(roles) {
   const password = process.env[PASSWORD_VAR];
-  if (!password && !DRY_RUN) throw new Error(`${PASSWORD_VAR} is not set (resolve through .env.local) — refusing to seed a fallback password`);
+  if (!password && !DRY_RUN) throw new Error(`${PASSWORD_VAR} is not set (resolve through .env.local) — add it to test-accounts.local.json — refusing to seed a password nobody can read back`);
   const overlay = readOverlay();
   if (needsForeignStore()) foreignStoreId = await resolveForeignStore(overlay);
   const orgIdsByKey = await ensureOrgs(overlay);

@@ -6,14 +6,13 @@ import { loadEnvFor } from './scripts/lib/load-env.mjs';
 // Layered env loader. Precedence (later overrides earlier):
 //   1. .env.defaults       — cross-env constants (sandbox cards, builder.io URL)
 //   2. .env.${TEST_ENV}    — per-env URLs/identifiers (vcst | vcptcore | virtostart)
-//   3. .env.local          — secrets (passwords, tokens) — gitignored
-//   4. .env.playwright.${TEST_ENV} — this env's passwords (gitignored), exposed as KEY_<ENV>, so the
-//                            promotion lifts them over 3.
-//   5. the env's files in the QA_ENV_PATH folders (a ticket's or a machine's stands) — they beat 1-4 key by key
-//   6. PASSWORDS=master    — every test account's password is MASTER_PASSWORD (.env.playwright.master)
+//   3. .env.local          — machine-local overrides — gitignored
+//   4. the env's files in the QA_ENV_PATH folders (a ticket's or a machine's stands) — they beat 1-3 key by key
+//   5. test-accounts.local.json — every test account's login and password (defaults, then envs.<env>) — gitignored
+//   6. PASSWORDS=master    — every test account's password is MASTER_PASSWORD (the store's `master`)
 // The order is scripts/lib/env-layers.mjs `layered`, the one every loader applies; process.env is beaten by 2-6.
 // The legacy monolithic .env file was removed — all values live in the layered
-// files above. Per-env scaffolds are committed; secrets stay in .env.local.
+// files above. Per-env scaffolds are committed; test-account credentials stay in the store, tokens in vc-secrets.
 //
 // TEST_ENV selects WHICH .env.${TEST_ENV} loads, so it must be resolved before any
 // dotenv file is read. Precedence: process.env.TEST_ENV > this Claude Code session's

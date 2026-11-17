@@ -23,7 +23,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   COMPONENTS, PAGES, PERMISSION_USERS, STATUS, CONTENT_FILE, SC_PERMISSIONS,
-  BUILDER_BASE_PERMISSIONS, SC_USER_PASSWORD_VAR, SC_USER_PASSWORD_FALLBACK,
+  BUILDER_BASE_PERMISSIONS, SC_USER_PASSWORD_VAR,
   userEmail, roleId, rolePermissions, excludedPermissions, validateFixtureShape, findGuidLeaks,
 } from './shared-components-specs.mjs';
 
@@ -114,9 +114,11 @@ if (!aliasBad) ok(`all ${aliasNames.length} aliases registered + runtime-id-free
 
 // 6. no password literal
 const registrySrc = JSON.stringify(aliasNames.map((n) => registry[n] || {}));
-const pwLeak = [specSrc, registrySrc].some((s) => new RegExp(`["'\`]${SC_USER_PASSWORD_FALLBACK.replace(/[.*+?^${}()|[\]\\!]/g, '\\$&')}["'\`]`).test(s.replace(new RegExp(`SC_USER_PASSWORD_FALLBACK\\s*=\\s*'${SC_USER_PASSWORD_FALLBACK.replace(/[.*+?^${}()|[\]\\!]/g, '\\$&')}'`), '')));
-if (pwLeak) fail('a password literal appears outside the single documented localhost fallback constant');
-else ok(`passwords resolve from {{${SC_USER_PASSWORD_VAR}}} (.env.local) — one documented localhost fallback constant only`);
+// No fallback constant in the spec, and every password field of the registry a {{VAR}} token: the value is the
+// test-account store's (test-accounts.local.json), or one the seeder generates and records there.
+const pwLeak = /_PASSWORD_FALLBACK\b|passwordFallback/.test(specSrc) || /"password"\s*:\s*"(?!\{\{)[^"]+"/.test(registrySrc);
+if (pwLeak) fail('a password literal or fallback constant appears in the spec or the alias registry');
+else ok(`passwords resolve from {{${SC_USER_PASSWORD_VAR}}} (test-accounts.local.json) — no literal, no fallback`);
 
 console.log(`\n${problems.length ? `FAILED — ${problems.length} problem(s)` : 'OK'}`);
 process.exit(problems.length ? 1 : 0);
