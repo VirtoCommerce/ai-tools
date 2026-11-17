@@ -8,6 +8,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The stray-screenshot sweep leaves git-tracked files alone — `vc-fix` `0.18.11` — 2026-11-17
+
+### Fixed
+
+- `hooks/sweep-stray-screenshots.mjs` (Stop / SubagentStop; the project mirror in `.claude/hooks/` changed the same
+  way) moved every loose `*.png` / `*.jpg` / `*.jpeg` / `*.har` in the project root, assuming the root holds no
+  images. The plugin runs the hook in every project the user opens, and in a vc-frontend checkout it moved the
+  committed README image `demo.jpg` into `reports/_stray-screenshots/`, leaving it deleted in `git status`. The hook
+  now skips every file `git ls-files` lists, and sweeps nothing when the root is not a git work tree or git fails.
+  It passes the names to git in batches of at most 8,000 characters: in one call, 1,500 loose files exceeded the
+  Windows command-line limit, git failed, and nothing was ever swept again.
 ## `visual:snap` waits for a visible story root — `vc-frontend` `0.3.2` — 2026-11-17
 
 ### Fixed
