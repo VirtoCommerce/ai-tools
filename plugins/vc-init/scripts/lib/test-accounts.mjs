@@ -39,7 +39,7 @@ import { join } from 'node:path';
 
 /** The store's file name, in the project root. Gitignored. */
 export const STORE_FILE = 'test-accounts.local.json';
-/** The tracked template: the store's shape and every declared name, no values. */
+/** The tracked template: the store's SHAPE (a few example accounts), no values. The names an env needs: creds:check. */
 export const STORE_EXAMPLE = 'templates/test-accounts.example.json';
 export const STORE_VERSION = 2;
 const NAME = /^[A-Z][A-Z0-9_]*$/;
