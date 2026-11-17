@@ -8,6 +8,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `visual:snap` waits for a visible story root — `vc-frontend` `0.3.2` — 2026-11-17
+
+### Fixed
+
+- `visual:snap` (`plugins/vc-frontend/visual/snap.mjs`) waited for `#storybook-root > *`, the root's FIRST child, to
+  become visible. A story whose first child is an empty element (VcPopover's `#popover-host`) never got there, so
+  every date-picker story timed out as `unrendered` — 43 stories × 2 viewports on vc-frontend, on every
+  build. It now waits for the first VISIBLE child (`#storybook-root > *:visible`). A story that renders nothing at all
+  (VcPagination `one-page`, ReportingPanel `no-data`) still reports `unrendered`.
+
+---
+
 ## Single strategy-driven `/qa-test` — `vc-test` `0.18.2`, `vc-fix` `0.18.10` — 2026-11-13
 
 Design: [`docs/superpowers/specs/2026-11-13-qa-test-single-design.md`](docs/superpowers/specs/2026-11-13-qa-test-single-design.md).
