@@ -1,0 +1,356 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+NXR-001,"Theme — body text is Inter and headings are Geologica on every main page, light and dark",Next Merge > Theme,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[ACT] for each page — home, the category, the p_title product page, /cart, /account/dashboard — read getComputedStyle(body).fontFamily and getComputedStyle(first h1).fontFamily
+[ACT] emulate prefers-color-scheme: dark and repeat on home and the product page","[DOM] on every page the body font-family list starts with Inter {SPEC}
+[DOM] on every page the h1 font-family list starts with Geologica {SPEC}
+[REL] the dark-mode fonts equal the light-mode fonts on the same page {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",A system or upstream font after a merge (cascade-layer order broken); headings in the body font,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Theme on cascade layers, vc-frontend#2577 | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-002,"Theme — widget titles are sentence case at weight 600, never uppercase",Next Merge > Theme,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[ACT] open the p_title product page and read every widget title (the kit's vc-widget title)
+[NAV] {{FRONT_URL}}/cart (add p_title first if empty)
+[ACT] read every widget title
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] read every widget title","[DOM] every widget title has computed text-transform none {SPEC}
+[DOM] every widget title has computed font-weight 600 {SPEC}
+[FORMAT] every title's rendered text is not all capitals (it differs from its own toUpperCase()) {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Uppercase titles: the kit default (--vc-widget-title-text-transform falls back to uppercase) wins over the theme,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Theme on cascade layers; ui-kit vc-widget.vue title variables | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-003,"Print — cart and order details print without header, footer and page chrome",Next Merge > Theme,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+The org user has >= 1 order","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/account/orders
+[ACT] open the first order
+[ACT] emulate media type print
+[ACT] read the display of the header, the footer and the account rail
+[NAV] {{FRONT_URL}}/cart (one line in it)
+[ACT] emulate media type print and read the same","[DOM] under print the header, the footer and the account rail have computed display none (or zero height) on both pages {SPEC}
+[DOM] under print the order lines and totals stay visible {SPEC}
+[REL] the order total printed == the order total on screen {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Header or footer in the print layout; line items clipped,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Theme (print), §Footer (hidden in print)",Draft
+NXR-004,"Header counter — two products in Compare show ""2"" on the Compare icon, named ""Compare: 2""",Next Merge > Header counters,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Compare list empty",front_url={{FRONT_URL}},"[SETUP] live-discover: open the first top-level category of the header ""Main navigation"" menubar
+[ACT] click ""Add to Compare"" on the first two cards
+[WAIT] header updates
+[ACT] read the header Compare link's badge, its accessible name and the badge and icon bounding boxes","[DOM] the badge text is ""2"" {SPEC}
+[DOM] the Compare link's accessible name is ""Compare: 2"" and the badge itself is aria-hidden {SPEC}
+[REL] the badge's left edge is at the icon's horizontal centre (±2 px) and the icon stays visible {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","Badge covers the icon; screen reader reads ""2"" alone or ""Compare"" without the count","On /compare click ""Clear all""","VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Header counters, vc-frontend#2644; useHeaderCountLabel (""{title}: {count}"") | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-005,"Header counter — a cart over 99 units shows ""99+"" with the exact count in the tooltip and the accessible name",Next Merge > Header counters,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[ACT] open the p_title product page; store its SKU (after ""SKU #"") as sku
+[ACT] read its stock; if below 150, pick another in-stock simple product with stock >= 150
+[NAV] {{FRONT_URL}}/bulk-order
+[ACT] fill the textarea: ""<sku>,150""
+[ACT] click ""Add to cart""
+[WAIT] header updates
+[ACT] hover the header cart link","[DOM] the cart badge reads ""99+"" {SPEC}
+[DOM] the hover tooltip shows the exact count 150 {SPEC}
+[DOM] the cart link's accessible name contains 150, not ""99+"" {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","Badge shows 150 or a compact ""150"" that overflows; tooltip absent; accessible name ""Cart: 99+""",[PRE:RESET_CART],"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Header counters (not covered by the dev smoke: guests could not add 100+ items); HEADER_BADGE_MAX = 99 in client-app/shared/layout/utils | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-006,"Header counter — an empty cart has no badge; the mobile cart link is named ""Cart""",Next Merge > Header counters,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[ACT] read the desktop header cart link
+[ACT] resize to 390 × 844
+[ACT] read the banner cart link","[COUNT] 0 badges on the desktop cart link {SPEC}
+[DOM] the mobile cart link's accessible name is exactly ""Cart"" {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","Badge ""0""; name ""Cart: 0""",none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Header counters | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-007,"Header counter — the mobile menu Compare row carries a count pill named ""Compare: N""",Next Merge > Header counters,Medium,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Viewport 390 × 844, Compare list empty",front_url={{FRONT_URL}},"[SETUP] live-discover: open the first top-level category from the mobile menu ""Catalog""
+[ACT] click ""Add to Compare"" on the first two cards
+[WAIT] the Compare count updates
+[ACT] click ""Main menu""
+[WAIT] drawer visible
+[ACT] read the ""Compare"" row","[DOM] the Compare row shows a pill with ""2"" {SPEC}
+[DOM] the Compare row's accessible name is ""Compare: 2"" {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","No pill in the drawer; drawer count differs from the compare page ""N of 5 added""","On /compare click ""Clear all""","VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Header counters | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-008,Header counter — in dark mode the badges use the primary fill and stay readable,Next Merge > Header counters,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Cart holds >= 1 unit","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[ACT] emulate prefers-color-scheme: dark
+[NAV] {{FRONT_URL}}
+[ACT] read the cart badge background, its text colour and the header background","[DOM] the badge background equals the computed primary colour token of the theme {SPEC}
+[TOUCH] badge text vs badge background contrast >= 4.5:1, badge vs header >= 3:1 {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Light-mode badge colours in dark mode; badge blends into the header,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Header counters, §Dark mode for the header | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-009,Header counter — on a scrolled page the pinned header keeps each badge on its icon,Next Merge > Header counters,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Cart holds >= 1 unit","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[NAV] the category page
+[ACT] read the cart badge and cart icon boxes
+[SCROLL] down 1500 px
+[WAIT] header pinned
+[ACT] read the same boxes","[REL] after the scroll the badge box still overlaps the icon box, with the same offset from it as before (±2 px) {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Badge left behind or detached when the header pins,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Header counters | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-010,"Dashboard — the ""Dashboard"" heading shows at phone and desktop widths",Next Merge > Dashboard,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/account/dashboard at 1920 wide
+[ACT] read the h1
+[ACT] resize to 390 × 844 and reload
+[ACT] read the h1","[DOM] the h1 reads ""Dashboard"" and is visible at 1920 {SPEC}
+[DOM] the h1 reads ""Dashboard"" and is visible at 390 {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Heading hidden at one width,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Account dashboard, vc-frontend#2552 | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-011,"Dashboard — order cards agree with the order list; ""All orders"" opens Orders",Next Merge > Dashboard,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+The org user has >= 1 order this month","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] cards loaded
+[ACT] read the ""Orders placed"" MTD value and the recent-orders rows
+[ACT] click ""All orders""
+[WAIT] /account/orders loads","[DOM] cards for orders this week, this month and this year, each with its change, and an average order value {SPEC}
+[REL] each recent-order row has a status chip whose text equals that order's status on its order page {SPEC}
+[NAV] ""All orders"" opens /account/orders {OBSERVED}
+[REL] the MTD orders value >= the number of this month's orders listed for the user in /account/orders under ""My orders"" {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Cards empty while orders exist; statistics errors (GetOrderStatistics),none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Account dashboard; observed on virtostart 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-012,Dashboard — a hidden widget stays hidden after Save and reload; Reset brings back the default,Next Merge > Dashboard,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] store the ordered widget titles as default_layout
+[ACT] click ""Edit layout""
+[WAIT] the layout editor is open
+[ACT] hide the first widget
+[ACT] move the last widget up one place with the keyboard
+[WAIT] the page reflects the action (no spinner, no pending request)
+[ACT] click Save
+[WAIT] the page reflects the action (no spinner, no pending request)
+[ACT] reload the page
+[ACT] store the widget titles as saved_layout
+[ACT] click ""Edit layout"", then ""Reset"", then Save
+[WAIT] the layout editor is open","[REL] saved_layout == default_layout without its first widget and with the last two swapped {SPEC}
+[REL] after Reset and Save the titles == default_layout {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Layout lost on reload; keyboard reorder does nothing; Reset leaves a widget hidden,Reset the layout (last steps),"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Account dashboard (edit mode, persists after reload) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-013,Dashboard — Cancel in edit mode discards the change,Next Merge > Dashboard,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] store the widget titles as before
+[ACT] click ""Edit layout""
+[WAIT] the layout editor is open
+[ACT] hide the first widget
+[ACT] click Cancel
+[WAIT] the page reflects the action (no spinner, no pending request)
+[ACT] reload","[REL] the widget titles == before, both right after Cancel and after the reload {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Cancel saves; hidden widget disappears after reload,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Account dashboard | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-014,"Dashboard — a customer with no orders sees the ""Continue browsing"" empty state",Next Merge > Dashboard,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:DEMO_NO_ORDERS_CUSTOMER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Demo profile seeded (seed:demo): the DEMO_NO_ORDERS_CUSTOMER persona has never ordered; her organization does have orders, so a widget that listed organization orders would fail this case","front_url={{FRONT_URL}}, email=@td(DEMO_NO_ORDERS_CUSTOMER.email)","[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] widgets loaded
+[ACT] click ""Continue browsing""
+[WAIT] the page reflects the action (no spinner, no pending request)","[COUNT] the recent-orders widget lists 0 orders {SPEC}
+[DOM] a ""Continue browsing"" button is shown in place of the list {SPEC}
+[NAV] ""Continue browsing"" leaves the account area (catalog or home) {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Empty table with no message; spinner that never ends,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Account dashboard",Draft
+NXR-015,Widgets — loading skeletons cause no layout shift when the content arrives,Next Merge > Widgets,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Network throttled to Fast 3G","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[ACT] start a PerformanceObserver for layout-shift
+[NAV] the first top-level category page (catalog filters load late)
+[WAIT] filters loaded
+[NAV] {{FRONT_URL}}/account/lists
+[WAIT] lists loaded
+[ACT] sum the layout-shift values without recent input, per page","[SHIFT] cumulative layout shift <= 0.1 on each page {SPEC}
+[REL] each skeleton's height is within 10% of the loaded widget's height {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Filters column jumps when facets arrive; lists page reflows,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §VcWidget (skeletons match the loaded widget)",Draft
+NXR-016,Cart — the mobile sticky bar keeps 8 px between its Total row and the Place order button,Next Merge > Cart,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Viewport 390 × 844","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[ACT] add p_title with + on its card
+[WAIT] the card shows ""in Cart 1""
+[NAV] {{FRONT_URL}}/cart
+[ACT] read the boxes of the sticky bar (.cart__mobile-bar), its Total row and its button (data-test-id sticked-place-order-button)
+[WAIT] the page reflects the action (no spinner, no pending request)","[MATH] button top − Total row bottom == 8 px (±1) {OBSERVED}
+[DOM] the bar stays at the bottom of the viewport while the page scrolls {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Button flush with the bar edge; bar hidden behind the page,[PRE:RESET_CART],"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Cart (cart.vue, vc-frontend#2577) | Promoted: REG-2026-11-17-1426 (2026-11-17)",Automated
+NXR-017,"Images — product and cart line images are contained, not cropped; a product without an image shows the fallback",Next Merge > Images,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[SETUP] live-discover: instead of p_title, a product whose main image is not square (naturalWidth / naturalHeight outside 0.95–1.05) — a square image renders the same under contain and cover, so it cannot fail this case; none ⇒ BLOCKED (data)
+[ACT] open that product page; read the main gallery image and the thumbnails
+[ACT] add p_title to the cart; on /cart read the line image
+[WAIT] the card shows ""in Cart"" and the header cart count updates (up to 6 s, debounced)
+[SETUP] live-discover: a product whose GetProduct images list is empty (search results), open it","[DOM] gallery, thumbnail and cart line images have computed object-fit contain {SPEC}
+[REL] each image's rendered box keeps the natural aspect ratio of the file (naturalWidth/naturalHeight ±2%) {SPEC}
+[COND: a product with an empty images list exists] [DOM] the image-less product shows the fallback image, smaller than the image box {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",object-fit cover (cropped product); broken image icon for an image-less product,[PRE:RESET_CART],"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Cart, §Product images (image-gallery.vue, vc-line-item.vue) | Promoted: REG-2026-11-17-1426 (2026-11-17)",Draft
+NXR-018,Forms — a required field's asterisk is not part of its accessible name,Next Merge > Forms,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/company/info
+[ACT] click ""Add new address""
+[WAIT] address form visible
+[ACT] read each required field's visible label and its accessible name","[DOM] every required label shows an asterisk {SPEC}
+[REL] each accessible name == the visible label text without the asterisk {SPEC}
+[DOM] labels use the theme caption style (same font-size as the theme's caption token on other forms) {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","Screen reader name ""Country *""; labels at body size",Close the form without saving,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Form labels, vc-frontend#2586 | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-019,"Forms — the card payment form shows its Card number and Security code labels, and clicking them throws nothing",Next Merge > Forms,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+A CyberSource card payment method is enabled on the store","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[ACT] add p_title to the cart
+[WAIT] the card shows ""in Cart"" and the header cart count updates (up to 6 s, debounced)
+[NAV] {{FRONT_URL}}/cart
+[ACT] set the shipping address and the first delivery method
+[ACT] choose ""Bank card (CyberSource)""
+[WAIT] the card form loads
+[ACT] click the ""Card number*"" label (div.vc-label), then the ""Security code*"" label
+[WAIT] 1 s","[COUNT] the form shows exactly the labels ""Card number*"", ""Cardholder name*"", ""Expiration date*"", ""Security code*"" {OBSERVED}
+[STATE] no console error after either click {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Labels missing for the hosted fields; TypeError on label click,"[PRE:RESET_CART] — no order is placed, no card data is entered","VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Form labels (not covered by the dev smoke: payment forms); payment methods observed on virtostart 2026-11-17 | Promoted: REG-2026-11-17-1426 (2026-11-17)",Automated
+NXR-020,Coupons — a long coupon code wraps inside its button,Next Merge > Account,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+The coupons page lists >= 1 coupon","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/account/coupons
+[WAIT] coupons loaded
+[ACT] find the coupon with the longest code; read its button box and text box","[REL] the code text box lies inside its button box on every side {SPEC}
+[DOM] the button's scrollWidth <= clientWidth (nothing overflows) {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Code runs past the button edge,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Coupons, vc-frontend#2596 | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-021,Company members — the table fits its card with long names and roles,Next Merge > Company,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/company/members at 1440 wide
+[WAIT] table loads
+[ACT] read the table and card boxes and each Email cell","[REL] the table's right edge <= the card's right edge (no horizontal overflow) {SPEC}
+[DOM] an email cell that is truncated has its full value in a title or tooltip {HYPOTHESIS}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","Table runs out of its card; Roles column takes all spare width while emails truncate (VCST-6873, open, Low)",none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Upstream features, vc-frontend#2638; VCST-6873",Draft
+NXR-022,Category — opening a second category while the first is still loading keeps the URL of the page on screen,Next Merge > Catalog,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Network throttled to Slow 3G for the first click",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] click the first menuitem of the ""Navigation"" menubar
+[WAIT] navigation starts (URL changes)
+[ACT] before it loads, click the second menuitem
+[WAIT] navigation starts (URL changes)
+[ACT] remove throttling
+[WAIT] 5 s","[REL] the h1 on screen == the second menuitem text {SPEC}
+[REL] the URL is the second category's path, not the first's {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",URL of the first category with the second category's content (or the reverse),none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Upstream features, vc-frontend#2633 | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-023,Compare — the page stays responsive at the compact-header width,Next Merge > Compare,Medium,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Compare list empty",front_url={{FRONT_URL}},"[SETUP] live-discover: add the first three products of one category to Compare
+[NAV] {{FRONT_URL}}/compare
+[ACT] resize from 1440 to 1100, 1024 and 900 wide
+[ACT] at each width click the ""Differences"" tab, then ""All""
+[WAIT] the page reflects the action (no spinner, no pending request)","[STATE] each tab click switches the rows within 2 s at every width {SPEC}
+[PERF] no long task over 1 s during the resizes (PerformanceObserver longtask) {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Tab freezes; page unresponsive after crossing the header breakpoint,"On /compare click ""Clear all""","VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Upstream features, vc-frontend#2613 | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-024,Addresses — Line 1 longer than 128 characters is saved whole,Next Merge > Company,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[SETUP] random-data: line1 = ""AGENT-TEST "" + 190 letters (200 characters in all)
+[NAV] {{FRONT_URL}}/company/info
+[ACT] click ""Add new address""
+[WAIT] the address form is visible
+[ACT] fill the required fields with valid values and Line 1: line1
+[ACT] save
+[WAIT] the address appears in the table
+[ACT] open it for editing and read Line 1","[REL] the saved Line 1 == line1, all 200 characters {SPEC}
+[STATE] no field error on Line 1 {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Field caps at 128; the value is cut on save; UpdateMemberAddresses error,Delete the AGENT-TEST address,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Upstream features, vc-frontend#2642 (Line 1 / Line 2 up to 2048) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-025,Cart and checkout — selection checkboxes and method selectors carry their names,Next Merge > Cart,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[ACT] add p_title to the cart
+[WAIT] the card shows ""in Cart"" and the header cart count updates (up to 6 s, debounced)
+[NAV] {{FRONT_URL}}/cart
+[ACT] read the accessible names of the select-all checkbox, the line checkbox, the billing checkbox and the delivery and payment method selectors","[DOM] select-all is named ""Select all items"" {OBSERVED}
+[REL] the line checkbox name contains p_title {SPEC}
+[DOM] the billing checkbox is named ""Same as shipping address""; the two selectors are named ""Delivery method"" and ""Payment method"" {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Unnamed checkbox; selector named by its current value only,[PRE:RESET_CART],"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Upstream features, vc-frontend#2587, #2632 | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-026,Forms — the Order comment holds at most 1000 characters and its counter says so,Next Merge > Forms,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[ACT] add p_title to the cart
+[WAIT] the card shows ""in Cart 1""
+[NAV] {{FRONT_URL}}/cart
+[SETUP] random-data: 1001 letters
+[ACT] fill ""Order comment"" with them
+[WAIT] counter updates","[DOM] the textarea has maxlength=""1000"" {OBSERVED}
+[MATH] the textarea value length == 1000 {SPEC}
+[DOM] the counter reads ""1000 / 1000"" {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",A 1001st character accepted; counter out of step with the value,[PRE:RESET_CART],"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Upstream features, vc-frontend#2629. Retargeted after REG-2026-11-17-1257: this textarea has maxlength=1000 and cannot enter an error state, so the aria-invalid half of #2629 has no reachable surface here (checklist-trace: not covered) | Promoted: REG-2026-11-17-1426 (2026-11-17)",Automated
+NXR-027,Popovers — opening the header account or settings popover does not scroll the page,Next Merge > Header,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[NAV] the category page
+[SCROLL] to 800 px
+[ACT] store window.scrollY
+[ACT] open the ""USD · EN"" settings popover
+[ACT] store window.scrollY again",[REL] window.scrollY after == before {SPEC},"[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Page jumps to the top when a popover opens,none,"VCST-6841 dev checklist (release 2.62.0 into Next, vc-frontend-next#23) §Upstream features, vc-frontend#2608",Draft
+NXR-028,"Compare — ""Differences"" shows exactly the rows counted in ""Differ: N of M rows""",Next Merge > Compare,Medium,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Compare list empty, desktop 1920",front_url={{FRONT_URL}},"[SETUP] live-discover: add two products of one category with different properties to Compare
+[NAV] {{FRONT_URL}}/compare
+[ACT] read ""Differ: N of M rows""
+[ACT] count rows under ""All""
+[ACT] click ""Differences"" and count rows
+[WAIT] the page reflects the action (no spinner, no pending request)
+[SCROLL] down 600 px and read the header row box","[REL] rows under ""All"" == M {SPEC}
+[REL] rows under ""Differences"" == N and N <= M {SPEC}
+[REL] after the scroll the table header row sits directly under the app header (top equal ±1 px) {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Differences shows equal rows; header row scrolls away,"On /compare click ""Clear all""","VCST-6398 dev checklist (release 2.60.0 into Next, vc-frontend-next#11) §1 Compare page; vc-frontend 098 CMP-* cover the upstream behaviour | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-029,"Compare — on a phone the tabs and ""Clear category"" share one bar above the table",Next Merge > Compare,Low,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Viewport 390 × 844, Compare list empty",front_url={{FRONT_URL}},"[SETUP] live-discover: add two products of one category to Compare
+[NAV] {{FRONT_URL}}/compare
+[ACT] read the boxes of the ""All"" and ""Differences"" tabs, ""Clear category"" and the table","[REL] the tabs and ""Clear category"" have the same vertical centre (±4 px) {SPEC}
+[REL] that bar's bottom <= the table's top {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","""Clear category"" wraps to its own line or sits inside the table","On /compare click ""Clear all""","VCST-6398 dev checklist (release 2.60.0 into Next, vc-frontend-next#11) §1 Compare page | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-030,Cart — a quantity above the allowed range is explained under the line,Next Merge > Cart,High,BL-CART-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[SETUP] live-discover: open the first top-level category in the header ""Main navigation"" menubar; take the first card with no ""Variants"" and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (skip an ""In stock"" card with no count: its available quantity is 0); store its title as p_title
+[ACT] open the p_title product page and store its stock as s
+[ACT] add p_title to the cart
+[WAIT] the card shows ""in Cart"" and the header cart count updates (up to 6 s, debounced)
+[NAV] {{FRONT_URL}}/cart
+[ACT] type s + 1 into the line quantity field and move focus out
+[WAIT] validation","[FORMAT] a message under the line matches /^You can order (maximum|from) .*item\(s\)$/ {SPEC}
+[REL] the number in the message == the quantity the line may hold (s, or the product's max quantity if lower) {SPEC}
+[STATE] ""Place order"" is disabled while the line is out of range {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Out-of-range quantity silently clamped with no message; message under another line,[PRE:RESET_CART],"VCST-6398 dev checklist (release 2.60.0 into Next, vc-frontend-next#11) §3 Quantity out of range (cart PASS on 2026-10-20; quotes do not explain the range, as upstream vc-frontend#2533) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-031,Missions — cards show skeletons while loading and the rewards banner links to the loyalty catalog,Next Merge > Loyalty,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Loyalty missions enabled and the loyalty catalog available on the store",front_url={{FRONT_URL}},"[ACT] throttle network to Fast 3G
+[NAV] {{FRONT_URL}}/account/missions
+[ACT] read the page before data arrives
+[WAIT] missions loaded
+[ACT] click the rewards banner link
+[WAIT] the target page loads","[DOM] mission card skeletons render before the data {SPEC}
+[SHIFT] layout shift <= 0.1 when the cards replace the skeletons {SPEC}
+[NAV] the banner link opens the loyalty catalog page {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Blank page until data; banner link 404,none,"VCST-6398 dev checklist (release 2.60.0 into Next, vc-frontend-next#11) §6 Missions (PASS on vcst 2026-10-20, CLS ≈ 0.02) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXR-032,Returns — the organization returns list is read-only for an organization member,Next Merge > Returns,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:DEMO_RETURNS_BUYER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+VirtoCommerce.Return installed; demo profile seeded (seed:demo, returns-demo): the buyer's organization holds submitted returns filed by other members","front_url={{FRONT_URL}}, email=@td(DEMO_RETURNS_BUYER.email)","[NAV] {{FRONT_URL}}/account/returns
+[WAIT] list loads
+[ACT] open the organization returns view
+[WAIT] organization list loads
+[ACT] open the first return whose customer is NOT the signed-in buyer (the newest one may be her own)
+[WAIT] return page loads","[COUNT] the organization list shows >= 1 return filed by another member {SPEC}
+[COUNT] no return in the list has status Draft (drafts are not listed, KB-17232A1F) {SPEC}
+[COUNT] the colleague's return page offers 0 edit, delete or status controls {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","Edit controls on another member's return; list empty while returns exist. Caveat: this persona's demo role also carries the organization-return submit permission — a control here may be the role, not a bug; check against VirtoOZ before filing",none,"VCST-6398 dev checklist (release 2.60.0 into Next, vc-frontend-next#11) §7 Organization returns; KB-17232A1F, KB-9E0ED0F4",Draft
+NXR-033,Sales Rep Hub — opens from the header and is served by the SalesRep plugin,Next Merge > Sales Rep,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+The signed-in user is a sales rep (the header shows ""Sales Rep Hub"")","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[ACT] click ""Sales Rep Hub"" in the header
+[WAIT] hub dashboard loads
+[ACT] open the customers list and the tasks calendar","[NAV] the hub opens at /company/dashboard {OBSERVED}
+[NETWORK] every hub chunk loads from /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ {OBSERVED}
+[COUNT] the customers list shows >= 1 customer {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",A built-in hub route answers instead of the plugin; hub chunks 404,none,"VCST-6398 dev checklist (release 2.60.0 into Next, vc-frontend-next#11) §5, VCST-6626 dev checklist (release 2.61.0 into Next, vc-frontend-next#19) §Sales Rep Hub; the hub looks like the upstream hub by design; vc-frontend 093b SR-HD-100 covers the plugin journey | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated

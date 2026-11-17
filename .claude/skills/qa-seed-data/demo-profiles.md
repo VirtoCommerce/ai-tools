@@ -50,6 +50,16 @@ password or, without it, an operator logging in on the rep's behalf.
   are never edited. When the store's membership-roles whitelist is active, the role is appended to it so the
   Admin picker offers it (`seed:membership-roles` keeps it while the demo holds). Teardown removes all of it.
 
+## Storefront personas
+
+A case on a demo store signs in as a demo buyer through an `@td()` alias, never as a throwaway account:
+`DEMO_RETURNS_BUYER` (holds the organization returns view; colleagues' returns in her org) and
+`DEMO_NO_ORDERS_CUSTOMER` (no order in any demo family). Login `@td(<alias>.email)`, password NAME
+`SR_DEMO_BUYER_PASSWORD` (`SR_DEMO_BUYER_PASSWORD_<ENV>` in `.env.playwright.all`). Declared in `DEMO_PERSONAS`
+(`sales-rep-demo-specs.mjs`); `td:validate:sales-rep-demo` [8] pins the registry entries and the no-orders
+property across families, `td:validate:returns-demo` the returns one. One persona alone:
+`npm run seed:sales-rep-demo -- --only <contact key>`.
+
 ## Loyalty missions demo
 
 Six store-wide missions — order count, order value, featured SKUs; one ending within 10 days (red badge),

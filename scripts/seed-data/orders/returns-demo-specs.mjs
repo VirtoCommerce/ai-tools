@@ -47,7 +47,7 @@
 import { readFileSync } from 'node:fs';
 import {
   DEMO_ORGS, DEMO_CONTACTS, DEMO_REPS, DEMO_ORDERS as SR_DEMO_ORDERS, DEMO_LEDGER_KEY as SR_DEMO_LEDGER_KEY,
-  demoOrderNumber, demoOrderAddress, isDemoSafeProduct,
+  DEMO_PERSONAS, PERSONA_NEEDS, demoOrderNumber, demoOrderAddress, isDemoSafeProduct,
 } from '../sales-rep/sales-rep-demo-specs.mjs';
 
 export { isDemoSafeProduct, SR_DEMO_LEDGER_KEY, DEMO_ORGS };
@@ -433,6 +433,22 @@ export function demoReturnProblems({ reasonCodes = null } = {}) {
     const viewerOrgs = new Set([...acc.buyers.map((b) => contactByKey(b)?.org), ...acc.reps.flatMap((r) => r.orgs)]);
     const multiBuyer = Object.entries(DEMO_RETURNS.reduce((m, r) => { const o = retOrderByKey(r.order); if (o) (m[o.org] ||= new Set()).add(ownerKeyOf(o)); return m; }, {})).filter(([, s2]) => s2.size > 1).map(([org]) => org);
     if (!multiBuyer.some((o) => viewerOrgs.has(o))) problems.push('no viewer sits in an organization with returns from two buyers — the organization view would look like a personal one');
+  }
+
+  // Personas (declared in sales-rep-demo-specs.mjs). An org-returns persona must hold the view AND see a
+  // colleague's submitted return: with only its own returns, a read-only check on "another member's
+  // return" has nothing to open (Drafts are not listed). A no-orders persona must own no returns order.
+  for (const [alias, p] of Object.entries(DEMO_PERSONAS)) {
+    const org = contactByKey(p.contact)?.org;
+    if (p.needs === PERSONA_NEEDS.ORG_RETURNS) {
+      if (!acc.buyers.includes(p.contact)) problems.push(`persona ${alias}: ${p.contact} is not in orgReturnsAccess.buyers — organizationReturns answers Forbidden`);
+      const others = DEMO_RETURNS.filter((r) => r.outcome !== OUTCOME.DRAFT).map((r) => retOrderByKey(r.order))
+        .filter((o) => o && o.org === org && ownerKeyOf(o) !== p.contact);
+      if (!others.length) problems.push(`persona ${alias}: no submitted return in ${org} was filed by anyone else — the read-only check has no colleague's return to open`);
+    }
+    if (p.needs === PERSONA_NEEDS.NO_ORDERS && DEMO_RET_ORDERS.some((o) => o.buyer === p.contact)) {
+      problems.push(`persona ${alias}: ${p.contact} owns a returns-demo order — the no-orders empty state is gone`);
+    }
   }
 
   // Non-vacuity: the lifecycle, not a list.

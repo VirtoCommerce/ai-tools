@@ -55,7 +55,7 @@ import {
   buildDemoFileBytes, buildDemoDocumentRequest, buildDemoOrderBody,
   demoOrderNumber, ordersInPostOrder, productNeedByOrg, isDemoSafeProduct,
   orgByKey, contactByKey, repEmailEnvKeys, roleSeesDocuments, SALES_REP_ROLE_ADVANCED, documentSourceRel,
-  DEMO_LISTS, listProductNeedByOrg, DEMO_LIST_SCOPE, DEMO_CARTS, DEMO_REP_CARTS, cartProductNeedByOrg, resolveTaskText,
+  DEMO_LISTS, listProductNeedByOrg, DEMO_LIST_SCOPE, DEMO_CARTS, DEMO_REP_CARTS, cartProductNeedByOrg, resolveTaskText, isDatelessTask,
 } from './sales-rep-demo-specs.mjs';
 
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -63,6 +63,9 @@ const TEST_ENV = process.env.TEST_ENV || 'vcst';
 // spec module because reconcile check [12] and the drift guard read it too.
 const LEDGER_KEY = DEMO_LEDGER_KEY;
 const only = (key) => !ONLY || key === ONLY;
+// `--only <contact key>` must still RESOLVE the contact's organization (a read, adopted by marker or
+// name), or a new contact is skipped as "org not in scope" and the scoped run creates nothing.
+const orgInScope = (orgKey) => only(orgKey) || DEMO_CONTACTS.some((c) => c.org === orgKey && only(c.key));
 
 // ---- ledger ----------------------------------------------------------------
 
@@ -240,7 +243,7 @@ async function findExisting(memberType, marker, name, ledgerId) {
 async function ensureOrgs() {
   const out = {};
   for (const spec of DEMO_ORGS) {
-    if (!only(spec.key)) continue;
+    if (!orgInScope(spec.key)) continue;
     const marker = demoMarker('ORG', spec.key);
     const found = await findExisting('Organization', marker, spec.name, priorId('organization', spec.key));
     if (found?.id) {
@@ -397,6 +400,9 @@ async function attachServedOrgs(reps, orgs) {
   const attachments = [];
   for (const r of reps) {
     if (r.skipped) continue;
+    // A run scoped to anything but this rep sees only the in-scope orgs, so it would rewrite this rep's
+    // ledger row with an addedOrgIds missing every other demo org, and teardown would detach none of them.
+    if (ONLY && !only(r.spec.key)) continue;
     // The rep's DEMO organizations are demo-owned (teardown deletes them), so every one the live list
     // holds counts as added, recomputed each run. Recording only THIS run's additions made a re-run
     // write addedOrgIds: [] and priorOrganizations = the whole live list, so teardown detached nothing.
@@ -636,9 +642,12 @@ const M_CREATE_TASK = 'mutation($c:InputCreateSalesRepTask!){createSalesRepTask(
 const M_DELETE_TASK = 'mutation($c:InputDeleteSalesRepTask!){deleteSalesRepTask(command:$c)}';
 const M_UPDATE_TASK = 'mutation($c:InputUpdateSalesRepTask!){updateSalesRepTask(command:$c){id name}}';
 const M_TASK_STATUS = 'mutation($c:InputChangeSalesRepTaskStatus!){changeSalesRepTaskStatus(command:$c){id completed}}';
-// The unfiltered list is not guaranteed to include completed tasks, so every filter is read and merged.
-const TASK_FILTERS = ['upcoming', 'overdue', 'completed'];
-const Q_TASKS = (filter) => `{salesRepTasks(first:200, filter:"${filter}"){items{id name description dueDate completed customerId}}}`;
+// The unfiltered list is not guaranteed to include completed tasks, so every filter is read and merged;
+// the unfiltered read (null) is what reaches canceled and undated tasks.
+const TASK_FILTERS = ['upcoming', 'overdue', 'completed', null];
+const Q_TASKS = (filter) => `{salesRepTasks(first:200${filter ? `, filter:"${filter}"` : ''}){items{id name description dueDate completed isActive customerId}}}`;
+/** Closed without being completed — what the storefront shows as canceled. */
+const isCanceledRow = (x) => !!x && x.isActive === false && !x.completed;
 
 /**
  * A rep-scoped token. `storeId` is REQUIRED by this grant. Returns null rather than throwing when
@@ -683,6 +692,7 @@ const makeGql = (token) => async (query, variables = {}) => {
 };
 
 const dueDate = (days) => {
+  if (days == null) return null;
   const d = new Date();
   d.setDate(d.getDate() + days);
   d.setHours(17, 0, 0, 0);
@@ -693,7 +703,9 @@ async function ensureTasks(reps, orgs) {
   const created = [];
   for (const r of reps) {
     if (r.skipped) continue;
-    const mine = DEMO_TASKS.filter((t) => t.rep === r.spec.key && only(t.key));
+    // Dated tasks first: an undated one copies its owner fields from a task the rep already has.
+    const mine = DEMO_TASKS.filter((t) => t.rep === r.spec.key && only(t.key))
+      .sort((a, b) => Number(isDatelessTask(a)) - Number(isDatelessTask(b)));
     if (!mine.length) continue;
     if (DRY_RUN) { log(`[DRY] would create ${mine.length} task(s) for ${r.spec.key}`); continue; }
     const token = await repToken(r);
@@ -716,8 +728,34 @@ async function ensureTasks(reps, orgs) {
       if (t.customer && !customerId) log(`  WARN task ${t.key}: customer ${t.customer} has no live id — the task is created without one`);
       // Ledger id first, so a task whose text changed is UPDATED rather than duplicated; name second,
       // for a lost overlay.
-      const prior = live.get(priorId('task', t.key)) || [...live.values()].find((x) => x.name === name);
+      let prior = live.get(priorId('task', t.key)) || [...live.values()].find((x) => x.name === name);
+      // States an update cannot reach — a due date removed or added back, a cancel undone, or an
+      // undated task's text changed (it has no rep-side update) — are rebuilt: delete, then create.
+      if (prior && (isDatelessTask(t) !== (prior.dueDate == null) || (!t.canceled && isCanceledRow(prior))
+        || (isDatelessTask(t) && (prior.name !== name || (prior.description || '') !== description)))) {
+        await gql(M_DELETE_TASK, { c: { id: prior.id } });
+        live.delete(prior.id);
+        log(`task rebuilt (${r.spec.key}): ${name}`);
+        prior = null;
+      }
       let id = prior?.id;
+      if (isDatelessTask(t)) {
+        if (prior) { verbose(`task "${name}" exists`); created.push({ type: 'task', key: t.key, id, ownerUserId: r.rep.userId, name }); continue; }
+        // createSalesRepTask requires a due date, so an undated task goes through TaskManagement REST
+        // (admin token) with the owner fields of a task this rep created — the same path as
+        // seed-sales-rep-tasks.mjs. That body takes no customer link.
+        const source = created.filter((c) => c.ownerUserId === r.rep.userId).at(-1)?.id || [...live.keys()][0];
+        const w = source ? await api('GET', `/api/task-management/${source}`) : null;
+        if (!w?.responsibleId) { log(`  WARN task ${t.key}: no task of ${r.spec.key} to copy the owner from — the undated task is skipped`); continue; }
+        id = (await api('POST', '/api/task-management', {
+          name, description, type: t.type, priority: t.priority, dueDate: null, isActive: true,
+          responsibleId: w.responsibleId, responsibleName: w.responsibleName, organizationId: w.organizationId, storeId: w.storeId,
+        }))?.id;
+        if (!id) { log(`  WARN task ${t.key}: POST /api/task-management returned no id`); continue; }
+        log(`task created (${r.spec.key}): ${name} — no due date`);
+        created.push({ type: 'task', key: t.key, id, ownerUserId: r.rep.userId, name });
+        continue;
+      }
       // A customer the rep's membership in is LOCKED is not served, and the module answers
       // "Customer not found." (README §The customer link) — the org-switcher book holds two such
       // memberships by design. The task is still worth showing, so it is written without the link.
@@ -746,6 +784,11 @@ async function ensureTasks(reps, orgs) {
         const res = await gql(M_TASK_STATUS, { c: { id, completed: !!t.completed } });
         if (res?.changeSalesRepTaskStatus?.completed !== !!t.completed) log(`  WARN task ${t.key}: status did not change to completed=${!!t.completed}`);
         else if (t.completed) log(`  task completed (${r.spec.key}): ${name}`);
+      }
+      // Closed without completing — the only way to a canceled task. Body `{}` is required (none → 415).
+      if (t.canceled && !isCanceledRow(prior)) {
+        await api('POST', `/api/task-management/finish?id=${encodeURIComponent(id)}&completed=false`, {});
+        log(`  task canceled (${r.spec.key}): ${name}`);
       }
       created.push({ type: 'task', key: t.key, id, ownerUserId: r.rep.userId, name });
     }
