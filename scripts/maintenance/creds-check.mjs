@@ -10,7 +10,7 @@
  * With an env argument, only that env. Exit 1 when something needs doing.
  */
 import '../lib/sync-stdio.mjs';
-import { STORE_FILE, StoreError, readStore, storeValues } from '../lib/test-accounts.mjs';
+import { STORE_FILE, StoreError, readStore, storeAccounts, storeValues } from '../lib/test-accounts.mjs';
 import { combinedEnvCandidates, deriveSecretNames, laneDrift, laneSecrets, readLaneManifests } from '../lib/browser-secrets.mjs';
 import { layered, usesMaster } from '../lib/env-layers.mjs';
 import { ROLE_PASSWORD_NAMES } from '../lib/env-core.js';
@@ -27,10 +27,13 @@ try { store = readStore(root); } catch (e) {
 }
 if (!store.exists) { console.log(`✗ no ${STORE_FILE} — npm run creds:migrate builds it from the .env files (or get it from the team's secret store)`); problems++; }
 else {
-  const envs = Object.entries(store.envs).map(([e, s]) => `${e} ${Object.values(s).filter(Boolean).length}`);
-  console.log(`${STORE_FILE}: ${Object.keys(store.defaults).length} shared name(s); ${envs.join(', ') || 'no env section'}${store.master ? '; master password' : ''}`);
-  const accounts = Object.entries(store.accounts).map(([e, a]) => `${e} ${Object.keys(a).length}`);
-  console.log(`  accounts (login + its password): ${accounts.join(', ') || 'none yet — a seed records each account it creates'}`);
+  console.log(`${STORE_FILE}: ${Object.keys(store.accounts).length} account(s) and ${Object.keys(store.shared).length} shared password(s) on every env${store.master ? '; master password' : ''}`);
+  const perEnv = Object.keys(store.envs).sort().map((e) => {
+    const all = storeAccounts(store, e);
+    const noPassword = all.filter((a) => !a.password).length;
+    return `${e} ${all.length}${noPassword ? ` (${noPassword} without a password)` : ''}`;
+  });
+  console.log(`  accounts per env: ${perEnv.join(', ') || 'none yet — a seed records each account it creates'}`);
 }
 
 const { envs: candidates, excluded } = combinedEnvCandidates(root);

@@ -26,7 +26,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   reconnect; a manifest (`.vc-fix/lanes/`, names + salted fingerprints) lets the secret-token hook, the pre-flight
   (`secrets:lanes`) and `env:use` say when the store changed under a running lane.
 - **Seeders record what they set.** Each account a seeder creates, or sets the password of, goes into the store
-  with its login (`accounts.<env>`) via `accountSet`; a password variable the env has no value for gets a generated,
+  with its login (`envs.<env>.accounts`, login and password side by side) via `accountSet`; a password variable the env has no value for gets a generated,
   policy-compliant password, recorded with the account — never a shared literal. A generated value is never forced
   onto an existing account.
 - **`npm run creds:migrate`** moves the old files into the store and proves, for every env and run ticket, that every

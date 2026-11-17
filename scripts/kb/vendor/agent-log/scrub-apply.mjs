@@ -25,7 +25,10 @@ const storeAsEnvText = (file, text) => {
   try {
     const d = JSON.parse(text);
     const out = d.master ? ["MASTER_PASSWORD=" + d.master] : [];
-    for (const s of [d.defaults || {}, ...Object.values(d.envs || {})]) for (const [k, v] of Object.entries(s)) if (v) out.push(k + "=" + v);
+    for (const level of [d, ...Object.values(d.envs || {})]) {
+      for (const [k, v] of Object.entries((level && level.shared) || {})) if (v) out.push(k + "=" + v);
+      for (const [k, a] of Object.entries((level && level.accounts) || {})) if (a && typeof a.password === "string" && a.password) out.push((/^[A-Z][A-Z0-9_]*$/.test(k) ? k : "ACCOUNT") + "_PASSWORD=" + a.password);
+    }
     return out.join("\n");
   } catch { return ""; }
 };

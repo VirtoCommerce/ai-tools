@@ -233,8 +233,12 @@ export function storeAsEnvText(file, text) {
   if (!String(file).endsWith('.json')) return text;
   try {
     const d = JSON.parse(text);
+    // Passwords only: `master`, every `shared` value and every account's own `password` (a login is no secret).
     const out = d.master ? [`MASTER_PASSWORD=${d.master}`] : [];
-    for (const sec of [d.defaults ?? {}, ...Object.values(d.envs ?? {})]) for (const [k, v] of Object.entries(sec)) if (v) out.push(`${k}=${v}`);
+    for (const level of [d, ...Object.values(d.envs ?? {})]) {
+      for (const [k, v] of Object.entries(level?.shared ?? {})) if (v) out.push(`${k}=${v}`);
+      for (const [k, a] of Object.entries(level?.accounts ?? {})) if (typeof a?.password === 'string' && a.password) out.push(`${/^[A-Z][A-Z0-9_]*$/.test(k) ? k : 'ACCOUNT'}_PASSWORD=${a.password}`);
+    }
     return out.join('\n');
   } catch { return ''; }
 }

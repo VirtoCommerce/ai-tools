@@ -40,7 +40,7 @@ running on `.env.local`'s stand: bind again.
 ## Where an env's files live — the project root and `QA_ENV_PATH`
 
 An env is its `.env.<env>` file wherever it lives (URLs, settings, `ENV_RISK`, `PASSWORDS`). Its test accounts'
-logins and passwords are not in it: they are in `test-accounts.local.json`, section `envs.<env>` (and `accounts.<env>`),
+logins and passwords are not in it: they are in `test-accounts.local.json`, section `envs.<env>` (its `accounts`, login and password side by side),
 which beats every file ([`browser-lanes.md`](browser-lanes.md) §Browser login secrets). Besides the project root, an
 env file may sit in dedicated folders —
 `QA_ENV_PATH` in `.env.local`, `;`-separated, the first wins:

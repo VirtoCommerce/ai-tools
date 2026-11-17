@@ -89,7 +89,7 @@ whose branch differs from its name needs a `BRANCH_MAP` row or a `DEPLOY_BRANCH`
 
 `--verify`'s live column needs the env's admin password (`scripts/deploy/lib/env.ts` `resolveEnvCoords`):
 `--password` if given, else the store's `master` on a `PASSWORDS=master` stand, else `ADMIN_PASSWORD` from
-`test-accounts.local.json` — `envs.<env>.ADMIN_PASSWORD`, falling back to `defaults.ADMIN_PASSWORD`. A missing
+`test-accounts.local.json` — the `ADMIN` account's password for the env (`envs.<env>.accounts.ADMIN`, else the top-level `ADMIN`). A missing
 password degrades `--verify` to branch-pin-only (`live` reads `?`), it never fails the run.
 
 **`JIRA_EMAIL` belongs in `.env.local`, next to `JIRA_API_TOKEN`** — they are the two halves of one

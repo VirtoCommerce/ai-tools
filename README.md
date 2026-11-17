@@ -137,7 +137,7 @@ Files load in order; later overrides earlier:
 | `.env.${TEST_ENV}` | git | Per-env URLs/IDs (`.env.vcst`, `.env.vcptcore`, `.env.virtostart`, …) — no secrets |
 | `.env.local` | **gitignored** | Machine-local values — create this locally (the repo scripts' API tokens, `QA_ENV_PATH`) |
 | `.env.<env>` in a `QA_ENV_PATH` folder | outside the repo | A stand that belongs to a ticket or a machine — the same file; it beats the repo's key by key |
-| `test-accounts.local.json` | **gitignored** | Every test account's login and password, every env (`defaults`, `envs.<env>`), plus `master` — the one password of every `PASSWORDS=master` stand. Shape: [`templates/test-accounts.example.json`](templates/test-accounts.example.json); `npm run creds:check` lists what is missing (names only), `npm run creds:migrate` moves old credential files into it. Tokens never go here (vc-secrets) |
+| `test-accounts.local.json` | **gitignored** | Every test account's login and password, every env (`accounts` — login and password side by side — and `shared`, top level and per `envs.<env>`), plus `master` — the one password of every `PASSWORDS=master` stand. Shape: [`templates/test-accounts.example.json`](templates/test-accounts.example.json); `npm run creds:check` lists what is missing (names only), `npm run creds:migrate` moves old credential files into it. Tokens never go here (vc-secrets) |
 
 Validate with `npm run env:check` (it prints which variables are set, empty and required). Variable *names* are stable across envs — only values differ. Access in code via `import { env } from './config.js'` (ES modules — always `.js`); a key the curated `env` export does not carry is read from `process.env` after the import.
 

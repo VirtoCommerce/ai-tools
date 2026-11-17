@@ -10,7 +10,7 @@
 //
 // The order, lowest first (`layered`): the process environment; `.env.defaults` filling gaps; `.env.<env>`;
 // `.env.local`; every KEY_<ENV> promoted over KEY; then each dedicated folder's `.env.<env>`, the lowest-priority folder
-// first; then the credential store, its `defaults` and then its `envs.<env>`. A dedicated file beats the root KEY BY
+// first; then the credential store, its top level and then its `envs.<env>`. A dedicated file beats the root KEY BY
 // KEY, pins included: a ticket's folder can hold its own stand (`.env.vcst_6314`) or override a shared env for that
 // ticket's runs (`.env.vcptcore_dev`). The store beats every file: a credential still in a .env file is a leftover the
 // loader names once per run (`npm run creds:migrate` moves it).
@@ -124,7 +124,7 @@ export function findEnv(env, { ticket, root = process.cwd(), ambient = process.e
 
 /**
  * What an env declares itself: its `.env.<env>` files merged key by key, the project root's first and each dedicated
- * folder's over it (`vars`), and its credentials in the store (`credentials`: `defaults` with `envs.<env>` over them)
+ * folder's over it (`vars`), and its credentials in the store (`credentials`: the flat variables its accounts and shared passwords give it)
  * — no .env.defaults, no .env.local, no promotion. Deploy coordinates (DEPLOY_BRANCH, BACK_URL) are read from here.
  */
 export function ownEnv(env, { ticket, root = process.cwd(), ambient = process.env } = {}) {
@@ -299,15 +299,16 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
   }
   for (const [k, v] of Object.entries(credentials)) {
     if (held(k)) continue;
-    put(k, v, storeOwn.has(k) ? `${STORE_FILE} (envs.${testEnv})` : `${STORE_FILE} (defaults)`);
+    put(k, v, storeOwn.has(k) ? `${STORE_FILE} (envs.${testEnv})` : `${STORE_FILE} (top level)`);
     if (storeOwn.has(k)) perEnv.add(k); else perEnv.delete(k);
   }
   // Every env section's names as NAME_<ENV> too — the form a lane types, and the one a suite or script that names
   // another env's account (`{{USER_PASSWORD_VCPTCORE_REGRESSION}}`) reads, as the `KEY_<ENV>` lines of .env.local did.
-  for (const [e, section] of Object.entries(store.envs)) {
-    for (const [k, v] of Object.entries(section)) {
+  for (const e of Object.keys(store.envs)) {
+    const { values: own, own: names } = storeValues(store, e);
+    for (const k of names) {
       const pin = k + envSuffix(e);
-      if (v && !held(pin)) put(pin, v, `${STORE_FILE} (envs.${e})`);
+      if (own[k] && !held(pin)) put(pin, own[k], `${STORE_FILE} (envs.${e})`);
     }
   }
 

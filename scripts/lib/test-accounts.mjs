@@ -1,18 +1,36 @@
-// scripts/lib/test-accounts.mjs — THE store of test-account credentials: every test account's login and
-// password, for every env, plus the master password, in one gitignored file at the project root.
+// scripts/lib/test-accounts.mjs — THE store of test-account credentials: every test account's login and password,
+// for every env, plus the master password, in one gitignored file at the project root.
 //
-//   { "version": 1, "master": "…", "defaults": { NAME: value }, "envs": { "<env>": { NAME: value } },
-//     "accounts": { "<env>": { "<login>": "<NAME of its password>" } } }
+//   {
+//     "version": 2,
+//     "master": "…",                                   the one password of every PASSWORDS=master stand
+//     "shared": { "DEFAULT_TEST_PASSWORD": "…" },       passwords many accounts use — every env
+//     "accounts": { "LOYALTY_VIP_USER": { "login": "…", "password": "…" } },   accounts the same on every env
+//     "envs": {
+//       "vcst": {
+//         "shared": { "TEST_USER_PASSWORD": "…" },     this env's own values (beat the top level)
+//         "accounts": {
+//           "USER":  { "login": "…", "password": "…" },
+//           "ADMIN": { "login": "admin", "password": "…", "vars": { "login": ["ADMIN", "ADMIN_EMAIL"] } },
+//           "agent-test-x@test-agent.com": { "password": { "use": "DEFAULT_TEST_PASSWORD" } }
+//         }
+//       }
+//     }
+//   }
 //
-// A NAME is the variable the suites, test-data and seeders already use (ORG_USER_EMAIL, ORG_USER_PASSWORD, ADMIN,
-// DEFAULT_TEST_PASSWORD). `envs.<env>` beats `defaults`. `accounts` lists every login a seeder created or set the
-// password of on an env, with the NAME its password is under — so each account's login and password are both here
-// (the value once, under the NAME; a login that shares DEFAULT_TEST_PASSWORD with fifty others does not copy it). Tokens and API keys never live here — they are vc-secrets'
-// (a TOKEN / API / KEY / SECRET-shaped name is refused). The loader (scripts/lib/env-layers.mjs `layered`) puts these
-// values over every .env* file; the Playwright lanes read them in memory (scripts/lanes/playwright-lane.mjs); a seeder
-// that sets a password records it here (`recordCredentials`). Design: docs/superpowers/specs/2026-11-17-test-accounts-store-design.md.
+// An ACCOUNT holds its login and password side by side. A named one (`USER`) is what the suites, test-data and
+// seeders call by variable: the loader exposes its login as `USER_EMAIL` and its password as `USER_PASSWORD` (or the
+// names its `vars` lists, for the few accounts named otherwise — `ADMIN`, `ADMIN_VIRTO`, a rep's `SR_REP_PASSWORD`).
+// An account keyed by its login (a seeded fixture) exposes nothing; it is here so every account is in one place. A
+// password `{ "use": NAME }` is the value of NAME — a `shared` one, or another account's — so a password fifty
+// fixtures share is written once. `envs.<env>` beats the top level, an account field by field; "" unsets a shared one.
+// Tokens and API keys never live here — they are vc-secrets' (a TOKEN / API / KEY / SECRET-shaped name is refused).
 //
-// Never prints or returns a value except to a caller that asked for one.
+// The loader (scripts/lib/env-layers.mjs `layered`) puts `storeValues` over every .env* file; the Playwright lanes read
+// them in memory (scripts/lanes/playwright-lane.mjs); a seeder that creates an account or sets its password records it
+// (`recordAccount`, through scripts/lib/user-provision.mjs `accountSet`). Design:
+// docs/superpowers/specs/2026-11-17-test-accounts-store-design.md. Never prints or returns a value except to a caller
+// that asked for one.
 import { chmodSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { randomInt } from 'node:crypto';
 import { join } from 'node:path';
@@ -21,7 +39,7 @@ import { join } from 'node:path';
 export const STORE_FILE = 'test-accounts.local.json';
 /** The tracked template: the store's shape and every declared name, no values. */
 export const STORE_EXAMPLE = 'templates/test-accounts.example.json';
-const VERSION = 1;
+export const STORE_VERSION = 2;
 const NAME = /^[A-Z][A-Z0-9_]*$/;
 const ENV = /^[a-z0-9_]+$/;
 
@@ -29,90 +47,178 @@ const ENV = /^[a-z0-9_]+$/;
 export const isTokenShaped = (name) => /TOKEN|API|KEY|SECRET/.test(String(name));
 /** A name the store may hold. */
 export const isStoreName = (name) => NAME.test(String(name)) && !isTokenShaped(name);
+/** An account key that is a variable stem (`USER`), not a login. */
+const isNamedKey = (key) => NAME.test(String(key));
 
 export class StoreError extends Error {}
 
-const empty = (file) => ({ file, exists: false, master: null, defaults: {}, envs: {}, accounts: {} });
+const emptyStore = () => ({ master: null, shared: {}, accounts: {}, envs: {} });
+
+/** The file parsed, untouched (any version), or null when absent. Throws StoreError on invalid JSON. */
+export function readRawStore(root = process.cwd()) {
+  const file = join(root, STORE_FILE);
+  if (!existsSync(file)) return null;
+  try { return JSON.parse(readFileSync(file, 'utf8')); } catch (e) {
+    throw new StoreError(`${STORE_FILE} is not valid JSON (${String(e?.message ?? e).split('\n')[0]}) — fix it by hand or restore it from the team's secret store`);
+  }
+}
 
 /**
- * The store of `root`. Absent: an empty store (`exists: false`). Present but unreadable or malformed: throws
- * StoreError — a broken credential store is never read as "no credentials".
+ * The store of `root`. Absent: an empty store (`exists: false`). Present but unreadable, malformed or an older format:
+ * throws StoreError — a broken credential store is never read as "no credentials".
  */
 export function readStore(root = process.cwd()) {
   const file = join(root, STORE_FILE);
-  if (!existsSync(file)) return empty(file);
-  let data;
-  try { data = JSON.parse(readFileSync(file, 'utf8')); } catch (e) {
-    throw new StoreError(`${STORE_FILE} is not valid JSON (${String(e?.message ?? e).split('\n')[0]}) — fix it by hand or restore it from the team's secret store`);
-  }
+  const data = readRawStore(root);
+  if (data === null) return { file, exists: false, ...emptyStore() };
+  if (data?.version === 1) throw new StoreError(`${STORE_FILE} is in the older format (version 1) — npm run creds:migrate converts it`);
   const problems = validateStore(data);
   if (problems.length) throw new StoreError(`${STORE_FILE}: ${problems.join('; ')}`);
-  return { file, exists: true, master: data.master || null, defaults: { ...(data.defaults ?? {}) }, envs: structuredClone(data.envs ?? {}), accounts: structuredClone(data.accounts ?? {}) };
+  const envs = {};
+  for (const [e, s] of Object.entries(data.envs ?? {})) envs[e] = { shared: { ...(s.shared ?? {}) }, accounts: structuredClone(s.accounts ?? {}) };
+  return { file, exists: true, master: data.master || null, shared: { ...(data.shared ?? {}) }, accounts: structuredClone(data.accounts ?? {}), envs };
 }
 
 /** What is wrong with a parsed store (names and positions only, never a value). Pure. */
 export function validateStore(data) {
   const out = [];
   if (!data || typeof data !== 'object' || Array.isArray(data)) return ['the file must hold one JSON object'];
-  if (data.version !== VERSION) out.push(`version must be ${VERSION}`);
-  for (const k of Object.keys(data)) if (!['version', 'master', 'defaults', 'envs', 'accounts', '$schema', '//'].includes(k)) out.push(`unknown top-level key "${k}"`);
+  if (data.version !== STORE_VERSION) out.push(`version must be ${STORE_VERSION}`);
+  for (const k of Object.keys(data)) if (!['version', 'master', 'shared', 'accounts', 'envs', '$schema', '//'].includes(k)) out.push(`unknown top-level key "${k}"`);
   if (data.master !== undefined && data.master !== null && typeof data.master !== 'string') out.push('master must be a string');
-  const section = (obj, where) => {
-    if (obj === undefined) return;
-    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) { out.push(`${where} must be an object`); return; }
-    for (const [k, v] of Object.entries(obj)) {
+  const isObj = (o) => o && typeof o === 'object' && !Array.isArray(o);
+  const shared = (o, where) => {
+    if (o === undefined) return;
+    if (!isObj(o)) { out.push(`${where} must be an object`); return; }
+    for (const [k, v] of Object.entries(o)) {
       if (!NAME.test(k)) out.push(`${where}.${k} is not a variable name`);
       else if (isTokenShaped(k)) out.push(`${where}.${k} is token/key-shaped — tokens and API keys belong in vc-secrets`);
       if (typeof v !== 'string') out.push(`${where}.${k} must be a string`);
     }
   };
-  section(data.defaults, 'defaults');
-  if (data.envs !== undefined) {
-    if (!data.envs || typeof data.envs !== 'object' || Array.isArray(data.envs)) out.push('envs must be an object');
-    else for (const [env, obj] of Object.entries(data.envs)) {
-      if (!ENV.test(env)) out.push(`envs.${env} is not an env name ([a-z0-9_]+)`);
-      section(obj, `envs.${env}`);
-    }
-  }
-  if (data.accounts !== undefined) {
-    if (!data.accounts || typeof data.accounts !== 'object' || Array.isArray(data.accounts)) out.push('accounts must be an object');
-    else for (const [env, obj] of Object.entries(data.accounts)) {
-      if (!ENV.test(env)) out.push(`accounts.${env} is not an env name ([a-z0-9_]+)`);
-      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) { out.push(`accounts.${env} must be an object`); continue; }
-      for (const [login, name] of Object.entries(obj)) {
-        if (!login.trim()) out.push(`accounts.${env} has an empty login`);
-        if (!NAME.test(String(name)) || isTokenShaped(name)) out.push(`accounts.${env}["${login}"] must name the variable its password is under`);
+  const names = (list, where) => {
+    for (const n of list) if (!isStoreName(n)) out.push(`${where}: "${n}" is not a variable name the store may hold`);
+  };
+  const accounts = (o, where) => {
+    if (o === undefined) return;
+    if (!isObj(o)) { out.push(`${where} must be an object`); return; }
+    for (const [key, a] of Object.entries(o)) {
+      const at = `${where}["${key}"]`;
+      if (!key.trim()) { out.push(`${where} has an empty key`); continue; }
+      if (isNamedKey(key) && isTokenShaped(key)) out.push(`${at} is token/key-shaped — tokens and API keys belong in vc-secrets`);
+      if (!isObj(a)) { out.push(`${at} must be an object { login, password }`); continue; }
+      for (const f of Object.keys(a)) if (!['login', 'password', 'vars', '//'].includes(f)) out.push(`${at}.${f} is not a field (login, password, vars)`);
+      if (a.login !== undefined && typeof a.login !== 'string') out.push(`${at}.login must be a string`);
+      const p = a.password;
+      if (p !== undefined && typeof p !== 'string' && !(isObj(p) && Object.keys(p).length === 1 && typeof p.use === 'string' && isStoreName(p.use))) {
+        out.push(`${at}.password must be a string or { "use": "<NAME>" }`);
       }
+      if (a.vars !== undefined) {
+        if (!isObj(a.vars)) out.push(`${at}.vars must be an object`);
+        else {
+          if (a.vars.login !== undefined) Array.isArray(a.vars.login) ? names(a.vars.login, `${at}.vars.login`) : out.push(`${at}.vars.login must be a list`);
+          if (a.vars.password !== undefined) names([a.vars.password], `${at}.vars.password`);
+        }
+      }
+    }
+  };
+  shared(data.shared, 'shared');
+  accounts(data.accounts, 'accounts');
+  if (data.envs !== undefined) {
+    if (!isObj(data.envs)) out.push('envs must be an object');
+    else for (const [env, s] of Object.entries(data.envs)) {
+      if (!ENV.test(env)) out.push(`envs.${env} is not an env name ([a-z0-9_]+)`);
+      if (!isObj(s)) { out.push(`envs.${env} must be an object { shared, accounts }`); continue; }
+      for (const f of Object.keys(s)) if (!['shared', 'accounts', '//'].includes(f)) out.push(`envs.${env}.${f} is not a field (shared, accounts)`);
+      shared(s.shared, `envs.${env}.shared`);
+      accounts(s.accounts, `envs.${env}.accounts`);
     }
   }
   return out;
 }
 
+/** The variables an account exposes: its login under `loginVars`, its password under `passwordVar` (null: none). */
+export function accountVars(key, entry) {
+  const named = isNamedKey(key);
+  const own = typeof entry?.password === 'string';
+  return {
+    loginVars: entry?.vars?.login ?? (named ? [`${key}_EMAIL`] : []),
+    passwordVar: entry?.vars?.password ?? (named && own ? `${key}_PASSWORD` : null),
+  };
+}
+
+/** `env`'s view: the top level with the env's `shared` and `accounts` over it (an account field by field). Pure. */
+export function envView(store, env) {
+  const own = store.envs?.[env] ?? { shared: {}, accounts: {} };
+  const accounts = {};
+  for (const [k, a] of Object.entries(store.accounts ?? {})) accounts[k] = { ...a };
+  for (const [k, a] of Object.entries(own.accounts ?? {})) accounts[k] = { ...(accounts[k] ?? {}), ...a };
+  return {
+    shared: { ...(store.shared ?? {}), ...(own.shared ?? {}) },
+    accounts,
+    ownShared: new Set(Object.keys(own.shared ?? {})),
+    ownAccounts: new Set(Object.keys(own.accounts ?? {})),
+  };
+}
+
+/** The value of a password field: a string, or `{ use: NAME }` looked up in `values`. Pure. */
+const passwordOf = (p, values) => (typeof p === 'string' ? p : p?.use ? values[p.use] : undefined);
+
 /**
- * The credentials `env` gets: `defaults` with `envs.<env>` over them, empty values dropped. `own`: the names
- * `envs.<env>` itself sets. Pure.
+ * The variables `env` gets, flat — what the loader puts in process.env: every shared password by its name, every
+ * named account's login and password by theirs. Empty values are dropped. `own`: the names this env's own section
+ * sets (not inherited from the top level). Pure.
  */
 export function storeValues(store, env) {
-  const own = store.envs?.[env] ?? {};
-  const values = {};
-  for (const [k, v] of Object.entries({ ...store.defaults, ...own })) if (v) values[k] = v;
-  return { values, own: new Set(Object.keys(own).filter((k) => own[k])) };
+  const view = envView(store, env);
+  const values = {}, own = new Set();
+  const set = (k, v, isOwn) => { if (v) { values[k] = v; if (isOwn) own.add(k); else own.delete(k); } else delete values[k]; };
+  for (const [k, v] of Object.entries(view.shared)) set(k, v, view.ownShared.has(k));
+  // Own passwords first, then logins, then the passwords that `use` another name (which may be an account's).
+  const entries = Object.entries(view.accounts);
+  for (const [k, a] of entries) {
+    const { passwordVar } = accountVars(k, a);
+    if (passwordVar && typeof a.password === 'string') set(passwordVar, a.password, view.ownAccounts.has(k));
+  }
+  for (const [k, a] of entries) {
+    const { loginVars, passwordVar } = accountVars(k, a);
+    for (const v of loginVars) if (a.login) set(v, a.login, view.ownAccounts.has(k));
+    if (passwordVar && typeof a.password !== 'string') set(passwordVar, passwordOf(a.password, values), view.ownAccounts.has(k));
+  }
+  return { values, own };
 }
 
-/** Every name the store holds anywhere (defaults and every env). Pure. */
-export function storeNames(store) {
-  return new Set([...Object.keys(store.defaults ?? {}), ...Object.values(store.envs ?? {}).flatMap((o) => Object.keys(o))]);
+/**
+ * Every account `env` has, side by side: `{ key, login, passwordName, password }` — login null when the store does
+ * not know it, password null when the env has no value. For listing and lookup; returns values.
+ */
+export function storeAccounts(store, env) {
+  const view = envView(store, env);
+  const { values } = storeValues(store, env);
+  return Object.entries(view.accounts).map(([key, a]) => {
+    const { passwordVar } = accountVars(key, a);
+    const login = a.login ?? (isNamedKey(key) ? null : key);
+    const passwordName = typeof a.password === 'string' ? passwordVar : a.password?.use ?? null;
+    return { key, login, passwordName, password: passwordOf(a.password, values) ?? null };
+  });
 }
 
-/** Serialise a store: sections and names sorted, so a diff of two versions reads. Pure. */
+/** Serialise a store: keys sorted, an account's fields in reading order, so a diff of two versions reads. Pure. */
 export function serialiseStore(store) {
   const sorted = (o) => Object.fromEntries(Object.keys(o ?? {}).sort().map((k) => [k, o[k]]));
-  const out = { version: VERSION };
+  const account = (a) => Object.fromEntries(['login', 'password', 'vars'].filter((f) => a[f] !== undefined).map((f) => [f, a[f]]));
+  const accounts = (o) => Object.fromEntries(Object.keys(o ?? {}).sort().map((k) => [k, account(o[k])]));
+  const out = { version: STORE_VERSION };
   if (store.master) out.master = store.master;
-  out.defaults = sorted(store.defaults);
-  out.envs = Object.fromEntries(Object.keys(store.envs ?? {}).sort().map((e) => [e, sorted(store.envs[e])]));
-  const accounts = Object.keys(store.accounts ?? {}).filter((e) => Object.keys(store.accounts[e]).length).sort();
-  if (accounts.length) out.accounts = Object.fromEntries(accounts.map((e) => [e, sorted(store.accounts[e])]));
+  out.shared = sorted(store.shared);
+  out.accounts = accounts(store.accounts);
+  out.envs = Object.fromEntries(Object.keys(store.envs ?? {}).sort().map((e) => {
+    const s = store.envs[e];
+    const section = {};
+    if (Object.keys(s.shared ?? {}).length) section.shared = sorted(s.shared);
+    if (Object.keys(s.accounts ?? {}).length) section.accounts = accounts(s.accounts);
+    return [e, section];
+  }));
   return `${JSON.stringify(out, null, 2)}\n`;
 }
 
@@ -129,51 +235,48 @@ export function writeStore(root, store) {
 }
 
 /**
- * Record credentials a seeder (or a person, through the migration) has just set: `entries` { NAME: value } into
- * `envs.<env>` (or `defaults` with env null). Re-reads the file right before writing, so two seeders that finish one
- * after the other both land. Returns the names whose value changed. Never logs a value.
- */
-export function recordCredentials(root, env, entries) {
-  if (env !== null && !ENV.test(String(env))) throw new StoreError(`not an env name: ${JSON.stringify(env)}`);
-  const store = readStore(root);
-  const target = env === null ? (store.defaults ??= {}) : (store.envs[env] ??= {});
-  const changed = [];
-  for (const [k, v] of Object.entries(entries)) {
-    if (!isStoreName(k)) throw new StoreError(`${k} cannot go in ${STORE_FILE}: ${isTokenShaped(k) ? 'tokens and API keys belong in vc-secrets' : 'not a variable name'}`);
-    if (typeof v !== 'string' || !v) throw new StoreError(`${k}: refusing to record an empty value`);
-    if (target[k] !== v) { target[k] = v; changed.push(k); }
-  }
-  if (changed.length) writeStore(root, store);
-  return changed;
-}
-
-/**
- * Record an account a seeder has just created, or set the password of, on `env`: its login, under `accounts.<env>`,
- * with the NAME its password is under; and, with `password`, that value under `envs.<env>.<NAME>` when the env does
- * not already resolve NAME to it (a password generated for a NAME the env had no value for). Re-reads the file right
- * before writing. Returns true when the file changed. Never logs a value.
+ * Record an account a seeder has just created, or set the password of, on `env`: `login`, whose password is the value
+ * of `passwordName`. The account it belongs to — a named account with that login, else one keyed by the login — gets
+ * that password: its own when `passwordName` is its own variable, else `{ use: passwordName }`. With `password` (one
+ * generated because the env had no value for `passwordName`), the value is recorded too: in that account when the
+ * name is its own, else in the env's `shared`. Re-reads the file right before writing. Returns true when it changed.
+ * Never logs a value.
  */
 export function recordAccount(root, env, login, passwordName, password) {
   if (!ENV.test(String(env))) throw new StoreError(`not an env name: ${JSON.stringify(env)}`);
   if (!isStoreName(passwordName)) throw new StoreError(`${passwordName} cannot name a password in ${STORE_FILE}`);
-  const key = String(login ?? '').trim();
-  if (!key) throw new StoreError('refusing to record an account with no login');
+  const who = String(login ?? '').trim();
+  if (!who) throw new StoreError('refusing to record an account with no login');
+  if (password !== undefined && (typeof password !== 'string' || !password)) throw new StoreError(`${passwordName}: refusing to record an empty value`);
   const store = readStore(root);
-  let changed = false;
-  const accounts = (store.accounts[env] ??= {});
-  if (accounts[key] !== passwordName) { accounts[key] = passwordName; changed = true; }
-  if (password !== undefined) {
-    if (typeof password !== 'string' || !password) throw new StoreError(`${passwordName}: refusing to record an empty value`);
-    if (storeValues(store, env).values[passwordName] !== password) { (store.envs[env] ??= {})[passwordName] = password; changed = true; }
-  }
-  if (changed) writeStore(root, store);
-  return changed;
-}
-
-/** The accounts the store lists for `env`: login → { name, password } (password: the value, or null when the env has none). */
-export function storeAccounts(store, env) {
+  const section = (store.envs[env] ??= { shared: {}, accounts: {} });
+  section.shared ??= {}; section.accounts ??= {};
+  const before = serialiseStore(store);
+  const view = envView(store, env);
+  const key = Object.keys(view.accounts).find((k) => (view.accounts[k].login ?? (isNamedKey(k) ? null : k)) === who) ?? who;
+  const entry = view.accounts[key] ?? {};
   const { values } = storeValues(store, env);
-  return Object.fromEntries(Object.entries(store.accounts?.[env] ?? {}).map(([login, name]) => [login, { name, password: values[name] ?? null }]));
+  const refersTo = entry.password && typeof entry.password === 'object' ? entry.password.use : null;
+  const ownVar = isNamedKey(key) ? accountVars(key, { ...entry, password: '' }).passwordVar : null;
+  const envEntry = (section.accounts[key] ??= {});
+  const recordShared = () => { if (password !== undefined && values[passwordName] !== password) section.shared[passwordName] = password; };
+  if (!isNamedKey(key) || refersTo === passwordName) {
+    // A fixture keyed by its login, or an account that already uses passwordName: say so, keep a generated value there.
+    if (refersTo !== passwordName) envEntry.password = { use: passwordName };
+    recordShared();
+  } else if (ownVar === passwordName) {
+    // A named account whose own password this is.
+    if (password !== undefined && values[passwordName] !== password) envEntry.password = password;
+  } else {
+    // A named account set with another name's password: it holds that value now; its own name stays its own.
+    recordShared();
+    const value = password ?? values[passwordName];
+    if (value && passwordOf(entry.password, values) !== value) envEntry.password = value;
+  }
+  if (!Object.keys(envEntry).length) delete section.accounts[key];
+  if (serialiseStore(store) === before) return false;
+  writeStore(root, store);
+  return true;
 }
 
 /**

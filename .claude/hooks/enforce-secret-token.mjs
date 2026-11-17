@@ -152,7 +152,7 @@ function nameHint(name, ctx) {
     .sort((a, b) => b.length - a.length)[0];
   if (base) {
     return `The lane has no ${name.slice(base.length)} entry for ${base}; it holds: ${ctx.envs.join(", ")}.\n` +
-      `Add that env's value to test-accounts.local.json (envs.<env>.${base}), then ${RECONNECT}.`;
+      `Add that env's account to test-accounts.local.json (envs.<env>.accounts), then ${RECONNECT}.`;
   }
   if (ctx.drift?.absent.includes(name)) return `${name} was added to the store after this lane started: ${RECONNECT}.`;
   return null;

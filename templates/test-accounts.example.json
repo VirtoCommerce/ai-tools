@@ -1,12 +1,8 @@
 {
-  "//": "TEMPLATE — copy to test-accounts.local.json (gitignored) at the project root, or get the team's copy from its secret store. Every test account's login and password, for every env: `defaults` apply to every env, `envs.<env>` wins for that env, `master` is the one password of every PASSWORDS=master stand. A name is the variable the suites, test-data and seeders use. Tokens and API keys never go here (vc-secrets). `accounts` lists, per env, every login a seeder created or set the password of, with the name its password is under (seeders fill it in themselves). npm run creds:check shows what is missing, never a value. Design: docs/superpowers/specs/2026-11-17-test-accounts-store-design.md",
-  "version": 1,
+  "//": "TEMPLATE — copy to test-accounts.local.json (gitignored) at the project root, or get the team's copy from its secret store. Every test account's login and password, for every env. `accounts`: an account's login and password side by side — a named one (USER) is what suites call {{USER_EMAIL}} / {{USER_PASSWORD}} (or the names in its `vars`); one keyed by its login is a seeded fixture, and its password { \"use\": NAME } is a shared one. `shared`: passwords many accounts use. The top level is every env; `envs.<env>` beats it (an account field by field; \"\" unsets a shared one). `master`: the one password of every PASSWORDS=master stand. Tokens and API keys never go here (vc-secrets). Seeders record every account they create. npm run creds:check shows what is missing, never a value. Design: docs/superpowers/specs/2026-11-17-test-accounts-store-design.md",
+  "version": 2,
   "master": "",
-  "defaults": {
-    "ADMIN_VIRTO": "",
-    "ADMIN_VIRTO_PASSWORD": "",
-    "AGENT1_EMAIL": "",
-    "AGENT1_PASSWORD": "",
+  "shared": {
     "AGENT_PERSONAL_PASSWORD": "",
     "AGENT_SLOT1_PASSWORD": "",
     "AGENT_SLOT2_PASSWORD": "",
@@ -14,68 +10,138 @@
     "B2B_USER_PASSWORD": "",
     "BROWSEFILTERS_NONE_PASSWORD": "",
     "BROWSEFILTERS_READ_ONLY_PASSWORD": "",
-    "BUILDER_IO_EMAIL": "",
-    "BUILDER_IO_PASSWORD": "",
     "CATALOG_LINK_RESTRICTED_PASSWORD": "",
     "CATALOG_READ_ONLY_PASSWORD": "",
     "DEFAULT_TEST_PASSWORD": "",
-    "EUR_USER_EMAIL": "",
-    "EUR_USER_PASSWORD": "",
-    "IMPERSONATION_ADMIN_EMAIL": "",
-    "IMPERSONATION_ADMIN_PASSWORD": "",
-    "JIRA_EMAIL": "",
-    "JIRA_PASSWORD": "",
-    "LOCKOUT_TEST_EMAIL": "",
-    "LOCKOUT_TEST_PASSWORD": "",
-    "LOYALTY_NOBAL_USER_EMAIL": "",
-    "LOYALTY_NOBAL_USER_PASSWORD": "",
-    "LOYALTY_VIP_USER_EMAIL": "",
-    "LOYALTY_VIP_USER_PASSWORD": "",
-    "LOYALTY_WHOLESALE_USER_EMAIL": "",
-    "LOYALTY_WHOLESALE_USER_PASSWORD": "",
-    "MULTI_ORG_USER_EMAIL": "",
-    "MULTI_ORG_USER_PASSWORD": "",
-    "ORG_USER_EMAIL": "",
-    "ORG_USER_PASSWORD": "",
-    "ORG_USER_VIRTO": "",
-    "ORG_USER_VIRTO_PASSWORD": "",
     "PAGEBUILDER_SC_USER_PASSWORD": "",
-    "PERSONAL_USER_VIRTO": "",
-    "PERSONAL_USER_VIRTO_PASSWORD": "",
     "RESTRICTED_CMS_ADMIN_PASSWORD": "",
     "RESTRICTED_SALESREP_ADMIN_PASSWORD": "",
     "RESTRICTED_USER_PASSWORD": "",
-    "RETURNS_AGENT_NO_AUTHORIZE_EMAIL": "",
-    "RETURNS_AGENT_NO_AUTHORIZE_PASSWORD": "",
-    "SALES_REP_EMAIL": "",
-    "SALES_REP_NOCUSTOMERS_EMAIL": "",
-    "SALES_REP_PASSWORD": "",
     "SHELL_SEARCH_PASSWORD": "",
     "SR_DEMO_BUYER_PASSWORD": "",
-    "SR_DEMO_OPERATOR_EMAIL": "",
-    "SR_DEMO_OPERATOR_PASSWORD": "",
-    "SR_DEMO_REP_PRIMARY_EMAIL": "",
-    "SR_DEMO_REP_PRIMARY_PASSWORD": "",
-    "SR_DEMO_REP_SECOND_EMAIL": "",
-    "SR_DEMO_REP_SWITCHER_EMAIL": "",
     "SR_REP_PASSWORD": "",
-    "TEST_USER_PASSWORD": "",
-    "USER2_EMAIL": "",
-    "USER2_PASSWORD": ""
+    "TEST_USER_PASSWORD": ""
+  },
+  "accounts": {
+    "AGENT1": {
+      "login": "",
+      "password": ""
+    },
+    "JIRA": {
+      "login": "",
+      "password": ""
+    },
+    "LOYALTY_NOBAL_USER": {
+      "login": "",
+      "password": ""
+    },
+    "LOYALTY_WHOLESALE_USER": {
+      "login": "",
+      "password": ""
+    },
+    "RETURNS_AGENT_NO_AUTHORIZE": {
+      "login": "",
+      "password": ""
+    },
+    "SALES_REP_NOCUSTOMERS": {
+      "login": "",
+      "password": {
+        "use": "SR_REP_PASSWORD"
+      }
+    },
+    "SR_DEMO_OPERATOR": {
+      "login": "",
+      "password": ""
+    }
   },
   "envs": {
     "vcst": {
-      "ADMIN": "",
-      "ADMIN_EMAIL": "",
-      "ADMIN_PASSWORD": "",
-      "USER_EMAIL": "",
-      "USER_PASSWORD": ""
-    }
-  },
-  "accounts": {
-    "vcst": {
-      "admin": "ADMIN_PASSWORD",
-      "<USER_EMAIL value>": "USER_PASSWORD"
+      "shared": {},
+      "accounts": {
+        "ADMIN": {
+          "login": "",
+          "password": "",
+          "vars": {
+            "login": [
+              "ADMIN_EMAIL",
+              "ADMIN"
+            ]
+          }
+        },
+        "ADMIN_VIRTO": {
+          "login": "",
+          "password": "",
+          "vars": {
+            "login": [
+              "ADMIN_VIRTO"
+            ]
+          }
+        },
+        "EUR_USER": {
+          "login": "",
+          "password": ""
+        },
+        "IMPERSONATION_ADMIN": {
+          "login": "",
+          "password": ""
+        },
+        "LOCKOUT_TEST": {
+          "login": "",
+          "password": ""
+        },
+        "LOYALTY_VIP_USER": {
+          "login": "",
+          "password": ""
+        },
+        "MULTI_ORG_USER": {
+          "login": "",
+          "password": ""
+        },
+        "ORG_USER": {
+          "login": "",
+          "password": ""
+        },
+        "ORG_USER_VIRTO": {
+          "login": "",
+          "password": "",
+          "vars": {
+            "login": [
+              "ORG_USER_VIRTO"
+            ]
+          }
+        },
+        "PERSONAL_USER_VIRTO": {
+          "login": "",
+          "password": "",
+          "vars": {
+            "login": [
+              "PERSONAL_USER_VIRTO"
+            ]
+          }
+        },
+        "SALES_REP": {
+          "login": "",
+          "password": {
+            "use": "SR_REP_PASSWORD"
+          }
+        },
+        "SR_DEMO_REP_PRIMARY": {
+          "login": ""
+        },
+        "USER": {
+          "login": "",
+          "password": ""
+        },
+        "USER2": {
+          "login": "",
+          "password": ""
+        },
+        "agent-test-example@test-agent.com": {
+          "password": {
+            "use": "DEFAULT_TEST_PASSWORD"
+          }
+        }
+      }
     }
   }
 }

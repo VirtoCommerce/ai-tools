@@ -29,7 +29,7 @@ import {
   collectDeclarations, findPasswordConflicts, findDestructiveOverlaps, findUndeclaredVars,
 } from './credential-specs.mjs';
 import { USER_ROLES } from '../lib/user-roles.mjs';
-import { STORE_EXAMPLE, STORE_FILE, readStore, storeValues } from '../lib/test-accounts.mjs';
+import { STORE_EXAMPLE, STORE_FILE, accountVars, readStore, storeValues } from '../lib/test-accounts.mjs';
 import { SEEDED_ACCOUNTS as OTP_ACCOUNTS, PASSWORD_VAR as OTP_PASSWORD_VAR } from './auth/otp-signin-specs.mjs';
 
 /**
@@ -74,7 +74,15 @@ function templateVarNames() {
   const out = new Set();
   try {
     const ex = JSON.parse(readFileSync(join(ROOT, STORE_EXAMPLE), 'utf8'));
-    for (const sec of [ex.defaults ?? {}, ...Object.values(ex.envs ?? {})]) for (const k of Object.keys(sec)) out.add(k);
+    // Every name the template declares: its shared passwords, and what each named account exposes.
+    for (const level of [ex, ...Object.values(ex.envs ?? {})]) {
+      for (const k of Object.keys(level.shared ?? {})) out.add(k);
+      for (const [k, a] of Object.entries(level.accounts ?? {})) {
+        const { loginVars, passwordVar } = accountVars(k, { ...a, password: typeof a.password === 'string' ? a.password : a.password });
+        for (const n of [...loginVars, passwordVar ?? (typeof a.password === 'string' && /^[A-Z][A-Z0-9_]*$/.test(k) ? `${k}_PASSWORD` : null)]) if (n) out.add(n);
+        if (a.password?.use) out.add(a.password.use);
+      }
+    }
   } catch { /* no template: the files below still count */ }
   for (const rel of ['templates/.env.local.template', 'templates/.env.{env}.example', '.env.defaults']) {
     const p = join(ROOT, rel);
