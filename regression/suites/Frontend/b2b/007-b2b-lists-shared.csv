@@ -1536,3 +1536,54 @@ Rep serves AcmeCorp; readerA = ACME_BUYER. HYPOTHESIS held at Draft: the shipped
 [DOM] each row offers its quantity control and the 'Add to cart' button {OBSERVED}
 [STATE] after a full reload the item count and SKUs equal the recorded values — the recipient has no path that changes the rep's list {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql",the recipient page renders a remove control on a row; the item count or SKUs differ after the reload; the page shows the rows without the rep-recommendation banner,none — the list is removed by the rep at the end of the case,VCST-5707 · Archetype:SCOPE · Technique:EP · Test Model VCST-5707 L5 (round 2) · open question VCST-5335 vs PR #2476 · KB-0E177E02 · sibling B2C-LIST-054 (recipient-edits expectation),Draft
+B2C-LIST-082,List - 'Add all to cart' Results Modal: 'View cart' Fills the Row Below 480px Viewport and Returns to Its Normal Width at 480px,B2C Features > Lists > Add all to cart,Medium,,ECL-7.4,"[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
+[PRE:RESET_CART]
+Runs on a DISPOSABLE personal customer; the list and its two items are created IN the case (no shared list, no USER_DEFAULT account).","url={{FRONT_URL}}/account/lists
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD
+products=@td(PROD_HEADPHONES.sku), @td(PROD_LAPTOP.sku)
+list name=AGENT-TEST- + random-data suffix","[NAV] {{FRONT_URL}}/search?q=@td(PROD_HEADPHONES.sku)
+[ACT] click 'Add to list' on the product card
+[WAIT] the 'Please select list' dialog opens
+[ACT] click 'Add new list'
+[WAIT] a row with a checked checkbox and an editable name field appears
+[ACT] replace the name in that field with the AGENT-TEST- prefixed list name
+[ACT] click 'Save'
+[WAIT] the dialog closes
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LAPTOP.sku)
+[ACT] click 'Add to list' on the product card
+[WAIT] the 'Please select list' dialog opens
+[ACT] click the AGENT-TEST- list name label in the dialog
+[WAIT] the 'Save' button becomes enabled
+[ACT] click 'Save'
+[WAIT] the dialog closes
+[NAV] {{FRONT_URL}}/account/lists
+[WAIT] the list card shows the AGENT-TEST- name and the count 2
+[ACT] click the AGENT-TEST- list name on its card
+[WAIT] the list page shows the 'Add all to cart' button
+[VIEWPORT] 1280x900
+[ACT] click 'Add all to cart' in the list-detail header
+[WAIT] the 'Adding products to cart result' dialog opens, with the buttons 'View cart', 'Print' and 'OK'
+[KEY] record the 'View cart' button width and the dialog content-box width (the parent's width minus its computed padding-left and padding-right)
+[ACT] click 'OK' in the results dialog
+[WAIT] the results dialog closes
+[VIEWPORT] 479x900
+[ACT] click 'Add all to cart' in the list-detail header
+[WAIT] the results dialog opens
+[KEY] record 'View cart' width and the dialog content-box width
+[ACT] click 'OK' in the results dialog
+[WAIT] the results dialog closes
+[VIEWPORT] 448x900
+[ACT] click 'Add all to cart'
+[WAIT] the results dialog opens
+[KEY] record 'View cart' width and the dialog content-box width
+[ACT] click 'OK' in the results dialog
+[WAIT] the results dialog closes
+[VIEWPORT] 480x900
+[ACT] click 'Add all to cart'
+[WAIT] the results dialog opens
+[KEY] record 'View cart' width and the dialog content-box width","[DOM] at 448 and 479 px viewport the 'View cart' button width equals the dialog content-box width (it fills its own row) {SPEC} (vcptcore 2026-11-17: 400 of 448, 431.2 of 479.2)
+[DOM] at 480 px 'View cart' is narrower than the dialog content-box width (its normal, content-sized width) {SPEC}
+[DOM] 'View cart' width at 479 differs from its width at 480 (the breakpoint is observable in the data) {OBSERVED} (vcptcore 2026-11-17: 128 wide at 480)","[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx/5xx on /graphql",'View cart' keeps a content-sized width below 480 (the full-width rule lost to the kit root now at :where() specificity); 'View cart' stays full width at 480 and above,"on /cart set the viewport so the .vc-line-items inline size is <= the 42rem container threshold and click 'Remove all' (confirm if asked) to empty it; on /account/lists open the card 'Actions' menu, choose 'Remove list' and confirm 'Delete'; delete the disposable customer","VCST-6493 AC-1, AC-4 {SPEC} (prior bug VCST-6274 R1); PR VirtoCommerce/vc-frontend#2639; kb KB-9470BF7B (same modal on /account/saved-for-later, context only); labels Observed vcptcore 2026-11-17; Archetype:BOUNDARY Technique:BVA Catches:VCST-6493 | Promoted: REG-2026-11-17-1417 (2026-11-17)",Automated
