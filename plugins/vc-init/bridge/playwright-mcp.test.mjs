@@ -199,4 +199,12 @@ test("a lane takes the store's passwords: every env as NAME_<ENV>, its own env b
   assert.equal(s.MASTER_PASSWORD, "Master-1aA!");
   assert.ok(!Object.values(s).includes("u@qa.test") && !("USER_EMAIL" in s) && !("ADMIN" in s), "a login is no secret");
   assert.deepEqual(storeLaneSecrets(mkdtempSync(join(tmpdir(), "lane-nostore-")), "qa"), {}, "no store: nothing");
+  // A production stand's password is never held (ENV_RISK=production), not even bare for the lane's own env; and a
+  // lane whose env may change under it gets no bare names at all.
+  writeFileSync(join(root, ".env.prod"), "ENV_RISK=production\n");
+  writeStore(root, { master: null, shared: {}, accounts: {}, envs: { qa: { accounts: { USER: { login: "u@qa.test", password: "Qa-user-1aA!" } } }, prod: { accounts: { ADMIN: { login: "admin", password: "Prod-admin-1aA!", vars: { login: ["ADMIN"] } } } } } });
+  const p = storeLaneSecrets(root, "prod");
+  assert.ok(!Object.values(p).includes("Prod-admin-1aA!"), "no production password, bare or NAME_<ENV>");
+  assert.equal(p.USER_PASSWORD_QA, "Qa-user-1aA!");
+  assert.ok(!("USER_PASSWORD" in storeLaneSecrets(root, "qa", { bare: false })), "bare: false holds no bare name");
 });

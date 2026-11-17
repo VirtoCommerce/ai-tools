@@ -26,10 +26,11 @@ test-user passwords — from `test-accounts.local.json` (or vc-secrets) — so t
 
 **Signing in.**
 
-- Type the password's NAME into the password field — `browser_type` with `text: "ADMIN_PASSWORD"`
-  (or `USER_PASSWORD`, or another `*_PASSWORD` the project declares) for the env the lane started on,
-  or the name with its env, `ADMIN_PASSWORD_<ENV>` (e.g. `ADMIN_PASSWORD_QA`), for any env. On a
-  master stand, `MASTER_PASSWORD`. The lane types the value and masks it in every response.
+- Type the password's NAME with the env under test into the password field — `browser_type` with
+  `text: "ADMIN_PASSWORD_<ENV>"` (e.g. `ADMIN_PASSWORD_QA`; or `USER_PASSWORD_<ENV>`, or another
+  `*_PASSWORD` the project declares). The bare name (`ADMIN_PASSWORD`) works only on a project with one
+  env, or a lane started for one env from vc-secrets. On a master stand, `MASTER_PASSWORD`. The lane
+  types the value and masks it in every response.
 - Never type `{{ADMIN_PASSWORD}}`, `$ADMIN_PASSWORD` or the value itself, never read a password
   from a file to type it, and never ask the operator for a password in chat.
 - The login (user name / email) is not secret: read it from the env (`ADMIN`, `USER_EMAIL`,

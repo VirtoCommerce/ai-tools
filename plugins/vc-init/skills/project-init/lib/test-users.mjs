@@ -32,8 +32,8 @@ export function envsIn(names) {
 /**
  * The users an environment declares: the built-ins plus every user add-user wrote — into the test-account store
  * (`accounts`, the env's view: an account whose `vars.login` names `<KEY>_LOGIN`) or, before the store, as a
- * `# vc-init user` block in the `.env.<env>` text. A store login wins over the file's. The store records no role:
- * a store user is an admin when its KEY starts with ADMIN, else a storefront user. Pure.
+ * `# vc-init user` block in the `.env.<env>` text. A store login wins over the file's. A store user's role is
+ * its `role` (add-user records it); one written before that is an admin when its KEY starts with ADMIN. Pure.
  */
 export function usersIn(text, accounts = {}) {
   const values = parse(String(text || ""));
@@ -44,7 +44,7 @@ export function usersIn(text, accounts = {}) {
   }
   for (const [key, a] of Object.entries(accounts || {})) {
     if (users.some((u) => u.key === key) || !(a?.vars?.login ?? []).includes(`${key}_LOGIN`)) continue;
-    users.push({ key, role: /^ADMIN/.test(key) ? "admin" : "user", loginVar: `${key}_LOGIN`, password: `${key}_PASSWORD`, login: a.login || "" });
+    users.push({ key, role: a.role ?? (/^ADMIN/.test(key) ? "admin" : "user"), loginVar: `${key}_LOGIN`, password: `${key}_PASSWORD`, login: a.login || "" });
   }
   return users;
 }

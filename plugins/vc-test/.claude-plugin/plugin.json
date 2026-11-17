@@ -20,7 +20,7 @@
   "dependencies": [
     {
       "name": "vc-init",
-      "version": ">=0.4.1"
+      "version": ">=0.8.0"
     },
     {
       "name": "vc-fix",

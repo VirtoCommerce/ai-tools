@@ -202,7 +202,17 @@ function main() {
       // One value for every env: the store's top level.
       const a = (store.accounts[acc] = { ...(store.accounts[acc] ?? {}), password: String(value) });
       if (loginVar && !(a.vars?.login ?? []).includes(loginVar)) a.vars = { ...(a.vars ?? {}), login: [...(a.vars?.login ?? []), loginVar] };
-      storeWritten.push(`${acc}.password (every env)`);
+      // An env's own password for the account would still win over the top level (field by field): drop it, so the
+      // one value really is every env's.
+      const shadowed = [];
+      for (const [e, s] of Object.entries(store.envs)) {
+        const own = s.accounts?.[acc];
+        if (!own || own.password === undefined) continue;
+        delete own.password;
+        if (!Object.keys(own).length) delete s.accounts[acc];
+        shadowed.push(e);
+      }
+      storeWritten.push(`${acc}.password (every env${shadowed.length ? `; replaced the own value of ${shadowed.join(", ")}` : ""})`);
     } else {
       fillAccount(store, envName, acc, { password: String(value), loginVar }, { overwrite: ["password"] });
       storeWritten.push(`${acc}.password`);

@@ -60,7 +60,7 @@ export function envSection(store, env) {
  * present. A login variable is added to `vars.login` when the account would not expose it. Mutates `store`; returns
  * the names of the fields it set.
  */
-export function fillAccount(store, env, key, { login, password, loginVar } = {}, { overwrite = [] } = {}) {
+export function fillAccount(store, env, key, { login, password, loginVar, role } = {}, { overwrite = [] } = {}) {
   const view = envView(store, env).accounts[key] ?? {};
   const section = envSection(store, env);
   const entry = (section.accounts[key] ??= {});
@@ -74,6 +74,7 @@ export function fillAccount(store, env, key, { login, password, loginVar } = {},
   };
   want("login", login);
   want("password", password);
+  want("role", role); // user | admin — the store's record of what add-user was told (the .env marker it replaces)
   if (loginVar) {
     const current = view.vars?.login ?? (loginVar === `${key}_EMAIL` ? [loginVar] : []);
     if (!current.includes(loginVar)) {

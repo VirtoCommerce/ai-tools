@@ -25,7 +25,9 @@
 // The run's ticket fills `<ticket>`: an explicit argument, else QA_TICKET, else this session's bound run
 // (`npm run run:use`); a folder whose placeholder has no value is skipped.
 //
-// Byte-identical in plugins/vc-fix/scripts/lib/env-layers.mjs: every path resolves against `root`, the caller's
+// NOT byte-identical to plugins/vc-fix/ and plugins/vc-test/scripts/lib/env-layers.mjs: those copies are this file PLUS
+// the legacy layers an unmigrated client still needs (.env.playwright.<env>, LEGACY_MASTER_FILE, `passwords` in
+// ownEnv). Port a fix by hand — never copy this file over them. Every path resolves against `root`, the caller's
 // project root, never against this file. .claude/knowledge/execution/run-env.md is the procedure.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, isAbsolute, join, resolve } from 'node:path';

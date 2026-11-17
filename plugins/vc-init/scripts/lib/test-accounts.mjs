@@ -115,7 +115,8 @@ export function validateStore(data) {
       if (isNamedKey(key) && isTokenShaped(key)) out.push(`${at} is token/key-shaped — tokens and API keys belong in vc-secrets`);
       if (isNamedKey(key) && isPersonalServiceName(key)) out.push(`${at} is a person's own tool account (tracker / code host) — it stays in .env.local or vc-secrets, not here`);
       if (!isObj(a)) { out.push(`${at} must be an object { login, password }`); continue; }
-      for (const f of Object.keys(a)) if (!['login', 'password', 'vars', '//'].includes(f)) out.push(`${at}.${f} is not a field (login, password, vars)`);
+      for (const f of Object.keys(a)) if (!['login', 'password', 'vars', 'role', '//'].includes(f)) out.push(`${at}.${f} is not a field (login, password, vars, role)`);
+      if (a.role !== undefined && !['user', 'admin'].includes(a.role)) out.push(`${at}.role must be "user" (storefront) or "admin" (back office)`);
       if (a.login !== undefined && typeof a.login !== 'string') out.push(`${at}.login must be a string`);
       const p = a.password;
       if (p !== undefined && typeof p !== 'string' && !(isObj(p) && Object.keys(p).length === 1 && typeof p.use === 'string' && isStoreName(p.use))) {
@@ -214,7 +215,7 @@ export function storeAccounts(store, env) {
 /** Serialise a store: keys sorted, an account's fields in reading order, so a diff of two versions reads. Pure. */
 export function serialiseStore(store) {
   const sorted = (o) => Object.fromEntries(Object.keys(o ?? {}).sort().map((k) => [k, o[k]]));
-  const account = (a) => Object.fromEntries(['login', 'password', 'vars'].filter((f) => a[f] !== undefined).map((f) => [f, a[f]]));
+  const account = (a) => Object.fromEntries(['login', 'password', 'vars', 'role'].filter((f) => a[f] !== undefined).map((f) => [f, a[f]]));
   const accounts = (o) => Object.fromEntries(Object.keys(o ?? {}).sort().map((k) => [k, account(o[k])]));
   const out = { version: STORE_VERSION };
   if (store.master) out.master = store.master;

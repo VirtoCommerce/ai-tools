@@ -1,7 +1,9 @@
 // plugins/vc-test/skills/ticket-context/lib/scrub.mjs — S2. Nothing an agent reads still carries a credential.
 // COPIED from scripts/kb/core/secret-gate.mjs (design D11, M1): SECRET_NAME, looksLikePath,
-// MIN_SECRET_LENGTH, TOKEN_SHAPES, secretValuesFrom, the env-file list (secretFiles), storeAsEnvText, stringsOf. Keep in step by hand —
-// it is a value scan of the real env secrets first, shapes second, never a 40-hex guess.
+// MIN_SECRET_LENGTH, TOKEN_SHAPES, secretValuesFrom, the env-file list (secretFiles), storeAsEnvText, stringsOf. Keep in step by hand
+// (storeAsEnvText also in scripts/kb/vendor/agent-log/scrub-scan.mjs + scrub-apply.mjs). ONE deliberate difference:
+// storeAsEnvText here renames a key that is not secret-named to STORE_PASSWORD, so a value is caught whatever its key
+// (port it to the others rather than drop it here). The scan is a value scan of the real env secrets first, shapes second, never a 40-hex guess.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 

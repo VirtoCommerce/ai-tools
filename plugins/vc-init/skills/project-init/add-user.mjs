@@ -281,7 +281,7 @@ function main() {
   const name = `${key}_PASSWORD`;
   const envDecl = declaredPasswords(readDecl(root))[env];
   const inVcSecrets = !!envDecl?.includes(ROLE_PASSWORD[role]);
-  const set = fillAccount(store, env, key, inVcSecrets ? { login, loginVar: `${key}_LOGIN` } : { login, password: "", loginVar: `${key}_LOGIN` }, { overwrite: ["login"] });
+  const set = fillAccount(store, env, key, inVcSecrets ? { login, loginVar: `${key}_LOGIN`, role } : { login, password: "", loginVar: `${key}_LOGIN`, role }, { overwrite: ["login", "role"] });
   if (set.length) {
     ensureProjectIgnores(root);
     try { writeStore(root, store); } catch (e) { fail(e.message); }

@@ -882,8 +882,8 @@ resolves `$pluginRoot` = the ACTIVE (enabled) install at call time via `claude p
 ## 7. Generate `.mcp.json`, then the browser rule
 
 No browser secrets file: gen-mcp writes every Playwright lane as the bridge — `npx -p <pin> node ${VC_RUN}
---playwright …`, which reads `test-accounts.local.json` at start (`NAME_<ENV>` for every env, bare names for the
-current one) and hands Playwright MCP the passwords in memory; with a role in vc-secrets (3c) `node ${VC_RUN}
+--playwright …`, which reads `test-accounts.local.json` at start (`NAME_<ENV>`, no prod env; bare names
+on a one-env project) and hands Playwright MCP the passwords in memory; with a role in vc-secrets (3c) `node ${VC_RUN}
 playwright <lane>` runs the declared server `playwright-<lane>.<env>`. A browser agent types the NAME, the lane
 types the value and masks it. After a password change or a `TEST_ENV` switch: restart. (`sync-browser-secrets.mjs`
 is retired — it says so; `--legacy` keeps the old `.env.playwright.local` for `--secrets` lanes.)
