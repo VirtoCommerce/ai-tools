@@ -23,8 +23,7 @@
  *   --print. Exit 0 iff every requested session ends up authorized.
  */
 import { execSync, spawnSync } from "child_process";
-import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "../../../scripts/lib/resolve-test-env.js";
+import { loadEnv } from "../../../scripts/lib/load-env.mjs";
 import { loadProjectProfile } from "../../../scripts/lib/project-profile.mjs";
 
 const ADO_RESOURCE = "499b84ac-1321-427f-aa17-267ca6975798"; // Azure DevOps app id
@@ -33,17 +32,6 @@ function parseArgs(argv) {
   const a = {};
   for (const x of argv) if (x.startsWith("--")) a[x.slice(2)] = true;
   return a;
-}
-function loadEnv() {
-  const TEST_ENV = resolveTestEnv("vcst");
-  dotenv({ path: ".env.defaults" });
-  dotenv({ path: `.env.${TEST_ENV}`, override: true });
-  dotenv({ path: ".env.local", override: true });
-  const SUF = `_${TEST_ENV.toUpperCase()}`;
-  for (const [k, v] of Object.entries(process.env)) {
-    if (k.endsWith(SUF) && v) process.env[k.slice(0, -SUF.length)] = v;
-  }
-  return TEST_ENV;
 }
 const log = (m) => console.log(`[ensure-session] ${m}`);
 function tryOut(cmd) {
@@ -117,7 +105,7 @@ async function ensureGithub(check) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  loadEnv();
+  loadEnv({ root: process.cwd() });
   const profile = loadProjectProfile();
   // Default targets from the profile; explicit --ado/--github narrows.
   const wantAdo = args.ado || (!args.ado && !args.github && (profile.tracker.kind === "azure" || profile.vcs.clientHost === "azure-repos"));

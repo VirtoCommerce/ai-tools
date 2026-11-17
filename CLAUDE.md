@@ -36,7 +36,7 @@ The `ci:*` family drives the pipelines; `npm run env:check` validates env vars b
 
 ## Environment
 
-Layered loader, keyed by `TEST_ENV` (default `vcst`). Validate: `npm run env:check`. Access: `import { env } from './config.js'`.
+Layered loader, keyed by `TEST_ENV` (default `vcst`). **Load** with `import './config.js'` (load + exit on a missing CORE variable) or `loadEnv()` from `scripts/lib/load-env.mjs` (load only); **read** with `process.env.X` — there is no other access path. Validate: `npm run env:check`. The loader files in `scripts/lib/` are copied byte-for-byte into the plugins: edit them here, then `npm run env:sync` (`env:sync:check` gates it).
 
 Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` → the env's files in the `QA_ENV_PATH` folders → `test-accounts.local.json` (test-account credentials, beats every file) → `PASSWORDS=master` → legacy `.env` (backwards-compat fallback); one implementation, `scripts/lib/env-layers.mjs`. `.env.local` applies to EVERY env: a URL there overrides `.env.${TEST_ENV}` unless that file pins it as `BACK_URL_<ENV>=` (the loader warns otherwise).
 

@@ -7,6 +7,8 @@
 export declare const MASTER_FILE: string;
 /** `.env.playwright.master` — the master password's legacy file (project root), read when the store has no `master`. */
 export declare const LEGACY_MASTER_FILE: string;
+/** What moves stray credentials into the store, for messages. */
+export declare const MIGRATE_HINT: string;
 /** `MASTER_PASSWORD` — the one name a lane types on a master stand. */
 export declare const MASTER_NAME: string;
 /** `.env.<name>` files that are not envs (local, defaults, backup, master). */
@@ -71,7 +73,7 @@ export interface Layered {
   ignoredPasswords: { value: string | undefined; file: string | null; production?: boolean } | null;
   /** Whether the credential store (test-accounts.local.json) exists. */
   store: boolean;
-  /** Credentials a .env file still holds although the store exists (empty without a store) — `/project-init --check` moves them. */
+  /** Credentials a .env file still holds although the store exists (empty without a store) — MIGRATE_HINT moves them. */
   leftovers: { key: string; file: string }[];
   /** What supplied a key's value. */
   sourceOf(key: string): string;

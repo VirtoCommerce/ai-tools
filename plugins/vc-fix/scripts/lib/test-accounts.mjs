@@ -1,5 +1,5 @@
-// A copy of the ai-tools repo's scripts/lib/test-accounts.mjs — identical in plugins/vc-fix and plugins/vc-test, kept in step by hand (a plugin never imports across plugins or from the repo root).
-// THE store of test-account credentials: every test account's login and password,
+// scripts/lib/test-accounts.mjs — ONE file, byte-identical in the ai-tools repo and every plugin (`npm run env:sync`;
+// edit it in the repo's scripts/lib/). THE store of test-account credentials: every test account's login and password,
 // for every env, plus the master password, in one gitignored file at the project root.
 //
 //   {

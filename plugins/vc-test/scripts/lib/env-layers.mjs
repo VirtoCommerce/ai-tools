@@ -3,7 +3,7 @@
 // An env is its `.env.<env>` file (URLs, settings, ENV_RISK, PASSWORDS). Its test accounts' logins and passwords are
 // in the ONE credential store, test-accounts.local.json (./test-accounts.mjs). A project that has not migrated yet
 // keeps them where they were — `.env.local`, `.env.playwright.<env>`, `.env.playwright.master` — and those LEGACY
-// files are still read, below the store (`/project-init --check` migrates them).
+// files are still read, below the store (MIGRATE_HINT below moves them).
 // An env file lives in the project root and, for a stand that belongs to one ticket or one machine, in DEDICATED
 // folders listed in QA_ENV_PATH (`;`-separated, the first wins; set it in .env.local). A folder may use
 // the placeholders QA_OUTPUT_DIR takes — `<ticket>` (the run's ticket), `<env>`, `<sprint>` — and nothing is appended:
@@ -16,7 +16,7 @@
 // the credential store, its top level and then its `envs.<env>`. A dedicated file beats the root KEY BY KEY, pins
 // included: a ticket's folder can hold its own stand (`.env.vcst_6314`) or override a shared env for that ticket's runs
 // (`.env.vcptcore_dev`). The store beats every file: once it exists, a credential still in a .env file is a leftover
-// the loader names once per run (`/project-init --check` moves it). Without a store the files apply as they always did.
+// the loader names once per run (MIGRATE_HINT moves it). Without a store the files apply as they always did.
 //
 // MASTER stands: `PASSWORDS=master` in an env's own file means every test account on it signs in with ONE password,
 // the store's `master`, else MASTER_PASSWORD in the root's legacy `.env.playwright.master` (typed as MASTER_PASSWORD).
@@ -29,9 +29,10 @@
 // The run's ticket fills `<ticket>`: an explicit argument, else QA_TICKET, else this session's bound run
 // (`npm run run:use`); a folder whose placeholder has no value is skipped.
 //
-// The ai-tools repo's scripts/lib/env-layers.mjs plus the legacy layers above; byte-identical in plugins/vc-fix and
-// plugins/vc-test. Every path resolves against `root`, the caller's project root, never against this file.
-// knowledge/execution/run-env.md is the procedure.
+// ONE file, byte-identical in the ai-tools repo's scripts/lib/ and every plugin's scripts/lib/ (plugins are
+// self-contained: copied, never referenced). Edit it in scripts/lib/ and run `npm run env:sync` — `npm run
+// env:sync:check` fails a copy that drifted. Every path resolves against `root`, the caller's project root, never
+// against this file. The procedure: the ai-tools repo's .claude/knowledge/execution/run-env.md.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, isAbsolute, join, resolve } from 'node:path';
 import { parse } from 'dotenv';
@@ -46,6 +47,8 @@ export const MASTER_NAME = 'MASTER_PASSWORD';
 export const LEGACY_MASTER_FILE = '.env.playwright.master';
 /** `.env.<name>` files that are not envs (`master`: `.env.playwright.master` is the legacy master password). */
 export const NOT_AN_ENV = new Set(['local', 'defaults', 'backup', 'master']);
+/** What moves stray credentials into the store, for messages: the ai-tools repo and a client project each have one. */
+export const MIGRATE_HINT = '`npm run creds:migrate` (ai-tools) or `/project-init --check` (a client project)';
 const PLACEHOLDER = /<(ticket|env|sprint)>/gi;
 /** The passwords every project's accounts have (config.js CORE). */
 const CORE_PASSWORDS = ['ADMIN_PASSWORD', 'USER_PASSWORD'];
@@ -160,7 +163,7 @@ export function lookedIn(env, { ticket, root = process.cwd(), ambient = process.
 /**
  * Every env file in the dedicated folders, across every ticket: each QA_ENV_PATH folder with its placeholders matched
  * against what exists on disk. `{ env, ticket, dir, file, secrets }` — ticket null for a folder without `<ticket>`,
- * secrets true for a legacy `.env.playwright.<env>` (read below the store; `/project-init --check` moves its passwords
+ * secrets true for a legacy `.env.playwright.<env>` (read below the store; MIGRATE_HINT moves its passwords
  * into it). The lanes and the migration need every env; nothing else needs all of them.
  */
 export function dedicatedEnvs({ root = process.cwd(), ambient = process.env } = {}) {
@@ -260,7 +263,7 @@ export function testAccountPasswordNames(root = process.cwd(), extra = []) {
  *   store: boolean, leftovers: { key: string, file: string }[], sourceOf: (key: string) => string }}
  *   `perEnv`: keys holding this env's own value (a KEY_<ENV> pin, a dedicated file, the store's `envs.<env>`, the
  *   master password); `store`: a credential store exists; `leftovers`: credentials a .env file still holds — any
- *   password, or a name the store also sets (the store wins) — for `/project-init --check` (none without a store);
+ *   password, or a name the store also sets (the store wins) — for MIGRATE_HINT (none without a store);
  *   `ignoredPasswords`: a PASSWORDS value dropped because it did not come from the env's own files, or (`production`)
  *   a PASSWORDS=master dropped because the env says ENV_RISK=production;
  *   `sourceOf(key)` names what supplied a key's value — print it next to any target you act on.
@@ -431,7 +434,7 @@ function warnOnce(testEnv, r, root, ambient) {
   if (r.leftovers.length) {
     const files = [...new Set(r.leftovers.map((l) => l.file))];
     const named = r.leftovers.slice(0, 6).map((l) => l.key).join(', ') + (r.leftovers.length > 6 ? ', …' : '');
-    console.warn(`[env] ${r.leftovers.length} test-account credential(s) still in ${files.join(', ')} (${named}) — ${STORE_FILE} is the one place they belong: /project-init --check moves them.`);
+    console.warn(`[env] ${r.leftovers.length} test-account credential(s) still in ${files.join(', ')} (${named}) — ${STORE_FILE} is the one place they belong: ${MIGRATE_HINT} moves them.`);
   }
   if (!r.rootFile) return;
   const own = readEnvFile(join(root, envFile)) ?? {};

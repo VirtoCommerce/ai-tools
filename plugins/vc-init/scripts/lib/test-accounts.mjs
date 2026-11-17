@@ -1,6 +1,5 @@
-// scripts/lib/test-accounts.mjs — vc-init's copy of the repository's scripts/lib/test-accounts.mjs (plugins are
-// self-contained: copied, never referenced). Keep it in step with that file.
-// scripts/lib/test-accounts.mjs — THE store of test-account credentials: every test account's login and password,
+// scripts/lib/test-accounts.mjs — ONE file, byte-identical in the ai-tools repo and every plugin (`npm run env:sync`;
+// edit it in the repo's scripts/lib/). THE store of test-account credentials: every test account's login and password,
 // for every env, plus the master password, in one gitignored file at the project root.
 //
 //   {

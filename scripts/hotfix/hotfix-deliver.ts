@@ -62,13 +62,13 @@
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { basename, dirname, resolve } from 'node:path';
-import { parse as parseDotenv } from 'dotenv';
+import { dirname, resolve } from 'node:path';
 import { getAdminToken, probeLiveModules, type AdminAuth, type ProbeStatus } from '../deploy/lib/live.ts';
 import { platformApiKey } from '../deploy/lib/env.ts';
-import { ownEnv } from '../lib/env-layers.mjs';
+import { findEnv, ownEnv, readEnvFile } from '../lib/env-layers.mjs';
+import { loadEnv } from '../lib/load-env.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -102,12 +102,9 @@ interface EnvResult {
 
 // ── env / token ──────────────────────────────────────────────────────────────
 function loadToken(): string | undefined {
-  // A variable already set is never overwritten, so the file read FIRST wins: .env.local before .env.defaults gives
-  // the documented order (process env, then .env.local, then .env.defaults). The reverse let a default beat a local value.
-  for (const f of ['.env.local', '.env.defaults']) {
-    const p = resolve(REPO_ROOT, f);
-    if (existsSync(p)) { const vars = parseDotenv(readFileSync(p)); for (const [k, v] of Object.entries(vars)) if (!process.env[k]) process.env[k] = v; }
-  }
+  // The one loader, the process environment first (ambientWins): an inline `GIT_TOKEN=… npm run …` or CI beats every
+  // file, then .env.local, then .env.<env>, then .env.defaults.
+  loadEnv({ root: REPO_ROOT, ambientWins: true });
   // This script performs a WRITE (Contents PUT) to vc-deploy-dev, so prefer the write-scoped classic
   // token (GITHUB_FIX_BUGS_TOKEN — the same PAT /qa-fix uses to push to VirtoCommerce repos) over the
   // read-only GITHUB_TOKEN, which typically lacks contents:write on vc-deploy-dev (→ HTTP 403).
@@ -118,17 +115,15 @@ function ghHeaders(extra: Record<string, string> = {}): Record<string, string> {
   return { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'vc-hotfix-deliver', ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}), ...extra };
 }
 
-/** Parse one .env file into a plain object (no process.env mutation). */
-function readEnvFile(path: string): Record<string, string> {
-  return existsSync(path) ? parseDotenv(readFileSync(path)) : {};
-}
 /** Deploy + connection coords for a target env, from `.env.vcptcore_<env>` (+ .env.local secrets). */
 function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   const key = env.replace(/^vcptcore[_-]?/, '').replace(/[^a-z0-9]/gi, '').toLowerCase(); // "stable" | "regression"
-  const file = resolve(REPO_ROOT, `.env.vcptcore_${key}`);
-  if (!existsSync(file)) throw new Error(`No env file for "${env}" (looked for .env.vcptcore_${key}). Known: stable, regression.`);
-  const e = readEnvFile(file);
-  const local = readEnvFile(resolve(REPO_ROOT, '.env.local'));
+  const envName = `vcptcore_${key}`;
+  // The env's own files, as the loader finds them: the root's `.env.<env>`, or its QA_ENV_PATH folder's.
+  const file = findEnv(envName, { root: REPO_ROOT });
+  if (!file) throw new Error(`No env file for "${env}" (looked for .env.${envName}). Known: stable, regression.`);
+  const { vars: e, credentials: creds } = ownEnv(envName, { root: REPO_ROOT });
+  const local = readEnvFile(resolve(REPO_ROOT, '.env.local')) ?? {};
   const repoSpec = e.DEPLOY_REPO || '';
   const [deployOwner, deployRepo] = repoSpec.includes('/') ? repoSpec.split('/') : [OWNER, repoSpec];
   if (!deployRepo || !e.DEPLOY_BRANCH || !e.DEPLOY_PACKAGES_PATH) {
@@ -136,8 +131,6 @@ function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   }
   // The env's admin password is the test-account store's (test-accounts.local.json), as scripts/deploy/lib/env.ts
   // reads it. No guess: an empty password skips the sign-in (getAdminToken) instead of a failed attempt against the shared admin.
-  const envName = basename(file).replace(/^\.env\./, ''); // the env's own name, as its file spells it
-  const creds = ownEnv(envName, { root: REPO_ROOT }).credentials;
   const password = passwordOverride || creds.ADMIN_PASSWORD || '';
   // The env's read-only service-account key, named and looked up by scripts/deploy/lib/env.ts: used instead of the shared admin.
   const apiKey = passwordOverride ? '' : platformApiKey(envName, local);

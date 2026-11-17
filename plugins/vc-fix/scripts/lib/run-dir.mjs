@@ -11,8 +11,8 @@
 // stand, then a cloud one), never share a file. Unset ⇒ `reports/tickets/<sprint>/<ticket>` (+ `<env>`) under
 // the project root; a project with no sprint folder (a new one, a vc-fix client) drops the `<sprint>` folder:
 // `reports/tickets/<ticket>/<env>`. A relative template resolves against the project root — outputRoot(): VC_FIX_HOME, else the
-// cwd, as plugins/CLAUDE.md defines it, so this file is the same in the vc-fix plugin
-// (plugins/vc-fix/scripts/lib/run-dir.mjs — keep the two byte-identical). Write the template unquoted or
+// cwd, as plugins/CLAUDE.md defines it, so this file is the same in every plugin (byte-identical copies,
+// `npm run env:sync`; edit it in the repo's scripts/lib/). Write the template unquoted or
 // single-quoted in .env.local: inside double quotes dotenv reads `\n` in `C:\temp\new` as a line break.
 //
 // Everything a run writes lands inside its folder — the layout is `runLayout()` and

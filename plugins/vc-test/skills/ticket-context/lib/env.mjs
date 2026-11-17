@@ -1,25 +1,13 @@
-// plugins/vc-test/skills/ticket-context/lib/env.mjs — the layered .env loader. TEST_ENV is resolved here, against `root` (copied
-// from scripts/lib/resolve-test-env.js — keep in step by hand). The files are applied by the repo's
-// scripts/lib/env-layers.mjs, the one order every loader applies, when this install has it: imported at run time, so
-// the skill stays self-contained (M1). Without it the minimal order applies, and LAYERS_GAP says what is missing:
-//   TEST_ENV: process env > this session's binding (.vc-fix/session-env/<CLAUDE_CODE_SESSION_ID>,
-//             `npm run env:use`) > .env.test-env > "vcst"
-//   .env.defaults → .env.<TEST_ENV> (override) → .env.local (override) → _<ENV> suffix promotion
-//   (env-layers only:) → the env's QA_ENV_PATH files → on a PASSWORDS=master stand, the master password
+// plugins/vc-test/skills/ticket-context/lib/env.mjs — loads the env for ticket-context, against `root`. The layers are
+// the plugin's own scripts/lib/env-layers.mjs — the ai-tools repo's file, copied byte for byte (`npm run env:sync`) —
+// so this skill and the repo load an env the same way. What is ticket-context's own is only the choice of TEST_ENV:
+//   process env > this session's binding (.vc-fix/session-env/<CLAUDE_CODE_SESSION_ID>, `npm run env:use`)
+//   > .env.test-env > the one environment the profile's `test` block declares (/vc-test:init) > "vcst"
+// read against `root` rather than the cwd.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { config, parse } from "dotenv";
-
-let layers = null;
-try {
-  layers = await import("../../../scripts/lib/env-layers.mjs");
-} catch (e) {
-  if (e?.code !== "ERR_MODULE_NOT_FOUND") throw e; // a broken loader fails loudly; only a missing one falls back
-}
-
-/** Null when the repo's loader applies the env; else the GAP detail the bundle carries. */
-export const LAYERS_GAP = layers ? null
-  : "scripts/lib/env-layers.mjs is not in this install: the env was read from the project root's .env.defaults, .env.<env> and .env.local only — no QA_ENV_PATH folder, no master stand";
+import { parse } from "dotenv";
+import { applyLayered } from "../../../scripts/lib/env-layers.mjs";
 
 /** …then, with none of those, the one environment the profile's `test` block declares (/vc-test:init), then "vcst". */
 export function resolveTestEnv(root, env = process.env, profile = null) {
@@ -37,14 +25,6 @@ export function resolveTestEnv(root, env = process.env, profile = null) {
 export function loadLayeredEnv(root, ticket, profile = null) {
   const testEnv = resolveTestEnv(root, process.env, profile);
   process.env.TEST_ENV = testEnv;
-  if (layers) {
-    layers.applyLayered(testEnv, { root, ticket });
-    return testEnv;
-  }
-  config({ path: join(root, ".env.defaults"), quiet: true });
-  config({ path: join(root, `.env.${testEnv}`), override: true, quiet: true });
-  config({ path: join(root, ".env.local"), override: true, quiet: true });
-  const suffix = `_${testEnv.toUpperCase()}`;
-  for (const [k, v] of Object.entries(process.env)) if (k.endsWith(suffix) && v) process.env[k.slice(0, -suffix.length)] = v;
+  applyLayered(testEnv, { root, ticket });
   return testEnv;
 }
