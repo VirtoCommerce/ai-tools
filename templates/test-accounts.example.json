@@ -68,15 +68,6 @@
             ]
           }
         },
-        "ADMIN_VIRTO": {
-          "login": "",
-          "password": "",
-          "vars": {
-            "login": [
-              "ADMIN_VIRTO"
-            ]
-          }
-        },
         "EUR_USER": {
           "login": "",
           "password": ""

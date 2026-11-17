@@ -13,6 +13,7 @@
     "run:dir": "node scripts/env/run-folder.mjs dir",
     "creds:migrate": "node scripts/maintenance/creds-migrate.mjs",
     "creds:check": "node scripts/maintenance/creds-check.mjs",
+    "creds:verify": "node scripts/maintenance/creds-verify.mjs",
     "gif": "node scripts/lib/make-gif.mjs",
     "seed": "node scripts/seed-data/seed-bootstrap.mjs",
     "seed:minimal": "node scripts/seed-data/seed-bootstrap.mjs --skip-optional",
