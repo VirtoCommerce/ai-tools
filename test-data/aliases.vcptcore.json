@@ -1709,5 +1709,12 @@
     "number": "AGENT-TEST-SRO-MTD-BUYER",
     "customerId": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b",
     "createdDate": "2026-11-03T23:15:08.3703168Z"
+  },
+  "RETURNS_AGENT_NO_AUTHORIZE": {
+    "_inline": true,
+    "platform_id": "d6df699b-e2dd-4ce2-bf6b-6d16340a44d9",
+    "user_id": "d6df699b-e2dd-4ce2-bf6b-6d16340a44d9",
+    "role_id": "AGENT-TEST-Return-Agent-NoAuthorize",
+    "userName": "AGENT-TEST-return-agent-noauth@test.virtocommerce.com"
   }
 }
