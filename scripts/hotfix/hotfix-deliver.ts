@@ -136,14 +136,15 @@ function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   }
   // The env's admin password is the test-account store's (test-accounts.local.json), as scripts/deploy/lib/env.ts
   // reads it. No guess: an empty password skips the sign-in (getAdminToken) instead of a failed attempt against the shared admin.
-  const envName = basename(file).replace(/^.env./, ''); // the env's own name, as its file spells it
-  const password = passwordOverride || ownEnv(envName, { root: REPO_ROOT }).credentials.ADMIN_PASSWORD || '';
+  const envName = basename(file).replace(/^\.env\./, ''); // the env's own name, as its file spells it
+  const creds = ownEnv(envName, { root: REPO_ROOT }).credentials;
+  const password = passwordOverride || creds.ADMIN_PASSWORD || '';
   // The env's read-only service-account key, named and looked up by scripts/deploy/lib/env.ts: used instead of the shared admin.
   const apiKey = passwordOverride ? '' : platformApiKey(envName, local);
   const backUrl = (e.BACK_URL || '').replace(/\/$/, '');
   return {
     env: key, file, deployOwner, deployRepo, branch: e.DEPLOY_BRANCH, path: e.DEPLOY_PACKAGES_PATH,
-    backUrl, admin: ownEnv(envName, { root: REPO_ROOT }).credentials.ADMIN || e.ADMIN || 'admin', password,
+    backUrl, admin: creds.ADMIN || e.ADMIN || 'admin', password,
     ...(apiKey && backUrl ? { apiKey, apiKeyFor: backUrl } : {}),
   };
 }

@@ -35,7 +35,9 @@ try { store = readStore(root); } catch (e) { console.log(`✗ ${e instanceof Sto
 if (!store.exists) { console.log(`✗ no ${STORE_FILE} — npm run creds:migrate, or get it from the team's secret store`); process.exit(1); }
 
 const fileEnvs = new Set(knownEnvs(root));
-const envs = named.length ? named : Object.keys(store.envs).sort();
+// Every env the project defines as well as every env the store names: an env whose accounts are all the store's top
+// level (or roles) has no `envs.<env>` section and must still be checked.
+const envs = named.length ? named : [...new Set([...fileEnvs, ...Object.keys(store.envs)])].sort();
 
 async function post(url, form) {
   const res = await fetch(url, {
@@ -109,16 +111,21 @@ async function verifyEnv(env) {
   // The admin: its token lets every other account be looked up before a sign-in is spent on it.
   const admin = list.find((a) => a.kind === 'admin');
   let token = null;
+  let adminSignIn = null;
   if (admin?.password) {
-    const s = await signIn(backUrl, admin.login, admin.password);
-    if (s.unreachable) return { env, lines: [`  ${backUrl}: unreachable (${s.reason}) — skipped`], skipped: true };
-    token = s.ok ? s.token : null;
+    adminSignIn = await signIn(backUrl, admin.login, admin.password);
+    if (adminSignIn.unreachable) return { env, lines: [`  ${backUrl}: unreachable (${adminSignIn.reason}) — skipped`], skipped: true };
+    token = adminSignIn.ok ? adminSignIn.token : null;
   }
 
   const results = await pool(list, async (a) => {
     const label = `${a.login} (${a.name})`;
     // A login with no password is an account the store names but does not sign in with (a colleague's reused demo rep).
     if (!a.password) return { ok: true, skipped: true, line: `– ${label}: no password recorded — not ours to sign in, not tried` };
+    // The admin's one sign-in already happened above: never spend a second one on it.
+    if (a === admin && adminSignIn) return adminSignIn.ok ? { ok: true, line: `✓ ${label}` } : { ok: false, line: `✗ ${label}: ${adminSignIn.reason}` };
+    // Without the admin's token no account's lockout state can be read: trying them would spend unguarded failed sign-ins.
+    if (adminSignIn && !token) return { ok: true, skipped: true, line: `– ${label}: not tried — the admin did not sign in, so its lockout state cannot be checked` };
     let sid = a.kind === 'admin' ? null : storeId;
     if (token) {
       const user = await lookUp(backUrl, token, a.login);

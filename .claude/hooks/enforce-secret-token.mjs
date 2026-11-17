@@ -282,8 +282,24 @@ try {
   }
   // Several sessions may run this lane at once: a name is held when any of them holds it, and stale only when every
   // one that holds it holds an old value.
-  const current = lib.laneSecrets(ROOT).secrets;
   const registered = new Set(manifests.flatMap((m) => Object.keys(m.names)));
+  const laneEnvs = [...new Set(manifests.flatMap((m) => m.envs ?? []))];
+  // Only the names the running lanes hold — deriving every name from the suite CSVs costs ~350 ms per keystroke call.
+  const bases = new Set([...registered].map((n) => lib.splitQualifiedName(n, laneEnvs)?.name).filter(Boolean));
+  let current;
+  try {
+    current = lib.laneSecrets(ROOT, { names: bases }).secrets;
+  } catch (e) {
+    // An unreadable store (malformed, an older format) leaves nothing to compare with — but the master password still
+    // goes nowhere this hook cannot confirm (item 5).
+    const why = `test-accounts.local.json could not be read: ${String(e?.message ?? e).split("\n")[0]}`;
+    for (const v of values) if (v.trim() === MASTER_NAME) {
+      process.stdout.write(JSON.stringify({ decision: "block", reason: unconfirmed(MASTER_NAME, why) }));
+      process.exit(0);
+    }
+    process.stderr.write(`enforce-secret-token: ${why} — only MASTER_PASSWORD is checked\n`);
+    process.exit(0);
+  }
   const drifts = manifests.map((m) => lib.laneDrift(m, current));
   const drift = {
     stale: [...registered].filter((n) => manifests.every((m, i) => !(n in m.names) || drifts[i].stale.includes(n))),

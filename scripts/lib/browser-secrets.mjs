@@ -198,8 +198,10 @@ export function combinedSecretValues(root, names, { ambient = process.env } = {}
  * @returns {{ secrets: Map<string, string>, envs: string[], master: { env: string }[], conflicts: { env: string, name: string }[],
  *   excluded: { env: string, reason: string }[], missing: Map<string, string[]> }}
  */
-export function laneSecrets(root, { ambient = process.env } = {}) {
-  const { entries, envs, excluded, master, conflicts } = combinedSecretValues(root, deriveSecretNames(root).keys(), { ambient });
+export function laneSecrets(root, { ambient = process.env, names } = {}) {
+  // `names`: the base names to look up (a caller comparing with running lanes passes theirs); default: derived from
+  // every suite CSV and test-data file, which is what a lane starts with and costs most of this function's time.
+  const { entries, envs, excluded, master, conflicts } = combinedSecretValues(root, names ?? deriveSecretNames(root).keys(), { ambient });
   const secrets = new Map([...entries].map(([q, e]) => [q, e.value]));
   const masterValue = readMaster({ root, ambient }).value;
   if (masterValue) secrets.set(MASTER_NAME, masterValue);

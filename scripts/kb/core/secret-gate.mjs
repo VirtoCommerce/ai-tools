@@ -228,7 +228,11 @@ export function secretFiles(env = process.env) {
   return [...new Set(['.env.local', 'test-accounts.local.json', ...perEnv])].map((n) => join(root, n));
 }
 
-/** The test-account store is JSON: its values as NAME=value lines, so the line rule reads them. Other files pass. */
+/**
+ * The test-account store is JSON: its values as NAME=value lines, so the line rule reads them. Other files pass.
+ * Copied verbatim (they import nothing outside node:) into scripts/kb/vendor/agent-log/scrub-scan.mjs and
+ * scrub-apply.mjs — change all three together, or the gate and the scrub disagree about what a secret is.
+ */
 export function storeAsEnvText(file, text) {
   if (!String(file).endsWith('.json')) return text;
   try {

@@ -19,7 +19,10 @@ const perEnvSecretFiles = () => {
 const SECRET_FILES = process.env.VC_MEASURE_SECRETS
   ? process.env.VC_MEASURE_SECRETS.split(";")
   : [...new Set([".env.local", "test-accounts.local.json", ...perEnvSecretFiles()])].map((n) => REPO + n);
-/* The test-account store (test-accounts.local.json) is JSON: its values as NAME=value lines, so the line scan reads them. */
+/* The test-account store (test-accounts.local.json) is JSON: its values as NAME=value lines, so the line scan reads them.
+ * A COPY (this vendored file imports nothing outside node:) — keep it identical to storeAsEnvText in
+ * scripts/kb/core/secret-gate.mjs and in the other agent-log script (scrub-scan.mjs / scrub-apply.mjs): a store-schema
+ * change made in one copy only makes the gate and the scrub disagree about what a secret is. */
 const storeAsEnvText = (file, text) => {
   if (!String(file).endsWith(".json")) return text;
   try {

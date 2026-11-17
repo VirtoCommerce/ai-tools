@@ -45,10 +45,10 @@ export function computeSecretsGate(root: string, browserSuites: string[], env: s
   const unsynced = new Set<string>();
   if (manifests.length && want.length) {
     const current = laneSecrets(root).secrets;
-    for (const m of manifests) {
-      const { stale } = laneDrift(m, current);
-      for (const q of want) if (!(q in m.names) || stale.includes(q)) unsynced.add(q);
-    }
+    // As the secret-token hook judges it: a name is in sync when ANY running lane holds its current value — the
+    // manifests include other sessions' lanes and lanes this run never uses.
+    const stale = manifests.map((m) => laneDrift(m, current).stale);
+    for (const q of want) if (!manifests.some((m, i) => q in m.names && !stale[i].includes(q))) unsynced.add(q);
   }
   const undeclared = missing.map((name) => ({
     name, cases: Object.fromEntries(Object.entries(perSuite).filter(([, s]) => s.byName[name]).map(([id, s]) => [id, s.byName[name]])),

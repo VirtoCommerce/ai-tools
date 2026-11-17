@@ -31,7 +31,7 @@
 // (`recordAccount`, through scripts/lib/user-provision.mjs `accountSet`). Design:
 // docs/superpowers/specs/2026-11-17-test-accounts-store-design.md. Never prints or returns a value except to a caller
 // that asked for one.
-import { chmodSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, closeSync, existsSync, openSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { randomInt } from 'node:crypto';
 import { join } from 'node:path';
 
@@ -254,35 +254,60 @@ export function recordAccount(root, env, login, passwordName, password) {
   const who = String(login ?? '').trim();
   if (!who) throw new StoreError('refusing to record an account with no login');
   if (password !== undefined && (typeof password !== 'string' || !password)) throw new StoreError(`${passwordName}: refusing to record an empty value`);
-  const store = readStore(root);
-  const section = (store.envs[env] ??= { shared: {}, accounts: {} });
-  section.shared ??= {}; section.accounts ??= {};
-  const before = serialiseStore(store);
-  const view = envView(store, env);
-  const key = Object.keys(view.accounts).find((k) => (view.accounts[k].login ?? (isNamedKey(k) ? null : k)) === who) ?? who;
-  const entry = view.accounts[key] ?? {};
-  const { values } = storeValues(store, env);
-  const refersTo = entry.password && typeof entry.password === 'object' ? entry.password.use : null;
-  const ownVar = isNamedKey(key) ? accountVars(key, { ...entry, password: '' }).passwordVar : null;
-  const envEntry = (section.accounts[key] ??= {});
-  const recordShared = () => { if (password !== undefined && values[passwordName] !== password) section.shared[passwordName] = password; };
-  if (!isNamedKey(key) || refersTo === passwordName) {
-    // A fixture keyed by its login, or an account that already uses passwordName: say so, keep a generated value there.
-    if (refersTo !== passwordName) envEntry.password = { use: passwordName };
-    recordShared();
-  } else if (ownVar === passwordName) {
-    // A named account whose own password this is.
-    if (password !== undefined && values[passwordName] !== password) envEntry.password = password;
-  } else {
-    // A named account set with another name's password: it holds that value now; its own name stays its own.
-    recordShared();
-    const value = password ?? values[passwordName];
-    if (value && passwordOf(entry.password, values) !== value) envEntry.password = value;
+  // Read-modify-write under the store's lock: two seeders (two sessions on two envs) must not drop each other's records.
+  return withStoreLock(root, () => {
+    const store = readStore(root);
+    const section = (store.envs[env] ??= { shared: {}, accounts: {} });
+    section.shared ??= {}; section.accounts ??= {};
+    const before = serialiseStore(store);
+    const view = envView(store, env);
+    const key = Object.keys(view.accounts).find((k) => (view.accounts[k].login ?? (isNamedKey(k) ? null : k)) === who) ?? who;
+    const entry = view.accounts[key] ?? {};
+    const { values } = storeValues(store, env);
+    const refersTo = entry.password && typeof entry.password === 'object' ? entry.password.use : null;
+    const ownVar = isNamedKey(key) ? accountVars(key, { ...entry, password: '' }).passwordVar : null;
+    const envEntry = (section.accounts[key] ??= {});
+    const recordShared = () => { if (password !== undefined && values[passwordName] !== password) section.shared[passwordName] = password; };
+    if (!isNamedKey(key) || refersTo === passwordName) {
+      // A fixture keyed by its login, or an account that already uses passwordName: say so, keep a generated value there.
+      if (refersTo !== passwordName) envEntry.password = { use: passwordName };
+      recordShared();
+    } else if (ownVar === passwordName) {
+      // A named account whose own password this is.
+      if (password !== undefined && values[passwordName] !== password) envEntry.password = password;
+    } else {
+      // A named account set with another name's password: it holds that value now; its own name stays its own.
+      recordShared();
+      const value = password ?? values[passwordName];
+      if (value && passwordOf(entry.password, values) !== value) envEntry.password = value;
+    }
+    if (!Object.keys(envEntry).length) delete section.accounts[key];
+    if (serialiseStore(store) === before) return false;
+    writeStore(root, store);
+    return true;
+  });
+}
+
+const LOCK_STALE_MS = 30_000;
+const LOCK_WAIT_MS = 10_000;
+/**
+ * Run `fn` holding `<store>.lock` (created exclusively; a lock older than LOCK_STALE_MS is a crashed writer's and is
+ * taken over). Waits up to LOCK_WAIT_MS for another writer, then throws StoreError.
+ */
+function withStoreLock(root, fn) {
+  const lock = join(root, `${STORE_FILE}.lock`);
+  const deadline = Date.now() + LOCK_WAIT_MS;
+  for (;;) {
+    try { closeSync(openSync(lock, 'wx')); break; } catch (e) {
+      if (e?.code !== 'EEXIST') throw e;
+      let age = 0;
+      try { age = Date.now() - statSync(lock).mtimeMs; } catch { continue; /* released meanwhile */ }
+      if (age > LOCK_STALE_MS) { rmSync(lock, { force: true }); continue; }
+      if (Date.now() > deadline) throw new StoreError(`${STORE_FILE} is locked by another writer (${lock}) — retry; delete the lock only if no seeder is running`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+    }
   }
-  if (!Object.keys(envEntry).length) delete section.accounts[key];
-  if (serialiseStore(store) === before) return false;
-  writeStore(root, store);
-  return true;
+  try { return fn(); } finally { rmSync(lock, { force: true }); }
 }
 
 /**

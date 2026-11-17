@@ -8,6 +8,7 @@ node_modules
 # THE test-account credential store: every test account's login and password, every env — never committed
 /test-accounts.local.json
 /test-accounts.local.json.*.tmp
+/test-accounts.local.json.lock
 # Legacy per-env Playwright secrets files (npm run creds:migrate deletes them) — never committed
 /.env.playwright.*
 !.env.defaults
