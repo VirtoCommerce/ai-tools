@@ -2,9 +2,12 @@
  * scripts/lib/load-layered-env.mjs
  *
  * Shared layered-env loader: .env.defaults → .env.${TEST_ENV} → .env.local (override), the
- * `_${TEST_ENV.toUpperCase()}` suffix promotion, the env's files in the QA_ENV_PATH folders and, on a
- * PASSWORDS=master stand, the master password — the order is ./env-layers.mjs `layered`, byte-identical
- * with the ai-tools repo's, so this plugin and the repo load an env the same way. Extracted because this
+ * `_${TEST_ENV.toUpperCase()}` suffix promotion, the env's files in the QA_ENV_PATH folders, the test-account
+ * store (test-accounts.local.json, ./test-accounts.mjs — it beats every file; a malformed one throws its
+ * StoreError) and, on a PASSWORDS=master stand, the master password — the order is ./env-layers.mjs `layered`
+ * (the ai-tools repo's, plus the legacy .env.playwright.* reads), so this plugin and the repo load an env the
+ * same way. The store layer is applied there, before the master values, never again here; the vc-secrets
+ * tokens injected under the bridge are put back after it and win. Extracted because this
  * ~8-line pattern had independently drifted into four copies (config.js, notify-teams.ts,
  * ensure-session.mjs, verify-access.mjs, discover-repos.mjs) — one of them (ensure-session.mjs) was missing
  * the `quiet` flag the others carried, proving the duplication was a real, not just theoretical,

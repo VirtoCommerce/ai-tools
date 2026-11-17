@@ -69,11 +69,9 @@ export function testEnvChoice(fallback = 'vcst') {
  * TEST_ENV_SOURCE) so every consumer (config.js, ci/run-regression.ts, scripts, child processes)
  * agrees on the same value regardless of which entry point ran first.
  *
- * Second side effect: the env's own secrets file, `.env.playwright.${TEST_ENV}`
- * (gitignored), is exposed as `KEY_${TEST_ENV.toUpperCase()}`. Every loader already
- * promotes that suffix over `.env.local`, so the file acts exactly like hand-written
- * `KEY_<ENV>=` lines in `.env.local`, and `npm run secrets:sync` takes that env's
- * passwords from it. A `KEY_<ENV>` that is already set is left alone.
+ * The env's test-account credentials are in the store (./test-accounts.mjs) — on a project that has not
+ * migrated, in the legacy `.env.local` / `.env.playwright.<env>` files — and the loader layers both
+ * (./env-layers.mjs `layered`); nothing here reads a password.
  *
  * The env's FILES are the loader's business (scripts/lib/env-layers.mjs `applyLayered`): they may live in
  * the project root or in a QA_ENV_PATH folder, and the loader is what warns when none defines the env.
@@ -85,15 +83,5 @@ export function resolveTestEnv(fallback = 'vcst') {
   const { env: testEnv, source } = testEnvChoice(fallback);
   process.env.TEST_ENV = testEnv; // normalize for all downstream readers
   process.env.TEST_ENV_SOURCE = `${testEnv}|${source}`;
-  exposeEnvSecrets(testEnv);
   return testEnv;
-}
-
-function exposeEnvSecrets(testEnv) {
-  const file = join(envDir(), `.env.playwright.${testEnv}`);
-  if (!existsSync(file)) return;
-  const suffix = envSuffix(testEnv);
-  for (const [key, value] of Object.entries(parse(readFileSync(file)))) {
-    if (value && process.env[key + suffix] === undefined) process.env[key + suffix] = value;
-  }
 }

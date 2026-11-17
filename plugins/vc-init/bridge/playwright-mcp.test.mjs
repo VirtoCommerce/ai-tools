@@ -172,3 +172,31 @@ test("a lane reads its own env's .env.local passwords: suffixed first, then bare
   assert.deepEqual(envFilePasswords(text, "vcst"), { USER_PASSWORD: "with space # and hash", BUYER2_PASSWORD: "b2" });
   assert.deepEqual(envFilePasswords(text, "qa"), { USER_PASSWORD: "bare-for-every-env" });
 });
+
+// The test-account store (test-accounts.local.json, vc-init 0.8.0): every env's passwords as NAME_<ENV>, the lane's
+// env's as the bare NAME, the master password — and never a login or a personal tool account.
+test("a lane takes the store's passwords: every env as NAME_<ENV>, its own env bare, the master, no login", async () => {
+  const { storeLaneSecrets } = await import("./playwright-mcp.mjs");
+  const { writeStore } = await import("../scripts/lib/test-accounts.mjs");
+  const root = mkdtempSync(join(tmpdir(), "lane-store-"));
+  writeFileSync(join(root, ".env.qa"), "BACK_URL=https://qa.test\n");
+  writeFileSync(join(root, ".env.stage"), "BACK_URL=https://stage.test\n");
+  writeStore(root, {
+    master: "Master-1aA!",
+    shared: { DEFAULT_TEST_PASSWORD: "Shared-1aA!" },
+    accounts: {},
+    envs: {
+      qa: { shared: {}, accounts: { ADMIN: { login: "admin", password: "Qa-admin-1aA!", vars: { login: ["ADMIN"] } }, USER: { login: "u@qa.test", password: "Qa-user-1aA!" } } },
+      stage: { shared: {}, accounts: { USER: { login: "u@stage.test", password: "Stage-user-1aA!" } } },
+    },
+  });
+  const s = storeLaneSecrets(root, "qa");
+  assert.equal(s.ADMIN_PASSWORD, "Qa-admin-1aA!");
+  assert.equal(s.USER_PASSWORD, "Qa-user-1aA!");
+  assert.equal(s.USER_PASSWORD_QA, "Qa-user-1aA!");
+  assert.equal(s.USER_PASSWORD_STAGE, "Stage-user-1aA!");
+  assert.equal(s.DEFAULT_TEST_PASSWORD_STAGE, "Shared-1aA!", "a shared password reaches every env the project names");
+  assert.equal(s.MASTER_PASSWORD, "Master-1aA!");
+  assert.ok(!Object.values(s).includes("u@qa.test") && !("USER_EMAIL" in s) && !("ADMIN" in s), "a login is no secret");
+  assert.deepEqual(storeLaneSecrets(mkdtempSync(join(tmpdir(), "lane-nostore-")), "qa"), {}, "no store: nothing");
+});

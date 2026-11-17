@@ -3,17 +3,21 @@
  * skills/project-init/add-user.mjs — add another test user (storefront or admin) to an environment
  * (`/project-init --add-user`).
  *
- * A test user is two values under one KEY: its login, which is not a secret and goes into `.env.<env>`
- * as `<KEY>_LOGIN`, and its password `<KEY>_PASSWORD`, which this script never sees. Where the password
- * goes follows where the env keeps its ROLE's passwords (§2d asks per role; lib/passwords.mjs) — the
+ * A test user is two values under one KEY: its login `<KEY>_LOGIN` and its password `<KEY>_PASSWORD`, which
+ * this script never sees. Both live in the test-account store, test-accounts.local.json, as the account
+ * `envs.<env>.accounts.<KEY> = { login, password, vars: { login: ["<KEY>_LOGIN"] } }` (scripts/lib/test-accounts.mjs).
+ * Where the password goes follows where the env keeps its ROLE's passwords (§2d; lib/passwords.mjs) — the
  * built-in password of that role (ADMIN_PASSWORD / USER_PASSWORD) being declared for the env says so:
  *
+ *   store       (the default) the account gets `password: ""` for the operator to fill in their editor; the
+ *               Playwright lanes and the loader read it from there.
  *   vc-secrets  the role's passwords are declared there → the name is added to that env's declaration
  *               (write-secrets-decl.mjs: secret `<key>-password-<env>`, bound in vc-init-onboard.<env>
- *               and every playwright-<lane>.<env>). The operator then runs `trust` and `set`.
- *   .env.local  an empty `<KEY>_PASSWORD_<ENV>=` placeholder is appended to `.env.local` for the
- *               operator to fill. A lane run from vc-secrets reads it from there itself; a project with
- *               no declaration hands it over through sync-browser-secrets.mjs.
+ *               and every playwright-<lane>.<env>). The operator then runs `trust` and `set`. The login still
+ *               goes to the store (an account with no password field).
+ *
+ * A user written by an older vc-init (a `# vc-init user` block in `.env.<env>`) is still listed and its login
+ * still counts; /project-init --check (creds-to-store.mjs) moves it into the store.
  *
  * Either way a browser agent logs in with the login from `<KEY>_LOGIN` and types the password by its
  * NAME — `browser_type(text="<KEY>_PASSWORD")`.
@@ -34,7 +38,7 @@
  *
  * Exit: 0 done (or nothing to do), 1 a bad argument or a refusal (the JSON / stderr says why).
  */
-import { appendFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "dotenv";
@@ -48,6 +52,8 @@ import { isGitTracked } from "./lib/project-env.mjs";
 import { hostState, storeCommand } from "./lib/host-adapter.mjs";
 import { BUILT_IN, envsIn, hostEnvFor, markedUsersIn, usersIn } from "./lib/test-users.mjs";
 import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredPasswords, isPasswordName, passwordSecret } from "./lib/passwords.mjs";
+import { STORE_FILE, fillAccount, readStore, writeStore } from "./lib/store-accounts.mjs";
+import { envView, isPersonalServiceName } from "../../scripts/lib/test-accounts.mjs";
 import { patAxesFromProfile, writeSecretsDecl } from "./write-secrets-decl.mjs";
 
 export { envsIn, hostEnvFor, markedUsersIn, usersIn };
@@ -59,6 +65,7 @@ export function keyProblem(key) {
   if (!/^[A-Z][A-Z0-9_]{0,40}$/.test(String(key || ""))) return "KEY is upper snake case: letters, digits, _ (e.g. BUYER2, SUPPORT_ADMIN)";
   if (BUILT_IN.some((b) => b.key === key)) return `${key} is a built-in user — every environment already has it`;
   if (!isPasswordName(`${key}_PASSWORD`)) return `${key}_PASSWORD looks like a token name (TOKEN/API/KEY/SECRET/PAT) — pick another KEY`;
+  if (isPersonalServiceName(key)) return `${key} names a person's own tool account (tracker / code host), not a test user — pick another KEY`;
   return null;
 }
 
@@ -114,13 +121,14 @@ export function nextKeys(role, taken, count = 3) {
   return out;
 }
 
-/** Every environment of the project, its password mode and its users. */
+/** Every environment of the project, its password mode and its users (the store's and an older .env.<env>'s). */
 export function listEnvs(root) {
   const inVcSecrets = declaredPasswords(readDecl(root));
+  const store = readStore(root);
   return envsIn(readdirSync(root)).map((env) => ({
     env,
-    passwords: Object.fromEntries(ROLES.map((r) => [r, inVcSecrets[env]?.includes(ROLE_PASSWORD[r]) ? "vc-secrets" : ".env.local"])),
-    users: usersIn(readFileSync(join(root, `.env.${env}`), "utf8")).map(({ key, role, loginVar, password, login }) => ({ key, role, loginVar, password, login })),
+    passwords: Object.fromEntries(ROLES.map((r) => [r, inVcSecrets[env]?.includes(ROLE_PASSWORD[r]) ? "vc-secrets" : "store"])),
+    users: usersIn(readFileSync(join(root, `.env.${env}`), "utf8"), envView(store, env).accounts).map(({ key, role, loginVar, password, login }) => ({ key, role, loginVar, password, login })),
   }));
 }
 
@@ -247,7 +255,8 @@ function main() {
   if (!profile) fail(error ? `cannot parse ${path}: ${error}` : `no ${path} — this project is not onboarded; run /project-init first`);
 
   if (args.list) {
-    const envs = listEnvs(root);
+    let envs;
+    try { envs = listEnvs(root); } catch (e) { fail(e.message); }
     const taken = envs.flatMap((e) => e.users.map((u) => u.key));
     console.log(JSON.stringify({ envs, nextKeys: { user: nextKeys("user", taken), admin: nextKeys("admin", taken) } }, null, 2));
     return;
@@ -263,19 +272,26 @@ function main() {
   const lp = loginProblem(login);
   if (lp) fail(lp);
 
-  // 1. The login, in the env file (not a secret).
-  const before = readFileSync(envFile, "utf8");
-  const next = withUser(before, { key, role, login, replace: !!args.replace });
-  if (next.refused) fail(next.refused);
-  if (next.change !== "unchanged") writeFileSync(envFile, next.text);
-
-  // 2. The password: declared in vc-secrets, or a placeholder in .env.local — by the env's mode.
+  // 1. The account in the test-account store: its login (and, below, where its password goes).
+  let store;
+  try { store = readStore(root); } catch (e) { fail(e.message); }
+  const current = usersIn(readFileSync(envFile, "utf8"), envView(store, env).accounts).find((u) => u.key === key)?.login || "";
+  if (current && current !== login && !args.replace) fail(`${key}_LOGIN is already ${JSON.stringify(current)} on ${env} — pass --replace to change it`);
+  const loginChange = current === login ? "unchanged" : current ? "replaced" : "added";
   const name = `${key}_PASSWORD`;
+  const envDecl = declaredPasswords(readDecl(root))[env];
+  const inVcSecrets = !!envDecl?.includes(ROLE_PASSWORD[role]);
+  const set = fillAccount(store, env, key, inVcSecrets ? { login, loginVar: `${key}_LOGIN` } : { login, password: "", loginVar: `${key}_LOGIN` }, { overwrite: ["login"] });
+  if (set.length) {
+    ensureProjectIgnores(root);
+    try { writeStore(root, store); } catch (e) { fail(e.message); }
+  }
+
+  // 2. The password: declared in vc-secrets, or a field of the store account — by the env's mode.
   const vcSecrets = JSON.stringify(vcSecretsShim().path || "<VC_SECRETS>");
   const steps = [];
   let password;
-  const envDecl = declaredPasswords(readDecl(root))[env];
-  if (envDecl?.includes(ROLE_PASSWORD[role])) {
+  if (inVcSecrets) {
     let decl;
     try {
       decl = writeSecretsDecl({ root, pat: patAxesFromProfile(profile), shim: args.shim || defaultShimPath(), passwordChange: { addEnvs: [env], addNames: [name], roles: [] /* the env is declared: add this name, no built-in */ } });
@@ -287,27 +303,20 @@ function main() {
     if (decl.trustNeeded) steps.push(`node ${vcSecrets} trust`);
     steps.push(`node ${vcSecrets} set ${secret}`);
   } else {
-    const local = join(root, ".env.local");
-    const suffixed = `${name}_${env.toUpperCase()}`;
-    const has = existsSync(local) && new RegExp(`^\\s*${suffixed}\\s*=`, "m").test(readFileSync(local, "utf8"));
-    if (!has) {
-      ensureProjectIgnores(root);
-      const text = existsSync(local) ? readFileSync(local, "utf8") : "";
-      appendFileSync(local, `${text && !text.endsWith("\n") ? "\n" : ""}\n# ${key} — password of the ${ROLE_TEXT[role]} ${login} on ${env}\n${suffixed}=\n`);
-    }
-    password = { mode: ".env.local", key: suffixed, placeholder: has ? "kept" : "added" };
-    steps.push(`fill ${suffixed}= in .env.local (in your editor, never in chat)`);
-    // A lane run from vc-secrets reads .env.local itself; only a declaration-free project needs the file.
-    if (!envDecl) steps.push(`TEST_ENV=${env} node "<vcInit>/skills/project-init/sync-browser-secrets.mjs"`);
+    const field = `envs.${env}.accounts.${key}.password`;
+    const filled = !!envView(store, env).accounts[key]?.password;
+    password = { mode: "store", file: STORE_FILE, field, placeholder: set.includes("password") ? "added" : filled ? "filled" : "kept" };
+    if (!filled) steps.push(`fill ${field} in ${STORE_FILE} (in your editor, never in chat)`);
+    else if (loginChange === "replaced") steps.push(`check ${field} in ${STORE_FILE}: it still holds the password of the previous login`);
   }
   steps.push("restart Claude Code — the browser lanes and the bridge read the passwords at start");
 
   console.log(JSON.stringify({
     env,
-    user: { key, role, loginVar: `${key}_LOGIN`, login, password: name, envFile: `.env.${env}`, login_change: next.change },
+    user: { key, role, loginVar: `${key}_LOGIN`, login, password: name, store: `${STORE_FILE} envs.${env}.accounts.${key}`, login_change: loginChange },
     password,
     steps,
-    agent: `log in with ${key}_LOGIN from .env.${env} and type the password by its NAME: browser_type(text="${name}")`,
+    agent: `log in with ${key}_LOGIN (the store's login for ${env}) and type the password by its NAME: browser_type(text="${name}")`,
   }, null, 2));
 }
 

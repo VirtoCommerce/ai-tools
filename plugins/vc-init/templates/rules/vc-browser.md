@@ -21,18 +21,19 @@ alternative" — yields to this rule.
   (`start msedge`, `Start-Process chrome`, an ad-hoc Playwright or Puppeteer script).
 
 **Why.** None of those can sign in: they refuse to type a password, and none of them can take one
-from vc-secrets. Only the Playwright lanes `/project-init` configured receive the test-user
-passwords — from vc-secrets or `.env.playwright.local` — so the agent never holds one.
+from the project's credential store. Only the Playwright lanes `/project-init` configured receive the
+test-user passwords — from `test-accounts.local.json` (or vc-secrets) — so the agent never holds one.
 
 **Signing in.**
 
-- Type the password's bare NAME into the password field — `browser_type` with
-  `text: "ADMIN_PASSWORD"` (or `USER_PASSWORD`, or another `*_PASSWORD` the project declares). The
-  lane types the value and masks it in every response.
+- Type the password's NAME into the password field — `browser_type` with `text: "ADMIN_PASSWORD"`
+  (or `USER_PASSWORD`, or another `*_PASSWORD` the project declares) for the env the lane started on,
+  or the name with its env, `ADMIN_PASSWORD_<ENV>` (e.g. `ADMIN_PASSWORD_QA`), for any env. On a
+  master stand, `MASTER_PASSWORD`. The lane types the value and masks it in every response.
 - Never type `{{ADMIN_PASSWORD}}`, `$ADMIN_PASSWORD` or the value itself, never read a password
   from a file to type it, and never ask the operator for a password in chat.
-- The login (user name / email) is not secret: read it from the env (`ADMIN_LOGIN`,
-  `USER_LOGIN`, … in `.env.<env>`) and type it as plain text.
+- The login (user name / email) is not secret: read it from the env (`ADMIN`, `USER_EMAIL`,
+  `<KEY>_LOGIN` — the loader takes them from `test-accounts.local.json`) and type it as plain text.
 
 **When Playwright is not available, stop — do not switch browsers.** If no `mcp__playwright-*`
 tool is loaded, a lane fails to start, or the typed name lands in the field as literal text, report

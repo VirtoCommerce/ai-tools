@@ -41,6 +41,8 @@ It writes only the profile's `test` block, through vc-init's `profile-set.mjs`; 
 | Keep this project's own personas? | Optional `personas.md` in the knowledge store; the visual lane proposes rows later |
 
 Missing accounts are answered with `/project-init --add-user` — `/vc-test:init` never asks for a login or a password.
+Test-account logins and passwords live in `test-accounts.local.json` (project root, gitignored); a project that has
+not migrated keeps them in `.env.local` or vc-secrets, which still work, and `/project-init --check` migrates them.
 
 ## Quick start
 

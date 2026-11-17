@@ -7,8 +7,10 @@ import { loadProjectProfile } from './scripts/lib/project-profile.mjs';
 //   2. .env.${TEST_ENV}    — per-env URLs/identifiers (vcst | vcptcore | virtostart)
 //   3. .env.local          — secrets (passwords, tokens) — gitignored
 //   4. the env's files in the QA_ENV_PATH folders — they beat 1-3 key by key
-//   5. PASSWORDS=master    — every test account's password is MASTER_PASSWORD (.env.playwright.master)
-// The order is scripts/lib/env-layers.mjs `layered` (byte-identical with the ai-tools repo's).
+//   5. test-accounts.local.json — every test account's login + password; beats 1-4 (a project that has not
+//      migrated keeps them in .env.local / the legacy .env.playwright.<env>, still read below it)
+//   6. PASSWORDS=master    — every test account's password is MASTER_PASSWORD (the store's `master`)
+// The order is scripts/lib/env-layers.mjs `layered` (the ai-tools repo's, plus the legacy reads).
 // The legacy monolithic .env file was removed — all values live in the layered
 // files above. Per-env scaffolds are committed; secrets stay in .env.local.
 //

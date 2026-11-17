@@ -1,8 +1,8 @@
 // plugins/vc-test/skills/ticket-context/lib/scrub.mjs — S2. Nothing an agent reads still carries a credential.
 // COPIED from scripts/kb/core/secret-gate.mjs (design D11, M1): SECRET_NAME, looksLikePath,
-// MIN_SECRET_LENGTH, TOKEN_SHAPES, secretValuesFrom, the env-file list, stringsOf. Keep in step by hand —
+// MIN_SECRET_LENGTH, TOKEN_SHAPES, secretValuesFrom, the env-file list (secretFiles), storeAsEnvText, stringsOf. Keep in step by hand —
 // it is a value scan of the real env secrets first, shapes second, never a 40-hex guess.
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 export const SCRUB_MARKER = "# scrubbed-by: ticket-context/scrub@1";
@@ -35,10 +35,42 @@ export function secretValuesFrom(text) {
   return out;
 }
 
+/** The test-account store's file name (test-accounts.local.json, the project root). */
+export const STORE_FILE = "test-accounts.local.json";
+
+/**
+ * The env-file list (secret-gate `secretFiles`): `.env.local`, the test-account store and every per-env secrets file
+ * at the root (`.env.<env>.local`, the legacy `.env.playwright.*` an unmigrated project still keeps its passwords in).
+ */
+export function secretFiles(root, env = process.env) {
+  if (env.VC_MEASURE_SECRETS) return env.VC_MEASURE_SECRETS.split(";").filter(Boolean);
+  let perEnv = [];
+  try { perEnv = readdirSync(root).filter((n) => /^\.env\.(?:.+\.local|playwright\..+)$/.test(n)); } catch { /* the fixed names only */ }
+  return [...new Set([".env.local", STORE_FILE, ...perEnv])].map((n) => join(root, n));
+}
+
+/**
+ * The test-account store is JSON: its PASSWORDS as NAME=value lines, so the line rule reads them — `master`, every
+ * `shared` value and every account's own `password`; never a login, which is no secret. Other files pass through.
+ * Every line carries a password-shaped name, so a value is caught whatever its key is called.
+ */
+export function storeAsEnvText(file, text) {
+  if (!String(file).endsWith(".json")) return text;
+  try {
+    const d = JSON.parse(text);
+    const name = (k) => (/^[A-Z][A-Z0-9_]*$/.test(k) && SECRET_NAME.test(k) ? k : "STORE_PASSWORD");
+    const out = typeof d?.master === "string" && d.master ? [`MASTER_PASSWORD=${d.master}`] : [];
+    for (const level of [d, ...Object.values(d?.envs ?? {})]) {
+      for (const [k, v] of Object.entries(level?.shared ?? {})) if (typeof v === "string" && v) out.push(`${name(k)}=${v}`);
+      for (const [k, a] of Object.entries(level?.accounts ?? {})) if (typeof a?.password === "string" && a.password) out.push(`${name(`${k}_PASSWORD`)}=${a.password}`);
+    }
+    return out.join("\n");
+  } catch { return ""; }
+}
+
 export function loadSecretValues(root, env = process.env) {
-  const files = env.VC_MEASURE_SECRETS ? env.VC_MEASURE_SECRETS.split(";").filter(Boolean) : [join(root, ".env.local"), join(root, ".env.playwright.local")];
   const values = new Set();
-  for (const f of files) if (existsSync(f)) for (const v of secretValuesFrom(readFileSync(f, "utf8"))) values.add(v);
+  for (const f of secretFiles(root, env)) if (existsSync(f)) for (const v of secretValuesFrom(storeAsEnvText(f, readFileSync(f, "utf8")))) values.add(v);
   // FIGMA_TOKEN can come from any env layer or the shell, so it is taken from the env as well; never printed.
   const figma = String(env.FIGMA_TOKEN ?? "").trim();
   if (figma) values.add(figma);

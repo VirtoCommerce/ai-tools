@@ -2,10 +2,11 @@
  * skills/project-init/lib/test-users.mjs — the test users an environment declares (`.env.<env>`), read by
  * add-user.mjs (which writes them) and verify-access.mjs (which checks them). Pure readers, no CLI.
  *
- * A test user is a KEY: its login `<KEY>_LOGIN` in `.env.<env>` under a `# vc-init user <KEY> (<role>)`
- * comment that add-user.mjs writes, and a password the agent types by NAME. Every environment also has
- * the two built-ins scaffold-env writes (ADMIN / USER_EMAIL) — except on a host-governed project, where
- * users take the host's password slots instead.
+ * A test user is a KEY: its login `<KEY>_LOGIN` and its password `<KEY>_PASSWORD`, which the agent types by
+ * NAME. add-user.mjs records both in the test-account store (test-accounts.local.json, `envs.<env>.accounts.<KEY>`);
+ * a project onboarded before the store has the login in `.env.<env>` under a `# vc-init user <KEY> (<role>)`
+ * comment, which is still read. Every environment also has the two built-ins (ADMIN / USER — scaffold-secrets.mjs)
+ * — except on a host-governed project, where users take the host's password slots and stay in `.env.<env>`.
  */
 import { parse } from "dotenv";
 
@@ -28,13 +29,22 @@ export function envsIn(names) {
     .sort();
 }
 
-/** The users an `.env.<env>` text declares: the built-ins plus every `# vc-init user` block. Pure. */
-export function usersIn(text) {
+/**
+ * The users an environment declares: the built-ins plus every user add-user wrote — into the test-account store
+ * (`accounts`, the env's view: an account whose `vars.login` names `<KEY>_LOGIN`) or, before the store, as a
+ * `# vc-init user` block in the `.env.<env>` text. A store login wins over the file's. The store records no role:
+ * a store user is an admin when its KEY starts with ADMIN, else a storefront user. Pure.
+ */
+export function usersIn(text, accounts = {}) {
   const values = parse(String(text || ""));
-  const users = BUILT_IN.map((b) => ({ ...b, login: values[b.loginVar] || "" }));
+  const users = BUILT_IN.map((b) => ({ ...b, login: accounts[b.key]?.login || values[b.loginVar] || "" }));
   for (const line of String(text || "").split(/\r?\n/)) {
     const m = MARK_RE.exec(line.trim());
-    if (m) users.push({ key: m[1], role: m[2], loginVar: `${m[1]}_LOGIN`, password: `${m[1]}_PASSWORD`, login: values[`${m[1]}_LOGIN`] || "" });
+    if (m) users.push({ key: m[1], role: m[2], loginVar: `${m[1]}_LOGIN`, password: `${m[1]}_PASSWORD`, login: accounts[m[1]]?.login || values[`${m[1]}_LOGIN`] || "" });
+  }
+  for (const [key, a] of Object.entries(accounts || {})) {
+    if (users.some((u) => u.key === key) || !(a?.vars?.login ?? []).includes(`${key}_LOGIN`)) continue;
+    users.push({ key, role: /^ADMIN/.test(key) ? "admin" : "user", loginVar: `${key}_LOGIN`, password: `${key}_PASSWORD`, login: a.login || "" });
   }
   return users;
 }

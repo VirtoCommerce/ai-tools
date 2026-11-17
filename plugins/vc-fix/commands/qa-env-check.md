@@ -50,16 +50,18 @@ Run `npm run env:check` to verify required variables are set. Source of truth fo
 Layered loader order (later overrides earlier):
 1. `.env.defaults` — plugin-supplied constants (sandbox cards, Builder.io public URL). Same for every customer.
 2. `.env.${TEST_ENV}` — customer per-env values (URLs, store ID, modules, risk class). `TEST_ENV` can be any `[a-z0-9_]+` name; kebab-case is rejected.
-3. `.env.local` — gitignored test-user passwords only. Per-env via `USER_PASSWORD_${TEST_ENV.upper()}` suffix promotion. **No GitHub / Azure DevOps / Jira token lives in any `.env*` file** — those are in vc-secrets (check 6).
-4. `.env` — legacy fallback for backwards-compat.
+3. `.env.local` — gitignored project-wide settings (and, on a project that has not migrated, test-user passwords, per-env via `USER_PASSWORD_${TEST_ENV.upper()}` suffix promotion). **No GitHub / Azure DevOps / Jira token lives in any `.env*` file** — those are in vc-secrets (check 6).
+4. `test-accounts.local.json` — gitignored; every test account's login + password (per env under `envs.<env>`, the master password as `master`). Beats every `.env*` file; `/project-init --check` migrates an older project into it.
+5. `.env` — legacy fallback for backwards-compat.
 
-Three buckets — this table is the definition; there is no separate configuration doc:
+Four buckets — this table is the definition; there is no separate configuration doc:
 
 | Bucket | Source | Examples |
 |--------|--------|----------|
 | Plugin-supplied | `.env.defaults` | Sandbox card numbers, Builder.io public URL |
 | Customer-required (per env) | `.env.${TEST_ENV}` | `FRONT_URL`, `BACK_URL`, `STORE_ID`, `STOREFRONT_PROFILE`, `MODULES_ENABLED` (+ `ENV_RISK`, optional — `test` when unset, set `production` by hand for a production stand) |
-| Project-wide (every env) + customer-secret | `.env.local` (gitignored) | `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL` / `ADO_ORG`, `ADO_PROJECT`, `CLIENT_REPO_ORG`; `USER_PASSWORD_*`, `ADMIN_PASSWORD_*`, `FIGMA_API_KEY` |
+| Project-wide (every env) + customer-secret | `.env.local` (gitignored) | `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL` / `ADO_ORG`, `ADO_PROJECT`, `CLIENT_REPO_ORG`, `FIGMA_API_KEY` |
+| Test accounts | `test-accounts.local.json` (gitignored; unmigrated: `.env.local`) | `USER_EMAIL` / `USER_PASSWORD`, `ADMIN` / `ADMIN_PASSWORD`, the master password |
 
 Report: `X/Y` required vars set, plus active `TEST_ENV`. List any missing with their bucket.
 
