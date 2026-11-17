@@ -1,49 +1,22 @@
 {
-  "runId": "REG-2026-11-12-1252",
+  "runId": "REG-2026-11-17-1509",
   "status": "completed",
-  "startedAt": "2026-11-12T11:53:15.858Z",
-  "env": "localhost",
-  "frontUrl": "http://localhost",
-  "ticket": "VCST-6688",
-  "selection": "110a,111",
-  "casesFilter": {
-    "ids": [
-      "MFA-048",
-      "MFA-049",
-      "MFA-054",
-      "MFA-064",
-      "MFA-073",
-      "MFA-074",
-      "MFA-075",
-      "MFASF-015",
-      "MFASF-023"
-    ]
-  },
+  "startedAt": "2026-11-17T14:09:50.557Z",
+  "env": "virtostart",
+  "frontUrl": "https://virtostart-demo-store.govirto.com",
+  "selection": "122 --ids NXR-014,NXR-017,NXR-032",
   "suites": {
-    "111": {
+    "122": {
       "status": "done",
       "lane": "browser",
-      "cases": 2,
-      "estimatedMinutes": 8,
+      "cases": 3,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-12T12:05:22Z",
-      "pass": 2,
+      "startedAt": "2026-11-17T14:10:28.334Z",
+      "pass": 1,
       "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-12T12:14:12Z"
-    },
-    "110a": {
-      "status": "done",
-      "lane": "browser",
-      "cases": 7,
-      "estimatedMinutes": 33,
-      "browser": "playwright-edge",
-      "startedAt": "2026-11-12T11:54:43Z",
-      "pass": 7,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-12T12:05:22Z"
+      "blocked": 2,
+      "finishedAt": "2026-11-17T14:13:49.004Z"
     }
   },
-  "finishedAt": "2026-11-12T12:14:36.779Z"
+  "finishedAt": "2026-11-17T14:14:22.952Z"
 }

@@ -1,0 +1,455 @@
+{
+  "run": "COV-2026-11-17-1230",
+  "scope": "vc-frontend-next (theme 3.x) storefront",
+  "stand": "virtostart",
+  "weights": {
+    "rev": 0.4,
+    "freq": 0.25,
+    "sev": 0.2,
+    "cov": 0.15
+  },
+  "gaps": [
+    {
+      "gapId": "GAP-001",
+      "manifestDomain": "cross-cutting",
+      "feature": "Home page (built-in demo-home: hero, categories, popular, suppliers, brands, CTA)",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 9.4,
+      "priority": "P0",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "KB-A788D882: on Next \"/\" always renders demo-home; Page Builder content for \"/\" never shows. VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-002",
+      "manifestDomain": "catalog-search",
+      "feature": "Header search: suggestions dropdown, /search results, empty result",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 8.9,
+      "priority": "P0",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-003",
+      "manifestDomain": "catalog-search",
+      "feature": "Catalog/category redesign (Paprika): grid/list, 4 sorts, In stock / Available at branches / Purchased before, page rounding, end-of-list",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 8.9,
+      "priority": "P0",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VCST-6050 DIVERGENCES.md lists the decided departures from the design. VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "domain-map"
+    },
+    {
+      "gapId": "GAP-004",
+      "manifestDomain": "purchase-flow",
+      "feature": "Product page: price, stock, add-to-cart/stepper, add to list/compare",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 9.6,
+      "priority": "P0",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-005",
+      "manifestDomain": "purchase-flow",
+      "feature": "Cart: add, change quantity, remove, totals, go to checkout",
+      "gapCategory": "SHALLOW_HAPPY",
+      "priorityScore": 9.4,
+      "priority": "P0",
+      "applicableLayers": [
+        "storefront",
+        "e2e"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "5 Draft rows in 028 (CART-119..123) carry a Next build gate but assert vc-frontend UI; none observed on Next. VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-006",
+      "manifestDomain": "purchase-flow",
+      "feature": "Checkout: shipping, billing, review, payment, completed page, order placed",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 9.5,
+      "priority": "P0",
+      "applicableLayers": [
+        "storefront",
+        "e2e"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-007",
+      "manifestDomain": "auth-security",
+      "feature": "Sign-in / sign-out, empty and partial submit validation",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 9.1,
+      "priority": "P0",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "MFA/passkey Draft rows exist in 111/114 with a Next gate. VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-008",
+      "manifestDomain": "customer-b2b",
+      "feature": "Account dashboard, order history, order details",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 8.3,
+      "priority": "P0",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-009",
+      "manifestDomain": "auth-security",
+      "feature": "Sign-up (personal / company) form and validation",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 7.2,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-010",
+      "manifestDomain": "auth-security",
+      "feature": "Forgot / reset / set password",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 6.8,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-011",
+      "manifestDomain": "customer-b2b",
+      "feature": "Profile, addresses, change password, security page",
+      "gapCategory": "SHALLOW_HAPPY",
+      "priorityScore": 5.7,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "3 Draft rows in 033 (AUTH-080..082). VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-012",
+      "manifestDomain": "customer-b2b",
+      "feature": "Lists (wishlists), shared list, saved for later",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 6.4,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-013",
+      "manifestDomain": "customer-b2b",
+      "feature": "Company info, members, organization switcher",
+      "gapCategory": "SHALLOW_HAPPY",
+      "priorityScore": 6.2,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "KB-F97583AC (suspected defect): desktop account menu has no org switcher on Next; VCST-6136 Select Organization menu is a Next story (GAP-32 of sprint 26-22). VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-014",
+      "manifestDomain": "catalog-search",
+      "feature": "Compare products",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 5.1,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-015",
+      "manifestDomain": "purchase-flow",
+      "feature": "Bulk order (quick order by SKU / CSV)",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 6.7,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-016",
+      "manifestDomain": "cross-cutting",
+      "feature": "Error pages 400/403/404/500, blocked",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 4.7,
+      "priority": "P2",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-017",
+      "manifestDomain": "cross-cutting",
+      "feature": "Mobile (390) header, menu, cart access",
+      "gapCategory": "SHALLOW_HAPPY",
+      "priorityScore": 7.6,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [
+        "121"
+      ],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "2 Draft rows in 033 (AUTH-078/079). VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-018",
+      "manifestDomain": "cross-cutting",
+      "feature": "Language / currency switch",
+      "gapCategory": "SHALLOW_HAPPY",
+      "priorityScore": 5.5,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "6 Draft rows in 046 (L10N-001..006) gated on a Next build. VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-019",
+      "manifestDomain": "marketing",
+      "feature": "GA4 events on Next",
+      "gapCategory": "SHALLOW_HAPPY",
+      "priorityScore": 5,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "7 Draft rows in 043 (GA-061..067). VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-020",
+      "manifestDomain": "customer-b2b",
+      "feature": "Quotes module",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 5.9,
+      "priority": "P1",
+      "applicableLayers": [
+        "storefront",
+        "e2e"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-021",
+      "manifestDomain": "customer-b2b",
+      "feature": "Returns module",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 4.6,
+      "priority": "P2",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-022",
+      "manifestDomain": "marketing",
+      "feature": "Loyalty (catalog, points history)",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 4.8,
+      "priority": "P2",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-023",
+      "manifestDomain": "customer-b2b",
+      "feature": "Purchase requests",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 4.6,
+      "priority": "P2",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-024",
+      "manifestDomain": "catalog-search",
+      "feature": "Branches page, brands / brand page",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 4.3,
+      "priority": "P2",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-025",
+      "manifestDomain": "communication",
+      "feature": "Back-in-stock, customer reviews, push messages, news",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 4.3,
+      "priority": "P2",
+      "applicableLayers": [
+        "storefront"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    },
+    {
+      "gapId": "GAP-026",
+      "manifestDomain": "platform-config",
+      "feature": "Punchout, Skyflow payment",
+      "gapCategory": "ZERO_COVERAGE",
+      "priorityScore": 4.6,
+      "priority": "P2",
+      "applicableLayers": [
+        "storefront",
+        "e2e"
+      ],
+      "targetSuites": [],
+      "businessRules": [],
+      "edgeCases": [],
+      "docsFindings": "VirtoOZ storefront guide illustrates vc-frontend only (\"Frontend Next ... still evolving\"): Next UI is undocumented, so surface is {OBSERVED}; mechanism docs still bind.",
+      "source": "live-coverage"
+    }
+  ]
+}

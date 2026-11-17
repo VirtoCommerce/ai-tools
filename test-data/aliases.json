@@ -1,7 +1,8 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.71",
+    "version": "1.5.72",
+    "changelog_1_5_72": "DEMO_RETURNS_BUYER + DEMO_NO_ORDERS_CUSTOMER: demo-profile storefront personas (virtostart). Login = the spec contact email, password = the {{SR_DEMO_BUYER_PASSWORD}} token. Spec DEMO_PERSONAS in sales-rep-demo-specs.mjs; guard td:validate:sales-rep-demo [8].",
     "changelog_1_5_71": "ORG_EMPTY gains platform_id (organizations.csv column), so SR-GQL-184 can use an ACTIVE unserved organization instead of ORG_SUSPENDED.",
     "changelog_1_5_70": "VCST-6255 customer sales report: added SR_MTD_ORDER_{WEST_1,WEST_2,TECH_1,FLAG_CANCELLED,STATUS_CANCELLED,OTHER_CREATOR} \u2014 current-month orders that make each statistics branch falsifiable (attribution by ApplicationUser id, IsCancelled flag isolated from status, status-only Cancelled, per-customer AOV divergence). Opt-in family `--only MTD` of seed-sales-rep-stats.mjs, spec sales-rep-mtd-specs.mjs, guarded by td:validate:sales-rep-stats.",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
@@ -12484,5 +12485,39 @@
       "orgName": "orgs.LAYOUT"
     },
     "notes": "VCST-6078 buyer dashboard — the disposable saved-layout buyer: the ONLY BD_* buyer whose account-dashboard layout (X-Frontend saveLayout, scope accountDashboard -> CustomerPreference Layout.accountDashboard[.{storeId}]) a case may change — status checkboxes, hidden cards, Max rows. Use it, NOT another BD_* buyer, in any case that Saves a layout. Six orders in B2B-store: New x2, Processing x2, Completed x1, Cancelled x1 (status only, IsCancelled=false — so it is still counted and the status facet offers a Cancelled tab). seed-buyer-dashboard.mjs deletes every BD_* buyer's account-dashboard layout preference on each (re)seed and at teardown, so every buyer starts never-saved (layout = null). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "DEMO_RETURNS_BUYER": {
+    "_inline": true,
+    "seed": "seed:demo",
+    "email": "m.hale@northwindtraders.example",
+    "password": "{{SR_DEMO_BUYER_PASSWORD}}",
+    "name": "Margaret Hale",
+    "organization": "Northwind Traders",
+    "org_role": "Organization maintainer",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "name",
+      "organization": "organization",
+      "org_role": "org_role"
+    },
+    "notes": "DEMO profile persona for an organization member who opens the ORGANIZATION returns list: Margaret Hale, Organization maintainer at Northwind Traders, who also holds the demo role \"Organization returns manager\" (xapi:my_organization:return:view + submit) that the returns demo adds to her membership. Her organization holds submitted returns filed by a colleague (Daniel Okafor) and by the primary demo rep, so a read-only check on another member's return has one to open; Draft returns are not listed. Spec: DEMO_PERSONAS in scripts/seed-data/sales-rep/sales-rep-demo-specs.mjs (contact DCT-NW-1); guards td:validate:sales-rep-demo [8] (this entry) + td:validate:returns-demo [1] (view grant + a colleague's return). Seeded by npm run seed:demo; exists only on an env holding the demo profile (virtostart). Sign in with @td(DEMO_RETURNS_BUYER.email); the Playwright lane types the password NAME SR_DEMO_BUYER_PASSWORD (SR_DEMO_BUYER_PASSWORD_<ENV> in .env.playwright.all), never a value. Presentation data on a public demo store: a case reads it, never mutates it."
+  },
+  "DEMO_NO_ORDERS_CUSTOMER": {
+    "_inline": true,
+    "seed": "seed:demo",
+    "email": "s.navarro@wingtip-electrical.example",
+    "password": "{{SR_DEMO_BUYER_PASSWORD}}",
+    "name": "Sofia Navarro",
+    "organization": "Wingtip Electrical Supply",
+    "org_role": "Purchasing agent",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "name",
+      "organization": "organization",
+      "org_role": "org_role"
+    },
+    "notes": "DEMO profile persona for a customer who has never ordered: Sofia Navarro, Purchasing agent at Wingtip Electrical Supply. No order, cart or list in the sales-rep, returns or loyalty-missions demo names her (td:validate:sales-rep-demo [1] + [8], td:validate:returns-demo [1]), so xAPI orders and the dashboard's My recent orders read 0 for her. Her ORGANIZATION has orders (James Whitfield's), so organization-wide figures are not zero. Spec: DEMO_PERSONAS in scripts/seed-data/sales-rep/sales-rep-demo-specs.mjs (contact DCT-WT-2). Seeded by npm run seed:demo, or for her alone npm run seed:sales-rep-demo -- --only DCT-WT-2; exists only on an env holding the demo profile (virtostart). Sign in with @td(DEMO_NO_ORDERS_CUSTOMER.email); the Playwright lane types the password NAME SR_DEMO_BUYER_PASSWORD (SR_DEMO_BUYER_PASSWORD_<ENV> in .env.playwright.all). A case that places an order as her consumes the persona for every later run: do not."
   }
 }

@@ -196,7 +196,7 @@
     "profile": "sales-rep-demo",
     "env": "virtostart",
     "marker": "DEMO-SR",
-    "generated": "2026-11-12T18:41:30.391Z",
+    "generated": "2026-11-17T14:53:04.724Z",
     "entities": [
       {
         "type": "organization",
@@ -344,6 +344,13 @@
         "id": "11f1f09c-9564-46f7-8af9-8a2a5c132784",
         "name": "James Whitfield",
         "marker": "DEMO-SR:CT:DCT-WT-1"
+      },
+      {
+        "type": "contact",
+        "key": "DCT-WT-2",
+        "id": "213545a9-87c2-496e-a9b9-a3d937e2a4ca",
+        "name": "Sofia Navarro",
+        "marker": "DEMO-SR:CT:DCT-WT-2"
       },
       {
         "type": "contact",
@@ -510,6 +517,16 @@
         "email": "j.whitfield@wingtip-electrical.example",
         "role": "Organization maintainer",
         "roleId": "org-maintainer",
+        "orgId": "52c9ca25-0fae-47f6-b6c6-b963c8d3eb01",
+        "orgName": "Wingtip Electrical Supply"
+      },
+      {
+        "type": "account",
+        "key": "DCT-WT-2",
+        "id": "02a33349-bcac-4297-833b-f76d6f0d12b5",
+        "email": "s.navarro@wingtip-electrical.example",
+        "role": "Purchasing agent",
+        "roleId": "purchasing-agent",
         "orgId": "52c9ca25-0fae-47f6-b6c6-b963c8d3eb01",
         "orgName": "Wingtip Electrical Supply"
       },
@@ -987,6 +1004,20 @@
       },
       {
         "type": "task",
+        "key": "DTSK-P-11",
+        "id": "3695ab51-281f-489b-8a37-5fea03d52989",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
+        "name": "Site visit to Contoso Plant 3"
+      },
+      {
+        "type": "task",
+        "key": "DTSK-P-12",
+        "id": "02018119-74ef-41a5-9234-28b35dcf1daa",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
+        "name": "Introduce the safety-gear catalog to Fabrikam"
+      },
+      {
+        "type": "task",
         "key": "DTSK-Q-01",
         "id": "c9a789ad-fde3-45bf-ab29-a08430cfed82",
         "ownerUserId": "dbb57432-f627-4e1c-ba34-36be362483ef",
@@ -1047,6 +1078,20 @@
         "id": "aeb1e02a-eb83-43f3-8b30-ce011aa32519",
         "ownerUserId": "dbb57432-f627-4e1c-ba34-36be362483ef",
         "name": "Send terms of sale to Contoso"
+      },
+      {
+        "type": "task",
+        "key": "DTSK-Q-10",
+        "id": "8ffa3b76-6dc0-4f35-9c69-52b5b3171714",
+        "ownerUserId": "dbb57432-f627-4e1c-ba34-36be362483ef",
+        "name": "Trade-show demo for Wingtip"
+      },
+      {
+        "type": "task",
+        "key": "DTSK-Q-11",
+        "id": "cae172fe-64a7-4f3e-9ae3-afe1c1599ac8",
+        "ownerUserId": "dbb57432-f627-4e1c-ba34-36be362483ef",
+        "name": "Collect Contoso feedback on the portal"
       },
       {
         "type": "task",
@@ -1117,6 +1162,20 @@
         "id": "912bd1ee-c3d6-4778-ba44-b9382803ac52",
         "ownerUserId": "87940daf-3ed4-4faa-8d10-f8ec9e4d85c6",
         "name": "Welcome call with Coastal Décor"
+      },
+      {
+        "type": "task",
+        "key": "DTSK-S-11",
+        "id": "55375c84-fea8-40cf-a754-13df4a23d99b",
+        "ownerUserId": "87940daf-3ed4-4faa-8d10-f8ec9e4d85c6",
+        "name": "Laptop rollout visit at Northwind Tools"
+      },
+      {
+        "type": "task",
+        "key": "DTSK-S-12",
+        "id": "993dd56c-e79f-4c3c-99f9-991b94a3f3f6",
+        "ownerUserId": "87940daf-3ed4-4faa-8d10-f8ec9e4d85c6",
+        "name": "Send Coastal Décor the spring lighting catalog"
       },
       {
         "type": "rep-attachment",
