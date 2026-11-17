@@ -101,7 +101,7 @@ async function verifyEnv(env) {
     if (!a.login || NOT_STAND.test(a.key) || NOT_STAND.test(a.passwordName ?? '')) continue;
     const key = a.login.toLowerCase();
     const password = (a.passwordName && r.env[a.passwordName]) ?? a.password;
-    if (!accounts.has(key)) accounts.set(key, { login: a.login, name: a.passwordName ?? a.key, password, kind: null });
+    if (!accounts.has(key)) accounts.set(key, { login: a.login, name: a.passwordName ?? `${a.key}_PASSWORD`, password, kind: null });
   }
   const list = [...accounts.values()];
   const header = `${backUrl}${r.master ? ' (master stand)' : ''} — ${list.length} account(s)`;
