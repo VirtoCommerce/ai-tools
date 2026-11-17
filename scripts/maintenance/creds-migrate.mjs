@@ -73,7 +73,13 @@ const OLD = await import(pathToFileURL(join(oldLib, 'env-layers.mjs')).href);
 const oldRoot = join(work, 'old-root');
 mkdirSync(oldRoot, { recursive: true });
 const trackedAtBase = new Set((git('ls-tree', '--name-only', base) ?? '').split('\n').filter(isEnvFileName));
-for (const n of trackedAtBase) writeFileSync(join(oldRoot, n), git('show', `${base}:${n}`) ?? '');
+// The logins the tracked files held come from <base> only while there is no store (the first migration): once a
+// version-2 store exists it is the answer, and a login someone removed from it never comes back out of git history.
+const storeExists = readRawStore(root)?.version === 2;
+for (const n of trackedAtBase) {
+  const text = storeExists ? (existsSync(join(root, n)) ? readFileSync(join(root, n), 'utf8') : '') : git('show', `${base}:${n}`) ?? '';
+  writeFileSync(join(oldRoot, n), text);
+}
 const localFiles = readdirSync(root).filter((n) => isEnvFileName(n) && !trackedAtBase.has(n));
 for (const n of localFiles) copyFileSync(join(root, n), join(oldRoot, n));
 
@@ -373,6 +379,7 @@ function compare(rootDir, amb, label) {
 const count = (o) => Object.values(o).filter(Boolean).length;
 console.log(`\nstore: ${Object.keys(store.accounts).length} account(s) and ${count(store.shared)} shared password(s) on every env${store.master ? ', master password' : ''}`);
 console.log(`  per env (own accounts / own shared): ${Object.entries(store.envs).map(([e, s]) => `${e} ${Object.keys(s.accounts).length}/${count(s.shared)}`).join(', ') || 'none'}`);
+if (existingV2) console.log(`  ${serialiseStore(store) === serialiseStore(existingV2) ? 'the existing store stays as it is' : `the existing ${STORE_FILE} would CHANGE — the differences come from .env leftovers listed below`}`);
 if (laneOnly.length) console.log(`  taken from a lanes file (no .env file had them): ${laneOnly.join(', ')}`);
 if (laneDiffers.length) console.log(`  ⚠ a lanes file disagreed — the store keeps the env files' value: ${laneDiffers.join(', ')}`);
 if (kept.length) console.log(`  the existing ${STORE_FILE} keeps: ${kept.join(', ')}`);

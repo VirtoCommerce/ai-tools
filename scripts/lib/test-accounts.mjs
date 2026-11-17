@@ -20,7 +20,7 @@
 //
 // An ACCOUNT holds its login and password side by side. A named one (`USER`) is what the suites, test-data and
 // seeders call by variable: the loader exposes its login as `USER_EMAIL` and its password as `USER_PASSWORD` (or the
-// names its `vars` lists, for the few accounts named otherwise — `ADMIN`, `ADMIN_VIRTO`, a rep's `SR_REP_PASSWORD`).
+// names its `vars` lists, for the few accounts named otherwise — `ADMIN` (also `ADMIN_EMAIL`), `PERSONAL_USER_VIRTO`, a rep's `SR_REP_PASSWORD`).
 // An account keyed by its login (a seeded fixture) exposes nothing; it is here so every account is in one place. A
 // password `{ "use": NAME }` is the value of NAME — a `shared` one, or another account's — so a password fifty
 // fixtures share is written once. `envs.<env>` beats the top level, an account field by field; "" unsets a shared one.

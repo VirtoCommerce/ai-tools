@@ -134,7 +134,12 @@ let api = async function api(method, path, body, { expectStatus = [200, 201, 204
   return ct.includes('application/json') ? res.json() : null;
 };
 // Test seam — swap the HTTP layer.
-export function __setApi(fn) { api = fn; }
+// A test that stands in for the platform creates no real account, so nothing it "creates" is recorded in the store:
+// replacing the api also turns `accountSet`'s writes off (the project's real test-accounts.local.json is never a
+// test's to write). `__setStoreRoot(dir)` turns them back on, into a test's own folder.
+let recordRoot = ROOT;
+export function __setApi(fn) { api = fn; recordRoot = null; }
+export function __setStoreRoot(dir) { recordRoot = dir; }
 export const getApi = () => api;
 
 // --- Lookups ---
@@ -225,9 +230,9 @@ export function resolvePassword(raw) {
  */
 export function accountSet(login, value, name) {
   const varName = name ?? resolvedVar.get(value);
-  if (!varName || !login || DRY_RUN) return null;
+  if (!varName || !login || DRY_RUN || !recordRoot) return null;
   const generated = generatedVar.has(value);
-  recordAccount(ROOT, TEST_ENV, login, varName, generated ? value : undefined);
+  recordAccount(recordRoot, TEST_ENV, login, varName, generated ? value : undefined);
   if (generated) {
     generatedVar.delete(value);
     process.env[varName] = value;
