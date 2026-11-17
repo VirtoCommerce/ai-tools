@@ -44,6 +44,8 @@ export const SECRET_IGNORES = [
   ".env.*.local",
   // Every test account's login and password, every env (scripts/lib/test-accounts.mjs).
   "test-accounts.local.json",
+  // Its write temp file (`.<pid>.tmp`, briefly holds every value) and its writers' lock (`.lock`).
+  "test-accounts.local.json.*",
   // This checkout's default TEST_ENV (lib/test-env-selector.mjs) — a per-developer choice, not a team one.
   ".env.test-env",
   "project-profile.json",
