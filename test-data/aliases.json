@@ -1,7 +1,8 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.70",
+    "version": "1.5.71",
+    "changelog_1_5_71": "ORG_EMPTY gains platform_id (organizations.csv column), so SR-GQL-184 can use an ACTIVE unserved organization instead of ORG_SUSPENDED.",
     "changelog_1_5_70": "VCST-6255 customer sales report: added SR_MTD_ORDER_{WEST_1,WEST_2,TECH_1,FLAG_CANCELLED,STATUS_CANCELLED,OTHER_CREATOR} \u2014 current-month orders that make each statistics branch falsifiable (attribution by ApplicationUser id, IsCancelled flag isolated from status, status-only Cancelled, per-customer AOV divergence). Opt-in family `--only MTD` of seed-sales-rep-stats.mjs, spec sales-rep-mtd-specs.mjs, guarded by td:validate:sales-rep-stats.",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
@@ -1549,7 +1550,8 @@
     },
     "fields": {
       "name": "org_name",
-      "id": "org_id"
+      "id": "org_id",
+      "platform_id": "platform_id"
     }
   },
   "PROD_HEADPHONES": {

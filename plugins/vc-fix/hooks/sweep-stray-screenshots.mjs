@@ -7,19 +7,27 @@
  * for that case. When a regression runner passes a bare name like
  * `cat016-chip-case.png` instead of the full
  * `reports/regression/<RUN_ID>/screenshots/...` path (test-runner-agent.md §8),
- * the PNG lands loosely in the repo root. `*.png` is gitignored, so it never
- * shows in `git status` — it just accumulates as clutter. This hook relocates
+ * the PNG lands loosely in the repo root. In ai-tools `*.png` is gitignored,
+ * so it never shows in `git status` — it just accumulates as clutter; another
+ * project may not ignore it at all. This hook relocates
  * any such loose root image/HAR into the active run's screenshots folder after
  * each subagent (runner) and at session end.
  *
- * The repo keeps NO images in root by convention, so sweeping every loose root
- * *.png/*.jpg/*.jpeg/*.har is safe. Never touches subdirectories. Always exits
- * 0 — a hook must never fail the agent.
+ * Only files git does NOT track are swept. The vc-fix plugin runs this hook
+ * in every project the user opens, not just ai-tools, and a product repo may
+ * commit images in its root (vc-frontend's README `demo.jpg` was moved away,
+ * leaving it deleted in `git status`). A Playwright stray is never tracked, so
+ * skipping tracked files loses nothing. If the root is not a git work tree or
+ * git fails, nothing is swept: we cannot tell a stray from a committed file.
+ * Never touches subdirectories. Always exits 0 — a hook must never fail the
+ * agent.
  */
 import { join, resolve } from "node:path";
+import { execFileSync } from "node:child_process";
 import { readdirSync, existsSync, mkdirSync, renameSync, readFileSync, statSync } from "node:fs";
 
 const SWEEP_EXT = /\.(png|jpe?g|har)$/i;
+const GIT_ARGV_BUDGET = 8000; // chars of file names per `git ls-files` call
 
 try {
   // NOT derived from import.meta.url: the plugin is installed outside the
@@ -27,9 +35,37 @@ try {
   const root = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
   // Loose image/HAR files directly in root (non-recursive).
-  const strays = readdirSync(root, { withFileTypes: true })
+  const candidates = readdirSync(root, { withFileTypes: true })
     .filter((e) => e.isFile() && SWEEP_EXT.test(e.name))
     .map((e) => e.name);
+
+  if (candidates.length === 0) process.exit(0);
+
+  // Skip anything git tracks. Throws (→ outer catch → exit 0, nothing moved)
+  // when root is not a git work tree or git is unavailable. Names go to git in
+  // batches: one call with every name fails past the Windows command-line
+  // limit (~32K chars) — 1,500 strays did — and then nothing is ever swept.
+  const tracked = new Set();
+  let batch = [];
+  let batchChars = 0;
+  const lsFiles = () => {
+    if (batch.length === 0) return;
+    const out = execFileSync("git", ["ls-files", "-z", "--", ...batch], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    for (const name of out.split("\0")) tracked.add(name);
+    batch = [];
+    batchChars = 0;
+  };
+  for (const name of candidates) {
+    if (batchChars + name.length + 1 > GIT_ARGV_BUDGET) lsFiles();
+    batch.push(name);
+    batchChars += name.length + 1;
+  }
+  lsFiles();
+  const strays = candidates.filter((name) => !tracked.has(name));
 
   if (strays.length === 0) process.exit(0);
 
