@@ -88,7 +88,7 @@ interface BundleResult {
 function loadToken(): string | undefined {
   // The operator's own secrets, shared with bundle:check and release:diff (scripts/lib/github-token.ts): the process
   // environment, then .env.local, then .env.defaults — never a committed .env.<env>'s identity.
-  applyOperatorSecrets(REPO_ROOT, ["GIT_TOKEN", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "JIRA_EMAIL", "JIRA_API_TOKEN", "JIRA_BASE_URL"]);
+  applyOperatorSecrets(REPO_ROOT, ["GIT_TOKEN", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "JIRA_EMAIL", "JIRA_API_TOKEN", "JIRA_BASE_URL"], null); // no _<ENV> pin: the session's env is not the stand a hotfix delivers to
   return process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 }
 let TOKEN: string | undefined;

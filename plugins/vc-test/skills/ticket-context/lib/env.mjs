@@ -8,6 +8,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "dotenv";
 import { applyLayered } from "../../../scripts/lib/env-layers.mjs";
+import { StoreError } from "../../../scripts/lib/test-accounts.mjs";
 
 /** …then, with none of those, the one environment the profile's `test` block declares (/vc-test:init), then "vcst". */
 export function resolveTestEnv(root, env = process.env, profile = null) {
@@ -25,6 +26,15 @@ export function resolveTestEnv(root, env = process.env, profile = null) {
 export function loadLayeredEnv(root, ticket, profile = null) {
   const testEnv = resolveTestEnv(root, process.env, profile);
   process.env.TEST_ENV = testEnv;
-  applyLayered(testEnv, { root, ticket, legacy: true, migrateHint: "`/project-init --check` moves them" });
+  const options = { root, ticket, legacy: true, migrateHint: "`/project-init --check` moves them" };
+  try {
+    applyLayered(testEnv, options);
+  } catch (e) {
+    // ticket-context reads the tracker and the code host, never a test account: a broken store must not stop it. The
+    // env is loaded without the store; a `preflight` child it starts reads the store itself and reports there.
+    if (!(e instanceof StoreError)) throw e;
+    process.stderr.write(`[env] test-accounts.local.json not read (${String(e.message).split("\n")[0]}) — ticket context loads without it\n`);
+    applyLayered(testEnv, { ...options, testAccounts: false });
+  }
   return testEnv;
 }

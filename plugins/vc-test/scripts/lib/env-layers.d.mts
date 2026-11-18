@@ -88,6 +88,9 @@ export interface LayerOptions extends LookupOptions {
   /** true: also read an unmigrated project's `.env.playwright.<env>` / `.env.playwright.master` below the store, and
    *  name no leftover until a store exists (a plugin serving client projects). Default false. */
   legacy?: boolean;
+  /** false: do not read the test-account store at all — a caller that needs no test account (a tracker / code-host
+   *  reader), so a broken store cannot stop it. Default true. */
+  testAccounts?: boolean;
 }
 
 /** An env's variables in the one order, without touching process.env. */

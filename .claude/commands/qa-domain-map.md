@@ -95,8 +95,8 @@ oracles use. The brief must carry:
 | **The account contrasts to walk** | the richest multi-X fixture, a minimal one, and **the negative case** (an account *without* the feature) — the negative contrast is what reveals the gating logic, and it is the axis most often unmapped |
 | **`--exclude` areas** | recorded in `excludes:`, and each excluded surface still gets a **one-line existence note** so the inventory is not silently incomplete |
 
-**Credentials come from `process.env` after `import('./config.js')`.** Note that `config.js` exports a
-**curated** `env` object — a missing key there is not proof a variable is unset.
+**Credentials come from `process.env` after `import('./config.js')`** — the only access path; a value one
+`.env` file lacks may come from another layer or the test-account store (`npm run env:check` names the source).
 
 On internal error, enumerate inline from source + the prior art rather than retrying the dispatch, and
 mark everything not seen live `UNVERIFIED`.

@@ -19,9 +19,9 @@
 // names once per run, with the caller's `migrateHint`. With `legacy`, nothing is a leftover until a store exists.
 //
 // MASTER stands: `PASSWORDS=master` in an env's own file means every test account on it signs in with ONE password,
-// the store's `master`, else (legacy only) MASTER_PASSWORD in the root's `.env.playwright.master` (typed as MASTER_PASSWORD).
-// Every test-account password variable resolves to it (the
-// platform admin's, ADMIN_PASSWORD, included), and a browser lane types MASTER_PASSWORD in every password field.
+// the store's `master`, else (legacy only) MASTER_PASSWORD in the root's `.env.playwright.master` (typed as
+// MASTER_PASSWORD). Every test-account password variable resolves to it (the platform admin's, ADMIN_PASSWORD,
+// included), and a browser lane types MASTER_PASSWORD in every password field.
 // Without the marker an env keeps its own passwords. Only the env's own file counts (never the process environment):
 // the root's `.env.<env>` for an env the project defines, else its QA_ENV_PATH file. A production stand
 // (ENV_RISK=production) never is one, and a master stand with no master password has its test-account passwords unset.
@@ -254,7 +254,9 @@ export function testAccountPasswordNames(root = process.cwd(), extra = []) {
  *   PASSWORDS, and never a copy of an inherited MASTER_PASSWORD;
  *   `passwordNames`: test-account password names beyond the scan (the caller's role registry);
  *   `masterValues: false`: decide PASSWORDS=master but skip the name scan and the master values — for a caller that
- *   needs only the decision (the enforce-secret-token hook, one process per typed password).
+ *   needs only the decision (the enforce-secret-token hook, one process per typed password);
+ *   `testAccounts: false`: do not read the test-account store at all — for a caller that needs no test account (a
+ *   tracker / code-host reader), so a broken store cannot stop it. Default true.
  * @returns {{ env: Record<string, string | undefined>, ticket: string | null, rootFile: boolean, dedicated: string[],
  *   dedicatedKeys: Set<string>, perEnv: Set<string>, master: null | { file: string, found: boolean, names: string[] },
  *   ignoredPasswords: null | { value: string | undefined, file: string | null, production?: boolean },
@@ -266,7 +268,7 @@ export function testAccountPasswordNames(root = process.cwd(), extra = []) {
  *   a PASSWORDS=master dropped because the env says ENV_RISK=production;
  *   `sourceOf(key)` names what supplied a key's value — print it next to any target you act on.
  */
-export function layered(testEnv, { root = process.cwd(), ambient = process.env, ticket, ambientWins = false, passwordNames = [], masterValues = true, legacy = false } = {}) {
+export function layered(testEnv, { root = process.cwd(), ambient = process.env, ticket, ambientWins = false, passwordNames = [], masterValues = true, legacy = false, testAccounts = true } = {}) {
   ambient = expanded(ambient); // an unexpanded `${env:X}` is unset: it neither wins (ambientWins) nor survives
   const suffix = envSuffix(testEnv);
   const env = { ...ambient, TEST_ENV: testEnv };
@@ -314,10 +316,10 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
 
   // The credential store beats every file. Once it exists, a password a file still holds, and a name the store also
   // sets, is a leftover; without one the files are where an unmigrated project keeps its passwords, and nothing is.
-  const store = readStore(root);
+  const store = testAccounts ? readStore(root) : { exists: false, master: null, shared: {}, accounts: {}, envs: {} };
   const { values: credentials, own: storeOwn } = storeValues(store, testEnv);
   const leftovers = [];
-  for (const [k, f] of store.exists || !legacy ? from : []) {
+  for (const [k, f] of testAccounts && (store.exists || !legacy) ? from : []) {
     if (f.file && !isPersonalServiceName(k) && (isLoginSecretName(k) || k in credentials)) leftovers.push({ key: f.pin ?? k, file: f.file });
   }
   for (const [k, v] of Object.entries(credentials)) {
@@ -397,9 +399,9 @@ const ENV_OWNED = ['BACK_URL', 'FRONT_URL', 'ENV_RISK'];
  * session is BOUND to (TEST_ENV_SOURCE `<env>|session`): its runs would go wherever .env.local points. Returns what
  * `layered` returns.
  */
-export function applyLayered(testEnv, { root = process.cwd(), ticket, ambientWins = false, passwordNames = [], legacy = false, migrateHint = DEFAULT_MIGRATE_HINT } = {}) {
+export function applyLayered(testEnv, { root = process.cwd(), ticket, ambientWins = false, passwordNames = [], legacy = false, testAccounts = true, migrateHint = DEFAULT_MIGRATE_HINT } = {}) {
   const ambient = { ...process.env };
-  const r = layered(testEnv, { root, ambient, ticket, ambientWins, passwordNames, legacy });
+  const r = layered(testEnv, { root, ambient, ticket, ambientWins, passwordNames, legacy, testAccounts });
   const [chosen, source] = (ambient.TEST_ENV_SOURCE ?? '').split('|');
   if (chosen === testEnv && source === 'session' && !r.rootFile && !r.dedicated.some((f) => basename(f) === `.env.${testEnv}`)) {
     throw new Error(`[env] this session is bound to TEST_ENV=${testEnv}, but there is no .env.${testEnv} in ${lookedIn(testEnv, { ticket: r.ticket, root, ambient })} — ` +

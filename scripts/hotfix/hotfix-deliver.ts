@@ -104,7 +104,7 @@ interface EnvResult {
 function loadToken(): string | undefined {
   // The operator's own secrets, shared with bundle:check and release:diff (scripts/lib/github-token.ts): the process
   // environment, then .env.local, then .env.defaults — never a committed .env.<env>'s identity.
-  applyOperatorSecrets(REPO_ROOT, ["GIT_TOKEN", "GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "JIRA_EMAIL", "JIRA_API_TOKEN", "JIRA_BASE_URL"]);
+  applyOperatorSecrets(REPO_ROOT, ["GIT_TOKEN", "GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "JIRA_EMAIL", "JIRA_API_TOKEN", "JIRA_BASE_URL"], null); // no _<ENV> pin: the session's env is not the stand a hotfix delivers to
   // This script performs a WRITE (Contents PUT) to vc-deploy-dev, so prefer the write-scoped classic
   // token (GITHUB_FIX_BUGS_TOKEN — the same PAT /qa-fix uses to push to VirtoCommerce repos) over the
   // read-only GITHUB_TOKEN, which typically lacks contents:write on vc-deploy-dev (→ HTTP 403).
@@ -122,7 +122,13 @@ function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   // The env's own files, as the loader finds them: the root's `.env.<env>`, or its QA_ENV_PATH folder's.
   const file = findEnv(envName, { root: REPO_ROOT });
   if (!file) throw new Error(`No env file for "${env}" (looked for .env.${envName}). Known: stable, regression.`);
-  const { vars: e, credentials: creds } = ownEnv(envName, { root: REPO_ROOT });
+  const { vars: merged, credentials: creds } = ownEnv(envName, { root: REPO_ROOT });
+  // As scripts/deploy/lib/env.ts resolveEnvCoords: an env the project root defines takes its coords from the root's file
+  // ONLY — a QA_ENV_PATH folder's override is for that ticket's runs, never for which repo/branch a delivery commits to.
+  const rootVars = readEnvFile(resolve(REPO_ROOT, `.env.${envName}`));
+  const e = rootVars ?? merged;
+  const overridden = rootVars ? ['DEPLOY_REPO', 'DEPLOY_BRANCH', 'DEPLOY_PACKAGES_PATH', 'BACK_URL'].filter((k) => merged[k] !== undefined && merged[k] !== rootVars[k]) : [];
+  if (overridden.length) console.warn(`[hotfix] a QA_ENV_PATH file sets ${overridden.join(', ')} for ${envName}, a project env: ignored — the delivery changes the stand the project's .env.${envName} names.`);
   const local = readEnvFile(resolve(REPO_ROOT, '.env.local')) ?? {};
   const repoSpec = e.DEPLOY_REPO || '';
   const [deployOwner, deployRepo] = repoSpec.includes('/') ? repoSpec.split('/') : [OWNER, repoSpec];
