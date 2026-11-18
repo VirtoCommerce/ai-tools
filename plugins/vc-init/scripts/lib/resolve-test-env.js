@@ -1,5 +1,4 @@
-// scripts/lib/resolve-test-env.js — which env is active. ONE file, byte-identical in the ai-tools repo and every
-// plugin (`npm run env:sync`); edit it in the repo's scripts/lib/.
+// scripts/lib/resolve-test-env.js — which env is active. Self-contained: it names no project.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'dotenv';

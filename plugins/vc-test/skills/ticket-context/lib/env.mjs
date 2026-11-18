@@ -25,6 +25,6 @@ export function resolveTestEnv(root, env = process.env, profile = null) {
 export function loadLayeredEnv(root, ticket, profile = null) {
   const testEnv = resolveTestEnv(root, process.env, profile);
   process.env.TEST_ENV = testEnv;
-  applyLayered(testEnv, { root, ticket });
+  applyLayered(testEnv, { root, ticket, legacy: true, migrateHint: "`/project-init --check` moves them" });
   return testEnv;
 }

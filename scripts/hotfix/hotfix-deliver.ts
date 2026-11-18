@@ -68,7 +68,7 @@ import { dirname, resolve } from 'node:path';
 import { getAdminToken, probeLiveModules, type AdminAuth, type ProbeStatus } from '../deploy/lib/live.ts';
 import { platformApiKey } from '../deploy/lib/env.ts';
 import { findEnv, ownEnv, readEnvFile } from '../lib/env-layers.mjs';
-import { loadEnv } from '../lib/load-env.mjs';
+import { applyOperatorSecrets } from '../lib/github-token.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -102,9 +102,9 @@ interface EnvResult {
 
 // ── env / token ──────────────────────────────────────────────────────────────
 function loadToken(): string | undefined {
-  // The one loader, the process environment first (ambientWins): an inline `GIT_TOKEN=… npm run …` or CI beats every
-  // file, then .env.local, then .env.<env>, then .env.defaults.
-  loadEnv({ root: REPO_ROOT, ambientWins: true });
+  // The operator's own secrets, shared with bundle:check and release:diff (scripts/lib/github-token.ts): the process
+  // environment, then .env.local, then .env.defaults — never a committed .env.<env>'s identity.
+  applyOperatorSecrets(REPO_ROOT, ["GIT_TOKEN", "GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "JIRA_EMAIL", "JIRA_API_TOKEN", "JIRA_BASE_URL"]);
   // This script performs a WRITE (Contents PUT) to vc-deploy-dev, so prefer the write-scoped classic
   // token (GITHUB_FIX_BUGS_TOKEN — the same PAT /qa-fix uses to push to VirtoCommerce repos) over the
   // read-only GITHUB_TOKEN, which typically lacks contents:write on vc-deploy-dev (→ HTTP 403).

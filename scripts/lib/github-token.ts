@@ -1,25 +1,34 @@
 /**
- * github-token — the GitHub token a read-only GitHub script uses, read from the project's env files.
+ * github-token — the operator's own secrets a script needs (GitHub tokens, the Jira identity a Jira token pairs with),
+ * read the one way every such script shares: bundle:check, release:diff and the hotfix scripts.
  *
- * For scripts that must NOT import config.js (its validator exits on test-only variables they do not need):
- * `bundle:check` and `release:diff`. Both used to carry their own copy of this loop, and both read the files
- * first-wins — so `.env.defaults` beat `.env.local`, the reverse of the documented order. One copy, the right order:
+ *   the process environment → .env.local → .env.defaults   (first found wins; in each, NAME_<ENV> beats NAME)
  *
- *   .env.defaults → .env.${TEST_ENV} (when TEST_ENV is set) → .env.local   (later wins)
- *
- * What the process environment already holds beats every file (CI passes GIT_TOKEN with `-e`). Nothing is written
- * into process.env.
+ * Deliberately NOT the env loader's full layering: a committed `.env.<env>` holds someone else's JIRA_EMAIL (it would
+ * pair with this operator's .env.local token → 401), and the test-account store has nothing a token reader needs, so
+ * a broken store must not stop a GitHub call. The `_<ENV>` pin is the loader's (resolve-test-env.js), for the env
+ * TEST_ENV or the session selects. Nothing is written into process.env unless the caller does it.
  */
 import { join } from "node:path";
 import { readEnvFile } from "./env-layers.mjs";
+import { envSuffix, testEnvChoice } from "./resolve-test-env.js";
 
 const NAMES = ["GIT_TOKEN", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN"] as const;
 
+/** Each of `names` as the operator set it, or undefined. */
+export function loadOperatorSecrets(root: string, names: readonly string[], ambient: Record<string, string | undefined> = process.env): Record<string, string | undefined> {
+  const suffix = envSuffix(ambient.TEST_ENV?.trim() || testEnvChoice("vcst").env);
+  const layers = [ambient, readEnvFile(join(root, ".env.local")) ?? {}, readEnvFile(join(root, ".env.defaults")) ?? {}];
+  return Object.fromEntries(names.map((k) => [k, layers.map((l) => l[k + suffix] || l[k]).find(Boolean)]));
+}
+
+/** Fill `names` into process.env where unset — for a script that reads them from process.env further on. */
+export function applyOperatorSecrets(root: string, names: readonly string[]): void {
+  for (const [k, v] of Object.entries(loadOperatorSecrets(root, names))) if (v && !process.env[k]) process.env[k] = v;
+}
+
+/** The first GitHub token set: GIT_TOKEN, GITHUB_TOKEN, GITHUB_PERSONAL_ACCESS_TOKEN. */
 export function loadGithubToken(root: string, ambient: Record<string, string | undefined> = process.env): string | undefined {
-  const files = [".env.defaults", ...(ambient.TEST_ENV ? [`.env.${ambient.TEST_ENV}`] : []), ".env.local"];
-  const fromFiles: Record<string, string> = {};
-  for (const f of files) Object.assign(fromFiles, readEnvFile(join(root, f)) ?? {});
-  const value = (k: string) => ambient[k] || fromFiles[k];
-  for (const k of NAMES) if (value(k)) return value(k);
-  return undefined;
+  const s = loadOperatorSecrets(root, NAMES, ambient);
+  return NAMES.map((k) => s[k]).find(Boolean);
 }

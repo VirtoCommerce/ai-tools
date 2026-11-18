@@ -7,8 +7,6 @@
 export declare const MASTER_FILE: string;
 /** `.env.playwright.master` — the master password's legacy file (project root), read when the store has no `master`. */
 export declare const LEGACY_MASTER_FILE: string;
-/** What moves stray credentials into the store, for messages. */
-export declare const MIGRATE_HINT: string;
 /** `MASTER_PASSWORD` — the one name a lane types on a master stand. */
 export declare const MASTER_NAME: string;
 /** `.env.<name>` files that are not envs (local, defaults, backup, master). */
@@ -50,7 +48,7 @@ export declare function dedicatedEnvs(options?: { root?: string; ambient?: Recor
 export declare function usesMaster(env: Record<string, string | undefined> | null | undefined): boolean;
 /** The master password — the store's `master`, else the legacy `.env.playwright.master`, else the environment — and
  *  where it came from; value null when there is none. */
-export declare function readMaster(options?: { root?: string; ambient?: Record<string, string | undefined>; store?: { master: string | null } }): { file: string; value: string | null };
+export declare function readMaster(options?: { root?: string; ambient?: Record<string, string | undefined>; store?: { master: string | null }; legacy?: boolean }): { file: string; value: string | null };
 /** The test accounts' login-password names: the CORE two, `extra`, and every name the suites and test-data use. */
 export declare function testAccountPasswordNames(root?: string, extra?: Iterable<string>): Set<string>;
 
@@ -73,7 +71,7 @@ export interface Layered {
   ignoredPasswords: { value: string | undefined; file: string | null; production?: boolean } | null;
   /** Whether the credential store (test-accounts.local.json) exists. */
   store: boolean;
-  /** Credentials a .env file still holds although the store exists (empty without a store) — MIGRATE_HINT moves them. */
+  /** Credentials a .env file still holds (with `legacy`, only once a store exists) — the caller's `migrateHint` names what moves them. */
   leftovers: { key: string; file: string }[];
   /** What supplied a key's value. */
   sourceOf(key: string): string;
@@ -87,10 +85,13 @@ export interface LayerOptions extends LookupOptions {
   passwordNames?: Iterable<string>;
   /** false: decide PASSWORDS=master but skip the test-account name scan and the master values (default true). */
   masterValues?: boolean;
+  /** true: also read an unmigrated project's `.env.playwright.<env>` / `.env.playwright.master` below the store, and
+   *  name no leftover until a store exists (a plugin serving client projects). Default false. */
+  legacy?: boolean;
 }
 
 /** An env's variables in the one order, without touching process.env. */
 export declare function layered(testEnv: string, options?: LayerOptions): Layered;
 /** `layered`, written into process.env, with the once-per-run warnings; throws when no file defines the env this
  *  session is bound to. It always applies the master values. */
-export declare function applyLayered(testEnv: string, options?: Omit<LayerOptions, 'ambient' | 'masterValues'>): Layered;
+export declare function applyLayered(testEnv: string, options?: Omit<LayerOptions, 'ambient' | 'masterValues'> & { migrateHint?: string }): Layered;

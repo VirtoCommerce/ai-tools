@@ -1,10 +1,7 @@
 /**
  * scripts/lib/load-layered-env.mjs — a plugin's ONE way to load an env into process.env.
  *
- * Byte-identical in plugins/vc-fix, plugins/vc-test and plugins/vc-init: edit it in plugins/vc-fix and run
- * `npm run env:sync` in the ai-tools repo (`env:sync:check` fails a copy that drifted). The layers themselves are
- * ./env-layers.mjs `layered` — the same file, byte-identical, the ai-tools repo loads with — so a plugin and the
- * repo load an env the same way: .env.defaults → .env.${TEST_ENV} → .env.local, the `_<ENV>` suffix promotion,
+ * The layers themselves are ./env-layers.mjs `layered`: .env.defaults → .env.${TEST_ENV} → .env.local, the `_<ENV>` suffix promotion,
  * the env's files in the QA_ENV_PATH folders, the test-account store (test-accounts.local.json, ./test-accounts.mjs —
  * it beats every file; a malformed one throws its StoreError; an unmigrated project's legacy password files are read
  * below it) and, on a PASSWORDS=master stand, the master password.
@@ -55,7 +52,8 @@ export function loadLayeredEnv(fallback = "vcst", { ticket } = {}) {
   }
   const injected = bridgeInjected();
   const root = resolve(envDir());
-  applyLayered(TEST_ENV, { root, ticket });
+  // `legacy`: a client project may not have migrated yet — its old password files are read below the store.
+  applyLayered(TEST_ENV, { root, ticket, legacy: true, migrateHint: "`/project-init --check` moves them" });
   Object.assign(process.env, injected);
   const plaintext = plaintextTokenKeys(readEnvFile(join(root, ".env.local")));
   if (plaintext.length && !warnedPlaintext) {

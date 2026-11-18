@@ -59,6 +59,6 @@ export function selectTestEnv(fallback = 'vcst') {
 
 /** loadEnv for a named env (the caller resolved it): the same layers, written into process.env. */
 export function loadEnvFor(testEnv, { ambientWins = false, root = ROOT, ticket } = {}) {
-  const r = applyLayered(testEnv, { root, ticket, ambientWins, passwordNames: ROLE_PASSWORD_NAMES });
+  const r = applyLayered(testEnv, { root, ticket, ambientWins, passwordNames: ROLE_PASSWORD_NAMES, migrateHint: '`npm run creds:migrate` moves them' });
   return { testEnv, promoted: r.perEnv, sourceOf: r.sourceOf, ticket: r.ticket, dedicated: r.dedicated, master: r.master };
 }

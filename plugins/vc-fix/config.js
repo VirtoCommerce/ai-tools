@@ -3,11 +3,12 @@
 //
 // Loading an env, the ONE way in this plugin: scripts/lib/load-layered-env.mjs `loadLayeredEnv()` (the layers, their
 // order, TEST_ENV's choice: scripts/lib/env-layers.mjs and resolve-test-env.js — the ai-tools repo's own files,
-// copied byte for byte). This file is that + `checkEnv` (scripts/lib/env-check.mjs) for a process that cannot do
+// copied byte for byte). This file is that + `enforceEnv` (scripts/lib/env-check.mjs) for a process that cannot do
 // anything without the stand's URLs and accounts. A script that needs only BACK_URL calls `loadLayeredEnv()` itself.
 import { testEnvChoice } from './scripts/lib/resolve-test-env.js';
 import { loadLayeredEnv } from './scripts/lib/load-layered-env.mjs';
-import { checkEnv } from './scripts/lib/env-check.mjs';
+import { enforceEnv } from './scripts/lib/env-check.mjs';
+import { loadProjectProfile } from './scripts/lib/project-profile.mjs';
 
 let TEST_ENV;
 try {
@@ -17,13 +18,10 @@ try {
     process.exit(1);
 }
 
-const { envRisk, errors, warnings } = checkEnv(process.env);
-console.log(`[config] TEST_ENV=${TEST_ENV} (from ${testEnvChoice('vcst').source}) ENV_RISK=${envRisk}`);
-if (envRisk === 'production') {
-    console.log(`[config] ⚠ PRODUCTION-RISK ENV. Admin-write suites blocked unless --allow-admin-writes-on-prod is passed.`);
+// Deployment profile (written by vc-init's /project-init). Loaded OPTIONALLY: a missing profile is reported, not a
+// crash — the commands that act on it (/qa-fix, /qa-bug, …) STOP themselves. A malformed or too-new profile still
+// throws: that is never a state to report past.
+if (!loadProjectProfile(undefined, { optional: true })) {
+    console.warn('No project-profile.json in this project — run /project-init (the vc-init plugin) before /qa-fix, /qa-bug or /qa-verify-fix.');
 }
-for (const w of warnings) console.warn(`[config] ${w}`);
-if (errors.length) {
-    for (const e of errors) console.error(`[config] ${e}`);
-    process.exit(1);
-}
+if (!enforceEnv(TEST_ENV, testEnvChoice('vcst').source)) process.exit(1);

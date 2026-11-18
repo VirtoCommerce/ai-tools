@@ -1,6 +1,5 @@
 // scripts/lib/env-check.mjs — what a loaded env must hold, and the one judgement of it: config.js exits on `errors`,
-// `npm run env:check` prints them. ONE file, byte-identical in the ai-tools repo and the vc-fix plugin
-// (`npm run env:sync`; edit it in the repo's scripts/lib/). It reads the env it is given and changes nothing.
+// `npm run env:check` prints them. Self-contained: it reads the env it is given and changes nothing.
 
 /** CORE — must exist for any suite to run (config.js exits 1 when one is missing). */
 export const CORE_REQUIRED_VARS = Object.freeze([
@@ -63,4 +62,41 @@ export function checkEnv(env = process.env) {
     else if (missing.length) warnings.push(`FEATURE-GATED partial: ${gates} — missing ${missing.join(', ')} (other vars present)`);
   }
   return { envRisk, errors, missingCore, warnings };
+}
+
+/**
+ * config.js's verdict on the loaded env, printed: the active env and its risk class, feature warnings, errors.
+ * `source` names what chose TEST_ENV. Returns false on an error — the caller exits.
+ */
+export function enforceEnv(testEnv, source) {
+  const { envRisk, errors, warnings } = checkEnv(process.env);
+  console.log(`[config] TEST_ENV=${testEnv} (from ${source}) ENV_RISK=${envRisk}`);
+  if (envRisk === 'production') console.log('[config] ⚠ PRODUCTION-RISK ENV. Admin-write suites blocked unless --allow-admin-writes-on-prod is passed.');
+  for (const w of warnings) console.warn(`[config] ${w}`);
+  for (const e of errors) console.error(`[config] ${e}`);
+  return !errors.length;
+}
+
+/**
+ * `npm run env:check`'s report on the loaded env: every CORE and FEATURE-GATED variable as SET (with the file it came
+ * from) or EMPTY, then every other variable the env's files set — never a value. `layers` is env-layers' `layered`
+ * result for this env read from the files alone (ambient {}), which names each variable's file. Returns the exit code.
+ */
+export function reportEnv(testEnv, sourceLabel, layers) {
+  const { envRisk, errors, warnings } = checkEnv(process.env);
+  console.log(`Active env: TEST_ENV=${testEnv} (${sourceLabel}) ENV_RISK=${envRisk}`);
+  const report = (name) => console.log(process.env[name] ? `  ${name}: SET (${layers.sourceOf(name)})` : `  ${name}: EMPTY`);
+  const listed = new Set(CORE_REQUIRED_VARS);
+  console.log('CORE');
+  CORE_REQUIRED_VARS.forEach(report);
+  for (const { vars, gates } of Object.values(FEATURE_GATED_VARS)) {
+    console.log(`FEATURE — ${gates}`);
+    vars.forEach((v) => { listed.add(v); report(v); });
+  }
+  const suffix = `_${testEnv.toUpperCase()}`;
+  const others = Object.keys(layers.env).filter((k) => k !== 'TEST_ENV' && !listed.has(k) && !k.endsWith(suffix) && process.env[k]).sort();
+  if (others.length) { console.log('OTHER — set by the env files'); others.forEach(report); }
+  for (const w of warnings) console.warn(w);
+  for (const e of errors) console.error(e);
+  return errors.length ? 1 : 0;
 }

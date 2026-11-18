@@ -45,7 +45,7 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { loadEnv } from '../lib/load-env.mjs';
+import { applyOperatorSecrets } from '../lib/github-token.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -86,9 +86,9 @@ interface BundleResult {
 
 // ── env / token ──────────────────────────────────────────────────────────────
 function loadToken(): string | undefined {
-  // The one loader, the process environment first (ambientWins): an inline `GIT_TOKEN=… npm run …` or CI beats every
-  // file, then .env.local, then .env.<env>, then .env.defaults.
-  loadEnv({ root: REPO_ROOT, ambientWins: true });
+  // The operator's own secrets, shared with bundle:check and release:diff (scripts/lib/github-token.ts): the process
+  // environment, then .env.local, then .env.defaults — never a committed .env.<env>'s identity.
+  applyOperatorSecrets(REPO_ROOT, ["GIT_TOKEN", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "JIRA_EMAIL", "JIRA_API_TOKEN", "JIRA_BASE_URL"]);
   return process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 }
 let TOKEN: string | undefined;

@@ -15,3 +15,9 @@ export declare function checkEnv(env?: Record<string, string | undefined>): {
   missingCore: string[];
   warnings: string[];
 };
+
+/** config.js's verdict on the loaded env: prints it; false on an error (the caller exits). */
+export declare function enforceEnv(testEnv: string, source: string): boolean;
+
+/** `npm run env:check`'s report on the loaded env (names and sources, never a value); returns the exit code. */
+export declare function reportEnv(testEnv: string, sourceLabel: string, layers: { env: Record<string, string | undefined>; sourceOf(key: string): string }): number;
