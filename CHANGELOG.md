@@ -8,6 +8,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `code-review`: a review as deep as the change is risky — `vc-frontend` `0.4.0` — 2026-11-18
+
+### Added
+
+- `/vc-frontend:code-review` (`plugins/vc-frontend/skills/code-review/`). `classify.mjs` sets a risk tier R0–R3 per
+  changed file from its zone, the repository's dependency-cruiser graph (consumers through barrels, ui-kit tags,
+  `core-api` exports, critical flows that render the file) and the diff (payment and cart-mutation calls, Apollo
+  cache policy, storage, design tokens and their readers, styling lines, rewrites of a recent fix). The agent then
+  answers `risk-questions.md` — questions mined from vc-frontend's review comments and fix history — and may raise
+  a tier. The user picks review lenses (`lenses.md`, with `styles` and `ui-kit` built from the styling reviews), one
+  agent runs each, a refutation pass keeps only findings with a concrete trigger, and a token or global-style change
+  offers a pixel check through `visual/`.
+
+---
+
 ## The stray-screenshot sweep leaves git-tracked files alone — `vc-fix` `0.18.11` — 2026-11-17
 
 ### Fixed

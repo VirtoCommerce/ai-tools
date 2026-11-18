@@ -28,6 +28,7 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 | Bring upstream into the fork (`upstream/dev`, a release tag, or `origin/<base>` into a redesign branch) | `/vc-frontend:merge-upstream <ref>` |
 | Find upstream fixes the fork never got, because it renders its own component instead | `/vc-frontend:port-upstream-to-fork` |
 | Make a backend module ship a storefront plugin (Module Federation) | `/vc-frontend:mf-new-plugin <name> <*.Web path>` |
+| Review a branch or PR as deep as the change is risky | `/vc-frontend:code-review [PR number \| --base <ref>]` |
 
 `merge-upstream` runs `port-upstream-to-fork` itself. Run the second one alone only to audit a fork.
 
@@ -93,6 +94,38 @@ It needs:
 - the module repo on a branch, with no uncommitted changes;
 - for the package: the .NET SDK the module targets, and `vc-build`.
 
-Full details: [`skills/merge-upstream/SKILL.md`](skills/merge-upstream/SKILL.md),
+## Reviewing a change by its risk
+
+`code-review` sets the depth of a review from what the change can break, not from its size. A one-line
+fix in `VcPopover` is R3: plugins import it through `core-api` and forks restyle it. A page column used
+once is R1.
+
+1. `classify.mjs` gives every changed file a tier from:
+   - its zone: checkout, payment, add-to-cart, ui-kit, core-api, auth, catalog search, CI…;
+   - the repository's own module graph (dependency-cruiser): consumers through barrel files, ui-kit
+     tags in templates, exports to plugins, critical flows that render the file;
+   - the diff itself: payment and cart-mutation calls, Apollo cache policy, error plumbing, browser
+     storage, design tokens (who reads a changed or removed `--vc-*` / `--color-*` token), styling
+     lines, and lines that rewrite a recent fix.
+
+   The change's tier is the highest file's, one higher for a big diff.
+2. The agent answers `risk-questions.md` for every file below R3 and may raise a tier, never lower
+   it. The questions come from this codebase's review and fix history; each names the PRs where it
+   broke before.
+3. **[PAUSE] You pick the lenses**: correctness, consumers, architecture, design, conventions,
+   security, commerce, styles, ui-kit, ui, tests, and a cheap `trivial` pass over R0 files; clean
+   code and performance on request. A huge change is offered as a split into clusters first, then
+   reviewed cluster by cluster at a depth you agree, with a coverage report.
+4. One agent per lens reviews statically; every finding then has to survive an agent that tries to
+   disprove it from the code.
+5. **[PAUSE] A pixel check, when tokens, global styles or a styled kit component changed:** the
+   plugin's `visual/` scripts shoot the affected Storybook stories before and after, per design,
+   preset and dark mode.
+6. The report: the tier and why, findings by blast radius, and what a person still has to check.
+
+It needs a vc-frontend checkout (or a fork with the same layout) with `node_modules` installed. Without
+dependency-cruiser it falls back to paths only and says so.
+
+Full details: [`skills/code-review/SKILL.md`](skills/code-review/SKILL.md), [`skills/merge-upstream/SKILL.md`](skills/merge-upstream/SKILL.md),
 [`skills/port-upstream-to-fork/SKILL.md`](skills/port-upstream-to-fork/SKILL.md) and
 [`skills/mf-new-plugin/SKILL.md`](skills/mf-new-plugin/SKILL.md).
