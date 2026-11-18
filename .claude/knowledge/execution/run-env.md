@@ -39,8 +39,10 @@ running on `.env.local`'s stand: bind again.
 
 ## Where an env's files live — the project root and `QA_ENV_PATH`
 
-An env is the same files wherever they live: `.env.<env>` (URLs, identities, `ENV_RISK`, `PASSWORDS`) and
-`.env.playwright.<env>` (its passwords). Besides the project root, they may sit in dedicated folders —
+An env is its `.env.<env>` file wherever it lives (URLs, settings, `ENV_RISK`, `PASSWORDS`). Its test accounts'
+logins and passwords are not in it: they are in `test-accounts.local.json`, section `envs.<env>` (its `accounts`, login and password side by side),
+which beats every file ([`browser-lanes.md`](browser-lanes.md) §Browser login secrets). Besides the project root, an
+env file may sit in dedicated folders —
 `QA_ENV_PATH` in `.env.local`, `;`-separated, the first wins:
 
 ```
@@ -67,14 +69,14 @@ QA_ENV_PATH=P:\VC\_VIRTO\tickets\<ticket>\.work\self-qa;P:\VC\_VIRTO\qa-envs
 
 ## Master stands — one password for every test account
 
-- **`.env.playwright.master`** (project root, gitignored) holds `MASTER_PASSWORD=…`: one strong value for every
+- **The store's `master`** (`test-accounts.local.json`, gitignored) is `MASTER_PASSWORD`: one strong value for every
   master stand, local and cloud. It must pass the platform's password policy (by default 8+ characters with an
   upper- and a lowercase letter), because the seeders set it on accounts.
 - **`PASSWORDS=master`** in the stand's own env file opts it in: the project root's `.env.<env>` for an env the
   repo defines, else its file in its `QA_ENV_PATH` folder. A line in `.env.local` or a ticket folder's override of a
   repo env is ignored with a warning, and one in the process environment (inherited, or passed by CI) is ignored too:
   each would switch a stand others use, and seeding would reset that stand's accounts to the master password. The
-  stand's file then holds no passwords. Without `.env.playwright.master` its test-account passwords are unset, never
+  stand's file then holds no passwords. Without a `master` in the store its test-account passwords are unset, never
   another stand's. Every test-account
   password variable resolves to the master value: the role registry, every name the suites and test-data type,
   and the platform admin's `ADMIN_PASSWORD` — the seeders sign in as the admin, so the stand's admin must use the
@@ -83,8 +85,8 @@ QA_ENV_PATH=P:\VC\_VIRTO\tickets\<ticket>\.work\self-qa;P:\VC\_VIRTO\qa-envs
   `*_PASSWORD`: on a master stand it would equal the master password. A
   production stand (`ENV_RISK=production`) is never a master stand: its `PASSWORDS=master` is ignored with a
   warning. A shared stand keeps per-env passwords unless the team agrees.
-- **The lanes type `MASTER_PASSWORD` in every password field.** `npm run secrets:sync:all` copies it into
-  `.env.playwright.all` as one stable line, so a new master stand needs no re-sync and no reconnect. The
+- **The lanes type `MASTER_PASSWORD` in every password field.** Every lane holds it (`scripts/lanes/playwright-lane.mjs`),
+  so a new master stand needs no reconnect. The
   `enforce-secret-token` hook blocks the master password — `MASTER_PASSWORD`, or any name whose value is a copy of
   it — in a session whose stand did not opt in, or that no binding, `TEST_ENV` or `.env.test-env` chose, and when
   it cannot resolve the stand at all (no `node_modules`, an env file it cannot layer).
@@ -95,10 +97,10 @@ A browser lane has no shell, so the brief is the only way the env reaches it. `e
 URLs and how the lanes type its passwords; copy them into the brief's Environment line
 ([`../../templates/agent-dispatch.md`](../../templates/agent-dispatch.md)): the env, `FRONT_URL`, `BACK_URL`,
 and the password form — `MASTER_PASSWORD` in every password field on a master stand, else `NAME_<ENV>`
-(`ORG_USER_PASSWORD_VCPTCORE_DEV`) when the lanes read the combined `.env.playwright.all`, the bare `NAME` on a
-single-env file ([`browser-lanes.md`](browser-lanes.md) §Browser login secrets). A `⚠ passwords` line from
-`env:use` means a sign-in on this env would type another env's passwords, or none: fix it
-(`npm run secrets:sync:all`, reconnect the `playwright-*` servers) before any browser lane starts.
+(`ORG_USER_PASSWORD_VCPTCORE_DEV`) otherwise ([`browser-lanes.md`](browser-lanes.md) §Browser login secrets). A
+`⚠ passwords` or `⚠ lanes` line from `env:use` means a sign-in on this env would type an old password, or none: fix
+it (`npm run creds:check`; add the account to `test-accounts.local.json` or seed it; reconnect the `playwright-*`
+servers) before any browser lane starts.
 
 ## Limits
 
@@ -109,9 +111,10 @@ single-env file ([`browser-lanes.md`](browser-lanes.md) §Browser login secrets)
 - **The installed `vc-fix` plugin resolves the env with its own copy of the resolver**: its steps follow a
   binding, the `QA_ENV_PATH` folders and master stands only from the plugin release that carries them. Until
   then, name the env in what you pass to them.
-- **vc-init's own loader keeps the order before `QA_ENV_PATH`:** its `sync-browser-secrets.mjs` (`/project-init`)
-  reads the project root's files only — no dedicated folders, no master stands. A stand in a `QA_ENV_PATH` folder,
-  or a master stand, gets its lane passwords from `npm run secrets:sync:all` here.
+- **The plugins do not read the store yet:** vc-init's `/project-init` still scaffolds test-user passwords into
+  `.env.local` and its `sync-browser-secrets.mjs` still writes `.env.playwright.local`; the vc-fix and vc-test loader
+  copies have no store layer. In this repo run `npm run creds:migrate` after `/project-init` (follow-up: the plugins
+  move to the store with their own release).
 - **A local stand is not a deploy target:** `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine:
   localhost, a loopback or unspecified address (IPv4 or IPv6, IPv4-mapped included) or a Docker `*.docker.internal`
   name. Other names for it — `localhost.`, its hostname or LAN address — and a `BACK_URL` with no scheme are not

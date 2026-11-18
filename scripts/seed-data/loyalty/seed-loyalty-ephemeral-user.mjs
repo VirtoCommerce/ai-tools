@@ -14,10 +14,10 @@
  * contention between parallel runners (see feedback_concurrent_runners_distinct_org_users_taskstop).
  *
  * DESIGN CONSTRAINTS (each one is load-bearing — see the /qa-fix conversation that produced this):
- *  - ONE shared password var, never a per-run random. Playwright's `--secrets` substitutes by NAME
- *    from a static dotenv and redacts the value; a generated password cannot live in that file and
- *    would be typed in plaintext into the transcript. Uses DEFAULT_TEST_PASSWORD, which is the var
- *    actually present in .env.playwright.local (see the password() note below).
+ *  - ONE shared password var, never a per-run random. A Playwright lane substitutes by NAME from
+ *    test-accounts.local.json, read when the lane starts, and redacts the value; a per-run password is
+ *    in no running lane and would be typed in plaintext into the transcript. Uses DEFAULT_TEST_PASSWORD,
+ *    which the store carries (see the password() note below).
  *  - Teardown is a PREFIX SWEEP, not an inline delete, because a crashed run leaks the account.
  *    `--teardown` removes every AGENT-TEST-loyzero-* account; `--max-age-hours N` keeps recent ones
  *    so a concurrent run isn't torn down underneath itself.
@@ -59,12 +59,12 @@ const ORG_NAME = 'TechFlow';        // resolved at runtime; only used if org mem
 /**
  * Standardised on DEFAULT_TEST_PASSWORD — deliberately NOT a dedicated EPHEMERAL_USER_PASSWORD.
  *
- * Playwright's `--secrets` file substitutes only on an exact NAME match and redacts the value, so a
- * browser case can type the NAME and keep the plaintext out of the transcript. `.env.playwright.local`
- * carries DEFAULT_TEST_PASSWORD but NOT EPHEMERAL_USER_PASSWORD. Preferring the latter created a
- * latent trap: while it stayed unset everything worked, but the moment anyone SET it in .env.local the
- * seeder would use it and the runner could no longer type it by name — leaking it in plaintext.
- * One var that is actually present in the secrets file removes the trap entirely.
+ * A Playwright lane substitutes only on an exact NAME match (`NAME_<ENV>`) and redacts the value, so a
+ * browser case can type the NAME and keep the plaintext out of the transcript. The store
+ * (test-accounts.local.json) carries DEFAULT_TEST_PASSWORD but NOT EPHEMERAL_USER_PASSWORD. Preferring the
+ * latter created a latent trap: while it stayed unset everything worked, but the moment anyone SET it outside
+ * the store the seeder would use it and the runner could no longer type it by name — leaking it in plaintext.
+ * One var that is actually present in the store removes the trap entirely.
  */
 const password = () => process.env.DEFAULT_TEST_PASSWORD || '';
 

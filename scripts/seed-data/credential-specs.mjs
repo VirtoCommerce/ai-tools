@@ -137,7 +137,7 @@ export function findDestructiveOverlaps(declarations, destructiveKeys = DESTRUCT
 
 /**
  * `{{VAR}}` cells whose var is not present in `knownVars` — the value silently degrades to the
- * seeder's PW_FALLBACK ('Password1!'), which is how a credential drifts in the first place.
+ * password the seeder generates for this run only — it creates new accounts and records itself, but reconciles nothing.
  * Advisory (a var may legitimately be unset on the machine running the guard), so the validator
  * reports these as warnings.
  */

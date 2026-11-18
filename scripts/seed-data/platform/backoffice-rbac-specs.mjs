@@ -57,7 +57,6 @@ export const RESTRICTED_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'RESTRICTED_CMS_ADMIN_PASSWORD',
-  passwordFallback: 'Password1!', // localhost-safe default (mirrors user-provision.mjs PW_FALLBACK)
 };
 
 // The copy endpoint CMS-124 probes; the seeder's --verify step calls it with the restricted token
@@ -174,7 +173,6 @@ export const CATALOG_LINK_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'CATALOG_LINK_RESTRICTED_PASSWORD',
-  passwordFallback: 'Password1!', // localhost-safe default (mirrors user-provision.mjs PW_FALLBACK)
 };
 
 // The Create-Links endpoint the VCST-5318 backend guard protects; the seeder's --verify step
@@ -276,7 +274,6 @@ export const SALESREP_READONLY_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'RESTRICTED_SALESREP_ADMIN_PASSWORD',
-  passwordFallback: 'Password1!', // localhost-safe default (mirrors user-provision.mjs PW_FALLBACK)
 };
 
 // The Platform endpoint the seeder's --verify step reads with the restricted token: it must reflect
@@ -374,7 +371,6 @@ export const SALESREP_ACCOUNTOPS_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'RESTRICTED_SALESREP_ADMIN_PASSWORD',
-  passwordFallback: 'Password1!',
 };
 
 export function assertSalesRepAccountOpsRolePermissions(permissions = SALESREP_ACCOUNTOPS_ROLE.permissions) {
@@ -411,7 +407,6 @@ export const SALESREP_MEMBERONLY_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'RESTRICTED_SALESREP_ADMIN_PASSWORD',
-  passwordFallback: 'Password1!',
 };
 
 export function assertSalesRepMemberOnlyRolePermissions(permissions = SALESREP_MEMBERONLY_ROLE.permissions) {
@@ -451,7 +446,6 @@ export const SALESREP_FULL_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false, // load-bearing: the positive control must NOT be an administrator
   passwordVar: 'RESTRICTED_SALESREP_ADMIN_PASSWORD',
-  passwordFallback: 'Password1!',
 };
 
 export function assertSalesRepFullRolePermissions(permissions = SALESREP_FULL_ROLE.permissions) {
@@ -517,7 +511,6 @@ export const CATALOG_READONLY_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'CATALOG_READ_ONLY_PASSWORD',
-  passwordFallback: 'Password1!', // localhost-safe default (mirrors user-provision.mjs PW_FALLBACK)
 };
 
 // The catalog endpoints PLAT-079 probes: POST creates a catalog (catalog:create), DELETE removes
@@ -575,7 +568,6 @@ export const BROWSEFILTERS_READONLY_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'BROWSEFILTERS_READ_ONLY_PASSWORD',
-  passwordFallback: 'Password1!', // localhost-safe default (mirrors user-provision.mjs PW_FALLBACK)
 };
 
 export const BROWSEFILTERS_NONE_REQUIRED_PERMISSIONS = [...BROWSEFILTERS_BASE_PERMISSIONS];
@@ -593,7 +585,6 @@ export const BROWSEFILTERS_NONE_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'BROWSEFILTERS_NONE_PASSWORD',
-  passwordFallback: 'Password1!',
 };
 
 /** The three pr909 routes the --verify step probes, and the status each account must get. */
@@ -653,7 +644,6 @@ export const RETURN_AGENT_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'RETURNS_AGENT_NO_AUTHORIZE_PASSWORD',
-  passwordFallback: 'Password1!',
 };
 
 /** The decision endpoint the --verify probe calls with the restricted token (dummy id — see the seeder). */
@@ -713,7 +703,6 @@ export const SHELL_SEARCH_NOREAD_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'SHELL_SEARCH_PASSWORD',
-  passwordFallback: 'Password1!',
 };
 
 export const SHELL_SEARCH_READ_REQUIRED_PERMISSIONS = [...SHELL_SEARCH_BASE_PERMISSIONS, ...SHELL_SEARCH_READ_PERMISSIONS];
@@ -731,7 +720,6 @@ export const SHELL_SEARCH_READ_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'SHELL_SEARCH_PASSWORD',
-  passwordFallback: 'Password1!',
 };
 
 /** Data calls of the settings / users / roles providers — the --verify probe expects 403 vs 200 per account. */
@@ -789,7 +777,6 @@ export const IMP_OPERATOR_ACCOUNT = {
   userType: 'Customer',
   isAdministrator: false,
   passwordVar: 'DEFAULT_TEST_PASSWORD',
-  passwordFallback: 'Password1!',
   // Personal storefront contact (no organization): created first, linked through memberId.
   contact: { firstName: 'Agent Test', lastName: 'Impersonation Customer' },
 };
@@ -839,7 +826,6 @@ export const TASK_READONLY_ACCOUNT = {
   userType: 'Manager',
   isAdministrator: false,
   passwordVar: 'RESTRICTED_USER_PASSWORD',
-  passwordFallback: 'Password1!',
 };
 export function assertTaskReadOnlyRolePermissions(permissions = TASK_READONLY_ROLE.permissions) {
   assertPermissionSet(permissions, {

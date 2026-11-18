@@ -22,7 +22,8 @@ alternative" — yields to this rule.
 
 **Why.** None of those can sign in: they refuse to type a password, and none of them can take one
 from vc-secrets. Only the Playwright lanes `/project-init` configured receive the test-user
-passwords — from vc-secrets or `.env.playwright.local` — so the agent never holds one.
+passwords — from vc-secrets, or (this repo) `test-accounts.local.json` through
+`scripts/lanes/playwright-lane.mjs` — so the agent never holds one.
 
 **Signing in.**
 
@@ -31,8 +32,9 @@ passwords — from vc-secrets or `.env.playwright.local` — so the agent never 
   lane types the value and masks it in every response.
 - Never type `{{ADMIN_PASSWORD}}`, `$ADMIN_PASSWORD` or the value itself, never read a password
   from a file to type it, and never ask the operator for a password in chat.
-- The login (user name / email) is not secret: read it from the env (`ADMIN_LOGIN`,
-  `USER_LOGIN`, … in `.env.<env>`) and type it as plain text.
+- The login (user name / email) is not secret: read it from the env (`ADMIN`, `USER_EMAIL`,
+  … — in this repo from `test-accounts.local.json`) and type it as plain text.
+- This repo's lanes hold every env's passwords: type `NAME_<ENV>` (`USER_PASSWORD_VCST`).
 
 **When Playwright is not available, stop — do not switch browsers.** If no `mcp__playwright-*`
 tool is loaded, a lane fails to start, or the typed name lands in the field as literal text, report

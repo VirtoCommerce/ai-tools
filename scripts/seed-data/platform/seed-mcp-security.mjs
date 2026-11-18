@@ -24,7 +24,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, ONLY,
   BACK_URL, STORE_ID, writeEnvAliasOverride, resetSecurityPassword, isLockedOut,
 } from '../../lib/seed-common.mjs';
-import { resolvePassword, passwordSource } from '../../lib/user-provision.mjs';
+import { accountSet, resolvePassword, passwordSource } from '../../lib/user-provision.mjs';
 import {
   ACCOUNTS, ALL_MCP_FIXTURE_PERMISSIONS, OPERATOR_ROLE, OPERATOR_FALLBACK_ROLE, APPROVER_ROLE, MANAGER_ROLE,
   CURRENTUSER_ENDPOINT, roleBody, accountBody, decidabilityProblems,
@@ -90,6 +90,7 @@ async function ensureAccount(account, roleRef) {
     const res = await api('POST', '/api/platform/security/users/create', accountBody(account, { password, storeId: STORE_ID, roleRef }));
     if (res && res.succeeded === false) throw new Error(`create ${account.email}: ${JSON.stringify(res.errors)}`);
     if (DRY_RUN) { log(`✓ create account (dry) ${account.email}`); return null; }
+    accountSet(account.email, password);
     const fresh = await findUser(account.email);
     if (!fresh?.id) throw new Error(`created ${account.email} but could not resolve its id`);
     log(`✓ create account ${account.email} (${fresh.id}) — Manager, isAdministrator=false, roles [${roleRef ? roleRef.name : ''}]`);
@@ -140,6 +141,7 @@ async function verifyAccount(account, roleRef) {
     // A reused account may carry an older password: re-apply the declared one once (never the fallback).
     log(`  ⚠ ${account.email}: /connect/token ${tok.status} — re-applying {{DEFAULT_TEST_PASSWORD}} once`);
     await resetSecurityPassword(api, account.email, pw);
+    accountSet(account.email, pw);
     tok = await token(account.email, pw);
   }
   if (typeof tok !== 'string') { log(`  ✗ ${account.aliasName}: /connect/token ${tok.status}`); return false; }

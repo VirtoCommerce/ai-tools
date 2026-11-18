@@ -10,24 +10,26 @@ import { checkMcpStatic, loadMcpRequirements, readMcpJson } from "../preflight/m
 import { classifyRun, gatherActivity, loadStatus, type Classification } from "./reap-stalled-run.ts";
 import { gateSuites, resolveRequiredModule, type GatingResult, type SuiteRef } from "./requires.ts";
 import { baselineDelta, readBaseline, type ModuleChange } from "./baseline.ts";
-import { classifySecretNames, declaredSecretsFile, readSecretsFile, splitQualifiedName, suiteSecretCases } from "../lib/browser-secrets.mjs";
+import { laneDrift, laneSecrets, readLaneManifests, suiteSecretCases } from "../lib/browser-secrets.mjs";
 import { MASTER_NAME, usesMaster } from "../lib/env-layers.mjs";
+import { envSuffix } from "../lib/resolve-test-env.js";
 import { requirementChecks } from "./requirements.ts";
 import { loadManifest } from "../../ci/lib/suite-manifest.js";
 
 export type BuildFor = "regression" | "smoke";
 
 /**
- * The browser-lane passwords the selected suites type, against the playwright-* MCP `--secrets` file the
- * nearest `.mcp.json` declares (`.env.playwright.local` when none does). A name the file lacks is typed as a
- * literal and the case BLOCKs on sign-in mid-run, so it is decided here. On the combined
- * `.env.playwright.all` a name is looked up as NAME_<ENV> for this run's env. On a master stand
- * (PASSWORDS=master) every name is typed as MASTER_PASSWORD, so that one name is what the file must hold.
- * `gated`: suites EVERY case of which needs an undeclared name.
+ * The browser-lane passwords the selected suites type, against the store and the lanes that are running. A suite
+ * types NAME_<ENV> (MASTER_PASSWORD on a master stand); a lane holds what test-accounts.local.json said when it
+ * started (scripts/lanes/playwright-lane.mjs, its manifest under .vc-fix/lanes/). A name the env has no value for, or
+ * one a running lane lacks or holds an old value of, is typed as a literal and the case BLOCKs on sign-in mid-run, so
+ * it is decided here. `gated`: suites EVERY case of which needs a name the env has no value for.
  */
 export interface SecretsGate {
   names: string[];
-  file: { name: string; exists: boolean; env: string | null; combined: boolean; envs: string[] | null };
+  master: boolean;
+  lanes: { lane: string; startedAt: string }[];
+  /** NAME_<ENV> (or MASTER_PASSWORD) a running lane lacks or holds an old value of. */
   unsynced: string[];
   undeclared: { name: string; cases: Record<string, string[]> }[];
   gated: { suite: string; names: string[] }[];
@@ -36,64 +38,52 @@ export interface SecretsGate {
 export function computeSecretsGate(root: string, browserSuites: string[], env: string, processEnv: Record<string, string | undefined> = process.env): SecretsGate {
   const perSuite = suiteSecretCases(root, browserSuites) as Record<string, { cases: number; byName: Record<string, string[]> }>;
   const names = [...new Set(Object.values(perSuite).flatMap((s) => Object.keys(s.byName)))].sort();
-  const declared = declaredSecretsFile(root);
-  const file = declared ? readSecretsFile(root, declared) : readSecretsFile(root);
-  const combined = file.envs !== null;
   const master = usesMaster(processEnv);
-  // What a lane substitutes for each name: on a master stand MASTER_PASSWORD's value, else the combined file's
-  // NAME_<ENV> entries for this env under their bare names, else the single-env file's.
-  const masterHeld = file.values.get(MASTER_NAME);
-  const view = master
-    ? { values: new Map(masterHeld ? names.map((n): [string, string] => [n, masterHeld]) : []) }
-    : combined
-    ? { values: new Map([...file.values].flatMap(([q, v]): [string, string][] => {
-        const split = splitQualifiedName(q, file.envs!);
-        return split?.env === env ? [[split.name, v]] : [];
-      })) }
-    : file;
-  const cls = classifySecretNames(names, view, processEnv);
-  // A file generated for (or a combined file without) another TEST_ENV holds another stand's values:
-  // every env-backed name is unsynced.
-  const otherEnv = !master && file.exists && (combined ? !file.envs!.includes(env) : file.env !== null && file.env !== env);
-  const unsynced = master
-    ? (cls.unsynced.length ? [MASTER_NAME] : [])
-    : otherEnv ? names.filter((n) => processEnv[n]) : cls.unsynced;
-  const undeclared = cls.undeclared.map((name) => ({
+  const missing = master ? (processEnv[MASTER_NAME] ? [] : names) : names.filter((n) => !processEnv[n]);
+  const want = master ? (processEnv[MASTER_NAME] ? [MASTER_NAME] : []) : names.filter((n) => processEnv[n]).map((n) => n + envSuffix(env));
+  const manifests = readLaneManifests(root);
+  const unsynced = new Set<string>();
+  if (manifests.length && want.length) {
+    const current = laneSecrets(root).secrets;
+    // As the secret-token hook judges it: a name is in sync when ANY running lane holds its current value — the
+    // manifests include other sessions' lanes and lanes this run never uses.
+    const stale = manifests.map((m) => laneDrift(m, current).stale);
+    for (const q of want) if (!manifests.some((m, i) => q in m.names && !stale[i].includes(q))) unsynced.add(q);
+  }
+  const undeclared = missing.map((name) => ({
     name, cases: Object.fromEntries(Object.entries(perSuite).filter(([, s]) => s.byName[name]).map(([id, s]) => [id, s.byName[name]])),
   }));
   const gated: SecretsGate["gated"] = [];
   for (const [suite, s] of Object.entries(perSuite)) {
-    const missing = cls.undeclared.filter((n) => s.byName[n]);
-    const hit = new Set(missing.flatMap((n) => s.byName[n]));
-    if (missing.length && s.cases > 0 && hit.size >= s.cases) gated.push({ suite, names: missing });
+    const miss = missing.filter((n) => s.byName[n]);
+    const hit = new Set(miss.flatMap((n) => s.byName[n]));
+    if (miss.length && s.cases > 0 && hit.size >= s.cases) gated.push({ suite, names: miss });
   }
-  return { names, file: { name: basename(file.path), exists: file.exists, env: file.env, combined, envs: file.envs }, unsynced, undeclared, gated };
+  return { names, master, lanes: manifests.map((m) => ({ lane: m.lane, startedAt: m.startedAt })), unsynced: [...unsynced].sort(), undeclared, gated };
 }
 
 export function secretsChecks(s: SecretsGate, env: string): Check[] {
   if (s.names.length === 0) return [];
   const checks: Check[] = [];
-  const sync = s.file.combined ? "npm run secrets:sync:all" : "npm run secrets:sync";
-  const fix = `${sync}, then reconnect playwright-chrome / -firefox / -edge in /mcp before any browser suite starts`;
-  const diagnose = s.file.combined ? "npm run secrets:check:all" : "npm run secrets:check";
-  const forEnv = s.file.combined
-    ? (s.file.envs?.includes(env) ? "" : ` (it covers ${s.file.envs?.join(", ") || "no env"}, not ${env})`)
-    : (s.file.env && s.file.env !== env ? ` (generated for TEST_ENV=${s.file.env})` : "");
-  if (!s.file.exists)
-    checks.push({ id: "secrets:sync", status: "BLOCK", found: `${s.file.name} absent — ${s.names.length} password name(s) the selected browser suites type cannot be substituted`, who: "me", do: fix, diagnose: [diagnose] });
+  const reconnect = "reconnect playwright-chrome / -firefox / -edge in /mcp before any browser suite starts";
+  if (!s.lanes.length)
+    checks.push({ id: "secrets:lanes", status: "BLOCK",
+      found: `no playwright-* lane started by scripts/lanes/playwright-lane.mjs is running — ${s.names.length} password name(s) the selected browser suites type would be typed literally`,
+      who: "me", do: `npm run creds:migrate (points .mcp.json's lanes at the launcher), then ${reconnect}`, diagnose: ["npm run creds:check"] });
   else if (s.unsynced.length)
-    checks.push({ id: "secrets:sync", status: "BLOCK",
-      found: `${s.unsynced.join(", ")} missing from or different in ${s.file.name}${forEnv} — those cases would sign in with the literal name`,
-      who: "me", do: fix, diagnose: [`${diagnose} (names only, never values)`] });
+    checks.push({ id: "secrets:lanes", status: "BLOCK",
+      found: `${s.unsynced.join(", ")} missing from or changed since a running lane started (${s.lanes.map((l) => l.lane).join(", ")}) — those cases would sign in with the literal name or an old password`,
+      who: "me", do: reconnect, diagnose: ["npm run creds:check (names only, never values)"] });
   const gated = new Set(s.gated.map((g) => g.suite));
   for (const u of s.undeclared) {
     const parts = Object.entries(u.cases).map(([suite, ids]) => gated.has(suite) ? `${suite} (all cases — leaves the plan)` : `${suite}: ${ids.join(", ")}`);
-    checks.push({ id: `secret:${u.name}`, status: "WARN", found: `${u.name} has no value in .env.local or ${s.file.name} — report BLOCKED, no sign-in attempt: ${parts.join("; ")}`,
-      who: "you", do: `add ${u.name} to .env.local (team secret store), then ${fix}`, diagnose: [],
+    checks.push({ id: `secret:${u.name}`, status: "WARN",
+      found: `${s.master ? MASTER_NAME : u.name} has no value for ${env} in test-accounts.local.json — report BLOCKED, no sign-in attempt: ${parts.join("; ")}`,
+      who: "you", do: `seed the account (its seeder records the password), or add ${s.master ? '"master"' : `envs.${env}.${u.name}`} to test-accounts.local.json; then ${reconnect}`, diagnose: ["npm run creds:check"],
       cases: Object.entries(u.cases).filter(([suite]) => !gated.has(suite)).flatMap(([suite, ids]) => ids.map((id) => `${suite}/${id}`)) });
   }
-  if (s.file.exists && !s.unsynced.length && !s.undeclared.length)
-    checks.push(ok("secrets", `${s.names.length} password name(s) the selected browser suites type are registered`));
+  if (s.lanes.length && !s.unsynced.length && !s.undeclared.length)
+    checks.push(ok("secrets", `${s.names.length} password name(s) the selected browser suites type are held by the running lanes`));
   return checks;
 }
 type Mcp = PolicyInput["mcp"];

@@ -68,6 +68,7 @@ import { basename, dirname, resolve } from 'node:path';
 import { parse as parseDotenv } from 'dotenv';
 import { getAdminToken, probeLiveModules, type AdminAuth, type ProbeStatus } from '../deploy/lib/live.ts';
 import { platformApiKey } from '../deploy/lib/env.ts';
+import { ownEnv } from '../lib/env-layers.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -133,24 +134,17 @@ function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   if (!deployRepo || !e.DEPLOY_BRANCH || !e.DEPLOY_PACKAGES_PATH) {
     throw new Error(`${file} is missing DEPLOY_REPO/DEPLOY_BRANCH/DEPLOY_PACKAGES_PATH — add the deploy coords (see .env.vcptcore_stable).`);
   }
-  const suffix = key.toUpperCase(); // per-env secret override, e.g. ADMIN_PASSWORD_STABLE
-  // scripts/deploy/lib/env.ts's order: the .env.local pin, then the env's own password file
-  // (.env.playwright.vcptcore_<key>, which this skipped — a machine that keeps env passwords only there
-  // fell through to a guessed password), then the legacy suffix form and the shared fallbacks. No guess:
-  // an empty password skips the sign-in (getAdminToken) instead of a failed attempt against the shared admin.
+  // The env's admin password is the test-account store's (test-accounts.local.json), as scripts/deploy/lib/env.ts
+  // reads it. No guess: an empty password skips the sign-in (getAdminToken) instead of a failed attempt against the shared admin.
   const envName = basename(file).replace(/^\.env\./, ''); // the env's own name, as its file spells it
-  const own = readEnvFile(resolve(REPO_ROOT, `.env.playwright.${envName}`));
-  const password = passwordOverride
-    || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`]
-    || own.ADMIN_PASSWORD
-    || local[`ADMIN_PASSWORD_${suffix}`]
-    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
+  const creds = ownEnv(envName, { root: REPO_ROOT }).credentials;
+  const password = passwordOverride || creds.ADMIN_PASSWORD || '';
   // The env's read-only service-account key, named and looked up by scripts/deploy/lib/env.ts: used instead of the shared admin.
-  const apiKey = passwordOverride ? '' : platformApiKey(envName, local, own);
+  const apiKey = passwordOverride ? '' : platformApiKey(envName, local);
   const backUrl = (e.BACK_URL || '').replace(/\/$/, '');
   return {
     env: key, file, deployOwner, deployRepo, branch: e.DEPLOY_BRANCH, path: e.DEPLOY_PACKAGES_PATH,
-    backUrl, admin: e.ADMIN || 'admin', password,
+    backUrl, admin: creds.ADMIN || e.ADMIN || 'admin', password,
     ...(apiKey && backUrl ? { apiKey, apiKeyFor: backUrl } : {}),
   };
 }

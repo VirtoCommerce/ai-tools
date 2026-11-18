@@ -3,7 +3,7 @@
  * folders) and the one order every loader applies them in, the master password included. See env-layers.mjs.
  */
 
-/** `.env.playwright.master` — the master password's file, in the project root. */
+/** Where the master password comes from: the `master` of `test-accounts.local.json`, in the project root. */
 export declare const MASTER_FILE: string;
 /** `MASTER_PASSWORD` — the one name a lane types on a master stand. */
 export declare const MASTER_NAME: string;
@@ -32,19 +32,19 @@ export declare function currentTicket(options?: LookupOptions): string | null;
 export declare function envFolders(options?: LookupOptions & { env?: string }): string[];
 /** The file that defines an env (a dedicated folder's first, else the root's), or null. */
 export declare function findEnv(env: string, options?: LookupOptions): string | null;
-/** What an env declares itself: its `.env.<env>` files (`vars`) and `.env.playwright.<env>` files (`passwords`), merged, dedicated over root. */
-export declare function ownEnv(env: string, options?: LookupOptions): { vars: Record<string, string>; passwords: Record<string, string> };
+/** What an env declares itself: its `.env.<env>` files (`vars`, dedicated over root) and its credentials in the store (`credentials`). */
+export declare function ownEnv(env: string, options?: LookupOptions): { vars: Record<string, string>; credentials: Record<string, string> };
 /** The envs the project root defines. */
 export declare function knownEnvs(root?: string): string[];
 /** Where an unknown env was looked for, for an error message. */
 export declare function lookedIn(env: string, options?: LookupOptions): string;
-/** Every env file in the dedicated folders, across every ticket (`secrets`: a `.env.playwright.<env>`). */
+/** Every env file in the dedicated folders, across every ticket (`secrets`: a legacy `.env.playwright.<env>`, read by `creds:migrate` only). */
 export declare function dedicatedEnvs(options?: { root?: string; ambient?: Record<string, string | undefined> }): { env: string; ticket: string | null; dir: string; file: string; secrets: boolean }[];
 
 /** Whether a layered env says PASSWORDS=master. */
 export declare function usesMaster(env: Record<string, string | undefined> | null | undefined): boolean;
 /** The master password and its file; value null when there is none. */
-export declare function readMaster(options?: { root?: string; ambient?: Record<string, string | undefined> }): { file: string; value: string | null };
+export declare function readMaster(options?: { root?: string; ambient?: Record<string, string | undefined>; store?: unknown }): { file: string; value: string | null };
 /** The test accounts' login-password names: the CORE two, `extra`, and every name the suites and test-data use. */
 export declare function testAccountPasswordNames(root?: string, extra?: Iterable<string>): Set<string>;
 
@@ -65,6 +65,10 @@ export interface Layered {
    *  .env.local, say), or (`production`) a PASSWORDS=master on an ENV_RISK=production stand, and where it came from;
    *  null when none was. */
   ignoredPasswords: { value: string | undefined; file: string | null; production?: boolean } | null;
+  /** A test-account store (test-accounts.local.json) exists. */
+  store: boolean;
+  /** Credentials a .env file still holds (any password, or a name the store also sets) — for `npm run creds:migrate`. */
+  leftovers: { key: string; file: string }[];
   /** What supplied a key's value. */
   sourceOf(key: string): string;
 }

@@ -19,7 +19,10 @@ import { buildStatisticsWindows, COMPARISON_AXES } from './sales-rep-stats-specs
 const argv = process.argv.slice(2);
 const REP_KEY = argv.includes('--rep') ? argv[argv.indexOf('--rep') + 1] : 'SR_REP_PRIMARY';
 const AS_JSON = argv.includes('--json');
-const REP_PASSWORD = process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD || 'Password1!';
+// The reps' password, from the store (SR_REP_PASSWORD, else TEST_USER_PASSWORD) — no literal fallback: a rep with
+// no recorded password was not seeded on this env (npm run seed:sales-rep records it).
+const repPassword = () => process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD
+  || (() => { throw new Error(`SR_REP_PASSWORD has no value for ${process.env.TEST_ENV} in test-accounts.local.json — run npm run seed:sales-rep (it records it)`); })();
 
 /** Rep identity comes from the committed CSV business key — never a literal in this script. */
 function repRow(key) {
@@ -35,7 +38,7 @@ async function repToken(email, storeId) {
   const res = await fetch(`${BACK_URL}/connect/token`, {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     // The scoped sales-rep grant requires storeId (see reference_token_endpoint_org_auth_testing).
-    body: new URLSearchParams({ grant_type: 'password', username: email, password: REP_PASSWORD, scope: 'offline_access', storeId }),
+    body: new URLSearchParams({ grant_type: 'password', username: email, password: repPassword(), scope: 'offline_access', storeId }),
   });
   if (!res.ok) throw new Error(`rep token failed: ${res.status} ${(await res.text()).slice(0, 200)}`);
   return (await res.json()).access_token;

@@ -2151,5 +2151,23 @@
     "sales_rep_roles": "Sales Representative;Advanced Sales Representative",
     "narrowed_values": "[\"Organization employee\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\",\"Organization returns manager\"]",
     "narrowed_omitted_role": "Purchasing agent"
+  },
+  "RETURNS_AGENT_NO_AUTHORIZE": {
+    "_inline": true,
+    "platform_id": "3abfaaa1-a990-44b4-a5ab-537b91b4a710",
+    "user_id": "3abfaaa1-a990-44b4-a5ab-537b91b4a710",
+    "role_id": "AGENT-TEST-Return-Agent-NoAuthorize",
+    "userName": "AGENT-TEST-return-agent-noauth@test.virtocommerce.com"
+  },
+  "SR_REP_PRIMARY": {
+    "id": "f328fac1-5912-4ff8-bcda-1074de4201cd",
+    "user_id": "5a623f60-c85a-4ea4-9a05-ee82e978c167"
+  },
+  "SR_OWNER_ACME": {
+    "id": "9d0c042d-f58e-4aed-b17c-e8299bda9706"
+  },
+  "SR_REP_NOCUSTOMERS": {
+    "id": "ec2f0c2a-964a-4ddb-a670-6113cb18ff28",
+    "user_id": "ce544dd4-f434-4388-ba15-6845a61a4cdc"
   }
 }

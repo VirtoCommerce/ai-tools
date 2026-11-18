@@ -1,20 +1,22 @@
 // scripts/lib/env-layers.mjs — where an env's files are, and the ONE order every loader applies them in.
 //
-// An env is a set of files: `.env.<env>` (its URLs, identities, ENV_RISK, PASSWORDS) and `.env.playwright.<env>` (its
-// passwords, gitignored). They live in the project root and, for a stand that belongs to one ticket or one machine,
-// in DEDICATED folders listed in QA_ENV_PATH (`;`-separated, the first wins; set it in .env.local). A folder may use
+// An env is its `.env.<env>` file (URLs, settings, ENV_RISK, PASSWORDS). Its test accounts' logins and passwords are
+// in no .env file: they are in the ONE credential store, test-accounts.local.json (scripts/lib/test-accounts.mjs).
+// An env file lives in the project root and, for a stand that belongs to one ticket or one machine, in DEDICATED
+// folders listed in QA_ENV_PATH (`;`-separated, the first wins; set it in .env.local). A folder may use
 // the placeholders QA_OUTPUT_DIR takes — `<ticket>` (the run's ticket), `<env>`, `<sprint>` — and nothing is appended:
 //
 //   QA_ENV_PATH=P:\VC\_VIRTO\tickets\<ticket>\.work\self-qa;P:\VC\_VIRTO\qa-envs
 //
-// The order, lowest first (`layered`): the process environment; the root's `.env.playwright.<env>` as KEY_<ENV> where
-// unset; `.env.defaults` filling gaps; `.env.<env>`; `.env.local`; every KEY_<ENV> promoted over KEY; then each
-// dedicated folder's `.env.<env>` and `.env.playwright.<env>`, the lowest-priority folder first. A dedicated file
-// therefore beats the root KEY BY KEY, pins included: a ticket's folder can hold its own stand (`.env.vcst_6314`) or
-// override a shared env for that ticket's runs (`.env.vcptcore_dev`). Each file is self-contained: none extends another.
+// The order, lowest first (`layered`): the process environment; `.env.defaults` filling gaps; `.env.<env>`;
+// `.env.local`; every KEY_<ENV> promoted over KEY; then each dedicated folder's `.env.<env>`, the lowest-priority folder
+// first; then the credential store, its top level and then its `envs.<env>`. A dedicated file beats the root KEY BY
+// KEY, pins included: a ticket's folder can hold its own stand (`.env.vcst_6314`) or override a shared env for that
+// ticket's runs (`.env.vcptcore_dev`). The store beats every file: a credential still in a .env file is a leftover the
+// loader names once per run (`npm run creds:migrate` moves it).
 //
 // MASTER stands: `PASSWORDS=master` in an env's own file means every test account on it signs in with ONE password,
-// MASTER_PASSWORD in the root's `.env.playwright.master`. Every test-account password variable resolves to it (the
+// the store's `master` (typed as MASTER_PASSWORD). Every test-account password variable resolves to it (the
 // platform admin's, ADMIN_PASSWORD, included), and a browser lane types MASTER_PASSWORD in every password field.
 // Without the marker an env keeps its own passwords. Only the env's own file counts (never the process environment):
 // the root's `.env.<env>` for an env the project defines, else its QA_ENV_PATH file. A production stand
@@ -30,11 +32,12 @@ import { basename, isAbsolute, join, resolve } from 'node:path';
 import { parse } from 'dotenv';
 import { TEST_ENV_PATTERN, envSuffix } from './resolve-test-env.js';
 import { TICKET_KEY, globDirs, resolveSprint, sessionRun } from './run-dir.mjs';
+import { STORE_FILE, isPersonalServiceName, readStore, storeValues } from './test-accounts.mjs';
 
-/** The master password's file (project root, gitignored) and the one name a browser lane types for it. */
-export const MASTER_FILE = '.env.playwright.master';
+/** Where the master password is (the store's `master`), for messages, and the one name a browser lane types for it. */
+export const MASTER_FILE = `${STORE_FILE} (master)`;
 export const MASTER_NAME = 'MASTER_PASSWORD';
-/** `.env.<name>` files that are not envs (`master`: `.env.playwright.master` is the master password, not an env's). */
+/** `.env.<name>` files that are not envs. */
 export const NOT_AN_ENV = new Set(['local', 'defaults', 'backup', 'master']);
 const PLACEHOLDER = /<(ticket|env|sprint)>/gi;
 /** The passwords every project's accounts have (config.js CORE). */
@@ -121,13 +124,13 @@ export function findEnv(env, { ticket, root = process.cwd(), ambient = process.e
 
 /**
  * What an env declares itself: its `.env.<env>` files merged key by key, the project root's first and each dedicated
- * folder's over it (`vars`), and its `.env.playwright.<env>` files the same way (`passwords`) — no .env.defaults, no
- * .env.local, no promotion. Deploy coordinates (DEPLOY_BRANCH, BACK_URL) are read from here.
+ * folder's over it (`vars`), and its credentials in the store (`credentials`: the flat variables its accounts and shared passwords give it)
+ * — no .env.defaults, no .env.local, no promotion. Deploy coordinates (DEPLOY_BRANCH, BACK_URL) are read from here.
  */
 export function ownEnv(env, { ticket, root = process.cwd(), ambient = process.env } = {}) {
   const dirs = [root, ...envFolders({ env, ticket, root, ambient }).reverse()];
-  const merge = (name) => Object.assign({}, ...dirs.map((dir) => readEnvFile(join(dir, name)) ?? {}));
-  return { vars: merge(`.env.${env}`), passwords: merge(`.env.playwright.${env}`) };
+  const vars = Object.assign({}, ...dirs.map((dir) => readEnvFile(join(dir, `.env.${env}`)) ?? {}));
+  return { vars, credentials: storeValues(readStore(root), env).values };
 }
 
 /** The envs the project root defines (`.env.<env>`) — the list an "unknown env" error names. */
@@ -149,8 +152,8 @@ export function lookedIn(env, { ticket, root = process.cwd(), ambient = process.
 /**
  * Every env file in the dedicated folders, across every ticket: each QA_ENV_PATH folder with its placeholders matched
  * against what exists on disk. `{ env, ticket, dir, file, secrets }` — ticket null for a folder without `<ticket>`,
- * secrets true for a `.env.playwright.<env>`. `npm run secrets:sync:all` writes their passwords; nothing else needs
- * all of them.
+ * secrets true for a legacy `.env.playwright.<env>`: no loader reads one any more, `npm run creds:migrate` moves its
+ * passwords into the store. The lanes and the migration need every env; nothing else needs all of them.
  */
 export function dedicatedEnvs({ root = process.cwd(), ambient = process.env } = {}) {
   const out = [];
@@ -188,18 +191,17 @@ export function dedicatedEnvs({ root = process.cwd(), ambient = process.env } = 
 /** Whether a layered env opted in to the master password. */
 export const usesMaster = (env) => env?.PASSWORDS?.trim().toLowerCase() === 'master';
 
-/** The master password: MASTER_PASSWORD in the root's `.env.playwright.master`, else in the process environment (CI). */
-export function readMaster({ root = process.cwd(), ambient = process.env } = {}) {
-  const file = join(root, MASTER_FILE);
-  const value = readEnvFile(file)?.[MASTER_NAME] || real(ambient[MASTER_NAME]) || null;
-  return { file, value };
+/** The master password: the store's `master`, else MASTER_PASSWORD in the process environment (CI). */
+export function readMaster({ root = process.cwd(), ambient = process.env, store } = {}) {
+  const value = (store ?? readStore(root)).master || real(ambient[MASTER_NAME]) || null;
+  return { file: MASTER_FILE, value };
 }
 
 const scanned = new Map();
 /**
  * The login-password names the project's test accounts use: the CORE two, `extra` (the caller's role registry), every
  * name a suite CSV under regression/suites types and every `{{X_PASSWORD}}` in test-data — the names
- * `npm run secrets:sync` derives, read without parsing a CSV. Scanned once per process, and only for a master stand.
+ * the Playwright lanes derive, read without parsing a CSV. Scanned once per process, and only for a master stand.
  */
 export function testAccountPasswordNames(root = process.cwd(), extra = []) {
   const key = resolve(root);
@@ -226,7 +228,7 @@ export function testAccountPasswordNames(root = process.cwd(), extra = []) {
 
 /**
  * An env's variables in the one order (the head of this file), computed WITHOUT touching process.env, so one process
- * can hold several envs (`secrets:sync:all`, the enforce-secret-token hook).
+ * can hold several envs (the Playwright lanes, the enforce-secret-token hook).
  *
  * @param {string} testEnv
  * @param {{ root?: string, ambient?: Record<string, string | undefined>, ticket?: string | null,
@@ -241,8 +243,10 @@ export function testAccountPasswordNames(root = process.cwd(), extra = []) {
  * @returns {{ env: Record<string, string | undefined>, ticket: string | null, rootFile: boolean, dedicated: string[],
  *   dedicatedKeys: Set<string>, perEnv: Set<string>, master: null | { file: string, found: boolean, names: string[] },
  *   ignoredPasswords: null | { value: string | undefined, file: string | null, production?: boolean },
- *   sourceOf: (key: string) => string }}
- *   `perEnv`: keys holding this env's own value (a KEY_<ENV> pin, a dedicated file, the master password);
+ *   store: boolean, leftovers: { key: string, file: string }[], sourceOf: (key: string) => string }}
+ *   `perEnv`: keys holding this env's own value (a KEY_<ENV> pin, a dedicated file, the store's `envs.<env>`, the
+ *   master password); `store`: a credential store exists; `leftovers`: credentials a .env file still holds — any
+ *   password, or a name the store also sets (the store wins) — for `npm run creds:migrate`;
  *   `ignoredPasswords`: a PASSWORDS value dropped because it did not come from the env's own files, or (`production`)
  *   a PASSWORDS=master dropped because the env says ENV_RISK=production;
  *   `sourceOf(key)` names what supplied a key's value — print it next to any target you act on.
@@ -260,10 +264,6 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
   const held = (key) => ambientWins && key in ambient && !copy(key);
   const put = (key, value, file, pin) => { env[key] = value; from.set(key, pin ? { file, pin } : { file }); };
 
-  const rootSecrets = `.env.playwright.${testEnv}`;
-  for (const [k, v] of Object.entries(readEnvFile(join(root, rootSecrets)) ?? {})) {
-    if (v && env[k + suffix] === undefined) put(k + suffix, v, rootSecrets);
-  }
   for (const [k, v] of Object.entries(readEnvFile(join(root, '.env.defaults')) ?? {})) if (!(k in env)) put(k, v, '.env.defaults');
   const own = readEnvFile(join(root, `.env.${testEnv}`));
   for (const [file, parsed] of [[`.env.${testEnv}`, own], ['.env.local', readEnvFile(join(root, '.env.local'))]]) {
@@ -280,15 +280,35 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
   const resolvedTicket = currentTicket({ ticket, root, ambient });
   let dedicatedPasswords; // { value, file }: PASSWORDS as the env's QA_ENV_PATH files say it, held by the environment or not
   for (const dir of envFolders({ env: testEnv, ticket: resolvedTicket, root, ambient }).reverse()) {
-    for (const name of [`.env.${testEnv}`, `.env.playwright.${testEnv}`]) {
-      const file = join(dir, name);
-      const parsed = readEnvFile(file);
-      if (!parsed) continue;
-      dedicated.push(file);
-      const values = { ...parsed };
-      for (const [k, v] of Object.entries(parsed)) if (k.endsWith(suffix) && v && k.length > suffix.length) values[k.slice(0, -suffix.length)] = v;
-      if (values.PASSWORDS !== undefined) dedicatedPasswords = { value: values.PASSWORDS, file };
-      for (const [k, v] of Object.entries(values)) if (!held(k)) { put(k, v, file); perEnv.add(k); dedicatedKeys.add(k); }
+    const file = join(dir, `.env.${testEnv}`);
+    const parsed = readEnvFile(file);
+    if (!parsed) continue;
+    dedicated.push(file);
+    const values = { ...parsed };
+    for (const [k, v] of Object.entries(parsed)) if (k.endsWith(suffix) && v && k.length > suffix.length) values[k.slice(0, -suffix.length)] = v;
+    if (values.PASSWORDS !== undefined) dedicatedPasswords = { value: values.PASSWORDS, file };
+    for (const [k, v] of Object.entries(values)) if (!held(k)) { put(k, v, file); perEnv.add(k); dedicatedKeys.add(k); }
+  }
+
+  // The credential store beats every file. A password a file still holds, and a name the store also sets, is a leftover.
+  const store = readStore(root);
+  const { values: credentials, own: storeOwn } = storeValues(store, testEnv);
+  const leftovers = [];
+  for (const [k, f] of from) {
+    if (f.file && !isPersonalServiceName(k) && (isLoginSecretName(k) || k in credentials)) leftovers.push({ key: f.pin ?? k, file: f.file });
+  }
+  for (const [k, v] of Object.entries(credentials)) {
+    if (held(k)) continue;
+    put(k, v, storeOwn.has(k) ? `${STORE_FILE} (envs.${testEnv})` : `${STORE_FILE} (top level)`);
+    if (storeOwn.has(k)) perEnv.add(k); else perEnv.delete(k);
+  }
+  // Every env section's names as NAME_<ENV> too — the form a lane types, and the one a suite or script that names
+  // another env's account (`{{USER_PASSWORD_VCPTCORE_REGRESSION}}`) reads, as the `KEY_<ENV>` lines of .env.local did.
+  for (const e of Object.keys(store.envs)) {
+    const { values: own, own: names } = storeValues(store, e);
+    for (const k of names) {
+      const pin = k + envSuffix(e);
+      if (own[k] && !held(pin)) put(pin, own[k], `${STORE_FILE} (envs.${e})`);
     }
   }
 
@@ -314,7 +334,7 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
 
   let master = null;
   if (usesMaster(env)) {
-    const { file, value } = readMaster({ root, ambient });
+    const { file, value } = readMaster({ root, ambient, store });
     const names = masterValues ? [...testAccountPasswordNames(root, passwordNames)].sort() : [];
     // With no master password the names are unset, never left at what .env.local or .env.defaults hold: those values
     // belong to other stands, and a seeder or a lane would send them to this one.
@@ -340,7 +360,7 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
     if (!f) return `${key} from the process environment`;
     return f.pin ? `${f.pin} from ${where(f.file)}` : `${key} from ${where(f.file)}`;
   };
-  return { env, ticket: resolvedTicket, rootFile: own !== null, dedicated, dedicatedKeys, perEnv, master, ignoredPasswords, sourceOf };
+  return { env, ticket: resolvedTicket, rootFile: own !== null, dedicated, dedicatedKeys, perEnv, master, ignoredPasswords, store: store.exists, leftovers, sourceOf };
 }
 
 /** Keys whose `.env.local` override of the env's own value is almost always a mistake. */
@@ -384,7 +404,12 @@ function warnOnce(testEnv, r, root, ambient) {
     console.warn(`[env] PASSWORDS=master from ${r.ignoredPasswords.file} is ignored: only ${own} can make ${testEnv} a master stand. Anything else would switch a stand others use, and seeding would reset its accounts to the master password.`);
   }
   if (r.master && !r.master.found) {
-    console.warn(`[env] ${testEnv} says PASSWORDS=master, but there is no ${MASTER_NAME} in ${MASTER_FILE} — its passwords stay unset. Create the file (one password every test account on master stands uses), then npm run secrets:sync:all.`);
+    console.warn(`[env] ${testEnv} says PASSWORDS=master, but ${STORE_FILE} has no "master" — its passwords stay unset. Add it (one password every test account on master stands uses), then reconnect the playwright-* lanes.`);
+  }
+  if (r.leftovers.length) {
+    const files = [...new Set(r.leftovers.map((l) => l.file))];
+    const named = r.leftovers.slice(0, 6).map((l) => l.key).join(', ') + (r.leftovers.length > 6 ? ', …' : '');
+    console.warn(`[env] ${r.leftovers.length} test-account credential(s) still in ${files.join(', ')} (${named}) — ${STORE_FILE} is the one place they belong: npm run creds:migrate moves them.`);
   }
   if (!r.rootFile) return;
   const own = readEnvFile(join(root, envFile)) ?? {};
