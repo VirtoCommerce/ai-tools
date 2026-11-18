@@ -1,23 +1,18 @@
 {
-  "runId": "REG-2026-11-18-1510",
+  "runId": "REG-2026-11-18-1641",
   "status": "in_progress",
-  "startedAt": "2026-11-18T14:10:21.905Z",
+  "startedAt": "2026-11-18T15:41:29.891Z",
   "env": "vcst",
-  "selection": "105,104 --ids <48 OTP cases> --no-promote",
+  "selection": "105 --ids OTP-019 --no-promote",
   "ticket": "VCST-6490",
-  "note": "qa-suite-sync step-7 re-run: code-email lookup by new journal row id (qa-test-lifecycle VCST-6490); exclusiveGroup store-setting:OtpSignIn.Enabled - sequential",
+  "note": "run of the rewritten OTP-019 (fresh code after the lockout ends)",
   "suites": {
-    "104": {
+    "105": {
       "status": "running",
       "lane": "browser",
-      "cases": 26,
+      "cases": 1,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-18T14:12:15Z"
-    },
-    "105": {
-      "status": "pending",
-      "lane": "browser",
-      "cases": 22
+      "startedAt": "2026-11-18T15:44:45.550Z"
     }
   }
 }

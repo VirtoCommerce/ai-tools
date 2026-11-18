@@ -84,8 +84,6 @@ const GLOBAL_SECRET_KEYS = new Set([
   "FIGMA_API_KEY",
   "BROWSERSTACK_USERNAME",
   "BROWSERSTACK_ACCESS_KEY",
-  "APPINSIGHTS_API_KEY_BACKEND",
-  "APPINSIGHTS_API_KEY_STOREFRONT",
 ]);
 
 const FLAGS = new Set(process.argv.slice(2).filter((a) => a.startsWith("--")));
