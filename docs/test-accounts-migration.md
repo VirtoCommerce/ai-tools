@@ -58,7 +58,7 @@ Do it after [PR #678](https://github.com/VirtoCommerce/ai-tools/pull/678) and [P
    npm run creds:migrate -- --apply
    ```
 
-   It creates `test-accounts.local.json`, backs up the old files to `.vc-fix/creds-backup/<time>/`, removes the credentials from `.env.local`, deletes `.env.playwright.*` and rewrites the lanes in `.mcp.json`. It should end with the line `proof (the real tree): … every credential resolves as before`.
+   It creates `test-accounts.local.json`, backs up the old files to `.vc-fix/creds-backup/<time>/`, removes the credentials from `.env.local`, deletes `.env.playwright.*` and rewrites the lanes in `.mcp.json`. It should end with the line `proof (the real tree): … every credential resolves as before`. When that proof passes, the backup is deleted (it holds the old passwords in plain text); `--keep-backup` keeps it.
 5. **Restart Claude Code** — the Playwright lanes start again and read the new file.
 6. Check:
 
@@ -68,7 +68,7 @@ Do it after [PR #678](https://github.com/VirtoCommerce/ai-tools/pull/678) and [P
    ```
 
    `creds:check` shows, per env, which names have no password, and that the lanes hold the current values (`✓ lane … holds what test-accounts.local.json says`). `creds:verify` tries to sign in with every account on its stand. Both print names only, never values.
-7. Once everything works, delete the backup `.vc-fix/creds-backup/` — it holds the old passwords in plain text.
+7. Nothing to clean up after a green migration: the backup is already gone. Ran it with `--keep-backup`, or have backups from earlier runs (the migration names them, it does not delete them)? Delete `.vc-fix/creds-backup/` once everything works — it holds the old passwords in plain text.
 
 Running `creds:migrate` again is safe: if the file already exists, it only picks up credentials left behind in `.env` files, and it never brings back what was removed from the file.
 
@@ -76,7 +76,7 @@ Running `creds:migrate` again is safe: if the file already exists, it only picks
 
 The lanes no longer read a `--secrets` file: each `playwright-*` starts through the launcher `scripts/lanes/playwright-lane.mjs`, which takes the passwords from `test-accounts.local.json`. `.mcp.json` is per machine (in `.gitignore`), so everyone has to change their own.
 
-- **Through the migration (step 4)** — `npm run creds:migrate -- --apply` rewrites all four lanes itself (the old copy is in the backup). Other servers (github, kb, atlassian…) are left alone.
+- **Through the migration (step 4)** — `npm run creds:migrate -- --apply` rewrites all four lanes itself (the old copy stays in the backup only if the proof fails, or with `--keep-backup`). Other servers (github, kb, atlassian…) are left alone.
 - **By hand** (new machine, or your own `.mcp.json` not made from the template) — in each of `playwright-chrome`, `playwright-firefox`, `playwright-edge`, `playwright-mobile`, replace `args` as in the example below (or copy from `templates/.mcp.json.example`). The lane name after `playwright-lane.mjs` must match the server name.
 
 Before (Windows):
@@ -162,7 +162,7 @@ Template of the file, names without values: `templates/test-accounts.example.jso
 | `creds:verify`: an account does not sign in | the password in the file does not match the stand: get the current file from the team or reseed the account |
 | The migration prints `✗ … differs` or `is lost` | nothing was written; post the output in a comment on this doc (it holds names only) |
 
-Everything broke after the migration? The old files are in `.vc-fix/creds-backup/<time>/` — you can put them back.
+The final proof failed? Then the backup stays in `.vc-fix/creds-backup/<time>/` and the migration prints where to restore from — put the old files back from there. After a green migration there is no backup (unless `--keep-backup`).
 
 ## Client projects (the vc-init plugin)
 
@@ -170,6 +170,6 @@ In client projects with the plugins `vc-init` 0.8.0 / `vc-fix` 0.19.0 / `vc-test
 
 1. Update the plugins (`/plugin update`) and restart Claude Code.
 2. Run `/project-init --check`: at step M it moves the passwords from `.env.local` and the logins from `.env.<env>` into `test-accounts.local.json`, checks that everything resolves as before, and rewrites the lanes.
-3. The lanes accept both kinds of names: `ADMIN_PASSWORD` for the env the lane started on, and `ADMIN_PASSWORD_<ENV>` for any env.
+3. Type `ADMIN_PASSWORD_<ENV>` — it works for any env. The bare name `ADMIN_PASSWORD` works only on a lane started with `--vc-env` or in a project with a single env; in a project with several envs, a bare name fails to sign in.
 
 Passwords can still be kept in vc-secrets (`--admin-passwords vc-secrets`, `--user-passwords vc-secrets`): the migration leaves those values alone, and they beat the file. Projects whose passwords the host manages (host-governed) do not change.
