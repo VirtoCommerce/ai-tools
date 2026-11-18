@@ -30,7 +30,7 @@
     {
       "name": "vc-frontend",
       "source": "./plugins/vc-frontend",
-      "description": "Skills for the Virto Commerce storefront (vc-frontend): keep a theme fork up to date with upstream, and add a storefront plugin to a backend module. Can make mistakes: review every change before merging."
+      "description": "Skills for the Virto Commerce storefront (vc-frontend): keep a theme fork up to date with upstream, add a storefront plugin to a backend module, and review a change as deep as it is risky. Can make mistakes: review every change before merging."
     },
     {
       "name": "vc-test",
