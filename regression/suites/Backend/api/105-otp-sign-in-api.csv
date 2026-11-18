@@ -3,9 +3,11 @@ OTP-018,OTP grant — the same code cannot sign in twice,Auth > OTP Sign-In > AP
 admin credentials resolve
 Sign-in log recording is enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On)","email={{USER_EMAIL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email={{USER_EMAIL}}, code=code
 [CAPTURE] firstToken = access_token of the first grant
@@ -29,9 +31,11 @@ OTP-019,OTP grant — wrong codes lock the account at the platform threshold,Aut
 @td(OTP_LOCKOUT_USER_1.email) is used by THIS case only (no other case shares it); OtpSignIn.Enabled is on for {{STORE_ID}}; platform lockout threshold N is the IdentityOptions:Lockout failed-attempt limit (observed 5, 120 s lock on vcptcore_qa1)
 Sign-in log recording is enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On)","email=@td(OTP_LOCKOUT_USER_1.email), store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_LOCKOUT_USER_1.email)"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""@td(OTP_LOCKOUT_USER_1.email)""}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_LOCKOUT_USER_1.email)"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to @td(OTP_LOCKOUT_USER_1.email) created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_LOCKOUT_USER_1.email)"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to @td(OTP_LOCKOUT_USER_1.email) whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
 [CAPTURE] N = the platform lockout threshold (observed 5)
@@ -52,10 +56,11 @@ Sign-in log recording is enabled (Settings > Platform > Sign In Log > Record sig
 OTP-020,OTP and password share one failed-attempt counter,Auth > OTP Sign-In > API > Lockout,High,BL-AUTH-003,ECL-4.2,"Re-arm the disposable account FIRST: node scripts/seed-data/auth/seed-otp-signin.mjs --verify (re-arms the disposable account: unlock + failed-attempt count 0)
 @td(OTP_LOCKOUT_USER_2.email) is used by THIS case only (a different account from the lockout case) and has password {{DEFAULT_TEST_PASSWORD}}; threshold N as in the lockout case (observed 5)
 OtpSignIn.Enabled is on for {{STORE_ID}}","email=@td(OTP_LOCKOUT_USER_2.email), password={{DEFAULT_TEST_PASSWORD}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_LOCKOUT_USER_2.email)"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""@td(OTP_LOCKOUT_USER_2.email)""}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_LOCKOUT_USER_2.email)"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to @td(OTP_LOCKOUT_USER_2.email) created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_LOCKOUT_USER_2.email)"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to @td(OTP_LOCKOUT_USER_2.email) whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
 [CAPTURE] wrongPassword = {{DEFAULT_TEST_PASSWORD}} with a suffix appended
@@ -74,14 +79,21 @@ OTP-021,OTP request - Resend issues a second code and accepting it refuses the f
 admin credentials resolve
 Two different codes: the Resend is requested in the next epoch-aligned 3-minute window (inside one window both requests email the SAME digits, KB-38B0EAE3). No code lifetime is asserted.
 The refused code1 counts as a failed attempt on this SHARED persona; Cleanup zeroes it (at most one failure between two successes).","email={{USER_EMAIL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[CAPTURE] T0 = current UTC time, taken immediately before the first request; w1 = floor(UTC epoch seconds / 180) at that moment
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
+[CAPTURE] w1 = floor(UTC epoch seconds / 180), taken immediately before the first request
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [WAIT] until the runner's next 3-minute UTC boundary (floor(UTC epoch seconds / 180) increases by exactly 1) plus a 10 s margin - the stand's clock can run behind the runner's, so a request made right on the boundary can still land in the earlier window; wait for the boundary plus the margin, never a fixed sleep
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [CAPTURE] w2 = floor(UTC epoch seconds / 180) immediately before the Resend (w2 must be w1 + 1, otherwise BLOCKED)
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""} - the Resend, in the next window
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll up to 90s until two OtpSignInEmailNotification messages to {{USER_EMAIL}} created after T0 are present
-[CAPTURE] code1 and code2 = the 6-digit values in those two messages, oldest first; sameCode = whether code1 equals code2
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code2 = the 6-digit value inside <strong>...</strong> in that message body; sameCode = whether code1 equals code2
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email={{USER_EMAIL}}, code=code2
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email={{USER_EMAIL}}, code=code1 - the EARLIER code, after code2 signed in","[STATUS] Both requests return 200 with succeeded=true {OBSERVED}
 [BODY] Two OtpSignInEmailNotification messages exist, one per request {OBSERVED}
@@ -93,9 +105,11 @@ The refused code1 counts as a failed attempt on this SHARED persona; Cleanup zer
 OTP-022,OTP grant — a code requested before the store setting is switched off is refused,Auth > OTP Sign-In > API,High,,,"OtpSignIn.Enabled is on for {{STORE_ID}} at the start; {{USER_EMAIL}} is a contact of {{STORE_ID}}; admin credentials resolve
 Runs ALONE: this case flips a store-wide setting (shared with the storefront setting-off case), so no other OTP case runs on {{STORE_ID}} meanwhile","email={{USER_EMAIL}}, store={{STORE_ID}}, setting=OtpSignIn.Enabled on->off on {{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 --- SCREEN: Admin ---
 [ACT] Open Stores > {{STORE_ID}} > Settings widget > 'OTP Sign-In' > 'General' in the admin (blade only - never a REST PUT of the whole store)
@@ -116,10 +130,11 @@ admin credentials resolve","email=@td(OTP_TRUSTED_STORE_CONTACT.email), store={{
 [CAPTURE] trusted = the trustedGroups array of the store
 [HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(OTP_TRUSTED_STORE_CONTACT.email) with the admin Bearer token
 [CAPTURE] homeStore = storeId of that account
-[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_TRUSTED_STORE_CONTACT.email)"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""@td(OTP_TRUSTED_STORE_CONTACT.email)""}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_TRUSTED_STORE_CONTACT.email)"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to @td(OTP_TRUSTED_STORE_CONTACT.email) created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_TRUSTED_STORE_CONTACT.email)"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to @td(OTP_TRUSTED_STORE_CONTACT.email) whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=@td(OTP_TRUSTED_STORE_CONTACT.email), code=code
 [HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with the access_token","[STATE] The fixture is decidable: homeStore is in trusted and differs from {{STORE_ID}} {SPEC}
@@ -144,10 +159,11 @@ PasswordLogin:DetailedErrors is true on the target environment (the distinct ref
 [API] response body is valid JSON with the documented error shape","A token for a store the contact may not enter; a code email created for a foreign contact; 200 succeeded=true for a refused account; 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected",none (the single grant attempt may count one failed attempt on a non-shared fixture account),VCST-5748 · Archetype:SCOPE · Technique:DT | Behavior:auth.signin.otp.store-rule | DataProfile:profile.auth.otp-store-rule,Draft
 OTP-025,"OTP email — subject, code and sender of the notification",Auth > OTP Sign-In > API,Medium,,,"OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}}; admin credentials resolve
 The store has an email address configured (Stores > store > General > Email)","email={{USER_EMAIL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [CAPTURE] msg = the whole OtpSignInEmailNotification journal message (from, subject, body, status)
 [HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer token
@@ -160,9 +176,11 @@ OTP-026,Sign-in log - OTP success and wrong code are recorded with signInType OT
 Sign-in log recording is enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); admin credentials resolve
 The lockout row is asserted in the lockout case (it owns the disposable account that locks); this case keeps its shared persona away from the threshold","email={{USER_EMAIL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email={{USER_EMAIL}}, code=wrongCode
@@ -223,10 +241,11 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":""Deleted"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = Deleted
-[CAPTURE] T0 = current UTC time, taken immediately before code1 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code1, organization_id=orgAId - record status, error, errors[] and the access_token as res1
 [CAPTURE] decode the access_token payload of res1 (if any) and record its organization_id claim as claim1
@@ -253,10 +272,11 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":""Invited"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = Invited
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgB membership, set ""status"":""Invited"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mB} with that body; read back status = Invited
-[CAPTURE] T0 = current UTC time, taken immediately before code1 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code1, organization_id=orgAId - record status, error, errors[] and the access_token as res1
 [CAPTURE] decode the access_token payload of res1 (if any) and record its organization_id claim as claim1
@@ -283,10 +303,11 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":""Deleted"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = Deleted
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgB membership, set ""status"":""Deleted"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mB} with that body; read back status = Deleted
-[CAPTURE] T0 = current UTC time, taken immediately before code1 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code1, organization_id=orgAId - record status, error, errors[] and the access_token as res1
 [CAPTURE] decode the access_token payload of res1 (if any) and record its organization_id claim as claim1
@@ -314,10 +335,11 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [HTTP] GET {{BACK_URL}}/api/members/{contactId}; set organizations=[orgBId] and PUT {{BACK_URL}}/api/contacts with that body (removing an organization deletes its membership row and its roles); read back: organizations = [orgBId] and the membership search has NO row for orgAId
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgB membership, set ""status"":""Rejected"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mB} with that body; read back status = Rejected
 [HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentBefore
-[CAPTURE] T0 = current UTC time, taken immediately before code1 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code1, organization_id=orgAId - record status, error, errors[] and the access_token as res1
 [CAPTURE] decode the access_token payload of res1 (if any) and record its organization_id claim as claim1
@@ -347,10 +369,11 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mA}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgA (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgB membership, set ""status"":""Rejected"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mB} with that body; read back status = Rejected
-[CAPTURE] T0 = current UTC time, taken immediately before code1 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code1, organization_id=orgAId - record status, error, errors[] and the access_token as res1
 [CAPTURE] decode the access_token payload of res1 (if any) and record its organization_id claim as claim1
@@ -435,10 +458,11 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [HTTP] GET {{BACK_URL}}/api/members/{contactId}; set currentOrganizationId=orgAId and PUT {{BACK_URL}}/api/contacts; read back currentOrganizationId = orgAId
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mA}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgA (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
 [HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentBefore1
-[CAPTURE] T0 = current UTC time, taken immediately before code1 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code1, organization_id=orgAId - record status, error, errors[] and the access_token as res1
 [CAPTURE] decode the access_token payload of res1 (if any) and record its organization_id claim as claim1
@@ -446,10 +470,11 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [HTTP] GET {{BACK_URL}}/api/members/{contactId}; set currentOrganizationId=orgAId and PUT {{BACK_URL}}/api/contacts; read back currentOrganizationId = orgAId
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mB}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgB (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
 [HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentBefore2
-[CAPTURE] T0 = current UTC time, taken immediately before code2 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code2 = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code2, organization_id=orgAId - record status, error, errors[] and the access_token as res2
 [CAPTURE] decode the access_token payload of res2 (if any) and record its organization_id claim as claim2
@@ -478,10 +503,11 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [HTTP] GET {{BACK_URL}}/api/members/{contactId}; set currentOrganizationId=orgAId and PUT {{BACK_URL}}/api/contacts; read back currentOrganizationId = orgAId
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mA}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgA (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
 [HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentBefore
-[CAPTURE] T0 = current UTC time, taken immediately before code1 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [CAPTURE] wrongCode = a 6-digit string different from code1
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=wrongCode, organization_id=orgAId - record status, error, errors[] and the access_token as res1
@@ -507,10 +533,11 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mA}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgA (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
-[CAPTURE] T0 = current UTC time, taken immediately before code1 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email}
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/api/platform/security/users/{userId}/lock
 [HTTP] GET {{BACK_URL}}/api/platform/security/users/{userId}/locked; read back locked = true
@@ -527,15 +554,18 @@ Build under test: VirtoCommerce.OTP with the single-use code fix (VCST-6490, vc-
 Two different codes: two requests inside one 3-minute window email the SAME digits (KB-38B0EAE3), so codeA and codeB are requested in adjacent epoch-aligned windows - codeA, wait for the next boundary, codeB.","email=<AGENT-TEST-6490 buyer created in-case>, password={{DEFAULT_TEST_PASSWORD}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6490 prefix) email = uniqueEmail (also the userName). POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6490"",""fullName"":""Agent T6490"",""name"":""Agent T6490"",""emails"":[email],""status"":""Approved""} and capture contactId from the response; POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""memberId"":contactId,""storeId"":""{{STORE_ID}}"",""userType"":""Customer"",""emailConfirmed"":true,""lockoutEnabled"":true,""passwordExpired"":false,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and require emailConfirmed=true, lockoutEnabled=true and accessFailedCount=0 - otherwise BLOCKED: the fixture did not land
 [CAPTURE] T0 = current UTC time, taken immediately before codeA is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] codeA = the 6-digit value inside <strong>...</strong> in that message body
 [WAIT] until the runner's next 3-minute UTC boundary (floor(UTC epoch seconds / 180) increases by exactly 1) plus a 10 s margin - the stand's clock can run behind the runner's, so a request made right on the boundary can still land in the earlier window; wait for the boundary plus the margin, never a fixed sleep; codeA is still inside its validity
-[CAPTURE] T1 = current UTC time, taken immediately before codeB is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email}
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T1 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] codeB = the 6-digit value inside <strong>...</strong> in that message body. codeB equal to codeA means both requests fell in one window (clock skew): BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=codeB - the later code, first
 [CAPTURE] tokenB = access_token of that grant
@@ -556,15 +586,18 @@ Build under test: VirtoCommerce.OTP with the single-use code fix (VCST-6490, vc-
 Two different codes: codeA is the first request, codeB the Resend, requested in the next epoch-aligned 3-minute window (inside one window both would carry the same digits, KB-38B0EAE3).","email=<AGENT-TEST-6490 buyer created in-case>, password={{DEFAULT_TEST_PASSWORD}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6490 prefix) email = uniqueEmail (also the userName). POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6490"",""fullName"":""Agent T6490"",""name"":""Agent T6490"",""emails"":[email],""status"":""Approved""} and capture contactId from the response; POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""memberId"":contactId,""storeId"":""{{STORE_ID}}"",""userType"":""Customer"",""emailConfirmed"":true,""lockoutEnabled"":true,""passwordExpired"":false,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and require emailConfirmed=true, lockoutEnabled=true and accessFailedCount=0 - otherwise BLOCKED: the fixture did not land
 [CAPTURE] T0 = current UTC time, taken immediately before codeA is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] codeA = the 6-digit value inside <strong>...</strong> in that message body
 [WAIT] until the runner's next 3-minute UTC boundary (floor(UTC epoch seconds / 180) increases by exactly 1) plus a 10 s margin - the stand's clock can run behind the runner's, so a request made right on the boundary can still land in the earlier window; wait for the boundary plus the margin, never a fixed sleep; codeA is still inside its validity
-[CAPTURE] T1 = current UTC time, taken immediately before codeB is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email}
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T1 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] codeB = the 6-digit value inside <strong>...</strong> in that message body. codeB equal to codeA means both requests fell in one window (clock skew): BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=codeA - the EARLIER code, after the Resend
 [CAPTURE] tokenA = access_token of that grant
@@ -584,9 +617,11 @@ Sign-in codes are read from the notification journal (OtpSignInEmailNotification
 Build under test: VirtoCommerce.OTP with the single-use code fix (VCST-6490, vc-module-otp PR #4, from 3.1002.0-pr-4-83d4). On an OTP build without it the refusals do not hold: record BLOCKED for the build, never FAIL, and never re-base the case to the old behaviour.","email=<AGENT-TEST-6490 buyer created in-case>, password={{DEFAULT_TEST_PASSWORD}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6490 prefix) email = uniqueEmail (also the userName). POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6490"",""fullName"":""Agent T6490"",""name"":""Agent T6490"",""emails"":[email],""status"":""Approved""} and capture contactId from the response; POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""memberId"":contactId,""storeId"":""{{STORE_ID}}"",""userType"":""Customer"",""emailConfirmed"":true,""lockoutEnabled"":true,""passwordExpired"":false,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and require emailConfirmed=true, lockoutEnabled=true and accessFailedCount=0 - otherwise BLOCKED: the fixture did not land
 [CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] codeC = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=password, username=email, password={{DEFAULT_TEST_PASSWORD}}, storeId={{STORE_ID}}, scope=offline_access
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=codeC - requested BEFORE the password sign-in
@@ -602,9 +637,11 @@ Sign-in codes are read from the notification journal (OtpSignInEmailNotification
 Build under test: VirtoCommerce.OTP with the single-use code fix (VCST-6490, vc-module-otp PR #4, from 3.1002.0-pr-4-83d4). On an OTP build without it the refusals do not hold: record BLOCKED for the build, never FAIL, and never re-base the case to the old behaviour.","email=<AGENT-TEST-6490 buyer created in-case>, password={{DEFAULT_TEST_PASSWORD}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6490 prefix) email = uniqueEmail (also the userName). POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6490"",""fullName"":""Agent T6490"",""name"":""Agent T6490"",""emails"":[email],""status"":""Approved""} and capture contactId from the response; POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""memberId"":contactId,""storeId"":""{{STORE_ID}}"",""userType"":""Customer"",""emailConfirmed"":true,""lockoutEnabled"":true,""passwordExpired"":false,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and require emailConfirmed=true, lockoutEnabled=true and accessFailedCount=0 - otherwise BLOCKED: the fixture did not land
 [CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code - fired TWICE AT THE SAME TIME (two requests started in the same tick on separate connections); record both statuses, bodies and durations as res1 and res2
 [HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer token and body {""userName"":email,""startDate"":""<T0>"",""take"":50,""sort"":""createdDate:desc""}
@@ -621,16 +658,19 @@ Build under test: VirtoCommerce.OTP with the single-use code fix (VCST-6490, vc-
 Threshold N is the IdentityOptions:Lockout failed-attempt limit of the platform (observed 5). The buyer is disposable, so the lock it ends in is never waited out.","email=<AGENT-TEST-6490 buyer created in-case>, password={{DEFAULT_TEST_PASSWORD}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6490 prefix) email = uniqueEmail (also the userName). POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6490"",""fullName"":""Agent T6490"",""name"":""Agent T6490"",""emails"":[email],""status"":""Approved""} and capture contactId from the response; POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""memberId"":contactId,""storeId"":""{{STORE_ID}}"",""userType"":""Customer"",""emailConfirmed"":true,""lockoutEnabled"":true,""passwordExpired"":false,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and require emailConfirmed=true, lockoutEnabled=true and accessFailedCount=0 - otherwise BLOCKED: the fixture did not land
 [CAPTURE] T0 = current UTC time, taken immediately before code1 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code1 - the first and only valid use
-[CAPTURE] T1 = current UTC time, taken immediately before code2 is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email}
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T1 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
-[CAPTURE] code2 = the 6-digit value in the message created after T1 - a code requested AFTER code1 was accepted; code2 equal to code1 = BLOCKED
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code2 = the 6-digit value in the message whose id is NOT in knownIds - a code requested AFTER code1 was accepted; code2 equal to code1 = BLOCKED
 [CAPTURE] N = the platform lockout threshold (observed 5)
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code1 - the USED code, replayed N times; after the FIRST replay GET {{BACK_URL}}/api/platform/security/users/{email} and capture accessFailedCount; record every response
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code2 - the valid code, while the account is locked
@@ -654,21 +694,23 @@ State under test: the buyer's ONLY organization membership is Invited, so the gr
 [ASSERT] m reads isCurrentlyLocked=false with an empty status, and GET {{BACK_URL}}/api/platform/security/users/{email} reads emailConfirmed=true, lockoutEnabled=true and accessFailedCount=0 - otherwise BLOCKED: the fixture did not land
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
 [HTTP] set the membership m ""status"":""Invited"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{m.id} with that body; read back status = Invited
-[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email}
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code, organization_id=orgId - the Invited organization, record the response as res1
 [HTTP] GET {{BACK_URL}}/api/platform/security/users/{email}; capture accessFailedCount as failedAfterRes1
 [HTTP] set the membership m ""status"":null (Inherit) and PUT {{BACK_URL}}/api/customer/organization-memberships/{m.id} with that body; read back status = empty
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code, organization_id=orgId - the SAME code again, now that the membership is signable, record the response as res2
 [HTTP] GET {{BACK_URL}}/api/platform/security/users/{email}; capture accessFailedCount as failedAfterRes2
-[CAPTURE] T1 = current UTC time, taken immediately before the fresh code is requested
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":email}
 [HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T1 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
-[CAPTURE] code2 = the 6-digit value in the message created after T1; code2 equal to code = BLOCKED, never FAIL
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code2 = the 6-digit value in the message whose id is NOT in knownIds; code2 equal to code = BLOCKED, never FAIL
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=email, code=code2, organization_id=orgId - the fresh code, record the response as res3","[STATUS] res1 returns 400 with code user_invitation_pending_in_organization and NO access_token - the refusal is the organization eligibility check, not the code {OBSERVED}
 [STATE] failedAfterRes1 is 0 - an eligibility refusal does not count as a failed attempt {OBSERVED}
 [BODY] res2 is HTTP 400 with error invalid_grant, code invalid_code, errors[0].code invalid_code and NO access_token - the code was used up when it verified, before the eligibility check refused the sign-in {SPEC}

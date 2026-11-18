@@ -627,3 +627,6 @@ rules:
       - A refused reuse is not counted toward the lockout, or not logged as an OTP InvalidCode failure.
       - Two parallel grants with one code both return a token.
     status: ACTIVE
+    verified:
+      date: 2026-11-18
+      by: REG-2026-11-18-1453

@@ -1,18 +1,23 @@
 {
-  "runId": "REG-2026-11-18-1453",
+  "runId": "REG-2026-11-18-1510",
   "status": "in_progress",
-  "startedAt": "2026-11-18T13:53:30.151Z",
+  "startedAt": "2026-11-18T14:10:21.905Z",
   "env": "vcst",
-  "selection": "105 --ids OTP-057 --no-promote",
+  "selection": "105,104 --ids <48 OTP cases> --no-promote",
   "ticket": "VCST-6490",
-  "note": "qa-suite-sync 5a run of the newly authored OTP-057 (qa-test-lifecycle VCST-6490)",
+  "note": "qa-suite-sync step-7 re-run: code-email lookup by new journal row id (qa-test-lifecycle VCST-6490); exclusiveGroup store-setting:OtpSignIn.Enabled - sequential",
   "suites": {
-    "105": {
+    "104": {
       "status": "running",
       "lane": "browser",
-      "cases": 1,
+      "cases": 26,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-18T13:54:22.482Z"
+      "startedAt": "2026-11-18T14:12:15Z"
+    },
+    "105": {
+      "status": "pending",
+      "lane": "browser",
+      "cases": 22
     }
   }
 }

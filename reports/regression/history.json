@@ -6855,5 +6855,21 @@
     "pass_rate": 100,
     "duration_minutes": 9.92,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-18-1453",
+    "date": "2026-11-18",
+    "suiteId": "105",
+    "suiteName": "OTP Sign-In API",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 0.36,
+    "mode": "interactive"
   }
 ]
