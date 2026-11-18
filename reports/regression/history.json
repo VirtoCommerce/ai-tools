@@ -6871,5 +6871,37 @@
     "pass_rate": 100,
     "duration_minutes": 0.36,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-18-1510",
+    "date": "2026-11-18",
+    "suiteId": "104",
+    "suiteName": "Auth OTP Sign-In",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 26,
+    "passed": 9,
+    "failed": 0,
+    "blocked": 17,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 38.17,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-18-1510",
+    "date": "2026-11-18",
+    "suiteId": "105",
+    "suiteName": "OTP Sign-In API",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 22,
+    "passed": 19,
+    "failed": 2,
+    "blocked": 1,
+    "skipped": 0,
+    "pass_rate": 90.48,
+    "duration_minutes": 31.99,
+    "mode": "interactive"
   }
 ]
