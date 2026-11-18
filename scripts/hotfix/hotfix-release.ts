@@ -83,6 +83,33 @@ async function releaseHasFix(repo: string, tag: string, expectCommit: string): P
   const msgs = await recentCommitMessages(repo, tag, 40);
   return msgs.some((m) => /cherry picked from commit/i.test(m) && (m.includes(expectCommit) || m.includes(short)));
 }
+/** Is the release's version on nuget.org? Package ids come from the tag's own `src/*.Core` / `src/*.Data`
+ * projects — never from the zip name: `VirtoCommerce.Catalog_X.zip` ships `VirtoCommerce.CatalogModule.Core`.
+ * The id is the project folder name (the csproj name), which is the PackageId VC modules publish under.
+ * null = no such project at the tag (platform/theme), so nothing is claimed. Polls briefly: nuget.org
+ * accepts a push minutes before the flat container lists it. `found` = EVERY id lists the version;
+ * `missing` names the ones that do not. */
+async function nugetHas(repo: string, release: any): Promise<{ ids: string[]; found: boolean; missing: string[] } | null> {
+  const tag = release.tag_name as string;
+  const tree = await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/git/trees/${encodeURIComponent(tag)}?recursive=1`);
+  const ids = [...new Set<string>((tree?.tree ?? []).map((t: any) => t.path as string)
+    .map((p: string) => /^src\/([^/]+\.(?:Core|Data))\/\1\.csproj$/.exec(p)?.[1]).filter(Boolean))];
+  if (!ids.length) return null;
+  let missing = ids;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const still: string[] = [];
+    for (const id of missing) {
+      const r = await fetch(`https://api.nuget.org/v3-flatcontainer/${id.toLowerCase()}/index.json`).catch(() => null);
+      const listed = r?.ok ? ((await r.json().catch(() => ({}))).versions ?? []).includes(tag) : false;
+      if (!listed) still.push(id);
+    }
+    missing = still;
+    if (!missing.length) return { ids, found: true, missing };
+    if (attempt < 3) await sleep(60_000);
+  }
+  return { ids, found: false, missing };
+}
+
 /** Jobs of a workflow run, by name → conclusion. */
 async function runJobs(repo: string, runId: number): Promise<{ name: string; conclusion: string | null }[]> {
   const j = await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/actions/runs/${runId}/jobs`);
@@ -90,12 +117,13 @@ async function runJobs(repo: string, runId: number): Promise<{ name: string; con
 }
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Find the "Release hotfix" workflow file for the repo (by name, fallback to *-release-hotfix.yml). */
+/** Find the "Release hotfix" workflow file for the repo (by name, fallback to *-release-hotfix.y(a)ml).
+ * hotfix-precheck.ts reads the CI the release will run with by the SAME rule — change both together. */
 async function findHotfixWorkflow(repo: string): Promise<{ id: number; path: string } | null> {
   const wf = await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/actions/workflows?per_page=100`);
   const list: any[] = wf?.workflows ?? [];
   const byName = list.find((w) => /release hotfix/i.test(w.name || ''));
-  const byPath = list.find((w) => /-release-hotfix\.yml$/i.test(w.path || ''));
+  const byPath = list.find((w) => /-release-hotfix\.ya?ml$/i.test(w.path || ''));
   const hit = byName ?? byPath;
   return hit ? { id: hit.id, path: hit.path.replace(/^\.github\/workflows\//, '') } : null;
 }
@@ -171,8 +199,18 @@ async function main() {
 
   if (!published) {
     const which = failedJobs.map((j) => `${j.name}=${j.conclusion}`).join(', ') || `conclusion=${conclusion}`;
-    if (asJson) console.log(JSON.stringify({ dispatched: true, runId, conclusion, published: false, failedJobs: failedJobs.map((j) => j.name), runUrl, verified: false }, null, 2));
-    else console.log(`\n⛔ Release not published — failing job(s): ${which}. ${runUrl}`);
+    // An old workflow creates the GitHub release and THEN pushes NuGet inside the same job: a 403 on the push
+    // fails the job with the release already out, and increment-version is skipped. Say exactly that.
+    // Only when the publish job itself FAILED on a red run — a publish job we merely did not recognise (renamed)
+    // on a green run is not a partial release. A failed lookup never hides the failure report below.
+    const publishFailed = conclusion !== 'success' && !!publishJob && failedJobs.some((j) => j.name === publishJob.name);
+    const partial = !publishFailed ? undefined : ((await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/releases?per_page=10`).catch(() => null)) ?? [])
+      .find((r: any) => r.target_commitish === branch && !r.draft && Date.parse(r.created_at) >= Date.parse(since));
+    const partialNote = partial
+      ? `GitHub release ${partial.tag_name} WAS created (${partial.html_url}) but the job failed after it — its NuGet packages are most likely NOT on nuget.org, and increment-version was skipped, so the branch still carries the previous version. A plain re-run would target ${partial.tag_name} again (422). Fix: port Trusted Publishing, set props+manifest to ${partial.tag_name}, release the next patch (.claude/skills/qa-hotfix/support-line-ci.md).`
+      : '';
+    if (asJson) console.log(JSON.stringify({ dispatched: true, runId, conclusion, published: false, partialRelease: partial ? partial.tag_name : null, failedJobs: failedJobs.map((j) => j.name), runUrl, verified: false, note: partialNote }, null, 2));
+    else console.log(`\n⛔ Release not published — failing job(s): ${which}. ${runUrl}${partialNote ? `\n  ⚠ ${partialNote}` : ''}`);
     throw new Exit(1);
   }
 
@@ -185,7 +223,16 @@ async function main() {
   else if (expectCommit) { verified = await releaseHasFix(repo, hotfix.tag_name, expectCommit); verifyNote = verified ? `release ${hotfix.tag_name} contains the fix (${expectCommit.slice(0, 8)}, direct or cherry-picked)` : `release ${hotfix.tag_name} does NOT contain ${expectCommit.slice(0, 8)}`; }
   else { verified = true; verifyNote = `release ${hotfix.tag_name} published (no --expect-commit to verify contents)`; }
 
-  const warn = incrementOnlyFailure ? `increment-version job failed (transient tool install) — release is OUT but the branch version files were NOT auto-bumped; the next hotfix on ${branch} will need its baseline set manually.` : '';
+  // NuGet: the GitHub release is what stands deploy, nuget.org is what downstream projects build against.
+  // The release is already OUT here: a failed lookup must not turn it into a "fatal" tool error.
+  let nugetError: string | null = null;
+  const nuget = hotfix ? await nugetHas(repo, hotfix).catch((e: any) => { nugetError = e.message; return null; }) : null;
+  const warns = [
+    incrementOnlyFailure ? `increment-version job failed (transient tool install) — release is OUT but the branch version files were NOT auto-bumped; the next hotfix on ${branch} will need its baseline set manually.` : '',
+    nuget && !nuget.found ? `NuGet pending: nuget.org does not list ${nuget.missing.join(' / ')} ${hotfix.tag_name} after ~3 min. Indexing can take ~15 min — re-check later; still missing then, read the run's NuGet push step.` : '',
+    nugetError ? `NuGet not checked (${nugetError}) — check nuget.org for ${hotfix.tag_name} by hand.` : '',
+  ].filter(Boolean);
+  const warn = warns.join(' ');
 
   if (asJson) { console.log(JSON.stringify({ dispatched: true, runId, conclusion, published: true, incrementVersionFailed: incrementOnlyFailure, runUrl, release: hotfix ? { tag: hotfix.tag_name, url: hotfix.html_url, assets: (hotfix.assets ?? []).map((a: any) => a.browser_download_url) } : null, verified, verifyNote, warn }, null, 2)); throw new Exit(verified ? 0 : 1); }
 
@@ -195,7 +242,8 @@ async function main() {
     for (const a of hotfix.assets ?? []) console.log(`  Asset:   ${a.browser_download_url}`);
   }
   console.log(`  Verify:  ${verified ? '✓' : '✗'} ${verifyNote}`);
-  if (warn) console.log(`  ⚠ ${warn}`);
+  if (nuget?.found) console.log(`  NuGet:   ✓ ${nuget.ids.join(' / ')} ${hotfix.tag_name} on nuget.org`);
+  for (const w of warns) console.log(`  ⚠ ${w}`);
   throw new Exit(verified ? 0 : 1);
 }
 
