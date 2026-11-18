@@ -107,6 +107,10 @@ const matchedRules = rules
 const lenses = suggestLenses({ files, tier, tokens, matchedRules });
 const unknownLens = args.lenses?.find((id) => !lenses.some((l) => l.id === id));
 if (unknownLens) fail(`Unknown lens in --lenses: ${unknownLens}. Lenses: ${lenses.map((l) => l.id).join(", ")}.`);
+// --lenses replaces the recommendation: a recommended lens missing from it is said out loud, since a
+// dropped `tests` or `ui` would otherwise leave its files unread without anyone noticing.
+const leftOut = args.lenses ? lenses.filter((l) => l.recommended && !args.lenses.includes(l.id)).map((l) => l.id) : [];
+if (leftOut.length) warnings.push(`--lenses leaves out recommended lens(es) ${leftOut.join(", ")}: their units are not planned. Add them unless the user dropped them.`);
 
 // How the changed files link, and the units each lens reads: only when the final mode is L or XL. An
 // S or M change is read whole by every lens, so the graph, the soft-link greps and the per-unit diffs

@@ -188,10 +188,13 @@ export const PLAN_RULES_LENSES = ["conventions", "styles", "ui", "clean-code"];
 export const PLAN_RULES_PACK = { clusters: 3, files: 40 };
 export const PLAN_CONTRACT_LENSES = ["architecture", "design", "consumers", "ui-kit"];
 export const PLAN_FLOW_LENSES = ["security", "commerce"];
-// The core of a change: the fewest clusters holding this share of its changed lines, within these
-// bounds. Their behaviour review ranks with the global view, ahead of every other agent.
-export const CORE_CODE_SHARE = 0.5;
-export const CORE_MAX_CLUSTERS = 5;
+// The core of a change: every cluster holding at least this share of its changed lines (the largest one
+// always), at most CORE_MAX_CLUSTERS. Their behaviour review ranks with the global view, first.
+export const CORE_MIN_SHARE = 0.05;
+export const CORE_MAX_CLUSTERS = 8;
+// Behaviour clusters this small (files, tests included) of one tier share an agent, up to
+// BEHAVIOUR_MAX_FILES: a two-file cluster does not need an agent of its own.
+export const SMALL_CLUSTER_FILES = 8;
 export const CONSUMER_UNIT_MAX_FILES = 10;
 // Soft links: a GraphQL name shared by more changed files than this joins everything and tells no
 // flow apart; an identifier found in more files repo-wide than this is a common word, not a key.

@@ -118,8 +118,9 @@ your own reading of the diff calls for, with the reason. Ask which to run (one m
 per group of up to four lenses; mark recommended options). Skip the pause only when the user passed
 `--yes` or `--lenses`.
 
-Then run step 2's command again with `--lenses <chosen>`, your `--raise` list and any `--budget` the
-user set, into the same `--units-dir`. Its mode, units and plan are the review; the first run's are not.
+If the lenses, a raise or the budget changed, run step 2's command again with `--lenses <chosen>`
+(the recommended ones plus or minus the user's picks), your `--raise` list and any `--budget`, into
+the same `--units-dir`; its plan is the review. The script warns when a recommended lens was left out.
 
 What each lens checks, and what it must not report: [lenses.md](lenses.md).
 
@@ -148,26 +149,14 @@ Write `context.md` once, for every agent:
 - paths worth reading: specs for the ticket (`client-app/**/specs/<TICKET>-*`), the README of each
   touched module, `core-api/README.md` when the facade moved.
 
-Every brief says:
+**Each agent's brief is written for it:** `agents/<id>.md` under `--units-dir` holds its files with
+tier and reasons, what to read, its part of `impact.md`, its risk questions, its lens sections and
+the rules every reviewer follows ([agent-brief.md](agent-brief.md): reading in batches, no shell,
+severity, output with coverage). Start each subagent with only: the path of its brief, `context.md`,
+the map (L and XL), and the risk questions you answered yes for its files. Copy nothing else in.
 
-- **A hunk is not reviewed until you can say what it changes for a user.** Read the whole changed
-  file, then follow `impact.md` — the definitions of names on the changed lines first, then the
-  callers of the changed symbol — as far as that takes. Caller lists marked incomplete (Vue
-  templates) need a grep of your own.
-- **Work in two passes:** first list every candidate issue you see, then check each one against the
-  code and keep only those you can trace.
-- **Stay within a budget:** if understanding the unit needs more than about fifteen further files,
-  stop and report what else should be read, instead of reading everything; a model with a full
-  context starts to invent.
-- Read whatever else in the repository you need (rules from `rules/`, stories, specs) and name what
-  you read in the finding. What the repository cannot show (the backend, runtime behaviour) goes
-  under `Needs context` or `Needs a run`, never into a guess.
-- **End with coverage:** the hunks read, the files read beyond the diff, and what was left unread.
-  Being assigned a file is not reading it.
-
-**Mode S:** one agent, the whole `full.diff`, every chosen lens section from `lenses.md` in one
-brief (items 2–5 below). **Mode M:** the plan's three agents over `full.diff`, each with its lens
-sections, `overview.md` as context. Then step 5. Modes L and XL:
+**Mode S:** the plan's one agent over `full.diff`. **Mode M:** its three agents over `full.diff`, with
+`overview.md` as context. Then step 5. Modes L and XL:
 
 **First, one agent writes the map of the change** from `overview.md` and the PR description: what
 the change is for, the flows (groups of changed files that call each other), the seams where
@@ -195,36 +184,7 @@ the units are a guess and the seam pass matters more.
 | global: architecture, design | the whole change, condensed (no full diff) | layering and new patterns are whole-change properties |
 | ui-kit | kit files by kit tier | public API for forks and plugins |
 
-One subagent per plan agent, at most five at once. Give each one this brief, filled in:
-
-1. The agent's `diffFiles` under `--units-dir` (the condensed `.md` for the global agent), the
-   repository path for reading whole files, and the map of the change.
-2. The agent's `files`, the only ones it reviews (its diffs may hold others), with their tier and
-   reasons from the script, and the risk questions answered yes for them.
-3. The lens section from `lenses.md`, verbatim, including its "Not a finding" list.
-4. For `consumers`: each changed file's consumer list and its "visible outside" notes.
-   For `conventions`: the rule files the script matched, the repository's `CLAUDE.md`, and the
-   script's `checks` on its files (literal rule hits on added lines, to confirm or drop).
-   For `tests`: the rule file for tests (`tests.md`), if one matched.
-   For `styles`: the files with styling lines, the `tokens` list, and the repository's style rules
-   (`styles.md`, `designs-and-presets.md`, `ui-kit.md` in `.claude/rules/`, if they exist).
-   For `ui-kit`: the kit files, their consumers and facade exposure, and `ui-kit.md` /
-   `ui-kit-internals.md` if they exist.
-5. The rules every lens follows:
-   - Static review only: Read, Grep and Glob over the unit files and the repository. Never run
-     tests, type checks, linters, builds, `yarn`, `npx` or a dev server. A claim that needs a run
-     goes under `## Needs a run` with the exact command.
-   - Report a defect in the changed lines, or one the change causes elsewhere. Not code the change
-     left alone, not conformance to a ticket, not "add a test" on its own.
-   - Every finding carries: file:line; the concrete path that triggers it (a route, a click, a prop
-     value, the caller that breaks); why it is wrong; severity; proof (`traced` — followed through
-     the code — or `suspected`).
-   - Severity: first what breaks and how reachable it is, then blast radius raises it. A real break
-     in shared or public code is `high`; the same break in one page is `medium`; a convention or
-     polish point is `low` wherever it sits.
-   - For anything under `client-app/ui-kit` or exported through `core-api`, judge reachability from
-     the public API (props, emits, slots, CSS custom properties), not from consumers in this
-     repository: forks and plugins are consumers too.
+One subagent per plan agent, at most five at once.
 
 Use the model the plan names: the session's model for `inherit`, a cheaper one (Sonnet or Haiku)
 for `cheap`. For R3, a second opinion from another model family is optional: offer it, never block
@@ -235,14 +195,17 @@ on it.
 **Seams** (L and XL; M only when files of different clusters link). One agent gets the map (or
 `overview.md`), every finding so far and the cross-cluster edges, and looks only at the places
 where units meet: a contract one cluster changed and another consumes, a value one
-flow produces and another trusts. Units cannot see these on their own.
+flow produces and another trusts. Units cannot see these on their own. It reads only the files on
+both sides of an edge, in batches, about fifteen in all.
 
 **Refute.** Merge duplicates across agents into one finding listing every lens that found it, then
 give all findings to one fresh subagent whose only job is to disprove each from the code: does the
 path really reach this line, does a guard elsewhere already handle it, did the behaviour exist before
 this change (`base/` under `--units-dir`; `fixes/` when a recent fix is involved). For a rule finding:
-is the quoted rule really in `rules/`, do its paths cover this file, does it apply to this line. Keep
-a finding only if it survives with a concrete trigger.
+is the quoted rule really in `rules/`, do its paths cover this file, does it apply to this line. Give
+it each finding with its quoted lines, so it opens only the files a finding names. Keep a finding only
+if it survives with a concrete trigger, and set its severity by the scale in agent-brief.md: wrong
+data or a blocked action on a page any user reaches is `medium` however unlikely the timing.
 
 ## 6. [PAUSE] Offer the visual check
 

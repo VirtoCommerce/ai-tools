@@ -6,6 +6,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { rewrittenFixes, writeBaseFiles, writeFixDiffs, writeRuleFiles } from "./context.mjs";
 import { git } from "./git.mjs";
+import { agentBriefs } from "./briefs.mjs";
 import { impactMarkdown } from "./impact.mjs";
 import { mechanicalLines } from "./report.mjs";
 import { OVERVIEW_COMMITS } from "./zones.mjs";
@@ -136,6 +137,12 @@ export function writeUnitsDir(dir, r, { fullMergeBase, diff = (files) => git(["d
   written.push("impact.md");
   writeFileSync(path.join(dir, "questions.md"), questionsMarkdown(r, questions));
   written.push("questions.md");
+  const briefs = agentBriefs(r, questions);
+  if (briefs.size) mkdirSync(path.join(dir, "agents"), { recursive: true });
+  for (const [id, text] of briefs) {
+    writeFileSync(path.join(dir, "agents", `${id}.md`), text);
+    written.push(`agents/${id}.md`);
+  }
   return written;
 }
 

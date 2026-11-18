@@ -8,7 +8,7 @@
 
 import {
   BEHAVIOUR_MAX_FILES,
-  CORE_CODE_SHARE,
+  CORE_MIN_SHARE,
   CORE_MAX_CLUSTERS,
   PLAN_BEHAVIOUR_LENSES,
   PLAN_BUDGET,
@@ -17,6 +17,7 @@ import {
   PLAN_OVERHEAD,
   PLAN_RULES_LENSES,
   PLAN_RULES_PACK,
+  SMALL_CLUSTER_FILES,
   TEST_LIKE,
   TIERS,
 } from "./zones.mjs";
@@ -39,23 +40,18 @@ function agent(kind, us, extra = {}) {
   };
 }
 
-// The fewest clusters that hold CORE_CODE_SHARE of the change's changed lines (added and deleted, any
-// non-R0 file but tests and mechanical ones: a schema JSON or a deletion is what a PR is about as much
-// as new code), at least one and at most CORE_MAX_CLUSTERS.
+// Every cluster holding CORE_MIN_SHARE of the change's changed lines (added and deleted, any non-R0 file
+// but tests and mechanical ones: a schema JSON or a deletion is what a PR is about as much as new code),
+// the largest always, at most CORE_MAX_CLUSTERS. A share and not a running total: a cluster of 8% of
+// a big PR is part of what it is for, however many larger clusters come before it.
 export function coreClusters(clusters, files) {
   const byPath = new Map(files.map((f) => [f.path, f]));
   const weight = (f) => (f && !TEST_LIKE.test(f.path) && !f.mechanical && f.tier !== "R0" && f.tier !== 0 ? f.added + f.deleted : 0);
   const sized = clusters.map((c) => ({ key: c.key, n: c.files.reduce((sum, p) => sum + weight(byPath.get(p)), 0) }));
   const total = sized.reduce((s, c) => s + c.n, 0);
   if (!total) return [];
-  const out = [];
-  let sum = 0;
-  for (const c of sized.filter((x) => x.n).sort((a, b) => b.n - a.n || a.key.localeCompare(b.key))) {
-    if (out.length >= CORE_MAX_CLUSTERS || (out.length && sum >= total * CORE_CODE_SHARE)) break;
-    out.push(c.key);
-    sum += c.n;
-  }
-  return out;
+  const ranked = sized.filter((x) => x.n).sort((a, b) => b.n - a.n || a.key.localeCompare(b.key));
+  return ranked.filter((c, i) => i === 0 || c.n >= total * CORE_MIN_SHARE).slice(0, CORE_MAX_CLUSTERS).map((c) => c.key);
 }
 
 const clusterOfScope = (scope) => scope.replace(/^cluster /, "").replace(/ \(no flow\)$/, "");
@@ -86,6 +82,25 @@ function packBehaviour(key, us, core) {
     const a = agent("behaviour", us.filter((u) => u.files.some((p) => mine.has(p))), { cluster: chunks.length > 1 ? `${key} (${i + 1}/${chunks.length})` : key, core: core.includes(key) });
     return { ...a, files: chunk };
   });
+}
+
+// Small clusters of one tier into agents of at most BEHAVIOUR_MAX_FILES files, largest first.
+function packSmall(small) {
+  const groups = [...small].map(([key, us]) => ({ key, us, tier: maxTier(us), files: new Set(us.flatMap((u) => u.files)).size }));
+  groups.sort((a, b) => tierN(b.tier) - tierN(a.tier) || b.files - a.files || a.key.localeCompare(b.key));
+  const out = [];
+  let pack = [];
+  const flush = () => {
+    if (pack.length) out.push(agent("behaviour", pack.flatMap((g) => g.us), { cluster: pack.map((g) => g.key).join(" + "), core: false }));
+    pack = [];
+  };
+  for (const g of groups) {
+    const files = pack.reduce((n, x) => n + x.files, 0);
+    if (pack.length && (pack[0].tier !== g.tier || files + g.files > BEHAVIOUR_MAX_FILES)) flush();
+    pack.push(g);
+  }
+  flush();
+  return out;
 }
 
 // Flow agents that read the same files ask their questions in one pass.
@@ -121,7 +136,14 @@ function largeAgents(units, core) {
     else flows.push(agent("flow", [u]));
   }
   out.push(...mergeSameFiles(flows));
-  for (const [key, us] of behaviour) out.push(...packBehaviour(key, us, core));
+  // Small clusters outside the core share agents by tier; the rest get theirs, cut to size.
+  const small = new Map();
+  for (const [key, us] of behaviour) {
+    const files = new Set(us.flatMap((u) => u.files)).size;
+    if (core.includes(key) || files > SMALL_CLUSTER_FILES) out.push(...packBehaviour(key, us, core));
+    else small.set(key, us);
+  }
+  out.push(...packSmall(small));
   out.push(...real.filter((u) => u.kind === "consumers").map((u) => agent("consumers", [u])));
   out.push(...real.filter((u) => u.lens === "ui-kit").map((u) => agent("ui-kit", [u])));
   // Styles of R2 and R3 files (tokens, presets, the kit, global styles) is judgement about how a value
