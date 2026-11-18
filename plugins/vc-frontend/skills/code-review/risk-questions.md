@@ -1,13 +1,15 @@
 # Risk questions
 
 `classify.mjs` matches each question's `Signals` (a regex over the file's path and changed lines;
-`always` = every non-R0 file) and lists the matched ids per file in `questions`. Answer those, yes or
+`removed` = over removed lines only; `rewrite` = the file both loses and gains many lines; `new-code` =
+a sizeable new file or addition) and lists the matched ids per file in `questions`. Answer those, yes or
 no, from the file's diff, and any other question the diff plainly calls for. For a file below R3 a
 yes raises it to at least the floor; a `lens:` floor raises nothing and adds that lens. For any file a
 yes is also a focus for the lenses. Record every raise: the question id and the diff line that
 answered it. Raise only, never lower. A signal is a cheap pre-filter, not the answer: most matches
 end in "no". Areas and questions run from most to least evidence in this codebase's review and fix history;
-"Broke before" says how it broke here before.
+"Broke before" says how it broke here before. The question is the rule; the examples show its shape
+in this codebase. A change that fits the question without resembling any example is still a yes.
 
 ## State and async
 
@@ -19,7 +21,7 @@ Broke before:
 - In the BOPIS pickup-location picker, a Load more response landing after a filter refetch appended the old query's rows and cursor to the new list — a reset fetch must invalidate in-flight load-more (generation token).
 - Switching the sales report from Year to Q2 paired the new period plan with the still-loaded Year response, so year figures showed under Q2 labels — pair each response with the plan it was fetched for.
 - Two return-draft autosaves could run at once and the last to reach the server won, losing the newer edit while the status said 'Saved automatically' — queue `UpdateReturn` per draft (`queuedMutationsLink`) and flush before submit.
-Signals: `await |\.then\(|useQuery|useLazyQuery|refetch|loadMore|load-more|debounce|setTimeout|postMessage`
+Signals: `\.then\(|useLazyQuery|refetch|fetchMore|loadMore|load-more|debounce|throttle|setTimeout|postMessage|[Aa]utosave|AbortController`
 
 **ASYNC-2 (R2).** Does it change a `watch` source or its `immediate`/`flush` option, or an
 `initialize()`/`onMounted` sequence, that assumes async data is already there (cart, shipment, route,
@@ -28,7 +30,7 @@ Broke before:
 - The product page's watcher that strips an unknown `?lineItemId=` checked the cart before it loaded, which would drop a valid id from cart-item edit links — skip the check while the cart is still `loading`.
 - Sales-rep watchers without `immediate` (the customer-picker over-cap check, pruning order-status tabs on a widget restored mid-edit) never ran when `useQuery` settled from cache during setup — add `{ immediate: true }` when the source may already hold data.
 - The header-links extension point turned `useNavigations`' `menuSchema` from `shallowRef` into a deep `ref`, which broke the mobile menu — keep it a `shallowRef` and call `triggerRef` after the in-place `mergeWith`.
-Signals: `watch\(|watchEffect|immediate|flush:|onMounted|initialize\(|isReady`
+Signals: `watch\(|watchEffect|immediate:|flush:|onMounted|initialize\(|isReady`
 
 **ASYNC-3 (lens: correctness).** Does script code use a ref or computed without `.value` (truthiness,
 an object field, `t()` params, an SDK payload), unwrap a ref or prop into a plain value at setup, write
@@ -37,7 +39,7 @@ Broke before:
 - The Datatrans card form enabled Pay before any card validation because `isValidBankCard` tested the `validationResult` ref object, which is always truthy — read `.value` and also require the form's `meta.valid`.
 - The Google Analytics `init` guard tested `!hasModuleSettings`, a ref and therefore always truthy, so the 'no module settings' exit never fired — read `hasModuleSettings.value` in conditions.
 - `VcAddToCart` built its quantity validation schema from `minQty.value` / `maxQty.value` at setup, so the min/max rules kept the first values when the product's limits changed — pass the refs so the schema recomputes.
-Signals: `\.value|computed\(|ref\(|toRef|defineProps|defineModel`
+Signals: `computed\(|\b(shallow)?[Rr]ef\(|toRef|toValue|unref\(|defineModel|\bif \(!?(is|has|can|show)[A-Z]\w*\)`
 
 **ASYNC-4 (R2).** Does it add or change state shared beyond one component instance
 (`createGlobalState`, `createSharedComposable`, a ref declared outside the composable function, an
@@ -88,7 +90,7 @@ Broke before:
 - Changing currency or signing in with another one lost cart items (sign-in cleared or skipped merging the anonymous cart; the selector sent stale cart fields) — every currency-switch path must carry all lines to the new-currency cart.
 - Saving the profile after a currency change reset the selected ship-to address, because `updateUser` rebuilt the contact payload without `selectedAddressId` — a partial update must pass through the fields it does not edit.
 - On logout the ship-to selector's `watchEffect` refetched organization addresses as the now-anonymous user, got a 403 and showed the No Access page — fetch permission-scoped data once on mount and skip refetching it on auth change.
-Signals: `[Cc]urrency|useSignMeIn|clearCurrencyCart|updateUser|useLanguages|[Oo]rganization|isAuthenticated|signOut|logout|ship-to|ShipTo`
+Signals: `useSignMeIn|clearCurrencyCart|updateUser|[Oo]rganization(Id)?\.value|contact\??\.organizations|switchOrganization|selectOrganization|[Cc]urrency(Code)?\.value|setCurrency|useLanguages|isAuthenticated|signOut|logout|ship-to|ShipTo|currency-selector|language-selector`
 
 **CART-4 (R3).** Does it change which SKU or configuration goes into the cart: how a variation is
 matched or auto-selected (`useProductVariationProperties`, `VcVariantPicker`, `options.vue`), or which
@@ -117,7 +119,7 @@ Broke before:
 - Making `VcLineItem`'s narrow price slot honour `showPlacedPrice` (default `false`) showed list prices in quotes and wishlists on narrow layouts, as neither passed the flag — when a shared component starts reading a prop, check callers that omit it.
 - Dropping the alphabetical sort in the shared `termFacetToCommonFacet` for catalog facets also unsorted the country, region and city filters of the pickup-location picker — keep the shared default and opt out at the catalog call site (`sortValues: false`).
 - Making `getLinkAttr` return `{}` for unsafe URLs looked like a route to callers testing `"externalLink" in getLinkAttr(...)`, so `VcLink` and footer links rendered `href="/catalog/javascript:void(0)"` — check how every caller reads a shared helper's result before changing it.
-Signals: `client-app/(core/utilities|shared/common)/|withDefaults|default:`
+Signals: `client-app/(core/utilities|shared/common)/` removed `withDefaults|default:`
 
 **CONTRACT-2 (R2).** Does it remove, rename or change the meaning of something forks, plugins or e2e
 rely on: a prop, emit, slot or model shape; a BEM class, `--vc-*` token or preset palette key; a
@@ -127,7 +129,7 @@ Broke before:
 - `ProductCardRelated`, `ProductCardRecommended` and `ProductCardRecentlyBrowsed`, exported from `@/shared/catalog`, lost their `linkClick` emit without notice to forks listening to it — list removed emits of exported components under Breaking changes.
 - Rebuilding `VcSelect`'s list stopped reading `--vc-dropdown-menu-*` tokens and rendering `vc-select__button`/`__input`/`__arrow` classes, so fork overrides silently stopped applying — fall back to the old tokens and list removed classes with an old→new map.
 - `VcLayoutWithRightSidebar` was removed outright when `VcLayout` arrived, breaking Theme CI and every fork page that used it — deprecate first and keep the old component working for a release.
-Signals: `defineProps|defineEmits|defineSlots|defineModel|<slot|--vc-|data-test-id|^export |locales/|index\.ts`
+Signals: removed `defineProps|defineEmits|defineSlots|defineModel|<slot|--vc-|data-test-id|^\s*export |\bemit\(` `locales/`
 
 **CONTRACT-3 (R3).** Does it change anything `client-app/core-api/index.ts` re-exports, directly or
 through its imports (props, emits, slots, return values, enums), or the `core-api` version?
@@ -151,7 +153,7 @@ Broke before:
 - The new preview-protocol guard required a non-empty `model.id`, but the Designer's Add-block preview payload has none, so the live block preview was dropped — check guards against the real Designer payloads, including id-less previews.
 - Page Builder sections began rendering only when their type is in `templateBlocks`/`ProductBlocks`, so sections a fork had registered with `app.component` vanished — announce such changes to forks and point them to `templateBlocks` registration.
 - In the Page Builder preview the header section could not be selected on narrow viewports, because only the desktop `bottom-header.vue` carried the `getPreviewSectionAttrs` marker — every layout variant that renders a section must carry its preview marker.
-Signals: `builder-preview|pages/matcher|static-content|[Ss]ection`
+Signals: `builder-preview|pages/matcher|static-content|[Ss]ection[A-Z]\w*|SECTION_|registerSection|sanitiz`
 
 ## Errors and empty states
 
@@ -163,7 +165,7 @@ Broke before:
 - With its toast suppressed, a failed Sales Rep list request (`useSalesReps`) only logged and rendered the same empty view as 'no sales reps' — wherever a toast is suppressed, keep a failed state distinct from empty data.
 - The OTP sign-in form announced 'New code sent' after a failed resend, since `requestCode` (`useFetch`) resolves `undefined` on HTTP errors and the handler checked only `Disabled` — treat any non-success response as a failure.
 - A failed category fetch left `preparingScope` stuck `true` (reset after the `await`, outside `finally`), so the search-bar scope chip and its clear button stayed hidden — reset busy flags in `finally`.
-Signals: `catch|useFetch|Promise\.all|finally|[Ll]oading|busy|error`
+Signals: `\bcatch\b|useFetch|Promise\.all|\bfinally\b|[Ll]oading(\.value)?\s*=[^=]|[Bb]usy|error-handler|onError\(`
 
 **ERR-2 (R2).** Does it show its own error, map server codes to text, or change which errors become
 toasts or redirects: `SUPPRESS_ERROR_NOTIFICATIONS_CONTEXT`, `notifications.error({ single: true })`,
@@ -181,7 +183,7 @@ Broke before:
 - `/company/info` threw on `organization.value!.name!` when the session expired and `organization` became `null` before the sign-in redirect — read it with `?.` and skip the field reset when the name is missing.
 - The order summary read the first shipment's price before the cart had any shipment, which throws on an empty `shipments` list — guard with `shipments[0]?` and show zero shipping until a shipment exists.
 - 'Add all to cart' on a wishlist crashed because `ga.addItemsToCart` received wishlist items where its mapper expected cart line items (`discountTotal` missing) — pass the shape the GA mapper takes and null-guard its inputs.
-Signals: `\w!\.|\w!\)|\w!;|\w!,|\[0\]|\bas [A-Z]`
+Signals: `\w!\.|\w!\)|\w!;|\w!,|\[0\]|\bas [A-Z]\w*(Type|Query|Fragment)\b`
 
 ## Data layer: GraphQL, Apollo, backend
 
@@ -225,7 +227,7 @@ Broke before:
 - The pending organization invites widget fetched `first: 50` and discarded `hasNextPage`/`endCursor`, so a user's 51st invite never appeared — page through the connection or show that more exist.
 - The compare page called `searchProducts` without `itemsPerPage`, so the default page size of 16 cut off every compared product past the 16th — request as many items as ids passed.
 - After server-side paging, a corporate-limited user's empty address search made `organizationsAddresses.length` zero, switching to local addresses and offering "add new address" — choose the address source from permissions, independent of the current page or keyword.
-Signals: `first:|MAX_|PAGE_SIZE|pageSize|\.length|totalCount|take:`
+Signals: `first:|MAX_|PAGE_SIZE|pageSize|totalCount|take:|\.length\s*[<>]=?\s*\w`
 
 **DATA-6 (R2).** Does it change a `useQuery`'s reactive variables or `enabled` flag, or how it
 refetches after a mutation (`refetchQueries` without `awaitRefetchQueries`, `filterActiveQueryNames`
@@ -234,7 +236,7 @@ Broke before:
 - Address mutations ran on `graphqlClient`, where `filterActiveQueryNames` found no watched queries, so no address list refreshed after add, edit, delete or favorite — filter and refetch on `apolloClient`, where the lists live.
 - Entering edit mode widened the stat queries' `@include` flags, Apollo restarted with `loading = true`, and every KPI card showed "—" for a round trip — mark a card pending only when its own data is missing.
 - Deleting a passkey resolved before the `GetSignInMethods` refetch, so focus moved while the deleted row was still rendered — set `awaitRefetchQueries` or await `refetch()` before acting on the new list.
-Signals: `useQuery|variables|enabled|refetchQueries|awaitRefetchQueries|refetch\(|filterActiveQueryNames`
+Signals: `useQuery|useLazyQuery|\benabled\s*[:=,]|refetchQueries|awaitRefetchQueries|refetch\(|filterActiveQueryNames`
 
 ## Checkout and payment
 
@@ -335,7 +337,7 @@ Broke before:
 - After multilingual SEO URLs, hand-built links lost the language prefix, the prefix regex ate path characters, facets kept the old language, and the language switch mishandled the other culture's slug — a locale change must rebuild every URL part.
 - An unanchored locale-prefix regex in `useLanguages` stripped `/de` from `/destinations` — match the prefix only as a whole first path segment (`^/de(?=/|$)`).
 - After a language switch the `facets` param still held terms in the old language, so the catalog filtered on values that no longer matched — drop `facets` from the URL and from `returnUrl` on every locale-change path.
-Signals: `[Ll]ocale|[Cc]ulture|useLanguages|returnUrl`
+Signals: `useLanguages|initLocale|updateLocalizedUrl|[Cc]ulture(Name)?|returnUrl|language-selector|[Pp]innedLocale|locale\.value\s*[=!]==`
 
 **URL-2 (R2).** Does it add or change a route guard (`beforeEnter`, `beforeEach`, `next()`),
 `addRoute`, the router base, slug resolution or 404 handling (`pages/matcher`, `priorityManager`,
@@ -353,7 +355,7 @@ Broke before:
 - Orders and quotes opened via `window.open`/`location.href` with `router.resolve().fullPath`, which has no locale base, so the URL lost the language code — use `.href` for any URL leaving vue-router.
 - `updateLocalizedUrl` rewrote the localized permalink with `history.pushState`, adding a duplicate history entry on each category visit so Back did nothing — rewrite the current URL with `replaceState`.
 - A header `router-link` with `custom` bound `@click="link.route ? navigate : undefined"`, which never calls `navigate`, so the `<a href>` did a full page reload — the slot's click handler must call `navigate(e)`.
-Signals: `href|fullPath|pushState|replaceState|location\.|window\.open|router\.resolve`
+Signals: `:href=|\bhref:|fullPath|pushState|replaceState|location\.(href|assign|replace)|window\.open|router\.resolve|\{[^}]*\bhref\b[^}]*navigate`
 
 ## Refactors and copies
 
@@ -364,7 +366,7 @@ handler, class and default has a counterpart.
 Broke before:
 - Moving `orders.vue` to `VcTable`'s `bordered` prop removed the wrapper `div` along with its `v-else`, so `VcEmptyView` and an empty table rendered together — a removed wrapper's `v-if`/`v-else` moves to its replacement.
 - A Sonar cleanup turned fire-and-forget `void` calls into `await`, including inside `watchEffect` where it changes what is tracked, and had to be reverted — a lint fix must keep timing and reactive reads identical.
-Signals: always
+Signals: rewrite
 
 **COPY-2 (R2).** Does it copy or mirror an existing page, composable or rule (list details, sign-in,
 quantity rules, filters, escaping) instead of reusing it, or fix logic that also lives in sibling
@@ -373,7 +375,7 @@ Broke before:
 - The compare page's add-to-cart re-implemented pack-size, min/max and availability rules by hand, already disagreeing with `useQuantityValidationSchema` (`availableQuantity === 0`, no `LINE_ITEM_QUANTITY_LIMIT`) — quantity validity must come from `useQuantityValidationSchema` / `QuantityControl`.
 - The saved-for-later page, forked from `list-details.vue`, dropped the `await` in its `watchEffect` (list changes wiped unsaved edits, reset to page 1) and the step back when a delete empties a page — a fork keeps every original guard.
 - Organization search escaped `"` but not `\`, so a trailing backslash broke out of the quoted filter, and `facets.ts` quoted other filters by hand — every filter value goes through one shared `escapeFilterSyntaxValue()`.
-Signals: always
+Signals: new-code
 
 ## Identity, permissions and sessions
 
@@ -386,7 +388,7 @@ Broke before:
 - The company info page showed the logo editor on `canEditOrganization || !loadingOrganization || !loadingUser`, so every member saw it once loading ended — permission and loading flags join with `&&` (`canEditOrganization && !(loadingOrganization || loadingUser)`).
 - On a Company page the mobile menu opened the unfiltered corporate section, whose `canShowItem` ignored the link's new `permission`, so users without `xapi:my_organization:order:view` saw Reporting — every menu render path must apply the same permission filter.
 - An impersonating operator saw the MFA Turn on/off switch, and clicking it opened /403 because the backend refuses MFA changes from operator tokens — hide change actions while `useUser().operator` is set.
-Signals: `[Pp]ermission|canShow|\$can|\bcan[A-Z]|[Rr]ole|isOrganization|operator|beforeEnter`
+Signals: `[Pp]ermission|canShow|\$can\b|\bcan[A-Z]\w*\b|\broles?\b|roleId|isOrganization|\b[Oo]perator\b|beforeEnter`
 
 **AUTH-2 (R3).** Does it change how tokens are stored, refreshed or attached (`useAuth`, `onRequest`
 interceptors and their order against `authPlugin`, WebSocket params), impersonation or login on behalf
@@ -396,7 +398,7 @@ Broke before:
 - Login on behalf went on to impersonate when `authorize` failed with a network error or 500, because only a 400 filled `authErrors` — any failed credential check must stop the flow before `doImpersonate`.
 - The UCP handoff restore stored the `anonymous_buyer_id` from a probe sent without a bearer, overwriting a signed-in buyer's identity — never write an anonymous identity while the browser holds a Platform token.
 - A failed `punchout` grant mid-session (Back to a used single-use token) ran `endSession()` but kept the punchout tokens, leaving the user signed in with no mode label or expiry sign-out — clear or keep tokens and session together.
-Signals: `[Tt]oken|useAuth|[Ii]mpersonat|signOut|logout|authorize|grant|interceptor|onRequest|Authorization`
+Signals: `[Aa]ccess_?[Tt]oken|[Rr]efresh_?[Tt]oken|[Aa]uth[Tt]oken|\.token\b|\btoken\s*[:=,)]|useAuth|[Ii]mpersonat|signOut|logout|grant_type|interceptor|onRequest|Authorization`
 
 ## i18n
 
@@ -408,7 +410,7 @@ Broke before:
 - Russian rules registered as `pluralRules.ru` never ran, because vue-i18n matches keys exactly against the store culture `ru-RU`, and the test used `ru` — register language and culture names; test with the app's culture.
 - The compare page put the count in a span outside the translated sentence, garbling ja/zh, and the ru `one` form hardcoded "1" ("1 товар" for 21) — put the count placeholder in every plural form; render with `<i18n-t>`.
 - Moving `pay_now_button` from the provider sections into `bank_card_form` left `fr.json` without it, so French buyers would see the raw key on the pay button — check a moved or removed key in every locale file.
-Signals: `\$t\(|\bt\(|i18n|plural|locales/|\bte\(|<i18n-t`
+Signals: `plural|i18n\.ts|locales/|<i18n-t|\bte\(|locale(\.value)?\s*[=!]==|\{\s*count\b|\bcount:`
 
 **I18N-2 (R2).** Does it call `t()` once in setup (into a ref, a string or a `usePageHead` argument)
 for keys a module locale loads lazily, translate a shared object in place, or pass backend or user text
@@ -417,7 +419,7 @@ Broke before:
 - After a hard load, quote list headers and quote tab titles showed raw keys: `t()` ran once in setup, into a plain `ref` and a `usePageHead` string, before the lazy quotes locale arrived — use `computed(() => t(...))`.
 - The account sidebar kept raw keys (`Quotes.navigation.route_name`) because `getTranslatedMenuLink` translated the menu in place, so Vue skipped the re-render when module locales arrived — translate into new objects and keep the source keys.
 - A custom role name passed as the `t("common.roles." + id, role.name)` fallback was compiled as a message, so `a@b` threw inside a computed and broke the members page — check `te(key)` and print backend text raw.
-Signals: `\bt\(|usePageHead|\$t\(`
+Signals: `^\s*(const|let) \w+ = (ref\()?t\(|^\s*\w+:\s*t\(|usePageHead|loadModuleLocale|\bt\((?![\"'])`
 
 ## Untrusted input and security
 
@@ -448,7 +450,7 @@ Broke before:
 - A Google (Gemini) API key was committed in plain text in the translator script on a feature branch and flagged by Sonar — scripts must read keys from the environment (`APP_GEMINI_API_KEY`), and a pushed key must be revoked.
 - A CI workflow put `${{ github.head_ref }}` straight into a PowerShell `run:` script, so a crafted branch name could inject commands (a quote already broke the step) — pass untrusted context through `env:` and read `$env:HEAD_REF`.
 - GA4 user properties sent `organization_name`, free text typed at sign-up, so a sole trader's personal name reached Google Analytics — send only ids and enums (`organization_id`, `session_kind`) to third-party analytics.
-Signals: `apiKey|API_KEY|[Ss]ecret|SECRET|rejectUnauthorized|NODE_TLS|github\.(head_ref|event)|\.github/|email|phone`
+Signals: `apiKey|API_KEY|[Ss]ecret|SECRET|rejectUnauthorized|NODE_TLS|github\.(head_ref|event)|\.github/|(gtag|[Aa]nalytics|console\.\w+|logger)\(.*(email|phone)|(email|phone).*(gtag|[Aa]nalytics|query:)`
 
 ## Money
 
@@ -477,7 +479,7 @@ Broke before:
 - The Orders "Last week" preset kept today's month and took only the day number from the week start, so on Oct 2 it selected Oct 20–27 — build both bounds from full local dates.
 - The Sales Rep Hub previous-period window was `prevStart + elapsed` unclamped, so on Mar 31 "last month" ran to Mar 3 and Mar 1–3 orders counted twice — clamp the previous window's end to the current period's start.
 - Returns filter chips passed `YYYY-MM-DD` strings to `new Date()`, which reads them as UTC midnight, so west of UTC they showed the previous day — parse date-only values as local dates (`toStartDateFilterValue`).
-Signals: `Date\(|toISOString|[Dd]ate|dayjs|timezone|getTime|DateTimeFormat`
+Signals: `new Date\(|Date\.(now|parse)|toISOString|dayjs|timezone|getTime|DateTimeFormat|toLocaleDate|startOf|endOf|[Dd]ate(From|To|Range)|[Pp]eriod`
 
 ## Browser storage
 
@@ -529,7 +531,7 @@ Broke before:
 - Every `reporting-panel` used the fixed radio `name="reporting-period"`, so with two panels on a page clicking a tab in one unchecked the other's — build radio names from a per-instance `useComponentId()`.
 - Image gallery keyboard navigation first used fixed element ids and global `document.querySelector` lookups, which hit the wrong gallery when two render on a page — derive ids per instance and scope lookups to the component root.
 - `CartForLater`, rendered in both the `v-if` and `v-else` branches of `cart.vue`, kept its "already reported" flag locally, so emptying or filling the cart remounted it and resent the same `view_item_list` — keep dedupe state in the page.
-Signals: `\bid=|:id=|\bname=|data-test-id|document\.|querySelector|addEventListener`
+Signals: `\bid=\"|type=\"radio\"|document\.|querySelector|getElementById|addEventListener\(`
 
 **LENS-4 (lens: tests).** Do new tests stub the unit they cover, use doubles or fixtures unlike the real
 contract (a stub emits what the component never does, a fixture lacks selected fields, `useFetch`

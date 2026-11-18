@@ -99,8 +99,10 @@ The script sees paths, the module graph, tokens and styling lines; it cannot see
 
 **Then classify by meaning: your judgment, on top of the script's.** The script pre-selects, per file,
 the questions in [risk-questions.md](risk-questions.md) whose signals match its path or changed
-lines (`questions`); a one-line change usually gets a handful. Answer those from the file's diff, plus
-any other question the diff plainly calls for. A yes raises a file below R3 to at least the
+lines, and writes just those, with their files, to `questions.md` under `--units-dir`: read that file,
+not the whole list. Answer them from the file's diff, plus any other question the diff plainly calls
+for. A question is the rule and its examples show the shape: a change that fits the question without
+resembling any example is still a yes. A yes raises a file below R3 to at least the
 question's floor, and for any file it becomes a focus handed to the lenses. Put each raise in the risk
 summary with the question id and the line that answered it. **You may raise a tier, never lower it**:
 lowering is the user's call. A raise changes the review only through the script: step 3 re-runs it

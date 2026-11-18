@@ -20,23 +20,49 @@ export function loadQuestions(warnings) {
   return out;
 }
 
+// A Signals line holds one or more matchers, any of which selects the question:
+//   `regex`          the file's path or any changed line;
+//   removed `regex`  a removed line (renames and removals, not every new use);
+//   rewrite          the file both loses and gains REWRITE_MIN_LINES lines (a refactor or rewrite);
+//   new-code         a new file of NEW_FILE_MIN_LINES lines, or NEW_CODE_MIN_LINES added lines;
+//   always           every non-R0 file.
+const REWRITE_MIN_LINES = 15;
+const NEW_CODE_MIN_LINES = 80;
+const NEW_FILE_MIN_LINES = 30;
+
 export function parseQuestions(text, src, warnings) {
   const out = [];
-  for (const m of text.matchAll(/\*\*([A-Z0-9]+-\d+) \(([^)]+)\)\.\*\*[\s\S]*?\nSignals: (always|`([^`\n]+)`)/g)) {
+  for (const m of text.matchAll(/\*\*([A-Z0-9]+-\d+) \(([^)]+)\)\.\*\*([\s\S]*?)\nSignals: ([^\n]+)/g)) {
     try {
-      out.push({ id: m[1], floor: m[2], always: m[3] === "always", re: m[3] === "always" ? null : new RegExp(m[4]) });
-    } catch {
-      warnings.push(`bad Signals regex for ${m[1]} in ${src}`);
+      out.push({ id: m[1], floor: m[2], text: `**${m[1]} (${m[2]}).**${m[3]}`.trim(), matchers: parseSignals(m[4]) });
+    } catch (e) {
+      warnings.push(`bad Signals for ${m[1]} in ${src}: ${e.message}`);
     }
   }
   return out;
 }
 
-// R0 files get none; any other file gets the questions its path or a changed line matches.
+function parseSignals(line) {
+  const out = [];
+  for (const t of line.matchAll(/(removed )?`([^`\n]+)`|\b(always|rewrite|new-code)\b/g)) {
+    if (t[3]) out.push({ kind: t[3] });
+    else out.push({ kind: t[1] ? "removed" : "any", re: new RegExp(t[2]) });
+  }
+  if (!out.length) throw new Error("no matcher");
+  return out;
+}
+
+// R0 files get none; any other file gets the questions one of whose matchers fires.
 export function matchQuestions(questions, f) {
   if (f.tier === 0) return [];
   const lines = [f.path, ...f.addedText, ...f.deletedText];
-  return questions.filter((q) => q.always || lines.some((l) => q.re.test(l))).map((q) => q.id);
+  const fires = (m) =>
+    m.kind === "always" ||
+    (m.kind === "rewrite" && f.added >= REWRITE_MIN_LINES && f.deleted >= REWRITE_MIN_LINES) ||
+    (m.kind === "new-code" && ((f.status === "A" && f.added >= NEW_FILE_MIN_LINES) || f.added >= NEW_CODE_MIN_LINES)) ||
+    (m.kind === "removed" && f.deletedText.some((l) => m.re.test(l))) ||
+    (m.kind === "any" && lines.some((l) => m.re.test(l)));
+  return questions.filter((q) => q.matchers.some(fires)).map((q) => q.id);
 }
 
 // The path-scoped rule files and their globs, as they are at the merge-base when one is given: a change

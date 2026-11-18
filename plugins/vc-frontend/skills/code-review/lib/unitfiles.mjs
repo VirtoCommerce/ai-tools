@@ -110,7 +110,7 @@ function flowLines(r, lines) {
 // S and M have no units: overview.md and full.diff, every non-mechanical file, which each lens reads
 // whole. Paths go after `--`, so a file name never reads as an option or a revision.
 // Every mode also gets base/<path> (each changed file as it was), fixes/<sha>.diff, rules/ and impact.md.
-export function writeUnitsDir(dir, r, { fullMergeBase, diff = (files) => git(["diff", "--no-renames", `${fullMergeBase}..HEAD`, "--", ...files]), subjects = null, show, showFix } = {}) {
+export function writeUnitsDir(dir, r, { fullMergeBase, diff = (files) => git(["diff", "--no-renames", `${fullMergeBase}..HEAD`, "--", ...files]), subjects = null, show, showFix, questions = [] } = {}) {
   mkdirSync(dir, { recursive: true });
   const condensed = condensedView(r);
   const written = [];
@@ -134,5 +134,26 @@ export function writeUnitsDir(dir, r, { fullMergeBase, diff = (files) => git(["d
   written.push(...writeRuleFiles(dir, r, fullMergeBase, show));
   writeFileSync(path.join(dir, "impact.md"), impactMarkdown(r.impact ?? []));
   written.push("impact.md");
+  writeFileSync(path.join(dir, "questions.md"), questionsMarkdown(r, questions));
+  written.push("questions.md");
   return written;
+}
+
+// questions.md: only the risk questions this change matched, in full, each with the files it matched,
+// so the reviewer reads a few questions instead of the whole list.
+export function questionsMarkdown(r, questions) {
+  const filesOf = new Map();
+  for (const f of r.files) for (const id of f.questions ?? []) filesOf.set(id, [...(filesOf.get(id) ?? []), f.path]);
+  const matched = questions.filter((q) => filesOf.has(q.id));
+  const lines = [
+    "# Risk questions this change matched",
+    "",
+    "Answer each yes or no for the files listed under it. The question is the rule; the examples show how it broke here before. A change that fits the question without resembling any example is still a yes.",
+  ];
+  for (const q of matched) {
+    const fs = filesOf.get(q.id);
+    lines.push("", q.text, "", `Files: ${fs.slice(0, 12).map((p) => `\`${p}\``).join(", ")}${fs.length > 12 ? `, … (${fs.length})` : ""}`);
+  }
+  if (!matched.length) lines.push("", "No question matched.");
+  return lines.join("\n") + "\n";
 }

@@ -174,7 +174,7 @@ const result = {
 
 const json = JSON.stringify(result, null, 2) + "\n";
 if (outFile) writeFileSync(outFile, json);
-if (args.unitsDir) writeUnitsDir(args.unitsDir, result, { fullMergeBase: mergeBase });
+if (args.unitsDir) writeUnitsDir(args.unitsDir, result, { fullMergeBase: mergeBase, questions: questionSet });
 process.stdout.write(args.json ? json : huge.on ? hugeMarkdown(result, outFile) : markdown(result));
 
 function parseArgs(argv) {
