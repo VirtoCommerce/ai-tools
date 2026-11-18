@@ -113,7 +113,9 @@ once is R1.
    it. The questions come from this codebase's review and fix history; each names the PRs where it
    broke before.
 3. **[PAUSE] You pick the lenses**: correctness, consumers, architecture, design, conventions,
-   security, commerce, styles, ui-kit, ui, tests; clean code and performance on request.
+   security, commerce, styles, ui-kit, ui, tests, and a cheap `trivial` pass over R0 files; clean
+   code and performance on request. A huge change is offered as a split into clusters first, then
+   reviewed cluster by cluster at a depth you agree, with a coverage report.
 4. One agent per lens reviews statically; every finding then has to survive an agent that tries to
    disprove it from the code.
 5. **[PAUSE] A pixel check, when tokens, global styles or a styled kit component changed:** the

@@ -302,6 +302,22 @@ Only for changed test files.
 
 Not a finding: missing tests in general.
 
+## trivial
+
+One cheap pass over the R0 files: tests, stories, docs, locales, assets, a version bump. It checks
+that they really are trivial and catches what hides there.
+
+- Tests: assertions removed or loosened, cases deleted, expectations rewritten to match new
+  behaviour, `.only` / `.skip` left in, snapshots updated together with a behaviour change.
+- Locales: a removed or renamed key still referenced in code (`git grep` the key), a key added to
+  `en` only, placeholders (`{count}`, `{name}`) or plural forms that differ between languages, a
+  message whose meaning changed while its key stayed.
+- Stories and docs: examples that use a prop, slot, event or token the change removed or renamed.
+- Anything in these files that is not trivial after all (a test helper or fixture that production
+  code imports, a JSON file read at runtime): say so and name the tier it should have.
+
+Not a finding: wording, translation style, story layout.
+
 ## clean-code (on request)
 
 Naming that misleads, dead code the change left behind, functions that grew past understanding,
