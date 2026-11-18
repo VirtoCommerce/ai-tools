@@ -80,8 +80,8 @@ anything (the operator names them — e.g. "v12 and v14").
    1. `git fetch && git checkout support/X.Y`
    2. `git cherry-pick <fixSha>` — on conflict, resolve only if trivially mechanical; otherwise
       **STOP + hand off** (do not force a risky resolution).
-      2b. Every Release-CI `⚠` from step 4 → its fix as a separate commit (the table in
-      [`support-line-ci.md`](../skills/qa-hotfix/support-line-ci.md)).
+      - **2b.** Every Release-CI `⚠` from step 4 → its fix as a separate commit (the table in
+        [`support-line-ci.md`](../skills/qa-hotfix/support-line-ci.md)).
    3. Show the diff → **confirm** → `git push origin support/X.Y`.
    4. **confirm** → trigger + verify the release:
       ```bash
