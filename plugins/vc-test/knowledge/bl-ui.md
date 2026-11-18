@@ -39,6 +39,7 @@
 - **Docs:** vc-docs platform/user-guide/docs/catalog/add-new-catalog.md — changes to items in a physical catalog are automatically reflected in all associated virtual catalogs
 - **Source:** VP-8460 (Done) — a product read through a virtual-catalog store returned price 0 / stock 0 while the physical product had values; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-090 failed in REG-2026-11-18-1157
 
 ### BL-UI-001: Layout stability on initial render `[P2-ux]`
 - **Rule:** After first paint, visible content MUST NOT shift as late assets resolve (images, web fonts, async data, skeleton → content swap). Cumulative Layout Shift (CLS) — measured via `PerformanceObserver({ type: 'layout-shift' })` summing `entry.value` where `entry.hadRecentInput === false` — must be ≤ 0.1 on initial render. Image elements without intrinsic dimensions (`width`/`height` attrs or CSS `aspect-ratio`) are the most common offender.
