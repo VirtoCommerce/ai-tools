@@ -3,9 +3,9 @@
 // `POST /api/platform/security/login/` and the storefront's form `POST /connect/token`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { configArg, configHarPath, createHarScrubber, harFilesIn, harForms, projectHarTargets, scrubHarFile, scrubHarFileSync, scrubHarText, sweepStaleTmp, tagKeyFile, watchHarDirs } from "./har-scrub.mjs";
 import { MASK } from "./redact.mjs";
 import { envFilePasswordValues } from "../skills/project-init/lib/passwords.mjs";
@@ -187,6 +187,32 @@ test("a running lane scrubs the HAR left from before, and the one Playwright wri
   lane.close();
   const out = readFileSync(file, "utf8");
   assert.ok(!out.includes(PW) && !out.includes(encodeURIComponent(STOREFRONT_PW)));
+});
+
+test("a lane whose HAR folder is deleted stays idle, watches the folder again once it is back, and scrubs what landed there", async () => {
+  // The real fs.watch: on Windows a deleted watched folder made the watcher spin at a whole core, forever.
+  const root = mkdtempSync(join(tmpdir(), "har-gone-"));
+  const file = join(root, "test-results", "chrome", "har", "session.har");
+  const seen = [];
+  const lane = watchHarDirs([file], { secrets: [PW], settleMs: 5, rearmMs: 50, onResult: (f, r) => seen.push(r.status) });
+  const until = async (pred) => { for (let i = 0; i < 300 && !pred(); i++) await new Promise((r) => setTimeout(r, 10)); };
+  try {
+    rmSync(join(root, "test-results"), { recursive: true, force: true });
+    const cpu = process.cpuUsage();
+    const t0 = Date.now();
+    await new Promise((r) => setTimeout(r, 1000));
+    const used = process.cpuUsage(cpu);
+    const share = (used.user + used.system) / 1000 / (Date.now() - t0);
+    assert.ok(share < 0.2, `an idle lane with its HAR folder gone used ${(share * 100).toFixed(0)}% of a core`);
+    assert.equal(existsSync(join(root, "test-results")), false, "the lane must not re-create a folder being deleted");
+    // Playwright writes the HAR again (it creates the folder itself): the re-armed watch scrubs it.
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, har([adminLogin]));
+    await until(() => seen.includes("scrubbed"));
+    assert.ok(!readFileSync(file, "utf8").includes(PW));
+  } finally {
+    lane.close();
+  }
 });
 
 test("a numeric password field is masked, and a value escaped twice inside a JSON body is found", () => {

@@ -537,9 +537,16 @@ export function harFilesIn(paths) {
 /**
  * Keep a running lane's HAR directory scrubbed: once now, after every write Playwright finishes there
  * (a `browser_close`), and synchronously at exit (the server's own shutdown writes the last HAR).
+ *
+ * A watched directory that is deleted (`test-results/` cleaned, a worktree removed) drops its watcher: on
+ * Windows the dead watcher fires its own path in a tight loop — ~200k events/s, a whole core, forever,
+ * even after the folder comes back, and no `error` event. Measured 2026-11-18: an idle lane went from 0% to
+ * 99.6% of a core the moment its `test-results/` was removed. The directory is then checked every
+ * `rearmMs` and watched again (and scanned) once it exists — never re-created here, which would race the
+ * deletion in progress.
  * @returns {{ close(): void }}
  */
-export function watchHarDirs(harPaths, { secrets = [], watch = fsWatch, onResult = () => {}, settleMs = 300 } = {}) {
+export function watchHarDirs(harPaths, { secrets = [], watch = fsWatch, onResult = () => {}, settleMs = 300, rearmMs = 5000 } = {}) {
   const timers = new Map();
   const running = new Set();
   const schedule = (file, tries = 0) => {
@@ -563,20 +570,52 @@ export function watchHarDirs(harPaths, { secrets = [], watch = fsWatch, onResult
   };
   sweepStaleTmp(harPaths);
   for (const f of harFilesIn(harPaths)) run(f);
-  const watchers = [];
-  for (const dir of new Set(harPaths.map((p) => dirname(p)))) {
+  const watchers = new Map();
+  const waits = new Map();
+  let closed = false;
+  const waitFor = (dir) => {
+    if (closed || waits.has(dir)) return;
+    const t = setInterval(() => {
+      if (!existsSync(dir)) return;
+      clearInterval(t);
+      waits.delete(dir);
+      arm(dir, false);
+    }, rearmMs);
+    t.unref?.();
+    waits.set(dir, t);
+  };
+  const lost = (dir, w) => {
+    if (watchers.get(dir) !== w) return;
+    watchers.delete(dir);
     try {
-      mkdirSync(dir, { recursive: true });
+      w.close?.();
+    } catch {
+      /* already closed */
+    }
+    waitFor(dir);
+  };
+  const arm = (dir, create) => {
+    try {
+      if (create) mkdirSync(dir, { recursive: true });
       const w = watch(dir, (_event, name) => {
+        if (watchers.get(dir) !== w) return;
+        // The folder itself went away: this watcher only spins from now on (see above).
+        if (!existsSync(dir)) return lost(dir, w);
         const files = name ? [join(dir, String(name))] : harFilesIn([join(dir, "x.har")]);
         for (const f of files) if (f.endsWith(".har")) schedule(f);
       });
-      w?.unref?.();
-      if (w) watchers.push(w);
+      if (!w) return;
+      w.on?.("error", () => lost(dir, w));
+      w.unref?.();
+      watchers.set(dir, w);
+      // Back after a deletion: whatever Playwright wrote meanwhile gets its scrub now.
+      if (!create) for (const f of harFilesIn([join(dir, "x.har")])) schedule(f);
     } catch {
-      /* no watcher — the start and exit scrubs still run */
+      /* not watchable now — look again later; the exit scrub still runs */
+      waitFor(dir);
     }
-  }
+  };
+  for (const dir of new Set(harPaths.map((p) => dirname(p)))) arm(dir, true);
   const atExit = () => {
     for (const t of timers.values()) clearTimeout(t);
     // An async scrub cut short by the exit leaves its temp file; the sync scrub below redoes its work.
@@ -586,9 +625,11 @@ export function watchHarDirs(harPaths, { secrets = [], watch = fsWatch, onResult
   process.on("exit", atExit);
   return {
     close() {
+      closed = true;
       process.off("exit", atExit);
       for (const t of timers.values()) clearTimeout(t);
-      for (const w of watchers) w.close?.();
+      for (const t of waits.values()) clearInterval(t);
+      for (const w of watchers.values()) w.close?.();
     },
   };
 }
