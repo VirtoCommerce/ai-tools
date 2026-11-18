@@ -16,6 +16,7 @@ Incidental repository / infrastructure defects found **while doing something els
 
 | # | Finding | Impact | Suggested fix |
 |---|---|---|---|
+| B-76 | **`deploy:pr` on a branch whose theme is `vc-frontend-next-*.zip` (vcptcore-qa) silently keeps the old theme, and `--apply` cannot write with an empty `gh` keyring.** Found 2026-11-04 (`/qa-deploy-pr VCST-6255 vcptcore`). Overlaps B-70 on part (a). (a) `editThemeText` matches only `vc-theme-*` URLs, so on `vc-frontend-next-3.2.0.zip` it returns the text unchanged; the table still shows `Theme absent → vc-theme-…pr-2627` and only a stderr warning hints the commit will not contain it. (b) With several storefront PRs linked (vc-frontend#2624 VCST-6650, #2627 VCST-6651), the last one wins with no prompt, and the ticket's PRs cannot be excluded. Explicit `--pr` only adds to them. (c) A SalesRep blob entry shaped `{Id, BlobName}` with no `Version` reads `Current: undefined` and forces a reserialize. (d) `lib/github.ts` writes only through `gh` with `GITHUB_TOKEN`/`GH_TOKEN` stripped: with no keyring login it falls to prepare-only, although `GIT_TOKEN` has `push` on vc-deploy-dev (PR #7030 was opened through REST with it). | Silent: a deploy PR that claims a theme switch delivers none, or the wrong storefront PR's build. | (a) Replace any `"URL"` value in `theme/artifact.json`, and say when the theme family changes (next → vue). (b) STOP and list the candidates when more than one theme PR resolves, and add `--only`/`--no-ticket-prs`. (c) Derive the current version from `BlobName` when `Version` is absent. (d) Fall back to REST with `GIT_TOKEN` when it has `push`. |
 | B-75 | **The file's own H1 is broken: line 1 reads `# Repository Find| B-60 | … |` and the B-60/B-61 rows sit inside the heading, so the title ends as `ings Backlog` on the next line.** Found 2026-11-09 (also on `origin/main`). Also: an uncommitted local edit in another session numbers its new row `B-68`, which `origin/main` already uses. | The page renders without a title and B-60/B-61 sit outside the table; duplicate B-numbers make a finding ambiguous to cite. | Restore `# Repository Findings Backlog` and move B-60/B-61 into the table; renumber the colliding local row when it is committed. |
 | B-74 | **`release:report --post` re-uses a stale dashboard image when a wave is re-reported.** `comment.mjs` `attachFiles()` (`--attach`) treats a same-name image as the same image by design, and `release-report.ts` always names it `<release>-<wave>-release.png`, so the regenerated dashboard is never uploaded. Found 2026-11-09 (stable-16 W6 re-run): the amended VCST-6042 comment kept the 2026-11-05 dashboard (43 759 B, first-round totals) under the new text (44 003 B locally). Repaired by hand: uploaded as `stable-16-W6-release-2026-11-09.png`. | The release ticket shows new numbers in text and old numbers in the picture, and the renderedBody check still passes. | In `release-report.ts`, version the image name when its bytes differ from the attachment with that name (date or short content hash), or pass the dashboards with a size match. Never change `--attach`'s same-name rule: a wiki `!name!` cannot tell two images apart. |
 | B-73 | **`release:report --post` cannot amend a wave comment older than 12 h.** `comment()` in `scripts/regression/release-report.ts:280` passes `--amend` but has no way to pass `--same-round`, so `tracker:comment`'s round guard stops every re-report of a wave on the same build a day later. Found 2026-11-09 (stable-16 W6 re-run after the env fixes, same Platform 3.1076.8 / Theme 2.59.0): VCST-6410 amended, VCST-6042 refused; finished by calling `scripts/tracker/comment.mjs` by hand with `--same-round`. | Every re-run of a wave a day after its first report needs a manual `tracker:comment` call for the release ticket. | Add `--same-round "<reason>"` to `release:report` and pass it through to both comments; keep the default refusal so a new build still gets a new comment. |
@@ -456,3 +457,31 @@ AUTH-013, 022, 048–051, 054–056, 061, 069, 073; 082 IMP-008, 010–013, 016,
 so the spread yields `{"0":"j","1":"i","2":"r","3":"a","comment_id":"…"}`. Fix: when `j.tracker` is a string, keep it as
 `{ name: j.tracker, comment_id }` (or write the id to `tracker_comment.id`, the field the summaries already use).
 Repaired by hand in the VCST-6442 summary.
+
+## 2026-11-09 — found during the Stable 16 W7 run (vcptcore_regression)
+
+**`release:report --post` keeps a stale release dashboard.** `scripts/tracker/comment.mjs` `attachFiles()` treats an
+`--attach` image with the same file name as the same image (no size check — only `--attach-file`/`--attach-video`
+pass `matchSize`). The release dashboard is re-rendered under a fixed name (`stable-<N>-<W>-release.png`), so every
+later `--post` amends the comment but keeps the first upload: on VCST-6042 the W7 comment showed the 10:57 render
+(42 649 B) while the current render was 43 071 B. Fix: give the release PNG a content- or run-scoped name (as the
+per-run PNGs already have), or upload a changed same-name image and reference it by attachment id.
+
+**Loyalty balance mode written through the settings API does not take effect until the store is saved.**
+`POST /api/platform/settings/v2/tenant/Store/<store>/values` for `Loyalty.LoyaltyBalanceCalculationMode` read back the
+new value, but accruals kept the old mode until a platform restart or an Admin store save (KB-0761662A). Suite 075f
+and any seeder that switch the mode via that API therefore do not switch it; they need a store save after the write.
+
+## 2026-11-12 — found during the Sprint 26-22 W5 regression (vcst)
+
+**`seed:membership-lock:verify` reads V6 by a stale hardcoded membership id.** It looks up
+`IMPERSONATE_TARGET_BLOCKED`'s membership as `e693f711487f44958105745fc5a12c60`, which no longer exists on vcst, so it
+prints "✗ V6 IS NO LONGER LOCKED — suite 082 depends on it" and then "VERIFY OK". The account's only membership is
+`9bde8cca-…` (created 2026-09-19), Approved and locked — V6 is intact. Fix: resolve V6 at run time by the account
+(`organization-memberships/search` by the user id), never a pinned id; and make a missing V6 fail `--verify` instead of
+printing OK after the ✗ line. `scripts/seed-data/b2b/membership-lock-specs.mjs` `V6_IS_READ_ONLY`.
+
+**`suites:merge` replaced runner-written results with all-BLOCKED `lane_lost` envelopes** (run
+REG-2026-11-12-0837-W5b) when run over all-browser suites whose runners had written `suite-<ID>-results.json` directly;
+the orchestrator rebuilt them from `suite-<ID>-cases.jsonl` and the runners' `bugs[]` were lost. Fix: `suites:merge`
+should refuse (or no-op) when no machine fragment exists and a canonical results file is already present.

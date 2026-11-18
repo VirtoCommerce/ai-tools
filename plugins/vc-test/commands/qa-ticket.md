@@ -75,9 +75,10 @@ STOPs are this run's; on a host-governed project it reads through the host's ser
 `node <plugin>/lib/keep-prepare.mjs --prepare <prepare_path> --key <TICKET>` → `PREPARE` (none if cached). Round 1,
 without `--full`: `node <plugin>/lib/route.mjs --bundle <BUNDLE> [--prepare <PREPARE>]` (the change's shape; the
 diffs in `PREPARE` let it see a page git records as a rename). `technical-change` ⇒ STOP:
-print its `reason` and its `shape.signals`, name `next` (the scoped regression plus the sync of the existing cases), and
+print its `reason` and its `shape.signals`, name `next` (`/qa-test <KEY>` for the scoped regression, then `/qa-test-lifecycle <KEY>` for the case sync), and
 say `--full` runs the scenario hunt anyway. A `NOT DEPLOYED:` line in `blockers[]` ⇒ BLOCKED on deploy: write
-`verdict.md` with it and stop.
+`verdict.md` with it and stop. The bundle's `acs` empty, or a blocker / gap naming a component no PR touches ⇒ print
+"Looks like a ticket for `/vc-test:qa-goal` (no ACs / unlinked component)" and continue; never start it.
 
 ## 2 — Change map, then scenarios
 
@@ -115,7 +116,7 @@ Ref `PB-n · R<k>`, the `R` of its `### Prior bugs` row.
 | `contract-refresh` | both commands of its `run.commands` |
 | `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` (a brief entry: on `run.model`, brief `<plugin>/<run.brief>`); checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE`, `EXPLORATORY` (its `lane`, `exploratory`) |
 | `bug:PB-n` (round ≥ 2) | the same, + `PB`, `CAPABILITIES`, `LANE` (its `lane`, if any) |
-| `visual` | its `run.agent` on the lane `plan-run` assigned (`LANE`, its `lane`), + the account role it signs in as: the role the approved scenarios on that surface sign in as, else the project's default storefront user (`USER_LOGIN` / `USER_PASSWORD`), else anonymous for a public route; the agent loads Skill `vc-test:qa-design` first (`<plugin>/skills/qa-design/visual-axis.md` §2, §4, §5, §6) |
+| `visual` | its `run.agent` on the lane `plan-run` assigned (`LANE`, its `lane`), + the account role it signs in as: the account of the risk the approved scenarios on that surface cite (several ⇒ the first scenario's account that is not `deny:`), else the project's default storefront user (`USER_LOGIN` / `USER_PASSWORD`), else anonymous for a public route; `<plugin>/briefs/ledger.md` always (its `vs. USER` tasks may create data); `--full` or not (a FAST run is one task, its own actor); the agent loads Skill `vc-test:qa-design` first (`<plugin>/skills/qa-design/visual-axis.md` §2, §4, §5, §6) |
 
 **A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
 `BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's
@@ -164,6 +165,6 @@ question decides filing; each one filed ⇒ at once `node <plugin>/lib/rounds.mj
 <id>=<KEY>`. A `verdict.json` bug with `priorBug` is skipped: it is already filed (P6). Then
 `node <plugin>/lib/rounds.mjs close --key <TICKET> --run-dir <RUN_DIR> --bundle <BUNDLE>`. Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and
 its `manual`, `unknown`, `foreign` lists; 3 ⇒ the stand is not writable: all manual. Print `verdict.md`'s first two
-lines and path.
+lines and path. The visual lane returned **proposed personas**? Offer them once, add the accepted ones: `skills/qa-design/visual-axis.md` §3.
 
 Ticket in Tested or Done? Run `/qa-docs <TICKET>` for its documentation, where that skill is installed.

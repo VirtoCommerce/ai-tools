@@ -40,8 +40,8 @@ rules:
     violation_signal: Unverified user completes checkout; no verification prompt; expired link still works; verified status not persisted after sign-out/sign-in.
     status: ACTIVE
     verified:
-      date: 2026-11-04
-      by: REG-2026-11-04-1531
+      date: 2026-11-17
+      by: REG-2026-11-17-1257
   - id: BL-AUTH-003
     title: Account lockout after N failed attempts
     rule: "After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. A successful password sign-in, or a successful second-factor completion, resets the failure counter. A successful passkey sign-in does not reset it (a passkey is not a password sign-in), but lockout still applies to it: a locked account cannot sign in with a passkey."
@@ -533,8 +533,8 @@ rules:
       - A change ticket and its code produce tokens at `grant_type=mfa`, or a sign-in ticket confirms a change.
     status: ACTIVE
     verified:
-      date: 2026-11-04
-      by: REG-2026-11-04-1531
+      date: 2026-11-12
+      by: REG-2026-11-12-1252
   - id: BL-AUTH-023
     title: An MFA mode set to Required by the administrator cannot be changed from the storefront
     rule: |-
@@ -556,8 +556,8 @@ rules:
       - A storefront mutation changes a mode the administrator set to Required.
     status: ACTIVE
     verified:
-      date: 2026-11-04
-      by: REG-2026-11-04-1531
+      date: 2026-11-12
+      by: REG-2026-11-12-1252
   - id: BL-AUTH-024
     title: An impersonated session cannot change MFA
     rule: |-

@@ -10,8 +10,8 @@
  "env": {
   "testEnv": "vcst",
   "platform": "3.1097.0",
-  "theme": "2.62.0-alpha.2642",
-  "note": "Xapi is the PR build 3.1031.0-pr-70-108f (vc-module-x-api#70, VCST-4717), deployed by vc-deploy-dev#7095"
+  "theme": "2.62.0-alpha.2647",
+  "note": "Updated 2026-11-12 (--update): theme alpha.2647 = vc-frontend dev 0315ecbd (vc-deploy-dev#7097, 2026-11-11 17:12 UTC; carries #2552, #2633, #2634, #2642, #2652); Xapi release 3.1031.0 (vc-deploy-dev#7098) replaced the PR build 3.1031.0-pr-70-108f (vc-deploy-dev#7095); BackgroundJobs 3.1055.0. W0 and the first W2 run were on alpha.2642."
  },
  "waves": [
   {
@@ -91,7 +91,7 @@
    "dependsOn": [
     "W0"
    ],
-   "note": "6253 and 6254 are not deployed on alpha.2642: their cases are NOT_DEPLOYED",
+   "note": "098 ran on alpha.2642 and was re-run on alpha.2647; 6253 and 6254 are on alpha.2647",
    "subtask": "VCST-6800"
   },
   {
@@ -122,18 +122,28 @@
    "dependsOn": [
     "W0"
    ],
-   "note": "Whole-storefront sweep for the CSS-layer and token changes; 6079 not deployed",
+   "note": "Whole-storefront sweep for the CSS-layer and token changes; 6079 is on alpha.2647",
    "subtask": "VCST-6802"
   },
   {
    "id": "WX",
-   "title": "Exclusive window — sign-in settings",
+   "title": "Exclusive window — sign-in settings and env-wide cases",
    "suites": [
     "104",
     "111",
     "114",
     "114a",
-    "114b"
+    "114b",
+    "031",
+    "032",
+    "033",
+    "044",
+    "029",
+    "036",
+    "002",
+    "004",
+    "005",
+    "083c"
    ],
    "dependsOn": [
     "W1",
@@ -148,9 +158,19 @@
     "111",
     "114",
     "114a",
-    "114b"
+    "114b",
+    "031",
+    "032",
+    "033",
+    "044",
+    "029",
+    "036",
+    "002",
+    "004",
+    "005",
+    "083c"
    ],
-   "note": "Flips MultiFactorAuthentication / OtpSignIn.Enabled / Passkey store settings; one owner, alone, settings restored in Cleanup",
+   "note": "104/111/114/114a/114b whole (MFA / OTP / Passkey store settings). From 031, 032, 033, 044, 029, 036, 002, 004, 005 and 083c only the 35 cases W1, W3, W4 and W6 deferred to WX (PLAN.md §WX). One owner, alone, every setting and shared record restored in Cleanup",
    "subtask": "VCST-6803"
   }
  ]

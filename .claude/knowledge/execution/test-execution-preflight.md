@@ -128,6 +128,29 @@ Preflight agents must treat sign-up as out-of-scope — the protocol assumes acc
 
 Each primitive is a UI-only sequence. No JS shortcuts unless explicitly noted.
 
+### DISPOSABLE_CUSTOMER <kind>
+
+**Purpose:** give the case its OWN customer, created for it and deleted after it — no shared account, so no
+other run can lock it (a stale password locks a shared account for everyone), fill its cart or change its
+state. `<kind>` is `personal` (no organization) or `orgMember` (the only member of an organization created
+with it). The one non-UI primitive: it runs a repo script, not the browser.
+
+**Steps:**
+1. `npm run td:customer -- create --kind <kind>` (TEST_ENV = the run's env). It prints one JSON line:
+   `email`, `userId`, `memberId`, `organizationId` (orgMember) and `passwordKey`. Keep the `email` for the
+   whole case: it is `DISPOSABLE_CUSTOMER` from here on.
+2. Do NOT sign in here. `[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]` (or a Steps line that signs in "as the
+   disposable customer") does that: type the `email` as plain text and the password by the NAME
+   `passwordKey` names (`DEFAULT_TEST_PASSWORD`), in the form the brief's Passwords slot gives — e.g.
+   `DEFAULT_TEST_PASSWORD_VCST` on the combined file ([`browser-lanes.md`](browser-lanes.md) §Browser login secrets).
+3. At Cleanup — also when the case FAILED or was BLOCKED after step 1 — run
+   `npm run td:customer -- delete --email <email>`. It deletes the account, its contact and its organization.
+
+**Failure handling:** create fails → `BLOCKED` with reason `PRECONDITION_UNMET:DISPOSABLE_CUSTOMER`. A crashed
+run's leftovers (`AGENT-TEST-SPEC-*`) are reclaimed by `npm run td:customer -- sweep`. The Playwright specs get
+the same account from the `disposableCustomer` fixture (regression/lib/fixtures.ts), through the same
+create path (scripts/lib/disposable-customer.mjs).
+
 ### SIGNOUT
 
 **Purpose:** end the current session.
@@ -271,6 +294,7 @@ All primitives are idempotent: the agent checks state first and skips the action
 When multiple `[PRE:*]` tags appear on a single case, the runner executes them in this order:
 
 ```
+[PRE:DISPOSABLE_CUSTOMER:<kind>]
 [PRE:CLEAR_SESSION]
 [PRE:SIGNOUT]
 [PRE:SIGNIN_AS:<alias>]

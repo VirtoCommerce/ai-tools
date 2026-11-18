@@ -41,3 +41,9 @@
 
 - With Customer 3.1033.0, sign-in falls back to an accessible organization; the "Forbidden" landing for a locked last-used org no longer exists (AUTH-043).
 - Stand data touched: order CO261111-00015 (IMP-030) and CO261111-00016 (cancelled, SEC-PCI); the "Many Orgs" user's active org moved to BMW-Group (IMP-048); USER_EMAIL has 2 failed sign-ins (AUTH-055); four old pending invites remain in TechFlow.
+
+## Closed (2026-11-12)
+
+W1 set to **DONE** by the owner's decision.
+- **No product bug from W1.** SEC-AUTH-005 / AUTH-069 were re-checked: the VCST-4531 AC asks for the success pop-up after a password change, which ships → `TEST_DEFECT`. AUTH-009: the duplicate-email suggestion was never a feature; not revealing whether an email exists is intended (owner's decision) → `TEST_DEFECT`.
+- **Deferred** (marked `DEFERRED` in `ledger.csv`): suite 044 skeleton rows, stale / case fixes, fixtures, manual cases, and the env-wide cases that belong in WX (persistent token validation, email verification required, role whitelist) plus the shared-fixture / W2-conflict cases.

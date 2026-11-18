@@ -24,6 +24,15 @@ const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-
 // A fired floor here needs its OWN risk: Source carries the token `floor:<id>`, technique is MODEL (M10). A risk carries
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
+// Clause 15: a test-user KEY, guest, spec (a committed .spec's own sign-in), deny:<permission> <KEY|P-n>, or P-n (floors.md §15).
+// Exported so `rounds.mjs append` decides "has an account" exactly as the gate does.
+export const ACCOUNT = /^(?:[A-Z][A-Z0-9_]*|guest|spec|P-?\d+|deny:\S+\s+(?:[A-Z][A-Z0-9_]*|P-?\d+))$/;
+/** The account is the lane cell's LAST `·` segment (a `·` inside the agent part is not misread); none with fewer than 3. */
+export const accountOf = (lane) => { const parts = String(lane).split("·").map((p) => p.trim()); return parts.length >= 3 ? parts.at(-1) : ""; };
+/** A row clause 15a never asks an account of: a `SKIP` lane or a BLOCKED row runs nothing; a TBD cell is clause 14's. */
+export const accountExempt = (lane) => /^skip\b/i.test(String(lane).trim()) || /\bBLOCKED\b/.test(lane) || String(lane).includes("TBD — strategy agent");
+/** The lane cell names a valid account (several joined by `+`). */
+export const hasAccount = (lane) => { const acc = accountOf(lane); return !!acc && acc.split("+").every((p) => ACCOUNT.test(p.trim())); };
 // Clause 12 (U59): a hotspot whose risk text says the code holds state — a limiter, a counter, a cache, a lockout — is
 // only decided on the stand if the stand's scale (instances, replicas, restarts) is part of the question.
 export const STATE_HOTSPOT = /\b(limit(?:er|s)?|attempts?|counter|throttl\w*|rate[- ]?limit\w*|cach(?:e|ed|ing)|lockout|locked out|in[- ]memory|session state)\b/i;
@@ -180,7 +189,7 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
     for (const s of new Set((bundle.known?.cases_at_risk ?? []).map((c) => c?.suite).filter(Boolean).map(String)))
       if (!new RegExp(`(?<!\\w)${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?!\\w)`).test(outOfScope)) errors.push(`6h: suite ${s} is at risk (known.cases_at_risk) but Out of scope does not name it`);
   for (const x of risks) {
-    const own = Object.keys(MODEL_RISK_FOR).filter((id) => names(x, id));
+    const own = [...Object.keys(MODEL_RISK_FOR), "F13"].filter((id) => names(x, id));
     if (own.length > 1) errors.push(`6f: ${x.r} carries ${own.map((id) => `floor:${id}`).join(" and ")} — one floor, one risk (M10)`);
   }
 
@@ -191,8 +200,10 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   // behaviour is a product risk with its own row and check (11a), and an AC/doc value is never lowered to "record what
   // was seen" (11b). An item starts the line or follows a `·` or a sentence end, so "P95 2s" inside an item is no item.
   const projectLine = /^Project risks:(.*)$/m.exec(sec)?.[1] ?? "";
-  for (const item of projectLine.split(/(?:·|(?<=[.;]))\s*(?=P\d+\s)/).map((t) => t.trim()).filter((t) => /^P\d+\b/.test(t))) {
-    const id = /^P\d+/.exec(item)[0];
+  const projectItems = projectLine.split(/(?:·|(?<=[.;]))\s*(?=P-?\d+\b)/).map((t) => t.trim()).filter((t) => /^P-?\d+\b/.test(t));
+  const projectIds = new Set(projectItems.map((t) => /^P-?\d+/.exec(t)[0].replace("-", ""))); // clause 15c reads the same items
+  for (const item of projectItems) {
+    const id = /^P-?\d+/.exec(item)[0];
     const anchor = productAnchor(item) ?? SUSPICION_ID.exec(item)?.[0] ?? HELD_STATE.exec(item)?.[0];
     if (anchor) errors.push(`11a: ${id} describes product behaviour (${anchor}) — a product risk with its own check, not a project risk (U58)`);
     const ref = RISK_REF.exec(item)?.[0];
@@ -241,6 +252,27 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
       else if (want && risk.level && RANK.indexOf(risk.level) < RANK.indexOf(want)) errors.push(`14: ${pb} is ${severity}, but ${risk.r}'s Level is ${risk.level} — a prior bug's risk is never below its severity`);
     }
   }
+  // 15, every strategy: the account each risk is checked as — the LAST `·` segment of the lane cell (floors.md §15,
+  // accountOf). A `none · ac-checks` row is not exempt: the AC run calls as the account (accountExempt).
+  for (const a of approach) {
+    if (accountExempt(a.lane)) continue;
+    const acc = accountOf(a.lane);
+    if (!acc) { errors.push(`15a: ${a.r} lane cell has no account — add '· <KEY | guest | deny:<permission> <KEY|P-n> | P-n>' (floors.md §15)`); continue; }
+    const accs = acc.split("+").map((p) => p.trim()); // several actors on one risk: ORG_USER + ORG_ADMIN
+    const bad = accs.find((p) => !ACCOUNT.test(p));
+    if (bad !== undefined) { errors.push(`15a: ${a.r} account "${bad}" is not KEY, guest, spec, deny:<permission> <KEY|P-n> or P-n (several joined by +)`); continue; }
+    for (const p of accs.map((x) => /\bP-?\d+$/.exec(x)?.[0].replace("-", "")).filter(Boolean))
+      if (!projectIds.has(p)) errors.push(`15c: ${a.r} account names ${p}, which is not on the 'Project risks:' line`);
+  }
+  // 15b: F13 fired on its own signal ⇒ a floor:F13 `deny:` risk. Fired only on doubt (part of the diff unread) no permission
+  // is known, so Out of scope naming F13 and what was unread answers it instead of an invented deny risk.
+  const f13 = floors.floors.find((f) => f.id === "F13");
+  const accountsOf = (r) => accountOf(approach.find((a) => a.r === r)?.lane ?? "").split("+").map((p) => p.trim());
+  const denyRisk = risks.some((x) => names(x, "F13") && accountsOf(x.r).some((p) => p.startsWith("deny:")));
+  // The Out-of-scope answer is one line naming F13 AND what was not read — a bare "F13 — n/a" records nothing.
+  const doubtAnswered = /^doubt:/.test(f13?.signal ?? "") && outOfScope.split("\n").some((l) => /\bF13\b/.test(l) && /unread|not read|truncat|over[- ]?cap|withheld|diff/i.test(l));
+  if (f13?.fired && !denyRisk && !doubtAnswered)
+    errors.push(`15b: F13 fired (${f13.signal.slice(0, 60)}) but no risk carries floor:F13 with a deny:<permission> account${/^doubt:/.test(f13.signal) ? " — or one Out-of-scope line naming F13 and the unread diff" : ""}`);
   const tbd = sec.split("\n").filter((l) => l.includes("TBD — strategy agent"));
   if (tbd.length) errors.push(`14: ${tbd.length} line(s) still read 'TBD — strategy agent' (first: ${tbd[0].trim().slice(0, 80)})`);
   const lines = sec.trimEnd().split("\n").length;

@@ -9,8 +9,8 @@
 //   On Azure Boards there are no sub-tasks: the `subtask` flag is ignored, no parent is read, every type but Bug is `test`.
 //   A --bundle that carries the ticket's change also reads its SHAPE (`shapeOf`; --prepare <the kept prepare.json> adds
 //   the PR diffs, so a new page that git records as a rename and an extension-point registration are seen): a non-Bug `test` whose diff resolves
-//   every refactor signal becomes `technical-change`, `next` = /qa-test <KEY> — that flow's scoped regression plus the
-//   2a sync / update / rewrite of the existing cases (.claude/knowledge/execution/ticket-routing.md §5d). It fails
+//   every refactor signal becomes `technical-change`, `next` = the scoped regression (`/qa-test <KEY>`) then the sync of the
+//   existing cases (`/qa-test-lifecycle <KEY>`) — the signals are `shapeOf` below. It fails
 //   CLOSED: any signal unresolved, or no change in the bundle, keeps `test`.
 // stdout is the result JSON: { job, role, reason, next[, shape] }, job one of test | technical-change | verify-fix |
 //   hotfix-check | unresolved.
@@ -77,10 +77,10 @@ export function route({ key = null, type = null, subtask = false, status = null,
   return { ...r, reason: `Sub-task of ${parent.key ?? "its parent"} (${parent.type ?? "no type"}, "${parent.status ?? "no status"}"): ${r.reason}` };
 }
 
-// The refactor vocabulary a ticket's summary or description uses for a mechanical change (§5d "the ticket").
+// The refactor vocabulary a ticket's summary or description uses for a mechanical change (the ticket signal of `shapeOf`).
 const REFACTOR_WORDS = /\b(refactor|deprecat|migrat|replac|renam|extract|upgrad|bump|consolidat)\w*|\bmov(e|es|ed|ing)\b|\bclean[- ]?up\b/i;
 // An added file that is a runtime surface someone can exercise: a page, a route, a menu entry, an extension point, a
-// GraphQL operation or schema, a REST controller, a module manifest (§5d "exported surface"). Tests and stories never count.
+// GraphQL operation or schema, a REST controller, a module manifest (the exported-surface signal of `shapeOf`). Tests and stories never count.
 const SURFACE_FILE = /(^|\/)(pages?|views|routes?|router)\/|(^|\/)(routes?|router)\.[cm]?[jt]s$|menu\.json$|extension|\.graphql$|(^|\/)module\.manifest$|Controller\.cs$|Schema\.cs$/i;
 // Navigation: a menu or router file CHANGED in any way (added, renamed, or modified) moves what a user can reach —
 // VCST-4386 modified `config/menu.json` and `router/routes/account.ts` while its new page came in as a git rename.
@@ -159,7 +159,7 @@ export function withShape(result, bundle, type, { diffs = {} } = {}) {
   if (shape.shape !== "technical-change") return { ...result, shape };
   const k = typeof bundle.ticket === "string" ? bundle.ticket : "<KEY>";
   return {
-    job: "technical-change", role: result.role, shape, next: `/qa-test ${k}`,
+    job: "technical-change", role: result.role, shape, next: `/qa-test ${k} (scoped regression), then /qa-test-lifecycle ${k} (case sync)`,
     reason: `${type} ticket whose change is a mechanical refactor (${shape.signals.map((s) => s.detail).join("; ")}): scoped regression plus the sync of the existing cases, not a scenario hunt`,
   };
 }

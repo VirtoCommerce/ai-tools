@@ -169,6 +169,7 @@ export const env = {
     // Application URLs
     FRONT_URL: getEnvVar('FRONT_URL'),
     BACK_URL: getEnvVar('BACK_URL'),
+    ADMIN_SHELL_URL: getEnvVar('ADMIN_SHELL_URL'),
     VIRTO_START_FRONT: getEnvVar('VIRTO_START_FRONT', ''),       // TODO(qa-agentic-standardization): deprecate; switch consumers to TEST_ENV=virtostart
     VIRTO_START_BACK: getEnvVar('VIRTO_START_BACK', ''),         // TODO(qa-agentic-standardization): deprecate; switch consumers to TEST_ENV=virtostart
     STORYBOOK_URL: getEnvVar('STORYBOOK_URL'),

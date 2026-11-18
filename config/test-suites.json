@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-11-11",
-    "totalSuites": 180,
+    "generated": "2026-11-17",
+    "totalSuites": 183,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -203,7 +203,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 76,
+      "testCount": 77,
       "estimatedMinutes": 20,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -796,7 +796,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 64,
+      "testCount": 66,
       "estimatedMinutes": 41,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1436,8 +1436,8 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 14,
-        "browser": 2,
+        "machine": 15,
+        "browser": 1,
         "manual": 0
       }
     },
@@ -1778,7 +1778,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 178,
+      "testCount": 181,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1793,7 +1793,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 174,
+        "machine": 177,
         "browser": 1,
         "manual": 0,
         "deprecated": 3
@@ -2871,7 +2871,12 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
-      "clickDriven": true
+      "clickDriven": true,
+      "lanes": {
+        "machine": 3,
+        "browser": 26,
+        "manual": 0
+      }
     },
     {
       "id": "075b",
@@ -2899,8 +2904,8 @@
       "customerApplicability": "reference",
       "clickDriven": true,
       "lanes": {
-        "machine": 8,
-        "browser": 4,
+        "machine": 11,
+        "browser": 1,
         "manual": 1
       }
     },
@@ -3389,7 +3394,12 @@
         "admin",
         "sprint"
       ],
-      "clickDriven": true
+      "clickDriven": true,
+      "lanes": {
+        "machine": 1,
+        "browser": 33,
+        "manual": 0
+      }
     },
     {
       "id": "085",
@@ -3412,7 +3422,12 @@
         "task-management"
       ],
       "customerApplicability": "reference",
-      "clickDriven": true
+      "clickDriven": true,
+      "lanes": {
+        "machine": 9,
+        "browser": 20,
+        "manual": 0
+      }
     },
     {
       "id": "086",
@@ -4137,7 +4152,7 @@
       "file": "regression/suites/Backend/api/110a-mfa-modes-api-backoffice.csv",
       "layer": "backend",
       "concern": "api",
-      "testCount": 40,
+      "testCount": 43,
       "estimatedMinutes": 200,
       "agent": "qa-backend-expert",
       "domain": "auth-security",
@@ -4163,7 +4178,7 @@
       "file": "regression/suites/Frontend/auth/111-auth-mfa-sign-in.csv",
       "layer": "frontend",
       "concern": "functional",
-      "testCount": 22,
+      "testCount": 23,
       "estimatedMinutes": 90,
       "agent": "qa-frontend-expert",
       "domain": "auth-security",
@@ -4351,6 +4366,31 @@
       "browserRequirementReason": "WebAuthn virtual authenticator is set up through the Chrome DevTools Protocol (WebAuthn.addVirtualAuthenticator): Chromium lanes only. Firefox has no CDP and cannot run the ceremony."
     },
     {
+      "id": "116",
+      "name": "Sales Rep — Reporting (customer sales report, storefront)",
+      "file": "regression/suites/Frontend/sales-rep/116-sales-rep-reporting-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 30,
+      "estimatedMinutes": 0,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "reporting",
+        "charts",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
       "id": "117",
       "name": "Sanity — multi-source indexing and signed webhook",
       "file": "regression/suites/Backend/sanity/117-sanity-multi-source.csv",
@@ -4460,6 +4500,60 @@
       "customerApplicability": "reference",
       "notes": "VCST-6078 (vc-frontend#2552, vc-module-x-frontend#12, vc-module-order#507). Buyer /account/dashboard: four stat cards + My recent orders + Edit layout. ORD-DASH-001 is the [JOURNEY] case. Personas BD_* are seeded by `npm run seed:buyer-dashboard` (guard `npm run td:validate:buyer-dashboard`). Clock/time-zone rows (003-005, 011, 024, 025) need a separate emulated-clock context; the failure rows (017, 018, 027) intercept /graphql, so run on a Chromium lane. Layout rows change per-user stored layouts (not deletable); ORD-DASH-013 is one-shot per seeded buyer.",
       "clickDriven": true
+    },
+    {
+      "id": "121",
+      "name": "Next P0 Smoke (vc-frontend-next)",
+      "file": "regression/suites/Frontend/next/121-next-p0-smoke.csv",
+      "domain": "cross-cutting",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P0",
+      "testCount": 33,
+      "estimatedMinutes": 30,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "next",
+        "vc-frontend-next",
+        "smoke",
+        "home",
+        "search",
+        "catalog",
+        "product",
+        "cart",
+        "checkout",
+        "auth",
+        "account",
+        "mobile"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "122",
+      "name": "Next Release-Merge Regression (vc-frontend-next)",
+      "file": "regression/suites/Frontend/next/122-next-release-merge.csv",
+      "domain": "cross-cutting",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 33,
+      "estimatedMinutes": 45,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "next",
+        "vc-frontend-next",
+        "release-merge",
+        "theme",
+        "header-counters",
+        "dashboard",
+        "compare",
+        "a11y",
+        "print",
+        "dark-mode"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
     }
   ],
   "selections": {
@@ -4496,7 +4590,9 @@
         "050b4",
         "050b5",
         "050c",
-        "050k"
+        "050k",
+        "121",
+        "122"
       ]
     },
     "catalog": {
@@ -4552,32 +4648,56 @@
     "marketing": {
       "where": {
         "domain": "marketing"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "b2b": {
       "where": {
         "tag": "b2b"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "bopis": {
       "where": {
         "tag": "bopis"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "payment": {
       "where": {
         "tag": "payment"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "whitelabeling": {
       "where": {
         "tag": "whitelabeling"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "configurable-products": {
       "where": {
         "tag": "configurable-products"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "store-asset-url": {
       "include": [
@@ -4597,7 +4717,9 @@
         "091",
         "091c",
         "107",
-        "111"
+        "111",
+        "121",
+        "122"
       ]
     },
     "backend": {
@@ -4617,6 +4739,8 @@
         "110a",
         "118",
         "119"
+        "121",
+        "122"
       ]
     },
     "sprint": {
@@ -4649,6 +4773,8 @@
         "112",
         "118",
         "119"
+        "121",
+        "122"
       ]
     },
     "full": {
@@ -4674,22 +4800,36 @@
         "112",
         "118",
         "119"
+        "121",
+        "122"
       ]
     },
     "sales-rep": {
       "where": {
         "tag": "sales-rep"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "domain:purchase-flow": {
       "where": {
         "domain": "purchase-flow"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "domain:catalog-search": {
       "where": {
         "domain": "catalog-search"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "domain:auth-security": {
       "where": {
@@ -4698,56 +4838,92 @@
       "exclude": [
         "110",
         "110a",
-        "111"
+        "111",
+        "121",
+        "122"
       ]
     },
     "domain:marketing": {
       "where": {
         "domain": "marketing"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "domain:content-cms": {
       "where": {
         "domain": "content-cms"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "domain:customer-b2b": {
       "where": {
         "domain": "customer-b2b"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "domain:platform-config": {
       "where": {
         "domain": "platform-config"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "domain:communication": {
       "where": {
         "domain": "communication"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "domain:branding": {
       "where": {
         "domain": "branding"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "domain:cross-cutting": {
       "where": {
         "domain": "cross-cutting"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "concern:functional": {
       "where": {
         "concern": "functional"
       },
       "exclude": [
-        "111"
+        "111",
+        "121",
+        "122"
       ]
     },
     "concern:non-functional": {
       "where": {
         "concern": "non-functional"
-      }
+      },
+      "exclude": [
+        "121",
+        "122"
+      ]
     },
     "concern:api": {
       "where": {
@@ -4760,6 +4936,8 @@
         "110a",
         "118",
         "119"
+        "121",
+        "122"
       ]
     },
     "concern:admin": {
@@ -4767,7 +4945,9 @@
         "concern": "admin"
       },
       "exclude": [
-        "092"
+        "092",
+        "121",
+        "122"
       ]
     },
     "returns": {
@@ -4810,6 +4990,12 @@
         "107",
         "109",
         "113"
+      ]
+    },
+    "next": {
+      "include": [
+        "121",
+        "122"
       ]
     }
   }

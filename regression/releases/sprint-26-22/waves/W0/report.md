@@ -35,3 +35,7 @@ SMK-009, 018, 019, 029, 030 are `Automation_Status=Manual`: never run by an agen
 ## Build notes
 
 CyberSource authorization succeeded and the order appeared in history at once; the Skyflow card form loads; no GraphQL errors on the Xapi PR build. `/sign-in` now opens on the one-time-code form, with password sign-in behind "Sign in with a password instead".
+
+## Closed (2026-11-12)
+
+W0 set to **DONE** by the owner's decision. Deferred, not done: the SMK-020 / SMK-034 / SMK-010 data repairs (FIXTURE carts on MULTI_ORG_USER and USER_EMAIL, the 0015 card for USER_DEFAULT), the five manual smoke cases, and **a re-run of 042 on theme 2.62.0-alpha.2647** — the smoke gate ran on alpha.2642; the theme moved to alpha.2647 mid-W4 (vc-deploy-dev#7097). Every deferred item is marked `DEFERRED` in `ledger.csv`. Filed: VCST-6805, VCST-6806; duplicate: VCST-6543.

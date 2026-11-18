@@ -19,15 +19,18 @@ lint/test commands. Do not invent commands — read the profile for the routed r
 
 | Kind | Repo | Lang | Install | Build | Test (red→green gate) | Typecheck | Lint |
 |------|------|------|---------|-------|-----------------------|-----------|------|
-| `frontend` | `vc-frontend` | TS | `yarn install --frozen-lockfile \|\| npm ci \|\| npm install` | `yarn build \|\| npm run build` | `yarn test:unit \|\| npx vitest run` | `yarn typecheck \|\| npx vue-tsc --noEmit` | `yarn lint \|\| npm run lint` |
+| `frontend` | `vc-frontend` | TS | `yarn install --frozen-lockfile \|\| npm ci \|\| npm install` | `yarn build \|\| npm run build` | `yarn test:unit \|\| npx vitest run` | `yarn validate:types \|\| npx vue-tsc --build --force` | `yarn lint \|\| npm run lint` |
 
 - **Default base branch is `dev`** (not `main`/`master`) — overridden by live `gh repo view` detection
   in `checkoutForFix`. The package name is `vc-theme-b2b-vue`.
 - **Yarn 4 (Berry)** + Node `>=22.12 <23`. `yarn precheck` runs ahead of most scripts — let it.
 - **There IS a real test harness** (vitest) — unlike the module Admin SPA, which has none. So there is
   **no scratch harness** for storefront bugs: write a normal `*.spec.ts` / `*.test.ts`.
-- A NEW lint or `vue-tsc` error your fix introduces **fails CI** (ESLint runs error-level, SonarCloud
-  gate is on). Fix the warning in your own code; never disable a rule or edit config to suppress it.
+- A NEW `vue-tsc` error your fix introduces **fails CI** (`yarn build` runs `validate:types`; SonarCloud
+  gate is on). **ESLint is not run in CI** — only pre-commit — so a local `lint` is the only place a new
+  lint error shows. Fix it in your own code; never disable a rule or edit config to suppress it.
+- **Bare `vue-tsc --noEmit` checks nothing here:** the root `tsconfig.json` is `"files": []` plus project
+  references. Typecheck with `yarn validate:types` (or `vue-tsc --build --force`).
 
 ## 2. vc-frontend repo layout
 

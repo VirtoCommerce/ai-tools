@@ -2090,7 +2090,7 @@
           "date": "2026-09-28"
         }
       ],
-      "notes": "No browser this wave (/qa-test-fast Stage 1); needs a live pass with intent-search enabled to confirm both the suppress and the restore-after-lookup halves."
+      "notes": "No browser this wave (a /qa-test context stage); needs a live pass with intent-search enabled to confirm both the suppress and the restore-after-lookup halves."
     },
     {
       "id": "srch.barcode.resolve.page-reset-on-change",

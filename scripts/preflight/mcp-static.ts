@@ -10,8 +10,8 @@ import { fileURLToPath } from "node:url";
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const REQUIREMENTS_PATH = ".claude/skills/preflight/mcp-requirements.json";
 
-export type Consumer = "ticket" | "ticket-fast" | "exploratory" | "lifecycle" | "domain-map" | "ba" | "regression" | "smoke";
-export const CONSUMERS: readonly Consumer[] = ["ticket", "ticket-fast", "exploratory", "lifecycle", "domain-map", "ba", "regression", "smoke"];
+export type Consumer = "ticket" | "exploratory" | "lifecycle" | "domain-map" | "ba" | "regression" | "smoke";
+export const CONSUMERS: readonly Consumer[] = ["ticket", "exploratory", "lifecycle", "domain-map", "ba", "regression", "smoke"];
 export type ReqClass = "REQ" | "REQ_FALLBACK" | "OPT";
 export interface McpRequirements {
   servers: Record<string, { scope: "project" | "user"; toolSearch: string; fallback: string | null; lane?: boolean; mcpKeys?: string[] }>;

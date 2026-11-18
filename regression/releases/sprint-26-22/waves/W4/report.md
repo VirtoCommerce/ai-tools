@@ -44,3 +44,11 @@ Already filed and still present: VCST-5878 (compare table body not keyboard-scro
 - USER_DEFAULT (qa-user-01) password on vcst had drifted from `TEST_USER_PASSWORD`; reset by admin API mid-run. `agent-test-wish-twostore` has the same drift (CAT-079).
 - 043: 23 cases first stopped on a session budget, re-run on the same run id.
 - SKIPPED: 44 manual-only, 3 deprecated.
+
+## Closed (2026-11-12)
+
+W4 set to **DONE** by the owner's decision.
+- **098 re-run on 2.62.0-alpha.2647:** the 5 FAIL cases (CMP-006, 017, 031, 032, 047) still fail with the same causes — VCST-6810, VCST-6811, VCST-5878, KB-53E57D1B.
+- **GA-027 is not a product bug:** a live re-check sent exactly one `purchase` on re-pay (the order's first); the case premise is wrong → `TEST_DEFECT`, nothing filed. The source gap (no "already reported" check) is in `evidence/GA-027`.
+- **Filed from W4:** VCST-6810, VCST-6811 (Low). **Pending decision:** CMP-031 (product / design).
+- **Deferred** (marked `DEFERRED` in `ledger.csv`): `.spec` moves, fixture repairs, stale-case rewrites, manual cases, and the 15 env-wide cases that belong in WX.

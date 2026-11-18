@@ -32,7 +32,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, ONLY, STORE_ID, writeEnvAliasOverride,
-  ROOT, BACK_URL, ADMIN, ADMIN_PASSWORD, discoverCatalogProducts, loadCsv,
+  ROOT, BACK_URL, ADMIN, ADMIN_PASSWORD, discoverCatalogProducts, loadCsv, ensureVirtoPagesEnabled,
 } from '../../lib/seed-common.mjs';
 import {
   CANONICAL_PAGES, STATUS, pickCanonical, permalinkConflict, draftBody, permalinkBody,
@@ -470,6 +470,7 @@ async function main() {
   assertSafeTarget();
   await auth();
   if (TEARDOWN) { await teardown(); log('Teardown complete (pages archived, not deleted).'); return; }
+  await ensureVirtoPagesEnabled(api, STORE_ID);
   await seed();
   log(DRY_RUN ? 'DRY RUN complete.' : 'Seed complete.');
 }

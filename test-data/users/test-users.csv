@@ -50,3 +50,4 @@ USER-048,qa-refund@virtocommerce.com,{{TEST_USER_PASSWORD}},Refund,Requester,Per
 USER-049,qa-cancel@virtocommerce.com,{{TEST_USER_PASSWORD}},Order,Canceller,Personal,+1-555-0149,Active,Order cancellation,User cancelling orders,true
 USER-050,qa-bulk-import@virtocommerce.com,{{TEST_USER_PASSWORD}},Bulk,Importer,Personal,+1-555-0150,Active,Bulk operations,Testing bulk user import,true
 USER-051,agent-test-push-empty@test-agent.com,{{TEST_USER_PASSWORD}},Push,NeverTargeted,Personal,,Active,068 PUSH-025 empty inbox,"RETIRED 2026-09-29: reached by a tracked push message at creation (KB-CB05268E); 068 PUSH-025 creates its empty-inbox account on the fly.",true
+USER-052,AGENT-TEST-agent1@test.virtocommerce.com,{{AGENT1_PASSWORD}},Agent,One,Personal,,Active,017b order widgets — AGENT1 storefront buyer,"VCST-6840: suite 017b signs in as {{AGENT1_EMAIL}} (.env.defaults); declared here so seed:users creates it",true

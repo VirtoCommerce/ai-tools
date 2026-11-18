@@ -4,7 +4,7 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 3193 · PASS 2051 · FAIL 348 · BLOCKED 636** · ledger 1233 rows
+**Executed 3193 · PASS 2123 · FAIL 362 · BLOCKED 554** · ledger 1305 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -15,22 +15,22 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W4 | Returns, B2B, accounts | Aleksandra Mitricheva | TRIAGED | 624 | 624 | 329 | 119 | 141 | 0 | 296 | REG-2026-11-09-1635-W4 |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | Aleksandra Mitricheva | TRIAGED | 144 | 144 | 72 | 14 | 6 | 0 | 68 | REG-2026-11-04-1505-W6 REG-2026-11-05-0023-W6R REG-2026-11-06-1345-W6R2 REG-2026-11-06-1410-W6R3 REG-2026-11-09-W6R4 REG-2026-11-09-W6R5 |
-| W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | TRIAGED | 428 | 428 | 169 | 44 | 193 | 0 | 524 | REG-2026-11-05-1645-W7 REG-2026-11-06-1424-W7C |
+| W7 | virto-start modules (autotests only) | Aleksandra Mitricheva | TRIAGED | 428 | 428 | 241 | 58 | 111 | 0 | 596 | REG-2026-11-05-1645-W7 REG-2026-11-06-1424-W7C REG-2026-11-09-0950-W7U REG-2026-11-09-1545-W7M |
 | WX | Exclusive window (env-wide cases) | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
 ## Triage verdicts
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 76 |
-| BY_DESIGN | 20 |
-| TEST_DEFECT | 205 |
-| DATA | 233 |
-| ENV_CONFIG | 535 |
+| REAL_BUG | 81 |
+| BY_DESIGN | 26 |
+| TEST_DEFECT | 219 |
+| DATA | 255 |
+| ENV_CONFIG | 555 |
 | NOT_TESTABLE | 132 |
-| DUPLICATE | 16 |
+| DUPLICATE | 17 |
 | FLAKY | 3 |
-| PENDING_DECISION | 13 |
+| PENDING_DECISION | 17 |
 
 ## Not run yet
 
@@ -77,6 +77,9 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W4 | CUST-172 | After sorting by Modified Date asc, the keyword search (MemberType:Contact + Enter) sends POST /api/members/search with sort "" and the hea… | unknown |  |
 | W4 | AUTH-069 | KB-4BDF14A7 - /account/change-password shows no "signs you out of other devices" notice (VCST-4531 AC, PR #2275) | unknown |  |
 | W4 | OBS-CUST-093-EMPTY-USERID | POST /api/customer/organization-memberships accepts userId "" (empty string): 200 and a membership with an empty userId is saved | no |  |
+| W7 | MSNF-099 | SKU-NOAVAIL mission modal shows the deleted product's raw GUID as its title, as a link | no | local report BUG-missions-sku-modal-degraded-target-states.md, below the filing floor (Low) |
+| W7 | MSNF-102 | A mission ~1.5 h past its end still listed with '0 days left' and an enabled Open mission | no | local report BUG-missions-ended-mission-zero-days-live-cta.md, below the filing floor (Low) |
+| W7 | MSNF-056 | The zero-days card is the ended DUE-00 mission — same defect as MSNF-102 | no | same defect as MSNF-102, file once |
 
 ## Decisions pending
 
@@ -95,5 +98,9 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W7 | MSN-003 | Mission create accepts and stores Periodicity Monthly; only None is processed, nothing rejects the rest | Loyalty product owner |
 | W7 | MSNF-068 | fr: untranslated mission returns the internal Name and null description — no default-language fallback; no source says it should | Loyalty product owner |
 | W7 | MSN-003 | Mission create accepts and stores Periodicity Monthly; only None is processed, nothing rejects the rest | Loyalty product owner |
+| W7 | QUOTE-011 | Expired quote shows 'Proposal sent', no expiry date, Approve offered; expiry is not implemented anywhere (no Expired status in docs or code) | Quote product owner |
+| W7 | QUOTE-022 | Expired quote can still be approved — same question as QUOTE-011 | Quote product owner |
+| W7 | QUOTE-023 | No Expired badge or expiry date on an expired quote — same question as QUOTE-011 | Quote product owner |
+| W7 | TASK-025 | POST /api/task-management accepts {} / empty name / unknown type / nonexistent assignee and saves them (200); the Admin app requires Type a… | TaskManagement product owner |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

@@ -39,9 +39,9 @@ deliver one conclusion — and left them to reconcile which version is current.
    earlier comment stays as that round's record — post the new round as a new comment, never an edit
    (`commentId`) of the old one. The plugin's hooks enforce this by age and session: editing a ledger
    comment older than 12 h (`TRACKER_ROUND_HOURS`), or one another session posted, is blocked as a
-   probable new round. **Exception:** an autonomous `/qa-test --iterate` loop is one round by design and amends with
-   `--same-round "<reason>"` — **but only its own round deltas.** A comment that already holds a
-   **published verdict** (a full `QA Complete` report — e.g. an earlier run without `--iterate`) is that
+   probable new round. **Exception:** `--same-round "<reason>"` amends — **but only a round's own
+   deltas** (a "QA re-test — round N" comment, written to be replaced). A comment that already holds a
+   **published verdict** (a full `QA Complete` report) is that
    round's record and is never edited with a later build's result: post the new round as a new comment.
    The plugin's hooks check age and session only, not whether a comment is a verdict — this one is on
    the caller (measured 2026-10-08, VCST-6077: a round-1 FAIL report with inline screenshots was
@@ -227,7 +227,7 @@ In the VirtoCommerce QA repo a PreToolUse hook refuses the Atlassian MCP create 
 
 | Who found it | Labels |
 |---|---|
-| Claude, while testing a ticket (`/qa-test`, `/qa-test-fast`, exploratory) | `found-by-agent` + `found-in-testing` |
+| Claude, while testing a ticket (`/qa-test`, exploratory) | `found-by-agent` + `found-in-testing` |
 | Claude, in a regression run (`/qa-regression`, triage of a run) | `found-by-agent` + `found-in-regression` |
 | A person — the user saying "I found this, file it", a Teams/partner report | `reported-by-human` |
 

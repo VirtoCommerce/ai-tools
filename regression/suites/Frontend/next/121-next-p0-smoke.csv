@@ -1,0 +1,413 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+NXT-001,"Home — built-in Next home renders its sections in order, with header and footer",Next Smoke > Home,Critical,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[WAIT] h1 visible in main
+[SCROLL] to the footer","[DOM] footer text matches /^Ver\. 3\.\d+\.\d+/ (the Next theme, not vc-frontend 2.x) {OBSERVED}
+[DOM] main h2 headings appear in this order: ""Shop by category"", ""Popular with buyers"", ""Become a customer"" (other sections may sit between them) {OBSERVED}
+[DOM] header has searchbox ""Search products and parts"", links ""Bulk order"", ""Compare"", ""Cart"" and ""Sign in"" {OBSERVED}
+[DOM] no Page Builder block markup in main: on Next ""/"" always renders the built-in home (KB-A788D882) {OBSERVED}
+[NAV] link ""Become a customer"" in the last section points to /sign-up {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","Blank main or a spinner after 10 s; footer ""Ver. 2."" (wrong theme deployed); GraphQL errors on InitializeApplication or GetPageContext",none,"GAP-001; KB-A788D882; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-002,"Home — ""Shop by category"" and ""Popular with buyers"" are not empty",Next Smoke > Home,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[WAIT] h2 ""Popular with buyers"" visible
+[WAIT] 5 s for the sections to load their content","[COUNT] ""Shop by category"" section shows >= 1 category link, each opening a page whose h1 equals the link text {SPEC}
+[COUNT] ""Popular with buyers"" section shows >= 1 product card with a non-zero price {SPEC}
+[REL] link ""See all"" opens a category page whose ""products found"" count is >= the number of cards in the section {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","Section heading with nothing under it (seen 2026-11-17: GetSlugInfo returns entityInfo null for the fixed category permalinks, SearchProducts returns 0 items — KB-6FCBD344, suspected defect, not filed)",none,"GAP-001; KB-6FCBD344; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): both sections rendered only their heading",Draft
+NXT-003,Header — a top category in the main navigation opens its category page,Next Smoke > Navigation,Critical,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[ACT] click menuitem cat_name in the ""Navigation"" menubar
+[WAIT] category page h1 visible","[REL] page h1 == cat_name {OBSERVED}
+[REL] last breadcrumb == cat_name, breadcrumbs start with ""Home"" {OBSERVED}
+[FORMAT] text next to the h1 matches /^\d+ products? found$/ and the number is >= 1 {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",404 page or an empty grid for a menu category; h1 differs from the menu label,none,"GAP-003; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-004,Search — suggestion dropdown groups results and its total matches the results page,Next Smoke > Search,Critical,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[SETUP] live-discover: on that category page, the first card with no ""Variants"" badge and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (a product can show ""In stock"" with no count while its available quantity is 0 — skip it); store its title as p_title and its price as p_price
+[SETUP] term = the first word of p_title with 3 or more letters
+[NAV] {{FRONT_URL}} (search from home: on a category page the header search is scoped to that category)
+[ASSERT] no ""Search within …"" scope chip in the search field
+[ACT] fill searchbox ""Search products and parts"" (data-test-id global-search-query-input): term
+[WAIT] suggestion dropdown visible
+[ACT] store the number of items in the dropdown ""Products"" group as d; if a button ""View all N results"" is shown, store N
+[KEY] Enter
+[WAIT] /search page h1 visible","[DOM] dropdown has a ""Products"" group with >= 1 item, each item with a price {OBSERVED}
+[NAV] URL is /search?q=<term> {OBSERVED}
+[REL] with a ""View all N results"" button: ""N products found"" on /search == N; without it (every match fits the dropdown, KB-804C2453): ""N products found"" == d {SPEC}
+[DOM] h1 contains the term {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Dropdown never opens; GetSearchResults errors; dropdown total and page total differ,none,"GAP-002; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): ""laptop"" gave ""View all 48 results"" and ""48 products found"" | Promoted: REG-2026-11-17-1454 (2026-11-17)",Automated
+NXT-005,Search — a term with no match shows the no-results state,Next Smoke > Search,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[SETUP] random-data: term = ""zq"" + 8 random lowercase letters (no product can match)
+[NAV] {{FRONT_URL}}/search?q=<term>
+[WAIT] h1 visible","[DOM] h1 reads ""Sorry, your search for ""<term>"" didn't return any results"" with the exact term {OBSERVED}
+[COUNT] 0 product cards in main {OBSERVED}
+[DOM] ""There are no results found"" and a ""Reset filters"" button visible {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Spinner never ends; unrelated products listed; the term not echoed or HTML-escaped wrongly,none,"GAP-002; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230). Product question (not asserted): the copy ""Loosen one of them"" shows with no filter applied | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-006,"Category — toolbar has 4 sorts, a grid/list switch and 3 filter switches; In stock is on by default",Next Smoke > Catalog,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[WAIT] product grid visible","[COUNT] exactly 4 sort tabs, in order ""Featured"", ""Price ↑"", ""Price ↓"", ""Newest""; ""Featured"" pressed {SPEC}
+[DOM] switches ""Purchased before"", ""In stock"", ""Available at branches"" in that order {OBSERVED}
+[STATE] ""In stock"" is on, a ""Show in stock"" filter chip and a ""Reset filters"" button are shown {OBSERVED}
+[DOM] ""Switch to grid view"" is pressed, ""Switch to list view"" is not {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","A fifth ""Relevance"" sort (design-only, dropped by decision); missing ""Purchased before"" switch",none,"GAP-003; vc-frontend-next client-app/shared/catalog/specs/VCST-6050-paprika-catalog/DIVERGENCES.md (4 sorts, 3 switches kept by decision); KB-0AC30F85; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-007,Category — Price ↑ and Price ↓ order the cards by price and set the sort in the URL,Next Smoke > Catalog,Critical,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[ACT] click sort tab ""Price ↑""
+[WAIT] grid reloads
+[ACT] read the price of the first 12 cards (the ""From"" price for variation cards)
+[ACT] click sort tab ""Price ↓""
+[WAIT] grid reloads
+[ACT] read the price of the first 12 cards","[NAV] after ""Price ↑"" the URL has sort=price-ascending {OBSERVED}
+[DOM] after ""Price ↑"" the 12 prices are non-decreasing {SPEC}
+[DOM] after ""Price ↓"" the 12 prices are non-increasing {SPEC}
+[REL] the first price under ""Price ↓"" >= the last price under ""Price ↑"" {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Order unchanged after a sort click; struck-through old price used for ordering; URL sort param not updated,none,"GAP-003; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): ""Price ↑"" sets ?sort=price-ascending",Draft
+NXT-008,Category — turning In stock off never shows fewer products; turning it on again restores the count,Next Smoke > Catalog,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[ACT] store the ""N products found"" count as n_on
+[ACT] click switch ""In stock""
+[WAIT] count updates
+[ACT] store the count as n_off
+[ACT] click switch ""In stock"" again
+[WAIT] count updates","[REL] n_off >= n_on {SPEC}
+[DOM] with In stock off the ""Show in stock"" chip is gone {OBSERVED}
+[REL] with In stock on again the count == n_on and the ""Show in stock"" chip is back {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Count drops when a filter is removed; chip and switch disagree,none,"GAP-003; KB-0AC30F85; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230). Product question (not asserted, REG-2026-11-17-1257): with In stock off there is no ""Reset filters"" button, and when it shows, ""Reset filters"" turns the default-on In stock switch off | Promoted: REG-2026-11-17-1426 (2026-11-17)",Automated
+NXT-009,Category — infinite scroll loads every product and ends with the end-of-list message,Next Smoke > Catalog,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[ACT] store the ""N products found"" count as n
+[SCROLL] to the bottom of the grid, repeat until no new cards load
+[WAIT] ""You have reached the end of the list."" visible","[REL] number of product cards == n {SPEC}
+[DOM] the last line of the grid reads ""You have reached the end of the list."" {OBSERVED}
+[COUNT] no product title appears twice {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Cards duplicated across pages; loading stops before n; end message shown while products remain,none,"GAP-003; DIVERGENCES.md (page rounding to whole rows); Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): 24 products, 18 first then the rest | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-010,Category — list view is kept on another category page,Next Smoke > Catalog,Medium,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[ACT] click ""Switch to list view""
+[WAIT] list rows shown
+[ACT] click another menuitem in the ""Navigation"" menubar
+[WAIT] that category page loads","[STATE] ""Switch to list view"" is pressed on the second category {OBSERVED}
+[DOM] products render as rows (data-test-id products-list-view), not as the grid {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",View resets to grid on navigation; both views rendered at once,none,"GAP-003; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): the list choice is kept and is not in the URL | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-011,Category — a Brand facet value leaves only that brand and lowers the count,Next Smoke > Catalog,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[ACT] store the count as n_all
+[ACT] in facet ""Brand"" pick a value whose own count is below n_all; store it as brand and its count as n_brand
+[WAIT] grid reloads","[REL] ""products found"" count == n_brand and < n_all {SPEC}
+[REL] every card's brand line == brand {SPEC}
+[DOM] a filter chip naming brand is shown {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Cards of other brands remain; the count ignores the facet; facet count differs from the page count,none,"GAP-003; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): facets Storage capacity, Price, Brand, Form factor, Condition, Lifecycle status, Operating system, Compliance | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-012,"Product page — a simple product shows the same price as its card, a SKU and stock",Next Smoke > Product,Critical,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[SETUP] live-discover: on that category page, the first card with no ""Variants"" badge and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (a product can show ""In stock"" with no count while its available quantity is 0 — skip it); store its title as p_title and its price as p_price
+[ACT] click the card title link (a.vc-product-title__text)
+[WAIT] product h1 visible","[REL] h1 == p_title {OBSERVED}
+[REL] ""Price:"" in ""Price and delivery"" == p_price, non-zero {SPEC}
+[FORMAT] a SKU line matches /^SKU #\S+/ with a ""Copy"" button {OBSERVED}
+[FORMAT] ""In stock"" shows a whole number >= 1 {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Price $0.00 or N/A for a simple product; card and page prices differ; GetProduct errors,none,"GAP-004; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1426 (2026-11-17)",Automated
+NXT-013,Product page — a variation product needs every option before it can be bought,Next Smoke > Product,Critical,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[SETUP] live-discover: walking the header ""Main navigation"" categories in order, the first card with a ""Variants"" badge whose product page renders ""Options"" radiogroups (""Variant options""); open it with ""Show on a separate page"" (it may open a new tab). A product page that shows a ""Product variations"" panel (List / Table / Filters) instead is the other variation layout (KB-191B1B4C) — skip it; no product with the Options layout ⇒ BLOCKED (data)
+[WAIT] 3 s for the ""Options"" radiogroups to hydrate
+[ACT] read the price and the purchase control before any choice
+[ACT] in each ""Variant options"" radiogroup pick the first enabled option
+[WAIT] price updates","[DOM] before a choice the price reads ""N/A"" and ""Add to cart"" is disabled with name ""Select options to proceed"" {OBSERVED}
+[FORMAT] after every option is chosen the price matches /^\$[\d,]+\.\d{2}$/ and is non-zero {OBSERVED}
+[STATE] after every option is chosen a quantity stepper is enabled and a stock number is shown {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Options never render; a price shown before all options are chosen; add enabled with an option missing,none,"GAP-004; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): data-test-id variant-picker--<Property>_option--<Value> | Promoted: REG-2026-11-17-1454 (2026-11-17)",Automated
+NXT-014,Product page — Add to Compare puts the product on /compare,Next Smoke > Product,Medium,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Compare list empty",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[SETUP] live-discover: on that category page, the first card with no ""Variants"" badge and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (a product can show ""In stock"" with no count while its available quantity is 0 — skip it); store its title as p_title and its price as p_price
+[ACT] open the p_title product page
+[ACT] click ""Add to Compare""
+[WAIT] the button state changes
+[NAV] {{FRONT_URL}}/compare","[DOM] counter reads ""1 of 5 added"" {SPEC}
+[REL] the compared product title == p_title {SPEC}
+[DOM] guest: the Wishlist button is disabled (""Wishlists are available only for authenticated users"") {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx","Compare counter stays ""0 of 5""; another product listed","On /compare click ""Clear all""","GAP-004, GAP-014; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): empty /compare shows ""0 of 5 added"" | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-015,Cart — + on a listing card adds one unit and the header cart count follows,Next Smoke > Cart,Critical,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[SETUP] live-discover: on that category page, the first card with no ""Variants"" badge and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (a product can show ""In stock"" with no count while its available quantity is 0 — skip it); store its title as p_title and its price as p_price
+[ACT] store the header cart link name as before (""Cart"" or ""Cart: n"")
+[ACT] click ""Increase quantity"" on the p_title card
+[WAIT] up to 6 s for ""in Cart 1"" on the card (the update is debounced)","[DOM] the card shows ""in Cart 1"" {OBSERVED}
+[REL] the header cart link reads ""Cart: n"" with n == before + 1 {OBSERVED}
+[STATE] /cart lists p_title with quantity 1 {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",UpdateShortCartItemQuantity errors; card count and header count disagree; two units added for one click,[PRE:RESET_CART],"GAP-005; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-016,Cart — line total and order summary follow a quantity change,Next Smoke > Cart,Critical,BL-CART-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[SETUP] live-discover: on that category page, the first card with no ""Variants"" badge and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (a product can show ""In stock"" with no count while its available quantity is 0 — skip it); store its title as p_title and its price as p_price
+[ACT] add p_title to the cart with + on its card
+[WAIT] ""in Cart 1""
+[NAV] {{FRONT_URL}}/cart
+[WAIT] h1 ""Shopping cart""
+[ACT] click ""Increase quantity"" on the p_title line twice
+[WAIT] up to 8 s for the Order summary to update (it lags the line)","[MATH] line Total == ""Price per item"" × 3 {SPEC}
+[MATH] Order summary Subtotal == the sum of all line totals {SPEC}
+[MATH] Order summary Total == Subtotal − Discount + Tax + Shipping cost {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Summary keeps the old subtotal after 8 s; ChangeFullCartItemsQuantity errors; rounding off by a cent,[PRE:RESET_CART],"GAP-005; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): the Order summary updates 3–7 s after the line | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-017,Cart — Remove from cart drops the line and lowers the subtotal by its total,Next Smoke > Cart,Critical,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[ACT] add the first two in-stock simple products with + on their cards
+[WAIT] header ""Cart: 2""
+[NAV] {{FRONT_URL}}/cart
+[ACT] store Subtotal as s0 and the first line's Total as t1
+[ACT] click ""Remove from cart"" on the first line (data-test-id remove-item-button, first)
+[WAIT] line gone and summary updated","[COUNT] 1 line left {OBSERVED}
+[MATH] new Subtotal == s0 − t1 {SPEC}
+[REL] header cart link reads ""Cart: 1"" {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",RemoveCartItems errors; line reappears on reload; subtotal unchanged,[PRE:RESET_CART],"GAP-005; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): no confirm dialog on remove | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-018,Cart — Clear cart empties the cart after confirmation,Next Smoke > Cart,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[ACT] add the first two in-stock simple products with + on their cards
+[WAIT] the card shows ""in Cart"" and the header cart count updates (up to 6 s, debounced)
+[NAV] {{FRONT_URL}}/cart
+[ACT] click ""Clear cart"" (data-test-id clear-cart-button)
+[WAIT] dialog ""Clear cart"" visible
+[ACT] click ""Yes"" (data-test-id yes-button)
+[WAIT] cart reloads","[DOM] ""Your cart is empty"" with ""Continue shopping"" and ""Add with bulk order"" {OBSERVED}
+[COUNT] 0 cart lines {SPEC}
+[REL] the header cart link carries no count {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Lines remain; the dialog closes without clearing; the header keeps the old count,none,"GAP-005; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-019,"Cart — Place order stays disabled until address, delivery and payment are set",Next Smoke > Checkout,Critical,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Checkout is one page on /cart (KB-8357EF95)","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[ACT] add one in-stock simple product with + on its card
+[WAIT] the card shows ""in Cart"" and the header cart count updates (up to 6 s, debounced)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] ""Shipping details"" and ""Payment details"" visible
+[ASSERT] ""Place order"" disabled with ""Complete all required information to proceed.""
+[ACT] ""Shipping address*"": select the first address in dialog ""Select address"", click ""OK""
+[WAIT] the page reflects the action (no spinner, no pending request)
+[ACT] ""Delivery method*"": pick the first option
+[ACT] ""Payment method*"": pick the invoice / purchase-order method (non-card)
+[WAIT] summary updates","[STATE] before the three choices ""Place order"" is disabled and the hint ""Complete all required information to proceed."" is shown {OBSERVED}
+[STATE] after the three choices ""Place order"" is enabled and the hint is gone {SPEC}
+[DOM] ""Same as shipping address"" is checked for the billing address {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Place order enabled with a required choice missing; AddOrUpdateCartShipment or AddOrUpdateCartPayment errors,[PRE:RESET_CART],"GAP-006; KB-8357EF95; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-020,Checkout — an invoice order is placed and its total matches the cart,Next Smoke > Checkout,Critical,BL-ORD-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Stand allows test orders (ENV_RISK staging)","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[ACT] add one in-stock simple product with + on its card
+[WAIT] the card shows ""in Cart"" and the header cart count updates (up to 6 s, debounced)
+[NAV] {{FRONT_URL}}/cart
+[ACT] set shipping address, the first delivery method and the invoice / purchase-order payment method
+[SETUP] random-data: po = ""AGENT-TEST-PO-"" + unix ms
+[ACT] fill ""Enter a purchase order number"": po
+[WAIT] summary updates
+[ACT] store the Order summary Total as cart_total
+[ACT] click ""Place order""
+[WAIT] up to 15 s for /checkout/completed
+[ACT] store the order number
+[ACT] click ""Show order""
+[WAIT] order page loads","[NAV] URL is /checkout/completed with h1 ""Order completed"" {OBSERVED}
+[FORMAT] ""Order <number> has been successfully submitted."" with number matching /^CO\d+$/ {OBSERVED}
+[REL] the order page Total == cart_total and its status is ""New"" {SPEC}
+[REL] /account/orders lists the number with the same total {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",CreateOrderFromCart errors; completed page without a number; order total differs from the cart total; the cart is not emptied,Order stays (orders are not deleted from the storefront); po carries the AGENT-TEST- prefix for back-office sweeps,"GAP-006, GAP-008; KB-8357EF95; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230): order CO26111700002, $899.98. Product questions (not asserted): ""Pay now"" on an invoice order, PO number not shown on the order page | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-021,Sign-in — opens on the email-code view; the password view validates required fields,Next Smoke > Auth,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] form visible
+[ACT] click ""Continue"" with Email empty (data-test-id otp-email-continue-button)
+[WAIT] validation
+[ACT] click ""Sign in with a password instead"" (data-test-id otp-email-switch-to-password-link)
+[WAIT] the password field is visible
+[ACT] click ""Sign in"" with both fields empty
+[WAIT] validation
+[ACT] fill Email (data-test-id email-input): {{ORG_USER_EMAIL}}
+[ACT] click ""Sign in""
+[WAIT] validation","[DOM] the first view says ""We'll email you a code. No password needed."" and has no password field {OBSERVED}
+[COUNT] empty ""Continue"" shows exactly 1 ""This field is required"" {OBSERVED}
+[COUNT] empty password-view submit shows 2 ""This field is required""; with the email filled, exactly 1, under Password {OBSERVED}
+[STATE] still signed out: the header shows ""Sign in"" {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Form submits with empty fields; no message under the field; a code email sent for an empty address,none,"GAP-007; KB-4167A6EB; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-022,Sign-in and sign-out — the password sign-in opens the account; logout returns to sign-in with a returnUrl,Next Smoke > Auth,Critical,BL-AUTH-002,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/sign-in
+[ACT] click ""Sign in with a password instead""
+[WAIT] the password field is visible
+[ACT] fill Email: {{ORG_USER_EMAIL}}
+[ACT] fill 'Password': {{ORG_USER_PASSWORD}}
+[ACT] click ""Sign in"" (data-test-id login-button)
+[WAIT] redirect
+[NAV] {{FRONT_URL}}/account/orders
+[ACT] open the ""Account menu"" and click ""Logout""
+[WAIT] redirect","[STATE] after sign-in the header shows the ""Account menu"" button and no ""Sign in"" link {OBSERVED}
+[NAV] after sign-in the page is / {OBSERVED}
+[NAV] after logout the URL is /sign-in?returnUrl=%2Faccount%2Forders (or the unencoded path) {OBSERVED}
+[STATE] after logout /account/orders redirects to /sign-in {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",/connect/token error; header unchanged after sign-in; /revoke/token not called on logout,none,"GAP-007; KB-4167A6EB; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-023,Sign-up — Company account adds Company name; an empty submit marks every required field,Next Smoke > Auth,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/sign-up
+[WAIT] form visible
+[ACT] count the required fields as r_personal
+[ACT] click the label text ""Company account"" (the radio input is covered by its indicator)
+[WAIT] the ""Company name*"" field is visible
+[ACT] count the required fields as r_company
+[ACT] click ""Sign up"" (data-test-id sign-up-submit-button)
+[WAIT] validation","[DOM] ""Personal account"" is selected by default {OBSERVED}
+[REL] r_company == r_personal + 1 and the extra field is ""Company name*"" {OBSERVED}
+[REL] the number of ""This field is required"" messages == r_company {OBSERVED}
+[NAV] URL is still /sign-up {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Form submits empty; a required field without a message; Company name missing for a company account,none,"GAP-009; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-024,Forgot password — Submit is enabled only with an email filled,Next Smoke > Auth,Medium,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/sign-in
+[ACT] click ""Sign in with a password instead""
+[WAIT] the password field is visible
+[ACT] click ""Forgot your password?""
+[WAIT] page loads
+[ASSERT] ""Submit"" disabled
+[SETUP] random-data: email = AGENT-TEST-<unix ms>@test.com
+[ACT] fill Email: email","[NAV] the link leads to /forgot-password with h1 ""Reset your password"" {OBSERVED}
+[STATE] ""Submit"" is disabled while Email is empty and enabled once it holds a valid address {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Submit enabled with an empty field; link points elsewhere,none,"GAP-010; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-025,Account — the dashboard's recent orders agree with the order list and the order page,Next Smoke > Account,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+The org user has >= 1 order (place one with the invoice-order case if needed)","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] ""My recent orders"" visible
+[ACT] store the first order's number and total
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] table loads
+[ACT] click that order number
+[WAIT] order page loads","[REL] the first row of /account/orders has the same number and total as the dashboard's first recent order {SPEC}
+[REL] the order page shows the same number and Total {SPEC}
+[DOM] /account/orders rows are ordered by date, newest first {SPEC}
+[DOM] the order page shows the billing and shipping address, shipping method and payment method {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",GetOrders errors; dashboard and list disagree; order page 404,none,"GAP-008; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-026,"Account menu — each Purchasing, Corporate and User link opens its page",Next Smoke > Account,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[ACT] open the ""Account menu"" dialog
+[ACT] for each of ""Orders"", ""Lists"", ""Company info"", ""Company members"", ""Profile"": click it, wait for the page, reopen the menu
+[WAIT] the page reflects the action (no spinner, no pending request)","[DOM] the menu has groups ""Purchasing"", ""Corporate"" and ""User"" and a ""Logout"" item {OBSERVED}
+[REL] each link lands on its route: /account/orders, /account/lists, /company/info, /company/members, /account/profile {OBSERVED}
+[COUNT] none of the five pages shows the 404 ""Page not found"" {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",A menu link opens 404 or the wrong page; the menu misses a group for an org user,none,"GAP-008, GAP-011, GAP-013; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230). Not asserted: org switcher absence on desktop (KB-F97583AC, suspected defect) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-027,"Bulk order — a pasted SKU,Quantity line adds that quantity to the cart",Next Smoke > Bulk order,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}
+[SETUP] live-discover: the first top-level category in the header ""Main navigation"" menubar; store its name as cat_name
+[NAV] open the cat_name category page
+[SETUP] live-discover: on that category page, the first card with no ""Variants"" badge and no ""Digital"" badge whose ""In stock"" badge shows a count of 1 or more (a product can show ""In stock"" with no count while its available quantity is 0 — skip it); store its title as p_title and its price as p_price
+[ACT] open the p_title product page and store its SKU (after ""SKU #"") as sku
+[NAV] {{FRONT_URL}}/bulk-order
+[ASSERT] tab ""Copy&Paste"" pressed, ""Add to cart"" disabled
+[ACT] fill the textarea: ""<sku>,2""
+[ACT] click ""Add to cart""
+[WAIT] cart updates
+[NAV] {{FRONT_URL}}/cart","[STATE] ""Add to cart"" is disabled while the textarea is empty and enabled once it holds a line {OBSERVED}
+[REL] the cart has a line titled p_title with quantity 2 {SPEC}
+[MATH] that line's Total == its ""Price per item"" × 2 {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",SKU not found for a real SKU; quantity 1 instead of 2; a second line for the same SKU,[PRE:RESET_CART],"GAP-015; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1426 (2026-11-17)",Automated
+NXT-028,"Error page — an unknown URL shows ""Page not found"" with a way home",Next Smoke > Errors,Medium,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[SETUP] random-data: slug = ""agent-test-missing-"" + unix ms
+[NAV] {{FRONT_URL}}/<slug>
+[WAIT] main visible
+[ACT] click ""Home page""
+[WAIT] home loads","[DOM] h1 ""404"" and h2 ""Page not found"" {OBSERVED}
+[NAV] ""Home page"" leads to / {OBSERVED}
+[DOM] header and footer still render on the error page {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Blank page; a product or category rendered for a random slug; endless spinner,none,"GAP-016; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230). Product question (not asserted): the document returns HTTP 200, not 404 | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-029,Mobile 390 — the drawer menu and the banner both reach the cart with the same count,Next Smoke > Mobile,High,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Viewport 390 × 844",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[WAIT] banner visible
+[ACT] click ""Main menu""
+[WAIT] drawer visible
+[ACT] click ""Cart"" in the drawer
+[WAIT] /cart loads","[DOM] the banner has ""Main menu"", the logo, ""Toggle search bar"" and ""Cart"" {OBSERVED}
+[DOM] the drawer lists ""Home"", ""Catalog"", ""Compare"", ""Bulk order"", ""Cart"", then ""Sign in"" and ""Sign up now"" {OBSERVED}
+[NAV] drawer ""Cart"" opens /cart {OBSERVED}
+[SHIFT] no horizontal scroll: document scrollWidth <= 390 {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Drawer does not open; content wider than the viewport; desktop header shown at 390,none,"GAP-017; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-030,Mobile 390 — header search finds the same products as on desktop,Next Smoke > Mobile,Medium,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL
+Viewport 390 × 844",front_url={{FRONT_URL}},"[SETUP] at 1920 wide, open {{FRONT_URL}}/search?q=<term> for a term from a discovered product title; store ""N products found"" as n_desktop
+[ACT] resize to 390 × 844
+[NAV] {{FRONT_URL}}
+[ACT] click ""Toggle search bar""
+[WAIT] the search field is visible
+[ACT] fill searchbox ""Search products and parts"": term
+[KEY] Enter
+[WAIT] results load","[NAV] URL is /search?q=<term> {SPEC}
+[REL] the products-found count == n_desktop {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Search bar does not open; Enter does nothing on mobile; a different count,none,"GAP-002, GAP-017; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-031,Company — company info and members load for the org user,Next Smoke > Company,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/company/info
+[WAIT] page loads
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] table loads","[DOM] /company/info shows a non-empty ""Company name"" and an ""Addresses"" section with ""Add new address"" {OBSERVED}
+[DOM] /company/members table has columns Name, Roles, Email, Active {OBSERVED}
+[REL] the members table has a row whose Email == {{ORG_USER_EMAIL}} {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Company name empty; the signed-in user missing from members; GraphQL errors on the company queries,none,"GAP-013; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
+NXT-032,Lists — creating a list shows it on /account/lists,Next Smoke > Account,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL","front_url={{FRONT_URL}}, email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/account/lists
+[WAIT] page loads
+[ACT] store the number of lists as k
+[SETUP] random-data: name = ""AGENT-TEST-L"" + the last 6 digits of unix ms (18 characters: ""List name"" accepts at most 25)
+[ACT] click ""Create list"" (data-test-id create-wishlist-button)
+[WAIT] the page reflects the action (no spinner, no pending request)
+[ACT] fill the list name: name
+[ACT] confirm
+[WAIT] list appears","[COUNT] number of lists == k + 1 {SPEC}
+[REL] a list named name is shown and opens /account/lists/<id> {SPEC}
+[DOM] with no lists the page reads ""You have not created any lists yet"" {OBSERVED}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Create list does nothing; duplicate lists; list name lost,Delete the list named name,"GAP-012; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1426 (2026-11-17)",Automated
+NXT-033,Header — the currency and language button opens a settings menu with the current values,Next Smoke > Navigation,Medium,,,"[PRE:CLEAR_SESSION]
+Stand serves the vc-frontend-next 3.x theme (footer text starts ""Ver. 3.""); on a vc-frontend 2.x stand the case is BLOCKED for the build, never FAIL",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] read the header button text (e.g. ""USD · EN"") as label
+[ACT] click it
+[WAIT] menu visible","[FORMAT] label matches /^[A-Z]{3} · [A-Z]{2}$/ {OBSERVED}
+[REL] the menu marks the currency and language that label names as the current ones (current-currency-label, current-language-label) {SPEC}","[CONSOLE] no uncaught JS error (CSP blocks of Application Insights and jsdelivr are known noise)
+[NETWORK] no GraphQL response carries errors[]; no 5xx",Button opens nothing; current values differ from the button text,none,"GAP-018; Observed on virtostart, vc-frontend-next 3.3.0, 2026-11-17 (COV-2026-11-17-1230) | Promoted: REG-2026-11-17-1257 (2026-11-17)",Automated
