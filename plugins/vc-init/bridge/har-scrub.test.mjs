@@ -189,31 +189,43 @@ test("a running lane scrubs the HAR left from before, and the one Playwright wri
   assert.ok(!out.includes(PW) && !out.includes(encodeURIComponent(STOREFRONT_PW)));
 });
 
-test("a lane whose HAR folder is deleted stays idle, watches the folder again once it is back, and scrubs what landed there", async () => {
-  // The real fs.watch: on Windows a deleted watched folder made the watcher spin at a whole core, forever.
-  const root = mkdtempSync(join(tmpdir(), "har-gone-"));
+// The real fs.watch: on Windows a deleted watched folder made the watcher spin at a whole core, forever.
+async function laneAfterDeletion(name, { recreateAtOnce }) {
+  const root = mkdtempSync(join(tmpdir(), name));
   const file = join(root, "test-results", "chrome", "har", "session.har");
   const seen = [];
   const lane = watchHarDirs([file], { secrets: [PW], settleMs: 5, rearmMs: 50, onResult: (f, r) => seen.push(r.status) });
   const until = async (pred) => { for (let i = 0; i < 300 && !pred(); i++) await new Promise((r) => setTimeout(r, 10)); };
   try {
     rmSync(join(root, "test-results"), { recursive: true, force: true });
+    // Back before the lane has handled a single event: the folder exists, but it is not the one watched.
+    if (recreateAtOnce) mkdirSync(dirname(file), { recursive: true });
     const cpu = process.cpuUsage();
     const t0 = Date.now();
     await new Promise((r) => setTimeout(r, 1000));
     const used = process.cpuUsage(cpu);
     const share = (used.user + used.system) / 1000 / (Date.now() - t0);
-    assert.ok(share < 0.2, `an idle lane with its HAR folder gone used ${(share * 100).toFixed(0)}% of a core`);
-    assert.equal(existsSync(join(root, "test-results")), false, "the lane must not re-create a folder being deleted");
-    // Playwright writes the HAR again (it creates the folder itself): the re-armed watch scrubs it.
-    mkdirSync(dirname(file), { recursive: true });
+    assert.ok(share < 0.2, `an idle lane with its HAR folder deleted used ${(share * 100).toFixed(0)}% of a core`);
+    if (!recreateAtOnce) {
+      assert.equal(existsSync(join(root, "test-results")), false, "the lane must not re-create a folder being deleted");
+      // Playwright writes the HAR again (it creates the folder itself).
+      mkdirSync(dirname(file), { recursive: true });
+    }
+    // The re-armed watch scrubs what lands in the folder that is there now.
     writeFileSync(file, har([adminLogin]));
     await until(() => seen.includes("scrubbed"));
     assert.ok(!readFileSync(file, "utf8").includes(PW));
   } finally {
     lane.close();
+    rmSync(root, { recursive: true, force: true, maxRetries: 5 });
   }
-});
+}
+
+test("a lane whose HAR folder is deleted stays idle, watches the folder again once it is back, and scrubs what landed there", () =>
+  laneAfterDeletion("har-gone-", { recreateAtOnce: false }));
+
+test("a lane whose HAR folder is deleted and re-created at once stays idle and scrubs what lands in the new folder", () =>
+  laneAfterDeletion("har-back-", { recreateAtOnce: true }));
 
 test("a numeric password field is masked, and a value escaped twice inside a JSON body is found", () => {
   const pin = entry("POST", "https://stand.example/api/pin", { request: { postData: { mimeType: "application/json", text: JSON.stringify({ user: "u", password: 123456 }) } } });
