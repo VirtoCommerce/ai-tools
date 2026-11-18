@@ -136,8 +136,8 @@ node -e 'for(const f of process.argv.slice(1))require("fs").readFileSync(f,"utf8
   MINOR, or MAJOR when a step acts on the claim (`CLAUDE.md` §What reaches a teammate).
 - **Per-user paths** (`~/.claude/…`, `settings.local.json`, an absolute OS path) → MAJOR.
 - **Environment:** URLs and credentials come from the layered loader keyed by `TEST_ENV`, resolved
-  through `process.env` after importing `config.js` — never read off one `.env.*` layer or the
-  curated `env` export (`.claude/rules/test-data.md` §Resolving a variable) → MAJOR if a step
+  through `process.env` after loading the env (`config.js` or `loadEnv()`) — never read off one
+  `.env.*` layer (`.claude/rules/test-data.md` §Resolving a variable) → MAJOR if a step
   concludes "unset" that way.
 - **Browsers:** `chromium`, not `chrome`; no WebKit on Windows (fall back to Edge); an MCP config
   change needs a server restart (`.claude/rules/agents.md` §Browser Automation Rules) → MAJOR if a

@@ -22,8 +22,7 @@
  *   TEST_ENV=<env> node skills/project-init/derive-context.mjs \
  *     --tracker jira|azure --client-vcs github|azure-repos [--upstream-org VirtoCommerce]
  */
-import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "../../../scripts/lib/resolve-test-env.js";
+import { loadEnv } from "../../../scripts/lib/load-env.mjs";
 import { probeGithubUpstream, resolveGithubToken, tryCmd } from "./probe-lib.mjs";
 
 function parseArgs(argv) {
@@ -44,18 +43,10 @@ async function main() {
   const clientVcs = args["client-vcs"] || "github";
   const upstreamOrg = args["upstream-org"] || "VirtoCommerce";
 
-  // Load env the same way config.js / verify-access do, incl. per-env suffix promotion
-  // (ADMIN_PASSWORD_<ENV> → ADMIN_PASSWORD, ADO_PAT_<ENV> → ADO_PAT, …) so filled creds
-  // are seen regardless of which file they landed in.
-  const TEST_ENV = resolveTestEnv("vcst");
-  // quiet: keep stdout pure JSON (dotenv v17 prints promo tips to stdout otherwise).
-  dotenv({ path: ".env.defaults", quiet: true });
-  dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
-  dotenv({ path: ".env.local", override: true, quiet: true });
-  const SUF = `_${TEST_ENV.toUpperCase()}`;
-  for (const [k, v] of Object.entries(process.env)) {
-    if (k.endsWith(SUF) && v) process.env[k.slice(0, -SUF.length)] = v;
-  }
+  // The one env loader (scripts/lib/load-env.mjs): every layer and the per-env suffix promotion (ADO_PAT_<ENV> →
+  // ADO_PAT, …), so filled tokens are seen whichever file they landed in. Tokens only: no test-account store, so a
+  // broken one cannot stop onboarding.
+  loadEnv({ root: process.cwd(), testAccounts: false });
 
   // --- auth actually present, per axis ---
   const gh = resolveGithubToken();

@@ -64,9 +64,11 @@ function child(root, env, mode, input = "") {
 
 /** CHILD: the credential variables the loader gives this env, with values (to the parent's pipe only). */
 async function childRead() {
-  const { loadLayeredEnv } = await import(pathToUrl(LOADER));
-  const env = loadLayeredEnv();
-  const e = process.env;
+  const { loadLayered } = await import(pathToUrl(LOADER));
+  // A value a QA_ENV_PATH folder supplies is that folder's to keep: this move cleans only the project root, so taking
+  // it would leave its line behind as a leftover nothing clears. The loader's warning names that file instead.
+  const { testEnv: env, layers: { dedicatedKeys: fromFolder } } = loadLayered();
+  const e = Object.fromEntries(Object.entries(process.env).filter(([k]) => !fromFolder.has(k)));
   const markers = existsSync(`.env.${env}`) ? markedUsersIn(readFileSync(`.env.${env}`, "utf8")).map((u) => u.key) : [];
   const out = {};
   for (const [k, v] of Object.entries(e)) if (v && storePassword(k)) out[k] = v;
@@ -227,8 +229,11 @@ async function main() {
   }
   if (Object.keys(plan.topShared).length) console.log(`${TAG} every env: shared ${Object.keys(plan.topShared).join(", ")}`);
   for (const [env, names] of Object.entries(plan.vcSecrets)) console.log(`${TAG} ${env}: ${names.join(", ")} kept in vc-secrets (option B) — not visible here, stays there`);
-  const leftover = existsSync(join(root, BROWSER_SECRETS_FILE));
-  console.log(`${TAG} ${moved} value(s) to move into ${STORE_FILE}${leftover ? `; ${BROWSER_SECRETS_FILE} to delete` : ""}`);
+  // The browser-secrets file, and the root's legacy per-env password files the loader reads below the store: every
+  // value they hold is in `expected` (a store value wins and needs none), so they go with the move.
+  const legacyFiles = [BROWSER_SECRETS_FILE, ...envs.map((e) => `.env.playwright.${e}`)].filter((f) => existsSync(join(root, f)));
+  const leftover = legacyFiles.length > 0;
+  console.log(`${TAG} ${moved} value(s) to move into ${STORE_FILE}${leftover ? `; ${legacyFiles.join(", ")} to delete` : ""}`);
   if (!apply) { console.log(`${TAG} dry run — nothing written; --apply moves them and proves the move`); return; }
   if (!moved && !leftover) { console.log(`${TAG} nothing to move`); return; }
 
@@ -272,12 +277,12 @@ async function main() {
   }
   if (storeBefore !== null) writeFileSync(join(backup, STORE_FILE), storeBefore);
   for (const f of changes.keys()) copyFileSync(f, join(backup, f.slice(root.length + 1)));
-  if (leftover) copyFileSync(join(root, BROWSER_SECRETS_FILE), join(backup, BROWSER_SECRETS_FILE));
+  for (const f of legacyFiles) copyFileSync(join(root, f), join(backup, f));
   for (const [f, text] of changes) writeFileSync(f, text);
-  if (leftover) rmSync(join(root, BROWSER_SECRETS_FILE));
+  for (const f of legacyFiles) rmSync(join(root, f));
   const restoreAll = () => {
     for (const f of changes.keys()) copyFileSync(join(backup, f.slice(root.length + 1)), f);
-    if (leftover) copyFileSync(join(backup, BROWSER_SECRETS_FILE), join(root, BROWSER_SECRETS_FILE));
+    for (const f of legacyFiles) copyFileSync(join(backup, f), join(root, f));
     restoreStore();
   };
 
@@ -286,7 +291,7 @@ async function main() {
   if (bad.length) { restoreAll(); fail(`second proof FAILED for ${bad.join(", ")} — every file restored from ${backup}`); }
 
   const rel = (f) => f.slice(root.length + 1);
-  console.log(`${TAG} ✓ moved into ${STORE_FILE}; cleaned ${[...changes.keys()].map(rel).join(", ") || "no file"}${leftover ? `; deleted ${BROWSER_SECRETS_FILE}` : ""}; backup: ${rel(backup)} (gitignored — delete it once the lanes sign in)`);
+  console.log(`${TAG} ✓ moved into ${STORE_FILE}; cleaned ${[...changes.keys()].map(rel).join(", ") || "no file"}${leftover ? `; deleted ${legacyFiles.join(", ")}` : ""}; backup: ${rel(backup)} (gitignored — delete it once the lanes sign in)`);
   const remaining = existsSync(local) ? Object.keys(parse(readFileSync(local, "utf8"))).filter((k) => /PASSWORD/.test(k) && !isPersonalServiceName(k) && !/TOKEN|API|KEY|SECRET/.test(k)) : [];
   if (remaining.length) console.log(`${TAG} still in .env.local (no .env.<env> uses it, or not a test account): ${remaining.join(", ")}`);
   console.log(`${TAG} next: gen-mcp.mjs (the lanes then read ${STORE_FILE}), restart Claude Code; a tracked .env.<env> changed — commit it, and give teammates ${STORE_FILE} through the team's secret store`);

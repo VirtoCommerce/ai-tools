@@ -62,13 +62,13 @@
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { basename, dirname, resolve } from 'node:path';
-import { parse as parseDotenv } from 'dotenv';
+import { dirname, resolve } from 'node:path';
 import { getAdminToken, probeLiveModules, type AdminAuth, type ProbeStatus } from '../deploy/lib/live.ts';
 import { platformApiKey } from '../deploy/lib/env.ts';
-import { ownEnv } from '../lib/env-layers.mjs';
+import { findEnv, ownEnv, readEnvFile } from '../lib/env-layers.mjs';
+import { applyOperatorSecrets } from '../lib/github-token.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -85,7 +85,8 @@ const HEALTH_SLICE_MS = 300_000;
 const DEFAULT_TIMEOUT_S = 1200; // deploy build + cloud rollout + platform restart ~ up to 20 min
 const PRODUCT_REPO_RE = /^vc-module(-x)?-[a-z0-9.-]+$/i;
 const isProductRepo = (n: string) => n === 'vc-platform' || n === 'vc-frontend' || PRODUCT_REPO_RE.test(n);
-const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
+// Read at use, not at import: loadToken() fills JIRA_BASE_URL from .env.local after the module has loaded.
+const jiraBase = () => (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
 
 // ── types ──────────────────────────────────────────────────────────────────────
 interface SemVer { major: number; minor: number; patch: number; }
@@ -102,12 +103,9 @@ interface EnvResult {
 
 // ── env / token ──────────────────────────────────────────────────────────────
 function loadToken(): string | undefined {
-  // A variable already set is never overwritten, so the file read FIRST wins: .env.local before .env.defaults gives
-  // the documented order (process env, then .env.local, then .env.defaults). The reverse let a default beat a local value.
-  for (const f of ['.env.local', '.env.defaults']) {
-    const p = resolve(REPO_ROOT, f);
-    if (existsSync(p)) { const vars = parseDotenv(readFileSync(p)); for (const [k, v] of Object.entries(vars)) if (!process.env[k]) process.env[k] = v; }
-  }
+  // The operator's own secrets, shared with bundle:check and release:diff (scripts/lib/github-token.ts): the process
+  // environment, then .env.local, then .env.defaults — never a committed .env.<env>'s identity.
+  applyOperatorSecrets(REPO_ROOT, ["GIT_TOKEN", "GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "JIRA_EMAIL", "JIRA_API_TOKEN", "JIRA_BASE_URL"], null); // no _<ENV> pin: the session's env is not the stand a hotfix delivers to
   // This script performs a WRITE (Contents PUT) to vc-deploy-dev, so prefer the write-scoped classic
   // token (GITHUB_FIX_BUGS_TOKEN — the same PAT /qa-fix uses to push to VirtoCommerce repos) over the
   // read-only GITHUB_TOKEN, which typically lacks contents:write on vc-deploy-dev (→ HTTP 403).
@@ -118,17 +116,21 @@ function ghHeaders(extra: Record<string, string> = {}): Record<string, string> {
   return { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'vc-hotfix-deliver', ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}), ...extra };
 }
 
-/** Parse one .env file into a plain object (no process.env mutation). */
-function readEnvFile(path: string): Record<string, string> {
-  return existsSync(path) ? parseDotenv(readFileSync(path)) : {};
-}
 /** Deploy + connection coords for a target env, from `.env.vcptcore_<env>` (+ .env.local secrets). */
 function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   const key = env.replace(/^vcptcore[_-]?/, '').replace(/[^a-z0-9]/gi, '').toLowerCase(); // "stable" | "regression"
-  const file = resolve(REPO_ROOT, `.env.vcptcore_${key}`);
-  if (!existsSync(file)) throw new Error(`No env file for "${env}" (looked for .env.vcptcore_${key}). Known: stable, regression.`);
-  const e = readEnvFile(file);
-  const local = readEnvFile(resolve(REPO_ROOT, '.env.local'));
+  const envName = `vcptcore_${key}`;
+  // The env's own files, as the loader finds them: the root's `.env.<env>`, or its QA_ENV_PATH folder's.
+  const file = findEnv(envName, { root: REPO_ROOT });
+  if (!file) throw new Error(`No env file for "${env}" (looked for .env.${envName}). Known: stable, regression.`);
+  const { vars: merged, credentials: creds } = ownEnv(envName, { root: REPO_ROOT });
+  // As scripts/deploy/lib/env.ts resolveEnvCoords: an env the project root defines takes its coords from the root's file
+  // ONLY — a QA_ENV_PATH folder's override is for that ticket's runs, never for which repo/branch a delivery commits to.
+  const rootVars = readEnvFile(resolve(REPO_ROOT, `.env.${envName}`));
+  const e = rootVars ?? merged;
+  const overridden = rootVars ? ['DEPLOY_REPO', 'DEPLOY_BRANCH', 'DEPLOY_PACKAGES_PATH', 'BACK_URL'].filter((k) => merged[k] !== undefined && merged[k] !== rootVars[k]) : [];
+  if (overridden.length) console.warn(`[hotfix] a QA_ENV_PATH file sets ${overridden.join(', ')} for ${envName}, a project env: ignored — the delivery changes the stand the project's .env.${envName} names.`);
+  const local = readEnvFile(resolve(REPO_ROOT, '.env.local')) ?? {};
   const repoSpec = e.DEPLOY_REPO || '';
   const [deployOwner, deployRepo] = repoSpec.includes('/') ? repoSpec.split('/') : [OWNER, repoSpec];
   if (!deployRepo || !e.DEPLOY_BRANCH || !e.DEPLOY_PACKAGES_PATH) {
@@ -136,8 +138,6 @@ function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   }
   // The env's admin password is the test-account store's (test-accounts.local.json), as scripts/deploy/lib/env.ts
   // reads it. No guess: an empty password skips the sign-in (getAdminToken) instead of a failed attempt against the shared admin.
-  const envName = basename(file).replace(/^\.env\./, ''); // the env's own name, as its file spells it
-  const creds = ownEnv(envName, { root: REPO_ROOT }).credentials;
   const password = passwordOverride || creds.ADMIN_PASSWORD || '';
   // The env's read-only service-account key, named and looked up by scripts/deploy/lib/env.ts: used instead of the shared admin.
   const apiKey = passwordOverride ? '' : platformApiKey(envName, local);
@@ -276,7 +276,7 @@ async function prFromJiraDescription(task: string): Promise<{ repo: string; numb
   const email = process.env.JIRA_EMAIL, token = process.env.JIRA_API_TOKEN;
   if (!email || !token) { console.error(`[hotfix-deliver] no GitHub PR found for ${task}; JIRA description fallback needs JIRA_EMAIL + JIRA_API_TOKEN in .env.local`); return null; }
   const auth = Buffer.from(`${email}:${token}`).toString('base64');
-  const res = await fetch(`${JIRA_BASE}/rest/api/3/issue/${encodeURIComponent(task)}?fields=description`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-deliver' } });
+  const res = await fetch(`${jiraBase()}/rest/api/3/issue/${encodeURIComponent(task)}?fields=description`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-deliver' } });
   if (!res.ok) { console.error(`[hotfix-deliver] JIRA fetch for ${task} failed (HTTP ${res.status})`); return null; }
   const j = await res.json();
   // description is ADF (JSON) — the PR href lives in a link mark; stringify + regex finds it.
@@ -289,7 +289,7 @@ async function jiraSummary(task: string): Promise<string | null> {
   const email = process.env.JIRA_EMAIL, token = process.env.JIRA_API_TOKEN;
   if (!email || !token) return null;
   const auth = Buffer.from(`${email}:${token}`).toString('base64');
-  const res = await fetch(`${JIRA_BASE}/rest/api/3/issue/${encodeURIComponent(task)}?fields=summary`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-deliver' } });
+  const res = await fetch(`${jiraBase()}/rest/api/3/issue/${encodeURIComponent(task)}?fields=summary`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-deliver' } });
   if (!res.ok) return null;
   return (await res.json())?.fields?.summary ?? null;
 }

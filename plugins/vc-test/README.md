@@ -227,4 +227,4 @@ gate. Full rules: `skills/qa-test-strategy/verdict-rules.md` §Decide the verdic
 | `agents/goal-judge.md` | The independent judge of `/vc-test:qa-goal`: Read, Grep, Glob, Bash; re-derives the draft verdict from `goal.json` and the evidence and returns `VERDICT: APPROVE` or `REJECT` with reasons and fixes. Never edits a file |
 | `lib/plan-run.mjs`, `score-scenarios.mjs`, `window.mjs`, `teardown.mjs`, … | The run's deterministic steps (P0); see each file's header |
 | `briefs/` | One brief per brief-driven dispatch — `scenarios`, `strategy`, `ac-checks`, `scenario-run`, `bug-rerun` — and `ledger.md`, which every lane that may write reads beside its brief |
-| `scripts/lib/` | The env loader, copied from vc-fix (`plugins/CLAUDE.md`: a plugin carries its own) |
+| `scripts/lib/` | The env loader — the ai-tools repo's files, copied byte for byte by `npm run env:sync` (`plugins/CLAUDE.md` §The env loader) |

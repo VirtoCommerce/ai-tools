@@ -192,6 +192,10 @@ export function buildInnerEnv(source, group, { nodePath = process.execPath, help
     GIT_ASKPASS: "",
     SSH_ASKPASS: "",
   }, gitConfigEnv({ nodePath, helperPath }));
+  // What came from vc-secrets, and for which env: the env loader puts back exactly these, and a password only for
+  // that env (scripts/lib/load-layered-env.mjs) — a child that switches env inherits them too.
+  env.VC_BRIDGE_SECRETS = Object.keys(secrets).sort().join(",");
+  if (source.TEST_ENV) env.VC_BRIDGE_ENV = source.TEST_ENV;
   if (projectRoot) Object.assign(env, { VC_FIX_HOME: projectRoot, PROJECT_PROFILE_PATH: join(projectRoot, "project-profile.json") });
   if (ghConfigDir) env.GH_CONFIG_DIR = ghConfigDir;
   if (gitGlobalConfig) env.GIT_CONFIG_GLOBAL = gitGlobalConfig;
@@ -561,7 +565,7 @@ async function runnerOuter(args) {
     });
   }
   const { env, secrets } = buildInnerEnv(process.env, "runner", { projectRoot: runner.projectRoot });
-  env.TEST_ENV = runner.env; // the env just checked, not whatever the child's loader would fall back to
+  env.TEST_ENV = env.VC_BRIDGE_ENV = runner.env; // the env just checked, not whatever the child's loader would fall back to
   return runChild(runner.cmd.command, runner.cmd.args, { env, secrets: [...Object.values(secrets), ...runnerFilePasswords(runner.projectRoot)], cwd: runner.projectRoot });
 }
 

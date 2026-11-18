@@ -33,8 +33,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "../../../scripts/lib/resolve-test-env.js";
+import { loadEnv } from "../../../scripts/lib/load-env.mjs";
 
 const UPSTREAM_ORG = "VirtoCommerce";
 
@@ -405,17 +404,8 @@ async function readPackageJsonLive(host, { org, project, name }) {
 }
 
 async function getModulesLive() {
-  const TEST_ENV = resolveTestEnv("vcst");
-  // quiet: stdout carries the machine-readable repo map (dotenv v17 prints promo tips otherwise).
-  dotenv({ path: ".env.defaults", quiet: true });
-  dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
-  dotenv({ path: ".env.local", override: true, quiet: true });
-  // Per-env suffix promotion (mirror config.js / verify-access) so ADMIN_PASSWORD_<ENV>
-  // → ADMIN_PASSWORD etc. — otherwise per-env creds in .env.local are never seen.
-  const SUF = `_${TEST_ENV.toUpperCase()}`;
-  for (const [k, v] of Object.entries(process.env)) {
-    if (k.endsWith(SUF) && v) process.env[k.slice(0, -SUF.length)] = v;
-  }
+  // The one env loader (scripts/lib/load-env.mjs) — its warnings go to stderr, so stdout keeps the repo map.
+  loadEnv({ root: process.cwd() });
 
   const BACK_URL = (process.env.BACK_URL || "").replace(/\/$/, "");
   const ADMIN = process.env.ADMIN || "";

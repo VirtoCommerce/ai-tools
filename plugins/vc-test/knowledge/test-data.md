@@ -33,11 +33,11 @@ The GOLDEN RULE governs *where a value comes from*; the SECOND governs *which va
 
 Enforced by `npm run td:validate` (`DV-024`): any suite row containing a literal `reports/tickets/…` **output** path fails. Provenance CITATIONS of prior run artifacts are a separate, tolerated class, tracked as informational by `npm run context:check` (`DOC-003E`) — do not confuse the two.
 
-## Resolving a variable: through `process.env`, never off a layer or the curated export
+## Resolving a variable: through `process.env`, never off a layer
 
-A role's login and password live in `test-accounts.local.json`, layered over `.env.defaults` → `.env.${TEST_ENV}` → `.env.local`, so grepping `.env.${TEST_ENV}` finds nothing and still looks conclusive, because it is the file named after the environment. The second half of the trap is worse: `config.js` exports a **curated** `env` object, and a key it does not carry comes back `undefined` — indistinguishable from a variable that is genuinely unset, which is the conclusion it will be mistaken for. Measured 2026-08-28: a working fixture account was reported as having empty credentials on exactly this basis, and the suite that authenticates as that role was very nearly filed as broken.
+A role's login and password live in `test-accounts.local.json`, layered over `.env.defaults` → `.env.${TEST_ENV}` → `.env.local`, so grepping `.env.${TEST_ENV}` finds nothing and still looks conclusive, because it is the file named after the environment. Measured 2026-08-28: a working fixture account was reported as having empty credentials from one layer (and from a curated `env` object `config.js` used to export, since removed), and the suite that authenticates as that role was very nearly filed as broken.
 
-**Resolve through `process.env` after importing `config.js`** (the import runs the layered loader); use the curated `env` export only for keys you have confirmed it carries. Never conclude a variable is unset from a single layer or from the curated object.
+**Resolve through `process.env` after loading the env** — `import './config.js'` (load + the CORE check) or `loadEnv()` from `scripts/lib/load-env.mjs` (load only). Never conclude a variable is unset from a single layer; `npm run env:check` names the file each value came from.
 
 ## DISPOSABLE FIXTURES — the four rules (detail on demand)
 

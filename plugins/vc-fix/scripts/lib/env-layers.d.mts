@@ -34,9 +34,9 @@ export declare function currentTicket(options?: LookupOptions): string | null;
 export declare function envFolders(options?: LookupOptions & { env?: string }): string[];
 /** The file that defines an env (a dedicated folder's first, else the root's), or null. */
 export declare function findEnv(env: string, options?: LookupOptions): string | null;
-/** What an env declares itself: its `.env.<env>` files (`vars`) and legacy `.env.playwright.<env>` files (`passwords`), merged,
- *  dedicated over root, and the flat variables the credential store gives it (`credentials`). */
-export declare function ownEnv(env: string, options?: LookupOptions): { vars: Record<string, string>; passwords: Record<string, string>; credentials: Record<string, string> };
+/** What an env declares itself: its `.env.<env>` files (`vars`), merged dedicated over root, and the flat variables
+ *  the credential store gives it (`credentials`). */
+export declare function ownEnv(env: string, options?: LookupOptions): { vars: Record<string, string>; credentials: Record<string, string> };
 /** The envs the project root defines. */
 export declare function knownEnvs(root?: string): string[];
 /** Where an unknown env was looked for, for an error message. */
@@ -48,7 +48,7 @@ export declare function dedicatedEnvs(options?: { root?: string; ambient?: Recor
 export declare function usesMaster(env: Record<string, string | undefined> | null | undefined): boolean;
 /** The master password — the store's `master`, else the legacy `.env.playwright.master`, else the environment — and
  *  where it came from; value null when there is none. */
-export declare function readMaster(options?: { root?: string; ambient?: Record<string, string | undefined>; store?: { master: string | null } }): { file: string; value: string | null };
+export declare function readMaster(options?: { root?: string; ambient?: Record<string, string | undefined>; store?: { master: string | null }; legacy?: boolean }): { file: string; value: string | null };
 /** The test accounts' login-password names: the CORE two, `extra`, and every name the suites and test-data use. */
 export declare function testAccountPasswordNames(root?: string, extra?: Iterable<string>): Set<string>;
 
@@ -71,7 +71,7 @@ export interface Layered {
   ignoredPasswords: { value: string | undefined; file: string | null; production?: boolean } | null;
   /** Whether the credential store (test-accounts.local.json) exists. */
   store: boolean;
-  /** Credentials a .env file still holds although the store exists (empty without a store) — `/project-init --check` moves them. */
+  /** Credentials a .env file still holds (with `legacy`, only once a store exists) — the caller's `migrateHint` names what moves them. */
   leftovers: { key: string; file: string }[];
   /** What supplied a key's value. */
   sourceOf(key: string): string;
@@ -85,10 +85,16 @@ export interface LayerOptions extends LookupOptions {
   passwordNames?: Iterable<string>;
   /** false: decide PASSWORDS=master but skip the test-account name scan and the master values (default true). */
   masterValues?: boolean;
+  /** true: also read an unmigrated project's `.env.playwright.<env>` / `.env.playwright.master` below the store, and
+   *  name no leftover until a store exists (a plugin serving client projects). Default false. */
+  legacy?: boolean;
+  /** false: do not read the test-account store at all — a caller that needs no test account (a tracker / code-host
+   *  reader), so a broken store cannot stop it. Default true. */
+  testAccounts?: boolean;
 }
 
 /** An env's variables in the one order, without touching process.env. */
 export declare function layered(testEnv: string, options?: LayerOptions): Layered;
 /** `layered`, written into process.env, with the once-per-run warnings; throws when no file defines the env this
  *  session is bound to. It always applies the master values. */
-export declare function applyLayered(testEnv: string, options?: Omit<LayerOptions, 'ambient' | 'masterValues'>): Layered;
+export declare function applyLayered(testEnv: string, options?: Omit<LayerOptions, 'ambient' | 'masterValues'> & { migrateHint?: string }): Layered;
