@@ -6919,5 +6919,53 @@
     "pass_rate": 100,
     "duration_minutes": 15.35,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-18-1715",
+    "date": "2026-11-18",
+    "suiteId": "001",
+    "suiteName": "Catalog Navigation",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 3.67,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-18-1715",
+    "date": "2026-11-18",
+    "suiteId": "045",
+    "suiteName": "Accessibility Tests",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 2,
+    "passed": 1,
+    "failed": 1,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 50,
+    "duration_minutes": 3.47,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-18-1715",
+    "date": "2026-11-18",
+    "suiteId": "071",
+    "suiteName": "Whitelabeling Branding",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 1.58,
+    "mode": "interactive"
   }
 ]

@@ -47,7 +47,7 @@
 [STATE] Sort combobox accessible name persists after infinite-scroll load-more
 [NAV] URL contains ?sort=<code> for non-default selections; no ?page param (infinite scroll)","[NETWORK] no 4xx/5xx on sort change request
 [NETWORK] POST /graphql (products) includes sort parameter in request; scroll fires continuation with same sort code
-[CONSOLE] no TypeError or JS errors","Sort dropdown combobox not rendering; native select-option failing on VcSelect; combobox accessible name not updating on selection; {first_id_asc} == {first_id_desc} (sort direction not applied); combobox name resetting after infinite-scroll load-more; console TypeError","none","VCST-5177; regression-qa-theme-26.csv; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + infinite-scroll + no-monotonic-price oracle (2026-06-26)","synced"
+[CONSOLE] no TypeError or JS errors","Sort dropdown combobox not rendering; native select-option failing on VcSelect; combobox accessible name not updating on selection; {first_id_asc} == {first_id_desc} (sort direction not applied); combobox name resetting after infinite-scroll load-more; console TypeError","none","VCST-5177; regression-qa-theme-26.csv; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + infinite-scroll + no-monotonic-price oracle (2026-06-26)",Draft
 "CAT-035","Brands Page Loads","Catalog > Brands","Medium","BL-CAT-001",,"Store has brand data configured; brands page enabled","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
 [WAIT] Wait for page to load completely
 [ASSERT] Verify brand list or grid is displayed
@@ -171,18 +171,19 @@
 "CAT-056","Catalog Listing Page Renders Correctly at 768px Tablet Viewport","Catalog > Responsive","Medium","BL-CAT-001",,"Category with products exists; storefront accessible","url={{FRONT_URL}}","[NAV] Navigate to any category listing page on {{FRONT_URL}}
 [ACT] Resize the browser viewport to 768x1024 (tablet portrait)
 [WAIT] Wait for layout to reflow
-[ASSERT] Verify the product grid adapts to the tablet viewport (typically 2-column grid at 768px)
+[ASSERT] Verify the product grid adapts to the tablet viewport
 [ASSERT] Verify product card images names and prices are fully visible with no overflow or clipping
 [ASSERT] Verify the navigation menu is accessible (hamburger or condensed menu)
 [ASSERT] Verify facet/filter panel is accessible (collapsed drawer or sidebar condensed)
 [SCROLL] Scroll down to verify entire product listing is accessible
-[ASSERT] Verify pagination controls are visible and functional","[DOM] Product grid displays in tablet-appropriate layout at 768px
+[SCROLL] Scroll to the bottom of the listing and wait for the next batch of product cards to append (infinite scroll is the default catalog_pagination_mode; there is no numbered pager)
+[ASSERT] Verify the product card count increased after the scroll, no pager or Load more control is present, and the grid still has no horizontal overflow","[DOM] Product grid displays in tablet-appropriate layout at 768px
 [DOM] Product cards are fully visible with no image cropping text overflow or price truncation
 [DOM] Navigation accessible at 768px
 [DOM] Facet/filter controls accessible (not off-screen)
-[DOM] Pagination controls visible and not overlapping content
+[DOM] Scrolling to the end at 768px appends the next batch of product cards (card count after > before); no numbered pager is rendered
 [STATE] No horizontal scroll bar visible at 768px width","[NETWORK] no 4xx/5xx on category page at tablet viewport
-[CONSOLE] no TypeError or JS errors","Product grid overflowing at 768px; product cards clipped or inaccessible; navigation menu not accessible; horizontal scrollbar visible; pagination hidden off-screen; console TypeError","none",Coverage Gap Analysis; GAP-CS-20 | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
+[CONSOLE] no TypeError or JS errors",Product grid overflowing at 768px; product cards clipped or inaccessible; navigation menu not accessible; horizontal scrollbar visible; console TypeError,"none","Coverage Gap Analysis; GAP-CS-20 | Synced: VCST-6292 (2026-11-18) | Audited: 2026-11-18 (TCA-2026-11-18); Source: vc-frontend/client-app/shared/catalog/components/category/category-products.vue:44,56 + category.vue:347-348 + client-app/config/settings_data.json:47 @a1435e3f; Docs: N/A - implementation-detail: infinite-scroll batching (setting named in StorefrontDeveloperGuide functionality-customization, settings_data.json table) | Promoted: REG-2026-08-25-1128 (2026-08-26)",Automated
 "CAT-059","Breadcrumb Resets When Navigating from Subcategory Back to Parent via Main Menu","Catalog > Navigation > Breadcrumb State","High","BL-CAT-001","ECL-14.1","Category hierarchy exists with at least 2 levels; user can navigate subcategory then return to parent via main menu","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click on a top-level category in the main navigation menu
 [WAIT] Wait for top-level category page to load

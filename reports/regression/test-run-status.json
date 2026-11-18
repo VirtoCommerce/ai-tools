@@ -1,23 +1,45 @@
 {
-  "runId": "REG-2026-11-18-1641",
+  "runId": "REG-2026-11-18-1715",
   "status": "completed",
-  "startedAt": "2026-11-18T15:41:29.891Z",
+  "startedAt": "2026-11-18T17:15:41.922Z",
   "env": "vcst",
-  "selection": "105 --ids OTP-019 --no-promote",
-  "ticket": "VCST-6490",
-  "note": "run of the rewritten OTP-019 (fresh code after the lockout ends)",
+  "selection": "001,045,071 --ids CAT-007,CAT-056,A11Y-KB-006,A11Y-KB-007,FWL-069 --no-promote",
+  "ticket": "VCST-6292",
+  "note": "qa-suite-sync 5a scoped run (/qa-test-lifecycle VCST-6292)",
   "suites": {
-    "105": {
+    "001": {
       "status": "done",
-      "lane": "browser",
-      "cases": 1,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-18T15:44:45.550Z",
+      "lane": "browser",
+      "startedAt": "2026-11-18T17:16:41.313Z",
+      "cases": 2,
+      "pass": 2,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-18T17:27:06.382Z"
+    },
+    "045": {
+      "status": "done",
+      "browser": "playwright-chrome",
+      "lane": "browser",
+      "startedAt": "2026-11-18T17:16:41.313Z",
+      "cases": 2,
+      "pass": 1,
+      "fail": 1,
+      "blocked": 0,
+      "finishedAt": "2026-11-18T17:27:06.382Z"
+    },
+    "071": {
+      "status": "done",
+      "browser": "playwright-chrome",
+      "lane": "browser",
+      "startedAt": "2026-11-18T17:16:41.313Z",
+      "cases": 1,
       "pass": 1,
       "fail": 0,
       "blocked": 0,
-      "finishedAt": "2026-11-18T16:03:12.285Z"
+      "finishedAt": "2026-11-18T17:27:06.382Z"
     }
   },
-  "finishedAt": "2026-11-18T16:03:20.525Z"
+  "finishedAt": "2026-11-18T17:28:02.939Z"
 }
