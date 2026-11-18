@@ -19,6 +19,8 @@
 //     scratchpad/pr-<N>/ or …/scratchpad/wt/ — the only two subtrees prepare.mjs writes. A Read of a
 //     credential-looking file name (.env, .mcp.json, *.pem, *.key, id_rsa…) is left to the normal rules
 //     (by name only — the scratch holds PR data); never a Grep/Glob whose pattern climbs out (`..` or absolute).
+//     Where the project folder is a 16-hex hash instead of the slug (Claude Code since 2026-11), only a
+//     path in the asking session's own folder (the hook input's session_id).
 //   - WebFetch of a documentation page in WEB_HOSTS below — THE list of hosts the review cites; the
 //     skill and its checklists point here instead of naming hosts themselves. No query string (it
 //     could carry data to that host), except `?view=` on learn.microsoft.com; a fragment never leaves.
@@ -75,7 +77,11 @@ function lexicallyPlausible(p) {
   return /[\\/]scratchpad[\\/](pr-\d+|wt)([\\/]|$)/i.test(p);
 }
 
-function inReviewScratch(p, cwd) {
+// A hashed project folder cannot be tied to this project from here, so such a path is approved only
+// for the session asking (its folder is the hook input's session_id) — narrower than the slug form.
+const HASHED = /^[0-9a-f]{16}$/i;
+
+function inReviewScratch(p, cwd, session) {
   if (!SLUG || !lexicallyPlausible(p)) return false;
   const abs = isAbsolute(p) ? p : resolve(cwd ?? process.cwd(), p);
   if (!existsSync(abs)) return false;
@@ -85,8 +91,10 @@ function inReviewScratch(p, cwd) {
     const rel = relative(root, target);
     if (!rel || rel.startsWith("..") || isAbsolute(rel)) continue;
     const parts = rel.split(sep);
-    // claude*/<slug>/<session>/scratchpad/(pr-<N>|wt)[/…]
-    if (parts.length >= 5 && /^claude(-[\w.-]+)?$/.test(parts[0]) && parts[1].toLowerCase() === SLUG &&
+    // claude*/<slug or hash>/<session>/scratchpad/(pr-<N>|wt)[/…]
+    const ours = parts[1]?.toLowerCase() === SLUG ||
+      (HASHED.test(parts[1] ?? "") && typeof session === "string" && session !== "" && parts[2] === session);
+    if (parts.length >= 5 && /^claude(-[\w.-]+)?$/.test(parts[0]) && ours &&
         parts[3] === "scratchpad" && (/^pr-\d+$/.test(parts[4]) || parts[4] === "wt")) return true;
   }
   return false;
@@ -119,9 +127,10 @@ function webAllowed(url) {
 function decide(input) {
   const t = input.tool_name;
   const ti = input.tool_input ?? {};
-  if (t === "Read") return inReviewScratch(ti.file_path, input.cwd) && !SENSITIVE.test(basename(ti.file_path));
-  if (t === "Glob") return inReviewScratch(ti.path, input.cwd) && !climbs(ti.pattern);
-  if (t === "Grep") return inReviewScratch(ti.path, input.cwd) && !climbs(ti.glob);
+  const s = input.session_id;
+  if (t === "Read") return inReviewScratch(ti.file_path, input.cwd, s) && !SENSITIVE.test(basename(ti.file_path));
+  if (t === "Glob") return inReviewScratch(ti.path, input.cwd, s) && !climbs(ti.pattern);
+  if (t === "Grep") return inReviewScratch(ti.path, input.cwd, s) && !climbs(ti.glob);
   if (t === "WebFetch") return webAllowed(ti.url);
   if (t === "Bash") {
     const cmd = ti.command;
