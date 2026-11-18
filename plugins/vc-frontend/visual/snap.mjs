@@ -168,7 +168,9 @@ async function storybookTargets(base) {
     }
     return entries.map((s) => ({
         id: s.id, title: s.title, ref: s.importPath, hide: [], mask: [],
-        waitFor: "#storybook-root > *, .sb-show-errordisplay",
+        // :visible — a story may render an empty first child (VcPopover's `#popover-host`), which never
+        // becomes visible: waiting on `> *` timed out every date-picker story of vc-frontend (43 stories).
+        waitFor: "#storybook-root > *:visible, .sb-show-errordisplay",
         url: (set) => {
             const g = set.globals ? `&globals=${encodeURIComponent(set.globals).replace(/%3A/g, ":").replace(/%3B/g, ";")}` : "";
             return `${base}/iframe.html?id=${s.id}&viewMode=story${g}`;

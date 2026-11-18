@@ -1,0 +1,177 @@
+{
+ "release": "sprint-26-22",
+ "ticket": "VCST-6644",
+ "sprint": {
+  "label": "Sprint26-22",
+  "startDate": "2026-11-02",
+  "endDate": "2026-11-16",
+  "plan": "docs/Sprint plans/sprint-26-22-test-plan.md"
+ },
+ "env": {
+  "testEnv": "vcst",
+  "platform": "3.1097.0",
+  "theme": "2.62.0-alpha.2647",
+  "note": "Updated 2026-11-12 (--update): theme alpha.2647 = vc-frontend dev 0315ecbd (vc-deploy-dev#7097, 2026-11-11 17:12 UTC; carries #2552, #2633, #2634, #2642, #2652); Xapi release 3.1031.0 (vc-deploy-dev#7098) replaced the PR build 3.1031.0-pr-70-108f (vc-deploy-dev#7095); BackgroundJobs 3.1055.0. W0 and the first W2 run were on alpha.2642."
+ },
+ "waves": [
+  {
+   "id": "W0",
+   "title": "Smoke gate",
+   "suites": [
+    "042"
+   ],
+   "note": "Runs first and alone; a red W0 stops every wave",
+   "subtask": "VCST-6796"
+  },
+  {
+   "id": "W1",
+   "title": "Authentication — sign-in, session, security",
+   "suites": [
+    "031",
+    "032",
+    "033",
+    "082",
+    "044"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "MFA/OTP/passkey settings stay at defaults here; the setting-flipping suites are in WX",
+   "subtask": "VCST-6797"
+  },
+  {
+   "id": "W2",
+   "title": "Sales Rep hub",
+   "suites": [
+    "089",
+    "090",
+    "091",
+    "091c",
+    "093",
+    "093b",
+    "097",
+    "106",
+    "112"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "One owner: all suites share the sales-rep fixtures (re-seed tasks before 106)",
+   "subtask": "VCST-6798"
+  },
+  {
+   "id": "W3",
+   "title": "Cart, checkout & addresses",
+   "suites": [
+    "011",
+    "013",
+    "028",
+    "029",
+    "030",
+    "081",
+    "015",
+    "036"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "subtask": "VCST-6799"
+  },
+  {
+   "id": "W4",
+   "title": "Catalog, search, compare & analytics",
+   "suites": [
+    "001",
+    "002",
+    "004",
+    "005",
+    "098",
+    "043"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "098 ran on alpha.2642 and was re-run on alpha.2647; 6253 and 6254 are on alpha.2647",
+   "subtask": "VCST-6800"
+  },
+  {
+   "id": "W5",
+   "title": "Company & organization",
+   "suites": [
+    "006",
+    "008",
+    "011b"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "One owner: the three suites share the B2B organization fixtures",
+   "subtask": "VCST-6801"
+  },
+  {
+   "id": "W6",
+   "title": "UI kit, design tokens, a11y & i18n (Bridge)",
+   "suites": [
+    "083c",
+    "045",
+    "046",
+    "048c",
+    "070",
+    "071"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "Whole-storefront sweep for the CSS-layer and token changes; 6079 is on alpha.2647",
+   "subtask": "VCST-6802"
+  },
+  {
+   "id": "WX",
+   "title": "Exclusive window — sign-in settings and env-wide cases",
+   "suites": [
+    "104",
+    "111",
+    "114",
+    "114a",
+    "114b",
+    "031",
+    "032",
+    "033",
+    "044",
+    "029",
+    "036",
+    "002",
+    "004",
+    "005",
+    "083c"
+   ],
+   "dependsOn": [
+    "W1",
+    "W2",
+    "W3",
+    "W4",
+    "W5",
+    "W6"
+   ],
+   "exclusive": [
+    "104",
+    "111",
+    "114",
+    "114a",
+    "114b",
+    "031",
+    "032",
+    "033",
+    "044",
+    "029",
+    "036",
+    "002",
+    "004",
+    "005",
+    "083c"
+   ],
+   "note": "104/111/114/114a/114b whole (MFA / OTP / Passkey store settings). From 031, 032, 033, 044, 029, 036, 002, 004, 005 and 083c only the 35 cases W1, W3, W4 and W6 deferred to WX (PLAN.md §WX). One owner, alone, every setting and shared record restored in Cleanup",
+   "subtask": "VCST-6803"
+  }
+ ]
+}

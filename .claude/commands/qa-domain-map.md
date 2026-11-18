@@ -6,8 +6,8 @@ argument-hint: "<domain-slug> [--refresh] [--layers back-office,storefront,api] 
 # /qa-domain-map — build or refresh a domain map
 
 **Model-invocable since 2026-09-10** — `disable-model-invocation` was removed, so this command runs both
-ways: an operator types it, **and** a **FULL** `/qa-test` run whose domain has no map invokes it at item
-`1c-map`, inside the wave already carrying `1c ‖ 1d` (§Auto-build from `/qa-test`). That is what turned
+ways: an operator types it, **and** a `/qa-test` run whose domain has no map invokes it at Stage 1,
+in the same message as the ticket context bundle (§Auto-build from `/qa-test`). That is what turned
 the map from a *nice to have* nobody found time for — **1 of 13 domains mapped after two months of
 recommending it** — into an artifact the pipeline fills in as it goes.
 
@@ -138,7 +138,7 @@ here.**
 
 ## Auto-build from `/qa-test`
 
-A FULL run reaching item `1c-map` with `domain_map.state ∈ {ABSENT, unresolved}` and an all-layer chain
+A `/qa-test` run whose domain-map state is `ABSENT` or `unresolved` reaching Stage 1
 **invokes this command** — the whole procedure, not a lighter paraphrase of it: Step 0's resolve, Step 1's
 pre-flight, Step 2's brief, Step 3's write, Step 4's 8-clause gate + `context:check` + `domain:check`.
 (Model-invocation is what makes that an invocation rather than a re-implementation, and a
@@ -148,13 +148,13 @@ in the same shape as its siblings.) Four deltas, and only four:
 | | Direct invocation | Auto-build inside `/qa-test` |
 |---|---|---|
 | **Scope** | build **or** refresh | **build only.** `STALE` is left alone and reported; a refresh is an operator's call |
-| **Pre-flight** | Step 1 as written | reuses what `1b` already fetched — deployed versions, the `2-release` ledger Δ, the schema refresh date — and fetches only the rest |
-| **Lane** | any free lane | **a lane `1c`'s analyzer is not on** (it holds `playwright-firefox`); named in the brief, never left to the agent |
+| **Pre-flight** | Step 1 as written | reuses what the preflight already fetched — deployed versions, the release-ledger Δ, the schema refresh date — and fetches only the rest |
+| **Lane** | any free lane | **a lane the ticket-context stage is not on**; `playwright-firefox` by default, named in the brief, never left to the agent |
 | **On failure** | STOP and say why | **degrade**: `build_outcome: FAILED` + the reason, `state` stays `ABSENT`, the `/qa-test` run continues unchanged. Nothing here is ever a blocker or a product finding |
 
 **Step 5's routing still applies** — a `DRIFT`, a selection-group defect, a zero-coverage area or a
 suspected product defect found during an auto-build is routed exactly as it would be from a direct run,
-into the host run's `5-docs`. **It is still filed from nowhere else.**
+into the host run's docs step. **It is still filed from nowhere else.**
 
 **When the map already EXISTS, the host run does not come back here.** It writes back what it verified at
 [`skills/qa-test/reporting.md`](../skills/qa-test/reporting.md) §5-docs-map — a bounded append from evidence
@@ -184,5 +184,5 @@ module under enumeration usually explains it.
 **Staleness is a warning, never a build failure.** `npm run domain:check` flags a map past
 `stale_after_days`; a **missing** map fails nothing, because most domains still have none (`npm run
 domain:check` prints how many exist — do not transcribe the number) and a hard gate would stop every
-ticket in the repo. That asymmetry is deliberate — see the decision record. **`/qa-test`'s FULL auto-build
+ticket in the repo. That asymmetry is deliberate — see the decision record. **`/qa-test`'s auto-build
 is how the missing ones get filled** — by a run that was already paying for the wave, not by a gate.

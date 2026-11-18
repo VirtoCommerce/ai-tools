@@ -242,7 +242,7 @@ Candidates, not decisions: each item is confirmed by a measurement and a decisio
 | Incident write-ups inside the always-loaded tier and prompts | D10: history is not an instruction | move to `docs/decisions/`, keep one rule line in the prompt | 3 |
 | History and rationale in `business-logic.md` | 434K chars, the agent sees it in fragments | compress to "rule · check · signal" | 2 |
 | Four modelling artifacts: domain map, test model, mind map, data model | they overlap; knowledge is lost between them (D8) | merge into one domain model with a failure layer + a separate failure-oriented ticket model | 3 |
-| Overlapping skills: `qa-test` / `qa-test-fast` / `qa-test-lifecycle`; `qa-checklist` / `qa-test-cases-generator`; `qa-sbtm` / `qa-exploratory`; the `qa-review-bl` alias | duplicated instructions growing in parallel | map the overlaps; merge or remove based on the result | 3 |
+| Overlapping skills: `qa-test` / `qa-test-lifecycle` (the FAST/FULL pair is merged into one `/qa-test`, 2026-11-13); `qa-checklist` / `qa-test-cases-generator`; `qa-sbtm` / `qa-exploratory`; the `qa-review-bl` alias | duplicated instructions growing in parallel | map the overlaps; merge or remove based on the result | 3 |
 | Unnecessary handoffs between agents in `/qa-test` | MAST: failures happen at coordination | model → check → execution in one agent + an independent verifier | 3 |
 | Fields and steps nobody fills in (e.g. `timing.steps` — always `0`) | dead process | fill automatically or remove | 3 |
 

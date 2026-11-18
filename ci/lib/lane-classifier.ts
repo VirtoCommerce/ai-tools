@@ -102,11 +102,20 @@ export function extractStepsCells(csv: string): string[] {
  */
 const RUNNER_OP_RE = /\[(?:GQL-OP|GQL-EXEC|REST-OP|REST-EXEC|REST)[\s\]]/i;
 
-/** True when EVERY non-empty Steps cell carries an executable runner op. */
+/**
+ * Step tags only a browser can execute (`.claude/knowledge/execution/test-runner-tags.md`
+ * §Step Type Tags, plus the Admin SPA's `[BLADE]` / `[GRID]`). A cell that sets up state through
+ * the runner and then checks it in a UI is still a browser case: suite 075b's MCO-ADM-001 places
+ * an order with `[GQL-OP]` and reads it in the Admin Orders blade, and without this check that one
+ * row sent the whole suite to the runner, which cannot open a blade.
+ */
+const BROWSER_STEP_RE = /\[(?:NAV|ACT|SCROLL|KEY|BLADE|GRID)[\s\]]/i;
+
+/** True when EVERY non-empty Steps cell carries an executable runner op and no browser step. */
 export function isRunnerNative(csv: string): boolean {
   const steps = extractStepsCells(csv);
   if (steps.length === 0) return false;
-  return steps.every((cell) => RUNNER_OP_RE.test(cell));
+  return steps.every((cell) => RUNNER_OP_RE.test(cell) && !BROWSER_STEP_RE.test(cell));
 }
 
 /**

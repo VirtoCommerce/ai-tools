@@ -1,27 +1,33 @@
 // CART-034 — the executable twin of row CART-034 in ../028-cart-core.csv. The CSV row is the truth for
 // WHAT is checked (Preconditions, Steps, Assertions, Cross_Layer_Checks); this file is HOW. A failure
 // here is fixed in this file or reported as a product finding — never by editing the row's expectation.
-import { test, expect } from "../../../../lib/fixtures.js";
+import { test, expect, type DisposableCustomer } from "../../../../lib/fixtures.js";
 import { env, td } from "../../../../lib/data.js";
 import { addToCart, cartQuantity, resetCart, watchCartTraffic } from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
 
-const ROLE = "USER_DEFAULT";
+// [PRE:DISPOSABLE_CUSTOMER:personal]: a personal customer created for this test and deleted after it (the
+// disposableCustomer fixture), so no shared account is signed in, locked or left with cart state.
+let customer: DisposableCustomer | undefined;
 
 // Cleanup: "none" in the row; the cart is still reset so the next case starts from an empty cart.
 test.afterEach(async ({ apiAs }) => {
-  await resetCart(await apiAs(ROLE));
+  if (customer) await resetCart(await apiAs(customer));
+  customer = undefined;
 });
 
-test("CART-034: Quantity Stepper - Cart Page Minimum is 1", async ({ signedInAs, apiAs }) => {
+test("CART-034: Quantity Stepper - Cart Page Minimum is 1", async ({ page, apiAs, signInHere, disposableCustomer }) => {
+  const user = (customer = await disposableCustomer("personal"));
   const sku = td("@td(BUYABLE_NO_MIN_QTY.sku)");
 
   // [PRE:RESET_CART] + "Product in cart with qty=1", seeded before the session opens.
-  const api = await apiAs(ROLE);
+  const api = await apiAs(user);
   await resetCart(api);
   await addToCart(api, sku, 1);
-  // [PRE:SIGNIN_AS:USER_DEFAULT]
-  const page = await signedInAs(ROLE);
+  // [PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
+  await page.goto(env("FRONT_URL"));
+  await signInHere(page, user);
+  await page.goto(env("FRONT_URL"));
   const traffic = watchCartTraffic(page);
   // Every GraphQL mutation the page sends — the row's [NETWORK] item is "no API call", not only
   // "no cart-returning call", so this counts requests, whatever they return.
@@ -53,6 +59,9 @@ test("CART-034: Quantity Stepper - Cart Page Minimum is 1", async ({ signedInAs,
 
   // [ACT] attempt to click '-'. `force` skips Playwright's wait for an enabled target, so the click is
   // really attempted on the disabled button instead of timing out (which would read as BLOCKED, D8).
+  // The page settles first: a fresh cart's first /cart load sets its default payment method
+  // (AddOrUpdateCartPayment) on its own, and that must not be counted as caused by the click.
+  await page.waitForLoadState("networkidle");
   const sinceClick = { mutations: mutationsSent.length, cart: traffic.cartMutations.length };
   await decrease.click({ force: true });
 

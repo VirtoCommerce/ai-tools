@@ -66,7 +66,7 @@ export function testEnvChoice(fallback = 'vcst') {
  * value to pick which `.env.${TEST_ENV}` to load.
  *
  * Side effect: writes the resolved value back to process.env.TEST_ENV (and what chose it to
- * TEST_ENV_SOURCE) so every consumer (config.js, ci/run-regression.ts, scripts, child processes)
+ * TEST_ENV_SOURCE) so every consumer (config.js, scripts, child processes)
  * agrees on the same value regardless of which entry point ran first.
  *
  * Second side effect: the env's own secrets file, `.env.playwright.${TEST_ENV}`

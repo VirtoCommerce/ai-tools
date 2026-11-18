@@ -8,7 +8,7 @@ the vc-* plugins are a **guest**. `/project-init` (vc-init) records it in `proje
 "governance": { "host": "<plugin>@<marketplace>", "secrets": "host",
                 "servers": { "tracker": "…", "codeHost": "…", "github": "…", "telemetry": "…",
                              "testManagement": "…", "browsers": ["…"] },
-                "stand": { "writable": false },
+                "stand": { "writable": false, "envs": null },
                 "websiteAuth": "host-secrets|manual-operator", "envs": { "<env>": "<host env>" },
                 "codeAccess": "none|read|write" }
 ```
@@ -22,7 +22,10 @@ the vc-* plugins are a **guest**. `/project-init` (vc-init) records it in `proje
 2. **The host's injected rules outrank ours.** Where a vc-fix command, agent or knowledge file says
    otherwise — a write, a resource, a delivery channel — the host's rule wins, and the step is done its
    way or reported as not possible.
-3. **Stands are read-only** (`governance.stand.writable: false`): no seeding, no data mutation.
+3. **Stands are read-only unless the operator said otherwise.** `governance.stand.writable: false` (the
+   default, and every profile from before vc-init 0.6.0) ⇒ no seeding, no data mutation. `true` ⇒ only the
+   agent's own test data, on the host environments in `stand.envs` — never another person's entity, never a
+   direct database or search-index write — and rule 2 still applies.
 4. **Nothing leaves for VirtoCommerce.** Self-diagnostics delivery is disabled (`deliver` refuses), and
    capture is off by default.
 

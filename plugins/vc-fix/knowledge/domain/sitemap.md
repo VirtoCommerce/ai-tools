@@ -5,19 +5,19 @@ applicability_rationale: "Full storefront URL map. Customer's sitemap differs by
 
 # Sitemap: FRONT_URL
 
-**Generated:** October 28, 2026 (rev 12 — deterministic axis refreshed for the Sprint 26-21 plan; body carried from rev 5, July 20 2026)
+**Generated:** November 11, 2026 (rev 14 — §2 route map re-derived from an up-to-date `vc-frontend` checkout; rev 13 earlier the same day refreshed the deterministic axis; rest of the body carried from rev 5, July 20 2026)
 **Base URL:** FRONT_URL (from `FRONT_URL` env var) — vcst-qa
 **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver.") *(was 2.49.0 in May)*
-**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1090.0**; 89 modules loaded) *(was 3.1078.0 / 87 at rev 11, 3.1073.0 at rev 10; rev 9, 2026-09-18: was `3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow`, a pre-release build pinned to VCST-5378 — the QA env is back on a stable-numbered line)*
-**Store total products:** 4,655 *(was 4,615 at rev 11, 4,567 at rev 10, 4,550 at rev 9; treat product counts and slugs as drift candidates)* · nav categories 52 *(53 at rev 11 counted `seed-loyalty-fixtures` twice; Carriage Bolts re-parented back `destinations/` → `bolts/` at rev 12)* · `/products-with-options` subcategories 7 *(unchanged)*
+**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1097.0**; 92 modules loaded) *(was 3.1090.0 / 89 at rev 12, 3.1078.0 / 87 at rev 11, 3.1073.0 at rev 10; rev 9, 2026-09-18: was `3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow`, a pre-release build pinned to VCST-5378 — the QA env is back on a stable-numbered line)*
+**Store total products:** 4,652 *(was 4,655 at rev 12, 4,615 at rev 11, 4,567 at rev 10, 4,550 at rev 9; treat product counts and slugs as drift candidates)* · nav categories 53 *(rev 13 added `seed-range-facet-fixtures`; 53 at rev 11 counted `seed-loyalty-fixtures` twice; Carriage Bolts re-parented back `destinations/` → `bolts/` at rev 12)* · `/products-with-options` subcategories 7 *(unchanged)*
 
 > **Note on the version fields:** the storefront footer "Ver." (`2.54.0-pr-2382`) is the **vc-frontend theme** version — earlier revs of this doc mislabeled it "Platform version". The actual VirtoCommerce **platform** runs on the `3.10xx` assembly line (resolved from `/api/platform/modules`).
 
-> **Route-map freshness (rev 12):** the rev-12 crawl (2026-10-28) still reports the same local checkout `48a9759c` @ 2026-09-24, now behind remote `5a5e6a4f`. The rev-11 crawl had reported the local `vc-frontend` checkout as **BEHIND `origin/dev`** (local `48a9759c` @ 2026-09-24 — not pulled since rev 10 — vs remote `3d463fb6`; rev 10's remote was `5ad8ba8d`, rev 9's local `17c99c7c` @ 2026-08-26). Even from that partial checkout the route axis already shows 4 added / 4 removed literals (see the rev-10 changelog), so the route sections below are known-stale. Routes added upstream since then are therefore **missing** from the route sections below, so revs 9, 10, 11 and 12 deliberately refreshed **only** the deterministic axis (platform line, product/category counts) rather than rewriting the route map from a stale source. Pull `vc-frontend` and re-run `npm run sitemap:refresh` before trusting the route lists. Sprint 26-18 lands route-affecting work (VCST-5159 sales-rep-as-plugin, VCST-4386 Skyflow module split), so this is a live risk, not a formality.
+> **Route-map freshness (rev 14):** route axis read from `vc-frontend` `dev` @ `0315ecbd` (2026-11-11), **up to date with `origin/dev`** — the first fresh checkout since rev 8, so §2 was re-derived from source this rev, not carried. The Sales Rep hub is **no longer in `vc-frontend`** (VCST-6532 removed the built-in copy 2026-10-28; it ships as a Module Federation plugin from `vc-module-sales-rep` `StorefrontApp/`), so the route axis cannot see `/company/*` hub routes any more — §2 lists them from the plugin source. Revs 9–13 had refreshed only the deterministic axis from stale checkouts.
 
 ## Overview
 
-B2B e-commerce storefront on Virto Commerce. **This rev was crawled as a guest** (unauthenticated) — the catalog is store-level so the top-level inventory/counts match the B2B signed-in view; §2 Account was **re-derived from the vc-frontend router source at rev 8** (previously carried forward from rev 4, May 2026, and ~4 months stale — it was missing `/account/missions` and the entire `/company/*` Sales Rep hub); §7 Admin still carries forward from rev 4 and was **not** re-verified. Catalog content has been **re-seeded again since the May 2026 rev** — top-level inventory below reflects the current (guest, 2026-07-20) state and differs substantially from rev 4: a new family of `/seed-*` categories replaced the May `SEED-20260518/19-*` fixtures, `Products with options` grew 11→48, `Rental home` moved `/homes`→`/sweet-home`, `Bolts` is a top-level category again, and `[en-US] TV` was dropped. Treat all IDs/slugs/counts as drift candidates; resolve via `@td()` / `live-discover` (see `.claude/rules/test-data.md`).
+B2B e-commerce storefront on Virto Commerce. **This rev was crawled as a guest** (unauthenticated) — the catalog is store-level so the top-level inventory/counts match the B2B signed-in view; §2 Account was **re-derived from the vc-frontend router source at rev 14** (first done at rev 8, after being carried forward from rev 4, May 2026); §7 Admin still carries forward from rev 4 and was **not** re-verified. Catalog content has been **re-seeded again since the May 2026 rev** — top-level inventory below reflects the current (guest, 2026-07-20) state and differs substantially from rev 4: a new family of `/seed-*` categories replaced the May `SEED-20260518/19-*` fixtures, `Products with options` grew 11→48, `Rental home` moved `/homes`→`/sweet-home`, `Bolts` is a top-level category again, and `[en-US] TV` was dropped. Treat all IDs/slugs/counts as drift candidates; resolve via `@td()` / `live-discover` (see `.claude/rules/test-data.md`).
 
 ## Available Languages
 
@@ -79,8 +79,8 @@ The site supports **15 languages** with locale-specific URLs:
 All account pages require authentication. Account sidebar is organized into **4 groups** (unchanged from March) plus the module-contributed Sales Rep hub.
 
 > **Two route sources, and only one of them is statically readable — this is why §2 kept going stale.**
-> **Core routes** are declared in `vc-frontend` `client-app/router/routes/{account,company,checkout,cart,main}.ts`. `account.ts` declares only dashboard · change-password · profile · addresses · orders(+`:orderId`,`:orderId/payment`) · saved-for-later · lists(+`:listId`) · saved-credit-cards · coupons; **`company.ts` declares only `info` and `members`.**
-> **Module routes** are added at bootstrap by `router.addRoute("Account"|"Company", …)` from the nine modules in `client-app/modules/` (back-in-stock, customer-reviews, loyalty, news, purchase-requests, push-messages, quotes, sales-rep, google-analytics/federated). **Everything else in the tables below comes from there** — `/account/missions`, `/account/points-history`, `/account/quotes`, `/account/back-in-stock`, `/account/notifications` and the whole `/company/*` Sales Rep hub.
+> **Core routes** are declared in `vc-frontend` `client-app/router/routes/{account,company,checkout,cart,main}.ts`. `account.ts` declares only dashboard · change-password · **security** · profile · addresses · orders(+`:orderId`,`:orderId/payment`) · saved-for-later · lists(+`:listId`) · coupons (saved-credit-cards moved to the `skyflow` module); **`company.ts` declares only `info` and `members`.**
+> **Module routes** are added at bootstrap by `router.addRoute("Account"|"Company", …)` from the modules in `client-app/modules/` (as of rev 14: back-in-stock, customer-reviews, google-analytics, loyalty, mfa, news, punchout, purchase-requests, push-messages, quotes, returns, skyflow — `sales-rep` was deleted by VCST-6532). **Most other account routes in the tables below come from there** — `/account/missions`, `/account/points-history`, `/account/quotes`, `/account/returns`, `/account/back-in-stock`, `/account/notifications`, `/account/saved-credit-cards`. **A third source since theme 2.60.0: Module Federation plugins** loaded from a backend module — the whole `/company/*` Sales Rep hub now comes from `vc-module-sales-rep`, outside `vc-frontend` entirely.
 > Consequences: (1) `npm run sitemap:refresh` **cannot see any of them** — it crawls nav categories, `/products-with-options` and the platform line over xAPI, so a story that ships a page produces an empty sitemap diff; (2) a module route is **config- and permission-gated**, so its absence on a given env is normal and is *not* evidence the route does not exist; (3) grepping only `router/routes/` under-reports the surface. Enumerate `client-app/modules/*/index.ts` for `addRoute` as well.
 > Nav-link caveat (VCST-5346 #19): loyalty and sales-rep merge their menu entries behind a **one-shot `isAuthenticated` check at bootstrap**, so a user who signs in *during* a session reaches the route by URL while the nav link stays absent until a full reload.
 
@@ -94,6 +94,7 @@ All account pages require authentication. Account sidebar is organized into **4 
 | Quote Requests | `/account/quotes` | Quote requests management |
 | Saved for Later | `/account/saved-for-later` | Saved items list |
 | Back-in-stock List | `/account/back-in-stock` | Back-in-stock notifications |
+| **Returns** | **`/account/returns`** (+ `new/:orderId`, `:returnId`, `:returnId/edit`) | **Return requests — list, create wizard from an order, details, cancel (VCST-5628, PR #2488). Module route (`modules/returns`), gated on `VirtoCommerce.Return` setting `Return.ReturnEnabled`; also puts a "request return" action on order details** |
 
 ### Marketing
 | Page | URL | Description |
@@ -109,9 +110,9 @@ All account pages require authentication. Account sidebar is organized into **4 
 | Company Info | `/company/info` | Company information |
 | Company Members | `/company/members` | Company members management |
 
-### Sales Rep hub (`/company/*` — module routes)
+### Sales Rep hub (`/company/*` — Module Federation plugin)
 
-Registered by the **`sales-rep` frontend module** (`client-app/modules/sales-rep/index.ts` → `router.addRoute("Company", …)`), not the core router — `company.ts` declares only `info` and `members`. All five are gated on `isSalesRepsEnabled()`; the hub left-rail widget additionally on `SALES_REP_ACCESS_PERMISSION`.
+**Not in `vc-frontend` any more.** Since theme 2.60.0 the hub ships as a Module Federation plugin from `VirtoCommerce.SalesRep` 3.1014.0+ (`vc-module-sales-rep` `src/VirtoCommerce.SalesRep.Web/StorefrontApp/`, `routes.ts` + `index.ts`); the built-in theme copy was removed by VCST-6532 (PR #2607, 2026-10-28). The plugin mounts every route under the `Company` parent, only when `isSalesRepsEnabled()`. Rep pages clear the parent's `requiresOrganization` (VCST-5494) and `beforeEnter`-guard on the rep role instead; the hub nav needs `sales-rep:access`. **The `sitemap:refresh` route axis cannot see these** — it reads only `vc-frontend`.
 
 | Page | URL | Description |
 |------|-----|-------------|
@@ -119,7 +120,13 @@ Registered by the **`sales-rep` frontend module** (`client-app/modules/sales-rep
 | Hub dashboard | `/company/dashboard` | Sales Rep hub dashboard, saved widget layout (VCST-5469) |
 | My customers | `/company/my-customers` | Served-customer list; nav link carries a total-count badge |
 | Customer profile | `/company/my-customers/:organizationId` | Per-customer profile (VCST-5308) |
-| **Document library** | **`/company/documents`** | **Approved sales materials from the `sales-rep-documents` assets folder (VCST-5730, shipped Sprint 26-17 — PR #2439 + `vc-module-sales-rep` #12). Additionally gated by its own `beforeEnter` on `documents:read`: without that permission the route, the nav link AND the dashboard widget are all absent** |
+| Customer orders | `/company/my-customers/:organizationId/orders` (+ `/:orderId`) | One customer's orders and an order's details |
+| Customer activity | `/company/my-customers/:organizationId/activities` | One customer's activity feed; redirects to the profile when the analytics module is off |
+| Customer coupons | `/company/my-customers/:organizationId/coupons` | One customer's coupons; redirects to the profile when the marketing module is off |
+| All customer orders | `/company/customer-orders` | Orders across every served customer |
+| Activities | `/company/activities` | Rep activity feed (VCST-5337) |
+| Tasks | `/company/tasks` | Rep tasks (VCST-5732); its `beforeEnter` requires the tasks module to be installed |
+| **Document library** | **`/company/documents`** | **Approved sales materials from the `sales-rep-documents` assets folder (VCST-5730). Own `beforeEnter` on `sales-rep-documents:read`: without it the route, the nav link AND the dashboard widget are all absent** |
 
 ### User
 | Page | URL | Description |
@@ -127,7 +134,8 @@ Registered by the **`sales-rep` frontend module** (`client-app/modules/sales-rep
 | Profile | `/account/profile` | User profile settings |
 | Addresses | `/account/addresses` | Personal-account addresses. **Route-level `beforeEnter`**: a corporate member is redirected to `/account/dashboard`, so for a B2B user the URL is unreachable, not merely hidden |
 | Change Password | `/account/change-password` | Password management |
-| Saved Credit Cards | `/account/saved-credit-cards` | Saved payment methods |
+| **Security** | **`/account/security`** | **Sign-in methods and keys (VCST-6121, PR #2601). Core route, no route guard; nav "Security" (shield icon) in the user group. The page is a shell of extension points filled by modules — e.g. `mfa` registers its two-factor settings into `accountSecurity` (VCST-6597, PR #2622), only when `VirtoCommerce.MFA` with its xAPI schema is installed. Expect a near-empty page on an env without such modules** |
+| Saved Credit Cards | `/account/saved-credit-cards` | Saved payment methods. **Now a `skyflow` module route** (no longer in core `account.ts`): registered only when the Skyflow module is installed |
 
 > The Addresses sidebar entry is only visible for personal accounts (without an org); B2B users like John Mitchell / TechFlow do NOT see it — by design.
 
@@ -518,7 +526,7 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 ## 13. Technical Information
 
 ### Platform
-- **Platform:** Virto Commerce (ASP.NET) — assembly line **3.10xx** (max module-required `platformVersion` 3.1090.0; 89 modules loaded — as of rev 12, 2026-10-28)
+- **Platform:** Virto Commerce (ASP.NET) — assembly line **3.10xx** (max module-required `platformVersion` 3.1097.0; 92 modules loaded — as of rev 13, 2026-11-11)
 - **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver."; a PR-preview theme build) *(was 2.49.0 in May)*
 - **Environment:** QA (vcst-qa)
 - **Storefront:** vc-frontend (Coffee theme)
@@ -579,6 +587,27 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 10. **Storefront is an SPA** — every path returns the 200 shell and renders 404s client-side, so HTTP status can't confirm a category/product exists; judge existence from the `/catalog` grid or live discovery
 
 ---
+
+## Changelog (vs. November 11, 2026 rev 13)
+
+| Area | Delta |
+|------|-------|
+| Route axis | Checkout pulled to `dev` @ `0315ecbd` (2026-11-11), up to date with `origin/dev`. Diff vs rev 13: ADDED (1) `security` (`router/routes/account.ts`) |
+| §2 — added | `/account/security` (VCST-6121) · `/account/returns` + 3 children (VCST-5628, `Return.ReturnEnabled`) |
+| §2 — moved | `/account/saved-credit-cards`: core router → `skyflow` module (registered only with Skyflow installed) |
+| §2 — Sales Rep hub | Removed from `vc-frontend` (VCST-6532, 2026-10-28); now an MF plugin from `vc-module-sales-rep`. Section rewritten from the plugin source: 5 → 12 routes (added customer orders / order / activities / coupons, all-customer orders, activities, tasks). Documents permission is `sales-rep-documents:read` (the previous rev said `documents:read`) |
+| §13 | Platform line synced to the header (3.1097.0 / 92) — rev 13 left it at the rev-12 values |
+| Scope of this rev | §2 re-derived from source (`vc-frontend` router + modules, `vc-module-sales-rep` StorefrontApp). Touched: header, overview, route-freshness note, §2, §13 platform line, this changelog, footer. Theme "Ver." **not** resolved — the browser pass got an empty accessibility snapshot from `playwright-chrome`. §11 menu structure, §§3–10 carried forward, **not** re-verified |
+
+## Changelog (vs. October 28, 2026 rev 12)
+
+| Area | Delta |
+|------|-------|
+| Platform assembly line | max module-required `platformVersion` 3.1090.0 → **3.1097.0**; modules loaded 89 → **92** |
+| Store total products | 4,655 → **4,652** (−3) |
+| Nav categories | 52 → **53**. ADDED (1): `seed-range-facet-fixtures` — a QA seed fixture, not merchandising; teardown-eligible |
+| Route axis | ADDED (2): `/punchout/:sessionToken` (`modules/punchout/index.ts`), an `Account` mount from `modules/returns/index.ts`. Read from the local `.fix-workspace/vc-frontend` checkout (`66004bd4` @ 2026-10-09), so routes merged since then are still missing; freshness reported UNKNOWN. §2 **not** rewritten |
+| Scope of this rev | Deterministic xAPI crawl only (`npm run sitemap:refresh`, 2026-11-11, `/qa-test-plan 26-22` Step 0). Touched: header, this changelog, footer. Theme "Ver." not resolved (no browser pass). §§2–13 carried forward, **not** re-verified |
 
 ## Changelog (vs. October 14, 2026 rev 11)
 
@@ -687,6 +716,6 @@ See git history of this file for prior revisions.
 
 ---
 
-**Last Updated:** October 28, 2026 (rev 12)
+**Last Updated:** November 11, 2026 (rev 14)
 **Tool Used:** Playwright (Chrome) MCP — live crawl (guest) + `/api/platform/modules` (authed) for platform version
-**Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Re-derived from source at rev 8:** §2 Account + Corporate + Sales Rep hub routes (vc-frontend `router/routes/` + `modules/*/index.ts`). **Carried forward from rev 4 (not re-verified):** §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.
+**Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Re-derived from source at rev 14:** §2 Account + Corporate routes (vc-frontend `router/routes/` + `modules/*/index.ts`) and the Sales Rep hub (`vc-module-sales-rep` `StorefrontApp/src/routes.ts`). **Carried forward from rev 4 (not re-verified):** §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.

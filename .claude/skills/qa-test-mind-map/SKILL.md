@@ -123,9 +123,9 @@ cross-domain edges drawn in the source-side map; in `build` step 10, `Behavior:`
 
 ## Integration
 
-- **`/qa-test` Step 1e test model** — Part 0 cites `<name>.mind-map.json` node ids instead of re-deriving
+- **`/qa-test` Stage 3 test model** — Part 0 cites `<name>.mind-map.json` node ids instead of re-deriving
   the chain when the map exists ([`../qa-test-model/test-model.md`](../qa-test-model/test-model.md)).
-- **`/qa-test` 5-mind-map** — a FULL run whose domain has a map but no mind map runs `build <slug> --from <ticket>` after the verdict and stamps only its own authored cases ([`../qa-test/reporting.md`](../qa-test/reporting.md) §5-mind-map).
+- **`/qa-test` Stage 3 mind map** — when the strategy's `Mind map` row is `RUN`, `build` or `update <slug> --from <ticket>` runs without stamps (`/qa-test` writes no case) and the map signals go into the run context ([`../qa-test/execution.md`](../qa-test/execution.md) §Map signals).
 - **Case authoring** — a plan row's `behavior` / `dataProfile` fields become the stamps
   (`scripts/test-cases/scaffold-rows.ts`, [`../../knowledge/execution/regression-scaffold.md`](../../knowledge/execution/regression-scaffold.md)).
 - **`/qa-test-lifecycle`** — hand each suspect's suite to `/qa-test-lifecycle suite <ID>`; `qa-suite-sync`
@@ -134,8 +134,6 @@ cross-domain edges drawn in the source-side map; in `build` step 10, `Behavior:`
 - **`/qa-review-oracles`** — every `DRIFT` whose `route` names it is a candidate for that audit.
 - **`/qa-checklist --from-model`** — Mode 5 selects the in-scope nodes by chain link, citation, descent
   and crossing ([`../qa-checklist/from-model.md`](../qa-checklist/from-model.md)).
-- **`/qa-test-fast`** — Wave 2 runs `update` or `build` without stamps and copies the map signals into the
-  run context ([`../qa-test-fast/context-wave.md`](../qa-test-fast/context-wave.md) §Wave 2).
 
 ## Failure handling
 

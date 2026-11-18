@@ -97,6 +97,14 @@ storefront users (typically admins in vc-secrets, users in `.env.local`, which i
   `.env.playwright.local`, the lanes' `--secrets` file. Use it where a script outside vc-init reads a
   password from the env files (vc-fix's module registry, seeders): those do not go through the bridge.
 
+**The lane HAR keeps no password.** The lane masks a typed password in its responses, but its `recordHar`
+captures the sign-in request's body (`POST /api/platform/security/login`, `POST /connect/token`). Either
+way the HAR is scrubbed (`bridge/har-scrub.mjs`): password-named body fields and every known password value
+become `«redacted»`, the rest of the traffic stays — session tokens and cookies included, so a HAR is still not
+a file to share. A bridged lane does it in-process: at start, after each
+`browser_close` and at exit. A lane started straight from `.mcp.json` gets the `hooks/scrub-har.mjs` hook
+after `browser_close` and at session start, with values from `.env.playwright.*` and `.env.local`.
+
 ## Host-governed projects
 
 Some client projects run their own governance plugin: it injects binding rules, ships the approved MCP
@@ -171,7 +179,8 @@ code already running as the user, which can read the credential store directly.
 |---|---|
 | `skills/project-init/` | the skill and its scripts (`SKILL.md` §Scripts lists them) |
 | `commands/project-init.md` | the `/project-init` command |
-| `bridge/` | the dispatcher, allowlist, credential helper, redactor, plugin resolver, the Playwright lane launcher (`playwright-mcp.mjs`), vc-test's script runner (`runner.mjs`) — and their committed tests (`node --test "plugins/vc-init/bridge/*.test.mjs"`) |
+| `bridge/` | the dispatcher, allowlist, credential helper, redactor, plugin resolver, the Playwright lane launcher (`playwright-mcp.mjs`) and its HAR scrub (`har-scrub.mjs`), vc-test's script runner (`runner.mjs`) — and their committed tests (`node --test "plugins/vc-init/bridge/*.test.mjs"`) |
+| `hooks/` | `SessionStart`: install the plugin's dependencies (`ensure-deps.mjs`); `SessionStart` + `PostToolUse` on a lane's `browser_close`: scrub the lane HAR files (`scrub-har.mjs`) |
 | `vc-run-shim.mjs`, `scripts/install-bridge.mjs` | the stable `$VC_RUN` pointer and its installer |
 | `scripts/lib/` | vc-init's own copies of the shared libs (plugins are self-contained) |
 | `templates/.mcp.json.example` | the MCP template `gen-mcp.mjs` writes `.mcp.json` from |

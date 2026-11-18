@@ -1,0 +1,120 @@
+{
+ "suites": {
+  "111": 22,
+  "114": 22
+ },
+ "cases": {
+  "114|PKS-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-003": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-004": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-005": {
+   "status": "UNKNOWN",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-006": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-007": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-008": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-010": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-011": {
+   "status": "FAIL",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-014": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-015": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-017": {
+   "status": "UNKNOWN",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-018": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-019": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-020": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-021": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-022": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-023": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "114|PKS-024": {
+   "status": "UNKNOWN",
+   "run": "REG-2026-11-12-1014-WXpre"
+  },
+  "111|MFASF-015": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1133-WX"
+  },
+  "111|MFASF-016": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1133-WX"
+  },
+  "111|MFASF-017": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1133-WX"
+  },
+  "111|MFASF-018": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1133-WX"
+  },
+  "111|MFASF-019": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1133-WX"
+  },
+  "111|MFASF-020": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1133-WX"
+  },
+  "111|MFASF-021": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1133-WX"
+  },
+  "111|MFASF-022": {
+   "status": "PASS",
+   "run": "REG-2026-11-12-1133-WX"
+  }
+ }
+}

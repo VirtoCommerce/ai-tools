@@ -1943,6 +1943,16 @@ export const missionName = (spec) => `${NAME_PREFIX}-${spec.key}`;
 /** True when `name` is one of ours — the teardown sweep predicate. Pure. */
 export const isSeededMissionName = (name) => String(name || '').startsWith(`${NAME_PREFIX}-`);
 
+/**
+ * True only for a MISSION this spec declares. The prefix predicate above is too wide for missions:
+ * sibling seeders name theirs under the same `AGENT-TEST-MSN-` stem (the VCST5957 deadline ladder,
+ * the missions-e2e set, the ORGLOY org missions), so a whole-set reset or teardown keyed on the
+ * prefix deleted their fixtures too (observed 2026-11-09: a progress reset cleared 44 missions,
+ * the deadline ladder and the e2e/org sets among them). Missions are matched by declared name. Pure.
+ */
+const OWN_MISSION_NAMES = new Set(MISSIONS.map(missionName));
+export const isOwnMissionName = (name) => OWN_MISSION_NAMES.has(String(name || ''));
+
 /** True when a goal spec needs separate LoyaltyMissionGoalItem rows. Pure. */
 export const needsGoalItems = (spec) => spec?.goal?.type === 'PerSkuGoal';
 

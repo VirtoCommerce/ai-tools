@@ -18,7 +18,8 @@
  */
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { governanceBlock, hostCandidates, hostInstallPath, resolveHostId } from "./lib/governance.mjs";
+import { governanceBlock, hostCandidates, hostInstallPath, resolveHostId, standOptions } from "./lib/governance.mjs";
+import { ourEnvs } from "./lib/test-env-selector.mjs";
 import { hostState } from "./lib/host-adapter.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 
@@ -44,7 +45,9 @@ function main() {
   }
   const state = installPath ? hostState(host, installPath, root) : null;
   const governance = governanceBlock(host, state ? { ...state.servers, browsers: state.servers.browsers.join(",") } : {}, state ? { websiteAuth: state.websiteAuth } : {});
-  console.log(JSON.stringify({ candidates, machineWide, inactive, detected, explicit, governance, state }, null, 2));
+  // `standQuestion`: the test-data question's `options` (2–4) and `more` (host-governed.md step 3).
+  const standQuestion = host ? standOptions(state?.hostEnvs, ourEnvs(root)) : null;
+  console.log(JSON.stringify({ candidates, machineWide, inactive, detected, explicit, governance, state, standQuestion }, null, 2));
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

@@ -43,6 +43,9 @@ rules:
       ref: "In cart/checkout, compare: `taxTotal` should equal `taxRate × (subtotal - totalDiscount)`, not `taxRate × subtotal`."
     violation_signal: Tax amount is higher than expected (calculated on pre-discount price), or tax changes when discount is applied/removed but the math doesn't align.
     status: ACTIVE
+    verified:
+      date: 2026-11-10
+      by: REG-2026-11-09-1635-W4
   - id: BL-PRICE-003
     title: Price rounding
     rule: All monetary amounts round half-up to 2 decimal places in the display currency. Intermediate calculations may use higher precision, but all customer-visible prices (line totals, subtotal, tax, grand total) display exactly 2 decimals.
@@ -134,8 +137,8 @@ rules:
     violation_signal: Non-org user sees contract prices; org member sees store default instead of contract; cart uses wrong price list after org switch.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-11-10
+      by: REG-2026-11-09-1635-W4
   - id: BL-PRICE-008
     title: No floating-point money arithmetic
     rule: All monetary calculations must use decimal or integer-cent arithmetic internally. Floating-point rounding errors must never accumulate across line items — the sum of rounded line totals must equal the displayed subtotal. A discrepancy of even $0.01 between `sum(lineTotals)` and `cartSubtotal` is a bug.

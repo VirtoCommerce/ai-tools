@@ -36,7 +36,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN,
-  ROOT, BACK_URL, FRONT_URL, STORE_ID, writeEnvAliasOverride,
+  ROOT, BACK_URL, FRONT_URL, STORE_ID, writeEnvAliasOverride, ensureVirtoPagesEnabled,
 } from '../../lib/seed-common.mjs';
 import {
   COMPONENTS, PAGES, PERMISSION_USERS, STATUS, CONTENT_FILE, RENDERING_BLOCK_TYPES,
@@ -371,6 +371,7 @@ async function main() {
   assertSafeTarget();
   await auth();
   if (TEARDOWN) { await teardown(); return; }
+  await ensureVirtoPagesEnabled(api, STORE_ID);
   await seed();
   log(DRY_RUN ? '\nDRY RUN complete.' : '\nSeed complete.');
 

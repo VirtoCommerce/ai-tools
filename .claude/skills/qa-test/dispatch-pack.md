@@ -1,14 +1,12 @@
 # The dispatch pack — supply the text, not the path
 
-Every fan-out in this pipeline hands N agents the same oracles. When the brief carries a *path*, each
+Every fan-out in this flow hands several agents the same oracles. When the brief carries a *path*, each
 agent opens it and pays for the whole file in its own context — N times, for the same bytes, to use the
 same three or four rules. The 2026-09-07 audit measured this as the largest remaining runtime cost once
 the always-loaded tier was re-tiered (the 2026-09-07 agentic-system audit, §6 items 7–8; the file was removed 2026-10-01).
 
-[`authoring.md`](authoring.md) §3b already applies the fix at one fan-out and states the reason. This
-file is that reason generalised, so the other fan-outs stop re-deriving it — and, more importantly, so
-the **limit** on it is written down once, because the pattern is easy to over-apply into something
-worse than the cost it removes.
+This file is that reason, written once — and, more importantly, so is the **limit** on it, because the
+pattern is easy to over-apply into something worse than the cost it removes.
 
 ## The rule, and its exact boundary
 
@@ -25,10 +23,8 @@ it removes it invisibly, because the brief still looks complete.
 |---|---|
 | `BL-*` invariants for the scope | `npm run bl:extract -- --domain <d>` (`npm run bl:extract:list` for the tokens) |
 | `ECL-*` edge-case patterns | `npm run ecl:extract -- --domain <d>` or `--chapter <n>` (`npm run ecl:extract:list`) |
-| The batch's rows of the `1e` variants × links matrix | from the Test Model, already in working context |
-| The `[JOURNEY]` / `Technique:FLOW` case | authored before fan-out ([`authoring.md`](authoring.md) §3b, item 2) |
-| Selector and GraphQL-schema fragments | cut from the snapshot `1b` item 2d refreshed, **stamped with its rev** |
-| Test data as `@td()` / `{{VAR}}` tokens, confirmed seeded | resolved at runtime by the agent, never as literals (`.claude/rules/test-data.md`) |
+| Selector and GraphQL-schema fragments | cut from the snapshot the contract refresh wrote, **stamped with its rev** |
+| Test data as `@td()` / `{{VAR}}` tokens | resolved at runtime by the agent, never as literals (`.claude/rules/test-data.md`) |
 
 Both extractors emit the oracle's own markdown verbatim, so a pack is the same authority character for
 character and `BL-*` / `ECL-N.M` ids keep their citation contract with the suites. Nothing in a pack is
@@ -36,23 +32,23 @@ ever a paraphrase: a summarised invariant is a second, drifting copy of a single
 
 ### Stays a path — or stays out
 
-- **`1c`'s prior art.** The brief passes `reports/ba/**` and `knowledge/domain/*` **as paths to READ**,
-  deliberately ([`context-wave.md`](context-wave.md) §1c). A prior report is a
+- **The bundle, the strategy, the model and the checklist.** They are the run's hand-off files: a brief
+  names them by path and the recipient reads the part it owns (a runner its section letter). The
+  orchestrator holds paths, not content.
+- **Prior art.** `reports/ba/**` and `knowledge/domain/*` travel **as paths to READ**. A prior report is a
   *hypothesis* the agent must triangulate against the release ledger and a live check before it can
   carry `CONFIRMED` / `DRIFT` / `MISSING`. Hand it over as a digest and the triangulation has nothing
   left to run against — the pack would have pre-answered the question the step exists to ask.
-- **The verifier's evidence.** §Verifier Mode re-derives from source *by definition*
-  ([`SKILL.md`](SKILL.md) §The verifier, in one place). Packing the doer's artifacts, script output or
-  live observations into its brief turns an independent check into a ratification of the doer's own
-  reading. Rule text is not evidence and may be packed; **the evidence never is.**
+- **A verifier's evidence.** `vc-test:strategy-verifier` re-derives the gate from the bundle and the strategy
+  file *by definition*. Rule text may be packed; the drafter's floors output, script output or summary
+  never is — that turns an independent check into a ratification of the drafter's own reading.
 - **The observed-behaviour base.** Never packed as an answer — **the brief tells the agent to ask it
   itself**: `mcp__kb__kb_ask`, with the coordinate of *its own* surface in *its own* question
-  ([`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*). This is the first rule's
-  second half, not an exception to it: the recipient is the one who knows what it is about to assert,
-  and a packed answer to a question the dispatcher guessed pre-answers the step exactly as a digested
-  prior report does. It also carries a **trust count and a deployment** that only mean anything beside
-  the agent's own observation — and the write side (`kb_confirm` on a match, `kb_dispute` on a
-  contradiction, `kb_capture` on a miss) cannot be delegated to a dispatcher at all.
+  ([`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*). The recipient is the one who
+  knows what it is about to assert, and a packed answer to a question the dispatcher guessed pre-answers
+  the step exactly as a digested prior report does. It also carries a **trust count and a deployment** that
+  only mean anything beside the agent's own observation — and the write side (`kb_confirm` on a match,
+  `kb_dispute` on a contradiction, `kb_capture` on a miss) cannot be delegated to a dispatcher at all.
 - **Anything whose FRESHNESS the recipient must judge.** If the agent's job includes deciding whether a
   snapshot is current, it needs the source and its date, not your cut of it.
 
@@ -65,19 +61,18 @@ ever a paraphrase: a summarised invariant is a second, drifting copy of a single
    §Business Logic Reference: use what you were handed, and ask for another domain rather than
    concluding nothing applies.
 2. **Time-sensitive fragments carry their rev.** A contract fragment cut from an unrefreshed snapshot
-   distributes one stale contract to every batch at once, and the cases fail at Step 4 looking like
-   product defects ([`contract-refresh.md`](contract-refresh.md) §4). Stamp the pack with the 2d refresh
-   date, or with `UNKNOWN` when 2d recorded that — a brief that hides the doubt manufactures confidence.
+   distributes one stale contract to every lane at once, and the checks fail looking like product
+   defects ([`contract-refresh.md`](contract-refresh.md) §4). Stamp the pack with the refresh date, or with
+   `UNKNOWN` when the refresh recorded that — a brief that hides the doubt manufactures confidence.
 
 ## Where a pack applies
 
 | Fan-out | Pack contents | Note |
 |---|---|---|
-| Step 3b — one batch per execution surface | the full table above, per layer | The worked case; [`authoring.md`](authoring.md) §3b item 4 |
-| Step 4 — execution agents (up to 3 lanes) | `BL-*` + `ECL-*` text, **Artifact B**, `@td()` tokens | The prompt template already asks for the rule *text* ([`SKILL.md`](SKILL.md) §Agent dispatch); extract it rather than hand-cutting. **Artifact A rows came OUT of this pack on 2026-09-10** — `4c`'s C1 run executed the same rows and is the only thing that emits a `RUN_ID`, so the agent's copy was a second execution that grounded nothing |
-| `1c ‖ 1d` | scope's `BL-*` / `ECL-*` text + the contract rev | Prior art stays paths — see above |
-| The C1 regression runner | selection + `BL-*` text for the triage vocabulary | Artifact C is not an agent prompt ([`authoring.md`](authoring.md) §Artifact C) |
-| The verifier (Step 3, 5-report) | rule text only | Evidence is re-derived, never supplied |
+| Stage 4 — the checklist runners (up to two lanes) | `BL-*` + `ECL-*` text, the checklist path + section letter, `@td()` tokens | [`execution.md`](execution.md) §Runner brief |
+| Stage 4 — exploratory | `BL-*` text as the correctness oracle; the charter payload | the charter is derived, never packed from a guess ([`exploratory-lane.md`](exploratory-lane.md) §6) |
+| Stage 4 — visual | the invariant text the lane checks against | [`visual-axis.md`](../../../plugins/vc-test/skills/qa-design/visual-axis.md) §2 |
+| The strategy verifier | rule text only | Evidence is re-derived, never supplied |
 
 ## Cost, and when it is not worth it
 

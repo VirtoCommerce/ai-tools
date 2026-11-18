@@ -109,6 +109,7 @@
 - **Source:** VCST-5862 (Done) — admin (vc-shell) light-theme text contrast violations (1.4.3)
 - **Source:** VCST-5671 (Done) — admin scheduler overflow popover not keyboard/AT reachable (2.1.1, 4.1.2)
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] ORD-102 failed in REG-2026-11-09-1635-W4
 
 ---
 

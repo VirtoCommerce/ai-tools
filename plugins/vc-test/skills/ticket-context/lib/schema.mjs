@@ -1,8 +1,9 @@
 // plugins/vc-test/skills/ticket-context/lib/schema.mjs — a JSON-schema SUBSET validator (M4: vc-fix ships no ajv).
 // It supports exactly the keywords bundle.schema.json uses, and THROWS on any other, so the schema can
-// never quietly outgrow the validator and pass something it did not check.
+// never quietly outgrow the validator and pass something it did not check. An `x-` key is an annotation for the
+// schema's own reader (goal.schema.json's x-forbiddenFieldNames) and validates nothing.
 const SUPPORTED = new Set(["$schema", "$id", "$defs", "$ref", "title", "description", "allOf", "type", "enum", "const",
-  "required", "properties", "additionalProperties", "items", "minLength", "pattern", "minimum"]);
+  "required", "properties", "additionalProperties", "items", "minLength", "pattern", "minimum", "maximum"]);
 
 const typeOf = (v) => (v === null ? "null" : Array.isArray(v) ? "array" : Number.isInteger(v) ? "integer" : typeof v);
 const typeMatches = (v, t) => t === typeOf(v) || (t === "number" && typeOf(v) === "integer");
@@ -13,7 +14,7 @@ function walkSchema(schema, root, path = "$") {
   if (walked.has(schema)) return;
 
   for (const k of Object.keys(schema)) {
-    if (!SUPPORTED.has(k)) throw new Error(`schema keyword "${k}" at ${path} is not supported by lib/schema.mjs`);
+    if (!SUPPORTED.has(k) && !k.startsWith("x-")) throw new Error(`schema keyword "${k}" at ${path} is not supported by lib/schema.mjs`);
   }
 
   if (schema.additionalProperties !== undefined && schema.additionalProperties !== false) {
@@ -66,6 +67,7 @@ export function validate(value, schema, root = schema, path = "$") {
     if (schema.pattern && !new RegExp(schema.pattern).test(value)) errors.push(`${path}: does not match ${schema.pattern}`);
   }
   if (typeof value === "number" && schema.minimum !== undefined && value < schema.minimum) errors.push(`${path}: below ${schema.minimum}`);
+  if (typeof value === "number" && schema.maximum !== undefined && value > schema.maximum) errors.push(`${path}: above ${schema.maximum}`);
   if (typeOf(value) === "object") {
     for (const r of schema.required ?? []) if (!(r in value)) errors.push(`${path}: missing "${r}"`);
     for (const [k, v] of Object.entries(value)) {

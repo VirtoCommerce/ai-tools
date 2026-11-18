@@ -4,18 +4,34 @@
  * Out-of-band mutation used to prove the storefront's `cache-and-network` refetch picks up a
  * server-side change that never passed through the browser's Apollo client.
  *
- * Usage:  TEST_ENV=vcst node scripts/seed-data/orders/set-order-status.mjs <orderId> <status>
+ * Usage:  TEST_ENV=vcst node scripts/seed-data/orders/set-order-status.mjs <orderId> <status> [--cancel <reason>]
  *
- * Reads BACK_URL / ADMIN_USER / ADMIN_PASSWORD from the layered env loader (config.js).
+ * --cancel also sets isCancelled + cancelReason + cancelledDate, as the Admin "Cancel" does. A status alone
+ * is not a cancellation: the account dashboard cards still count an order whose only change is the status.
+ *
+ * Reads BACK_URL / ADMIN_USER / ADMIN_PASSWORD from the layered env loader (config.js). Refuses an env
+ * whose ENV_RISK is undeclared or production (seed-common assertSafeRisk), and an orderId that is not a GUID.
  * Never logs the password or the access token.
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import '../../../config.js';
+import { assertSafeRisk } from '../../lib/seed-common.mjs';
 
-const [, , orderId, nextStatus] = process.argv;
+const [, , orderId, nextStatus, ...rest] = process.argv;
+const cancelAt = rest.indexOf('--cancel');
+const cancelReason = cancelAt >= 0 ? rest[cancelAt + 1] : undefined;
+if (cancelAt >= 0 && !cancelReason) {
+  console.error('--cancel needs a reason');
+  process.exit(2);
+}
 
 if (!orderId || !nextStatus) {
-  console.error('usage: set-order-status.mjs <orderId> <status>');
+  console.error('usage: set-order-status.mjs <orderId> <status> [--cancel <reason>]');
+  process.exit(2);
+}
+// The id goes into a URL path: accept only a platform GUID, never a path fragment.
+if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) {
+  console.error(`orderId must be an order GUID, got "${orderId}"`);
   process.exit(2);
 }
 
@@ -24,6 +40,15 @@ if (!BACK_URL) {
   console.error('BACK_URL is not set for TEST_ENV=' + (process.env.TEST_ENV ?? '(unset)'));
   process.exit(2);
 }
+
+// A write to the platform: refuse an undeclared / production-risk env before any credential is sent.
+// This script has no dry run: it always writes. seed-common reads --dry-run from argv and then skips the
+// production refusal, so a --dry-run here would let a production write through — refuse it instead.
+if (process.argv.includes('--dry-run')) {
+  console.error('set-order-status.mjs has no --dry-run; it always writes. Remove the flag.');
+  process.exit(2);
+}
+assertSafeRisk(new URL(BACK_URL).host);
 
 const tokenRes = await fetch(`${BACK_URL}/connect/token`, {
   method: 'POST',
@@ -45,7 +70,7 @@ const token = (await tokenRes.json()).access_token;
 const auth = { Authorization: `Bearer ${token}` };
 
 const readOrder = async () => {
-  const res = await fetch(`${BACK_URL}/api/order/customerOrders/${orderId}`, { headers: auth });
+  const res = await fetch(`${BACK_URL}/api/order/customerOrders/${encodeURIComponent(orderId)}`, { headers: auth });
   if (!res.ok) {
     console.error('GET order failed:', res.status);
     process.exit(1);
@@ -57,6 +82,11 @@ const before = await readOrder();
 console.log('before:', before.number, '|', before.status, '| total', before.total);
 
 before.status = nextStatus;
+if (cancelReason) {
+  before.isCancelled = true;
+  before.cancelReason = cancelReason;
+  before.cancelledDate = new Date().toISOString();
+}
 
 const put = await fetch(`${BACK_URL}/api/order/customerOrders`, {
   method: 'PUT',
@@ -67,9 +97,9 @@ console.log('PUT:', put.status, put.ok ? '' : (await put.text()).slice(0, 300));
 
 // Read back from the server — a 2xx PUT is NOT proof; this platform can silently no-op.
 const after = await readOrder();
-console.log('status now:', after.status);
+console.log('status now:', after.status, cancelReason ? `| isCancelled ${after.isCancelled}` : '');
 
-if (after.status !== nextStatus) {
-  console.error(`MISMATCH: expected "${nextStatus}", server still reports "${after.status}"`);
+if (after.status !== nextStatus || (cancelReason && after.isCancelled !== true)) {
+  console.error(`MISMATCH: expected "${nextStatus}"${cancelReason ? ' + isCancelled' : ''}, server reports "${after.status}"${cancelReason ? ` / isCancelled ${after.isCancelled}` : ''}`);
   process.exit(1);
 }

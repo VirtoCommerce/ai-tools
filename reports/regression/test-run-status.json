@@ -1,32 +1,22 @@
 {
-  "runId": "REG-2026-11-05-1740",
+  "runId": "REG-2026-11-17-1509",
   "status": "completed",
-  "startedAt": "2026-11-05T16:41:03.321Z",
-  "windowStart": "2026-11-05T16:41:03.321Z",
-  "selection": "106",
-  "env": "vcst",
-  "scoped": true,
-  "cases": "ids",
-  "ids": [
-    "SR-TK-043",
-    "SR-TK-044",
-    "SR-TK-048",
-    "SR-TK-057"
-  ],
-  "purpose": "VCST-6157 re-run on ff13 of the cases REG-2026-11-05-1651 blocked on the stale edge bundle (VCST-6676) + SR-TK-057 rewritten for the ff13 container-query toolbar",
-  "plan": "reports/regression/REG-2026-11-05-1740/preflight.json",
+  "startedAt": "2026-11-17T14:09:50.557Z",
+  "env": "virtostart",
+  "frontUrl": "https://virtostart-demo-store.govirto.com",
+  "selection": "122 --ids NXR-014,NXR-017,NXR-032",
   "suites": {
-    "106": {
+    "122": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-firefox",
-      "total": 4,
-      "startedAt": "2026-11-05T16:41:57.130Z",
-      "pass": 4,
+      "cases": 3,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-17T14:10:28.334Z",
+      "pass": 1,
       "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-05T16:58:21.182Z"
+      "blocked": 2,
+      "finishedAt": "2026-11-17T14:13:49.004Z"
     }
   },
-  "finishedAt": "2026-11-05T16:58:38.177Z"
+  "finishedAt": "2026-11-17T14:14:22.952Z"
 }

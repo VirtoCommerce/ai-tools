@@ -179,14 +179,7 @@ Full reference: [.claude/knowledge/execution/browser-lanes.md](.claude/knowledge
 ```bash
 npm install              # Install dependencies
 npm run env:check        # Validate env vars for active TEST_ENV layer
-npm run ci:smoke         # Smoke selection
-npm run ci:critical      # Critical selection (a curated subset of the P0 suites)
-npm run ci:frontend      # Frontend selection
-npm run ci:backend       # Backend selection
-npm run ci:full          # Full regression (the manifest's `full` selection)
-npm run ci:cycle         # Full cycle: sync → review → regression
-npm run ci:monitor       # Online bug monitoring from App Insights
-npm run ci:notify        # Teams notification
+npm run regression:plan -- <selection>   # Resolve smoke / critical / frontend / backend / full to suites
 npm run context:check    # Docs/prompt budget + dangling-reference gate (runs on every PR)
 npm run docs:index       # Regenerate the README rosters (skills, agents, commands, suites); :check gates CI
 npm run kb -- ask "<q>"  # Ask the observed-behaviour knowledge base (no MCP server needed)

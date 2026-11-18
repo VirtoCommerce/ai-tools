@@ -23,7 +23,7 @@ prove it with a red→green test, and open a **pull request for human review**.
 > single-repo / no-auto-merge / never-edit-tests rules, escalation, reporting. **Gate ladder:**
 > `.claude/rules/quality-gates.md` (you own G2, G3; you feed G4–G7).
 
-> **Verification bar:** storefront fixes are **logic-proven** here — `vue-tsc --noEmit` + lint +
+> **Verification bar:** storefront fixes are **logic-proven** here — typecheck + lint +
 > a new red→green `vitest` test (build/full-suite are NOT default — see Gate 3 scoping below). You can
 > prove logic locally but **cannot prove pixels** in a unit test — layout / CLS / visual aspects need a
 > running app. **`/qa-fix` does NOT run a live app** — it ships a unit-proven fix + PR and stops at human
@@ -126,16 +126,15 @@ Invoke the development skills:
    SFC `<script setup>` fix), then `activate_project` on the absolute path — not before — the TS server can't resolve
    the `@/` → `client-app/` alias (or anything in `node_modules`) until install has run, so activating
    any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md` §Fast local
-   navigation & editing).
-4. **Reproduce (red)** — add a NEW `*.spec.ts` asserting expected behavior; confirm it fails by running
-   **only that spec file** — `npx vitest run <path/to/new.spec.ts>`. Trivial-skip only for a one-line
-   template/typo/binding with no assertable logic (note in PR body + manual verification steps).
+   navigation & editing). **Then read the checkout's own agent rules** — `skills/vue-fix/repo-own-rules.md`.
+4. **Reproduce (red)** — a NEW test case asserting expected behavior, placed per `quality-gates.md`
+   §G2 placement (a case in the subject's existing `*.test.ts`; a new file only when none; uncommitted
+   scratch for a no-logic change); confirm it fails running **only that file** — `npx vitest run <file>`.
 5. **Fix (green)** — smallest correct change to product code, matching `<script setup>` + Composition
    API + TS idioms; re-run **the same scoped spec** until green. **Existing tests/stories UNMODIFIED** —
-   prove this with `git diff --name-only` (no `*.test.*`/`*.spec.*`/`*.stories.*` files edited). "Still
-   green" is GUARANTEED by not editing them + your scoped spec passing — **do NOT re-run the whole suite
-   to "confirm no regression"** (a diff that can't reach a test can't regress it; run #3 built + ran all
-   1637 for nothing).
+   their files only gain cases (`git diff --numstat`: 0 deleted lines). "Still green" is GUARANTEED by
+   not editing them + your scoped spec passing — **do NOT re-run the whole suite to "confirm no
+   regression"** (a diff that can't reach a test can't regress it).
    > **Green-gate for a template-/style-only `.vue` diff = `vue-tsc` (typecheck) + lint + the scoped
    > red→green spec. That's it.** `yarn build` and the full `test:unit` suite are **NOT** part of the gate
    > for such a diff — do not run them (see step 6). They ARE required only when the diff changes `<script>`
@@ -149,8 +148,8 @@ Invoke the development skills:
      suite (when justified) shows reds in files you didn't touch, confirm they fail on the pristine tree,
      note "pre-existing/unrelated" in one line, and move on; do NOT rabbit-hole (last run wasted two extra
      runs re-proving 3 unrelated flaky timeouts).
-   - **Typecheck + lint:** always (`vue-tsc --noEmit` typecheck — it can't cheaply scope, accept it; lint
-     scoped to changed files).
+   - **Typecheck + lint:** always (the profile's `typecheckCmd` — never bare `vue-tsc --noEmit`, which
+     checks 0 files upstream; lint scoped to changed files) + the checks the repo's own rules name.
    - **Build:** **skip `yarn build` for a template-/style-/markup-only change** once typecheck is green —
      its marginal risk-coverage is ~0 and it costs ~40 s. Run `build` only when the diff changes TS that
      could break compilation/bundling (new imports, types, module boundaries). State which you did + why. The repo's PR CI also runs a **SonarCloud quality gate** (G5) —
@@ -187,7 +186,7 @@ Invoke the development skills:
 |---------|------|
 | Clone / branch / commit / push | **Bash** `node "$VC_RUN" git-gh`/`git-ado` (clone, push); plain `git` (branch, commit) |
 | Install / build | **Bash** `yarn install --frozen-lockfile \|\| npm ci`, `yarn build \|\| npm run build` (per `REPO_PROFILES.frontend`) |
-| Typecheck / lint / test | **Bash** `yarn typecheck \|\| npx vue-tsc --noEmit`, repo lint cmd, `yarn test:unit \|\| npx vitest run` (scope the repro by file path) |
+| Typecheck / lint / test | **Bash** profile `typecheckCmd`, repo lint cmd, `npx vitest run <file>` (scope the repro by file path) |
 | Find/read the seam (post-clone) | an LSP-backed symbol tool if available (e.g. Serena `get_symbols_overview`/`find_symbol`/`find_referencing_symbols`) — else `Grep`/`Glob`/`Read` |
 | Source edits | an LSP-backed symbol tool's precise edit if available (e.g. Serena `replace_symbol_body`/`insert_after_symbol`/`insert_before_symbol`) — else **Write/Edit** in `.fix-workspace/<repo-basename>/`, or `.fix-workspace/<module-repo>/<subApp.path>/` when routed to a module sub-app |
 | Repo read (pre-clone) | `mcp__github__search_code`, `get_file_contents`, `get_pull_request*` |

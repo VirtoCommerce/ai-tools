@@ -82,9 +82,8 @@ on two envs) never write the same file.
 - **Reading:** prior artifacts come from every run folder of the ticket that `use` listed (all envs, and the
   older `reports/tickets/<Sprint>/<ticket-key>/` layout); they are written only into this run's folder.
   Moving a run's bug report into `reports/bugs/open/` is the operator's call.
-- **Run inline by another command** for its own ticket (the ai-tools `/qa-test` on a fix-ready Bug): the
-  caller bound the folder, do not bind again. **For another ticket** (a per-bug verify in `/qa-test --iterate`):
-  `… dir --ticket <ticket-key>` resolves that ticket's folder. Never `use` there: it re-binds the whole session.
+- **Run inline by another command** for its own ticket: the caller bound the folder, do not bind again.
+  **For another ticket**: `… dir --ticket <ticket-key>` resolves that ticket's folder. Never `use` there: it re-binds the whole session.
 
 ## Limits
 

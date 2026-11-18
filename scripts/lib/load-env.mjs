@@ -25,7 +25,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
  * by selectTestEnv below. The layers are read from the repo root. Warns once when no file defines the env; throws
  * when the session is bound to an env no file defines (scripts/lib/env-layers.mjs `applyLayered`).
  *
- * `ambientWins` is for runners that CI drives with `-e` (ci/run-regression.ts, ci/run-monitor.ts): what
+ * `ambientWins` is for runners driven with `-e` (a container or CI job): what
  * the process environment already held beats every file and every file's pin, and the files only fill
  * the gaps — config.js's documented intent for CI ("process.env wins"), which its overrides do not do. Two
  * exceptions (env-layers.mjs `layered`): PASSWORDS comes only from the stand's own file, and a copy of an inherited

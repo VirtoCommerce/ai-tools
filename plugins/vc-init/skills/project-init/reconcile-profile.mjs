@@ -59,7 +59,11 @@
 import { readFileSync, writeFileSync, existsSync, realpathSync } from "fs";
 import { fileURLToPath } from "url";
 import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION, authAxes } from "../../scripts/lib/project-profile.mjs";
-import { resolveOutPath } from "./lib/paths.mjs";
+import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
+import { hostInstallPath, parseStandEnvs, productionStandEnvs, standBlock, standOptions, standPending } from "./lib/governance.mjs";
+import { ourEnvs } from "./lib/test-env-selector.mjs";
+import { declareTestStands } from "./lib/test-stands.mjs";
+import { hostState } from "./lib/host-adapter.mjs";
 
 // ─── managed-field migration policy ──────────────────────────────────────────
 // The DEFAULT for any schema field not listed here is `policy: "default"` — when it is
@@ -96,6 +100,18 @@ const MANAGED_FIELDS = [
 ];
 const managedFor = (path) => MANAGED_FIELDS.find((m) => m.path === path);
 
+// The host-governed test-data question (host-governed.md step 3). Not a MANAGED_FIELDS entry: the field
+// exists (null = never asked), so it is a value check after the walk. Its env options are the host's
+// environments, which only `main()` can read (lib/host-adapter.mjs) — `reconcile()` stays pure. Options and
+// `more` (what did not fit AskUserQuestion's 2–4) come from lib/governance.mjs standOptions.
+const STAND_PATH = "governance.stand.envs";
+const STAND_QUESTION = {
+  question: "On which environments may the agent create its own test data (orders, users, carts — never someone else's, never a direct DB write)? Not ticked = read-only.",
+  multiSelect: true,
+  // A multi-select answer is ONE --set, comma-joined (repeated --set flags overwrite each other).
+  set: "--set governance.stand.envs=<env>,<env>  (one --set, the ticked or typed values comma-joined; Nowhere = none, never with an env)",
+};
+
 // Fixed-shape scalars `--set` may write directly, each with its allowed values. The auth axes are
 // here because a migrated version-1 profile reports an axis it never described under `rescan`, and
 // --check writes what derive-context found back through `--set auth.<axis>=<mode>`.
@@ -116,6 +132,8 @@ const SETTABLE_SCALARS = {
 const CONDITIONAL = [
   { path: "tracker.azure", when: (p) => (p?.tracker?.kind ?? PROFILE_DEFAULTS.tracker.kind) === "azure" },
   { path: "vcs.azure", when: (p) => (p?.vcs?.clientHost ?? PROFILE_DEFAULTS.vcs.clientHost) === "azure-repos" },
+  // The test-data answer belongs to a host-governed project only (lib/governance.mjs standBlock).
+  { path: "governance.stand.envs", when: (p) => Boolean(p?.governance?.host) },
 ];
 
 // ─── arg parsing ─────────────────────────────────────────────────────────────
@@ -195,7 +213,7 @@ function setDeep(obj, dotted, value) {
  * pending (unresolved ask/rescan) field, so it is always safe to write.
  */
 export function reconcile(schema, existing, decisions, unsets = []) {
-  const report = { added: [], removed: [], pending: [], rescan: [], unset: [], rejected: [], preserved: [] };
+  const report = { added: [], removed: [], pending: [], rescan: [], unset: [], rejected: [], preserved: [], warnings: [] };
   // ─── schema 1 → 2 (VCST-6402): the single `vcs.auth` becomes `auth.{github,ado,jira}` ─────────
   // A version-1 profile recorded the client host's auth only. Derive what it does say (authAxes)
   // BEFORE the walk, so the walk keeps the derived block instead of adding an all-empty default;
@@ -411,6 +429,24 @@ export function reconcile(schema, existing, decisions, unsets = []) {
     }
   }
 
+  // ─── governance.stand.envs — the host-governed test-data question ───────────────────
+  // Before vc-init 0.6.0 a host-governed profile got `stand: { writable: false }` without the operator
+  // being asked. `envs: null` (or absent) marks that unasked state; the walk keeps it (the schema default
+  // is null), so it is a VALUE check here, like tracker.fields below. Pending until answered with
+  // `--set governance.stand.envs=<host env>,…|none`; the answer writes both envs and writable.
+  if (STAND_PATH in (decisions || {})) {
+    let envs = null;
+    try { envs = parseStandEnvs(decisions[STAND_PATH]); } catch (e) { report.rejected.push({ path: STAND_PATH, value: decisions[STAND_PATH], reason: e.message }); }
+    if (envs && migrated?.governance?.host) {
+      migrated.governance.stand = standBlock(envs);
+      report.added.push({ path: "governance.stand", value: migrated.governance.stand, via: "ask-resolved" });
+      for (const e of productionStandEnvs(envs)) report.warnings.push(`${e} looks like production — test data may now be created there`);
+    } else if (envs) {
+      report.rejected.push({ path: STAND_PATH, value: decisions[STAND_PATH], reason: "only a host-governed project records where test data may be created" });
+    }
+  }
+  if (standPending(migrated)) report.pending.push({ path: STAND_PATH, policy: "ask", default: "none", ...STAND_QUESTION, ...standOptions([]) });
+
   // ─── tracker.fields rescan (VCST-5582 E5) ──────────────────────────────────────────
   // tracker.fields on an Azure profile is DISCOVERED live (discover-tracker.mjs). It is an OPEN
   // MAP, so the walk keeps whatever is there and never flags it — but an existing profile whose
@@ -431,7 +467,7 @@ export function reconcile(schema, existing, decisions, unsets = []) {
 }
 
 // ─── main ────────────────────────────────────────────────────────────────────
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
   const decisions = parseDecisions(args.set);
   const outPath = resolveOutPath(args.out, "project-profile.json");
@@ -463,7 +499,31 @@ function main() {
     return;
   }
 
-  const { migrated, added, removed, pending, rescan, unset, rejected, preserved } = reconcile(PROFILE_DEFAULTS, raw, decisions, args.unset);
+  const { migrated, added, removed, pending, rescan, unset, rejected, preserved, warnings } = reconcile(PROFILE_DEFAULTS, raw, decisions, args.unset);
+  // The test-data question offers the host's own environments (never a production-looking one) — read
+  // from the host's install here, since reconcile() is pure. Unreadable host ⇒ only "Nowhere" + free text.
+  const standAsk = pending.find((p) => p.path === STAND_PATH);
+  if (standAsk) {
+    const root = outputRoot();
+    let hostEnvs = [];
+    try {
+      const installPath = hostInstallPath(migrated.governance.host, { projectRoot: root });
+      if (installPath) hostEnvs = hostState(migrated.governance.host, installPath, root).hostEnvs;
+    } catch { /* the host's files are unreadable — fall back to the project's own envs */ }
+    let ours = [];
+    try { ours = ourEnvs(root); } catch { /* no env files readable — the operator types the names */ }
+    Object.assign(standAsk, standOptions(hostEnvs, ours, migrated.governance.envs));
+  }
+  // An answer given here is declared to vc-test per env at once (lib/test-stands.mjs), as gen-profile does.
+  if (added.some((a) => a.path === "governance.stand" && a.via === "ask-resolved")) {
+    const declared = await declareTestStands(migrated, outputRoot(), { reassert: true });
+    if (declared.profile !== migrated) {
+      Object.assign(migrated, { test: declared.profile.test });
+      added.push({ path: "test.environments", value: declared.profile.test.environments, via: "stand-declared", lines: declared.lines });
+    } else {
+      warnings.push(...declared.lines);
+    }
+  }
   const hasStructuralChange = added.length > 0 || removed.length > 0 || unset.length > 0;
   // `rescan` (e.g. an Azure profile with an empty tracker.fields, VCST-5582 E5) also counts as
   // "changes" so the skill knows to re-run the live discover step — even when nothing structural
@@ -490,6 +550,7 @@ function main() {
           pending,
           rescan,
           preserved,
+          warnings,
         },
         null,
         2,
@@ -522,7 +583,7 @@ function main() {
 
   console.log(
     JSON.stringify(
-      { status, path: outPath, wrote, added, removed, unset, rejected, pending, rescan, preserved },
+      { status, path: outPath, wrote, added, removed, unset, rejected, pending, rescan, preserved, warnings },
       null,
       2,
     ),
@@ -533,4 +594,4 @@ function main() {
 const invoked = process.argv[1] && (() => {
   try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; }
 })();
-if (invoked) main();
+if (invoked) main().catch((e) => { console.log(JSON.stringify({ status: "error", error: String(e?.message || e) }, null, 2)); });
