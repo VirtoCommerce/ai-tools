@@ -20,6 +20,7 @@
  *      keeps its values), remove the credential lines (and comment lines that hold a credential value) from .env.local,
  *      the tracked .env files and the QA_ENV_PATH folders' env files, delete .env.playwright.*, point the .mcp.json
  *      playwright-* lanes at scripts/lanes/playwright-lane.mjs, and re-check the real tree against the old answer.
+ *      Green: the backup (it holds every old password) is deleted, unless `--keep-backup`. Red: it stays, to restore.
  *
  * A credential is any `X_PASSWORD` (not token/key-shaped), and the logins paired with one: `X`, `X_EMAIL`,
  * `X_EMAILS`, `X_LOGIN`, and the role registry's emailVars (scripts/lib/user-roles.mjs). Tokens and API keys stay
@@ -42,6 +43,7 @@ import * as NEW from '../lib/env-layers.mjs';
 const argv = process.argv.slice(2);
 const opt = (name) => { const i = argv.indexOf(name); return i === -1 ? null : argv[i + 1]; };
 const APPLY = argv.includes('--apply');
+const KEEP_BACKUP = argv.includes('--keep-backup');
 const root = resolve(opt('--root') ?? process.cwd());
 const work = join(root, '.vc-fix', 'creds-migrate');
 const fail = (m) => { console.error(`✗ ${m}`); process.exit(2); };
@@ -414,10 +416,22 @@ for (const p of plan) {
   writeFileSync(p.real, cleanText(original).text.split('\n').join(eol));
 }
 const mcp = rewriteMcp(join(root, '.mcp.json'));
-console.log(`\n✓ wrote ${STORE_FILE}; backup of every changed file: ${relative(root, backup)} (holds the old values — delete it once you have checked)`);
+console.log(`\n✓ wrote ${STORE_FILE}`);
 if (mcp) console.log(`✓ .mcp.json: ${mcp.join(', ')} now start through scripts/lanes/playwright-lane.mjs — restart Claude Code (or reconnect them in /mcp)`);
 const after = compare(root, ambient, 'the real tree');
 rmSync(work, { recursive: true, force: true });
+// The backup holds every old password in plaintext. Proven green, it has nothing left to give back: delete it (unless
+// --keep-backup). Red, it is how the operator restores — keep it and say where.
+const backupRel = relative(root, backup);
+if (!after.length && !KEEP_BACKUP) {
+  rmSync(backup, { recursive: true, force: true });
+  console.log(`✓ the proof is green — the backup of the old files (it held their passwords) is deleted; --keep-backup keeps it`);
+  const older = existsSync(dirname(backup)) ? readdirSync(dirname(backup)) : [];
+  if (!older.length) rmSync(dirname(backup), { recursive: true, force: true });
+  else console.log(`  ⚠ ${older.length} older backup(s) left in ${relative(root, dirname(backup))} from earlier runs — they hold passwords too: delete them once you no longer need them`);
+} else if (existsSync(backup)) {
+  console.log(`${after.length ? '✗ the real tree differs — restore from' : 'backup kept (--keep-backup):'} ${backupRel} (it holds the old values; delete it once you have checked)`);
+}
 process.exit(after.length ? 1 : 0);
 
 /** Point every playwright-* lane that runs `@playwright/mcp@<pin>` with `--secrets` at the launcher. Returns the lanes changed. */
