@@ -11,7 +11,6 @@
  *   - repos:       the discovered client/platform repo map
  *
  * Written by `/project-init` (gen-profile.mjs). Read by:
- *   - config.js                → every skill sees it via `env.PROFILE`
  *   - plugins/vc-fix/skills/qa-fix-routing/repo-router.ts → client-vs-platform ownership routing
  *
  * SAFE DEFAULTS: when project-profile.json is ABSENT (fresh checkout, or the

@@ -4,7 +4,7 @@
   "description": "",
   "main": "config.js",
   "scripts": {
-    "env:check": "node get_variables_env.js",
+    "env:check": "node scripts/env/env-check.mjs",
     "specs:run": "playwright test --project=script",
     "specs:runner": "playwright test --project=runner",
     "specs:debug": "playwright test --project=script --debug=cli",
@@ -151,6 +151,8 @@
     "schema:refresh": "node scripts/graphql/refresh-graphql-schema.mjs",
     "schema:check": "node scripts/graphql/refresh-graphql-schema.mjs --check",
     "context:check": "node scripts/maintenance/lint-claude-docs.mjs",
+    "env:sync": "node scripts/maintenance/sync-env-loader.mjs",
+    "env:sync:check": "node scripts/maintenance/sync-env-loader.mjs --check",
     "context:report": "node scripts/maintenance/lint-claude-docs.mjs --json",
     "context:check:baseline": "node scripts/maintenance/lint-claude-docs.mjs --update-baseline",
     "knowledge:index": "node scripts/maintenance/gen-knowledge-index.mjs",

@@ -52,8 +52,8 @@ alternate — the rails do not move.
    `<plugin>/briefs/ledger.md` when it may create data. You record what it returns. ≤ 3 browser agents, one per
    lane. Every dispatch's description is `[vc-test:<step>] <KEY>` (`run-cost.mjs` counts by it).
 4. **Browser: Playwright lanes only** (`mcp__playwright-<lane>__*`). The login comes from the env, typed as text; a
-   password is typed by its **NAME** as the lane's secrets spell it — bare (`ADMIN_PASSWORD`) on a vc-secrets lane
-   or a one-env file, `NAME_<ENV>` (`ADMIN_PASSWORD_VCST`) on a combined `.env.playwright.all`. No route
+   password is typed by its **NAME** — bare (`ADMIN_PASSWORD`) for the lane's env or `NAME_<ENV>` (`ADMIN_PASSWORD_VCST`),
+   both work (`MASTER_PASSWORD` on a master stand); the values are in `test-accounts.local.json`. No route
    interception; `browser_evaluate` only to read. No lane, or the name lands as literal text ⇒ STOP: "restart
    Claude Code or run `/project-init --check`" — never another browser.
 5. **Data only on a writable stand.** Create or change anything only when `capabilities.json` `stand.writable`

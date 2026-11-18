@@ -37,6 +37,7 @@ import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { StringDecoder } from "node:string_decoder";
 import { MASK, redactText, secretForms } from "./redact.mjs";
+import { storePasswordValues } from "../skills/project-init/lib/passwords.mjs";
 
 /** A body field or form parameter whose value is a password. */
 export const FIELD_RE = /pass(?:word|wd)|^pwd$|^client_secret$/i;
@@ -624,5 +625,7 @@ export function projectHarTargets(root, { passwordValues }) {
       /* unreadable file — pass 1 still runs */
     }
   }
+  // The test-account store holds the passwords now (test-accounts.local.json).
+  for (const v of storePasswordValues(root)) secrets.add(v);
   return { harPaths, secrets: [...secrets] };
 }

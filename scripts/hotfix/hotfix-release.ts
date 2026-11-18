@@ -34,10 +34,10 @@
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { parse as parseDotenv } from 'dotenv';
+import { applyOperatorSecrets } from '../lib/github-token.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -46,12 +46,9 @@ const POLL_INTERVAL_MS = 15_000;
 const POLL_TIMEOUT_MS = 25 * 60_000; // hotfix build+test+publish can take ~10-20 min
 
 function loadToken(): string | undefined {
-  // A variable already set is never overwritten, so the file read FIRST wins: .env.local before .env.defaults gives
-  // the documented order (process env, then .env.local, then .env.defaults). The reverse let a default beat a local value.
-  for (const f of ['.env.local', '.env.defaults']) {
-    const p = resolve(REPO_ROOT, f);
-    if (existsSync(p)) { const vars = parseDotenv(readFileSync(p)); for (const [k, v] of Object.entries(vars)) if (!process.env[k]) process.env[k] = v; }
-  }
+  // The operator's own secrets, shared with bundle:check and release:diff (scripts/lib/github-token.ts): the process
+  // environment, then .env.local, then .env.defaults — never a committed .env.<env>'s identity.
+  applyOperatorSecrets(REPO_ROOT, ["GIT_TOKEN", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN"], null); // no _<ENV> pin: the session's env is not the stand a hotfix delivers to
   return process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 }
 let TOKEN: string | undefined;

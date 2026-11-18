@@ -8,6 +8,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The plugins move to the test-account store — `vc-init` `0.8.0`, `vc-fix` `0.19.0`, `vc-test` `0.19.0` — 2026-11-17
+
+### Changed
+
+- **`/project-init` (vc-init) keeps a client's test-account logins and passwords in `test-accounts.local.json` by
+  default.** `scaffold-secrets` scaffolds `envs.<env>.accounts` (ADMIN, USER), `scaffold-env` no longer writes logins
+  into `.env.<env>`, `write-env` and `--add-user` write logins and passwords to the store. vc-secrets stays an
+  optional variant per role (`--admin-passwords` / `--user-passwords vc-secrets`); `env-local` is an alias of
+  `store`. Tokens stay in vc-secrets; a person's own tracker login never goes in the store.
+- **Client lanes read the store in memory.** `gen-mcp` writes each Playwright lane as
+  `npx -p <pin> node ${VC_RUN} --playwright <pin> …` (no `--secrets` file); the bridge hands the lane every env's
+  passwords as `NAME_<ENV>` and the lane's env's as the bare `NAME` (both work), plus `MASTER_PASSWORD`; a
+  vc-secrets value still wins. `sync-browser-secrets` is a no-op unless `--legacy`.
+- **Migration for existing clients:** `/project-init --check` Step M runs `creds-to-store.mjs` first — it moves the
+  `.env.local` passwords and `.env.<env>` logins into the store, proves every env resolves each name as before,
+  backs up, cleans the files (restoring them if the second proof fails) and deletes `.env.playwright.local`.
+- **vc-fix / vc-test loaders** carry the store layer (their own copies of `test-accounts.mjs`), with the old
+  `.env.playwright.<env>` / `.env.playwright.master` read as a fallback below it, so an unmigrated client keeps
+  working. Secret scrubbers (vc-test ticket-context, the knowledge store, vc-init runner/HAR redaction) and the
+  self-check deny list (lock-step with `.claude/`) read the store's values.
+
 ## Test-account credentials in one file — `test-accounts.local.json` — `vc-init` `0.7.1` — 2026-11-17
 
 ### Changed

@@ -57,7 +57,7 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
    a vc-secrets secret is declared (PAT) or a login is run (session). **Do NOT ask about upstream
    `feedback.mode`** (PR #172 item 4) — it stays at its `ask` default.
 3. Scaffold + hand off: `scaffold-env.mjs` → `.env.<env>` (per-env URLs) + the tracker / code-host connection
-   into `.env.local` (once, same for every env); `scaffold-secrets.mjs` → the test-user passwords in `.env.local`; `write-secrets-decl.mjs` → `.claude/vc-secrets.local.json` (one <!-- doclint:may-not-exist -->
+   into `.env.local` (once, same for every env); `scaffold-secrets.mjs` → the test accounts (login beside password) in `test-accounts.local.json`; `write-secrets-decl.mjs` → `.claude/vc-secrets.local.json` (one <!-- doclint:may-not-exist -->
    secret per PAT axis + the bridge tasks). Show the operator what to fill, the `trust` command when
    the declarations changed, and the token block from `check-secrets.mjs --steps` (what / where / the
    `set <name>` command per token) — then **pause** with the waiting banner, no tool calls after it.
@@ -77,9 +77,9 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
 6. Write the profile (`gen-profile.mjs --repos-json … --tracker-json … --runtime-mode plugin` + tracker
    connection + derived flags + `--github-auth`/`--ado-auth`/`--jira-auth` from 2d + `--self-diagnostics`
    from 0b). Do NOT pass `--project-type`/`--client-org` — the scan is authoritative.
-7. Browser login secrets (`sync-browser-secrets.mjs` → `.env.playwright.local`: the agent types a password's
-   NAME, Playwright MCP types the value — skipped when 3c put the passwords in vc-secrets, where each lane
-   is `node ${VC_RUN} playwright <lane>` and no file exists), then `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
+7. `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers. Each Playwright lane runs the bridge, which reads the
+   passwords from `test-accounts.local.json` (or vc-secrets) in memory: the agent types a password's NAME, the
+   lane types the value. No secrets file.
 8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node "$VC_RUN" onboard verify-access` then
    `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"`. **Restate the readiness table
    AND the MCP-server status as Markdown tables in your reply.** For a **session-auth FAIL** run

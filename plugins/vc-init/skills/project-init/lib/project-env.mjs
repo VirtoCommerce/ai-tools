@@ -18,14 +18,14 @@ export const LOCAL_FILE = ".env.local";
 /** Section header above the project settings appended to an EXISTING `.env.local`. */
 export const LOCAL_SECTION = "# === /project-init project settings — the same for every environment ===";
 
-/** Header of a NEW `.env.local`, whichever scaffolder creates it first (scaffold-env or scaffold-secrets). */
+/** Header of a NEW `.env.local`, whichever writer creates it first (scaffold-env or write-env). */
 export const LOCAL_HEADER = [
   `# ==============================================================================`,
   `# .env.local — this machine's project settings (GITIGNORED — never commit).`,
   `# Templated by /project-init. Holds what is the SAME for every environment (the`,
-  `# tracker / code-host connection) and the test-user passwords; per-env creds carry`,
-  `# the _<ENV> suffix config.js promotes to the base name when TEST_ENV matches.`,
-  `# Per-env URLs live in .env.<env>. API tokens do NOT go here: they are stored in`,
+  `# tracker / code-host connection); a per-env value carries the _<ENV> suffix.`,
+  `# Per-env URLs live in .env.<env>. Test-account logins and passwords live in`,
+  `# test-accounts.local.json. API tokens do NOT go here: they are stored in`,
   `# vc-secrets (node "$VC_SECRETS" set <name>) and reach a process only via $VC_RUN.`,
   `# ==============================================================================`,
   ``, ``,
@@ -54,7 +54,7 @@ export function envHeader(env, { hostGoverned = false } = {}) {
     `# run verify-access.mjs. What is the same for every env (the tracker /`,
     hostGoverned
       ? `# code-host connection) lives in .env.local; passwords live in the host's secret tool.`
-      : `# code-host connection) and the test-user passwords live in .env.local.`,
+      : `# code-host connection) lives in .env.local; test accounts in test-accounts.local.json.`,
     `# Activate: TEST_ENV=${env} npm run env:check`,
     `# ==============================================================================`,
     ``, ``,

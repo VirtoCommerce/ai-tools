@@ -31,7 +31,7 @@ It interviews you for env name, bug tracker (Jira or Azure Boards), code host (G
 Repos), and auth — never passwords, and never a token in the chat: you store each token yourself with
 `node "<VC_SECRETS>" set <name>` — then derives the rest (native-platform vs client project, fork
 account) from your token plus a live repo scan, and writes `project-profile.json` + `.env.<env>` +
-`.env.local` (test-user passwords only) + `.mcp.json`. That profile is what routes every `/qa-fix`
+`test-accounts.local.json` (test-account logins + passwords) + `.mcp.json`. That profile is what routes every `/qa-fix`
 to the right repo and tracker — and every command here **stops with "run /project-init"** until it
 exists.
 
@@ -39,7 +39,8 @@ exists.
 
 `/project-init` belongs to the `vc-init` plugin; its modes (`--add-env` for another environment,
 `--check` after an upgrade — which also moves any token an older onboarding left in a file into
-vc-secrets) are documented in [`../vc-init/README.md`](../vc-init/README.md).
+vc-secrets, and test-account passwords from `.env.local` / vc-secrets into `test-accounts.local.json`; until
+then the old places still work) are documented in [`../vc-init/README.md`](../vc-init/README.md).
 
 > An **environment** is only a URL set + its per-env passwords, selected at runtime by `TEST_ENV`.
 > A different **tracker or code host** is a different *project* — run a fresh `/project-init`

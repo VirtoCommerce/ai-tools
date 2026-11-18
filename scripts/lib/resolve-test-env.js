@@ -1,3 +1,4 @@
+// scripts/lib/resolve-test-env.js — which env is active. Self-contained: it names no project.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'dotenv';
@@ -69,10 +70,11 @@ export function testEnvChoice(fallback = 'vcst') {
  * TEST_ENV_SOURCE) so every consumer (config.js, scripts, child processes)
  * agrees on the same value regardless of which entry point ran first.
  *
- * The env's test-account credentials are in the store (scripts/lib/test-accounts.mjs), which the loader
- * layers; nothing here reads a password.
+ * The env's test-account credentials are in the store (./test-accounts.mjs) — on a project that has not
+ * migrated, in the legacy `.env.local` / `.env.playwright.<env>` files — and the loader layers both
+ * (./env-layers.mjs `layered`); nothing here reads a password.
  *
- * The env's FILES are the loader's business (scripts/lib/env-layers.mjs `applyLayered`): they may live in
+ * The env's FILES are the loader's business (./env-layers.mjs `applyLayered`): they may live in
  * the project root or in a QA_ENV_PATH folder, and the loader is what warns when none defines the env.
  *
  * @param {string} [fallback='vcst'] repo default when nothing else is set

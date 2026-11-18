@@ -42,10 +42,10 @@
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { parse as parseDotenv } from 'dotenv';
+import { applyOperatorSecrets } from '../lib/github-token.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -53,7 +53,8 @@ const OWNER = 'VirtoCommerce';
 const MAX_PATCH_PROBE = 40;
 const MAX_RELEASES_SCAN = 20; // how many recent releases to scan for "fix already shipped"
 const BUNDLES_BASE = `https://github.com/VirtoCommerce/vc-modules/blob/${process.env.BUNDLE_REF || 'master'}/bundles`;
-const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
+// Read at use, not at import: loadToken() fills JIRA_BASE_URL from .env.local after the module has loaded.
+const jiraBase = () => (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
 // A fixable / hotfixable product repo: a module (incl. x-api split), the platform, or the theme.
 const PRODUCT_REPO_RE = /^vc-module(-x)?-[a-z0-9.-]+$/i;
 const isProductRepo = (n: string) => n === 'vc-platform' || n === 'vc-frontend' || PRODUCT_REPO_RE.test(n);
@@ -101,15 +102,9 @@ interface CiReadiness {
 
 // ── env / token ──────────────────────────────────────────────────────────────
 function loadToken(): string | undefined {
-  // A variable already set is never overwritten, so the file read FIRST wins: .env.local before .env.defaults gives
-  // the documented order (process env, then .env.local, then .env.defaults). The reverse let a default beat a local value.
-  for (const f of ['.env.local', '.env.defaults']) {
-    const p = resolve(REPO_ROOT, f);
-    if (existsSync(p)) {
-      const vars = parseDotenv(readFileSync(p));
-      for (const [k, v] of Object.entries(vars)) if (!process.env[k]) process.env[k] = v;
-    }
-  }
+  // The operator's own secrets, shared with bundle:check and release:diff (scripts/lib/github-token.ts): the process
+  // environment, then .env.local, then .env.defaults — never a committed .env.<env>'s identity.
+  applyOperatorSecrets(REPO_ROOT, ["GIT_TOKEN", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "JIRA_EMAIL", "JIRA_API_TOKEN", "JIRA_BASE_URL"], null); // no _<ENV> pin: the session's env is not the stand a hotfix delivers to
   return process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 }
 let TOKEN: string | undefined;
@@ -461,7 +456,7 @@ async function prFromJiraDescription(task: string): Promise<{ repo: string; numb
   const email = process.env.JIRA_EMAIL, token = process.env.JIRA_API_TOKEN;
   if (!email || !token) { console.error(`[hotfix-precheck] no GitHub PR found for ${task}; JIRA description fallback needs JIRA_EMAIL + JIRA_API_TOKEN in .env.local`); return null; }
   const auth = Buffer.from(`${email}:${token}`).toString('base64');
-  const res = await fetch(`${JIRA_BASE}/rest/api/3/issue/${encodeURIComponent(task)}?fields=description`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-precheck' } });
+  const res = await fetch(`${jiraBase()}/rest/api/3/issue/${encodeURIComponent(task)}?fields=description`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-precheck' } });
   if (!res.ok) { console.error(`[hotfix-precheck] JIRA fetch for ${task} failed (HTTP ${res.status})`); return null; }
   const j = await res.json();
   // description is ADF (JSON) — the PR href lives in a link mark; stringify + regex finds it.

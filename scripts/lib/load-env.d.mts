@@ -25,6 +25,8 @@ export interface LoadEnvOptions {
   root?: string;
   /** The run's ticket for QA_ENV_PATH's `<ticket>` (default: QA_TICKET, else the session's bound run; null: none). */
   ticket?: string | null;
+  /** false: skip the test-account store (a tokens-only script, which a broken store must not stop). Default true. */
+  testAccounts?: boolean;
 }
 
 export declare function loadEnv(options?: LoadEnvOptions & { fallback?: string }): LoadedEnv;

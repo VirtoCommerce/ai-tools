@@ -9,7 +9,7 @@
  *   Bucket #2  .env.<env>   (committed, NON-secret) — per-env URLs / identifiers /
  *              risk: FRONT_URL, BACK_URL, STORE_ID, ENV_RISK, STOREFRONT_PROFILE,
  *              MODULES_ENABLED, ADMIN/USER emails, …
- *   Bucket #3  .env.local   (gitignored) — passwords + tokens + API keys, AND the
+ *   Bucket #3  .env.local   (gitignored) — tokens + API keys + a person's own tool login, AND the
  *              project-level keys scaffold-env.mjs CATALOG marks `scope: "project"`
  *              (JIRA_BASE_URL / JIRA_PROJECT_KEY / JIRA_EMAIL, ADO_ORG / ADO_PROJECT,
  *              CLIENT_REPO_ORG): the same for every env, so they arrive in envVars but
@@ -37,6 +37,15 @@
  * envVars  → .env.<env>   (never suffixed; these are non-secret identifiers)
  * secrets  → .env.local   (per-env creds suffixed when suffixCreds; global tokens never)
  *
+ * TEST ACCOUNTS go to the test-account store instead, `test-accounts.local.json` (scripts/lib/test-accounts.mjs,
+ * lib/store-accounts.mjs), under `envs.<env>.accounts` — the login beside its password:
+ *   envVars.ADMIN → ADMIN.login (vars.login ["ADMIN"]) · envVars.USER_EMAIL → USER.login ·
+ *   envVars.<KEY>_LOGIN of an add-user user → <KEY>.login (vars.login ["<KEY>_LOGIN"]) ·
+ *   secrets.<STEM>_PASSWORD (ADMIN_PASSWORD, USER_PASSWORD, <KEY>_PASSWORD, any password name that is not a
+ *   person's own tool account like JIRA_PASSWORD) → <STEM>.password. `suffixCreds: false` puts a password at the
+ *   store's top level (every env). A password the env keeps in vc-secrets (option B) is refused: store it with
+ *   `vc-secrets set`. A value written here replaces the field's old one.
+ *
  * Usage:
  *   echo '<json>' | node skills/project-init/write-env.mjs [--dry-run] [--print]
  *   node skills/project-init/write-env.mjs < answers.json
@@ -52,6 +61,11 @@ import { CATALOG } from "./scaffold-env.mjs";
 import { LOCAL_HEADER, envHeader, envSuffixesIn, isGitTracked, keySuffixes, readKey, removeKey, sharedProjectKeys } from "./lib/project-env.mjs";
 import { isHostGoverned } from "./lib/governance.mjs";
 import { normalizeValue } from "./normalize-env.mjs";
+import { ensureProjectIgnores } from "./lib/gitignore.mjs";
+import { markedUsersIn } from "./lib/test-users.mjs";
+import { declaredPasswords } from "./lib/passwords.mjs";
+import { STORE_FILE, fillAccount, loginAccount, passwordAccount, readStore, writeStore } from "./lib/store-accounts.mjs";
+import { envView } from "../../scripts/lib/test-accounts.mjs";
 
 // The project-level keys — one value for every env — go to .env.local, never .env.<env>.
 const PROJECT_KEYS = new Set(CATALOG.filter(([, m]) => m.scope === "project").map(([k]) => k));
@@ -144,9 +158,65 @@ function main() {
   const suffixCreds = payload.suffixCreds !== false; // default true
 
   const envVars = { ...(payload.envVars || {}) };
-  const secrets = payload.secrets || {};
+  const secrets = { ...(payload.secrets || {}) };
   if (!Object.keys(envVars).length && !Object.keys(secrets).length) {
     fail("nothing to write: both envVars and secrets are empty.");
+  }
+
+  // Write into the deployment project (process.cwd()), symmetric with config.js which
+  // dotenv-loads these from cwd. VC_FIX_HOME overrides for out-of-project callers.
+  const OUTPUT_ROOT = outputRoot();
+  const envPath = join(OUTPUT_ROOT, `.env.${envName}`);
+  const localPath = join(OUTPUT_ROOT, ".env.local");
+
+  // --- Test accounts → the store (login beside password), taken out before the files are split ---
+  let store;
+  try { store = readStore(OUTPUT_ROOT); } catch (e) { fail(e.message); }
+  const markers = new Set(markedUsersIn(existsSync(envPath) ? readFileSync(envPath, "utf-8") : "").map((u) => u.key));
+  const isUser = (k) => markers.has(k) || !!envView(store, envName).accounts[k];
+  let inVcSecrets = [];
+  try {
+    inVcSecrets = declaredPasswords(JSON.parse(readFileSync(join(OUTPUT_ROOT, ".claude", "vc-secrets.local.json"), "utf-8")))[envName] || [];
+  } catch { /* no declaration — no password is kept in vc-secrets */ }
+  const storeWritten = [];
+  const refusedVc = [];
+  for (const key of Object.keys(envVars)) {
+    const acc = loginAccount(key, isUser);
+    if (!acc) continue;
+    const value = envVars[key];
+    delete envVars[key];
+    if (value === undefined || value === null || value === "") continue;
+    fillAccount(store, envName, acc.key, { login: String(value), loginVar: acc.loginVar }, { overwrite: ["login"] });
+    storeWritten.push(`${acc.key}.login`);
+  }
+  for (const key of Object.keys(secrets)) {
+    const name = key.endsWith(SUFFIX) ? key.slice(0, -SUFFIX.length) : key;
+    const acc = passwordAccount(name);
+    if (!acc) continue;
+    const value = secrets[key];
+    delete secrets[key];
+    if (value === undefined || value === null || value === "") continue;
+    if (inVcSecrets.includes(name)) { refusedVc.push(name); continue; }
+    const loginVar = acc === "ADMIN" ? "ADMIN" : markers.has(acc) ? `${acc}_LOGIN` : undefined;
+    if (!suffixCreds) {
+      // One value for every env: the store's top level.
+      const a = (store.accounts[acc] = { ...(store.accounts[acc] ?? {}), password: String(value) });
+      if (loginVar && !(a.vars?.login ?? []).includes(loginVar)) a.vars = { ...(a.vars ?? {}), login: [...(a.vars?.login ?? []), loginVar] };
+      // An env's own password for the account would still win over the top level (field by field): drop it, so the
+      // one value really is every env's.
+      const shadowed = [];
+      for (const [e, s] of Object.entries(store.envs)) {
+        const own = s.accounts?.[acc];
+        if (!own || own.password === undefined) continue;
+        delete own.password;
+        if (!Object.keys(own).length) delete s.accounts[acc];
+        shadowed.push(e);
+      }
+      storeWritten.push(`${acc}.password (every env${shadowed.length ? `; replaced the own value of ${shadowed.join(", ")}` : ""})`);
+    } else {
+      fillAccount(store, envName, acc, { password: String(value), loginVar }, { overwrite: ["password"] });
+      storeWritten.push(`${acc}.password`);
+    }
   }
 
   // Split secrets: global tokens keep their name; per-env creds get the suffix.
@@ -164,11 +234,6 @@ function main() {
     }
   }
 
-  // Write into the deployment project (process.cwd()), symmetric with config.js which
-  // dotenv-loads these from cwd. VC_FIX_HOME overrides for out-of-project callers.
-  const OUTPUT_ROOT = outputRoot();
-  const envPath = join(OUTPUT_ROOT, `.env.${envName}`);
-  const localPath = join(OUTPUT_ROOT, ".env.local");
 
   // Project keys: one value for every env, so a different one already in .env.local is another env's
   // tracker — never overwritten silently (that would redirect the other env's runs). A project that keeps
@@ -232,8 +297,15 @@ function main() {
     if (!DRY_RUN) writeFileSync(localPath, res.text);
   }
 
+  // --- The store (gitignored first) ---
+  if (storeWritten.length && !DRY_RUN) {
+    ensureProjectIgnores(OUTPUT_ROOT);
+    try { writeStore(OUTPUT_ROOT, store); } catch (e) { fail(e.message); }
+  }
+
   // --- Report (names only, never values) ---
   const tag = DRY_RUN ? "[write-env] DRY-RUN — would write" : "[write-env] wrote";
+  if (storeWritten.length) console.log(`${tag} ${join(OUTPUT_ROOT, STORE_FILE)} (envs.${envName} unless marked): ${storeWritten.join(", ")} [values hidden]`);
   if (envReport) {
     console.log(`${tag} ${envReport.path}${envReport.created ? " (created)" : ""}: ${envReport.written.join(", ") || "(no keys)"}`);
     if (envReport.removed.length) console.log(`[write-env] moved out of ${envReport.path} (now in .env.local): ${envReport.removed.join(", ")}`);
@@ -255,7 +327,10 @@ function main() {
   if (refused.length) {
     console.error(`[write-env] NOT written: ${refused.join(", ")} — .env.local already holds a different value, the one every env uses. Edit .env.local by hand, or keep one value per env as <KEY>_<ENV> there.`);
   }
-  if (refused.length || refusedShared.length) process.exit(1);
+  if (refusedVc.length) {
+    console.error(`[write-env] NOT written: ${refusedVc.join(", ")} — ${envName} keeps it in vc-secrets (option B): store it with node "<VC_SECRETS>" set <name> in your own terminal, never in a file.`);
+  }
+  if (refused.length || refusedShared.length || refusedVc.length) process.exit(1);
 }
 
 main();

@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
-import { LAYERS_GAP, loadLayeredEnv, resolveTestEnv } from "./env.mjs";
+import { loadLayeredEnv, resolveTestEnv } from "./env.mjs";
 import { resolveProfile } from "./profile.mjs";
 import { HostGoverned, bridgeRun, vcRun } from "./bridge.mjs";
 import { replayRun } from "./replay.mjs";
@@ -175,7 +175,6 @@ async function prepare() {
   if (!rawDir && !vcRun()) noTracker("no-credential", "VC_RUN is not set — run /project-init");
   const tracker = profile.tracker === "azure" ? azureBoardsConnector({ profile, key, root, run }) : jiraConnector({ base: profile.trackerBase, key, root, run });
   const gaps = [];
-  if (LAYERS_GAP) gaps.push(gap("env", "not-available-in-install", LAYERS_GAP));
   // The first reads answer "can the tracker be read at all": a refusal there is `no-tracker`, one JSON object like a
   // missing VC_RUN, never a stack line. HostGoverned is no GapError and keeps its own exit 4 (the top-level catch).
   // In a host pass an unanswered first read is not a refusal: the pass ends and asks for it (NeedsFetch).

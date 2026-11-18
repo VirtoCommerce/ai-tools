@@ -18,6 +18,10 @@ Claude Code doesn't document a reliable way for a plugin's commands/skills to re
 - **The token bridge.** No GitHub / Azure DevOps / Jira token is in a file. The operator stores each PAT in `vc-secrets`; `write-secrets-decl.mjs` declares the `vc-init-<group>` tasks; every token-holding call runs as `node "$VC_RUN" <tool> …`, where `$VC_RUN` is a stable shim (`vc-run-shim.mjs` → `~/.claude/plugins/data/vc-init-ai-tools/vc-run.mjs`) that resolves the current install and dispatches through `bridge/run.mjs` — an allowlist, a host-pinned git credential helper, an allowlisted child env and output redaction. Test-user passwords may live there too (`lib/passwords.mjs`): one secret per password per env, and the Playwright lanes run as `node "$VC_RUN" playwright <lane>` → the vc-secrets server `playwright-<lane>.<env>` → `bridge/playwright-mcp.mjs`, which hands them to Playwright MCP as `config.secrets` with no `--secrets` file. `plugins/vc-init/bridge/` is the one place under `plugins/` besides vc-secrets with committed unit tests (root [`../CLAUDE.md`](../CLAUDE.md) §Essential Rules).
 - **Duplication, as vc-fix.** vc-init carries its own copies of the libs `/project-init` needs (`scripts/lib/`) and resolves a sibling plugin's files through `bridge/resolve-plugin.mjs` (a checkout sibling, the install registry, the cache) — never a relative path into another plugin.
 
+## The env loader — one set of files, copied into every plugin
+
+`env-layers.mjs`, `resolve-test-env.js`, `run-dir.mjs`, `test-accounts.mjs` (+ their `.d.*ts`), and vc-fix's `env-check.mjs`, are the repo's `scripts/lib/` files copied **byte for byte** into `plugins/{vc-fix,vc-test,vc-init}/scripts/lib/`; `load-layered-env.mjs` (the plugins' wrapper: TEST_ENV validation, the bridge's injected values, the plaintext-token warning) is vc-fix's, copied into vc-test and vc-init. **Edit the source, then `npm run env:sync`** — never a copy: `env:sync:check` fails the PR in `gates.yml`. The shared files name no project: what differs per caller is an option — the plugins' wrapper passes `legacy: true` (an unmigrated client's `.env.playwright.<env>` / `.env.playwright.master`, read below the test-account store) and its own `migrateHint`; the repo passes neither legacy nor a plugin command. The list of files is `scripts/maintenance/sync-env-loader.mjs` `SYNC`.
+
 ## `vc-perf` — the three layers
 
 **L1** BenchmarkDotNet A/B, **L2** a k6 load harness + `dotnet-counters`, **L3** `dotnet-trace` allocation/CPU/DB attribution, plus a `perf-analyst` agent that ranks optimization candidates and a `perf-loop` orchestrator.
@@ -30,7 +34,7 @@ Claude Code doesn't document a reliable way for a plugin's commands/skills to re
 - **`lib/design/` and `knowledge/bl-ui.md` are generated** from `scripts/lib/*.ts` and the BL YAML by `npm run vc-test:design`. After a BL YAML or measurement-code edit, re-run it; `vc-test:design:check` fails a stale bundle in `gates.yml`.
 - **Repo shims call the plugin.** This repo's `/qa-triage-results` and `/qa-design` run the vc-test skills (≥ 0.11.0 and ≥ 0.12.0) — a breaking change to either skill breaks the shim too.
 - **Committed tests** exist only for `lib/knowledge-store.mjs` and `lib/write-zones.mjs` (root [`../CLAUDE.md`](../CLAUDE.md) §Essential Rules); every other vc-test script follows NO CODE ⇒ NO UNIT TEST / temporary-test.
-- **Its own copies, as vc-fix:** `scripts/lib/` is the env loader copied from vc-fix; tracker and code-host reads go only through `$VC_RUN` (or the `fetch` agent on a host-governed project), never a token of its own.
+- **Its own copies, as vc-fix:** `scripts/lib/` holds the env loader (below); tracker and code-host reads go only through `$VC_RUN` (or the `fetch` agent on a host-governed project), never a token of its own.
 
 ## `vc-secrets` — the launcher
 
