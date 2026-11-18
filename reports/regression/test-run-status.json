@@ -1,6 +1,6 @@
 {
   "runId": "REG-2026-11-18-1641",
-  "status": "in_progress",
+  "status": "completed",
   "startedAt": "2026-11-18T15:41:29.891Z",
   "env": "vcst",
   "selection": "105 --ids OTP-019 --no-promote",
@@ -8,11 +8,16 @@
   "note": "run of the rewritten OTP-019 (fresh code after the lockout ends)",
   "suites": {
     "105": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "cases": 1,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-18T15:44:45.550Z"
+      "startedAt": "2026-11-18T15:44:45.550Z",
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-18T16:03:12.285Z"
     }
-  }
+  },
+  "finishedAt": "2026-11-18T16:03:20.525Z"
 }
