@@ -15,6 +15,18 @@ export const HUGE_DIFF_LINES = 3000;
 // The same hunk in this many files is a mechanical edit (an import path, a renamed prop), not logic.
 export const REPEATED_HUNK_FILES = 5;
 export const HUGE_TOP_FILES = 30;
+// Review modes by the non-trivial part (not R0, not mechanical): S and M are read whole by each lens;
+// only L and XL pay for the change graph, flows and per-lens units. XL is huge mode.
+export const MODE_S_FILES = 3;
+export const MODE_S_LINES = 150;
+export const MODE_M_FILES = 20;
+export const MODE_M_LINES = 1000;
+// Size alone misjudges this codebase: a two-file change that spans checkout and the facade needs the
+// flow picture as much as a big one. Each signal below is known before the graph work runs.
+export const MODE_CRITICAL_ZONES = ["commerce", "add-to-cart", "auth", "company", "context-switch", "federation", "ui-kit"];
+export const MODE_L_CRITICAL_ZONES = 2;
+export const MODE_L_LAYERS = 3;
+export const MODE_L_EXPOSED_FILES = 3;
 export const HUGE_LARGEST_FILES = 10;
 
 // First match wins. A rule's tier is the floor for the file; fan-out can only raise it.
@@ -125,3 +137,49 @@ export const LAYERS = [
 ];
 // What each kind of R0 file is called in the trivial lens.
 export const TRIVIAL_KINDS = { tests: "tests", stories: "stories", docs: "docs", locales: "locales", assets: "assets", "build-version": "version bump" };
+
+// Review units: how each lens cuts the change. A local lens reads one cluster at a time; consumers
+// reads the public files with their consumer lists; a flow lens reads every changed file a flow joins,
+// across clusters, because a payment or a permission check breaks between files, not inside one; a
+// global lens reads a condensed view of the whole change, since layers and coupling are only visible
+// from above and the full diff of a big change does not fit one agent.
+export const LENS_KINDS = {
+  correctness: "local",
+  conventions: "local",
+  styles: "local",
+  ui: "local",
+  tests: "local",
+  trivial: "local",
+  "clean-code": "local",
+  performance: "local",
+  "ui-kit": "local",
+  consumers: "consumers",
+  security: "flow",
+  commerce: "flow",
+  architecture: "global",
+  design: "global",
+};
+// The files a flow lens is about; a flow with any of them goes to the lens whole.
+export const FLOW_LENS_MATCH = {
+  security: { zones: ["auth", "company", "html-injection", "federation", "content", "ci"], questions: /^SEC-/ },
+  commerce: { zones: ["commerce", "add-to-cart", "context-switch"], reasons: CONTENT_SIGNALS.filter((s) => s.zone === "commerce").map((s) => s.reason) },
+};
+export const FLOW_UNIT_MAX_FILES = 25;
+// Review agents per mode, not counting the map, seam and refutation agents. Local lenses on one
+// cluster share an agent; past the budget, units are dropped in reverse priority and listed.
+export const PLAN_BUDGET = { S: 1, M: 3, L: 15, XL: 25 };
+export const PLAN_LOCAL_LENSES = ["correctness", "conventions", "styles", "ui", "tests", "clean-code", "performance"];
+// An M change past its budget gets one agent per kind of question: the contract it exposes, the
+// flows it touches, and the local reading.
+export const PLAN_CONTRACT_LENSES = ["architecture", "design", "consumers", "ui-kit"];
+export const PLAN_FLOW_LENSES = ["security", "commerce"];
+export const CONSUMER_UNIT_MAX_FILES = 10;
+// Soft links: a GraphQL name shared by more changed files than this joins everything and tells no
+// flow apart; an identifier found in more files repo-wide than this is a common word, not a key.
+export const SOFT_KEY_MAX_FILES = 10;
+export const RARE_IDENTIFIER_MAX_FILES = 5;
+// Past this share of changed code files with no link of any kind, the graph does not explain the change.
+export const ORPHAN_WARN_SHARE = 0.4;
+export const OVERVIEW_COMMITS = 50;
+export const IMPACT_USED_BY_MAX = 15;
+export const API_DELTA_LINES = 8;

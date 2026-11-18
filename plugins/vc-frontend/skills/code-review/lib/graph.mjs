@@ -27,24 +27,27 @@ export function moduleGraph(ctx) {
   const modules = JSON.parse(out).modules;
   const deps = new Map();
   const rev = new Map();
+  // Import specifier → resolved path per module, for the impact map: `@/shared/cart` means a file.
+  const resolve = new Map();
   for (const m of modules) {
     const targets = m.dependencies.map((d) => d.resolved).filter((r) => r.startsWith("client-app/"));
     deps.set(m.source, targets);
+    resolve.set(m.source, new Map(m.dependencies.map((d) => [d.module, d.resolved])));
     for (const t of targets) {
       if (!rev.has(t)) rev.set(t, new Set());
       rev.get(t).add(m.source);
     }
   }
-  return { deps, rev, consumers: new Map(), tagUsers: new Map() };
+  return { deps, rev, resolve, consumers: new Map(), tagUsers: new Map() };
 }
 
-function isBarrel(p) {
+export function isBarrel(p) {
   return BARREL.test(p);
 }
 
 // Direct consumers, looking through barrel files. A module that imports the barrel counts only if it
 // names something this file exports: a barrel import alone says nothing about which export is used.
-function consumersThroughBarrels(g, file) {
+export function consumersThroughBarrels(g, file) {
   if (g.consumers.has(file)) return g.consumers.get(file);
   const names = exportedNames(file);
   let nameRe = null;

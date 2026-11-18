@@ -32,6 +32,29 @@ export function gitGrep(words, dir, globs, raw) {
   }
 }
 
+// The files that contain each of several fixed strings, in one `git grep -o`: every match comes back
+// as `path:match`. `word` matches whole words only. Missing candidates map to an empty set.
+export function grepHits(cands, { word = false, scope = ["."] } = {}) {
+  const files = new Map(cands.map((c) => [c, new Set()]));
+  if (!cands.length) return files;
+  let out = "";
+  try {
+    out = execFileSync("git", ["grep", "-o", "-F", "-I", ...(word ? ["-w"] : []), ...cands.flatMap((c) => ["-e", c]), "--", ...scope], {
+      encoding: "utf8",
+      maxBuffer: 512 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch {
+    /* no match at all */
+  }
+  for (const line of out.split("\n")) {
+    const i = line.indexOf(":");
+    const hit = i > 0 && files.get(line.slice(i + 1));
+    if (hit) hit.add(line.slice(0, i));
+  }
+  return files;
+}
+
 // Working-tree reads: the graph, consumers, styles and tokens all read the same files again and again.
 const headCache = new Map();
 export function readHead(p) {
@@ -68,7 +91,7 @@ export function changedFiles(mb) {
 
 // One entry per path from `--name-status`, line counts from `--numstat`, and from the `-U0` diff the
 // text and line number of every added and removed line. `hunks` maps a path to its hunks' changed
-// lines, kept out of the file objects so the JSON stays as it is.
+// lines and position, kept out of the file objects so the JSON stays as it is.
 export function parseChanges({ nameStatus, numstat, diff }) {
   const byPath = new Map();
   for (const line of nameStatus.split("\n").filter(Boolean)) {
@@ -91,10 +114,11 @@ export function parseChanges({ nameStatus, numstat, diff }) {
       hunk = null;
     } else if (line.startsWith("+++ ") || line.startsWith("--- ")) continue;
     else if (line.startsWith("@@")) {
-      const m = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)/);
-      if (m) [oldLine, newLine] = [Number(m[1]), Number(m[2])];
+      const m = line.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?/);
+      if (m) [oldLine, newLine] = [Number(m[1]), Number(m[3])];
       if (current) {
-        hunk = { added: [], deleted: [] };
+        // Where the hunk sits: the impact map finds the code around it by these.
+        hunk = { added: [], deleted: [], oldStart: oldLine, oldCount: m?.[2] === undefined ? 1 : Number(m[2]), newStart: newLine, newCount: m?.[4] === undefined ? 1 : Number(m[4]) };
         if (!hunks.has(current.path)) hunks.set(current.path, []);
         hunks.get(current.path).push(hunk);
       }

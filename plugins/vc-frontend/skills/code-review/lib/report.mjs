@@ -1,5 +1,6 @@
 // The lenses a change calls for, and the Markdown the user reads.
 
+import { planLine } from "./plan.mjs";
 import { CODE_FILE, HUGE_DIFF_FILES, HUGE_DIFF_LINES, HUGE_LARGEST_FILES, HUGE_TOP_FILES, TIERS, TRIVIAL_KINDS } from "./zones.mjs";
 
 // files: classified files; tier: the change's tier as a number; tokens and matchedRules as in the result.
@@ -53,6 +54,9 @@ const FILE_HEADER = ["| Tier | File | Why | Consumers | Visible outside |", "|--
 
 function header(r, lines) {
   lines.push(`# Risk ${r.tier} — ${r.head} against ${r.base} (merge-base ${r.mergeBase})`, "");
+  if (r.mode) lines.push(`Mode ${r.mode.id}: ${r.mode.reason}.`, "");
+  if (r.plan) lines.push(planLine(r.plan), "");
+  for (const g of r.gates ?? []) lines.push(`Gate **${g.id}**: ${g.note}.`, "");
   if (r.escalation) lines.push(`Raised one tier: ${r.escalation}.`, "");
 }
 
@@ -63,6 +67,20 @@ function footer(r, lines) {
     lines.push("", "## Path-scoped rules that apply", "");
     for (const rule of r.rules) lines.push(`- \`${rule.file}\`: ${rule.files.length} file(s)`);
   }
+  unitLines(r, lines);
+}
+
+// How the review splits: units per lens, how the changed files link, what is public.
+function unitLines(r, lines) {
+  if (!r.units) return;
+  const per = new Map();
+  for (const u of r.units) if (u.id) per.set(u.lens, (per.get(u.lens) ?? 0) + 1);
+  const offered = r.units.filter((u) => u.recommended === false && u.units);
+  const g = r.graphCoverage;
+  lines.push("", "## Review units", "");
+  lines.push(`- Units: ${[...per].map(([l, n]) => `${l} ${n}`).join(", ") || "none"}${offered.length ? `; on request: ${offered.map((u) => `${u.lens} ${u.units}`).join(", ")}` : ""}.`);
+  lines.push(`- ${r.flows.length} flow(s)${r.flows.length ? ` (${r.flows.slice(0, 8).map((f) => f.files.length).join(", ")}${r.flows.length > 8 ? ", …" : ""} files)` : ""}; ${r.changeGraph.edges.length} link(s) between changed files, ${r.changeGraph.crossCluster.length} across clusters; ${r.publicSurface.length} public file(s).`);
+  lines.push(`- ${g.orphans.length} of ${g.codeFiles} changed code file(s) link to no other changed file.${g.warning ? ` **${g.warning}.**` : ""}`);
 }
 
 function warningLines(r, lines) {
@@ -89,7 +107,7 @@ export function markdown(r) {
 const code = (s) => "`" + String(s).replace(/`/g, "'") + "`";
 const capped = (items, n, fmt = code) => items.slice(0, n).map(fmt).join(", ") + (items.length > n ? `, … (${items.length} in all)` : "");
 
-function mechanicalLines(r, lines) {
+export function mechanicalLines(r, lines) {
   if (!r.mechanicalGroups?.length) return;
   lines.push("", "## Mechanical changes: one representative per group", "");
   for (const g of r.mechanicalGroups) {

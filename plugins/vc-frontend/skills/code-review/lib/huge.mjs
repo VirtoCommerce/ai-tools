@@ -2,13 +2,62 @@
 // review (or a split of the PR) can take one at a time.
 
 import { suggestLenses } from "./report.mjs";
-import { CLUSTER_MAX_FILES, DOMAIN_FOLDER, HUGE_DIFF_FILES, HUGE_DIFF_LINES, LAYERS, TIERS } from "./zones.mjs";
+import { CLUSTER_MAX_FILES, DOMAIN_FOLDER, HUGE_DIFF_FILES, HUGE_DIFF_LINES, LAYERS, MODE_CRITICAL_ZONES, MODE_L_CRITICAL_ZONES, MODE_L_EXPOSED_FILES, MODE_L_LAYERS, MODE_M_FILES, MODE_M_LINES, MODE_S_FILES, MODE_S_LINES, TIERS } from "./zones.mjs";
 
 export function hugeMode(nonTrivialFiles, changedLines) {
   const why = [];
   if (nonTrivialFiles > HUGE_DIFF_FILES) why.push(`${nonTrivialFiles} non-trivial files (limit ${HUGE_DIFF_FILES})`);
   if (changedLines > HUGE_DIFF_LINES) why.push(`${changedLines} changed non-trivial lines (limit ${HUGE_DIFF_LINES})`);
   return { on: why.length > 0, reason: why.length ? why.join(", ") : null, nonTrivialFiles };
+}
+
+// How much machinery the review needs. A small, contained change is read whole by every lens;
+// splitting it into units, flows and a link graph costs more than it saves. Size sets the first guess
+// over the non-trivial part (not R0, not mechanical); risk and spread then move it, in this order:
+//   1. an R3 file needs at least M: one cheap pass is not enough for it;
+//   2. several critical zones, several layers or several publicly visible files need at least L: the
+//      links between them are where it breaks, and only L and XL build the graph;
+//   3. R1 files in one cluster need at most M: nothing in them reaches far;
+//   4. a huge change is XL whatever else holds.
+// clusterCount: review clusters, which hold exactly the non-trivial files.
+const MODES = ["S", "M", "L", "XL"];
+export function changeMode(files, huge, clusterCount) {
+  const nonTrivial = files.filter((f) => f.tier >= 1 && !f.mechanical);
+  const lines = nonTrivial.reduce((n, f) => n + f.added + f.deleted, 0);
+  let mode = nonTrivial.length <= MODE_S_FILES && lines <= MODE_S_LINES ? "S" : nonTrivial.length <= MODE_M_FILES && lines <= MODE_M_LINES ? "M" : "L";
+  const why = [`size ${mode} (${nonTrivial.length} non-trivial file(s), ${lines} line(s))`];
+  const atLeast = (m, rule) => {
+    if (MODES.indexOf(mode) >= MODES.indexOf(m)) return;
+    mode = m;
+    why.push(`${rule} → ${m}`);
+  };
+  const r3 = nonTrivial.filter((f) => f.tier === 3).length;
+  if (r3) atLeast("M", `${r3} R3 file(s)`);
+  const zones = [...new Set(nonTrivial.map((f) => f.zone).filter((z) => MODE_CRITICAL_ZONES.includes(z)))];
+  const layers = [...new Set(nonTrivial.map((f) => LAYERS.find((l) => l.re.test(f.path))?.id).filter(Boolean))];
+  const exposed = nonTrivial.filter((f) => f.external.length).length;
+  if (zones.length >= MODE_L_CRITICAL_ZONES) atLeast("L", `zones ${zones.join("+")}`);
+  if (layers.length >= MODE_L_LAYERS) atLeast("L", `layers ${layers.join("+")}`);
+  if (exposed >= MODE_L_EXPOSED_FILES) atLeast("L", `${exposed} publicly visible file(s)`);
+  if (!huge.on && nonTrivial.length && nonTrivial.every((f) => f.tier === 1) && clusterCount === 1 && MODES.indexOf(mode) > 1) {
+    mode = "M";
+    why.push("all R1 in one cluster → M");
+  }
+  if (huge.on) {
+    mode = "XL";
+    why.push(`huge (${huge.reason}) → XL`);
+  }
+  return { id: mode, reason: why.join("; ") };
+}
+
+// Changes with nothing for the code lenses to read: say which, and what review is left.
+export function reviewGates(files) {
+  if (files.some((f) => f.tier >= 1 && !f.mechanical)) return [];
+  const r0 = files.some((f) => f.tier === 0 && !f.mechanical);
+  const mech = files.some((f) => f.mechanical);
+  if (!mech) return [{ id: "r0-only", lenses: ["trivial"], note: "only R0 files (tests, stories, docs, locales, assets, version bump): run the trivial lens alone" }];
+  if (!r0) return [{ id: "mechanical-only", lenses: [], note: "only mechanical files: review the mechanical groups (one representative each), no lens" }];
+  return [{ id: "no-non-trivial", lenses: ["trivial"], note: "no non-trivial file: only R0 and mechanical files; run the trivial lens and review the mechanical groups" }];
 }
 
 // The zone when the file has one, else its domain folder, else its top directory. ui-kit is one zone
