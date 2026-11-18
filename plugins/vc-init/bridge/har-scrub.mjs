@@ -520,26 +520,51 @@ export function configArg(args) {
   return null;
 }
 
+/** Every `*.har` directly in `dir`; none when it does not exist. */
+function harFilesInDir(dir) {
+  try {
+    return readdirSync(dir)
+      .filter((f) => f.endsWith(".har"))
+      .map((f) => join(dir, f));
+  } catch {
+    return []; /* no directory yet — nothing recorded */
+  }
+}
+
 /** Every `*.har` in the directories of the given HAR paths (the lane's own file and any sibling). */
 export function harFilesIn(paths) {
-  const out = new Set();
-  for (const p of paths) {
-    const dir = dirname(p);
-    try {
-      for (const f of readdirSync(dir)) if (f.endsWith(".har")) out.add(join(dir, f));
-    } catch {
-      /* no directory yet — nothing recorded */
-    }
-  }
-  return [...out];
+  return [...new Set(paths.flatMap((p) => harFilesInDir(dirname(p))))];
 }
+
+/** What tells one directory from another created at the same path later, or null when there is none to stat. */
+function dirIdentity(dir) {
+  try {
+    const st = statSync(dir, { bigint: true });
+    return `${st.dev}:${st.ino}:${st.birthtimeNs}`;
+  } catch {
+    return null; /* gone, or delete-pending on Windows */
+  }
+}
+
+/** Events in one second above which a watcher is spinning, not reporting writes (a HAR write is a few). */
+const STORM_PER_SEC = 5000;
 
 /**
  * Keep a running lane's HAR directory scrubbed: once now, after every write Playwright finishes there
  * (a `browser_close`), and synchronously at exit (the server's own shutdown writes the last HAR).
+ *
+ * A watched directory that is deleted (`test-results/` cleaned, a worktree removed) drops its watcher: on
+ * Windows the dead watcher fires its own path in a tight loop — ~200k events/s, a whole core, forever,
+ * even after the folder comes back, and no `error` event. Measured 2026-11-18: an idle lane went from 0% to
+ * 99.6% of a core the moment its `test-results/` was removed. A watcher is dropped when an event that is not
+ * a HAR write finds its directory gone or replaced (a new directory at the same path: the old watcher still
+ * spins), when it reports an `error`, and when it fires more than STORM_PER_SEC events in a second whatever
+ * the cause. The directory is then checked every `rearmMs` and watched again (and scanned) once it exists —
+ * never re-created here, which would race the deletion in progress. A drop on a healthy directory costs
+ * one re-arm and one rescan, nothing more.
  * @returns {{ close(): void }}
  */
-export function watchHarDirs(harPaths, { secrets = [], watch = fsWatch, onResult = () => {}, settleMs = 300 } = {}) {
+export function watchHarDirs(harPaths, { secrets = [], watch = fsWatch, onResult = () => {}, settleMs = 300, rearmMs = 1000 } = {}) {
   const timers = new Map();
   const running = new Set();
   const schedule = (file, tries = 0) => {
@@ -563,20 +588,60 @@ export function watchHarDirs(harPaths, { secrets = [], watch = fsWatch, onResult
   };
   sweepStaleTmp(harPaths);
   for (const f of harFilesIn(harPaths)) run(f);
-  const watchers = [];
-  for (const dir of new Set(harPaths.map((p) => dirname(p)))) {
+  const watchers = new Map();
+  const waits = new Map();
+  let closed = false;
+  const waitFor = (dir) => {
+    if (closed || waits.has(dir)) return;
+    const t = setInterval(() => {
+      if (!existsSync(dir)) return;
+      clearInterval(t);
+      waits.delete(dir);
+      arm(dir, false);
+    }, rearmMs);
+    t.unref?.();
+    waits.set(dir, t);
+  };
+  const lost = (dir, w) => {
+    if (watchers.get(dir) !== w) return;
+    watchers.delete(dir);
     try {
-      mkdirSync(dir, { recursive: true });
-      const w = watch(dir, (_event, name) => {
-        const files = name ? [join(dir, String(name))] : harFilesIn([join(dir, "x.har")]);
-        for (const f of files) if (f.endsWith(".har")) schedule(f);
-      });
-      w?.unref?.();
-      if (w) watchers.push(w);
+      w.close?.();
     } catch {
-      /* no watcher — the start and exit scrubs still run */
+      /* already closed */
     }
-  }
+    waitFor(dir);
+  };
+  const arm = (dir, create) => {
+    try {
+      if (create) mkdirSync(dir, { recursive: true });
+      const id = dirIdentity(dir);
+      let windowStart = Date.now();
+      let events = 0;
+      const w = watch(dir, (_event, name) => {
+        if (closed || watchers.get(dir) !== w) return;
+        const now = Date.now();
+        if (now - windowStart > 1000) [windowStart, events] = [now, 0];
+        // Spinning, for whatever reason (see above): drop it and watch afresh.
+        if (++events > STORM_PER_SEC) return lost(dir, w);
+        const file = name ? join(dir, String(name)) : null;
+        if (file?.endsWith(".har")) return schedule(file);
+        // Not a HAR write: the folder itself may have gone, or been replaced under this watcher.
+        if (dirIdentity(dir) !== id) return lost(dir, w);
+        if (!file) for (const f of harFilesInDir(dir)) schedule(f);
+      });
+      if (!w) return;
+      w.on?.("error", () => lost(dir, w));
+      w.unref?.();
+      watchers.set(dir, w);
+      // Back after a deletion: whatever Playwright wrote meanwhile gets its scrub now.
+      if (!create) for (const f of harFilesInDir(dir)) schedule(f);
+    } catch {
+      /* not watchable now — look again later; the exit scrub still runs */
+      waitFor(dir);
+    }
+  };
+  for (const dir of new Set(harPaths.map((p) => dirname(p)))) arm(dir, true);
   const atExit = () => {
     for (const t of timers.values()) clearTimeout(t);
     // An async scrub cut short by the exit leaves its temp file; the sync scrub below redoes its work.
@@ -586,9 +651,13 @@ export function watchHarDirs(harPaths, { secrets = [], watch = fsWatch, onResult
   process.on("exit", atExit);
   return {
     close() {
+      closed = true;
       process.off("exit", atExit);
       for (const t of timers.values()) clearTimeout(t);
-      for (const w of watchers) w.close?.();
+      for (const t of waits.values()) clearInterval(t);
+      for (const w of watchers.values()) w.close?.();
+      watchers.clear();
+      waits.clear();
     },
   };
 }
