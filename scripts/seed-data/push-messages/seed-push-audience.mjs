@@ -44,7 +44,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, ensureMemberIndex,
   writeEnvAliasOverride, DRY_RUN, TEARDOWN, STORE_ID, ROOT,
 } from '../../lib/seed-common.mjs';
-import { resolvePassword, passwordSource } from '../../lib/user-provision.mjs';
+import { accountSet, resolvePassword, passwordSource } from '../../lib/user-provision.mjs';
 import {
   SEED_PREFIX, EMAIL_PREFIX, PASSWORD_VAR, ORGS, PEOPLE, MEMBER_QUERY,
   orgBody, memberBody, seedOuterId, isSeededOuterId,
@@ -391,6 +391,7 @@ async function main() {
     const res = await api('POST', '/api/platform/security/users/create', body);
     if (res && res.succeeded === false) throw new Error(`security/users/create failed for ${p.email}: ${JSON.stringify(res.errors)}`);
     if (DRY_RUN) { log(`  ✓ create login (dry) ${p.email}`); continue; }
+    accountSet(p.email, password);
     const fresh = await findUser(p.email);
     if (!fresh?.id) throw new Error(`created login ${p.email} but could not resolve it back`);
     log(`  ✓ create login ${p.email} (${fresh.id})`);

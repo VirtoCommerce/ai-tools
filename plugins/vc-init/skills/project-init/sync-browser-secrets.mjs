@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 /**
- * sync-browser-secrets.mjs — GENERATE `.env.playwright.local`, the `--secrets` file of every playwright-*
+ * sync-browser-secrets.mjs — RETIRED by the test-account store (vc-init 0.8.0). The Playwright lanes gen-mcp writes
+ * now run the bridge (`${VC_RUN} --playwright …`, or `${VC_RUN} playwright <lane>` with vc-secrets), which reads
+ * test-accounts.local.json (or vc-secrets) at start and hands Playwright MCP the passwords in memory — there is no
+ * `--secrets` file to generate. Run plainly, this says so and exits 0; `--check` exits 0 when every lane in
+ * .mcp.json reads the store and 1 (with the gen-mcp fix) when one still passes `--secrets`.
+ *
+ * `--legacy` keeps the old behaviour for a project whose .mcp.json still has `--secrets` lanes: everything below.
+ *
+ * LEGACY — GENERATE `.env.playwright.local`, the `--secrets` file of every playwright-*
  * MCP server, from the test-user passwords in `.env.local` for the current TEST_ENV.
  *
  * Why: an agent that signs in through the real UI must never hold the password. With `--secrets`,
@@ -19,7 +27,8 @@
  * This is option A. When the vc-secrets declaration keeps the passwords (option B, lib/passwords.mjs),
  * the lanes run from vc-secrets and no file is wanted: this script then writes nothing and says so.
  *
- * Usage: TEST_ENV=<env> node sync-browser-secrets.mjs [--check]
+ * Usage: node sync-browser-secrets.mjs [--check]            (the store: nothing to generate)
+ *        TEST_ENV=<env> node sync-browser-secrets.mjs --legacy [--check]
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -76,6 +85,23 @@ export function buildContent(env, names, valueOf) {
   return { content: `${header.join("\n")}\n${lines.join("\n")}\n`, written: lines.map((l) => l.slice(0, l.indexOf("="))), missing, unserialisable };
 }
 
+/**
+ * The Playwright lanes of the project's .mcp.json and whether each reads its passwords in memory (the bridge:
+ * `--playwright` = the store, `playwright <lane>` = vc-secrets) or from a `--secrets` file. Reads .mcp.json.
+ * @returns {{ lanes: string[], legacy: string[], mcpJson: boolean }}
+ */
+export function laneSources(root = outputRoot()) {
+  let servers = {};
+  let mcpJson = false;
+  try { servers = JSON.parse(readFileSync(join(root, ".mcp.json"), "utf8")).mcpServers || {}; mcpJson = true; } catch { /* no .mcp.json yet */ }
+  const lanes = Object.keys(servers).filter((n) => /^playwright-[a-z0-9]+$/.test(n));
+  const viaBridge = (def) => {
+    const args = (def?.args || []).map(String);
+    return args.includes("--playwright") || (args.includes("playwright") && args.some((a) => a.includes("VC_RUN") || a.endsWith("vc-run.mjs")));
+  };
+  return { lanes, legacy: lanes.filter((n) => !viaBridge(servers[n])), mcpJson };
+}
+
 /** What the file SHOULD hold now for the current TEST_ENV, and what it holds. Loads the layered env. */
 export function currentState(root = outputRoot()) {
   const env = loadLayeredEnv();
@@ -90,6 +116,16 @@ export function currentState(root = outputRoot()) {
 function main() {
   standDownIfHostGoverned(outputRoot(), "sync-browser-secrets skipped: the browser lanes are the host's");
   const check = process.argv.includes("--check");
+  if (!process.argv.includes("--legacy")) {
+    const { lanes, legacy } = laneSources();
+    const leftover = existsSync(join(outputRoot(), SECRETS_FILE));
+    if (legacy.length) {
+      console.log(`[browser-secrets] ✗ ${legacy.join(", ")} still pass${legacy.length === 1 ? "es" : ""} a --secrets file — re-run gen-mcp.mjs: its lanes read test-accounts.local.json in memory (or run this with --legacy to keep the old file)`);
+      process.exit(check ? 1 : 0);
+    }
+    console.log(`[browser-secrets] ✓ nothing to generate: ${lanes.length ? lanes.join(", ") : "the Playwright lanes"} read test-accounts.local.json (or vc-secrets) at start — after a password change, restart Claude Code${leftover ? `; the leftover ${SECRETS_FILE} is unused — creds-to-store.mjs --apply deletes it` : ""}`);
+    return;
+  }
   let inVcSecrets = [];
   try {
     inVcSecrets = Object.keys(declaredPasswords(JSON.parse(readFileSync(join(outputRoot(), ".claude", "vc-secrets.local.json"), "utf8"))));

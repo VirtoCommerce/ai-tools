@@ -38,7 +38,7 @@ browser automation with AI agents, **not** traditional `.spec.js` files. The rep
 | [scripts/](scripts/) | Resolvers, GraphQL runner, seeders, deploy, `kb`, sync/lint utilities |
 | [ci/](ci/) | Headless regression / full-cycle / monitoring / suite-audit pipelines (tracked) |
 | [docs/](docs/) | Onboarding, distribution, release/versioning, decisions (`docs/decisions/`) |
-| [templates/](templates/) | Customer-facing config templates (`.env.local.template`, `.env.playwright.local.template`, `.env.{env}.example`, `.mcp.json.example`, `aliases.{env}.json.template`, `bl.schema.json`) |
+| [templates/](templates/) | Customer-facing config templates (`.env.local.template`, `test-accounts.example.json`, `.env.{env}.example`, `.mcp.json.example`, `aliases.{env}.json.template`, `bl.schema.json`) |
 | [vc/](vc/) | **Layer 2** — VC's internal shared data (`vc/shared/`: sprint plans, prompt templates, workshop); customers ignore |
 
 ## Directory Structure

@@ -8,6 +8,55 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The plugins move to the test-account store — `vc-init` `0.8.0`, `vc-fix` `0.19.0`, `vc-test` `0.19.0` — 2026-11-17
+
+### Changed
+
+- **`/project-init` (vc-init) keeps a client's test-account logins and passwords in `test-accounts.local.json` by
+  default.** `scaffold-secrets` scaffolds `envs.<env>.accounts` (ADMIN, USER), `scaffold-env` no longer writes logins
+  into `.env.<env>`, `write-env` and `--add-user` write logins and passwords to the store. vc-secrets stays an
+  optional variant per role (`--admin-passwords` / `--user-passwords vc-secrets`); `env-local` is an alias of
+  `store`. Tokens stay in vc-secrets; a person's own tracker login never goes in the store.
+- **Client lanes read the store in memory.** `gen-mcp` writes each Playwright lane as
+  `npx -p <pin> node ${VC_RUN} --playwright <pin> …` (no `--secrets` file); the bridge hands the lane every env's
+  passwords as `NAME_<ENV>` and the lane's env's as the bare `NAME` (both work), plus `MASTER_PASSWORD`; a
+  vc-secrets value still wins. `sync-browser-secrets` is a no-op unless `--legacy`.
+- **Migration for existing clients:** `/project-init --check` Step M runs `creds-to-store.mjs` first — it moves the
+  `.env.local` passwords and `.env.<env>` logins into the store, proves every env resolves each name as before,
+  backs up, cleans the files (restoring them if the second proof fails) and deletes `.env.playwright.local`.
+- **vc-fix / vc-test loaders** carry the store layer (their own copies of `test-accounts.mjs`), with the old
+  `.env.playwright.<env>` / `.env.playwright.master` read as a fallback below it, so an unmigrated client keeps
+  working. Secret scrubbers (vc-test ticket-context, the knowledge store, vc-init runner/HAR redaction) and the
+  self-check deny list (lock-step with `.claude/`) read the store's values.
+
+## Test-account credentials in one file — `test-accounts.local.json` — `vc-init` `0.7.1` — 2026-11-17
+
+### Changed
+
+- **Every test account's login and password, for every env, now lives in ONE gitignored file,
+  `test-accounts.local.json`** (`scripts/lib/test-accounts.mjs`; shape `templates/test-accounts.example.json`;
+  design `docs/superpowers/specs/2026-11-17-test-accounts-store-design.md`). Before, they were spread over the
+  tracked `.env.<env>` / `.env.defaults` (logins), `.env.local` (bare and `_<ENV>` passwords), `.env.playwright.<env>`,
+  `.env.playwright.master`, two generated `--secrets` files and a `'Password1!'` fallback in about 25 seeder places,
+  and no seeder wrote down the password it set — so every seed and every env switch ended with lines added to
+  `.env.local` by hand and a `secrets:sync`. The loader (`scripts/lib/env-layers.mjs`) layers the store over every
+  `.env` file and names a credential still left in one. Tokens and API keys stay out of it (vc-secrets).
+- **The Playwright lanes read the store in memory** (`scripts/lanes/playwright-lane.mjs`, through vc-init's
+  `startPlaywrightMcp`): no `--secrets` file, no `npm run secrets:sync[:all]` / `secrets:check[:all]` (removed). A
+  lane holds every non-production env's passwords as `NAME_<ENV>` plus `MASTER_PASSWORD`, so an env switch needs no
+  reconnect; a manifest (`.vc-fix/lanes/`, names + salted fingerprints) lets the secret-token hook, the pre-flight
+  (`secrets:lanes`) and `env:use` say when the store changed under a running lane.
+- **Seeders record what they set.** Each account a seeder creates, or sets the password of, goes into the store
+  with its login (`envs.<env>.accounts`, login and password side by side) via `accountSet`; a password variable the env has no value for gets a generated,
+  policy-compliant password, recorded with the account — never a shared literal. A generated value is never forced
+  onto an existing account.
+- **`npm run creds:migrate`** moves the old files into the store and proves, for every env and run ticket, that every
+  credential variable resolves exactly as before; only then does it back up and clean the old files and point
+  `.mcp.json`'s lanes at the launcher. **`npm run creds:check`** shows the store, the gaps per env, leftovers and stale
+  lanes — names only.
+- `vc-init` `0.7.1`: `bridge/playwright-mcp.mjs` exports `startPlaywrightMcp` (unchanged behaviour for the vc-secrets
+  lanes). The plugins' own loaders and `/project-init` move to the store in a follow-up.
+
 ## The stray-screenshot sweep leaves git-tracked files alone — `vc-fix` `0.18.11` — 2026-11-17
 
 ### Fixed

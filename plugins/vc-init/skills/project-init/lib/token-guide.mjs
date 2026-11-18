@@ -15,9 +15,9 @@
 import { passwordSecret } from "./passwords.mjs";
 
 /**
- * The test-user passwords (option B, lib/passwords.mjs keeps them in vc-secrets; option A in
- * .env.local, where scaffold-secrets.mjs writes the same texts as comments). A name not listed here
- * (MULTI_ORG_USER_PASSWORD, …) is the operator's own and gets a generic line.
+ * The test-user passwords: in the test-account store, test-accounts.local.json, by default (scaffold-secrets.mjs
+ * prints these texts beside each field to fill), or in vc-secrets (option B, lib/passwords.mjs). A name not listed
+ * here (MULTI_ORG_USER_PASSWORD, …) is the operator's own and gets a generic line.
  */
 export const PASSWORD_GUIDE = {
   ADMIN_PASSWORD: {

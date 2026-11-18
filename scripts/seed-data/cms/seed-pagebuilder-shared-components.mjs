@@ -33,6 +33,7 @@
  */
 
 import { readFileSync, existsSync } from 'node:fs';
+import { passwordFor, accountSet } from '../../lib/user-provision.mjs';
 import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN,
@@ -40,7 +41,7 @@ import {
 } from '../../lib/seed-common.mjs';
 import {
   COMPONENTS, PAGES, PERMISSION_USERS, STATUS, CONTENT_FILE, RENDERING_BLOCK_TYPES,
-  SC_USER_PASSWORD_VAR, SC_USER_PASSWORD_FALLBACK,
+  SC_USER_PASSWORD_VAR,
   userEmail, roleId, roleName, rolePermissions, excludedPermissions, roleBody, accountBody,
   buildComponentCreateBody, buildContentDoc, buildPageContentBody, createGroupedBody, draftBody,
   expectedUsage, pageRefs, isLinkedPlacement, validateFixtureShape,
@@ -164,10 +165,8 @@ async function ensurePage(spec, live, componentIds) {
 }
 
 // ── permission users ─────────────────────────────────────────────────────────
-function scPassword() {
-  const raw = process.env[SC_USER_PASSWORD_VAR];
-  return (raw && String(raw).trim()) || SC_USER_PASSWORD_FALLBACK;
-}
+// The accounts' password: the store's for this env, else one generated and recorded once an account is created with it.
+const scPassword = () => passwordFor(SC_USER_PASSWORD_VAR);
 async function findRole(u) {
   const r = await api('POST', '/api/platform/security/roles/search', { keyword: roleName(u), take: 50 }, { expectStatus: [200] });
   return (r?.results || []).find((x) => x.id === roleId(u) || x.name === roleName(u)) || null;
@@ -204,11 +203,13 @@ async function ensurePermissionUser(u) {
     log(`  ↻ reuse ${u.key} (${email}) — role ${roleId(u)}, StoreId=${store}${dirty ? ' [reconciled]' : ''}`);
     return { userId: existing.id, roleId: roleId(u) };
   }
-  const res = await api('POST', '/api/platform/security/users/create', accountBody(u, { password: scPassword(), storeId: store }));
+  const password = scPassword();
+  const res = await api('POST', '/api/platform/security/users/create', accountBody(u, { password, storeId: store }));
   if (res && res.succeeded === false) throw new Error(`create ${email}: ${JSON.stringify(res.errors)}`);
   const fresh = await findUser(email);
   if (!fresh?.id) throw new Error(`created ${email} but could not resolve its id`);
   log(`  ✓ create ${u.key} (${email}) — Manager, isAdministrator=false, StoreId=${store}, LACKS ${excludedPermissions(u).join(', ') || 'nothing'}`);
+  accountSet(email, password);
   return { userId: fresh.id, roleId: roleId(u) };
 }
 

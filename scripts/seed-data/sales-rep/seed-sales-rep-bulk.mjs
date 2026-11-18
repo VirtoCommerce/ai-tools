@@ -43,7 +43,10 @@ const COUNT = argVal('--count') != null ? parseInt(argVal('--count'), 10) : BULK
 const CONCURRENCY = Math.max(1, parseInt(argVal('--concurrency', '5'), 10) || 5);
 const BATCH = Math.max(1, parseInt(argVal('--batch', '5'), 10) || 5);
 const VERIFY = argv.includes('--verify');
-const REP_PASSWORD = process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD || 'Password1!';
+// The reps' password, from the store (SR_REP_PASSWORD, else TEST_USER_PASSWORD) — no literal fallback: a rep with
+// no recorded password was not seeded on this env (npm run seed:sales-rep records it).
+const repPassword = () => process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD
+  || (() => { throw new Error(`SR_REP_PASSWORD has no value for ${process.env.TEST_ENV} in test-accounts.local.json — run npm run seed:sales-rep (it records it)`); })();
 
 const now = () => performance.now();
 
@@ -123,7 +126,7 @@ async function repToken(email) {
   // seen rejecting a correct password when extra params are sent).
   const res = await fetch(`${BACK_URL}/connect/token`, {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'password', username: email, password: REP_PASSWORD, storeId: BULK_STORE }),
+    body: new URLSearchParams({ grant_type: 'password', username: email, password: repPassword(), storeId: BULK_STORE }),
   });
   if (!res.ok) throw new Error(`rep token failed: ${res.status}`);
   return (await res.json()).access_token;

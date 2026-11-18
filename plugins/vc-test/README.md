@@ -41,6 +41,8 @@ It writes only the profile's `test` block, through vc-init's `profile-set.mjs`; 
 | Keep this project's own personas? | Optional `personas.md` in the knowledge store; the visual lane proposes rows later |
 
 Missing accounts are answered with `/project-init --add-user` — `/vc-test:init` never asks for a login or a password.
+Test-account logins and passwords live in `test-accounts.local.json` (project root, gitignored); a project that has
+not migrated keeps them in `.env.local` or vc-secrets, which still work, and `/project-init --check` migrates them.
 
 ## Quick start
 
@@ -225,4 +227,4 @@ gate. Full rules: `skills/qa-test-strategy/verdict-rules.md` §Decide the verdic
 | `agents/goal-judge.md` | The independent judge of `/vc-test:qa-goal`: Read, Grep, Glob, Bash; re-derives the draft verdict from `goal.json` and the evidence and returns `VERDICT: APPROVE` or `REJECT` with reasons and fixes. Never edits a file |
 | `lib/plan-run.mjs`, `score-scenarios.mjs`, `window.mjs`, `teardown.mjs`, … | The run's deterministic steps (P0); see each file's header |
 | `briefs/` | One brief per brief-driven dispatch — `scenarios`, `strategy`, `ac-checks`, `scenario-run`, `bug-rerun` — and `ledger.md`, which every lane that may write reads beside its brief |
-| `scripts/lib/` | The env loader, copied from vc-fix (`plugins/CLAUDE.md`: a plugin carries its own) |
+| `scripts/lib/` | The env loader — the ai-tools repo's files, copied byte for byte by `npm run env:sync` (`plugins/CLAUDE.md` §The env loader) |

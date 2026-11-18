@@ -46,7 +46,8 @@ What it writes into the project (all gitignored):
 | `project-profile.json` | the deployment profile (`schemaVersion` 3): tracker, code host, repos, `auth.{github,ado,jira}`, `governance` |
 | `.env.<env>` | per-env URLs and identifiers (no secret) |
 | `.env.test-env` | `TEST_ENV=<env>`, the project's default env (below) |
-| `.env.local` | what is the same for every env — the tracker / code-host connection (`JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL` / `ADO_ORG`, `ADO_PROJECT`, `CLIENT_REPO_ORG`) — and the test-user passwords of the roles not kept in vc-secrets (below) |
+| `.env.local` | what is the same for every env — the tracker / code-host connection (`JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL` / `ADO_ORG`, `ADO_PROJECT`, `CLIENT_REPO_ORG`) |
+| `test-accounts.local.json` | the test-account store: per env, every test account's login beside its password (`ADMIN`, `USER`, each `--add-user` user) — passwords of a role kept in vc-secrets excepted (below) |
 | `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server; with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>`, `vc-init-runner.<env>` and the `playwright-<lane>.<env>` servers <!-- doclint:may-not-exist --> |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers; the settings `env` holds `VC_RUN` and `VC_SECRETS` (paths) and no token |
 
@@ -78,9 +79,16 @@ changed. The operator runs them in a terminal and replies "done"; `check-secrets
 `vc-secrets doctor` and names whatever is still missing.
 
 **Test-user passwords** go one of two ways, chosen at the auth question separately for admins and for
-storefront users (typically admins in vc-secrets, users in `.env.local`, which is easier to edit):
+storefront users:
 
-- **vc-secrets (recommended)** — no password in any file. One secret per password per environment
+- **The test-account store (default)** — `test-accounts.local.json`, gitignored, one file: per env each
+  account's login beside its password (`scripts/lib/test-accounts.mjs`). The env loader puts it over every
+  `.env*` file, so a script outside vc-init (vc-fix's module registry, seeders) reads it too. Each Playwright
+  lane in `.mcp.json` runs the bridge (`npx -p <pin> node ${VC_RUN} --playwright …`), which reads the store at
+  start and hands `@playwright/mcp` the passwords in memory — no `--secrets` file. A project onboarded before
+  0.8.0 moves its `.env.<env>` logins and `.env.local` passwords there with `/project-init --check`
+  (`creds-to-store.mjs`: plan, then `--apply`, which proves every env resolves as before, backs up and cleans).
+- **vc-secrets (optional)** — no password in any file. One secret per password per environment
   (`admin-password-<env>`, `user-password-<env>`), stored with `set` like a token. Each Playwright lane in
   `.mcp.json` is `node ${VC_RUN} playwright <lane>`: the bridge picks the current `TEST_ENV` and runs the
   declared vc-secrets server `playwright-<lane>.<env>`, which starts the pinned `@playwright/mcp` in-process
@@ -90,12 +98,9 @@ storefront users (typically admins in vc-secrets, users in `.env.local`, which i
   playwright <spec…>` / `runner node <script>` — the task `vc-init-runner.<env>`, which holds that env's
   passwords and never a token, only for an env the profile's `test` block lists and only on files inside its
   `scriptRoots` (`bridge/runner.mjs`); `runner plugin <name>` starts one of vc-test's own scripts by name
-  (`RUNNER_PLUGIN_SCRIPTS`, from the trusted install — F6's `deployed`). A lane also reads the passwords of the roles kept in `.env.local` for its
-  env straight from that file, so a mixed setup needs no generated file. One declaration per env means an env whose passwords are not stored yet
+  (`RUNNER_PLUGIN_SCRIPTS`, from the trusted install — F6's `deployed`). A lane also reads the passwords of the roles kept in the store for its
+  env, so a mixed setup needs no generated file. One declaration per env means an env whose passwords are not stored yet
   breaks only itself, and switching `TEST_ENV` asks for no new trust.
-- **`.env.local`** — `ADMIN_PASSWORD_<ENV>` …, and `sync-browser-secrets.mjs` generates
-  `.env.playwright.local`, the lanes' `--secrets` file. Use it where a script outside vc-init reads a
-  password from the env files (vc-fix's module registry, seeders): those do not go through the bridge.
 
 **The lane HAR keeps no password.** The lane masks a typed password in its responses, but its `recordHar`
 captures the sign-in request's body (`POST /api/platform/security/login`, `POST /connect/token`). Either
@@ -103,7 +108,7 @@ way the HAR is scrubbed (`bridge/har-scrub.mjs`): password-named body fields and
 become `«redacted»`, the rest of the traffic stays — session tokens and cookies included, so a HAR is still not
 a file to share. A bridged lane does it in-process: at start, after each
 `browser_close` and at exit. A lane started straight from `.mcp.json` gets the `hooks/scrub-har.mjs` hook
-after `browser_close` and at session start, with values from `.env.playwright.*` and `.env.local`.
+after `browser_close` and at session start, with values from the store, `.env.playwright.*` and `.env.local`.
 
 ## Host-governed projects
 

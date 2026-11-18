@@ -240,3 +240,12 @@ test("temp files left by a scrub cut short are swept once they are stale", () =>
   assert.equal(sweepStaleTmp([file]), 1);
   assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith(".tmp")), ["session.har.123.2.scrub.tmp"]);
 });
+
+test("project HAR targets mask the test-account store's passwords", async () => {
+  const { writeStore } = await import("../scripts/lib/test-accounts.mjs");
+  const root = mkdtempSync(join(tmpdir(), "har-store-"));
+  writeStore(root, { master: "Master-1aA!", shared: {}, accounts: { USER: { login: "u@x.test", password: "Top-user-1aA!" } }, envs: {} });
+  const { secrets } = projectHarTargets(root, { passwordValues: envFilePasswordValues });
+  assert.ok(secrets.includes("Top-user-1aA!") && secrets.includes("Master-1aA!"));
+  assert.ok(!secrets.includes("u@x.test"));
+});

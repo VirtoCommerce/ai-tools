@@ -34,12 +34,15 @@ function makeApiMock() {
   return { api, calls };
 }
 
-test('resolvePassword: {{VAR}} resolves from env, literal passes through, fallback on missing', () => {
+test('resolvePassword: {{VAR}} resolves from env, literal passes through, an unset VAR gets one generated password', () => {
   process.env.__TP_TEST = 'FromEnv1!';
   assert.equal(resolvePassword('{{__TP_TEST}}'), 'FromEnv1!');
   assert.equal(resolvePassword('{{ __TP_TEST }}'), 'FromEnv1!');           // tolerant of spaces
   assert.equal(resolvePassword('LiteralPass1!'), 'LiteralPass1!');         // back-compat literal
-  assert.equal(resolvePassword('{{__TP_MISSING__}}', 'fb!'), 'fb!');       // unset → fallback
+  const generated = resolvePassword('{{__TP_MISSING__}}');                  // unset → generated, never a shared literal
+  assert.equal(generated.length, 20);
+  assert.equal(resolvePassword('{{__TP_MISSING__}}'), generated, 'one value per variable for the whole run');
+  assert.notEqual(resolvePassword('{{__TP_OTHER_MISSING__}}'), generated, 'another variable gets its own');
   delete process.env.__TP_TEST;
 });
 

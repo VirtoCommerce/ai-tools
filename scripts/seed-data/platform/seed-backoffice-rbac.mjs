@@ -69,6 +69,7 @@ import {
   IMP_OPERATOR_ROLE, IMP_OPERATOR_ACCOUNT, IMP_OPERATOR_REQUIRED_PERMISSIONS, assertImpOperatorRolePermissions, contactBodyFor,
 } from './backoffice-rbac-specs.mjs';
 import { STORE as BARCODE_STORE } from '../catalog/barcode-specs.mjs';
+import { passwordFor, accountSet } from '../../lib/user-provision.mjs';
 
 const VERIFY = process.argv.includes('--verify');
 
@@ -89,10 +90,8 @@ async function getUserById(id) {
   return u?.id ? u : null;
 }
 
-function resolvePassword(account) {
-  const raw = process.env[account.passwordVar];
-  return (raw && String(raw).trim()) || account.passwordFallback;
-}
+// An account's password: the store's for this env, else one generated and recorded once the account is created with it.
+const resolvePassword = (account) => passwordFor(account.passwordVar);
 
 // --- seed (parameterized per fixture) ---
 async function ensureRole(role, assertPerms, excluded) {
@@ -149,6 +148,7 @@ async function ensureAccount(account, role, roleId) {
   const fresh = await findUser(email);
   if (!fresh?.id) throw new Error(`created ${email} but could not resolve its id`);
   log(`✓ create account ${fresh.id} (${email}) — ${account.userType}, isAdministrator=false, role ${role.role_name}`);
+  accountSet(email, password);
   return fresh.id;
 }
 

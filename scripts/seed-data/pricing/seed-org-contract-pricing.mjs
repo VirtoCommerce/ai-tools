@@ -27,7 +27,7 @@ import {
   log, verbose, assertSafeTarget, auth, api, loadCsv, loadAliases, writeEnvAliasOverride, verifyRemoved,
   ensureCategoryPath, ensureVirtualCatalog, ensureFulfillmentCenter,
 } from '../../lib/seed-common.mjs';
-import { resolvePassword } from '../../lib/user-provision.mjs';
+import { accountSet, resolvePassword } from '../../lib/user-provision.mjs';
 import {
   CONTRACT, CONTRACT_GROUP, BASE_PRICELIST_NAME, ASSORTMENT_PRICELIST_NAME, B2C_CONSUMER_ALIAS,
   CONTRACTED_PRODUCT, CONTROL_PRODUCT, ORG_ONLY_PRODUCT, CONTRACT_BUYER, SEED_PREFIX,
@@ -257,6 +257,7 @@ async function seed() {
       if (res && res.succeeded === false) throw new Error(`create ${CONTRACT_BUYER.email}: ${JSON.stringify(res.errors)}`);
       buyerUserId = res?.id || (await findUser(CONTRACT_BUYER.email))?.id || null;
       log(`Created contract buyer ${CONTRACT_BUYER.email} (contact ${buyerContactId}, user ${buyerUserId})`);
+      accountSet(CONTRACT_BUYER.email, password);
     }
     // The group on the CONTACT is what the storefront actually reads — see the spec's LIMITATION.
     await setMemberGroup(buyerContactId, true);

@@ -25,12 +25,14 @@ export interface LoadEnvOptions {
   root?: string;
   /** The run's ticket for QA_ENV_PATH's `<ticket>` (default: QA_TICKET, else the session's bound run; null: none). */
   ticket?: string | null;
+  /** false: skip the test-account store (a tokens-only script, which a broken store must not stop). Default true. */
+  testAccounts?: boolean;
 }
 
 export declare function loadEnv(options?: LoadEnvOptions & { fallback?: string }): LoadedEnv;
 
-/** The TEST_ENV resolveTestEnv() picks, written to process.env, without exposing `.env.playwright.<env>` — for a
- *  caller that loads the layers next. */
+/** The TEST_ENV resolveTestEnv() picks, written to process.env (TEST_ENV, TEST_ENV_SOURCE) — for a caller that
+ *  loads the layers next. */
 export declare function selectTestEnv(fallback?: string): string;
 
 /** loadEnv for a named env the caller already resolved. */

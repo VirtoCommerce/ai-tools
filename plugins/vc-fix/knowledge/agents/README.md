@@ -177,4 +177,4 @@ returns thin results or for non-VC libraries. Full tool list and routing rules i
 - Claude Code with subagent/Task tool support
 - MCP servers configured in `.mcp.json` (Playwright chrome/firefox/edge, github)
 - User/IDE-level MCPs configured: Chrome DevTools, Azure, Atlassian, **VirtoOZ**
-- `.env.<env>` (URLs) + `.env.local` (test-user passwords only), written by `/project-init` (vc-init); GitHub / Azure DevOps / Jira tokens live in vc-secrets and reach a process only through the bridge `node "$VC_RUN" <tool> …`; validate with `/qa-env-check`
+- `.env.<env>` (URLs) + `test-accounts.local.json` (test-account logins + passwords; an unmigrated project's `.env.local` / vc-secrets still work), written by `/project-init` (vc-init); GitHub / Azure DevOps / Jira tokens live in vc-secrets and reach a process only through the bridge `node "$VC_RUN" <tool> …`; validate with `/qa-env-check`

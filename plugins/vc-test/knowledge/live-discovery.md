@@ -280,7 +280,7 @@ The regression orchestrator runs up to 3 browser agents in parallel (chrome / fi
 | 2 | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.email)` / `@td(AGENT_POOL_SLOT_2.password)` | `@td(AGENT_POOL_SLOT_2.b2b_email)` in `@td(AGENT_POOL_SLOT_2.b2b_org)` (paired with slot 1 for same-org tests) |
 | 3 | `playwright-edge` | `@td(AGENT_POOL_SLOT_3.email)` / `@td(AGENT_POOL_SLOT_3.password)` | `@td(AGENT_POOL_SLOT_3.b2b_email)` in `@td(AGENT_POOL_SLOT_3.b2b_org)` (cross-org pair) |
 
-The accounts themselves are rows of `test-data/users/agent-user-pool.csv`, and a customer edits that file with their own. Its password columns are `{{VAR}}` tokens (`{{AGENT_SLOT1_PASSWORD}}` …) resolved from `.env.local`, with safe non-prod defaults in `templates/.env.local.template`. No value is repeated here: a transcribed password is correct once and then silently wrong ([`test-data.md`](test-data.md) §GOLDEN RULE).
+The accounts themselves are rows of `test-data/users/agent-user-pool.csv`, and a customer edits that file with their own. Its password columns are `{{VAR}}` tokens (`{{AGENT_SLOT1_PASSWORD}}` …) resolved from the test-account store `test-accounts.local.json` (the names an env still lacks: `npm run creds:check -- <env>`; a seeder records the accounts it creates). No value is repeated here: a transcribed password is correct once and then silently wrong ([`test-data.md`](test-data.md) §GOLDEN RULE).
 
 Agents should authenticate against their slot user (resolve at runtime via `@td(AGENT_POOL_SLOT_N.*)` from `agent-user-pool.csv`, never hardcode), so each agent's `discoverFirstCart` / `discoverFirstAddress` returns *its own* isolated state.
 

@@ -275,6 +275,21 @@ function collectEnvDenyValues(root, set) {
       pushDeny(set, m[1].trim().replace(/^["']|["']$/g, ""));
     }
   }
+  // The test-account store (`test-accounts.local.json`, JSON, at the same root) holds what the env files
+  // used to: every password — `master`, the `shared` ones, each account's own — and every login (a named
+  // account's `login`, a seeded fixture's key). A login is a client identifier here, so it is denied too.
+  let store = null;
+  try { store = JSON.parse(readFileSync(join(root, "test-accounts.local.json"), "utf8")); } catch { return; }
+  if (!store || typeof store !== "object") return;
+  pushDeny(set, store.master);
+  for (const level of [store, ...Object.values(store.envs ?? {})]) {
+    for (const v of Object.values(level?.shared ?? {})) pushDeny(set, v);
+    for (const [key, a] of Object.entries(level?.accounts ?? {})) {
+      if (!/^[A-Z][A-Z0-9_]*$/.test(key)) pushDeny(set, key);
+      if (typeof a?.password === "string") pushDeny(set, a.password);
+      if (typeof a?.login === "string") pushDeny(set, a.login);
+    }
+  }
 }
 function collectProfileDenyValues(profile, set, states) {
   const walk = (node, keyPath) => {

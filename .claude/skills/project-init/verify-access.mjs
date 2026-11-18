@@ -21,22 +21,13 @@
  * Usage: node skills/project-init/verify-access.mjs
  */
 import { execSync } from "child_process";
-import { config as dotenv } from "dotenv";
 import { readFileSync } from "fs";
-import { resolveTestEnv } from "../../../scripts/lib/resolve-test-env.js";
+import { loadEnv } from "../../../scripts/lib/load-env.mjs";
 import { loadProjectProfile } from "../../../scripts/lib/project-profile.mjs";
 import { probeGithubUpstream, resolveGithubToken, resolveAdoTenant } from "./probe-lib.mjs";
 
-const TEST_ENV = resolveTestEnv("vcst");
-// quiet: dotenv v17 prints promo tips to stdout, which would garble the readiness table.
-dotenv({ path: ".env.defaults", quiet: true });
-dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
-dotenv({ path: ".env.local", override: true, quiet: true });
-// Per-env suffix promotion (mirror config.js) so ADMIN_PASSWORD_<ENV> → ADMIN_PASSWORD etc.
-const SUF = `_${TEST_ENV.toUpperCase()}`;
-for (const [k, v] of Object.entries(process.env)) {
-  if (k.endsWith(SUF) && v) process.env[k.slice(0, -SUF.length)] = v;
-}
+// The one env loader (scripts/lib/load-env.mjs) — its warnings go to stderr, so stdout keeps the readiness table.
+const { testEnv: TEST_ENV } = loadEnv({ root: process.cwd() });
 
 const BACK = (process.env.BACK_URL || "").replace(/\/+$/, "");
 const FRONT = (process.env.FRONT_URL || "").replace(/\/+$/, "");
@@ -350,7 +341,7 @@ function renderTable(rows) {
   const fails = rows.filter((r) => r.status === "FAIL");
 
   console.log("");
-  console.log(`  ${paint(ANSI.bold, `/qa-fix readiness — TEST_ENV=${resolveTestEnv("vcst")}`)}`);
+  console.log(`  ${paint(ANSI.bold, `/qa-fix readiness — TEST_ENV=${TEST_ENV}`)}`);
   console.log(line("┌", "┬", "┐"));
   console.log(headRow(H.name, H.status, H.detail));
   console.log(line("├", "┼", "┤"));

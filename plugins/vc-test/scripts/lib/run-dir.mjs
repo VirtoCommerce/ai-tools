@@ -11,12 +11,11 @@
 // stand, then a cloud one), never share a file. Unset ⇒ `reports/tickets/<sprint>/<ticket>` (+ `<env>`) under
 // the project root; a project with no sprint folder (a new one, a vc-fix client) drops the `<sprint>` folder:
 // `reports/tickets/<ticket>/<env>`. A relative template resolves against the project root — outputRoot(): VC_FIX_HOME, else the
-// cwd, as plugins/CLAUDE.md defines it, so this file is the same in the vc-fix plugin
-// (plugins/vc-fix/scripts/lib/run-dir.mjs — keep the two byte-identical). Write the template unquoted or
+// cwd — so this file is the same wherever it is copied. Write the template unquoted or
 // single-quoted in .env.local: inside double quotes dotenv reads `\n` in `C:\temp\new` as a line break.
 //
-// Everything a run writes lands inside its folder — the layout is `runLayout()` and
-// .claude/knowledge/execution/run-output.md; nothing a run writes is shared with another run.
+// Everything a run writes lands inside its folder — the layout is `runLayout()`; nothing a run writes is shared
+// with another run.
 //
 // A session BINDS its run folder (`npm run run:use`, scripts/env/run-folder.mjs) the way it binds its env:
 // `.vc-fix/session-run/<CLAUDE_CODE_SESSION_ID>`. Scripts that write run output read `sessionRun()` and follow it.
@@ -26,7 +25,7 @@ import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { parse } from 'dotenv';
 import { TEST_ENV_PATTERN } from './resolve-test-env.js';
 
-/** Where a project's state goes: VC_FIX_HOME, else the cwd (plugins/CLAUDE.md `outputRoot()`). */
+/** Where a project's state goes: VC_FIX_HOME, else the cwd (the plugins' `outputRoot()`). */
 export function outputRoot() {
   return process.env.VC_FIX_HOME ? resolve(process.env.VC_FIX_HOME) : process.cwd();
 }

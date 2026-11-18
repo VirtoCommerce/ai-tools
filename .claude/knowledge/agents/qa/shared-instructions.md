@@ -117,8 +117,8 @@ Drive the browser like a customer: click, type, hover, scroll, wait, use Enter/T
 URL to skip steps unless the test targets direct navigation; on mobile (≤500 px) open the hamburger before
 calling a control missing. `browser_evaluate` / `run_code_unsafe` / `evaluate_script` are blocked by
 `hooks/enforce-real-user.mjs` outside its narrow allow-list. Only the Playwright lanes may be used
-(`.claude/rules/vc-browser.md`). **Passwords:** type the key's bare NAME (`ORG_USER_PASSWORD`, or
-`NAME_<ENV>` on `.env.playwright.all`), never `{{NAME}}` — a miss is silent. Allow-list, password check,
+(`.claude/rules/vc-browser.md`). **Passwords:** type the key's NAME with the env (`ORG_USER_PASSWORD_<ENV>`,
+or `MASTER_PASSWORD` on a master stand), never `{{NAME}}` — a miss is silent. Allow-list, password check,
 the anti-example: [`browser-rules.md`](browser-rules.md).
 
 ### Hard rules — do NOT do these

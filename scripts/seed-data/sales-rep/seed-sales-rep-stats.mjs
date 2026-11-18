@@ -58,7 +58,10 @@ import {
 } from './sales-rep-mtd-specs.mjs';
 
 const REP_KEY = 'SR_REP_PRIMARY';
-const REP_PASSWORD = process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD || 'Password1!';
+// The reps' password, from the store (SR_REP_PASSWORD, else TEST_USER_PASSWORD) — no literal fallback: a rep with
+// no recorded password was not seeded on this env (npm run seed:sales-rep records it).
+const repPassword = () => process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD
+  || (() => { throw new Error(`SR_REP_PASSWORD has no value for ${process.env.TEST_ENV} in test-accounts.local.json — run npm run seed:sales-rep (it records it)`); })();
 
 // Fixture families selected by `--only`. MTD is opt-in: it never runs on a bare seed or teardown.
 const FAMILY_KEYS = ['ROWCAP', 'MTD'];
@@ -104,7 +107,7 @@ function b2bUserRow(userKey) {
 /** Password grant for the rep. `organization_id` (snake_case) sets the ORG CONTEXT that stamps
  *  cart.organizationId; `storeId` is required by the scoped sales-rep grant. */
 async function repToken(email, storeId, organizationId = null) {
-  const params = { grant_type: 'password', username: email, password: REP_PASSWORD, scope: 'offline_access', storeId };
+  const params = { grant_type: 'password', username: email, password: repPassword(), scope: 'offline_access', storeId };
   if (organizationId) params.organization_id = organizationId;
   const res = await fetch(`${BACK_URL}/connect/token`, {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

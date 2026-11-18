@@ -57,7 +57,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, verifyRemoved, writeEnvAliasOverride,
   DRY_RUN, TEARDOWN, ONLY, STORE_ID, BACK_URL, ROOT, buildStoreSeo, idsParam, loadCsv,
 } from '../../lib/seed-common.mjs';
-import { resolvePassword } from '../../lib/user-provision.mjs';
+import { accountSet, resolvePassword } from '../../lib/user-provision.mjs';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -263,6 +263,7 @@ async function ensureBuyer(spec) {
     user = await findUserBySearch(b.email) || await getUser(b.email);
     if (!user) throw new Error(`created ${b.email} but cannot resolve it`);
     ok(`${spec.alias}: Customer account ${b.email} created (${user.id})`);
+    accountSet(b.email, password);
   }
   const full = await getUser(b.email) || user;
   const acctDrift = full.memberId !== contact.id || full.isAdministrator || full.userType !== 'Customer' || (full.roles || []).length > 0;
@@ -387,6 +388,7 @@ async function ensureAccount(spec, roleId) {
     const res = await api('POST', '/api/platform/security/users/create', accountBody(spec, { password, storeId: STORE_ID, roleId }));
     if (res && res.succeeded === false) throw new Error(`create ${spec.email}: ${JSON.stringify(res.errors)}`);
     if (DRY_RUN) { log(`✓ create account (dry) ${spec.email}`); return null; }
+    accountSet(spec.email, password);
     user = await getUser(spec.email) || await findUserBySearch(spec.email);
     if (!user) throw new Error(`created ${spec.email} but cannot resolve it`);
     ok(`account ${spec.email} created (${user.id}) — Manager, isAdministrator=false, role ${spec.role.name}`);

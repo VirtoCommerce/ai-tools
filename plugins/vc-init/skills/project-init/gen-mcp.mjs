@@ -49,7 +49,7 @@ import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { vcSecretsShim } from "../../bridge/vc-secrets-path.mjs";
 import { MCP_REMOTE_SPEC, githubMcpEntryOAuth, githubMcpEntryPat } from "./lib/github-mcp.mjs";
 import { patAxesFromProfile, writeSecretsDecl } from "./write-secrets-decl.mjs";
-import { EVIDENCE_INCOMING, absolutizeOutputDir, laneEntryViaBridge, preferProjectPlaywrightConfig } from "./lib/playwright-lanes.mjs";
+import { EVIDENCE_INCOMING, absolutizeOutputDir, laneCommands, laneEntryViaBridge, preferProjectPlaywrightConfig } from "./lib/playwright-lanes.mjs";
 import { declaredPasswords } from "./lib/passwords.mjs";
 // The ignore rules + writer live in lib/ because FOUR scripts create secret-bearing files at
 // four different onboarding steps and each must protect its own before writing it (VCST-5774
@@ -436,6 +436,18 @@ function main() {
     for (const name of Object.keys(mcpServers)) {
       if (/^playwright-[a-z0-9]+$/.test(name)) mcpServers[name] = laneEntryViaBridge(name.slice("playwright-".length));
     }
+  } else {
+    // The default (vc-init 0.8.0): the passwords are in the test-account store, test-accounts.local.json. Each lane
+    // runs the bridge straight from .mcp.json — `npx -p <pin> node ${VC_RUN} --playwright <pin> …` — which reads the
+    // store (and a not-yet-migrated .env.local) and hands Playwright MCP the passwords in memory: no --secrets file.
+    const cmds = laneCommands({ servers: srcServers, root: projectRoot, shim: "${VC_RUN}" });
+    for (const name of Object.keys(mcpServers)) {
+      const lane = /^playwright-([a-z0-9]+)$/.exec(name)?.[1];
+      // On Windows npx is a .cmd, so the template's `cmd /c npx` shape; elsewhere npx directly.
+      if (!lane || !cmds[lane]) continue;
+      const call = os === "windows" ? { command: "cmd", args: ["/c", cmds[lane].command, ...cmds[lane].args] } : cmds[lane];
+      mcpServers[name] = stripComments(ensureNodeOptions({ type: "stdio", ...call }));
+    }
   }
 
   // Which servers to ENABLE (the rest stay defined but dormant). Only playwright-chrome
@@ -519,7 +531,7 @@ function main() {
   }
   console.log(passwordEnvs.length
     ? `[gen-mcp] browser passwords: vc-secrets for ${passwordEnvs.join(", ")} — each lane runs \`node \${VC_RUN} playwright <lane>\`, which starts the declared server playwright-<lane>.<TEST_ENV>; no password file`
-    : `[gen-mcp] browser passwords: ${existsSync(join(projectRoot, ".env.playwright.local")) ? ".env.playwright.local, passed as --secrets" : "no .env.playwright.local yet — run sync-browser-secrets.mjs, then gen-mcp again"}`);
+    : `[gen-mcp] browser passwords: test-accounts.local.json — each lane runs the bridge (\`\${VC_RUN} --playwright\`), which reads it in memory; no password file${existsSync(join(projectRoot, "test-accounts.local.json")) ? "" : " (no test-accounts.local.json yet: /project-init scaffolds it; until then the lanes read .env.local)"}`);
   console.log(`[gen-mcp] browser evidence lands in ${join(projectRoot, ...EVIDENCE_INCOMING)}\\<browser> (absolute — never the project root, whatever cwd the MCP server starts in)`);
   // VCST-5702 ITEM 4 — emit the PINNED @playwright/mcp version so a version mismatch surfaces at
   // project-init. On 0.0.77 and 0.0.83 a bare screenshot filename resolves against the server cwd, not the

@@ -128,7 +128,7 @@ stops before the committing step).
 2. **The lane and the account role — never a credential.** The visual lane is a Playwright lane: in a
    vc-test run the one `plan-run` drew from the pool (§4), in this repository's `/qa-test`
    the one the run leaves free (§4). It signs in the way every Playwright lane does — the login
-   as plain text from the env (`USER_LOGIN`, …), the password's bare NAME (`USER_PASSWORD`, …) typed into
+   as plain text from the env (`USER_LOGIN`, …), the password's NAME with the env (`USER_PASSWORD_<ENV>`, …) typed into
    the password field, the lane supplying the value — the **Signing in.** paragraph of the project's `vc-browser.md`, which
    `vc-init` writes (in this repository: `.claude/rules/vc-browser.md`). So the brief names the **lane** and
    the **account role** the target needs. A role-gated or data-bearing target (sales-rep hub, orders, a B2B
