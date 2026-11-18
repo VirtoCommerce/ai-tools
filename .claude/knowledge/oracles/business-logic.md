@@ -39,6 +39,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** vc-module-marketing `BestRewardPromotionPolicy.cs` — coupon/promo reward evaluated against the already-computed `CartTotal` (post catalog/tier price), not the list price.
 - **Source:** VCST-1820 (Done) — a catalog promotion was not applied to each tier price separately; fixed so the discount applies to each tier price
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] CFG-GQL-015, CFG-GQL-016, CFG-GQL-018, CFG-GQL-030, CFG-GQL-031, CFG-GQL-034, CFG-GQL-036 failed in REG-2026-11-18-1157
 
 ### BL-PRICE-002: Tax calculation position `[P0-revenue]`
 - **Rule:** Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).
@@ -126,6 +127,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-5234 (Done) — an over-stock quantity was persisted on the line but the per-line validation error disappeared; fixed so the line keeps PRODUCT_QTY_INSUFFICIENT
 - **Source:** VCST-3926 (Done) — storefront let a user increase cart quantity for out-of-stock or unavailable products; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] CAT-084, CAT-083, CRB-GQL-021, CFG-GQL-009, CFG-GQL-011, CFG-GQL-015, CFG-GQL-016, CFG-GQL-018, CFG-GQL-030, CFG-GQL-031, CFG-GQL-035, CFG-GQL-036 failed in REG-2026-11-18-1157
 
 ### BL-CART-002: Out-of-stock mid-session `[P0-revenue]`
 - **Rule:** If a product's stock reaches 0 after the user has added it to cart but before checkout completes, the system must prevent the order from being placed. The cart should show an error state for the affected item.
@@ -183,6 +185,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** KB-734A0813 (single observation) — same-product adds merge into one line with summed quantity; configured items always stay separate lines
 - **Source:** VCST-4205 (Done) — different configurations of one configurable product merged into a single Saved-for-Later item; fixed to keep them separate
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] CRB-GQL-021 failed in REG-2026-11-18-1157
 
 ### BL-CART-008: Cart persistence across sign-out / sign-in `[P1-data]`
 - **Rule:** A registered user's cart is persisted server-side. If the user signs out and signs back in, the cart must be restored with the same items and quantities. If the user had items as a guest (anonymous cart), upon sign-in those items should merge into the registered user's existing cart (merge strategy: add quantities, no duplicates). A coupon applied before the merge (on either side) persists through the merge — it is not silently dropped — and its discount **re-prices against the post-merge subtotal** rather than staying frozen at the pre-merge discount amount, because a merge always runs a full cart recalculation before saving.
@@ -215,6 +218,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** vc-module-x-cart `ConfiguredLineItemContainer.cs` `UpdatePrice(LineItem)` — `Items.Where(x => x.Item is { SelectedForCheckout: true })` before summing into `lineItem.ListPrice` / `PlacedPrice` / `ExtendedPrice`.
 - **Source:** VCST-4961 (Done) — selectedForCheckout on configuration items had no write path; resolved
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] CFG-GQL-016, CFG-GQL-018, CFG-GQL-030, CFG-GQL-031, CFG-GQL-036 failed in REG-2026-11-18-1157
 
 ### BL-CART-011: Unmatched section key in batch selection is a silent no-op `[P1-data]`
 - **Rule:** When `selectCartConfigurationItems` or `unSelectCartConfigurationItems` receives a `configurationSections[]` list where one or more keys do not match any `ConfigurationItem` on the target lineItem, those unmatched keys MUST be silently skipped. The mutation MUST still process all matched keys, MUST return HTTP 200, and MUST return `errors[]` as empty. Unmatched keys leave no trace in the response.
@@ -233,6 +237,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/selectCartConfigurationItems.md — command takes one lineItemId plus configurationSections
 - **Source:** vc-module-x-cart PR #114 §Scoping.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] CFG-GQL-047 failed in REG-2026-11-18-1157
 
 ### BL-CART-013: No-change short-circuit on configuration-item selection mutations `[P1-data]`
 - **Rule:** When a configuration-item selection mutation is called but the resulting `selectedForCheckout` state for every affected configuration item is identical to the pre-mutation state, `UpdateConfiguredLineItemPrice` MUST NOT be executed. The cart aggregate detects the no-change condition before invoking the reprice path and short-circuits. Applies to idempotent re-sends, to `selectAll` when all already selected, and to `unSelectAll` when all already unselected.
@@ -241,6 +246,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert
 - **Source:** vc-module-x-cart PR #114 §Key business behavior; `CartAggregateTests` "no-change short-circuit" and "idempotency" unit tests.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] CFG-GQL-015 failed in REG-2026-11-18-1157
 
 ### BL-CART-014: Configuration-section identification — `(sectionId, type)` for Text/File; `option.productId` required for Variation `[P1-data]`
 - **Rule:** When identifying a `ConfigurationItem` for selection mutations: for `Text` and `File` sections, `(sectionId, type)` alone is sufficient for unique lookup. For `Variation` sections, `option.productId` is mandatory because multiple variations of the same configurable section can coexist on a lineItem. Omitting `option` for a `Variation`-type section results in a no-op (item not found, per BL-CART-011). For `Product` sections, `option.productId` resolves the option but is not required for uniqueness when only one product placement per section is allowed.
@@ -250,6 +256,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/changeCartConfigurationItemSelected.md — a section is identified by sectionId, type and an optional option
 - **Source:** vc-module-x-cart PR #114 — `ConfigurationSectionKeyInput.cs` and `ConfigurableProductOptionKeyInput.cs`.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] CFG-GQL-030, CFG-GQL-031, CFG-GQL-045 failed in REG-2026-11-18-1157
 
 ### BL-CART-015: Configuration items survive a Saved-for-Later round trip `[P1-data]`
 - **Rule:** Moving a configurable lineItem to Saved for Later (`moveToSavedForLater`) and back into the cart (`moveFromSavedForLater`) MUST preserve its `configurationItems` (customText, selected option/productId, files, section) unchanged. The lineItem is re-created with a new `lineItemId` on each leg, but its configuration payload is not lost, truncated, or reset to defaults.
@@ -766,6 +773,20 @@ Cases MFA-033 and MFA-062 (suite 110a).
 - **Source:** VCST-5904 comment 112278 — Backoffice sign-in: the global setting only.
 - **Trust:** DECLARED
 
+### BL-AUTH-026: An emailed sign-in code signs in at most once `[P0-security]`
+- **Rule:** A one-time code emailed for code sign-in (`grant_type=otp_email`) signs the user in at most once. Accepting a code makes that code and every code emailed before it invalid. Requesting a code, including Resend, does not invalidate codes already sent, and a password sign-in invalidates none. A refused code (used, superseded, or wrong) returns 400 `invalid_grant` with code `invalid_code` and no token, is recorded in the sign-in log as an OTP failure with reason InvalidCode, and counts as a failed attempt toward the account lockout (BL-AUTH-003). Of two grants with one code at the same time, exactly one succeeds.
+- **Verify:** Grant a code twice → 200 then 400 invalid_code; two codes from adjacent 3-minute windows, accept the later → the earlier is refused (and the reverse order after a Resend); a password sign-in leaves a pending code valid; two parallel grants with one code → exactly one token. Suite 105 (OTP-018, OTP-021, OTP-052 – OTP-056) and suite 104 (OTP-058).
+- **Violation signal:** - A second 200 with an access token for a code that already signed the user in.
+- A code emailed before an accepted code still signs in.
+- Resend or a password sign-in invalidates a pending code.
+- A refused reuse is not counted toward the lockout, or not logged as an OTP InvalidCode failure.
+- Two parallel grants with one code both return a token.
+- **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-otp README — a code works for one sign-in; a sign-in makes every code sent before it invalid; the sign-in log records the real reason.
+- **Source:** VCST-6490 description, Expected — a one-time code works for one sign-in; a second grant with the same code is refused like a wrong code (invalid_code).
+- **Source:** VirtoCommerce/vc-module-otp PR #4 description (VCST-6490) — accepting a code invalidates it and every code sent before it; requesting a code and password sign-ins invalidate nothing; a reused code counts as a failed attempt; parallel checks for one user are serialized.
+- **Trust:** DECLARED
+
 ---
 
 ## Domain 6: B2B / Organization (BL-B2B)
@@ -986,6 +1007,7 @@ Cases MFA-033 and MFA-062 (suite 110a).
 - **Docs:** vc-docs platform/user-guide/docs/catalog/add-new-catalog.md — changes to items in a physical catalog are automatically reflected in all associated virtual catalogs
 - **Source:** VP-8460 (Done) — a product read through a virtual-catalog store returned price 0 / stock 0 while the physical product had values; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-090 failed in REG-2026-11-18-1157
 
 ### BL-CAT-003: Search index lag window `[P2-ux]`
 - **Rule:** After an admin change (product create/update/delete, price change, stock update), there is a 30-60 second window where the Elasticsearch index still reflects old data. During this window, storefront search/listing may show stale results. However, PDP (direct product page) and cart always use live data. After reindex, search results must match the current state.
@@ -1003,6 +1025,7 @@ Cases MFA-033 and MFA-062 (suite 110a).
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Source:** VP-7347 (Done) — a child of a hidden category was still returned as visible; fixed: subcategories inherit hidden
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-090 failed in REG-2026-11-18-1157
 
 ### BL-CAT-005: Product requires virtual catalog assignment for storefront `[P1-data]`
 - **Rule:** A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the single catalog assigned to the store, which may be a physical catalog directly or a virtual catalog built over one or more physical catalogs. Products must be in a category within the store's assigned catalog (or its linked physical catalog) to be visible.
@@ -1095,6 +1118,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Docs:** platform/user-guide/docs/pricing/troubleshooting-guide.md (published) — rebuild the product index for price changes to reflect in the frontend
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-013 failed in REG-2026-11-18-1157
 
 ### BL-CROSS-003: Module disable → API 404, Admin section removal, dependent degradation `[P1-data]`
 - **Rule:** When a module is disabled in Admin, its REST APIs return 404, its Admin SPA sections disappear, and its GraphQL schema types are removed. Dependent modules should degrade gracefully — not crash.
@@ -1632,6 +1656,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Violation signal:** `elapsed_ms` exceeds threshold consistently (not just one spike); response time grows linearly with repetition (N+1 hint); timeout; 504 Gateway Timeout.
 - **Agents:** qa-backend-expert, test-runner-agent, regression-orchestrator, test-management-specialist, qa-testing-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] CAT-GQL-124, CRB-GQL-017 failed in REG-2026-11-18-1157
 
 ### BL-GQL-003: GraphQL response data integrity `[P1-data]`
 - **Rule:** Successful GraphQL operations return data conformant to the schema's declared return type: (a) non-null fields are non-null in the response (resolver did not silently drop a required projection), (b) computed/derived fields (cart totals `total`/`subTotal`/`taxTotal`/`discountTotal`; index-backed price fields `price.actual`/`price.list`) are present and arithmetically consistent, (c) mutation responses include the full mutated entity, not a partial echo, (d) after-state queries reflect the mutation's effect — no stale read.
@@ -2676,14 +2701,14 @@ ticket or a docs page disputes (`status`).
 
 | Domain | ID Range | Total | P0 | P1 | P2 | DECLARED | SUSPECT |
 |--------|----------|-------|----|----|----|----------|---------|
-| Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
-| Cart | BL-CART-001–016 | 16 | 6 | 10 | 0 | 8 | 2 |
+| Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 3 |
+| Cart | BL-CART-001–016 | 16 | 6 | 10 | 0 | 8 | 8 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
-| Users & Authentication | BL-AUTH-001–025 | 25 | 13 | 11 | 1 | 18 | 11 |
+| Users & Authentication | BL-AUTH-001–026 | 26 | 14 | 11 | 1 | 19 | 11 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 9 |
-| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
-| Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
+| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 6 |
+| Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 7 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 3 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
 | BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 0 |
@@ -2692,7 +2717,7 @@ ticket or a docs page disputes (`status`).
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 3 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
 | UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 5 |
-| GraphQL xAPI Contract | BL-GQL-001–005 | 5 | 2 | 2 | 1 | 3 | 4 |
+| GraphQL xAPI Contract | BL-GQL-001–005 | 5 | 2 | 2 | 1 | 3 | 5 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
@@ -2706,4 +2731,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **242** | **75** | **128** | **39** | **134** | **76** |
+| **Total** | | **243** | **76** | **128** | **39** | **135** | **87** |

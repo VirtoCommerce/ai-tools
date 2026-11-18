@@ -44,6 +44,9 @@ rules:
       ref: '`addItem(productId=X, itemCurrencyCode="PTS")` then `addItem(productId=X, itemCurrencyCode=cart.currency)` → assert two distinct line items for `X` with different `currencyCode`.'
     violation_signal: One line item for `X` with doubled quantity; cross-currency dedup collapses the two adds.
     status: ACTIVE
+    verified:
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-LOY-003
     title: Mixed Cart — `cartTotals` exposes one entry per distinct line currency
     rule: "`cart.cartTotals[]` MUST contain exactly one entry per distinct currency present among the cart's line items. The entry with `isDefaultTotalCurrency = true` MUST correspond to `cart.currency`. Each entry's `subTotal`/`discountTotal`/`taxTotal`/`total` reflect ONLY that currency's lines. A primary-currency-only cart → exactly one entry."
@@ -63,6 +66,9 @@ rules:
       ref: Mixed cart (USD + PTS) → query `cartTotals { isDefaultTotalCurrency total { currency { code } } subTotal { amount } }` → assert exactly 2 entries; the default entry's currency = cart currency; each `subTotal` = that currency's lines' sum.
     violation_signal: Single entry on a mixed cart (grouping broken); zero or multiple `isDefaultTotalCurrency = true` entries; a block's totals include other-currency values.
     status: ACTIVE
+    verified:
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-LOY-004
     title: Mixed Cart — loyalty lines excluded from the CART-LEVEL promotion context even when selected for checkout
     rule: A loyalty-currency line with `selectedForCheckout = true` MUST NOT appear in the promotion evaluation context's entries, and its price MUST NOT contribute to the cart-subtotal discount base. This holds for every CART-LEVEL reward (percentage off subtotal, fixed amount off subtotal) and for shipping and payment rewards, which are evaluated against primary-currency amounts. Selecting a loyalty line for checkout never makes it eligible for a primary-currency cart promotion. **SCOPE LIMIT — per-line rewards are NOT currency-scoped:** a per-line catalog-item reward is applied to every line item and matched on product id alone, with no currency guard, so this invariant does not extend to a per-line reward that names no product, or that names a product also carried as a loyalty-currency line (see BL-LOY-002). Treat that as an open risk, not a guarantee.

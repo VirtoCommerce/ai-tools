@@ -1,22 +1,18 @@
 {
-  "runId": "REG-2026-11-17-1509",
-  "status": "completed",
-  "startedAt": "2026-11-17T14:09:50.557Z",
-  "env": "virtostart",
-  "frontUrl": "https://virtostart-demo-store.govirto.com",
-  "selection": "122 --ids NXR-014,NXR-017,NXR-032",
+  "runId": "REG-2026-11-18-1453",
+  "status": "in_progress",
+  "startedAt": "2026-11-18T13:53:30.151Z",
+  "env": "vcst",
+  "selection": "105 --ids OTP-057 --no-promote",
+  "ticket": "VCST-6490",
+  "note": "qa-suite-sync 5a run of the newly authored OTP-057 (qa-test-lifecycle VCST-6490)",
   "suites": {
-    "122": {
-      "status": "done",
+    "105": {
+      "status": "running",
       "lane": "browser",
-      "cases": 3,
+      "cases": 1,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-17T14:10:28.334Z",
-      "pass": 1,
-      "fail": 0,
-      "blocked": 2,
-      "finishedAt": "2026-11-17T14:13:49.004Z"
+      "startedAt": "2026-11-18T13:54:22.482Z"
     }
-  },
-  "finishedAt": "2026-11-17T14:14:22.952Z"
+  }
 }
