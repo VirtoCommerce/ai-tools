@@ -1,5 +1,5 @@
 ---
-description: "Triage a completed regression run's, or with `ticket <KEY>` a /qa-test or /qa-test-fast checklist's, non-passing cases — runs the vc-test plugin's `qa-triage-results` skill."
+description: "Triage a completed regression run's, or with `ticket <KEY>` a /qa-test checklist's, non-passing cases — runs the vc-test plugin's `qa-triage-results` skill."
 argument-hint: "[RUN_ID | latest | ticket <KEY>] [--fix] [--verify] [--min-severity P0|P1|P2|P3]"
 disable-model-invocation: true
 ---

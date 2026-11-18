@@ -1,0 +1,32 @@
+{
+  "pass": 2,
+  "env": "vcst",
+  "prUnderTest": "VirtoCommerce/vc-frontend#2613",
+  "prBuild": "vc-theme-b2b-vue-2.62.0-pr-2613-e3fc-e3fce9a9.zip",
+  "runningBuild": "vc-theme-b2b-vue-2.62.0-pr-2613-e3fc-e3fce9a9.zip",
+  "deployPR": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7036",
+  "local": {
+    "themeUrl": "https://vc3prerelease.blob.core.windows.net/packages/vc-theme-b2b-vue-2.62.0-pr-2613-e3fc-e3fce9a9.zip",
+    "marker": "fe-6ccd76723332",
+    "observedMarker": "fe-19851517b377",
+    "boundTo": "vcst",
+    "running": false,
+    "checkedAt": "2026-11-05"
+  },
+  "baseline": "cited: Jira comment 111932 (2026-10-13 measured repro); live repro not re-run (hard-freezes the tab)",
+  "jiraComments": {
+    "pass1": "112717",
+    "starting": "112722",
+    "result": "112723"
+  },
+  "skipped": [
+    "Step 0.2 /qa-env-check endpoints \u2014 device VM and cloud cannot reach the stand (egress); reachability confirmed in the built-in browser, admin /connect/token not run (no sign-in from automation)",
+    "Step 5 agent dispatch \u2014 dispatched agents have no built-in browser; Step 5 run inline",
+    "Step 6 /vc-fix:qa-report \u2014 skill not available in this session; result comment written by hand",
+    "Step 6 inline screenshots \u2014 Jira media upload host blocked from cloud and device network; screenshot kept locally, stated in the comment",
+    "Step 6A evidence page \u2014 written locally by hand (qa-report unavailable)"
+  ],
+  "updated": "2026-11-05",
+  "result": "VERIFIED",
+  "jiraStatus": "Tested"
+}

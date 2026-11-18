@@ -101,6 +101,61 @@ const WEBAUTHN_CDP =
 const PAGE_ACTION =
   /\.(?:click|dblclick|fill|type|press|pressSequentially|check|uncheck|selectOption|setInputFiles|dispatchEvent|tap|hover|focus|evaluate|evaluateHandle|\$eval|\$\$eval|goto|reload|setContent|route|addInitScript|exposeFunction|exposeBinding)\s*\(|\b(?:removeAttribute|setAttribute|innerHTML|outerHTML)\b|\.disabled\s*=|['"](?:Runtime|DOM|Input|Page|Network|Fetch|Emulation)\./;
 
+// --- Allowed by what the payload DOES, not by what it mentions (2026-11-06) -------------------
+// The allow-list above names reads one by one, so every new read-only probe (a class list, a
+// Swiper instance's lock state, a walk of document.styleSheets) was blocked until someone added
+// a regex — and a test lane had no way to time real input or print to PDF at all. Measured on
+// VCST-6529: S-4's resize/click burst ran as single MCP calls ~570 ms apart, S-5/S-8 had to fall
+// back on the debug-only @allow-eval, and S-10's paged-media print stayed BLOCKED. The rule this
+// hook enforces is "no forged user input, no forced control"; the three gates below allow
+// exactly what keeps that rule.
+
+// 1. A browser_evaluate / evaluate_script payload that changes nothing. Any synthetic input,
+//    member assignment, DOM / CSSOM / storage write, navigation, network call or dynamic code
+//    makes it a mutation, and the payload falls through to the allow-list as before.
+const DOM_MUTATION = new RegExp(
+  [
+    String.raw`\.(?:click|dblclick|focus|blur|submit|requestSubmit|reset|select|showModal|showPopover|hidePopover|togglePopover|close)\s*\(`,
+    String.raw`\b(?:dispatchEvent|fireEvent|initEvent|new\s+(?:Mouse|Keyboard|Pointer|Touch|Input|Focus|Submit|Custom)?Event)\b`,
+    String.raw`\b(?:setAttribute|removeAttribute|toggleAttribute|setAttributeNS|removeAttributeNS)\b`,
+    String.raw`\b(?:appendChild|insertBefore|removeChild|replaceChild|replaceChildren|replaceWith|insertAdjacent\w*|createElement|createElementNS|cloneNode|attachShadow)\b`,
+    String.raw`\.(?:append|prepend|before|after|remove|add|toggle|replace|setProperty|removeProperty|insertRule|deleteRule|replaceSync|setItem|removeItem|clear|assign|reload|pushState|replaceState|open|write|writeln|execCommand|scrollTo|scrollBy|scrollIntoView|slideNext|slidePrev|slideTo|update|destroy|init|play|pause)\s*\(`,
+    String.raw`\b(?:fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|eval|Function|import|setTimeout|setInterval|requestAnimationFrame|postMessage)\s*\(`,
+    // any member or index assignment, compound assignment or ++/-- on a member
+    String.raw`(?:[\w$\])]\.[\w$]+|\])\s*(?:[-+*/%&|^]|\*\*|<<|>>>?|\?\?|&&|\|\|)?=(?!=)`,
+    String.raw`(?:\+\+|--)\s*[\w$]+(?:\.[\w$]+)+|[\w$]+(?:\.[\w$]+)+\s*(?:\+\+|--)`,
+    String.raw`\b(?:document\.cookie|location|document\.designMode)\s*=(?!=)`,
+  ].join("|"),
+);
+
+// 2. A browser_run_code_unsafe payload that drives the page only through Playwright's own input
+//    and capture APIs (locator actions with their actionability checks, page.mouse / keyboard /
+//    touchscreen, setViewportSize, waitFor*, screenshot, pdf, emulateMedia). Those send trusted
+//    browser input, exactly what browser_click / browser_resize do one call at a time — so a
+//    timed burst or a real paged-media print is still a real user. Anything that runs page JS,
+//    mocks the network, forces past actionability or talks to the API behind the UI is not.
+const PW_FORBIDDEN =
+  /\.(?:evaluate|evaluateHandle|evaluateAll|\$eval|\$\$eval|addInitScript|addScriptTag|addStyleTag|exposeFunction|exposeBinding|route|routeFromHAR|routeWebSocket|unroute|setContent|dispatchEvent|newCDPSession|setExtraHTTPHeaders|addCookies|clearCookies|setGeolocation|grantPermissions|setOffline|setHTTPCredentials)\s*\(|\bforce\s*:\s*true\b|\.request\.|\brequest\s*\.\s*(?:get|post|put|patch|delete|fetch)\s*\(|\b(?:fetch|eval|Function|require|import)\s*\(|\bprocess\.|\bchild_process\b|\bfs\./;
+const PW_PAGE_CODE = /\bpage\b/;
+
+// 3. Environment simulation, declared: a scenario whose technique is "what if a fork / plugin /
+//    preset ships this CSS or token" may inject that stylesheet or set that token, marked
+//    `/* @simulate: <what is simulated> */` so a reviewer can tell a simulated-environment result
+//    from a stock one. It may change the page's STYLE and attributes; it may never forge input or
+//    unlock a control — those still need a real click on what the stand renders.
+const SIMULATE = /@simulate\s*:\s*\S/;
+const FORGED_INPUT =
+  /\.(?:click|dblclick|submit|requestSubmit)\s*\(|\b(?:dispatchEvent|fireEvent|initEvent)\b|\bnew\s+(?:Mouse|Keyboard|Pointer|Touch|Input|Submit)Event\b|\.(?:value|checked|selected|disabled|readOnly)\s*=(?!=)|removeAttribute\s*\(\s*['"](?:disabled|readonly|aria-disabled|inert)['"]|\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/;
+
+function allowedByBehaviour(toolName, js) {
+  if (!js.trim()) return false;
+  if (SIMULATE.test(js) && !FORGED_INPUT.test(js)) return true;
+  if (/__browser_run_code_unsafe$/.test(toolName)) {
+    return PW_PAGE_CODE.test(js) && !PW_FORBIDDEN.test(js);
+  }
+  return !DOM_MUTATION.test(js);
+}
+
 const BLOCK_MESSAGE = [
   "BLOCKED by real-user interaction rule.",
   "",
@@ -113,6 +168,16 @@ const BLOCK_MESSAGE = [
   "  - An API-only repro is NOT a UI-layer defect.",
   "  - Tests must validate the user experience, not just an end state.",
   "  - Forcing a blocked control manufactures false positives that waste review cycles.",
+  "",
+  "Allowed by what the payload does:",
+  "  - browser_evaluate / evaluate_script that only READS: no synthetic input, no member",
+  "    assignment, no DOM / CSSOM / storage write, no navigation, no network, no eval.",
+  "  - browser_run_code_unsafe that drives the page only through Playwright input and capture",
+  "    (locator actions, page.mouse / keyboard, setViewportSize, waitFor*, screenshot, pdf,",
+  "    emulateMedia) — no evaluate, route, addScriptTag/StyleTag, CDP, force:true, page.request.",
+  "  - /* @simulate: <what> */      — inject the CSS / token a fork, plugin or preset would ship;",
+  "                                 may restyle the page, may never click, submit, set .value or",
+  "                                 unlock a disabled control. Name it in the row's evidence.",
   "",
   "Documented auto-allow exceptions (regex match on the JS payload):",
   "  - execCommand('insertText')  — GraphiQL JWT paste into CodeMirror",
@@ -175,6 +240,9 @@ try {
   }
 
   const jsCode = extractJs(event.tool_input);
+  if (allowedByBehaviour(toolName, jsCode)) {
+    process.exit(0);
+  }
   if (WEBAUTHN_CDP.test(jsCode) && !PAGE_ACTION.test(jsCode)) {
     process.exit(0);
   }

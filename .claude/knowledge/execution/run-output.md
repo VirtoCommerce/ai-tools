@@ -37,8 +37,8 @@ filename (on `@playwright/mcp` 0.0.77 it lands in the project root) and moved in
 with `mv` right after. The flag also lifts the lane's limit on reading local files, so it is the operator's
 call ([`browser-lanes.md`](browser-lanes.md)).
 
-**Only the run's orchestrator binds.** Subagents share the session, so one that works on another ticket (a
-per-bug verify-fix in `/qa-test --iterate`) resolves that ticket's folder with
+**Only the run's orchestrator binds.** Subagents share the session, so one that works on another ticket
+resolves that ticket's folder with
 `npm run run:dir -- --ticket <KEY>` and never runs `run:use`, which would re-bind the whole session.
 
 ## The layout
@@ -78,8 +78,9 @@ knowledge base, not git.
 
 ## Not in the run folder
 
-- **`/qa-test` FULL's new Draft cases** (`regression/suites/`), `tc:alloc` and fixture updates. They are the
-  case corpus, its C1 regression runs them from there, and one author per suite already governs them.
+- **Suite cases and fixtures** (`regression/suites/`, `tc:alloc`, seeders). `/qa-test` writes none — `/qa-test-lifecycle`
+  and `/qa-generate-data` do. They are the case corpus, the regression lane runs them from there, and one author per
+  suite already governs them.
 - **Remote writes**: the kb, the Artifact page, and the tracker comment — one per ticket **per env**,
   because `.tracker-comments.json` keys its entries by both.
 - **`tokens:sync`**: it is generated from the storefront source, not from a stand.

@@ -88,11 +88,11 @@ gate proves **one feature** is done and safe, the Sprint/Full gates aggregate ma
 deployment.
 
 **Inputs it consumes (does not re-run):** the `/qa-test VCST-XXXX` verdict + AC reconciliation, the open
-bug list for the feature, and the change-scoped regression result (the Artifact-C suite selection from the
-`/qa-test` run). **Owner:** `qa-lead-orchestrator` (this is its go/no-go call).
+bug list for the feature, and the change-scoped regression result (the regression lane of the
+`/qa-test` run, when its strategy ran one). **Owner:** `qa-lead-orchestrator` (this is its go/no-go call).
 
-**Independently ratified at `/qa-test` Step 5-report.** This gate is not self-certified by the run that produced
-the inputs: a **fresh `qa-lead-orchestrator` verifier instance** (§Verifier Mode) re-evaluates the criteria
+**Independently ratified when someone asks for the gate.** `/qa-test` no longer dispatches this ratification itself: a
+**fresh `qa-lead-orchestrator` verifier instance** (§Verifier Mode) re-evaluates the criteria
 below from the raw inputs and may **downgrade** the GO/NO-GO. The pass-rate + bug-count math has a
 deterministic core:
 
@@ -141,7 +141,7 @@ and are combined with that math by the verifier.
 
 | Criterion | Threshold | Source |
 |-----------|-----------|--------|
-| `/qa-test` verdict | **PASS** or **PASS WITH NOTES** | `/qa-test` Step 5-verdict |
+| `/qa-test` verdict | **PASS** or **PASS WITH NOTES** | `/qa-test` Stage 5 verdict (`verdict.md`) |
 | Acceptance criteria + DoD | 100% verified — every atomic condition (story ACs + gap-ACs) carries PASS evidence, all reconciled SATISFIED-live, every DoD item MET/N-A, with the quantified AC-coverage/DoD estimate | `/qa-test` Step 5-verdict |
 | `BL-*` invariants for the domain | Verified, none violated | `bl:extract -- --domain <d>` |
 | Open P0 bugs in the feature | 0 — non-negotiable, outranks every other criterion | `reports/bugs/` |
@@ -174,11 +174,6 @@ and are combined with that math by the verifier.
 - The GO/NO-GO decision + evidence links are recorded in the per-ticket QA report
   (the ticket's run folder, category 6 per `.claude/rules/reports.md`), not a new artifact
   type.
-- **Epic roll-up (`/qa-test --epic` runs).** This gate stays **per story**; an Epic-scoped run combines the
-  per-story verdicts into one Epic-level recommendation: **all** child stories GO/CONDITIONAL GO + the
-  **cross-story E2E** clean + **0 open P0 across the whole Epic** → the Epic's feature is releasable. Any
-  child NO-GO, a broken cross-story seam, or an open P0 anywhere in the Epic → the Epic is NO-GO (name the
-  blocking story). Recommendation only; recorded in the Epic's `summary.json.epic.roll_up`.
 
 ---
 

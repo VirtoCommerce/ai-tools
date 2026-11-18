@@ -10,8 +10,8 @@
 //
 // The scheme — exactly one WHO label, and for an agent finding exactly one WHEN label:
 //   found-by-agent        — Claude saw the failure itself in its own run
-//     found-in-testing    —   while testing a ticket (/qa-test, /qa-test-fast, exploratory)
-//     found-in-regression —   in a regression run (/qa-regression, ci:regression, triage)
+//     found-in-testing    —   while testing a ticket (/qa-test, exploratory)
+//     found-in-regression —   in a regression run (/qa-regression, triage)
 //   reported-by-human     — a person found it (the user, a Teams/partner report); Claude only filed it
 // A bug a person described — even one Claude then reproduced — is `reported-by-human`, and so is
 // any bug whose origin is unclear.

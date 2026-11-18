@@ -37,7 +37,7 @@ Read `CLAUDE.md`, `.claude/rules/agents.md`, and the most recent `docs/Sprint pl
 
 - `npm run bl:extract -- --domain <d>` — `BL-DOMAIN-NNN` invariants. Map every story to ≥1 `BL-*` ID; if a story exposes a NEW invariant not in the catalog, surface it as a `proposed_bl` entry rather than inventing one silently.
 - `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` — `ECL-*` edge case patterns. Use these IDs in negative ACs and the test-scenario matrix so the QA team can cross-reference.
-- `reports/ba/` + `reports/ba/test-models/` + `.claude/knowledge/domain/` — **Step 0, always**: the prior BA analysis, prior test models and existing suites for this surface. Amend what exists; never fork it. A **test model** is read-only from here — it is `/qa-test` `1e`’s artifact and carries its own amend / carry-forward rule.
+- `reports/ba/` + `reports/ba/test-models/` + `.claude/knowledge/domain/` — **Step 0, always**: the prior BA analysis, prior test models and existing suites for this surface. Amend what exists; never fork it. A **test model** is read-only from here — it is `/qa-test-model`’s artifact and carries its own amend / carry-forward rule.
 - `.claude/knowledge/domain/sitemap.md` — full storefront URL map (use for navigation language in ACs).
 - `.claude/knowledge/domain/products.md` — product-type vocabulary for catalog/PDP stories.
 - `.claude/knowledge/api/graphql-schema.md` — authoritative xAPI field/argument names; reference exact names in Technical Notes, never paraphrase.
@@ -133,7 +133,7 @@ Standard DoD that every story must meet — customize per project:
 
 ```
 - [ ] Feature works in supported browsers: Chrome, Firefox, Edge (WebKit/Safari is NOT supported on Windows in this QA environment — see CLAUDE.md)
-- [ ] Responsive: works on mobile (375px), tablet (768px), desktop (1920px) — match the QA viewport set
+- [ ] Responsive: works on mobile and desktop, no layout break at any width of the QA viewport sweep (`AUDIT_VIEWPORTS_PX`, `scripts/lib/design-tokens.generated.ts`)
 - [ ] Unit tests cover derivation logic, not literals (§7a)
 - [ ] Integration/E2E test added for primary happy path; GraphQL operations covered by runner-native test in `regression/suites/Backend/graphql/`
 - [ ] Code reviewed and approved by 1+ team member

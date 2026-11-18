@@ -1028,7 +1028,9 @@ async function runCleanup(
           if (!block.role) {
             throw new Error("[AUTH] missing role");
           }
-          cleanupToken = await tokenCache.getToken(block.role, block.org);
+          cleanupToken = /^anonymous$/i.test(block.role)
+            ? undefined
+            : await tokenCache.getToken(block.role, block.org);
           cleanupResults.push({
             kind: "AUTH",
             role: block.role,
@@ -1097,11 +1099,19 @@ async function executeBlock(
     evidenceOps: OpEvidence[];
     nullCaptures: string[];
   },
-  setToken: (t: string) => void,
+  setToken: (t: string | undefined) => void,
   getToken: () => string | undefined
 ): Promise<void> {
   switch (block.kind) {
     case "AUTH": {
+      // `[AUTH role=ANONYMOUS]` drops the token mid-case, so a case can create a real object as
+      // its owner and then call the operation with no Authorization header (SEC-IDENT).
+      if (/^anonymous$/i.test(block.role)) {
+        setToken(undefined);
+        ctx.authState.ucpToken = undefined;
+        console.log(`\n• [AUTH role=ANONYMOUS] token dropped — next requests carry no Authorization header`);
+        return;
+      }
       if (!block.role) {
         throw new Error(`[AUTH] missing role — expected [AUTH role=<alias>]`);
       }

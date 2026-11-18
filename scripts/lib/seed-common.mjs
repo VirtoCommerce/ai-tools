@@ -543,10 +543,11 @@ export async function orderLacksProductImages(api, order) {
  * page shifts with every catalog change). Each carries its min/max order quantity (re-read when the
  * search projection did not carry it, so a quantity check never judges an unread limit) and, for
  * inventory-tracked products, `availableQuantity` = Σ(inStock − reserved) across fulfillment centers.
- * Pair with orders-specs.mjs `fitsLineQuantity` to pick a product per line.
+ * Pair with orders-specs.mjs `fitsLineQuantity` to pick a product per line. `catalogId` scopes the
+ * search to one catalog (e.g. the store's own catalog, so the line is buyable in that store).
  */
-export async function discoverLineCandidates(api, count) {
-  const found = await discoverCatalogProducts(api, count, { sort: 'code:asc', realOnly: true });
+export async function discoverLineCandidates(api, count, { catalogId = null } = {}) {
+  const found = await discoverCatalogProducts(api, count, { sort: 'code:asc', realOnly: true, catalogId });
   const unread = found.filter((p) => p.minQuantity == null || p.maxQuantity == null || p.trackInventory == null);
   if (unread.length) {
     const full = await readProductsById(api, unread.map((p) => p.id));
@@ -579,10 +580,40 @@ export async function discoverLineCandidates(api, count) {
  * then judges or DELETES "its" order acts on another fixture's. Always filter by `number ===`, with a
  * take large enough to reach the exact hit behind newer prefix matches. DI on `api` like the helpers above.
  */
-export async function findOrdersByExactNumber(api, number, { take = 100 } = {}) {
+export async function findOrdersByExactNumber(api, number, { take = 100, withPrototypes = false } = {}) {
   if (!number) return [];
-  const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take });
+  // customerOrders/search drops IsPrototype orders unless withPrototypes=true (measured 2026-11-09),
+  // so a seeder that owns a prototype fixture must pass it or its teardown leaves the prototype behind.
+  const body = withPrototypes ? { keyword: number, take, withPrototypes: true } : { keyword: number, take };
+  const found = await api('POST', '/api/order/customerOrders/search', body);
   return (found?.results || []).filter((o) => o?.number === number);
+}
+
+/**
+ * A user's Customer-module preference rows whose `name` passes `match` ([] when none / route absent).
+ * Preferences are keyed on the ApplicationUser id, and deleting the user does NOT cascade them
+ * (kb KB-AC688064 / KB-F57FC873), so a seeder that owns one must find and delete it explicitly.
+ */
+export async function findCustomerPreferences(api, userId, match) {
+  if (!userId) return [];
+  const res = await api('POST', '/api/customer-preferences/search', { userId, take: 100 }, { expectStatus: [200, 201, 404] });
+  return (res?.results || res?.items || []).filter((p) => match(p?.name));
+}
+
+/** Delete every preference row of `userId` whose name passes `match`. Returns the row count (dry-run: would-delete). */
+export async function resetCustomerPreferences(api, userId, match, label) {
+  if (!userId) {
+    const msg = `${label} — no ApplicationUser id resolved, cannot reset its preferences`;
+    if (DRY_RUN) verbose(msg); else log(`  WARN: ${msg}`);
+    return 0;
+  }
+  const rows = await findCustomerPreferences(api, userId, match);
+  if (rows.length === 0) { verbose(`${label}: no matching preference — already never-saved`); return 0; }
+  const names = rows.map((r) => r.name).join(', ');
+  if (DRY_RUN) { log(`  ${label}: would delete ${rows.length} preference(s): ${names}`); return rows.length; }
+  await api('DELETE', `/api/customer-preferences?${idsParam(rows.map((r) => r.id))}`, null, { expectStatus: [200, 204] });
+  log(`  ${label}: deleted ${rows.length} preference(s) (${names})`);
+  return rows.length;
 }
 
 /**
@@ -872,11 +903,48 @@ export async function ensureStoreWhiteLabeling(api, { storeId = STORE_ID, row = 
   log(`  ✓ Store-level WL theme on ${storeId}: ${from ? `"${from}" → ` : ''}"${theme}"`);
 }
 
+/**
+ * Turn the store's VirtoPages.Enable on in the `store` object (raise-only, never off). While it is off —
+ * the setting's default — slugInfo resolves no Page Builder page, so every published page 404s even
+ * though it is indexed as Published (@kb(KB-48CBEB82)). Returns true when it changed the object.
+ * Only flips a setting the store already carries: a store GET lists every setting registered for stores,
+ * so a missing entry means the Page Builder module is not installed, and adding an unregistered setting
+ * would make the platform reject the whole store PUT.
+ */
+export function enableVirtoPages(store) {
+  const vp = (store.settings || []).find((s) => s.name === 'VirtoPages.Enable');
+  if (!vp || isTrue(vp.value)) return false;
+  vp.value = true;
+  return true;
+}
+
+/** True for a CSV cell or setting value of true/"true"/"True"; the one truthiness rule for stores.csv. */
+const isTrue = (v) => /^true$/i.test(String(v ?? ''));
+
+/**
+ * For the seeders that publish Page Builder pages: make sure the store serves them (whole-store PUT).
+ * Follows stores.csv: a row with virtopages_enabled other than true is left alone. Never throws — page
+ * seeding does not need the switch, so a failed PUT is logged and the seeder carries on.
+ */
+export async function ensureVirtoPagesEnabled(api, storeId = STORE_ID) {
+  const row = loadCsvOptional('test-data/stores/stores.csv').find((r) => r.store_id === storeId);
+  if (row && !isTrue(row.virtopages_enabled)) { verbose(`VirtoPages.Enable left as is for ${storeId} (stores.csv says not true)`); return false; }
+  const store = await api('GET', `/api/stores/${encodeURIComponent(storeId)}`, null, { expectStatus: [200, 204, 404] });
+  if (!store?.id) { log(`  ⚠ store ${storeId} not found — VirtoPages.Enable not checked; its pages will not resolve`); return false; }
+  if (!(store.settings || []).some((s) => s.name === 'VirtoPages.Enable')) { log(`  ⚠ store ${storeId} has no VirtoPages.Enable setting (Page Builder module not installed?)`); return false; }
+  if (!enableVirtoPages(store)) { verbose(`VirtoPages.Enable already on for ${storeId}`); return false; }
+  if (DRY_RUN) { log(`  [DRY] would turn VirtoPages.Enable on for store ${storeId}`); return true; }
+  try {
+    await api('PUT', '/api/stores', store, { expectStatus: [200, 204] });
+  } catch (e) { log(`  ⚠ VirtoPages.Enable not turned on for ${storeId}: ${String(e.message).slice(0, 150)}`); return false; }
+  log(`  ✓ VirtoPages.Enable turned on for store ${storeId} (Page Builder pages do not resolve without it)`);
+  return true;
+}
+
 /** Map a stores.csv row's flag columns → VC store settings (booleans kept even when false). */
 export function storeSettingsFromRow(row) {
-  const bool = (v) => /^true$/i.test(String(v ?? ''));
   const out = [];
-  const addBool = (name, v) => out.push({ name, valueType: 'Boolean', value: bool(v) });
+  const addBool = (name, v) => out.push({ name, valueType: 'Boolean', value: isTrue(v) });
   const addText = (name, v) => { if (v !== undefined && v !== null && String(v).trim() !== '') out.push({ name, valueType: 'ShortText', value: String(v).trim() }); };
   addBool('Stores.IsSpa', row.is_spa);
   addBool('Stores.AllowAnonymousUsers', row.anonymous_users_allowed);
@@ -891,6 +959,8 @@ export function storeSettingsFromRow(row) {
   addText('Loyalty.Mode', row.loyalty_mode);
   addText('Loyalty.Currency', row.loyalty_currency);
   addBool('WhiteLabeling.WhiteLabelingEnabled', row.whitelabeling_enabled);
+  // virtopages_enabled is NOT sent on create: VirtoPages.Enable exists only with the Page Builder module, and
+  // an unregistered setting fails the whole POST. ensureStore raises it after create via ensureVirtoPagesEnabled.
   addText('Customer.ContactDefaultStatus', row.contact_default_status);
   addText('Customer.OrganizationDefaultStatus', row.org_default_status);
   return out;
@@ -1008,6 +1078,9 @@ export async function ensureStore(api, { storeId = STORE_ID, catalogId = null, e
     // Reconciled the same way as url, so an env whose email was nulled (e.g. by a partial body sent to
     // this whole-entity PUT — see the 2026-08-27 incident) is REPAIRED by a re-seed, not just preserved.
     if (desiredEmail && store.email !== desiredEmail) { store.email = desiredEmail; changed = true; }
+    // Raise-only, unlike the other settings (written on create only): a store this seeder did not create
+    // (start-local's B2B-store) has VirtoPages.Enable off, and then no Page Builder page resolves.
+    if (isTrue(row?.virtopages_enabled) && enableVirtoPages(store)) changed = true;
     if (await applyFulfillmentCenters(api, store)) changed = true;
     if (changed && !DRY_RUN) {
       try {
@@ -1045,6 +1118,7 @@ export async function ensureStore(api, { storeId = STORE_ID, catalogId = null, e
     const created = await api('POST', '/api/stores', body, { expectStatus: [200, 201, 204] });
     await applyStoreMethods(api, storeId, row);
     await ensureStoreWhiteLabeling(api, { storeId, row });
+    if (isTrue(row?.virtopages_enabled)) await ensureVirtoPagesEnabled(api, storeId);
     log(`✓ created store: ${storeId}${catalogId ? ` → catalog ${catalogId}` : ''}`
       + `${row ? ` (${currencies.length} currencies, ${languages.length} languages, ${body.settings?.length || 0} settings)` : ' (minimal — no stores.csv row)'}`);
     return created?.id || storeId;

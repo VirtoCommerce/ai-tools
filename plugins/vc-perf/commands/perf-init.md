@@ -59,7 +59,7 @@ by hand.
    - which XAPI modules the project extends (L1 candidates) → `perf.benchmark.xapiTargets` + `runnerDirs`
    - load-test fixtures (a buyable product / org / config ids) — discover from the live catalog where
      possible, don't hardcode → `perf.loadtest.fixtures`. Note: the harness does not read this key
-     directly — export it as `PRODUCT_IDS` (comma-separated) when invoking `run.sh` (see
+     directly — pass it as `PRODUCT_IDS` (comma-separated) in `run.sh`'s `--env-file` (see
      `perf-loadtest/SKILL.md`). `perf.loadtest.seedEndpoint` is likewise recorded for reference only;
      no script currently consumes it.
    See `project-profile.example.json` for the block shape.

@@ -39,6 +39,7 @@ import {
   SHELL_SEARCH_READ_ROLE, SHELL_SEARCH_READ_ACCOUNT, SHELL_SEARCH_READ_EXCLUDED_PERMISSION, assertShellSearchReadRolePermissions,
   SHELL_SEARCH_READ_PERMISSIONS, SHELL_SEARCH_NEVER_PERMISSIONS,
   IMP_OPERATOR_ROLE, IMP_OPERATOR_ACCOUNT, IMP_OPERATOR_REQUIRED_PERMISSIONS, assertImpOperatorRolePermissions,
+  TASK_READONLY_ROLE, TASK_READONLY_ACCOUNT, TASK_READONLY_EXCLUDED_PERMISSION, assertTaskReadOnlyRolePermissions,
   findGuidLeaks,
 } from './backoffice-rbac-specs.mjs';
 
@@ -144,6 +145,8 @@ catch (e) { fail(e.message); }
 
 try { assertShellSearchReadRolePermissions(); ok(`role "${SHELL_SEARCH_READ_ROLE.role_name}" holds ${SHELL_SEARCH_READ_ROLE.permissions.join(', ')} (VCST-6260 control: provider data calls 200)`); }
 catch (e) { fail(e.message); }
+try { assertTaskReadOnlyRolePermissions(); ok(`role "${TASK_READONLY_ROLE.role_name}" holds ${TASK_READONLY_ROLE.permissions.join(', ')} and no task write (085 TASK-016 create gate)`); }
+catch (e) { fail(e.message); }
 
 // The VCST-6260 pair must differ by EXACTLY the two read permissions, and neither may hold order/pricing
 // access or a settings/security write — otherwise a provider difference could come from something else.
@@ -176,6 +179,7 @@ checkAlias(BROWSEFILTERS_NONE_ROLE, BROWSEFILTERS_NONE_ACCOUNT, BROWSEFILTERS_NO
 checkAlias(RETURN_AGENT_ROLE, RETURN_AGENT_ACCOUNT, RETURN_AGENT_EXCLUDED_PERMISSION);
 checkAlias(SHELL_SEARCH_NOREAD_ROLE, SHELL_SEARCH_NOREAD_ACCOUNT, SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSION);
 checkAlias(SHELL_SEARCH_READ_ROLE, SHELL_SEARCH_READ_ACCOUNT, SHELL_SEARCH_READ_EXCLUDED_PERMISSION);
+checkAlias(TASK_READONLY_ROLE, TASK_READONLY_ACCOUNT, TASK_READONLY_EXCLUDED_PERMISSION);
 
 // 4. IMP-038 operator. The case removes loginOnBehalf from the role and expects impersonation to stop,
 // so it is decidable only if the role holds that permission (else the first half cannot pass) and the

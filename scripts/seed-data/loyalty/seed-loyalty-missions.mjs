@@ -79,7 +79,7 @@ import { roleByKey, resolveRole } from '../../lib/user-roles.mjs';
 import {
   MISSIONS, MISSION_BY_ALIAS, STORE_SETTING, PERSKU_PRODUCTS, TARGETING,
   BANNERS, BANNER_FOLDER, BANNER_CONTENT_TYPE, bannerSourceRel, bannerAssetRel, bannerKeyFor,
-  missionName, isSeededMissionName, needsGoalItems, resolveCurrencies, resolveLocales,
+  missionName, isOwnMissionName, needsGoalItems, resolveCurrencies, resolveLocales,
   buildMissionBody, buildGoalItems, reconcileGoalItems, localizedValues,
   ZERO_STOCK_PRODUCT, TARGET_PRODUCTS, OWNED_PRODUCTS, CASH_TARGET_PRODUCTS, goalSlotsFor, localeIntentsUsed, localeFieldFor,
   missionSignature, signaturesMatch, windowIsOpen, windowExpectsOpen, validateSpecShape,
@@ -175,7 +175,7 @@ async function ourMissionsByName() {
   // An Archived mission is retired, not a fixture: it is immutable, off the customer query, and a
   // same-name live mission may sit beside it after a re-seed. Keying it in would let the reuse loop
   // pick the dead one and try to DELETE it.
-  for (const m of all) if (isSeededMissionName(m.name) && String(m.status) !== 'Archived') map.set(m.name, m);
+  for (const m of all) if (isOwnMissionName(m.name) && String(m.status) !== 'Archived') map.set(m.name, m);
   return map;
 }
 
@@ -1594,7 +1594,7 @@ async function teardown() {
   const wanted = new Set(targets.map((m) => m.name));
   const residue = await verifyRemoved(async () => (
     // Archived is retired, not residue (it is off the customer query and cannot be deleted once it has progress).
-    (await searchMissions()).filter((m) => isSeededMissionName(m.name) && String(m.status) !== 'Archived' && (!ONLY || wanted.has(m.name)))
+    (await searchMissions()).filter((m) => isOwnMissionName(m.name) && String(m.status) !== 'Archived' && (!ONLY || wanted.has(m.name)))
   ));
   if (residue > 0) throw new Error(`teardown left ${residue} ${ONLY ? `${[...wanted][0]} ` : 'AGENT-TEST-MSN- '}mission(s) behind`);
 

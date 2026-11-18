@@ -1,10 +1,11 @@
-// plugins/vc-test/skills/qa-test-strategy/lib/floors.mjs — the floors F1–F12, computed from the /ticket-context bundle.
+// plugins/vc-test/skills/qa-test-strategy/lib/floors.mjs — the floors F1–F13, computed from the /ticket-context bundle.
 // R2 of the /qa-test redesign: a floor is a gate rule, never a model judgment. This script reads signals; it
 // never chooses a risk. F9 (doubt ⇒ the floor applies) is built in: a signal that cannot be read fires its floor.
 import { existsSync, readFileSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadRegistry } from "../../../lib/strategy-artifacts.mjs";
+import { shapeOf } from "../../../lib/route.mjs";
 
 // The tracker's names for P0/P1 come from project-profile.json `tracker.p0p1Priorities` (an array of names); with no
 // profile entry, this default (Jira's Highest/High plus the P0/P1/Blocker/Critical spellings). A name not listed reads as P2+.
@@ -14,7 +15,7 @@ const P01_DEFAULT = ["p0", "p1", "highest", "high", "blocker", "critical"];
 const projectRoot = () => resolve(process.env.VC_FIX_HOME || process.cwd());
 // qa-design/visual-axis.md §1 source 1 — a rendering file.
 const VISUAL = /\.(vue|scss|css|html)$|\/Scripts\/.*\.html$|\/icons?\/|design-tokens?|_tokens?\.scss$/i; // not a bare "token": TokenService.cs is not a rendering file
-// ticket-routing.md §5c — the change IS the design system.
+// floors.md F8 — the change IS the design system (the `ui-kit` class).
 const UI_KIT = /client-app\/ui-kit\/|_ui-kit-tokens\.scss$|\/_colors\.scss$|\/_dark\.scss$|\/preflight\.scss$|client-app\/assets\/presets\/[^/]+\.json$|\.storybook\/|storybook-styles\/|\.stories\./i;
 // F4 — revenue-critical flows, matched on names only (paths, operations, endpoints, settings, components, domains),
 // never on prose. No word boundary: `shopping_cart.vue`, `CartController`, `addItemToCart` are revenue flows too.
@@ -25,6 +26,13 @@ const REVENUE = [/cart|checkout|payments?|pric(?:e|es|ing)|quotes?/i, /(?<![A-Za
 const PARTIAL = /^pr:([^:]+)(?::[^:]+)*:(diff|patches|files)$/;
 // F10 — B2B org context (test-model redesign §5).
 const ORG = /organizationId|organization_id|xapi:my_organization|my_organization|\/organizations?\b|sales-rep|salesrep|loginOnBehalf|CanImpersonate|impersonat/i;
+// F13 — the change checks a PERMISSION. Role names are a project's own (a client renames or adds roles), so a role name or
+// an AC actor is never a signal; the platform's permission checks are. Case-sensitive on purpose: `XApiPermissions.CanX`
+// and `Permissions.Approve` are permissions, `permissions.ts` / `permissions.length` are not. Grounded in vc-platform
+// (`PermissionAuthorizationRequirement`, `…AuthorizationHandler`, `AuthorizeAsync`, `HasGlobalPermission`) and vc-frontend
+// (`checkPermissions(XApiPermissions.…)`, `$can($permissions.xApi.…)`).
+export const ACCESS_GUARD = /\[Authorize\b|Permissions?\.[A-Z]\w*|\$permissions\.|\bHasGlobalPermission\b|\b[Cc]heckPermissions?\(|\$can\(|Authoriz(?:ation)?(?:Handler|Requirement)\b|\bAuthorizeAsync\b/;
+const F13_REQUIRES = ["a risk with Source floor:F13 whose account is deny:<permission> <KEY|P-n> — the KEY chosen by the permissions it holds on the stand, never by its role name (floors.md §15)"];
 // F11 — configuration (test-model redesign §5a, layers 1–3).
 const CONFIG = /ModuleConstants\.Settings|settingsManager|SettingsManager|store\.settings|\$cfg\./;
 // F11 — a settings entry is the CHANGE agent's prose; only a named key is a signal. A dotted PascalCase key
@@ -98,6 +106,10 @@ function applyCapabilities(floors, bundle, caps) {
   });
 }
 
+/** A non-Bug ticket whose change has the technical-change shape — the same test route.mjs uses to route it. */
+const isRefactor = (bundle, fields) => !!bundle.change && String(fields.type ?? "").toLowerCase() !== "bug"
+  && shapeOf(bundle).shape === "technical-change";
+
 /** A PR closed without merge never shipped: it is not change surface (check-bundle counts it out the same way). */
 export const isAbandoned = (p) => p.state === "closed" && p.merged === false;
 
@@ -163,6 +175,10 @@ function baseFloors(bundle, { domainMapText, p01Names, changeMap }) {
   const failedLookup = gaps.find((g) => g.where === "known.domain" || g.where.startsWith("known.tc:scope") || g.where.startsWith("known.regression:select"));
   const f5 = atRisk.length > 0 ? floor("F5", true, `${atRisk.length} suite(s) at risk: ${atRisk.slice(0, 5).map((c) => c.suite).join(", ")}`, ["coverage triage + regression after the staleness check"])
     : failedLookup ? floor("F5", true, `doubt: ${failedLookup.where} (${failedLookup.reason})`, ["coverage triage + regression after the staleness check"])
+    // A refactor (route.mjs `shapeOf`: every refactor signal resolves) has no ACs to aim a checklist at: the regression
+    // over its blast radius IS its test, so "0 suites at risk by path" is a lookup to widen, not a clean result.
+    : isRefactor(bundle, fields) ? floor("F5", true, "refactor (technical-change shape) with 0 suite(s) at risk by path: the blast radius is looked up, not assumed empty",
+      ["coverage triage + regression after the staleness check", "tc:scope --domain widening; still no suite ⇒ Out of scope names the refactor's missing regression"])
     : floor("F5", false, "0 suite(s) at risk", ["coverage triage + regression after the staleness check"]);
 
   const notDeployed = (bundle.blockers ?? []).filter((b) => /^NOT DEPLOYED:/.test(b));
@@ -180,7 +196,7 @@ function baseFloors(bundle, { domainMapText, p01Names, changeMap }) {
   // Fails closed on what was NOT read; a ui-kit path in the part that was read still fires it.
   const f8 = kit.length ? floor("F8", true, `ui-kit files: ${kit.slice(0, 3).join(", ")}${existing.length ? "" : " (all added: a new surface, no PIXEL)"}`,
     ["visual lane", "token audit", ...(existing.length ? [PIXEL_REQUIREMENT] : [])])
-    : floor("F8", false, diffUnread ? `${diffUnread} — F8 fails closed (ticket-routing §5c)` : "no ui-kit file");
+    : floor("F8", false, diffUnread ? `${diffUnread} — F8 fails closed` : "no ui-kit file");
 
   const org = surface.match(ORG);
   const f10 = diffFloor("F10", org ? `org context: ${org[0]}` : null, "no org context in the diff surface", ["an org-context risk with technique MODEL, Source carrying floor:F10"]);
@@ -202,8 +218,17 @@ function baseFloors(bundle, { domainMapText, p01Names, changeMap }) {
     : floor("F12", zoned.length > 0, zoned.length ? `significant-zone hotspots: ${zoned.slice(0, 5).map((h) => `${h?.id ?? "?"} (${zoneOf(h) ?? "no zone — doubt"})`).join(", ")}`
       : "no hotspot in a significant zone", f12req);
 
+  const perm = prs.flatMap(settingsOf).find((s) => /permission/i.test(s));
+  const guard = surface.match(ACCESS_GUARD);
+  const accessSpots = Array.isArray(spots) ? spots.filter((h) => zoneOf(h)?.toLowerCase() === "access").map((h) => h?.id ?? "?") : [];
+  const f13signal = perm ? `permission: ${perm.slice(0, 60)}` : guard ? `access guard: ${guard[0]}`
+    : accessSpots.length ? `access hotspot: ${accessSpots.slice(0, 5).join(", ")}` : null;
+  // On doubt no permission is known: Out of scope naming F13 answers it (clause 15b), never an invented deny risk.
+  const f13 = diffFloor("F13", f13signal, "no access check in the diff surface", f13signal ? F13_REQUIRES
+    : ["a floor:F13 deny: risk if the unread diff checks access, else Out of scope naming F13 and the unread diff (clause 15b)"]);
+
   return { product_prs: prs.length, floors: [f1, f2, f3, f4, f5, f6, f7, f8,
-    floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11, f12] };
+    floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11, f12, f13] };
 }
 
 /** A JSON file, or one line naming the file and the reason, then exit 2 — never a stack trace. */

@@ -26,6 +26,10 @@
  *      catches nothing.
  *  [6] The ledger key starts with `_`, which is the only thing keeping `td:reconcile` check [11]
  *      from member-probing every order and file GUID the ledger holds.
+ *  [7] Demo rep identities stay out of committed files.
+ *  [8] Persona aliases: each DEMO_PERSONAS entry has a registry entry in test-data/aliases.json that
+ *      says exactly what personaAliasEntry() derives (login, password TOKEN, name, org), and a
+ *      no-orders persona is the buyer of no order in the returns or loyalty-missions demo either.
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
@@ -34,6 +38,7 @@ import { fileURLToPath } from 'node:url';
 import {
   DEMO_DOCUMENTS, DEMO_ORGS, DEMO_ORDERS, DEMO_TASKS, DEMO_REPS, DEMO_UPLOADS_DIR, DEMO_LEDGER_KEY,
   demoProblems, documentSourceRel, isDemoSafeProduct, EXCLUDED_PRODUCT_RE,
+  DEMO_PERSONAS, PERSONA_NEEDS, personaAliasEntry,
 } from './sales-rep-demo-specs.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -204,6 +209,35 @@ for (const name of readdirSync(ROOT).filter((n) => /^\.env\.[a-z0-9_]+$/.test(n)
   }
 }
 if (!problems.some((p) => / carries an email | carries owner | names \d+ real address/.test(p))) ok(`${anonChecked} ledger row(s) / env assignment(s) checked — no demo rep address committed`);
+
+// [8] persona aliases ----------------------------------------------------------
+// A case signs in as @td(<persona>.email) and the lane types the password NAME the token carries. A
+// registry entry that drifted from the spec signs in as someone else (or nobody) and the case goes
+// BLOCKED or, worse, passes on another account's data.
+console.log('\n[8] Persona aliases match the spec, and a no-orders persona orders nowhere');
+const registry = JSON.parse(readFileSync(basePath, 'utf8'));
+const otherFamilyBuyers = [
+  ['returns demo', 'test-data/orders/returns-demo/returns-demo.json', (f) => (f.orders || []).map((o) => o.buyer)],
+  ['loyalty-missions demo', 'test-data/loyalty/missions-demo/missions-demo.json', (f) => (f.progressOrders || []).map((o) => o.buyer)],
+];
+for (const alias of Object.keys(DEMO_PERSONAS)) {
+  const want = personaAliasEntry(alias);
+  const have = registry[alias];
+  if (!want) continue; // demoProblems() [1] already names it
+  if (!have) { fail(`test-data/aliases.json has no "${alias}" entry — the persona cannot be signed in as by @td()`); continue; }
+  const drift = Object.entries(want).filter(([k, v]) => have[k] !== v).map(([k, v]) => `${k} is ${JSON.stringify(have[k])}, spec says ${JSON.stringify(v)}`);
+  const undeclared = Object.keys(want).filter((k) => have.fields?.[k] !== k);
+  if (drift.length) fail(`aliases.json ${alias}: ${drift.join('; ')}`);
+  else if (undeclared.length) fail(`aliases.json ${alias}: fields does not declare ${undeclared.join(', ')} — @td(${alias}.<field>) would not resolve`);
+  else ok(`${alias} → ${want.name} <${want.email}> at ${want.organization}, password ${want.password}`);
+  if (DEMO_PERSONAS[alias].needs !== PERSONA_NEEDS.NO_ORDERS) continue;
+  for (const [family, rel, buyersOf] of otherFamilyBuyers) {
+    if (!existsSync(join(ROOT, rel))) { fail(`${rel} is missing — cannot prove ${alias} has no ${family} order`); continue; }
+    const n = buyersOf(JSON.parse(readFileSync(join(ROOT, rel), 'utf8'))).filter((b) => b === DEMO_PERSONAS[alias].contact).length;
+    if (n) fail(`${alias}: the ${family} places ${n} order(s) as ${DEMO_PERSONAS[alias].contact} — the no-orders empty state is gone`);
+    else ok(`${alias}: no ${family} order`);
+  }
+}
 
 // ---- report ----------------------------------------------------------------
 console.log('\n=== sales-rep DEMO dataset validation ===');

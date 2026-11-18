@@ -55,8 +55,8 @@ docs or an oracle, and use the entry only as proof that the bug reproduces (`Cat
 
 ## 3. Every functional case names the bug it would catch
 
-`References` already carries `Archetype:<TOKEN> · Technique:<TOKEN>` (`skills/qa-test/authoring.md`
-§Carry the model's design decision into the row; tokens: `knowledge/oracles/vc-bug-catalog.md`
+`References` already carries `Archetype:<TOKEN> · Technique:<TOKEN>` (`skills/qa-test-cases-generator/test-case-template.md`;
+tokens: `knowledge/oracles/vc-bug-catalog.md`
 §Defect archetypes). A `FUNC` case adds, where it applies:
 
 - **`Catches:<ISSUE-KEY>`** — the closed bug this case would have caught. Its expectation is the fixed

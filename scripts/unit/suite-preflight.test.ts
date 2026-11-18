@@ -110,7 +110,7 @@ test("the REAL manifest passes preflight against the REAL filesystem", () => {
     csvPath: s.file,
     agent: s.agent,
     runner: s.runner,
-    agentPath: join("ci", "agents", `${s.agent}.md`),
+    agentPath: join(".claude", "agents", `${s.agent}.md`),
   }));
   const problems = preflightManifest(suites, { fileExists: existsSync });
   assert.deepEqual(problems, [], formatPreflightProblems(problems));

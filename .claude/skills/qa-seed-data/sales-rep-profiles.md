@@ -176,6 +176,14 @@ steps falls back to an operator's login-on-behalf (the chain below); only when n
 either does the seed skip them. Verified live on vcst 2026-09-24: all 12 tasks seeded with no rep
 password and render on the hub's **Calendar** page and the dashboard's *Tasks & due dates* widget.
 
+**Task states.** Each demo rep has tasks due today, upcoming, overdue, completed, **canceled** and
+**undated** (`demoProblems()` fails a rep missing any of them). The last two are states the rep endpoint
+cannot create, so they take the path `seed-sales-rep-tasks.mjs` uses: a canceled task is created as
+the rep, then closed without completing (`POST /api/task-management/finish?completed=false`, admin
+token); an undated task (`dueInDays: null`) is `POST /api/task-management` with the owner fields copied
+from one of the rep's tasks. That body takes no customer link, so an undated task names none, and a
+task whose state an update cannot reach (a date removed or added back, a cancel undone) is rebuilt.
+
 **Active carts are the BUYERS', not the reps'.** `DEMO_CARTS` gives each buyer contact one non-empty
 cart, created with that buyer's own token inside their organization (`SR_DEMO_BUYER_PASSWORD`, no rep
 password needed). The seeder skips any pool product the cart refuses (`CART_PRODUCT_UNAVAILABLE`,

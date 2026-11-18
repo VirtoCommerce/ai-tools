@@ -1,8 +1,8 @@
 // Backend (platform) server-side exceptions, grouped by signature.
 // Runs against the backend App Insights resource (env-resolved App ID). Time
-// window is applied by the REST API `timespan` param (ci/lib/appinsights.ts),
+// window is applied by the REST API `timespan` param (scripts/lib/appinsights.ts),
 // so no `where timestamp > ago(...)` here.
-// Emitted columns are consumed by ci/lib/fingerprint-store.ts — keep names stable.
+// Emitted columns are consumed by the /qa-monitoring fingerprint store — keep names stable.
 exceptions
 | where client_Type != "Browser"
 | summarize

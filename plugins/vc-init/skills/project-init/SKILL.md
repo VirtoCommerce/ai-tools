@@ -490,9 +490,9 @@ operator fills the files and stores the tokens. **Do NOT pass `--project-type` /
 ### 3a. `.env.<env>` template + the project settings in `.env.local` (`scaffold-env.mjs`)
 
 ```bash
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs" --env myqa --tracker jira --client-vcs github --print
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs" --env myqa --tracker jira --client-vcs github --print --no-default
 # Azure Repos client on Jira → ADO_ORG/ADO_PROJECT are emitted for the code host too:
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs" --env acme --tracker jira --client-vcs azure-repos --print
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs" --env acme --tracker jira --client-vcs azure-repos --print --no-default
 ```
 Flags: `--env <name>` (required), `--tracker jira|azure`, `--client-vcs
 github|azure-repos`. `ADMIN` is pre-filled with a safe default and `STORE_ID` may stay empty (normalize-env detects it);
@@ -513,6 +513,10 @@ relay that line; the operator keeps one value in `.env.local` (or `<KEY>_<ENV>` 
 deletes the rest. Once a key is kept per env, every later env gets its own `<KEY>_<NEW>` placeholder, never
 a bare empty one. `write-env.mjs` never overwrites a different value already in `.env.local`: it
 refuses that key (exit 1) and says so.
+
+Once every env of the run exists: `default-env.mjs [--env <env>]` sets **`.env.test-env`** (`TEST_ENV=<env>`).
+`ask` ⇒ read its header, then ONE AskUserQuestion: `options`, `recommended` first; `decline: true` ⇒ also
+"No default environment" (`--decline`); else `--choose <answer>`. Relay `lines`.
 
 ### 3b. `.env.local` — test-user passwords (`scaffold-secrets.mjs`)
 
@@ -1159,7 +1163,7 @@ runtime by `TEST_ENV`. So `--add-env`:
 Same scaffolders as the full flow (§3), reusing the tracker/host read from the profile:
 
 ```bash
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs"     --env <new> --tracker <kind> --client-vcs <host> --print
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs"     --env <new> --tracker <kind> --client-vcs <host> --print --no-default
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" --env <new> --tracker <kind> --client-vcs <host> --print
 ```
 
@@ -1167,7 +1171,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" --env <new> 
   `BACK_URL`, store/culture). All empty for the operator to fill. The **project-level** connection
   (`JIRA_*`, `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`) is already in `.env.local` and is NOT
   re-emitted — a project that still has it in its old env files gets it moved there now (§3a). Don't
-  ask the operator to re-enter tracker/org values they gave at onboarding.
+  ask the operator to re-enter tracker/org values they gave at onboarding. Then §3a `default-env.mjs --env <new>`.
 - `scaffold-secrets` adds ONLY the `_<ENV>`-suffixed per-env app passwords
   (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Passwords in vc-secrets**
   (`node "$VC_RUN" --where` lists `passwordEnvs`)? `scaffold-secrets` then skips the vc-secrets role's
@@ -1290,9 +1294,8 @@ report — no writes, no scans, no questions of its own:
 - **`removed`** — obsolete fields no longer in the schema (pruned on `--write`). **Open
   maps** (`tracker.azure.roleStates`/`stateMap`/`workItemTypes`) and **arrays** (`repos.*`)
   are kept wholesale — their contents are data, not schema.
-- **`pending`** — fields whose value is the OPERATOR's decision (a privacy / behaviour
-  opt-in, e.g. `selfDiagnostics`). Each carries its own `question` + `options`; **never**
-  auto-filled.
+- **`pending`** — the OPERATOR's decisions (`selfDiagnostics`; host-governed:
+  `governance.stand.envs`). Each has its `question` + `options` (+ `set`); never auto-filled.
 - **`rescan`** — fields that should be re-derived from a live scan (repos / tracker).
 
 `status:"no-profile"` ⇒ never onboarded — run the **full interview** instead, don't reconcile.
@@ -1315,7 +1318,7 @@ operator to update vc-init; nothing was changed.
   source: "derive-context" }`. Run `TEST_ENV=<env> node "$VC_RUN" onboard derive-context --tracker
   <kind> --client-vcs <host>` and pass its `auth.<axis>` back as `--set auth.<axis>=<pat|gh-cli|az-login|oauth>`
   (derive's `none` ⇒ ask the operator which they want, as in §2d).
-- Then apply everything in one write, one `--set path=value` per resolved decision:
+- Then apply it all in one write, one `--set` per decision; show `warnings` verbatim:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --write \
@@ -1403,7 +1406,7 @@ invisible reason:
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/normalize-env.mjs" --env <env>
 ```
 
-Then refresh the browser login secrets (§7 — a changed password or env leaves them stale), the agent
+Then §3a `default-env.mjs` (an older project has no `.env.test-env`; `ask` is asked here too). Then refresh the browser login secrets (§7 — a changed password or env leaves them stale), the agent
 rules (§7 — a plugin upgrade may bring a new or changed one) and the readiness table (§8), so a stale token / URL / login surfaces too:
 
 ```bash
@@ -1464,9 +1467,9 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 
 | Script | Role |
 |--------|------|
-| `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
-| `scaffold-secrets.mjs` | add the commented test-user password placeholders to `.env.local` (what/why/where per value); reports which tokens this topology stores in vc-secrets and warns on a plaintext token still in `.env.local`; idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
-| `lib/gitignore.mjs` | the ONE list of what onboarding generates that must never be committed, plus the append-only writer. Shared because FOUR scripts create such files at four different steps and each must protect its own **before** creating it — while only `gen-mcp` (§7) wrote the block, `.env.local` (§3b) sat unignored through the operator's fill-in pause and through any run that aborted before §7. Idempotent, so four calls cost one read and produce one block |
+| `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent; gitignores it first (VCST-5774). |
+| `scaffold-secrets.mjs` | add the commented test-user password placeholders to `.env.local` (what/why/where per value); reports which tokens this topology stores in vc-secrets and warns on a plaintext token still in `.env.local`; idempotent; gitignores it first (VCST-5774). |
+| `lib/gitignore.mjs` | the ONE list of what onboarding generates that must never be committed, plus the append-only writer; every script that creates such a file calls it **before** creating it (VCST-5774 — why: its header). Idempotent |
 | `write-secrets-decl.mjs` | write `.claude/vc-secrets.local.json` — one `local` secret per PAT axis, the `vc-init-<group>` bridge tasks, the GitHub MCP server, a stable `projectId`. Owns only those keys, writes nothing when unchanged (so trust is re-asked only when the PAT axes change). `--from-profile` reads `auth.*`. `--password-envs` / `--password-names`: per env the password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers (`lib/passwords.mjs`, `lib/playwright-lanes.mjs`) <!-- doclint:may-not-exist --> |
 | `add-user.mjs` | **`--add-user`**: `--list` — every `.env.<env>`, its password mode and its users; `--env --key --role --login` — writes `<KEY>_LOGIN` into `.env.<env>` and declares `<KEY>_PASSWORD` in that env's vc-secrets declaration or adds its `.env.local` placeholder; prints the operator's `steps`. Never sees a password |
 | `check-secrets.mjs` | `--preflight` (§0d): is vc-secrets installed and runnable · `--steps` (§3d): the token block — what/why/where + the exact `set <name>` command per token (and each declared password's) · default (§3e): the TOKEN GATE — reads `vc-secrets doctor`'s lines and exits 1 with the `trust` / `set` commands still to run. Never sees a value |
@@ -1475,7 +1478,8 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `profile-set.mjs` | the ONE path another plugin writes the profile through: `/qa-bug` (`--set tracker.fieldDefaults.*` / `fieldMap.*`), `/perf-init` (`--merge perf=<json>`). Allowlisted paths only; exit 2 = no profile |
 | `../../scripts/install-bridge.mjs` | copy `vc-run-shim.mjs` to `~/.claude/plugins/data/vc-init-ai-tools/vc-run.mjs` (§0d) and print `VC_RUN=<path>` |
 | `../../bridge/run.mjs` | the `$VC_RUN` dispatcher: allowlist (`bridge/allowlist.mjs`) → `vc-secrets task vc-init-<group>` for a PAT axis, else the tool directly; inner side builds an allowlisted env, pins git to `bridge/git-credential.mjs`, redacts output (`bridge/redact.mjs`) |
-| `normalize-env.mjs` | **run on the operator's "done" (§3e) and in `--check` Step C** — move any tracker / code-host key left in a `.env.<env>` into `.env.local` (`lib/project-env.mjs`; a key the env files disagree on is reported, never moved), then normalize the hand-filled `.env.<env>` and the project keys in `.env.local` IN PLACE (quotes / padding / **all** trailing slashes; a pasted `dev.azure.com/<org>` → the bare slug) and validate it: exit 1 on an unfilled placeholder, a URL with no `http(s)://`, or a path-shaped `ADO_ORG`/`ADO_PROJECT`; WARN on a path component in `FRONT_URL`/`BACK_URL`. Prints every fix. Rules come from `scaffold-env.mjs` `CATALOG` (`type` + no-`def`), never a private copy |
+| `normalize-env.mjs` | **run on "done" (§3e) and in `--check` Step C** — moves a tracker / code-host key left in a `.env.<env>` to `.env.local` (one the files disagree on is reported, never moved), normalizes `.env.<env>` and the project keys IN PLACE (quotes, padding, trailing slashes, a pasted `dev.azure.com/<org>` → the slug) and validates: exit 1 on an unfilled placeholder, a URL without `http(s)://`, a path-shaped `ADO_ORG`/`ADO_PROJECT`; WARN on a path in `FRONT_URL`/`BACK_URL`. Rules: `scaffold-env.mjs` `CATALOG` |
+| `default-env.mjs` | `.env.test-env` once every env exists (§3a): `written` / `kept` / `ask` / `skipped`; `--choose <env>`; host: `testStands` |
 | `write-env.mjs` | (non-interactive helper) write `.env.<env>` / `.env.local` from a JSON answer object on STDIN when values ARE known programmatically — a `scope: "project"` key in `envVars` lands in `.env.local`; idempotent |
 | `lib/project-env.mjs` | where the project-level keys live (`.env.local`) and the one-time move out of every `.env.<env>` git does not track, run by scaffold-env + normalize-env; the shared `.env.local` header |
 | `discover-repos.mjs` | ALWAYS-run scan: Platform API modules → client/platform split, client-host scan for the storefront repo, and **derives projectType + clientOrg**; bakes per-repo `contribution`/`integrationBranch`/`toolchain`/`localVerify`; emits `{ projectType, clientOrg, client, platform }` |

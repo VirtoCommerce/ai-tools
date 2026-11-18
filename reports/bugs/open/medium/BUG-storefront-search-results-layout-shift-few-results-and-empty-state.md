@@ -70,7 +70,7 @@ material amount of its own. The defect doesn't fail VCST-2945.
 **Related, not duplicates:**
 - `reports/bugs/open/medium/BUG-Search-Bar-Scope-Chip-Layout-Shift.md` (VCST-5817) — a horizontal shift of the
   search input caused by the scope chip. A different element and mechanism.
-- `reports/bugs/open/critical-high/BUG-layout-cls-images-missing-dimensions.md` — home/catalog CLS from a
+- `reports/bugs/open/medium/BUG-Home-CLS-Matcher-Loader-Footer-Jump-VCST-6710.md` — home/catalog CLS from a
   late CMS `.features-block`. Also displaces the footer, but has a different cause.
 - `reports/bugs/rejected/BUG-account-missions-cls-0219-from-shared-chrome.md` — header/sidebar chrome on
   `/account/missions`.

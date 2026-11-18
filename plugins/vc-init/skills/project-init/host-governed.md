@@ -65,8 +65,33 @@ Everything with a fixed set of answers goes into ONE `AskUserQuestion` call (at 
 the ones that apply): the host is this project's governance · the host's setup has run here (only when
 `confirmed: false`) · which server serves each role in `state.choices` (telemetry included — which one is
 production is never guessed) · only when the code probe (3a) READ the repos: may the agent open PRs on
-the client's repos (the person's host role grants writing) — yes ⇒ `write`, no ⇒ `read`. URLs and
-accounts follow in step 4, also as `AskUserQuestion` rounds.
+the client's repos (the person's host role grants writing) — yes ⇒ `write`, no ⇒ `read` · **where the
+agent may create its own test data** (always asked; below). URLs and accounts follow in step 4, also as
+`AskUserQuestion` rounds. More than four questions ⇒ the rest go into one more call, never into chat.
+
+**The test-data question** — multi-select, header `test data`: *"On which environments may the agent create
+its own test data (orders, users, carts — never someone else's, never a direct database write)? Not ticked =
+read-only."* Options: detect-governance's `standQuestion.options` as given — always 2–4: up to three
+environments (the host's; for a host with no password slots, this project's own; never a production-looking
+one), then **"Nowhere — read-only"**, the Recommended one and the default; with no environment known, "Let me
+type the environment names" instead. Name `standQuestion.more` (what did not fit) in the question text, to type.
+The host's rules decide what the operator may tick — the question records their answer, it does not grant
+anything. The ticked values go, comma-joined, to ONE `gen-profile --gov-stand-envs <env>,…|none` →
+`governance.stand` `{ writable: <any ticked>, envs: [...] }`; "Nowhere" ticked together with an env is
+refused — ask again. **This answer is the only one: `/vc-test:init` is not needed for it.** It is declared to
+vc-test per env (`lib/test-stands.mjs`): `test.environments.<env> = { writable: <its host env is listed>,
+backUrl: <the env's BACK_URL, read as vc-test reads it, without a ticket's own folder> }`, other `test` keys untouched. An env not listed is
+declared read-only, so vc-test writes only where the operator said yes. `default-env.mjs` declares every env
+on disk each time it runs — after step 4, in `--add-env` and in `--check` — and shows it as `testStands`
+lines; a new answer (`--gov-stand-envs`, a `--check` answer) re-applies to every env, otherwise an env's
+existing `writable` (a later `/vc-test:init` choice) is kept while its stand stays the same; when the env's
+BACK_URL changes it follows the answer again and a line names the move (`old → new`) — a choice never follows
+an env to another stand. A `.env.<name>` with no BACK_URL that nobody allowed (a front's `.env.production`) is
+not declared.
+An env whose URL the host blocks in step 4 is dropped from the list again (`--merge --gov-stand-envs`).
+A profile written before vc-init 0.6.0 (`stand: { writable: false }` with no `envs`) was never asked:
+`--check` reports `governance.stand.envs` as `pending` with this question and its options, and the answer goes
+back as `reconcile-profile.mjs --write --set governance.stand.envs=<env>,…|none` — no full re-run.
 
 Never invent a URL; an origin the host blocks (its browser config's `blockedOrigins`) is refused.
 
@@ -76,10 +101,12 @@ plus the tracker / code host facts:
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" <state.genProfile, answers applied> \
   --tracker <facts.tracker> --azure-org <facts.adoOrg> --azure-project <facts.adoProject> \
-  --client-vcs <facts.clientVcs> --gov-envs <env>=<host env>,… --self-diagnostics false --runtime-mode plugin
+  --client-vcs <facts.clientVcs> --gov-envs <env>=<host env>,… --gov-stand-envs <ticked>|none \
+  --self-diagnostics false --runtime-mode plugin
 ```
 
-(`--gov-envs` only for an env whose name differs from the host's.) Then §3a scaffold-env for each env.
+(`--gov-envs` only for an env whose name differs from the host's.) Then §3a scaffold-env `--no-default` for
+each env — the default env is chosen once all of them exist (step 4).
 
 ### 3a. Code access — probe it, never ask it; then scan the repos
 
@@ -145,13 +172,24 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/add-user.mjs" --env <env> --slot <
 Admins take their environment's slots first. Collect every add-user report's `steps` for the hand-off,
 then §3e normalize-env (it detects `STORE_ID`).
 
+Then the **default environment** — §3a `default-env.mjs`, the same step as the normal flow. With one env it
+writes `.env.test-env` by itself; with several it answers `ask`, and you ask ONE `AskUserQuestion` *"Which
+environment do commands use by default?"* — its `options`, `recommended` first and marked Recommended (an
+env the host keeps test-user slots for, never a production-looking one) — then run it again with
+`--choose <answer>`. A lone production-looking env answers `ask` with `decline: true`: offer it AND *"No
+default environment"*, which runs `--decline`. An answer naming no env comes back as `ask` with `error`: show
+it and ask again. The full contract is the script's header (§3a). The host's browser servers do not read
+`.env.test-env`, so its lines say nothing about restarting for passwords.
+
 ### 5. The hand-off — what was set up, then exactly how to enter the passwords
 
-One message, two parts, after §8 verify-access:
+One message, after §8 verify-access:
 
 1. **What was set up** — a short table `File | Field | Value`: the URLs, `STORE_ID` (detected), each
    account (`USER1` — admin — <login>), the ADO coordinates. Nothing for the operator to do there.
-2. **Enter the passwords — numbered steps**, written for someone doing it for the first time:
+2. **Test data** — one line: the envs where the agent may create its own test data (default-env's
+   `testStands` lines), or "nowhere — read-only". No `/vc-test:init` is needed for it.
+3. **Enter the passwords — numbered steps**, written for someone doing it for the first time:
    1. Open a terminal (PowerShell) — a separate window, not this chat.
    2. For each account, run its command (from `steps`), one at a time. Put the account's login above it
       as a comment so the operator knows whose password is asked.
@@ -169,17 +207,18 @@ One message, two parts, after §8 verify-access:
 | §0e tooling | `gh`/`az` are not installed for us; Node + git only |
 | §1 deps | `install-deps` as usual; **no `playwright install`** — the browser servers are the host's |
 | §2 interview | replaced by steps 2–4 above: facts shown, then `AskUserQuestion` rounds (choices, URLs, accounts). §2b and §2d are **not asked** |
-| §3a `.env.<env>` | URLs only — no built-in `ADMIN` / `USER_EMAIL`: test users take the host's slots. The file is gitignored |
+| §3a `.env.<env>` | URLs only — no built-in `ADMIN` / `USER_EMAIL`: test users take the host's slots. The file is gitignored. `.env.test-env` by `default-env.mjs` after step 4 (one question when there are several envs); it also declares each env to vc-test from the test-data answer (`testStands` — relay them, a NOT-declared line included) |
 | §3b `.env.local` | **no password placeholder** — the tracker / code-host connection only |
 | §3c `write-secrets-decl`, §3d token pause, §3e token gate | **skipped** |
 | §3e normalize-env | as usual — it requests the storefront URL once to detect `STORE_ID` |
 | §4 `discover-repos` | **through the host**: step 3a — a listing read with the host's server, `--listing-json`; without one it stands down. VirtoCommerce modules are not listed (the modules API needs an admin sign-in, which is the host's) |
 | §4b `discover-tracker`, §5 `derive-context` | **skipped** — read through the host's MCP servers at run time; each script stands down by itself |
-| §6 `gen-profile` | written in step 3 with the facts and answers; recorded as a client project that files nothing upstream |
+| §6 `gen-profile` | written in step 3 with the facts and answers; recorded as a client project that files nothing upstream; with no tracker scan the ticket key format follows the tracker (Azure Boards `numeric`, Jira `prefixed`); `governance.stand` from the test-data question (`--gov-stand-envs`), read-only until it is answered |
 | §7 `sync-browser-secrets`, `gen-mcp`, `write-agent-rules` | **skipped** — servers, browser lanes and their rules are the host's |
 | §8 `verify-access` | the **host-mode readiness table**: host plugin, each role's server, the host's setup ran here, the profile matches the servers on, each env's test users and their slots (a filled slot is NOT checked — no secret is resolved), the URLs |
 | §9 `next-steps` | as usual; tracker asks name the host's tracker server; no `/qa-fix` without a code host |
 | `ensure-session`, `--check` Step M | **skipped** |
+| `--check` Step A/B | as usual, plus the test-data question as a `pending` decision when it was never asked (a pre-0.6.0 profile); answered with `--set governance.stand.envs=…` |
 
 ## Environments and test users later
 
@@ -187,6 +226,8 @@ One message, two parts, after §8 verify-access:
 name needs `gen-profile --gov-envs <env>=<host env>` (adds, never drops). A slot is one password, so it
 belongs to one user across every `.env.<env>` mapped to the same host environment.
 
+- **A new env** (`--add-env`) is declared to vc-test by its `default-env.mjs` step (map a renamed one with
+  `--gov-envs` first); `gen-profile --merge --gov-stand-envs <envs>|none` changes the answer for every env.
 - **`websiteAuth: "host-secrets"`** — add a user any time with `/project-init --add-user`: the free slots
   are offered, the login and a note go to `.env.<env>`, and the operator stores the password with the
   host's tool.

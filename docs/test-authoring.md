@@ -154,24 +154,17 @@ Validate: `npm run suites:lint`. The schema is in `config/test-suites.schema.jso
 
 ## Section 6 — Running Your Suites
 
-Once registered:
+Once registered, run them interactively from Claude Code:
 
-```bash
-# Run a single customer suite
-npx tsx ci/run-regression.ts -- 100
-
-# Run all customer-authored suites (via a tag selector — add a selection rule first):
-# In config/test-suites.json under "selections":
-#   "customer-only": { "where": { "tag": "customer-authored" } }
-# Then:
-npm run ci:regression -- customer-only
-
-# Or mix VC reference suites with yours
-npm run ci:critical          # VC-shipped P0 selection
-TEST_ENV=qa SUITE_SELECTION=100,101,110 npm run ci:regression   # comma-separated IDs
+```text
+/qa-regression 100            # one customer suite
+/qa-regression 100,101,110    # comma-separated IDs
+/qa-regression critical       # a manifest selection (add your own under "selections", e.g. a tag rule)
 ```
 
-Your suites run with the same multi-env filters as VC's:
+`npm run regression:plan -- <selection>` prints the suites a selection resolves to without running anything.
+
+Your suites go through the same multi-env filters as VC's:
 - `MODULES_ENABLED=giftwrap-myco` to enable suites tagged `requiresModules: ["giftwrap-myco"]`
 - `STOREFRONT_PROFILE=b2c` to skip B2B-only customer suites
 - `ENV_RISK=production` to skip your write-tagged customer suites (unless you pass `--allow-admin-writes-on-prod`)
@@ -236,52 +229,7 @@ Quick patterns to start from. None of these ship — they're suggestions for wha
 
 ## Section 11 — Running in CI
 
-The plugin ships a customer CI template at `.github/workflows/customer-template.yml`.
-
-**To use it in YOUR repo:**
-
-1. Copy the template file into your own repo's `.github/workflows/regression.yml`
-2. Set the secrets it references in your repo's Settings → Secrets and variables → Actions:
-   - **Required:** `ANTHROPIC_API_KEY`, `VC_FRONT_URL`, `VC_BACK_URL`, `VC_ADMIN_USER`, `VC_ADMIN_PASSWORD`, `VC_STORE_ID`, `VC_TEST_USER_EMAIL`, `VC_TEST_USER_PASSWORD`
-   - **Optional:** B2B user, payment-processor cards, Teams webhook (see template header for the full list)
-3. Run the workflow manually from your Actions tab. The `workflow_dispatch` inputs let you pick suite selection, env risk, modules, etc. for each run.
-
-**What the template does for you:**
-
-| Step | Why |
-|------|-----|
-| Checks out the `ai-tools` repo as a subdir | You don't copy the plugin code into your repo — you pull the released version |
-| Pins to `main` by default | **Change this to a release tag** (`ref: v1.0.0`) once we publish a v1.x release for stability |
-| Runs `npm run verify:multi-env` before any LLM spend | Confirms the filter pipeline works against this version of the manifest BEFORE you burn tokens |
-| Runs `npm run env:check` | Catches missing-secret problems before the regression starts |
-| Reads `summary.json` and posts a GitHub Step Summary | Pass rate + cost visible without digging into artifacts |
-| Uploads `test-results/` + `reports/regression/` + `reports/bugs/` as a 30-day artifact | Evidence retained per run |
-
-**Multi-env safety:**
-
-- `env_risk: production` (the default-blocking tier) BLOCKS all 45 write-heavy suites unless you also pass `allow_admin_writes_on_prod: true`
-- `modules_enabled` lets you say "only test catalog + orders" if your deployment doesn't have marketing/loyalty/etc.
-- `storefront_profile` lets B2C-only customers skip B2B suites entirely
-- `payment_processors_enabled` lets you skip payment suites for processors you don't use
-
-**Schedule a daily smoke:**
-
-Uncomment the `schedule` block in the template and edit the cron:
-
-```yaml
-schedule:
-  - cron: '0 6 * * 1-5'  # 6 AM UTC Mon-Fri
-```
-
-The workflow will run with the default inputs (smoke selection, ENV_RISK=test).
-
-**Cost estimate per smoke run:**
-
-- Smoke (≈26 cases): **$3-5**, ~18 min wall clock
-- Critical (≈P0 suites): **$8-12**, ~45 min wall clock
-- Full (all applicable): **$60-80**, 4-6 hours wall clock
-
-These are LLM token costs only — GitHub Actions minutes are separate (and free for public repos / cheap for private).
+No headless runner or CI template ships any more: the Agent-SDK runner and `customer-template.yml` were removed by VCST-6637 because they almost never ran ([`decisions/regression-history.md`](decisions/regression-history.md) §Headless pipelines removed). Run regressions with `/qa-regression` (Section 6). `npm run verify:multi-env` still checks the multi-env filters offline and is safe to run in your own CI.
 
 ## References
 
@@ -291,6 +239,4 @@ These are LLM token costs only — GitHub Actions minutes are separate (and free
 - Enriched CSV template + 15-column spec: [`../skills/qa-test-cases-generator/test-case-template.md`](../.claude/skills/qa-test-cases-generator/test-case-template.md)
 - Tag reference for Steps/Assertions: [`../knowledge/execution/test-runner-tags.md`](../.claude/knowledge/execution/test-runner-tags.md)
 - Stability contract: [`./versioning.md`](versioning.md)
-- Marketing one-pager (high-level positioning): [`./marketing-onepager.md`](marketing-onepager.md)
-- Customer CI template: [`../.github/workflows/customer-template.yml`](../.github/workflows/customer-template.yml)
-- Multi-env filter verification: [`../reports/multi-env-verification/`](../reports/multi-env-verification/) (generated by `npm run verify:multi-env:report`)
+- Multi-env filter verification: `reports/multi-env-verification/` (generated by `npm run verify:multi-env:report`; absent until you run it)

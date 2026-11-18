@@ -816,6 +816,39 @@ export function assertImpOperatorRolePermissions(permissions = IMP_OPERATOR_ROLE
   if (extra.length) throw new Error(`impersonation operator (IMP-038) role must hold only ${IMP_OPERATOR_REQUIRED_PERMISSIONS.join(', ')} — extra: ${extra.join(', ')}`);
 }
 
+// ============================================================================
+// Task Management read-only fixture (suite 085 TASK-016, persona RESTRICTED_USER)
+// ============================================================================
+// A back-office (Manager) account that may OPEN the Tasks app and READ tasks but holds no task write
+// permission, so the create gate is decidable: the Add/Create control must be absent or disabled and
+// POST /api/task-management must answer 403 for this token. Permission names were read live from
+// GET /api/platform/security/permissions (TaskManagement group: task:access, task:read, task:create,
+// task:update, task:delete, task:finish, task:attachment:management).
+export const TASK_READONLY_REQUIRED_PERMISSIONS = ['task:access', 'task:read'];
+export const TASK_READONLY_EXCLUDED_PERMISSIONS = ['task:create', 'task:update', 'task:delete', 'task:finish', 'task:attachment:management'];
+export const TASK_READONLY_EXCLUDED_PERMISSION = 'task:create';
+export const TASK_READONLY_ROLE = {
+  role_id: 'AGENT-TEST-Task-ReadOnly',
+  role_name: 'AGENT-TEST-Task-ReadOnly',
+  description: 'AGENT-TEST back-office role for suite 085 TASK-016: task:access + task:read only, EXCLUDES task:create (and every other task write) so the Tasks app opens but creating a task is refused. isAdministrator=false. Safe to delete.',
+  permissions: [...TASK_READONLY_REQUIRED_PERMISSIONS],
+};
+export const TASK_READONLY_ACCOUNT = {
+  aliasName: 'RESTRICTED_USER',
+  email: 'AGENT-TEST-task-readonly@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false,
+  passwordVar: 'RESTRICTED_USER_PASSWORD',
+  passwordFallback: 'Password1!',
+};
+export function assertTaskReadOnlyRolePermissions(permissions = TASK_READONLY_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: TASK_READONLY_REQUIRED_PERMISSIONS,
+    excluded: TASK_READONLY_EXCLUDED_PERMISSIONS,
+    label: 'task management read-only (085 TASK-016)',
+  });
+}
+
 const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
 /** Scan text for a runtime platform GUID that must never be committed to a spec/fixture. */
 export function findGuidLeaks(text) {

@@ -56,6 +56,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, loadCsv, idsParam,
 } from '../../lib/seed-common.mjs';
 import { isSeededDocument } from './sales-rep-docs-specs.mjs';
+import { isLayoutPreference } from './sales-rep-layout-specs.mjs';
 import { DEMO_REPS, repEmailEnvKeys } from './sales-rep-demo-specs.mjs';
 import { REP_ONLY_ORG } from './rep-only-org-specs.mjs';
 
@@ -165,11 +166,14 @@ async function pageSearch(path, body = {}, { take = 50, cap = 2000 } = {}) {
 const allReps = () => pageSearch('/api/sales-rep/search');
 const allDocuments = () => pageSearch('/api/sales-rep/documents/search');
 
-/** A rep's persisted SalesRepLayout.* rows. Keyed on the ApplicationUser, so it does NOT cascade. */
+/**
+ * A rep's persisted layout rows — current `Layout.salesRep*` and legacy `SalesRepLayout.*` (the one
+ * matcher in sales-rep-layout-specs.mjs). Keyed on the ApplicationUser, so it does NOT cascade.
+ */
 async function layoutPrefs(userId) {
   if (!userId) return [];
   const res = await api('POST', '/api/customer-preferences/search', { userId, take: 100 }, { expectStatus: [200, 201, 404] });
-  return (res?.results || res?.items || []).filter((p) => String(p?.name || '').startsWith('SalesRepLayout'));
+  return (res?.results || res?.items || []).filter((p) => isLayoutPreference(p?.name));
 }
 
 /**

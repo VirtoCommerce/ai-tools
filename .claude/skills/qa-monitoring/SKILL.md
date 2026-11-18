@@ -7,8 +7,7 @@ argument-hint: "[frontend|backend|both] [--since=MIN] [--dry-run]"
 
 # /qa-monitoring — Online Bug Monitoring (methodology)
 
-Methodology + reference for the `/qa-monitoring` command and its headless twin
-`ci/run-monitor.ts`. The command file (`plugins/vc-fix/commands/qa-monitoring.md`, shipped by the vc-fix plugin) is the
+Methodology + reference for the `/qa-monitoring` command. The command file (`plugins/vc-fix/commands/qa-monitoring.md`, shipped by the vc-fix plugin) is the
 terminal entry; this skill holds the data flow, the KQL probe library, the triage
 taxonomy, and the dedup model. **Detect-and-report only**: the flow stops at a
 report + Teams alert and a human decides whether to `/qa-bug` or `/qa-fix`.
@@ -63,7 +62,7 @@ are always high severity), `debugging-signals.md` (benign-noise filter),
 `platform-patterns.md` (expected desync/cache behavior). When ambiguous, prefer
 NEEDS_REVIEW over REAL_BUG — a log line alone is not a defect.
 
-## Dedup model (`ci/lib/fingerprint-store.ts`)
+## Dedup model (`plugins/vc-fix/skills/qa-monitoring/fingerprint-store.ts`)
 - Fingerprint = md5(`env|layer|probe|normalized-signature`). The store is shared across
   envs (vcst, vcptcore, …); the `env` (= `TEST_ENV`) keeps each env's signatures separate
   inside the one file, so a vcst decision never masks the same signature in vcptcore.
@@ -71,8 +70,7 @@ NEEDS_REVIEW over REAL_BUG — a log line alone is not a defect.
   (`new|triaged|confirmed|noise|filed`).
 - SPIKING = `count ≥ max(baseline×factor, baseline+minDelta)` (factor/minDelta env-tunable).
 - `classify()` reads the *previous* baseline; `recordRun()` updates it — order matters.
-- The store is local working state (gitignored). In CI it is carried across scheduled
-  runs via `actions/cache` (see `.github/workflows/monitor.yml`).
+- The store is local working state (gitignored).
 
 ## Knobs (env)
 `MONITOR_LAYERS` (both|frontend|backend) · `MONITOR_SINCE_MIN` (35) · `MONITOR_MAX_SIGNALS`
@@ -80,7 +78,7 @@ NEEDS_REVIEW over REAL_BUG — a log line alone is not a defect.
 · `MODEL` · `DRY_RUN` (triage only — no repro/drafts).
 
 ## Cross-references
-- Command: `plugins/vc-fix/commands/qa-monitoring.md` · Twin: `ci/run-monitor.ts`
+- Command: `plugins/vc-fix/commands/qa-monitoring.md`
 - Bug handoff contract (`## Fix Routing`): `plugins/vc-fix/commands/qa-bug.md` Step 4 → `/qa-fix`
 - Reports policy + the `reports/monitoring/` category: `.claude/rules/reports.md`
 - Bug lifecycle after a confirmed draft: `/qa-bug` → `/qa-fix` → `/qa-verify-fix`

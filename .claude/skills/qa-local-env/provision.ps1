@@ -865,7 +865,10 @@ function New-FrontendNginxConf([string]$BackendUrl, [string]$StoreId, [string]$T
     $proxyTarget = if ($u.IsDefaultPort) { "$($u.Scheme)://$($u.Host)" } else { "$($u.Scheme)://$($u.Host):$($u.Port)" }
   }
   $sslLine = if ($isHttps) { "        proxy_ssl_server_name on;`n" } else { "" }
-  $proxied = @("/files", "/connect/token", "/graphql", "/revoke/token", "/api/files", "/cms-content")
+  # "^~ /modules/" serves module-federation storefront plugins (Passkeys, SalesRep, …) from the backend.
+  # The ^~ is load-bearing: without it the static `\.(json|…)$` regex below wins for mf-manifest.json and
+  # answers a local 404, so every module plugin silently fails to load (VCST-6600 verification, 2026-11-09).
+  $proxied = @("/files", "/connect/token", "/graphql", "/revoke/token", "/api/files", "/cms-content", "^~ /modules/")
   $locations = ""
   foreach ($loc in $proxied) {
     $locations += @"

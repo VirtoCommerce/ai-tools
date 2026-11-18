@@ -4,18 +4,18 @@
 [NAV] {{FRONT_URL}}/
 [WAIT] networkidle
 [REFLOW]
-[PROBE:CLS]","[CLS] <= 0.1","console errors and 4xx/5xx are captured automatically into the FAIL trace","Hero .slider-block images without width/height or aspect-ratio; webfont swap reflowing .vc-typography; product grid resolving late","none (context is destroyed after the case)","business-logic.md#bl-ui-001; replaces 048b LAYOUT-CLS-001","Automated"
+[PROBE:CLS]","[CLS] <= 0.1","console errors and 4xx/5xx are captured automatically into the FAIL trace","Hero .slider-block images without width/height or aspect-ratio; webfont swap reflowing .vc-typography; product grid resolving late","none (context is destroyed after the case)","business-logic.md#bl-ui-001; replaces 048b LAYOUT-CLS-001; fails on VCST-6710 (open, home footer jump under the Matcher loader)","Automated"
 "LAYOUT-CLS-002","CLS on catalog listing","CLS > Initial render","P2","BL-UI-001","ECL-1.2","Catalog has at least one indexed product.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
 [THROTTLE] fast3g
 [NAV] {{FRONT_URL}}/catalog
 [WAIT] .vc-product-card >= 4
 [WAIT] networkidle
 [REFLOW]
-[PROBE:CLS]","[CLS] <= 0.1","auto-captured","Product-card images resolving after grid layout; facet rail widening on load","none","business-logic.md#bl-ui-001; replaces 048b LAYOUT-CLS-002","Automated"
+[PROBE:CLS]","[CLS] <= 0.1","auto-captured","Product-card images resolving after grid layout; facet rail widening on load","none","business-logic.md#bl-ui-001; replaces 048b LAYOUT-CLS-002; fails on VCST-6712 (open, Sort by wraps when the scrollbar appears)","Automated"
 "LAYOUT-IMG-001","Home images reserve space before load (CLS root cause)","CLS > Reserved space","P1","BL-UI-001","ECL-1.2","Root-causes the CLS number: every image must carry width+height attrs, a CSS aspect-ratio, or an explicitly sized box.","{{FRONT_URL}}","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/
 [WAIT] networkidle
-[PROBE:IMGDIMS] img","[IMGDIMS] missingDims == 0","auto-captured","Hero slides and content-block images with aspect-ratio:auto and no width/height attributes","none","business-logic.md#bl-ui-001; root cause behind 048b LAYOUT-CLS-001/002/003 + VCCAROUSEL-001","Automated"
+[PROBE:IMGDIMS] img","[IMGDIMS] missingDims == 0","auto-captured","Hero slides and content-block images with aspect-ratio:auto and no width/height attributes","none","business-logic.md#bl-ui-001; root cause behind 048b LAYOUT-CLS-001/002/003 + VCCAROUSEL-001; fails on VCST-6709 (open, header logo has no reserved width; it is white-label configurable, so a sized slot also passes)","Automated"
 "LAYOUT-IMG-002","Catalog product-card images reserve space","CLS > Reserved space","P1","BL-UI-001","ECL-1.2","Catalog renders product cards.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/catalog
 [WAIT] .vc-product-card >= 4
@@ -231,16 +231,26 @@ Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL o
 [CONTENT] placeholders == 0
 [CONTENT] rawKeys == 0","auto-captured","A points price split across lines; NaN PTS; a raw key where the currency label belongs","none: currency and theme live in the case's own fresh browser context","Archetype:MONEY · Technique:PW · Purpose:VISUAL
 Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL on a planted mutant, price CSS that lets a price break inside the number (word-break: break-all on a 1ch price box), served through a local proxy that injects it into every HTML page, PASS through the same proxy without it. | Promoted: P5B-FINAL-LAYOUT-CNT (2026-10-27)",Automated
-"LAYOUT-CNT-006","Cart and its one-page checkout in Portuguese show no raw key, placeholder or mid-token wrap (pt, signed in, 375)","Content > Locale","P1",,"ECL-12.1","Signed in as USER, whose cart holds items. vcst runs one-page checkout: /cart carries the shipping and payment sections. The store currency (USD) is kept on purpose: a currency switch would be saved on the shared account.","{{FRONT_URL}}; USER","[AUTH] USER
+"LAYOUT-CNT-006","Cart and its one-page checkout in Portuguese show no raw key, placeholder or mid-token wrap (pt, signed in, 375)","Content > Locale","P1",,"ECL-12.1","Signed in as USER. The case puts its own line in the cart first (the first catalog product, discovered live, added from its page) because USER's cart can be emptied by another suite or run, and removes it in Cleanup. vcst runs one-page checkout: /cart carries the shipping and payment sections. The store currency (USD) is kept on purpose: a currency switch would be saved on the shared account.","{{FRONT_URL}}; USER","[AUTH] USER
 [VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 4
+[CLICK] .vc-product-card:not(:has([data-test-id^=variations-])) a[href]
+[WAIT] [data-test-id=quantity-stepper]
+[CLICK] [data-test-id=quantity-stepper] .vc-quantity-stepper__increment
+[WAIT] 2000ms
+[WAIT] networkidle
 [NAV] {{FRONT_URL}}/pt/cart
 [WAIT] [data-test-id=place-order-button]
 [WAIT] networkidle
-[PROBE:CONTENT] #main-content","[CONTENT] rawKeys == 0
+[PROBE:CONTENT] #main-content
+[CLICK] [data-test-id=clear-cart-button]
+[CLICK] [data-test-id=yes-button]
+[WAIT] networkidle","[CONTENT] rawKeys == 0
 [CONTENT] guids == 0
 [CONTENT] brokenImages == 0
 [CONTENT] placeholders == 0
-[CONTENT] midWrap == 0","auto-captured","A raw key in a line item, the order summary or a checkout section; a total drawn across two lines; NaN or undefined in a money field","none: currency and theme live in the case's own fresh browser context","Archetype:FALLBACK · Technique:PW · Purpose:VISUAL
+[CONTENT] midWrap == 0","auto-captured","A raw key in a line item, the order summary or a checkout section; a total drawn across two lines; NaN or undefined in a money field","The last Steps lines clear USER's cart (Clear cart, then Yes) and run after the probe, so they run whether the assertions pass or fail. They do NOT run when an earlier step errors (the runner has no cleanup-on-failure): in that case the case is BLOCKED and a line the case already added stays in USER's cart until the next case or run empties it. Currency and theme live in the case's own fresh browser context.","Archetype:FALLBACK · Technique:PW · Purpose:VISUAL
 Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL on a planted mutant, a three-segment i18n key (shared.catalog.products_count_label) appended to the page's main content, served through a local proxy that injects it into every HTML page, PASS through the same proxy without it. | Promoted: P5B-FINAL-LAYOUT-CNT (2026-10-27)",Automated
 "LAYOUT-CNT-007","Order history in German shows no raw key and no internal id in visible text (de, signed in, 1280)","Content > Locale","P2",,"ECL-12.1","Signed in as USER, who has orders. An order is shown by its number, never its GUID; a status by its label, never its key.","{{FRONT_URL}}; USER","[AUTH] USER
 [VIEWPORT] 1280x900
@@ -273,7 +283,7 @@ Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL o
 [WAIT] networkidle
 [STRESS:TEXT] x2 body
 [PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","A label, button or title that does not wrap and pushes the page wider than the viewport","none: currency and theme live in the case's own fresh browser context","Archetype:RENDER · Technique:PW · Purpose:VISUAL
-Fails on vcst 2026-10-27 on a real defect: the catalog's results count is white-space: nowrap with no ellipsis, so twice-as-long text widens the page to 353 px (reports/bugs/open/low/BUG-catalog-results-count-nowrap-overflows-on-long-text-VCST-6534.md, kb KB-06A3A50F). Stays Draft until that is fixed.","Draft"
+Fails on vcst 2026-10-27 on a real defect: the catalog's results count is white-space: nowrap with no ellipsis, so twice-as-long text widens the page to 353 px (reports/bugs/open/low/BUG-catalog-results-count-nowrap-overflows-on-long-text-VCST-6708.md, VCST-6708, kb KB-06A3A50F). Stays Draft until that is fixed.","Draft"
 "LAYOUT-STR-002","PDP with ×2 Portuguese text has no horizontal page scroll (pt, ×2, 375)","Overflow > Stress matrix","P1","BL-UI-004","ECL-1.6; ECL-12.1","[STRESS:TEXT] x2 repeats every visible text to twice its length after the page settles: a translation twice as long as English, the way de and pt run long. BL-UI-004: long content wraps, truncates with an ellipsis or scrolls inside its own container; the document never scrolls sideways (a data table that scrolls by itself is allowed). The PDP is reached by clicking the first catalog card, never by a composed URL: a product's slug is per language, and /de/ or /pt/ in front of the English slug is a 404 (seen 2026-10-27). The price guard ends the case BLOCKED when no priced PDP renders.","{{FRONT_URL}}; the first catalog card","[VIEWPORT] 375x812
 [NAV] {{FRONT_URL}}/pt/catalog
 [WAIT] networkidle
@@ -283,13 +293,23 @@ Fails on vcst 2026-10-27 on a real defect: the catalog's results count is white-
 [STRESS:TEXT] x2 body
 [PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","A label, button or title that does not wrap and pushes the page wider than the viewport","none: currency and theme live in the case's own fresh browser context","Archetype:RENDER · Technique:PW · Purpose:VISUAL
 Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL on a planted mutant, headings, links, buttons, labels and text set to white-space: nowrap, served through a local proxy that injects it into every HTML page, PASS through the same proxy without it. | Promoted: P5B-FINAL-LAYOUT-STR (2026-10-27)",Automated
-"LAYOUT-STR-003","Cart and checkout with ×2 German text have no horizontal page scroll (de, ×2, signed in, 768)","Overflow > Stress matrix","P1","BL-UI-004","ECL-1.6; ECL-12.1","[STRESS:TEXT] x2 repeats every visible text to twice its length after the page settles: a translation twice as long as English, the way de and pt run long. BL-UI-004: long content wraps, truncates with an ellipsis or scrolls inside its own container; the document never scrolls sideways (a data table that scrolls by itself is allowed).","{{FRONT_URL}}; USER","[AUTH] USER
+"LAYOUT-STR-003","Cart and checkout with ×2 German text have no horizontal page scroll (de, ×2, signed in, 768)","Overflow > Stress matrix","P1","BL-UI-004","ECL-1.6; ECL-12.1","[STRESS:TEXT] x2 repeats every visible text to twice its length after the page settles: a translation twice as long as English, the way de and pt run long. BL-UI-004: long content wraps, truncates with an ellipsis or scrolls inside its own container; the document never scrolls sideways (a data table that scrolls by itself is allowed). Signed in as USER. The case puts its own line in the cart first (the first catalog product that has no variations, picked live from /catalog and added with its quantity stepper) because USER's cart can be emptied by another suite or run, and removes it in Cleanup.","{{FRONT_URL}}; USER","[AUTH] USER
 [VIEWPORT] 768x1024
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 4
+[CLICK] .vc-product-card:not(:has([data-test-id^=variations-])) a[href]
+[WAIT] [data-test-id=quantity-stepper]
+[CLICK] [data-test-id=quantity-stepper] .vc-quantity-stepper__increment
+[WAIT] 2000ms
+[WAIT] networkidle
 [NAV] {{FRONT_URL}}/de/cart
 [WAIT] networkidle
 [WAIT] [data-test-id=place-order-button]
 [STRESS:TEXT] x2 body
-[PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","A label, button or title that does not wrap and pushes the page wider than the viewport","none: currency and theme live in the case's own fresh browser context","Archetype:RENDER · Technique:PW · Purpose:VISUAL
+[PROBE:OVERFLOW]
+[CLICK] [data-test-id=clear-cart-button]
+[CLICK] [data-test-id=yes-button]
+[WAIT] networkidle","[OVERFLOW] documentScrolls == false","auto-captured","A label, button or title that does not wrap and pushes the page wider than the viewport","The last Steps lines clear USER's cart (Clear cart, then Yes) and run after the probe, so they run whether the assertions pass or fail. They do NOT run when an earlier step errors (the runner has no cleanup-on-failure): in that case the case is BLOCKED and a line the case already added stays in USER's cart until the next case or run empties it. Currency and theme live in the case's own fresh browser context.","Archetype:RENDER · Technique:PW · Purpose:VISUAL
 Proof (cases-that-catch-bugs.md §6), vcst 2026-10-27: PASS on the stand; FAIL on a planted mutant, headings, links, buttons, labels and text set to white-space: nowrap, served through a local proxy that injects it into every HTML page, PASS through the same proxy without it. | Promoted: P5B-FINAL-LAYOUT-STR (2026-10-27)",Automated
 "LAYOUT-STR-004","Home header and menu with ×2 Portuguese text have no horizontal page scroll (pt, ×2, 1280)","Overflow > Stress matrix","P2","BL-UI-004","ECL-1.6; ECL-12.1","[STRESS:TEXT] x2 repeats every visible text to twice its length after the page settles: a translation twice as long as English, the way de and pt run long. BL-UI-004: long content wraps, truncates with an ellipsis or scrolls inside its own container; the document never scrolls sideways (a data table that scrolls by itself is allowed).","{{FRONT_URL}}","[VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/pt/
