@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { git, gitShow } from "./git.mjs";
 
 const SKILL_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -38,15 +39,27 @@ export function matchQuestions(questions, f) {
   return questions.filter((q) => q.always || lines.some((l) => q.re.test(l))).map((q) => q.id);
 }
 
-export function pathScopedRules() {
+// The path-scoped rule files and their globs, as they are at the merge-base when one is given: a change
+// that deletes a rule file or narrows its globs must not drop it from its own review. Without a
+// merge-base (tests, a fresh repository) the working tree.
+export function pathScopedRules(mergeBase = null) {
   const dir = ".claude/rules";
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((n) => n.endsWith(".md"))
-    .map((n) => {
-      const text = readFileSync(path.join(dir, n), "utf8");
-      const fm = text.match(/^---\n([\s\S]*?)\n---/);
-      const globs = fm ? [...fm[1].matchAll(/^\s*-\s*["']?([^"'\n]+)["']?\s*$/gm)].map((m) => m[1]) : [];
-      return { file: path.join(dir, n), globs: globs.length ? globs : ["**"] };
-    });
+  const list = mergeBase ? listAt(mergeBase, dir) : existsSync(dir) ? readdirSync(dir).map((n) => path.posix.join(dir, n)) : [];
+  return list
+    .filter((p) => p.endsWith(".md"))
+    .map((p) => ruleGlobs(p, mergeBase ? gitShow(`${mergeBase}:${p}`) : readFileSync(p, "utf8")));
+}
+
+export function ruleGlobs(file, text) {
+  const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const globs = fm ? [...fm[1].matchAll(/^\s*-\s*["']?([^"'\n]+)["']?\s*$/gm)].map((m) => m[1]) : [];
+  return { file, globs: globs.length ? globs : ["**"] };
+}
+
+function listAt(rev, dir) {
+  try {
+    return git(["ls-tree", "--name-only", `${rev}:${dir}`]).split("\n").filter(Boolean).map((n) => path.posix.join(dir, n));
+  } catch {
+    return [];
+  }
 }

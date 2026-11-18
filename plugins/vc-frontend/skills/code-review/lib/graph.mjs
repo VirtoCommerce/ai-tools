@@ -7,7 +7,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { escapeRe } from "./globs.mjs";
 import { gitGrep, readHead } from "./git.mjs";
-import { BARREL, CRITICAL_ZONES, FACADE_ENTRY, HUB, PUBLIC_BARREL, TEST_LIKE, zoneOf } from "./zones.mjs";
+import { BARREL, CRITICAL_REACH_DEPTH, CRITICAL_REACH_MAX_CONSUMERS, CRITICAL_ZONES, FACADE_ENTRY, HUB, PUBLIC_BARREL, TEST_LIKE, zoneOf } from "./zones.mjs";
 
 export function moduleGraph(ctx) {
   if (!existsSync(".dependency-cruiser.cjs") && !existsSync(".dependency-cruiser.js")) return null;
@@ -93,25 +93,32 @@ export function directConsumers(g, file) {
 
 // A file outside the critical zones that a critical flow still renders or calls — the address form
 // inside checkout's shipping step. Walks importers upward and stops at the app shell (router, bootstrap,
-// module registration), which imports everything and would make every file "critical".
+// module registration), which imports everything and would make every file "critical". It goes
+// CRITICAL_REACH_DEPTH importers up, and never from or through a widely used file: a constant that
+// checkout imports among forty others is not checkout code.
 export function criticalReach(g, file) {
   const own = zoneOf(file);
   if (own && CRITICAL_ZONES.includes(own.id)) return null;
+  const wide = (m) => consumersThroughBarrels(g, m).consumers.length > CRITICAL_REACH_MAX_CONSUMERS;
+  if (wide(file)) return null;
   const parent = new Map([[file, null]]);
+  const depth = new Map([[file, 0]]);
   const queue = [file];
   while (queue.length) {
     const m = queue.shift();
+    if (depth.get(m) >= CRITICAL_REACH_DEPTH) continue;
     for (const c of consumersThroughBarrels(g, m).consumers) {
       if (parent.has(c) || TEST_LIKE.test(c) || HUB.test(c)) continue;
       parent.set(c, m);
+      depth.set(c, depth.get(m) + 1);
       const z = zoneOf(c);
       if (z && CRITICAL_ZONES.includes(z.id)) {
         const chain = [];
         for (let x = c; x; x = parent.get(x)) chain.push(x.replace(/^client-app\//, ""));
         chain.reverse();
-        return { zone: z.id, chain: chain.length > 5 ? [chain[0], "…", ...chain.slice(-3)] : chain };
+        return { zone: z.id, chain };
       }
-      queue.push(c);
+      if (!wide(c)) queue.push(c);
     }
   }
   return null;

@@ -1,6 +1,6 @@
 // A file's tier: its path zone is the floor; changed lines and fan-out can only raise it.
 
-import { readHead, rewrittenFix, versionOnly } from "./git.mjs";
+import { gitShow, metadataOnly, readHead, rewrittenFix } from "./git.mjs";
 import { criticalReach, directConsumers } from "./graph.mjs";
 import {
   CODE_FILE,
@@ -15,8 +15,9 @@ import {
   zoneOf,
 } from "./zones.mjs";
 
-export function resolveZone(f) {
-  return f.path === "package.json" && versionOnly(f) ? VERSION_ONLY_ZONE : zoneOf(f.path);
+export function resolveZone(f, mergeBase = null) {
+  const metadata = f.path === "package.json" && f.status === "M" && mergeBase && metadataOnly(gitShow(`${mergeBase}:package.json`), readHead("package.json"));
+  return metadata ? VERSION_ONLY_ZONE : zoneOf(f.path);
 }
 
 // ctx: { graph, facadeExports, mergeBase, commits }.
@@ -25,7 +26,7 @@ export function classifyFile(ctx, f) {
   f.consumers = [];
   f.external = [];
 
-  const zone = resolveZone(f);
+  const zone = resolveZone(f, ctx.mergeBase);
   f.zone = zone?.id ?? null;
   f.tier = zone ? zone.tier : 1;
   f.reasons.push(zone ? zone.reason : "no zone: tier from fan-out");
@@ -37,6 +38,7 @@ export function classifyFile(ctx, f) {
   if (f.tier === 0) return;
 
   if (CODE_FILE.test(f.path)) contentSignals(ctx, f);
+  else pathSignals(f);
 
   const { graph, facadeExports } = ctx;
   if (!graph || !CODE_FILE.test(f.path)) return;
@@ -71,6 +73,21 @@ export function classifyFile(ctx, f) {
   }
 }
 
+// Signals in changed lines. A signal bound to paths names the flow more precisely than the file's wide
+// zone (a guard in the router is auth, not app shell), so it also takes over the zone it raises.
+function pathSignals(f) {
+  const changed = [...f.addedText, ...f.deletedText];
+  for (const s of CONTENT_SIGNALS) {
+    if (s.paths ? !s.paths.test(f.path) : !CODE_FILE.test(f.path)) continue;
+    if (!changed.some((l) => s.re.test(l))) continue;
+    f.reasons.push(s.reason);
+    if (f.tier < s.tier) {
+      f.tier = s.tier;
+      if (s.zone && (s.paths || !f.zone)) f.zone = s.zone;
+    }
+  }
+}
+
 // What the changed lines of a code file say, whatever its path: injection surface, mechanisms that
 // broke before, a host layer importing a module, and lines a recent fix wrote.
 function contentSignals(ctx, f) {
@@ -79,15 +96,7 @@ function contentSignals(ctx, f) {
     f.tier = 3;
     f.reasons.push("adds HTML or script injection surface (v-html, innerHTML, sanitizer, eval)");
   }
-  const changed = [...f.addedText, ...f.deletedText];
-  for (const s of CONTENT_SIGNALS) {
-    if (!changed.some((l) => s.re.test(l))) continue;
-    f.reasons.push(s.reason);
-    if (f.tier < s.tier) {
-      f.tier = s.tier;
-      if (s.zone && !f.zone) f.zone = s.zone;
-    }
-  }
+  pathSignals(f);
   if (HOST_LAYER.test(f.path) && f.addedText.some((l) => MODULE_IMPORT.test(l))) {
     f.reasons.push("core, shared or page code imports a module directly");
     f.tier = Math.max(f.tier, 2);

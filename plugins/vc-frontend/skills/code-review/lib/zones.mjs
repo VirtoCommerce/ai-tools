@@ -42,12 +42,12 @@ export const ZONES = [
 
   { id: "ui-kit", tier: 3, globs: ["client-app/ui-kit/**"], reason: "ui-kit is public API: forks restyle it, plugins import it through core-api" },
   { id: "federation", tier: 3, globs: ["client-app/core-api/**", "client-app/core/federation/**", "vite.federation.*", "**/federation.mjs"], reason: "Module Federation facade or contract: every plugin depends on it" },
-  { id: "commerce", tier: 3, globs: ["client-app/shared/{cart,checkout,payment}/**", "client-app/pages/checkout/**", "client-app/pages/cart.vue", "client-app/pages/account/order-payment.vue", "client-app/core/api/graphql/{cart,payment}/**", "client-app/modules/*/components/payment-processing-*"], reason: "cart, checkout or payment: money and orders" },
+  { id: "commerce", tier: 3, globs: ["client-app/shared/{cart,checkout,payment}/**", "client-app/pages/checkout/**", "client-app/pages/cart.vue", "client-app/pages/account/order-payment.vue", "client-app/core/api/graphql/{cart,payment}/**", "client-app/core/api/graphql/common/fragments/{money,currency}.graphql", "client-app/modules/*/components/payment-processing-*"], reason: "cart, checkout or payment: money and orders" },
   { id: "add-to-cart", tier: 3, globs: ["**/quantity-control.vue", "**/add-to-cart*", "client-app/shared/catalog/components/configuration/**", "**/useConfigurableProduct*", "**/useProductVariationProperties*", "**/useQuantityValidationSchema*"], reason: "quantity, variation or configuration that decides what goes into the cart" },
   { id: "company", tier: 3, globs: ["client-app/shared/company/**", "client-app/core/api/graphql/organization/**"], reason: "B2B organization, members and roles" },
   { id: "auth", tier: 3, globs: ["client-app/core/plugins/{auth,permissions}.plugin.ts", "client-app/core/composables/useAuth*", "client-app/pages/auth/**", "client-app/shared/sign-in/**", "client-app/shared/account/composables/{useSignMeIn,useImpersonate}*", "client-app/pages/{sign-in,sign-up,reset-password,forgot-password,change-password,confirm-email,confirm-invitation}.vue"], reason: "authentication, impersonation and permissions" },
   { id: "context-switch", tier: 3, globs: ["client-app/shared/layout/components/{currency-selector,language-selector}/**", "client-app/shared/ship-to-location/**"], reason: "currency, language or ship-to switch: the cart and user state are rebuilt" },
-  { id: "build", tier: 3, globs: ["package.json", "yarn.lock", ".yarnrc.yml", ".npmrc", "vite.config.*", "**/tsconfig*.json"], reason: "build or dependencies: every page ships through it" },
+  { id: "build", tier: 3, globs: ["package.json", "yarn.lock", ".yarnrc.yml", ".npmrc", "vite.config.*", "vite.*.{ts,js,mjs,cjs}", "**/tsconfig*.json"], reason: "build or dependencies: every page ships through it" },
   { id: "ci", tier: 3, globs: [".github/**"], reason: "CI and repository automation" },
 
   { id: "core", tier: 2, globs: ["client-app/core/**"], reason: "core: every layer above uses it" },
@@ -62,17 +62,22 @@ export function zoneOf(p) {
   return ZONES.find((z) => z.globs.some((g) => globMatch(g, p)));
 }
 
-// package.json whose only changed lines are its version: a release bump.
-export const VERSION_ONLY_ZONE = { id: "build-version", tier: 0, reason: "package.json: version field only" };
-export const VERSION_LINE = /^\s*"version"\s*:/;
+// package.json that differs only in these fields, compared parsed: a release bump or its metadata.
+export const VERSION_ONLY_ZONE = { id: "build-version", tier: 0, reason: "package.json: version or descriptive fields only" };
+export const PACKAGE_METADATA = ["version", "description", "author", "contributors", "homepage", "repository", "bugs", "keywords", "funding"];
 
 // Flows whose files are critical on their own; a file they render or call inherits their attention.
 export const CRITICAL_ZONES = ["commerce", "add-to-cart", "company", "auth", "context-switch"];
 // Zones that are wider than any single flow (core is read by checkout and by everything else) say
 // nothing more by reaching checkout; the walk is for page, shared and module code.
 export const WIDE_ZONES = ["core", "app-shell", "styles", "config", "ui-kit", "federation"];
+// How far the walk goes: a critical file that imports this one, or imports a file that does. Past
+// that, or through a file with more direct consumers than this, every constant and helper "reaches
+// checkout" and the signal says nothing.
+export const CRITICAL_REACH_DEPTH = 2;
+export const CRITICAL_REACH_MAX_CONSUMERS = 10;
 // The app shell imports everything; walking through it would make every file "critical".
-export const HUB = /^client-app\/(router\/|main\.ts$|app-runner\.ts$|App\.vue$|modules\/[^/]+\/index\.ts$|core-api\/)/;
+export const HUB =/^client-app\/(router\/|main\.ts$|app-runner\.ts$|App\.vue$|modules\/[^/]+\/index\.ts$|core-api\/)/;
 // Barrels that forks and modules import from: a file exported through one is visible outside its folder.
 export const PUBLIC_BARREL = /^client-app\/(shared|modules|core)\/[^/]+\/index\.ts$/;
 export const BARREL = /(^|\/)index\.(ts|js|mjs)$/;
@@ -88,6 +93,10 @@ export const CONTENT_SIGNALS = [
   { tier: 2, re: /SUPPRESS_ERROR_NOTIFICATIONS_CONTEXT|single:\s*true|AbortReason/, reason: "error notification plumbing" },
   { tier: 2, re: /useLocalStorage|useSessionStorage|localStorage\.|sessionStorage\./, reason: "browser storage key or shape" },
   { tier: 2, re: /createGlobalState|createSharedComposable/, reason: "state shared beyond one component" },
+  // Path-bound signals, for files whose zone is wide but some lines are not: they also run on JSON.
+  { tier: 3, zone: "auth", paths: /^client-app\/router\//, re: /isAuthenticated|requiresAuth|requiresOrganization|anonymousUsersAllowed|meta\.public|\bpublic:\s*(true|false)|[Pp]ermission/, reason: "route guard or route access rule" },
+  { tier: 3, zone: "commerce", paths: /^client-app\/config\/settings_data\.json$/, re: /"[^"]*(CVV|[Pp]ayment|checkout_|cart_|purchase_order|zero_price)[^"]*"\s*:/, reason: "store setting that changes payment, checkout or the cart" },
+  { tier: 3, zone: "federation", paths: /^client-app\/config\/settings_data\.json$/, re: /"module_federation_enabled"\s*:/, reason: "switches Module Federation plugins on or off" },
 ];
 export const MODULE_IMPORT = /from\s+["']@\/modules\//;
 export const HOST_LAYER = /^client-app\/(core|shared|pages)\//;
@@ -136,7 +145,7 @@ export const LAYERS = [
   { id: "pages", re: /^client-app\/pages\// },
 ];
 // What each kind of R0 file is called in the trivial lens.
-export const TRIVIAL_KINDS = { tests: "tests", stories: "stories", docs: "docs", locales: "locales", assets: "assets", "build-version": "version bump" };
+export const TRIVIAL_KINDS = { tests: "tests", stories: "stories", docs: "docs", locales: "locales", assets: "assets", "build-version": "package version or metadata" };
 
 // Review units: how each lens cuts the change. A local lens reads one cluster at a time; consumers
 // reads the public files with their consumer lists; a flow lens reads every changed file a flow joins,
@@ -165,14 +174,24 @@ export const FLOW_LENS_MATCH = {
   commerce: { zones: ["commerce", "add-to-cart", "context-switch"], reasons: CONTENT_SIGNALS.filter((s) => s.zone === "commerce").map((s) => s.reason) },
 };
 export const FLOW_UNIT_MAX_FILES = 25;
-// Review agents per mode, not counting the map, seam and refutation agents. Local lenses on one
-// cluster share an agent; past the budget, units are dropped in reverse priority and listed.
-export const PLAN_BUDGET = { S: 1, M: 3, L: 15, XL: 25 };
-export const PLAN_LOCAL_LENSES = ["correctness", "conventions", "styles", "ui", "tests", "clean-code", "performance"];
-// An M change past its budget gets one agent per kind of question: the contract it exposes, the
-// flows it touches, and the local reading.
+// Every agent a review starts, per mode: the review agents plus the overhead below (one refuter gets
+// all findings at once). Past the budget, review agents are dropped in reverse priority and listed.
+export const PLAN_BUDGET = { S: 2, M: 5, L: 18, XL: 28 };
+export const PLAN_OVERHEAD = { S: ["refute"], M: ["seams", "refute"], L: ["map", "seams", "refute"], XL: ["map", "seams", "refute"] };
+// One behaviour agent reads at most this many files, its cluster's tests included.
+export const BEHAVIOUR_MAX_FILES = 25;
+// Local lenses split by the work they are: behaviour needs judgement and the session's model, one
+// cluster per agent; rules is checklist work against written rules, on a cheaper model, several
+// clusters of one tier per agent.
+export const PLAN_BEHAVIOUR_LENSES = ["correctness", "tests", "performance"];
+export const PLAN_RULES_LENSES = ["conventions", "styles", "ui", "clean-code"];
+export const PLAN_RULES_PACK = { clusters: 3, files: 40 };
 export const PLAN_CONTRACT_LENSES = ["architecture", "design", "consumers", "ui-kit"];
 export const PLAN_FLOW_LENSES = ["security", "commerce"];
+// The core of a change: the fewest clusters holding this share of its changed lines, within these
+// bounds. Their behaviour review ranks with the global view, ahead of every other agent.
+export const CORE_CODE_SHARE = 0.5;
+export const CORE_MAX_CLUSTERS = 5;
 export const CONSUMER_UNIT_MAX_FILES = 10;
 // Soft links: a GraphQL name shared by more changed files than this joins everything and tells no
 // flow apart; an identifier found in more files repo-wide than this is a common word, not a key.

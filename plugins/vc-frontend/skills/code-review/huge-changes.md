@@ -14,10 +14,12 @@ on.
 2. **Set the mechanical part aside, and explain it.** `mechanicalGroups` holds the files that need
    no file-by-file reading: the same edit repeated across many files, generated files, pure renames,
    whitespace-only changes. For each group:
-   - review the representative of a repeated edit once, against its before → after sample. Ask
-     how the edit was made: a script or codemod the PR names can be trusted once; an edit an agent
-     made file by file gets three representatives, because agents vary where scripts do not. A
-     `shape` group (same edit, different names) gets one representative per distinct name pattern;
+   - review the representative of a repeated edit against its before → after sample, then check
+     that the edit means the same in every member: the same line in the same kind of place (an
+     import, a call with the same arguments), not a changed default in one file and a changed guard
+     in another. Who made the edit proves nothing. A member where the line sits in a different
+     context goes back to review. `shape` groups are renames and import moves only (the script
+     groups nothing else by shape): one representative per distinct name pattern;
    - check that generated files have a source change in this diff (a `.graphql`, `package.json`,
      a facade export); a generated change with no source is a finding;
    - `outliers` repeat the edit and also change something else: they stay in the normal review,
@@ -28,7 +30,9 @@ on.
    files) and put it in the report for the people who review next.
 3. **[PAUSE] Agree the depth per cluster** with the user, by the cluster's tier: R3 clusters get the
    lenses their zone calls for, R2 clusters get correctness and consumers, R1 clusters one
-   correctness pass, R0 clusters the `trivial` pass. The user may raise or lower any cluster.
+   correctness pass, R0 clusters the `trivial` pass. The user may raise or lower any cluster: a raise
+   goes into the re-run as `--raise` for its files (or a higher `--budget`); a lowered cluster's
+   agents are taken out of `plan.agents` and listed in coverage as skipped by agreement.
 4. **Map, units, seams (step 4 and 5) as usual**, only for the clusters and lenses agreed in step 3,
    with the review guide from step 2 added to every brief. Every agent also flags hunks that do not
    fit the PR's stated purpose: in a large change, the unrelated edit is the one nobody reads.

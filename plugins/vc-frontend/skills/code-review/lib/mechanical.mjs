@@ -18,12 +18,38 @@ export function hunkKey(h) {
   return deleted.length || added.length ? [...deleted.map((l) => "-" + l), ...added.map((l) => "+" + l)].join("\n") : "";
 }
 
+const TOKEN = /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|\d+(?:\.\d+)?|[A-Za-z_$][\w$]*|\S/g;
+const IDENT = /^[A-Za-z_$][\w$]*$/;
+const QUOTED = /^["'`]/;
+const IMPORT_LINE = /^\s*(import|export)\b.*\bfrom\b|^\s*import\s*["'`]|\bimport\(/;
+
+// A hunk that only renames: the removed and added lines have the same tokens except names swapped for
+// names (`useFoo` → `useBar`) and, on import lines, module paths swapped for paths. A changed value,
+// keyword or operator (`ref(false)` → `ref(true)`, `<` → `<=`) is behaviour, never a shape.
+export function renameOnly(deleted, added) {
+  if (deleted.length !== added.length) return false;
+  for (let i = 0; i < deleted.length; i++) {
+    const a = deleted[i].match(TOKEN) ?? [];
+    const b = added[i].match(TOKEN) ?? [];
+    if (a.length !== b.length) return false;
+    const importLine = IMPORT_LINE.test(deleted[i]) && IMPORT_LINE.test(added[i]);
+    for (let j = 0; j < a.length; j++) {
+      if (a[j] === b[j]) continue;
+      const names = IDENT.test(a[j]) && IDENT.test(b[j]) && !JS_KEYWORDS.has(a[j]) && !JS_KEYWORDS.has(b[j]);
+      const paths = importLine && QUOTED.test(a[j]) && QUOTED.test(b[j]);
+      if (!names && !paths) return false;
+    }
+  }
+  return true;
+}
+
 // The same with string and number literals and every non-keyword name replaced by a placeholder
 // numbered in order of first use, so `useFoo` → `useBar` here and `useBaz` → `useQux` there match.
+// Only for hunks that rename (renameOnly): anything else must match exactly to be grouped.
 export function shapeKey(h) {
   const deleted = trimmed(h.deleted);
   const added = trimmed(h.added);
-  if (!deleted.length || !added.length) return "";
+  if (!deleted.length || !added.length || !renameOnly(deleted, added)) return "";
   const names = new Map();
   const name = (w) => {
     if (JS_KEYWORDS.has(w)) return w;
@@ -59,8 +85,9 @@ const sample = (lines) => trimmed(lines).slice(0, SAMPLE_LINES).map((l) => (l.le
 // match wins:
 //   generated   regenerated output, lockfiles, or `linguist-generated` in .gitattributes;
 //   rename      moved without an edit (both sides of the move);
-//   whitespace  nothing left under `git diff -w`;
-//   repeated    every hunk is one that at least REPEATED_HUNK_FILES files share, exactly or by shape.
+//   whitespace  nothing left once whitespace amounts, line ends and blank lines are ignored;
+//   repeated    every hunk is one that at least REPEATED_HUNK_FILES files share, exactly or by shape
+//               (renames only); an R3 file never joins a shape group, a rename there can rebind.
 //               Files sharing the same set of hunks form a group; its first file is the representative.
 //               A file with the group's hunks plus others of its own is an outlier: it stays in review.
 // Returns the groups for the report.
@@ -73,15 +100,17 @@ export function markMechanical(files, hunks, { renames = [], whitespace = new Se
     const rule = GENERATED.find((r) => r.globs.some((g) => globMatch(g, f.path)));
     const attr = !rule && generatedGlobs.some((g) => globMatch(g, f.path));
     if (!rule && !attr) continue;
-    f.mechanical = "generated";
     const what = rule?.what ?? "linguist-generated";
     if (!generated.has(what)) generated.set(what, { rule, files: [] });
     generated.get(what).files.push(f.path);
   }
+  const byPath = new Map(files.map((f) => [f.path, f]));
   for (const [what, { rule, files: paths }] of generated) {
     const sourceGlobs = (rule?.sources ?? []).flatMap((g) => paths.map((p) => g.replace(/^\{dir\}\//, path.dirname(p) === "." ? "" : `${path.dirname(p)}/`)));
     const sources = changed.filter((p) => !paths.includes(p) && (sourceGlobs.some((g) => globMatch(g, p)) || (rule?.facade && facadeExports.has(p))));
     const suspicious = Boolean(rule) && !sources.length;
+    // A regeneration with no source is a hand edit until shown otherwise: it stays in review.
+    if (!suspicious) for (const p of paths) byPath.get(p).mechanical = "generated";
     const explanation = !rule
       ? "marked linguist-generated in .gitattributes"
       : sources.length
@@ -90,7 +119,6 @@ export function markMechanical(files, hunks, { renames = [], whitespace = new Se
     groups.push({ id: `g${groups.length + 1}`, kind: "generated", what, count: paths.length, files: paths, sources, suspicious, explanation });
   }
 
-  const byPath = new Map(files.map((f) => [f.path, f]));
   const pairs = renames.filter(({ from, to }) => [from, to].every((p) => byPath.has(p) && !byPath.get(p).mechanical));
   const moved = new Set(pairs.flatMap(({ from, to }) => [from, to]));
   for (const f of files) if (moved.has(f.path)) f.mechanical = "rename";
@@ -98,7 +126,7 @@ export function markMechanical(files, hunks, { renames = [], whitespace = new Se
 
   const spaced = files.filter((f) => !f.mechanical && whitespace.has(f.path) && f.added + f.deleted > 0);
   for (const f of spaced) f.mechanical = "whitespace";
-  if (spaced.length) groups.push({ id: "whitespace", kind: "whitespace", count: spaced.length, files: spaced.map((f) => f.path), explanation: "`git diff -w` is empty for these files: only indentation, line ends or blank lines changed" });
+  if (spaced.length) groups.push({ id: "whitespace", kind: "whitespace", count: spaced.length, files: spaced.map((f) => f.path), explanation: "nothing left once changed amounts of whitespace, line ends and blank lines are ignored: only indentation, line ends or blank lines changed" });
 
   groups.push(...repeatedGroups(files.filter((f) => !f.mechanical), hunks));
   return groups;
@@ -112,7 +140,7 @@ function repeatedGroups(files, hunks) {
   for (const f of files) {
     const hs = (hunks.get(f.path) ?? []).map((h) => {
       const exact = hunkKey(h);
-      const shape = exact ? shapeKey(h) : "";
+      const shape = exact && !(f.tier >= 3) ? shapeKey(h) : "";
       return { h, exact: exact && hash(exact), shape: shape && hash(shape) };
     });
     hunksOf.set(f, hs.filter((x) => x.exact));

@@ -3,7 +3,7 @@
 // names a diff file the script writes for it (see unitfiles.mjs).
 
 import { clusterKey, splitCluster } from "./huge.mjs";
-import { CONSUMER_UNIT_MAX_FILES, FLOW_LENS_MATCH, FLOW_UNIT_MAX_FILES, LENS_KINDS, TIERS, TRIVIAL_KINDS } from "./zones.mjs";
+import { CLUSTER_MAX_FILES, CONSUMER_UNIT_MAX_FILES, FLOW_LENS_MATCH, FLOW_UNIT_MAX_FILES, LENS_KINDS, TIERS, TRIVIAL_KINDS, zoneOf } from "./zones.mjs";
 
 const reviewable = (f) => !f.mechanical;
 
@@ -101,13 +101,22 @@ function lensParts(lens, ctx) {
       } else chunks = splitFlow(fl.files, clusterOf);
       chunks.forEach((ps, i) => out.push({ scope: `flow ${fl.id}${chunks.length > 1 ? ` (${i + 1}/${chunks.length})` : ""}`, files: ps }));
     }
-    const single = files.filter((f) => f.tier >= 1 && reviewable(f) && !inFlow.has(f.path) && matchesFlowLens(lens, f)).map((f) => f.path);
-    slices(single, FLOW_UNIT_MAX_FILES).forEach((ps, i, all) => out.push({ scope: `files in no flow${all.length > 1 ? ` (${i + 1}/${all.length})` : ""}`, files: ps }));
+    // Files in the lens's zones that no flow joins go by cluster, so the plan can hand them to that
+    // cluster's behaviour agent instead of a separate one.
+    const single = files.filter((f) => f.tier >= 1 && reviewable(f) && !inFlow.has(f.path) && matchesFlowLens(lens, f));
+    out.push(...perCluster(single, (f) => clusterOf.get(f.path) ?? clusterKey(f), (k) => `cluster ${k} (no flow)`));
     return out;
   }
-  if (lens === "trivial") return grouped(files.filter((f) => f.tier === 0 && reviewable(f)), (f) => TRIVIAL_KINDS[f.zone] ?? f.zone ?? "other");
-  // Test files sit in the "tests" zone; they group by the folder of the code they test instead.
-  if (lens === "tests") return grouped(files.filter((f) => f.zone === "tests" && reviewable(f)), (f) => clusterKey({ ...f, zone: null }));
+  // A test file is reviewed once: with the code it tests, by the tests lens of that cluster. Tests
+  // with no cluster, or all of them when the tests lens does not run, go to the trivial sweep.
+  const tests = files.filter((f) => f.zone === "tests" && reviewable(f));
+  const testOf = new Map(tests.map((f) => [f.path, testCluster(f.path, clusters, clusterOf)]));
+  const testsRun = ctx.pick.has("tests");
+  if (lens === "tests") return perCluster(tests.filter((f) => testOf.get(f.path)), (f) => testOf.get(f.path), (k) => `cluster ${k}`);
+  if (lens === "trivial") {
+    const swept = files.filter((f) => f.tier === 0 && reviewable(f) && (f.zone !== "tests" || !testsRun || !testOf.get(f.path)));
+    return grouped(swept, (f) => TRIVIAL_KINDS[f.zone] ?? f.zone ?? "other");
+  }
   if (lens === "ui-kit") return grouped(files.filter((f) => f.zone === "ui-kit" && f.tier >= 1 && reviewable(f)), (f) => f.path.match(/^client-app\/ui-kit\/(components\/[^/]+|[^/]+)/)?.[1] ?? "ui-kit");
   // Local lenses read the clusters that call for them; a lens no cluster calls for (one run on
   // request) reads them all.
@@ -115,6 +124,31 @@ function lensParts(lens, ctx) {
   const out = (calling.length ? calling : clusters).map((c) => ({ scope: `cluster ${c.key}`, files: c.files }));
   if (lens === "ui") out.push(...grouped(files.filter((f) => f.zone === "locales" && reviewable(f)), () => "locales"));
   return out;
+}
+
+// The cluster of the code a test file tests: its subject (`x.test.ts` → `x.ts`, `x.vue`) when that
+// changed, else the cluster its subject's path would key to, the part in its own folder when the
+// cluster was split.
+export function testCluster(testPath, clusters, clusterOf) {
+  const base = testPath.replace(/__snapshots__\//, "").replace(/\.snap$/, "").replace(/\.(test|spec)(-d)?\.(ts|tsx|js)$/, "");
+  const subjects = ["ts", "vue", "tsx", "js"].map((ext) => `${base}.${ext}`);
+  for (const p of subjects) if (clusterOf.has(p)) return clusterOf.get(p);
+  const key = clusterKey({ path: subjects[0], zone: zoneOf(subjects[0])?.id ?? null });
+  const candidates = clusters.filter((c) => c.key === key || c.key.startsWith(`${key}:`) || c.key.startsWith(`${key} (`));
+  const dir = testPath.slice(0, testPath.lastIndexOf("/") + 1);
+  return (candidates.find((c) => c.files.some((p) => p.startsWith(dir))) ?? candidates[0])?.key ?? null;
+}
+
+// Units keyed by cluster, cut into CLUSTER_MAX_FILES slices that keep the cluster's scope, so every
+// slice still joins that cluster's agent in the plan.
+function perCluster(fs, keyOf, scopeOf) {
+  const by = new Map();
+  for (const f of fs) {
+    const k = keyOf(f);
+    if (!by.has(k)) by.set(k, []);
+    by.get(k).push(f.path);
+  }
+  return [...by].sort((a, b) => a[0].localeCompare(b[0])).flatMap(([k, ps]) => slices(ps, CLUSTER_MAX_FILES).map((part) => ({ scope: scopeOf(k), files: part })));
 }
 
 function grouped(fs, keyOf) {
@@ -136,7 +170,7 @@ function grouped(fs, keyOf) {
 export function buildUnits({ files, clusters, flows, surface, lenses, clusterOf, chosen = null }) {
   const pick = new Set(chosen ?? lenses.filter((l) => l.recommended).map((l) => l.id));
   const byPath = new Map(files.map((f) => [f.path, f]));
-  const ctx = { files, clusters, flows, surface, clusterOf };
+  const ctx = { files, clusters, flows, surface, clusterOf, pick };
   const out = [];
   for (const l of lenses) {
     const kind = LENS_KINDS[l.id] ?? "local";

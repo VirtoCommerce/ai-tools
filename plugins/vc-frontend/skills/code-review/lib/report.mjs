@@ -67,7 +67,16 @@ function footer(r, lines) {
     lines.push("", "## Path-scoped rules that apply", "");
     for (const rule of r.rules) lines.push(`- \`${rule.file}\`: ${rule.files.length} file(s)`);
   }
+  checkLines(r, lines);
   unitLines(r, lines);
+}
+
+// Literal rule hits: candidates for the rules agent or the refuter to confirm, not findings yet.
+export function checkLines(r, lines) {
+  if (!r.checks?.length) return;
+  lines.push("", `## Rule checks on added lines (${r.checks.length}): confirm each`, "");
+  for (const c of r.checks.slice(0, 30)) lines.push(`- \`${c.path}${c.line ? `:${c.line}` : ""}\` **${c.check}** (${c.rule}: ${c.says}): ${code(c.text)}`);
+  if (r.checks.length > 30) lines.push(`- … ${r.checks.length - 30} more in the JSON (\`checks\`)`);
 }
 
 // How the review splits: units per lens, how the changed files link, what is public.

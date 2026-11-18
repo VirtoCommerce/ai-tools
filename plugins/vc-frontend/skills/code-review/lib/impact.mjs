@@ -115,10 +115,11 @@ const GLOBAL_REGISTRATION = /\bapp\.(?:component|directive)\(|globalProperties/;
 const TEMPLATE_NOTE = "template usages are found by tag grep only for ui-kit; other template references may be missing";
 
 // complete: the list holds every user a grep can see, so none was cut and no template hides one.
-function usedByOf(users, grepSeesAll) {
+function usedByOf(users, grepSeesAll, note = TEMPLATE_NOTE) {
   const complete = grepSeesAll && users.length <= IMPACT_USED_BY_MAX;
-  return { total: users.length, files: users.slice(0, IMPACT_USED_BY_MAX), complete, ...(grepSeesAll ? {} : { note: TEMPLATE_NOTE }) };
+  return { total: users.length, files: users.slice(0, IMPACT_USED_BY_MAX), complete, ...(grepSeesAll ? {} : { note }) };
 }
+const PRIVATE_NOTE = "not exported under this name (a factory wrapped by createSharedComposable, an alias): the files that import its module are listed; follow the exported wrapper";
 
 const SHARED_MODULE = /^client-app\/shared\/|\/composables\/|(^|\/)use[A-Z]\w*\.ts$/;
 
@@ -141,7 +142,7 @@ export function impactMap(files, hunks, { read, graph = null, grep = (names) => 
       // Who calls it only matters for a symbol other files can reach.
       const symbol = top && /^[A-Za-z_$][\w$]*$/.test(top) && (exported.has(top) || (shared && !f.path.endsWith(".vue"))) ? top : null;
       if (symbol) asked.set(symbol, (asked.get(symbol) ?? new Set()).add(f.path));
-      const entry = { lines, in: where, uses: hunkUses(f.path, h, imports, graph?.resolve?.get(f.path)), symbol };
+      const entry = { lines, in: where, uses: hunkUses(f.path, h, imports, graph?.resolve?.get(f.path)), symbol, private: symbol && !exported.has(symbol) ? f.consumers : null };
       // A component's users are its consumers. Templates reach components by tag, and only kit tags
       // are grepped, so the list is never known to be complete.
       if (f.path.endsWith(".vue")) entry.usedBy = usedByOf(f.consumers.filter((p) => !TEST_LIKE.test(p)), false);
@@ -153,10 +154,14 @@ export function impactMap(files, hunks, { read, graph = null, grep = (names) => 
   for (const entry of out) {
     for (const h of entry.hunks) {
       if (h.symbol) {
-        const users = [...(hits.get(h.symbol) ?? [])].filter((p) => p !== entry.path && !TEST_LIKE.test(p)).sort();
-        h.usedBy = usedByOf(users, !GLOBAL_REGISTRATION.test(read(entry.path)));
+        // A private name only its own file mentions is reached through an exported wrapper: its
+        // module's importers are the users, and a grep cannot prove the list whole.
+        const named = [...(hits.get(h.symbol) ?? [])];
+        const users = [...new Set([...named, ...(h.private ?? [])])].filter((p) => p !== entry.path && !TEST_LIKE.test(p)).sort();
+        h.usedBy = h.private ? usedByOf(users, false, PRIVATE_NOTE) : usedByOf(users, !GLOBAL_REGISTRATION.test(read(entry.path)));
       }
       delete h.symbol;
+      delete h.private;
     }
   }
   return out;

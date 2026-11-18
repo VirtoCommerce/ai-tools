@@ -36,7 +36,8 @@ The code sits in the right place and does not bend the structure others will cop
   the host only through its `init()` and the extension registry.
 - New files: right layer, right domain folder, exported through the folder's `index.ts` when other
   domains need them, not when they don't.
-- A new pattern, convention, key format or registry: would three more copies of it be good?
+- A new pattern, convention, key format or registry that others will copy: name where the next copy
+  would go and what it breaks or duplicates there. No such place, no finding.
 - GraphQL: one operation per folder with its `useXQuery` wrapper; generated `types.ts` untouched.
 
 Not a finding: a layout preference with no rule or consumer behind it.
@@ -45,10 +46,12 @@ Not a finding: a layout preference with no rule or consumer behind it.
 
 Responsibilities and coupling of the new or reshaped code.
 
-- One component or composable doing two jobs that change for different reasons.
+- One component or composable doing two jobs that change for different reasons: name both reasons
+  and the change that would touch one job and break the other.
 - Reaching into another domain's internals instead of its public API.
 - Duplication of something that exists (name the existing composable, helper or ui-kit component).
-- An abstraction with one user and no second one in sight; options that only one caller passes.
+- An abstraction with one user and no second one in this change or its ticket; options that only
+  one caller passes. Name the single user.
 
 Not a finding: a style of decomposition that differs from yours but is consistent with the folder.
 
@@ -57,12 +60,23 @@ Not a finding: a style of decomposition that differs from yours but is consisten
 The change follows the repository's written rules. You get the rule files that apply to these paths
 and `CLAUDE.md`.
 
+Work rule file by rule file, not with all of them in mind at once (models follow a few rules at a
+time and drop the rest):
+
+1. For each rule file, list its sections whose paths and subject can apply to the changed lines.
+2. Take those sections one at a time and check every added line they cover.
+3. Return the ledger under your findings: rule file and section, the lines it covered, and the
+   verdict (kept, or why not). A section you skipped is listed as skipped.
+
 - Report a violation only with the rule it breaks: rule file and the line or section, quoted.
 - If the repository has a patterns file (house idioms such as which link or composable to use for a
   job), it counts as a rule file.
+- The script's `checks` already list literal violations (focused tests, banned selectors, imports):
+  confirm or drop each, do not hunt for them again.
 
-Not a finding: anything you cannot quote a rule for. Anything ESLint, Prettier, `vue-tsc` or
-dependency-cruiser already enforces.
+Not a finding: anything you cannot quote a rule for. Anything a check that runs in CI already
+enforces (`vue-tsc`, dependency-cruiser, Prettier). ESLint counts only if CI runs it: where it does
+not (vc-frontend), an ESLint rule an added line breaks is a finding.
 
 ## security
 
@@ -96,7 +110,9 @@ Does every changed template and style follow the design system, so it survives a
 mode, RTL, every design and a fork's one-class override? Any `.vue` template or `<style>`, `.scss`,
 design, preset or Tailwind config, inside `client-app/ui-kit` or outside it. You get `styles.md`,
 `ui-kit.md`, `markup.md`, `designs-and-presets.md` and `client-app/assets/styles/README.md`: where a
-check names a rule, read the rule for the detail. Most often needed first:
+check names a rule, read the rule for the detail. A check marked "written only here" is a house
+pattern from past reviews with no rule file yet: cite the check, and keep it `low` unless it breaks
+something visible. Most often needed first:
 
 - Kit component restyled from app code, by any route (`ui-kit.md` §9–11, `styles.md` §10, §42): a
   `.vc-*` selector, a class on `<VcX>` setting what VcX owns, a kit private variable read or set
@@ -225,7 +241,8 @@ documented sees after upgrading. You get `ui-kit-internals.md`, `ui-kit.md`, `st
 - Defaults (`ui-kit-internals.md` §1): a changed default size, padding, colour, cursor or variant moves
   every screen and every fork; it needs the designer's agreement and the developer's instruction in the
   PR description. A usage that passes no new prop renders exactly as before.
-- Trigger (`ui-kit-internals.md` §1): every changed kit hunk has a consumer in this PR that needs it.
+- Trigger (`ui-kit-internals.md` §1): a new prop, slot, variant or token has a consumer in this PR
+  (or its ticket) that needs it. A fix of existing behaviour needs none.
 - New prop names (written only here): named by role, not by look (`strong` names a look); in the kit's
   existing vocabulary, so check other components' `IProps` for the same idea (`description`, not
   `sub`; `size`, `variant`, `color` with the canonical values in `ui-kit.md` §3); a boolean that picks

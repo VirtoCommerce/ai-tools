@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Risk tier of a branch's change in a vc-frontend checkout (upstream or a theme fork).
 //
-//   node classify.mjs [--base <ref>] [--json] [--out <file>] [--no-graph] [--units-dir <dir>] [--lenses a,b] [--budget n]
+//   node classify.mjs [--base <ref>] [--json] [--out <file>] [--no-graph] [--units-dir <dir>] [--lenses a,b] [--budget n] [--raise path=R3,...]
 //
 // Run from anywhere inside the checkout; HEAD must be the branch under review. The diff is
 // merge-base(<base>, HEAD)..HEAD, committed changes only. The module graph comes from the
@@ -11,16 +11,18 @@
 // --units-dir writes the files review agents read, since they have no shell: overview.md, impact.md,
 // base/<path>, rules/ and fixes/<sha>.diff always; for L and XL one diff per review unit and the
 // condensed view for the global lenses, for S and M one full.diff. --lenses picks the lenses that get units;
-// by default the recommended ones. --budget overrides the mode's review-agent budget for the plan.
+// by default the recommended ones. --budget overrides the mode's agent budget (review agents plus map, seams, refute).
+// --raise lifts files to a tier the reviewer's risk questions found, before mode, units and plan are built.
 //
 // Zones, signals and thresholds live in lib/zones.mjs.
 
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { changeGraph, flows, graphCoverage } from "./lib/changegraph.mjs";
+import { ruleChecks } from "./lib/checks.mjs";
 import { rulesWarning } from "./lib/context.mjs";
 import { globMatch } from "./lib/globs.mjs";
-import { changedFiles, defaultBase, exactRenames, git, readHead, whitespaceOnly } from "./lib/git.mjs";
+import { changedFiles, defaultBase, exactRenames, git, gitShow, readHead, whitespaceOnly } from "./lib/git.mjs";
 import { facadeExportSet, moduleGraph } from "./lib/graph.mjs";
 import { changeMode, clusters, hugeMode, reviewGates } from "./lib/huge.mjs";
 import { impactMap } from "./lib/impact.mjs";
@@ -55,9 +57,22 @@ const ctx = { mergeBase, warnings, graph: null, facadeExports: new Set(), commit
 ctx.graph = args.noGraph ? null : moduleGraph(ctx);
 if (!ctx.graph && !args.noGraph) warnings.push("dependency-cruiser did not run: fan-out and external exposure are unknown, tiers come from paths only.");
 if (ctx.graph) ctx.facadeExports = facadeExportSet(ctx.graph);
-const rules = pathScopedRules();
+// Test files are R0 but have rules of their own (tests.md): attach those too.
+const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$|\.test-d\.ts$/;
+const rules = pathScopedRules(mergeBase);
 
 for (const f of files) classifyFile(ctx, f);
+// Raises from the reviewer's own reading (risk questions answered yes), so the mode, units and plan
+// are rebuilt from the tiers the review will actually use. A raise never lowers a tier.
+for (const [p, t] of args.raise ?? []) {
+  const f = files.find((x) => x.path === p) ?? fail(`--raise: ${p} is not a changed file.`);
+  const n = TIERS.indexOf(t);
+  if (n < 0) fail(`--raise: ${t} is not one of ${TIERS.join(", ")}.`);
+  if (n > f.tier) {
+    f.tier = n;
+    f.reasons.push(`raised to ${t} by the reviewer's risk questions`);
+  }
+}
 const read = gitReader(mergeBase, files);
 for (const f of files) markStyling(f, read);
 const questionSet = loadQuestions(warnings);
@@ -65,7 +80,17 @@ for (const f of files) f.questions = matchQuestions(questionSet, f);
 const tokens = tokenChanges(files);
 const visual = visualCheck(files, tokens, mergeBase);
 
-const codeFiles = files.filter((f) => f.tier >= 1 && f.zone !== "generated" && f.zone !== "build-version");
+// One `git diff` each for exact renames and whitespace-only files; renames need an add and a delete.
+// Before any sizing: churn nobody has to read must not make a change look big.
+const statuses = new Set(files.map((f) => f.status));
+const mechanicalGroups = markMechanical(files, hunks, {
+  renames: statuses.has("A") && statuses.has("D") ? exactRenames(mergeBase) : [],
+  whitespace: whitespaceOnly(mergeBase),
+  generatedGlobs: parseGeneratedAttributes(readHead(".gitattributes")),
+  facadeExports: ctx.facadeExports,
+});
+
+const codeFiles = files.filter((f) => f.tier >= 1 && !f.mechanical && f.zone !== "generated" && f.zone !== "build-version");
 const changedLines = codeFiles.reduce((n, f) => n + f.added + f.deleted, 0);
 let tier = Math.max(...files.map((f) => f.tier));
 let escalation = null;
@@ -77,20 +102,11 @@ const huge = hugeMode(codeFiles.length, changedLines);
 
 const zones = [...new Set(files.filter((f) => f.tier >= 2).map((f) => f.zone).filter(Boolean))];
 const matchedRules = rules
-  .map((r) => ({ file: r.file, files: files.filter((f) => f.tier >= 1 && r.globs.some((g) => globMatch(g, f.path))).map((f) => f.path) }))
+  .map((r) => ({ file: r.file, files: files.filter((f) => (f.tier >= 1 || TEST_FILE.test(f.path)) && r.globs.some((g) => globMatch(g, f.path))).map((f) => f.path) }))
   .filter((r) => r.files.length);
 const lenses = suggestLenses({ files, tier, tokens, matchedRules });
 const unknownLens = args.lenses?.find((id) => !lenses.some((l) => l.id === id));
 if (unknownLens) fail(`Unknown lens in --lenses: ${unknownLens}. Lenses: ${lenses.map((l) => l.id).join(", ")}.`);
-
-// One `git diff` each for exact renames and whitespace-only files; renames need an add and a delete.
-const statuses = new Set(files.map((f) => f.status));
-const mechanicalGroups = markMechanical(files, hunks, {
-  renames: statuses.has("A") && statuses.has("D") ? exactRenames(mergeBase) : [],
-  whitespace: whitespaceOnly(mergeBase),
-  generatedGlobs: parseGeneratedAttributes(readHead(".gitattributes")),
-  facadeExports: ctx.facadeExports,
-});
 
 // How the changed files link, and the units each lens reads: only when the final mode is L or XL. An
 // S or M change is read whole by every lens, so the graph, the soft-link greps and the per-unit diffs
@@ -106,14 +122,21 @@ const surface = split ? publicSurface(files, read) : null;
 const impact = impactMap(files, hunks, { read: readHead, graph: ctx.graph });
 const units = split ? buildUnits({ files, clusters: clusterList, flows: flowList, surface, lenses, clusterOf, chosen: args.lenses }) : null;
 
+const gates = reviewGates(files);
 const plan = reviewPlan({
   mode,
   chosen: args.lenses ?? lenses.filter((l) => l.recommended).map((l) => l.id),
   units,
   files,
+  clusters: clusterList,
   tier: TIERS[tier],
   budget: args.budget,
+  gates,
+  mechanicalGroups,
 });
+
+// Literal rule checks on added lines, against the rules as they are at the merge-base.
+const checks = ruleChecks(files, rules, (p) => gitShow(`${mergeBase}:${p}`));
 
 // Reviewers read rules/ from the merge-base; say so when the change edits them.
 const rulesNote = args.unitsDir ? rulesWarning({ rules: matchedRules, files }) : null;
@@ -126,7 +149,7 @@ const result = {
   tier: TIERS[tier],
   escalation,
   mode,
-  gates: reviewGates(files),
+  gates,
   huge,
   changedLines,
   zones,
@@ -135,6 +158,7 @@ const result = {
   tokens,
   visual,
   rules: matchedRules,
+  checks,
   lenses,
   clusters: clusterList,
   mechanicalGroups,
@@ -164,6 +188,12 @@ function parseArgs(argv) {
     else if (argv[i] === "--budget") {
       out.budget = Number.parseInt(argv[++i], 10);
       if (!(out.budget > 0)) fail("--budget needs a positive number.");
+    }
+    else if (argv[i] === "--raise") {
+      out.raise = (argv[++i] ?? fail("--raise needs path=R2,...")).split(",").map((x) => x.trim()).filter(Boolean).map((x) => {
+        const at = x.lastIndexOf("=");
+        return at > 0 ? [x.slice(0, at), x.slice(at + 1)] : fail(`--raise: ${x} is not path=tier.`);
+      });
     }
     else if (argv[i] === "--lenses") out.lenses = (argv[++i] ?? fail("--lenses needs a list.")).split(",").map((l) => l.trim()).filter(Boolean);
     else fail(`Unknown argument: ${argv[i]}`);

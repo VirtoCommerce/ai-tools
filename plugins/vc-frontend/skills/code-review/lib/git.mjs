@@ -3,10 +3,14 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { escapeRe } from "./globs.mjs";
-import { FIX_SUBJECT, FIX_WINDOW_DAYS, MAX_BLAME_RUNS, VERSION_LINE } from "./zones.mjs";
+import { FIX_SUBJECT, FIX_WINDOW_DAYS, MAX_BLAME_RUNS, PACKAGE_METADATA } from "./zones.mjs";
+
+// Paths print as they are: with quoting on, git writes non-ASCII paths as "caf\303\251.vue" in quotes
+// and every parser here would miss them. Tabs and newlines in a path stay unsupported.
+const PLAIN_PATHS = ["-c", "core.quotePath=false"];
 
 export function git(argv) {
-  return execFileSync("git", argv, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
+  return execFileSync("git", [...PLAIN_PATHS, ...argv], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
 }
 
 export function gitShow(spec) {
@@ -22,7 +26,7 @@ export function gitGrep(words, dir, globs, raw) {
   const pattern = raw ?? `(<|\\b)(${words.map(escapeRe).join("|")})\\b`;
   const scope = globs.length ? globs.map((g) => `${dir}/**/${g}`) : ["."];
   try {
-    const out = execFileSync("git", ["grep", "-l", "-E", pattern, "--", ...scope], {
+    const out = execFileSync("git", [...PLAIN_PATHS, "grep", "-l", "-E", pattern, "--", ...scope], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -39,7 +43,7 @@ export function grepHits(cands, { word = false, scope = ["."] } = {}) {
   if (!cands.length) return files;
   let out = "";
   try {
-    out = execFileSync("git", ["grep", "-o", "-F", "-I", ...(word ? ["-w"] : []), ...cands.flatMap((c) => ["-e", c]), "--", ...scope], {
+    out = execFileSync("git", [...PLAIN_PATHS, "grep", "-o", "-F", "-I", ...(word ? ["-w"] : []), ...cands.flatMap((c) => ["-e", c]), "--", ...scope], {
       encoding: "utf8",
       maxBuffer: 512 * 1024 * 1024,
       stdio: ["ignore", "pipe", "pipe"],
@@ -150,18 +154,18 @@ export function parseRenames(text) {
   return out;
 }
 
-// Paths whose whole change is whitespace: `git diff -w` counts no line for them.
+// Paths whose whole change is whitespace: in the plain numstat, gone from the one that ignores changed
+// amounts of whitespace, line ends and blank lines (git drops such a file rather than print 0/0). Not
+// `-w`: it also ignores a space added where there was none, as in "ab" → "a b".
 export function whitespaceOnly(mb) {
-  return parseWhitespaceOnly(git(["diff", "-w", "--numstat", "--no-renames", mb, "HEAD"]));
+  const run = (extra) => git(["diff", ...extra, "--numstat", "--no-renames", mb, "HEAD"]);
+  return parseWhitespaceOnly(run([]), run(["--ignore-space-change", "--ignore-cr-at-eol", "--ignore-blank-lines"]));
 }
 
-export function parseWhitespaceOnly(text) {
-  const out = new Set();
-  for (const line of text.split("\n").filter(Boolean)) {
-    const [a, d, p] = line.split("\t");
-    if (a === "0" && d === "0") out.add(p);
-  }
-  return out;
+export function parseWhitespaceOnly(plain, ignoring) {
+  const rows = (text) => text.split("\n").filter(Boolean).map((l) => l.split("\t"));
+  const left = new Set(rows(ignoring).map(([, , p]) => p));
+  return new Set(rows(plain).filter(([a, d, p]) => a !== "-" && !(a === "0" && d === "0") && !left.has(p)).map(([, , p]) => p));
 }
 
 // One `git blame` for all ranges; range by range only if that fails, skipping the ranges that fail.
@@ -198,9 +202,19 @@ export function showMany(rev, paths) {
   return out;
 }
 
-export function versionOnly(f) {
-  const changed = [...f.addedText, ...f.deletedText].filter((l) => l.trim());
-  return changed.length > 0 && changed.every((l) => VERSION_LINE.test(l));
+// package.json texts that differ, parsed, only in descriptive fields (version, author, …). Scripts,
+// dependencies, engines, exports and anything unparseable count as a build change.
+export function metadataOnly(baseText, headText) {
+  let base;
+  let head;
+  try {
+    [base, head] = [JSON.parse(baseText), JSON.parse(headText)];
+  } catch {
+    return false;
+  }
+  if (!base || !head || typeof base !== "object" || typeof head !== "object") return false;
+  const rest = (o) => JSON.stringify(Object.fromEntries(Object.entries(o).filter(([k]) => !PACKAGE_METADATA.includes(k)).sort(([a], [b]) => a.localeCompare(b))));
+  return rest(base) === rest(head) && JSON.stringify(base) !== JSON.stringify(head);
 }
 
 // Removed lines that a fix, hotfix or revert wrote within the year before HEAD. Fixes of fixes are about a
