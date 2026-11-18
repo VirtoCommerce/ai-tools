@@ -132,14 +132,14 @@ export function findEnv(env, { ticket, root = process.cwd(), ambient = process.e
 
 /**
  * What an env declares itself: its `.env.<env>` files merged key by key, the project root's first and each dedicated
- * folder's over it (`vars`), its legacy `.env.playwright.<env>` files the same way (`passwords`), and its credentials
- * in the store (`credentials`: the flat variables its accounts and shared passwords give it) — no .env.defaults, no
- * .env.local, no promotion. Deploy coordinates (DEPLOY_BRANCH, BACK_URL) are read from here.
+ * folder's over it (`vars`), and its credentials in the store (`credentials`: the flat variables its accounts and
+ * shared passwords give it) — no .env.defaults, no .env.local, no promotion. Deploy coordinates (DEPLOY_BRANCH,
+ * BACK_URL) are read from here.
  */
 export function ownEnv(env, { ticket, root = process.cwd(), ambient = process.env } = {}) {
   const dirs = [root, ...envFolders({ env, ticket, root, ambient }).reverse()];
-  const merge = (name) => Object.assign({}, ...dirs.map((dir) => readEnvFile(join(dir, name)) ?? {}));
-  return { vars: merge(`.env.${env}`), passwords: merge(`.env.playwright.${env}`), credentials: storeValues(readStore(root), env).values };
+  const vars = Object.assign({}, ...dirs.map((dir) => readEnvFile(join(dir, `.env.${env}`)) ?? {}));
+  return { vars, credentials: storeValues(readStore(root), env).values };
 }
 
 /** The envs the project root defines (`.env.<env>`) — the list an "unknown env" error names. */
@@ -409,11 +409,11 @@ export function applyLayered(testEnv, { root = process.cwd(), ticket, ambientWin
   }
   for (const [k, v] of Object.entries(r.env)) if (v !== undefined && process.env[k] !== v) process.env[k] = v;
   for (const k of Object.keys(ambient)) if (!(k in r.env)) delete process.env[k]; // inherited values `layered` dropped
-  warnOnce(testEnv, r, root, ambient, migrateHint);
+  warnOnce(testEnv, r, root, ambient, migrateHint, legacy);
   return r;
 }
 
-function warnOnce(testEnv, r, root, ambient, migrateHint) {
+function warnOnce(testEnv, r, root, ambient, migrateHint, legacy) {
   const mark = `${testEnv}|${r.ticket ?? ''}`;
   if (process.env.TEST_ENV_CHECKED === mark) return;
   process.env.TEST_ENV_CHECKED = mark;
@@ -429,7 +429,7 @@ function warnOnce(testEnv, r, root, ambient, migrateHint) {
     console.warn(`[env] PASSWORDS=master from ${r.ignoredPasswords.file} is ignored: only ${own} can make ${testEnv} a master stand. Anything else would switch a stand others use, and seeding would reset its accounts to the master password.`);
   }
   if (r.master && !r.master.found) {
-    console.warn(`[env] ${testEnv} says PASSWORDS=master, but ${STORE_FILE} has no "master" — its passwords stay unset. Add it (one password every test account on master stands uses), then reconnect the playwright-* lanes.`);
+    console.warn(`[env] ${testEnv} says PASSWORDS=master, but ${STORE_FILE} has no "master"${legacy ? ` (nor ${LEGACY_MASTER_FILE} a ${MASTER_NAME})` : ''} — its passwords stay unset. Add it (one password every test account on master stands uses), then reconnect the playwright-* lanes.`);
   }
   if (r.leftovers.length) {
     const files = [...new Set(r.leftovers.map((l) => l.file))];

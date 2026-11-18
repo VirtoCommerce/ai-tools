@@ -29,11 +29,14 @@ export const SYNC = [
 const check = process.argv.includes('--check');
 const drifted = [];
 let written = 0;
+// Compared and written with LF line endings: a Windows checkout may hold a file as CRLF (some copies are pinned
+// eol=lf, the sources are not), and git stores both as LF — a line-ending difference is not drift.
+const lf = (path) => readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
 for (const { source, copies } of SYNC) {
-  const want = readFileSync(join(ROOT, source));
+  const want = lf(join(ROOT, source));
   for (const copy of copies) {
     const path = join(ROOT, copy);
-    if (existsSync(path) && readFileSync(path).equals(want)) continue;
+    if (existsSync(path) && lf(path) === want) continue;
     if (check) { drifted.push(`${copy}  ≠  ${source}`); continue; }
     writeFileSync(path, want);
     written++;

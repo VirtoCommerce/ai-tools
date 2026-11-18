@@ -51,7 +51,7 @@ const REPO = resolve(SKILL_DIR, "..", "..", "..");
 // The one env loader (scripts/lib/load-env.mjs), for the LOCAL stand unless TEST_ENV names another: a session's
 // binding or .env.test-env must not point this at a shared stand. .env.local beats .env.<env>, so JIRA_EMAIL is the
 // token owner's account (a committed env's JIRA_EMAIL against the .env.local token → 401).
-loadEnvFor(process.env.TEST_ENV || "localhost", { root: REPO });
+loadEnvFor(process.env.TEST_ENV || "localhost", { root: REPO, testAccounts: false }); // tokens only: a broken account store must not stop it
 
 const ARTIFACT_RE = /https?:\/\/vc3prerelease\.blob\.core\.windows\.net\/[^\s)"'<>]+?\.zip/gi;
 const PR_URL_RE = /github\.com\/(VirtoCommerce)\/([A-Za-z0-9._-]+)\/pull\/(\d+)/gi;

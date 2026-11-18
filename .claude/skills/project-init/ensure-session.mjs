@@ -105,7 +105,7 @@ async function ensureGithub(check) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  loadEnv({ root: process.cwd() });
+  loadEnv({ root: process.cwd(), testAccounts: false }); // tokens only: a broken account store must not stop onboarding
   const profile = loadProjectProfile();
   // Default targets from the profile; explicit --ado/--github narrows.
   const wantAdo = args.ado || (!args.ado && !args.github && (profile.tracker.kind === "azure" || profile.vcs.clientHost === "azure-repos"));

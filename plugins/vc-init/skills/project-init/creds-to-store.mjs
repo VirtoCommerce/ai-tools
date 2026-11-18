@@ -64,12 +64,10 @@ function child(root, env, mode, input = "") {
 
 /** CHILD: the credential variables the loader gives this env, with values (to the parent's pipe only). */
 async function childRead() {
-  const { loadLayeredEnv } = await import(pathToUrl(LOADER));
-  const env = loadLayeredEnv();
+  const { loadLayered } = await import(pathToUrl(LOADER));
   // A value a QA_ENV_PATH folder supplies is that folder's to keep: this move cleans only the project root, so taking
   // it would leave its line behind as a leftover nothing clears. The loader's warning names that file instead.
-  const { layered } = await import(pathToUrl(resolve(dirname(LOADER), "env-layers.mjs")));
-  const fromFolder = layered(env, { root: resolve("."), ambient: childEnv(env), legacy: true }).dedicatedKeys;
+  const { testEnv: env, layers: { dedicatedKeys: fromFolder } } = loadLayered();
   const e = Object.fromEntries(Object.entries(process.env).filter(([k]) => !fromFolder.has(k)));
   const markers = existsSync(`.env.${env}`) ? markedUsersIn(readFileSync(`.env.${env}`, "utf8")).map((u) => u.key) : [];
   const out = {};

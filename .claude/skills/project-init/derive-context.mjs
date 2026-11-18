@@ -43,9 +43,10 @@ async function main() {
   const clientVcs = args["client-vcs"] || "github";
   const upstreamOrg = args["upstream-org"] || "VirtoCommerce";
 
-  // The one env loader (scripts/lib/load-env.mjs): every layer, the per-env suffix promotion (ADO_PAT_<ENV> →
-  // ADO_PAT, …) and the test-account store, so filled creds are seen whichever file they landed in.
-  loadEnv({ root: process.cwd() });
+  // The one env loader (scripts/lib/load-env.mjs): every layer and the per-env suffix promotion (ADO_PAT_<ENV> →
+  // ADO_PAT, …), so filled tokens are seen whichever file they landed in. Tokens only: no test-account store, so a
+  // broken one cannot stop onboarding.
+  loadEnv({ root: process.cwd(), testAccounts: false });
 
   // --- auth actually present, per axis ---
   const gh = resolveGithubToken();

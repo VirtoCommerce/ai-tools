@@ -35,6 +35,7 @@ export const FEATURE_GATED_VARS = Object.freeze({
   // App IDs gate the feature. Auth is AAD-first (az login / service principal / managed identity) — API keys are an
   // optional fallback, not required here.
   monitoring: { vars: ['APPINSIGHTS_APP_ID_BACKEND', 'APPINSIGHTS_APP_ID_STOREFRONT'], gates: '/qa-monitoring (App Insights online bug monitoring)' },
+  teams: { vars: ['TEAMS_WEBHOOK_URL'], gates: '/qa-monitoring Teams card (vc-fix skills/qa-monitoring/notify-teams.ts) — optional, monitoring still runs without it' },
 });
 
 /**
@@ -78,14 +79,15 @@ export function enforceEnv(testEnv, source) {
 }
 
 /**
- * `npm run env:check`'s report on the loaded env: every CORE and FEATURE-GATED variable as SET (with the file it came
- * from) or EMPTY, then every other variable the env's files set — never a value. `layers` is env-layers' `layered`
- * result for this env read from the files alone (ambient {}), which names each variable's file. Returns the exit code.
+ * `npm run env:check`'s report on the loaded env: every CORE and FEATURE-GATED variable as SET (with where it came
+ * from) or EMPTY, then every other variable the env's files set — never a value. `sourceOf` is the LOAD's own (the
+ * result of the load that filled process.env), so the source printed is the one the value came from; `fileKeys` are
+ * the names the env's files set. Returns the exit code.
  */
-export function reportEnv(testEnv, sourceLabel, layers) {
+export function reportEnv(testEnv, sourceLabel, sourceOf, fileKeys) {
   const { envRisk, errors, warnings } = checkEnv(process.env);
   console.log(`Active env: TEST_ENV=${testEnv} (${sourceLabel}) ENV_RISK=${envRisk}`);
-  const report = (name) => console.log(process.env[name] ? `  ${name}: SET (${layers.sourceOf(name)})` : `  ${name}: EMPTY`);
+  const report = (name) => console.log(process.env[name] ? `  ${name}: SET (${sourceOf(name)})` : `  ${name}: EMPTY`);
   const listed = new Set(CORE_REQUIRED_VARS);
   console.log('CORE');
   CORE_REQUIRED_VARS.forEach(report);
@@ -94,7 +96,7 @@ export function reportEnv(testEnv, sourceLabel, layers) {
     vars.forEach((v) => { listed.add(v); report(v); });
   }
   const suffix = `_${testEnv.toUpperCase()}`;
-  const others = Object.keys(layers.env).filter((k) => k !== 'TEST_ENV' && !listed.has(k) && !k.endsWith(suffix) && process.env[k]).sort();
+  const others = [...fileKeys].filter((k) => k !== 'TEST_ENV' && !listed.has(k) && !k.endsWith(suffix) && process.env[k]).sort();
   if (others.length) { console.log('OTHER — set by the env files'); others.forEach(report); }
   for (const w of warnings) console.warn(w);
   for (const e of errors) console.error(e);

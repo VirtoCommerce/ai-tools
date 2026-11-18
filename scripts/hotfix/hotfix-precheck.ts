@@ -53,7 +53,8 @@ const OWNER = 'VirtoCommerce';
 const MAX_PATCH_PROBE = 40;
 const MAX_RELEASES_SCAN = 20; // how many recent releases to scan for "fix already shipped"
 const BUNDLES_BASE = `https://github.com/VirtoCommerce/vc-modules/blob/${process.env.BUNDLE_REF || 'master'}/bundles`;
-const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
+// Read at use, not at import: loadToken() fills JIRA_BASE_URL from .env.local after the module has loaded.
+const jiraBase = () => (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
 // A fixable / hotfixable product repo: a module (incl. x-api split), the platform, or the theme.
 const PRODUCT_REPO_RE = /^vc-module(-x)?-[a-z0-9.-]+$/i;
 const isProductRepo = (n: string) => n === 'vc-platform' || n === 'vc-frontend' || PRODUCT_REPO_RE.test(n);
@@ -455,7 +456,7 @@ async function prFromJiraDescription(task: string): Promise<{ repo: string; numb
   const email = process.env.JIRA_EMAIL, token = process.env.JIRA_API_TOKEN;
   if (!email || !token) { console.error(`[hotfix-precheck] no GitHub PR found for ${task}; JIRA description fallback needs JIRA_EMAIL + JIRA_API_TOKEN in .env.local`); return null; }
   const auth = Buffer.from(`${email}:${token}`).toString('base64');
-  const res = await fetch(`${JIRA_BASE}/rest/api/3/issue/${encodeURIComponent(task)}?fields=description`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-precheck' } });
+  const res = await fetch(`${jiraBase()}/rest/api/3/issue/${encodeURIComponent(task)}?fields=description`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-precheck' } });
   if (!res.ok) { console.error(`[hotfix-precheck] JIRA fetch for ${task} failed (HTTP ${res.status})`); return null; }
   const j = await res.json();
   // description is ADF (JSON) — the PR href lives in a link mark; stringify + regex finds it.

@@ -31,7 +31,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
  * exceptions (env-layers.mjs `layered`): PASSWORDS comes only from the stand's own file, and a copy of an inherited
  * MASTER_PASSWORD is not the environment's own.
  *
- * @param {{ fallback?: string, ambientWins?: boolean, root?: string, ticket?: string | null }} [options] `fallback`:
+ * @param {{ fallback?: string, ambientWins?: boolean, root?: string, ticket?: string | null, testAccounts?: boolean }} [options] `fallback`:
  *   TEST_ENV to use when nothing selects one; `ticket`: the run's ticket for QA_ENV_PATH's `<ticket>` (default: QA_TICKET,
  *   else the session's bound run)
  * @returns {{ testEnv: string, promoted: Set<string>, sourceOf: (key: string) => string, ticket: string | null,
@@ -40,8 +40,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
  *   password); `sourceOf(key)` names what supplied a key's current value, e.g. 'BACK_URL from .env.local' or
  *   'BACK_URL_VCPTCORE_DEV from .env.vcptcore_dev' — print it next to any target you act on.
  */
-export function loadEnv({ fallback = 'vcst', ambientWins = false, root = ROOT, ticket } = {}) {
-  return loadEnvFor(selectTestEnv(fallback), { ambientWins, root, ticket });
+export function loadEnv({ fallback = 'vcst', ambientWins = false, root = ROOT, ticket, testAccounts = true } = {}) {
+  return loadEnvFor(selectTestEnv(fallback), { ambientWins, root, ticket, testAccounts });
 }
 
 /**
@@ -57,8 +57,12 @@ export function selectTestEnv(fallback = 'vcst') {
   return env;
 }
 
-/** loadEnv for a named env (the caller resolved it): the same layers, written into process.env. */
-export function loadEnvFor(testEnv, { ambientWins = false, root = ROOT, ticket } = {}) {
-  const r = applyLayered(testEnv, { root, ticket, ambientWins, passwordNames: ROLE_PASSWORD_NAMES, migrateHint: '`npm run creds:migrate` moves them' });
+/**
+ * loadEnv for a named env (the caller resolved it): the same layers, written into process.env. `testAccounts: false`
+ * skips the test-account store — for a script that needs only tokens and URLs (a tracker / code-host reader, an
+ * onboarding helper), so a broken store cannot stop it.
+ */
+export function loadEnvFor(testEnv, { ambientWins = false, root = ROOT, ticket, testAccounts = true } = {}) {
+  const r = applyLayered(testEnv, { root, ticket, ambientWins, testAccounts, passwordNames: ROLE_PASSWORD_NAMES, migrateHint: '`npm run creds:migrate` moves them' });
   return { testEnv, promoted: r.perEnv, sourceOf: r.sourceOf, ticket: r.ticket, dedicated: r.dedicated, master: r.master };
 }

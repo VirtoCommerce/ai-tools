@@ -85,7 +85,8 @@ const HEALTH_SLICE_MS = 300_000;
 const DEFAULT_TIMEOUT_S = 1200; // deploy build + cloud rollout + platform restart ~ up to 20 min
 const PRODUCT_REPO_RE = /^vc-module(-x)?-[a-z0-9.-]+$/i;
 const isProductRepo = (n: string) => n === 'vc-platform' || n === 'vc-frontend' || PRODUCT_REPO_RE.test(n);
-const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
+// Read at use, not at import: loadToken() fills JIRA_BASE_URL from .env.local after the module has loaded.
+const jiraBase = () => (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
 
 // ── types ──────────────────────────────────────────────────────────────────────
 interface SemVer { major: number; minor: number; patch: number; }
@@ -275,7 +276,7 @@ async function prFromJiraDescription(task: string): Promise<{ repo: string; numb
   const email = process.env.JIRA_EMAIL, token = process.env.JIRA_API_TOKEN;
   if (!email || !token) { console.error(`[hotfix-deliver] no GitHub PR found for ${task}; JIRA description fallback needs JIRA_EMAIL + JIRA_API_TOKEN in .env.local`); return null; }
   const auth = Buffer.from(`${email}:${token}`).toString('base64');
-  const res = await fetch(`${JIRA_BASE}/rest/api/3/issue/${encodeURIComponent(task)}?fields=description`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-deliver' } });
+  const res = await fetch(`${jiraBase()}/rest/api/3/issue/${encodeURIComponent(task)}?fields=description`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-deliver' } });
   if (!res.ok) { console.error(`[hotfix-deliver] JIRA fetch for ${task} failed (HTTP ${res.status})`); return null; }
   const j = await res.json();
   // description is ADF (JSON) — the PR href lives in a link mark; stringify + regex finds it.
@@ -288,7 +289,7 @@ async function jiraSummary(task: string): Promise<string | null> {
   const email = process.env.JIRA_EMAIL, token = process.env.JIRA_API_TOKEN;
   if (!email || !token) return null;
   const auth = Buffer.from(`${email}:${token}`).toString('base64');
-  const res = await fetch(`${JIRA_BASE}/rest/api/3/issue/${encodeURIComponent(task)}?fields=summary`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-deliver' } });
+  const res = await fetch(`${jiraBase()}/rest/api/3/issue/${encodeURIComponent(task)}?fields=summary`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-deliver' } });
   if (!res.ok) return null;
   return (await res.json())?.fields?.summary ?? null;
 }

@@ -34,9 +34,9 @@ export declare function currentTicket(options?: LookupOptions): string | null;
 export declare function envFolders(options?: LookupOptions & { env?: string }): string[];
 /** The file that defines an env (a dedicated folder's first, else the root's), or null. */
 export declare function findEnv(env: string, options?: LookupOptions): string | null;
-/** What an env declares itself: its `.env.<env>` files (`vars`) and legacy `.env.playwright.<env>` files (`passwords`), merged,
- *  dedicated over root, and the flat variables the credential store gives it (`credentials`). */
-export declare function ownEnv(env: string, options?: LookupOptions): { vars: Record<string, string>; passwords: Record<string, string>; credentials: Record<string, string> };
+/** What an env declares itself: its `.env.<env>` files (`vars`), merged dedicated over root, and the flat variables
+ *  the credential store gives it (`credentials`). */
+export declare function ownEnv(env: string, options?: LookupOptions): { vars: Record<string, string>; credentials: Record<string, string> };
 /** The envs the project root defines. */
 export declare function knownEnvs(root?: string): string[];
 /** Where an unknown env was looked for, for an error message. */

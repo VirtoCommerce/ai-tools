@@ -9,5 +9,8 @@ import { reportEnv } from '../lib/env-check.mjs';
 
 const SOURCE = { TEST_ENV: 'TEST_ENV in the environment', session: "this session's binding (npm run env:use)", '.env.test-env': '.env.test-env', default: 'the default' };
 const root = process.cwd();
-const { testEnv } = loadEnv({ root });
-process.exit(reportEnv(testEnv, SOURCE[testEnvChoice('vcst').source], layered(testEnv, { root, ambient: {}, masterValues: false })));
+// The load's own sourceOf names where each value in process.env came from; the files alone (ambient {}) list the
+// other names they set.
+const { testEnv, sourceOf } = loadEnv({ root });
+const fileKeys = Object.keys(layered(testEnv, { root, ambient: {}, masterValues: false }).env);
+process.exit(reportEnv(testEnv, SOURCE[testEnvChoice('vcst').source], sourceOf, fileKeys));
