@@ -11,6 +11,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const TIERS = ["R0", "R1", "R2", "R3"];
 const BIG_DIFF_LINES = 400;
@@ -92,6 +93,8 @@ const rules = pathScopedRules();
 
 for (const f of files) classifyFile(f);
 for (const f of files) markStyling(f, mergeBase);
+const questionSet = loadQuestions();
+for (const f of files) f.questions = f.tier === 0 ? [] : questionSet.filter((q) => q.always || [f.path, ...f.addedText, ...f.deletedText].some((l) => q.re.test(l))).map((q) => q.id);
 const tokens = tokenChanges();
 const visual = visualCheck();
 
@@ -119,6 +122,7 @@ const result = {
   changedLines,
   zones,
   files: files.map(({ tier: t, ...rest }) => ({ tier: TIERS[t], ...rest })),
+  questions: [...new Set(files.flatMap((f) => f.questions))],
   tokens,
   visual,
   rules: matchedRules,
@@ -238,6 +242,28 @@ function rewrittenFix(f) {
     if (FIX_SUBJECT.test(c.subject) && now - c.time < FIX_WINDOW_DAYS * 86400) return `${sha.slice(0, 9)} "${c.subject.slice(0, 70)}"`;
   }
   return null;
+}
+
+// --- risk questions -------------------------------------------------------------
+
+// Questions and their `Signals:` regex, from this skill's risk-questions.md and, when the repository
+// has one, its own .claude/review/risk-questions.md (same format). A signal only pre-selects a question.
+function loadQuestions() {
+  const sources = [path.join(path.dirname(fileURLToPath(import.meta.url)), "risk-questions.md"), ".claude/review/risk-questions.md"];
+  const out = [];
+  for (const src of sources) {
+    if (!existsSync(src)) continue;
+    const text = readFileSync(src, "utf8");
+    for (const m of text.matchAll(/\*\*([A-Z0-9]+-\d+) \(([^)]+)\)\.\*\*[\s\S]*?\nSignals: (always|`([^`\n]+)`)/g)) {
+      try {
+        out.push({ id: m[1], floor: m[2], always: m[3] === "always", re: m[3] === "always" ? null : new RegExp(m[4]) });
+      } catch {
+        warnings.push(`bad Signals regex for ${m[1]} in ${src}`);
+      }
+    }
+  }
+  if (!out.length) warnings.push("no risk questions found: answer risk-questions.md in full");
+  return out;
 }
 
 // --- styling ------------------------------------------------------------------
@@ -682,6 +708,10 @@ function markdown(r) {
   for (const f of sorted) {
     const consumers = f.consumers.length ? `${f.consumers.length}: ${f.consumers.slice(0, 4).map((c) => "`" + c + "`").join(", ")}${f.consumers.length > 4 ? ", …" : ""}` : "—";
     lines.push(`| ${f.tier} | \`${f.path}\` (${f.status}, +${f.added}/−${f.deleted}) | ${f.reasons.join("; ")} | ${consumers} | ${f.external.join("; ") || "—"} |`);
+  }
+  if (r.questions.length) {
+    lines.push("", "## Risk questions matched", "");
+    for (const f of sorted) if (f.questions?.length) lines.push(`- \`${f.path}\`: ${f.questions.join(", ")}`);
   }
   lines.push("", "## Lenses", "");
   for (const l of r.lenses) lines.push(`- [${l.recommended ? "x" : " "}] **${l.id}** — ${l.why}`);

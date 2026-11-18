@@ -56,10 +56,12 @@ The script sees what paths and the module graph show:
 
 It cannot see what the code does.
 
-**Then classify by meaning: your judgment, on top of the script's.** Read
-[risk-questions.md](risk-questions.md) and answer every question for every non-R0 file below R3
-from its diff. A yes raises the file to at least the question's floor. Put each raise in the risk
-summary with the question and the line that answered it. **You may raise a tier, never lower it**:
+**Then classify by meaning: your judgment, on top of the script's.** The script pre-selects, per file,
+the questions in [risk-questions.md](risk-questions.md) whose signals match its path or changed
+lines (`questions`); a one-line change usually gets a handful. Answer those from the file's diff, plus
+any other question the diff plainly calls for. A yes raises a file below R3 to at least the
+question's floor, and for any file it becomes a focus handed to the lenses. Put each raise in the risk
+summary with the question id and the line that answered it. **You may raise a tier, never lower it**:
 lowering is the user's call.
 
 If the repository has its own .claude/review/risk-questions.md, answer its questions too. A
@@ -80,7 +82,8 @@ One subagent per lens, all in parallel. Give each one this brief, filled in:
 
 1. The repository path, the base and head SHAs, and the command for the diff:
    `git diff <merge-base>..HEAD -- <files>`.
-2. The files in scope for the lens, with their tier and reasons from the script.
+2. The files in scope for the lens, with their tier and reasons from the script, and the risk
+   questions answered yes for them.
 3. The lens section from `lenses.md`, verbatim, including its "Not a finding" list.
 4. For `consumers`: each changed file's consumer list and its "visible outside" notes.
    For `conventions`: the rule files the script matched, and the repository's `CLAUDE.md`.
