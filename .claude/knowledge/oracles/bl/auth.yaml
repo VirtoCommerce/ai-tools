@@ -40,8 +40,8 @@ rules:
     violation_signal: Unverified user completes checkout; no verification prompt; expired link still works; verified status not persisted after sign-out/sign-in.
     status: ACTIVE
     verified:
-      date: 2026-11-17
-      by: REG-2026-11-17-1257
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-AUTH-003
     title: Account lockout after N failed attempts
     rule: "After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. A successful password sign-in, or a successful second-factor completion, resets the failure counter. A successful passkey sign-in does not reset it (a passkey is not a password sign-in), but lockout still applies to it: a locked account cannot sign in with a passkey."
@@ -93,8 +93,8 @@ rules:
     violation_signal: "Checkout pre-fills a shipping address while the policy is at its disabled value, or fails to pre-fill while it is at the previous-order value; pre-fill overwrites a delivery address already chosen on the shipment; pre-fill draws from the saved address book rather than the most recent order; a brand-new customer sees pre-filled data; addresses or saved cards from another account are displayed. NOTE: a returning customer seeing an empty address form under the **default** (disabled) policy is **expected** — do not file it."
     status: ACTIVE
     verified:
-      date: 2026-11-04
-      by: REG-2026-11-04-1022
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-AUTH-005
     title: RBAC 6-permission model
     rule: Every module in Virto Commerce follows the same permission-claim model built from a canonical base set — `access`, `read`, `create`, `update`, `delete` (the 5-permission module template in `ModuleConstants.cs`) — plus `export` on modules that support data export, and further module-specific extensions (e.g. Orders adds `read_prices` / `update_shipments`). The commonly-used "6-permission" shorthand = the base 5 + `export`. Permissions are assigned to roles, and roles are assigned to users. A user without `create` permission on a module must not see the "Create" button in Admin. API calls without the required permission must return 403 Forbidden.
@@ -150,8 +150,8 @@ rules:
     violation_signal: A `/sign-out` route renders a page; a header-level logout button exists; logout works only via a URL (no popup); the popup logout selector `data-test-id="sign-out-button"` (inside `data-test-id="account-menu"`) is missing.
     status: ACTIVE
     verified:
-      date: 2026-10-15
-      by: REG-2026-10-15-1115
+      date: 2026-11-18
+      by: REG-2026-11-18-1510
   - id: BL-AUTH-008
     title: Self-impersonation must have a defined non-circular outcome
     rule: "When an operator with `CanImpersonate` navigates to `/account/impersonate/{ownUserId}` (their own platform user ID), the result must be a defined, non-circular outcome: (a) session cleared with redirect to `/sign-in`, (b) a handled error page, or (c) a redirect to home with the operator's own session intact and no impersonation banner. The system must NOT enter a circular state where the banner shows \"Operator logged in as Operator\" or an infinite redirect loop."
@@ -371,8 +371,8 @@ rules:
       - A `refresh_token` switch or an impersonation silently succeeding on an inaccessible org. The fallback is leaking into an explicit-switch path.
     status: ACTIVE
     verified:
-      date: 2026-11-04
-      by: REG-2026-11-04-1531
+      date: 2026-11-18
+      by: REG-2026-11-18-1510
   - id: BL-AUTH-017
     title: A malformed REST request body yields 400, never 500
     rule: A REST endpoint that accepts a request body MUST validate required fields **before** touching any downstream store or lookup; a missing, null, or unparseable body MUST return **400 Bad Request**, never an unhandled **500**. A well-formed body carrying a merely *wrong* value (an empty-string or unknown username) is a different outcome and MUST still resolve gracefully — typically `200` with a failure flag. No response body may leak a stack trace.
@@ -601,3 +601,32 @@ rules:
     violation_signal: |-
       - A store mode or a user / organization mode changes whether the Backoffice sign-in asks for the code.
     status: ACTIVE
+  - id: BL-AUTH-026
+    title: An emailed sign-in code signs in at most once
+    rule: |-
+      A one-time code emailed for code sign-in (`grant_type=otp_email`) signs the user in at most once. Accepting a code makes that code and every code emailed before it invalid. Requesting a code, including Resend, does not invalidate codes already sent, and a password sign-in invalidates none. A refused code (used, superseded, or wrong) returns 400 `invalid_grant` with code `invalid_code` and no token, is recorded in the sign-in log as an OTP failure with reason InvalidCode, and counts as a failed attempt toward the account lockout (BL-AUTH-003). Of two grants with one code at the same time, exactly one succeeds.
+    priority: P0-security
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-6490 description, Expected — a one-time code works for one sign-in; a second grant with the same code is refused like a wrong code (invalid_code)."
+      - kind: ac
+        ref: "VirtoCommerce/vc-module-otp PR #4 description (VCST-6490) — accepting a code invalidates it and every code sent before it; requesting a code and password sign-ins invalidate nothing; a reused code counts as a failed attempt; parallel checks for one user are serialized."
+      - kind: doc
+        ref: "vc-module-otp README — a code works for one sign-in; a sign-in makes every code sent before it invalid; the sign-in log records the real reason."
+    scope:
+      code_ref: vc-module-otp:src/VirtoCommerce.Otp.Data/Services/OtpService.cs#VerifyCodeAsync
+    check:
+      kind: manual
+      ref: |-
+        Grant a code twice → 200 then 400 invalid_code; two codes from adjacent 3-minute windows, accept the later → the earlier is refused (and the reverse order after a Resend); a password sign-in leaves a pending code valid; two parallel grants with one code → exactly one token. Suite 105 (OTP-018, OTP-021, OTP-052 – OTP-056) and suite 104 (OTP-058).
+    violation_signal: |-
+      - A second 200 with an access token for a code that already signed the user in.
+      - A code emailed before an accepted code still signs in.
+      - Resend or a password sign-in invalidates a pending code.
+      - A refused reuse is not counted toward the lockout, or not logged as an OTP InvalidCode failure.
+      - Two parallel grants with one code both return a token.
+    status: ACTIVE
+    verified:
+      date: 2026-11-18
+      by: REG-2026-11-18-1510

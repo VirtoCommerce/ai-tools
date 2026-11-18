@@ -271,3 +271,21 @@ Admin access; Test favicon files: favicon.ico favicon.png","admin={{BACK_URL}}, 
 [DOM] Both formats display correctly in browser tab
 [DOM] Favicon is properly generated in multiple sizes (16x16, 32x32, 180x180) if thumbnail job runs","[CONSOLE] no file upload errors
 [NETWORK] favicon loads with HTTP 200 in browser tab","ICO format rejected; PNG format rejected; Favicon not showing in browser tab after upload","remove uploaded favicons and restore original","Favicon Upload","Manual"
+FWL-069,Classic storefront loads no soft-design CSS or fonts and declares data-design=classic,Theme > Design (build-time),Medium,,,"[PRE:CLEAR_SESSION]
+- The stand's store bundles design 'classic' (read html[data-design] on the first page; 'soft' = BLOCKED, this case is the classic branch, not FAIL)
+- Read-only: no setting is changed; the design setting is read, never flipped","store={{FRONT_URL}}, guest page=/, signed-in page=/account/orders, user=USER, network filter (regular expression) = designs?/soft|soft[-_.]|[/_.-](Inter|Geologica)[/_.-]|fonts\.(googleapis|gstatic)\.com","--- SCREEN: guest - home page ---
+[NAV] Navigate to {{FRONT_URL}}/
+[WAIT] the home page has finished loading (no pending requests)
+[ASSERT] Read html[data-design]; the value 'soft' = BLOCKED (not FAIL)
+[ASSERT] Read the network request list since navigation start, static resources included, filtered with the regular expression from Test_Data
+[ASSERT] Count link[data-design-fonts] elements in the document and list the font families the document has loaded (document.fonts) - read-only
+--- SCREEN: USER - Orders page ---
+[PRE:SIGNIN_AS:USER]
+[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] the Orders table is rendered
+[ASSERT] Read html[data-design]; the value 'soft' = BLOCKED (not FAIL)
+[ASSERT] Read the network request list since navigation start, static resources included, filtered with the regular expression from Test_Data
+[ASSERT] Count link[data-design-fonts] elements in the document and list the font families the document has loaded (document.fonts) - read-only","[STATE] On both pages html[data-design] equals 'classic' {SPEC} (VCST-6292 AC-14) {OBSERVED} (KB-45D8D356, vcst 2026-11-18)
+[COUNT] requests matching the soft-design filter (a designs/soft chunk, a Soft stylesheet, an Inter or Geologica font file, a Google Fonts host) on the guest home page = 0 and on the signed-in Orders page = 0 {SPEC} (VCST-6292 AC-14) {OBSERVED} (KB-45D8D356)
+[COUNT] link[data-design-fonts] elements = 0 on both pages {OBSERVED} (KB-45D8D356, vcst 2026-11-18)
+[STATE] The loaded font families contain neither 'Inter' nor 'Geologica' on either page {SPEC} (VCST-6292 AC-14) {OBSERVED} (KB-45D8D356)",[NETWORK] no soft-design asset request on either page; a request that fails for an unrelated host (e.g. a third-party image) is not counted,"any request for a soft design chunk, Soft stylesheet, Inter or Geologica font, or a Google Fonts host on a classic storefront; a link[data-design-fonts] element in the document; html[data-design] missing or not 'classic'; Inter or Geologica among the loaded font families",none - read-only; no setting or data changed (sign out USER),"VCST-6292 AC-14 · Archetype:CONFIG · Technique:EP · Purpose:FUNC · Observed: KB-45D8D356 (vcst, design classic, anonymous, /, /catalog, /cart) + vcst 2026-11-18 theme 2.63.0-pr-2617-a143 (guest /, USER /account/orders: no soft request, no link[data-design-fonts], only Lato loaded, data-design=classic) | Promoted: REG-2026-11-18-1715 (2026-11-18)",Automated

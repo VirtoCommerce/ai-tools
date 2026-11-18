@@ -39,10 +39,11 @@ rules:
       kind: manual
       ref: Change price in Admin → immediately check storefront listing (may show old price) → add to cart → cart must show the NEW price. After reindex → listing matches cart.
     violation_signal: Cart uses stale price from search index; order placed at old price after admin price increase; price mismatch between listing and cart persists beyond reindex window.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-27
       by: REG-2026-10-27-SR-SWEEP
+    suspect_reason: "[case] BSM-013 failed in REG-2026-11-18-1157"
   - id: BL-CROSS-003
     title: Module disable → API 404, Admin section removal, dependent degradation
     rule: When a module is disabled in Admin, its REST APIs return 404, its Admin SPA sections disappear, and its GraphQL schema types are removed. Dependent modules should degrade gracefully — not crash.
@@ -55,8 +56,8 @@ rules:
     violation_signal: API returns 500 instead of 404; Admin section still visible but broken; dependent module crashes; re-enable doesn't restore functionality.
     status: ACTIVE
     verified:
-      date: 2026-10-27
-      by: REG-2026-10-27-SR-SWEEP
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-CROSS-004
     title: Currency switch triggers multi-system recalculation
     rule: "When a user switches currency on the storefront, the following must all update atomically: (1) product prices switch to the new currency's price list, (2) cart line items recalculate using new prices, (3) shipping rates update for the new currency, (4) tax recalculates if rates differ. Products without prices in the new currency become unavailable."
@@ -70,6 +71,9 @@ rules:
       ref: Switch currency → all prices update → cart totals recalculate → shipping and tax adjust → products without new-currency prices show "Unavailable".
     violation_signal: Partial update (prices change but cart doesn't recalculate); shipping in old currency; tax on pre-switch amounts; mixed currency display.
     status: ACTIVE
+    verified:
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-CROSS-005
     title: Order placement triggers multi-system side effects
     rule: "When an order is successfully placed, the following side effects must all occur: (1) inventory decremented by ordered quantities, (2) order confirmation email sent to the customer, (3) GA4 `purchase` event fired with correct order ID, revenue, and items, (4) order appears in the customer's order history, (5) cart is cleared. All side effects must complete — partial execution (e.g., inventory decremented but email not sent) is a bug."
@@ -128,8 +132,8 @@ rules:
     violation_signal: Cart swaps but prices remain from previous org; addresses from wrong org; theme doesn't change; partial context swap of any kind.
     status: ACTIVE
     verified:
-      date: 2026-10-29
-      by: REG-2026-10-28-1915
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-CROSS-009
     title: Eventual consistency is bounded
     rule: "Any change to an entity — an admin edit (product, price, inventory, category, settings) **or a write through any API surface** (REST, xAPI/GraphQL) — must be reflected everywhere that entity is read within 120 seconds (2 reindex cycles). This bound covers search index, cache layers, CDN, **and per-entity read caches**: a write on one surface must invalidate the cached read of the *same* entity on every other surface — caches must expire on the entity's change event, not only on a same-surface write. After 120 seconds, any discrepancy (Admin vs storefront, or one API surface vs another) is a bug."

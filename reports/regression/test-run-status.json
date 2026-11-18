@@ -1,22 +1,45 @@
 {
-  "runId": "REG-2026-11-17-1509",
+  "runId": "REG-2026-11-18-1715",
   "status": "completed",
-  "startedAt": "2026-11-17T14:09:50.557Z",
-  "env": "virtostart",
-  "frontUrl": "https://virtostart-demo-store.govirto.com",
-  "selection": "122 --ids NXR-014,NXR-017,NXR-032",
+  "startedAt": "2026-11-18T17:15:41.922Z",
+  "env": "vcst",
+  "selection": "001,045,071 --ids CAT-007,CAT-056,A11Y-KB-006,A11Y-KB-007,FWL-069 --no-promote",
+  "ticket": "VCST-6292",
+  "note": "qa-suite-sync 5a scoped run (/qa-test-lifecycle VCST-6292)",
   "suites": {
-    "122": {
+    "001": {
       "status": "done",
-      "lane": "browser",
-      "cases": 3,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-17T14:10:28.334Z",
+      "lane": "browser",
+      "startedAt": "2026-11-18T17:16:41.313Z",
+      "cases": 2,
+      "pass": 2,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-18T17:27:06.382Z"
+    },
+    "045": {
+      "status": "done",
+      "browser": "playwright-chrome",
+      "lane": "browser",
+      "startedAt": "2026-11-18T17:16:41.313Z",
+      "cases": 2,
+      "pass": 1,
+      "fail": 1,
+      "blocked": 0,
+      "finishedAt": "2026-11-18T17:27:06.382Z"
+    },
+    "071": {
+      "status": "done",
+      "browser": "playwright-chrome",
+      "lane": "browser",
+      "startedAt": "2026-11-18T17:16:41.313Z",
+      "cases": 1,
       "pass": 1,
       "fail": 0,
-      "blocked": 2,
-      "finishedAt": "2026-11-17T14:13:49.004Z"
+      "blocked": 0,
+      "finishedAt": "2026-11-18T17:27:06.382Z"
     }
   },
-  "finishedAt": "2026-11-17T14:14:22.952Z"
+  "finishedAt": "2026-11-18T17:28:02.939Z"
 }

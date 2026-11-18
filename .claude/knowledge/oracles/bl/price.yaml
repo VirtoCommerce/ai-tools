@@ -24,10 +24,11 @@ rules:
       kind: manual
       ref: "`cart.items[].placedPrice` reflects the stacked discount. Coupon savings are calculated on the post-tier price, not the list price."
     violation_signal: Cart total higher than expected; coupon discount amount equals percentage of list price instead of sale/tier price.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-11-04
       by: REG-2026-11-04-1022
+    suspect_reason: "[case] CFG-GQL-015, CFG-GQL-016, CFG-GQL-018, CFG-GQL-030, CFG-GQL-031, CFG-GQL-034, CFG-GQL-036 failed in REG-2026-11-18-1157"
   - id: BL-PRICE-002
     title: Tax calculation position
     rule: Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).
@@ -64,8 +65,8 @@ rules:
     violation_signal: Price displays like "$12.5" or "$12.456", or rounding inconsistency between line total and cart subtotal.
     status: ACTIVE
     verified:
-      date: 2026-10-29
-      by: REG-2026-10-28-1915
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-PRICE-004
     title: Tiered/volume pricing boundaries
     rule: When a product has tiered pricing (e.g., 1-9 units = $10, 10+ units = $8), the lower price activates at exactly the threshold quantity. All units in the line use the same tier price (not split pricing).
@@ -137,8 +138,8 @@ rules:
     violation_signal: Non-org user sees contract prices; org member sees store default instead of contract; cart uses wrong price list after org switch.
     status: ACTIVE
     verified:
-      date: 2026-11-10
-      by: REG-2026-11-09-1635-W4
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-PRICE-008
     title: No floating-point money arithmetic
     rule: All monetary calculations must use decimal or integer-cent arithmetic internally. Floating-point rounding errors must never accumulate across line items — the sum of rounded line totals must equal the displayed subtotal. A discrepancy of even $0.01 between `sum(lineTotals)` and `cartSubtotal` is a bug.
@@ -155,8 +156,8 @@ rules:
     violation_signal: Subtotal differs from manual sum of line totals by $0.01+; penny discrepancy grows with more items; line total ≠ qty × unit price.
     status: ACTIVE
     verified:
-      date: 2026-10-29
-      by: REG-2026-10-28-1915
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-PRICE-009
     title: "`discountPercent` is a 4-decimal fraction, rounded away-from-zero, independent of the money rounding policy"
     rule: The `discountPercent` field (backing model `ProductPrice.DiscountPercent`, exposed via GraphQL `PriceType.discountPercent`) is computed as `discountAmount / listPrice`, rounded to exactly **4 decimal places** using **away-from-zero** midpoint rounding — hardcoded, and NOT routed through the pluggable money-rounding-policy extension point (that policy governs currency `MoneyType` amounts only, not this raw decimal fraction). When `listPrice` is zero, the value is `0`. The field is a **fraction** (e.g. `0.1250`), never a whole-number percentage, and is never `null`.
@@ -174,3 +175,6 @@ rules:
       ref: Query a product's `price { discountPercent }` where a discount is active. Compute `round(discountAmount / listPrice, 4, AwayFromZero)` independently and assert equality. Confirm the value carries up to 4 decimal digits rather than being pre-multiplied by 100 or truncated to fewer decimals. A product with no discount returns `0`, not `null`.
     violation_signal: "`discountPercent` returned as a whole number instead of a fraction; precision truncated below 4 decimals; a midpoint value rounded to-even instead of away-from-zero; `null` on a no-discount product; or the value changing after a custom money-rounding policy is registered (it must not — this field bypasses that policy entirely)."
     status: ACTIVE
+    verified:
+      date: 2026-11-18
+      by: REG-2026-11-18-1157

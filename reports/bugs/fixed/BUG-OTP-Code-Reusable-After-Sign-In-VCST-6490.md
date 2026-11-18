@@ -1,6 +1,6 @@
 # OTP sign-in: the emailed code is not one-time — the same code signs in again until it expires — **Medium**
 
-## Status: READY_TO_SUBMIT (filed as VCST-6490)
+## Status: FIXED (VCST-6490)
 **Found by:** agent — testing auth domain map refresh (2026-10-21)
 **Tracker:** [VCST-6490](https://virtocommerce.atlassian.net/browse/VCST-6490) · labels `found-by-agent`, `found-in-testing`. The auto-fix labels are withheld: the fix needs a product decision (see Fix Routing).
 
@@ -52,3 +52,10 @@ Suite 105, the `Archetype:REPLAY` case: "KNOWN GAP (VCST-5748, round 2)", expect
 - **Component / module:** OTP — `OtpService.VerifyCodeAsync`
 - **RCA anchor:** `OtpService.cs` `VerifyUserTokenAsync(user, TokenOptions.DefaultEmailProvider`
 - **Routing confidence:** HIGH. The fix approach is a product decision: a used-code store like the MFA module's, or a security-stamp rotation, which also signs out the user's other sessions. That is why the auto-fix labels are withheld.
+
+## Resolution
+
+- **Fixed in:** VirtoCommerce.OTP 3.1002.0-pr-4-83d4 (vc-module-otp#4, merged 2026-11-18): a per-user code stamp changes when a code is accepted, and code checks for one user run under a distributed lock.
+- **Tracker:** VCST-6490
+- **Verified:** 2026-11-18 on vcst (platform 3.1099.0), `/vc-fix:qa-verify-fix` — VERIFIED
+- **Method:** REST. The reuse STR ran 3 times, 3 of 3 refused with 400 `invalid_grant` / `invalid_code` and no token, and still refused 65 s later. Codes sent before an accepted code are refused; resend leaves the earlier code valid; a password sign-in does not cancel a code; of two parallel grants with one code exactly one succeeds. Evidence: `reports/tickets/Sprint26-23/VCST-6490/vcst/verification-report.md`.
