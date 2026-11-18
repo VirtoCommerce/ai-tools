@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: "Initialize / onboard the Virto Commerce plugins onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> (per-env URLs) + .env.local (the tracker / code-host connection, the same for every env, + test-user passwords) + .mcp.json + the vc-secrets declarations + the always-loaded rule that browser work goes only through the Playwright MCP lanes (.claude/rules/vc-browser.md), and verifies access. That one profile is what every installed plugin reads — the tracker, the repositories and the stands come from it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it checks that the host's own setup has run (and stops with its command when it has not), reads the servers and test-user password slots that setup left, and skips every token / MCP step of ours. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--add-user` adds another storefront user or admin (login in `.env.<env>`, password in vc-secrets or `.env.local`); `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
+description: "Initialize / onboard the Virto Commerce plugins onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> (per-env URLs) + .env.local (the tracker / code-host connection, the same for every env) + test-accounts.local.json (every test account's login and password) + .mcp.json + the vc-secrets declarations + the always-loaded rule that browser work goes only through the Playwright MCP lanes (.claude/rules/vc-browser.md), and verifies access. That one profile is what every installed plugin reads — the tracker, the repositories and the stands come from it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it checks that the host's own setup has run (and stops with its command when it has not), reads the servers and test-user password slots that setup left, and skips every token / MCP step of ours. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--add-user` adds another storefront user or admin (to test-accounts.local.json; optionally its password in vc-secrets); `--check` reconciles an existing profile to the current schema, moves the test accounts into test-accounts.local.json and any plaintext token into vc-secrets, then verifies."
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
@@ -40,7 +40,8 @@ operator can do now, built from the plugins actually installed.
 | Artifact | Purpose |
 |----------|---------|
 | `project-profile.json` (gitignored) | the deployment profile (`schemaVersion` 3) — read by every installed plugin that needs the deployment's tracker, repositories or stands. vc-init is its ONLY writer: other plugins persist into it through `profile-set.mjs` |
-| `.env.<env>` + `.env.local` | Both scaffolded as **commented templates** the operator fills in — no values are asked in the interview. `scaffold-env.mjs` writes `.env.<env>` (per-env URLs/identifiers) and, ONCE, the project-level keys its `CATALOG` marks `scope: "project"` — the tracker / code-host connection (`JIRA_BASE_URL`/`JIRA_PROJECT_KEY`/`JIRA_EMAIL`, `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`), the same for every env — into `.env.local`; `scaffold-secrets.mjs` adds the test-user passwords (`_<ENV>`-suffixed) to `.env.local`. No token goes into either. |
+| `.env.<env>` + `.env.local` | Both scaffolded as **commented templates** the operator fills in — no values are asked in the interview. `scaffold-env.mjs` writes `.env.<env>` (per-env URLs/identifiers) and, ONCE, the project-level keys its `CATALOG` marks `scope: "project"` — the tracker / code-host connection (`JIRA_BASE_URL`/`JIRA_PROJECT_KEY`/`JIRA_EMAIL`, `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`), the same for every env — into `.env.local`. No token and no test account goes into either. |
+| `test-accounts.local.json` (gitignored) | the test-account store: per env (`envs.<env>.accounts`) each test account's login beside its password — `ADMIN`, `USER`, every `--add-user` user (`scaffold-secrets.mjs`, `add-user.mjs`). The loader and the Playwright lanes read it; nothing else holds them. |
 | `.claude/vc-secrets.local.json` (gitignored) | the vc-secrets declarations (`write-secrets-decl.mjs`): one `local` secret per PAT axis (`github-pat` / `ado-pat` / `jira-token`), the `vc-init-*` tasks the `$VC_RUN` bridge dispatches to, and the GitHub MCP server. Reviewed and approved by the operator with `vc-secrets trust` <!-- doclint:may-not-exist --> |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`); `settings.local.json` `env` carries `VC_RUN` (a path, not a secret) and no token. The Playwright servers are configured entirely via CLI flags (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`). Only `playwright-chrome` is enabled by default; `playwright-firefox` / `playwright-edge` stay defined for opt-in cross-browser runs. |
 | `.claude/rules/vc-browser.md` (**committed**, not ignored) | the always-loaded agent rule (`write-agent-rules.mjs`, §7): every browser action goes through a Playwright MCP lane — never the built-in browser pane, Claude in Chrome, Chrome DevTools or a Bash-started browser, none of which can type a password. Lives in the project so it binds every plugin, including ones installed later. Copied from `templates/rules/` <!-- doclint:may-not-exist --> |
@@ -185,7 +186,7 @@ change` → end the turn, no tool call after it. The operator answers in chat.
   session use the literal path `install-bridge.mjs` printed**, wherever this file says `$VC_RUN`.
 - **Deployment project directory** (your Bash cwd — the folder Claude Code was launched
   in): where **all generated state lands** — `project-profile.json`, `.env.<env>`,
-  `.env.local`, `.mcp.json`, `.claude/settings.local.json` and `.claude/vc-secrets.local.json`. <!-- doclint:may-not-exist -->
+  `.env.local`, `test-accounts.local.json`, `.mcp.json`, `.claude/settings.local.json` and `.claude/vc-secrets.local.json`. <!-- doclint:may-not-exist -->
   The generators default their output there automatically (symmetric with the readers). You do
   **not** pass an output path in the normal flow. `VC_FIX_HOME=<dir>` overrides the output root
   only for out-of-project / CI callers — the interactive flow never sets it.
@@ -440,12 +441,10 @@ Applicable axes:
 | **GitHub** | **always** (the platform upstream is always GitHub; and the client host may be GitHub) | `PAT` (Recommended) → vc-secrets `github-pat` · `Browser login` → `gh auth login` |
 | **Azure DevOps** | tracker = `azure` **OR** code host = `azure-repos` | `PAT` (Recommended) → vc-secrets `ado-pat` · `Browser login` → `az login` |
 | **Jira** | tracker = `jira` | `API token` (Recommended) → vc-secrets `jira-token` · `Atlassian MCP OAuth` (no token) |
-| **Admin passwords** | always — **not asked** | `vc-secrets` only → `admin-password-<env>`, no file. A back-office password is never offered a file: pass `--admin-passwords vc-secrets` |
-| **Storefront-user passwords** | always | `.env.local` (Recommended — easy to edit when there are many users) → `USER_PASSWORD_<ENV>` in the file · `vc-secrets` → `user-password-<env>`, no file |
+| **Test-account passwords** | always, per role (admin · storefront user) | `test-accounts.local.json` (Recommended — login beside password, one file) → `store` · `vc-secrets` → `<role>-password-<env>`, no file |
 
 Map the answers to the flags every later step takes: `--github-auth pat|gh-cli`, `--ado-auth
-pat|az-login`, `--jira-auth pat|oauth`, `--admin-passwords vc-secrets` (always), `--user-passwords
-vc-secrets|env-local`. **Carry the auth ones to step 6** — gen-profile writes them to `auth.*` in the
+pat|az-login`, `--jira-auth pat|oauth`, `--admin-passwords` / `--user-passwords store|vc-secrets`. **Carry the auth ones to step 6** — gen-profile writes them to `auth.*` in the
 profile. The password choices are recorded by the vc-secrets declaration itself (3c), not the profile:
 a role is in vc-secrets when its `ADMIN_PASSWORD` / `USER_PASSWORD` is declared in a
 `vc-init-onboard.<env>` task (`lib/passwords.mjs`), and `--add-env` / `--add-user` follow that.
@@ -475,9 +474,8 @@ ADMIN's login*, *Enter the STOREFRONT USER's login*); then *"Add another account
 asked (normalize-env detects it).
 
 After §3a has scaffolded the files, write the values with `write-env.mjs` (stdin, never argv, never a file
-left in the project): the first admin's login is `ADMIN`, the first storefront user's `USER_EMAIL`; every
-further account is added with `add-user.mjs` (§--add-user). Where a password goes is fixed by 2d: an
-admin's ALWAYS to vc-secrets; a storefront user's where the operator chose (`.env.local` or vc-secrets).
+left in the project): the first admin's login is `ADMIN`, the first storefront user's `USER_EMAIL` — both land in
+the store; every further account is added with `add-user.mjs` (§--add-user). Where a password goes is fixed by 2d.
 §3d then hands over only what is secret, as numbered steps (host-governed.md step 5 is the model).
 
 ## 3. Scaffold the env templates + the vc-secrets declarations, then hand off
@@ -495,8 +493,8 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs" --env myqa --tra
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs" --env acme --tracker jira --client-vcs azure-repos --print --no-default
 ```
 Flags: `--env <name>` (required), `--tracker jira|azure`, `--client-vcs
-github|azure-repos`. `ADMIN` is pre-filled with a safe default and `STORE_ID` may stay empty (normalize-env detects it);
-everything else is empty. `ADO_ORG`/`ADO_PROJECT` are emitted when the tracker is
+github|azure-repos`. `STORE_ID` may stay empty (normalize-env detects it); everything else is empty. No login:
+logins are store fields (3b). `ADO_ORG`/`ADO_PROJECT` are emitted when the tracker is
 Azure **or** the code host is Azure Repos. Idempotent — a re-run only adds missing
 keys, never clobbers.
 
@@ -518,15 +516,14 @@ Once every env of the run exists: `default-env.mjs [--env <env>]` sets **`.env.t
 `ask` ⇒ read its header, then ONE AskUserQuestion: `options`, `recommended` first; `decline: true` ⇒ also
 "No default environment" (`--decline`); else `--choose <answer>`. Relay `lines`.
 
-### 3b. `.env.local` — test-user passwords (`scaffold-secrets.mjs`)
+### 3b. `test-accounts.local.json` — the test accounts (`scaffold-secrets.mjs`)
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" \
   --env myqa --tracker jira --jira-auth pat --client-vcs github --github-auth pat --print
 ```
-Writes `ADMIN_PASSWORD_<ENV>` / `USER_PASSWORD_<ENV>` placeholders (app TEST accounts) and NOTHING
-else — and for a role that goes to vc-secrets (`--admin-passwords` / `--user-passwords vc-secrets`) not
-even its placeholder: it names the secret 3c declares instead. Its last line names the tokens this topology needs — `tokens go to vc-secrets, not .env.local:
+Adds `envs.<env>.accounts` `ADMIN` (login `admin` or the env's old `ADMIN`) and `USER` with empty fields to fill,
+never overwriting one; a vc-secrets role (2d) gets no password field — it names the secret 3c declares. Its last line names the tokens this topology needs — `tokens go to vc-secrets, not .env.local:
 github-pat, jira-token` — which must match what 3c declares. If it warns that `.env.local` still holds
 a token in plaintext (an older onboarding), say so in one line: `/project-init --check` moves it.
 Idempotent.
@@ -548,7 +545,7 @@ When either role goes to vc-secrets (2d) add `--password-envs <env> --password-r
 (`admin`, `user` or `admin,user`): it also declares, for that env, one `local` secret per such password
 (`admin-password-<env>` and/or `user-password-<env>`; `--password-names` adds others), the task `vc-init-onboard.<env>` (the onboarding scripts' API logins) and one server
 `playwright-<lane>.<env>` per Playwright lane — the same lane flags gen-mcp would write, run in-process by
-`bridge/playwright-mcp.mjs` with the passwords in memory only — a lane also reads the `.env.local`
+`bridge/playwright-mcp.mjs` with the passwords in memory only — a lane also reads the store
 role's passwords of its env itself, so mixed mode needs no generated file. Declared here, at 3c, so the
 operator trusts it once: gen-mcp (§7) finds it unchanged.
 
@@ -565,8 +562,8 @@ short parts, in this order:
 
 1. **What is filled, what is left** — ONE table, `File | Field | Value / what to do`: every key 2e wrote
    (value shown, never a secret), `STORE_ID` as "detected after you reply", and only the keys still
-   empty with what to put there. A storefront-user password kept in `.env.local` is a row
-   "`USER_PASSWORD_<ENV>` — type it in the file in your editor, never in chat".
+   empty with what to put there. A password in the store is a row
+   "`envs.<env>.accounts.USER.password` in `test-accounts.local.json` — type it in your editor, never in chat".
 2. **Approve the declarations** — only when 3c reported `trustNeeded: true`: the operator runs, in
    their own terminal in the project directory, `node "<VC_SECRETS>" trust`, reads what it shows (the
    bridge command and env names, no values) and types `y`. It needs a real terminal — the `!` prefix
@@ -882,27 +879,14 @@ resolves `$pluginRoot` = the ACTIVE (enabled) install at call time via `claude p
 (fallback: a highest-semver scan of `~/.claude/plugins/cache/*/<plugin>/`). Result:
 **no re-run of `/project-init` after an upgrade**, no version-stamped path, no stale link.
 
-## 7. Generate the browser login secrets, then `.mcp.json`, then the browser rule
+## 7. Generate `.mcp.json`, then the browser rule
 
-First the browser lanes' `--secrets` file — it must exist before gen-mcp, which passes it (absolute
-path) to every Playwright server it finds on disk:
-
-```bash
-TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs"
-```
-
-**Any role's passwords in vc-secrets (3c declared `--password-envs`)?** Skip this command — it says so
-and writes nothing. gen-mcp then writes every lane as `node ${VC_RUN} playwright <lane>`: the bridge
-resolves the current env (`TEST_ENV`, else `.env.test-env`, else the only declared env) and runs the
-declared server `playwright-<lane>.<env>`, which takes the vc-secrets roles from the declaration and the
-`.env.local` roles from that file — so switching `TEST_ENV` needs a restart and nothing else, no
-generated file, no new trust. Both roles in `.env.local`:
-
-It writes `.env.playwright.local` (gitignored) with the CURRENT env's login passwords under their bare
-names — `ADMIN_PASSWORD`, `USER_PASSWORD`, any other `*_PASSWORD` in `.env.local`; never a token. A
-browser agent then types the NAME into the password field and Playwright MCP types the value and masks
-it, so the password never enters the model's context or the transcript. It is per env: after switching
-`TEST_ENV` or changing a password, re-run it and restart. It prints names only.
+No browser secrets file: gen-mcp writes every Playwright lane as the bridge — `npx -p <pin> node ${VC_RUN}
+--playwright …`, which reads `test-accounts.local.json` at start (`NAME_<ENV>`, no prod env; bare names
+on a one-env project) and hands Playwright MCP the passwords in memory; with a role in vc-secrets (3c) `node ${VC_RUN}
+playwright <lane>` runs the declared server `playwright-<lane>.<env>`. A browser agent types the NAME, the lane
+types the value and masks it. After a password change or a `TEST_ENV` switch: restart. (`sync-browser-secrets.mjs`
+is retired — it says so; `--legacy` keeps the old `.env.playwright.local` for `--secrets` lanes.)
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-mcp.mjs" --tracker jira --client-vcs github \
@@ -947,7 +931,7 @@ It copies `templates/rules/*.md` into the project's `.claude/rules/` (today `vc-
 Claude Code loads on every turn and every subagent dispatch, whichever plugin is running — so the rule
 binds plugins installed after onboarding too. Without it agents reach for the built-in browser pane,
 Claude in Chrome or Chrome DevTools to sign in to a stand and stall at the password field: none of them
-types a password, and only the Playwright lanes get one (from vc-secrets or `.env.playwright.local`).
+types a password, and only the Playwright lanes get one (from the store or vc-secrets).
 It overwrites only files carrying its own marker, leaves a same-named operator file alone, and is
 **not** gitignored — tell the operator to commit it so teammates get the rule.
 
@@ -1126,7 +1110,7 @@ target** — a second QA env, staging, a customer's second storefront — that s
 **env-agnostic**: `tracker.kind`, `vcs.clientHost`, `repos.*`, `contributionMode`, the
 tracker role model — all describe the PROJECT (where bugs are filed, where code lives, which
 repos exist), not a single deployment. An *environment* is only a **URL set + its access
-creds** (`.env.<name>` + the `_<ENV>`-suffixed passwords in `.env.local`), selected at
+creds** (`.env.<name>` + its `envs.<name>` section of `test-accounts.local.json`), selected at
 runtime by `TEST_ENV`. So `--add-env`:
 
 - **does NOT** re-run the interview, re-scan repos (`discover-repos`), re-derive
@@ -1172,10 +1156,9 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" --env <new> 
   (`JIRA_*`, `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`) is already in `.env.local` and is NOT
   re-emitted — a project that still has it in its old env files gets it moved there now (§3a). Don't
   ask the operator to re-enter tracker/org values they gave at onboarding. Then §3a `default-env.mjs --env <new>`.
-- `scaffold-secrets` adds ONLY the `_<ENV>`-suffixed per-env app passwords
-  (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Passwords in vc-secrets**
+- `scaffold-secrets` adds ONLY `envs.<new>.accounts` `ADMIN` / `USER` to the store. **Passwords in vc-secrets**
   (`node "$VC_RUN" --where` lists `passwordEnvs`)? `scaffold-secrets` then skips the vc-secrets role's
-  placeholder by itself (it reads the declaration), and you declare the new env — the same roles as the
+  password by itself (it reads the declaration), and you declare the new env — the same roles as the
   others — and show its steps:
   `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-secrets-decl.mjs" --from-profile --password-envs <new> --shim "$VC_RUN"`
   and `check-secrets.mjs --steps`. The new env's lanes and onboard task change the declarations, so the
@@ -1202,9 +1185,7 @@ Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new en
 readiness table** in your reply (§8). Then present **Done**: `TEST_ENV=<new>` (per run, or via
 your shell) selects the new environment for every plugin, and close with
 `TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/next-steps.mjs"` (§9). Before a browser run
-on the new env, `TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs"`
-and a restart give the Playwright lanes that env's passwords (§7) — with the passwords in vc-secrets,
-`TEST_ENV=<new>` and a restart alone do.
+on the new env, `TEST_ENV=<new>` and a restart give the Playwright lanes that env's passwords (§7).
 
 Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
 marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
@@ -1216,11 +1197,9 @@ marker itself). Only if this path ended before running verify-access, run it man
 
 `/project-init --add-user` gives an already-onboarded project one more storefront user or admin — a
 second buyer, a support admin — on one or more environments, without the interview. A test user is a
-KEY with two values: the login, which is not a secret and goes into `.env.<env>` as `<KEY>_LOGIN`, and
-the password `<KEY>_PASSWORD`, which you never see. Where the password goes follows where that env
-keeps its ROLE's passwords (§2d): in vc-secrets (`<key>-password-<env>`, bound into that env's lanes and
-onboard task) or in `.env.local` (`<KEY>_PASSWORD_<ENV>=`, for the operator to fill) — typically an
-admin to vc-secrets and a storefront user to `.env.local`. `add-user.mjs` does both writes; you only ask.
+KEY: the store account `envs.<env>.accounts.<KEY>` with its login (`<KEY>_LOGIN`) and its password
+(`<KEY>_PASSWORD`, which you never see, left empty for the operator). When that env keeps the ROLE's passwords
+in vc-secrets (§2d) the password is declared there instead (`<key>-password-<env>`). `add-user.mjs` writes; you only ask.
 
 1. **Precondition + scan** (no question): `project-profile.json` must exist (else run the full
    interview). List the environments, where each role's passwords live and the users they already have:
@@ -1245,8 +1224,7 @@ admin to vc-secrets and a storefront user to `.env.local`. `add-user.mjs` does b
    re-asked. Collect every report's `steps`.
 6. **Hand off** under a `🔒  STORE THE PASSWORD` header: the `steps` verbatim, deduplicated — for
    vc-secrets `trust` (when a declaration changed) and `set <key>-password-<env>`, typed at the hidden
-   prompt in their own terminal; for `.env.local` the line to fill and the sync-browser-secrets command —
-   then the restart. Close with the report's `agent` line: an agent logs in with `<KEY>_LOGIN` and types
+   prompt in their own terminal; for the store the field to fill in their editor — then the restart. Close with the report's `agent` line: an agent logs in with `<KEY>_LOGIN` and types
    the password by its NAME (`browser_type(text="<KEY>_PASSWORD")`). The user itself must already exist
    on the stand — this mode only hands its credentials to the agents.
 
@@ -1354,7 +1332,19 @@ nothing — that many removals usually means a schema mismatch (reconciling agai
 schema than the one that wrote the profile), not stale fields. **Review the `removed` list**;
 only if the removals are genuinely intended, re-run with `--force`.
 
-### Step M — move every plaintext token into vc-secrets, then strip it (VCST-6402)
+### Step M — test accounts into the store, then every plaintext token into vc-secrets (VCST-6402)
+
+First the test accounts (vc-init before 0.8.0 kept logins in `.env.<env>`, passwords in `.env.local`):
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/creds-to-store.mjs"            # the plan: names and counts
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/creds-to-store.mjs" --apply    # move, prove, back up, clean
+```
+
+Show the plan; on the operator's yes, `--apply`. It writes `test-accounts.local.json`, proves every env resolves
+every moved name as before, backs up to `.vc-fix/creds-backup/<time>/`, removes the moved lines and
+`.env.playwright.local` (a failed proof changes nothing). Relay its last lines: gen-mcp (§7), restart, commit a
+tracked `.env.<env>`. Then the tokens:
 
 An install onboarded before VCST-6402 keeps its tokens in files: `.env.local` (`GITHUB_FIX_BUGS_TOKEN`,
 `ADO_PAT`, `JIRA_API_TOKEN`, also `_<ENV>`-suffixed), `.claude/settings.local.json` `env`
@@ -1386,14 +1376,10 @@ may be the only working one. A postman/context7 key is stripped unconditionally 
 `.mcp.json` is never edited here: re-run gen-mcp (§7), which rewrites it without any token and prunes
 the settings `env`.
 
-**Passwords.** Once the declaration keeps an env's passwords in vc-secrets, `--scan` also lists each
-`<NAME>_<ENV>` of that env in an `.env` file and a leftover `.env.playwright.local`; `--strip` removes a
-password line when `vc-secrets doctor` reports its secret stored (verify-access then proves the login) and
-deletes `.env.playwright.local`. To move an existing project's passwords there: `write-secrets-decl.mjs
---from-profile --password-envs <every env>`, the §3d steps (`trust`, `set` per password), `--strip`,
-then gen-mcp. Only vc-init's onboarding scripts read a password from vc-secrets today: a script outside
-vc-init that logs in over the API with `ADMIN_PASSWORD` from `.env.local` (vc-fix's module registry,
-seeders) finds it empty after the move — keep `.env.local` (option A) where those are used. Relay `stripped`, `remaining` and `next` in one short table; a `remaining` entry is
+**Passwords in vc-secrets (option B).** `--scan` also lists each `<NAME>_<ENV>` of such an env in an `.env`
+file; `--strip` removes it once `vc-secrets doctor` reports its secret stored. Only vc-init's onboarding
+scripts read a password from vc-secrets: a script outside vc-init (vc-fix's module registry, seeders) finds
+it empty — keep the store (the default) where those are used. Relay `stripped`, `remaining` and `next` in one short table; a `remaining` entry is
 the operator's to-do, named, not a silent leftover.
 
 ### Step C — normalize the env file, then verify access
@@ -1406,11 +1392,10 @@ invisible reason:
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/normalize-env.mjs" --env <env>
 ```
 
-Then §3a `default-env.mjs` (an older project has no `.env.test-env`; `ask` is asked here too). Then refresh the browser login secrets (§7 — a changed password or env leaves them stale), the agent
+Then §3a `default-env.mjs` (an older project has no `.env.test-env`; `ask` is asked here too). Then refresh the agent
 rules (§7 — a plugin upgrade may bring a new or changed one) and the readiness table (§8), so a stale token / URL / login surfaces too:
 
 ```bash
-TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs"
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-agent-rules.mjs"   # §7: add / update the browser rule
 ```
 
@@ -1468,19 +1453,20 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | Script | Role |
 |--------|------|
 | `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent; gitignores it first (VCST-5774). |
-| `scaffold-secrets.mjs` | add the commented test-user password placeholders to `.env.local` (what/why/where per value); reports which tokens this topology stores in vc-secrets and warns on a plaintext token still in `.env.local`; idempotent; gitignores it first (VCST-5774). |
+| `scaffold-secrets.mjs` | add `envs.<env>.accounts` ADMIN / USER to `test-accounts.local.json` (empty fields to fill, what/where printed; `--admin-passwords` / `--user-passwords store|vc-secrets`); reports which tokens go to vc-secrets and warns on a plaintext token in `.env.local`; idempotent; gitignores first (VCST-5774). |
+| `creds-to-store.mjs` | **`--check` Step M, first**: move the test accounts from `.env.<env>` / `.env.local` into the store; `--apply` proves, backs up, cleans. Names only |
 | `lib/gitignore.mjs` | the ONE list of what onboarding generates that must never be committed, plus the append-only writer; every script that creates such a file calls it **before** creating it (VCST-5774 — why: its header). Idempotent |
 | `write-secrets-decl.mjs` | write `.claude/vc-secrets.local.json` — one `local` secret per PAT axis, the `vc-init-<group>` bridge tasks, the GitHub MCP server, a stable `projectId`. Owns only those keys, writes nothing when unchanged (so trust is re-asked only when the PAT axes change). `--from-profile` reads `auth.*`. `--password-envs` / `--password-names`: per env the password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers (`lib/passwords.mjs`, `lib/playwright-lanes.mjs`) <!-- doclint:may-not-exist --> |
-| `add-user.mjs` | **`--add-user`**: `--list` — every `.env.<env>`, its password mode and its users; `--env --key --role --login` — writes `<KEY>_LOGIN` into `.env.<env>` and declares `<KEY>_PASSWORD` in that env's vc-secrets declaration or adds its `.env.local` placeholder; prints the operator's `steps`. Never sees a password |
+| `add-user.mjs` | **`--add-user`**: `--list` — every `.env.<env>`, its password mode and its users; `--env --key --role --login` — writes the store account `<KEY>` (login + an empty password, or the password declared in vc-secrets); prints the operator's `steps`. Never sees a password |
 | `check-secrets.mjs` | `--preflight` (§0d): is vc-secrets installed and runnable · `--steps` (§3d): the token block — what/why/where + the exact `set <name>` command per token (and each declared password's) · default (§3e): the TOKEN GATE — reads `vc-secrets doctor`'s lines and exits 1 with the `trust` / `set` commands still to run. Never sees a value |
-| `lib/token-guide.mjs` | what/why/where of each onboarding token (`github-pat`, `ado-pat`, `jira-token`) — the texts that used to sit in `.env.local` comments |
+| `lib/token-guide.mjs` | what/why/where of each onboarding token (`github-pat`, `ado-pat`, `jira-token`) and built-in password |
 | `lib/vc-secrets-doctor.mjs` | runs `vc-secrets doctor` through the shim and parses its OK/FAIL/SKIP lines into a verdict (shared by check-secrets and verify-access) |
 | `profile-set.mjs` | the ONE path another plugin writes the profile through: `/qa-bug` (`--set tracker.fieldDefaults.*` / `fieldMap.*`), `/perf-init` (`--merge perf=<json>`). Allowlisted paths only; exit 2 = no profile |
 | `../../scripts/install-bridge.mjs` | copy `vc-run-shim.mjs` to `~/.claude/plugins/data/vc-init-ai-tools/vc-run.mjs` (§0d) and print `VC_RUN=<path>` |
 | `../../bridge/run.mjs` | the `$VC_RUN` dispatcher: allowlist (`bridge/allowlist.mjs`) → `vc-secrets task vc-init-<group>` for a PAT axis, else the tool directly; inner side builds an allowlisted env, pins git to `bridge/git-credential.mjs`, redacts output (`bridge/redact.mjs`) |
 | `normalize-env.mjs` | **run on "done" (§3e) and in `--check` Step C** — moves a tracker / code-host key left in a `.env.<env>` to `.env.local` (one the files disagree on is reported, never moved), normalizes `.env.<env>` and the project keys IN PLACE (quotes, padding, trailing slashes, a pasted `dev.azure.com/<org>` → the slug) and validates: exit 1 on an unfilled placeholder, a URL without `http(s)://`, a path-shaped `ADO_ORG`/`ADO_PROJECT`; WARN on a path in `FRONT_URL`/`BACK_URL`. Rules: `scaffold-env.mjs` `CATALOG` |
 | `default-env.mjs` | `.env.test-env` once every env exists (§3a): `written` / `kept` / `ask` / `skipped`; `--choose <env>`; host: `testStands` |
-| `write-env.mjs` | (non-interactive helper) write `.env.<env>` / `.env.local` from a JSON answer object on STDIN when values ARE known programmatically — a `scope: "project"` key in `envVars` lands in `.env.local`; idempotent |
+| `write-env.mjs` | (non-interactive helper) write `.env.<env>` / `.env.local` / the store from a JSON answer object on STDIN — a `scope: "project"` key lands in `.env.local`, a test account's login or password in `test-accounts.local.json`; idempotent |
 | `lib/project-env.mjs` | where the project-level keys live (`.env.local`) and the one-time move out of every `.env.<env>` git does not track, run by scaffold-env + normalize-env; the shared `.env.local` header |
 | `discover-repos.mjs` | ALWAYS-run scan: Platform API modules → client/platform split, client-host scan for the storefront repo, and **derives projectType + clientOrg**; bakes per-repo `contribution`/`integrationBranch`/`toolchain`/`localVerify`; emits `{ projectType, clientOrg, client, platform }` |
 | `discover-tracker.mjs` | **Azure-only** scan of work-item types → per-type `states` + a `role→state` map (`roleStates`), plus `apiBase`/`projectId`/`ticketKeyFormat`/`crossLinkToken`; emits `.local-env/tracker.json` for `gen-profile --tracker-json`. Jira: format facts only (transitions discovered live). Enables `/qa-fix`'s silent role-based transitions |
@@ -1492,11 +1478,11 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see vc-fix's `knowledge/execution/plugin-root.md`.) |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict, incl. the two **secret-hygiene** rows that audit `.mcp.json` + `.claude/settings.local.json` for an exposed credential (graded by committability: tracked/not-ignored ⇒ FAIL); prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`). Also **reports every non-PASS row as self-diagnostics telemetry** (`lib/diag-obs.mjs` → the collector's `obs` subcommand) — the table used to be rendered and discarded, so a WARN the operator could plainly read was invisible to `/vc-self-check` and the run self-diagnosed "no plugin issues detected" (VCST-5582 H). Exit code is unchanged: 0 unless a hard FAIL |
 | `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
-| `migrate-secrets.mjs` | **`--check` Step M**: `--scan` lists every token left in a file (`.env*`, settings `env`, `.mcp.json`, `.fix-workspace/*/.git/config` remote URLs, the profile) by NAME and LOCATION and flags the ones in git history (⇒ rotate); `--strip` removes an axis's plaintext copies only after its bridge probe passes. With passwords in vc-secrets also their `.env` lines (once stored) and `.env.playwright.local` |
+| `migrate-secrets.mjs` | **`--check` Step M**: `--scan` lists every token left in a file (`.env*`, settings `env`, `.mcp.json`, `.fix-workspace/*/.git/config` remote URLs, the profile) by NAME and LOCATION and flags the ones in git history (⇒ rotate); `--strip` removes an axis's plaintext copies only after its bridge probe passes. With passwords in vc-secrets also their `.env` lines (once stored) |
 | `detect-governance.mjs` | §0-host: find a host governance plugin bound to this folder by its shape (`lib/governance.mjs` hostCandidates — no host named) and print the `governance` block it would write plus the host's `state` — whether its own setup ran here, the servers it left on, its test-user password slots (`lib/host-adapter.mjs`, read-only); `--governance <host|none>` overrides |
 | `render-scan.mjs` | §4a/§4b: the operator's confirmation tables, verbatim — `--repos` (client repos with default branch + PR target) and `--tracker` (role → state per work-item type) |
 | `next-steps.mjs` | §9: "the project is ready" + what to do now, from the profile and the installed plugins (`--plugins a,b` overrides detection) |
-| `sync-browser-secrets.mjs` | §7: generate `.env.playwright.local` (Playwright `--secrets`) from the current env's passwords — the agent types the NAME, the MCP types the value; `--check` exits 1 when stale |
+| `sync-browser-secrets.mjs` | retired: the lanes read the store; `--check` exits 1 when a lane in `.mcp.json` still passes `--secrets`; `--legacy` keeps the old file |
 | `write-agent-rules.mjs` | §7 / `--check` Step C: copy `templates/rules/*.md` (the browser-only-through-Playwright rule) into the project's `.claude/rules/`, so it binds every plugin, current and future; overwrites only its own marked files; `--check` exits 1 when missing or stale. Stands down when host-governed |
 | `install-deps.mjs` | §1 / `--check`: `npm install --omit=dev` in the folder of every installed plugin of this marketplace (from `claude plugin list`, not a fixed list) that lacks a runtime dependency (`--check` only reports) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). Run it DIRECTLY, never through `$VC_RUN` — a session login must not see a token (gh refuses to log in while GH_TOKEN is set). |

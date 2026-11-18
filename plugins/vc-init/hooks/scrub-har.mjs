@@ -5,8 +5,9 @@
 // A lane run through the vc-init bridge scrubs its own HAR in-process. A lane started straight from
 // `.mcp.json` (`npx @playwright/mcp … --secrets <file>`) has no such process, so this hook does it:
 // right after a `browser_close` (when Playwright has just written the HAR) and at session start (the HAR
-// a server wrote when the previous session ended). Values come from the project's `.env.playwright.*`
-// and `.env.local`; password-named body fields are masked even without them.
+// a server wrote when the previous session ended). Values come from the test-account store
+// (test-accounts.local.json), the project's `.env.playwright.*` and `.env.local`; password-named body fields
+// are masked even without them.
 //
 // Fail-soft: never blocks a tool call or the session; it prints one line when it masked something.
 import { harFilesIn, projectHarTargets, scrubHarFileSync, sweepStaleTmp } from "../bridge/har-scrub.mjs";

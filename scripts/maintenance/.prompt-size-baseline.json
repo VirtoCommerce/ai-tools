@@ -10,9 +10,9 @@
   ".claude/skills/qa-seed-data/SKILL.md": 32249,
   ".claude/skills/qa-test-cases-generator/SKILL.md": 41943,
   ".claude/skills/vc-self-check/SKILL.md": 27380,
-  "plugins/vc-fix/commands/qa-bug.md": 47000,
+  "plugins/vc-fix/commands/qa-bug.md": 46983,
   "plugins/vc-fix/commands/qa-fix.md": 36070,
-  "plugins/vc-fix/commands/qa-verify-fix.md": 33475,
+  "plugins/vc-fix/commands/qa-verify-fix.md": 33446,
   "plugins/vc-fix/skills/vc-self-check/SKILL.md": 21399,
-  "plugins/vc-init/skills/project-init/SKILL.md": 109008
+  "plugins/vc-init/skills/project-init/SKILL.md": 108158
 }

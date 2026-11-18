@@ -65,7 +65,8 @@ import {
 // Slot resolution for the "tracker bug field contract" readiness row (VCST-5582 E-g) — the
 // SAME pure function the create path uses, so the row can't claim a mapping create won't make.
 import { resolveSlots } from "../../scripts/lib/bug-contract.mjs";
-import { SECRETS_FILE as BROWSER_SECRETS_FILE, currentState as browserSecretsState } from "./sync-browser-secrets.mjs";
+import { SECRETS_FILE as BROWSER_SECRETS_FILE, laneSources } from "./sync-browser-secrets.mjs";
+import { STORE_FILE, readStore } from "./lib/store-accounts.mjs";
 import { missingDeps, pluginRoots } from "./install-deps.mjs";
 import { declaredPasswords, passwordSecretNames } from "./lib/passwords.mjs";
 import { fileURLToPath } from "url";
@@ -631,23 +632,27 @@ async function main() {
     }
   }
 
-  // 1b'. Browser login: the agent types a password's NAME and Playwright MCP substitutes the value from
-  //      the --secrets file gen-mcp wires in — so the password never enters the model's context. A
-  //      missing or stale file means the agent would have to read the password to type it.
-  //      Option B (lib/passwords.mjs): no file — the current env's passwords are vc-secrets entries and
-  //      each lane is a declared server; the row checks those instead.
+  // 1b'. Browser login: the agent types a password's NAME and Playwright MCP substitutes the value, which each
+  //      lane reads at start from the test-account store (test-accounts.local.json) — so the password never
+  //      enters the model's context. The row checks that every lane in .mcp.json reads it (not a --secrets file)
+  //      and that the store has the current env's two built-in passwords.
+  //      Option B (lib/passwords.mjs): the current env's passwords are vc-secrets entries and each lane is a
+  //      declared server; the row checks those instead.
   const pwByEnv = declaredPasswords(readLocalDeclaration(outputRoot()));
   if (Object.keys(pwByEnv).length) {
     add(...browserPasswordsRow({ root: outputRoot(), env: resolveTestEnv("vcst"), pwByEnv }));
   } else try {
-    const bs = browserSecretsState(outputRoot());
-    const regen = `TEST_ENV=${bs.env} node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs", then restart Claude Code`;
-    if (bs.before === null) add("Browser login secrets", "WARN", `no ${BROWSER_SECRETS_FILE} — run ${regen}; gen-mcp then passes it to every Playwright lane`);
-    else if (bs.stale) add("Browser login secrets", "WARN", `${BROWSER_SECRETS_FILE} is out of date for TEST_ENV=${bs.env} (a password changed, or another env) — run ${regen}`);
-    else if (bs.missing.length) add("Browser login secrets", "WARN", `${bs.written.join(", ") || "nothing"} ready; no value for ${bs.missing.join(", ")} in .env.local`);
-    else add("Browser login secrets", "PASS", `${bs.written.join(", ")} — typed by name, never read by the agent`);
+    const root = outputRoot();
+    const { legacy } = laneSources(root);
+    const store = readStore(root);
+    // The loader put the store over every file, so process.env holds what a lane will be handed.
+    const missing = ["ADMIN_PASSWORD", "USER_PASSWORD"].filter((n) => !process.env[n]);
+    if (legacy.length) add("Browser login secrets", "WARN", `${legacy.join(", ")} still read ${BROWSER_SECRETS_FILE} (--secrets) — re-run gen-mcp.mjs and restart Claude Code: the lanes then read ${STORE_FILE} in memory`);
+    else if (!store.exists) add("Browser login secrets", "WARN", `no ${STORE_FILE} — the lanes fall back to .env.local; /project-init --check moves the test accounts into the store (creds-to-store.mjs)`);
+    else if (missing.length) add("Browser login secrets", "WARN", `no value for ${missing.join(", ")} on TEST_ENV=${TEST_ENV} — fill envs.${TEST_ENV}.accounts in ${STORE_FILE}, then restart Claude Code`);
+    else add("Browser login secrets", "PASS", `ADMIN_PASSWORD, USER_PASSWORD from ${STORE_FILE} — typed by name, never read by the agent`);
   } catch (e) {
-    add("Browser login secrets", "WARN", `could not check ${BROWSER_SECRETS_FILE}: ${e.message}`);
+    add("Browser login secrets", "WARN", `could not check ${STORE_FILE}: ${e.message}`);
   }
 
   // 1c. Tokens live in vc-secrets and reach a process only through the $VC_RUN bridge (VCST-6402).

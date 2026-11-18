@@ -114,6 +114,23 @@ test("every password file and the process's password variables are scrubbed by v
   }
 });
 
+test("the test-account store's passwords are scrubbed by value; its logins are not", () => {
+  const { root, cfg } = project();
+  writeFileSync(join(root, "test-accounts.local.json"), JSON.stringify({
+    version: 2,
+    master: "StoreMasterPw42",
+    shared: { DEFAULT_TEST_PASSWORD: "SharedStorePw77" },
+    envs: { vcst: { accounts: {
+      USER: { login: "buyer@example.test", password: "AccountStorePw99" },
+      "fixture@example.test": { password: { use: "DEFAULT_TEST_PASSWORD" } },
+    } } },
+  }));
+  const { path } = writeKnowledge(cfg, { kind: "test-doc", slug: "s", text: "buyer@example.test typed AccountStorePw99 then SharedStorePw77 and StoreMasterPw42" });
+  const text = readFileSync(path, "utf8");
+  assert.doesNotMatch(text, /AccountStorePw99|SharedStorePw77|StoreMasterPw42/);
+  assert.match(text, /^buyer@example\.test typed /);
+});
+
 test("a secret-named variable whose value a non-secret layer declares is a fact, not a secret", () => {
   const { root, cfg } = project();
   writeFileSync(join(root, ".env.defaults"), "ORDER_KEYWORD_TOKEN=Beacon\n");

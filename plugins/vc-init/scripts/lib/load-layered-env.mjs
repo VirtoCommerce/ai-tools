@@ -20,6 +20,7 @@
 import { config as dotenv } from "dotenv";
 import { join } from "node:path";
 import { envDir, resolveTestEnv } from "./resolve-test-env.js";
+import { readStore, storeValues } from "./test-accounts.mjs";
 
 /** Token env vars that belong in vc-secrets, never in a file (VCST-6402). */
 export const TOKEN_KEYS = ["GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN", "ADO_PAT", "JIRA_API_TOKEN"];
@@ -57,6 +58,9 @@ export function loadLayeredEnv(fallback = "vcst") {
   for (const [key, value] of Object.entries(process.env)) {
     if (key.endsWith(SUFFIX) && value) process.env[key.slice(0, -SUFFIX.length)] = value;
   }
+  // The test-account store (test-accounts.local.json): every test account's login and password, over every file.
+  // Absent: nothing changes. Malformed: throws — a broken credential store is never read as "no credentials".
+  Object.assign(process.env, storeValues(readStore(dir), TEST_ENV).values);
   Object.assign(process.env, injected);
   const plaintext = plaintextTokenKeys(local.parsed);
   if (plaintext.length && !warnedPlaintext) {

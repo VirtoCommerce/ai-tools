@@ -56,7 +56,7 @@ In the skill's base directory unless marked `<plugin>/knowledge/`.
 
 Your browser is the **Playwright lane your brief names** (`playwright-edge`, `playwright-chrome` or `playwright-firefox`; the run assigns it). Use that lane's tools and no other browser. Your brief also names the **account role** the target needs (a vc-test run: the role its approved scenarios on that surface sign in as, else `USER_LOGIN` / `USER_PASSWORD`, else anonymous on a public route).
 
-- Type the password's bare NAME into the password field — `browser_type` with `text: "USER_PASSWORD"` (or `ADMIN_PASSWORD`, or another `*_PASSWORD` the project declares for that role). The lane types the value and masks it in every response.
+- Type the password's NAME with the env under test into the password field — `browser_type` with `text: "USER_PASSWORD_<ENV>"` (or `ADMIN_PASSWORD_<ENV>`, or another `*_PASSWORD` the project declares for that role; the bare name only on a one-env project or a lane started for one env). The lane types the value and masks it in every response.
 - Never type `{{USER_PASSWORD}}`, `$USER_PASSWORD` or the value itself, never read a password from a file to type it, and never ask the operator for a password in chat.
 - The login (user name / email) is not secret: read it from the env (`USER_LOGIN`, `ADMIN_LOGIN`, … in `.env.<env>`) and type it as plain text.
 - A role-gated or data-bearing target (sales-rep hub, orders, B2B org, loyalty tier) needs that role's account: any other renders its **empty state**, which **reads as a pass**. No role named for such a target ⇒ ask your dispatcher, never guess one.
