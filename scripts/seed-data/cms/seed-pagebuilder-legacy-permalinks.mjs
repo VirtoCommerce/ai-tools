@@ -30,6 +30,10 @@ import {
   TICKET_PREFIX, PAGE_ALIASES, USER_ALIAS, MODULE_ID, STATUS, EMPTY_CONTENT, pageSpecs, moduleExportJson, restoreManifest,
   buildStoredZip, roleBody, accountBody,
 } from './pagebuilder-legacy-permalinks-specs.mjs';
+import { routesFor, resolveBuilderRoutes } from './builder-routes.mjs';
+
+// Route family (Site Builder or Page Builder) — read from /api/platform/modules right after auth.
+let R = routesFor('page-builder');
 
 const ENV = process.env.TEST_ENV || 'vcst';
 const ALIASES = loadAliases();
@@ -40,7 +44,7 @@ const WANT_USER = !only || only.includes(USER_ALIAS);
 const USER = ALIASES[USER_ALIAS];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const getGroup = (id) => api('GET', `/api/page-builder-pages/grouped/${encodeURIComponent(id)}`, null, { expectStatus: [200, 204, 404] });
+const getGroup = (id) => api('GET', `${R.pages}/grouped/${encodeURIComponent(id)}`, null, { expectStatus: [200, 204, 404] });
 
 async function rawToken(username, password) {
   const res = await fetch(`${BACK_URL}/connect/token`, {
@@ -60,7 +64,7 @@ async function rawPost(tok, path, body) {
 }
 
 async function allPages() {
-  const r = await api('POST', '/api/page-builder-pages/search', { take: 1000 }, { expectStatus: [200] });
+  const r = await api('POST', `${R.pages}/search`, { take: 1000 }, { expectStatus: [200] });
   return r?.results || r?.items || [];
 }
 
@@ -74,7 +78,7 @@ function leftovers(pages, specs) {
 async function deletePages(pages) {
   for (const p of pages) {
     if (DRY_RUN) { log(`  [DRY] would delete "${p.name}" (${p.id})`); continue; }
-    await api('DELETE', `/api/page-builder-pages/grouped/${encodeURIComponent(p.id)}`, null, { expectStatus: [200, 204, 404] });
+    await api('DELETE', `${R.pages}/grouped/${encodeURIComponent(p.id)}`, null, { expectStatus: [200, 204, 404] });
     log(`  x deleted leftover "${p.name}" (${p.id}, ${p.status})`);
   }
 }
@@ -92,19 +96,19 @@ async function pollNotification(id, label, { tries = 60, every = 3000 } = {}) {
 async function importPages(specs) {
   const ids = Object.fromEntries(specs.map((s) => [s.alias, { groupId: randomUUID(), pageId: randomUUID() }]));
   const newManifest = await api('GET', '/api/platform/export/manifest/new', null, { expectStatus: [200] });
-  const mod = (newManifest.modules || []).find((m) => m.id === MODULE_ID);
-  if (!mod) throw new Error(`${MODULE_ID} is not installed on ${ENV}`);
+  const mod = (newManifest.modules || []).find((m) => m.id === R.moduleId);
+  if (!mod) throw new Error(`${R.moduleId} is not installed on ${ENV}`);
   const zip = buildStoredZip([
-    { name: 'Manifest.json', data: Buffer.from(JSON.stringify(restoreManifest(newManifest, mod.version), null, 2)) },
+    { name: 'Manifest.json', data: Buffer.from(JSON.stringify(restoreManifest(newManifest, mod.version, R.moduleId), null, 2)) },
     { name: 'PlatformEntries.json', data: Buffer.from('{}') },
-    { name: `${MODULE_ID}.json`, data: Buffer.from(JSON.stringify(moduleExportJson(specs, ids))) },
+    { name: `${R.moduleId}.json`, data: Buffer.from(JSON.stringify(moduleExportJson(specs, ids, R))) },
   ]);
   const fileName = `agent-test-6443-legacy-${Date.now()}.zip`;
   if (DRY_RUN) { log(`  [DRY] would import ${specs.length} group(s) via backups/${fileName} (${zip.length} bytes)`); return ids; }
   await uploadAsset('backups', fileName, zip, 'application/zip');
   const fileUrl = `backups/${fileName}`;
   const exportManifest = await api('GET', `/api/platform/export/manifest/load?fileUrl=${encodeURIComponent(fileUrl)}`, null, { expectStatus: [200] });
-  const r = await api('POST', '/api/platform/import', { fileUrl, exportManifest, modules: [MODULE_ID], handleSecurity: false, handleSettings: false, handleBinaryData: false }, { expectStatus: [200] });
+  const r = await api('POST', '/api/platform/import', { fileUrl, exportManifest, modules: [R.moduleId], handleSecurity: false, handleSettings: false, handleBinaryData: false }, { expectStatus: [200] });
   const n = await pollNotification((r.notification || r).id, 'import');
   if (n.errorCount) throw new Error(`import finished with ${n.errorCount} error(s): ${JSON.stringify(n.errors).slice(0, 400)}`);
   log(`  + imported ${specs.length} group(s) (job ${n.jobId}, 0 errors)`);
@@ -130,8 +134,8 @@ async function verifyPage(spec, groupId) {
  * it created. Returns { status, reason } where reason is the 400 body.
  */
 async function probeCreate(tok, { storeId, culture, permalink, name }) {
-  const r = await rawPost(tok, '/api/page-builder-pages/create-group-page', { storeId, cultureName: culture, name, permalink, content: EMPTY_CONTENT });
-  if (r.status >= 200 && r.status < 300 && r.json?.id) await api('DELETE', `/api/page-builder-pages/grouped/${encodeURIComponent(r.json.id)}`, null, { expectStatus: [200, 204, 404] });
+  const r = await rawPost(tok, `${R.pages}/create-group-page`, { storeId, cultureName: culture, name, permalink, content: EMPTY_CONTENT });
+  if (r.status >= 200 && r.status < 300 && r.json?.id) await api('DELETE', `${R.pages}/grouped/${encodeURIComponent(r.json.id)}`, null, { expectStatus: [200, 204, 404] });
   return { status: r.status, reason: String(r.text || '').slice(0, 120) };
 }
 const REQUIRED_MSG = /are required/i;
@@ -230,6 +234,8 @@ async function teardown() {
 async function main() {
   assertSafeTarget();
   await auth();
+  R = await resolveBuilderRoutes(api);
+  console.log(`  builder: ${R.moduleId} (${R.pages})`);
   log(`VCST-6443 legacy permalinks on ${ENV}: ${SPECS.length} page(s)${WANT_USER ? ' + no-create user' : ''}${DRY_RUN ? ' [DRY RUN]' : ''}`);
   if (TEARDOWN) await teardown();
   else {

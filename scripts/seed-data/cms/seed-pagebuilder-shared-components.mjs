@@ -46,6 +46,10 @@ import {
   buildComponentCreateBody, buildContentDoc, buildPageContentBody, createGroupedBody, draftBody,
   expectedUsage, pageRefs, isLinkedPlacement, validateFixtureShape,
 } from './shared-components-specs.mjs';
+import { routesFor, resolveBuilderRoutes } from './builder-routes.mjs';
+
+// Route family (Site Builder or Page Builder) — read from /api/platform/modules right after auth.
+let R = routesFor('page-builder');
 
 const VERIFY = process.argv.includes('--verify');
 const SECONDARY_STORE = process.env.STORE_ID_SECONDARY || null;
@@ -83,11 +87,11 @@ async function rawGet(path) {
 
 // ── shared components ────────────────────────────────────────────────────────
 async function searchComponents() {
-  const r = await api('POST', '/api/page-builder-shared-components/search', { storeId: STORE_ID, take: 500 }, { expectStatus: [200, 201] });
+  const r = await api('POST', `${R.shared}/search`, { storeId: STORE_ID, take: 500 }, { expectStatus: [200, 201] });
   return r?.results || r?.items || [];
 }
-const getComponent = (id) => api('GET', `/api/page-builder-shared-components/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] });
-const deleteComponent = (id) => api('DELETE', `/api/page-builder-shared-components/${encodeURIComponent(id)}`, null, { expectStatus: [200, 204, 404] });
+const getComponent = (id) => api('GET', `${R.shared}/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] });
+const deleteComponent = (id) => api('DELETE', `${R.shared}/${encodeURIComponent(id)}`, null, { expectStatus: [200, 204, 404] });
 
 async function ensureComponent(spec, live) {
   const doc = fixture().components[spec.alias];
@@ -98,11 +102,11 @@ async function ensureComponent(spec, live) {
   }
   if (existing?.id) {
     // Idempotent: re-post the fixture content so a drifted component is healed to the contract.
-    await api('POST', `/api/page-builder-shared-components/${encodeURIComponent(existing.id)}/content`, buildContentDoc(doc), { expectStatus: [200, 201, 204] });
+    await api('POST', `${R.shared}/${encodeURIComponent(existing.id)}/content`, buildContentDoc(doc), { expectStatus: [200, 201, 204] });
     log(`  ↻ reuse component ${spec.name} (${existing.id}) — content re-applied (${doc.content.length} section(s))`);
     return existing.id;
   }
-  const res = await api('POST', '/api/page-builder-shared-components', buildComponentCreateBody(spec, doc, { storeId: STORE_ID }), { expectStatus: [200, 201] });
+  const res = await api('POST', `${R.shared}`, buildComponentCreateBody(spec, doc, { storeId: STORE_ID }), { expectStatus: [200, 201] });
   const id = res?.id || (await searchComponents()).find((c) => c.name === spec.name)?.id;
   if (!id) throw new Error(`create component ${spec.name}: no id returned`);
   log(`  ✓ create component ${spec.name} (${id}) — ${doc.content.length} section(s)`);
@@ -111,22 +115,22 @@ async function ensureComponent(spec, live) {
 
 // ── pages ────────────────────────────────────────────────────────────────────
 async function searchPages() {
-  const r = await api('POST', '/api/page-builder-pages/search', { storeId: STORE_ID, take: 500 }, { expectStatus: [200] });
+  const r = await api('POST', `${R.pages}/search`, { storeId: STORE_ID, take: 500 }, { expectStatus: [200] });
   return r?.results || r?.items || [];
 }
-const getGrouped = (id) => api('GET', `/api/page-builder-pages/grouped/${id}`, null, { expectStatus: [200, 404] });
-const upsertGrouped = (body) => api('POST', '/api/page-builder-pages/grouped', body, { expectStatus: [200, 201, 204] });
-const publishPage = (id) => api('POST', `/api/page-builder-pages/grouped/publishing/${id}?publish=true`, null, { expectStatus: [200, 201, 204] });
-const deletePage = (id) => api('DELETE', `/api/page-builder-pages/grouped/${id}`, null, { expectStatus: [200, 204, 404] });
+const getGrouped = (id) => api('GET', `${R.pages}/grouped/${id}`, null, { expectStatus: [200, 404] });
+const upsertGrouped = (body) => api('POST', `${R.pages}/grouped`, body, { expectStatus: [200, 201, 204] });
+const publishPage = (id) => api('POST', `${R.pages}/grouped/publishing/${id}?publish=true`, null, { expectStatus: [200, 201, 204] });
+const deletePage = (id) => api('DELETE', `${R.pages}/grouped/${id}`, null, { expectStatus: [200, 204, 404] });
 // Builds that guard concurrent saves (VCST-6009) answer a bare content POST with 428: read the BODY
 // eTag with includeVersion=true and echo it as If-Match, exactly as seed-pagebuilder-pages.mjs does
 // (@kb(KB-1336804F)). Older builds return no eTag and accept the bare POST.
 async function postPageContent(id, body) {
-  if (DRY_RUN) { verbose(`[DRY] POST /api/page-builder-pages/grouped/${id}/content`); return; }
+  if (DRY_RUN) { verbose(`[DRY] POST ${R.pages}/grouped/${id}/content`); return; }
   const tok = await token();
-  const v = await rawGet(`/api/page-builder-pages/grouped/${id}/content?draft=true&includeVersion=true`);
+  const v = await rawGet(`${R.pages}/grouped/${id}/content?draft=true&includeVersion=true`);
   const eTag = typeof v.doc?.eTag === 'string' ? v.doc.eTag : null;
-  const res = await fetch(`${BACK_URL}/api/page-builder-pages/grouped/${id}/content${eTag ? '?includeVersion=true' : ''}`, {
+  const res = await fetch(`${BACK_URL}${R.pages}/grouped/${id}/content${eTag ? '?includeVersion=true' : ''}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json', ...(eTag ? { 'If-Match': eTag } : {}) },
     body: JSON.stringify(body),
@@ -371,6 +375,8 @@ async function teardown() {
 async function main() {
   assertSafeTarget();
   await auth();
+  R = await resolveBuilderRoutes(api);
+  console.log(`  builder: ${R.moduleId} (${R.pages})`);
   if (TEARDOWN) { await teardown(); return; }
   await ensureVirtoPagesEnabled(api, STORE_ID);
   await seed();

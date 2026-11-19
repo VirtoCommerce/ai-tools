@@ -40,6 +40,10 @@ import {
   CONTENT_FILE, contentDocFor, parseContentDoc, blockCount, buildContentBody, maxDiscover,
   createGroupedBody, usesPool, sameContent,
 } from './pagebuilder-pages-specs.mjs';
+import { routesFor, resolveBuilderRoutes } from './builder-routes.mjs';
+
+// Route family (Site Builder or Page Builder) — read from /api/platform/modules right after auth.
+let R = routesFor('page-builder');
 import { discoverGa4Pool } from '../analytics/ga4-pool.mjs';
 import { pageAliasFields } from '../analytics/ga4-lists-specs.mjs';
 
@@ -57,7 +61,7 @@ async function contentToken() {
 }
 async function getContent(groupId, draft = false) {
   const tok = await contentToken();
-  const r = await fetch(`${BACK_URL}/api/page-builder-pages/grouped/${groupId}/content?draft=${draft}`, { headers: { Authorization: `Bearer ${tok}` } });
+  const r = await fetch(`${BACK_URL}${R.pages}/grouped/${groupId}/content?draft=${draft}`, { headers: { Authorization: `Bearer ${tok}` } });
   return parseContentDoc(await r.text().catch(() => ''));
 }
 async function postContent(groupId, body) {
@@ -65,10 +69,10 @@ async function postContent(groupId, body) {
   // and echo it as If-Match (the BODY eTag — the edge proxy weakens the ETag header; @kb(KB-1336804F)).
   // Older builds return no eTag and accept the bare POST, so the header is sent only when one exists.
   const tok = await contentToken();
-  const vr = await fetch(`${BACK_URL}/api/page-builder-pages/grouped/${groupId}/content?draft=true&includeVersion=true`, { headers: { Authorization: `Bearer ${tok}` } });
+  const vr = await fetch(`${BACK_URL}${R.pages}/grouped/${groupId}/content?draft=true&includeVersion=true`, { headers: { Authorization: `Bearer ${tok}` } });
   let eTag = null;
   try { const v = JSON.parse(await vr.text()); eTag = typeof v?.eTag === 'string' ? v.eTag : null; } catch { /* plain document: no version support */ }
-  const res = await fetch(`${BACK_URL}/api/page-builder-pages/grouped/${groupId}/content${eTag ? '?includeVersion=true' : ''}`, {
+  const res = await fetch(`${BACK_URL}${R.pages}/grouped/${groupId}/content${eTag ? '?includeVersion=true' : ''}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json', ...(eTag ? { 'If-Match': eTag } : {}) },
     body: JSON.stringify(body),
@@ -161,17 +165,17 @@ async function ensurePageState(page, spec, culture, { schedule } = {}) {
 async function searchPages() {
   const all = [];
   for (let skip = 0; ; ) {
-    const r = await api('POST', '/api/page-builder-pages/search', { storeId: STORE_ID, skip, take: 200 }, { expectStatus: [200] });
+    const r = await api('POST', `${R.pages}/search`, { storeId: STORE_ID, skip, take: 200 }, { expectStatus: [200] });
     const batch = r?.results || r?.items || [];
     all.push(...batch);
     skip += batch.length;
     if (!batch.length || skip >= (r?.totalCount ?? 0)) return all;
   }
 }
-const getGrouped = (id) => api('GET', `/api/page-builder-pages/grouped/${id}`, null, { expectStatus: [200, 404] });
-const upsert = (body) => api('POST', '/api/page-builder-pages/grouped', body, { expectStatus: [200, 201, 204] });
-const publish = (id) => api('POST', `/api/page-builder-pages/grouped/publishing/${id}?publish=true`, null, { expectStatus: [200, 201, 204] });
-const archive = (id) => api('POST', `/api/page-builder-pages/grouped/archive?ids=${encodeURIComponent(id)}`, null, { expectStatus: [200, 201, 204] });
+const getGrouped = (id) => api('GET', `${R.pages}/grouped/${id}`, null, { expectStatus: [200, 404] });
+const upsert = (body) => api('POST', `${R.pages}/grouped`, body, { expectStatus: [200, 201, 204] });
+const publish = (id) => api('POST', `${R.pages}/grouped/publishing/${id}?publish=true`, null, { expectStatus: [200, 201, 204] });
+const archive = (id) => api('POST', `${R.pages}/grouped/archive?ids=${encodeURIComponent(id)}`, null, { expectStatus: [200, 201, 204] });
 
 /**
  * CREATE a brand-new grouped page from a spec + culture/name/permalink (from-scratch path). POSTs the
@@ -187,7 +191,7 @@ async function createPage(spec, { culture, name, permalink, orgId = null }) {
   if (!gid) return null;
   return { id: gid, name, permalink, cultureName: culture, status: STATUS.DRAFT };
 }
-const createGrouped = (body) => api('POST', '/api/page-builder-pages/grouped', body, { expectStatus: [200, 201, 204] });
+const createGrouped = (body) => api('POST', `${R.pages}/grouped`, body, { expectStatus: [200, 201, 204] });
 
 /** The org platform_id PINNED in test-data/b2b/organizations.csv for the row whose org_name contains
  * `keyword` (env-invariant — seedOrgs forces this id on every env). Null if the CSV/row is absent. */
@@ -241,7 +245,7 @@ async function ensureDraft(page) {
   if (status !== STATUS.PUBLISHED) { verbose(`already ${status}: ${page.name}`); return 'ok'; }
   if (DRY_RUN) { log(`  [DRY] would unpublish ${page.name} (Published → Draft)`); return 'would-unpublish'; }
   try {
-    await api('POST', `/api/page-builder-pages/grouped/publishing/${page.id}?publish=false`, null, { expectStatus: [200, 201, 204] });
+    await api('POST', `${R.pages}/grouped/publishing/${page.id}?publish=false`, null, { expectStatus: [200, 201, 204] });
   } catch (e) {
     return `unpublish-failed (${String(e.message).slice(0, 80)})`;
   }
@@ -469,6 +473,8 @@ async function teardown() {
 async function main() {
   assertSafeTarget();
   await auth();
+  R = await resolveBuilderRoutes(api);
+  console.log(`  builder: ${R.moduleId} (${R.pages})`);
   if (TEARDOWN) { await teardown(); log('Teardown complete (pages archived, not deleted).'); return; }
   await ensureVirtoPagesEnabled(api, STORE_ID);
   await seed();
