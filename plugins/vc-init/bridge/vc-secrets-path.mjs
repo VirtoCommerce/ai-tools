@@ -4,8 +4,10 @@
  * VC_SECRETS is a PROJECT setting: /project-init writes it into the project's
  * `.claude/settings.local.json` `env` next to VC_RUN, and nothing asks the operator to edit
  * `~/.claude/settings.json`. That env reaches only sessions started after it was written, so until the
- * restart every caller here falls back to the shim's documented default path — the one vc-secrets'
- * `install-shim.mjs` writes when given no `--data-dir`, which is how `installVcSecretsShim` runs it.
+ * restart every caller here falls back to the shim's default path in Claude Code's data directory.
+ * `installVcSecretsShim` names that directory to vc-secrets' `install-shim.mjs` as `--data-dir`: left to
+ * itself, the installer (since vc-secrets 0.2.0) picks the data directory of whichever client's plugin tree
+ * its copy sits in, so a vc-secrets resolved from Codex's cache would put the shim where nothing here reads it.
  *
  * A SET VC_SECRETS is used as is, even when it names a missing file: someone chose that path, and
  * quietly running a different launcher would hide the mistake.
@@ -37,7 +39,7 @@ export function vcSecretsShim(env = process.env) {
 }
 
 /**
- * Run vc-secrets' own installer (no --data-dir ⇒ the documented default) and return the shim path.
+ * Run vc-secrets' own installer into Claude Code's default directory (named as --data-dir) and return the shim path.
  * Writes nothing but the shim — the installer never touches a settings file.
  * @returns {{ ok: true, path: string, state: string } | { ok: false, reason: string }}
  */
@@ -46,8 +48,8 @@ export function installVcSecretsShim(opts = {}) {
   if (!root) return { ok: false, reason: "the vc-secrets plugin is not installed — /plugin install vc-secrets@ai-tools, restart Claude Code" };
   const script = path.join(root, "scripts", "install-shim.mjs");
   if (!existsSync(script)) return { ok: false, reason: `${script} not found — the vc-secrets install is incomplete` };
-  const r = spawnSync(process.execPath, [script], { encoding: "utf8", timeout: 60000, windowsHide: true });
   const target = defaultVcSecretsShim();
+  const r = spawnSync(process.execPath, [script, "--data-dir", path.dirname(target)], { encoding: "utf8", timeout: 60000, windowsHide: true });
   if (r.status !== 0 || !existsSync(target)) {
     return { ok: false, reason: `install-shim failed (exit ${r.status}): ${String(r.stderr || r.stdout || "").trim().split(/\r?\n/)[0] || "no output"}` };
   }

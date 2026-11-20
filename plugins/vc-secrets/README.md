@@ -42,7 +42,7 @@ team's servers, a person for their own.
 
 | Skill | What it does |
 |---|---|
-| `install` | Put the shim at a stable path and print the settings entry plus the commands that use it |
+| `install` | Put the shim at a stable path in the data directory of the client that installed the plugin, and print what that client's config needs plus the commands that use it |
 | `doctor` | Resolve everything a live server needs and report what is broken |
 | `migrate` | One-time: move user-scope secrets stored under the pre-plugin flat `mcpw:<name>` credential (or `~/.config/mcpw/secrets/<name>.gpg`) to their namespaced keys. A repository's local-store secret is skipped |
 
@@ -57,7 +57,7 @@ From a terminal, everything runs through the shim, by its literal path — `inst
 commands, and every other verb takes the same form, so there is nothing to configure first. (If you'd
 rather type a short name than paste the path each time, export it as `VC_SECRETS` from your shell's
 own startup file — that's a convenience you set up yourself, not something this tool needs or
-writes.) The `settings.json` entry `install` also prints is separate and unrelated to your terminal:
+writes.) The `settings.json` entry `install` also prints under Claude Code is separate and unrelated to your terminal:
 it reaches only the processes Claude Code itself starts, which is why a wrapped MCP server needs it
 but a command you type by hand does not:
 
@@ -528,7 +528,8 @@ than writing these by hand — it gets the file mode, the atomic replace and the
 
 `UNKNOWN` is not "no floor". Nobody has measured which Cursor version this works on, and rendering
 that as "none" would be a claim rather than a gap. `emit-config` says the same thing when it prints
-an entry for that client.
+an entry for that client. The one version measured is `cursor-agent` 2026.11.19, the command-line
+agent; the Cursor IDE and every older version are unmeasured.
 
 Codex's "Open restricted" mode for untrusted folders does **not** stop the MCP entries in your user config
 from starting, and those entries are exactly `node <shim> run <name>` — so a repository's declaration
@@ -556,7 +557,8 @@ repository cannot reach the people who need it, so it ships as a verb of the too
 
 ### Claude Code
 
-Install from the marketplace. Run the `install` skill once per machine and paste the printed `env`
+Install from the marketplace. Run the `install` skill once per machine — it puts the shim in
+`~/.claude/plugins/data/vc-secrets-ai-tools/` — and paste the printed `env`
 entry into `~/.claude/settings.json`, then restart — a wrapped server picks the variable up only on
 start. `install` prints rather than writes: that file is yours, and a tool that edits a developer's
 global settings unasked is a tool nobody trusts twice. Paste `emit-config claude-code` into
@@ -570,18 +572,40 @@ node "<the path install printed>" doctor      # expect no FAIL
 
 ### Cursor
 
-Load the plugin from `~/.cursor/plugins/local`. That is the only install route documented here, and
-deliberately so: Cursor's marketplace reads its own manifest file, which this repository does not
-ship, so "install it from the marketplace" would be an instruction nobody has performed.
+Two install routes work; they differ in whether a shim is needed.
+
+- **From the marketplace.** `cursor-agent plugin marketplace add https://github.com/VirtoCommerce/ai-tools`
+  — Cursor reads this repository's `.claude-plugin/marketplace.json`, so nothing Cursor-specific is
+  published — then install `vc-secrets` from `/plugins` (installing is interactive only). The plugin
+  lands in `~/.cursor/plugins/cache/ai-tools/vc-secrets/<commit>/`, a directory named after the
+  marketplace's git commit rather than the plugin's version, so its path changes with every commit to
+  the marketplace. The install belongs to your Cursor account, not to the machine: a fresh home signed
+  in to the same account receives it again at start-up, at the marketplace's current commit.
+- **From a local directory.** Put a real copy of this package at `~/.cursor/plugins/local/vc-secrets/`.
+  A symlink to a checkout is not loaded.
 
 Cursor's entry uses a variable rather than a baked path, but something still has to stand behind it:
-run the `install` skill once per machine and set `VC_SECRETS` to the shim path it prints. Cursor reads
+run the `install` skill once per machine and set `VC_SECRETS` to the path it prints. Cursor reads
 that as `${env:VC_SECRETS}` from your environment, so export it from your shell's own startup file —
-the `env` entry `install` prints is another client's mechanism and does nothing here.
+`install` prints the `export` line and writes nothing. For a marketplace install that path is a shim it
+copies into `~/.cursor/plugins/data/vc-secrets-ai-tools/`, which finds the current install in Cursor's
+plugin cache on every launch. For a local copy it is the copy's own `vc-secrets.mjs`: that path carries
+no version and is updated in place, so there is nothing for a shim to track.
 
 Then paste `emit-config cursor` into `<repo>/.cursor/mcp.json` or `~/.cursor/mcp.json` and run
 `doctor`. If the plugin does not appear in Cursor's own plugin list, that is the symptom of the
 unestablished version floor, and a trace log is the only other place it shows.
+
+The guard runs on every tool call here, and Cursor registers it fail-closed: a hook that exits 0 and
+prints nothing is read as a failed hook, and the call is refused. vc-secrets 0.1.0 printed nothing when
+it allowed a call, so with it installed Cursor refused everything — a shell command or a file read as
+much as an edit to a declaration. 0.2.0 answers every call.
+
+Cursor also loads Claude Code's plugins — one that `~/.claude/plugins/installed_plugins.json` records
+and `~/.claude/settings.json` enables, from its recorded `installPath`. Which of that copy's hook
+registrations Cursor then runs is not measured, so keep a Claude Code install current too. Such a copy
+is set up through the Claude Code branch: `install` run from it prints Claude Code's entry, and the
+path to export as `VC_SECRETS` is the shim it puts under `~/.claude/plugins/data/`.
 
 ### Codex
 
@@ -591,9 +615,10 @@ needs publishing. Enable the plugin in `~/.codex/config.toml`.
 
 Then run the `install` skill once per machine. Codex expands no variables in its config, so
 `emit-config codex` bakes the shim's absolute path into every entry — and the shim is a file that
-`install` creates. Skip this and the pasted entries name a file nothing wrote, so every wrapped
-server fails at launch with a module-not-found naming a path you never chose. You do **not** need the
-`env` entry that `install` also prints: that is read by another client and nothing here uses it.
+`install` creates, in `~/.codex/plugins/data/vc-secrets-ai-tools/`. Skip this and the pasted entries
+name a file nothing wrote, so every wrapped server fails at launch with a module-not-found naming a
+path you never chose; `emit-config codex` warns when that file does not exist yet. Codex needs no `settings.json` entry and no shell variable, and `install` prints
+neither here. The shim looks for the current install in Codex's own plugin cache first.
 
 Paste `emit-config codex` into `~/.codex/config.toml`, run `doctor`, and trust the hook.
 
@@ -611,6 +636,19 @@ Paste `emit-config codex` into `~/.codex/config.toml`, run `doctor`, and trust t
 > repeat that still goes through after trusting is the finding worth reporting rather than working
 > around.
 
+### Upgrading from 0.1.0
+
+0.1.0 put one shim, under `~/.claude/plugins/data/vc-secrets-ai-tools/`, for every client, and only
+`install` run under Claude Code replaces that file. That copy does not search Cursor's plugin cache.
+`doctor` does not prompt for any of this — the shim's contract did not change — so after updating:
+
+- **Cursor:** run `install` again and change your `export VC_SECRETS` line to the path it prints. Until
+  then, on a machine where only Cursor holds the plugin, the old shim answers `plugin vc-secrets@ai-tools
+  is not installed`.
+- **Codex:** run `install` again and paste `emit-config codex` again. The entries naming the old shim
+  keep working, but through Claude Code's data directory, which an uninstall there deletes.
+- **Claude Code:** nothing changes; re-running `install` refreshes the shim in place.
+
 ## Turning it off, and uninstalling
 
 Disabling the plugin does **not** stop launches, and it does switch the guard off.
@@ -620,18 +658,22 @@ does not read whether the plugin is enabled: it resolves an install from the cli
 and runs it.
 The guard hook, on the other hand, ships *with* the plugin, so a disabled plugin leaves declarations
 editable by the tools the hook used to refuse while the servers keep launching with their secrets.
-Uninstalling from the last scope in Claude Code deletes the plugin's data directory, which is where the shim
-lives (unless `--keep-data` is passed), so entries pointing at it then fail to start. Under Codex or Cursor, or
-with `--keep-data`, the shim stays and still finds whatever install the client's registry and cache hold, so do
-not rely on an uninstall as the off switch either.
+Each client keeps its own shim, in its own data directory, so an uninstall in one client never
+removes the shim another client's entries name. Uninstalling from the last scope in Claude Code deletes
+Claude Code's data directory, and its shim with it (unless `--keep-data` is passed), so entries pointing
+at that shim then fail to start. Under Codex or Cursor, or with `--keep-data`, the shim stays and still
+finds whatever install the client's registry and caches hold, so do not rely on an uninstall as the off
+switch either.
 
 The off switch is the entries and the shim, not the plugin:
 
 - Restore or delete the entries you pasted from `emit-config`, in the files named above.
 - Remove the `VC_SECRETS` entry from the `env` block of Claude Code's user settings (Cursor: the `export`
   in your shell's startup file; Codex has no such variable, its entries carry the literal path).
-- Delete the shim directory, `~/.claude/plugins/data/vc-secrets-ai-tools/` — the file inside it is
-  `vc-secrets-shim.mjs`. If `install` was run with `--data-dir`, it is that directory instead.
+- Delete the shim directory of every client you ran `install` under — `~/.claude/plugins/data/vc-secrets-ai-tools/`,
+  `~/.codex/plugins/data/vc-secrets-ai-tools/`, `~/.cursor/plugins/data/vc-secrets-ai-tools/`; the file inside
+  is `vc-secrets-shim.mjs`. If `install` was run with `--data-dir`, it is that directory instead. A Cursor
+  local copy has no shim: the `export` above names the copy itself.
 
 The secrets themselves stay in the credential store; nothing here removes them.
 
@@ -755,7 +797,12 @@ client's own enable flag, and, on Codex, a hook that stays untrusted until you t
 
 What the hook actually sees differs per client, and the guard reads each shape rather than assuming
 one: on Claude Code the matcher selects `Edit`, `Write` and `NotebookEdit`; on Cursor the hook
-receives every tool call and the guard filters; on Codex the paths live inside `apply_patch` text and
+receives every tool call and the guard filters — and answers each one, because the registration is
+fail-closed and Cursor reads an exit 0 with empty output as a failed hook. Only the Cursor registration
+passes `--cursor`, which makes the guard write Cursor's answer on stdout: `{"permission":"allow"}`, or
+`{"permission":"deny",…}` carrying the reason; the exit codes are the same either way, and without the
+flag stdout stays empty. Cursor runs a plugin's hook from the plugin's own directory, which is why
+its relative command resolves; on Codex the paths live inside `apply_patch` text and
 one patch can name several files, so the guard reads them all. A payload it cannot parse is reported
 rather than passed in silence — that message is the difference between "nothing to block here" and "I
 could not tell".
@@ -807,6 +854,12 @@ p "unreadable payload" '{"tool_name":"Write","tool_input":{"filePath":".claude/v
 #    is the client's tool payload -- the file content about to be written.
 p "unreadable input" '{"tool_name":"Write","tool_input":{"file_path":SHOULD-NOT-APPEAR}}'
 ```
+
+Cursor runs the hook with `--cursor`. To check that form, redefine the helper as
+`p() { printf '%s' "$2" | node "$H" --cursor; echo "  -> exit $?  ($1)"; }` and rerun the six: the exit
+codes are unchanged, and each probe also prints one line on stdout — `{"permission":"allow"}` for the
+three that exit 0, `{"permission":"deny",…}` with the reason for the three blocks. An exit-0 probe that
+prints nothing in this form is the defect that made Cursor refuse every call.
 
 Probes 4 and 5 both exit 0, and the difference is the line probe 5 prints:
 `vc-secrets guard: unrecognised Write payload -- not inspected`. That sentence is the whole point of
