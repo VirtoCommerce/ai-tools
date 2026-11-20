@@ -1,7 +1,7 @@
 ---
 name: qa-docs
-description: "[QA Method] Use when a ticket in status Tested or Done needs its documentation: ONE document — What's new, How to set it up, How it works — built from the run's PASS rows and real stand screenshots, posted as ONE Jira comment, plus a ≤30 s Motion film a person exports and attaches. Called by /qa-test at its Stage 5 docs step; run by hand after /vc-test:qa-ticket. `release` mode aggregates the What's new sections of a sprint or version. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
-argument-hint: "<TICKET> [--video [<file.mp4>]] | release --sprint <SprintXX-XX> | release --version <X.Y.Z>"
+description: "[QA Method] Use when a ticket in status Tested or Done needs its documentation: ONE document — What's new, How to set it up, How it works — built from the run's PASS rows and real stand screenshots, posted as ONE Jira comment, plus a ≤30 s Motion film a person exports and attaches. Called by /qa-test at its Stage 5 docs step; run by hand after /vc-test:qa-ticket. `release` mode aggregates the What's new sections of a sprint or version. `/qa-docs <sprint>` makes the sprint's release notes, a Slides deck and/or a film of its key stories. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
+argument-hint: "<TICKET> [--video [<file.mp4>]] | release --sprint <SprintXX-XX> | release --version <X.Y.Z> | <sprint> [--notes] [--slides] [--film]"
 ---
 
 # /qa-docs — the documentation of one tested ticket
@@ -13,7 +13,8 @@ screenshots, GIFs and the film are [`media.md`](media.md); the release aggregate
 [`release.md`](release.md).
 
 **Runs in the main session and dispatches no subagent**: it needs a browser lane, the Artifact tool and
-the tracker in one place. It is an Observer and a Judge under
+the tracker in one place — except the sprint mode, which dispatches its capture walks to lane specialists
+([`sprint.md`](sprint.md)). It is an Observer and a Judge under
 [`authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5.2 — it walks the stand and
 states how the platform behaves — so it carries the `kb` read step (2) and write step (7).
 
@@ -24,6 +25,11 @@ states how the platform behaves — so it carries the `kb` read step (2) and wri
 | `/qa-docs <TICKET>` | steps 1–8 below |
 | `/qa-docs <TICKET> --video [<file.mp4>]` | attach the exported film and amend the comment: [`media.md`](media.md) §Hand-off |
 | `/qa-docs release --sprint <S>` · `--version <V>` | the aggregate: [`release.md`](release.md) §Aggregate |
+| `/qa-docs <sprint>` [`--notes`] [`--slides`] [`--film`] | the sprint mode — release notes, slides and/or a film of the sprint's key stories: [`sprint.md`](sprint.md) |
+
+An argument that is not a ticket key and names a sprint (`sprint26-22`, `Sprint 26-22`, `26-22`) is the
+sprint mode; read [`sprint.md`](sprint.md) and follow it instead of the steps below. `release --sprint <S>`
+with no flag, or with `--notes` alone, keeps the plain aggregate.
 
 `/qa-test` calls `/qa-docs <TICKET>` at its docs step, after the status hop, when the ticket ends in Tested or
 Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the ticket needs documentation.
