@@ -305,7 +305,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/check-secrets.mjs" --preflight
   `already up to date` / `present`) and its `doctor` runs (a `FAIL no declaration file found` from
   doctor is expected at this point — this run writes the declaration in §3). With no `VC_SECRETS` in
   the environment the script installs the shim itself, through vc-secrets' own `install-shim.mjs`
-  at its documented default path; that installer writes no settings file. Note the `shim` path: it
+  in Claude Code's data dir; that installer writes no settings file. Note the `shim` path: it
   is the `<VC_SECRETS>` in every command you show the operator, and the literal path for this
   session (the settings `env` takes effect only after a restart).
 - **Exit 2** (`"installed": false`) → **STOP before the interview.** Show the JSON's `reason` and

@@ -5,7 +5,7 @@
  * Two moments of /project-init call it (VCST-6402):
  *
  *   --preflight   §0d, before the interview: install the vc-secrets shim when it is missing (vc-secrets'
- *                 own install-shim.mjs, documented default path — no settings file is touched; gen-mcp
+ *                 own install-shim.mjs, into Claude Code's data directory — no settings file is touched; gen-mcp
  *                 writes VC_SECRETS into the PROJECT's .claude/settings.local.json in §7), then check
  *                 that its `doctor` runs. A missing declaration is expected here.
  *   (default)     the token pause, on the operator's "done": run `doctor` and decide, from its LINES

@@ -197,6 +197,34 @@ function normalisedPath(raw) {
     return path.posix.normalize(filePath);
 }
 
+// Cursor registers this hook with failClosed (hooks-cursor.json), and there a hook that exits 0 with nothing
+// on stdout counts as failed, so the call is refused. Cursor hands this hook every tool call, so an empty
+// allow refused all of them -- measured with cursor-agent 2026.11.19: Shell and Read were rejected with
+// "Hook ... returned no output", while a probe hook answering {} or {"permission":"allow"} let them through.
+// Cursor's contract is a JSON answer on stdout, {"permission": "allow" | "deny"}, with exit 2 still meaning
+// deny. Only Cursor's registration passes --cursor: the shared hooks.json is read by Claude Code and Codex,
+// which go by the exit code, and one command string there cannot name a client without being wrong for the
+// other.
+const CURSOR = process.argv.slice(2).includes("--cursor");
+
+function allow() {
+    if (CURSOR) {
+        fs.writeSync(1, `${JSON.stringify({ permission: "allow" })}\n`);
+    }
+    process.exit(0);
+}
+
+// The reason goes to stderr for every client, as before, and under Cursor also into the deny answer:
+// agent_message is what the agent reads back, user_message what the person sees.
+function block(message) {
+    fs.writeSync(2, message);
+    if (CURSOR) {
+        const reason = message.trim();
+        fs.writeSync(1, `${JSON.stringify({ permission: "deny", user_message: reason, agent_message: reason })}\n`);
+    }
+    process.exit(2);
+}
+
 let input;
 try {
     input = JSON.parse(readFileSync(0, "utf8"));
@@ -220,7 +248,7 @@ try {
     // ~200 KB loaded once per tool call.
     const why = e instanceof SyntaxError ? "not valid JSON" : e.code ?? e.name;
     fs.writeSync(2, `vc-secrets guard: could not read its input (${why}) -- not inspected\n`);
-    process.exit(0);
+    allow();
 }
 
 let targets;
@@ -229,8 +257,7 @@ try {
 } catch (e) {
     // Nothing in targetsFrom throws today. The catch stays because exiting 1 from an unexpected throw
     // would ALLOW the call: refusing an edit is recoverable, letting a declaration edit through is not.
-    fs.writeSync(2, `BLOCK: vc-secrets guard failed to read this payload -- ${e.message}\n`);
-    process.exit(2);
+    block(`BLOCK: vc-secrets guard failed to read this payload -- ${e.message}\n`);
 }
 
 if (!targets.readable) {
@@ -239,7 +266,7 @@ if (!targets.readable) {
     // this guard could not parse — which is exactly the case worth saying out loud.
     const what = typeof input.tool_name === "string" && input.tool_name ? input.tool_name : "unnamed tool";
     fs.writeSync(2, `vc-secrets guard: unrecognised ${what} payload -- not inspected\n`);
-    process.exit(0);
+    allow();
 }
 
 // A relative path names a file relative to the client's working directory, and a directory-scoped
@@ -261,25 +288,22 @@ for (const raw of targets.paths) {
         // Covers all three homes: <repo>/.claude/vc-secrets.json, its .local. sibling, and
         // ~/.claude/vc-secrets.json
         if (DECLARATION_RE.test(filePath)) {
-            fs.writeSync(2,
+            block(
                 "BLOCK: a vc-secrets declaration decides which command receives which secret -- change it via a human PR, not an in-session edit. "
                 + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
-            process.exit(2);
         }
         // Not the declaration's remedy: the record changes only through `vc-secrets trust`, which asks a person
         // at a terminal -- a PR cannot reach it, and an in-session edit would skip the question.
         if (TRUST_FILE_RE.test(filePath)) {
-            fs.writeSync(2,
+            block(
                 "BLOCK: the vc-secrets trust file records which repository declarations you approved to run -- change it with \"vc-secrets trust\" or \"vc-secrets untrust\" in your own terminal, not an in-session edit. "
                 + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
-            process.exit(2);
         }
         // The shim is what every server launch runs, and — unlike the launcher in the plugin cache — a
         // plugin update never overwrites it, so an edit here survives indefinitely.
         if (SHIM_RE.test(filePath)) {
-            fs.writeSync(2,
+            block(
                 "BLOCK: the vc-secrets shim is on the path of every server launch -- reinstall it with the vc-secrets install skill instead of editing it.\n");
-            process.exit(2);
         }
         // Checked AFTER the shim, and the order is load-bearing: this pattern matches the installed shim
         // too, so testing it first would answer an installed-copy edit with "open a PR" when the fix there
@@ -289,12 +313,11 @@ for (const raw of targets.paths) {
         // verb, so an edit here changes what READS a token, where a declaration only names one. The rest
         // of the package qualifies through the three ways stated where MODULE_RE is defined.
         if (MODULE_RE.test(filePath) || PACKAGE_FILE_RE.test(filePath) || LIB_RE.test(filePath)) {
-            fs.writeSync(2,
+            block(
                 "BLOCK: this is vc-secrets' own code on the path that handles a token -- change it through a human PR, not an in-session edit. "
                 + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
-            process.exit(2);
         }
     }
 }
 
-process.exit(0);
+allow();
