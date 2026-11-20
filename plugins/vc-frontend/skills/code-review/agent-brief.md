@@ -31,13 +31,27 @@
 
 ## Severity
 
-What a user meets decides it; blast radius raises it.
+Two questions decide it: what a user meets, and how many users or consumers meet it.
 
-- `high`: a break in shared or public code that others build on (kit, core, facade, a shared
-  composable), or wrong money, a lost order, a security hole.
-- `medium`: a page any user can reach shows wrong data, loses input or blocks an action, even if only
-  under fast clicks or slow responses. That the timing is unlikely does not lower it.
-- `low`: only the designer frame, only analytics, a test that cannot fail, a convention, polish.
+- `high`, any of:
+  - money, orders or security: a wrong price, total or currency; wrong items or quantities ordered;
+    a payment or order that goes through without a check it must pass (CVV, validation, required
+    terms, permission); a security hole or leaked data;
+  - a page or a key flow (sign-in, catalog, cart, checkout, payment, account) crashes, renders blank or
+    cannot be completed for a whole class of users (a role, a store setting, a locale, guests);
+  - wrong data or behaviour on every page (app boot, layout, the header, the locale or currency used
+    for every request);
+  - a break in code others build on: a kit component, a core or shared composable, the facade, an
+    extension point, so that its consumers break.
+- `medium`: one widget or one page shows wrong or missing data, loses input or blocks an action in
+  normal use, even if only under fast clicks or slow responses; an accessibility break in a component
+  used across the app.
+- `low`: only after a failed request when a reload recovers; only with a misconfiguration an admin
+  must enter; analytics or tracking only; only in the designer frame; polish, a convention, a test
+  that cannot fail.
+
+Never lower it because the timing is unlikely, or because the feature sits behind a store setting
+or a preset flag that is off by default: customers turn those on, and the defect is theirs then.
 
 ## Output
 

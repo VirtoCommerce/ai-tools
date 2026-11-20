@@ -202,10 +202,12 @@ both sides of an edge, in batches, about fifteen in all.
 give all findings to one fresh subagent whose only job is to disprove each from the code: does the
 path really reach this line, does a guard elsewhere already handle it, did the behaviour exist before
 this change (`base/` under `--units-dir`; `fixes/` when a recent fix is involved). For a rule finding:
-is the quoted rule really in `rules/`, do its paths cover this file, does it apply to this line. Give
+is the quoted rule really in `rules/`, do its paths cover this file, does it apply to this line. For a race:
+can the input change while the same instance lives (a parent `:key` on it remounts the component),
+and does the late result write state the next instance sees? If neither, there is no race. Give
 it each finding with its quoted lines, so it opens only the files a finding names. Keep a finding only
-if it survives with a concrete trigger, and set its severity by the scale in agent-brief.md: wrong
-data or a blocked action on a page any user reaches is `medium` however unlikely the timing.
+if it survives with a concrete trigger, and set its severity by the scale in agent-brief.md. A page that crashes for a whole class of users, or a
+payment or order that skips a required check, is `high`, even behind a flag that is off by default.
 
 ## 6. [PAUSE] Offer the visual check
 

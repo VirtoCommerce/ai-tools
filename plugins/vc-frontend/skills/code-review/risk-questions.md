@@ -16,7 +16,9 @@ in this codebase. A change that fits the question without resembling any example
 **ASYNC-1 (R2).** Does it start async work (search, refetch, load more, autosave, SDK init, a
 `postMessage` handler) whose result writes shared state while its input (route param, id, period,
 filter, open form) can change or a second click can land, with no request token, cancel or locked
-controls?
+controls? First check that the input can change while the same instance lives: a parent that keys
+the component by that input (`:key="productId"`) remounts it, and a late response into per-instance
+state then writes to a discarded component — no race.
 Broke before:
 - In the BOPIS pickup-location picker, a Load more response landing after a filter refetch appended the old query's rows and cursor to the new list — a reset fetch must invalidate in-flight load-more (generation token).
 - Switching the sales report from Year to Q2 paired the new period plan with the still-loaded Year response, so year figures showed under Q2 labels — pair each response with the plan it was fetched for.
@@ -258,7 +260,8 @@ Broke before:
 Signals: `updateShipment|updatePayment|shipmentMethod|paymentMethod|deliveryAddress|[Ss]hipment`
 
 **PAY-3 (R3).** Does it change what enables Place order or Pay, or a submit's busy flag? The gate must
-stay closed while loading and after a failed load, hold in `createOrderFromCart`, be registered in
+stay closed while loading, while a required field (a CVV iframe, a consent) is not ready, and after a
+failed load, hold in `createOrderFromCart`, be registered in
 `init()` rather than an async chunk, and cover every instance (`cart.vue` renders `PlaceOrder` twice).
 Broke before:
 - The subscription consent guard registered only after the subscription items loaded, so Place order was enabled while they loaded and for good if the request failed — the gate stays closed while loading and after a failed load.
