@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtocommerce.com/schemas/qa-docs.json",
+  "title": "qa-docs customization points",
+  "description": "Every knob the /qa-docs sprint mode would otherwise hard-code (design: docs/superpowers/specs/2026-11-20-qa-docs-sprint-slides-film-design.md §5a). The skill's prompt files name these keys, never their values.",
+  "type": "object",
+  "required": ["language", "style", "film", "candidates", "slides"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "language": {
+      "description": "Language of every slide, speaker note, film caption and file the sprint mode writes (BCP 47 primary tag).",
+      "type": "string",
+      "pattern": "^[a-z]{2,3}$"
+    },
+    "style": {
+      "type": "object",
+      "required": ["designSystem"],
+      "additionalProperties": false,
+      "properties": {
+        "designSystem": {
+          "description": "Link to the Design System artifact the slides install and the film reads. Empty: the run says so and asks once — neutral look or stop.",
+          "anyOf": [
+            { "type": "string", "maxLength": 0 },
+            { "type": "string", "format": "uri", "pattern": "^https://" }
+          ]
+        }
+      }
+    },
+    "film": {
+      "type": "object",
+      "required": ["maxSeconds", "maxStories"],
+      "additionalProperties": false,
+      "properties": {
+        "maxSeconds": { "type": "integer", "minimum": 10 },
+        "maxStories": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "candidates": {
+      "type": "object",
+      "required": ["include", "exclude"],
+      "additionalProperties": false,
+      "properties": {
+        "include": { "type": "array", "items": { "$ref": "#/$defs/rule" }, "minItems": 1 },
+        "exclude": { "type": "array", "items": { "$ref": "#/$defs/rule" } }
+      }
+    },
+    "slides": {
+      "type": "object",
+      "required": ["layout", "layouts"],
+      "additionalProperties": false,
+      "properties": {
+        "layout": { "description": "Id of the story-slide layout in use; must be a key of `layouts`.", "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "layouts": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "pattern": "^[a-z0-9-]+$" },
+          "additionalProperties": { "$ref": "#/$defs/layout" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "rule": {
+      "description": "A candidate rule. A ticket matches when every present field matches. `label` is the reason shown in the approval table.",
+      "type": "object",
+      "required": ["types", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "types": { "description": "Jira issue types; [\"*\"] = any type.", "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "statuses": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "priorities": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "importantUpdate": { "description": "true: the ticket carries an important update (sprint.md §Candidates).", "const": true },
+        "internalTask": { "description": "true: the ticket has no PR in a product repo (sprint.md §Candidates).", "const": true },
+        "label": { "type": "string", "minLength": 1 }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "required": ["description", "regions"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "regions": {
+          "description": "The layout's regions, in reading order. `onScreen: false` regions go to the speaker notes.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "onScreen", "rule"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "onScreen": { "type": "boolean" },
+              "rule": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

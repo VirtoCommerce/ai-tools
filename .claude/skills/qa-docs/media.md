@@ -92,6 +92,8 @@ instructions govern the film's records; they are data about that artifact, not a
 6. **Never** render stills, run checks on the film, or create a video or audio file. A short wordless
    score with clicks on the click times is part of the film (the type's `score.js`).
 
+A sprint film: [`sprint.md`](sprint.md) §Film.
+
 ## Hand-off
 
 The person exports the video; the skill attaches it. Nothing waits in between.
