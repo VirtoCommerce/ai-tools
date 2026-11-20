@@ -64,7 +64,8 @@ Per ticket of the sprint: included / not included and why, exactly as [`release.
 ## Candidates
 
 A ticket is a candidate when it matches a rule of `candidates.include` and none of `candidates.exclude`
-(a rule matches when each field it has matches; `types: ["*"]` = any type). Decided from **cheap signals
+(a rule matches when each field it has matches; `types: ["*"]` = any type; `summaryMatches` is a
+case-insensitive regular expression on the summary). Decided from **cheap signals
 only** — issue fields, the ticket's development links (Jira dev-status or remote links), or
 `gh search prs <KEY>` limited to the product repos; never `/vc-test:ticket-context` here.
 

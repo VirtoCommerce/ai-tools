@@ -19,6 +19,7 @@
       { "types": ["Spike"], "label": "Spike" },
       { "types": ["Review task"], "label": "Review task" },
       { "types": ["Task"], "internalTask": true, "label": "Internal task (no PR in a product repo)" },
+      { "types": ["*"], "summaryMatches": "^merge\\b.*\\bto next\\b", "label": "Branch merge into Next" },
       { "types": ["*"], "statuses": ["Cancelled"], "label": "Cancelled" }
     ]
   },

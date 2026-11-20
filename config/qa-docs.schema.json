@@ -70,6 +70,7 @@
         "types": { "description": "Jira issue types; [\"*\"] = any type.", "type": "array", "items": { "type": "string" }, "minItems": 1 },
         "statuses": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
         "priorities": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "summaryMatches": { "description": "Case-insensitive regular expression the ticket summary must match.", "type": "string", "minLength": 1 },
         "importantUpdate": { "description": "true: the ticket carries an important update (sprint.md §Candidates).", "const": true },
         "internalTask": { "description": "true: the ticket has no PR in a product repo (sprint.md §Candidates).", "const": true },
         "label": { "type": "string", "minLength": 1 }
