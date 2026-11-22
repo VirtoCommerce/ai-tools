@@ -75,6 +75,8 @@ export const CATEGORY_PATHS = {
   A: 'Compare Fixtures > Group A',
   B: 'Compare Fixtures > Group B',
   C: 'Compare Fixtures > Group C',
+  // Its own tab, so the one-entry variations fixture (CMP-060) never changes what Group A/B/C hold.
+  D: 'Compare Fixtures > Group D',
   NESTED_PARENT: 'Compare Nested',
   NESTED_CHILD: 'Compare Nested > Compare Nested',
   NONE: '',   // no category at all — linked at the store virtual-catalog ROOT (uncategorized tab)
@@ -156,9 +158,18 @@ export const PRODUCTS = [
     // Adding the same property to an ALREADY-INDEXED document does survive a re-index, which is why
     // this record is seeded in two phases: create + index bare, then apply the properties and
     // re-index. See `indexTwoPhase` and the seeder's applyDeferredProperties().
+    //
+    // CAUSE, measured since (kb KB-52EAADEE / KB-BF12E9E2, vcst-qa 2026-11-04): the document builder
+    // indexes a property under its LOWERCASED name in the shared Product index, where `price` is
+    // mapped double — so a TEXT value under `Price` gets the whole document rejected, and xAPI keeps
+    // serving the stale bare phase-1 document with NO properties (what vcptcore showed, 2026-11-20:
+    // no Price / SKU / Availability rows at all). A NUMBER value indexes cleanly and does not touch
+    // the price sort/filter, which read the pricelist fields. So `Price` is Number, with a value far
+    // from the list price so the property row and the built-in Price row can never read alike.
+    // Two-phase is kept: it still proves the bare document indexes before the colliding names land.
     indexTwoPhase: true,
     properties: [
-      p('Price', 'ShortText', 'PROPERTY-Price-not-the-field'),
+      p('Price', 'Number', 98765.43),
       p('SKU', 'ShortText', 'PROPERTY-SKU-not-the-field'),
       p('Availability', 'ShortText', 'PROPERTY-Availability-not-the-field'),
       p('AgentTestCompareShared', 'ShortText', SHARED_PROPERTY_VALUE),
@@ -275,6 +286,32 @@ export const PRODUCTS = [
       { code: 'AGENT-TEST-CMP-VAR-S', name: 'AGENT-TEST-Compare-Variations-Small', listPrice: 34.99, stock: 9 },
       { code: 'AGENT-TEST-CMP-VAR-M', name: 'AGENT-TEST-Compare-Variations-Medium', listPrice: 44.99, stock: 11 },
       { code: 'AGENT-TEST-CMP-VAR-L', name: 'AGENT-TEST-Compare-Variations-Large', listPrice: 54.99, stock: 13 },
+    ],
+  },
+
+  // ---- The ONE-ENTRY variations parent (catalog card button pluralization, suite 001 CAT-082).
+  //
+  // Lives in this domain only because the seeder already owns the variation machinery (find-or-
+  // create children, price, stock, index together, write back, teardown); it is not a compare case.
+  // The storefront card counts its variations button as (vc-frontend
+  // client-app/shared/catalog/utilities/variations.ts):
+  //   Show in stock ON  → purchasable master (1|0) + purchasable variations   (getPurchasableVariationsCount)
+  //   Show in stock OFF → variations.length + 1                               (getVariationsCount)
+  // and the panel lists the master itself as a row (kb KB-191B1B4C). So a parent with exactly ONE
+  // variation where the master is in stock and the variation is NOT reads 1 with the default filter
+  // and 2 without it — the singular form is reachable, and the two counting rules DISAGREE on this
+  // product (oneEntryShape() guards both). A parent with one IN-STOCK variation would read 2 on both
+  // and never reach the singular form at all.
+  {
+    cmpId: 'CMP-060', alias: 'PROD_VAR_ONE_ENTRY',
+    code: 'AGENT-TEST-CMP-VARONE', name: 'AGENT-TEST-Compare-One-Variation-Parent',
+    categoryPath: CATEGORY_PATHS.D, listPrice: 26.99, stock: 15,
+    minQuantity: 1, packSize: 1, maxQuantity: 0,
+    purpose: 'Exactly ONE variation, out of stock, under an in-stock master — the card\'s variations button counts 1 with Show in stock on (singular form) and 2 with it off',
+    proof: 'one-entry',
+    properties: [],
+    variations: [
+      { code: 'AGENT-TEST-CMP-VARONE-CHILD', name: 'AGENT-TEST-Compare-One-Variation-Child', listPrice: 21.99, stock: 0 },
     ],
   },
 
@@ -449,6 +486,31 @@ export function variationPriceDivergence(rec = byAlias.PROD_CMP_VARIATIONS) {
   return problems;
 }
 
+// --- the one-entry variations parent (CAT-082) --------------------------------
+
+/** The storefront card count with Show in stock ON: in-stock master + in-stock variations. */
+export const purchasableEntryCount = (rec) =>
+  (Number(rec.stock) > 0 ? 1 : 0) + variationsOf(rec).filter((v) => Number(v.stock) > 0).length;
+/** The storefront card count with Show in stock OFF: every variation plus the master. */
+export const allEntryCount = (rec) => variationsOf(rec).length + 1;
+
+/**
+ * Vacuity guard for PROD_VAR_ONE_ENTRY. The fixture exists to reach the SINGULAR form of the
+ * variations button, and it decides nothing if (a) it carries more than one variation, (b) its
+ * default-filter count is not exactly 1, or (c) the two counting rules agree — then a card that used
+ * the wrong rule would read the same number and pass.
+ */
+export function oneEntryShape(rec = byAlias.PROD_VAR_ONE_ENTRY) {
+  if (!rec) return ['PROD_VAR_ONE_ENTRY is missing from PRODUCTS — CAT-082 has no one-entry variations fixture'];
+  const problems = [];
+  if (variationsOf(rec).length !== 1) problems.push(`PROD_VAR_ONE_ENTRY carries ${variationsOf(rec).length} variation(s); it must carry exactly ONE`);
+  if (!(Number(rec.stock) > 0)) problems.push('PROD_VAR_ONE_ENTRY\'s master has no stock — an out-of-stock master card is the one Show in stock hides, so the button under test may never render');
+  if (purchasableEntryCount(rec) !== 1) problems.push(`PROD_VAR_ONE_ENTRY counts ${purchasableEntryCount(rec)} purchasable entr(y/ies) with Show in stock on; it must count exactly 1 to reach the singular form`);
+  if (purchasableEntryCount(rec) === allEntryCount(rec)) problems.push(`PROD_VAR_ONE_ENTRY counts ${allEntryCount(rec)} with Show in stock on AND off — the two counting rules agree, so a card using the wrong one passes`);
+  if (tabSiblings(rec).length) problems.push('PROD_VAR_ONE_ENTRY shares its tab with another fixture — keep it alone in Group D so the compare tabs are unchanged');
+  return problems;
+}
+
 /**
  * The two independent carriers of the raw-differs / formatted-same shape, which is the ONLY thing
  * that can catch `differs` being computed over formatted strings. Declared as data so the guard can
@@ -511,6 +573,7 @@ export function validateSpecShape() {
     }
     for (const pr of r.properties || []) {
       if (!VALUE_TYPES.includes(pr.valueType)) problems.push(`${r.cmpId}: property "${pr.name}" has valueType "${pr.valueType}", which is not one of ${VALUE_TYPES.join('/')}`);
+      if (pr.name.toLowerCase() === 'price' && pr.valueType !== 'Number') problems.push(`${r.cmpId}: property "${pr.name}" is ${pr.valueType} — the Product index maps the lowercased field \`price\` as double, so a non-numeric value gets the whole document rejected and xAPI serves a stale copy without any properties (kb KB-52EAADEE)`);
       if (pr.value == null || pr.value === '') problems.push(`${r.cmpId}: property "${pr.name}" has no value — an INLINE property only exists through its value, so this row would silently not be created`);
     }
   }
@@ -541,6 +604,7 @@ export function validateSpecShape() {
   problems.push(...quantityDivergence());
   problems.push(...formatCollisionProblems());
   problems.push(...variationPriceDivergence());
+  problems.push(...oneEntryShape());
   return problems;
 }
 

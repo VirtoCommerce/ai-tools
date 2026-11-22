@@ -12519,5 +12519,25 @@
       "org_role": "org_role"
     },
     "notes": "DEMO profile persona for a customer who has never ordered: Sofia Navarro, Purchasing agent at Wingtip Electrical Supply. No order, cart or list in the sales-rep, returns or loyalty-missions demo names her (td:validate:sales-rep-demo [1] + [8], td:validate:returns-demo [1]), so xAPI orders and the dashboard's My recent orders read 0 for her. Her ORGANIZATION has orders (James Whitfield's), so organization-wide figures are not zero. Spec: DEMO_PERSONAS in scripts/seed-data/sales-rep/sales-rep-demo-specs.mjs (contact DCT-WT-2). Seeded by npm run seed:demo, or for her alone npm run seed:sales-rep-demo -- --only DCT-WT-2; exists only on an env holding the demo profile (virtostart). Sign in with @td(DEMO_NO_ORDERS_CUSTOMER.email); the Playwright lane types the password NAME SR_DEMO_BUYER_PASSWORD (SR_DEMO_BUYER_PASSWORD_<ENV> in .env.playwright.all). A case that places an order as her consumes the persona for every later run: do not."
+  },
+  "PROD_VAR_ONE_ENTRY": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-060"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "stock": "stock_qty",
+      "variationCount": "variation_count",
+      "minVariationPrice": "min_variation_price"
+    },
+    "notes": "One-entry variations parent for suite 001 CAT-082 (VCST-6046): an in-stock master with exactly ONE variation, which is out of stock. The storefront card's variations button counts in-stock-and-buyable master + variations with Show in stock on (here 1, the singular form) and variations.length + 1 with it off (here 2), and the panel lists the master as a row, so with the default filter the panel lists exactly one entry. Search it by @td(PROD_VAR_ONE_ENTRY.name) or open {{FRONT_URL}}@td(PROD_VAR_ONE_ENTRY.url). Seeded by scripts/seed-data/compare/seed-compare.mjs (alone in the Compare Fixtures > Group D tab); runtime id in aliases.<env>.json only.",
+    "_status": "authored-20261120"
   }
 }

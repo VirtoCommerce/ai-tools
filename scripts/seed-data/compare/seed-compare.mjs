@@ -41,9 +41,13 @@ import {
   SEED_PREFIX, priceListName, productSlug, validateSpecShape,
   categoryRootCode, categoryPathCode, categorySegmentSlug,
   variationsOf, hasVariations, minVariationPrice, formatMoney,
+  purchasableEntryCount, allEntryCount,
 } from './compare-specs.mjs';
+import { deletionWindows } from '../catalog/barcode-specs.mjs';
 
 let VIRTUAL_CATALOG_ID = null;
+/** Every category this run resolved or created (all path segments), keyed by id → name. */
+const SEEDED_CATEGORIES = new Map();
 
 const records = ONLY ? PRODUCTS.filter((r) => r.cmpId === ONLY || r.alias === ONLY) : PRODUCTS;
 
@@ -199,8 +203,40 @@ async function findSeedCategoryRoots() {
 // nothing (knowledge/execution/test-data-authoring.md §5a). For the two-phase record we have to
 // PROBE for the document rather than trust the index job, so the seeder asks xAPI directly.
 
+/**
+ * Request an indexation and make sure it was not REFUSED. The Search module runs one indexation at a
+ * time: a request made while another holds the lock is accepted (200, a job id) and then finishes at
+ * once with the single error "Indexation is already in progress." — nothing is indexed and nothing
+ * fails. Measured on vcptcore 2026-11-20: every request of a whole seed run was refused that way
+ * while an indexation started elsewhere ran on, so the fixtures looked seeded and never reached
+ * xAPI. The job's push notification is read back and the request retried until it is not refused.
+ * Returns true when a request was taken, false when the lock never freed inside `timeoutMs`.
+ */
+async function requestIndex(entries, { timeoutMs = 10 * 60_000, label = 'index' } = {}) {
+  const t0 = Date.now();
+  for (let attempt = 1; ; attempt++) {
+    // A run that waits out the lock can outlive the OAuth token (a 401 here, measured 2026-11-20 after
+    // ~55 min of refusals) — re-authenticate once per attempt instead of giving up.
+    const job = await api('POST', '/api/search/indexes/index', entries, { expectStatus: [200, 204] })
+      .catch(async (e) => { if (!/→ 401/.test(String(e.message))) throw e; await auth(); return api('POST', '/api/search/indexes/index', entries, { expectStatus: [200, 204] }); });
+    let refused = false;
+    for (let i = 0; i < 6; i++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      const n = await api('POST', '/api/platform/pushnotifications', { take: 50, skip: 0 }, { expectStatus: [200] }).catch(() => null);
+      const mine = (n?.notifyEvents || []).find((e) => (job?.jobId && e.jobId === job.jobId) || (job?.id && e.id === job.id));
+      if (!mine?.finished) continue;
+      refused = (mine.errors || []).some((e) => /already in progress/i.test(String(e)));
+      break;
+    }
+    if (!refused) { if (attempt > 1) log(`  ${label}: taken on attempt ${attempt}`); return true; }
+    if (Date.now() - t0 > timeoutMs) { log(`  ⚠ ${label}: every request refused for ${Math.round((Date.now() - t0) / 1000)} s — another indexation holds the lock`); return false; }
+    verbose(`  ${label}: refused (another indexation in progress) — retrying`);
+    await new Promise((r) => setTimeout(r, 15_000));
+  }
+}
+
 async function reindex(ids) {
-  await api('POST', '/api/search/indexes/index', [{ documentType: 'Product', documentIds: ids, rebuild: false }], { expectStatus: [200, 204] }).catch(() => {});
+  return requestIndex([{ documentType: 'Product', documentIds: ids, rebuild: false }], { label: 'product reindex' }).catch(() => false);
 }
 
 const VISIBILITY_QUERY = `query($storeId:String!,$ids:[String]!){
@@ -215,6 +251,28 @@ async function visibleInXapi(id) {
   if (!r?.ok) return false;
   const j = await r.json().catch(() => null);
   return Number(j?.data?.products?.totalCount) > 0;
+}
+
+const PROPS_QUERY = `query($storeId:String!,$ids:[String]!){
+  products(storeId:$storeId, cultureName:"en-US", currencyCode:"USD", productIds:$ids, first:1){ items{ properties{ name value } } }
+}`;
+
+/** Wait until xAPI serves every `{ name, value }` — the VALUE too, so a stale document carrying an
+ *  older value under the same name (what a refused reindex leaves behind) does not pass. */
+async function waitForXapiProperties(id, props, { tries = 12, delayMs = 8000 } = {}) {
+  const names = props.map((x) => x.name);
+  for (let i = 0; i < tries; i++) {
+    await new Promise((r) => setTimeout(r, delayMs));
+    const r = await fetch(`${BACK_URL}/graphql`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: PROPS_QUERY, variables: { storeId: STORE_ID, ids: [id] } }),
+    }).catch(() => null);
+    const item = (await r?.json().catch(() => null))?.data?.products?.items?.[0];
+    const have = new Map((item?.properties || []).map((p) => [p.name, String(p.value)]));
+    if (item && props.every((x) => have.get(x.name) === String(x.value))) return true;
+    verbose(`  …xAPI ${item ? `has ${[...have].map(([n, v]) => `${n}=${v}`).join(', ') || 'no properties'}` : 'does not see the product'} — waiting for ${names.join(', ')}`);
+  }
+  return false;
 }
 
 async function waitForXapi(id, { tries = 10, delayMs = 8000 } = {}) {
@@ -241,11 +299,16 @@ async function applyDeferredProperties(rec, productId) {
   const full = await api('GET', `/api/catalog/products/${productId}`);
   full.properties = [...(full.properties || []).filter((p) => !rec.properties.some((x) => x.name === p.name)), ...rec.properties.map(toProperty)];
   await api('POST', '/api/catalog/products', full, { expectStatus: [200, 201, 204] });
-  await reindex([productId]);
-  const ok = await waitForXapi(productId);
+  // Visible is not enough: the record exists to carry these property NAMES on the storefront, and a
+  // document re-indexed without them still renders (as a plain product). Prove name AND value reached xAPI.
+  // A refused reindex is not by itself a failure: xAPI was observed (vcptcore 2026-11-20) serving the
+  // new property VALUE while the product's index document was still the old one. The value check
+  // below is the proof either way.
+  if (!(await reindex([productId]))) log(`  ⚠ ${rec.cmpId}: the reindex after applying the properties was refused — proving through xAPI anyway`);
+  const ok = await waitForXapiProperties(productId, rec.properties);
   log(ok
     ? `  ✓ two-phase: ${rec.properties.length} propert(y/ies) applied and still visible to xAPI`
-    : `  ⚠ ${rec.cmpId} DISAPPEARED from xAPI after its properties were applied — the fixture is NOT provisioned`);
+    : `  ⚠ ${rec.cmpId}: xAPI does not expose ${rec.properties.map((x) => x.name).join(' / ')} on the product (or lost the product) after its properties were applied — the fixture is NOT provisioned`);
   return ok;
 }
 
@@ -353,6 +416,109 @@ async function verifyVariationBranch(rec, parentId) {
   return false;
 }
 
+const ENTRY_QUERY = `query($storeId:String!,$ids:[String]!){
+  products(storeId:$storeId, cultureName:"en-US", currencyCode:"${CURRENCY}", productIds:$ids, first:1){
+    items{ id hasVariations availabilityData{ isInStock isBuyable }
+      variations{ code availabilityData{ isInStock isBuyable } } }
+  }
+}`;
+
+/**
+ * Prove the ONE-ENTRY shape live: the storefront card computes its variations button from exactly
+ * these fields (in-stock AND buyable master + variations), so the proof re-derives both counts from
+ * xAPI and requires the spec's numbers with Show in stock on and off. Anything else means the
+ * singular form is unreachable on this product, however green the static guard is.
+ */
+async function verifyOneEntry(rec, parentId) {
+  const ok = (a) => !!a?.isInStock && !!a?.isBuyable;
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 8000));
+    const r = await fetch(`${BACK_URL}/graphql`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: ENTRY_QUERY, variables: { storeId: STORE_ID, ids: [parentId] } }),
+    }).catch(() => null);
+    const item = (await r?.json().catch(() => null))?.data?.products?.items?.[0];
+    if (!item?.hasVariations || (item.variations || []).length !== variationsOf(rec).length) {
+      verbose(`  …xAPI reports hasVariations=${item?.hasVariations} with ${(item?.variations || []).length} variation(s) — still indexing`);
+      continue;
+    }
+    const purchasable = item.variations.filter((v) => ok(v.availabilityData)).length;
+    const inStockOn = (ok(item.availabilityData) ? 1 : 0) + purchasable;
+    const inStockOff = item.variations.length + 1;
+    log('');
+    log(`  ✓ one-entry proof for ${rec.alias}: master purchasable ${ok(item.availabilityData)} · variations ${item.variations.length} (${purchasable} purchasable)`);
+    log(`      button count — Show in stock ON: ${inStockOn} (spec ${purchasableEntryCount(rec)}) · OFF: ${inStockOff} (spec ${allEntryCount(rec)})`);
+    if (inStockOn !== purchasableEntryCount(rec) || inStockOff !== allEntryCount(rec)) {
+      log(`  ❌ ${rec.alias}: live counts disagree with the spec — the singular form is NOT reachable on this product`);
+      return false;
+    }
+    return true;
+  }
+  log(`  ⚠ ${rec.cmpId}: xAPI never reported ${variationsOf(rec).length} variation(s) on the parent — NOT provisioned`);
+  return false;
+}
+
+// --- category indexing ---------------------------------------------------------
+// xAPI resolves a category (Query.category / Query.categories / compareList.categories[].category)
+// ONLY from the Category search index (kb KB-646B735D). With event-based indexation off, a category
+// this seeder creates stays out of that index, so every compare tab reads "Unknown category" while the
+// products — indexed explicitly in main() — render fine. So the categories are indexed explicitly
+// too, and proven by asking xAPI for each one by id.
+
+const CATEGORY_QUERY = `query($storeId:String!,$id:String!){ category(storeId:$storeId, id:$id, cultureName:"en-US"){ id name } }`;
+
+async function xapiCategoryName(id) {
+  const r = await fetch(`${BACK_URL}/graphql`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: CATEGORY_QUERY, variables: { storeId: STORE_ID, id } }),
+  }).catch(() => null);
+  return (await r?.json().catch(() => null))?.data?.category?.name ?? null;
+}
+
+/** Index every seeded category and wait until xAPI resolves each by name. Returns the ids it never saw. */
+async function indexAndProveCategories() {
+  const ids = [...SEEDED_CATEGORIES.keys()];
+  if (!ids.length) return [];
+  // documentType 'Category' + `documentIds` — the same request seed-brands / seed-category-images use.
+  if (!(await requestIndex([{ documentType: 'Category', documentIds: ids, rebuild: false }], { label: 'category reindex' }))) return ids;
+  log(`✓ category reindex triggered for ${ids.length} categor${ids.length === 1 ? 'y' : 'ies'}`);
+  let missing = ids;
+  for (let i = 0; i < 12 && missing.length; i++) {
+    await new Promise((r) => setTimeout(r, 8000));
+    const still = [];
+    for (const id of missing) if ((await xapiCategoryName(id)) !== SEEDED_CATEGORIES.get(id)) still.push(id);
+    missing = still;
+  }
+  for (const id of ids) log(`  ${missing.includes(id) ? '❌' : '✓'} xAPI category(${id}) → ${missing.includes(id) ? 'null' : `"${SEEDED_CATEGORIES.get(id)}"`}`);
+  return missing;
+}
+
+/**
+ * Teardown counterpart: explicit documentIds only (re)BUILD documents, so a deleted category's
+ * document stays in the index (kb KB-31802239). Replay the change feed over a window around the
+ * deletions instead (the barcode / brands seeders' mechanism). Best effort — returns the ids still indexed.
+ */
+async function purgeCategoryDocs(ids, timestamps) {
+  if (!ids.length || DRY_RUN) return [];
+  const indexed = async () => {
+    const left = [];
+    for (const id of ids) {
+      const doc = (await api('GET', `/api/search/indexes/index/Category/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] }) || [])[0];
+      if (doc) left.push(id);
+    }
+    return left;
+  };
+  if (!(await indexed()).length) return [];
+  await requestIndex(deletionWindows(timestamps).map((w) => ({ documentType: 'Category', ...w })), { label: 'category index purge' });
+  log(`↻ index purge requested for ${ids.length} deleted category root document(s)`);
+  for (let i = 0; i < 15; i++) {
+    await new Promise((r) => setTimeout(r, 8000));
+    const left = await indexed();
+    if (!left.length) return [];
+  }
+  return indexed();
+}
+
 // --- category resolution -----------------------------------------------------
 // seed-common's ensureCategoryPath is deliberately NOT used here. Its per-segment lookup goes
 // through the keyword search index, which lags a write, so a second run inside that window MISSES
@@ -385,6 +551,15 @@ async function browseCategories(catalogId, parentId) {
   return parentId ? all : all.filter((c) => !c.parentId);
 }
 
+/** Every descendant category id under `rootId` (DB-backed browse, depth-first). */
+async function categorySubtreeIds(catalogId, rootId) {
+  const out = [];
+  for (const c of await browseCategories(catalogId, rootId)) {
+    out.push(c.id, ...(await categorySubtreeIds(catalogId, c.id)));
+  }
+  return out;
+}
+
 const _pathCache = new Map();
 async function ensureComparePath(path) {
   if (_pathCache.has(path)) return _pathCache.get(path);
@@ -413,6 +588,7 @@ async function ensureComparePath(path) {
       id = created?.id;
       log(`✓ category: ${seg} (${id})`);
     }
+    if (id && !String(id).startsWith('dry-')) SEEDED_CATEGORIES.set(id, seg);
     rootId = rootId || id;
     parentId = id;
     leaf = { catalogId, categoryId: id, name: seg };
@@ -489,12 +665,18 @@ async function seedRecord(rec, ffcId, defaultCatalogId) {
   await setPrice(pl.id, product.id, rec.listPrice);
   await ensureInventory(ffcId, product.id, rec.stock);
   if (!rec.categoryPath) await linkAtVirtualRoot(product.id);
-  await enrichProductContent(product.id, { images: 1, code: rec.code });
-  if (rec.indexTwoPhase) await applyDeferredProperties(rec, product.id);
+  // enrichProductContent re-POSTs the whole entity when it adds anything, and a parent entity carries
+  // its variation children inline — re-inserting them fails with `PK_Item` (measured on vcptcore
+  // 2026-11-20 for CMP-050). So a parent that already HAS children is not enriched here; on its first
+  // run (no children yet) it is.
+  if (!hasVariations(rec) || !(await variationChildren(product.id)).length) {
+    await enrichProductContent(product.id, { images: 1, code: rec.code });
+  } else verbose(`  skip content enrichment: ${rec.code} already has variation children`);
+  const propsFailed = rec.indexTwoPhase ? !(await applyDeferredProperties(rec, product.id)) : false;
   const variationIds = await seedVariations(rec, product.id, catalogId, categoryId, ffcId);
 
   log(`  ✓ price ${rec.listPrice} ${CURRENCY} · stock ${rec.stock} · moq ${rec.minQuantity} · pack ${rec.packSize} · max ${rec.maxQuantity || '∞'} · props ${rec.properties.length}${variationIds.length ? ` · variations ${variationIds.length}` : ''}`);
-  return { ...rec, productId: product.id, variationIds };
+  return { ...rec, productId: product.id, variationIds, propsFailed };
 }
 
 async function main() {
@@ -540,8 +722,7 @@ async function main() {
       // documentType MUST be 'Product' (not 'CatalogProduct', which is accepted and indexes
       // nothing) and the field MUST be `documentIds` (not `ids`, which degrades to a global
       // incremental) — see knowledge/execution/test-data-authoring.md §5a.
-      await api('POST', '/api/search/indexes/index', [{ documentType: 'Product', documentIds: ids, rebuild: false }], { expectStatus: [200, 204] });
-      log('✓ reindex triggered');
+      if (await requestIndex([{ documentType: 'Product', documentIds: ids, rebuild: false }], { label: 'product reindex' })) log('✓ reindex triggered');
     } catch (e) { log(`⚠ reindex: ${String(e.message).slice(0, 120)}`); }
 
     // Runtime GUIDs → aliases.<env>.json only. The committed CSV keeps platform_id BLANK.
@@ -556,12 +737,17 @@ async function main() {
   // The variation branch is proven LIVE, after the index write. Everything else in this domain is
   // verifiable by looking at it; "does the storefront read a DIFFERENT price for this column" is not.
   let variationProofFailed = false;
+  let missingCategories = [];
   if (!DRY_RUN) {
     for (const s of seeded) {
       if (!s.productId || !hasVariations(s)) continue;
-      if (!(await verifyVariationBranch(s, s.productId))) variationProofFailed = true;
+      const proven = s.proof === 'one-entry' ? await verifyOneEntry(s, s.productId) : await verifyVariationBranch(s, s.productId);
+      if (!proven) variationProofFailed = true;
     }
+    missingCategories = await indexAndProveCategories()
+      .catch((e) => { log(`⚠ category reindex: ${String(e.message).slice(0, 160)}`); return [...SEEDED_CATEGORIES.keys()]; });
   }
+  const propsFailed = seeded.filter((s) => s.propsFailed);
 
   const ok = seeded.filter((s) => !s.error).length;
   console.log(`\n✅ Compare fixtures: ${ok}/${seeded.length} products seeded`);
@@ -569,9 +755,15 @@ async function main() {
     console.log(s.error ? `  ❌ ${s.cmpId}: ${String(s.error).slice(0, 120)}` : `  ✓ ${s.cmpId} ${s.alias} id=${s.productId}${s.variationIds?.length ? ` (+${s.variationIds.length} variations)` : ''}`);
   }
   if (variationProofFailed) {
-    console.error('\n❌ the hasVariations fixture did not prove out live — it is provisioned but NOT discriminating. Do not author cases against it until this is green.');
-    process.exit(1);
+    console.error('\n❌ a hasVariations fixture did not prove out live — it is provisioned but NOT discriminating. Do not author cases against it until this is green.');
   }
+  if (missingCategories.length) {
+    console.error(`\n❌ ${missingCategories.length} compare categor(y/ies) never resolved through xAPI — every compare tab of their products reads "Unknown category": ${missingCategories.join(', ')}`);
+  }
+  if (propsFailed.length) {
+    console.error(`\n❌ two-phase properties not visible on the storefront for: ${propsFailed.map((x) => x.alias).join(', ')}`);
+  }
+  if (variationProofFailed || missingCategories.length || propsFailed.length) process.exit(1);
 }
 
 // ---------------------------------------------------------------------------
@@ -637,13 +829,21 @@ async function teardown() {
   //    listentries without a keyword is DB-backed, which is exactly why unlinkSeedRootsFrom-
   //    StoreVirtualCatalog uses the same call for the same reason.
   if (!ONLY) {
-    for (const { rootName, id } of await findSeedCategoryRoots()) {
+    const deletedCats = []; const deletedAt = [];
+    for (const { rootName, id, catalogId } of await findSeedCategoryRoots()) {
+      // The subtree's ids too, read BEFORE the delete — their index documents outlive it the same way.
+      const subtree = DRY_RUN ? [] : await categorySubtreeIds(catalogId, id);
+      deletedAt.push(new Date().toISOString());
       if (DRY_RUN) { log(`[DRY] would unlink + delete category root "${rootName}" (${id})`); continue; }
       await api('POST', '/api/catalog/listentrylinks/delete', [{ listEntryId: id, listEntryType: 'category', catalogId: VIRTUAL_CATALOG_ID }], { expectStatus: [200, 204, 404] }).catch(() => {});
       await api('POST', '/api/catalog/listentries/delete', { objectIds: [id], objectType: 'Category' }, { expectStatus: [200, 204, 404] })
         .catch((e) => log(`⚠ category delete "${rootName}": ${String(e.message).slice(0, 140)}`));
       log(`✗ removed category root "${rootName}" (${id})`);
+      deletedAt.push(new Date().toISOString());
+      deletedCats.push(id, ...subtree);
     }
+    const stillIndexed = await purgeCategoryDocs(deletedCats, deletedAt).catch((e) => { log(`⚠ category index purge: ${String(e.message).slice(0, 140)}`); return []; });
+    if (stillIndexed.length) log(`⚠ ${stillIndexed.length} deleted compare categor(y/ies) still in the Category index: ${stillIndexed.join(', ')}`);
     const left = await findSeedCategoryRoots();
     if (left.length) log(`⚠ ${left.length} compare category root(s) still present: ${left.map((c) => `${c.rootName} (${c.id})`).join(', ')}`);
   }
