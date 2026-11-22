@@ -214,7 +214,10 @@ async function findSeedCategoryRoots() {
  * finishes at once), false when the lock never freed inside `timeoutMs` or the job's notification
  * never showed up, so nothing confirms the request was taken.
  */
+let lockTimedOut = false; // one lock timeout ends the waiting for the whole run: the next request would wait for the same lock
+
 async function requestIndex(entries, { timeoutMs = 10 * 60_000, label = 'index' } = {}) {
+  if (lockTimedOut) { log(`  ⚠ ${label}: skipped — an earlier request already waited out the indexation lock`); return false; }
   const t0 = Date.now();
   for (let attempt = 1; ; attempt++) {
     // A run that waits out the lock can outlive the OAuth token (a 401 here, measured 2026-11-20 after
@@ -228,7 +231,8 @@ async function requestIndex(entries, { timeoutMs = 10 * 60_000, label = 'index' 
     for (let i = 0; i < 6; i++) {
       await new Promise((r) => setTimeout(r, 2500));
       // Ask for this job's own notification: an unfiltered page can miss it on a busy stand.
-      const n = await api('POST', '/api/platform/pushnotifications', { ids: [job.id], take: 1 }, { expectStatus: [200] }).catch(() => null);
+      const n = await api('POST', '/api/platform/pushnotifications', { ids: [job.id], take: 1 }, { expectStatus: [200] })
+        .catch(async (e) => { if (/→ 401/.test(String(e.message))) await auth(); return null; });
       const mine = (n?.notifyEvents || [])[0];
       if (mine) seen = true;
       if (!mine?.finished) continue;
@@ -237,7 +241,7 @@ async function requestIndex(entries, { timeoutMs = 10 * 60_000, label = 'index' 
     }
     if (!seen) { log(`  ⚠ ${label}: no notification ${job.id} within 15 s — not confirmed as taken`); return false; }
     if (!refused) { if (attempt > 1) log(`  ${label}: taken on attempt ${attempt}`); return true; }
-    if (Date.now() - t0 > timeoutMs) { log(`  ⚠ ${label}: every request refused for ${Math.round((Date.now() - t0) / 1000)} s — another indexation holds the lock`); return false; }
+    if (Date.now() - t0 > timeoutMs) { lockTimedOut = true; log(`  ⚠ ${label}: every request refused for ${Math.round((Date.now() - t0) / 1000)} s — another indexation holds the lock`); return false; }
     verbose(`  ${label}: refused (another indexation in progress) — retrying`);
     await new Promise((r) => setTimeout(r, 15_000));
   }
@@ -265,8 +269,9 @@ const PROPS_QUERY = `query($storeId:String!,$ids:[String]!){
   products(storeId:$storeId, cultureName:"${CULTURE}", currencyCode:"${CURRENCY}", productIds:$ids, first:1){ items{ properties{ name value } } }
 }`;
 
-/** Wait until xAPI serves every `{ name, value }` — the VALUE too, so a stale document carrying an
- *  older value under the same name (what a refused reindex leaves behind) does not pass. */
+/** Wait until xAPI serves every `{ name, value }`, the value included. It proves what the storefront
+ *  renders, not that this run's reindex landed: xAPI finds the product through the index but reads its
+ *  properties from the catalog, so an older document that still finds the product passes too. */
 async function waitForXapiProperties(id, props, { tries = 12, delayMs = 8000 } = {}) {
   const names = props.map((x) => x.name);
   for (let i = 0; i < tries; i++) {
@@ -519,7 +524,8 @@ async function purgeCategoryDocs(ids, timestamps) {
     return left;
   };
   if (!(await indexed()).length) return [];
-  await requestIndex(deletionWindows(timestamps).map((w) => ({ documentType: 'Category', ...w })), { label: 'category index purge' });
+  const taken = await requestIndex(deletionWindows(timestamps).map((w) => ({ documentType: 'Category', ...w })), { label: 'category index purge' });
+  if (!taken) { log(`⚠ index purge for ${ids.length} deleted category root document(s) was not confirmed as taken — not waiting for it`); return indexed(); }
   log(`↻ index purge requested for ${ids.length} deleted category root document(s)`);
   for (let i = 0; i < 15; i++) {
     await new Promise((r) => setTimeout(r, 8000));

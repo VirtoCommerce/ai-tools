@@ -1915,7 +1915,7 @@
       "concern": "api",
       "priority": "P1",
       "testCount": 14,
-      "estimatedMinutes": 0,
+      "estimatedMinutes": 5,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
@@ -4599,7 +4599,7 @@
       "concern": "admin",
       "priority": "P2",
       "testCount": 2,
-      "estimatedMinutes": 0,
+      "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
         "catalog",
