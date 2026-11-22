@@ -55,7 +55,7 @@ export const SEED_PREFIX = 'AGENT-TEST';
 export const PRICE_LIST_DATE = '20260903';
 export const priceListName = (currency = 'USD') => `SEED-${PRICE_LIST_DATE}-Compare-${currency}`;
 export const CURRENCY = 'USD';
-export const CULTURE = process.env.CULTURE_NAME || 'en-US';
+export const CULTURE = 'en-US';
 
 // ---------------------------------------------------------------------------
 // CATEGORY PATHS — the tab model.

@@ -60,9 +60,9 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [STATE] No floating/sticky compare bar exists anywhere on the page (count lives in the header link); a transient success toast appears after add
 [STATE] Compare selection is saved on the server: after a reload the card still shows 'Remove from Compare' and the header badge keeps its count","[NETWORK] no 4xx/5xx on the saveProductsToCompareList request of the add
 [CONSOLE] no TypeError or JS errors","'Add to Compare' button missing on cards; clicking does not toggle the button to 'Remove from Compare'; header Compare badge does not increment; console TypeError",Open /compare and click 'Clear all' (or remove the added item),"Coverage Gap Analysis; vc-frontend shared/compare (useCompareProducts) | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-20) (list now stored on the server, module README; BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule)",Automated
-"CAT-031","Compare Page Display","Catalog > Compare","High","BL-CAT-007",,"2 or more products added to the compare bar","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
-[ACT] Add 2 or more products to compare bar
-[ACT] Click 'Compare' in compare bar or navigate to /compare
+"CAT-031","Compare Page Display","Catalog > Compare","High",,,2 or more products added to compare,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Click 'Add to Compare' on 2 or more product cards
+[ACT] Click the header 'Compare' link
 [WAIT] Wait for compare page to load
 [ASSERT] Verify products displayed side by side
 [ASSERT] Verify spec/attribute rows are shown for comparison","[NAV] Compare page loads at /compare or similar URL
@@ -70,7 +70,7 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [DOM] Product name, image, and price shown at top of each column (price matches /^\$[0-9,]+\.[0-9]{2}$/)
 [DOM] Specification attribute rows listed for comparison
 [DOM] Each product has an 'Add to Cart' button","[NETWORK] GET /compare returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Compare page returns 4xx; products not in side-by-side layout; attributes missing; Add to Cart absent; console TypeError","none","Coverage Gap Analysis","Draft"
+[CONSOLE] no TypeError or JS errors","Compare page returns 4xx; products not in side-by-side layout; attributes missing; Add to Cart absent; console TypeError","none","Coverage Gap Analysis | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link)","Draft"
 "CAT-032","Compare Limit","Catalog > Compare","Medium",,,"Category page with compare active; currently at maximum allowed products","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
 [ACT] Add products to compare until the maximum limit is reached
 [WAIT] the header 'Compare' link badge shows the maximum count
@@ -82,23 +82,23 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [STATE] Over-limit product not added to the compare list
 [MATH] The header 'Compare' badge = the allowed maximum count, unchanged after the over-limit attempt","[NETWORK] no 5xx on over-limit attempt
 [CONSOLE] no TypeError or JS errors",No limit message shown; over-limit product added silently; header Compare badge count exceeds maximum; console TypeError,"none","Coverage Gap Analysis | Synced: VCST-5918 (2026-11-20) (limit message observed vcptcore 2026-11-17, checklist A4; limit is a per-category store setting, README §Categories and limits; BL-CAT-007 dropped: it is Multi-FFC inventory aggregation) | Promoted: REG-2026-11-20-1202 (2026-11-22)",Automated
-"CAT-033","Remove from Compare","Catalog > Compare","Medium","BL-CAT-007",,"2 or more products added to compare; on /compare page","url={{FRONT_URL}}/compare","[NAV] Navigate to the compare page at {{FRONT_URL}}/compare
+"CAT-033","Remove from Compare","Catalog > Compare","Medium",,,"2 or more products added to compare; on /compare page","url={{FRONT_URL}}/compare","[NAV] Navigate to the compare page at {{FRONT_URL}}/compare
 [ASSERT] Verify remove button (X or Remove) visible per product column
 [ACT] Click remove on one product
 [WAIT] Wait for that product column to disappear
 [ASSERT] Verify remaining products still displayed
-[ASSERT] Verify compare bar count decrements","[DOM] Remove/close button available per product column on compare page
+[ASSERT] Verify the header 'Compare' badge count decrements","[DOM] Remove/close button available per product column on compare page
 [STATE] Removed product column disappears from comparison
 [DOM] Remaining products still shown correctly
-[MATH] Compare bar count decrements by 1 after removal","[NETWORK] no 4xx/5xx on remove request
-[CONSOLE] no TypeError or JS errors","Remove button not visible; removing one product removes all; remaining products layout broken; compare count not updating; console TypeError","none",Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
-"CAT-034","Compare Empty State","Catalog > Compare","Medium","BL-CAT-007",,"No products in compare (fresh session or after clearing)","url={{FRONT_URL}}/compare","[NAV] Navigate to {{FRONT_URL}}/compare with no products in compare bar
+[MATH] the header 'Compare' badge count decrements by 1 after removal","[NETWORK] no 4xx/5xx on remove request
+[CONSOLE] no TypeError or JS errors","Remove button not visible; removing one product removes all; remaining products layout broken; compare count not updating; console TypeError","none","Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link)",Automated
+"CAT-034","Compare Empty State","Catalog > Compare","Medium",,,"No products in compare (fresh session or after clearing)","url={{FRONT_URL}}/compare","[NAV] Navigate to {{FRONT_URL}}/compare with an empty compare list
 [ASSERT] Verify empty state UI is shown","[DOM] Compare page loads without JavaScript error
 [DOM] Empty state message shown (e.g., 'No products to compare')
 [DOM] Call-to-action present ('Browse catalog' or 'Add products to compare' link)
 [NAV] CTA link navigates back to catalog
 [DOM] No broken layout","[NETWORK] GET /compare returns HTTP 200 (not 4xx)
-[CONSOLE] no TypeError or JS errors","Compare page returns 4xx on empty state; no empty state message; CTA link broken; layout broken without products; console TypeError","none",Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
+[CONSOLE] no TypeError or JS errors","Compare page returns 4xx on empty state; no empty state message; CTA link broken; layout broken without products; console TypeError","none","Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link)",Automated
 "CAT-038","B2B Virtual Catalog Navigation - Org User Sees Assigned Products","Catalog > Virtual Catalog","High","BL-CAT-002, BL-CAT-005",,"@td(PROD_ORG_EXCLUDED.name) exists in a physical catalog but is deliberately withheld from the store's virtual catalog (drift-guarded by td:validate:catalog-edge). Rebased 2026-09-07 (REG-2026-09-07-1342): live-confirmed the platform's virtual catalog binds at STORE level and is shared by every identity — org user, personal user, and guest all returned identical /catalog listings — so an org-scoped subset does not exist on this environment; the discriminating case is store-level exclusion (BL-CAT-005), not a per-org catalog.",url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}; excludedSku=@td(PROD_ORG_EXCLUDED.sku); excludedName=@td(PROD_ORG_EXCLUDED.name),"[NAV] Log in as org user at {{FRONT_URL}} using {{ORG_USER_EMAIL}} / {{ORG_USER_PASSWORD}}
 [NAV] Navigate to main catalog page
 [WAIT] Wait for product listing to load

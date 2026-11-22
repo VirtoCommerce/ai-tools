@@ -221,18 +221,21 @@ async function requestIndex(entries, { timeoutMs = 10 * 60_000, label = 'index' 
     // ~55 min of refusals) — re-authenticate once per attempt instead of giving up.
     const job = await api('POST', '/api/search/indexes/index', entries, { expectStatus: [200, 204] })
       .catch(async (e) => { if (!/→ 401/.test(String(e.message))) throw e; await auth(); return api('POST', '/api/search/indexes/index', entries, { expectStatus: [200, 204] }); });
+    // A 204 carries no body, so there is no notification id to read back: the request cannot be confirmed.
+    if (!job?.id) { log(`  ⚠ ${label}: the index request returned no notification id — not confirmed as taken`); return false; }
     let refused = false;
     let seen = false;
     for (let i = 0; i < 6; i++) {
       await new Promise((r) => setTimeout(r, 2500));
-      const n = await api('POST', '/api/platform/pushnotifications', { take: 50, skip: 0 }, { expectStatus: [200] }).catch(() => null);
-      const mine = (n?.notifyEvents || []).find((e) => (job?.jobId && e.jobId === job.jobId) || (job?.id && e.id === job.id));
+      // Ask for this job's own notification: an unfiltered page can miss it on a busy stand.
+      const n = await api('POST', '/api/platform/pushnotifications', { ids: [job.id], take: 1 }, { expectStatus: [200] }).catch(() => null);
+      const mine = (n?.notifyEvents || [])[0];
       if (mine) seen = true;
       if (!mine?.finished) continue;
       refused = (mine.errors || []).some((e) => /already in progress/i.test(String(e)));
       break;
     }
-    if (!seen) { log(`  ⚠ ${label}: no notification for job ${job?.jobId || job?.id || '?'} within 15 s — not confirmed as taken`); return false; }
+    if (!seen) { log(`  ⚠ ${label}: no notification ${job.id} within 15 s — not confirmed as taken`); return false; }
     if (!refused) { if (attempt > 1) log(`  ${label}: taken on attempt ${attempt}`); return true; }
     if (Date.now() - t0 > timeoutMs) { log(`  ⚠ ${label}: every request refused for ${Math.round((Date.now() - t0) / 1000)} s — another indexation holds the lock`); return false; }
     verbose(`  ${label}: refused (another indexation in progress) — retrying`);

@@ -1907,6 +1907,7 @@
     },
     {
       "id": "050q",
+      "exclusiveGroup": "store-setting:ProductComparison",
       "name": "GraphQL xAPI - Product Comparison (server-side compare list: save, read, remove, move, merge, access rules, limits, settings gates)",
       "file": "regression/suites/Backend/graphql/050q-graphql-product-compare.csv",
       "domain": "catalog-search",
@@ -3838,6 +3839,7 @@
     },
     {
       "id": "098",
+      "exclusiveGroup": "store-setting:ProductComparison",
       "name": "Product Compare v2",
       "file": "regression/suites/Frontend/catalog/098-product-compare.csv",
       "domain": "catalog-search",
@@ -4589,6 +4591,7 @@
     },
     {
       "id": "123",
+      "exclusiveGroup": "store-setting:ProductComparison",
       "name": "Product Comparison - Admin store settings",
       "file": "regression/suites/Backend/catalog/123-product-compare-admin.csv",
       "domain": "catalog-search",
