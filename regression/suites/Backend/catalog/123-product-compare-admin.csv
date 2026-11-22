@@ -11,7 +11,7 @@ CMP-ADM-001,The store settings blade has a Product Comparison group with three s
 [WAIT] the save completes
 [HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID}} and read the setting ProductComparison.MaxItems as SAVED
 [NAV] {{FRONT_URL}}/compare in a storefront session after a hard reload
-[KEY] read store.settings.modules from the storefront's InitializeApplication response for the module VirtoCommerce.ProductComparison as PUBLIC_SETTINGS","[REL] GROUP_ROWS lists exactly 'Enable product comparison', 'Products per category' and 'Allow guests to compare' {SPEC} {OBSERVED} (published guide screenshot, vcptcore 2026-11-19)
+[KEY] read pageContext.store.settings.modules from the storefront's GetPageContext response ({OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0130)) for the module VirtoCommerce.ProductComparison as PUBLIC_SETTINGS","[REL] GROUP_ROWS lists exactly 'Enable product comparison', 'Products per category' and 'Allow guests to compare' {SPEC} {OBSERVED} (published guide screenshot, vcptcore 2026-11-19)
 [STATE] before the change the three rows show the defaults: Enable on, Products per category 5, Allow guests on {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; README §Settings)
 [MATH] SAVED = 3 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
 [MATH] PUBLIC_SETTINGS.MaxItems = 3 — the setting is public and reaches the storefront without a deploy {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; README: the per-store settings are marked public)","[CONSOLE] no TypeError or JS error in the Admin blade

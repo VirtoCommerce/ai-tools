@@ -2197,7 +2197,7 @@ NEEDS_WINDOW: flips store setting ProductComparison.AnonymousListEnabled to fals
 [WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
 [ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
 [WAIT] a notification appears
-[CAPTURE] the notification text as TOAST and whether it has a 'Sign in' button as TOAST_BTN, and whether a saveProductsToCompareList request was sent as SAVE_SENT
+[CAPTURE] the notification text as TOAST and whether it has a 'Sign in' link as TOAST_BTN, and whether a saveProductsToCompareList request was sent as SAVE_SENT
 [CAPTURE] the header Compare badge as BADGE and whether the control's aria-pressed is 'true' as PRESSED","[DOM] TOAST reads 'Sign in to add products to compare' and TOAST_BTN = true {OBSERVED} (vcptcore 2026-11-19, checklist C8; the warning is the one the setting describes: guests are asked to sign in) {SPEC} (README §Settings)
 [STATE] SAVE_SENT = false, BADGE is absent and PRESSED = false — nothing was stored {OBSERVED} (checklist C8)","[API] a server-side save as a guest is refused with extensions.code ANONYMOUS_COMPARE_LIST_DISABLED — asserted in suite 050q
 [CONSOLE] no TypeError or JS error on the page under test","The product is added for the guest anyway, no sign-in message, the setting is not restored after a failure",Run: npm run store:set -- --name ProductComparison.AnonymousListEnabled --value true and [AUTH ADMIN_DEFAULT] reset the platform cache,VCST-5918 · Archetype:FALLBACK · Technique:DT | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
@@ -2266,15 +2266,15 @@ NEEDS_WINDOW: flips store setting ProductComparison.MaxItems 5 → 3 → 5 on th
 [NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_2.sku)
 [WAIT] the results grid renders a card for @td(PROD_CMP_FILL_2.name)
 [ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_2.name)
-[WAIT] that control's aria-pressed attribute becomes 'true'
+[WAIT] a warning notification appears (the add is refused: the control stays not pressed)
 [CAPTURE] the warning notification text as LOW_TOAST
 [SETUP] Run: npm run store:set -- --name ProductComparison.MaxItems --value 5, then [AUTH ADMIN_DEFAULT] POST {{BACK_URL}}/api/platform-cache/reset
 [ACT] reload with a hard reload
 [NAV] {{FRONT_URL}}/compare
 [WAIT] the compare table renders
-[CAPTURE] the line under the page title as BACK_COUNT","[MATH] LOW_COUNT = '3 of 3 added' and LOW_LIST holds the three OLDEST products (@td(PROD_CMP_A.name), @td(PROD_CMP_B.name), @td(PROD_PROP_PRICE.name)) {SPEC} {OBSERVED} (checklist C10: the page showed the 3 oldest)
+[CAPTURE] the line under the page title as BACK_COUNT","[MATH] LOW_COUNT starts with '3 of 3 added' (the category name follows, {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0130)) and LOW_LIST holds the three OLDEST products (@td(PROD_CMP_A.name), @td(PROD_CMP_B.name), @td(PROD_PROP_PRICE.name)) {SPEC} {OBSERVED} (checklist C10: the page showed the 3 oldest)
 [DOM] LOW_TOAST reads 'Only 3 products from the same category can be compared' — the limit follows the setting {OBSERVED} (checklist C10)
-[MATH] BACK_COUNT = '5 of 5 added' — lowering the limit deleted nothing {SPEC} {OBSERVED} (checklist C10: back to 5 → all 5 return)","[API] the refused add returns extensions.code COMPARE_LIST_LIMIT_REACHED {OBSERVED} (checklist C10)
+[MATH] BACK_COUNT starts with '5 of 5 added' — lowering the limit deleted nothing {SPEC} {OBSERVED} (checklist C10: back to 5 → all 5 return)","[NETWORK] the refused add sends no saveProductsToCompareList request — the storefront refuses it from the limit it already holds {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0130)
 [CONSOLE] no TypeError or JS error on the page under test","Products beyond the new limit are deleted, the page still shows five, the notification quotes the old limit, products do not return after the limit is raised, the setting is not restored after a failure",when the case wrote the setting (MAX_BEFORE = 5): Run: npm run store:set -- --name ProductComparison.MaxItems --value 5 and [AUTH ADMIN_DEFAULT] reset the platform cache — a BLOCKED case wrote nothing and restores nothing; clear the compare list of {{USER2_EMAIL}} through the UI,VCST-5918 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
 CMP-065,Another buyer's compareItemId in the product page URL opens the plain product page with default options,Catalog > Product Compare v2 > Server-side list,Medium,,,"[PRE:CLEAR_SESSION]
 The 'Customize' link opens the product page with ?compareItemId=<item id> and preselects that item's configuration only when the item is in the VIEWER's own list {SPEC} (README §Storefront plugin) {OBSERVED} (checklist B8, vcptcore 2026-11-17: a foreign id gave the plain PDP with the default 16GB). Two buyers are used: the owner {{USER2_EMAIL}} and a second buyer (the default test user, {{USER_EMAIL}}) whose list does not hold that item. @td(CFG_LAPTOP.name) is the configurable fixture with two required Product sections.","owner={{USER2_EMAIL}}, owner_password={{USER2_PASSWORD}}, other={{USER_EMAIL}}, other_password={{USER_PASSWORD}}, cfg_url=@td(CFG_LAPTOP.url)","--- SCREEN: Owner ---
