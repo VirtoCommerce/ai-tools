@@ -37,7 +37,7 @@ import {
   ensureCurrencies, enrichProductContent, syncEnvAliases, verifyRemoved, idsParam, ROOT,
 } from '../../lib/seed-common.mjs';
 import {
-  PRODUCTS, CATEGORY_ROOTS, CATEGORY_PATHS, CSV_FILE_KEY, CURRENCY,
+  PRODUCTS, CATEGORY_ROOTS, CATEGORY_PATHS, CSV_FILE_KEY, CURRENCY, CULTURE,
   SEED_PREFIX, priceListName, productSlug, validateSpecShape,
   categoryRootCode, categoryPathCode, categorySegmentSlug,
   variationsOf, hasVariations, minVariationPrice, formatMoney,
@@ -210,7 +210,9 @@ async function findSeedCategoryRoots() {
  * fails. Measured on vcptcore 2026-11-20: every request of a whole seed run was refused that way
  * while an indexation started elsewhere ran on, so the fixtures looked seeded and never reached
  * xAPI. The job's push notification is read back and the request retried until it is not refused.
- * Returns true when a request was taken, false when the lock never freed inside `timeoutMs`.
+ * Returns true when a request was taken (finished clean, or still running after the poll — a refusal
+ * finishes at once), false when the lock never freed inside `timeoutMs` or the job's notification
+ * never showed up, so nothing confirms the request was taken.
  */
 async function requestIndex(entries, { timeoutMs = 10 * 60_000, label = 'index' } = {}) {
   const t0 = Date.now();
@@ -220,14 +222,17 @@ async function requestIndex(entries, { timeoutMs = 10 * 60_000, label = 'index' 
     const job = await api('POST', '/api/search/indexes/index', entries, { expectStatus: [200, 204] })
       .catch(async (e) => { if (!/→ 401/.test(String(e.message))) throw e; await auth(); return api('POST', '/api/search/indexes/index', entries, { expectStatus: [200, 204] }); });
     let refused = false;
+    let seen = false;
     for (let i = 0; i < 6; i++) {
       await new Promise((r) => setTimeout(r, 2500));
       const n = await api('POST', '/api/platform/pushnotifications', { take: 50, skip: 0 }, { expectStatus: [200] }).catch(() => null);
       const mine = (n?.notifyEvents || []).find((e) => (job?.jobId && e.jobId === job.jobId) || (job?.id && e.id === job.id));
+      if (mine) seen = true;
       if (!mine?.finished) continue;
       refused = (mine.errors || []).some((e) => /already in progress/i.test(String(e)));
       break;
     }
+    if (!seen) { log(`  ⚠ ${label}: no notification for job ${job?.jobId || job?.id || '?'} within 15 s — not confirmed as taken`); return false; }
     if (!refused) { if (attempt > 1) log(`  ${label}: taken on attempt ${attempt}`); return true; }
     if (Date.now() - t0 > timeoutMs) { log(`  ⚠ ${label}: every request refused for ${Math.round((Date.now() - t0) / 1000)} s — another indexation holds the lock`); return false; }
     verbose(`  ${label}: refused (another indexation in progress) — retrying`);
@@ -240,7 +245,7 @@ async function reindex(ids) {
 }
 
 const VISIBILITY_QUERY = `query($storeId:String!,$ids:[String]!){
-  products(storeId:$storeId, cultureName:"en-US", currencyCode:"USD", productIds:$ids, first:1){ totalCount }
+  products(storeId:$storeId, cultureName:"${CULTURE}", currencyCode:"${CURRENCY}", productIds:$ids, first:1){ totalCount }
 }`;
 
 async function visibleInXapi(id) {
@@ -254,7 +259,7 @@ async function visibleInXapi(id) {
 }
 
 const PROPS_QUERY = `query($storeId:String!,$ids:[String]!){
-  products(storeId:$storeId, cultureName:"en-US", currencyCode:"USD", productIds:$ids, first:1){ items{ properties{ name value } } }
+  products(storeId:$storeId, cultureName:"${CULTURE}", currencyCode:"${CURRENCY}", productIds:$ids, first:1){ items{ properties{ name value } } }
 }`;
 
 /** Wait until xAPI serves every `{ name, value }` — the VALUE too, so a stale document carrying an
@@ -368,7 +373,7 @@ async function seedVariations(rec, parentId, catalogId, categoryId, ffcId) {
 }
 
 const PRICE_QUERY = `query($storeId:String!,$ids:[String]!){
-  products(storeId:$storeId, cultureName:"en-US", currencyCode:"${CURRENCY}", productIds:$ids, first:5){
+  products(storeId:$storeId, cultureName:"${CULTURE}", currencyCode:"${CURRENCY}", productIds:$ids, first:5){
     items{ id code hasVariations
       price{ actual{ amount formattedAmount } }
       minVariationPrice{ actual{ amount formattedAmount } }
@@ -417,7 +422,7 @@ async function verifyVariationBranch(rec, parentId) {
 }
 
 const ENTRY_QUERY = `query($storeId:String!,$ids:[String]!){
-  products(storeId:$storeId, cultureName:"en-US", currencyCode:"${CURRENCY}", productIds:$ids, first:1){
+  products(storeId:$storeId, cultureName:"${CULTURE}", currencyCode:"${CURRENCY}", productIds:$ids, first:1){
     items{ id hasVariations availabilityData{ isInStock isBuyable }
       variations{ code availabilityData{ isInStock isBuyable } } }
   }
@@ -465,7 +470,7 @@ async function verifyOneEntry(rec, parentId) {
 // products — indexed explicitly in main() — render fine. So the categories are indexed explicitly
 // too, and proven by asking xAPI for each one by id.
 
-const CATEGORY_QUERY = `query($storeId:String!,$id:String!){ category(storeId:$storeId, id:$id, cultureName:"en-US"){ id name } }`;
+const CATEGORY_QUERY = `query($storeId:String!,$id:String!){ category(storeId:$storeId, id:$id, cultureName:"${CULTURE}"){ id name } }`;
 
 async function xapiCategoryName(id) {
   const r = await fetch(`${BACK_URL}/graphql`, {
@@ -480,8 +485,10 @@ async function indexAndProveCategories() {
   const ids = [...SEEDED_CATEGORIES.keys()];
   if (!ids.length) return [];
   // documentType 'Category' + `documentIds` — the same request seed-brands / seed-category-images use.
-  if (!(await requestIndex([{ documentType: 'Category', documentIds: ids, rebuild: false }], { label: 'category reindex' }))) return ids;
-  log(`✓ category reindex triggered for ${ids.length} categor${ids.length === 1 ? 'y' : 'ies'}`);
+  // The xAPI read below is the proof either way: an unconfirmed request may still have been taken.
+  if (await requestIndex([{ documentType: 'Category', documentIds: ids, rebuild: false }], { label: 'category reindex' })) {
+    log(`✓ category reindex triggered for ${ids.length} categor${ids.length === 1 ? 'y' : 'ies'}`);
+  }
   let missing = ids;
   for (let i = 0; i < 12 && missing.length; i++) {
     await new Promise((r) => setTimeout(r, 8000));

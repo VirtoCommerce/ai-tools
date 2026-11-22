@@ -437,11 +437,11 @@ MOQ-2 variant (VCST-5918): a real catalog product with a minimum order quantity 
 CMP-015,Switching organization does not carry the previous org's comparison and prices,Catalog > Product Compare v2,Critical,"BL-B2B-001, BL-CROSS-008, BL-CROSS-004",,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed (store setting ProductComparison.AnonymousListEnabled on, the default; Stores.AllowAnonymousUsers on).
 The compare list is kept on the server (a guest's under the anonymous id the browser holds, a signed-in buyer's per account and organization) and is shared by every case that uses the browser profile, so NEVER assume an empty list — step 1 clears it through the UI.
 Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Store setting ProductComparison.MaxItems = 5 (the default), enforced PER second-level category {SPEC} (module README §Categories and limits). Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
-@td(MULTI_ORG_TF_BR.email) belongs to TWO organizations with distinct per-org roles, so the org switcher is available in the account menu.
-BL-CROSS-008 requires cart, pricing and lists to swap ATOMICALLY on an organization change; a partial swap is a critical defect. The compare list belongs to the organization in the caller's token, so a buyer who switches organization sees that organization's own list and switching back restores the first one {SPEC} (module README §XAPI specification; Jira VCST-5918 comment 112644; observed vcptcore 2026-11-17, checklist C1/C2).","url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR.email), password=@td(MULTI_ORG_TF_BR.password), a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/sign-in
+@td(MULTI_ORG_TF_BR_ALT.email) belongs to TWO organizations with distinct per-org roles, so the org switcher is available in the account menu.
+BL-CROSS-008 requires cart, pricing and lists to swap ATOMICALLY on an organization change; a partial swap is a critical defect. The compare list belongs to the organization in the caller's token, so a buyer who switches organization sees that organization's own list and switching back restores the first one {SPEC} (module README §XAPI specification; Jira VCST-5918 comment 112644; observed vcptcore 2026-11-17, checklist C1/C2).","url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password=@td(MULTI_ORG_TF_BR_ALT.password), a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] the sign-in form renders
-[ACT] fill 'Email': @td(MULTI_ORG_TF_BR.email)
-[ACT] fill 'Password': @td(MULTI_ORG_TF_BR.password)
+[ACT] fill 'Email': @td(MULTI_ORG_TF_BR_ALT.email)
+[ACT] fill 'Password': @td(MULTI_ORG_TF_BR_ALT.password)
 [ACT] click 'Sign in'
 [WAIT] the account menu renders in the top header
 [NAV] {{FRONT_URL}}/compare
@@ -781,10 +781,10 @@ CMP-028,Compare list across two tabs and a sign-out in one of them (UIP-TABS),Ca
 The compare list is kept on the server (a guest's under the anonymous id the browser holds, a signed-in buyer's per account and organization) and is shared by every case that uses the browser profile, so NEVER assume an empty list — step 1 clears it through the UI.
 Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Store setting ProductComparison.MaxItems = 5 (the default), enforced PER second-level category {SPEC} (module README §Categories and limits). Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
 UIP-TABS sweep row. The compare list belongs to the signed-in account on the server (one list per user, store and organization), so signing out in one tab does not delete it; a signed-out visitor is a guest with an anonymous list of their own {SPEC} (module README §Lists, guests and sign-in). What the first tab shows meanwhile is not declared, which is why those expectations are questions.
-Two tabs on the same profile, both signed in as @td(MULTI_ORG_TF_BR.email).","url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR.email), password=@td(MULTI_ORG_TF_BR.password), a_sku=@td(PROD_CMP_A.sku)","[NAV] {{FRONT_URL}}/sign-in
+Two tabs on the same profile, both signed in as @td(MULTI_ORG_TF_BR_ALT.email).","url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password=@td(MULTI_ORG_TF_BR_ALT.password), a_sku=@td(PROD_CMP_A.sku)","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] the sign-in form renders
-[ACT] fill 'Email': @td(MULTI_ORG_TF_BR.email)
-[ACT] fill 'Password': @td(MULTI_ORG_TF_BR.password)
+[ACT] fill 'Email': @td(MULTI_ORG_TF_BR_ALT.email)
+[ACT] fill 'Password': @td(MULTI_ORG_TF_BR_ALT.password)
 [ACT] click 'Sign in'
 [WAIT] the account menu renders in the top header
 [NAV] {{FRONT_URL}}/compare
@@ -806,12 +806,12 @@ Two tabs on the same profile, both signed in as @td(MULTI_ORG_TF_BR.email).","ur
 [ACT] switch back to the first tab without reloading it
 [WAIT] the compare page settles
 [NAV] {{FRONT_URL}}/sign-in
-[ACT] fill 'Email': @td(MULTI_ORG_TF_BR.email)
-[ACT] fill 'Password': @td(MULTI_ORG_TF_BR.password)
+[ACT] fill 'Email': @td(MULTI_ORG_TF_BR_ALT.email)
+[ACT] fill 'Password': @td(MULTI_ORG_TF_BR_ALT.password)
 [ACT] click 'Sign in'
 [WAIT] the account menu renders in the top header
 [NAV] {{FRONT_URL}}/compare
-[WAIT] the compare page settles","[REL] the account's list is kept: after the second tab signs out, signing in again as @td(MULTI_ORG_TF_BR.email) shows @td(PROD_CMP_A.name) on /compare again {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; README: a list is keyed by user, store and organization)
+[WAIT] the compare page settles","[REL] the account's list is kept: after the second tab signs out, signing in again as @td(MULTI_ORG_TF_BR_ALT.email) shows @td(PROD_CMP_A.name) on /compare again {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; README: a list is keyed by user, store and organization)
 [REL] verify whether the first tab's compare page still renders the same product column after the second tab signs out {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
 [DOM] the first tab does not render a stale signed-in header while the session is gone — its header state matches the second tab's {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
 [STATE] no unhandled authorization error is surfaced to the customer in the first tab after the sign-out {BL}","[CONSOLE] no TypeError or unhandled promise rejection in the first tab after the sign-out
@@ -1985,11 +1985,11 @@ Executability: the case blocks the request carrying the mergeCompareList operati
 [NETWORK] the blocked request is the only failed request; no 5xx on /graphql
 [API] errors[] is empty on the mergeCompareList response of the retry {SPEC}","The guest's products are gone after the next load, the merge is not retried, the list shows only the guest products or only the account's, an error toast persists after the retry",Remove the network block; clear the compare list of {{USER2_EMAIL}} through the UI,VCST-5918 · Archetype:STALE · Technique:ST,Draft
 CMP-057,Each organization keeps its own compare list — clearing one leaves the other untouched,Catalog > Product Compare v2 > Server-side list,Critical,BL-CROSS-008,,"[PRE:CLEAR_SESSION]
-@td(MULTI_ORG_TF_BR.email) belongs to TWO organizations; the organization switcher is in the account menu. The list belongs to the organization in the caller's token, so a switch shows that organization's own list {SPEC} (README §XAPI specification, comment 112644). Both lists are EMPTY at case start — screen 1 clears the first, screen 3 the second. Compare fixtures seeded on the env (test-data/compare/compare-products.csv); the fixture categories must be in the Category search index, or every tab reads 'Unknown category' (checklist X1) — assert tab COUNTS, never labels, until that data fix lands.","login=@td(MULTI_ORG_TF_BR.email), password=@td(MULTI_ORG_TF_BR.password), a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku), c_sku=@td(PROD_CMP_C.sku)","--- SCREEN: Organization 1 ---
+@td(MULTI_ORG_TF_BR_ALT.email) belongs to TWO organizations; the organization switcher is in the account menu. The list belongs to the organization in the caller's token, so a switch shows that organization's own list {SPEC} (README §XAPI specification, comment 112644). Both lists are EMPTY at case start — screen 1 clears the first, screen 3 the second. Compare fixtures seeded on the env (test-data/compare/compare-products.csv); the fixture categories must be in the Category search index, or every tab reads 'Unknown category' (checklist X1) — assert tab COUNTS, never labels, until that data fix lands.","login=@td(MULTI_ORG_TF_BR_ALT.email), password=@td(MULTI_ORG_TF_BR_ALT.password), a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku), c_sku=@td(PROD_CMP_C.sku)","--- SCREEN: Organization 1 ---
 [NAV] {{FRONT_URL}}/sign-in
 [WAIT] the sign-in form renders
-[ACT] fill 'Email': @td(MULTI_ORG_TF_BR.email)
-[ACT] fill 'Password': @td(MULTI_ORG_TF_BR.password)
+[ACT] fill 'Email': @td(MULTI_ORG_TF_BR_ALT.email)
+[ACT] fill 'Password': @td(MULTI_ORG_TF_BR_ALT.password)
 [ACT] click 'Sign in'
 [WAIT] the account menu renders in the top header
 [NAV] {{FRONT_URL}}/compare

@@ -55,6 +55,7 @@ export const SEED_PREFIX = 'AGENT-TEST';
 export const PRICE_LIST_DATE = '20260903';
 export const priceListName = (currency = 'USD') => `SEED-${PRICE_LIST_DATE}-Compare-${currency}`;
 export const CURRENCY = 'USD';
+export const CULTURE = process.env.CULTURE_NAME || 'en-US';
 
 // ---------------------------------------------------------------------------
 // CATEGORY PATHS — the tab model.
@@ -413,7 +414,7 @@ export const variationLinkCount = (rec) => variationsOf(rec).length + 1;
 
 /** The money formatter the storefront column is read through. Used to prove a RAW gap survives it. */
 export const formatMoney = (n) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: CURRENCY }).format(Number(n));
+  new Intl.NumberFormat(CULTURE, { style: 'currency', currency: CURRENCY }).format(Number(n));
 
 /** How many variations the fixture must carry for its rendered count to be non-trivial. */
 export const VARIATION_MIN_COUNT = 3;

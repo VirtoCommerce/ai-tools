@@ -1929,7 +1929,7 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
-      "notes": "VCST-5918 server-side product compare. All cases Draft. CMP-GQL-005/006/007 assert the specified behaviour of known bug candidates (D5 section cap, D6 two-alias read, X11 null-category group) and are expected to fail until fixed or until the PO settles the spec; CMP-GQL-014 is a question (no written source). CMP-GQL-012/013 flip store settings ProductComparison.Enabled / AnonymousListEnabled and must run alone (NEEDS_WINDOW). Guest ids are fixed AGENT-TEST-CMP-GUEST-* strings cleared by the cases themselves. Not authored: the cleanup-job case (needs a 1 h aged guest list and create-on-fly users/organizations) and the guest-list-by-signed-in-buyer merge (X18, PO question first).",
+      "notes": "VCST-5918 server-side product compare. Promoted to Automated from the vcptcore run of 2026-11-20; CMP-GQL-006 is Deprecated (two aliases of one product are reachable only through the API — not a defect). CMP-GQL-005 asserts the 30-item section cap the developer confirmed; CMP-GQL-007 asserts the shared null-category group. CMP-GQL-012/013 flip store settings ProductComparison.Enabled / AnonymousListEnabled and restore them: run this suite alone, never beside 098 or 123 (NEEDS_WINDOW). Guest ids are fixed AGENT-TEST-CMP-GUEST-* strings cleared by the cases themselves. Not authored: the cleanup-job case (needs a 1 h aged guest list and create-on-fly users/organizations) and the guest-list-by-signed-in-buyer merge (X18, PO question first).",
       "lanes": {
         "machine": 11,
         "browser": 2,
@@ -4612,7 +4612,7 @@
       "envRiskGate": "staging",
       "customerApplicability": "reference",
       "clickDriven": true,
-      "notes": "VCST-5918. Store settings group Product Comparison (Enable product comparison, Products per category, Allow guests to compare). CMP-ADM-002 asserts the spec of Reset to default and is expected to fail on the known platform behaviour (X23). Both cases change a shared store setting and restore it."
+      "notes": "VCST-5918. Store settings group Product Comparison (Enable product comparison, Products per category, Allow guests to compare). CMP-ADM-001 Automated; CMP-ADM-002 stays Draft — it asserts the spec of Reset to default against the known platform behaviour (X23). Both cases change a shared store setting and restore it: run this suite alone, never beside 098 or 050q."
     }
   ],
   "selections": {
@@ -4661,9 +4661,7 @@
         "003",
         "051",
         "053",
-        "098",
-        "050q",
-        "123"
+        "098"
       ]
     },
     "search": {
