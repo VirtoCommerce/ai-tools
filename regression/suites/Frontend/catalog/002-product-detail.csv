@@ -60,16 +60,23 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [STATE] No floating/sticky compare bar exists anywhere on the page (count lives in the header link); a transient success toast appears after add
 [STATE] Compare selection is saved on the server: after a reload the card still shows 'Remove from Compare' and the header badge keeps its count","[NETWORK] no 4xx/5xx on the saveProductsToCompareList request of the add
 [CONSOLE] no TypeError or JS errors","'Add to Compare' button missing on cards; clicking does not toggle the button to 'Remove from Compare'; header Compare badge does not increment; console TypeError",Open /compare and click 'Clear all' (or remove the added item),"Coverage Gap Analysis; vc-frontend shared/compare (useCompareProducts) | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-20) (list now stored on the server, module README; BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule)",Automated
-"CAT-031","Compare Page Display","Catalog > Compare","High",BL-CAT-019,,Product comparison is enabled for the store (store setting ProductComparison.Enabled); the category has 2 or more products,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
-[ACT] Click 'Add to Compare' on 2 product cards of that category
+"CAT-031","Compare Page Display","Catalog > Compare","High",BL-CAT-019,,"[PRE:CLEAR_SESSION]
+Product comparison is enabled for the store (store setting ProductComparison.Enabled); the guest compare list starts empty. @td(PROD_CMP_A.name) and @td(PROD_CMP_B.name) are in the same category group.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] Click 'Add to Compare' on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] Click 'Add to Compare' on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
 [WAIT] the header 'Compare' link counts 2
 [ACT] Click the header 'Compare' link
-[WAIT] the compare table shows both products","[NAV] the URL path is /compare {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
-[DOM] the compare table has exactly 2 product columns, and the line under the title reads '2 of <limit> added in <category name>' {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
-[DOM] each column shows the product name link, an image and a 'Price per unit' value with two decimals in the store's currency {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
-[DOM] the table lists the products' specification property rows, and a 'Differ: N of M rows' counter is shown {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
-[DOM] each product column has an 'Add to cart' button {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)","[NETWORK] no 4xx/5xx on /graphql {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
-[CONSOLE] no TypeError or JS errors {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)",Compare page shows not found; products not in side-by-side columns; specification rows missing; add-to-cart button absent; console TypeError,"none","Coverage Gap Analysis | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link) | Promoted: REG-2026-11-23-0822 (2026-11-23)",Automated
+[WAIT] the compare table shows both products","[NAV] the URL path is /compare {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[DOM] the compare table has exactly 2 product columns, and the line under the title reads '2 of L added in <the products' category group>', where L is the store's ProductComparison.MaxItems {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[DOM] each column shows the product name link, an image and a 'Price per unit' value with two decimals in the store's currency {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[DOM] the table lists the products' specification property rows, and a 'Differ: N of M rows' counter is shown {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[DOM] each product column has an 'Add to cart' button {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)","[NETWORK] no 4xx/5xx on /graphql {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[CONSOLE] no TypeError or JS errors {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)",Compare page shows not found; products not in side-by-side columns; specification rows missing; add-to-cart button absent; console TypeError,"none","Coverage Gap Analysis | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link) | Promoted: REG-2026-11-23-0822 (2026-11-23) | Re-run: REG-2026-11-23-0926 (2026-11-23)",Automated
 "CAT-032","Compare Limit","Catalog > Compare","Medium",BL-CAT-013,,"Category page with compare active; currently at maximum allowed products","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
 [ACT] Add products to compare until the maximum limit is reached
 [WAIT] the header 'Compare' link badge shows the maximum count
@@ -81,23 +88,32 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [STATE] Over-limit product not added to the compare list
 [MATH] The header 'Compare' badge = the allowed maximum count, unchanged after the over-limit attempt","[NETWORK] no 5xx on over-limit attempt
 [CONSOLE] no TypeError or JS errors",No limit message shown; over-limit product added silently; header Compare badge count exceeds maximum; console TypeError,"none","Coverage Gap Analysis | Synced: VCST-5918 (2026-11-20) (limit message observed vcptcore 2026-11-17, checklist A4; limit is a per-category store setting, README §Categories and limits; BL-CAT-007 dropped: it is Multi-FFC inventory aggregation) | Promoted: REG-2026-11-20-1202 (2026-11-22)",Automated
-"CAT-033","Remove from Compare","Catalog > Compare","Medium",BL-CAT-018,,"2 or more products added to compare; on /compare page","url={{FRONT_URL}}/compare","[NAV] Navigate to the compare page at {{FRONT_URL}}/compare
-[ASSERT] Verify remove button (X or Remove) visible per product column
-[ACT] Click remove on one product
-[WAIT] Wait for that product column to disappear
-[ASSERT] Verify remaining products still displayed
-[ASSERT] Verify the header 'Compare' badge count decrements","[DOM] Remove/close button available per product column on compare page
-[STATE] Removed product column disappears from comparison
-[DOM] Remaining products still shown correctly
-[MATH] the header 'Compare' badge count decrements by 1 after removal","[NETWORK] no 4xx/5xx on remove request
-[CONSOLE] no TypeError or JS errors","Remove button not visible; removing one product removes all; remaining products layout broken; compare count not updating; console TypeError","none","Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link)",Automated
-"CAT-034","Compare Empty State","Catalog > Compare","Medium",,,"No products in compare (fresh session or after clearing)","url={{FRONT_URL}}/compare","[NAV] Navigate to {{FRONT_URL}}/compare with an empty compare list
-[ASSERT] Verify empty state UI is shown","[DOM] Compare page loads without JavaScript error
-[DOM] Empty state message shown (e.g., 'No products to compare')
-[DOM] Call-to-action present ('Browse catalog' or 'Add products to compare' link)
-[NAV] CTA link navigates back to catalog
-[DOM] No broken layout","[NETWORK] GET /compare returns HTTP 200 (not 4xx)
-[CONSOLE] no TypeError or JS errors","Compare page returns 4xx on empty state; no empty state message; CTA link broken; layout broken without products; console TypeError","none","Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link)",Automated
+"CAT-033","Remove from Compare","Catalog > Compare","Medium",,,"[PRE:CLEAR_SESSION]
+Product comparison is enabled for the store; the guest compare list starts empty. @td(PROD_CMP_A.name) and @td(PROD_CMP_B.name) are in the same category group.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] Click 'Add to Compare' on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] Click 'Add to Compare' on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table shows 2 product columns and the header 'Compare' link counts 2
+[ACT] Click 'Remove from compare' on the @td(PROD_CMP_A.name) column
+[WAIT] that product column disappears","[DOM] each product column has a 'Remove from compare' control {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[STATE] the removed product's column is gone and a notification says the product was removed {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[DOM] the @td(PROD_CMP_B.name) column is still shown, with its name and 'Price per unit' value {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[MATH] header 'Compare' count after removal = count before removal - 1 (2 → 1) {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)","[NETWORK] no 4xx/5xx on remove request {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[CONSOLE] no TypeError or JS errors {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)",Remove control missing; the removed column stays; the other column disappears; header count unchanged; console TypeError,"none","Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link)",Automated
+"CAT-034","Compare Empty State","Catalog > Compare","Medium",,,"[PRE:CLEAR_SESSION]
+Product comparison is enabled for the store; a fresh guest session with an empty compare list","url={{FRONT_URL}}/compare","[NAV] Navigate to {{FRONT_URL}}/compare with an empty compare list
+[WAIT] the compare page settles
+[ACT] Click the empty state's 'Add products' link
+[WAIT] the catalog page renders","[DOM] the empty state heading reads 'Your compare list is empty' {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[DOM] the line under the title reads '0 of L added', where L is the store's ProductComparison.MaxItems, and 'Clear all' is disabled {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[DOM] the empty state has an 'Add products' link {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[NAV] the 'Add products' link opens /catalog {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)","[NETWORK] no 4xx/5xx on /graphql {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)
+[CONSOLE] no TypeError or JS errors {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0926)",No empty state on an empty list; 'Clear all' enabled on an empty list; no 'Add products' link or it does not open the catalog; console TypeError,"none","Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link)",Automated
 "CAT-038","B2B Virtual Catalog Navigation - Org User Sees Assigned Products","Catalog > Virtual Catalog","High","BL-CAT-002, BL-CAT-005",,"@td(PROD_ORG_EXCLUDED.name) exists in a physical catalog but is deliberately withheld from the store's virtual catalog (drift-guarded by td:validate:catalog-edge). Rebased 2026-09-07 (REG-2026-09-07-1342): live-confirmed the platform's virtual catalog binds at STORE level and is shared by every identity — org user, personal user, and guest all returned identical /catalog listings — so an org-scoped subset does not exist on this environment; the discriminating case is store-level exclusion (BL-CAT-005), not a per-org catalog.",url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}; excludedSku=@td(PROD_ORG_EXCLUDED.sku); excludedName=@td(PROD_ORG_EXCLUDED.name),"[NAV] Log in as org user at {{FRONT_URL}} using {{ORG_USER_EMAIL}} / {{ORG_USER_PASSWORD}}
 [NAV] Navigate to main catalog page
 [WAIT] Wait for product listing to load
