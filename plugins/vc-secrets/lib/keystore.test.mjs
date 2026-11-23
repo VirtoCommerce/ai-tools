@@ -51,6 +51,11 @@ test("dpapiKeyToPath: LOCALAPPDATA is the root, XDG_CONFIG_HOME overrides it", (
     assert.equal(m.dpapiKeyToPath(key, { LOCALAPPDATA: "/L", XDG_CONFIG_HOME: "/X" }), path.join("/X", "vc-secrets", "secrets", "user", "oauth-ado-refresh.dpapi"));
 });
 
+test("dpapiKeyToPath: with neither LOCALAPPDATA nor XDG_CONFIG_HOME the root is the home directory", () => {
+    assert.equal(m.dpapiKeyToPath("vc-secrets:user:oauth-ado-refresh", {}),
+        path.join(os.homedir(), "vc-secrets", "secrets", "user", "oauth-ado-refresh.dpapi"));
+});
+
 test("dpapiKeyToPath: a malformed key is refused", () => {
     assert.throws(() => m.dpapiKeyToPath("../x", { LOCALAPPDATA: "/L" }), m.VcSecretsError);
 });
@@ -771,8 +776,13 @@ test("PS_DPAPI_PROTECT: CurrentUser scope, the key as entropy, the value on stdi
     // The flags argument is the scope switch: CRYPTPROTECT_LOCAL_MACHINE would let any account on the
     // machine decrypt the file. The only flag passed is UI_FORBIDDEN (0x1), so no prompt can block a launch.
     assert.match(script, /const int CRYPTPROTECT_UI_FORBIDDEN = 0x1;/);
-    assert.match(script, /CryptProtectData\(ref [^;]*CRYPTPROTECT_UI_FORBIDDEN, out /);
+    assert.match(script, /CryptProtectData\(ref [^;]*System\.IntPtr\.Zero, CRYPTPROTECT_UI_FORBIDDEN, out output\)/);
     assert.doesNotMatch(script, /CRYPTPROTECT_LOCAL_MACHINE/);
+
+    // A DPAPI failure is exit 1 naming the code. A script that swallowed it would hand node an empty
+    // blob to write over a previously valid entry.
+    assert.ok(script.includes("CryptProtectData failed win32err="), "the failure names the win32 code");
+    assert.match(script, /exit 1/);
 
     const spec = m.buildDpapiProtect(key, {});
     assert.deepEqual(spec.extraEnv, { VC_SECRETS_NAME: key });
@@ -846,4 +856,201 @@ test("unprotectManyIo: a malformed key is refused before PowerShell is spawned",
     const run = async () => { throw new Error("must not spawn"); };
     await assert.rejects(
         () => m.unprotectManyIo({ blobs: new Map([["../x", Buffer.from([1])]]), env: {}, run }), m.VcSecretsError);
+});
+
+// The dpapi file store: PowerShell turns a value into a blob, node owns every file operation.
+const DPAPI_KEY = "vc-secrets:user:oauth-a-refresh";
+
+function dpapiTmpEnv(prefix) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+    tmpDirs.push(dir);
+
+    return { dir, env: { XDG_CONFIG_HOME: dir } };
+}
+
+// A PowerShell that prints the base64 of `cipher` for the protect script; any other script is a mistake.
+function fakeProtect(cipher, calls = []) {
+    return async (spec, opts) => {
+        calls.push({ spec, opts });
+        assert.equal(Buffer.from(spec.args[spec.args.indexOf("-EncodedCommand") + 1], "base64").toString("utf16le"),
+            m.PS_DPAPI_PROTECT, "only the protect script may run on a write");
+
+        return Buffer.from(cipher).toString("base64");
+    };
+}
+
+const refused = (code) => Object.assign(new Error(`${code}: rename refused`), { code });
+
+test("writeSecretValue: dpapi writes the ciphertext PowerShell returns, through a pid-suffixed tmp file", async () => {
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-write-");
+    const calls = [];
+    const renames = [];
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    await m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: fakeProtect("CIPHER", calls),
+        rename: (from, to) => { renames.push({ from, to }); fs.renameSync(from, to); } });
+
+    assert.equal(fs.readFileSync(target, "utf8"), "CIPHER");
+    assert.deepEqual(fs.readdirSync(path.dirname(target)), ["oauth-a-refresh.dpapi"], "no tmp file remains");
+    assert.equal(renames.length, 1);
+    assert.ok(renames[0].from.endsWith(`.${process.pid}.tmp`), `the rename source is "${renames[0].from}"`);
+    assert.equal(renames[0].to, target);
+    assert.equal(calls[0].opts.stdinValue, "the-token", "the value goes on stdin");
+    assert.deepEqual(calls[0].opts.redactValues, ["the-token"]);
+    assert.deepEqual(calls[0].spec.extraEnv, { VC_SECRETS_NAME: DPAPI_KEY });
+});
+
+test("writeSecretValue: dpapi retries a rename refused with EPERM and succeeds", async () => {
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-retry-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    let refusals = 2;
+    const sleeps = [];
+    await m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: fakeProtect("CIPHER"),
+        rename: (from, to) => {
+            if (refusals > 0) {
+                refusals -= 1;
+                throw refused("EPERM");
+            }
+            fs.renameSync(from, to);
+        },
+        sleep: async (ms) => { sleeps.push(ms); } });
+
+    assert.deepEqual(sleeps, [50, 100]);
+    assert.equal(fs.readFileSync(target, "utf8"), "CIPHER");
+});
+
+test("writeSecretValue: dpapi gives up after five refused renames, leaves the previous entry and no tmp file", async () => {
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-giveup-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "PREVIOUS");
+    let attempts = 0;
+    const sleeps = [];
+    await assert.rejects(
+        () => m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: fakeProtect("CIPHER"),
+            rename: () => { attempts += 1; throw refused("EBUSY"); },
+            sleep: async (ms) => { sleeps.push(ms); } }),
+        (e) => e.code === "EBUSY");
+
+    assert.equal(attempts, m.RENAME_ATTEMPTS);
+    assert.equal(attempts, 5);
+    assert.deepEqual(sleeps, [50, 100, 150, 200], "no wait after the last refusal");
+    assert.equal(fs.readFileSync(target, "utf8"), "PREVIOUS");
+    assert.deepEqual(fs.readdirSync(path.dirname(target)), ["oauth-a-refresh.dpapi"], "the tmp file is gone");
+});
+
+test("writeSecretValue: dpapi does not retry ENOENT", async () => {
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-enoent-");
+    let attempts = 0;
+    const sleeps = [];
+    await assert.rejects(
+        () => m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: fakeProtect("CIPHER"),
+            rename: () => { attempts += 1; throw refused("ENOENT"); },
+            sleep: async (ms) => { sleeps.push(ms); } }),
+        (e) => e.code === "ENOENT");
+
+    assert.equal(attempts, 1);
+    assert.deepEqual(sleeps, []);
+});
+
+test("writeSecretValue: dpapi refuses to store an empty ciphertext over the entry", async () => {
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-empty-");
+    await assert.rejects(
+        () => m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: async () => "" }),
+        /no ciphertext/);
+    assert.equal(fs.existsSync(m.dpapiKeyToPath(DPAPI_KEY, env)), false);
+});
+
+test("writeSecretValue: a dpapi value over the Credential Manager ceiling is stored", async () => {
+    // The bug's own size plus one: Credential Manager refuses 2907 bytes (exit 4), the file store has no ceiling.
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-large-");
+    const value = "x".repeat(2907);
+    assert.ok(value.length > m.WCM_BLOB_LIMIT);
+    await m.writeSecretValue(DPAPI_KEY, value, { backend: "dpapi", env, run: fakeProtect("CIPHER") });
+
+    assert.equal(fs.readFileSync(m.dpapiKeyToPath(DPAPI_KEY, env), "utf8"), "CIPHER");
+});
+
+test("readDpapiFile: absence is the path not existing", () => {
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-read-absent-");
+    assert.equal(m.readDpapiFile(DPAPI_KEY, env), undefined);
+
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, Buffer.from([1, 2, 3]));
+    assert.deepEqual(m.readDpapiFile(DPAPI_KEY, env), Buffer.from([1, 2, 3]));
+});
+
+test("readDpapiFile: an entry that cannot be examined is not absent", (t) => {
+    // undefined here would be read as "not signed in": an interactive sign-in that spends an
+    // authorization code, over a refresh token that never left the disk.
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-read-denied-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "BLOB");
+    denyFs(t, "readFileSync", target);
+
+    assert.throws(() => m.readDpapiFile(DPAPI_KEY, env),
+        (e) => e instanceof m.VcSecretsError && e.message === 'could not read the stored entry "oauth-a-refresh": EACCES');
+});
+
+function wcmDeleteRun(held, calls = []) {
+    return async (spec) => {
+        calls.push(spec);
+        if (!held) {
+            throw Object.assign(new m.VcSecretsError("powershell.exe exited 3: "), { toolExitCode: 3 });
+        }
+    };
+}
+
+test("deleteEntryIo: dpapi removes the file and the Credential Manager entry of the same key", async () => {
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-both-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "BLOB");
+    const calls = [];
+    await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(true, calls) })(DPAPI_KEY);
+
+    assert.equal(fs.existsSync(target), false);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].extraEnv.VC_SECRETS_NAME, DPAPI_KEY);
+    assert.equal(Buffer.from(calls[0].args[calls[0].args.indexOf("-EncodedCommand") + 1], "base64").toString("utf16le"),
+        m.PS_CRED_DELETE);
+});
+
+test("deleteEntryIo: dpapi with only a legacy Credential Manager entry removes it and succeeds", async () => {
+    // Logout after an upgrade, before any launch migrated the pair: the file never existed, the legacy
+    // entry did, and reporting "nothing stored" would leave the live refresh token behind.
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-legacy-");
+    const calls = [];
+    await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(true, calls) })(DPAPI_KEY);
+
+    assert.equal(calls.length, 1, "the legacy entry was deleted");
+});
+
+test("deleteEntryIo: dpapi with only the file removes it and succeeds", async () => {
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-file-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "BLOB");
+    await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false) })(DPAPI_KEY);
+
+    assert.equal(fs.existsSync(target), false);
+});
+
+test("deleteEntryIo: dpapi with neither present is exit 3", async () => {
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-none-");
+    await assert.rejects(() => m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false) })(DPAPI_KEY),
+        (e) => e.toolExitCode === 3);
+});
+
+test("deleteEntryIo: dpapi does not treat an unremovable file or a Credential Manager failure as absence", async () => {
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-fail-");
+    const denied = () => { throw Object.assign(new Error("EACCES"), { code: "EACCES" }); };
+    await assert.rejects(
+        () => m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false), rm: denied })(DPAPI_KEY),
+        (e) => e instanceof m.VcSecretsError && e.toolExitCode === undefined && /could not remove/.test(e.message));
+
+    const failing = async () => { throw Object.assign(new m.VcSecretsError("powershell.exe exited 1: CredDelete failed win32err=5"), { toolExitCode: 1 }); };
+    await assert.rejects(() => m.deleteEntryIo("dpapi", env, { run: failing })(DPAPI_KEY),
+        (e) => e.toolExitCode === 1);
 });

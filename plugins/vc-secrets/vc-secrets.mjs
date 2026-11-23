@@ -25,7 +25,7 @@ export {
 } from "./lib/config.mjs";
 
 export {
-    KEY_PREFIX, keyFor, keyToPath, legacyKeyToPath, detectLocalBackend, oauthBackend, dpapiKeyToPath, secretsDir,
+    KEY_PREFIX, keyFor, keyToPath, legacyKeyToPath, detectLocalBackend, oauthBackend, dpapiKeyToPath, readDpapiFile, renameWithRetry, RENAME_ATTEMPTS, secretsDir,
     psEncode, psCommand, PS_CRED_READ, PS_CRED_WRITE, oversizeMarkerPath, recordOversizeMarker, clearOversizeMarker,
     readOversizeMarker, PS_CRED_DELETE, decodeCredBlobHex, buildLocalRead, buildLocalWrite, buildLocalDelete, deleteEntryIo,
     PS_CRED_READ_MANY, buildCredReadMany, credReadManyIo, CS_DPAPI, PS_DPAPI_PROTECT, PS_DPAPI_UNPROTECT_MANY,

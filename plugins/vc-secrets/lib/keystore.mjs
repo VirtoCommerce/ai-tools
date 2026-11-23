@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { VcSecretsError } from "../vc-secrets-error.mjs";
 
@@ -54,6 +55,13 @@ const TIMEOUT_LOCAL_MS = 10_000;
 const TIMEOUT_AZ_MS = 20_000;
 
 const LOCAL_BACKENDS = ["wcm", "keychain", "gpg"];
+
+// The final rename of a dpapi file is the one step another process can refuse: on Windows a reader
+// holding the target open, or antivirus scanning the fresh tmp file, fails it with one of these codes
+// for a moment. Waiting and trying again is what resolves it; any other code is a real failure.
+const RENAME_ATTEMPTS = 5;
+
+const RENAME_RETRY_CODES = ["EPERM", "EBUSY", "EACCES"];
 
 // security(1) reads that command line into a fixed buffer and, past the limit, SPLITS rather than
 // refusing: the first half stores a TRUNCATED value and the tail runs as a second command whose name
@@ -121,9 +129,10 @@ function keyToPath(key, env = process.env) {
     return path.join(secretsDir(env), scope, `${name}.gpg`);
 }
 
-// The root is not configBase: the DPAPI files are written and read by Windows PowerShell and node
-// across shells whose HOME differs (Git Bash, WSL, cmd), so HOME cannot name the one directory
-// they must share; LOCALAPPDATA is per-user and the same in every one of them (ADR D1).
+// The root is not configBase: HOME is not one directory on Windows -- Git Bash, an IDE and Explorer can
+// each report a different one -- yet a file written by one of them has to be found by the others.
+// LOCALAPPDATA is per-user and the same in all of them (ADR D1). Node reads and writes these files;
+// PowerShell only calls DPAPI on the bytes it is handed.
 function dpapiKeyToPath(key, env = process.env) {
     assertKeyShape(key);
     const { scope, name } = keyParts(key);
@@ -132,6 +141,21 @@ function dpapiKeyToPath(key, env = process.env) {
         : path.join(env.LOCALAPPDATA || os.homedir(), KEY_PREFIX, "secrets");
 
     return path.join(root, scope, `${name}.dpapi`);
+}
+
+// The stored bytes of a dpapi entry. Only an absent path is "no entry" (undefined); a file that is there
+// and cannot be read is an error, because every caller reads undefined as "nothing is stored" and goes on
+// to a fresh sign-in that spends a single-use authorization code. The message carries the code, never bytes.
+function readDpapiFile(key, env = process.env) {
+    const file = dpapiKeyToPath(key, env);
+    try {
+        return fs.readFileSync(file);
+    } catch (e) {
+        if (isAbsentPathError(e)) {
+            return undefined;
+        }
+        throw new VcSecretsError(`could not read the stored entry "${nameFromKey(key)}": ${e.code ?? e.message}`);
+    }
 }
 
 // Only an absent path means "no entry", and existsSync could not say so: its false for a file that
@@ -451,7 +475,7 @@ if(-not [CredManW]::CredWrite([ref]$c,0)){
 // Scope is the flags argument. It is CRYPTPROTECT_UI_FORBIDDEN (0x1) and nothing else: no prompt can block a
 // launch, and CRYPTPROTECT_LOCAL_MACHINE (0x4) is never passed, so only the signed-in account can decrypt
 // what it wrote. The entropy is what binds a blob to its key: a file renamed to another entry's name does not
-// decrypt there (win32 13), rather than handing one entry's token to another's reader.
+// decrypt there, it fails with a win32 code, rather than handing one entry's token to another's reader.
 //
 // A failure throws Win32Exception with the win32 code, which the scripts report as a code and never as text
 // that could carry a value. The plaintext copy and the decrypted output are zeroed before they are freed.
@@ -812,7 +836,37 @@ function buildLocalDelete(backend, key, env = process.env) {
 // and gpg entries are files whose absence is a path error (isAbsentPathError) rather than any exit
 // code at all -- the same test gpgEntryPresent applies, so logout and a presence check agree.
 function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run = runTool, rm = fs.rmSync } = {}) {
+    // The wcm delete a dpapi entry also owes: the pair may still sit in Credential Manager from before the
+    // file store, and a logout that left it would let the next launch read the old token back.
+    const legacyDelete = backend === "dpapi" ? deleteEntryIo("wcm", env, { run }) : null;
+
     return async (key) => {
+        if (backend === "dpapi") {
+            const file = dpapiKeyToPath(key, env);
+            let fileAbsent = false;
+            try {
+                rm(file);
+            } catch (e) {
+                if (!isAbsentPathError(e)) {
+                    throw new VcSecretsError(`could not remove "${key}": ${e.code ?? e.message}`);
+                }
+                fileAbsent = true;
+            }
+            let legacyAbsent = false;
+            try {
+                await legacyDelete(key);
+            } catch (e) {
+                if (e.toolExitCode !== 3) {
+                    throw e;
+                }
+                legacyAbsent = true;
+            }
+            if (fileAbsent && legacyAbsent) {
+                throw Object.assign(new VcSecretsError(`no stored entry "${key}"`), { toolExitCode: 3 });
+            }
+
+            return;
+        }
         if (backend === "gpg") {
             assertKeyShape(key);
             try {
@@ -835,6 +889,46 @@ function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run 
             throw e;
         }
     };
+}
+
+// Moves `from` over `to`, waiting 50 * attempt ms after a refusal that is usually momentary (see
+// RENAME_RETRY_CODES). Any other code, and the refusal on the last attempt, is the caller's to handle.
+async function renameWithRetry(from, to, { rename = fs.renameSync, sleep = delay } = {}) {
+    for (let attempt = 1; ; attempt += 1) {
+        try {
+            rename(from, to);
+
+            return;
+        } catch (e) {
+            if (attempt >= RENAME_ATTEMPTS || !RENAME_RETRY_CODES.includes(e.code)) {
+                throw e;
+            }
+            await sleep(50 * attempt);
+        }
+    }
+}
+
+// The dpapi write: PowerShell turns the value into a blob and node owns the file. The blob goes to a tmp
+// file named for this process and is renamed over the entry, so a reader never sees a partial file and two
+// processes writing at once do not share a tmp path. A failed write leaves the previous entry in place.
+async function writeDpapiValue(key, value, { env, run, rename, sleep }) {
+    const finalPath = dpapiKeyToPath(key, env);
+    const stdout = await run(buildDpapiProtect(key, env), { stdinValue: value, redactValues: [value] });
+    const blob = Buffer.from(stdout, "base64");
+    if (blob.length === 0) {
+        throw new VcSecretsError(`DPAPI returned no ciphertext for "${nameFromKey(key)}"`);
+    }
+    fs.mkdirSync(path.dirname(finalPath), { recursive: true, mode: 0o700 });
+    const tmpPath = `${finalPath}.${process.pid}.tmp`;
+    try {
+        fs.writeFileSync(tmpPath, blob, { mode: 0o600 });
+        await renameWithRetry(tmpPath, finalPath, { rename, sleep });
+    } catch (e) {
+        try {
+            fs.unlinkSync(tmpPath);
+        } catch { /* best-effort cleanup -- the original error is what matters */ }
+        throw e;
+    }
 }
 
 // Shared by cmdSet's non-interactive branch and cmdMigrate: runs a write `spec` built with a
@@ -885,13 +979,18 @@ async function writeLocalValue(backend, key, spec, value, env = process.env, run
 // a line-length refusal, restored in buildLocalWrite above, because this package's three-segment key
 // is longer than the source's two-segment one and eats most of the margin the source measured.
 async function writeSecretValue(key, value, { backend = detectLocalBackend(), env = process.env,
-    run = runTool } = {}) {
+    run = runTool, rename = fs.renameSync, sleep = delay } = {}) {
     if (!value) {
         // The invariant belongs here rather than only in cmdSet: a renewal and a login can both be
         // handed an empty string by a response that parsed, and an empty entry is worse than a
         // missing one — it reads back as "backend returned empty value", which sends a developer to
         // retype a secret this tool just erased.
         throw new VcSecretsError(`refusing to store an empty value for "${key}"`);
+    }
+    if (backend === "dpapi") {
+        // Its own branch: writeLocalValue's non-gpg path would read a PowerShell failure as the
+        // Credential Manager's, and dpapi has no size ceiling to map.
+        return writeDpapiValue(key, value, { env, run, rename, sleep });
     }
     const spec = buildLocalWrite(backend, key, env, { tmp: backend === "gpg", value });
     // Composed once here purely to validate. The runner composes it only AFTER spawning, so without
@@ -1209,8 +1308,8 @@ async function cmdMigrate(cfg) {
 export {
     KEY_PREFIX, keystoreFilePresent, scopeKeyFor, keyFor, nameFromKey, TIMEOUT_LOCAL_MS, TIMEOUT_AZ_MS,
     LOCAL_BACKENDS, SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT, quoteForSecurityInteractive, detectLocalBackend,
-    oauthBackend, secretsDir, keyToPath, dpapiKeyToPath, gpgEntryPresent, legacyKeyToPath, oversizeMarkerPath,
-    recordOversizeMarker, clearOversizeMarker, readOversizeMarker, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE,
+    oauthBackend, secretsDir, keyToPath, dpapiKeyToPath, readDpapiFile, renameWithRetry, RENAME_ATTEMPTS,
+    gpgEntryPresent, legacyKeyToPath, oversizeMarkerPath, recordOversizeMarker, clearOversizeMarker, readOversizeMarker, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE,
     PS_CRED_WRITE, CS_DPAPI, PS_DPAPI_PROTECT, PS_DPAPI_UNPROTECT_MANY, buildDpapiProtect, unprotectManyIo,
     psEncode, psCommand, decodeCredBlobHex, isAbsentEntry, buildLocalRead, buildCredReadMany, credReadManyIo,
     batchedReadError, buildLocalWrite, buildLocalDelete, deleteEntryIo, writeLocalValue, writeSecretValue,
