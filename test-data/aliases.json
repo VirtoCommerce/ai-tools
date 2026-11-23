@@ -1,7 +1,9 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.72",
+    "version": "1.5.74",
+    "changelog_1_5_74": "SIZE_RUN_MASTER (seed:size-run, guard td:validate:size-run): single-group Size picker XS,S,M,L,XL on the B2C template for B2C-VAR-001 (suite 009); sibling of VARIANT_PICKER_MASTER, which is unchanged.",
+    "changelog_1_5_73": "SB_THEME_B2B + SB_STORE_EDITOR + SB_THEME_EDITOR_NOPUBLISH (seed:site-builder), SB_LEGACY_HEADER_PAGE (seed:cms-pages), SB_WL_ORG_BUYER + SB_PERSONAL_BUYER (reuse combos): the Site Builder fixtures the VCST-6571/6572 runs lacked.",
     "changelog_1_5_72": "DEMO_RETURNS_BUYER + DEMO_NO_ORDERS_CUSTOMER: demo-profile storefront personas (virtostart). Login = the spec contact email, password = the {{SR_DEMO_BUYER_PASSWORD}} token. Spec DEMO_PERSONAS in sales-rep-demo-specs.mjs; guard td:validate:sales-rep-demo [8].",
     "changelog_1_5_71": "ORG_EMPTY gains platform_id (organizations.csv column), so SR-GQL-184 can use an ACTIVE unserved organization instead of ORG_SUSPENDED.",
     "changelog_1_5_70": "VCST-6255 customer sales report: added SR_MTD_ORDER_{WEST_1,WEST_2,TECH_1,FLAG_CANCELLED,STATUS_CANCELLED,OTHER_CREATOR} \u2014 current-month orders that make each statistics branch falsifiable (attribution by ApplicationUser id, IsCancelled flag isolated from status, status-only Cancelled, per-customer AOV divergence). Opt-in family `--only MTD` of seed-sales-rep-stats.mjs, spec sales-rep-mtd-specs.mjs, guarded by td:validate:sales-rep-stats.",
@@ -12000,6 +12002,29 @@
     },
     "notes": "A11Y-VCP-001 (suite 045): the master whose PDP renders the storefront VcVariantPicker (vc-frontend options.vue on the B2C product template). Carries VirtoFrontend_UI_Layout=B2C (exact case - the theme compares with ===); 4 stocked, distinctly priced variations over Color x Size with a deliberately NON-full matrix, so picking Black makes Size L unavailable (the disabled state is reachable). Open {{FRONT_URL}}@td(VARIANT_PICKER_MASTER.url). Seeded by scripts/seed-data/products/seed-variant-picker.mjs (npm run seed:variant-picker); guard npm run td:validate:variant-picker; runtime id only in aliases.<env>.json."
   },
+  "SIZE_RUN_MASTER": {
+    "json": "products/size-run",
+    "seed": "seed:size-run",
+    "fields": {
+      "id": "id",
+      "selectedVariationId": "selectedVariationId",
+      "sku": "master.sku",
+      "name": "master.name",
+      "slug": "master.slug",
+      "url": "master.url",
+      "price": "master.listPrice",
+      "sizes": "sizes",
+      "variationCount": "variations.length",
+      "selectedSize": "selection.size",
+      "selectedSku": "selection.sku",
+      "selectedName": "selection.name",
+      "selectedPrice": "selection.listPrice",
+      "currency": "currency",
+      "layoutProperty": "layoutProperty.name",
+      "layoutValue": "layoutProperty.value"
+    },
+    "notes": "B2C-VAR-001 (suite 009): a B2C PDP (VirtoFrontend_UI_Layout=B2C, exact case) whose variant picker has ONE group, Size, with exactly @td(SIZE_RUN_MASTER.sizes); 5 stocked variations with strictly distinct SKUs and prices, master price distinct from all, so a wrong variation for the selected size shows a different SKU and price. Picking @td(SIZE_RUN_MASTER.selectedSize) alone resolves @td(SIZE_RUN_MASTER.selectedSku) @ @td(SIZE_RUN_MASTER.selectedPrice) @td(SIZE_RUN_MASTER.currency). Open {{FRONT_URL}}@td(SIZE_RUN_MASTER.url). LIMIT: a single-property family - it cannot show the unavailable-combination state (that is VARIANT_PICKER_MASTER's job); option ORDER on screen is the theme's, not guaranteed by the fixture. Seeded by scripts/seed-data/products/seed-size-run.mjs (npm run seed:size-run); guard npm run td:validate:size-run; runtime ids (id, selectedVariationId) only in aliases.<env>.json."
+  },
   "L10N_COLLISION_CATEGORY": {
     "file": "catalogs/locale-slug-categories",
     "filter": {
@@ -12536,6 +12561,129 @@
       "org_role": "org_role"
     },
     "notes": "DEMO profile persona for a customer who has never ordered: Sofia Navarro, Purchasing agent at Wingtip Electrical Supply. No order, cart or list in the sales-rep, returns or loyalty-missions demo names her (td:validate:sales-rep-demo [1] + [8], td:validate:returns-demo [1]), so xAPI orders and the dashboard's My recent orders read 0 for her. Her ORGANIZATION has orders (James Whitfield's), so organization-wide figures are not zero. Spec: DEMO_PERSONAS in scripts/seed-data/sales-rep/sales-rep-demo-specs.mjs (contact DCT-WT-2). Seeded by npm run seed:demo, or for her alone npm run seed:sales-rep-demo -- --only DCT-WT-2; exists only on an env holding the demo profile (virtostart). Sign in with @td(DEMO_NO_ORDERS_CUSTOMER.email); the Playwright lane types the password NAME SR_DEMO_BUYER_PASSWORD (SR_DEMO_BUYER_PASSWORD_<ENV> in .env.playwright.all). A case that places an order as her consumes the persona for every later run: do not."
+  },
+  "SB_THEME_B2B": {
+    "_inline": true,
+    "seed": "seed:site-builder",
+    "_comment": "VCST-6571/6572 (Site Builder Release #1): a PUBLISHED theme on B2B-store that visibly differs from the storefront's built-in templates — an announcement bar in the header (palette tokens only), a palette generated from two brand colours (AA-checked before publish), and a product template rule: products of rule.product_type open template.key, whose text section shows template.marker; a product of rule.control_product_type does not. Seed: `TEST_ENV=vcst npm run seed:site-builder -- --only SB_THEME_B2B`; needs the store's schema catalog (open B2B-store once in the Site Builder designer so the storefront preview uploads it). Teardown (`npm run seed:site-builder:teardown -- --only SB_THEME_B2B`) puts every touched file back as FOUND (absent files deleted through the Content API) and publishes once more — publications are append-only, so the restored state is a NEW publication number. Runtime (aliases.<env>.json): publication_before/after/restored, catalog_hash, rule_product_* / control_product_* (live-discovered through xAPI). B2B-store's store-level white-labeling overrides the palette and logo for every visitor, so the palette is observable in the designer Theme tab and in the theme snapshot, not on the storefront (see SB_WL_ORG_BUYER and SB_PERSONAL_BUYER).",
+    "store_id": "B2B-store",
+    "theme": "default",
+    "announcement": {
+      "text": "AGENT-TEST-SB announcement bar",
+      "background": "color_accent_700",
+      "color": "color_additional_50",
+      "section_id": "agenttestsbannouncementbar",
+      "block_id": "agenttestsbannouncement"
+    },
+    "palette": {
+      "primary": "#1e6b52",
+      "secondary": "#7a1fa2"
+    },
+    "template": {
+      "key": "product.agent-test-sb",
+      "name": "AGENT-TEST-SB product template",
+      "marker": "AGENT-TEST-SB product template marker",
+      "text": "Shown only on products the AGENT-TEST-SB template rule matches."
+    },
+    "rule": {
+      "id": "agent-test-sb",
+      "product_type": "Digital",
+      "control_product_type": "Physical"
+    },
+    "rules_when_absent": {
+      "_provenance": "The storefront's built-in product rule, applied while a store has no config/template_rules.json — vc-module-site-builder 28d00e0, src/VirtoCommerce.SiteBuilder.Web/vue/src/modules/designer/rules.ts DEFAULT_RULES. Kept so writing the file does not drop it; re-check when the module version changes.",
+      "product": [
+        {
+          "id": "default-b2c",
+          "template": "product.b2c",
+          "when": {
+            "property": {
+              "name": "VirtoFrontend_UI_Layout",
+              "equals": "B2C"
+            }
+          }
+        }
+      ]
+    },
+    "fields": {
+      "store_id": "store_id",
+      "announcement_text": "announcement.text",
+      "template_key": "template.key",
+      "template_marker": "template.marker",
+      "rule_product_type": "rule.product_type",
+      "control_product_type": "rule.control_product_type",
+      "palette_primary": "palette.primary"
+    }
+  },
+  "SB_STORE_EDITOR": {
+    "_inline": true,
+    "seed": "seed:site-builder",
+    "_comment": "VCST-6571 AC-8: back-office Site Builder editor scoped to ONE store — builder:read and builder:shared-components:read carry a StoreSelectedScope on B2B-store; page create/update/delete are global; NO builder:theme, builder:templates or builder:publish. Expect on B2B-store: page reads + page draft save 200, theme file save / palette 403, publish 403; on other_store every Site Builder read and write 403 (@kb(KB-4FEABEDD)). Sign in as login; the Playwright lane types the password NAME password_var (<VAR>_VCST). The seed verifies that with probes that change nothing. Runtime role_id/user_id in aliases.<env>.json. Teardown deletes the user and the role.",
+    "login": "agent-test-sb-store-editor",
+    "email": "agent-test-sb-store-editor@test.virtocommerce.com",
+    "role": "AGENT-TEST-SB store editor",
+    "permissions": "builder:access, builder:read@B2B-store, builder:shared-components:read@B2B-store, builder:create, builder:update, builder:delete",
+    "other_store": "Electronics",
+    "user_type": "Manager",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "fields": {
+      "login": "login",
+      "email": "email",
+      "role": "role",
+      "other_store": "other_store",
+      "password_var": "password_var"
+    }
+  },
+  "SB_THEME_EDITOR_NOPUBLISH": {
+    "_inline": true,
+    "seed": "seed:site-builder",
+    "_comment": "VCST-6571 AC-8: SB_STORE_EDITOR plus builder:theme and builder:templates, still WITHOUT builder:publish and still scoped to B2B-store — the pair that tells \"may edit the theme\" from \"may publish it\": palette check 200, theme/publish and page publishing 403. Same sign-in rules and teardown as SB_STORE_EDITOR.",
+    "login": "agent-test-sb-theme-editor",
+    "email": "agent-test-sb-theme-editor@test.virtocommerce.com",
+    "role": "AGENT-TEST-SB theme editor no publish",
+    "permissions": "builder:access, builder:read@B2B-store, builder:shared-components:read@B2B-store, builder:create, builder:update, builder:delete, builder:theme, builder:templates",
+    "other_store": "Electronics",
+    "user_type": "Manager",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "fields": {
+      "login": "login",
+      "email": "email",
+      "role": "role",
+      "other_store": "other_store",
+      "password_var": "password_var"
+    }
+  },
+  "SB_LEGACY_HEADER_PAGE": {
+    "_inline": true,
+    "seed": "seed:cms-pages",
+    "_comment": "VCST-6571 AC-7: a B2B-store page written the LEGACY way (grouped content endpoint) with page settings header = header and hideBreadcrumbs = true; header differs from the page name and from its title block. A case re-saves it in the Site Builder designer and checks the storefront H1 still reads header and no breadcrumbs show. Seed: `TEST_ENV=vcst npm run seed:cms-pages -- --only SB_LEGACY_HEADER_PAGE` (content in test-data/cms/page-content.json; the seeder rewrites drifted content). Teardown archives it (`npm run seed:cms-pages:teardown -- --only SB_LEGACY_HEADER_PAGE`). Runtime group_id in aliases.<env>.json.",
+    "name": "AGENT-TEST SB Legacy Header Page",
+    "permalink": "/agent-test-sb-legacy-header",
+    "url": "/agent-test-sb-legacy-header",
+    "culture": "en-US",
+    "header": "AGENT-TEST SB page-settings header",
+    "hide_breadcrumbs": true,
+    "expect_status": "Published",
+    "fields": {
+      "name": "name",
+      "permalink": "permalink",
+      "url": "url",
+      "header": "header",
+      "hide_breadcrumbs": "hide_breadcrumbs"
+    }
+  },
+  "SB_WL_ORG_BUYER": {
+    "_inline": true,
+    "combo": "SB-WL-01",
+    "org": "WL_ELECTRONICS",
+    "buyer": "WL_USER_ELECTRONICS",
+    "_comment": "VCST-6571 AC-12 / B8 (REUSED, nothing new seeded): a buyer whose organization has its OWN white-labeling (logo, secondary logo, favicon, menus, theme preset Watermelon) — ORG_USER's org has none. Org @td(WL_ELECTRONICS.name), buyer @td(WL_USER_ELECTRONICS.email) on B2B-store; provisioned by npm run seed:white-labeling (checked live on vcst 2026-11-19: org config isEnabled, buyer a Customer of B2B-store in that org). Expect the org's logo and colours over the theme on the storefront, and the overridden fields marked in the designer Theme tab."
+  },
+  "SB_PERSONAL_BUYER": {
+    "_inline": true,
+    "combo": "SB-WL-02",
+    "buyer": "PERSONAL_NON_ORG_USER",
+    "_comment": "VCST-6571 AC-12 / B9 (REUSED): a personal B2B-store buyer with no organization — sign in with @td(PERSONAL_NON_ORG_USER.email). On B2B-store the STORE-level white-labeling still applies to this buyer, so 'theme logo and palette shown' needs a store without store-level white-labeling, which vcst cannot serve (one storefront host, bound to B2B-store): a case either disables B2B-store's store white-labeling (isEnabled=false) as its own step and restores it in Cleanup, or stays BLOCKED."
   },
   "PROD_VAR_ONE_ENTRY": {
     "file": "compare/compare-products",

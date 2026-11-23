@@ -22,7 +22,10 @@ export const PAGE_ALIASES = [
   'PB_6443_LEGACY_EXP1', 'PB_6443_LEGACY_EXP2', 'PB_6443_LEGACY_PCT', 'PB_6443_LEGACY_LT',
 ];
 export const USER_ALIAS = 'PB_6443_NOCREATE_USER';
-export const MODULE_ID = 'VirtoCommerce.PageBuilderModule';
+import { routesFor } from './builder-routes.mjs';
+
+/** Page Builder's id; a Site Builder stand passes its own route set (builder-routes.mjs) to the two builders below. */
+export const MODULE_ID = routesFor('page-builder').moduleId;
 export const EMPTY_CONTENT = JSON.stringify({ settings: {}, content: [] });
 export const STATUS = { DRAFT: 'Draft', PUBLISHED: 'Published' };
 
@@ -65,11 +68,12 @@ export function ruleViolations(permalink) {
   return out;
 }
 
-/** The module's export JSON for the given specs, in the shape the platform's own export writes. */
-export function moduleExportJson(specs, ids) {
+/** The module's export JSON for the given specs, in the shape the platform's own export writes. The part
+ * names follow the module (PageBuilderPages / SiteBuilderPages); the page shape is the same in both. */
+export function moduleExportJson(specs, ids, routes = routesFor('page-builder')) {
   return {
-    PageBuilderSharedComponents: [],
-    PageBuilderPages: specs.map((s) => ({
+    [routes.exportShared]: [],
+    [routes.exportPages]: specs.map((s) => ({
       groupId: ids[s.alias].groupId,
       name: s.name,
       permalink: s.permalink,
@@ -82,12 +86,12 @@ export function moduleExportJson(specs, ids) {
 }
 
 /** Restore manifest (PascalCase, as Manifest.json is written by the platform) for one module. */
-export function restoreManifest(newManifest, moduleVersion) {
+export function restoreManifest(newManifest, moduleVersion, moduleId = MODULE_ID) {
   return {
     Author: newManifest.author || 'admin',
     PlatformVersion: newManifest.platformVersion,
     HandleSettings: false, HandleDynamicProperties: false, HandleSecurity: false, HandleBinaryData: false,
-    Modules: [{ PartUri: `${MODULE_ID}.json`, Id: MODULE_ID, Version: moduleVersion, Optional: false }],
+    Modules: [{ PartUri: `${moduleId}.json`, Id: moduleId, Version: moduleVersion, Optional: false }],
     Options: [],
     IsEncrypted: false,
   };
