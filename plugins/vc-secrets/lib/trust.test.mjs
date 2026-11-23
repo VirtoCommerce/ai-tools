@@ -1385,7 +1385,10 @@ test("namespaceTrustProblem: the one rule behind the launch gate, whichever refe
         { ...m.namespaceTrustProblem(cfg, state, SECRET_PAT), home: "user", shadowsUser: false });
 });
 
-test("set: a repository's local secret is stored only once this checkout is trusted for its namespace, and the refusal comes before the keystore",
+// A spawned `set` has no terminal to read the value from, so these tests prove only where the gate stands: the
+// refusal text, and that a trusted checkout gets as far as the value prompt. That nothing is asked or written for an
+// untrusted one, and that a trusted one writes, is the in-process test in cli.test.mjs.
+test("set: a repository's local secret gets past the gate to the value prompt only once this checkout is trusted for its namespace",
     POSIX_STUB_ONLY, () => {
         const recorder = keychainRecorder();
         const env = launcherEnv(recorder.env);
@@ -1395,23 +1398,20 @@ test("set: a repository's local secret is stored only once this checkout is trus
         assert.equal(untrusted.status, 1, untrusted.stderr);
         assert.equal(untrusted.stderr, `vc-secrets: secret "pat" is stored in namespace "proj-x", which this repository declares, `
             + `and this checkout is not trusted -- review it, then run "vc-secrets trust" in ${m.trustRootKey(root)}\n`);
-        assert.deepEqual(recorder.calls(), [], "refused before the keystore, and before a value was asked for");
 
         seedTrust(env, root);
         const trusted = runVerb(env, root, "set", "pat");
-        assert.equal(trusted.status, 0, trusted.stderr);
-        assert.ok(recorder.calls().some((call) => call.includes("-s vc-secrets:proj-x:pat")),
-            "the control: with the record the same verb reaches the keystore");
+        // The control: with the record the same verb gets past the gate to the value prompt.
+        assert.equal(trusted.status, 1, trusted.stderr);
+        assert.match(trusted.stderr, /vc-secrets set requires an interactive terminal/);
 
         // The id the record pins is the id in play: the same root, declaring another namespace now.
-        const before = recorder.calls().length;
         fs.writeFileSync(path.join(root, ".claude", m.CONFIG_NAME),
             JSON.stringify({ projectId: "proj-y", secrets: { pat: { backend: "local" } } }));
         const moved = runVerb(env, root, "set", "pat");
         assert.equal(moved.status, 1, moved.stderr);
         assert.equal(moved.stderr, `vc-secrets: secret "pat" is stored in namespace "proj-y", and the projectId changed since you trusted `
             + `this checkout: projectId is "proj-y", trusted "proj-x" -- review it, then run "vc-secrets trust" again in ${m.trustRootKey(root)}\n`);
-        assert.equal(recorder.calls().length, before);
     });
 
 test("set: repository Y claiming X's projectId is refused while X is trusted, and a record for Y's own root lifts it", POSIX_STUB_ONLY, () => {
@@ -1421,17 +1421,17 @@ test("set: repository Y claiming X's projectId is refused while X is trusted, an
     const y = namespaceRepo(NS_PAT_PROJECT);
     assert.notEqual(m.trustRootKey(x), m.trustRootKey(y));
     seedTrust(env, x);
-    assert.equal(runVerb(env, x, "set", "pat").status, 0, "X is trusted, and stores its own secret");
-    const stored = recorder.calls().length;
+    const own = runVerb(env, x, "set", "pat");
+    assert.match(own.stderr, /vc-secrets set requires an interactive terminal/, "X is trusted: its set gets past the gate to the value prompt");
 
     const refused = runVerb(env, y, "set", "pat");
     assert.equal(refused.status, 1, refused.stderr);
     assert.match(refused.stderr, /secret "pat" is stored in namespace "proj-x", which this repository declares, and this checkout is not trusted/,
         "the record is keyed by X's root, and Y cannot claim that");
-    assert.equal(recorder.calls().length, stored, "Y's set did not overwrite X's secret");
 
     seedTrust(env, y);
-    assert.equal(runVerb(env, y, "set", "pat").status, 0, "the person's own record for Y lifts it");
+    const lifted = runVerb(env, y, "set", "pat");
+    assert.match(lifted.stderr, /vc-secrets set requires an interactive terminal/, "the person's own record for Y lifts it");
 });
 
 test("trustNotes: an oauth reader's note names the entry and the namespace too", () => {

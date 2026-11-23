@@ -107,9 +107,9 @@ test("builders: no secret and no raw script in argv, timeouts per spec", () => {
     assert.ok(Buffer.from(writeEncoded, "base64").toString("utf16le").includes("InputEncoding"),
         "write script must set Console.InputEncoding to UTF-8 (non-ASCII secrets)");
 
-    const kcWrite = m.buildLocalWrite("keychain", "vc-secrets:user:ado-pat", { USER: "u" });
-    assert.equal(kcWrite.interactive, true);
-    assert.equal(kcWrite.timeoutMs, null, "interactive specs must not carry a kill timer");
+    const kcWrite = m.buildLocalWrite("keychain", "vc-secrets:user:ado-pat", { USER: "u" }, { value: "v" });
+    assert.ok(!kcWrite.interactive, "no keychain write inherits the terminal");
+    assert.equal(kcWrite.timeoutMs, m.TIMEOUT_LOCAL_MS, "a write that waits on no one carries a kill timer");
 
     const gpgWrite = m.buildLocalWrite("gpg", "vc-secrets:user:ado-pat", { HOME: "/h", VC_SECRETS_GPG_RECIPIENT: "dev@x" });
     assert.ok(gpgWrite.args.includes("--trust-model"), "explicit recipient needs trust-model always");
@@ -553,15 +553,15 @@ test("newKeyPresent: keychain exit 44 IS absence", { skip: !CAN_RUN_POSIX_STUB &
 
 // ── regressions: keystore writes, declaration validation and install-shim ─────────────────────────
 
-test("keychain write: migrate gets a non-interactive shape, set keeps the prompt", () => {
-    // With no value the prompt is right: `set` has a human at the TTY and the plaintext never passes
-    // through this process. With a value it must NOT prompt — migrate holds a value the user cannot
-    // retype, and the interactive shape asked for one anyway and stored whatever was typed as a
-    // successful migration.
+test("keychain write: the shape is always non-interactive, and a build with no value is refused", () => {
+    // `set`, migrate, login and renewal all hold the value before they write. The shape that left the
+    // value to security's own prompt is gone: that prompt cuts what is typed at 128 characters, and it
+    // reported success for the truncated entry. A build with no value must not fall into the command shape
+    // instead -- runTool composes the command only when handed a value, so security -i would read an empty
+    // stdin, exit 0, and the write would be reported as stored.
     const key = `${m.KEY_PREFIX}:demo:tok`;
-    const prompting = m.buildLocalWrite("keychain", key, { USER: "u" });
-    assert.equal(prompting.interactive, true);
-    assert.ok(!prompting.args.includes("secret-value"));
+    assert.throws(() => m.buildLocalWrite("keychain", key, { USER: "u" }),
+        /keychain write for "vc-secrets:demo:tok" needs the value/);
 
     const copying = m.buildLocalWrite("keychain", key, { USER: "u" }, { value: "secret-value" });
     assert.ok(!copying.interactive, "a copy must not wait for a human");

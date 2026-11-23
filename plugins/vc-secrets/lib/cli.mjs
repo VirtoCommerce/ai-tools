@@ -11,7 +11,7 @@ import { forTerminal } from "./util.mjs";
 import { runTool } from "./spawn.mjs";
 import { CONFIG_NAME, loadConfig } from "./config.mjs";
 import { buildLocalWrite, cmdMigrate, detectLocalBackend, keyFor, keyToPath, keystoreFilePresent, legacyKeyToPath,
-    nameFromKey, writeLocalValue } from "./keystore.mjs";
+    nameFromKey, writeSecretValue } from "./keystore.mjs";
 import { cmdTrust, cmdUntrust, isNamespaceDecl, namespaceDeclarations, namespaceTrustProblem, readTrustState,
     requireNamespaceTrust, trustAssessment, trustNotes } from "./trust.mjs";
 import { oauthEntryKeys } from "./oauth-token.mjs";
@@ -70,7 +70,9 @@ function promptHidden(question) {
     });
 }
 
-async function cmdSet(name, cfg, { trustState = null } = {}) {
+// `prompt` and `run` are the seams for a test: the value is read here on every backend, so the one thing a
+// test must not reach -- the machine's own keystore tool -- is only ever called through `run`.
+async function cmdSet(name, cfg, { trustState = null, prompt = promptHidden, run = runTool } = {}) {
     const decl = cfg.secrets[name];
     if (!decl) {
         throw new VcSecretsError(`unknown secret "${name}" -- declare it in ${CONFIG_NAME} first`);
@@ -83,16 +85,20 @@ async function cmdSet(name, cfg, { trustState = null } = {}) {
     requireNamespaceTrust(cfg, "secret", name, trustState);
     const key = keyFor(name, decl, cfg);
     const backend = detectLocalBackend();
-    const spec = buildLocalWrite(backend, key, process.env, { tmp: backend === "gpg" });
-    if (spec.interactive) {
-        await runTool(spec);                 // macOS: security prompts on the TTY; no timer
-    } else {
-        const value = await promptHidden(`value for "${name}" (hidden): `);
-        if (!value) {
-            throw new VcSecretsError("empty value -- nothing stored");
-        }
-        await writeLocalValue(backend, key, spec, value, process.env);
+    // Read here, not left to the Keychain's own prompt: that one cuts what is typed at 128 characters and
+    // still reports success, so a long token was stored truncated and refused by the service later.
+    const value = await prompt(`value for "${name}" (hidden): `);
+    if (!value) {
+        throw new VcSecretsError("empty value -- nothing stored");
     }
+    // The keychain builder keeps an argv route for a value with a line ending, because `migrate` must be able
+    // to move one it cannot retype. The prompt cannot produce one, so reaching that route here means the
+    // value would be readable in every process listing for as long as the write runs: refuse it instead.
+    if (buildLocalWrite(backend, key, process.env, { tmp: backend === "gpg", value }).argvExposesValue) {
+        throw new VcSecretsError("value contains a line ending, which the keychain can take only as a command-line argument "
+            + "that other processes can read -- nothing stored");
+    }
+    await writeSecretValue(key, value, { backend, run });
     process.stderr.write(`vc-secrets: stored "${name}" (${decl.scope}) in ${backend}\n`);
 }
 

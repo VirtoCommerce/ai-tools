@@ -304,24 +304,27 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, no
             // Each line says what ITS probe proves, which is not the same thing. The Credential
             // Manager probe writes the blob limit, so it proves `set` can store a value that large.
             // The DPAPI probe writes and reads back a value well over that limit, so it proves the
-            // file store has no ceiling a token can reach. The keychain probe proves only that the
-            // non-interactive write path works; whether the token a login produces fits under the
-            // command-line limit is answered only by storing one.
+            // file store has no ceiling a token can reach. The keychain probe proves only that the write
+            // path `set`, login and renewal share works; whether a given value fits under the
+            // command-line limit is answered only by storing it.
             if (probed === "wcm") {
                 lines.push(`OK wcm accepts a write at the size limit -- "vc-secrets set" can store a value up to ${WCM_BLOB_LIMIT} bytes`);
             } else if (probed === "dpapi") {
                 lines.push(`OK dpapi stores and reads back an ${DPAPI_PROBE_BYTES}-byte value -- login and renewal can store a token`);
             } else {
                 lines.push(`OK ${probed} accepts a write at the size limit`
-                    + " -- login and renewal can reach the store; whether the token they produce fits under"
+                    + " -- set, login and renewal can reach the store; whether the value they store fits under"
                     + " that limit is answered only by storing one");
             }
         } else if (result !== null && typeof result === "object") {
             // What the failure costs depends on the store: Credential Manager holds `set` secrets,
-            // the OAuth pair lives in DPAPI files (or the keychain), so only the others can name login.
-            const loses = probed === "wcm"
-                ? "\"vc-secrets set\" may not be able to store a value"
-                : "\"vc-secrets login\" may not be able to store a token";
+            // the OAuth pair lives in DPAPI files, and the keychain holds both, so it names both verbs.
+            let loses = "\"vc-secrets login\" may not be able to store a token";
+            if (probed === "wcm") {
+                loses = "\"vc-secrets set\" may not be able to store a value";
+            } else if (probed === "keychain") {
+                loses = "\"vc-secrets set\" and \"vc-secrets login\" may not be able to store a value";
+            }
             // Two verdicts, because they send the reader to different places. Only the first is about the
             // ceiling; the second covers a locked keychain, a sandbox, a timeout -- causes whose remedy
             // has nothing to do with size. The distinction is the probe's, made where the exit code was.
@@ -559,11 +562,11 @@ function writeProbeValue(cfg, env = process.env, backend = "keychain", namespace
     return "p".repeat(Math.max(1, SECURITY_LINE_LIMIT - overhead));
 }
 
-// macOS is the only platform whose non-interactive write differs from the one `vc-secrets set`
-// exercises: `set` types into a TTY, while login and the mid-session renewal go through
-// `security -i`. That path has no other rehearsal, so doctor rehearses it -- a throwaway entry
-// written and immediately removed. Without this the first proof that it works is a token
-// rotation in the middle of a session, which is the worst possible place to find out.
+// On macOS `set`, login and the mid-session renewal all write through `security -i`, which reads the
+// whole command from one line, so one rehearsal of that path covers the three. It has no other, so
+// doctor rehearses it -- a throwaway entry written and immediately removed. Without this the first proof
+// that it works is a token rotation in the middle of a session, which is the worst possible place to find
+// out.
 const WRITE_PROBED_BACKENDS = ["keychain", "wcm", "dpapi"];
 
 // Windows was added because that is where the ceiling is: `doctor` was silent about whether a value

@@ -18,6 +18,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   working while no access token was ever cached, and every launch and every five-minute renewal tick exchanged
   the refresh token, which rotates it each time. `login` and renewal now store the refresh and access entries
   as DPAPI-protected files, which have no size ceiling.
+- **macOS: `vc-secrets set` stores a long API token whole.** The password prompt of `security` truncates what is
+  typed at 128 characters and `set` still reported success, so a longer token was stored cut and the service
+  answered 401 later. `set` now reads the value itself, as it does on every other platform, and writes it through
+  `security -i`, which keeps it out of the command line; a value too long for that command line is refused.
 
 ### Changed
 

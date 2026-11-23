@@ -767,15 +767,17 @@ function buildLocalWrite(backend, key, env = process.env, { tmp = false, value =
     }
     if (backend === "keychain") {
         const account = keychainAccount(env);
-        // Three shapes, and the differences are load-bearing. `set`: `-w` with no value makes security
-        // prompt on the TTY, so the plaintext never passes through this process at all.
+        // The value is part of the command, so there is no build without one. The shape that left it to
+        // `security`'s own prompt is gone: that prompt cuts what is typed at 128 characters and still reports
+        // success. Falling through to the command shape instead would be worse -- runTool composes the command
+        // only when it is handed a value, so `security -i` would read an empty stdin, exit 0, and the write
+        // would be reported as stored.
         if (value === undefined) {
-            return { cmd: "security", args: ["add-generic-password", "-U", "-a", account, "-s", key, "-w"],
-                interactive: true, timeoutMs: null, captureStdout: false };
+            throw new VcSecretsError(`keychain write for "${key}" needs the value: the command security reads from stdin is built from it`);
         }
-        // `migrate`: there IS no value to type — the point is to copy one the user cannot read — and
-        // `security` takes no password on stdin. Its interactive mode takes the whole COMMAND there, which
-        // is what keeps the value out of argv and out of this machine's process list.
+        // `security` takes no password on stdin, but its interactive mode takes the whole COMMAND there, which
+        // is what keeps the value out of argv and out of this machine's process list. `set`, login, renewal
+        // and `migrate` all write this way.
         if (!/[\r\n]/.test(value)) {
             return { cmd: "security", args: ["-i"], stdinData: COMMAND_ON_STDIN,
                 stdinCommand: (v) => {
@@ -793,7 +795,8 @@ function buildLocalWrite(backend, key, env = process.env, { tmp = false, value =
 
         // A line ending cannot be quoted into that command — it ends it — so this one value takes the
         // older route and its exposure is reported rather than hidden. Refusing instead would strand the
-        // secret: migrate exists for values the user cannot retype.
+        // secret: migrate exists for values the user cannot retype. `set` refuses such a value before it
+        // gets here, since a typed one never carries a line ending.
         return { cmd: "security", args: ["add-generic-password", "-U", "-a", account, "-s", key, "-w", value],
             argvExposesValue: true, timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: false };
     }
@@ -940,9 +943,9 @@ async function writeDpapiValue(key, value, { env, run, rename, sleep }) {
     }
 }
 
-// Shared by cmdSet's non-interactive branch and cmdMigrate: runs a write `spec` built with a
-// value already in hand. gpg gets an atomic tmp-then-rename so a reader never observes a
-// partially-written or empty file; the other backends write in one shot.
+// Shared by writeSecretValue and cmdMigrate: runs a write `spec` built with a value already in hand.
+// gpg gets an atomic tmp-then-rename so a reader never observes a partially-written or empty file; the
+// other backends write in one shot.
 async function writeLocalValue(backend, key, spec, value, env = process.env, run = runTool) {
     if (backend !== "gpg") {
         try {
@@ -977,16 +980,11 @@ async function writeLocalValue(backend, key, spec, value, env = process.env, run
     }
 }
 
-// Callers must not build their own write spec for a value already in hand: for the keychain
-// backend, buildLocalWrite's `value === undefined` branch is the INTERACTIVE `security -w` one
-// cmdSet's own TTY prompt uses -- routing a renewal or a login through it does not fail, it hangs,
-// waiting for a typist that is never there. Passing `value` here is what selects buildLocalWrite's
-// non-interactive `security -i` branch instead, the same choice cmdMigrate makes at its own call
-// site for the same reason: the value is already in hand and there is nothing to prompt
-// for. This is the source's buildKeychainWrite/buildLocalWrite split, expressed here as the `value`
-// option rather than as two separate builders. The split only: the source's composeStdin also carried
-// a line-length refusal, restored in buildLocalWrite above, because this package's three-segment key
-// is longer than the source's two-segment one and eats most of the margin the source measured.
+// The write for a value already in hand, and the one `set`, login and renewal all go through. For the
+// keychain it composes the command `security -i` reads from stdin, the same choice cmdMigrate makes at its
+// own call site. The line-length refusal lives in buildLocalWrite (the source's composeStdin carried one
+// too), because this package's three-segment key is longer than the source's two-segment one and eats most
+// of the margin the source measured.
 async function writeSecretValue(key, value, { backend = detectLocalBackend(), env = process.env,
     run = runTool, rename = fs.renameSync, sleep = delay } = {}) {
     if (!value) {

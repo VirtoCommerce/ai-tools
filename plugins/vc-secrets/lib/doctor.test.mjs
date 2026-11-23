@@ -639,10 +639,13 @@ test("doctorReport: the write probe is reported in both directions, naming the b
     const ok = m.doctorReport(cfg, { ...base, platform: "darwin", oauthStatus: {},
         writeProbes: [{ backend: "keychain", result: "ok" }] });
     assert.ok(ok.some((l) => l.startsWith("OK keychain accepts")), ok.join("\n"));
+    assert.match(ok.find((l) => l.startsWith("OK keychain accepts")), /-- set, login and renewal can reach the store/,
+        "`set` writes through the path the probe rehearses, so the line names it");
     const bad = m.doctorReport(cfg, { ...base, platform: "darwin",
         writeProbes: [{ backend: "keychain", result: { oversize: false, message: "interaction required" } }] });
     const fail = bad.find((l) => l.startsWith("FAIL"));
     assert.match(fail, /login/, "the line must say what the developer loses, not just that a write failed");
+    assert.match(fail, /"vc-secrets set" and "vc-secrets login" may not be able to store a value/, "and on the keychain that includes `set`");
     // A platform where the probe does not run must stay SILENT rather than report a passing check it
     // never made -- the difference between "verified" and "not applicable". base is linux, so gpg.
     assert.equal(m.doctorReport(cfg, base)

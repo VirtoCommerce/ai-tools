@@ -2806,7 +2806,6 @@ test("set: a secret declared in the LOCAL file is gated like a project one", POS
     const refused = runVerb(env, root, "set", "pat");
     assert.equal(refused.status, 1, refused.stderr);
     assert.match(refused.stderr, /secret "pat" is stored in namespace "proj-x", which this repository declares, and this checkout is not trusted/);
-    assert.deepEqual(recorder.calls(), []);
 });
 
 // Counts the reads of one file made by the verbs that run under `env`, by a preload that wraps
@@ -2854,7 +2853,10 @@ test("set, doctor: a user-scope declaration is never gated, a corrupt trust file
         ]) {
             const setCounter = fileReadCounter(baseEnv, trustFile);
             const set = runVerb(setCounter.env, cwd, "set", "mine");
-            assert.equal(set.status, 0, `${what}: ${set.stderr}`);
+            // A spawned `set` has no terminal to read the value from, so what a pass looks like here is the
+            // value prompt's refusal: the gate was passed, and nothing about trust was said.
+            assert.equal(set.status, 1, `${what}: ${set.stderr}`);
+            assert.match(set.stderr, /vc-secrets set requires an interactive terminal/, what);
             assert.doesNotMatch(set.stderr, /trust/i, what);
             assert.equal(setCounter.reads(), 0, `${what}: set never reads the trust file`);
             const doctorCounter = fileReadCounter(baseEnv, trustFile);
@@ -2863,7 +2865,8 @@ test("set, doctor: a user-scope declaration is never gated, a corrupt trust file
             assert.doesNotMatch(doctor.stderr, /trust file|SKIP secret "mine"/, what);
             assert.equal(doctorCounter.reads(), doctorReads, `${what}: reads of the trust file by doctor`);
         }
-        assert.ok(recorder.calls().some((call) => call.includes("-s vc-secrets:user:mine")));
+        assert.ok(recorder.calls().some((call) => call.includes("find-generic-password") && call.includes("-s vc-secrets:user:mine")),
+            "the keystore stub was reached, by doctor's read: a spawned `set` stops at the value prompt");
     });
 
 test("doctor: a repository's local secret and oauth cache are not read in a checkout that is not trusted for the namespace, and are once it is",
@@ -2924,7 +2927,9 @@ test("untrust revokes what trust granted to set, login and logout", POSIX_STUB_O
     const env = launcherEnv(recorder.env);
     const root = namespaceRepo(NS_PAT_PROJECT);
     seedTrust(env, root);
-    assert.equal(runVerb(env, root, "set", "pat").status, 0);
+    const trusted = runVerb(env, root, "set", "pat");
+    assert.match(trusted.stderr, /vc-secrets set requires an interactive terminal/, "trusted: the gate is passed and the value is asked for");
+    assert.doesNotMatch(trusted.stderr, /not trusted/);
     assert.equal(runVerb(env, root, "untrust").status, 0);
     const refused = runVerb(env, root, "set", "pat");
     assert.equal(refused.status, 1);

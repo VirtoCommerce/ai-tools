@@ -63,7 +63,7 @@ but a command you type by hand does not:
 
 | Verb | |
 |---|---|
-| `set <name>` | Store one secret. Hidden prompt; the value never appears in argv. Only works for a name already declared as a `local`-backend secret — it refuses an unknown one, a `keyvault` one (set that in the vault itself), and a repository's `local` secret until [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. |
+| `set <name>` | Store one secret. Hidden prompt on every platform, read by `vc-secrets` itself; the value never appears in argv. On macOS it is written with `security -i`, so a value too long for one command line (4095 bytes for the whole command, account and key included) is refused instead of stored cut. Only works for a name already declared as a `local`-backend secret — it refuses an unknown one, a `keyvault` one (set that in the vault itself), and a repository's `local` secret until [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. |
 | `login <name>` | Sign in to the `oauth` entry `<name>` in a browser and store its token. Refuses an entry a repository declares until your user file acknowledges its app registration and [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. |
 | `logout <name>` | Delete the stored token for that entry, and print which entries were removed and how many were already absent. Refuses an entry a repository declares until [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. A `login` still waiting on its browser tab can finish afterwards and store a token again — close that tab. |
 | `run <server>` | Resolve and run that server on stdio, staying as its parent. This is what an MCP entry calls. |
