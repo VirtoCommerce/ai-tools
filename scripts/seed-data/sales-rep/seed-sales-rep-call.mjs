@@ -2,7 +2,7 @@
 /**
  * seed-sales-rep-call.mjs — VCST-6256 "Call a customer" fixtures (vc-module-sales-rep PR #37).
  *
- * Provisions the dedicated rep SR_REP_CALL and the eleven AGENT-TEST-SR-Call-NN orgs it ALONE serves,
+ * Provisions the dedicated rep SR_REP_CALL and the twelve AGENT-TEST-SR-Call-NN orgs it ALONE serves,
  * each with the contacts / org phones / default-address phone its variant needs. The shape and the
  * expected phone list per org live in sales-rep-call-specs.mjs (single source of truth); this file
  * only resolves, creates, heals and verifies.
