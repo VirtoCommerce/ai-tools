@@ -12143,8 +12143,8 @@
     "variant": "V6",
     "name": "AGENT-TEST-SR-Call-06-Extension",
     "expected_phone_count": "1",
-    "expected_default_href": "tel:+1555040506045",
-    "expected_hrefs": "tel:+1555040506045",
+    "expected_default_href": "tel:+15550405060,45",
+    "expected_hrefs": "tel:+15550405060,45",
     "expected_labels": "AGENT-TEST-SR-Call-06-Owner",
     "expected_primary_contact": "AGENT-TEST-SR-Call-06-Owner",
     "id": "",
@@ -12152,7 +12152,7 @@
     "primary_contact_id": "",
     "contact_V6C": "",
     "default_href": "",
-    "_notes": "VCST-6256 V6. EXTENSION: owner phone \"+1-555-040-5060 x45\". Stored text is shown as-is; the href is the normalized digits, which FOLDS the extension into the dial string (tel:+1555040506045). expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+    "_notes": "VCST-6256 V6. EXTENSION: owner phone \"+1-555-040-5060 x45\". Stored text is shown as-is; the href dials the extension after a pause (tel:+15550405060,45) — VCST-6794; before it the digits were glued (tel:+1555040506045). expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
   },
   "ORG_SR_CALL_ADDR": {
     "_inline": true,

@@ -9,7 +9,7 @@
  *                              granting sales-rep member of that org; else null  (SalesRepPrimaryContactResolver)
  *           `address`        = the org's default address (its `phone` field)
  *   client  buildCustomerPhones(): candidates = primaryContact.phones (label = contact fullName),
- *           then `phone`, then `address.phone` (label = org name); normalized to digits + leading '+',
+ *           then `phone`, then `address.phone` (label = org name); normalized to digits + leading '+' (a trailing extension after a comma),
  *           empties dropped, first occurrence wins; the first entry is the default number.
  *
  * Every variant exists because it makes a WRONG implementation observable (SECOND RULE):
@@ -23,8 +23,8 @@
  *   04 OWNERLESS  no owner; contacts = SR_REP_CALL's contact (older, phone +1-555-090-0001) and a
  *                 non-rep contact created later (+1-555-041-0002) -> primaryContact must be the NON-rep
  *   05 NONE       owner contact with no phones, no org/address phone -> 0 numbers, contact still shown
- *   06 EXT        "+1-555-040-5060 x45" -> stored text kept; href = normalized digits (the product folds
- *                 the extension into the dial string: tel:+1555040506045 — see EXT note in the report)
+ *   06 EXT        "+1-555-040-5060 x45" -> stored text kept; href dials the extension after a pause:
+ *                 tel:+15550405060,45 (VCST-6794; before it the digits were glued: tel:+1555040506045)
  *   07 ADDR       contact +1-555-050-6070, address +1-555-050-6071 -> 2 numbers, 2nd labelled ORG name
  *   08 ORGADDR    owner without phones; org "+1 (555) 080-9010", address "+1-555-080-9010" -> `phone`
  *                 falls back to the org number and collapses with the address: 1 number, ORG label
@@ -86,11 +86,18 @@ export const CALL_ORGS = [
     contacts: [{ key: 'P2C', fullName: `${CALL_PREFIX}11-Owner`, phones: ['+1-555-110-1100'], owner: true }] },
 ];
 
-/** Same rule as the storefront's normalizePhone(): digits + a leading '+' when the text starts with one. */
+/** `x45`, `ext. 45`, `#45` at the end of a number (vc-module-sales-rep phones.ts, VCST-6794). */
+const EXTENSION = /(?:#|ext(?:ension)?\.?|x)[\s:]*(\d+)$/i;
+
+/** Same rule as the storefront's normalizePhone(): digits + a leading '+', then `,<ext>` (a dialer pause). */
 export function normalizePhone(value) {
   const trimmed = String(value ?? '').trim();
-  const digits = trimmed.replace(/\D/g, '');
-  return digits && trimmed.startsWith('+') ? `+${digits}` : digits;
+  const extension = EXTENSION.exec(trimmed);
+  const main = extension ? trimmed.slice(0, extension.index) : trimmed;
+  const digits = main.replace(/\D/g, '');
+  if (!digits) return '';
+  const number = main.startsWith('+') ? `+${digits}` : digits;
+  return extension ? `${number},${extension[1]}` : number;
 }
 
 /** The primary contact the server should resolve for a spec org (null = none). Pure. */
