@@ -841,7 +841,8 @@ function buildLocalDelete(backend, key, env = process.env) {
 // One meaning of "already absent" for logout to check, assembled here because each backend
 // signals it differently: the PowerShell branch exits 3 by construction, security(1) answers 44,
 // and gpg entries are files whose absence is a path error (isAbsentPathError) rather than any exit
-// code at all -- the same test gpgEntryPresent applies, so logout and a presence check agree.
+// code at all -- the same test gpgEntryPresent applies, so logout and a presence check agree. A dpapi
+// entry is absent only when both its file and its legacy Credential Manager entry were.
 function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run = runTool, rm = fs.rmSync } = {}) {
     // The wcm delete a dpapi entry also owes: the pair may still sit in Credential Manager from before the
     // file store, and a logout that left it would let the next launch read the old token back.
@@ -849,6 +850,18 @@ function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run 
 
     return async (key) => {
         if (backend === "dpapi") {
+            // The legacy entry first. The file decides which store a launch reads, so it is the last thing to
+            // go: a Credential Manager delete that fails leaves the file in place and the logout retryable,
+            // where file-first would leave the legacy pair as the store the next launch falls back to.
+            let legacyAbsent = false;
+            try {
+                await legacyDelete(key);
+            } catch (e) {
+                if (e.toolExitCode !== 3) {
+                    throw e;
+                }
+                legacyAbsent = true;
+            }
             const file = dpapiKeyToPath(key, env);
             let fileAbsent = false;
             try {
@@ -858,15 +871,6 @@ function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run 
                     throw new VcSecretsError(`could not remove "${key}": ${e.code ?? e.message}`);
                 }
                 fileAbsent = true;
-            }
-            let legacyAbsent = false;
-            try {
-                await legacyDelete(key);
-            } catch (e) {
-                if (e.toolExitCode !== 3) {
-                    throw e;
-                }
-                legacyAbsent = true;
             }
             if (fileAbsent && legacyAbsent) {
                 throw Object.assign(new VcSecretsError(`no stored entry "${key}"`), { toolExitCode: 3 });

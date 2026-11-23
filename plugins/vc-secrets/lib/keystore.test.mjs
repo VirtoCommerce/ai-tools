@@ -801,7 +801,7 @@ test("PS_DPAPI_PROTECT: CurrentUser scope, the key as entropy, the value on stdi
     // A DPAPI failure is exit 1 naming the code. A script that swallowed it would hand node an empty
     // blob to write over a previously valid entry.
     assert.ok(script.includes("CryptProtectData failed win32err="), "the failure names the win32 code");
-    assert.match(script, /exit 1/);
+    assert.match(script, /CryptProtectData failed win32err="\+\$ex\.NativeErrorCode\); exit 1 \}/);
 
     const spec = m.buildDpapiProtect(key, {});
     assert.deepEqual(spec.extraEnv, { VC_SECRETS_NAME: key });
@@ -984,8 +984,12 @@ test("writeSecretValue: a dpapi value over the Credential Manager ceiling is sto
     const { env } = dpapiTmpEnv("vc-secrets-dpapi-large-");
     const value = "x".repeat(2907);
     assert.ok(value.length > m.WCM_BLOB_LIMIT);
-    await m.writeSecretValue(DPAPI_KEY, value, { backend: "dpapi", env, run: fakeProtect("CIPHER") });
+    const calls = [];
+    await m.writeSecretValue(DPAPI_KEY, value, { backend: "dpapi", env, run: fakeProtect("CIPHER", calls) });
 
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].opts.stdinValue.length, 2907, "the whole value reached the protect run");
+    assert.equal(calls[0].opts.stdinValue, value);
     assert.equal(fs.readFileSync(m.dpapiKeyToPath(DPAPI_KEY, env), "utf8"), "CIPHER");
 });
 
@@ -1072,4 +1076,18 @@ test("deleteEntryIo: dpapi does not treat an unremovable file or a Credential Ma
     const failing = async () => { throw Object.assign(new m.VcSecretsError("powershell.exe exited 1: CredDelete failed win32err=5"), { toolExitCode: 1 }); };
     await assert.rejects(() => m.deleteEntryIo("dpapi", env, { run: failing })(DPAPI_KEY),
         (e) => e.toolExitCode === 1);
+});
+
+test("deleteEntryIo: dpapi leaves the file in place when the Credential Manager delete fails", async () => {
+    // The file decides the store. Removing it first would leave the legacy pair as the store the next launch
+    // falls back to, so a failed Credential Manager delete would bring a logged-out token back.
+    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-order-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "BLOB");
+    const failing = async () => { throw Object.assign(new m.VcSecretsError("powershell.exe exited 1: CredDelete failed win32err=5"), { toolExitCode: 1 }); };
+    await assert.rejects(() => m.deleteEntryIo("dpapi", env, { run: failing })(DPAPI_KEY),
+        (e) => e.toolExitCode === 1);
+
+    assert.equal(fs.readFileSync(target, "utf8"), "BLOB");
 });
