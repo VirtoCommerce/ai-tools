@@ -12667,6 +12667,7 @@
     "combo": "SB-WL-02",
     "buyer": "PERSONAL_NON_ORG_USER",
     "_comment": "VCST-6571 AC-12 / B9 (REUSED): a personal B2B-store buyer with no organization — sign in with @td(PERSONAL_NON_ORG_USER.email). On B2B-store the STORE-level white-labeling still applies to this buyer, so 'theme logo and palette shown' needs a store without store-level white-labeling, which vcst cannot serve (one storefront host, bound to B2B-store): a case either disables B2B-store's store white-labeling (isEnabled=false) as its own step and restores it in Cleanup, or stays BLOCKED."
+  },
   "PROD_VAR_ONE_ENTRY": {
     "file": "compare/compare-products",
     "filter": {

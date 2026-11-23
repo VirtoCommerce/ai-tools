@@ -24,6 +24,7 @@
  *   delete  DELETE /api/assets?urls=<folder url> — recursive; the parent listing lags a few seconds
  *   content GET …/grouped/{id}/content?includeVersion=true → {content,eTag}; POST with If-Match
  */
+import "../../lib/sync-stdio.mjs";
 import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, STORE_ID, BACK_URL, ADMIN, ADMIN_PASSWORD,
   uploadAsset, writeEnvAliasOverride, verifyRemoved,

@@ -10,6 +10,7 @@
  * runtime GUID leaks into the committed declarations, or when the declared theme no longer builds into files
  * that keep the storefront's built-in rules.
  */
+import "../../lib/sync-stdio.mjs";
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

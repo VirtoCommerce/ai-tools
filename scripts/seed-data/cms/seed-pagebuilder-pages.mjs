@@ -28,6 +28,7 @@
  * Flags: --dry-run, --verbose, --teardown, --only <ALIAS[,ALIAS]> (e.g. PB_GA4_PRODUCT_LISTS,PB_GA4_HTML_LISTS).
  */
 
+import "../../lib/sync-stdio.mjs";
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {

@@ -20,6 +20,7 @@
  *   TEST_ENV=vcst npm run seed:pb-legacy-permalinks:teardown
  */
 
+import "../../lib/sync-stdio.mjs";
 import { randomUUID } from 'node:crypto';
 import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, ONLY, loadAliases, BACK_URL, ADMIN, ADMIN_PASSWORD,

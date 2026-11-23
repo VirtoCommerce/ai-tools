@@ -32,6 +32,7 @@
  * Flags: --dry-run, --verbose, --teardown, --verify.
  */
 
+import "../../lib/sync-stdio.mjs";
 import { readFileSync, existsSync } from 'node:fs';
 import { passwordFor, accountSet } from '../../lib/user-provision.mjs';
 import { join } from 'node:path';

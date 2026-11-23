@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-11-23",
-    "totalSuites": 185,
+    "totalSuites": 187,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -4643,6 +4643,9 @@
       "customerApplicability": "reference",
       "notes": "VCST-6571. Ports of Page Builder suite 059 to Site Builder (/api/site-builder-pages, /apps/site-builder-shell). Pages are created by each case (AGENT-TEST- prefix). Toast/label/banner wording is {HYPOTHESIS} until observed on a Site Builder stand; designer/clone rows need the flag-on storefront.",
       "clickDriven": true
+    },
+    {
+      "id": "123c",
       "exclusiveGroup": "store-setting:ProductComparison",
       "name": "Product Comparison - Admin store settings",
       "file": "regression/suites/Backend/catalog/123-product-compare-admin.csv",
