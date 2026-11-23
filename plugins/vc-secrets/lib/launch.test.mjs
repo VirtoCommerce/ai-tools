@@ -637,8 +637,27 @@ test("cmdLaunch off win32 never makes the bind call", async () => {
 
 const D1_ENV = { VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-no-such-powershell" };
 
+// A store root of the launch's own: the oauth pair is read from <name>.dpapi files under it, so a launch test
+// that did not name one would look for them in the developer's real profile.
+function d1Env(extra = {}) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-d1-store-"));
+    tmpDirs.push(dir);
+
+    return { ...D1_ENV, XDG_CONFIG_HOME: dir, ...extra };
+}
+
+// A dpapi file as the doubles below read it: its bytes ARE the plaintext, the "ciphertext" of the double.
+function putDpapiFile(env, key, text) {
+    const file = m.dpapiKeyToPath(key, env);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, Buffer.from(text, "utf8"));
+}
+
+// What PS_CRED_READ_MANY answers for the blobs it was sent, against the double's "ciphertext".
+const decryptBlobs = (blobs) => Object.fromEntries([...blobs].map(([key, blob]) => [key, { ok: credHex(blob.toString("utf8")) }]));
+
 // Everything the launch is given besides the configuration, and what it did with it.
-async function launchD1(cfg, { credReadMany, run, deps = {}, env = D1_ENV } = {}) {
+async function launchD1(cfg, { credReadMany, run, deps = {}, env = d1Env() } = {}) {
     const seen = { childEnv: null, pushed: [], exchanged: [], locks: 0, bound: [] };
     const handle = await withProcessEnv(env, () => m.cmdLaunch("servers", "s", cfg, {
         bindPlatform: "win32",
@@ -767,7 +786,7 @@ test("cmdLaunch on win32: refresh absent in the batch is absent whatever the acc
 test("cmdLaunch on win32: a refresh read that failed in the batch says what the single read says", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, async (t) => {
     const stderr = captureStderr(t);
     const fx = d1Config({ secretName: null });
-    const env = { VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-ps-d1-stub" };
+    const env = d1Env({ VC_SECRETS_POWERSHELL: "vc-ps-d1-stub" });
     const stub = "#!/bin/sh\nprintf 'CredRead failed win32err=5' >&2\nexit 1\n";
     let single = null;
     await withStubOnPath("vc-ps-d1-stub", stub, () => withProcessEnv(env, async () => {
@@ -873,16 +892,129 @@ test("cmdLaunch on win32: an invalid VC_SECRETS_LOCAL_BACKEND asks the batch for
     assert.deepEqual(calls, [[]], "the bind still ran, with no key to read");
 });
 
-test("cmdLaunch on win32: oauth keys are batched only when the oauth entry will be read from Credential Manager", async () => {
-    // The environment says wcm; the backend handed to oauthLaunchDeps says keychain, and that one wins.
+test("cmdLaunch on win32: oauth keys are batched only when the oauth entry is read from the dpapi store", async () => {
+    // The environment says wcm, which oauthBackend maps to dpapi; a backend handed to the launch wins, and
+    // keychain and gpg entries are not PowerShell's to read.
     const fx = d1Config({ secretName: null });
+    for (const backend of ["keychain", "gpg"]) {
+        const calls = [];
+        const { handle } = await launchD1(fx.cfg, {
+            credReadMany: async (request) => { calls.push({ keys: request.keys, blobs: request.blobs }); return { job: "ok", creds: {} }; },
+            deps: { backend, readCache: async () => ({ state: "valid", accessToken: "cached" }) },
+        });
+        await handle.dispose();
+        assert.deepEqual(calls, [{ keys: [], blobs: new Map() }], backend);
+    }
+
     const calls = [];
     const { handle } = await launchD1(fx.cfg, {
         credReadMany: async (request) => { calls.push(request.keys); return { job: "ok", creds: {} }; },
-        deps: { backend: "keychain", readCache: async () => ({ state: "valid", accessToken: "cached" }) },
+        deps: { readCache: async () => ({ state: "valid", accessToken: "cached" }) },
     });
     await handle.dispose();
-    assert.deepEqual(calls, [[]]);
+    assert.deepEqual(calls, [[fx.keys.refresh, fx.keys.access]], "the environment's wcm is dpapi for the oauth pair: its legacy keys ride along");
+});
+
+test("cmdLaunch: one PowerShell call carries the secret, the legacy pair and the dpapi blobs", async () => {
+    const fx = d1Config();
+    const env = d1Env();
+    putDpapiFile(env, fx.keys.refresh, fx.refreshBlob("r1"));
+    putDpapiFile(env, fx.keys.access, fx.accessBlob("a-file"));
+    const reads = [];
+    const { handle, seen } = await launchD1(fx.cfg, { env,
+        run: d1LiveRun({}, reads),
+        deps: { backend: "dpapi" },
+        credReadMany: async (request) => ({ job: "ok", dpapi: decryptBlobs(request.blobs), creds: {
+            [fx.secretKey("pat")]: { ok: credHex("the-pat") },
+            [fx.keys.refresh]: { err: 1168 },
+            [fx.keys.access]: { err: 1168 } } }),
+    });
+    try {
+        assert.equal(seen.bound.length, 1, "one PowerShell call for the whole launch");
+        assert.deepEqual(seen.bound[0].keys, [fx.secretKey("pat"), fx.keys.refresh, fx.keys.access],
+            "the secret, then the oauth pair's Credential Manager entries of an earlier version");
+        assert.deepEqual([...seen.bound[0].blobs.keys()], [fx.keys.refresh, fx.keys.access], "and the pair's files, decrypted in the same call");
+        assert.deepEqual(reads, [], "no per-name read afterwards");
+        assert.equal(seen.childEnv.ADO_TOKEN, "a-file");
+        assert.equal(seen.childEnv.PAT, "the-pat");
+        assert.deepEqual(seen.exchanged, [], "a valid batched access token is not exchanged");
+    } finally {
+        await handle.dispose();
+    }
+});
+
+test("cmdLaunch: a launch whose refresh file exists is answered from the batch with no further reads", async () => {
+    // The refresh file decides the store: a legacy pair still sitting in Credential Manager, read in the
+    // same call, is not what the launch serves.
+    const fx = d1Config({ secretName: null });
+    const env = d1Env();
+    putDpapiFile(env, fx.keys.refresh, fx.refreshBlob("r-file"));
+    putDpapiFile(env, fx.keys.access, fx.accessBlob("a-file"));
+    const reads = [];
+    const { handle, seen } = await launchD1(fx.cfg, { env,
+        run: d1LiveRun({}, reads),
+        deps: { backend: "dpapi" },
+        credReadMany: async (request) => ({ job: "ok", dpapi: decryptBlobs(request.blobs), creds: {
+            [fx.keys.refresh]: { ok: credHex(fx.refreshBlob("r-legacy")) },
+            [fx.keys.access]: { ok: credHex(fx.accessBlob("a-legacy")) } } }),
+    });
+    try {
+        assert.equal(seen.bound.length, 1);
+        assert.deepEqual(reads, [], "neither a Credential Manager read nor a decrypt of its own");
+        assert.equal(seen.childEnv.ADO_TOKEN, "a-file");
+        assert.deepEqual(seen.exchanged, []);
+    } finally {
+        await handle.dispose();
+    }
+});
+
+test("cmdLaunch: a dpapi entry the batch could not decrypt for a non-DPAPI reason is decrypted singly", async () => {
+    const fx = d1Config({ secretName: null });
+    const env = d1Env();
+    putDpapiFile(env, fx.keys.refresh, fx.refreshBlob("r-file"));
+    putDpapiFile(env, fx.keys.access, fx.accessBlob("a-file"));
+    const singles = [];
+    const run = async (spec, opts) => {
+        const input = JSON.parse(opts.stdinValue);
+        singles.push(Object.keys(input));
+
+        return JSON.stringify(decryptBlobs(new Map(Object.entries(input).map(([key, b64]) => [key, Buffer.from(b64, "base64")]))));
+    };
+    const { handle, seen } = await launchD1(fx.cfg, { env, run, deps: { backend: "dpapi" },
+        credReadMany: async (request) => ({ job: "ok", creds: {},
+            dpapi: { ...decryptBlobs(request.blobs), [fx.keys.refresh]: { err: -1 } } }) });
+    try {
+        assert.deepEqual(singles, [[fx.keys.refresh]], "only the entry the batch could not account for goes to a decrypt of its own");
+        assert.equal(seen.childEnv.ADO_TOKEN, "a-file");
+    } finally {
+        await handle.dispose();
+    }
+});
+
+test("cmdLaunch: a batch that fails as a whole with dpapi blobs attached falls back to single reads", async (t) => {
+    const stderr = captureStderr(t);
+    const fx = d1Config({ secretName: null });
+    const env = d1Env();
+    putDpapiFile(env, fx.keys.refresh, fx.refreshBlob("r-file"));
+    putDpapiFile(env, fx.keys.access, fx.accessBlob("a-file"));
+    const spawns = [];
+    const run = async (spec, opts) => {
+        spawns.push(opts?.stdinValue === undefined ? spec.extraEnv?.VC_SECRETS_NAME : "unprotect");
+        const input = JSON.parse(opts.stdinValue);
+
+        return JSON.stringify(decryptBlobs(new Map(Object.entries(input).map(([key, b64]) => [key, Buffer.from(b64, "base64")]))));
+    };
+    const { handle, seen } = await launchD1(fx.cfg, { env, run, deps: { backend: "dpapi" },
+        credReadMany: async () => { throw new m.VcSecretsError("powershell.exe exited 1: nope"); } });
+    try {
+        assert.equal(seen.bound.length, 1);
+        assert.deepEqual(spawns, ["unprotect"], "the batch seeded nothing, so the files were read and decrypted singly, once");
+        assert.equal(seen.childEnv.ADO_TOKEN, "a-file");
+        assert.equal(stderr.length, 1);
+        assert.match(stderr[0], /could not bind the launch's process tree .*\(powershell\.exe exited 1: nope\)/);
+    } finally {
+        await handle.dispose();
+    }
 });
 
 test("cmdLaunch on win32: an oauth entry's outcome never becomes a secret's value, even when the two share a name", async () => {

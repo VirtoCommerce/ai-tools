@@ -287,190 +287,13 @@ $b=New-Object byte[] $n
 [Console]::Out.Write((($b | ForEach-Object { $_.ToString("x2") }) -join ''))
 `;
 
-// Everything a Windows launch needs from PowerShell, in ONE process: every Credential Manager name the
-// launch reads, and the job object that binds the launch's process tree to the launcher.
-//
-// One process because each one costs a powershell.exe start and an Add-Type compile -- the bulk of a wcm
-// read -- and the launch used to pay that once per name, sequentially. The read half is PS_CRED_READ's,
-// per name: the same CredRead declaration, the same blob copied out as hex, which decodeCredBlobHex
-// turns back into the value. What changes is the reporting: a failed CredRead is reported as its raw
-// win32 code instead of an exit status, and readWcmBatch applies PS_CRED_READ's rule to it -- 1168
-// (ERROR_NOT_FOUND) alone is "absent", every other code an unreadable store. Names arrive as a JSON
-// array of keystore keys in VC_SECRETS_NAMES; an empty array is the bind alone. The output is one JSON
-// object, {"creds":{"<key>":{"ok":"<hex>"}|{"err":<win32 code>}},"job":"ok"|<win32 code>}, built by hand
-// rather than with ConvertTo-Json: every key has passed assertKeyShape ([a-z0-9:-]) and every value is
-// hex or an integer, so nothing in it needs escaping.
-//
-// The bind, and why it exists. An MCP client stops a server with child.kill(), which on Windows is
-// TerminateProcess: no handler in the launcher runs. libuv puts the launcher's DIRECT children in a
-// kill-on-close job of its own, but one that lets their descendants slip out of it silently (libuv
-// src/win/process.c, uv__init_global_job_handle), so the processes that hold the secrets -- `npx.cmd`
-// -> cmd.exe -> node, the server -- outlive a launcher killed that way. A job created WITHOUT any
-// breakaway permission, holding the launcher, catches every process created after the assignment: with
-// nested jobs a process escapes only up to the first job that forbids it, and libuv never asks to
-// escape at all (it does not pass CREATE_BREAKAWAY_FROM_JOB). KILL_ON_JOB_CLOSE then ends that whole
-// tree when the job's last handle closes -- and the only handle left is the one duplicated into the
-// launcher, so any end of the launcher, a TerminateProcess included, ends its tree. The duplicate is not
-// inheritable: a child holding one would keep the job open after the launcher died.
-//
-// THE ORDER IS LOAD-BEARING: the handle is duplicated into the launcher BEFORE the launcher is assigned.
-// Assigned first, a failed duplicate would leave this PowerShell process the job's only holder, and its
-// exit -- moments later -- would close the job and KILL_ON_JOB_CLOSE would kill the launcher. Duplicated
-// first, a failed duplicate leaves an empty job that dies harmlessly with this process, and a failed
-// assignment after a good duplicate leaves the launcher holding a handle to a job it is not in, which
-// costs nothing. Either failure is reported as its win32 code and the launch goes on unbound.
-//
-// The reads run before the bind, so a read that throws ends the script before any bind was attempted
-// and the caller's "could not bind" is true. The pid comes from VC_SECRETS_LAUNCHER_PID. The names are
-// parsed into a variable and enumerated with foreach, not wrapped in @(...): Windows PowerShell 5.1
-// emits a parsed array as ONE pipeline object, which @() would wrap into an array holding the array.
-const PS_CRED_READ_MANY = `
-$ErrorActionPreference='Stop'
-[Console]::OutputEncoding=[System.Text.Encoding]::UTF8
-Add-Type -TypeDefinition @'
-using System; using System.Runtime.InteropServices;
-public static class CredManLaunch {
-  [DllImport("advapi32", CharSet=CharSet.Unicode, SetLastError=true)]
-  public static extern bool CredRead(string target, int type, int flags, out IntPtr cred);
-  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
-  public struct CREDENTIAL { public int Flags; public int Type; public string TargetName; public string Comment;
-    public long LastWritten; public int CredentialBlobSize; public IntPtr CredentialBlob; public int Persist;
-    public int AttributeCount; public IntPtr Attributes; public string TargetAlias; public string UserName; }
-  [StructLayout(LayoutKind.Sequential)]
-  public struct JOBOBJECT_BASIC_LIMIT_INFORMATION { public long PerProcessUserTimeLimit; public long PerJobUserTimeLimit;
-    public int LimitFlags; public UIntPtr MinimumWorkingSetSize; public UIntPtr MaximumWorkingSetSize; public int ActiveProcessLimit;
-    public UIntPtr Affinity; public int PriorityClass; public int SchedulingClass; }
-  [StructLayout(LayoutKind.Sequential)]
-  public struct IO_COUNTERS { public ulong ReadOperationCount; public ulong WriteOperationCount; public ulong OtherOperationCount;
-    public ulong ReadTransferCount; public ulong WriteTransferCount; public ulong OtherTransferCount; }
-  [StructLayout(LayoutKind.Sequential)]
-  public struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION { public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
-    public IO_COUNTERS IoInfo; public UIntPtr ProcessMemoryLimit; public UIntPtr JobMemoryLimit;
-    public UIntPtr PeakProcessMemoryUsed; public UIntPtr PeakJobMemoryUsed; }
-  [DllImport("kernel32", CharSet=CharSet.Unicode, SetLastError=true)]
-  static extern IntPtr CreateJobObject(IntPtr attributes, string name);
-  [DllImport("kernel32", SetLastError=true)]
-  static extern bool SetInformationJobObject(IntPtr job, int infoClass, ref JOBOBJECT_EXTENDED_LIMIT_INFORMATION info, int size);
-  [DllImport("kernel32", SetLastError=true)]
-  static extern IntPtr OpenProcess(int access, bool inherit, int pid);
-  [DllImport("kernel32")]
-  static extern IntPtr GetCurrentProcess();
-  [DllImport("kernel32", SetLastError=true)]
-  static extern bool DuplicateHandle(IntPtr sourceProcess, IntPtr source, IntPtr targetProcess, out IntPtr target,
-    int access, bool inherit, int options);
-  [DllImport("kernel32", SetLastError=true)]
-  static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
-  [DllImport("kernel32", SetLastError=true)]
-  static extern bool CloseHandle(IntPtr handle);
-  const int JobObjectExtendedLimitInformation = 9;
-  const int JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000;
-  const int PROCESS_TERMINATE = 0x0001, PROCESS_DUP_HANDLE = 0x0040, PROCESS_SET_QUOTA = 0x0100;
-  const int DUPLICATE_SAME_ACCESS = 0x2;
-  static int LastError() { int e = Marshal.GetLastWin32Error(); return e == 0 ? -1 : e; }
-  public static int Bind(int pid) {
-    IntPtr job = CreateJobObject(IntPtr.Zero, null);
-    if (job == IntPtr.Zero) { return LastError(); }
-    try {
-      JOBOBJECT_EXTENDED_LIMIT_INFORMATION info = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION();
-      info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-      if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation, ref info, Marshal.SizeOf(info))) { return LastError(); }
-      IntPtr launcher = OpenProcess(PROCESS_DUP_HANDLE | PROCESS_SET_QUOTA | PROCESS_TERMINATE, false, pid);
-      if (launcher == IntPtr.Zero) { return LastError(); }
-      try {
-        IntPtr held;
-        if (!DuplicateHandle(GetCurrentProcess(), job, launcher, out held, 0, false, DUPLICATE_SAME_ACCESS)) { return LastError(); }
-        if (!AssignProcessToJobObject(job, launcher)) { return LastError(); }
-        return 0;
-      } finally { CloseHandle(launcher); }
-    } finally { CloseHandle(job); }
-  }
-}
-'@
-$out=New-Object System.Text.StringBuilder
-[void]$out.Append('{"creds":{')
-$sep=''
-$names=ConvertFrom-Json $env:VC_SECRETS_NAMES
-foreach($k in $names){
-  [void]$out.Append($sep+'"'+$k+'":'); $sep=','
-  $ptr=[IntPtr]::Zero
-  if(-not [CredManLaunch]::CredRead($k,1,0,[ref]$ptr)){
-    $e=[System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
-    [void]$out.Append('{"err":'+$e+'}'); continue
-  }
-  $c=[System.Runtime.InteropServices.Marshal]::PtrToStructure($ptr,[type][CredManLaunch+CREDENTIAL])
-  $n=$c.CredentialBlobSize
-  $b=New-Object byte[] $n
-  [System.Runtime.InteropServices.Marshal]::Copy($c.CredentialBlob,$b,0,$n)
-  [void]$out.Append('{"ok":"'+(($b | ForEach-Object { $_.ToString("x2") }) -join '')+'"}')
-}
-$j=[CredManLaunch]::Bind([int]$env:VC_SECRETS_LAUNCHER_PID)
-[void]$out.Append('},"job":'+$(if($j -eq 0){'"ok"'}else{$j})+'}')
-[Console]::Out.Write($out.ToString())
-`;
-
-// 1168 is ERROR_NOT_FOUND, and ONLY that may read as "already absent". Exiting 3 for every
-// failure would let logout report success while the refresh token is still in the store —
-// the single outcome logout exists to prevent.
-const PS_CRED_DELETE = `
-$ErrorActionPreference='Stop'
-Add-Type -TypeDefinition @'
-using System; using System.Runtime.InteropServices;
-public static class CredManDel {
-  [DllImport("advapi32", CharSet=CharSet.Unicode, SetLastError=true)]
-  public static extern bool CredDelete(string target, int type, int flags);
-}
-'@
-if(-not [CredManDel]::CredDelete("$env:VC_SECRETS_NAME",1,0)){
-  $e=[System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
-  if($e -eq 1168){ exit 3 }
-  [Console]::Error.Write("CredDelete failed win32err=$e"); exit 1
-}
-`;
-
-// No TrimEnd on the value, and that is the opposite of what runTool does when it READS. The two are
-// not inconsistent: `security -w` and the PowerShell reader append a line ending of their own, so
-// stripping one on the way out removes the tool's artifact. Nothing appends anything on the way in
-// -- runTool writes `child.stdin.write(stdinValue)` and ReadToEnd returns exactly those bytes -- so
-// a TrimEnd here deleted the CALLER's, and every one of them rather than a single line ending.
-//
-// Reachable through cmdMigrate, the one caller whose value can legitimately end in a newline: the
-// other two write paths are a token's JSON and a secret typed at a prompt, where Enter is the
-// terminator. Migrate exists to move a value the user CANNOT retype, which is why its gpg read opts
-// out of the same strip with keepTrailingNewline -- Windows was quietly doing what that opt-out was
-// added to prevent.
-const PS_CRED_WRITE = `
-$ErrorActionPreference='Stop'
-[Console]::InputEncoding=[System.Text.Encoding]::UTF8
-$value=[Console]::In.ReadToEnd()
-Add-Type -TypeDefinition @'
-using System; using System.Runtime.InteropServices;
-public static class CredManW {
-  [DllImport("advapi32", CharSet=CharSet.Unicode, SetLastError=true)]
-  public static extern bool CredWrite(ref CREDENTIAL cred, int flags);
-  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
-  public struct CREDENTIAL { public int Flags; public int Type; public string TargetName; public string Comment;
-    public long LastWritten; public int CredentialBlobSize; public IntPtr CredentialBlob; public int Persist;
-    public int AttributeCount; public IntPtr Attributes; public string TargetAlias; public string UserName; }
-}
-'@
-$bytes=[System.Text.Encoding]::UTF8.GetBytes($value)
-$blob=[System.Runtime.InteropServices.Marshal]::AllocCoTaskMem($bytes.Length)
-[System.Runtime.InteropServices.Marshal]::Copy($bytes,0,$blob,$bytes.Length)
-$c=New-Object CredManW+CREDENTIAL
-$c.Type=1; $c.TargetName="$env:VC_SECRETS_NAME"; $c.UserName=$env:USERNAME; $c.Persist=2
-$c.CredentialBlob=$blob; $c.CredentialBlobSize=$bytes.Length
-if(-not [CredManW]::CredWrite([ref]$c,0)){
-  $e=[System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
-  if($e -eq 1783){ [Console]::Error.Write("value too large for Credential Manager ($($bytes.Length) bytes; limit ${WCM_BLOB_LIMIT})"); exit 4 }
-  [Console]::Error.Write("CredWrite failed win32err=$e"); exit 3
-}
-`;
-
-// The DPAPI half of the OAuth store, as C# source for Add-Type. Two scripts below and the launch's batched
-// read (PS_CRED_READ_MANY) compile it, so it is self-contained: no `using` line, which C# only allows ahead
-// of every type in the unit, so the fragment may sit after a host's own `using` lines and next to its own
-// classes; every type is named in full. The class is `Dpapi`, not a CredMan* name: Add-Type caches a type per
-// PowerShell session by name, and a second definition of one name is an error, not a replacement.
+// The DPAPI half of the OAuth store, as C# source for Add-Type. Three scripts compile it: the launch's batched
+// read (PS_CRED_READ_MANY, which follows) and the protect and unprotect scripts further down. It is declared
+// ahead of all three because a template literal cannot interpolate a const declared below it. It is
+// self-contained: no `using` line, which C# only allows ahead of every type in the unit, so the fragment may
+// sit after a host's own `using` lines and next to its own classes; every type is named in full. The class is
+// `Dpapi`, not a CredMan* name: Add-Type caches a type per PowerShell session by name, and a second definition
+// of one name is an error, not a replacement.
 //
 // Scope is the flags argument. It is CRYPTPROTECT_UI_FORBIDDEN (0x1) and nothing else: no prompt can block a
 // launch, and CRYPTPROTECT_LOCAL_MACHINE (0x4) is never passed, so only the signed-in account can decrypt
@@ -535,6 +358,218 @@ public static class Dpapi {
       return TakeOutput(output);
     } finally { Release(input); Release(salt); }
   }
+}
+`;
+
+// Everything a Windows launch needs from PowerShell, in ONE process: every Credential Manager name the
+// launch reads, and the job object that binds the launch's process tree to the launcher.
+//
+// One process because each one costs a powershell.exe start and an Add-Type compile -- the bulk of a wcm
+// read -- and the launch used to pay that once per name, sequentially. The read half is PS_CRED_READ's,
+// per name: the same CredRead declaration, the same blob copied out as hex, which decodeCredBlobHex
+// turns back into the value. What changes is the reporting: a failed CredRead is reported as its raw
+// win32 code instead of an exit status, and readWcmBatch applies PS_CRED_READ's rule to it -- 1168
+// (ERROR_NOT_FOUND) alone is "absent", every other code an unreadable store. Names arrive as a JSON
+// array of keystore keys in VC_SECRETS_NAMES; an empty array is the bind alone. The output is one JSON
+// object, {"creds":{"<key>":{"ok":"<hex>"}|{"err":<win32 code>}},"job":"ok"|<win32 code>}, built by hand
+// rather than with ConvertTo-Json: every key has passed assertKeyShape ([a-z0-9:-]) and every value is
+// hex or an integer, so nothing in it needs escaping.
+//
+// The bind, and why it exists. An MCP client stops a server with child.kill(), which on Windows is
+// TerminateProcess: no handler in the launcher runs. libuv puts the launcher's DIRECT children in a
+// kill-on-close job of its own, but one that lets their descendants slip out of it silently (libuv
+// src/win/process.c, uv__init_global_job_handle), so the processes that hold the secrets -- `npx.cmd`
+// -> cmd.exe -> node, the server -- outlive a launcher killed that way. A job created WITHOUT any
+// breakaway permission, holding the launcher, catches every process created after the assignment: with
+// nested jobs a process escapes only up to the first job that forbids it, and libuv never asks to
+// escape at all (it does not pass CREATE_BREAKAWAY_FROM_JOB). KILL_ON_JOB_CLOSE then ends that whole
+// tree when the job's last handle closes -- and the only handle left is the one duplicated into the
+// launcher, so any end of the launcher, a TerminateProcess included, ends its tree. The duplicate is not
+// inheritable: a child holding one would keep the job open after the launcher died.
+//
+// THE ORDER IS LOAD-BEARING: the handle is duplicated into the launcher BEFORE the launcher is assigned.
+// Assigned first, a failed duplicate would leave this PowerShell process the job's only holder, and its
+// exit -- moments later -- would close the job and KILL_ON_JOB_CLOSE would kill the launcher. Duplicated
+// first, a failed duplicate leaves an empty job that dies harmlessly with this process, and a failed
+// assignment after a good duplicate leaves the launcher holding a handle to a job it is not in, which
+// costs nothing. Either failure is reported as its win32 code and the launch goes on unbound.
+//
+// The reads run before the bind, so a read that throws ends the script before any bind was attempted
+// and the caller's "could not bind" is true.
+//
+// The DPAPI blobs of the OAuth pair ride in the same call, which is why the launch pays no second
+// powershell.exe start for them. When VC_SECRETS_DPAPI_ON_STDIN is "1" the script reads one JSON object from
+// stdin, {"<key>":"<base64 blob>"}, AFTER the reads and AFTER the bind, and adds
+// ,"dpapi":{"<key>":{"ok":"<hex of the plaintext>"}|{"err":<win32 code>}} to the output; each key is its own
+// blob's entropy, as in PS_DPAPI_UNPROTECT_MANY. Behind the bind on purpose: nothing about a blob can then
+// keep the launcher out of the job. For the same reason a failure to decrypt one blob -- any exception, not
+// only DPAPI's -- is that key's {"err":code} and never fails the call, which would report a bind that did
+// happen as one that did not. Code -1 marks a failure that is not DPAPI's, with no win32 code to name:
+// readWcmBatch does not seed it, and node decrypts that file singly, where such a failure is a thrown error
+// as it is for any single read.
+//
+// The pid comes from VC_SECRETS_LAUNCHER_PID. The names are parsed into a variable and enumerated with
+// foreach, not wrapped in @(...): Windows PowerShell 5.1 emits a parsed array as ONE pipeline object, which
+// @() would wrap into an array holding the array.
+const PS_CRED_READ_MANY = `
+$ErrorActionPreference='Stop'
+[Console]::OutputEncoding=[System.Text.Encoding]::UTF8
+Add-Type -TypeDefinition @'
+using System; using System.Runtime.InteropServices;
+public static class CredManLaunch {
+  [DllImport("advapi32", CharSet=CharSet.Unicode, SetLastError=true)]
+  public static extern bool CredRead(string target, int type, int flags, out IntPtr cred);
+  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+  public struct CREDENTIAL { public int Flags; public int Type; public string TargetName; public string Comment;
+    public long LastWritten; public int CredentialBlobSize; public IntPtr CredentialBlob; public int Persist;
+    public int AttributeCount; public IntPtr Attributes; public string TargetAlias; public string UserName; }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct JOBOBJECT_BASIC_LIMIT_INFORMATION { public long PerProcessUserTimeLimit; public long PerJobUserTimeLimit;
+    public int LimitFlags; public UIntPtr MinimumWorkingSetSize; public UIntPtr MaximumWorkingSetSize; public int ActiveProcessLimit;
+    public UIntPtr Affinity; public int PriorityClass; public int SchedulingClass; }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct IO_COUNTERS { public ulong ReadOperationCount; public ulong WriteOperationCount; public ulong OtherOperationCount;
+    public ulong ReadTransferCount; public ulong WriteTransferCount; public ulong OtherTransferCount; }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION { public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
+    public IO_COUNTERS IoInfo; public UIntPtr ProcessMemoryLimit; public UIntPtr JobMemoryLimit;
+    public UIntPtr PeakProcessMemoryUsed; public UIntPtr PeakJobMemoryUsed; }
+  [DllImport("kernel32", CharSet=CharSet.Unicode, SetLastError=true)]
+  static extern IntPtr CreateJobObject(IntPtr attributes, string name);
+  [DllImport("kernel32", SetLastError=true)]
+  static extern bool SetInformationJobObject(IntPtr job, int infoClass, ref JOBOBJECT_EXTENDED_LIMIT_INFORMATION info, int size);
+  [DllImport("kernel32", SetLastError=true)]
+  static extern IntPtr OpenProcess(int access, bool inherit, int pid);
+  [DllImport("kernel32")]
+  static extern IntPtr GetCurrentProcess();
+  [DllImport("kernel32", SetLastError=true)]
+  static extern bool DuplicateHandle(IntPtr sourceProcess, IntPtr source, IntPtr targetProcess, out IntPtr target,
+    int access, bool inherit, int options);
+  [DllImport("kernel32", SetLastError=true)]
+  static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+  [DllImport("kernel32", SetLastError=true)]
+  static extern bool CloseHandle(IntPtr handle);
+  const int JobObjectExtendedLimitInformation = 9;
+  const int JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000;
+  const int PROCESS_TERMINATE = 0x0001, PROCESS_DUP_HANDLE = 0x0040, PROCESS_SET_QUOTA = 0x0100;
+  const int DUPLICATE_SAME_ACCESS = 0x2;
+  static int LastError() { int e = Marshal.GetLastWin32Error(); return e == 0 ? -1 : e; }
+  public static int Bind(int pid) {
+    IntPtr job = CreateJobObject(IntPtr.Zero, null);
+    if (job == IntPtr.Zero) { return LastError(); }
+    try {
+      JOBOBJECT_EXTENDED_LIMIT_INFORMATION info = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION();
+      info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+      if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation, ref info, Marshal.SizeOf(info))) { return LastError(); }
+      IntPtr launcher = OpenProcess(PROCESS_DUP_HANDLE | PROCESS_SET_QUOTA | PROCESS_TERMINATE, false, pid);
+      if (launcher == IntPtr.Zero) { return LastError(); }
+      try {
+        IntPtr held;
+        if (!DuplicateHandle(GetCurrentProcess(), job, launcher, out held, 0, false, DUPLICATE_SAME_ACCESS)) { return LastError(); }
+        if (!AssignProcessToJobObject(job, launcher)) { return LastError(); }
+        return 0;
+      } finally { CloseHandle(launcher); }
+    } finally { CloseHandle(job); }
+  }
+}
+${CS_DPAPI}'@
+$out=New-Object System.Text.StringBuilder
+[void]$out.Append('{"creds":{')
+$sep=''
+$names=ConvertFrom-Json $env:VC_SECRETS_NAMES
+foreach($k in $names){
+  [void]$out.Append($sep+'"'+$k+'":'); $sep=','
+  $ptr=[IntPtr]::Zero
+  if(-not [CredManLaunch]::CredRead($k,1,0,[ref]$ptr)){
+    $e=[System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+    [void]$out.Append('{"err":'+$e+'}'); continue
+  }
+  $c=[System.Runtime.InteropServices.Marshal]::PtrToStructure($ptr,[type][CredManLaunch+CREDENTIAL])
+  $n=$c.CredentialBlobSize
+  $b=New-Object byte[] $n
+  [System.Runtime.InteropServices.Marshal]::Copy($c.CredentialBlob,$b,0,$n)
+  [void]$out.Append('{"ok":"'+(($b | ForEach-Object { $_.ToString("x2") }) -join '')+'"}')
+}
+$j=[CredManLaunch]::Bind([int]$env:VC_SECRETS_LAUNCHER_PID)
+[void]$out.Append('},"job":'+$(if($j -eq 0){'"ok"'}else{$j}))
+if($env:VC_SECRETS_DPAPI_ON_STDIN -eq '1'){
+  $blobs=ConvertFrom-Json ([Console]::In.ReadToEnd())
+  [void]$out.Append(',"dpapi":{')
+  $sep=''
+  foreach($p in $blobs.PSObject.Properties){
+    [void]$out.Append($sep+'"'+$p.Name+'":'); $sep=','
+    try {
+      $b=[Dpapi]::Unprotect([Convert]::FromBase64String($p.Value),[System.Text.Encoding]::UTF8.GetBytes($p.Name))
+      [void]$out.Append('{"ok":"'+(($b | ForEach-Object { $_.ToString("x2") }) -join '')+'"}')
+    } catch {
+      $ex=$_.Exception
+      if($ex.InnerException -is [System.ComponentModel.Win32Exception]){ $ex=$ex.InnerException }
+      $code=-1
+      if($ex -is [System.ComponentModel.Win32Exception]){ $code=$ex.NativeErrorCode }
+      [void]$out.Append('{"err":'+$code+'}')
+    }
+  }
+  [void]$out.Append('}')
+}
+[void]$out.Append('}')
+[Console]::Out.Write($out.ToString())
+`;
+
+// 1168 is ERROR_NOT_FOUND, and ONLY that may read as "already absent". Exiting 3 for every
+// failure would let logout report success while the refresh token is still in the store —
+// the single outcome logout exists to prevent.
+const PS_CRED_DELETE = `
+$ErrorActionPreference='Stop'
+Add-Type -TypeDefinition @'
+using System; using System.Runtime.InteropServices;
+public static class CredManDel {
+  [DllImport("advapi32", CharSet=CharSet.Unicode, SetLastError=true)]
+  public static extern bool CredDelete(string target, int type, int flags);
+}
+'@
+if(-not [CredManDel]::CredDelete("$env:VC_SECRETS_NAME",1,0)){
+  $e=[System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+  if($e -eq 1168){ exit 3 }
+  [Console]::Error.Write("CredDelete failed win32err=$e"); exit 1
+}
+`;
+
+// No TrimEnd on the value, and that is the opposite of what runTool does when it READS. The two are
+// not inconsistent: `security -w` and the PowerShell reader append a line ending of their own, so
+// stripping one on the way out removes the tool's artifact. Nothing appends anything on the way in
+// -- runTool writes `child.stdin.write(stdinValue)` and ReadToEnd returns exactly those bytes -- so
+// a TrimEnd here deleted the CALLER's, and every one of them rather than a single line ending.
+//
+// Reachable through cmdMigrate, the one caller whose value can legitimately end in a newline: the
+// other two write paths are a token's JSON and a secret typed at a prompt, where Enter is the
+// terminator. Migrate exists to move a value the user CANNOT retype, which is why its gpg read opts
+// out of the same strip with keepTrailingNewline -- Windows was quietly doing what that opt-out was
+// added to prevent.
+const PS_CRED_WRITE = `
+$ErrorActionPreference='Stop'
+[Console]::InputEncoding=[System.Text.Encoding]::UTF8
+$value=[Console]::In.ReadToEnd()
+Add-Type -TypeDefinition @'
+using System; using System.Runtime.InteropServices;
+public static class CredManW {
+  [DllImport("advapi32", CharSet=CharSet.Unicode, SetLastError=true)]
+  public static extern bool CredWrite(ref CREDENTIAL cred, int flags);
+  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+  public struct CREDENTIAL { public int Flags; public int Type; public string TargetName; public string Comment;
+    public long LastWritten; public int CredentialBlobSize; public IntPtr CredentialBlob; public int Persist;
+    public int AttributeCount; public IntPtr Attributes; public string TargetAlias; public string UserName; }
+}
+'@
+$bytes=[System.Text.Encoding]::UTF8.GetBytes($value)
+$blob=[System.Runtime.InteropServices.Marshal]::AllocCoTaskMem($bytes.Length)
+[System.Runtime.InteropServices.Marshal]::Copy($bytes,0,$blob,$bytes.Length)
+$c=New-Object CredManW+CREDENTIAL
+$c.Type=1; $c.TargetName="$env:VC_SECRETS_NAME"; $c.UserName=$env:USERNAME; $c.Persist=2
+$c.CredentialBlob=$blob; $c.CredentialBlobSize=$bytes.Length
+if(-not [CredManW]::CredWrite([ref]$c,0)){
+  $e=[System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+  if($e -eq 1783){ [Console]::Error.Write("value too large for Credential Manager ($($bytes.Length) bytes; limit ${WCM_BLOB_LIMIT})"); exit 4 }
+  [Console]::Error.Write("CredWrite failed win32err=$e"); exit 3
 }
 `;
 
@@ -679,21 +714,43 @@ function buildLocalRead(backend, key, env = process.env) {
 // The launch's one PowerShell call (PS_CRED_READ_MANY): the keys to read, possibly none, and the pid to
 // bind. Every key is shape-checked like any other builder's, and here it also keeps the hand-built
 // JSON the script prints free of anything that would need escaping.
-function buildCredReadMany(keys, pid, env = process.env) {
+//
+// `blobs`: key -> the bytes of a dpapi file, decrypted in the same call. Non-empty, the script is told to read
+// them from stdin (the caller passes blobsToJson(blobs) as runTool's stdinValue); empty, stdin is not touched.
+function buildCredReadMany(keys, pid, env = process.env, blobs = new Map()) {
     for (const key of keys) {
         assertKeyShape(key);
     }
-
-    return { cmd: psCommand(env), args: psArgs(PS_CRED_READ_MANY),
+    const spec = { cmd: psCommand(env), args: psArgs(PS_CRED_READ_MANY),
         extraEnv: { VC_SECRETS_NAMES: JSON.stringify(keys), VC_SECRETS_LAUNCHER_PID: String(pid) },
         timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: true };
+    if (blobs.size > 0) {
+        blobsToJson(blobs);   // shape-checks every key before PowerShell is spawned
+        spec.stdinData = VALUE_ON_STDIN;
+        spec.extraEnv.VC_SECRETS_DPAPI_ON_STDIN = "1";
+    }
+
+    return spec;
+}
+
+// {"<key>":"<base64>"}: what both scripts that decrypt blobs read from stdin. Keys are shape-checked here
+// because they become property names in a hand-built JSON output on the other side.
+function blobsToJson(blobs) {
+    const input = {};
+    for (const [key, blob] of blobs) {
+        assertKeyShape(key);
+        input[key] = blob.toString("base64");
+    }
+
+    return JSON.stringify(input);
 }
 
 // Runs it and returns the parsed object. A call that fails as a whole -- PowerShell missing, Add-Type
 // refused, a timeout, output that is not the object -- throws a VcSecretsError, and the message never
 // carries the output: on success that holds every value read, hex-encoded.
-async function credReadManyIo({ keys, pid, env = process.env, redactValues = [] }) {
-    const stdout = await runTool(buildCredReadMany(keys, pid, env), { redactValues });
+async function credReadManyIo({ keys, pid, env = process.env, redactValues = [], blobs = new Map() }) {
+    const stdout = await runTool(buildCredReadMany(keys, pid, env, blobs),
+        { redactValues, ...(blobs.size > 0 ? { stdinValue: blobsToJson(blobs) } : {}) });
     let result = null;
     try {
         result = JSON.parse(stdout);
@@ -734,14 +791,10 @@ async function unprotectManyIo({ blobs, env = process.env, run = runTool }) {
     if (blobs.size === 0) {
         return new Map();
     }
-    const input = {};
-    for (const [key, blob] of blobs) {
-        assertKeyShape(key);
-        input[key] = blob.toString("base64");
-    }
+    const input = blobsToJson(blobs);
     const spec = { cmd: psCommand(env), args: psArgs(PS_DPAPI_UNPROTECT_MANY),
         stdinData: VALUE_ON_STDIN, timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: true };
-    const stdout = await run(spec, { stdinValue: JSON.stringify(input) });
+    const stdout = await run(spec, { stdinValue: input });
     let result = null;
     try {
         result = JSON.parse(stdout);
@@ -1104,7 +1157,14 @@ function makeSecretResolver(cfg, env = process.env) {
     // keyed by a secret's name: what an oauth entry's outcome means is decided where it is consumed
     // (oauthLaunchDeps), and a secret that happens to share a name with an entry must not receive it. A key
     // the script did not report is simply absent from the Map.
-    resolver.readWcmBatch = async (refs, { pid, run = credReadManyIo, extraKeys = [] }) => {
+    //
+    // `dpapiKeys`: the keys of dpapi files to decrypt in the same call. Node reads the files -- a missing one
+    // is `files.get(key) === false`, one that is there `true` and its bytes go to the script as a blob -- and
+    // `dpapiOutcomes` maps each decrypted key to the raw `{ ok }` / `{ err }`, interpreted, like `outcomes`,
+    // only where it is consumed. A file that is there and cannot be read is not swallowed into "absent": its
+    // key is left out of `files`, so the consumer reads it itself and reports why. After a call that failed as
+    // a whole nothing is seeded -- `files` included -- and every entry is read singly.
+    resolver.readWcmBatch = async (refs, { pid, run = credReadManyIo, extraKeys = [], dpapiKeys = [] }) => {
         const wanted = new Map();
         const localRefs = refs.filter(({ decl }) => decl.backend !== "keyvault");
         // The local backend is consulted only when a reference needs it, as the resolver above does: a
@@ -1127,16 +1187,33 @@ function makeSecretResolver(cfg, env = process.env) {
                 wanted.set(name, keyFor(name, decl, cfg));
             }
         }
+        const files = new Map();
+        const blobs = new Map();
+        for (const key of dpapiKeys) {
+            let blob;
+            try {
+                blob = readDpapiFile(key, env);
+            } catch (e) {
+                if (!(e instanceof VcSecretsError)) {
+                    throw e;
+                }
+                continue;
+            }
+            files.set(key, blob !== undefined);
+            if (blob !== undefined) {
+                blobs.set(key, blob);
+            }
+        }
         let result;
         try {
             result = await run({ keys: [...new Set([...wanted.values(), ...extraKeys])], pid, env,
-                redactValues: resolvedValues });
+                redactValues: resolvedValues, blobs });
         } catch (e) {
             if (!(e instanceof VcSecretsError)) {
                 throw e;
             }
 
-            return { seeded: new Map(), job: e.message, outcomes: new Map() };
+            return { seeded: new Map(), job: e.message, outcomes: new Map(), dpapiOutcomes: new Map(), files: new Map() };
         }
         const cmd = psCommand(env);
         const seeded = new Map();
@@ -1163,9 +1240,20 @@ function makeSecretResolver(cfg, env = process.env) {
                 outcomes.set(key, outcome);
             }
         }
+        const dpapiOutcomes = new Map();
+        for (const key of blobs.keys()) {
+            const outcome = result.dpapi !== null && typeof result.dpapi === "object" && Object.hasOwn(result.dpapi, key)
+                ? result.dpapi[key] : null;
+            // -1 is the script's mark for a failure that is not DPAPI's. Not seeded: the key stays `files: true`
+            // with no outcome, so the consumer decrypts it singly, and there the failure is thrown, as it is for
+            // any single read. The batch must not be laxer than that read.
+            if (typeof outcome?.ok === "string" || (Number.isInteger(outcome?.err) && outcome.err !== -1)) {
+                dpapiOutcomes.set(key, outcome);
+            }
+        }
         const job = result.job === "ok" || Number.isInteger(result.job) ? result.job : "the bind reported no result";
 
-        return { seeded, job, outcomes };
+        return { seeded, job, outcomes, dpapiOutcomes, files };
     };
 
     return resolver;

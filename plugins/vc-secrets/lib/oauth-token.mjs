@@ -269,16 +269,17 @@ async function clearEntryPair(remove, keys) {
 // on -- the exchange spends the token it read under the lock, never one batched before the lock was
 // asked for, which a neighbour may have rotated since. An outcome is interpreted only when consumed, by
 // the same branches as a read that ran then.
-function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend = oauthBackend(process.platform, env),
+function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: backendSeam = null,
     run = runTool, write = writeSecretValue, remove = null, seed = null } = {}) {
     const keys = oauthEntryKeys(entryName, decl, cfg);
+    const backend = backendSeam ?? oauthBackend(process.platform, env);
     // `= null` in the parameter list and resolved here, the way cmdLogin and cmdLogout resolve their
-    // own locks: the default needs `backend`, `env` and `run`, and reading sibling parameters out of
+    // own locks: the defaults need `env`, `backend` and `run`, and reading sibling parameters out of
     // one destructuring pattern relies on evaluation order that is easy to break by reordering the
-    // list. A seam at all because the default DELETES — on gpg it is an `fs.rmSync` of a real file in
-    // the developer's keystore — and a test that reaches this path without injecting it would do
-    // that from a run that looks entirely green. That has happened once already, to cmdLogin's
-    // equivalent seam; the note is on loginDeps in the test file.
+    // list. That goes for the backend as much as for `remove`. `remove` is a seam at all because the default
+    // DELETES — on gpg it is an `fs.rmSync` of a real file in the developer's keystore — and a test that
+    // reaches this path without injecting it would do that from a run that looks entirely green. That has
+    // happened once already, to cmdLogin's equivalent seam; the note is on loginDeps in the test file.
     const removeEntry = remove ?? deleteEntryIo(backend, env, { run });
     // Only a dpapi pair has a legacy store to clear after migrating; the Credential Manager entries of
     // the same keys. Not the `remove` seam: that one is the dpapi delete, which clears the files too.
@@ -287,6 +288,9 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend = oa
     // written: the one moment the legacy entries may go, and never before, or a failed write would leave
     // the developer with no pair at all.
     let migrating = false;
+    // The refresh token that read found in Credential Manager, kept while `migrating`: an exchange may not
+    // issue a new one, and then this is still the live token the file has to receive.
+    let legacyRefreshToken;
     // The raw read: what the backend printed for `key`, or what it threw. A batched outcome stands in for the
     // run when there is one, and throws the very error that run would have -- so everything past this point,
     // absent-versus-failure included, is one code path for both. `store` is the store being read: the
@@ -354,9 +358,7 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend = oa
     // store: with none, the pair is read from Credential Manager (an upgrade from before the file
     // store) and an access file left on its own is never looked at -- paired with a legacy refresh
     // token it could serve another principal's access token.
-    const readDpapiPair = async (batch) => {
-        // The launch's pre-dpapi seed shape (a bare Map of Credential Manager outcomes); removable once the launch passes the new one.
-        const parts = batch instanceof Map ? { wcm: batch } : batch;
+    const readDpapiPair = async (parts) => {
         const toDecrypt = new Map();
         const outcomes = new Map();
         // Whether the entry has a file, and queues what has to be decrypted for it. A seed that says the
@@ -386,10 +388,12 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend = oa
             if (!migrating) {
                 return { refresh: undefined };
             }
+            legacyRefreshToken = legacyRefresh.refreshToken;
 
             return { refresh: legacyRefresh, access: await readEntry(keys.access, parts?.wcm, "wcm") };
         }
         migrating = false;
+        legacyRefreshToken = undefined;
         const hasAccess = present(keys.access);
         for (const [key, outcome] of await unprotectManyIo({ blobs: toDecrypt, env, run })) {
             outcomes.set(key, outcome);
@@ -449,11 +453,28 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend = oa
             // RFC 6749 section 6 makes refresh_token optional on the refresh grant. Writing the
             // entry regardless would serialise `undefined` over a LIVE refresh token, and the
             // next launch would demand a sign-in that nothing had actually invalidated.
-            if (fresh.refreshToken !== undefined) {
+            //
+            // While migrating, the live one is the legacy token the read found, and it goes into the refresh
+            // file now: the next read looks at that file alone, finds none beside an access file, and would
+            // exchange again at every launch and every renewal tick, for good.
+            const carried = fresh.refreshToken === undefined && migrating;
+            const refreshToken = carried ? legacyRefreshToken : fresh.refreshToken;
+            if (refreshToken !== undefined) {
                 try {
-                    await write(keys.refresh, cache.serializeRefresh({ refreshToken: fresh.refreshToken,
+                    await write(keys.refresh, cache.serializeRefresh({ refreshToken,
                         tenantId: decl.tenantId, clientId: decl.clientId, scopes: decl.scopes }), { backend, env });
                 } catch (e) {
+                    if (carried) {
+                        // Not the dead-token case below: no new token was issued, so the legacy one is still
+                        // the only good copy, and deleting it would sign the developer out over a write that
+                        // merely failed. Nothing is cleared and nothing is thrown; the access entry is not
+                        // written either, since the next read ignores it without a refresh file. The next
+                        // renewal retries the migration.
+                        fs.writeSync(2, `vc-secrets: the refresh token could not be moved into the file for "${nameFromKey(keys.refresh)}" `
+                            + `(${e.message}) -- it stays in Credential Manager; the next renewal retries\n`);
+
+                        return;
+                    }
                     // Both entries go, exactly as cmdLogin's identical branch does — and the reason
                     // is STRONGER here, because nobody is watching. What is on disk after this
                     // failure is a dead refresh token beside an access token that keeps working

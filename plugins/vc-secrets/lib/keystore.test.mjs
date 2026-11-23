@@ -877,6 +877,110 @@ test("unprotectManyIo: a malformed key is refused before PowerShell is spawned",
         () => m.unprotectManyIo({ blobs: new Map([["../x", Buffer.from([1])]]), env: {}, run }), m.VcSecretsError);
 });
 
+test("PS_CRED_READ_MANY: dpapi blobs are decrypted after the job bind", () => {
+    // The reads and the duplicate/assign sequence keep their places: the decrypt rides behind both, so a
+    // failure in it can never keep the launcher out of the job, and the script reads stdin only when node
+    // says it sent blobs.
+    const script = m.PS_CRED_READ_MANY;
+    assert.ok(script.includes(m.CS_DPAPI), "the batched read compiles the shared DPAPI class");
+    assert.ok(script.includes("VC_SECRETS_DPAPI_ON_STDIN"));
+    const bind = script.indexOf("[CredManLaunch]::Bind(");
+    const decrypt = script.indexOf("[Dpapi]::Unprotect(");
+    assert.equal(script.split("[Dpapi]::Unprotect(").length - 1, 1, "one decrypt call site");
+    assert.ok(bind >= 0 && decrypt > bind, "the decrypt call comes after the bind call");
+    assert.ok(script.indexOf("[Console]::In.ReadToEnd()") > bind, "stdin is read after the bind");
+    assert.ok(script.indexOf("[CredManLaunch]::CredRead(") < bind, "the reads still come first");
+    assert.ok(script.includes("UTF8.GetBytes($p.Name)"), "each key is its own blob's entropy");
+});
+
+test("buildCredReadMany: blobs put the decrypt on stdin and switch the script to read it", () => {
+    const key = "vc-secrets:user:oauth-a-refresh";
+    const plain = m.buildCredReadMany([key], 7, {});
+    assert.equal(plain.stdinData, undefined, "no blobs: nothing on stdin, as before");
+    assert.equal(plain.extraEnv.VC_SECRETS_DPAPI_ON_STDIN, undefined);
+
+    const withBlobs = m.buildCredReadMany([key], 7, {}, new Map([[key, Buffer.from([1, 2])]]));
+    assert.equal(withBlobs.stdinData, m.VALUE_ON_STDIN);
+    assert.equal(withBlobs.extraEnv.VC_SECRETS_DPAPI_ON_STDIN, "1");
+    assert.equal(withBlobs.extraEnv.VC_SECRETS_NAMES, JSON.stringify([key]));
+    assert.throws(() => m.buildCredReadMany([], 7, {}, new Map([["../x", Buffer.from([1])]])), m.VcSecretsError);
+});
+
+test("credReadManyIo: the blobs travel on stdin as base64 and never in the environment", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, async () => {
+    const key = "vc-secrets:user:oauth-a-refresh";
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-stdin-"));
+    tmpDirs.push(dir);
+    const out = path.join(dir, "stdin.txt");
+    const stub = `#!/bin/sh
+cat > "${out}"
+printf '%s' '{"creds":{},"job":"ok","dpapi":{}}'
+`;
+    await withStubOnPath("vc-ps-batch-stdin", stub, async () => {
+        const env = { VC_SECRETS_POWERSHELL: "vc-ps-batch-stdin" };
+        const result = await m.credReadManyIo({ keys: [], pid: 1, env, blobs: new Map([[key, Buffer.from([1, 2, 3])]]) });
+        assert.equal(result.job, "ok");
+    });
+    assert.equal(fs.readFileSync(out, "utf8"), JSON.stringify({ [key]: Buffer.from([1, 2, 3]).toString("base64") }));
+});
+
+test("readWcmBatch: dpapi files are read by node, sent as blobs, and come back as outcomes and presence", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-dpapi-"));
+    tmpDirs.push(dir);
+    const env = { XDG_CONFIG_HOME: dir, VC_SECRETS_LOCAL_BACKEND: "wcm" };
+    const present = "vc-secrets:user:oauth-a-refresh";
+    const absent = "vc-secrets:user:oauth-a-access";
+    const unreadable = "vc-secrets:user:oauth-b-refresh";
+    fs.mkdirSync(path.dirname(m.dpapiKeyToPath(present, env)), { recursive: true });
+    fs.writeFileSync(m.dpapiKeyToPath(present, env), Buffer.from("CIPHER"));
+    // A directory where the file should be: not absent, and not readable.
+    fs.mkdirSync(m.dpapiKeyToPath(unreadable, env), { recursive: true });
+
+    const resolver = m.makeSecretResolver({}, env);
+    let asked = null;
+    const batch = await resolver.readWcmBatch([], { pid: 9, dpapiKeys: [present, absent, unreadable],
+        run: async (request) => {
+            asked = request;
+
+            return { creds: {}, job: "ok", dpapi: { [present]: { ok: credHex("plain") } } };
+        } });
+    assert.deepEqual([...asked.blobs.keys()], [present], "only a file that exists is sent");
+    assert.equal(asked.blobs.get(present).toString(), "CIPHER");
+    assert.deepEqual([...batch.dpapiOutcomes], [[present, { ok: credHex("plain") }]]);
+    assert.deepEqual([...batch.files], [[present, true], [absent, false]],
+        "a file that could not be read is left out, so its single read reports it");
+    assert.equal(batch.job, "ok");
+});
+
+test("readWcmBatch: a dpapi outcome of -1, the script's mark for a failure that is not DPAPI's, is not seeded", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-dpapi-"));
+    tmpDirs.push(dir);
+    const env = { XDG_CONFIG_HOME: dir };
+    const odd = "vc-secrets:user:oauth-a-refresh";
+    const refused = "vc-secrets:user:oauth-a-access";
+    for (const key of [odd, refused]) {
+        fs.mkdirSync(path.dirname(m.dpapiKeyToPath(key, env)), { recursive: true });
+        fs.writeFileSync(m.dpapiKeyToPath(key, env), Buffer.from("CIPHER"));
+    }
+    const batch = await m.makeSecretResolver({}, env).readWcmBatch([], { pid: 9, dpapiKeys: [odd, refused],
+        run: async () => ({ creds: {}, job: "ok", dpapi: { [odd]: { err: -1 }, [refused]: { err: 13 } } }) });
+    assert.deepEqual([...batch.dpapiOutcomes], [[refused, { err: 13 }]], "DPAPI's own code is seeded, -1 is not");
+    assert.equal(batch.files.get(odd), true, "the file is still known to be there, so it is decrypted singly");
+});
+
+test("readWcmBatch: with dpapi blobs attached, a call that fails as a whole seeds nothing", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-dpapi-"));
+    tmpDirs.push(dir);
+    const env = { XDG_CONFIG_HOME: dir };
+    const key = "vc-secrets:user:oauth-a-refresh";
+    fs.mkdirSync(path.dirname(m.dpapiKeyToPath(key, env)), { recursive: true });
+    fs.writeFileSync(m.dpapiKeyToPath(key, env), Buffer.from("CIPHER"));
+    const batch = await m.makeSecretResolver({}, env).readWcmBatch([], { pid: 9, extraKeys: [key], dpapiKeys: [key],
+        run: async () => { throw new m.VcSecretsError("powershell.exe exited 1: nope"); } });
+    assert.equal(batch.job, "powershell.exe exited 1: nope");
+    assert.equal(batch.outcomes.size + batch.dpapiOutcomes.size + batch.files.size + batch.seeded.size, 0,
+        "each entry is then read singly, exactly as a whole-call failure leaves it today");
+});
+
 // The dpapi file store: PowerShell turns a value into a blob, node owns every file operation.
 const DPAPI_KEY = "vc-secrets:user:oauth-a-refresh";
 
