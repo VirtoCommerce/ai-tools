@@ -8,6 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import * as m from "../vc-secrets.mjs";
 import * as cache from "../vc-secrets-cache.mjs";
+import { pathPresent } from "./util.mjs";
 import { tmpDirs, socketTest, lockTest } from "../test-support.mjs";
 import {
     LAUNCHER_PATH, probe, scopedPaths, trustedStateFor, OAUTH_DECL, keyvaultPairCfg, trustEnv, NO_TRUST,
@@ -787,7 +788,7 @@ exit 3
         env: { VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-ps-login-stub",
             PATH: `${bin}${path.delimiter}${process.env.PATH}`, XDG_CONFIG_HOME: dir, PS_LOG: log,
             PS_PRESENT: present.join(" ") },
-        calls: () => (fs.existsSync(log) ? fs.readFileSync(log, "utf8").split("\n").filter(Boolean) : []),
+        calls: () => (pathPresent(log, "the stub call log") ? fs.readFileSync(log, "utf8").split("\n").filter(Boolean) : []),
     };
 }
 
@@ -1426,7 +1427,7 @@ test("cmdLogout: dpapi logout removes both files and both legacy entries", POSIX
         { trustState: LOGOUT_TRUST, acquireLock: FREE_LOCK, log: () => {} }));
     assert.deepEqual(report.removed, [LOGOUT_KEYS.refresh, LOGOUT_KEYS.access]);
     assert.deepEqual(report.alreadyAbsent, []);
-    assert.deepEqual(files.filter((file) => fs.existsSync(file)), [], "the files are still there");
+    assert.deepEqual(files.filter((file) => pathPresent(file, "a stored entry file")), [], "the files are still there");
     assert.deepEqual(ps.calls(), [`delete ${LOGOUT_KEYS.refresh}`, `delete ${LOGOUT_KEYS.access}`]);
 });
 

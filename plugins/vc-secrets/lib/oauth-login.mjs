@@ -12,7 +12,7 @@ import { severingClose } from "../vc-secrets-teardown.mjs";  // the one teardown
 import { forTerminal } from "./util.mjs";
 import { commandOnPath, resolveSpawnCommand } from "./spawn.mjs";
 import { CONFIG_HINT_PATH, CONFIG_NAME, DOCTOR_REMEDY, USER_SCOPE, authorizationFor } from "./config.mjs";
-import { deleteEntryIo, oauthBackend, writeSecretValue } from "./keystore.mjs";
+import { OAUTH_BACKENDS, deleteEntryIo, oauthBackend, writeSecretValue } from "./keystore.mjs";
 import { requireNamespaceTrust } from "./trust.mjs";
 import { acquireTokenLock, clearEntryPair, oauthEntryKeys, storeAccessEntry, tokenLockFor } from "./oauth-token.mjs";
 
@@ -290,10 +290,6 @@ function withDeadline(promise, ms, onTimeout) {
 
     return Promise.race([promise, expiry]).finally(() => clearTimeout(timer));
 }
-
-// The backends that can hold the OAuth pair: oauthBackend maps Credential Manager platforms to dpapi, so
-// "wcm" is not among them. Not LOCAL_BACKENDS, which names where a `set` secret may go.
-const OAUTH_BACKENDS = ["dpapi", "keychain", "gpg"];
 
 async function cmdLogin(serverName, cfg, {
     listen = listenForCallback,

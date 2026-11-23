@@ -4,9 +4,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import * as m from "../vc-secrets.mjs";
-import { writeLocalValue } from "./keystore.mjs";
 import * as cache from "../vc-secrets-cache.mjs";
 import * as oauth from "../vc-secrets-oauth.mjs";
+import { pathPresent } from "./util.mjs";
 import { tmpDirs } from "../test-support.mjs";
 import { denyFs, CAN_RUN_POSIX_STUB, scopedPaths, credHex, stubBinary, withStubOnPath } from "../test-fixtures.mjs";
 
@@ -44,6 +44,14 @@ test("oauthBackend: keychain and gpg are unchanged", () => {
 
 test("oauthBackend: dpapi is not a value VC_SECRETS_LOCAL_BACKEND accepts", () => {
     assert.throws(() => m.oauthBackend("linux", { VC_SECRETS_LOCAL_BACKEND: "dpapi" }), /VC_SECRETS_LOCAL_BACKEND/);
+});
+
+test("OAUTH_BACKENDS: the backends oauthBackend can answer with, derived from the local ones", () => {
+    assert.deepEqual([...m.OAUTH_BACKENDS].sort(), ["dpapi", "gpg", "keychain"]);
+    for (const local of ["wcm", "keychain", "gpg"]) {
+        assert.ok(m.OAUTH_BACKENDS.includes(m.oauthBackend("linux", { VC_SECRETS_LOCAL_BACKEND: local })),
+            `oauthBackend over "${local}" must be one of the backends that can hold the pair`);
+    }
 });
 
 test("dpapiKeyToPath: LOCALAPPDATA is the root, XDG_CONFIG_HOME overrides it", () => {
@@ -131,94 +139,11 @@ test("the read script prints hex, because the encoding has to be decided from th
     assert.doesNotMatch(m.PS_CRED_READ, /PtrToStringUni/);
 });
 
-function markerHome() {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-marker-"));
-    tmpDirs.push(dir);
-
-    return { XDG_CONFIG_HOME: dir };
-}
-
-test("the oversize marker lives beside the keystore, not inside it, and keeps the key's scope", () => {
-    // A sibling of `secrets/` rather than a child: something that walks the keystore directory must
-    // not meet a diagnostic file there and try to read it as an entry. And per-scope like the keys
-    // themselves -- two projects on one machine declare the same entry NAME routinely, and a flat
-    // layout would have each overwrite the other's marker and report the wrong project's overflow.
-    const env = markerHome();
-    const user = m.oversizeMarkerPath("vc-secrets:user:oauth-ado-dev-access", env);
-    const project = m.oversizeMarkerPath("vc-secrets:p1:oauth-ado-dev-access", env);
-    assert.equal(path.dirname(path.dirname(user)), path.join(env.XDG_CONFIG_HOME, "vc-secrets", "state"));
-    assert.equal(path.dirname(m.secretsDir(env)), path.dirname(path.dirname(path.dirname(user))),
-        "the state directory must sit beside the secrets directory, not under it");
-    assert.notEqual(user, project, "two scopes may not share one marker");
-});
-
-test("the oversize marker records the measurement and no byte of the value", () => {
-    // The value is the access TOKEN. Nothing about it may reach a file that exists to be read by a
-    // diagnostic and pasted into a report -- so the marker is handed a byte count and never the
-    // bytes, and the assertion below is on the whole object rather than on the fields of interest:
-    // a field added later carrying part of the value would pass a field-by-field check.
-    const env = markerHome();
-    const key = "vc-secrets:user:oauth-ado-dev-access";
-    m.recordOversizeMarker(key, { backend: "wcm", bytes: 2588, limit: 2560, env, at: 1_700_000_000 });
-    assert.deepEqual(JSON.parse(fs.readFileSync(m.oversizeMarkerPath(key, env), "utf8")),
-        { key, backend: "wcm", bytes: 2588, limit: 2560, at: 1_700_000_000 });
-});
-
-test("the oversize marker reads back, clears, and reports nothing once cleared", () => {
-    // Clearing is the half that makes this a CURRENT STATE rather than a log of something once
-    // true. Without it doctor keeps naming an overflow that a later, smaller entry already fixed --
-    // wrong in the reassuring direction, which is the expensive direction for a diagnostic.
-    const env = markerHome();
-    const key = "vc-secrets:user:oauth-ado-dev-access";
-    m.recordOversizeMarker(key, { backend: "wcm", bytes: 2588, limit: 2560, env });
-    assert.equal(m.readOversizeMarker(key, env).bytes, 2588);
-    m.clearOversizeMarker(key, env);
-    assert.equal(m.readOversizeMarker(key, env), null);
-});
-
-test("clearing a marker that was never written is silent, since that is every ordinary success", () => {
-    // Clear runs on the SUCCESS path of every login and every renewal, and almost none of them ever
-    // overflowed. Throwing here would fail a working sign-in over a file that correctly does not
-    // exist.
-    const env = markerHome();
-    m.clearOversizeMarker("vc-secrets:user:oauth-ado-dev-access", env);
-});
-
-test("a corrupt marker reads as no marker, because a hint that cannot be read is not a finding", () => {
-    // Deliberately the opposite call from the keystore reads, where collapsing absent with
-    // unreadable is a defect -- see PS_CRED_READ's ERROR_NOT_FOUND check and newKeyPresent, which
-    // both insist the two stay apart. What hangs on this one is whether doctor
-    // prints one advisory line -- not whether a token exists -- so inventing a finding out of an
-    // unparseable diagnostic would send a developer to diagnose the diagnostic.
-    const env = markerHome();
-    const key = "vc-secrets:user:oauth-ado-dev-access";
-    const file = m.oversizeMarkerPath(key, env);
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, "{ not json");
-    assert.equal(m.readOversizeMarker(key, env), null);
-});
-
-test("recordOversizeMarker: a state path that cannot be created warns instead of failing the sign-in", () => {
-    // Both call sites stand inside a catch that has already decided this failure will not fail the
-    // operation -- cmdLogin says so in as many words, because a login rejected there costs an
-    // interactive sign-in while the refresh token it just stored is rotated away by the next one.
-    // clearOversizeMarker was guarded from the start; this is the sibling that was not, and the
-    // asymmetry is reachable: a read-only profile, a full disk, or the case staged here.
-    const env = markerHome();
-    const key = "vc-secrets:user:oauth-ado-dev-access";
-    fs.mkdirSync(path.join(env.XDG_CONFIG_HOME, "vc-secrets"), { recursive: true });
-    fs.writeFileSync(path.join(env.XDG_CONFIG_HOME, "vc-secrets", "state"), "");
-    assert.doesNotThrow(() => m.recordOversizeMarker(key,
-        { backend: "wcm", bytes: 2588, limit: 2560, env }));
-    assert.equal(m.readOversizeMarker(key, env), null,
-        "a marker that could not be written must not read back as one that was");
-});
-
 test("a message improved for a human keeps the exit code the code reads", () => {
     // mapResolveError returns a NEW error in every branch, so it silently dropped toolExitCode --
     // and the caller still received an error, just one that no longer answered WHICH failure this
-    // was. The oversize marker is the consumer that made it visible: it must record only exit 4,
-    // and by the time the write failure reached it the 4 was gone.
+    // was. doctor's write probe is the consumer that made it visible: it reports the Credential Manager
+    // ceiling only for exit 4, and by the time the write failure reached it the 4 was gone.
     const raw = Object.assign(new Error("value too large for Credential Manager (2588 bytes; limit 2560)"),
         { toolExitCode: 4 });
     const mapped = m.mapResolveError("wcm", "oauth-ado-dev-access", raw);
@@ -383,18 +308,20 @@ test("buildLocalWrite: gpg tmp target for atomic write", () => {
     assert.ok(finalTarget.endsWith("ado-pat.gpg") && !finalTarget.endsWith(".tmp"), "default (no tmp option) targets the final path");
 });
 
-test("writeLocalValue: gpg renames the same pid-suffixed tmp file the builder targets", async () => {
-    const { env } = dpapiTmpEnv("vc-secrets-gpg-tmp-");
+test("writeSecretValue: gpg renames the same pid-suffixed tmp file the builder targets", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-gpg-tmp-");
     const key = "vc-secrets:user:ado-pat";
     const finalPath = m.keyToPath(key, env);
-    const spec = m.buildLocalWrite("gpg", key, env, { tmp: true });
-    const target = spec.args[spec.args.indexOf("-o") + 1];
     // Stands in for gpg: writes exactly where the spec's `-o` points.
-    const run = async () => { fs.writeFileSync(target, "CIPHER"); };
-    await writeLocalValue("gpg", key, spec, "the-token", env, run);
+    let target = null;
+    const run = async (spec) => {
+        target = spec.args[spec.args.indexOf("-o") + 1];
+        fs.writeFileSync(target, "CIPHER");
+    };
+    await m.writeSecretValue(key, "the-token", { backend: "gpg", env, run });
 
     assert.equal(fs.readFileSync(finalPath, "utf8"), "CIPHER");
-    assert.equal(fs.existsSync(target), false, "the tmp file was renamed, not left behind");
+    assert.equal(pathPresent(target, "the tmp file"), false, "the tmp file was renamed, not left behind");
     assert.equal(target, `${finalPath}.${process.pid}.tmp`);
 });
 
@@ -984,7 +911,7 @@ test("readWcmBatch: with dpapi blobs attached, a call that fails as a whole seed
 // The dpapi file store: PowerShell turns a value into a blob, node owns every file operation.
 const DPAPI_KEY = "vc-secrets:user:oauth-a-refresh";
 
-function dpapiTmpEnv(prefix) {
+function tmpConfigEnv(prefix) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
     tmpDirs.push(dir);
 
@@ -1005,7 +932,7 @@ function fakeProtect(cipher, calls = []) {
 const refused = (code) => Object.assign(new Error(`${code}: rename refused`), { code });
 
 test("writeSecretValue: dpapi writes the ciphertext PowerShell returns, through a pid-suffixed tmp file", async () => {
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-write-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-write-");
     const calls = [];
     const renames = [];
     const target = m.dpapiKeyToPath(DPAPI_KEY, env);
@@ -1023,7 +950,7 @@ test("writeSecretValue: dpapi writes the ciphertext PowerShell returns, through 
 });
 
 test("writeSecretValue: dpapi retries a rename refused with EPERM and succeeds", async () => {
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-retry-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-retry-");
     const target = m.dpapiKeyToPath(DPAPI_KEY, env);
     let refusals = 2;
     const sleeps = [];
@@ -1042,7 +969,7 @@ test("writeSecretValue: dpapi retries a rename refused with EPERM and succeeds",
 });
 
 test("writeSecretValue: dpapi gives up after five refused renames, leaves the previous entry and no tmp file", async () => {
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-giveup-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-giveup-");
     const target = m.dpapiKeyToPath(DPAPI_KEY, env);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, "PREVIOUS");
@@ -1062,7 +989,7 @@ test("writeSecretValue: dpapi gives up after five refused renames, leaves the pr
 });
 
 test("writeSecretValue: dpapi does not retry ENOENT", async () => {
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-enoent-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-enoent-");
     let attempts = 0;
     const sleeps = [];
     await assert.rejects(
@@ -1076,7 +1003,7 @@ test("writeSecretValue: dpapi does not retry ENOENT", async () => {
 });
 
 test("writeSecretValue: dpapi refuses to store an empty ciphertext over the entry", async () => {
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-empty-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-empty-");
     await assert.rejects(
         () => m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: async () => "" }),
         /no ciphertext/);
@@ -1085,7 +1012,7 @@ test("writeSecretValue: dpapi refuses to store an empty ciphertext over the entr
 
 test("writeSecretValue: a dpapi value over the Credential Manager ceiling is stored", async () => {
     // The bug's own size plus one: Credential Manager refuses 2907 bytes (exit 4), the file store has no ceiling.
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-large-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-large-");
     const value = "x".repeat(2907);
     assert.ok(value.length > m.WCM_BLOB_LIMIT);
     const calls = [];
@@ -1098,7 +1025,7 @@ test("writeSecretValue: a dpapi value over the Credential Manager ceiling is sto
 });
 
 test("readDpapiFile: absence is the path not existing", () => {
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-read-absent-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-read-absent-");
     assert.equal(m.readDpapiFile(DPAPI_KEY, env), undefined);
 
     const target = m.dpapiKeyToPath(DPAPI_KEY, env);
@@ -1110,7 +1037,7 @@ test("readDpapiFile: absence is the path not existing", () => {
 test("readDpapiFile: an entry that cannot be examined is not absent", (t) => {
     // undefined here would be read as "not signed in": an interactive sign-in that spends an
     // authorization code, over a refresh token that never left the disk.
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-read-denied-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-read-denied-");
     const target = m.dpapiKeyToPath(DPAPI_KEY, env);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, "BLOB");
@@ -1130,7 +1057,7 @@ function wcmDeleteRun(held, calls = []) {
 }
 
 test("deleteEntryIo: dpapi removes the file and the Credential Manager entry of the same key", async () => {
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-both-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-both-");
     const target = m.dpapiKeyToPath(DPAPI_KEY, env);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, "BLOB");
@@ -1147,7 +1074,7 @@ test("deleteEntryIo: dpapi removes the file and the Credential Manager entry of 
 test("deleteEntryIo: dpapi with only a legacy Credential Manager entry removes it and succeeds", async () => {
     // Logout after an upgrade, before any launch migrated the pair: the file never existed, the legacy
     // entry did, and reporting "nothing stored" would leave the live refresh token behind.
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-legacy-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-legacy-");
     const calls = [];
     await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(true, calls) })(DPAPI_KEY);
 
@@ -1155,7 +1082,7 @@ test("deleteEntryIo: dpapi with only a legacy Credential Manager entry removes i
 });
 
 test("deleteEntryIo: dpapi with only the file removes it and succeeds", async () => {
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-file-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-file-");
     const target = m.dpapiKeyToPath(DPAPI_KEY, env);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, "BLOB");
@@ -1165,13 +1092,13 @@ test("deleteEntryIo: dpapi with only the file removes it and succeeds", async ()
 });
 
 test("deleteEntryIo: dpapi with neither present is exit 3", async () => {
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-none-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-none-");
     await assert.rejects(() => m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false) })(DPAPI_KEY),
         (e) => e.toolExitCode === 3);
 });
 
 test("deleteEntryIo: dpapi does not treat an unremovable file or a Credential Manager failure as absence", async () => {
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-fail-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-fail-");
     const denied = () => { throw Object.assign(new Error("EACCES"), { code: "EACCES" }); };
     await assert.rejects(
         () => m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false), rm: denied })(DPAPI_KEY),
@@ -1185,7 +1112,7 @@ test("deleteEntryIo: dpapi does not treat an unremovable file or a Credential Ma
 test("deleteEntryIo: dpapi leaves the file in place when the Credential Manager delete fails", async () => {
     // The file decides the store. Removing it first would leave the legacy pair as the store the next launch
     // falls back to, so a failed Credential Manager delete would bring a logged-out token back.
-    const { env } = dpapiTmpEnv("vc-secrets-dpapi-del-order-");
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-order-");
     const target = m.dpapiKeyToPath(DPAPI_KEY, env);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, "BLOB");

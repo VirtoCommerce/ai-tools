@@ -33,9 +33,9 @@ function keyFor(name, decl, cfg) {
 }
 
 // The two variable segments back out again. One parse rather than one per reader: the same key is
-// taken apart for a secret's path, for its oversize-marker path and for the messages a developer
-// reads, and separate spellings of one grammar can disagree about a key neither of them validated
-// while each still looks right where it stands.
+// taken apart for a secret's path and for the messages a developer reads, and separate spellings of
+// one grammar can disagree about a key neither of them validated while each still looks right where
+// it stands.
 function keyParts(key) {
     const [, scope, name] = key.split(":");
 
@@ -101,14 +101,20 @@ function detectLocalBackend(platform = process.platform, env = process.env) {
     return "gpg";
 }
 
-// The backend that holds the OAuth refresh/access pair. Credential Manager platforms map to the
-// dpapi file store; keychain and gpg are unchanged. dpapi is deliberately not in LOCAL_BACKENDS, so
+// The one place a local backend becomes the OAuth pair's backend: Credential Manager platforms map to
+// the dpapi file store; keychain and gpg are unchanged. oauthBackend and OAUTH_BACKENDS both go
+// through it, so the answer and the set of possible answers cannot drift apart.
+const toOauthBackend = (backend) => (backend === "wcm" ? "dpapi" : backend);
+
+// The backend that holds the OAuth refresh/access pair. dpapi is deliberately not in LOCAL_BACKENDS, so
 // VC_SECRETS_LOCAL_BACKEND=dpapi stays invalid and a `set` secret can never land there.
 function oauthBackend(platform = process.platform, env = process.env) {
-    const backend = detectLocalBackend(platform, env);
-
-    return backend === "wcm" ? "dpapi" : backend;
+    return toOauthBackend(detectLocalBackend(platform, env));
 }
+
+// The backends that can hold the OAuth pair, so "wcm" is not among them. Not LOCAL_BACKENDS, which
+// names where a `set` secret may go.
+const OAUTH_BACKENDS = LOCAL_BACKENDS.map(toOauthBackend);
 
 // Where both storage layouts live, current and legacy. cmdUnlock walks the two in one loop, so a
 // second spelling that drifts surfaces as "nothing to unlock" rather than as an error.
@@ -172,79 +178,6 @@ function gpgEntryPresent(key, env = process.env) {
 // new namespaced key, but nothing ever writes to this path again.
 function legacyKeyToPath(name, env = process.env) {
     return path.join(configBase(env), LEGACY_KEY_PREFIX, "secrets", `${name}.gpg`);
-}
-
-// Where a keystore write that CANNOT come right on its own is recorded.
-//
-// On Credential Manager an oversize value fails deterministically: the value is larger than the
-// backend's ceiling, so the identical write fails identically at every launch and every renewal,
-// forever. Without this, that failure prints one line to fd 2 and is gone; the next tick repeats it
-// and nothing accumulates. The system still works -- each launch pays a token exchange instead of
-// reading a stored token -- but Entra rotates the refresh token on every exchange, so it pays a
-// rotation too, and nothing says so.
-//
-// A FILE, not a keystore entry, because the keystore is the thing that failed. A sibling of the
-// secrets directory rather than a child, so nothing that walks the keystore mistakes it for an
-// entry; split per scope the same way keyToPath splits the keys -- the scheme, not the directory --
-// so two projects on one machine cannot collide on one entry name.
-//
-// And it is CURRENT STATE, not an event log: a successful write for the same key deletes it. Without
-// that half, doctor would keep reporting a condition the next successful write had already fixed --
-// a diagnostic that is wrong in the reassuring direction, which is worse than none.
-function oversizeMarkerPath(key, env = process.env) {
-    const { scope, name } = keyParts(key);
-
-    return path.join(path.dirname(secretsDir(env)), "state", scope, `${name}.oversize.json`);
-}
-
-// Not one byte of the value. `bytes` is measured from what the caller tried to write rather than
-// scraped out of the backend's stderr the way mapResolveError does it: the number is already in hand
-// at both call sites, and parsing a message for it would be a second, independent way to be wrong
-// about the same quantity.
-function recordOversizeMarker(key, { backend, bytes, limit, env = process.env, at = Date.now() }) {
-    const file = oversizeMarkerPath(key, env);
-    try {
-        fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
-        fs.writeFileSync(file, JSON.stringify({ key, backend, bytes, limit, at }), { mode: 0o600 });
-    } catch (e) {
-        // Both call sites stand inside a catch that has already decided this failure will not fail
-        // the operation -- cmdLogin says so in as many words, because failing there costs an
-        // interactive sign-in. A throw from here escapes that catch and rejects a login whose
-        // refresh token is already stored, sending the developer to sign in again and rotate away
-        // the token they just obtained. The state directory is exactly where that happens: a
-        // read-only profile, a file where the directory should be, or a full disk.
-        //
-        // clearOversizeMarker draws this line on the success path for the same reason.
-        fs.writeSync(2, `vc-secrets: the oversize marker for "${key}" could not be written`
-            + ` (${e.code ?? e.message}) -- "vc-secrets doctor" will not report the ceiling\n`);
-    }
-}
-
-function clearOversizeMarker(key, env = process.env) {
-    try {
-        fs.rmSync(oversizeMarkerPath(key, env));
-    } catch (e) {
-        // Absent is the ordinary case: every successful write on a machine that never overflowed
-        // clears nothing. Anything else is reported but not thrown -- this runs on the SUCCESS path
-        // of a login or a renewal, and failing either over a leftover diagnostic file would trade a
-        // working sign-in for a tidy report.
-        if (e.code !== "ENOENT") {
-            fs.writeSync(2, `vc-secrets: a stale oversize marker for "${key}" could not be removed`
-                + ` (${e.code ?? e.message}) -- "vc-secrets doctor" may report a problem that is fixed\n`);
-        }
-    }
-}
-
-function readOversizeMarker(key, env = process.env) {
-    try {
-        return JSON.parse(fs.readFileSync(oversizeMarkerPath(key, env), "utf8"));
-    } catch {
-        // Absent and unreadable collapse deliberately, unlike the keystore reads where that collapse
-        // is a defect: this decides whether doctor prints one advisory line, not whether a token
-        // exists. A marker that cannot be read is not a finding of its own -- inventing one would
-        // send a developer to diagnose the diagnostic.
-        return null;
-    }
 }
 
 // PowerShell 5.1 P/Invoke for Credential Manager (no built-in cmdlets exist).
@@ -818,11 +751,12 @@ async function unprotectManyIo({ blobs, env = process.env, run = runTool }) {
     return outcomes;
 }
 
-// The tmp file a gpg write goes through, named for this process: login stores even when the token lock is
-// busy, so two writers can overlap and must not share one tmp path. buildLocalWrite targets it and
-// writeLocalValue renames it, so both must compute the same name.
-function gpgTmpPath(key, env) {
-    return `${keyToPath(key, env)}.${process.pid}.tmp`;
+// The tmp file a write goes through before it is renamed over `finalPath`, named for this process: login
+// stores even when the token lock is busy, so two writers can overlap and must not share one tmp path.
+// The gpg write (buildLocalWrite targets it, writeLocalValue renames it) and the dpapi write both name
+// theirs here, so each pair computes the same name.
+function processTmpPath(finalPath) {
+    return `${finalPath}.${process.pid}.tmp`;
 }
 
 function buildLocalWrite(backend, key, env = process.env, { tmp = false, value = undefined } = {}) {
@@ -867,9 +801,10 @@ function buildLocalWrite(backend, key, env = process.env, { tmp = false, value =
         ? ["--recipient", env.VC_SECRETS_GPG_RECIPIENT, "--trust-model", "always"]
         : ["--default-recipient-self"];
     // Write to a tmp sibling first so a mid-write crash/kill can never leave
-    // a half-encrypted `<name>.gpg` in place of a previously-valid secret — cmdSet renames it in
+    // a half-encrypted `<name>.gpg` in place of a previously-valid secret — writeLocalValue renames it in
     // after gpg exits 0.
-    const target = tmp ? gpgTmpPath(key, env) : keyToPath(key, env);
+    const finalPath = keyToPath(key, env);
+    const target = tmp ? processTmpPath(finalPath) : finalPath;
 
     return { cmd: "gpg", args: ["--quiet", "--batch", "--yes", ...recipientArgs, "--encrypt", "-o", target],
         stdinData: VALUE_ON_STDIN, timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: false };
@@ -983,7 +918,7 @@ async function writeDpapiValue(key, value, { env, run, rename, sleep }) {
         throw new VcSecretsError(`DPAPI returned no ciphertext for "${nameFromKey(key)}"`);
     }
     fs.mkdirSync(path.dirname(finalPath), { recursive: true, mode: 0o700 });
-    const tmpPath = `${finalPath}.${process.pid}.tmp`;
+    const tmpPath = processTmpPath(finalPath);
     try {
         fs.writeFileSync(tmpPath, blob, { mode: 0o600 });
         await renameWithRetry(tmpPath, finalPath, { rename, sleep });
@@ -1017,7 +952,7 @@ async function writeLocalValue(backend, key, spec, value, env = process.env, run
     }
     fs.mkdirSync(path.dirname(keyToPath(key, env)), { recursive: true, mode: 0o700 });
     const finalPath = keyToPath(key, env);
-    const tmpPath = gpgTmpPath(key, env);
+    const tmpPath = processTmpPath(finalPath);
     try {
         await run(spec, { stdinValue: value, redactValues: [value] });
         fs.chmodSync(tmpPath, 0o600);
@@ -1085,8 +1020,8 @@ function mapResolveError(backend, name, e) {
     // Every branch that rewrites the message returns a NEW error, and a new error carries no
     // toolExitCode -- so improving a message for a human silently stripped the classification the
     // code downstream needs. The two are not alternatives, and the loss is invisible: the caller
-    // still gets an error, just one that no longer answers "which failure was this". The oversize
-    // marker reads exit 4 off an error that has already passed through here. The fall-through at
+    // still gets an error, just one that no longer answers "which failure was this". doctor's
+    // write probe reads exit 4 off an error that has already passed through here. The fall-through at
     // the end returns the original untouched, so it needs no keep().
     const keep = (mapped) => Object.assign(mapped, { toolExitCode: e.toolExitCode });
     if (backend === "wcm" && e.toolExitCode === 3) {
@@ -1407,8 +1342,8 @@ async function cmdMigrate(cfg) {
 export {
     KEY_PREFIX, keystoreFilePresent, scopeKeyFor, keyFor, nameFromKey, TIMEOUT_LOCAL_MS, TIMEOUT_AZ_MS,
     LOCAL_BACKENDS, SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT, quoteForSecurityInteractive, detectLocalBackend,
-    oauthBackend, secretsDir, keyToPath, dpapiKeyToPath, readDpapiFile, renameWithRetry, RENAME_ATTEMPTS,
-    gpgEntryPresent, legacyKeyToPath, oversizeMarkerPath, recordOversizeMarker, clearOversizeMarker, readOversizeMarker, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE,
+    oauthBackend, OAUTH_BACKENDS, secretsDir, keyToPath, dpapiKeyToPath, readDpapiFile, renameWithRetry, RENAME_ATTEMPTS,
+    gpgEntryPresent, legacyKeyToPath, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE,
     PS_CRED_WRITE, CS_DPAPI, PS_DPAPI_PROTECT, PS_DPAPI_UNPROTECT_MANY, buildDpapiProtect, unprotectManyIo,
     psEncode, psCommand, decodeCredBlobHex, isAbsentEntry, buildLocalRead, buildCredReadMany, credReadManyIo,
     batchedReadError, buildLocalWrite, buildLocalDelete, deleteEntryIo, writeLocalValue, writeSecretValue,

@@ -365,11 +365,9 @@ test("oauthLaunchDeps.writeCache: a renewal that issues no new refresh token lea
     // `write` here receives the full three-segment keystore key oauthEntryKeys produces, so the
     // value that must appear is LAUNCH_KEYS.access.
     const written = [];
-    // A throwaway XDG_CONFIG_HOME although this test asserts nothing about markers: writeCache
-    // clears the oversize marker on the success path this test drives, so without an env here the
-    // rmSync lands in the DEVELOPER'S OWN config directory. It survives only because the deletion
-    // of an absent file is swallowed, which is a property of clearOversizeMarker rather than of
-    // this fixture.
+    // A throwaway XDG_CONFIG_HOME although this test asserts nothing about the keystore: every store
+    // here goes through the injected `write`, but a seam left unstubbed would otherwise reach the
+    // DEVELOPER'S OWN config directory.
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-write-"));
     tmpDirs.push(dir);
     const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "keychain",
@@ -463,13 +461,10 @@ test("oauthLaunchDeps.writeCache: a failed ACCESS write is a warning, not a lost
 
         return Buffer.byteLength(str);
     });
-    // A throwaway XDG_CONFIG_HOME although this test asserts nothing about markers: the `write`
-    // double injected here throws a plain `Error`, which carries no toolExitCode, so as this
-    // fixture stands it never reaches the marker. It is the cost of being
-    // wrong that decides this: change that error to an exit 4, or widen the marker's condition, and
-    // without an env here the marker write lands in the DEVELOPER'S OWN config directory -- measured,
-    // by mutating exactly that condition, which left a real file under ~/.config/vc-secrets/state.
-    // The same omission on the delete seam once destroyed a live sign-in from a green run.
+    // A throwaway XDG_CONFIG_HOME although this test asserts nothing about the keystore: the `write`
+    // double injected here is the only store this path reaches, but a seam left unstubbed would
+    // otherwise land in the DEVELOPER'S OWN config directory. The same omission on the delete seam
+    // once destroyed a live sign-in from a green run.
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-warn-"));
     tmpDirs.push(dir);
     const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "keychain",
