@@ -6,15 +6,17 @@ import path from "node:path";
 
 import { VcSecretsError } from "../vc-secrets-error.mjs";
 
-import { canonicalPath, forTerminal, isAbsentPathError, jsonForTerminal, pathForTerminal, readFailureReason } from "./util.mjs";
-import { commandOnPath } from "./spawn.mjs";
+import { canonicalPath, forTerminal, isAbsentPathError, jsonForTerminal, pathForTerminal, pathPresent,
+    readFailureReason } from "./util.mjs";
+import { commandOnPath, runTool } from "./spawn.mjs";
 import { CONFIG_HINT_PATH, LEGACY_ENV_VARS, USER_SCOPE, authorizationFor, crossingProblem, crossingSource,
     parseReference } from "./config.mjs";
-import { SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT, buildLocalWrite, deleteEntryIo, detectLocalBackend, keyFor,
-    makeSecretResolver, psCommand, readLegacyLocalValue, readOversizeMarker, writeSecretValue } from "./keystore.mjs";
+import { SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT, buildLocalWrite, deleteEntryIo, detectLocalBackend, dpapiKeyToPath,
+    keyFor, makeSecretResolver, oauthBackend, psCommand, readDpapiFile, readLegacyLocalValue, unprotectManyIo,
+    writeSecretValue } from "./keystore.mjs";
 import { LAUNCHABLE_KINDS, isNamespaceDecl, namespaceDeclarations, namespaceTrustProblem, readTrustState,
     trustAssessment } from "./trust.mjs";
-import { oauthEntryKeys, oauthKeyClashes, oauthLaunchDeps } from "./oauth-token.mjs";
+import { oauthKeyClashes, oauthLaunchDeps } from "./oauth-token.mjs";
 import { oauthReferences, oauthStatusFrom, oauthTenantChecks } from "./oauth-checks.mjs";
 import { childNodeProbes, childNodeRefusal, childNodeSupportsImport } from "./launch.mjs";
 
@@ -208,7 +210,7 @@ function readWiredElsewhere(paths, seen = [], problems = []) {
     return names;
 }
 
-function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, notRead = [], toolsMissing, wired, configDirOverride, legacyOnly = [], shimContract = null, wiringProblems = [], clientConfigsSeen = [], writeProbe = null, oauthStatus = {}, oauthOversize = {}, tenantChecks = [], childNodes = [], trustFindings = [], namespaceNotRead = [] }) {
+function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, notRead = [], toolsMissing, wired, configDirOverride, legacyOnly = [], shimContract = null, wiringProblems = [], clientConfigsSeen = [], writeProbes = [], oauthStatus = {}, tenantChecks = [], childNodes = [], trustFindings = [], namespaceNotRead = [] }) {
     const lines = [];
     const loadedFiles = Object.entries(cfg.files ?? {}).map(([scope, file]) => `${scope}=${pathForTerminal(file)}`).join(", ");
     if (loadedFiles) {
@@ -293,25 +295,40 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, no
     for (const { kind, name } of namespaceNotRead) {
         lines.push(`SKIP ${kind} "${name}" not read -- this checkout is not trusted for namespace ${JSON.stringify(cfg.projectId)}`);
     }
-    if (writeProbe === "ok") {
-        // The probe writes a value of exactly WCM_BLOB_LIMIT bytes, so it proves only that the store
-        // accepts a write of that size through the non-interactive path. Whether the entry THIS
-        // machine produces fits under it is a different question -- the measured access entry was
-        // 2536 of a 2560-byte ceiling, growing about forty bytes per group membership -- so a
-        // machine one group over passes this probe and then fails every real write. The oversize
-        // WARN above is what answers that question.
-        lines.push(`OK ${backend ?? "the keystore"} accepts a write at the size limit`
-            + " -- login and renewal can reach the store; whether the token they produce fits under"
-            + " that limit is answered only by storing one");
-    } else if (writeProbe !== null && typeof writeProbe === "object") {
-        // Two verdicts, because they send the reader to different places. Only the first is about the
-        // ceiling; the second covers a locked keychain, a sandbox, a timeout -- causes whose remedy
-        // has nothing to do with size. The distinction is the probe's, made where the exit code was.
-        lines.push(writeProbe.oversize
-            ? `FAIL ${backend ?? "the keystore"} rejected a write at the size limit`
-                + ` -- "vc-secrets login" may not be able to store a token: ${writeProbe.message}`
-            : `FAIL ${backend ?? "the keystore"} refused a write`
-                + ` -- "vc-secrets login" may not be able to store a token: ${writeProbe.message}`);
+    // One line per store probed, naming the store the probe actually wrote to: on Windows the local
+    // backend (Credential Manager, where `set` puts a secret) and the OAuth backend (DPAPI files) are
+    // two stores, and a single "the keystore accepts a write" would certify whichever one it was
+    // measured on for both. A probe that did not run (null) is silent, not a pass.
+    for (const { backend: probed, result } of writeProbes) {
+        if (result === "ok") {
+            // Each line says what ITS probe proves, which is not the same thing. The Credential
+            // Manager probe writes the blob limit, so it proves `set` can store a value that large.
+            // The DPAPI probe writes and reads back a value well over that limit, so it proves the
+            // file store has no ceiling a token can reach. The keychain probe proves only that the
+            // non-interactive write path works; whether the token a login produces fits under the
+            // command-line limit is answered only by storing one.
+            if (probed === "wcm") {
+                lines.push(`OK wcm accepts a write at the size limit -- "vc-secrets set" can store a value up to ${WCM_BLOB_LIMIT} bytes`);
+            } else if (probed === "dpapi") {
+                lines.push(`OK dpapi stores and reads back an ${DPAPI_PROBE_BYTES}-byte value -- login and renewal can store a token`);
+            } else {
+                lines.push(`OK ${probed} accepts a write at the size limit`
+                    + " -- login and renewal can reach the store; whether the token they produce fits under"
+                    + " that limit is answered only by storing one");
+            }
+        } else if (result !== null && typeof result === "object") {
+            // What the failure costs depends on the store: Credential Manager holds `set` secrets,
+            // the OAuth pair lives in DPAPI files (or the keychain), so only the others can name login.
+            const loses = probed === "wcm"
+                ? "\"vc-secrets set\" may not be able to store a value"
+                : "\"vc-secrets login\" may not be able to store a token";
+            // Two verdicts, because they send the reader to different places. Only the first is about the
+            // ceiling; the second covers a locked keychain, a sandbox, a timeout -- causes whose remedy
+            // has nothing to do with size. The distinction is the probe's, made where the exit code was.
+            lines.push(result.oversize
+                ? `FAIL ${probed} rejected a write at the size limit -- ${loses}: ${result.message}`
+                : `FAIL ${probed} refused a write -- ${loses}: ${result.message}`);
+        }
     }
     for (const [name, status] of Object.entries(oauthStatus)) {
         // The home is part of the verdict, not decoration: cfg.oauth merges config scopes (user,
@@ -343,24 +360,6 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, no
                 lines.push(`INFO oauth "${name}": a renewed token reaches ${kind} "${ref.launchableName}" only if it reads ${ref.envVar}`
                     + " from its environment at each use -- one that keeps its startup copy runs on it until it expires");
             }
-        }
-        // Printed beside the status rather than instead of it, because the two are independent: the
-        // entry above usually reads "needs-refresh", which is an OK line and honestly so -- the next
-        // launch WILL renew. What that line cannot say is that it will do so every single time, and
-        // pay a refresh-token rotation for it.
-        //
-        // WARN and not FAIL. Nothing is broken and nothing is lost; a FAIL exits 1 and would redden
-        // every run on an affected machine for a condition the developer cannot act on. The line
-        // exists to be seen when the contingency it names is finally worth building.
-        const oversize = oauthOversize[name];
-        if (oversize) {
-            // The store named in words, not as the internal backend id: "wcm" tells a developer
-            // nothing, and this line is read by whoever has to decide what to do about it.
-            const store = oversize.backend === "wcm" ? "Credential Manager" : oversize.backend;
-            lines.push(`WARN oauth "${name}": the access entry does not fit ${store}`
-                + ` (${oversize.bytes} bytes, limit ${oversize.limit}).`);
-            lines.push("     Every launch and every renewal now pays a token exchange, and each rotates the refresh token.");
-            lines.push("     Nothing to change locally -- this is the design's DPAPI contingency, and this line is its trigger.");
         }
     }
     // A list rather than one verdict: with two oauth entries a single variable reports only the last,
@@ -517,6 +516,11 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, no
 
 const WRITE_PROBE_NAME = "vc-secrets-writeprobe";
 
+// The DPAPI probe's value size. Well over the Credential Manager's 2560-byte blob limit, because that
+// limit is the reason the OAuth pair moved to files: a token that grows with the signed-in user's group
+// memberships must still fit, and a probe at the old limit would pass on a store that cannot hold one.
+const DPAPI_PROBE_BYTES = 8192;
+
 // The write probe's own throwaway key. Always this name -- distinct from any real secret or oauth
 // entry -- so the probe can never collide with, and therefore never clobbers, a live value. Scoped to
 // the project when one is declared (mirroring where a real local secret would actually live), or to
@@ -535,10 +539,14 @@ function writeProbeKey(cfg, namespaceTrusted = true) {
 // places. On macOS/keychain the constraint is the length of the command line `security` receives, so
 // the value is sized to put that line exactly at its limit. On Windows the constraint is the blob
 // itself, so the value IS the limit. Either way a probe that writes something small passes on
-// precisely the machine where a real entry would not fit.
+// precisely the machine where a real entry would not fit. A dpapi file has no ceiling to rehearse; its
+// value is sized past the limit it exists to escape.
 function writeProbeValue(cfg, env = process.env, backend = "keychain", namespaceTrusted = true) {
     if (backend === "wcm") {
         return "p".repeat(WCM_BLOB_LIMIT);
+    }
+    if (backend === "dpapi") {
+        return "p".repeat(DPAPI_PROBE_BYTES);
     }
     // Sized from the key the probe actually writes under, which is what puts the composed line at
     // exactly the limit -- the limit is a property of the LINE, not of the key, so every key sized
@@ -556,14 +564,20 @@ function writeProbeValue(cfg, env = process.env, backend = "keychain", namespace
 // `security -i`. That path has no other rehearsal, so doctor rehearses it -- a throwaway entry
 // written and immediately removed. Without this the first proof that it works is a token
 // rotation in the middle of a session, which is the worst possible place to find out.
-const WRITE_PROBED_BACKENDS = ["keychain", "wcm"];
+const WRITE_PROBED_BACKENDS = ["keychain", "wcm", "dpapi"];
 
-// Windows was added because that is where the ceiling is: `doctor` was silent about whether a token
-// could be STORED on the one platform whose store refuses an oversize value, and the refusal arrives
-// after the authorization code is spent, which cannot be retried. gpg stays out for now: there the
-// write is a file, and a probe there answers a different question (a directory that reads but does
-// not write) worth its own decision.
-async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = null, cfg = null, namespaceTrusted = true }) {
+// Windows was added because that is where the ceiling is: `doctor` was silent about whether a value
+// could be STORED on the one platform whose store refuses an oversize one. Two stores are probed there,
+// because two stores are written: Credential Manager takes a `set` secret, and the DPAPI files take the
+// OAuth pair, where the refusal of a token arrives after the authorization code is spent, which cannot
+// be retried. gpg stays out for now: there the write is a file, and a probe there answers a different
+// question (a directory that reads but does not write) worth its own decision.
+//
+// `env` and `run` are seams for the one backend whose probe touches the disk and a child process: the
+// dpapi write, its read-back and its cleanup all go through them, so a test points them at a temp
+// directory and a stand-in PowerShell and no run reaches the real store.
+async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = null, cfg = null, namespaceTrusted = true,
+    env = process.env, run = runTool }) {
     if (!WRITE_PROBED_BACKENDS.includes(backend)) {
         return null;
     }
@@ -577,9 +591,24 @@ async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = 
         return null;
     }
     const key = writeProbeKey(cfg, namespaceTrusted);
-    const removeEntry = remove ?? deleteEntryIo(backend);
+    const removeEntry = remove ?? deleteEntryIo(backend, env, { run });
+    // The scope directory this probe is about to create, or null when one is already there. A dpapi write
+    // creates it and deleting the entry removes only the file, so on a machine with no entries yet the probe
+    // would leave an empty directory behind; one that existed before is not the probe's to remove.
+    let createdDir = null;
     try {
-        await write(key, writeProbeValue(cfg, process.env, backend, namespaceTrusted), { backend });
+        if (backend === "dpapi") {
+            const dir = path.dirname(dpapiKeyToPath(key, env));
+            createdDir = pathPresent(dir, "the DPAPI scope directory") ? null : dir;
+        }
+        const value = writeProbeValue(cfg, env, backend, namespaceTrusted);
+        await write(key, value, { backend, env, run });
+        if (backend === "dpapi" && (await readBackDpapiValue(key, env, run)) !== value) {
+            // A write that returned is not a value that can be read: the file store's whole claim is
+            // that what a login stores is what the next launch gets back, so the probe checks that
+            // and not only that PowerShell exited 0.
+            return { oversize: false, message: "the value read back differs from the value written" };
+        }
     } catch (e) {
         // Classified here, where the error still carries its exit code, and narrowly: exit 4 is the
         // Credential Manager helper's own code for an oversize blob and means nothing on any other
@@ -606,9 +635,55 @@ async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = 
                 fs.writeSync(2, `vc-secrets: could not remove the write probe "${key}" (${e.message})\n`);
             }
         }
+        if (createdDir !== null) {
+            try {
+                // rmdir, not rm -r: it refuses a directory with anything in it, so a file a real login put
+                // there in the meantime is never taken along with the probe's.
+                fs.rmdirSync(createdDir);
+            } catch (e) {
+                if (e.code !== "ENOENT" && e.code !== "ENOTEMPTY") {
+                    fs.writeSync(2, `vc-secrets: could not remove the write probe's directory (${e.code ?? e.message})\n`);
+                }
+            }
+        }
     }
 
     return "ok";
+}
+
+// The value a dpapi entry decrypts to, read the way a launch reads it: node reads the file, one PowerShell
+// call decrypts it. A missing file and a blob DPAPI refuses both throw, each naming its own cause and never
+// the bytes: "the value differs" would send the reader after corruption when the file is simply not where
+// the write said it put it.
+async function readBackDpapiValue(key, env, run) {
+    const blob = readDpapiFile(key, env);
+    if (blob === undefined) {
+        throw new VcSecretsError("no file was found where the value was written");
+    }
+    const outcome = (await unprotectManyIo({ blobs: new Map([[key, blob]]), env, run })).get(key);
+    if (outcome.err !== undefined) {
+        throw new VcSecretsError(`DPAPI could not decrypt the value it just wrote (win32 error ${outcome.err})`);
+    }
+
+    return Buffer.from(outcome.ok, "hex").toString("utf8");
+}
+
+// The binary a store's reads and writes go through, or null where none is needed. dpapi and wcm share
+// PowerShell: the one process that calls DPAPI and the one that calls Credential Manager.
+// `env` is the run's: the probe spawns psCommand(env), and a check made against another environment's
+// PowerShell would pass or fail for a binary the probe never runs.
+function backendTool(backend, env) {
+    if (backend === "wcm" || backend === "dpapi") {
+        return psCommand(env);
+    }
+    if (backend === "keychain") {
+        return "security";
+    }
+    if (backend === "gpg") {
+        return "gpg";
+    }
+
+    return null;
 }
 
 const DOCTOR_FLAGS = ["--all"];
@@ -723,6 +798,16 @@ async function cmdDoctor(cfg, flags = [], deps = {}) {
     try {
         localBackend = "backend" in deps ? deps.backend : detectLocalBackend();
     } catch { /* reported via doctorReport */ }
+    // Where the OAuth pair lives, which is not always where `set` puts a secret: on Windows the local backend
+    // is Credential Manager and the pair is in DPAPI files. The sign-in status and the write probes below
+    // are asked of this store, never of the local one by assumption.
+    let oauthStore = null;
+    try {
+        oauthStore = deps.oauthBackend ?? oauthBackend(process.platform, env);
+    } catch { /* the same invalid override doctorReport names for the local backend */ }
+    // Each distinct store once, in the order a reader meets them: the local backend, then the OAuth store
+    // where it differs (on Windows: wcm, then dpapi).
+    const probeBackends = [...new Set([localBackend, oauthStore].filter(Boolean))];
 
     // Before the loop below, which needs it: a repository's Key Vault secret is read only on behalf of a
     // consumer the launch itself would let through.
@@ -811,7 +896,7 @@ async function cmdDoctor(cfg, flags = [], deps = {}) {
     }
     resolver.resolvedValues.length = 0;
 
-    const backendTools = localBackend === "wcm" ? [psCommand()] : localBackend === "keychain" ? ["security"] : localBackend === "gpg" ? ["gpg"] : [];
+    const backendTools = [...new Set(probeBackends.map((b) => backendTool(b, env)).filter((t) => t !== null))];
     // A secret doctor declined to read needs no `az`: reporting the tool missing for a read that was never
     // going to happen would be a FAIL about nothing.
     const needsAz = Object.entries(cfg.secrets)
@@ -821,7 +906,7 @@ async function cmdDoctor(cfg, flags = [], deps = {}) {
     // Under the user scope when this checkout is not trusted for the repository's namespace: the probe
     // writes and deletes its key, and the repository's projectId may name another project's.
     const probeNamespaceTrusted = () => {
-        if (!cfg.projectId || !WRITE_PROBED_BACKENDS.includes(localBackend)) {
+        if (!cfg.projectId || !probeBackends.some((b) => WRITE_PROBED_BACKENDS.includes(b))) {
             return true;
         }
         try {
@@ -840,26 +925,27 @@ async function cmdDoctor(cfg, flags = [], deps = {}) {
     // Skipped when the backend's own tool is missing, the same suppression the secret loop above
     // makes: the line naming the missing tool is already printed, and running the probe anyway added
     // a SECOND FAIL for that one cause plus a cleanup warning about an entry that was never written.
-    const writeProbe = localBackend === null || backendTools.some((t) => toolsMissing.includes(t))
-        ? null
-        : await (deps.probeKeystoreWrite ?? probeKeystoreWrite)({ backend: localBackend, cfg, namespaceTrusted: probeNamespaceTrusted() });
+    //
+    // One probe per store (probeBackends), each skipped on its own tool. `env` is handed through: the dpapi
+    // probe writes a file under it, and a run pointed at another environment must not touch this one's.
+    const writeProbes = [];
+    for (const probed of probeBackends) {
+        if (toolsMissing.includes(backendTool(probed, env))) {
+            continue;
+        }
+        const result = await (deps.probeKeystoreWrite ?? probeKeystoreWrite)({ backend: probed, cfg, namespaceTrusted: probeNamespaceTrusted(), env });
+        if (result !== null) {
+            writeProbes.push({ backend: probed, result });
+        }
+    }
 
     // Read, never exchanged: proving a token is refreshable would rotate the refresh token as a side
     // effect of a diagnostic -- and Entra rotates on use, which signs out every session but one.
     const oauthStatus = {};
-    const oauthOversize = {};
     for (const [name, decl] of Object.entries(cfg.oauth ?? {})) {
         if (namespaceBlocked && isNamespaceDecl("oauth", decl)) {
             namespaceNotRead.push({ kind: "oauth", name });
             continue;
-        }
-        // Read, never recomputed. doctor holds no fresh token and must not exchange for one, so it
-        // cannot measure what an access entry WOULD weigh -- and an entry that exceeded the ceiling
-        // was never stored, so there is nothing in the keystore to measure either. The marker a
-        // failed write left behind is the only place this fact survives.
-        const marker = readOversizeMarker(oauthEntryKeys(name, decl, cfg).access, env);
-        if (marker) {
-            oauthOversize[name] = marker;
         }
         try {
             // cfg passed through (unlike the source's two-argument call): oauthEntryKeys needs it to
@@ -867,7 +953,11 @@ async function cmdDoctor(cfg, flags = [], deps = {}) {
             // "user". Drop it and a project-scope entry throws before the read ever reaches the
             // keystore; caught below, but reported as an opaque "Cannot read properties of undefined"
             // instead of the sign-in state a developer could act on.
-            oauthStatus[name] = oauthStatusFrom(await (deps.oauthLaunchDeps ?? oauthLaunchDeps)(name, decl, cfg).readCache());
+            //
+            // `backend` is the OAuth store resolved above and `env` the run's: without them the read
+            // would take the default for this process, and a pair in DPAPI files would be looked for in
+            // Credential Manager, where a login no longer puts it.
+            oauthStatus[name] = oauthStatusFrom(await (deps.oauthLaunchDeps ?? oauthLaunchDeps)(name, decl, cfg, { backend: oauthStore, env }).readCache());
         } catch (e) {
             oauthStatus[name] = e?.message ?? "unreadable";
         }
@@ -884,7 +974,7 @@ async function cmdDoctor(cfg, flags = [], deps = {}) {
         env, platform: process.platform, enableLists, resolvable, skipped, notRead,
         toolsMissing, wired, configDirOverride: Boolean(env.VC_SECRETS_CONFIG_DIR), legacyOnly,
         shimContract: deps.shimContract ?? null, wiringProblems, clientConfigsSeen,
-        writeProbe, oauthStatus, oauthOversize, tenantChecks, childNodes, trustFindings, namespaceNotRead,
+        writeProbes, oauthStatus, tenantChecks, childNodes, trustFindings, namespaceNotRead,
     });
     // sync write: stderr is async on a POSIX pipe and on a Windows console, and process.exit drops pending writes
     (deps.write ?? ((text) => fs.writeSync(2, text)))(lines.join("\n") + "\n");
