@@ -112,15 +112,35 @@ fallback — as a pair, never one entry from each store: a refresh file beside a
 entry could serve a previous principal's access token, the failure `cmdLogin` already deletes the access
 entry first to prevent. The pair is written to files at the next exchange or sign-in, and the Credential
 Manager entries are deleted once the refresh file is in place. A developer signed in before the upgrade
-is never asked to sign in again.
+is never asked to sign in again. An exchange that returns no new refresh token (RFC 6749 §6 makes it
+optional) carries the legacy refresh token into the file; otherwise the next read would find an access
+file with no refresh file beside it and exchange again on every launch and tick.
 
-Every delete of an OAuth entry — `logout`, the access entry `login` clears first, the pair a failed
-renewal clears — removes the file **and** the Credential Manager entry of the same key. Otherwise the
-fallback would bring back a token that `logout` reported removed.
+The migration removes any access **file** before it publishes the refresh file. An access file with no
+refresh file beside it is ignored by every read, but the moment a refresh file appears it is read again —
+and it may belong to a previous principal (a pair whose refresh file was lost). Left in place, it would
+be served as valid beside the migrated refresh token, to a reader that arrives while the legacy entries
+are being deleted or after the new access write fails. A removal that fails for any reason other than
+absence is handled as a failed refresh write: the legacy pair stays the store, or, with a newly issued
+token, the pair is cleared and the error names `login`. Serving another principal's token is the outcome
+ruled out; one extra sign-in is not.
 
-An entry DPAPI refuses to decrypt (after an administrator's password reset, or a profile copied to
-another machine) is read as absent with a notice naming the entry, exactly as an entry that is not
-readable JSON is today: the remedy is a sign-in, and failing the launch over a cache helps nobody.
+Deleting the legacy pair after the refresh file is in place is best effort — the file decides from then
+on — but not silent: a delete that fails for any reason other than absence prints one line naming the
+entry and the remedy (`logout`, then a sign-in). It is not retried on later reads: that would cost a
+PowerShell start on every read, and the copy left behind is the token the next rotation invalidates.
+
+Every delete of an OAuth entry — `logout`, the access entry `login` clears first, the pair a renewal
+clears when it cannot store a newly issued refresh token — removes the Credential Manager entry of the same
+key **and** the file, in that order. Otherwise the fallback would bring back a token that `logout`
+reported removed; and the order means a failure part-way leaves the file, which decides the store, rather
+than a legacy entry the next read would fall back to.
+
+A **refresh** file DPAPI refuses to decrypt (after an administrator's password reset, or a profile copied
+to another machine) is read as absent with a notice naming the entry and `vc-secrets login`, exactly as an
+entry that is not readable JSON: the remedy is a sign-in, and failing the launch over a cache helps
+nobody. An undecryptable **access** file beside a good refresh file costs one exchange, and its notice
+says so.
 
 ### D7 — `doctor` still does not exchange
 
