@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import * as m from "../vc-secrets.mjs";
+import { writeLocalValue } from "./keystore.mjs";
 import * as cache from "../vc-secrets-cache.mjs";
 import * as oauth from "../vc-secrets-oauth.mjs";
 import { tmpDirs } from "../test-support.mjs";
@@ -370,13 +371,31 @@ test("buildLocalRead/buildLocalWrite: reject keys outside vc-secrets:<scope>:<na
 });
 
 test("buildLocalWrite: gpg tmp target for atomic write", () => {
-    const spec = m.buildLocalWrite("gpg", "vc-secrets:user:ado-pat", { HOME: "/h" }, { tmp: true });
+    const key = "vc-secrets:user:ado-pat";
+    const env = { HOME: "/h" };
+    const spec = m.buildLocalWrite("gpg", key, env, { tmp: true });
     const target = spec.args[spec.args.indexOf("-o") + 1];
-    assert.ok(target.endsWith(path.join("ado-pat.gpg.tmp")), `expected .gpg.tmp target, got "${target}"`);
+    // Named for this process: login stores even when the token lock is busy, so two writers must not share a tmp path.
+    assert.equal(target, `${m.keyToPath(key, env)}.${process.pid}.tmp`);
 
     const finalSpec = m.buildLocalWrite("gpg", "vc-secrets:user:ado-pat", { HOME: "/h" });
     const finalTarget = finalSpec.args[finalSpec.args.indexOf("-o") + 1];
     assert.ok(finalTarget.endsWith("ado-pat.gpg") && !finalTarget.endsWith(".tmp"), "default (no tmp option) targets the final path");
+});
+
+test("writeLocalValue: gpg renames the same pid-suffixed tmp file the builder targets", async () => {
+    const { env } = dpapiTmpEnv("vc-secrets-gpg-tmp-");
+    const key = "vc-secrets:user:ado-pat";
+    const finalPath = m.keyToPath(key, env);
+    const spec = m.buildLocalWrite("gpg", key, env, { tmp: true });
+    const target = spec.args[spec.args.indexOf("-o") + 1];
+    // Stands in for gpg: writes exactly where the spec's `-o` points.
+    const run = async () => { fs.writeFileSync(target, "CIPHER"); };
+    await writeLocalValue("gpg", key, spec, "the-token", env, run);
+
+    assert.equal(fs.readFileSync(finalPath, "utf8"), "CIPHER");
+    assert.equal(fs.existsSync(target), false, "the tmp file was renamed, not left behind");
+    assert.equal(target, `${finalPath}.${process.pid}.tmp`);
 });
 
 test("buildLocalDelete refuses a key that is not three segments", () => {

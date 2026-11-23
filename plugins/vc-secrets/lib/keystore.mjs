@@ -765,6 +765,13 @@ async function unprotectManyIo({ blobs, env = process.env, run = runTool }) {
     return outcomes;
 }
 
+// The tmp file a gpg write goes through, named for this process: login stores even when the token lock is
+// busy, so two writers can overlap and must not share one tmp path. buildLocalWrite targets it and
+// writeLocalValue renames it, so both must compute the same name.
+function gpgTmpPath(key, env) {
+    return `${keyToPath(key, env)}.${process.pid}.tmp`;
+}
+
 function buildLocalWrite(backend, key, env = process.env, { tmp = false, value = undefined } = {}) {
     assertKeyShape(key);
     if (backend === "wcm") {
@@ -806,10 +813,10 @@ function buildLocalWrite(backend, key, env = process.env, { tmp = false, value =
     const recipientArgs = env.VC_SECRETS_GPG_RECIPIENT
         ? ["--recipient", env.VC_SECRETS_GPG_RECIPIENT, "--trust-model", "always"]
         : ["--default-recipient-self"];
-    // Write to a `.tmp` sibling first so a mid-write crash/kill can never leave
+    // Write to a tmp sibling first so a mid-write crash/kill can never leave
     // a half-encrypted `<name>.gpg` in place of a previously-valid secret — cmdSet renames it in
     // after gpg exits 0.
-    const target = `${keyToPath(key, env)}${tmp ? ".tmp" : ""}`;
+    const target = tmp ? gpgTmpPath(key, env) : keyToPath(key, env);
 
     return { cmd: "gpg", args: ["--quiet", "--batch", "--yes", ...recipientArgs, "--encrypt", "-o", target],
         stdinData: VALUE_ON_STDIN, timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: false };
@@ -953,7 +960,7 @@ async function writeLocalValue(backend, key, spec, value, env = process.env, run
     }
     fs.mkdirSync(path.dirname(keyToPath(key, env)), { recursive: true, mode: 0o700 });
     const finalPath = keyToPath(key, env);
-    const tmpPath = `${finalPath}.tmp`;
+    const tmpPath = gpgTmpPath(key, env);
     try {
         await run(spec, { stdinValue: value, redactValues: [value] });
         fs.chmodSync(tmpPath, 0o600);
