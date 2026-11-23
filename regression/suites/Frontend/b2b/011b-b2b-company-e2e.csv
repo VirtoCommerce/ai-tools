@@ -103,9 +103,9 @@ Sign out of all sessions.","VCST-5028 | paths: /company/members,/sign-up [P5:BLO
 [ASSERT] company info fields are editable (maintainer can edit org info)
 
 --- SCREEN: Switch to BuildRight (org-employee role) ---
-[ACT] open org-switcher in header (click company name or org-switcher control)
-[WAIT] org list dropdown / panel opens
-[ACT] click 'BuildRight' in the org list
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
+[ACT] click 'BuildRight' in the Organizations panel
 [WAIT] page reloads or context switches; org indicator in header shows BuildRight name
 
 --- SCREEN: BuildRight org (org-employee role) ---
@@ -125,7 +125,7 @@ Sign out of all sessions.","VCST-5028 | paths: /company/members,/sign-up [P5:BLO
 [CONSOLE] No TypeError or JS errors during org switch
 [NETWORK] No 4xx on /company/members for TechFlow session; 403 or redirect expected for BuildRight employee session attempting member management
 [API] GetPageContext (me query) response user.permissions differs between TechFlow and BuildRight sessions confirming org-scoped permission isolation","Spinner >8s after org switch, header still shows TechFlow after switching to BuildRight, 'Invite members' visible for BuildRight employee, no permission change observable in network responses after org switch","[PRE:CLEAR_SESSION]
-Sign out. No org data was modified so no additional cleanup required.","VCST-5028 | paths: /company/members,/company/info,org-switcher [P5:VERIFIED]","Automated"
+Sign out. No org data was modified so no additional cleanup required.","VCST-5028 | paths: /company/members,/company/info,org-switcher [P5:VERIFIED] | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23)","Automated"
 "COMP-E2E-003","Multi-Org Context Isolation — Cart Addresses Lists after Org Switch","Company E2E > Multi-Org Isolation > [JOURNEY]","Critical","BL-B2B-001, BL-CART-005, BL-CROSS-008","ECL-7.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
 [PRE:SWITCH_ORG:TECHFLOW]
@@ -146,8 +146,8 @@ Sign out. No org data was modified so no additional cleanup required.","VCST-502
 [ASSERT] cart contains at least 1 item (TechFlow cart)
 
 --- SCREEN: Switch to BuildRight ---
-[ACT] open org-switcher in header
-[WAIT] org list opens
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
 [ACT] click 'BuildRight'
 [WAIT] context switch completes; header shows BuildRight
 
@@ -156,7 +156,8 @@ Sign out. No org data was modified so no additional cleanup required.","VCST-502
 [ASSERT] cart is empty (BuildRight has its own separate cart) OR shows BuildRight-specific items, NOT TechFlow's items
 
 --- SCREEN: Switch back to TechFlow ---
-[ACT] open org-switcher in header
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
 [ACT] click 'TechFlow'
 [WAIT] context switch completes; header shows TechFlow
 
@@ -170,7 +171,7 @@ Sign out. No org data was modified so no additional cleanup required.","VCST-502
 [NETWORK] No 4xx/5xx on cart load for either org context
 [API] addItem mutation during TechFlow session uses TechFlow org context (distinct cartId verifiable in request payload)","Spinner >8s after org switch, cart badge shows TechFlow item count immediately after switching to BuildRight, item count stays non-zero for BuildRight cart before any items added, cart fails to restore TechFlow items on switch-back, 4xx on cart load","[PRE:RESET_CART]
 [PRE:CLEAR_SESSION]
-Remove items from TechFlow cart (clear cart on both org contexts if needed).","VCST-5028 | paths: /cart,org-switcher [P5:VERIFIED]","Draft"
+Remove items from TechFlow cart (clear cart on both org contexts if needed).","VCST-5028 | paths: /cart,org-switcher [P5:VERIFIED] | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23)","Draft"
 "COMP-E2E-004","Multi-Org Switch — Active Org Context Reflected Across All Screens","Company E2E > Multi-Org Isolation > [JOURNEY]","High","BL-CROSS-008, BL-B2B-001, BL-B2B-007","ECL-7.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:MULTI_ORG_USER_EMAIL]
 1. MULTI_ORG_USER_EMAIL ({{MULTI_ORG_USER_EMAIL}}) belongs to ≥2 orgs.
@@ -188,8 +189,8 @@ Remove items from TechFlow cart (clear cart on both org contexts if needed).","V
 [ASSERT] company name on /company/info matches the header org indicator
 
 --- SCREEN: Switch to second org ---
-[ACT] open org-switcher in header
-[WAIT] dropdown / panel shows list of available orgs (≥2 entries)
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' shows the available orgs (≥2 entries)
 [ACT] click any org that is different from the currently active one
 [WAIT] context switch completes
 
@@ -213,7 +214,7 @@ Remove items from TechFlow cart (clear cart on both org contexts if needed).","V
 [CONSOLE] No TypeError during org switch or cross-page navigation
 [NETWORK] No 5xx on any page load after org switch
 [API] xAPI me query after switch returns organizationId matching newly selected org","Spinner >8s on org switch, header still shows org-1 after clicking org-2, /company/info still shows org-1 name after switch, 5xx on any page load after switch, JS TypeError in console during switch","[PRE:CLEAR_SESSION]
-Sign out. No data modified.","VCST-5028 | paths: /company/info,/company/members,/account/orders [P5:VERIFIED]","Draft"
+Sign out. No data modified.","VCST-5028 | paths: /company/info,/company/members,/account/orders [P5:VERIFIED] | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23)","Draft"
 "COMP-E2E-005","Org-Scoped Lockout — a Locked Membership Never Lands the Session in the Locked Org (Credential Sign-In Falls Back, Explicit Switch Is Refused); Other Orgs Unaffected","Company E2E > Org-Scoped Lockout > [JOURNEY]","Critical","BL-AUTH-012, BL-AUTH-013, BL-B2B-005, BL-AUTH-016","ECL-7.3","[PRE:CLEAR_SESSION]
 1. MULTI_ORG_TF_BR user exists: maintainer in TechFlow, employee in BuildRight.
 2. Admin credentials available for REST API call to lock/unlock membership.
@@ -237,7 +238,7 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [WAIT] login response settles
 
 [ASSERT] sign-in is NOT refused: the storefront lands in BuildRight (the accessible org), never in TechFlow, and the header org indicator shows 'BuildRight'
-[ASSERT] in the account-menu 'Organizations' listbox the TechFlow option is disabled with the lock-closed icon and cannot be selected (keyboard path only — never force the disabled control)
+[ASSERT] in the 'Organizations' listbox of the header Organizations panel (open it with the Organizations control, data-test-id=""organizations-button"") the TechFlow option is disabled with the lock-closed icon and cannot be selected (keyboard path only — never force the disabled control)
 [CAPTURE] from the network log record the sign-in POST /connect/token response: decode its access_token organization_id claim as $SIGNIN_CLAIM and record its refresh_token as $RT (minted AFTER the lock)
 [HTTP] POST {{FRONT_URL}}/connect/token grant_type=refresh_token refresh_token=$RT storeId={{STORE_ID}} organization_id=@td(MULTI_ORG_TF_BR.org_techflow_id) — record status, error, errors[] and error_description as $SWITCH (a refresh token minted BEFORE the lock is revoked and fails code-less, KB-D1D30720)
 
@@ -267,7 +268,7 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [CONSOLE] No unhandled JS errors during lock/unlock flow
 [NETWORK] No 5xx on storefront sign-in page during either org attempt","Lock REST endpoint returns 4xx, global locked=true after org lock (BL-AUTH-012 violation — critical), BuildRight login fails after TechFlow lock (cross-org contamination), the TechFlow password sign-in is refused or lands in the locked TechFlow, the explicit-switch refusal shows a generic lockout message or a code-less invalid_grant (token minted before the lock — verdict void), 5xx on /sign-in during locked-org attempt","[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
 Ensure TechFlow membership is unlocked after test regardless of pass/fail outcome.
-[PRE:CLEAR_SESSION]","VCST-5028 | paths: /sign-in,REST:memberships/lock [P5:login-VERIFIED;REST-NX] | Re-based: VCST-6132 — re-run PASS in REG-2026-10-20-1329 (BLOCKED in REG-2026-10-20-0125)","Draft"
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: /sign-in,REST:memberships/lock [P5:login-VERIFIED;REST-NX] | Re-based: VCST-6132 — re-run PASS in REG-2026-10-20-1329 (BLOCKED in REG-2026-10-20-0125) | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23)","Draft"
 "COMP-E2E-006","Company Info Edit — Changes Reflected Across Account and Checkout Contexts","Company E2E > Company Info > [JOURNEY]","High","BL-B2B-005, BL-CROSS-008","ECL-7.1","[PRE:CLEAR_SESSION]
 Admin REST API available with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}} to provision a disposable AGENT-TEST org + org-maintainer user — this case must NEVER edit the shared TechFlow org (many other cases in this suite depend on its name staying ""TechFlow"").
 NOTE: /company/info's real editable surface is Company Name only (an inline textbox with its own edit-icon → save-icon), a logo uploader, and an Addresses table — there is no description/secondary text field to clear or edit.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_api_email={{ADMIN_EMAIL}}, admin_api_password={{ADMIN_PASSWORD}}, new_member_password={{DEFAULT_TEST_PASSWORD}}","--- SCREEN: Fixture Setup (REST) ---
@@ -954,8 +955,8 @@ Verify AGENT-TEST-noperm-$TS_SUFFIX@yopmail.com absent from BuildRight roster.",
 [ASSERT] me.permissions includes xapi:my_organization:order:view
 
 --- SCREEN: Switch to BuildRight — verify permissions change ---
-[ACT] open org-switcher in header
-[WAIT] org list opens
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
 [ACT] click 'BuildRight'
 [WAIT] context switch completes; header shows BuildRight
 
@@ -969,8 +970,8 @@ Verify AGENT-TEST-noperm-$TS_SUFFIX@yopmail.com absent from BuildRight roster.",
 [ASSERT] 'Invite members' button ABSENT (permission-driven UI matches BuildRight employee empty permissions)
 
 --- SCREEN: Switch back to TechFlow — verify permissions restored ---
-[ACT] open org-switcher in header
-[WAIT] org list opens
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
 [ACT] click 'TechFlow'
 [WAIT] context switch completes; header shows TechFlow
 [GQL] Re-execute me query with TechFlow token
@@ -982,7 +983,7 @@ Verify AGENT-TEST-noperm-$TS_SUFFIX@yopmail.com absent from BuildRight roster.",
 [API] Both responses confirm permissions from JWT org-scoped claims, not DB global roles (BUG-A fix area)
 [NETWORK] GetPageContext/me query fires after each org switch; distinct permission sets observable in payloads
 [CONSOLE] No JS errors during org switch or me query","TechFlow me.permissions missing xapi:my_organization:edit (BUG-A regression), BuildRight me.permissions contains maintainer permissions (cross-org permission leak — BL-B2B-007 violation), me.permissions identical for both orgs (BUG-A not fixed — DB-role resolution still used), 'Invite members' visible on BuildRight (UI mismatch), 5xx on me query after org switch","[PRE:CLEAR_SESSION]
-No data modified.","VCST-5028 (BUG-A fixed 402e 2026-06-19) | paths: /company/members,GraphQL:me.permissions [P5:VERIFIED]","Draft"
+No data modified.","VCST-5028 (BUG-A fixed 402e 2026-06-19) | paths: /company/members,GraphQL:me.permissions [P5:VERIFIED] | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23)","Draft"
 "COMP-E2E-022","REST Create Membership — Missing userId Must Return 400 Not 500 (BUG-B Known-Failing)","Company E2E > REST API > Negative > [needs-review]","High","BL-B2B-009","ECL-10.2","[PRE:CLEAR_SESSION]
 Admin REST API available with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}.
 NOTE: BUG-B is OPEN as of 2026-06-19 — POST /api/customer/organization-memberships with missing userId currently returns HTTP 500 + DB error with DB-name leak. This case asserts the EXPECTED 400. Mark result needs-review until BUG-B is fixed. Do NOT assert the buggy 500 as correct.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, techflow_org_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","--- LAYER: API (negative: missing userId field) ---

@@ -890,8 +890,8 @@ IMPERSONATE_TARGET_MANY_ORGS (USR-020) belongs to >10 organizations (all Active 
 [WAIT] Silent flow completes — impersonation banner visible; session is @td(IMPERSONATE_TARGET_MANY_ORGS.name)
 [ASSERT] Impersonation banner visible: operator name + 'logged in as' + target name (@td(IMPERSONATE_TARGET_MANY_ORGS.name))
 [NOTE] --- SCREEN: Header Org Switcher ---
-[ACT] Locate the current-org/user chip in the header — the element showing the active org name and impersonated user name (e.g., 'BMW-Group / Mary Moll' in the evidence screenshot)
-[ACT] Click the org chip to open the 'Organizations' dropdown panel
+[ACT] Locate the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[ACT] Click the Organizations control to open the 'Organizations' panel (role=dialog)
 [WAIT] Organizations dropdown panel opens
 [ASSERT] Search input visible inside the Organizations dropdown panel
 [ASSERT] Radio-button list of organizations is visible with at least 10 rows (scrollable)
@@ -917,7 +917,7 @@ IMPERSONATE_TARGET_MANY_ORGS (USR-020) belongs to >10 organizations (all Active 
 [ASSERT] Orders page renders under the new org context (no 403/500 error)
 [NOTE] --- SCREEN: Exit Impersonation ---
 [ACT] Click 'Back to {operator}' in the header
-[WAIT] Revert completes — operator session restored; impersonation banner gone","[DOM] Organizations dropdown panel opens when org chip clicked
+[WAIT] Revert completes — operator session restored; impersonation banner gone","[DOM] Organizations dropdown panel opens when the Organizations control is clicked
 [DOM] Search input present and enabled inside the Organizations panel
 [DOM] Radio list contains >10 organization rows
 [DOM] List is scrollable — rows beyond initial viewport are reachable by scrolling
@@ -929,8 +929,8 @@ IMPERSONATE_TARGET_MANY_ORGS (USR-020) belongs to >10 organizations (all Active 
 [STATE] After 'Back to {operator}': operator session restored; banner gone","[API] Organization context switch call (if any) returns no 4xx/5xx during impersonation
 [CONSOLE] No JS errors during dropdown open, scroll, search, or org selection
 [NETWORK] No 4xx/5xx during catalog or orders page load under new org context
-[API] GraphQL response errors[] is empty","Org chip absent from header during impersonation; Organizations dropdown does not open; Search input absent (list has no search field — this field only renders when org count > threshold); Radio list renders fewer than 10 rows despite target having >10 orgs; Search filter does not reduce list (filtering broken); Clearing search does not restore full list; Org switch does not update header chip; Catalog/orders returns 403 under new org context; Impersonation banner disappears after org switch (BL-AUTH-010 violation); console TypeError","Revert impersonation if not already done.
-[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-006, BL-AUTH-010; Added 2026-05-14. Covers >10-org threshold (scroll + search behavior). Evidence screenshot reference: tests/Sprint-current/VCST-4906/evidence/Screenshot 2026-05-14 163709.png (Mary Moll / BMW-Group with 8+ visible orgs). FIXTURE-SEEDING NEEDED: USR-020 must be provisioned with >10 Active org memberships before first run — see IMPERSONATE_TARGET_MANY_ORGS alias. | Promoted: REG-2026-09-07-1342 (2026-09-07)",Automated
+[API] GraphQL response errors[] is empty",Organizations control absent from header during impersonation; Organizations dropdown does not open; Search input absent (list has no search field — this field only renders when org count > threshold); Radio list renders fewer than 10 rows despite target having >10 orgs; Search filter does not reduce list (filtering broken); Clearing search does not restore full list; Org switch does not update header chip; Catalog/orders returns 403 under new org context; Impersonation banner disappears after org switch (BL-AUTH-010 violation); console TypeError,"Revert impersonation if not already done.
+[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-006, BL-AUTH-010; Added 2026-05-14. Covers >10-org threshold (scroll + search behavior). Evidence screenshot reference: tests/Sprint-current/VCST-4906/evidence/Screenshot 2026-05-14 163709.png (Mary Moll / BMW-Group with 8+ visible orgs). FIXTURE-SEEDING NEEDED: USR-020 must be provisioned with >10 Active org memberships before first run — see IMPERSONATE_TARGET_MANY_ORGS alias. | Promoted: REG-2026-09-07-1342 (2026-09-07) | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23)",Automated
 "IMP-049","Impersonation — Target User Account Status: Blocked and Invited Contracts","LoginOnBehalf > Authorization > Target Account Status","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
 Operator (SUPPORT_AGENT) has StorefrontPermissions.CanImpersonate. Two separate target users required:
 (a) IMPERSONATE_TARGET_BLOCKED: a customer account whose platform status is 'Locked' (user-level block, distinct from a suspended org). Platform Admin SPA shows Status=Locked on the user detail blade.
