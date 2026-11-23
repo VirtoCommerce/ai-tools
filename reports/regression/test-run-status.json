@@ -1,6 +1,6 @@
 {
   "runId": "REG-2026-11-23-1454",
-  "status": "stalled",
+  "status": "completed",
   "startedAt": "2026-11-23T13:54:20.371Z",
   "env": "vcst",
   "selection": "006 --ids <38 changed+new ORG cases> --no-promote",
@@ -8,13 +8,15 @@
   "note": "qa-suite-sync step-6 scoped run (/qa-test-lifecycle VCST-6237), suite 006 only",
   "suites": {
     "006": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "cases": 38,
-      "browser": "playwright-chrome"
+      "browser": "playwright-chrome",
+      "pass": 28,
+      "fail": 0,
+      "blocked": 7,
+      "skipped": 1
     }
   },
-  "stalledAt": "2026-11-23T14:42:26.338Z",
-  "stalledReason": "no progress for 45 min (REG-2026-11-23-1454:in_progress:1:37:0)",
-  "finishedAt": "2026-11-23T14:42:26.338Z"
+  "finishedAt": "2026-11-23T18:35:10.491Z"
 }

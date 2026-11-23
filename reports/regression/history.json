@@ -7148,5 +7148,21 @@
     "pass_rate": 83.78,
     "duration_minutes": 41.26,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-23-1454",
+    "date": "2026-11-23",
+    "suiteId": "006",
+    "suiteName": "B2B Organization",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 38,
+    "passed": 28,
+    "failed": 0,
+    "blocked": 7,
+    "skipped": 3,
+    "pass_rate": 100,
+    "duration_minutes": 277.39,
+    "mode": "interactive"
   }
 ]
