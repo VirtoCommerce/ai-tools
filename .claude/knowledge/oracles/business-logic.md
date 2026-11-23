@@ -1096,6 +1096,73 @@ Cases MFA-033 and MFA-062 (suite 110a).
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Trust:** INFERRED
 
+### BL-CAT-013: Compare limit is per category group and a refused add saves nothing `[P1-data]`
+- **Rule:** The store setting ProductComparison.MaxItems (default 5) caps the number of products in each category group of a compare list (the second-level category; products with no category share one group), not the list as a whole. An add that would take a group past the cap is refused with a warning and saves nothing, including when one request carries several products. Lowering the cap hides the products over it without deleting them; raising it shows them again.
+- **Verify:** Fill one category group to MaxItems → add one more product of that group → a warning, the list is unchanged (xAPI saveProductsToCompareList → COMPARE_LIST_LIMIT_REACHED, nothing saved). A product of another group is still accepted. Lower MaxItems → each group shows at most the new cap; raise it back → every product returns.
+- **Violation signal:** A group holds more than MaxItems; the cap counts the whole list; a refused add saves part of its products; lowering the cap deletes products.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5918 AC-6 — store setting for the maximum items per list, default 5
+- **Source:** VCST-5918 AC-9 — category level policy, second level by default
+- **Source:** VCST-5918 implementation decisions (comment 112644) — MaxItems caps each category group, not the whole list; adding to a full group is refused with the existing warning; the group is the second-level category
+- **Trust:** DECLARED
+
+### BL-CAT-014: A compare list belongs to one user, store and organization `[P0-security]`
+- **Rule:** A compare list is kept per user, store and organization; the organization comes from the sign-in token. Switching organization shows that organization's own list, and a change in one organization's list never changes another's. A buyer can neither read nor change another buyer's list by any operation, and an anonymous caller reaches only guest lists.
+- **Verify:** As a buyer in two organizations, add different products in each → switch organization → the other organization's list shows; clear one → the other is unchanged. With buyer A's token, read and write buyer B's list id through every compare operation → refused, B's list unchanged. Anonymously, use a registered user's list id → Unauthorized.
+- **Violation signal:** One organization's products appear after switching to another; clearing one organization's list empties another; another buyer's list is readable or writable; an anonymous caller reaches a registered user's list.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5918 AC-1 — one compare list per store and user, created on the first add
+- **Source:** VCST-5918 implementation decisions (comment 112644) — one list per user, store and organization; organization comes from the sign-in token, so switching organization shows that organization's list
+- **Trust:** DECLARED
+
+### BL-CAT-015: A guest compare list joins the account list at sign-in `[P1-data]`
+- **Rule:** When a guest with a non-empty compare list signs in or registers, the guest list is merged into the account list and then deleted; a product in both lists stays once. If a category group would exceed the limit, the guest's products win and the account's newest products fill the remaining places.
+- **Verify:** As a guest add products (one also in the account's list) → sign in → the account list holds the union with the shared product once, and the guest list id no longer resolves. Repeat with a category group the merge would overfill → the guest's products plus the account's newest, up to the limit.
+- **Violation signal:** Guest products lost at sign-in; a product duplicated; the guest list still exists after the merge; at the limit the account's products displace the guest's.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5918 AC-15 — an anonymous user with a non-empty list who signs in or registers has the list merged (mergeCompareList) and the anonymous list cleared
+- **Source:** VCST-5918 AC-3 — mergeCompareList overrides products with the new ones when the product limit is reached
+- **Source:** VCST-5918 implementation decisions (comment 112644) — the guest list is merged into the account list and then deleted; at the limit the guest's items win, then the account's newest items fill the rest
+- **Trust:** DECLARED
+
+### BL-CAT-016: Product comparison turned off removes compare from the store without deleting lists `[P1-data]`
+- **Rule:** With the store setting ProductComparison.Enabled off, or the Product Comparison module not installed, the store has no compare feature — no add-to-compare control, no Compare link, the compare page is not found, and the API refuses to save. Saved lists are kept and show again when comparison is turned back on.
+- **Verify:** Turn ProductComparison.Enabled off for the store → reload → no compare control on cards and the product page, no Compare link, /compare is not found; xAPI save → COMPARE_LIST_DISABLED. Turn it on → the earlier list is back.
+- **Violation signal:** A compare control or link is shown, or the compare page opens, while comparison is off; a save succeeds while off; the list is gone after turning comparison back on.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5918 AC-7 — store-level boolean setting, default true, disables compare per store without uninstalling
+- **Source:** VCST-5918 AC-13 — with the setting off the add-to-compare button and the compare page are hidden
+- **Source:** VCST-5918 AC-16 — if the module is not installed or is disabled, the comparison feature is unavailable (menu item hidden, navigation disabled)
+- **Trust:** DECLARED
+
+### BL-CAT-017: Guest comparison turned off asks a guest to sign in and saves nothing `[P1-data]`
+- **Rule:** With the store setting ProductComparison.AnonymousListEnabled off, a guest who adds a product to compare is asked to sign in and nothing is saved; signed-in buyers are not affected. A guest list that existed before is hidden, not deleted, and returns when the setting is turned back on.
+- **Verify:** Turn ProductComparison.AnonymousListEnabled off → as a guest click Add to Compare → a sign-in prompt, the count does not change (xAPI save → ANONYMOUS_COMPARE_LIST_DISABLED); a signed-in buyer still saves. Turn it on → the guest's earlier list returns.
+- **Violation signal:** A guest's add is saved while guest comparison is off; no sign-in prompt; a signed-in buyer is refused; the guest's earlier list is deleted.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5918 AC-8 — a setting controls anonymous compare lists
+- **Source:** VCST-5918 AC-12 — with anonymous lists off, an anonymous customer who clicks add to compare sees a warning to sign in
+- **Trust:** DECLARED
+
+### BL-CAT-018: The compare list is kept on the server `[P1-data]`
+- **Rule:** The compare list is read from and saved to the server, not the browser. Every add, remove, Clear category and Clear all is saved, so a reload, a new tab or another device signed in as the same buyer shows the same list. Compare lists kept in the browser before the upgrade are not read.
+- **Verify:** Add, remove and clear products → reload, open a new tab, and sign in as the same buyer in a second browser → the same list everywhere. Seed the old browser compare keys → a fresh load shows only the server list.
+- **Violation signal:** A change is lost on reload; another device shows a different list; products from the old browser keys appear.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5918 AC-14 — compare scenarios use the X-API instead of local storage
+- **Source:** VCST-5918 AC-1 — the compare list is persisted
+- **Source:** VCST-5918 implementation decisions (comment 112644) — lists saved in browsers before the upgrade are not imported
+- **Trust:** DECLARED
+
+### BL-CAT-019: The compare page groups products by category group `[P1-ux]`
+- **Rule:** The compare page shows the list grouped by category group, one tab per group with its count, and the products of the selected group side by side with one column each and one row per compared attribute. One request returns the list, its groups and the product details.
+- **Verify:** Add products from two category groups → open the compare page → one tab per group with its count; the selected tab shows its products in one column each with attribute rows. xAPI compareList returns the groups with their products.
+- **Violation signal:** Products of different groups mixed in one table; a tab count differs from its columns; a product shown in two tabs; attribute rows missing.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5918 AC-5 — one X-API query returns the compared products and categories with product details (compareList - category - products)
+- **Source:** VCST-5918 implementation decisions (comment 112644) — the category group is the second-level category
+- **Trust:** DECLARED
+
 ---
 
 ## Domain 8: Cross-Domain Invariants (BL-CROSS)
@@ -2707,7 +2774,7 @@ ticket or a docs page disputes (`status`).
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
 | Users & Authentication | BL-AUTH-001–026 | 26 | 14 | 11 | 1 | 19 | 11 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 9 |
-| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 6 |
+| Catalog & Inventory | BL-CAT-001–019 | 19 | 3 | 12 | 4 | 15 | 6 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 7 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 3 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
@@ -2731,4 +2798,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **243** | **76** | **128** | **39** | **135** | **87** |
+| **Total** | | **250** | **77** | **134** | **39** | **142** | **87** |

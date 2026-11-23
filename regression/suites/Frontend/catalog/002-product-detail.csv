@@ -47,7 +47,7 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [DOM] Badge count is readable (not clipped)
 [DOM] No layout overflow caused by smaller badge size
 [DOM] Badge appearance consistent across different category items","[CONSOLE] no TypeError or JS errors","Badges overflowing category item containers; badge count not readable; inconsistent badge size across items; console TypeError","none","VCST-4623","Manual"
-"CAT-030","Add to Compare from Catalog Card","Catalog > Compare","High",,,Category page with product cards; at least 2 comparable products visible. Compare is saved on the server and works for guests (an anonymous list) and signed-in buyers alike (no sign-in required).,"url={{FRONT_URL}}","[NAV] Navigate to a category page with product cards on {{FRONT_URL}}
+"CAT-030","Add to Compare from Catalog Card","Catalog > Compare","High",BL-CAT-018,,Category page with product cards; at least 2 comparable products visible. Compare is saved on the server and works for guests (an anonymous list) and signed-in buyers alike (no sign-in required).,"url={{FRONT_URL}}","[NAV] Navigate to a category page with product cards on {{FRONT_URL}}
 [ASSERT] Verify each product card shows a button labeled 'Add to Compare' (in the card action row, next to 'Add to list')
 [ACT] Note the current count on the header 'Compare' nav link (badge absent or 0 when list empty)
 [ACT] Click 'Add to Compare' on the first product card
@@ -60,7 +60,7 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [STATE] No floating/sticky compare bar exists anywhere on the page (count lives in the header link); a transient success toast appears after add
 [STATE] Compare selection is saved on the server: after a reload the card still shows 'Remove from Compare' and the header badge keeps its count","[NETWORK] no 4xx/5xx on the saveProductsToCompareList request of the add
 [CONSOLE] no TypeError or JS errors","'Add to Compare' button missing on cards; clicking does not toggle the button to 'Remove from Compare'; header Compare badge does not increment; console TypeError",Open /compare and click 'Clear all' (or remove the added item),"Coverage Gap Analysis; vc-frontend shared/compare (useCompareProducts) | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-20) (list now stored on the server, module README; BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule)",Automated
-"CAT-031","Compare Page Display","Catalog > Compare","High",,,Product comparison is enabled for the store (store setting ProductComparison.Enabled); the category has 2 or more products,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+"CAT-031","Compare Page Display","Catalog > Compare","High",BL-CAT-019,,Product comparison is enabled for the store (store setting ProductComparison.Enabled); the category has 2 or more products,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
 [ACT] Click 'Add to Compare' on 2 product cards of that category
 [WAIT] the header 'Compare' link counts 2
 [ACT] Click the header 'Compare' link
@@ -70,7 +70,7 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [DOM] the table lists the products' specification property rows, and a 'Differ: N of M rows' counter is shown {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
 [DOM] each product column has an 'Add to cart' button {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)","[NETWORK] no 4xx/5xx on /graphql {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
 [CONSOLE] no TypeError or JS errors {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)",Compare page shows not found; products not in side-by-side columns; specification rows missing; add-to-cart button absent; console TypeError,"none","Coverage Gap Analysis | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link) | Promoted: REG-2026-11-23-0822 (2026-11-23)",Automated
-"CAT-032","Compare Limit","Catalog > Compare","Medium",,,"Category page with compare active; currently at maximum allowed products","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+"CAT-032","Compare Limit","Catalog > Compare","Medium",BL-CAT-013,,"Category page with compare active; currently at maximum allowed products","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
 [ACT] Add products to compare until the maximum limit is reached
 [WAIT] the header 'Compare' link badge shows the maximum count
 [ASSERT] Verify the header 'Compare' link badge shows the maximum count
@@ -81,7 +81,7 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [STATE] Over-limit product not added to the compare list
 [MATH] The header 'Compare' badge = the allowed maximum count, unchanged after the over-limit attempt","[NETWORK] no 5xx on over-limit attempt
 [CONSOLE] no TypeError or JS errors",No limit message shown; over-limit product added silently; header Compare badge count exceeds maximum; console TypeError,"none","Coverage Gap Analysis | Synced: VCST-5918 (2026-11-20) (limit message observed vcptcore 2026-11-17, checklist A4; limit is a per-category store setting, README §Categories and limits; BL-CAT-007 dropped: it is Multi-FFC inventory aggregation) | Promoted: REG-2026-11-20-1202 (2026-11-22)",Automated
-"CAT-033","Remove from Compare","Catalog > Compare","Medium",,,"2 or more products added to compare; on /compare page","url={{FRONT_URL}}/compare","[NAV] Navigate to the compare page at {{FRONT_URL}}/compare
+"CAT-033","Remove from Compare","Catalog > Compare","Medium",BL-CAT-018,,"2 or more products added to compare; on /compare page","url={{FRONT_URL}}/compare","[NAV] Navigate to the compare page at {{FRONT_URL}}/compare
 [ASSERT] Verify remove button (X or Remove) visible per product column
 [ACT] Click remove on one product
 [WAIT] Wait for that product column to disappear
