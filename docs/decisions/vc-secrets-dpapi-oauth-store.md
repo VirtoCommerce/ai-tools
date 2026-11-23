@@ -95,6 +95,13 @@ Node's rename on Windows replaces an existing file, and node opens files for rea
 access, so a concurrent reader in another launcher does not block it. A third party that opens the file
 without share-delete — an antivirus scan, the indexer — can make the rename fail transiently
 (`EPERM`/`EBUSY`/`EACCES`), so the rename is retried briefly before the write is reported as failed.
+Removing a file meets the same third party, so a removal is retried with the same policy — the stale
+access file cleared before a migration publishes its refresh file, and the file a logout or a cleared
+pair deletes. Unretried, one scan during a migration that holds a new refresh token signed the developer
+out, and one during a logout failed it. A file already absent is not retried: that is the removal's
+answer, not a refusal. `fs.rmSync`'s own `maxRetries` was not used for this: its documentation says the
+option applies only with `recursive`, while Node 22 does retry a plain file under it, synchronously and
+with no seam a test can replace — one policy for rename and removal, in one loop, is what stays checkable.
 PowerShell receives ciphertext and returns plaintext on its standard streams: `[IO.File]::ReadAllBytes`
 opens without share-delete and would itself become the reader that blocks a neighbour's rename.
 
