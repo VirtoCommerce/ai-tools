@@ -1,7 +1,8 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.73",
+    "version": "1.5.74",
+    "changelog_1_5_74": "SIZE_RUN_MASTER (seed:size-run, guard td:validate:size-run): single-group Size picker XS,S,M,L,XL on the B2C template for B2C-VAR-001 (suite 009); sibling of VARIANT_PICKER_MASTER, which is unchanged.",
     "changelog_1_5_73": "SB_THEME_B2B + SB_STORE_EDITOR + SB_THEME_EDITOR_NOPUBLISH (seed:site-builder), SB_LEGACY_HEADER_PAGE (seed:cms-pages), SB_WL_ORG_BUYER + SB_PERSONAL_BUYER (reuse combos): the Site Builder fixtures the VCST-6571/6572 runs lacked.",
     "changelog_1_5_72": "DEMO_RETURNS_BUYER + DEMO_NO_ORDERS_CUSTOMER: demo-profile storefront personas (virtostart). Login = the spec contact email, password = the {{SR_DEMO_BUYER_PASSWORD}} token. Spec DEMO_PERSONAS in sales-rep-demo-specs.mjs; guard td:validate:sales-rep-demo [8].",
     "changelog_1_5_71": "ORG_EMPTY gains platform_id (organizations.csv column), so SR-GQL-184 can use an ACTIVE unserved organization instead of ORG_SUSPENDED.",
@@ -12000,6 +12001,29 @@
       "layoutValue": "layoutProperty.value"
     },
     "notes": "A11Y-VCP-001 (suite 045): the master whose PDP renders the storefront VcVariantPicker (vc-frontend options.vue on the B2C product template). Carries VirtoFrontend_UI_Layout=B2C (exact case - the theme compares with ===); 4 stocked, distinctly priced variations over Color x Size with a deliberately NON-full matrix, so picking Black makes Size L unavailable (the disabled state is reachable). Open {{FRONT_URL}}@td(VARIANT_PICKER_MASTER.url). Seeded by scripts/seed-data/products/seed-variant-picker.mjs (npm run seed:variant-picker); guard npm run td:validate:variant-picker; runtime id only in aliases.<env>.json."
+  },
+  "SIZE_RUN_MASTER": {
+    "json": "products/size-run",
+    "seed": "seed:size-run",
+    "fields": {
+      "id": "id",
+      "selectedVariationId": "selectedVariationId",
+      "sku": "master.sku",
+      "name": "master.name",
+      "slug": "master.slug",
+      "url": "master.url",
+      "price": "master.listPrice",
+      "sizes": "sizes",
+      "variationCount": "variations.length",
+      "selectedSize": "selection.size",
+      "selectedSku": "selection.sku",
+      "selectedName": "selection.name",
+      "selectedPrice": "selection.listPrice",
+      "currency": "currency",
+      "layoutProperty": "layoutProperty.name",
+      "layoutValue": "layoutProperty.value"
+    },
+    "notes": "B2C-VAR-001 (suite 009): a B2C PDP (VirtoFrontend_UI_Layout=B2C, exact case) whose variant picker has ONE group, Size, with exactly @td(SIZE_RUN_MASTER.sizes); 5 stocked variations with strictly distinct SKUs and prices, master price distinct from all, so a wrong variation for the selected size shows a different SKU and price. Picking @td(SIZE_RUN_MASTER.selectedSize) alone resolves @td(SIZE_RUN_MASTER.selectedSku) @ @td(SIZE_RUN_MASTER.selectedPrice) @td(SIZE_RUN_MASTER.currency). Open {{FRONT_URL}}@td(SIZE_RUN_MASTER.url). LIMIT: a single-property family - it cannot show the unavailable-combination state (that is VARIANT_PICKER_MASTER's job); option ORDER on screen is the theme's, not guaranteed by the fixture. Seeded by scripts/seed-data/products/seed-size-run.mjs (npm run seed:size-run); guard npm run td:validate:size-run; runtime ids (id, selectedVariationId) only in aliases.<env>.json."
   },
   "L10N_COLLISION_CATEGORY": {
     "file": "catalogs/locale-slug-categories",

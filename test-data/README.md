@@ -341,6 +341,9 @@ The storefront Brands catalog (`/brands`, brand pages, the "Top brands" logo row
 ### 14e. Variant picker (products/variant-picker.json)
 A master carrying `VirtoFrontend_UI_Layout=B2C` (exact case: the theme compares with `===`, anything else renders the B2B variations table) plus 4 stocked, distinctly priced variations over two VARIATION properties (Color × Size), so the PDP renders `VcVariantPicker` (A11Y-VCP-001). The matrix is deliberately NOT full — after picking one Color some Sizes are unavailable — so the disabled state is reachable; option labels are unique across groups. Seed: `npm run seed:variant-picker`; guard: `npm run td:validate:variant-picker`. Alias: `VARIANT_PICKER_MASTER` (json-backed; runtime id in the overlay).
 
+### 14e2. Size run (products/size-run.json)
+Sibling of the variant picker (same B2C-template mechanics, reused by import from `variant-picker-specs.mjs`) with ONE VARIATION property, Size = exactly XS, S, M, L, XL, so picking a size alone resolves a variation and enables add-to-cart (B2C-VAR-001, suite 009). Five stocked variations with strictly distinct SKUs and prices, master price distinct from all — a wrong variation for the selected size shows a different SKU and price. Limit: it cannot show an unavailable combination (that is the variant picker's job). Seed: `npm run seed:size-run`; guard: `npm run td:validate:size-run`. Alias: `SIZE_RUN_MASTER` (json-backed; runtime `id` + `selectedVariationId` in the overlay).
+
 ### 14f. Locale↔slug collision category (catalogs/locale-slug-categories.csv)
 A TOP-LEVEL storefront category whose slug starts with a store locale's 2-letter code (`de`), with the SAME slug in every store language, so a language switch may change only the locale prefix and any change in the slug part is the slug-eating defect (L10N-ROUTE-001/002, VCST-5144). Seed: `npm run seed:locale-slug`; guard: `npm run td:validate:locale-slug`. Alias: `L10N_COLLISION_CATEGORY`.
 

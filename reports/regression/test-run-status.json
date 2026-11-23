@@ -1,34 +1,28 @@
 {
-  "runId": "REG-2026-11-19-2029",
-  "status": "completed",
-  "startedAt": "2026-11-19T19:29:35.177Z",
+  "runId": "REG-2026-11-20-0821",
+  "status": "stalled",
+  "startedAt": "2026-11-20T07:21:14.661Z",
   "env": "vcst",
-  "selection": "123,123b --ids <61 SB targets> --no-promote",
+  "selection": "123,123b --ids <74 SB targets> --no-promote",
   "ticket": "VCST-6571",
-  "note": "qa-suite-sync 5a scoped run (/qa-test-lifecycle VCST-6571)",
+  "note": "qa-suite-sync step-7 re-run + flag-on cases (/qa-test-lifecycle VCST-6571)",
   "suites": {
     "123": {
-      "status": "done",
+      "status": "running",
       "lane": "browser",
-      "cases": 22,
-      "browser": "playwright-edge",
-      "startedAt": "2026-11-19T19:30:53Z",
-      "pass": 9,
-      "fail": 8,
-      "blocked": 5,
-      "finishedAt": "2026-11-19T20:14:00Z"
+      "cases": 32,
+      "browser": "playwright-firefox",
+      "startedAt": "2026-11-20T07:23:22Z"
     },
     "123b": {
-      "status": "done",
+      "status": "running",
       "lane": "browser",
-      "cases": 39,
+      "cases": 42,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-19T19:30:53Z",
-      "pass": 31,
-      "fail": 6,
-      "blocked": 2,
-      "finishedAt": "2026-11-19T20:14:04Z"
+      "startedAt": "2026-11-20T07:23:22Z"
     }
   },
-  "finishedAt": "2026-11-19T20:15:14.241Z"
+  "stalledAt": "2026-11-20T08:28:19.973Z",
+  "stalledReason": "no progress for 45 min (REG-2026-11-20-0821:in_progress:2:74:29)",
+  "finishedAt": "2026-11-20T08:28:19.973Z"
 }
