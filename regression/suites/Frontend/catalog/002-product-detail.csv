@@ -60,17 +60,16 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [STATE] No floating/sticky compare bar exists anywhere on the page (count lives in the header link); a transient success toast appears after add
 [STATE] Compare selection is saved on the server: after a reload the card still shows 'Remove from Compare' and the header badge keeps its count","[NETWORK] no 4xx/5xx on the saveProductsToCompareList request of the add
 [CONSOLE] no TypeError or JS errors","'Add to Compare' button missing on cards; clicking does not toggle the button to 'Remove from Compare'; header Compare badge does not increment; console TypeError",Open /compare and click 'Clear all' (or remove the added item),"Coverage Gap Analysis; vc-frontend shared/compare (useCompareProducts) | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-20) (list now stored on the server, module README; BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule)",Automated
-"CAT-031","Compare Page Display","Catalog > Compare","High",,,2 or more products added to compare,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
-[ACT] Click 'Add to Compare' on 2 or more product cards
+"CAT-031","Compare Page Display","Catalog > Compare","High",,,Product comparison is enabled for the store (store setting ProductComparison.Enabled); the category has 2 or more products,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Click 'Add to Compare' on 2 product cards of that category
+[WAIT] the header 'Compare' link counts 2
 [ACT] Click the header 'Compare' link
-[WAIT] Wait for compare page to load
-[ASSERT] Verify products displayed side by side
-[ASSERT] Verify spec/attribute rows are shown for comparison","[NAV] Compare page loads at /compare or similar URL
-[DOM] Products displayed in side-by-side column layout
-[DOM] Product name, image, and price shown at top of each column (price matches /^\$[0-9,]+\.[0-9]{2}$/)
-[DOM] Specification attribute rows listed for comparison
-[DOM] Each product has an 'Add to Cart' button","[NETWORK] GET /compare returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Compare page returns 4xx; products not in side-by-side layout; attributes missing; Add to Cart absent; console TypeError","none","Coverage Gap Analysis | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link)","Draft"
+[WAIT] the compare table shows both products","[NAV] the URL path is /compare {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
+[DOM] the compare table has exactly 2 product columns, and the line under the title reads '2 of <limit> added in <category name>' {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
+[DOM] each column shows the product name link, an image and a 'Price per unit' value with two decimals in the store's currency {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
+[DOM] the table lists the products' specification property rows, and a 'Differ: N of M rows' counter is shown {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
+[DOM] each product column has an 'Add to cart' button {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)","[NETWORK] no 4xx/5xx on /graphql {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)
+[CONSOLE] no TypeError or JS errors {OBSERVED} (vcptcore 2026-11-23, REG-2026-11-23-0822)",Compare page shows not found; products not in side-by-side columns; specification rows missing; add-to-cart button absent; console TypeError,"none","Coverage Gap Analysis | Synced: VCST-5918 (2026-11-23) (BL-CAT-007 dropped: it is Multi-FFC inventory aggregation, not a compare rule; no compare bar — the count lives in the header 'Compare' link) | Promoted: REG-2026-11-23-0822 (2026-11-23)",Automated
 "CAT-032","Compare Limit","Catalog > Compare","Medium",,,"Category page with compare active; currently at maximum allowed products","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
 [ACT] Add products to compare until the maximum limit is reached
 [WAIT] the header 'Compare' link badge shows the maximum count
