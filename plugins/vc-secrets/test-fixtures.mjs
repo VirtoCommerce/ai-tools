@@ -496,7 +496,7 @@ export function namespaceStoreSeams() {
             },
             writeEntry: async (name) => { calls.push(`write ${name}`); },
             removeEntry: async (name) => { calls.push(`remove ${name}`); },
-            oversize: { record: () => {}, clear: () => {} },
+            removeLegacyEntry: async (name) => { calls.push(`remove-legacy ${name}`); },
             randomState: () => "STATE",
             log: () => {},
             backend: "gpg",
@@ -555,8 +555,7 @@ export function loginDeps(overrides = {}) {
     const logged = [];
     const lock = [];
     const removed = [];
-    const marked = [];
-    const cleared = [];
+    const removedLegacy = [];
     const deps = {
         listen: async () => ({ port: 51234, next: async () => ({ code: "the-code" }), close: async () => {} }),
         open: (cmd) => { opened.push(cmd); },
@@ -580,17 +579,17 @@ export function loginDeps(overrides = {}) {
         // like nothing at all. Both oauth entries for the affected server were present before the
         // run and gone after, with every other test still passing.
         removeEntry: async (name) => { removed.push(name); },
-        // Injected for exactly the reason removeEntry is: the default WRITES and DELETES a file
-        // under the developer's own config directory, and both halves run on ordinary paths --
-        // `clear` on every successful login. Left to default, every login test would litter a real
-        // machine from a green run.
-        oversize: { record: (key, info) => { marked.push([key, info]); }, clear: (key) => { cleared.push(key); } },
+        // Injected for the reason removeEntry is: on a dpapi login the default is a Credential Manager
+        // delete through the REAL PowerShell, run after every successful refresh write. A test that
+        // injects `backend: "dpapi"` and leaves this to default deletes a developer's live sign-in from
+        // a green run.
+        removeLegacyEntry: async (name) => { removedLegacy.push(name); },
         // Injected for the reason the others are: the default reads the developer's own trust file.
         trustState: trustedFor(LOGIN_CFG),
         ...overrides,
     };
 
-    return { deps, written, opened, logged, lock, removed, marked, cleared };
+    return { deps, written, opened, logged, lock, removed, removedLegacy };
 }
 
 // Depth-aware rather than line-anchored: the first version of this matched only a seam standing

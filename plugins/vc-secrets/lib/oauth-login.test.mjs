@@ -12,7 +12,7 @@ import { tmpDirs, socketTest, lockTest } from "../test-support.mjs";
 import {
     LAUNCHER_PATH, probe, scopedPaths, trustedStateFor, OAUTH_DECL, keyvaultPairCfg, trustEnv, NO_TRUST,
     withProcessEnv, namespaceOauthCfg, corruptTrustFile, namespaceStoreSeams, DECL_IDENTITY, LOGIN_DECL, LOGIN_CFG,
-    trustedFor, loginDeps, seamsOf, definedSeams,
+    trustedFor, loginDeps, seamsOf, definedSeams, stubBinary, POSIX_STUB_ONLY,
 } from "../test-fixtures.mjs";
 
 test("resolveEnvEntries: Key Vault reads run in parallel, so two that wait for each other both finish",
@@ -761,6 +761,36 @@ socketTest("a teardown does not wait on a peer that only connected -- the sign-i
 
 const LOGIN_KEYS = m.oauthEntryKeys("azure-mcp", LOGIN_DECL, LOGIN_CFG);
 
+// A PowerShell for the dpapi store, reached the way production reaches it: the name in VC_SECRETS_POWERSHELL,
+// resolved through PATH, spawned by the real runTool, so a verb whose backend and store are defaults runs
+// against it and never against the machine's. A write (the value arrives on stdin) is logged and answers with
+// the base64 of "CIPHER"; a delete is logged and exits 3, as Credential Manager does for an entry that is not
+// there, unless the key is listed in `present`. VC_SECRETS_LOCAL_BACKEND=wcm is what makes oauthBackend answer
+// dpapi on this platform, and XDG_CONFIG_HOME keeps the files out of the developer's own directory.
+function dpapiStubEnv({ present = [] } = {}) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-login-dpapi-"));
+    tmpDirs.push(dir);
+    const log = path.join(dir, "ps.log");
+    const bin = stubBinary("vc-ps-login-stub", `#!/bin/sh
+value=$(cat)
+if [ -n "$value" ]; then
+  printf 'protect %s\\n' "$VC_SECRETS_NAME" >> "$PS_LOG"
+  printf '%s' 'Q0lQSEVS'
+  exit 0
+fi
+printf 'delete %s\\n' "$VC_SECRETS_NAME" >> "$PS_LOG"
+case " $PS_PRESENT " in *" $VC_SECRETS_NAME "*) exit 0 ;; esac
+exit 3
+`);
+
+    return {
+        env: { VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-ps-login-stub",
+            PATH: `${bin}${path.delimiter}${process.env.PATH}`, XDG_CONFIG_HOME: dir, PS_LOG: log,
+            PS_PRESENT: present.join(" ") },
+        calls: () => (fs.existsSync(log) ? fs.readFileSync(log, "utf8").split("\n").filter(Boolean) : []),
+    };
+}
+
 // UNACKNOWLEDGED_CFG differs from LOGIN_CFG in exactly one property, so a test driven by it fails
 // for the reason its name gives. USER_CFG differs in two -- the declaration's home AND the absent
 // registrations block -- and has to: the whole claim is that the first makes the second irrelevant.
@@ -818,7 +848,7 @@ test("loginDeps: every cmdLogin seam that reaches outside this process is inject
     // A parser that quietly finds nothing would make this test pass forever. Pin the whole list,
     // so adding a seam fails here and forces a decision about whether it needs injecting.
     assert.deepEqual(seams, ["listen", "open", "browser", "exchange", "writeEntry", "removeEntry",
-        "randomState", "log", "backend", "acquireLock", "now", "sleep", "waitMs", "oversize", "trustState"],
+        "removeLegacyEntry", "randomState", "log", "backend", "acquireLock", "now", "sleep", "waitMs", "trustState"],
         "the seam list changed, or the parse broke — both need a human");
     // These four stay inside the process: a pure command builder, the clock, a timer, and a plain
     // number of milliseconds. `waitMs` is injected by the tests that drive the deadline, but it
@@ -898,19 +928,66 @@ test("cmdLogin: a failed ACCESS write is not fatal — losing it costs one excha
     assert.ok(logged.some((l) => /access/i.test(l)), `the degraded write must be reported: ${logged.join("")}`);
 });
 
-test("cmdLogin: an access write that failed for any other reason leaves no marker", async () => {
-    // The distinction the whole file rests on. A transient failure -- a locked store, a timeout --
-    // will succeed on the next attempt, and a marker left for one would have doctor report a
-    // permanent condition that the very next launch silently disproves. Recording unconditionally
-    // is the easy mistake and it looks identical from a green run.
-    const { deps, marked } = loginDeps({
-        writeEntry: async (name) => {
-            if (name.endsWith("-access")) { throw new m.VcSecretsError("the keystore was busy"); }
-        },
-        backend: "wcm",
+test("cmdLogin: the default writer uses the backend cmdLogin resolved", POSIX_STUB_ONLY, async () => {
+    // The default writer used to ignore `backend`: it asked writeSecretValue for ITS default, so a login
+    // whose backend was resolved to dpapi stored through whatever detectLocalBackend said. The seam that
+    // carries the writer is left out here, and the files are what shows where the writes went.
+    const ps = dpapiStubEnv();
+    const { deps } = loginDeps({ backend: "dpapi", writeEntry: undefined });
+    await withProcessEnv(ps.env, () => m.cmdLogin("azure-mcp", LOGIN_CFG, deps));
+    for (const key of [LOGIN_KEYS.refresh, LOGIN_KEYS.access]) {
+        assert.equal(fs.readFileSync(m.dpapiKeyToPath(key, ps.env), "utf8"), "CIPHER", `no dpapi file for ${key}`);
+    }
+    assert.deepEqual(ps.calls(), [`protect ${LOGIN_KEYS.refresh}`, `protect ${LOGIN_KEYS.access}`]);
+});
+
+test("cmdLogin: dpapi login removes the legacy Credential Manager refresh entry after storing the new one", async () => {
+    // The refresh file is read first from now on, so a refresh token left in Credential Manager would sit
+    // there unread but live. Removed only AFTER the write: a failed write must leave the developer the
+    // pair they had.
+    const events = [];
+    const { deps } = loginDeps({ backend: "dpapi",
+        writeEntry: async (name) => { events.push(`write ${name}`); },
+        removeEntry: async (name) => { events.push(`remove ${name}`); },
+        removeLegacyEntry: async (name) => { events.push(`remove-legacy ${name}`); },
     });
     await m.cmdLogin("azure-mcp", LOGIN_CFG, deps);
-    assert.deepEqual(marked, [], "only a deterministic oversize failure may be recorded");
+    const legacy = events.indexOf(`remove-legacy ${LOGIN_KEYS.refresh}`);
+    assert.notEqual(legacy, -1, `the legacy refresh entry was not removed: ${events.join(", ")}`);
+    assert.ok(legacy > events.indexOf(`write ${LOGIN_KEYS.refresh}`), `removed before the new refresh entry landed: ${events.join(", ")}`);
+    assert.equal(events.filter((e) => e.startsWith("remove-legacy")).length, 1,
+        "the access entry's legacy copy goes with the pre-delete, which on dpapi clears both stores");
+});
+
+test("cmdLogin: a failing legacy delete neither fails the sign-in nor clears the pair, and only a real failure is reported", async () => {
+    // Best effort, for the reason clearEntryPair is: the write already landed, the refresh file is what a
+    // launch reads, and failing here would spend nothing but charge the developer a retry of a sign-in that
+    // worked. Exit 3 is the ordinary outcome (no legacy entry) and says nothing. Any other failure leaves a
+    // refresh token in Credential Manager, so it is named once, in the "signed in, but" form, with the remedy.
+    for (const [toolExitCode, notices] of [[3, 0], [1, 1]]) {
+        const { deps, written, removed, logged } = loginDeps({ backend: "dpapi",
+            removeLegacyEntry: async () => {
+                throw Object.assign(new m.VcSecretsError("legacy delete failed\u001b[2J"), { toolExitCode });
+            },
+        });
+        await m.cmdLogin("azure-mcp", LOGIN_CFG, deps);
+        assert.deepEqual(written.map(([name]) => name), [LOGIN_KEYS.refresh, LOGIN_KEYS.access], `exit ${toolExitCode}`);
+        assert.deepEqual(removed, [LOGIN_KEYS.access], `a failed legacy delete must not clear the new pair (exit ${toolExitCode})`);
+        const lines = logged.filter((l) => l.includes("previous Credential Manager entry"));
+        assert.equal(lines.length, notices, `exit ${toolExitCode}: ${logged.join("")}`);
+        if (notices > 0) {
+            assert.match(lines[0], /^vc-secrets: signed in, but .*"azure-mcp".*legacy delete failed\?\[2J.*"vc-secrets logout azure-mcp"/s);
+            assert.ok(!/[\u0000-\u001f]/.test(lines[0].slice(0, -1)), `raw control byte in: ${JSON.stringify(lines[0])}`);
+        }
+    }
+});
+
+test("cmdLogin: keychain and gpg have no legacy store to clear", async () => {
+    for (const backend of ["keychain", "gpg"]) {
+        const { deps, removedLegacy } = loginDeps({ backend });
+        await m.cmdLogin("azure-mcp", LOGIN_CFG, deps);
+        assert.deepEqual(removedLegacy, [], backend);
+    }
 });
 
 test("cmdLogin: the previous access entry is deleted before the new refresh entry is written", async () => {
@@ -1097,6 +1174,16 @@ test("cmdLogin: a backend with no keystore is refused before a code is spent", a
         listen: async () => { bound = true; return { port: 1, next: async () => ({ code: "c" }), close: async () => {} }; },
     });
     await assert.rejects(() => m.cmdLogin("azure-mcp", LOGIN_CFG, deps), /nonesuch/);
+    assert.equal(bound, false, "nothing may be opened or bound when the token cannot be stored");
+});
+
+test("cmdLogin: wcm is not an OAuth backend -- the pair lives in dpapi -- so it is refused before a code is spent", async () => {
+    let bound = false;
+    const { deps } = loginDeps({
+        backend: "wcm",
+        listen: async () => { bound = true; return { port: 1, next: async () => ({ code: "c" }), close: async () => {} }; },
+    });
+    await assert.rejects(() => m.cmdLogin("azure-mcp", LOGIN_CFG, deps), /no keystore on backend "wcm"/);
     assert.equal(bound, false, "nothing may be opened or bound when the token cannot be stored");
 });
 
@@ -1323,6 +1410,36 @@ test("cmdLogout: removes both entries, refresh before access", async () => {
     await m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST, deleteEntry: async (n) => { deleted.push(n); },
         acquireLock: FREE_LOCK });
     assert.deepEqual(deleted, [LOGOUT_KEYS.refresh, LOGOUT_KEYS.access]);
+});
+
+test("cmdLogout: dpapi logout removes both files and both legacy entries", POSIX_STUB_ONLY, async () => {
+    // Neither seam that reaches a store is injected: the backend is the one the platform resolves to, and the
+    // delete is the one that backend builds. Credential Manager is asked first and the file goes last, so a
+    // logout that fails in between is retryable and a launch never falls back to the legacy pair.
+    const ps = dpapiStubEnv({ present: [LOGOUT_KEYS.refresh, LOGOUT_KEYS.access] });
+    const files = [LOGOUT_KEYS.refresh, LOGOUT_KEYS.access].map((key) => m.dpapiKeyToPath(key, ps.env));
+    for (const file of files) {
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, "CIPHER");
+    }
+    const report = await withProcessEnv(ps.env, () => m.cmdLogout("azure-mcp", LOGOUT_CFG,
+        { trustState: LOGOUT_TRUST, acquireLock: FREE_LOCK, log: () => {} }));
+    assert.deepEqual(report.removed, [LOGOUT_KEYS.refresh, LOGOUT_KEYS.access]);
+    assert.deepEqual(report.alreadyAbsent, []);
+    assert.deepEqual(files.filter((file) => fs.existsSync(file)), [], "the files are still there");
+    assert.deepEqual(ps.calls(), [`delete ${LOGOUT_KEYS.refresh}`, `delete ${LOGOUT_KEYS.access}`]);
+});
+
+test("cmdLogout: with only a legacy pair, logout removes it and reports signed out", POSIX_STUB_ONLY, async () => {
+    // A machine that signed in before the file store holds the pair in Credential Manager alone. Exit 3 is
+    // for "neither the file nor the legacy entry existed"; reporting these as absent would tell the developer
+    // they were never signed in while the refresh token is still on the machine.
+    const ps = dpapiStubEnv({ present: [LOGOUT_KEYS.refresh, LOGOUT_KEYS.access] });
+    const report = await withProcessEnv(ps.env, () => m.cmdLogout("azure-mcp", LOGOUT_CFG,
+        { trustState: LOGOUT_TRUST, acquireLock: FREE_LOCK, log: () => {} }));
+    assert.deepEqual(report.removed, [LOGOUT_KEYS.refresh, LOGOUT_KEYS.access]);
+    assert.deepEqual(report.alreadyAbsent, []);
+    assert.deepEqual(ps.calls(), [`delete ${LOGOUT_KEYS.refresh}`, `delete ${LOGOUT_KEYS.access}`]);
 });
 
 test("cmdLogout: an already-absent entry is success, and both are still attempted", async () => {
