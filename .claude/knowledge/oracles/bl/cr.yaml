@@ -28,6 +28,9 @@ rules:
       ref: As an eligible buyer, submit a review for a purchased product → mutation returns a non-empty id with no validation errors → in Admin, the new review appears in the review list with Status = New → the review is absent from the public storefront review list until approved.
     violation_signal: A submitted review appears already Approved in Admin without any moderation action; the review is immediately visible on the storefront before approval; the create call returns a null id with no validation errors on a genuinely eligible purchase.
     status: ACTIVE
+    verified:
+      date: 2026-11-19
+      by: REG-2026-11-19-1857
   - id: BL-CR-008
     title: Anonymous visitors cannot access the review-submission control
     rule: "The storefront never offers the \"leave feedback\" control (button or inline form) to an unauthenticated visitor — feedback eligibility is computed only after authentication, so it defaults to unavailable for anonymous sessions. This is reinforced server-side: a review requires a completed order tied to the requesting user's id, which an anonymous session structurally cannot have."
@@ -85,8 +88,8 @@ rules:
     violation_signal: A New or Rejected review appears in the public review list or inflates its total count; pagination returns duplicate or missing items across pages; sort direction has no effect.
     status: ACTIVE
     verified:
-      date: 2026-11-04
-      by: REG-2026-11-04-1022
+      date: 2026-11-19
+      by: REG-2026-11-19-1857
   - id: BL-CR-012
     title: Admin review search filters by status, entity type, rating range, and keyword
     rule: The admin review search accepts an array of review statuses, an entity type, a rating range (start/end), and a keyword, narrowing the result set to exactly the matching rows; every visible column (Title, Rating, Created date, Status, Created by) is independently sortable.
