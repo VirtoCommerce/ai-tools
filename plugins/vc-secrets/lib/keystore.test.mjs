@@ -756,3 +756,94 @@ test("writeSecretValue: an oversize keychain value is refused before the runner 
         (e) => e instanceof m.VcSecretsError && /too large for the keychain/.test(e.message));
     assert.equal(runnerCalls.length, 0, "the runner must never be reached once the guard has refused");
 });
+
+function decodedScript(spec) {
+    return Buffer.from(spec.args[spec.args.indexOf("-EncodedCommand") + 1], "base64").toString("utf16le");
+}
+
+test("PS_DPAPI_PROTECT: CurrentUser scope, the key as entropy, the value on stdin and never in env", () => {
+    const key = "vc-secrets:user:oauth-a-refresh";
+    const script = m.PS_DPAPI_PROTECT;
+    assert.match(script, /CryptProtectData/);
+    assert.ok(script.includes("$env:VC_SECRETS_NAME"), "the key is the entropy");
+    assert.ok(script.includes("[Console]::In.ReadToEnd()"), "the value arrives on stdin, untrimmed");
+
+    // The flags argument is the scope switch: CRYPTPROTECT_LOCAL_MACHINE would let any account on the
+    // machine decrypt the file. The only flag passed is UI_FORBIDDEN (0x1), so no prompt can block a launch.
+    assert.match(script, /const int CRYPTPROTECT_UI_FORBIDDEN = 0x1;/);
+    assert.match(script, /CryptProtectData\(ref [^;]*CRYPTPROTECT_UI_FORBIDDEN, out /);
+    assert.doesNotMatch(script, /CRYPTPROTECT_LOCAL_MACHINE/);
+
+    const spec = m.buildDpapiProtect(key, {});
+    assert.deepEqual(spec.extraEnv, { VC_SECRETS_NAME: key });
+    assert.equal(spec.cmd, "powershell.exe");
+    assert.equal(spec.stdinData, m.VALUE_ON_STDIN);
+    assert.equal(spec.timeoutMs, m.TIMEOUT_LOCAL_MS);
+    assert.equal(spec.captureStdout, true);
+    assert.equal(decodedScript(spec), script);
+    assert.ok(!spec.args.some((a) => a.includes("CryptProtectData")), "raw script must not be in argv");
+});
+
+test("buildDpapiProtect: a malformed key is refused before anything is built", () => {
+    assert.throws(() => m.buildDpapiProtect("../x", {}), m.VcSecretsError);
+});
+
+test("PS_DPAPI_UNPROTECT_MANY: reads blobs from stdin, reports a per-key win32 code instead of failing the call", () => {
+    const script = m.PS_DPAPI_UNPROTECT_MANY;
+    assert.match(script, /CryptUnprotectData/);
+    assert.ok(script.includes("[Console]::In.ReadToEnd()"));
+    assert.ok(script.includes('"err"'));
+    assert.ok(script.includes('"ok"'));
+    assert.ok(script.includes("UTF8.GetBytes($p.Name)"), "each key is its own blob's entropy");
+});
+
+test("the DPAPI C# class is its own, so it cannot collide with a CredMan class in one PowerShell session", () => {
+    assert.match(m.CS_DPAPI, /public static class Dpapi \{/);
+    assert.doesNotMatch(m.CS_DPAPI, /CredMan/);
+    assert.ok(m.PS_DPAPI_PROTECT.includes(m.CS_DPAPI));
+    assert.ok(m.PS_DPAPI_UNPROTECT_MANY.includes(m.CS_DPAPI));
+});
+
+test("unprotectManyIo: no blobs, no PowerShell", async () => {
+    const run = async () => { throw new Error("must not spawn"); };
+    const result = await m.unprotectManyIo({ blobs: new Map(), env: {}, run });
+    assert.ok(result instanceof Map);
+    assert.equal(result.size, 0);
+});
+
+test("unprotectManyIo: maps each key's outcome", async () => {
+    const refresh = "vc-secrets:user:oauth-a-refresh";
+    const access = "vc-secrets:user:oauth-a-access";
+    const blobs = new Map([[refresh, Buffer.from([1, 2, 3])], [access, Buffer.from([4, 5])]]);
+    const calls = [];
+    const run = async (spec, opts) => {
+        calls.push({ spec, opts });
+
+        return '{"vc-secrets:user:oauth-a-refresh":{"ok":"6869"},"vc-secrets:user:oauth-a-access":{"err":13}}';
+    };
+    const result = await m.unprotectManyIo({ blobs, env: {}, run });
+    assert.deepEqual([...result], [[refresh, { ok: "6869" }], [access, { err: 13 }]]);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].spec.stdinData, m.VALUE_ON_STDIN);
+    assert.equal(calls[0].spec.captureStdout, true);
+    assert.equal(decodedScript(calls[0].spec), m.PS_DPAPI_UNPROTECT_MANY);
+    assert.equal(calls[0].opts.stdinValue,
+        JSON.stringify({ [refresh]: Buffer.from([1, 2, 3]).toString("base64"), [access]: Buffer.from([4, 5]).toString("base64") }));
+});
+
+test("unprotectManyIo: output that is not the object is an error that does not echo it", async () => {
+    const blobs = new Map([["vc-secrets:user:oauth-a-refresh", Buffer.from([1])]]);
+    for (const out of ["secret-bytes", '"secret-bytes"', "[]", "null", '{"other":{"ok":"secret-bytes"}}',
+        '{"vc-secrets:user:oauth-a-refresh":"secret-bytes"}']) {
+        await assert.rejects(
+            () => m.unprotectManyIo({ blobs, env: {}, run: async () => out }),
+            (e) => e instanceof m.VcSecretsError && !e.message.includes("secret-bytes"),
+            `output ${out}`);
+    }
+});
+
+test("unprotectManyIo: a malformed key is refused before PowerShell is spawned", async () => {
+    const run = async () => { throw new Error("must not spawn"); };
+    await assert.rejects(
+        () => m.unprotectManyIo({ blobs: new Map([["../x", Buffer.from([1])]]), env: {}, run }), m.VcSecretsError);
+});

@@ -442,6 +442,137 @@ if(-not [CredManW]::CredWrite([ref]$c,0)){
 }
 `;
 
+// The DPAPI half of the OAuth store, as C# source for Add-Type. Two scripts below and the launch's batched
+// read (PS_CRED_READ_MANY) compile it, so it is self-contained: no `using` line, which C# only allows ahead
+// of every type in the unit, so the fragment may sit after a host's own `using` lines and next to its own
+// classes; every type is named in full. The class is `Dpapi`, not a CredMan* name: Add-Type caches a type per
+// PowerShell session by name, and a second definition of one name is an error, not a replacement.
+//
+// Scope is the flags argument. It is CRYPTPROTECT_UI_FORBIDDEN (0x1) and nothing else: no prompt can block a
+// launch, and CRYPTPROTECT_LOCAL_MACHINE (0x4) is never passed, so only the signed-in account can decrypt
+// what it wrote. The entropy is what binds a blob to its key: a file renamed to another entry's name does not
+// decrypt there (win32 13), rather than handing one entry's token to another's reader.
+//
+// A failure throws Win32Exception with the win32 code, which the scripts report as a code and never as text
+// that could carry a value. The plaintext copy and the decrypted output are zeroed before they are freed.
+const CS_DPAPI = `
+public static class Dpapi {
+  [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+  struct DATA_BLOB { public int cbData; public System.IntPtr pbData; }
+  [System.Runtime.InteropServices.DllImport("crypt32", SetLastError=true)]
+  static extern bool CryptProtectData(ref DATA_BLOB dataIn, System.IntPtr description, ref DATA_BLOB entropy,
+    System.IntPtr reserved, System.IntPtr prompt, int flags, out DATA_BLOB dataOut);
+  [System.Runtime.InteropServices.DllImport("crypt32", SetLastError=true)]
+  static extern bool CryptUnprotectData(ref DATA_BLOB dataIn, System.IntPtr description, ref DATA_BLOB entropy,
+    System.IntPtr reserved, System.IntPtr prompt, int flags, out DATA_BLOB dataOut);
+  [System.Runtime.InteropServices.DllImport("kernel32")]
+  static extern System.IntPtr LocalFree(System.IntPtr memory);
+  const int CRYPTPROTECT_UI_FORBIDDEN = 0x1;
+  static DATA_BLOB Wrap(byte[] data) {
+    DATA_BLOB blob = new DATA_BLOB();
+    blob.cbData = data.Length;
+    blob.pbData = System.Runtime.InteropServices.Marshal.AllocHGlobal(data.Length == 0 ? 1 : data.Length);
+    System.Runtime.InteropServices.Marshal.Copy(data, 0, blob.pbData, data.Length);
+    return blob;
+  }
+  static void Wipe(System.IntPtr memory, int size) {
+    System.Runtime.InteropServices.Marshal.Copy(new byte[size], 0, memory, size);
+  }
+  static void Release(DATA_BLOB blob) {
+    Wipe(blob.pbData, blob.cbData);
+    System.Runtime.InteropServices.Marshal.FreeHGlobal(blob.pbData);
+  }
+  static byte[] TakeOutput(DATA_BLOB output) {
+    byte[] result = new byte[output.cbData];
+    System.Runtime.InteropServices.Marshal.Copy(output.pbData, result, 0, output.cbData);
+    Wipe(output.pbData, output.cbData);
+    LocalFree(output.pbData);
+    return result;
+  }
+  public static byte[] Protect(byte[] data, byte[] entropy) {
+    DATA_BLOB input = Wrap(data);
+    DATA_BLOB salt = Wrap(entropy);
+    try {
+      DATA_BLOB output;
+      if (!CryptProtectData(ref input, System.IntPtr.Zero, ref salt, System.IntPtr.Zero, System.IntPtr.Zero, CRYPTPROTECT_UI_FORBIDDEN, out output)) {
+        throw new System.ComponentModel.Win32Exception(System.Runtime.InteropServices.Marshal.GetLastWin32Error());
+      }
+      return TakeOutput(output);
+    } finally { Release(input); Release(salt); }
+  }
+  public static byte[] Unprotect(byte[] blob, byte[] entropy) {
+    DATA_BLOB input = Wrap(blob);
+    DATA_BLOB salt = Wrap(entropy);
+    try {
+      DATA_BLOB output;
+      if (!CryptUnprotectData(ref input, System.IntPtr.Zero, ref salt, System.IntPtr.Zero, System.IntPtr.Zero, CRYPTPROTECT_UI_FORBIDDEN, out output)) {
+        throw new System.ComponentModel.Win32Exception(System.Runtime.InteropServices.Marshal.GetLastWin32Error());
+      }
+      return TakeOutput(output);
+    } finally { Release(input); Release(salt); }
+  }
+}
+`;
+
+// Writes one value as a DPAPI blob. The key arrives in VC_SECRETS_NAME and its UTF-8 bytes are the entropy;
+// the value arrives on stdin, read whole and never trimmed (PS_CRED_WRITE says why), so it is in neither argv
+// nor the environment. Output is the blob as base64 with no line ending: node owns the file, this script
+// only turns bytes into bytes. A DPAPI failure is exit 1 naming the win32 code, never the value.
+const PS_DPAPI_PROTECT = `
+$ErrorActionPreference='Stop'
+[Console]::InputEncoding=[System.Text.Encoding]::UTF8
+$value=[Console]::In.ReadToEnd()
+Add-Type -TypeDefinition @'
+${CS_DPAPI}
+'@
+try {
+  $blob=[Dpapi]::Protect([System.Text.Encoding]::UTF8.GetBytes($value),[System.Text.Encoding]::UTF8.GetBytes("$env:VC_SECRETS_NAME"))
+} catch {
+  $ex=$_.Exception
+  if($ex.InnerException -is [System.ComponentModel.Win32Exception]){ $ex=$ex.InnerException }
+  if($ex -is [System.ComponentModel.Win32Exception]){ [Console]::Error.Write("CryptProtectData failed win32err="+$ex.NativeErrorCode); exit 1 }
+  throw
+}
+[Console]::Out.Write([Convert]::ToBase64String($blob))
+`;
+
+// Decrypts any number of blobs in one process, for the same reason PS_CRED_READ_MANY batches: the powershell.exe
+// start and the Add-Type compile are the cost, not the call. Input is one JSON object on stdin,
+// {"<key>":"<base64 blob>"}; each key is its blob's entropy. Output is one JSON object,
+// {"<key>":{"ok":"<hex of the plaintext>"}|{"err":<win32 code>}}, built by hand like PS_CRED_READ_MANY's: every
+// key has passed assertKeyShape ([a-z0-9:-]) and every value is hex or an integer, so nothing needs escaping.
+//
+// A blob DPAPI refuses -- another account's, another key's, damaged -- is that key's {"err":code} and the
+// others still decrypt: one unreadable entry must not take the whole launch's credentials with it. Anything
+// that is not a Win32Exception is a failure of the call, and exits non-zero without printing a value.
+const PS_DPAPI_UNPROTECT_MANY = `
+$ErrorActionPreference='Stop'
+[Console]::InputEncoding=[System.Text.Encoding]::UTF8
+[Console]::OutputEncoding=[System.Text.Encoding]::UTF8
+$in=[Console]::In.ReadToEnd()
+Add-Type -TypeDefinition @'
+${CS_DPAPI}
+'@
+$blobs=ConvertFrom-Json $in
+$out=New-Object System.Text.StringBuilder
+[void]$out.Append('{')
+$sep=''
+foreach($p in $blobs.PSObject.Properties){
+  [void]$out.Append($sep+'"'+$p.Name+'":'); $sep=','
+  try {
+    $b=[Dpapi]::Unprotect([Convert]::FromBase64String($p.Value),[System.Text.Encoding]::UTF8.GetBytes($p.Name))
+    [void]$out.Append('{"ok":"'+(($b | ForEach-Object { $_.ToString("x2") }) -join '')+'"}')
+  } catch {
+    $ex=$_.Exception
+    if($ex.InnerException -is [System.ComponentModel.Win32Exception]){ $ex=$ex.InnerException }
+    if($ex -isnot [System.ComponentModel.Win32Exception]){ throw }
+    [void]$out.Append('{"err":'+$ex.NativeErrorCode+'}')
+  }
+}
+[void]$out.Append('}')
+[Console]::Out.Write($out.ToString())
+`;
+
 function psEncode(script) {
     return Buffer.from(script, "utf16le").toString("base64");
 }
@@ -559,6 +690,55 @@ function batchedReadError(cmd, code) {
     const stderr = exit === 3 ? "" : `CredRead failed win32err=${code}`;
 
     return Object.assign(new VcSecretsError(`${cmd} exited ${exit}: ${stderr}`), { toolExitCode: exit });
+}
+
+// The DPAPI blob for one key, produced by PS_DPAPI_PROTECT. The value goes on stdin (the caller passes it as
+// runTool's stdinValue), the key in the environment: it is not secret and is the entropy.
+function buildDpapiProtect(key, env = process.env) {
+    assertKeyShape(key);
+
+    return { cmd: psCommand(env), args: psArgs(PS_DPAPI_PROTECT),
+        extraEnv: { VC_SECRETS_NAME: key }, stdinData: VALUE_ON_STDIN, timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: true };
+}
+
+// Decrypts every blob in one PowerShell call (PS_DPAPI_UNPROTECT_MANY). `blobs` is key -> the file's bytes;
+// the result is key -> { ok: <hex of the plaintext> } | { err: <win32 code> }, the same two outcomes
+// credReadManyIo reports per name. No blobs, no process. A call that fails as a whole -- PowerShell missing,
+// a timeout, output that is not the object or lacks a key it was asked for -- throws a VcSecretsError whose
+// message never carries the output: on success that holds every plaintext, hex-encoded.
+async function unprotectManyIo({ blobs, env = process.env, run = runTool }) {
+    if (blobs.size === 0) {
+        return new Map();
+    }
+    const input = {};
+    for (const [key, blob] of blobs) {
+        assertKeyShape(key);
+        input[key] = blob.toString("base64");
+    }
+    const spec = { cmd: psCommand(env), args: psArgs(PS_DPAPI_UNPROTECT_MANY),
+        stdinData: VALUE_ON_STDIN, timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: true };
+    const stdout = await run(spec, { stdinValue: JSON.stringify(input) });
+    let result = null;
+    try {
+        result = JSON.parse(stdout);
+    } catch { /* reported below, without the text */ }
+    const unreadable = new VcSecretsError(`${psCommand(env)} did not print the batched unprotect's result`);
+    if (result === null || typeof result !== "object" || Array.isArray(result)) {
+        throw unreadable;
+    }
+    const outcomes = new Map();
+    for (const key of blobs.keys()) {
+        const outcome = Object.hasOwn(result, key) ? result[key] : null;
+        if (outcome !== null && typeof outcome === "object" && typeof outcome.ok === "string") {
+            outcomes.set(key, { ok: outcome.ok });
+        } else if (outcome !== null && typeof outcome === "object" && Number.isInteger(outcome.err)) {
+            outcomes.set(key, { err: outcome.err });
+        } else {
+            throw unreadable;
+        }
+    }
+
+    return outcomes;
 }
 
 function buildLocalWrite(backend, key, env = process.env, { tmp = false, value = undefined } = {}) {
@@ -1031,7 +1211,7 @@ export {
     LOCAL_BACKENDS, SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT, quoteForSecurityInteractive, detectLocalBackend,
     oauthBackend, secretsDir, keyToPath, dpapiKeyToPath, gpgEntryPresent, legacyKeyToPath, oversizeMarkerPath,
     recordOversizeMarker, clearOversizeMarker, readOversizeMarker, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE,
-    PS_CRED_WRITE,
+    PS_CRED_WRITE, CS_DPAPI, PS_DPAPI_PROTECT, PS_DPAPI_UNPROTECT_MANY, buildDpapiProtect, unprotectManyIo,
     psEncode, psCommand, decodeCredBlobHex, isAbsentEntry, buildLocalRead, buildCredReadMany, credReadManyIo,
     batchedReadError, buildLocalWrite, buildLocalDelete, deleteEntryIo, writeLocalValue, writeSecretValue,
     buildKeyvaultRead, mapResolveError, makeSecretResolver, readLegacyLocalValue, newKeyPresent, cmdMigrate,
