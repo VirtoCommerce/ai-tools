@@ -803,7 +803,7 @@ test("oauthLaunchDeps: an orphan access file that cannot be removed stops a carr
     fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-orphan" }));
     denyFs(t, "rmSync", m.dpapiKeyToPath(LAUNCH_KEYS.access, fx.env));
     const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
-        run: fx.run(MIGRATION_LEGACY()), write: publishingWrite(fx) });
+        run: fx.run(MIGRATION_LEGACY()), write: publishingWrite(fx), sleep: async () => {} });
 
     assert.equal((await deps.readCache()).state, "needs-refresh");
     fx.ops.length = 0;
@@ -822,8 +822,11 @@ test("oauthLaunchDeps: an orphan access file that cannot be removed fails a migr
     const fx = dpapiStore();
     fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-orphan" }));
     denyFs(t, "rmSync", m.dpapiKeyToPath(LAUNCH_KEYS.access, fx.env));
+    const run = fx.run(MIGRATION_LEGACY());
+    // The dead-token branch removes the files through the default `remove`, which takes its own sleep.
     const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
-        run: fx.run(MIGRATION_LEGACY()), write: publishingWrite(fx) });
+        run, write: publishingWrite(fx), sleep: async () => {},
+        remove: m.deleteEntryIo("dpapi", fx.env, { run, sleep: async () => {} }) });
 
     assert.equal((await deps.readCache()).state, "needs-refresh");
     fx.ops.length = 0;
@@ -834,6 +837,44 @@ test("oauthLaunchDeps: an orphan access file that cannot be removed fails a migr
     assert.equal(pathPresent(m.dpapiKeyToPath(LAUNCH_KEYS.refresh, fx.env), "the refresh file"), false);
     assert.deepEqual(fx.ops.filter((o) => o.op === "wcm-delete").map((o) => o.key),
         [LAUNCH_KEYS.access, LAUNCH_KEYS.refresh], "the dead-token branch: the legacy pair is cleared too");
+});
+
+test("oauthLaunchDeps: a transient lock on the orphan access file is waited out and the migration completes", async (t) => {
+    // The removal runs with a NEW refresh token in hand, so a failure there took the dead-token branch: both stores
+    // cleared and the developer signed out, over a lock an antivirus scan or an indexer held for a moment.
+    mockStderr(t);
+    const fx = dpapiStore();
+    const orphan = m.dpapiKeyToPath(LAUNCH_KEYS.access, fx.env);
+    fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-orphan" }));
+    const real = fs.rmSync;
+    let busy = 1;
+    t.mock.method(fs, "rmSync", (p, ...rest) => {
+        if (String(p) === orphan && busy > 0) {
+            busy -= 1;
+            throw Object.assign(new Error(`EBUSY: resource busy or locked, rmSync '${p}'`), { code: "EBUSY" });
+        }
+
+        return real(p, ...rest);
+    });
+    const sleeps = [];
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run(MIGRATION_LEGACY()), sleep: async (ms) => { sleeps.push(ms); },
+        write: async (key, value) => {
+            if (key === LAUNCH_KEYS.refresh) {
+                assert.equal(pathPresent(orphan, "the orphan access file"), false,
+                    "the orphan is removed before the refresh file is published");
+            }
+            await publishingWrite(fx)(key, value);
+        } });
+
+    assert.equal((await deps.readCache()).state, "needs-refresh");
+    fx.ops.length = 0;
+    await assert.doesNotReject(() => deps.writeCache(FRESH));
+    assert.deepEqual(sleeps, [50], "one wait, then the removal went through");
+    assert.equal(fx.ops.find((o) => o.op === "write")?.key, LAUNCH_KEYS.refresh, "the refresh file was published");
+    assert.equal(pathPresent(m.dpapiKeyToPath(LAUNCH_KEYS.refresh, fx.env), "the refresh file"), true);
+    assert.deepEqual(await deps.readCache(), { state: "needs-refresh", refreshToken: "r2" },
+        "the migrated pair is read, not the orphan (which would read as a valid access token)");
 });
 
 test("oauthLaunchDeps: a legacy entry that cannot be removed after migrating is named once, with the remedy", async (t) => {

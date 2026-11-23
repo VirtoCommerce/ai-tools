@@ -9,9 +9,9 @@ import * as oauth from "../vc-secrets-oauth.mjs";  // the Entra protocol
 
 import { runTool } from "./spawn.mjs";
 import { batchedReadError, buildLocalRead, decodeCredBlobHex, deleteEntryIo, dpapiKeyToPath, gpgEntryPresent,
-    isAbsentEntry, keyFor, mapResolveError, nameFromKey, oauthBackend, psCommand, readDpapiFile, scopeKeyFor,
-    unprotectManyIo, writeSecretValue } from "./keystore.mjs";
-import { forTerminal, isAbsentPathError } from "./util.mjs";
+    isAbsentEntry, keyFor, mapResolveError, nameFromKey, oauthBackend, psCommand, readDpapiFile, removeFileWithRetry,
+    scopeKeyFor, unprotectManyIo, writeSecretValue } from "./keystore.mjs";
+import { forTerminal } from "./util.mjs";
 
 function oauthEntryKeys(name, decl, cfg) {
     return {
@@ -270,8 +270,11 @@ async function clearEntryPair(remove, keys) {
 // on -- the exchange spends the token it read under the lock, never one batched before the lock was
 // asked for, which a neighbour may have rotated since. An outcome is interpreted only when consumed, by
 // the same branches as a read that ran then.
+//
+// `rm` and `sleep`: the file removal and the wait between its retries, for the one removal made here
+// (removeOrphanAccessFile). Left undefined they are removeFileWithRetry's own defaults, resolved when it runs.
 function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: backendSeam = null,
-    run = runTool, write = writeSecretValue, remove = null, seed = null } = {}) {
+    run = runTool, write = writeSecretValue, remove = null, seed = null, rm, sleep } = {}) {
     const keys = oauthEntryKeys(entryName, decl, cfg);
     const backend = backendSeam ?? oauthBackend(process.platform, env);
     // `= null` in the parameter list and resolved here, the way cmdLogin and cmdLogout resolve their
@@ -434,15 +437,14 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
     // pair's access half, and nothing checks it against the refresh token. Removed first, a reader between
     // the publication and the legacy deletes, or after a failed access write, finds no access file and costs
     // one exchange. The file only: the Credential Manager entry is the legacy pair, which stays until the
-    // refresh file is in. Absence is what it is meant to find; any other failure is the caller's, handled as
-    // a failure of the refresh write itself.
-    const removeOrphanAccessFile = () => {
+    // refresh file is in. Absence is what it is meant to find; a transient lock (antivirus, an indexer,
+    // another reader) is waited out by removeFileWithRetry, so only a lasting failure is the caller's,
+    // handled as a failure of the refresh write itself.
+    const removeOrphanAccessFile = async () => {
         try {
-            fs.rmSync(dpapiKeyToPath(keys.access, env));
+            await removeFileWithRetry(dpapiKeyToPath(keys.access, env), { rm, sleep });
         } catch (e) {
-            if (!isAbsentPathError(e)) {
-                throw new VcSecretsError(`could not remove the stale access file for "${nameFromKey(keys.access)}": ${e.code ?? e.message}`);
-            }
+            throw new VcSecretsError(`could not remove the stale access file for "${nameFromKey(keys.access)}": ${e.code ?? e.message}`);
         }
     };
 
@@ -487,7 +489,7 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
                     if (migrating) {
                         // Inside the try: a file that cannot be removed is a refresh write that cannot be
                         // made, and the two branches below already say what each kind of token does then.
-                        removeOrphanAccessFile();
+                        await removeOrphanAccessFile();
                     }
                     await write(keys.refresh, cache.serializeRefresh({ refreshToken,
                         tenantId: decl.tenantId, clientId: decl.clientId, scopes: decl.scopes }), { backend, env, run });

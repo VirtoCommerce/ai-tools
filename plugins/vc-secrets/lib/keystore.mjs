@@ -56,9 +56,10 @@ const TIMEOUT_AZ_MS = 20_000;
 
 const LOCAL_BACKENDS = ["wcm", "keychain", "gpg"];
 
-// The final rename of a dpapi file is the one step another process can refuse: on Windows a reader
-// holding the target open, or antivirus scanning the fresh tmp file, fails it with one of these codes
-// for a moment. Waiting and trying again is what resolves it; any other code is a real failure.
+// Renaming or removing a dpapi file is the step another process can refuse: on Windows a reader holding the
+// file open, antivirus scanning it, or an indexer fails it with one of these codes for a moment. Waiting and
+// trying again is what resolves it; any other code is a real failure. renameWithRetry and removeFileWithRetry
+// share these numbers through retryTransient.
 const RENAME_ATTEMPTS = 5;
 
 const RENAME_RETRY_CODES = ["EPERM", "EBUSY", "EACCES"];
@@ -833,8 +834,9 @@ function buildLocalDelete(backend, key, env = process.env) {
 // signals it differently: the PowerShell branch exits 3 by construction, security(1) answers 44,
 // and gpg entries are files whose absence is a path error (isAbsentPathError) rather than any exit
 // code at all -- the same test gpgEntryPresent applies, so logout and a presence check agree. A dpapi
-// entry is absent only when both its file and its legacy Credential Manager entry were.
-function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run = runTool, rm = fs.rmSync } = {}) {
+// entry is absent only when both its file and its legacy Credential Manager entry were. A dpapi file is
+// removed through removeFileWithRetry, so a momentary lock on it is waited out (`sleep` is that wait).
+function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run = runTool, rm = fs.rmSync, sleep = delay } = {}) {
     // The wcm delete a dpapi entry also owes: the pair may still sit in Credential Manager from before the
     // file store, and a logout that left it would let the next launch read the old token back.
     const legacyDelete = backend === "dpapi" ? deleteEntryIo("wcm", env, { run }) : null;
@@ -854,16 +856,13 @@ function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run 
                 legacyAbsent = true;
             }
             const file = dpapiKeyToPath(key, env);
-            let fileAbsent = false;
+            let fileRemoved;
             try {
-                rm(file);
+                fileRemoved = await removeFileWithRetry(file, { rm, sleep });
             } catch (e) {
-                if (!isAbsentPathError(e)) {
-                    throw new VcSecretsError(`could not remove "${key}": ${e.code ?? e.message}`);
-                }
-                fileAbsent = true;
+                throw new VcSecretsError(`could not remove "${key}": ${e.code ?? e.message}`);
             }
-            if (fileAbsent && legacyAbsent) {
+            if (!fileRemoved && legacyAbsent) {
                 throw Object.assign(new VcSecretsError(`no stored entry "${key}"`), { toolExitCode: 3 });
             }
 
@@ -893,12 +892,12 @@ function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run 
     };
 }
 
-// Moves `from` over `to`, waiting 50 * attempt ms after a refusal that is usually momentary (see
-// RENAME_RETRY_CODES). Any other code, and the refusal on the last attempt, is the caller's to handle.
-async function renameWithRetry(from, to, { rename = fs.renameSync, sleep = delay } = {}) {
+// Runs `op` (synchronous), waiting 50 * attempt ms after a refusal that is usually momentary (see
+// RENAME_RETRY_CODES). Any other code, and the refusal on the last attempt, is rethrown as it was.
+async function retryTransient(op, sleep) {
     for (let attempt = 1; ; attempt += 1) {
         try {
-            rename(from, to);
+            op();
 
             return;
         } catch (e) {
@@ -908,6 +907,31 @@ async function renameWithRetry(from, to, { rename = fs.renameSync, sleep = delay
             await sleep(50 * attempt);
         }
     }
+}
+
+// Moves `from` over `to`, patiently (retryTransient). What to do with the refusal that outlasts it is the
+// caller's.
+async function renameWithRetry(from, to, { rename = fs.renameSync, sleep = delay } = {}) {
+    await retryTransient(() => rename(from, to), sleep);
+}
+
+// Removes `file` with the same patience as renameWithRetry: a lock another process holds for a moment is waited
+// out, rather than failing a logout or a migration over it. Resolves true when it removed the file and false
+// when the path was absent (isAbsentPathError, which a retry cannot change, so it is not waited on): what
+// absence means is the caller's. Any other code, and a refusal that outlasts the attempts, is rethrown as it
+// was. Not fs.rmSync's own maxRetries: it has no say over which codes it retries or how long it waits, and
+// sleeps synchronously.
+async function removeFileWithRetry(file, { rm = fs.rmSync, sleep = delay } = {}) {
+    try {
+        await retryTransient(() => rm(file), sleep);
+    } catch (e) {
+        if (isAbsentPathError(e)) {
+            return false;
+        }
+        throw e;
+    }
+
+    return true;
 }
 
 // The one shape PS_DPAPI_PROTECT prints: base64 and nothing else. Node's decoder skips every character outside
@@ -1350,8 +1374,8 @@ async function cmdMigrate(cfg) {
 export {
     KEY_PREFIX, keystoreFilePresent, scopeKeyFor, keyFor, nameFromKey, TIMEOUT_LOCAL_MS, TIMEOUT_AZ_MS,
     LOCAL_BACKENDS, SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT, quoteForSecurityInteractive, detectLocalBackend,
-    oauthBackend, OAUTH_BACKENDS, secretsDir, keyToPath, dpapiKeyToPath, readDpapiFile, renameWithRetry, RENAME_ATTEMPTS,
-    gpgEntryPresent, legacyKeyToPath, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE,
+    oauthBackend, OAUTH_BACKENDS, secretsDir, keyToPath, dpapiKeyToPath, readDpapiFile, renameWithRetry, removeFileWithRetry,
+    RENAME_ATTEMPTS, gpgEntryPresent, legacyKeyToPath, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE,
     PS_CRED_WRITE, CS_DPAPI, PS_DPAPI_PROTECT, PS_DPAPI_UNPROTECT_MANY, buildDpapiProtect, unprotectManyIo,
     psEncode, psCommand, decodeCredBlobHex, isAbsentEntry, buildLocalRead, buildCredReadMany, credReadManyIo,
     batchedReadError, buildLocalWrite, buildLocalDelete, deleteEntryIo, writeLocalValue, writeSecretValue,

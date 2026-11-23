@@ -7,6 +7,7 @@ import * as m from "../vc-secrets.mjs";
 import * as cache from "../vc-secrets-cache.mjs";
 import * as oauth from "../vc-secrets-oauth.mjs";
 import { pathPresent } from "./util.mjs";
+import { removeFileWithRetry } from "./keystore.mjs";
 import { tmpDirs } from "../test-support.mjs";
 import { denyFs, CAN_RUN_POSIX_STUB, scopedPaths, credHex, stubBinary, withStubOnPath } from "../test-fixtures.mjs";
 
@@ -929,7 +930,7 @@ function fakeProtect(cipher, calls = []) {
     };
 }
 
-const refused = (code) => Object.assign(new Error(`${code}: rename refused`), { code });
+const refused = (code) => Object.assign(new Error(`${code}: refused`), { code });
 
 test("writeSecretValue: dpapi writes the ciphertext PowerShell returns, through a pid-suffixed tmp file", async () => {
     const { env } = tmpConfigEnv("vc-secrets-dpapi-write-");
@@ -1123,7 +1124,7 @@ test("deleteEntryIo: dpapi does not treat an unremovable file or a Credential Ma
     const { env } = tmpConfigEnv("vc-secrets-dpapi-del-fail-");
     const denied = () => { throw Object.assign(new Error("EACCES"), { code: "EACCES" }); };
     await assert.rejects(
-        () => m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false), rm: denied })(DPAPI_KEY),
+        () => m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false), rm: denied, sleep: async () => {} })(DPAPI_KEY),
         (e) => e instanceof m.VcSecretsError && e.toolExitCode === undefined && /could not remove/.test(e.message));
 
     const failing = async () => { throw Object.assign(new m.VcSecretsError("powershell.exe exited 1: CredDelete failed win32err=5"), { toolExitCode: 1 }); };
@@ -1143,4 +1144,96 @@ test("deleteEntryIo: dpapi leaves the file in place when the Credential Manager 
         (e) => e.toolExitCode === 1);
 
     assert.equal(fs.readFileSync(target, "utf8"), "BLOB");
+});
+
+// The removal twin of the rename retry above: the same attempts, the same delays, the same codes, and absence
+// told apart from a failure. `rm` and `sleep` are injected, so no test here waits for real.
+function failingRm(code, failures, calls) {
+    return () => {
+        calls.push(code);
+        if (calls.length <= failures) {
+            throw refused(code);
+        }
+    };
+}
+
+test("removeFileWithRetry: a lock that clears is waited out, 50 then 100 ms, and the file counts as removed", async () => {
+    const calls = [];
+    const sleeps = [];
+    const removed = await removeFileWithRetry("any-file", { rm: failingRm("EBUSY", 2, calls),
+        sleep: async (ms) => { sleeps.push(ms); } });
+
+    assert.equal(removed, true);
+    assert.equal(calls.length, 3);
+    assert.deepEqual(sleeps, [50, 100]);
+});
+
+test("removeFileWithRetry: EPERM, EBUSY and EACCES are each retried", async () => {
+    for (const code of ["EPERM", "EBUSY", "EACCES"]) {
+        const calls = [];
+        await removeFileWithRetry("any-file", { rm: failingRm(code, 1, calls), sleep: async () => {} });
+
+        assert.equal(calls.length, 2, `${code} was not retried`);
+    }
+});
+
+test("removeFileWithRetry: a lock that never clears throws the original error after five attempts and four waits", async () => {
+    const calls = [];
+    const sleeps = [];
+    const original = refused("EPERM");
+    await assert.rejects(
+        () => removeFileWithRetry("any-file", { rm: () => { calls.push("EPERM"); throw original; },
+            sleep: async (ms) => { sleeps.push(ms); } }),
+        (e) => e === original);
+
+    assert.equal(calls.length, m.RENAME_ATTEMPTS);
+    assert.equal(calls.length, 5);
+    assert.deepEqual(sleeps, [50, 100, 150, 200], "no wait after the last refusal");
+});
+
+test("removeFileWithRetry: an absent path is false on the first attempt, ENOENT and ENOTDIR alike", async () => {
+    for (const code of ["ENOENT", "ENOTDIR"]) {
+        const calls = [];
+        const sleeps = [];
+        const removed = await removeFileWithRetry("any-file", { rm: failingRm(code, 9, calls),
+            sleep: async (ms) => { sleeps.push(ms); } });
+
+        assert.equal(removed, false, code);
+        assert.equal(calls.length, 1, `${code} was retried`);
+        assert.deepEqual(sleeps, [], code);
+    }
+});
+
+test("removeFileWithRetry: any other code is thrown after one attempt, not waited on", async () => {
+    const calls = [];
+    const sleeps = [];
+    await assert.rejects(
+        () => removeFileWithRetry("any-file", { rm: failingRm("EISDIR", 9, calls),
+            sleep: async (ms) => { sleeps.push(ms); } }),
+        (e) => e.code === "EISDIR");
+
+    assert.equal(calls.length, 1);
+    assert.deepEqual(sleeps, []);
+});
+
+test("deleteEntryIo: dpapi waits out a transient lock on the file and removes it", async () => {
+    // A logout or a pair clear that hit an antivirus scan or an indexer for a moment was a hard failure.
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-busy-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "BLOB");
+    let busy = 1;
+    const sleeps = [];
+    await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false),
+        rm: (file) => {
+            if (busy > 0) {
+                busy -= 1;
+                throw refused("EBUSY");
+            }
+            fs.rmSync(file);
+        },
+        sleep: async (ms) => { sleeps.push(ms); } })(DPAPI_KEY);
+
+    assert.equal(pathPresent(target, "the dpapi entry"), false);
+    assert.deepEqual(sleeps, [50]);
 });
