@@ -378,7 +378,7 @@ export function coerceSettingValue(raw, valueType) {
     if (!/^(true|false)$/i.test(String(raw))) throw new Error(`setting is Boolean; --value must be true|false (got "${raw}")`);
     return /^true$/i.test(String(raw));
   }
-  if (t === 'integer' || t === 'decimal' || t === 'number') {
+  if (/integer|decimal|number|double/.test(t)) { // PositiveInteger too: a string there never reads back equal
     const n = Number(raw);
     if (!Number.isFinite(n) || String(raw).trim() === '') throw new Error(`setting is ${valueType}; --value must be numeric (got "${raw}")`);
     return n;
