@@ -3,7 +3,7 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-11-20",
+    "generated": "2026-11-23",
     "totalSuites": 185,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
@@ -899,7 +899,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 20,
+      "testCount": 23,
       "estimatedMinutes": 10,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1186,7 +1186,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 67,
+      "testCount": 72,
       "estimatedMinutes": 17,
       "agent": "qa-testing-expert",
       "tags": [
@@ -1903,6 +1903,39 @@
         "machine": 62,
         "browser": 0,
         "manual": 1
+      }
+    },
+    {
+      "id": "050q",
+      "exclusiveGroup": "store-setting:ProductComparison",
+      "name": "GraphQL xAPI - Product Comparison (server-side compare list: save, read, remove, move, merge, access rules, limits, settings gates)",
+      "file": "regression/suites/Backend/graphql/050q-graphql-product-compare.csv",
+      "domain": "catalog-search",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 14,
+      "estimatedMinutes": 5,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "compare",
+        "product-comparison",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.ProductComparison",
+        "VirtoCommerce.Xapi"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5918 server-side product compare. Promoted to Automated from the vcptcore run of 2026-11-20; CMP-GQL-006 is Deprecated (two aliases of one product are reachable only through the API — not a defect). CMP-GQL-005 asserts the 30-item section cap the developer confirmed; CMP-GQL-007 asserts the shared null-category group. CMP-GQL-012/013 flip store settings ProductComparison.Enabled / AnonymousListEnabled and restore them: run this suite alone, never beside 098 or 123 (NEEDS_WINDOW). Guest ids are fixed AGENT-TEST-CMP-GUEST-* strings cleared by the cases themselves. Not authored: the cleanup-job case (needs a 1 h aged guest list and create-on-fly users/organizations) and the guest-list-by-signed-in-buyer merge (X18, PO question first).",
+      "lanes": {
+        "machine": 11,
+        "browser": 2,
+        "manual": 0,
+        "deprecated": 1
       }
     },
     {
@@ -3806,13 +3839,14 @@
     },
     {
       "id": "098",
+      "exclusiveGroup": "store-setting:ProductComparison",
       "name": "Product Compare v2",
       "file": "regression/suites/Frontend/catalog/098-product-compare.csv",
       "domain": "catalog-search",
       "layer": "frontend",
       "concern": "functional",
       "priority": "P2",
-      "testCount": 53,
+      "testCount": 68,
       "estimatedMinutes": 26,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -4609,6 +4643,31 @@
       "customerApplicability": "reference",
       "notes": "VCST-6571. Ports of Page Builder suite 059 to Site Builder (/api/site-builder-pages, /apps/site-builder-shell). Pages are created by each case (AGENT-TEST- prefix). Toast/label/banner wording is {HYPOTHESIS} until observed on a Site Builder stand; designer/clone rows need the flag-on storefront.",
       "clickDriven": true
+      "exclusiveGroup": "store-setting:ProductComparison",
+      "name": "Product Comparison - Admin store settings",
+      "file": "regression/suites/Backend/catalog/123-product-compare-admin.csv",
+      "domain": "catalog-search",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P2",
+      "testCount": 2,
+      "estimatedMinutes": 15,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "catalog",
+        "compare",
+        "product-comparison",
+        "admin",
+        "settings",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.ProductComparison"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true,
+      "notes": "VCST-5918. Store settings group Product Comparison (Enable product comparison, Products per category, Allow guests to compare). CMP-ADM-001 Automated; CMP-ADM-002 stays Draft — it asserts the spec of Reset to default against the known platform behaviour (X23). Both cases change a shared store setting and restore it: run this suite alone, never beside 098 or 050q."
     }
   ],
   "selections": {

@@ -79,7 +79,7 @@ export {
     clientNames, clientDescriptor, MIN_VERSION_UNKNOWN,
 } from "./clients.mjs";
 export {
-    defaultDataHome, defaultShimDir, defaultShimPath,
+    CLIENT_HOME_DIRS, clientOwning, defaultDataHome, defaultShimDir, defaultShimPath,
 } from "./scripts/shim-path.mjs";
 export {
     PACKAGE_NAME_RE, BIN_NAME_RE,

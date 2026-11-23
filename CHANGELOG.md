@@ -8,6 +8,68 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The `tsc` hook no longer runs after every Edit — `vc-fix` `0.19.2` — 2026-11-23
+
+### Removed
+
+- The `PostToolUse` `Edit` hook `npx tsc --noEmit --pretty 2>&1 | head -20`. A hook matcher names the tool, not
+  the file, so it ran synchronously after every Edit in every project the user opens, whatever the file type. In a
+  project with no local TypeScript, `npx` fetched the unrelated npm package `tsc` (a placeholder that prints "This
+  is not the tsc command you are looking for") and ran it. Where TypeScript is installed, it checked the root
+  `tsconfig.json`, which in vc-frontend lists no files, and never `.vue` files. The developer skills already run the
+  repository's own declared typecheck as an explicit gate. `HOOK_TSC_ERROR` in `/vc-self-check` stays: older installs still
+  produce it.
+
+## vc-secrets runs under Codex and Cursor without Claude Code — `vc-secrets` `0.2.0`, `vc-init` `0.8.4` — 2026-11-20
+
+### Fixed
+
+- **Cursor: the guard no longer refuses every tool call.** Cursor registers the plugin's `preToolUse` hook
+  fail-closed and reads an exit 0 with empty stdout as a failed hook. The 0.1.0 guard printed nothing when it
+  allowed a call, so with vc-secrets installed from Cursor's marketplace every shell command, file read and edit
+  was refused. `hooks/hooks-cursor.json` now passes
+  `--cursor`, and with it the guard writes `{"permission":"allow"}` or `{"permission":"deny", …}` with the reason
+  on stdout. Exit codes, and the output under Claude Code and Codex, are unchanged.
+- **Codex and Cursor no longer depend on Claude Code.** `install` put the shim in `~/.claude/plugins/data/`
+  whichever client ran it and printed Claude Code's `settings.json` entry; on a Cursor-only machine the shim then
+  answered `plugin vc-secrets@ai-tools is not installed`, since it did not know Cursor's plugin cache. `install`
+  now reads its client from its own location, installs into that client's data directory
+  (`~/.codex/plugins/data/…`, `~/.cursor/plugins/data/…`) and prints that client's instructions, so an uninstall in
+  Claude Code no longer removes the shim a Codex or Cursor entry names. A Cursor plugin in
+  `~/.cursor/plugins/local` gets no shim: its path carries no version, and `install` prints the launcher's own path.
+  A Codex or Cursor shim looks in its own client's cache first; `emit-config codex` names Codex's own shim and
+  warns while that file does not exist yet. For an entry that names `VC_SECRETS` (`claude-code`, `cursor`) the
+  verify step goes through the variable when it is set, and otherwise says the variable is missing and names the
+  client's own shim — for Cursor's entry from a `~/.cursor/plugins/local` copy, that copy's launcher.
+  Claude Code is unchanged: its shim still reads Claude Code's install registry first.
+- **Cursor's install directories are ordered by version.** Cursor names one after the marketplace's commit rather
+  than the plugin version, so two of them were ordered by chance; the shim now ranks them by the version in their
+  manifest, with modification time breaking a tie.
+- **vc-init: `/project-init` names the shim directory it reads back.** It ran vc-secrets' installer without
+  `--data-dir` and then looked for the shim in Claude Code's data directory. With vc-secrets 0.2.0 choosing the
+  directory by client, a vc-secrets found only in Codex's cache put the shim in Codex's, and a successful install
+  was reported as failed. `bridge/vc-secrets-path.mjs` now passes Claude Code's directory as `--data-dir`, which
+  vc-secrets 0.1.0 accepts too.
+
+### Changed
+
+- The shim's refusal of an install from another marketplace says when that marketplace is `vc-tools`, this one's
+  name before its 2026-09-30 rename. The README's Cursor setup documents the marketplace route, which works: Cursor
+  reads this repository's `.claude-plugin/marketplace.json`.
+- **Upgrading from 0.1.0** (README §Upgrading from 0.1.0): existing Cursor and Codex setups still name the 0.1.0
+  shim under `~/.claude/plugins/data/`, which does not search Cursor's cache, and `doctor` does not prompt. Under
+  Cursor, re-run `install` and change the `export VC_SECRETS` line; under Codex, re-run `install` and paste
+  `emit-config codex` again — the old entries keep working meanwhile.
+
+### Verified
+
+- In an isolated home: `install` from a Cursor cache copy, a Cursor `plugins/local` copy and a Codex cache copy each
+  put the shim (or, for `local`, named the launcher) in that client's own place and created no `~/.claude`; `doctor`
+  through each reached the launcher, and removing the cache copy made the same shim refuse. `cursor-agent`
+  2026.11.19 with 0.2.0 in its marketplace cache ran a shell command and a read and refused a declaration write
+  with the guard's reason; while the account's 0.1.0 install was in that cache it refused all three. The
+  vc-secrets suite passes.
+
 ## The plugins move to the test-account store — `vc-init` `0.8.0`, `vc-fix` `0.19.0`, `vc-test` `0.19.0` — 2026-11-17
 
 ### Changed

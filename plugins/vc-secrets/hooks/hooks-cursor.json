@@ -3,7 +3,7 @@
   "hooks": {
     "preToolUse": [
       {
-        "command": "node \"./hooks/guard-declarations.mjs\"",
+        "command": "node \"./hooks/guard-declarations.mjs\" --cursor",
         "failClosed": true
       }
     ]

@@ -1420,3 +1420,98 @@ The login event is sent from the landing page after the sign-in (deferred by the
 [STATE] USER_PROPS holds at least one entry whose object is non-empty {SPEC} (S21, module README: user_properties set)
 [COUNT] LOGINS_AFTER_OUT holds the same single entry: signing out does not send a second login {SPEC} (S21)","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","login event lost by the deferral, or sent twice; user properties not set after sign-in",none,VCST-6626 · Archetype:RACE · Technique:ST,Draft
+GA-068,"GA4 — opening /compare sends view_item_list for the compare list, and switching a category tab sends it again with that tab's items",Analytics > GA4 lists > Compare,Medium,,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend theme 2.63.0 + VirtoCommerce.ProductComparison 3.1000.0 (VCST-5918); Google Analytics 4 events through the dataLayer, verified on vcptcore 2026-11-19 {OBSERVED}. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params); ev(name) = the entries with e[1] === name; n0 = window.dataLayer.length read immediately before an action, and ""from n0"" = window.dataLayer.slice(n0). Guest; three products from two categories are added in the case (the compare list is built by the case).",url={{FRONT_URL}},"[GQL] find purchasable products in two different second-level categories; ADD_URLS = their product pages
+[NAV] each page of ADD_URLS
+[ACT] click 'Add to Compare' on each of three products (two in one category, one in the other)
+[WAIT] the header Compare badge shows 3
+[CAPTURE] n0 = window.dataLayer.length
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders
+[KEY] record ev('view_item_list') from n0 as VIL1 (count, e[2].item_list_id, e[2].item_list_name, each item's price, brand and category)
+[CAPTURE] n1 = window.dataLayer.length
+[ACT] click the other category tab
+[WAIT] the table re-renders
+[KEY] record ev('view_item_list') from n1 as VIL2 (count, item ids)","[COUNT] VIL1 holds exactly one event {OBSERVED} (vcptcore 2026-11-19, run VCST-5918)
+[STATE] VIL1.e[2].item_list_id = compare_products and item_list_name = 'Compare products' {OBSERVED}
+[STATE] every item of VIL1 carries a price, a brand and a category, and its item ids are the codes of the products of the ACTIVE tab {OBSERVED}
+[COUNT] VIL2 holds exactly one event whose items are the products of the tab switched to, not the first tab's {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","No view_item_list on /compare, the list id is a catalog list's, a tab switch sends nothing or sends the previous tab's items, two events for one view",Clear the compare list through the UI,VCST-5918 · Archetype:SILENT · Technique:EP | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+GA-069,GA4 — add to cart from the compare table sends add_to_cart tagged as compare with the added quantity,Analytics > GA4 lists > Compare,Medium,,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend theme 2.63.0 + VirtoCommerce.ProductComparison 3.1000.0 (VCST-5918); Google Analytics 4 events through the dataLayer, verified on vcptcore 2026-11-19 {OBSERVED}. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params); ev(name) = the entries with e[1] === name; n0 = window.dataLayer.length read immediately before an action, and ""from n0"" = window.dataLayer.slice(n0). Guest. One purchasable product with a minimum order quantity above 1 (@td(PROD_MOQ.sku)) so the sent quantity can be told from a default of 1.","url={{FRONT_URL}}, moq_sku=@td(PROD_MOQ.sku), moq_min=@td(PROD_MOQ.minQuantity)","[NAV] {{FRONT_URL}}/search?q=@td(PROD_MOQ.sku)
+[WAIT] the results grid renders a card for @td(PROD_MOQ.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_MOQ.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders
+[CAPTURE] n0 = window.dataLayer.length
+[ACT] click 'Add to cart' in the column for @td(PROD_MOQ.name)
+[WAIT] the add-to-cart notification appears
+[KEY] record ev('add_to_cart') from n0 as ATC (count, e[2].source_block, e[2].source_route, currency, value, items[0].item_id, items[0].quantity)","[COUNT] ATC holds exactly one event {OBSERVED} (vcptcore 2026-11-19, run VCST-5918)
+[STATE] ATC.e[2].source_block = compare and source_route = CompareProducts {OBSERVED}
+[STATE] ATC.e[2].currency is the store currency and value > 0 {OBSERVED}
+[MATH] ATC.items[0].quantity = @td(PROD_MOQ.minQuantity), the quantity the cart line receives {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","add_to_cart missing or sent twice, source_block missing or not compare, quantity 1 for a product with a larger minimum",Remove @td(PROD_MOQ.sku) from the cart; clear the compare list through the UI,VCST-5918 · Archetype:SILENT · Technique:EP | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+GA-070,"GA4 — adding, removing and clearing compare products sends no analytics event",Analytics > GA4 lists > Compare,Low,,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend theme 2.63.0 + VirtoCommerce.ProductComparison 3.1000.0 (VCST-5918); Google Analytics 4 events through the dataLayer, verified on vcptcore 2026-11-19 {OBSERVED}. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params); ev(name) = the entries with e[1] === name; n0 = window.dataLayer.length read immediately before an action, and ""from n0"" = window.dataLayer.slice(n0). Guest. Same as theme 2.62: compare changes are not tracked. The page-view events of loading /compare are excluded by taking n0 AFTER the page has settled.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[CAPTURE] n0 = window.dataLayer.length
+[ACT] click 'Add to Compare' on the card
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[ACT] click 'Remove from Compare' on the same card
+[WAIT] that control's aria-pressed attribute becomes 'false'
+[KEY] record every event entry from n0 as CARD_EVENTS
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[ACT] click 'Add to Compare' on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table has settled and no request is in flight
+[CAPTURE] n1 = window.dataLayer.length
+[ACT] click 'Remove from compare' on the column
+[WAIT] a removal notification appears
+[ACT] click 'Clear category'
+[WAIT] the confirmation dialog renders
+[ACT] click 'OK' in the confirmation dialog
+[WAIT] the empty-state heading renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click 'Add to Compare' on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table has settled and no request is in flight
+[CAPTURE] n2 = window.dataLayer.length
+[ACT] click 'Clear all'
+[WAIT] the confirmation dialog renders
+[ACT] click 'OK' in the confirmation dialog
+[WAIT] the empty-state heading renders
+[KEY] record every event entry from n1 up to the moment of n2 and every entry from n2 as PAGE_EVENTS","[COUNT] the number of event entries in CARD_EVENTS = 0 {OBSERVED} (vcptcore 2026-11-19, run VCST-5918)
+[COUNT] the number of event entries in PAGE_EVENTS = 0 (no add_to_cart, select_item, view_item_list or other event for remove, clear category and clear all) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","An event is sent for adding, removing or clearing a compare product",Clear the compare list through the UI,VCST-5918 · Archetype:SILENT · Technique:EP | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+GA-071,A signed-in buyer's add to cart from the compare table sends the PushHistoricalEvent addToCart mutation (XRecommend enabled),Analytics > GA4 lists > Compare,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend theme 2.63.0 + ProductComparison 3.1000.0 (VCST-5918) with the VirtoCommerce.XRecommend module enabled {OBSERVED} (vcptcore 2026-11-19). The storefront's useHistoricalEvents sends the event only when the visitor is signed in (see GA-072 for the guest).","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), a_id=@td(PROD_CMP_A.id)","[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders
+[CAPTURE] the network log position as NET0
+[ACT] click 'Add to cart' in the column for @td(PROD_CMP_A.name)
+[WAIT] the add-to-cart notification appears
+[KEY] record the /graphql requests after NET0 whose operation is pushHistoricalEvent as PHE (command.eventType, productId, storeId, sessionId, response)","[COUNT] PHE holds exactly one request {OBSERVED}
+[STATE] PHE.command.eventType = addToCart, productId = @td(PROD_CMP_A.id), storeId = {{STORE_ID}} and sessionId is non-empty {OBSERVED}
+[STATE] the pushHistoricalEvent response has no errors[] {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","No pushHistoricalEvent for a signed-in add to cart from the compare table, a wrong eventType, two events",Remove @td(PROD_CMP_A.sku) from the cart; clear the compare list through the UI,VCST-5918 · Archetype:SILENT · Technique:EP | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+GA-072,A guest's add to cart from the compare table does not send PushHistoricalEvent,Analytics > GA4 lists > Compare,Low,,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend theme 2.63.0 + ProductComparison 3.1000.0 (VCST-5918), XRecommend enabled. By design useHistoricalEvents sends only when the visitor is signed in {OBSERVED} (vcptcore 2026-11-19, run VCST-5918); the guest's add_to_cart GA event is still sent (GA-069).","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku)","[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders
+[CAPTURE] the network log position as NET0 and n0 = window.dataLayer.length
+[ACT] click 'Add to cart' in the column for @td(PROD_CMP_A.name)
+[WAIT] the add-to-cart notification appears
+[KEY] record the /graphql requests after NET0 whose operation is pushHistoricalEvent as PHE and ev('add_to_cart') from n0 as ATC","[COUNT] PHE holds 0 requests {OBSERVED}
+[COUNT] ATC holds exactly one event — the guest is still tracked in GA4 {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A pushHistoricalEvent request for a guest, add_to_cart missing for the guest",Remove @td(PROD_CMP_A.sku) from the cart; clear the compare list through the UI,VCST-5918 · Archetype:SILENT · Technique:EP | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
