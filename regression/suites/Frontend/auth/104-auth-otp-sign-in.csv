@@ -833,12 +833,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
 [CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
-[ACT] Click the account button (data-test-id=""account-button"")
-[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
 [ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
 [WAIT] the organization name in the header reads ""<orgBName>""
-[ACT] Click the account button (data-test-id=""account-button"")
-[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
 [ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
 [WAIT] the organization name in the header reads ""<orgAName>""
 [STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
@@ -863,8 +863,8 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
 --- SCREEN: Switcher after the fallback ---
 [ASSERT] The organization name in the header reads ""<orgBName>""
-[ACT] Click the account button (data-test-id=""account-button"")
-[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
 [ACT] Record the state of each option in listbox 'Organizations' (name, [selected], disabled, lock-closed icon)
 [CAPTURE] start recording every POST /connect/token from this point as switchReqs
 [KEY] Press Tab until focus reaches listbox 'Organizations', ArrowDown to the option named orgAName and press Enter (keyboard path only - never force the disabled control, VC-EXEC-003)
@@ -875,7 +875,7 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [COUNT] switchReqs holds zero /connect/token requests naming orgAId - a locked organization never reaches the token layer {SPEC} (VCST-5317 click guard)
 [DOM] After the keypress the organization name in the header still reads ""<orgBName>"" {SPEC} (VCST-6132 story S2)","[API] GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgBId after the sign-in (write-back) and still orgBId after the keypress
 [CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","an ENABLED Org A option that switches the session into it, or a /connect/token naming orgAId after the keypress; the lock icon is missing while the option is disabled; BOTH options render disabled; the header changes to Org A or to no organization after the keypress; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:SCOPE · Technique:EG · Probe:VC-B2B-005 | Promoted: REG-2026-10-20-0125 (2026-10-20) | Behavior:auth.org.resolve.switcher-lists-locked | DataProfile:profile.auth.org-switcher-lists-locked,Automated
+[NETWORK] no 4xx/5xx on /graphql","an ENABLED Org A option that switches the session into it, or a /connect/token naming orgAId after the keypress; the lock icon is missing while the option is disabled; BOTH options render disabled; the header changes to Org A or to no organization after the keypress; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:SCOPE · Technique:EG · Probe:VC-B2B-005 | Promoted: REG-2026-10-20-0125 (2026-10-20) | Behavior:auth.org.resolve.switcher-lists-locked | DataProfile:profile.auth.org-switcher-lists-locked | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23),Automated
 OTP-035,OTP sign-in when every organization is locked succeeds with no organization context,Auth > OTP Sign-In > Organization fallback,High,"BL-AUTH-016, BL-AUTH-015",,"[PRE:CLEAR_SESSION]
 Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.

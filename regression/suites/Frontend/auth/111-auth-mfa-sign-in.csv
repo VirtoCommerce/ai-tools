@@ -177,12 +177,12 @@ The storefront resends the last-used organization on the mfa grant (vc-frontend 
 [CAPTURE] code0 = readLatestMfaCode({email: account.email, after: T0, excludeIds: the journal rows already read}).code - the 6-digit value in the journal row body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in
-[ACT] Click the account button (data-test-id=""account-button"")
-[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
 [ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
 [WAIT] the organization name in the header reads ""<orgBName>""
-[ACT] Click the account button (data-test-id=""account-button"")
-[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
 [ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
 [WAIT] the organization name in the header reads ""<orgAName>""
 [STATE] read localStorage key organization-id-<account.email> = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming Org A a broken build and a fixed one are indistinguishable
@@ -216,7 +216,7 @@ The storefront resends the last-used organization on the mfa grant (vc-frontend 
 [ADMIN] Security > Sign-in log: the fallback sign-in is logged as a success
 [CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","MID-JOURNEY: the code step shows an organization error instead of signing the buyer in (the fallback does not apply on the mfa grant: the buyer burns the code and is sent back to the password form); the buyer lands with the locked Org A label, or with no organization although Org B is active; the substituted organization is not persisted; the global /locked flag reads true after an organization lock; spinner >5s","Operator window W2 is restored by the operator after the run; the case writes no setting of {{STORE_ID}}
-Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:SCOPE · Technique:DT · Behavior:auth.org.resolve.mfa-leg | Promoted: REG-2026-10-26-1652 (2026-10-26),Automated
+Sign out through the account menu if a session is open, then teardown(runId) of mfa-fixtures.mjs: removes every AGENT-TEST-MFA entity of the run (accounts, contacts, organizations, role, store) and asserts zero residue",VCST-5904 · Archetype:SCOPE · Technique:DT · Behavior:auth.org.resolve.mfa-leg | Promoted: REG-2026-10-26-1652 (2026-10-26) | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23),Automated
 MFASF-006,"MFA — unconfirmed email gets a clear refusal after the password, no code is sent",Auth > MFA > Storefront sign-in,High,BL-AUTH-002,,"Fixtures are created IN THE CASE (FIFTH RULE) by scripts/seed-data/auth/mfa-fixtures.mjs: the account kind, the store and every flag come from the creator, never from a shared persona; the whole run is removed in Cleanup with teardown(runId). If the creator reports a fixtureGap for the kind this case needs, or the environment touched the state before the step that reads it, the case is BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (MfaSignInEmailNotification for the account) with readLatestMfaCode; SMTP is not relied on, and no code within 90s is BLOCKED.
 OPERATOR WINDOW W2 (store): B2B-store {{STORE_ID}} MultiFactorAuthentication.StoreMode = Enabled, set by the operator in Admin (Stores > {{STORE_ID}} > Settings > Security) before the run and restored by the operator after it; the case never writes a setting of {{STORE_ID}} - it only READS the store to assert the window state, and if the store is not in it the case is BLOCKED (needs operator window W2), never FAIL. While the window is open EVERY storefront password sign-in on that store is challenged - run it alone, never beside another suite that signs in on {{STORE_ID}} (104, 031, 032, 082 ...). No global setting is touched.
