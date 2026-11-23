@@ -2136,7 +2136,7 @@ test("channelPipeName: two users, two scopes, two servers and two launches never
         "a separator in either name cannot reshape the pipe path");
 });
 
-test("a channel that cannot accept a client degrades to no renewal, never to a dead session", async () => {
+channelTest("a channel that cannot accept a client degrades to no renewal, never to a dead session", async () => {
     // A net.Server with NO listener for "error" throws -- into uncaughtException and out through
     // fail(). Driven behaviourally rather than by matching source text: net.createServer is
     // wrapped for this one call so the real server createChannel builds is captured, then a real
