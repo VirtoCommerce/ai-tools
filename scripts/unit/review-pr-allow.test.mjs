@@ -63,6 +63,16 @@ test("default mode: approves only reads inside the review scratch, never a crede
   assert.equal(hook(read(join(link, "unit", "review-pr-allow.test.mjs"))), "none", "a link out of the scratch");
 });
 
+test("hashed project folder: only the asking session's scratch is approved", () => {
+  const f = join(TMP, "0123456789abcdef", "sess-a", "scratchpad", "pr-7", "pr.diff");
+  mkdirSync(dirname(f), { recursive: true });
+  writeFileSync(f, "x\n");
+  assert.equal(hook({ ...read(f), session_id: "sess-a" }), "allow");
+  assert.equal(hook({ ...read(f), session_id: "sess-b" }), "none", "another session");
+  assert.equal(hook({ ...read(f), session_id: "" }), "none", "empty session_id");
+  assert.equal(hook(read(f)), "none", "no session_id");
+});
+
 test("default mode: WebFetch only of docs pages on WEB_HOSTS", () => {
   for (const u of ["https://docs.github.com/en/actions", "https://learn.microsoft.com/en-us/powershell/x",
     "https://www.gnu.org/software/bash/manual/bash.html", "https://nodejs.org/api/fs.html",
@@ -191,4 +201,17 @@ test("prepare.mjs: refuses a scratch directory of another project", () => {
   const r = prepare(["fetch", other, "1", "VirtoCommerce/.github", "main", "README.md"]);
   assert.equal(r.status, 2);
   assert.match(r.stderr, /not a session scratchpad/);
+});
+
+test("prepare.mjs: accepts a scratchpad under a hashed project folder (Claude Code since 2026-11)", () => {
+  const hashed = join(TMP, "0123456789abcdef", "session", "scratchpad");
+  mkdirSync(hashed, { recursive: true });
+  const clone = join(TMP, "clone-hashed");
+  execFileSync("git", ["init", "-q", clone]);
+  execFileSync("git", ["-C", clone, "remote", "add", "origin", "https://github.com/VirtoCommerce/unit.git"]);
+  const r = prepare(["snapshot-cleanup", clone, hashed]);
+  assert.equal(r.status, 0, r.stderr);
+  const near = join(TMP, "0123456789abcdeg", "session", "scratchpad");
+  mkdirSync(near, { recursive: true });
+  assert.match(prepare(["snapshot-cleanup", clone, near]).stderr, /not a session scratchpad/);
 });
