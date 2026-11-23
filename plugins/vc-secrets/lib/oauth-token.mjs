@@ -8,9 +8,9 @@ import * as cache from "../vc-secrets-cache.mjs";  // entries, expiry, the cross
 import * as oauth from "../vc-secrets-oauth.mjs";  // the Entra protocol
 
 import { runTool } from "./spawn.mjs";
-import { WCM_BLOB_LIMIT, batchedReadError, buildLocalRead, clearOversizeMarker, decodeCredBlobHex, deleteEntryIo,
-    detectLocalBackend, gpgEntryPresent, isAbsentEntry, keyFor, mapResolveError, nameFromKey, psCommand,
-    recordOversizeMarker, scopeKeyFor, writeSecretValue } from "./keystore.mjs";
+import { batchedReadError, buildLocalRead, decodeCredBlobHex, deleteEntryIo, gpgEntryPresent, isAbsentEntry,
+    keyFor, mapResolveError, nameFromKey, oauthBackend, psCommand, readDpapiFile, scopeKeyFor,
+    unprotectManyIo, writeSecretValue } from "./keystore.mjs";
 
 function oauthEntryKeys(name, decl, cfg) {
     return {
@@ -225,26 +225,10 @@ async function ensureFreshToken({ serverName, readCache, writeCache, exchange, a
 // The tail both token writers share -- cmdLogin after an interactive sign-in, writeCache after a
 // renewal. Best effort throughout: losing the access entry costs one exchange on the next launch,
 // where failing the whole operation would cost an interactive sign-in.
-//
-// ONLY exit 4 records a marker. It is the one failure that cannot come right on its own -- the value
-// is over the backend's ceiling, so the identical write fails identically forever. A transient
-// failure that left a marker behind would report a permanent condition that the very next successful
-// write disproves, and that distinction is the whole point of the file. Credential Manager is the
-// only backend that produces it (gpg has no ceiling to cross, keychain does not signal size this
-// way), so WCM_BLOB_LIMIT is the limit recorded; `backend` goes in the marker too, because a reader
-// should not have to infer which store refused from the value of a number.
-//
-// Cleared on success because the marker is current state, not a log; the reason is on
-// oversizeMarkerPath. Four coupled rules in one body rather than two, so a fifth writer gets them
-// by calling rather than by copying.
-async function storeAccessEntry(key, value, { write, marker, log, backend, note = "" }) {
+async function storeAccessEntry(key, value, { write, log, note = "" }) {
     try {
         await write(key, value);
-        marker.clear(key);
     } catch (e) {
-        if (e.toolExitCode === 4) {
-            marker.record(key, { backend, limit: WCM_BLOB_LIMIT, bytes: Buffer.byteLength(value) });
-        }
         log(`vc-secrets: ${note}the access entry could not be stored (${e.message}); `
             + "the next launch will exchange one\n");
     }
@@ -272,14 +256,20 @@ async function clearEntryPair(remove, keys) {
 // ("vc-secrets:<scope>:<name>"), never a bare entry name. Every read/write below is built from one
 // of those full keys.
 //
-// `seed`: raw outcomes of the launch's one batched Credential Manager call (readWcmBatch's `outcomes`), by
-// full key -- or null. It exists to save the first readCache of a launch its PowerShell round trips and
-// answers nothing else: readCache takes it and drops it before its first read, so the re-read under the
-// lock, every poll while another launcher holds it and every renewal tick read the store itself. That is
-// what the refresh token's safety rests on -- the exchange spends the token it read under the lock, never
-// one batched before the lock was asked for, which a neighbour may have rotated since. An outcome is
-// interpreted only when consumed, by the same branches as a read that ran then.
-function oauthLaunchDeps(entryName, decl, cfg, { backend = detectLocalBackend(), env = process.env,
+// `backend` is where the pair lives (oauthBackend): "dpapi" on Windows, where the entries are
+// DPAPI-protected files and the Credential Manager pair of an earlier version is read as a fallback
+// and migrated; "keychain" and "gpg" elsewhere, unchanged.
+//
+// `seed`: what the launch's one batched call already read -- or null. On dpapi it is
+// { wcm: Map<key, {ok}|{err}>, dpapi: Map<key, {ok}|{err}>, files: Map<key, boolean> }: the Credential
+// Manager outcomes, the decrypted files, and whether node found each file at all. It exists to save the
+// first readCache of a launch its PowerShell round trips and answers nothing else: readCache takes it
+// and drops it before its first read, so the re-read under the lock, every poll while another launcher
+// holds it and every renewal tick read the store itself. That is what the refresh token's safety rests
+// on -- the exchange spends the token it read under the lock, never one batched before the lock was
+// asked for, which a neighbour may have rotated since. An outcome is interpreted only when consumed, by
+// the same branches as a read that ran then.
+function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend = oauthBackend(process.platform, env),
     run = runTool, write = writeSecretValue, remove = null, seed = null } = {}) {
     const keys = oauthEntryKeys(entryName, decl, cfg);
     // `= null` in the parameter list and resolved here, the way cmdLogin and cmdLogout resolve their
@@ -290,13 +280,21 @@ function oauthLaunchDeps(entryName, decl, cfg, { backend = detectLocalBackend(),
     // that from a run that looks entirely green. That has happened once already, to cmdLogin's
     // equivalent seam; the note is on loginDeps in the test file.
     const removeEntry = remove ?? deleteEntryIo(backend, env, { run });
+    // Only a dpapi pair has a legacy store to clear after migrating; the Credential Manager entries of
+    // the same keys. Not the `remove` seam: that one is the dpapi delete, which clears the files too.
+    const removeLegacy = backend === "dpapi" ? deleteEntryIo("wcm", env, { run }) : null;
+    // True from a read that found the pair only in Credential Manager until the refresh file has been
+    // written: the one moment the legacy entries may go, and never before, or a failed write would leave
+    // the developer with no pair at all.
+    let migrating = false;
     // The raw read: what the backend printed for `key`, or what it threw. A batched outcome stands in for the
     // run when there is one, and throws the very error that run would have -- so everything past this point,
-    // absent-versus-failure included, is one code path for both.
-    const fetchRaw = (key, batched) => {
-        const outcome = backend === "wcm" ? batched?.get(key) : undefined;
+    // absent-versus-failure included, is one code path for both. `store` is the store being read: the
+    // backend itself, or "wcm" for the legacy pair under dpapi.
+    const fetchRaw = (store, key, batched) => {
+        const outcome = store === "wcm" ? batched?.get(key) : undefined;
         if (outcome === undefined) {
-            return run(buildLocalRead(backend, key, env));
+            return run(buildLocalRead(store, key, env));
         }
         if (typeof outcome.ok === "string") {
             return outcome.ok;
@@ -304,25 +302,11 @@ function oauthLaunchDeps(entryName, decl, cfg, { backend = detectLocalBackend(),
 
         throw batchedReadError(psCommand(env), outcome.err);
     };
-    const readEntry = async (key, batched = null) => {
-        // keyToPath (not the source's flat `${name}.gpg`) — this package's gpg layout already
-        // namespaces entries by scope, so the file this key resolves to is the one keyToPath
-        // computes everywhere else, not a hand-built path that skips the scope directory.
-        if (backend === "gpg" && !gpgEntryPresent(key, env)) {
-            return undefined;
-        }
-        const keyName = nameFromKey(key);
-        let raw;
+    // The entry a stored text holds, or undefined after naming why not. `produceText` is a thunk so a
+    // failure while decoding is caught by the same handler as a failure while parsing.
+    const parseStored = (keyName, produceText) => {
         try {
-            raw = await fetchRaw(key, batched);
-        } catch (e) {
-            if (isAbsentEntry(backend, e)) {
-                return undefined;   // not stored: "sign in", not a tool failure
-            }
-            throw mapResolveError(backend, keyName, e);
-        }
-        try {
-            const entry = cache.parseEntry(backend === "wcm" ? decodeCredBlobHex(raw).value : raw);
+            const entry = cache.parseEntry(produceText());
             if (entry === null) {
                 // Both cases are named on fd 2, and this one most of all: a version skew is a
                 // thing a developer can reason about, a keystore entry that has been damaged is
@@ -346,21 +330,116 @@ function oauthLaunchDeps(entryName, decl, cfg, { backend = detectLocalBackend(),
             return undefined;
         }
     };
+    const readEntry = async (key, batched = null, store = backend) => {
+        // keyToPath (not the source's flat `${name}.gpg`) — this package's gpg layout already
+        // namespaces entries by scope, so the file this key resolves to is the one keyToPath
+        // computes everywhere else, not a hand-built path that skips the scope directory.
+        if (store === "gpg" && !gpgEntryPresent(key, env)) {
+            return undefined;
+        }
+        const keyName = nameFromKey(key);
+        let raw;
+        try {
+            raw = await fetchRaw(store, key, batched);
+        } catch (e) {
+            if (isAbsentEntry(store, e)) {
+                return undefined;   // not stored: "sign in", not a tool failure
+            }
+            throw mapResolveError(store, keyName, e);
+        }
+
+        return parseStored(keyName, () => (store === "wcm" ? decodeCredBlobHex(raw).value : raw));
+    };
+    // What the dpapi files hold, as the pair cacheStatus decides on. The refresh FILE alone picks the
+    // store: with none, the pair is read from Credential Manager (an upgrade from before the file
+    // store) and an access file left on its own is never looked at -- paired with a legacy refresh
+    // token it could serve another principal's access token.
+    const readDpapiPair = async (batch) => {
+        // The launch's pre-dpapi seed shape (a bare Map of Credential Manager outcomes); removable once the launch passes the new one.
+        const parts = batch instanceof Map ? { wcm: batch } : batch;
+        const toDecrypt = new Map();
+        const outcomes = new Map();
+        // Whether the entry has a file, and queues what has to be decrypted for it. A seed that says the
+        // file was there answers with its decrypted outcome; a seed that says nothing about it, or no seed
+        // at all, sends node to the file.
+        const present = (key) => {
+            const seen = parts?.files?.get(key);
+            if (seen === false) {
+                return false;
+            }
+            if (seen === true && parts.dpapi?.has(key)) {
+                outcomes.set(key, parts.dpapi.get(key));
+
+                return true;
+            }
+            const blob = readDpapiFile(key, env);
+            if (blob === undefined) {
+                return false;
+            }
+            toDecrypt.set(key, blob);
+
+            return true;
+        };
+        if (!present(keys.refresh)) {
+            const legacyRefresh = await readEntry(keys.refresh, parts?.wcm, "wcm");
+            migrating = legacyRefresh?.refreshToken !== undefined;
+            if (!migrating) {
+                return { refresh: undefined };
+            }
+
+            return { refresh: legacyRefresh, access: await readEntry(keys.access, parts?.wcm, "wcm") };
+        }
+        migrating = false;
+        const hasAccess = present(keys.access);
+        for (const [key, outcome] of await unprotectManyIo({ blobs: toDecrypt, env, run })) {
+            outcomes.set(key, outcome);
+        }
+        const decrypted = (key) => {
+            const outcome = outcomes.get(key);
+            if (outcome === undefined) {
+                return undefined;
+            }
+            if (typeof outcome.ok !== "string") {
+                // The notice names the entry and DPAPI's code, nothing of the file. Absent, like an entry
+                // that is not readable JSON: the next step is a sign-in either way, and the file decides --
+                // falling back to Credential Manager here would serve a pair this one superseded.
+                fs.writeSync(2, `vc-secrets: the stored entry for "${nameFromKey(key)}" could not be decrypted `
+                    + `(win32 error ${outcome.err}) -- treating it as absent; the next launch will sign in or exchange\n`);
+
+                return undefined;
+            }
+
+            return parseStored(nameFromKey(key), () => Buffer.from(outcome.ok, "hex").toString("utf8"));
+        };
+        const refresh = decrypted(keys.refresh);
+        if (refresh?.refreshToken === undefined) {
+            return { refresh };
+        }
+
+        return { refresh, access: hasAccess ? decrypted(keys.access) : undefined };
+    };
 
     return {
         readCache: async () => {
             // Taken and dropped before anything can throw: only this call may see the batch.
             const s = seed;
             seed = null;
-            const refresh = await readEntry(keys.refresh, s);
-            if (refresh?.refreshToken === undefined) {
+            let pair;
+            if (backend === "dpapi") {
+                pair = await readDpapiPair(s);
+            } else {
+                const refresh = await readEntry(keys.refresh, s);
                 // Short-circuited before the second read: deciding "no token can be obtained
                 // without interaction" is the path with a latency budget on it, and on Credential
                 // Manager each read is a PowerShell P/Invoke worth one to three seconds.
+                pair = refresh?.refreshToken === undefined ? { refresh }
+                    : { refresh, access: await readEntry(keys.access, s) };
+            }
+            const { refresh, access } = pair;
+            if (refresh?.refreshToken === undefined) {
                 return { state: "absent" };
             }
-            const status = cache.cacheStatus({ refresh, access: await readEntry(keys.access, s) },
-                decl, Date.now(), os.uptime());
+            const status = cache.cacheStatus({ refresh, access }, decl, Date.now(), os.uptime());
 
             // The refresh token rides back with the verdict: cacheStatus deliberately returns a
             // state and nothing else, and the exchange needs the token that state was decided on.
@@ -392,20 +471,16 @@ function oauthLaunchDeps(entryName, decl, cfg, { backend = detectLocalBackend(),
                     throw new VcSecretsError(`the renewed refresh token could not be stored in "${keys.refresh}" `
                         + `(${e.message}) -- run "vc-secrets login ${entryName}"`);
                 }
+                if (migrating) {
+                    // The refresh file is in place, so the legacy pair is now the stale one. Best effort:
+                    // a delete that fails leaves entries the next launch ignores, because the file decides.
+                    await clearEntryPair(removeLegacy, [keys.access, keys.refresh]);
+                    migrating = false;
+                }
             }
-            // The renewal path is where an oversize entry HURTS, which is why it records the marker
-            // at all. RENEWAL_TICK_MS fires every five minutes and the tick decides from the store,
-            // so an access entry that never lands means an exchange -- and a refresh-token rotation
-            // -- every five minutes, indefinitely, reported as one fd-2 line each time and never as
-            // a condition.
             await storeAccessEntry(keys.access, cache.serializeAccess(fresh), {
                 write: (k, v) => write(k, v, { backend, env }),
-                marker: {
-                    clear: (k) => clearOversizeMarker(k, env),
-                    record: (k, meta) => recordOversizeMarker(k, { ...meta, env }),
-                },
                 log: (s) => fs.writeSync(2, s),
-                backend,
             });
         },
         exchange: (refreshToken) => oauth.exchange(decl.tenantId, oauth.buildTokenBody({ kind: "refresh",

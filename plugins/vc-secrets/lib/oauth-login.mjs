@@ -12,8 +12,7 @@ import { severingClose } from "../vc-secrets-teardown.mjs";  // the one teardown
 import { forTerminal } from "./util.mjs";
 import { commandOnPath, resolveSpawnCommand } from "./spawn.mjs";
 import { CONFIG_HINT_PATH, CONFIG_NAME, DOCTOR_REMEDY, USER_SCOPE, authorizationFor } from "./config.mjs";
-import { LOCAL_BACKENDS, clearOversizeMarker, deleteEntryIo, detectLocalBackend, recordOversizeMarker,
-    writeSecretValue } from "./keystore.mjs";
+import { LOCAL_BACKENDS, deleteEntryIo, detectLocalBackend, writeSecretValue } from "./keystore.mjs";
 import { requireNamespaceTrust } from "./trust.mjs";
 import { acquireTokenLock, clearEntryPair, oauthEntryKeys, storeAccessEntry, tokenLockFor } from "./oauth-token.mjs";
 
@@ -360,10 +359,6 @@ async function cmdLogin(serverName, cfg, {
     // this function's own text keeps finding it as a seam.
     const acquire = acquireLock ?? tokenLockFor(serverName, decl, cfg);
     const removeStale = removeEntry ?? deleteEntryIo(backend);
-    // A seam for the same reason removeEntry is one: the default TOUCHES THE FILESYSTEM under the
-    // developer's own config directory, and a test that reaches either path without injecting it
-    // does that from a run that reports nothing but a pass.
-    const marker = oversize ?? { record: recordOversizeMarker, clear: clearOversizeMarker };
     const { verifier, challenge } = oauth.createPkcePair();
     const state = randomState();
     const server = await listen(state, { entryName: serverName });
@@ -526,7 +521,7 @@ async function cmdLogin(serverName, cfg, {
             // "signed in, but": the sign-in itself succeeded and the refresh entry landed, so the
             // line must not read as a failed login.
             await storeAccessEntry(names.access, cache.serializeAccess(parsed), {
-                write: writeEntry, marker, log, backend, note: "signed in, but ",
+                write: writeEntry, log, note: "signed in, but ",
             });
         } finally {
             // Covers the stale-clearing path too: that branch deletes the very entries a waiting

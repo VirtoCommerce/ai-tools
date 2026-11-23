@@ -898,37 +898,6 @@ test("cmdLogin: a failed ACCESS write is not fatal — losing it costs one excha
     assert.ok(logged.some((l) => /access/i.test(l)), `the degraded write must be reported: ${logged.join("")}`);
 });
 
-test("cmdLogin: an access entry too large for the keystore is recorded, not just logged", async () => {
-    // On Credential Manager this failure is DETERMINISTIC: the value is over the ceiling, so the
-    // identical write fails identically at every launch and every renewal, forever. It printed one
-    // line to fd 2 and was forgotten, and the next tick printed it again -- so the machine paid a
-    // token exchange, and a refresh-token rotation with it, every five minutes with nothing
-    // anywhere saying the condition was permanent. The marker is what lets doctor say it.
-    const { deps, marked, logged } = loginDeps({
-        writeEntry: async (name) => {
-            if (name.endsWith("-access")) {
-                throw Object.assign(new m.VcSecretsError("too large for Credential Manager"), { toolExitCode: 4 });
-            }
-        },
-        backend: "wcm",
-    });
-    await m.cmdLogin("azure-mcp", LOGIN_CFG, deps);
-    assert.equal(marked.length, 1, `exactly one marker: ${JSON.stringify(marked)}`);
-    const [key, info] = marked[0];
-    assert.equal(key, LOGIN_KEYS.access);
-    assert.equal(info.backend, "wcm");
-    assert.equal(info.limit, m.WCM_BLOB_LIMIT);
-    // Measured from what we tried to write, not scraped from the backend's message -- the number is
-    // in hand here, and parsing a string for it would be a second way to be wrong about it.
-    assert.equal(info.bytes, Buffer.byteLength(cache.serializeAccess({ accessToken: "at",
-        expiresAt: 1_703_600_000, obtainedAt: 1_700_000_000, lifetimeMs: 3600_000, uptimeAtIssue: 1000 })));
-    // "signed in, but" included on purpose: without it the same sentence reads as a failed login,
-    // at the moment a developer is most likely to re-run `login` and rotate away the token they
-    // just got. The prefix is a parameter of the shared write tail, so it is droppable in one edit.
-    assert.ok(logged.some((l) => /signed in, but the access entry could not be stored/.test(l)),
-        "and the login still reports it, without reading as a failed sign-in");
-});
-
 test("cmdLogin: an access write that failed for any other reason leaves no marker", async () => {
     // The distinction the whole file rests on. A transient failure -- a locked store, a timeout --
     // will succeed on the next attempt, and a marker left for one would have doctor report a
@@ -942,15 +911,6 @@ test("cmdLogin: an access write that failed for any other reason leaves no marke
     });
     await m.cmdLogin("azure-mcp", LOGIN_CFG, deps);
     assert.deepEqual(marked, [], "only a deterministic oversize failure may be recorded");
-});
-
-test("cmdLogin: a successful access write clears any marker for that entry", async () => {
-    // The load-bearing half: the marker is CURRENT STATE, not an event record. An entry that
-    // shrank back under the ceiling -- a group membership dropped, a narrower scope list -- must
-    // stop being reported, or doctor goes on naming a problem that is fixed.
-    const { deps, cleared } = loginDeps();
-    await m.cmdLogin("azure-mcp", LOGIN_CFG, deps);
-    assert.deepEqual(cleared, [LOGIN_KEYS.access]);
 });
 
 test("cmdLogin: the previous access entry is deleted before the new refresh entry is written", async () => {
