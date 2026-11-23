@@ -8,6 +8,47 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The Windows sign-in is stored in a DPAPI file — `vc-secrets` `0.3.0` — 2026-11-23
+
+### Fixed
+
+- **Windows: an access token larger than Credential Manager's 2560-byte blob ceiling is cached again.** The
+  access token carries the user's group claims and grows with every group membership; on a machine with enough
+  of them the token alone outgrew the ceiling. The write of the access entry is best effort, so sign-in kept
+  working while no access token was ever cached, and every launch and every five-minute renewal tick exchanged
+  the refresh token, which rotates it each time. `login` and renewal now store the refresh and access entries
+  as DPAPI-protected files, which have no size ceiling.
+
+### Changed
+
+- **Where a Windows sign-in lives.** One file per entry, `%LOCALAPPDATA%\vc-secrets\secrets\<scope>\<name>.dpapi`,
+  encrypted with `CryptProtectData` under the current user and bound to the entry's key. `%LOCALAPPDATA%` rather
+  than `HOME`, because Git Bash, an IDE and Explorer can disagree on `HOME` and an entry written under one
+  would read as "not signed in" under another; an explicit `XDG_CONFIG_HOME` still wins. Files are written to a
+  temporary sibling and renamed over the entry, so a launcher reading without the token lock sees the old
+  version or the new one. Secrets stored with `set` stay in Credential Manager, and macOS and Linux are
+  unchanged. README §Where an OAuth sign-in is stored on Windows;
+  [`docs/decisions/vc-secrets-dpapi-oauth-store.md`](docs/decisions/vc-secrets-dpapi-oauth-store.md) records the
+  decision and what was rejected.
+- **Existing sign-ins migrate on first read.** When no refresh file exists, the Credential Manager pair under the
+  same keys is read, as a pair, and moved into files at the next renewal or sign-in; the Credential Manager
+  entries are then deleted. Nobody has to sign in again. `logout` and a failed renewal remove the file and the
+  Credential Manager entry of the same key, so a fallback cannot bring back a token that was reported removed.
+  A file DPAPI cannot decrypt (an administrator's password reset, a profile copied to another machine) reads as
+  not signed in, with a notice naming the entry.
+- **`doctor` probes each store a kind of entry uses.** On Windows it prints one line for Credential Manager
+  (`set` can store a value up to the ceiling) and one for the DPAPI files (a value well over the ceiling is
+  stored and read back), so the `OK` about login and renewal describes the store they use.
+- `VC_SECRETS_LOCAL_BACKEND=wcm` keeps `set` secrets in Credential Manager and stores the sign-in in the DPAPI
+  files; `dpapi` is not a valid value, so a `set` secret cannot land there.
+
+### Removed
+
+- The oversize marker and the `doctor` `WARN` that read it. Both existed to make the Credential Manager ceiling
+  visible while the sign-in still depended on it; with no sign-in written there, nothing produces either. A
+  marker file already on disk is left alone and no longer read. The exit-4 message for a `set` value over the
+  ceiling stays.
+
 ## The `tsc` hook no longer runs after every Edit — `vc-fix` `0.19.2` — 2026-11-23
 
 ### Removed

@@ -1,6 +1,6 @@
 # vc-secrets — why the OAuth entry pair moves out of Credential Manager on Windows
 
-**Date:** 2026-11-23 · **Status:** accepted; implementation in progress on `fix/vc-secrets-dpapi-oauth-store`
+**Date:** 2026-11-23 · **Status:** accepted; implemented in 0.3.0
 
 Never loaded by an agent. The normative description of where a value is stored is
 `plugins/vc-secrets/README.md` §Where a secret is stored, and under what key; this file records why the

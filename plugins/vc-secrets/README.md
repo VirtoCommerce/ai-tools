@@ -144,7 +144,7 @@ its environment from outliving the launcher. On Windows the launcher binds the t
 object before it starts anything, so any end of the launcher ends the whole tree -- a client stopping the
 server (which on Windows terminates the launcher outright, running none of its handlers), a crash, or Task
 Manager. The bind is made in the same PowerShell call that reads the launch's Credential Manager secrets and,
-for a launch with an `oauth:` reference stored there, its cached sign-in; it can be refused in a restricted context; the launch then goes ahead and says so on stderr (`could not bind
+for a launch with an `oauth:` reference, decrypts its cached sign-in from the [DPAPI files](#where-an-oauth-sign-in-is-stored-on-windows); it can be refused in a restricted context; the launch then goes ahead and says so on stderr (`could not bind
 the launch's process tree to this launcher`), and a client stop may leave that launch's tree running. The job does not permit breakaway, so a descendant
 that explicitly asks to leave it (`CREATE_BREAKAWAY_FROM_JOB`) fails to start; the `npx → cmd → node` chain
 never asks, and permitting it would let any descendant escape the teardown. On Linux and macOS a **server's** group also ends when the client closes the launcher's stdin: the
@@ -211,7 +211,7 @@ needs no `oauth` entry and no `vc-secrets login`. Both routes hand the server a 
 own account; what differs is where it comes from. With `azcli` the client is the developer tool you
 signed in with, the token lives in that tool's cache, and the sign-in behind it reaches every Azure
 resource your account can, for any process in the same environment. An `oauth` entry signs in against the
-app registration and scopes the declaration names, keeps the refresh token in the OS keystore, and asks
+app registration and scopes the declaration names, keeps the refresh token in the OS keystore (on Windows, in a DPAPI-protected file; see [Where an OAuth sign-in is stored on Windows](#where-an-oauth-sign-in-is-stored-on-windows)), and asks
 your consent before a repository's registration is used. Neither keeps the server away from sign-ins
 already present in its environment (see [Scope of the protection](#scope-of-the-protection)). Choose
 `azcli` when that ambient identity is acceptable for the agent that will run the server.
@@ -371,7 +371,7 @@ Trust these for /work/repo? [y/N]
   repository's launchable and for the other cases below: your own user-scope server or task that reads a
   repository-declared `local` secret or `oauth` entry, and `set`, `login`, `logout`, `unlock` and `doctor`
   for those entries. `doctor`'s write probe also consults it whenever the repository declares a `projectId`
-  (on the keychain and Credential Manager backends), and falls back to the `user` key silently when this
+  (on the keychain, Credential Manager and DPAPI stores), and falls back to the `user` key silently when this
   checkout is not trusted or the file cannot be read. Any other launch or verb never depends on it, so a
   user-only configuration never reads it; `doctor` and `emit-config` read it to report on the repository's. A
   trust file that cannot be read refuses those launches and verbs rather than reading as empty or as trusted,
@@ -517,6 +517,23 @@ The value itself lives where your platform keeps credentials: a Credential Manag
 credential (Windows), a Keychain generic password (macOS), or a gpg-encrypted file under
 `~/.config/vc-secrets/secrets/<scope>/` (Linux/WSL, `$XDG_CONFIG_HOME` honoured). Use `set` rather
 than writing these by hand — it gets the file mode, the atomic replace and the key shape right.
+
+### Where an OAuth sign-in is stored on Windows
+
+A [`login`](#signed-in-tokens-the-oauth-block) sign-in is not stored where `set` puts a secret. On Windows its refresh and access
+entries are one file each, `%LOCALAPPDATA%\vc-secrets\secrets\<scope>\<name>.dpapi`, holding a DPAPI
+(`CryptProtectData`, current-user scope) ciphertext; an `XDG_CONFIG_HOME` that is set replaces
+`%LOCALAPPDATA%` as the root. A `set` secret stays in Credential Manager. The reason for the split is size:
+a Credential Manager generic credential holds at most 2560 bytes, and an access token grows with the user's
+group memberships until it no longer fits, which left no access token cached and made every launch and every
+renewal exchange the refresh token. The files have no such ceiling. They are protected by the same Windows
+user key as Credential Manager, so a process running as you can read them, as it could read the credentials.
+
+A sign-in made before this change needs no new `login`: when no refresh file exists, the entries still in
+Credential Manager are read as a pair, moved into files at the next renewal or sign-in, and deleted from
+Credential Manager. `logout` removes both copies. A file DPAPI cannot decrypt (after an administrator
+password reset, or a profile copied to another machine) is treated as not signed in, with a notice naming
+the entry; run `login` again. macOS and Linux are unchanged.
 
 ## Clients
 
@@ -682,7 +699,7 @@ The secrets themselves stay in the credential store; nothing here removes them.
 | Variable | Effect |
 |---|---|
 | `VC_SECRETS` | Where the shim lives; referenced from `.mcp.json` so no repo hardcodes a plugin path |
-| `VC_SECRETS_LOCAL_BACKEND` | Override the detected backend (`wcm` / `keychain` / `gpg`). WSL is **not** treated as Windows |
+| `VC_SECRETS_LOCAL_BACKEND` | Override the detected backend (`wcm` / `keychain` / `gpg`). WSL is **not** treated as Windows. `wcm` stores the OAuth sign-in in [DPAPI files](#where-an-oauth-sign-in-is-stored-on-windows) and `set` secrets in Credential Manager; `dpapi` is not a valid value |
 | `VC_SECRETS_GPG_RECIPIENT` | Encrypt to a specific key instead of your default |
 | `VC_SECRETS_POWERSHELL` | Set to `pwsh` if Constrained Language Mode blocks the in-box PowerShell's `Add-Type` |
 | `VC_SECRETS_WSL_NO_INTEROP` | `1` makes `login` on Linux and WSL open no browser at all — neither the Windows default browser through `wslview` or `powershell.exe`, nor `xdg-open`. Sign in by hand from the URL `login` prints |
