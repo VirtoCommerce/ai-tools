@@ -531,9 +531,12 @@ user key as Credential Manager, so a process running as you can read them, as it
 
 A sign-in made before this change needs no new `login`: when no refresh file exists, the entries still in
 Credential Manager are read as a pair, moved into files at the next renewal or sign-in, and deleted from
-Credential Manager. `logout` removes both copies. A file DPAPI cannot decrypt (after an administrator
+Credential Manager. `logout` removes both copies. A refresh file DPAPI cannot decrypt (after an administrator
 password reset, or a profile copied to another machine) is treated as not signed in, with a notice naming
-the entry; run `login` again. macOS and Linux are unchanged.
+the entry; run `login` again. An access file it cannot decrypt, beside a refresh file it can, costs one token
+exchange at the next launch and nothing more. Sessions started before the upgrade keep running the old code:
+once the first launch of the new version has moved the sign-in into files, those sessions can no longer renew
+it, so restart them. macOS and Linux are unchanged.
 
 ## Clients
 

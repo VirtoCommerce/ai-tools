@@ -1007,7 +1007,29 @@ test("writeSecretValue: dpapi refuses to store an empty ciphertext over the entr
     await assert.rejects(
         () => m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: async () => "" }),
         /no ciphertext/);
-    assert.equal(fs.existsSync(m.dpapiKeyToPath(DPAPI_KEY, env)), false);
+    assert.equal(pathPresent(m.dpapiKeyToPath(DPAPI_KEY, env), "the dpapi entry"), false);
+});
+
+test("writeSecretValue: dpapi stores only base64 ciphertext, and a stray line in stdout is refused by name", async () => {
+    // Node's base64 decoder skips every character outside the alphabet, so a warning PowerShell printed ahead
+    // of the ciphertext would be decoded into a corrupt blob and stored after a "successful" write. The error
+    // names the entry and never carries the output, which may sit beside a secret.
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-stray-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    for (const stray of ["WARNING: module cache rebuilt\r\nQ0lQSEVS", "Q0lQ\nSEVS", "Q0 lQSEVS", "Q0lQSEVS===", "=Q0lQSEVS", "!!!", "\r\n"]) {
+        await assert.rejects(
+            () => m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: async () => stray }),
+            (e) => e instanceof m.VcSecretsError && e.message.includes("oauth-a-refresh")
+                && !/WARNING|Q0lQ|SEVS|!!!/.test(e.message),
+            JSON.stringify(stray));
+        assert.equal(pathPresent(target, "the dpapi entry"), false, `a refused output left an entry: ${JSON.stringify(stray)}`);
+    }
+
+    // The ciphertext PowerShell prints, with or without padding and a trailing line ending, is still stored.
+    for (const printed of ["Q0lQSEVS", "Q0lQSEU=\r\n", "  Q0lQSA==\n"]) {
+        await m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: async () => printed });
+        assert.deepEqual(fs.readFileSync(target), Buffer.from(printed.trim(), "base64"), JSON.stringify(printed));
+    }
 });
 
 test("writeSecretValue: a dpapi value over the Credential Manager ceiling is stored", async () => {
@@ -1064,7 +1086,7 @@ test("deleteEntryIo: dpapi removes the file and the Credential Manager entry of 
     const calls = [];
     await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(true, calls) })(DPAPI_KEY);
 
-    assert.equal(fs.existsSync(target), false);
+    assert.equal(pathPresent(target, "the dpapi entry"), false);
     assert.equal(calls.length, 1);
     assert.equal(calls[0].extraEnv.VC_SECRETS_NAME, DPAPI_KEY);
     assert.equal(Buffer.from(calls[0].args[calls[0].args.indexOf("-EncodedCommand") + 1], "base64").toString("utf16le"),
@@ -1088,7 +1110,7 @@ test("deleteEntryIo: dpapi with only the file removes it and succeeds", async ()
     fs.writeFileSync(target, "BLOB");
     await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false) })(DPAPI_KEY);
 
-    assert.equal(fs.existsSync(target), false);
+    assert.equal(pathPresent(target, "the dpapi entry"), false);
 });
 
 test("deleteEntryIo: dpapi with neither present is exit 3", async () => {

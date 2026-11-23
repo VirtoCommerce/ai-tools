@@ -907,13 +907,23 @@ async function renameWithRetry(from, to, { rename = fs.renameSync, sleep = delay
     }
 }
 
+// The one shape PS_DPAPI_PROTECT prints: base64 and nothing else. Node's decoder skips every character outside
+// the alphabet instead of refusing it, so a warning PowerShell printed ahead of the ciphertext would be decoded
+// into a corrupt blob and stored after a write that looked successful.
+const BASE64_CIPHERTEXT_RE = /^[A-Za-z0-9+/]+={0,2}$/;
+
 // The dpapi write: PowerShell turns the value into a blob and node owns the file. The blob goes to a tmp
 // file named for this process and is renamed over the entry, so a reader never sees a partial file and two
 // processes writing at once do not share a tmp path. A failed write leaves the previous entry in place.
 async function writeDpapiValue(key, value, { env, run, rename, sleep }) {
     const finalPath = dpapiKeyToPath(key, env);
     const stdout = await run(buildDpapiProtect(key, env), { stdinValue: value, redactValues: [value] });
-    const blob = Buffer.from(stdout, "base64");
+    const printed = String(stdout ?? "").trim();
+    if (printed !== "" && !BASE64_CIPHERTEXT_RE.test(printed)) {
+        // The entry is named and the output is not: it is whatever PowerShell printed, and may sit beside a secret.
+        throw new VcSecretsError(`DPAPI printed something other than base64 ciphertext for "${nameFromKey(key)}"`);
+    }
+    const blob = Buffer.from(printed, "base64");
     if (blob.length === 0) {
         throw new VcSecretsError(`DPAPI returned no ciphertext for "${nameFromKey(key)}"`);
     }

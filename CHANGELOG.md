@@ -32,10 +32,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   decision and what was rejected.
 - **Existing sign-ins migrate on first read.** When no refresh file exists, the Credential Manager pair under the
   same keys is read, as a pair, and moved into files at the next renewal or sign-in; the Credential Manager
-  entries are then deleted. Nobody has to sign in again. `logout` and a failed renewal remove the file and the
-  Credential Manager entry of the same key, so a fallback cannot bring back a token that was reported removed.
-  A file DPAPI cannot decrypt (an administrator's password reset, a profile copied to another machine) reads as
-  not signed in, with a notice naming the entry.
+  entries are then deleted. Nobody has to sign in again. `logout`, and a renewal whose new refresh token cannot
+  be stored, remove the file and the Credential Manager entry of the same key, so a fallback cannot bring back a
+  token that was reported removed. A refresh file DPAPI cannot decrypt (an administrator's password reset, a
+  profile copied to another machine) reads as not signed in, with a notice naming the entry; an access file it
+  cannot decrypt beside a good refresh file costs one exchange. Sessions started before the upgrade keep running
+  the old code: once the first launch of the new version has migrated the sign-in, those sessions can no longer
+  renew it, so restart them.
 - **`doctor` probes each store a kind of entry uses.** On Windows it prints one line for Credential Manager
   (`set` can store a value up to the ceiling) and one for the DPAPI files (a value well over the ceiling is
   stored and read back), so the `OK` about login and renewal describes the store they use.

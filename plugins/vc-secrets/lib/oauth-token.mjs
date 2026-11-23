@@ -8,9 +8,10 @@ import * as cache from "../vc-secrets-cache.mjs";  // entries, expiry, the cross
 import * as oauth from "../vc-secrets-oauth.mjs";  // the Entra protocol
 
 import { runTool } from "./spawn.mjs";
-import { batchedReadError, buildLocalRead, decodeCredBlobHex, deleteEntryIo, gpgEntryPresent, isAbsentEntry,
-    keyFor, mapResolveError, nameFromKey, oauthBackend, psCommand, readDpapiFile, scopeKeyFor,
+import { batchedReadError, buildLocalRead, decodeCredBlobHex, deleteEntryIo, dpapiKeyToPath, gpgEntryPresent,
+    isAbsentEntry, keyFor, mapResolveError, nameFromKey, oauthBackend, psCommand, readDpapiFile, scopeKeyFor,
     unprotectManyIo, writeSecretValue } from "./keystore.mjs";
+import { forTerminal, isAbsentPathError } from "./util.mjs";
 
 function oauthEntryKeys(name, decl, cfg) {
     return {
@@ -306,6 +307,11 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
 
         throw batchedReadError(psCommand(env), outcome.err);
     };
+    // What follows once an entry reads as absent, for the notices that say so. Nothing signs in on its own after
+    // the refresh entry is gone: the launch stops and asks for the login verb, so the notice names it. A missing
+    // access entry costs one exchange, which the launch makes itself (the wording storeAccessEntry uses).
+    const afterAbsent = (keyName) => (keyName === nameFromKey(keys.refresh)
+        ? `run "vc-secrets login ${entryName}" to sign in` : "the next launch will exchange one");
     // The entry a stored text holds, or undefined after naming why not. `produceText` is a thunk so a
     // failure while decoding is caught by the same handler as a failure while parsing.
     const parseStored = (keyName, produceText) => {
@@ -321,7 +327,7 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
                 // The notice is therefore built HERE, out of the key alone, so nothing of the value
                 // travels with it.
                 fs.writeSync(2, `vc-secrets: the stored entry for "${keyName}" is not readable JSON`
-                    + " -- treating it as absent; the next launch will sign in or exchange\n");
+                    + ` -- treating it as absent; ${afterAbsent(keyName)}\n`);
             }
 
             return entry ?? undefined;
@@ -405,10 +411,10 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
             }
             if (typeof outcome.ok !== "string") {
                 // The notice names the entry and DPAPI's code, nothing of the file. Absent, like an entry
-                // that is not readable JSON: the next step is a sign-in either way, and the file decides --
-                // falling back to Credential Manager here would serve a pair this one superseded.
+                // that is not readable JSON: the file decides, and falling back to Credential Manager here
+                // would serve a pair this one superseded. What follows differs by entry (afterAbsent).
                 fs.writeSync(2, `vc-secrets: the stored entry for "${nameFromKey(key)}" could not be decrypted `
-                    + `(win32 error ${outcome.err}) -- treating it as absent; the next launch will sign in or exchange\n`);
+                    + `(win32 error ${outcome.err}) -- treating it as absent; ${afterAbsent(nameFromKey(key))}\n`);
 
                 return undefined;
             }
@@ -421,6 +427,23 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
         }
 
         return { refresh, access: hasAccess ? decrypted(keys.access) : undefined };
+    };
+    // The access FILE of the pair about to be published, removed before its refresh file goes in. A read
+    // ignores an access file while no refresh file exists, so one can sit on disk from another sign-in (or
+    // from a write that never got its refresh file); the moment a refresh file is published it becomes that
+    // pair's access half, and nothing checks it against the refresh token. Removed first, a reader between
+    // the publication and the legacy deletes, or after a failed access write, finds no access file and costs
+    // one exchange. The file only: the Credential Manager entry is the legacy pair, which stays until the
+    // refresh file is in. Absence is what it is meant to find; any other failure is the caller's, handled as
+    // a failure of the refresh write itself.
+    const removeOrphanAccessFile = () => {
+        try {
+            fs.rmSync(dpapiKeyToPath(keys.access, env));
+        } catch (e) {
+            if (!isAbsentPathError(e)) {
+                throw new VcSecretsError(`could not remove the stale access file for "${nameFromKey(keys.access)}": ${e.code ?? e.message}`);
+            }
+        }
     };
 
     return {
@@ -461,8 +484,13 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
             const refreshToken = carried ? legacyRefreshToken : fresh.refreshToken;
             if (refreshToken !== undefined) {
                 try {
+                    if (migrating) {
+                        // Inside the try: a file that cannot be removed is a refresh write that cannot be
+                        // made, and the two branches below already say what each kind of token does then.
+                        removeOrphanAccessFile();
+                    }
                     await write(keys.refresh, cache.serializeRefresh({ refreshToken,
-                        tenantId: decl.tenantId, clientId: decl.clientId, scopes: decl.scopes }), { backend, env });
+                        tenantId: decl.tenantId, clientId: decl.clientId, scopes: decl.scopes }), { backend, env, run });
                 } catch (e) {
                     if (carried) {
                         // Not the dead-token case below: no new token was issued, so the legacy one is still
@@ -493,14 +521,27 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
                         + `(${e.message}) -- run "vc-secrets login ${entryName}"`);
                 }
                 if (migrating) {
-                    // The refresh file is in place, so the legacy pair is now the stale one. Best effort:
-                    // a delete that fails leaves entries the next launch ignores, because the file decides.
-                    await clearEntryPair(removeLegacy, [keys.access, keys.refresh]);
+                    // The refresh file is in place, so the legacy pair is now the stale one. Best effort, and
+                    // never retried: the renewal succeeds either way, and the next launch ignores what is left
+                    // because the file decides. The legacy copy is the same refresh token, dead at the next
+                    // rotation, and `logout` clears it. So a delete that failed is said once, per entry, since
+                    // nothing else will say it is there. Exit 3 is the ordinary "no such entry".
+                    for (const stale of [keys.access, keys.refresh]) {
+                        try {
+                            await removeLegacy(stale);
+                        } catch (e) {
+                            if (e.toolExitCode !== 3) {
+                                fs.writeSync(2, `vc-secrets: the previous Credential Manager entry "${nameFromKey(stale)}" could not be removed `
+                                    + `(${forTerminal(e.message)}); it is no longer read, and "vc-secrets logout ${entryName}" `
+                                    + "followed by a new sign-in clears it\n");
+                            }
+                        }
+                    }
                     migrating = false;
                 }
             }
             await storeAccessEntry(keys.access, cache.serializeAccess(fresh), {
-                write: (k, v) => write(k, v, { backend, env }),
+                write: (k, v) => write(k, v, { backend, env, run }),
                 log: (s) => fs.writeSync(2, s),
             });
         },
