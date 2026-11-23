@@ -8,6 +8,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The `tsc` hook no longer runs after every Edit — `vc-fix` `0.19.2` — 2026-11-23
+
+### Removed
+
+- The `PostToolUse` `Edit` hook `npx tsc --noEmit --pretty 2>&1 | head -20`. A hook matcher names the tool, not
+  the file, so it ran synchronously after every Edit in every project the user opens, whatever the file type. In a
+  project with no local TypeScript, `npx` fetched the unrelated npm package `tsc` (a placeholder that prints "This
+  is not the tsc command you are looking for") and ran it. Where TypeScript is installed, it checked the root
+  `tsconfig.json`, which in vc-frontend lists no files, and never `.vue` files. The developer skills already run the
+  repository's own declared typecheck as an explicit gate. `HOOK_TSC_ERROR` in `/vc-self-check` stays: older installs still
+  produce it.
+
 ## vc-secrets runs under Codex and Cursor without Claude Code — `vc-secrets` `0.2.0`, `vc-init` `0.8.4` — 2026-11-20
 
 ### Fixed

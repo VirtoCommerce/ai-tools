@@ -227,8 +227,9 @@ const ERROR_MARKERS = [
   ["GIT_CONFLICT", /merge conflict|CONFLICT \(|automatic merge failed/i],
   ["LINT_FAILED", /\beslint\b|lint (?:error|failed)|prettier[^\n]*error/i],
   ["BUILD_FAILED", /build failed|compilation (?:error|failed)|found \d+ error|msbuild[^\n]*error|dotnet build[^\n]*error|webpack[^\n]*error|vite build[^\n]*error/i],
-  // A bare `error TS####` is treated as the plugin's own PostToolUse tsc-hook failure — AFTER
-  // BUILD_FAILED, so a target-repo build that surfaces a TS diagnostic reads as BUILD_FAILED.
+  // A bare `error TS####` — the echo of the PostToolUse tsc hook that installs before 0.19.2
+  // shipped, or a typecheck run outside a build — comes AFTER BUILD_FAILED, so a target-repo
+  // build that surfaces a TS diagnostic reads as BUILD_FAILED.
   ["HOOK_TSC_ERROR", /error TS\d{3,}|\btsc\b[^\n]*error/i],
   // Test failures, INCLUDING test-runner timeouts (mocha/jest/vitest) — before NETWORK_TIMEOUT.
   ["TEST_FAILED", /\btest(?:s)? failed\b|\d+ failing\b|assertion(?:error)? failed|\bFAIL\b\s|✗|expect\(|timeout of \d+\s*ms|test(?:s)? timed out/i],
