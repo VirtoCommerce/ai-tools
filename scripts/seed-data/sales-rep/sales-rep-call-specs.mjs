@@ -1,6 +1,6 @@
 /**
  * sales-rep-call-specs.mjs — side-effect-free source of truth for the VCST-6256 "Call a customer"
- * fixtures (vc-module-sales-rep PR #37): one DEDICATED rep, SR_REP_CALL, serving ONLY the eleven
+ * fixtures (vc-module-sales-rep PR #37): one DEDICATED rep, SR_REP_CALL, serving ONLY the twelve
  * AGENT-TEST-SR-Call-NN orgs below, so its My customers page shows exactly these rows.
  *
  * What the feature reads (PR #37, read at 0b3c557 — re-read it if the module moves):
@@ -90,7 +90,8 @@ export const CALL_ORGS = [
     contacts: [{ key: 'V12C', fullName: `${CALL_PREFIX}12-Owner`, phones: ['x45'], owner: true }] },
 ];
 
-/** `x45`, `ext. 45`, `#45` at the end of a number (vc-module-sales-rep phones.ts, VCST-6794). */
+/** `x45`, `ext. 45`, `#45` at the end of a number — verbatim from vc-module-sales-rep StorefrontApp/src/phones.ts
+ * at PR #46 head 883ab61 (VCST-6794); re-copy it when that file changes. */
 const EXTENSION = /(?:#|ext(?:ension)?\.?|x)[\s:]*(\d+)$/i;
 
 /** Same rule as the storefront's normalizePhone(): digits + a leading '+', then `,<ext>` (a dialer pause). */
