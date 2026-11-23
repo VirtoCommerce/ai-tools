@@ -93,6 +93,15 @@ function detectLocalBackend(platform = process.platform, env = process.env) {
     return "gpg";
 }
 
+// The backend that holds the OAuth refresh/access pair. Credential Manager platforms map to the
+// dpapi file store; keychain and gpg are unchanged. dpapi is deliberately not in LOCAL_BACKENDS, so
+// VC_SECRETS_LOCAL_BACKEND=dpapi stays invalid and a `set` secret can never land there.
+function oauthBackend(platform = process.platform, env = process.env) {
+    const backend = detectLocalBackend(platform, env);
+
+    return backend === "wcm" ? "dpapi" : backend;
+}
+
 // Where both storage layouts live, current and legacy. cmdUnlock walks the two in one loop, so a
 // second spelling that drifts surfaces as "nothing to unlock" rather than as an error.
 function configBase(env) {
@@ -110,6 +119,19 @@ function keyToPath(key, env = process.env) {
     const { scope, name } = keyParts(key);
 
     return path.join(secretsDir(env), scope, `${name}.gpg`);
+}
+
+// The root is not configBase: the DPAPI files are written and read by Windows PowerShell and node
+// across shells whose HOME differs (Git Bash, WSL, cmd), so HOME cannot name the one directory
+// they must share; LOCALAPPDATA is per-user and the same in every one of them (ADR D1).
+function dpapiKeyToPath(key, env = process.env) {
+    assertKeyShape(key);
+    const { scope, name } = keyParts(key);
+    const root = env.XDG_CONFIG_HOME
+        ? path.join(env.XDG_CONFIG_HOME, KEY_PREFIX, "secrets")
+        : path.join(env.LOCALAPPDATA || os.homedir(), KEY_PREFIX, "secrets");
+
+    return path.join(root, scope, `${name}.dpapi`);
 }
 
 // Only an absent path means "no entry", and existsSync could not say so: its false for a file that
@@ -1007,8 +1029,9 @@ async function cmdMigrate(cfg) {
 export {
     KEY_PREFIX, keystoreFilePresent, scopeKeyFor, keyFor, nameFromKey, TIMEOUT_LOCAL_MS, TIMEOUT_AZ_MS,
     LOCAL_BACKENDS, SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT, quoteForSecurityInteractive, detectLocalBackend,
-    secretsDir, keyToPath, gpgEntryPresent, legacyKeyToPath, oversizeMarkerPath, recordOversizeMarker,
-    clearOversizeMarker, readOversizeMarker, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE, PS_CRED_WRITE,
+    oauthBackend, secretsDir, keyToPath, dpapiKeyToPath, gpgEntryPresent, legacyKeyToPath, oversizeMarkerPath,
+    recordOversizeMarker, clearOversizeMarker, readOversizeMarker, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE,
+    PS_CRED_WRITE,
     psEncode, psCommand, decodeCredBlobHex, isAbsentEntry, buildLocalRead, buildCredReadMany, credReadManyIo,
     batchedReadError, buildLocalWrite, buildLocalDelete, deleteEntryIo, writeLocalValue, writeSecretValue,
     buildKeyvaultRead, mapResolveError, makeSecretResolver, readLegacyLocalValue, newKeyPresent, cmdMigrate,

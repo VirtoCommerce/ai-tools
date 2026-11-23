@@ -25,9 +25,9 @@ export {
 } from "./lib/config.mjs";
 
 export {
-    KEY_PREFIX, keyFor, keyToPath, legacyKeyToPath, detectLocalBackend, secretsDir, psEncode, psCommand,
-    PS_CRED_READ, PS_CRED_WRITE, oversizeMarkerPath, recordOversizeMarker, clearOversizeMarker, readOversizeMarker,
-    PS_CRED_DELETE, decodeCredBlobHex, buildLocalRead, buildLocalWrite, buildLocalDelete, deleteEntryIo,
+    KEY_PREFIX, keyFor, keyToPath, legacyKeyToPath, detectLocalBackend, oauthBackend, dpapiKeyToPath, secretsDir,
+    psEncode, psCommand, PS_CRED_READ, PS_CRED_WRITE, oversizeMarkerPath, recordOversizeMarker, clearOversizeMarker,
+    readOversizeMarker, PS_CRED_DELETE, decodeCredBlobHex, buildLocalRead, buildLocalWrite, buildLocalDelete, deleteEntryIo,
     PS_CRED_READ_MANY, buildCredReadMany, credReadManyIo, buildKeyvaultRead, TIMEOUT_LOCAL_MS, TIMEOUT_AZ_MS,
     SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT, quoteForSecurityInteractive, writeSecretValue, makeSecretResolver,
     mapResolveError, cmdMigrate, newKeyPresent, readLegacyLocalValue,

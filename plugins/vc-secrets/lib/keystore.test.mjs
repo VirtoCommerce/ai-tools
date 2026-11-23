@@ -31,6 +31,30 @@ test("detectLocalBackend: VC_SECRETS_LOCAL_BACKEND override, invalid rejected", 
     assert.throws(() => m.detectLocalBackend("linux", { VC_SECRETS_LOCAL_BACKEND: "vault9000" }), m.VcSecretsError);
 });
 
+test("oauthBackend: Credential Manager platforms store the OAuth pair with dpapi", () => {
+    assert.equal(m.oauthBackend("win32", {}), "dpapi");
+    assert.equal(m.oauthBackend("linux", { VC_SECRETS_LOCAL_BACKEND: "wcm" }), "dpapi");
+});
+
+test("oauthBackend: keychain and gpg are unchanged", () => {
+    assert.equal(m.oauthBackend("darwin", {}), "keychain");
+    assert.equal(m.oauthBackend("linux", {}), "gpg");
+});
+
+test("oauthBackend: dpapi is not a value VC_SECRETS_LOCAL_BACKEND accepts", () => {
+    assert.throws(() => m.oauthBackend("linux", { VC_SECRETS_LOCAL_BACKEND: "dpapi" }), /VC_SECRETS_LOCAL_BACKEND/);
+});
+
+test("dpapiKeyToPath: LOCALAPPDATA is the root, XDG_CONFIG_HOME overrides it", () => {
+    const key = "vc-secrets:user:oauth-ado-refresh";
+    assert.equal(m.dpapiKeyToPath(key, { LOCALAPPDATA: "/L" }), path.join("/L", "vc-secrets", "secrets", "user", "oauth-ado-refresh.dpapi"));
+    assert.equal(m.dpapiKeyToPath(key, { LOCALAPPDATA: "/L", XDG_CONFIG_HOME: "/X" }), path.join("/X", "vc-secrets", "secrets", "user", "oauth-ado-refresh.dpapi"));
+});
+
+test("dpapiKeyToPath: a malformed key is refused", () => {
+    assert.throws(() => m.dpapiKeyToPath("../x", { LOCALAPPDATA: "/L" }), m.VcSecretsError);
+});
+
 test("keyFor: project scope uses the project's namespace, user scope uses \"user\"", () => {
     assert.equal(m.keyFor("ado-pat", { scope: "project" }, { projectId: "myproj" }), "vc-secrets:myproj:ado-pat");
     assert.equal(m.keyFor("ado-pat", { scope: "user" }, {}), "vc-secrets:user:ado-pat");
