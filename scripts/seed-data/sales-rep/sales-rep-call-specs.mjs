@@ -30,9 +30,11 @@
  *                 falls back to the org number and collapses with the address: 1 number, ORG label
  *   09/10 FILLER  nothing — they only push org 11 onto page 2
  *   11 PAGE2      owner phone +1-555-110-1100 — the only row on page 2 (10 per page) with a number
+ *   12 EXTONLY    owner's only phone is "x45" — an extension with no number (VCST-6794): 0 numbers, the
+ *                 disabled "No phone number" control; on page 2 beside 11, after it by name
  *
  * Order on the page: the rep has NO orders, so the default "my-last-orders" rule ties every row and the
- * handler falls back to ThenBy(Name) — the NN in the name fixes the order, 01..10 on page 1, 11 on page 2.
+ * handler falls back to ThenBy(Name) — the NN in the name fixes the order, 01..10 on page 1, 11..12 on page 2.
  *
  * FIFTH RULE: nothing in the environment moves these states (no job, query or expiry touches member
  * phones / owners / memberships), so seeding — not in-case creation — is correct. A case that EDITS a
@@ -84,6 +86,8 @@ export const CALL_ORGS = [
   { key: 'F10', aliasName: 'ORG_SR_CALL_FILL10', name: `${CALL_PREFIX}10-Filler`, orgPhones: [], address: addr(10), contacts: [] },
   { key: 'P2', aliasName: 'ORG_SR_CALL_PAGE2', name: `${CALL_PREFIX}11-PageTwo`, orgPhones: [], address: addr(11),
     contacts: [{ key: 'P2C', fullName: `${CALL_PREFIX}11-Owner`, phones: ['+1-555-110-1100'], owner: true }] },
+  { key: 'V12', aliasName: 'ORG_SR_CALL_EXTONLY', name: `${CALL_PREFIX}12-ExtOnly`, orgPhones: [], address: addr(12),
+    contacts: [{ key: 'V12C', fullName: `${CALL_PREFIX}12-Owner`, phones: ['x45'], owner: true }] },
 ];
 
 /** `x45`, `ext. 45`, `#45` at the end of a number (vc-module-sales-rep phones.ts, VCST-6794). */
@@ -147,6 +151,10 @@ export function callShortfalls(orgs = CALL_ORGS, rep = CALL_REP) {
   }
   if (by.V5 && (n('V5') !== 0 || !expectedPrimaryContact(by.V5))) p.push('V5 must have a contact and 0 numbers');
   if (by.V6 && !/x\d+/i.test(by.V6.contacts[0].phones[0])) p.push('V6 must carry an extension');
+  // VCST-6794: the extension is dialled after a pause, never glued into the digits.
+  if (by.V6 && !/^tel:\+?\d+,\d+$/.test(expectedPhones(by.V6)[0]?.href || '')) p.push('V6 href must keep the extension after a comma (tel:<number>,<ext>)');
+  if (by.V12 && (by.V12.contacts[0]?.phones.length !== 1 || normalizePhone(by.V12.contacts[0].phones[0]) !== '' || n('V12') !== 0 || !expectedPrimaryContact(by.V12)))
+    p.push('V12 must have a contact whose only phone is an extension with no number (0 numbers)');
   if (by.V7) { const l = expectedPhones(by.V7); if (l.length !== 2 || l[1].name !== by.V7.name || l[0].name === l[1].name) p.push('V7 must yield 2 numbers, the 2nd labelled with the ORG name'); }
   if (by.V8) { const l = expectedPhones(by.V8); if (l.length !== 1 || l[0].name !== by.V8.name || by.V8.orgPhones[0] === by.V8.address.phone) p.push('V8 must collapse org+address (different text) to 1 org-labelled number'); }
   // Paging: > PAGE_SIZE orgs, and the rows past the first page (by name) include a number.

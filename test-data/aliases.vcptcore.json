@@ -1824,5 +1824,12 @@
   },
   "CFG_DUPLABEL": {
     "id": "9a95fc6f-d66e-4761-bd61-3f56452b1bd9"
+  },
+  "ORG_SR_CALL_EXTONLY": {
+    "id": "71383ae6-ce94-4b66-9395-0688f22a1908",
+    "platform_id": "71383ae6-ce94-4b66-9395-0688f22a1908",
+    "primary_contact_id": "c77dd250-ceeb-481a-982d-5f0e9368a47e",
+    "contact_V12C": "c77dd250-ceeb-481a-982d-5f0e9368a47e",
+    "default_href": ""
   }
 }

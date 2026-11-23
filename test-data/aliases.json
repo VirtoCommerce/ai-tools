@@ -12237,6 +12237,23 @@
     "default_href": "",
     "_notes": "VCST-6256 P2. PAGE 2: the 11th org by name (the rep has no orders, so the default rule ties and the handler orders by name) — the only row on page 2 at 10 per page, with an owner phone +1-555-110-1100. Backs \"numbers reloaded when the page changes\". expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
   },
+  "ORG_SR_CALL_EXTONLY": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "V12",
+    "name": "AGENT-TEST-SR-Call-12-ExtOnly",
+    "expected_phone_count": "0",
+    "expected_default_href": "",
+    "expected_hrefs": "",
+    "expected_labels": "",
+    "expected_primary_contact": "AGENT-TEST-SR-Call-12-Owner",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "contact_V12C": "",
+    "default_href": "",
+    "_notes": "VCST-6794 V12. EXTENSION ONLY: the owner's only phone is \"x45\" (an extension with no number), no org or address phone. Expect 0 numbers: the disabled 'No phone number' control and no Phone row. expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
   "MCP_OPERATOR": {
     "seed": "seed:mcp-security",
     "_inline": true,
