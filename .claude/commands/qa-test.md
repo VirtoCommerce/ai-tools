@@ -1,6 +1,6 @@
 ---
 description: "Test ONE tracker ticket on one strategy-driven path, in six stages — 0 Route · 1 Context · 2 Strategy · 3 Prepare · 4 Execute · 5 Close. vc-test supplies the ticket context, the approved test strategy (which decides what runs) and triage; the repo adds the lanes, the verdict, the one tracker comment, the status hop and the docs. Ticket keys only, one per run. Writes no suite case and no seeder: stale and candidate cases are handed to /qa-test-lifecycle."
-argument-hint: "<TICKET> [<env>] [--yes] [--dry-run]"
+argument-hint: "<TICKET> [<env>] [--yes] [--dry-run] [--regression none|scoped|wide]"
 ---
 
 # /qa-test — test one ticket
@@ -35,6 +35,7 @@ before Stage 0.
 | `<env>` | an env `npm run run:use` accepts; absent ⇒ the session's binding |
 | `--yes` | the strategy approval is skipped (`Status: AUTO (--yes)`). Every other question is still asked |
 | `--dry-run` | the run stops after Stage 2's approval; no status hop, nothing posted |
+| `--regression <mode>` | `none` · `scoped` (default: Critical/High/Medium non-stale cases, ≤40, never Low; the rest `deferred`) · `wide` (every non-stale case). Anything else **STOP and ask**. [`execution.md`](../skills/qa-test/execution.md) §Regression |
 | a feature name | **STOP**, one line: a feature area is tested with `/qa-exploratory` |
 | `PR #N` | **STOP**, one line: test the ticket the PR belongs to, or run `/qa-regression` |
 | several ticket keys | **STOP**, one line: one `/qa-test` run per key |
@@ -170,8 +171,8 @@ and is shown to the operator before Stage 4, with the same two answers as Stage 
   `playwright-firefox`, first or alongside the runners as the row says (§Exploratory).
 - **Visual** — `Visual lane: RUN`: `vc-test:ui-ux-expert` on the free lane; its brief's first line invokes the
   Skill `vc-test:qa-design` (§Visual).
-- **Regression** — `Coverage triage + regression: RUN` and at least one non-stale case:
-  `/qa-regression <suites> --ids <non-stale case ids> --no-promote`, in its own message **after** every lane
+- **Regression** — `Coverage triage + regression: RUN`, `--regression` not `none`, and at least one non-stale
+  case: `/qa-regression <suites> --ids <the mode's case ids> --no-promote` (`scoped` caps them), in its own message **after** every lane
   above has returned — it takes all three browser slots and pool accounts (§Regression).
 - **Data** is made as each item's Data cell says (§Data); the ledger stays open through Stage 5.
 - **Join** — every bullet of §Join gate. You write the Results into the checklist; runners never edit it.

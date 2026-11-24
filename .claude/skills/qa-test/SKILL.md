@@ -60,7 +60,7 @@ explicitly, because in every one of these places an omission is indistinguishabl
 | Reverse edges (a model ran) | no reverse effect exists | covered by #, or `ABSENT IN PRODUCT` (a finding) |
 | A charter source | nothing in it | covered, or `NOT REACHED + reason` |
 | Below-floor findings | nothing minor was found | `summary.json.bugs_not_filed: []` |
-| A case at risk | still correct | ran in the regression lane, or a `stale_cases` entry with its reason |
+| A case at risk | still correct | ran in the regression lane, a `regression.deferred` entry (`scoped`: Low or over the cap, [`execution.md`](execution.md) §Regression), or a `stale_cases` entry with its reason |
 | A ledger id not deleted | cleaned up | named under `verdict.md`'s Data heading and in `summary.json.test_data` |
 
 ## Rationalization table

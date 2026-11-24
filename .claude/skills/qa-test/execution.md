@@ -94,6 +94,24 @@ never enters it — it is a `stale_cases` entry for `/qa-test-lifecycle`. Captur
 and the wall clock for `summary.json.regression`. Every case stale ⇒ the lane is not dispatched, and
 `verdict.md` says why.
 
+**Mode — `--regression none|scoped|wide`, default `scoped`.** The staleness check (Stage 3) runs in every
+mode; the mode only decides how many of the non-stale cases the lane runs.
+
+| Mode | The lane runs | Why it exists |
+|---|---|---|
+| `scoped` (default) | only **Critical, High and Medium** non-stale cases — never `Low` — at most **`REGRESSION_CASE_CAP` = 40** of them, taken in this order: `Priority` (Critical → High → Medium), then cases whose matched term is the ticket's own observable, then suite order | a developer's ticket run should not pay for a sweep; `/qa-regression` is the sweep |
+| `wide` | every non-stale case — the lane as before the modes existed | a risky change, or the operator's call |
+| `none` | nothing: `summary.json.regression` = `{ "skipped_reason": "--regression none" }` | the change has no existing coverage worth running |
+
+Cases `scoped` leaves out — every `Low` one, and any Critical/High/Medium one past the cap — are **deferred,
+never dropped**: `summary.json.regression.deferred` lists each id with its suite and its reason (`low` or
+`cap`), and `verdict.md` prints one line — `N deferred (L low, C over cap 40) — /qa-regression <suites> --ids …`
+with the ready command. A deferred case was checked and is not stale; it did not run. The cap lives only in
+this paragraph — change it here.
+
+The lane also records its yield, so the mode can be judged later: `regression.attributable_failures` = the
+number of failures triage attributed to this ticket (`0` is a valid and useful value).
+
 **It runs AFTER the other lanes, never beside them.** `/qa-regression` fills all three browser slots and the
 three seeded pool accounts (`qa-regression.md` Step 4, `{{LANE_ID}}`) and has no flag that leaves a slot or an
 account to someone else — beside the runners it would put a second agent on `playwright-chrome` /
