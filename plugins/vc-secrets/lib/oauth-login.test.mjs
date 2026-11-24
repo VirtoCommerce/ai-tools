@@ -13,7 +13,7 @@ import { tmpDirs, socketTest, lockTest } from "../test-support.mjs";
 import {
     LAUNCHER_PATH, probe, scopedPaths, trustedStateFor, OAUTH_DECL, keyvaultPairCfg, trustEnv, NO_TRUST,
     withProcessEnv, namespaceOauthCfg, corruptTrustFile, namespaceStoreSeams, DECL_IDENTITY, LOGIN_DECL, LOGIN_CFG,
-    trustedFor, loginDeps, seamsOf, definedSeams, stubBinary, POSIX_STUB_ONLY,
+    trustedFor, loginDeps, seamsOf, definedSeams, stubBinary, POSIX_STUB_ONLY, WIN32_COMMAND_LINE_LIMIT,
 } from "../test-fixtures.mjs";
 
 test("resolveEnvEntries: Key Vault reads run in parallel, so two that wait for each other both finish",
@@ -928,9 +928,6 @@ test("cmdLogin: a failed ACCESS write is not fatal — losing it costs one excha
     await m.cmdLogin("azure-mcp", LOGIN_CFG, deps);
     assert.ok(logged.some((l) => /access/i.test(l)), `the degraded write must be reported: ${logged.join("")}`);
 });
-
-// Skipped on Windows only: the property is platform-independent and keeps running on Linux and macOS.
-const WIN32_COMMAND_LINE_LIMIT = process.platform === "win32" && "on Windows the stub is a .cmd file started through cmd.exe, whose command line is limited to 8191 characters, and the DPAPI script's -EncodedCommand is longer; production starts powershell.exe directly (limit 32767), and the real-OS smoke workflow spawns the real powershell.exe with these scripts";
 
 test("cmdLogin: the default writer uses the backend cmdLogin resolved", { skip: WIN32_COMMAND_LINE_LIMIT || POSIX_STUB_ONLY.skip }, async () => {
     // The default writer used to ignore `backend`: it asked writeSecretValue for ITS default, so a login

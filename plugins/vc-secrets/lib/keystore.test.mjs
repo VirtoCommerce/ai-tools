@@ -9,7 +9,7 @@ import * as oauth from "../vc-secrets-oauth.mjs";
 import { pathPresent } from "./util.mjs";
 import { removeFileWithRetry } from "./keystore.mjs";
 import { tmpDirs } from "../test-support.mjs";
-import { denyFs, CAN_RUN_POSIX_STUB, scopedPaths, credHex, stubBinary, withStubOnPath } from "../test-fixtures.mjs";
+import { denyFs, CAN_RUN_POSIX_STUB, scopedPaths, credHex, stubBinary, withStubOnPath, WIN32_COMMAND_LINE_LIMIT } from "../test-fixtures.mjs";
 
 test("loadConfig: a project secret shadowing a user-scope name keys the PROJECT namespace", () => {
     // The point of the two fields: the winner's `home` is project, so its key is the project's — the
@@ -835,9 +835,6 @@ test("buildCredReadMany: blobs put the decrypt on stdin and switch the script to
     assert.equal(withBlobs.extraEnv.VC_SECRETS_NAMES, JSON.stringify([key]));
     assert.throws(() => m.buildCredReadMany([], 7, {}, new Map([["../x", Buffer.from([1])]])), m.VcSecretsError);
 });
-
-// Skipped on Windows only: the property is platform-independent and keeps running on Linux and macOS.
-const WIN32_COMMAND_LINE_LIMIT = process.platform === "win32" && "on Windows the stub is a .cmd file started through cmd.exe, whose command line is limited to 8191 characters, and the DPAPI script's -EncodedCommand is longer; production starts powershell.exe directly (limit 32767), and the real-OS smoke workflow spawns the real powershell.exe with these scripts";
 
 test("credReadManyIo: the blobs travel on stdin as base64 and never in the environment", { skip: WIN32_COMMAND_LINE_LIMIT || (!CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind") }, async () => {
     const key = "vc-secrets:user:oauth-a-refresh";

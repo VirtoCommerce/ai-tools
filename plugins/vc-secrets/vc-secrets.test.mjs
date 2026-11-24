@@ -1461,9 +1461,11 @@ test("install-shim: a destination whose bytes differ is called different, not ol
     const r = spawnSync(process.execPath, [script], { encoding: "utf8", env: { ...process.env, HOME: home } });
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /replaced a different copy/);
-    // The product's own wording for the other outcome ("an older copy"), not the bare word: the report names
-    // the temp directory, and a path such as /var/folders/... contains "older".
-    assert.doesNotMatch(r.stdout, /an older copy/);
+    // The report names the temp home, and a path such as /var/folders/... contains "older" (fOLDERs), so the paths
+    // are taken out before the word is looked for: the word itself, anywhere else in the text, is what is refused.
+    const spellings = [home, fs.realpathSync(home)];
+    const text = spellings.reduce((out, spelling) => out.split(spelling).join(""), r.stdout);
+    assert.doesNotMatch(text, /older/);
 });
 
 test("install-shim: --data-dir decides the location, in both spellings", () => {

@@ -428,6 +428,10 @@ export const SECRET_PAT = [{ kind: "secret", name: "pat" }];
 
 export const POSIX_STUB_ONLY = { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" };
 
+// For a test whose stub receives the DPAPI script's command line. Skipped on Windows only: the property is
+// platform-independent and keeps running on Linux and macOS. The reason is the skip message, or false elsewhere.
+export const WIN32_COMMAND_LINE_LIMIT = process.platform === "win32" && "on Windows the stub is a .cmd file started through cmd.exe, whose command line is limited to 8191 characters, and the DPAPI script's -EncodedCommand is longer; production starts powershell.exe directly (limit 32767), and the real-OS smoke workflow spawns the real powershell.exe with these scripts";
+
 // A repository on disk, found the way a real run finds it: by walking up from its working directory.
 export function namespaceRepo(project, local) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-ns-store-"));
