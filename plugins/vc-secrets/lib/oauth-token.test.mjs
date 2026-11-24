@@ -6,7 +6,7 @@ import path from "node:path";
 import * as m from "../vc-secrets.mjs";
 import * as cache from "../vc-secrets-cache.mjs";
 import { pathPresent } from "./util.mjs";
-import { tmpDirs, lockTest } from "../test-support.mjs";
+import { UNREACHABLE_POWERSHELL, tmpDirs, lockTest } from "../test-support.mjs";
 import { scopedPaths, OAUTH_DECL, credHex, d1Config, d1LiveRun, DECL_IDENTITY, denyFs } from "../test-fixtures.mjs";
 
 test("an oauth entry key is a full three-segment key the read builder accepts", () => {
@@ -499,7 +499,7 @@ test("oauthLaunchDeps.writeCache: a failed ACCESS write is a warning, not a lost
 function dpapiStore() {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-dpapi-launch-"));
     tmpDirs.push(dir);
-    const env = { XDG_CONFIG_HOME: dir, USER: "u" };
+    const env = { XDG_CONFIG_HOME: dir, USER: "u", VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL };
     const putFile = (key, text) => {
         const file = m.dpapiKeyToPath(key, env);
         fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -534,6 +534,13 @@ function dpapiStore() {
 
     return { dir, env, putFile, ops, run };
 }
+
+test("dpapiStore: a call made with the default runner cannot start the real PowerShell", async () => {
+    // The PowerShell name is read from the env object a function is handed, so the guard has to be in it.
+    const { env } = dpapiStore();
+    const failure = await m.unprotectManyIo({ blobs: new Map([["vc-secrets:user:oauth-a-refresh", Buffer.from("x")]]), env }).then(() => null, (e) => e);
+    assert.ok(failure?.message.includes(UNREACHABLE_POWERSHELL), `the start was ${failure?.message}, not the guard's path`);
+});
 
 // Issued in 1970 with a one-second life: past its margin however the clock reads.
 const expiredAccessBlob = () => accessBlob({ obtainedAt: 1, expiresAt: 1, lifetimeMs: 1000 });

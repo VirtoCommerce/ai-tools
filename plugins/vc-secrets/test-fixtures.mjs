@@ -13,7 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as m from "./vc-secrets.mjs";
 import * as cache from "./vc-secrets-cache.mjs";
-import { stripComments, tmpDirs } from "./test-support.mjs";
+import { UNREACHABLE_POWERSHELL, stripComments, tmpDirs } from "./test-support.mjs";
 
 export const LAUNCHER_PATH = fileURLToPath(new URL("./vc-secrets.mjs", import.meta.url));
 
@@ -26,6 +26,10 @@ export const LAUNCHER_PATH = fileURLToPath(new URL("./vc-secrets.mjs", import.me
 // variables, so a test that can touch them pins the backend (as the doctor tests do) or stubs the tool
 // on PATH. Both HOME and USERPROFILE for the reason shimEnv gives; a test that means to use a fixture
 // home passes it in `extra`, which lands last.
+//
+// Stripping VC_SECRETS_POWERSHELL takes the suite's guard with it (test-support.mjs), and a launcher spawned
+// from this env would then start the real powershell.exe on Windows: so the guard is put back, and a test
+// that stubs PowerShell sets its own in `extra`.
 export function launcherEnv(extra = {}) {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-launcher-home-"));
     tmpDirs.push(home);
@@ -36,7 +40,8 @@ export function launcherEnv(extra = {}) {
         }
     }
 
-    return { ...env, HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: home, ...extra };
+    return { ...env, VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL, HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: home,
+        ...extra };
 }
 
 // One path fails the named fs call with EACCES, the way it does under an ancestor that lost its search

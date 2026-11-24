@@ -2107,7 +2107,7 @@ const UNGUARDED_FILES = ["README.md", "LICENSE"];
 const TEST_FILES = ["vc-secrets.test.mjs", "vc-secrets-oauth.test.mjs", "test-support.mjs", "test-fixtures.mjs",
     "lib/util.test.mjs", "lib/spawn.test.mjs", "lib/config.test.mjs", "lib/keystore.test.mjs", "lib/trust.test.mjs",
     "lib/oauth-token.test.mjs", "lib/oauth-login.test.mjs", "lib/oauth-checks.test.mjs", "lib/launch.test.mjs",
-    "lib/doctor.test.mjs", "lib/cli.test.mjs"];
+    "lib/doctor.test.mjs", "lib/cli.test.mjs", "store-guards.test.mjs"];
 
 // The guard does not use its own process's working directory as a root, and these two helpers still name
 // one explicitly, so no result depends on where the suite is run from.

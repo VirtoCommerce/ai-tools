@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import * as m from "../vc-secrets.mjs";
-import { tmpDirs } from "../test-support.mjs";
+import { UNREACHABLE_POWERSHELL, tmpDirs } from "../test-support.mjs";
 import { pathPresent } from "./util.mjs";
 import {
     launcherEnv, denyFs, CAN_DENY_BY_MODE, scopedPaths, trustedStateFor, seedTrust, CROSSING_SHAPE, crossingReport,
@@ -419,8 +419,14 @@ function dpapiProbeEnv() {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-doctor-dpapi-"));
     tmpDirs.push(dir);
 
-    return { dir, env: { XDG_CONFIG_HOME: dir } };
+    return { dir, env: { XDG_CONFIG_HOME: dir, VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL } };
 }
+
+test("dpapiProbeEnv: a call made with the default runner cannot start the real PowerShell", async () => {
+    const { env } = dpapiProbeEnv();
+    const failure = await m.unprotectManyIo({ blobs: new Map([[PROBE_USER, Buffer.from("x")]]), env }).then(() => null, (e) => e);
+    assert.ok(failure?.message.includes(UNREACHABLE_POWERSHELL), `the start was ${failure?.message}, not the guard's path`);
+});
 
 const toHex = (text) => Buffer.from(text, "utf8").toString("hex");
 

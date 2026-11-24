@@ -8,7 +8,7 @@ import * as cache from "../vc-secrets-cache.mjs";
 import * as oauth from "../vc-secrets-oauth.mjs";
 import { pathPresent } from "./util.mjs";
 import { removeFileWithRetry } from "./keystore.mjs";
-import { tmpDirs } from "../test-support.mjs";
+import { UNREACHABLE_POWERSHELL, tmpDirs } from "../test-support.mjs";
 import { denyFs, CAN_RUN_POSIX_STUB, scopedPaths, credHex, stubBinary, withStubOnPath, WIN32_COMMAND_LINE_LIMIT } from "../test-fixtures.mjs";
 
 test("loadConfig: a project secret shadowing a user-scope name keys the PROJECT namespace", () => {
@@ -914,12 +914,20 @@ test("readWcmBatch: with dpapi blobs attached, a call that fails as a whole seed
 // The dpapi file store: PowerShell turns a value into a blob, node owns every file operation.
 const DPAPI_KEY = "vc-secrets:user:oauth-a-refresh";
 
+// The PowerShell name rides in the object because psCommand reads it from the env a function is handed, not
+// from process.env: a call made with the default runner would otherwise start the real powershell.exe.
 function tmpConfigEnv(prefix) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
     tmpDirs.push(dir);
 
-    return { dir, env: { XDG_CONFIG_HOME: dir } };
+    return { dir, env: { XDG_CONFIG_HOME: dir, VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL } };
 }
+
+test("tmpConfigEnv: a call made with the default runner cannot start the real PowerShell", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-guard-fixture-");
+    const failure = await m.unprotectManyIo({ blobs: new Map([[DPAPI_KEY, Buffer.from("x")]]), env }).then(() => null, (e) => e);
+    assert.ok(failure?.message.includes(UNREACHABLE_POWERSHELL), `the start was ${failure?.message}, not the guard's path`);
+});
 
 // A PowerShell that prints the base64 of `cipher` for the protect script; any other script is a mistake.
 function fakeProtect(cipher, calls = []) {
