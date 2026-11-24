@@ -331,7 +331,11 @@ public static class Dpapi {
 // costs nothing. Either failure is reported as its win32 code and the launch goes on unbound.
 //
 // The reads run before the bind, so a read that throws ends the script before any bind was attempted
-// and the caller's "could not bind" is true.
+// and the caller's "could not bind" is true -- for a call that carries no blobs. With blobs on stdin a call
+// that fails as a whole (a timeout in the decrypt phase, stdin that is not the JSON the script expects) may
+// fail AFTER the bind, and the output is printed only at the end, so the caller cannot tell: readWcmBatch
+// reports that as `mayHaveBound`, and the launch words it as unknown rather than as a bind that did not
+// happen.
 //
 // The DPAPI blobs of the OAuth pair ride in the same call, which is why the launch pays no second
 // powershell.exe start for them. When VC_SECRETS_DPAPI_ON_STDIN is "1" the script reads one JSON object from
@@ -762,7 +766,7 @@ function processTmpPath(finalPath) {
     return `${finalPath}.${process.pid}.tmp`;
 }
 
-function buildLocalWrite(backend, key, env = process.env, { tmp = false, value = undefined } = {}) {
+function buildLocalWrite(backend, key, env = process.env, { tmp = false, value = undefined, attended = false } = {}) {
     assertKeyShape(key);
     if (backend === "wcm") {
         return { cmd: psCommand(env), args: psArgs(PS_CRED_WRITE),
@@ -793,7 +797,10 @@ function buildLocalWrite(backend, key, env = process.env, { tmp = false, value =
 
                     return line;
                 },
-                timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: false };
+                // `attended` is `set`, a person at the terminal: a locked keychain raises its unlock dialog from
+                // this very call and the person answers it in their own time, which a kill timer would cut at
+                // 10 s. Login, renewal, migrate and the doctor probe run with nobody there and keep the timer.
+                timeoutMs: attended ? null : TIMEOUT_LOCAL_MS, captureStdout: false };
         }
 
         // A line ending cannot be quoted into that command — it ends it — so this one value takes the
@@ -1012,7 +1019,7 @@ async function writeLocalValue(backend, key, spec, value, env = process.env, run
 // too), because this package's three-segment key is longer than the source's two-segment one and eats most
 // of the margin the source measured.
 async function writeSecretValue(key, value, { backend = detectLocalBackend(), env = process.env,
-    run = runTool, rename = fs.renameSync, sleep = delay } = {}) {
+    run = runTool, rename = fs.renameSync, sleep = delay, attended = false } = {}) {
     if (!value) {
         // The invariant belongs here rather than only in cmdSet: a renewal and a login can both be
         // handed an empty string by a response that parsed, and an empty entry is worse than a
@@ -1025,7 +1032,7 @@ async function writeSecretValue(key, value, { backend = detectLocalBackend(), en
         // Credential Manager's, and dpapi has no size ceiling to map.
         return writeDpapiValue(key, value, { env, run, rename, sleep });
     }
-    const spec = buildLocalWrite(backend, key, env, { tmp: backend === "gpg", value });
+    const spec = buildLocalWrite(backend, key, env, { tmp: backend === "gpg", value, attended });
     // Composed once here purely to validate. The runner composes it only AFTER spawning, so without
     // this call an oversize value leaves an orphaned `security -i` waiting on a stdin that never
     // arrives, until the runner's own timeout kills it -- and the refusal would hold only for
@@ -1182,7 +1189,8 @@ function makeSecretResolver(cfg, env = process.env) {
                 throw e;
             }
 
-            return { seeded: new Map(), job: e.message, outcomes: new Map(), dpapiOutcomes: new Map(), files: new Map() };
+            return { seeded: new Map(), job: e.message, outcomes: new Map(), dpapiOutcomes: new Map(), files: new Map(),
+                mayHaveBound: blobs.size > 0 };
         }
         const cmd = psCommand(env);
         const seeded = new Map();
@@ -1222,7 +1230,7 @@ function makeSecretResolver(cfg, env = process.env) {
         }
         const job = result.job === "ok" || Number.isInteger(result.job) ? result.job : "the bind reported no result";
 
-        return { seeded, job, outcomes, dpapiOutcomes, files };
+        return { seeded, job, outcomes, dpapiOutcomes, files, mayHaveBound: false };
     };
 
     return resolver;

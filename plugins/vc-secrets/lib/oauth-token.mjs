@@ -314,7 +314,7 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
     // the refresh entry is gone: the launch stops and asks for the login verb, so the notice names it. A missing
     // access entry costs one exchange, which the launch makes itself (the wording storeAccessEntry uses).
     const afterAbsent = (keyName) => (keyName === nameFromKey(keys.refresh)
-        ? `run "vc-secrets login ${entryName}" to sign in` : "the next launch will exchange one");
+        ? `run "vc-secrets login ${entryName}" to sign in` : "a launch will exchange one");
     // The entry a stored text holds, or undefined after naming why not. `produceText` is a thunk so a
     // failure while decoding is caught by the same handler as a failure while parsing.
     const parseStored = (keyName, produceText) => {
@@ -394,12 +394,22 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
         if (!present(keys.refresh)) {
             const legacyRefresh = await readEntry(keys.refresh, parts?.wcm, "wcm");
             migrating = legacyRefresh?.refreshToken !== undefined;
-            if (!migrating) {
+            if (migrating) {
+                legacyRefreshToken = legacyRefresh.refreshToken;
+
+                return { refresh: legacyRefresh, access: await readEntry(keys.access, parts?.wcm, "wcm") };
+            }
+            // Neither store had it a moment ago, which is not yet "signed out": a migrating writer publishes
+            // the refresh file and only then deletes the legacy pair, so a reader that found no file (or was
+            // seeded with that) and reads Credential Manager after the delete sees neither. The file is read
+            // once more, directly -- the seed's answer is the stale half of that race -- and a refresh file
+            // that is there now is decrypted like any other. Only a file still absent sends the developer to
+            // a sign-in (D6: nobody signed in before the upgrade is asked to).
+            const published = readDpapiFile(keys.refresh, env);
+            if (published === undefined) {
                 return { refresh: undefined };
             }
-            legacyRefreshToken = legacyRefresh.refreshToken;
-
-            return { refresh: legacyRefresh, access: await readEntry(keys.access, parts?.wcm, "wcm") };
+            toDecrypt.set(keys.refresh, published);
         }
         migrating = false;
         legacyRefreshToken = undefined;

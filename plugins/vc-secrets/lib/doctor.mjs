@@ -12,8 +12,8 @@ import { commandOnPath, runTool } from "./spawn.mjs";
 import { CONFIG_HINT_PATH, LEGACY_ENV_VARS, USER_SCOPE, authorizationFor, crossingProblem, crossingSource,
     parseReference } from "./config.mjs";
 import { SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT, buildLocalWrite, deleteEntryIo, detectLocalBackend, dpapiKeyToPath,
-    keyFor, makeSecretResolver, oauthBackend, psCommand, readDpapiFile, readLegacyLocalValue, unprotectManyIo,
-    writeSecretValue } from "./keystore.mjs";
+    keyFor, makeSecretResolver, oauthBackend, psCommand, readDpapiFile, readLegacyLocalValue, removeFileWithRetry,
+    unprotectManyIo, writeSecretValue } from "./keystore.mjs";
 import { LAUNCHABLE_KINDS, isNamespaceDecl, namespaceDeclarations, namespaceTrustProblem, readTrustState,
     trustAssessment } from "./trust.mjs";
 import { oauthKeyClashes, oauthLaunchDeps } from "./oauth-token.mjs";
@@ -586,6 +586,19 @@ function missingDirectories(dir) {
     return missing;
 }
 
+// The dpapi probe is a file in the sign-in's store and nothing else. deleteEntryIo("dpapi") would first run a
+// Credential Manager delete for a key that was never stored there (one more PowerShell start), and on any code
+// but "not found" it would throw before the file was touched, leaving the 8 KB probe behind. An absent file is
+// what a refused write leaves, and is nothing to report; any other failure names the file.
+async function removeDpapiProbeFile(key, env) {
+    const file = dpapiKeyToPath(key, env);
+    try {
+        await removeFileWithRetry(file);
+    } catch (e) {
+        throw new VcSecretsError(`${pathForTerminal(file)}: ${e.code ?? e.message}`);
+    }
+}
+
 // Windows was added because that is where the ceiling is: `doctor` was silent about whether a value
 // could be STORED on the one platform whose store refuses an oversize one. Two stores are probed there,
 // because two stores are written: Credential Manager takes a `set` secret, and the DPAPI files take the
@@ -611,7 +624,8 @@ async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = 
         return null;
     }
     const key = writeProbeKey(cfg, namespaceTrusted);
-    const removeEntry = remove ?? deleteEntryIo(backend, env, { run });
+    const removeEntry = remove ?? (backend === "dpapi" ? (probeKey) => removeDpapiProbeFile(probeKey, env)
+        : deleteEntryIo(backend, env, { run }));
     // The directories this probe is about to create, deepest first. A dpapi write creates the scope directory
     // and, on a machine with no entries yet, the `secrets` and `vc-secrets` directories above it, and deleting
     // the entry removes only the file, so the probe would leave empty directories behind; one that existed

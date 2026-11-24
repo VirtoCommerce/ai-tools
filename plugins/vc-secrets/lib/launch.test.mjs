@@ -1011,7 +1011,7 @@ test("cmdLaunch: a batch that fails as a whole with dpapi blobs attached falls b
         assert.deepEqual(spawns, ["unprotect"], "the batch seeded nothing, so the files were read and decrypted singly, once");
         assert.equal(seen.childEnv.ADO_TOKEN, "a-file");
         assert.equal(stderr.length, 1);
-        assert.match(stderr[0], /could not bind the launch's process tree .*\(powershell\.exe exited 1: nope\)/);
+        assert.match(stderr[0], /the launch's PowerShell call failed \(powershell\.exe exited 1: nope\) -- it may have bound/);
     } finally {
         await handle.dispose();
     }

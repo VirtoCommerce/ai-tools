@@ -595,15 +595,20 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
             const oauthKeys = backend === "dpapi"
                 ? oauthRefs.flatMap(({ name: entryName, decl }) => Object.values(oauthEntryKeys(entryName, decl, cfg)))
                 : [];
-            const { seeded, job, outcomes, dpapiOutcomes, files } = await resolver.readWcmBatch(refs,
+            const { seeded, job, outcomes, dpapiOutcomes, files, mayHaveBound } = await resolver.readWcmBatch(refs,
                 { pid: process.pid, extraKeys: oauthKeys, dpapiKeys: oauthKeys,
                     ...(deps.credReadMany ? { run: deps.credReadMany } : {}) });
             oauthSeed = outcomes.size + dpapiOutcomes.size + files.size > 0 ? { wcm: outcomes, dpapi: dpapiOutcomes, files } : null;
             if (job !== "ok") {
                 // A whole-call failure carries PowerShell's stderr, which can span lines; the warning is one.
                 const why = Number.isInteger(job) ? `win32 error ${job}` : job.replace(/\s*\r?\n\s*/g, " ");
-                fs.writeSync(2, `vc-secrets: could not bind the launch's process tree to this launcher (${why})`
-                    + " -- a client stop may leave it running\n");
+                // A call that carried DPAPI blobs can fail as a whole after the bind (they are handled behind it),
+                // and prints nothing before it ends, so there the bind is unknown rather than failed.
+                fs.writeSync(2, mayHaveBound
+                    ? `vc-secrets: the launch's PowerShell call failed (${why}) -- it may have bound the launch's process `
+                        + "tree to this launcher before it did; if not, a client stop may leave it running\n"
+                    : `vc-secrets: could not bind the launch's process tree to this launcher (${why})`
+                        + " -- a client stop may leave it running\n");
             }
 
             return seeded;

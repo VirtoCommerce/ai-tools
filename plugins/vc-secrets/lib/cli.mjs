@@ -98,7 +98,8 @@ async function cmdSet(name, cfg, { trustState = null, prompt = promptHidden, run
         throw new VcSecretsError("value contains a line ending, which the keychain can take only as a command-line argument "
             + "that other processes can read -- nothing stored");
     }
-    await writeSecretValue(key, value, { backend, run });
+    // Attended: the person who just typed the value is at the terminal for a Keychain unlock dialog too.
+    await writeSecretValue(key, value, { backend, run, attended: true });
     process.stderr.write(`vc-secrets: stored "${name}" (${decl.scope}) in ${backend}\n`);
 }
 

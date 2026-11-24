@@ -369,7 +369,7 @@ test("oauthLaunchDeps.readCache: a corrupt ACCESS entry beside a good refresh en
         run: async (spec) => (spec.args.at(-2).endsWith("-refresh") ? refreshBlob() : "ZZCORRUPTSENTINELZZ{{{") });
     assert.deepEqual(await deps.readCache(), { state: "needs-refresh", refreshToken: "r1" });
     assert.deepEqual(stderr, ["vc-secrets: the stored entry for \"oauth-azure-mcp-access\" is not readable JSON "
-        + "-- treating it as absent; the next launch will exchange one\n"]);
+        + "-- treating it as absent; a launch will exchange one\n"]);
 });
 
 test("oauthLaunchDeps.writeCache: a renewal that issues no new refresh token leaves the stored one alone", async () => {
@@ -635,7 +635,7 @@ test("oauthLaunchDeps: an entry DPAPI cannot decrypt is absent, named once, and 
     // An undecryptable access file beside a good refresh file costs one exchange, which the launch makes
     // itself, so this notice keeps the exchange wording and has no login to ask for.
     assert.deepEqual(stderr, ["vc-secrets: the stored entry for \"oauth-azure-mcp-access\" could not be decrypted "
-        + "(win32 error 13) -- treating it as absent; the next launch will exchange one\n"]);
+        + "(win32 error 13) -- treating it as absent; a launch will exchange one\n"]);
     assert.doesNotMatch(stderr[0], /SENTINEL/, "the notice names the entry, never its bytes");
     assert.ok(accessRefused.ops.every((o) => o.op === "unprotect"));
 });
@@ -657,7 +657,7 @@ test("oauthLaunchDeps: a dpapi entry that is not readable JSON names the login v
     const b = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: accessBad.env, run: accessBad.run() });
     assert.deepEqual(await b.readCache(), { state: "needs-refresh", refreshToken: "r1" });
     assert.deepEqual(stderr, ["vc-secrets: the stored entry for \"oauth-azure-mcp-access\" is not readable JSON "
-        + "-- treating it as absent; the next launch will exchange one\n"]);
+        + "-- treating it as absent; a launch will exchange one\n"]);
     assert.doesNotMatch(stderr[0], /SENTINEL/, "the notice names the entry, never its bytes");
 });
 
