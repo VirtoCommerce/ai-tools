@@ -171,7 +171,8 @@ and is shown to the operator before Stage 4, with the same two answers as Stage 
 - **Visual** — `Visual lane: RUN`: `vc-test:ui-ux-expert` on the free lane; its brief's first line invokes the
   Skill `vc-test:qa-design` (§Visual).
 - **Regression** — `Coverage triage + regression: RUN` and at least one non-stale case:
-  `/qa-regression <suites> --ids <non-stale case ids> --no-promote`, in its own message **after** every lane
+  `/qa-regression <suites> --ids <the scoped case ids> --no-promote` (scope and cap:
+  [`execution.md`](../skills/qa-test/execution.md) §Regression), in its own message **after** every lane
   above has returned — it takes all three browser slots and pool accounts (§Regression).
 - **Data** is made as each item's Data cell says (§Data); the ledger stays open through Stage 5.
 - **Join** — every bullet of §Join gate. You write the Results into the checklist; runners never edit it.

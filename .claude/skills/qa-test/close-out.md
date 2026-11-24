@@ -130,7 +130,7 @@ is **recorded** here and **published** by the comment, so a late finding amends 
   - `suggested_tickets` — every finding offered as its own ticket that was not created (the *Suggested
     separate tickets* table renders only from it)
   - `strategy` — reconciled; `status_transitions[]` — every hop and skip
-  - `regression` — the regression lane's run (`c1`: suites, ids, `run_id`, `pass_rate`), or its `skipped_reason`
+  - `regression` — the regression lane's run (`c1`: suites, ids, `run_id`, `pass_rate`, `attributable_failures`, `deferred`), or its `skipped_reason`
   - `visual` — the visual lane, or `ran: false` + `skipped_reason`; never `null` (a `null` reads as a gap)
   - `test_data` — the ledger and teardown
   - `domain_map` — its state, plus the mind-map path and `mind_map_findings[]`
