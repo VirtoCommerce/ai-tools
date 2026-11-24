@@ -1,0 +1,24 @@
+{
+  "_comment": "B2C-VAR-001 (suite 009) - a B2C PDP whose variant picker has ONE group (Size) with exactly XS,S,M,L,XL, so selecting a size resolves exactly one variation. Rules + non-vacuity contract: scripts/seed-data/products/size-run-specs.mjs. Seeder: npm run seed:size-run. Guard: npm run td:validate:size-run. Runtime ids (master + selected variation) live ONLY in aliases.<env>.json. Limit: single-property family - it cannot show an unavailable combination (that is VARIANT_PICKER's job).",
+  "fixtureKey": "SIZE_RUN",
+  "categoryPath": "Test Fixtures > Size Run",
+  "currency": "USD",
+  "layoutProperty": { "name": "VirtoFrontend_UI_Layout", "value": "B2C" },
+  "variationProperties": ["Size"],
+  "sizes": "XS,S,M,L,XL",
+  "master": {
+    "sku": "QA-SIZERUN-M-001",
+    "name": "AGENT-TEST-Size-Run-Tee",
+    "slug": "agent-test-size-run-tee",
+    "url": "/seed-test-fixtures/seed-test-fixtures-size-run/agent-test-size-run-tee",
+    "listPrice": 25
+  },
+  "selection": { "size": "M", "sku": "QA-SIZERUN-V-003", "name": "AGENT-TEST-Size-Run-Tee-M", "listPrice": 20 },
+  "variations": [
+    { "sku": "QA-SIZERUN-V-001", "name": "AGENT-TEST-Size-Run-Tee-XS", "properties": { "Size": "XS" }, "listPrice": 18, "stock": 21 },
+    { "sku": "QA-SIZERUN-V-002", "name": "AGENT-TEST-Size-Run-Tee-S", "properties": { "Size": "S" }, "listPrice": 19, "stock": 22 },
+    { "sku": "QA-SIZERUN-V-003", "name": "AGENT-TEST-Size-Run-Tee-M", "properties": { "Size": "M" }, "listPrice": 20, "stock": 23 },
+    { "sku": "QA-SIZERUN-V-004", "name": "AGENT-TEST-Size-Run-Tee-L", "properties": { "Size": "L" }, "listPrice": 21, "stock": 24 },
+    { "sku": "QA-SIZERUN-V-005", "name": "AGENT-TEST-Size-Run-Tee-XL", "properties": { "Size": "XL" }, "listPrice": 22, "stock": 25 }
+  ]
+}

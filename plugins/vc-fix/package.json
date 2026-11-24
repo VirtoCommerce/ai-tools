@@ -5,7 +5,7 @@
   "main": "config.js",
   "type": "module",
   "scripts": {
-    "env:check": "node get_variables_env.js",
+    "env:check": "node scripts/env/env-check.mjs",
     "verify:paths": "node scripts/verify-plugin-paths.mjs"
   },
   "license": "SEE LICENSE IN LICENSE",

@@ -541,7 +541,7 @@ export function kindToolchain(kind) {
     return {
       install: "yarn install --frozen-lockfile || npm ci || npm install",
       build: "yarn build || npm run build",
-      typecheck: "yarn typecheck || npx vue-tsc --noEmit",
+      typecheck: "yarn validate:types || npx vue-tsc --build --force",
       lint: "yarn lint || npm run lint",
       test: "yarn test:unit || npx vitest run",
     };
@@ -654,7 +654,7 @@ async function getModulesLive() {
   const ADMIN = process.env.ADMIN || "";
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
   if (!BACK_URL || !ADMIN || !ADMIN_PASSWORD) {
-    throw new Error("Need BACK_URL + ADMIN + ADMIN_PASSWORD in env (.env.local, or vc-secrets admin-password-<env> through `node \"$VC_RUN\" onboard`). Run the base env setup first.");
+    throw new Error("Need BACK_URL + ADMIN + ADMIN_PASSWORD in env (test-accounts.local.json envs.<env>.accounts.ADMIN, or vc-secrets admin-password-<env> through `node \"$VC_RUN\" onboard`). Run the base env setup first.");
   }
 
   const tokenRes = await fetch(`${BACK_URL}/connect/token`, {

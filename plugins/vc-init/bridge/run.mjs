@@ -49,7 +49,7 @@ import { createRedactor } from "./redact.mjs";
 import { resolvePluginFile, resolvePluginRoot, selfRoot } from "./resolve-plugin.mjs";
 import { vcSecretsShim } from "./vc-secrets-path.mjs";
 import { checkRunnerFiles, findPlaywright, runnerCommand, runnerEnvAllowed } from "./runner.mjs";
-import { currentEnv, declaredPasswords, envFilePasswordValues, isPasswordName, laneServer, onboardTask, runnerTask } from "../skills/project-init/lib/passwords.mjs";
+import { currentEnv, declaredPasswords, envFilePasswordValues, isPasswordName, laneServer, onboardTask, runnerTask, storePasswordValues } from "../skills/project-init/lib/passwords.mjs";
 
 export const EX_REFUSED = 64;
 export const EX_UNAVAILABLE = 69;
@@ -192,6 +192,10 @@ export function buildInnerEnv(source, group, { nodePath = process.execPath, help
     GIT_ASKPASS: "",
     SSH_ASKPASS: "",
   }, gitConfigEnv({ nodePath, helperPath }));
+  // What came from vc-secrets, and for which env: the env loader puts back exactly these, and a password only for
+  // that env (scripts/lib/load-layered-env.mjs) — a child that switches env inherits them too.
+  env.VC_BRIDGE_SECRETS = Object.keys(secrets).sort().join(",");
+  if (source.TEST_ENV) env.VC_BRIDGE_ENV = source.TEST_ENV;
   if (projectRoot) Object.assign(env, { VC_FIX_HOME: projectRoot, PROJECT_PROFILE_PATH: join(projectRoot, "project-profile.json") });
   if (ghConfigDir) env.GH_CONFIG_DIR = ghConfigDir;
   if (gitGlobalConfig) env.GIT_CONFIG_GLOBAL = gitGlobalConfig;
@@ -523,16 +527,17 @@ export function prepareRunner(args, decls, found, { trustedOnly = false, resolve
 /**
  * Passwords kept in the env files reach the runner's child only through its own loader, but its output is
  * redacted for them too (B10): only the values, never into the child's environment. Every env's, because
- * the loader reads the whole of `.env.local`; `.env.playwright.local` is the lanes' `--secrets` file.
+ * the loader reads the whole of `.env.local` and the test-account store; `.env.playwright.local` is a legacy lanes file.
  */
 export function runnerFilePasswords(projectRoot) {
-  return [".env.local", ".env.playwright.local"].flatMap((name) => {
+  const fromFiles = [".env.local", ".env.playwright.local"].flatMap((name) => {
     try {
       return envFilePasswordValues(readFileSync(join(projectRoot, name), "utf8"));
     } catch {
       return [];
     }
   });
+  return [...fromFiles, ...storePasswordValues(projectRoot)];
 }
 
 /**
@@ -560,7 +565,7 @@ async function runnerOuter(args) {
     });
   }
   const { env, secrets } = buildInnerEnv(process.env, "runner", { projectRoot: runner.projectRoot });
-  env.TEST_ENV = runner.env; // the env just checked, not whatever the child's loader would fall back to
+  env.TEST_ENV = env.VC_BRIDGE_ENV = runner.env; // the env just checked, not whatever the child's loader would fall back to
   return runChild(runner.cmd.command, runner.cmd.args, { env, secrets: [...Object.values(secrets), ...runnerFilePasswords(runner.projectRoot)], cwd: runner.projectRoot });
 }
 

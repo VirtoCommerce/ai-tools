@@ -1,7 +1,12 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.69",
+    "version": "1.5.74",
+    "changelog_1_5_74": "SIZE_RUN_MASTER (seed:size-run, guard td:validate:size-run): single-group Size picker XS,S,M,L,XL on the B2C template for B2C-VAR-001 (suite 009); sibling of VARIANT_PICKER_MASTER, which is unchanged.",
+    "changelog_1_5_73": "SB_THEME_B2B + SB_STORE_EDITOR + SB_THEME_EDITOR_NOPUBLISH (seed:site-builder), SB_LEGACY_HEADER_PAGE (seed:cms-pages), SB_WL_ORG_BUYER + SB_PERSONAL_BUYER (reuse combos): the Site Builder fixtures the VCST-6571/6572 runs lacked.",
+    "changelog_1_5_72": "DEMO_RETURNS_BUYER + DEMO_NO_ORDERS_CUSTOMER: demo-profile storefront personas (virtostart). Login = the spec contact email, password = the {{SR_DEMO_BUYER_PASSWORD}} token. Spec DEMO_PERSONAS in sales-rep-demo-specs.mjs; guard td:validate:sales-rep-demo [8].",
+    "changelog_1_5_71": "ORG_EMPTY gains platform_id (organizations.csv column), so SR-GQL-184 can use an ACTIVE unserved organization instead of ORG_SUSPENDED.",
+    "changelog_1_5_70": "VCST-6255 customer sales report: added SR_MTD_ORDER_{WEST_1,WEST_2,TECH_1,FLAG_CANCELLED,STATUS_CANCELLED,OTHER_CREATOR} \u2014 current-month orders that make each statistics branch falsifiable (attribution by ApplicationUser id, IsCancelled flag isolated from status, status-only Cancelled, per-customer AOV divergence). Opt-in family `--only MTD` of seed-sales-rep-stats.mjs, spec sales-rep-mtd-specs.mjs, guarded by td:validate:sales-rep-stats.",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -1370,6 +1375,19 @@
       "org_id": "org_id"
     }
   },
+  "BUILDRIGHT_BUYER": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-009"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "org_id": "org_id"
+    }
+  },
   "ACMEWEST_ADMIN": {
     "file": "b2b/users",
     "filter": {
@@ -1535,7 +1553,8 @@
     },
     "fields": {
       "name": "org_name",
-      "id": "org_id"
+      "id": "org_id",
+      "platform_id": "platform_id"
     }
   },
   "PROD_HEADPHONES": {
@@ -5111,6 +5130,42 @@
     "id": "",
     "number": "AGENT-TEST-SRO-ROWCAP-TECH-04",
     "_notes": "VCST-5649 widget row-cap fixture — a Completed-status order in ORG-002/TechFlow for SR_REP_LAYOUT. The cross-org row: it must appear in the dashboard scope (all served customers) and must NOT appear in the ORG-001 customerProfile scope, which is what proves the two scopes cap independent data sets. Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
+  },
+  "SR_MTD_ORDER_WEST_1": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-SRO-MTD-WEST-1",
+    "_notes": "Counted: ORG-004/AcmeWest, New, isCancelled=false, created by SR_REP_PRIMARY (CustomerId = its ApplicationUser id), total 100.50. One of six VCST-6255 current-month projection orders (customer sales report); shape is the single source of truth in scripts/seed-data/sales-rep/sales-rep-mtd-specs.mjs MTD_ORDERS. TIME-TERMINAL: createdDate is server-assigned, so the order lands in the month it was seeded and must be re-seeded per run (`TEST_ENV=<env> node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD`; teardown `--teardown --only MTD`). `number` is the business key; runtime id/customerId/createdDate land in aliases.<env>.json. Expected figures = rep baseline + expectedRepDelta() — read the baseline with npm run sales-rep:stats."
+  },
+  "SR_MTD_ORDER_WEST_2": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-SRO-MTD-WEST-2",
+    "_notes": "Counted: ORG-004/AcmeWest, Processing, isCancelled=false, by SR_REP_PRIMARY, total 300.30 — with WEST-1 gives AcmeWest 2 orders / 400.80 / AOV 200.40, distinct from TechFlow's 1 / 1001.00. One of six VCST-6255 current-month projection orders (customer sales report); shape is the single source of truth in scripts/seed-data/sales-rep/sales-rep-mtd-specs.mjs MTD_ORDERS. TIME-TERMINAL: createdDate is server-assigned, so the order lands in the month it was seeded and must be re-seeded per run (`TEST_ENV=<env> node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD`; teardown `--teardown --only MTD`). `number` is the business key; runtime id/customerId/createdDate land in aliases.<env>.json. Expected figures = rep baseline + expectedRepDelta() — read the baseline with npm run sales-rep:stats."
+  },
+  "SR_MTD_ORDER_TECH_1": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-SRO-MTD-TECH-1",
+    "_notes": "Counted: ORG-002/TechFlow, New, isCancelled=false, by SR_REP_PRIMARY, total 1001.00. One of six VCST-6255 current-month projection orders (customer sales report); shape is the single source of truth in scripts/seed-data/sales-rep/sales-rep-mtd-specs.mjs MTD_ORDERS. TIME-TERMINAL: createdDate is server-assigned, so the order lands in the month it was seeded and must be re-seeded per run (`TEST_ENV=<env> node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD`; teardown `--teardown --only MTD`). `number` is the business key; runtime id/customerId/createdDate land in aliases.<env>.json. Expected figures = rep baseline + expectedRepDelta() — read the baseline with npm run sales-rep:stats."
+  },
+  "SR_MTD_ORDER_FLAG_CANCELLED": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-SRO-MTD-XCANCEL",
+    "_notes": "Excluded by the cancel FLAG: ORG-004/AcmeWest, status Processing (deliberately NOT 'Cancelled', so only the flag can exclude it), isCancelled=true, by SR_REP_PRIMARY, total 777.70. One of six VCST-6255 current-month projection orders (customer sales report); shape is the single source of truth in scripts/seed-data/sales-rep/sales-rep-mtd-specs.mjs MTD_ORDERS. TIME-TERMINAL: createdDate is server-assigned, so the order lands in the month it was seeded and must be re-seeded per run (`TEST_ENV=<env> node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD`; teardown `--teardown --only MTD`). `number` is the business key; runtime id/customerId/createdDate land in aliases.<env>.json. Expected figures = rep baseline + expectedRepDelta() — read the baseline with npm run sales-rep:stats."
+  },
+  "SR_MTD_ORDER_STATUS_CANCELLED": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-SRO-MTD-SCANCEL",
+    "_notes": "Status-only cancel: ORG-002/TechFlow, status 'Cancelled', isCancelled=false, by SR_REP_PRIMARY, total 555.50. The AC says it must NOT count; the observed implementation counts it — the two readings differ by exactly 1 order / 555.50. One of six VCST-6255 current-month projection orders (customer sales report); shape is the single source of truth in scripts/seed-data/sales-rep/sales-rep-mtd-specs.mjs MTD_ORDERS. TIME-TERMINAL: createdDate is server-assigned, so the order lands in the month it was seeded and must be re-seeded per run (`TEST_ENV=<env> node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD`; teardown `--teardown --only MTD`). `number` is the business key; runtime id/customerId/createdDate land in aliases.<env>.json. Expected figures = rep baseline + expectedRepDelta() — read the baseline with npm run sales-rep:stats."
+  },
+  "SR_MTD_ORDER_OTHER_CREATOR": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-SRO-MTD-BUYER",
+    "_notes": "Excluded by attribution: ORG-002/TechFlow (served), New, isCancelled=false, CustomerId = @td(TECHFLOW_BUYER) (b2b/users.csv USR-007), NOT the rep, total 999.90. One of six VCST-6255 current-month projection orders (customer sales report); shape is the single source of truth in scripts/seed-data/sales-rep/sales-rep-mtd-specs.mjs MTD_ORDERS. TIME-TERMINAL: createdDate is server-assigned, so the order lands in the month it was seeded and must be re-seeded per run (`TEST_ENV=<env> node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD`; teardown `--teardown --only MTD`). `number` is the business key; runtime id/customerId/createdDate land in aliases.<env>.json. Expected figures = rep baseline + expectedRepDelta() — read the baseline with npm run sales-rep:stats."
   },
   "SR_REP_DOCS": {
     "file": "sales-rep/document-reps",
@@ -11947,6 +12002,29 @@
     },
     "notes": "A11Y-VCP-001 (suite 045): the master whose PDP renders the storefront VcVariantPicker (vc-frontend options.vue on the B2C product template). Carries VirtoFrontend_UI_Layout=B2C (exact case - the theme compares with ===); 4 stocked, distinctly priced variations over Color x Size with a deliberately NON-full matrix, so picking Black makes Size L unavailable (the disabled state is reachable). Open {{FRONT_URL}}@td(VARIANT_PICKER_MASTER.url). Seeded by scripts/seed-data/products/seed-variant-picker.mjs (npm run seed:variant-picker); guard npm run td:validate:variant-picker; runtime id only in aliases.<env>.json."
   },
+  "SIZE_RUN_MASTER": {
+    "json": "products/size-run",
+    "seed": "seed:size-run",
+    "fields": {
+      "id": "id",
+      "selectedVariationId": "selectedVariationId",
+      "sku": "master.sku",
+      "name": "master.name",
+      "slug": "master.slug",
+      "url": "master.url",
+      "price": "master.listPrice",
+      "sizes": "sizes",
+      "variationCount": "variations.length",
+      "selectedSize": "selection.size",
+      "selectedSku": "selection.sku",
+      "selectedName": "selection.name",
+      "selectedPrice": "selection.listPrice",
+      "currency": "currency",
+      "layoutProperty": "layoutProperty.name",
+      "layoutValue": "layoutProperty.value"
+    },
+    "notes": "B2C-VAR-001 (suite 009): a B2C PDP (VirtoFrontend_UI_Layout=B2C, exact case) whose variant picker has ONE group, Size, with exactly @td(SIZE_RUN_MASTER.sizes); 5 stocked variations with strictly distinct SKUs and prices, master price distinct from all, so a wrong variation for the selected size shows a different SKU and price. Picking @td(SIZE_RUN_MASTER.selectedSize) alone resolves @td(SIZE_RUN_MASTER.selectedSku) @ @td(SIZE_RUN_MASTER.selectedPrice) @td(SIZE_RUN_MASTER.currency). Open {{FRONT_URL}}@td(SIZE_RUN_MASTER.url). LIMIT: a single-property family - it cannot show the unavailable-combination state (that is VARIANT_PICKER_MASTER's job); option ORDER on screen is the theme's, not guaranteed by the fixture. Seeded by scripts/seed-data/products/seed-size-run.mjs (npm run seed:size-run); guard npm run td:validate:size-run; runtime ids (id, selectedVariationId) only in aliases.<env>.json."
+  },
   "L10N_COLLISION_CATEGORY": {
     "file": "catalogs/locale-slug-categories",
     "filter": {
@@ -11962,6 +12040,30 @@
       "seoLanguages": "seo_languages"
     },
     "notes": "L10N-ROUTE-001/002 (suite 046): a TOP-LEVEL storefront category whose slug starts with a supported 2-letter locale code (de), with the SAME slug in every store language so a language switch keeps the slug and only the prefix changes - the slug-eating defect (VCST-5144) is then the only way the URL can differ. Seeded by scripts/seed-data/catalog/seed-locale-slug-category.mjs (npm run seed:locale-slug); guard npm run td:validate:locale-slug; category_id only in aliases.<env>.json."
+  },
+  "RESTRICTED_USER": {
+    "seed": "seed:rbac",
+    "_inline": true,
+    "_comment": "Suite 085 TASK-016 persona: a back-office Manager account whose only role grants task:access + task:read (no task:create or any other task write). The Tasks app opens, but Add/Create must be absent or disabled and POST /api/task-management must answer 403. Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs (TASK_READONLY_*); seed: npm run seed:rbac -- --only RESTRICTED_USER (add --verify for the live /currentuser proof); drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only RESTRICTED_USER. Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json. The PASSWORD is a {{RESTRICTED_USER_PASSWORD}} secret from .env.local (never committed).",
+    "email": "AGENT-TEST-task-readonly@test.virtocommerce.com",
+    "login": "AGENT-TEST-task-readonly@test.virtocommerce.com",
+    "password": "{{RESTRICTED_USER_PASSWORD}}",
+    "password_var": "RESTRICTED_USER_PASSWORD",
+    "role": "AGENT-TEST-Task-ReadOnly",
+    "permissions": [
+      "task:access",
+      "task:read"
+    ],
+    "excluded_permission": "task:create",
+    "excluded_permissions": [
+      "task:create",
+      "task:update",
+      "task:delete",
+      "task:finish",
+      "task:attachment:management"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
   },
   "SR_REP_CALL": {
     "_inline": true,
@@ -12066,8 +12168,8 @@
     "variant": "V6",
     "name": "AGENT-TEST-SR-Call-06-Extension",
     "expected_phone_count": "1",
-    "expected_default_href": "tel:+1555040506045",
-    "expected_hrefs": "tel:+1555040506045",
+    "expected_default_href": "tel:+15550405060,45",
+    "expected_hrefs": "tel:+15550405060,45",
     "expected_labels": "AGENT-TEST-SR-Call-06-Owner",
     "expected_primary_contact": "AGENT-TEST-SR-Call-06-Owner",
     "id": "",
@@ -12075,7 +12177,7 @@
     "primary_contact_id": "",
     "contact_V6C": "",
     "default_href": "",
-    "_notes": "VCST-6256 V6. EXTENSION: owner phone \"+1-555-040-5060 x45\". Stored text is shown as-is; the href is the normalized digits, which FOLDS the extension into the dial string (tel:+1555040506045). expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+    "_notes": "VCST-6256 V6. EXTENSION: owner phone \"+1-555-040-5060 x45\". Stored text is shown as-is; the href dials the extension after a pause (tel:+15550405060,45) — VCST-6794; before it the digits were glued (tel:+1555040506045). expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
   },
   "ORG_SR_CALL_ADDR": {
     "_inline": true,
@@ -12159,6 +12261,23 @@
     "contact_P2C": "",
     "default_href": "",
     "_notes": "VCST-6256 P2. PAGE 2: the 11th org by name (the rep has no orders, so the default rule ties and the handler orders by name) — the only row on page 2 at 10 per page, with an owner phone +1-555-110-1100. Backs \"numbers reloaded when the page changes\". expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() (the storefront buildCustomerPhones() rule) — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
+  },
+  "ORG_SR_CALL_EXTONLY": {
+    "_inline": true,
+    "seed": "seed:sales-rep-call",
+    "variant": "V12",
+    "name": "AGENT-TEST-SR-Call-12-ExtOnly",
+    "expected_phone_count": "0",
+    "expected_default_href": "",
+    "expected_hrefs": "",
+    "expected_labels": "",
+    "expected_primary_contact": "AGENT-TEST-SR-Call-12-Owner",
+    "id": "",
+    "platform_id": "",
+    "primary_contact_id": "",
+    "contact_V12C": "",
+    "default_href": "",
+    "_notes": "VCST-6794 V12. EXTENSION ONLY: the owner's only phone is \"x45\" (an extension with no number), no org or address phone. Expect 0 numbers: the disabled 'No phone number' control and no Phone row. expected_* fields are DERIVED from sales-rep-call-specs.mjs expectedPhones() — td:validate:sr-call fails if they drift. Runtime GUIDs only in aliases.<env>.json."
   },
   "MCP_OPERATOR": {
     "seed": "seed:mcp-security",
@@ -12408,5 +12527,182 @@
       "orgName": "orgs.LAYOUT"
     },
     "notes": "VCST-6078 buyer dashboard — the disposable saved-layout buyer: the ONLY BD_* buyer whose account-dashboard layout (X-Frontend saveLayout, scope accountDashboard -> CustomerPreference Layout.accountDashboard[.{storeId}]) a case may change — status checkboxes, hidden cards, Max rows. Use it, NOT another BD_* buyer, in any case that Saves a layout. Six orders in B2B-store: New x2, Processing x2, Completed x1, Cancelled x1 (status only, IsCancelled=false — so it is still counted and the status facet offers a Cancelled tab). seed-buyer-dashboard.mjs deletes every BD_* buyer's account-dashboard layout preference on each (re)seed and at teardown, so every buyer starts never-saved (layout = null). Sign in with the email + the password NAME in passwordVar (Playwright lanes type the name). Expected figures hold for the seed day (createdDate is server-assigned). Runtime ids (user_id, contact_id, org_id, orders.<KEY>.id/createdDate) live in aliases.<env>.json only — npm run seed:buyer-dashboard."
+  },
+  "DEMO_RETURNS_BUYER": {
+    "_inline": true,
+    "seed": "seed:demo",
+    "email": "m.hale@northwindtraders.example",
+    "password": "{{SR_DEMO_BUYER_PASSWORD}}",
+    "name": "Margaret Hale",
+    "organization": "Northwind Traders",
+    "org_role": "Organization maintainer",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "name",
+      "organization": "organization",
+      "org_role": "org_role"
+    },
+    "notes": "DEMO profile persona for an organization member who opens the ORGANIZATION returns list: Margaret Hale, Organization maintainer at Northwind Traders, who also holds the demo role \"Organization returns manager\" (xapi:my_organization:return:view + submit) that the returns demo adds to her membership. Her organization holds submitted returns filed by a colleague (Daniel Okafor) and by the primary demo rep, so a read-only check on another member's return has one to open; Draft returns are not listed. Spec: DEMO_PERSONAS in scripts/seed-data/sales-rep/sales-rep-demo-specs.mjs (contact DCT-NW-1); guards td:validate:sales-rep-demo [8] (this entry) + td:validate:returns-demo [1] (view grant + a colleague's return). Seeded by npm run seed:demo; exists only on an env holding the demo profile (virtostart). Sign in with @td(DEMO_RETURNS_BUYER.email); the Playwright lane types the password NAME SR_DEMO_BUYER_PASSWORD (SR_DEMO_BUYER_PASSWORD_<ENV> in .env.playwright.all), never a value. Presentation data on a public demo store: a case reads it, never mutates it."
+  },
+  "DEMO_NO_ORDERS_CUSTOMER": {
+    "_inline": true,
+    "seed": "seed:demo",
+    "email": "s.navarro@wingtip-electrical.example",
+    "password": "{{SR_DEMO_BUYER_PASSWORD}}",
+    "name": "Sofia Navarro",
+    "organization": "Wingtip Electrical Supply",
+    "org_role": "Purchasing agent",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "name",
+      "organization": "organization",
+      "org_role": "org_role"
+    },
+    "notes": "DEMO profile persona for a customer who has never ordered: Sofia Navarro, Purchasing agent at Wingtip Electrical Supply. No order, cart or list in the sales-rep, returns or loyalty-missions demo names her (td:validate:sales-rep-demo [1] + [8], td:validate:returns-demo [1]), so xAPI orders and the dashboard's My recent orders read 0 for her. Her ORGANIZATION has orders (James Whitfield's), so organization-wide figures are not zero. Spec: DEMO_PERSONAS in scripts/seed-data/sales-rep/sales-rep-demo-specs.mjs (contact DCT-WT-2). Seeded by npm run seed:demo, or for her alone npm run seed:sales-rep-demo -- --only DCT-WT-2; exists only on an env holding the demo profile (virtostart). Sign in with @td(DEMO_NO_ORDERS_CUSTOMER.email); the Playwright lane types the password NAME SR_DEMO_BUYER_PASSWORD (SR_DEMO_BUYER_PASSWORD_<ENV> in .env.playwright.all). A case that places an order as her consumes the persona for every later run: do not."
+  },
+  "SB_THEME_B2B": {
+    "_inline": true,
+    "seed": "seed:site-builder",
+    "_comment": "VCST-6571/6572 (Site Builder Release #1): a PUBLISHED theme on B2B-store that visibly differs from the storefront's built-in templates — an announcement bar in the header (palette tokens only), a palette generated from two brand colours (AA-checked before publish), and a product template rule: products of rule.product_type open template.key, whose text section shows template.marker; a product of rule.control_product_type does not. Seed: `TEST_ENV=vcst npm run seed:site-builder -- --only SB_THEME_B2B`; needs the store's schema catalog (open B2B-store once in the Site Builder designer so the storefront preview uploads it). Teardown (`npm run seed:site-builder:teardown -- --only SB_THEME_B2B`) puts every touched file back as FOUND (absent files deleted through the Content API) and publishes once more — publications are append-only, so the restored state is a NEW publication number. Runtime (aliases.<env>.json): publication_before/after/restored, catalog_hash, rule_product_* / control_product_* (live-discovered through xAPI). B2B-store's store-level white-labeling overrides the palette and logo for every visitor, so the palette is observable in the designer Theme tab and in the theme snapshot, not on the storefront (see SB_WL_ORG_BUYER and SB_PERSONAL_BUYER).",
+    "store_id": "B2B-store",
+    "theme": "default",
+    "announcement": {
+      "text": "AGENT-TEST-SB announcement bar",
+      "background": "color_accent_700",
+      "color": "color_additional_50",
+      "section_id": "agenttestsbannouncementbar",
+      "block_id": "agenttestsbannouncement"
+    },
+    "palette": {
+      "primary": "#1e6b52",
+      "secondary": "#7a1fa2"
+    },
+    "template": {
+      "key": "product.agent-test-sb",
+      "name": "AGENT-TEST-SB product template",
+      "marker": "AGENT-TEST-SB product template marker",
+      "text": "Shown only on products the AGENT-TEST-SB template rule matches."
+    },
+    "rule": {
+      "id": "agent-test-sb",
+      "product_type": "Digital",
+      "control_product_type": "Physical"
+    },
+    "rules_when_absent": {
+      "_provenance": "The storefront's built-in product rule, applied while a store has no config/template_rules.json — vc-module-site-builder 28d00e0, src/VirtoCommerce.SiteBuilder.Web/vue/src/modules/designer/rules.ts DEFAULT_RULES. Kept so writing the file does not drop it; re-check when the module version changes.",
+      "product": [
+        {
+          "id": "default-b2c",
+          "template": "product.b2c",
+          "when": {
+            "property": {
+              "name": "VirtoFrontend_UI_Layout",
+              "equals": "B2C"
+            }
+          }
+        }
+      ]
+    },
+    "fields": {
+      "store_id": "store_id",
+      "announcement_text": "announcement.text",
+      "template_key": "template.key",
+      "template_marker": "template.marker",
+      "rule_product_type": "rule.product_type",
+      "control_product_type": "rule.control_product_type",
+      "palette_primary": "palette.primary"
+    }
+  },
+  "SB_STORE_EDITOR": {
+    "_inline": true,
+    "seed": "seed:site-builder",
+    "_comment": "VCST-6571 AC-8: back-office Site Builder editor scoped to ONE store — builder:read and builder:shared-components:read carry a StoreSelectedScope on B2B-store; page create/update/delete are global; NO builder:theme, builder:templates or builder:publish. Expect on B2B-store: page reads + page draft save 200, theme file save / palette 403, publish 403; on other_store every Site Builder read and write 403 (@kb(KB-4FEABEDD)). Sign in as login; the Playwright lane types the password NAME password_var (<VAR>_VCST). The seed verifies that with probes that change nothing. Runtime role_id/user_id in aliases.<env>.json. Teardown deletes the user and the role.",
+    "login": "agent-test-sb-store-editor",
+    "email": "agent-test-sb-store-editor@test.virtocommerce.com",
+    "role": "AGENT-TEST-SB store editor",
+    "permissions": "builder:access, builder:read@B2B-store, builder:shared-components:read@B2B-store, builder:create, builder:update, builder:delete",
+    "other_store": "Electronics",
+    "user_type": "Manager",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "fields": {
+      "login": "login",
+      "email": "email",
+      "role": "role",
+      "other_store": "other_store",
+      "password_var": "password_var"
+    }
+  },
+  "SB_THEME_EDITOR_NOPUBLISH": {
+    "_inline": true,
+    "seed": "seed:site-builder",
+    "_comment": "VCST-6571 AC-8: SB_STORE_EDITOR plus builder:theme and builder:templates, still WITHOUT builder:publish and still scoped to B2B-store — the pair that tells \"may edit the theme\" from \"may publish it\": palette check 200, theme/publish and page publishing 403. Same sign-in rules and teardown as SB_STORE_EDITOR.",
+    "login": "agent-test-sb-theme-editor",
+    "email": "agent-test-sb-theme-editor@test.virtocommerce.com",
+    "role": "AGENT-TEST-SB theme editor no publish",
+    "permissions": "builder:access, builder:read@B2B-store, builder:shared-components:read@B2B-store, builder:create, builder:update, builder:delete, builder:theme, builder:templates",
+    "other_store": "Electronics",
+    "user_type": "Manager",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "fields": {
+      "login": "login",
+      "email": "email",
+      "role": "role",
+      "other_store": "other_store",
+      "password_var": "password_var"
+    }
+  },
+  "SB_LEGACY_HEADER_PAGE": {
+    "_inline": true,
+    "seed": "seed:cms-pages",
+    "_comment": "VCST-6571 AC-7: a B2B-store page written the LEGACY way (grouped content endpoint) with page settings header = header and hideBreadcrumbs = true; header differs from the page name and from its title block. A case re-saves it in the Site Builder designer and checks the storefront H1 still reads header and no breadcrumbs show. Seed: `TEST_ENV=vcst npm run seed:cms-pages -- --only SB_LEGACY_HEADER_PAGE` (content in test-data/cms/page-content.json; the seeder rewrites drifted content). Teardown archives it (`npm run seed:cms-pages:teardown -- --only SB_LEGACY_HEADER_PAGE`). Runtime group_id in aliases.<env>.json.",
+    "name": "AGENT-TEST SB Legacy Header Page",
+    "permalink": "/agent-test-sb-legacy-header",
+    "url": "/agent-test-sb-legacy-header",
+    "culture": "en-US",
+    "header": "AGENT-TEST SB page-settings header",
+    "hide_breadcrumbs": true,
+    "expect_status": "Published",
+    "fields": {
+      "name": "name",
+      "permalink": "permalink",
+      "url": "url",
+      "header": "header",
+      "hide_breadcrumbs": "hide_breadcrumbs"
+    }
+  },
+  "SB_WL_ORG_BUYER": {
+    "_inline": true,
+    "combo": "SB-WL-01",
+    "org": "WL_ELECTRONICS",
+    "buyer": "WL_USER_ELECTRONICS",
+    "_comment": "VCST-6571 AC-12 / B8 (REUSED, nothing new seeded): a buyer whose organization has its OWN white-labeling (logo, secondary logo, favicon, menus, theme preset Watermelon) — ORG_USER's org has none. Org @td(WL_ELECTRONICS.name), buyer @td(WL_USER_ELECTRONICS.email) on B2B-store; provisioned by npm run seed:white-labeling (checked live on vcst 2026-11-19: org config isEnabled, buyer a Customer of B2B-store in that org). Expect the org's logo and colours over the theme on the storefront, and the overridden fields marked in the designer Theme tab."
+  },
+  "SB_PERSONAL_BUYER": {
+    "_inline": true,
+    "combo": "SB-WL-02",
+    "buyer": "PERSONAL_NON_ORG_USER",
+    "_comment": "VCST-6571 AC-12 / B9 (REUSED): a personal B2B-store buyer with no organization — sign in with @td(PERSONAL_NON_ORG_USER.email). On B2B-store the STORE-level white-labeling still applies to this buyer, so 'theme logo and palette shown' needs a store without store-level white-labeling, which vcst cannot serve (one storefront host, bound to B2B-store): a case either disables B2B-store's store white-labeling (isEnabled=false) as its own step and restores it in Cleanup, or stays BLOCKED."
+  },
+  "PROD_VAR_ONE_ENTRY": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-060"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "stock": "stock_qty",
+      "variationCount": "variation_count",
+      "minVariationPrice": "min_variation_price"
+    },
+    "notes": "One-entry variations parent for suite 001 CAT-082 (VCST-6046): an in-stock master with exactly ONE variation, which is out of stock. The storefront card's variations button counts in-stock-and-buyable master + variations with Show in stock on (here 1, the singular form) and variations.length + 1 with it off (here 2), and the panel lists the master as a row, so with the default filter the panel lists exactly one entry. Search it by @td(PROD_VAR_ONE_ENTRY.name) or open {{FRONT_URL}}@td(PROD_VAR_ONE_ENTRY.url). Seeded by scripts/seed-data/compare/seed-compare.mjs (alone in the Compare Fixtures > Group D tab); runtime id in aliases.<env>.json only.",
+    "_status": "authored-20261120"
   }
 }

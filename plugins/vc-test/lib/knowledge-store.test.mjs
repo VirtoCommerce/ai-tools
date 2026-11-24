@@ -114,6 +114,23 @@ test("every password file and the process's password variables are scrubbed by v
   }
 });
 
+test("the test-account store's passwords are scrubbed by value; its logins are not", () => {
+  const { root, cfg } = project();
+  writeFileSync(join(root, "test-accounts.local.json"), JSON.stringify({
+    version: 2,
+    master: "StoreMasterPw42",
+    shared: { DEFAULT_TEST_PASSWORD: "SharedStorePw77" },
+    envs: { vcst: { accounts: {
+      USER: { login: "buyer@example.test", password: "AccountStorePw99" },
+      "fixture@example.test": { password: { use: "DEFAULT_TEST_PASSWORD" } },
+    } } },
+  }));
+  const { path } = writeKnowledge(cfg, { kind: "test-doc", slug: "s", text: "buyer@example.test typed AccountStorePw99 then SharedStorePw77 and StoreMasterPw42" });
+  const text = readFileSync(path, "utf8");
+  assert.doesNotMatch(text, /AccountStorePw99|SharedStorePw77|StoreMasterPw42/);
+  assert.match(text, /^buyer@example\.test typed /);
+});
+
 test("a secret-named variable whose value a non-secret layer declares is a fact, not a secret", () => {
   const { root, cfg } = project();
   writeFileSync(join(root, ".env.defaults"), "ORDER_KEYWORD_TOKEN=Beacon\n");
@@ -134,4 +151,13 @@ test("only a declared platform project may write to the platform store (no proje
   assert.equal(cfg.platformWritable, false);
   assert.throws(() => writeKnowledge(cfg, { kind: "rules", slug: "x", text: "a: 1", target: "platform" }), /platform write refused/);
   assert.equal(storeConfig({ schemaVersion: 3, projectType: "platform" }, { root }).platformWritable, true);
+});
+
+test("a client's personas file lands in its own store, never the platform store", () => {
+  const { root, cfg } = project({ projectType: "client" });
+  const { path } = writeKnowledge(cfg, { kind: "personas", slug: "project", text: "## Archetypes\n" });
+  assert.equal(path, join(root, "qa-knowledge", "personas.md"));
+  const forced = { ...cfg, platform: join(root, "platform") };
+  assert.throws(() => writeKnowledge(forced, { kind: "personas", slug: "project", text: "x", target: "platform" }), /platform write refused/);
+  assert.equal(existsSync(join(root, "platform")), false);
 });

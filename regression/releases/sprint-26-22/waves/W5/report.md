@@ -5,72 +5,62 @@ ProfileExperienceApi 3.1024.0) · sub-task VCST-6801 · 2026-11-12
 
 ## Result
 
-All 141 cases have a result (latest result per case, `cases.json`): **110 PASS · 12 FAIL · 9 BLOCKED · 10 SKIPPED**.
-Every FAIL and BLOCKED case has a ledger row (`untriaged` 0).
+All 141 cases have a result (latest result per case, `cases.json`): **122 PASS · 4 FAIL · 5 BLOCKED · 10 SKIPPED**.
+Every FAIL and BLOCKED case has a ledger row (`untriaged` 0). Every FAIL is a filed product bug.
 
 | Suite | Cases | PASS | FAIL | BLOCKED | SKIPPED |
 |---|---|---|---|---|---|
-| 006 B2B Organization | 71 | 57 | 4 | 6 | 4 |
-| 008 B2B Members | 40 | 27 | 5 | 2 | 6 |
-| 011b B2B Company E2E | 30 | 26 | 3 | 1 | 0 |
+| 006 B2B Organization | 71 | 61 | 1 | 5 | 4 |
+| 008 B2B Members | 40 | 32 | 2 | 0 | 6 |
+| 011b B2B Company E2E | 30 | 29 | 1 | 0 | 0 |
 
-Five runs, each replacing the earlier result of the cases it re-ran:
+Runs (each re-run replaces the earlier result of the cases it re-ran):
 
 | Run | Cases | Why |
 |---|---|---|
 | REG-2026-11-12-0725-W5 | 141 | first run — 129 BLOCKED on sign-in (owner's vcst passwords out of date) |
-| REG-2026-11-12-0837-W5b | 56 | cases that did not need the failing accounts; `seed:membership-lock` allowed |
-| REG-2026-11-12-0914-W5c | 70 | after ORG_USER / MULTI_ORG_USER passwords were reset |
-| REG-2026-11-12-1008-W5d | 8 | after the B2B_USER_PASSWORD accounts were reset — 8/8 PASS |
-| REG-2026-11-12-1023-W5e | 17 | after the B2B-store roles whitelist was set — role dialogs work |
+| -0837-W5b · -0914-W5c · -1008-W5d | 56 · 70 · 8 | after the passwords were reset, group by group |
+| -1023-W5e | 17 | after the B2B-store roles whitelist was set |
+| -1214-W5f · -1235-W5g · -1248-W5h · -1315-W5i | 15 · 4 · 4 · 1 | re-runs of the 15 repaired cases (W5g: correct password name; W5h: whitelist re-applied; W5i: B2C-MBR-033 setup fixed) |
 
-## FAIL by verdict
+## FAIL — all filed
 
-- **REAL_BUG (1 defect, not new in this sprint) — VCST-6823 (Low):** B2C-MBR-031 (+ B2C-MBR-025) — the `/company/members`
-  Role filter offers "Store manager", which returns no members. `organization.contactRoles` aggregates roles over every
-  membership record of the org, `organization.contacts` lists only contacts linked to it; on TechFlow 9 of 29
-  memberships have an unlinked contact; no storefront or Admin flow creates that state (only a direct membership POST). Route: `vc-module-profile-experience-api`. Supersedes the stale draft
-  `reports/bugs/open/medium/BUG-members-role-facet-static-list.md` (blamed a static vc-frontend list). Evidence:
-  `reports/regression/REG-2026-11-12-0914-W5c/evidence/B2C-MBR-025/` (owner's machine). kb KB-356A2FB9.
-- **DUPLICATE:** COMP-E2E-022 → **VCST-5314** (500 with raw SQL on membership create without `userId`; orphan
-  membership with `userId:""`). Still reproduces; the ticket has been in **Draft** since 2026-06-22 — schema
-  disclosure in an error body deserves a look.
-- **TEST_DEFECT (9):**
-  - B2C-ORG-045/050/051, COMP-E2E-024 — a user with no accessible org now signs in with no organization (BL-AUTH-016,
-    VCST-5281 Done) instead of the old /403 or Forbidden. Access boundary re-checked live: no org data leaks
-    (KB-CFF49BB0).
-  - B2C-MBR-023, COMP-E2E-001 — Delete keeps the row as Inactive, as the storefront user guide documents. The confirm
-    dialog copy ("delete … from the company members list") contradicts the guide — observation, not filed.
-  - B2C-MBR-033 — no Resend on a declined row; re-invite works through the Invite dialog (KB-BAEBCDA7).
-  - B2C-MBR-004 — the default invite role is the first whitelisted role, not a fixed one.
-  - B2C-ORG-057 — the touch-target probe counts a hidden 1×1 radio; the 560×20 rows meet the WCAG 2.5.8 spacing
-    exception. Ruled differently (strict 24×24), it becomes a P3 vc-frontend bug.
+| Cases | Bug | Severity | New in sprint |
+|---|---|---|---|
+| B2C-ORG-057 | **VCST-6826** — mobile menu "My organizations" list collapses to ~2 px at 400% zoom (320×225); organizations cannot be seen or selected. `vc-frontend` `multi-organisation-menu.vue:104`, WCAG 1.4.10. In bundles v15 and v16 | Medium | no (VCST-4357, 2025-12) |
+| B2C-MBR-031, B2C-MBR-025 | **VCST-6823** — Role filter offers a role that matches no member: `organization.contactRoles` counts memberships of contacts not linked to the org. `vc-module-profile-experience-api`. No storefront/Admin flow creates the trigger; only a direct membership POST or legacy data | Low | no (VCST-5450) |
+| COMP-E2E-022 | **VCST-5314** (existing, in Draft since 2026-06-22) — membership create without `userId` answers 500 with raw SQL names; comment added that it still reproduces | High | no |
 
-## BLOCKED causes and the fix for each
+## BLOCKED
 
-| Cases | Verdict | Fix |
+| Cases | Verdict | What unblocks it |
 |---|---|---|
-| B2C-ORG-055, 058, 070 | NOT_TESTABLE | need `page.route` / CDP throttling, which the `enforce-real-user` hook forbids in MCP lanes — Playwright `.spec` twins |
-| B2C-ORG-040, COMP-E2E-025 | TEST_DEFECT | setup must create the contact with `organizations` [TechFlow, BuildRight] |
-| B2C-ORG-042 | DATA | a dedicated >N-org frontend-lane fixture |
-| B2C-MBR-040 | DATA | case sets TechFlow `Organization.Roles` itself and restores it |
-| B2C-MBR-041 | DATA | bind a zero-membership contact (MULTI_ORG_USER has a human-made Valvo membership) |
-| B2C-ORG-031 | ENV_CONFIG | `PERSONAL_USER_VIRTO_PASSWORD` into the owner's `.env.local` |
+| B2C-ORG-055, 058, 070 | NOT_TESTABLE | need `page.route` / CDP throttling, forbidden in MCP lanes by the `enforce-real-user` hook — Playwright `.spec` twins |
+| B2C-ORG-042 | DATA | a dedicated >N-organization frontend-lane fixture |
+| B2C-ORG-031 | ENV_CONFIG | `PERSONAL_USER_VIRTO_PASSWORD` in the owner's `.env.local` |
+
+## Case repairs (this PR)
+
+15 cases re-based to the documented / observed behaviour and **re-run green** (B2C-MBR-025 still fails only on
+VCST-6823, B2C-ORG-057 now fails only on VCST-6826 — both intended):
+- no-org sign-in renders the dashboard, org data stays refused (B2C-ORG-045/050/051, COMP-E2E-024; BL-AUTH-016, KB-CFF49BB0);
+- Delete keeps the member row as Inactive, per the storefront user guide (B2C-MBR-023, COMP-E2E-001);
+- re-invite through the Invite dialog (B2C-MBR-033); invite default = first whitelisted role (B2C-MBR-004);
+- setups create contacts with `organizations` (B2C-ORG-040, B2C-MBR-031, B2C-MBR-033, COMP-E2E-025);
+- data the case owns per the FIFTH RULE (B2C-MBR-040 sets TechFlow roles and restores them; B2C-MBR-041 on a dedicated zero-membership contact);
+- zoom by CSS-viewport equivalence + WCAG 2.5.8 spacing exception (B2C-ORG-057).
 
 ## Changes made on vcst during this wave (owner's decisions)
 
 - **Passwords reset to the owner's values:** ORG_USER (test-emily), MULTI_ORG_USER and every `b2b/users` account with
-  `{{B2B_USER_PASSWORD}}` (ACME_*, TECHFLOW_BUYER, BUILDRIGHT_ADMIN, …). Anyone using the old values must take the
-  current ones from the team secret store.
+  `{{B2B_USER_PASSWORD}}`. Anyone on the old values must take the current ones from the team secret store.
 - **`Customer.MembershipRolesWhitelist` on B2B-store** set from an empty override to the seeder's 7 roles
-  (`npm run seed:membership-roles`) and **left in place**. `--teardown` would restore the empty pre-state.
-- **B2B-store white-labeling `themePresetName`** switched Mercury → Red for B2C-ORG-064 and restored to Mercury
-  (read back).
-- `seed:membership-lock` torn down after every run; `:verify` OK. Its "V6 IS NO LONGER LOCKED" line reads a stale
-  hardcoded membership id — V6 (IMPERSONATE_TARGET_BLOCKED) is intact (its only membership is locked).
+  (`npm run seed:membership-roles`), **left in place**. It was emptied again at 12:14:46 UTC under `admin` (by whom is
+  not established) and re-applied at ~12:47 UTC on the owner's decision.
+- **B2B-store white-labeling `themePresetName`** switched Mercury → Red for one case and restored (read back).
+- `seed:membership-lock` torn down after every run; `:verify` OK (its V6 line reads a stale id — backlog).
 
-## Case and fixture repairs
+## Open
 
-Not applied on this branch. Each `OPEN:` row in `ledger.csv` names its repair; they go through
-`/qa-review-tests suite <ID> --fix` (one author per suite CSV), and the repaired cases are re-run before they are
-called fixed.
+Nothing blocks the wave's own record. Left for others: the three `.spec` twins, the >N-org fixture, the missing
+secret, and the two filed bugs. Wave stays **TRIAGED** until those `OPEN:` rows close.

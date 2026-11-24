@@ -101,7 +101,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 
 ## Environment Variables (read via process.env)
 
-Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` → legacy `.env`. **Never edit a specific file by name; just use the variable.** Switch envs with `TEST_ENV=vcptcore` or `TEST_ENV=virtostart`. Secrets (passwords, tokens) live in `.env.local` (gitignored).
+Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` → the `QA_ENV_PATH` folders → `test-accounts.local.json` → `PASSWORDS=master`. **Never edit a specific file by name; just use the variable.** Switch envs with `TEST_ENV=vcptcore` or `TEST_ENV=virtostart`. Test-account logins and passwords live in `test-accounts.local.json` (gitignored; `npm run creds:check`), tokens in vc-secrets.
 
 | Resource | Variable |
 |----------|----------|
@@ -115,7 +115,7 @@ Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `
 
 ## Agent User Pool (Parallel Isolation)
 
-When running in parallel, each browser slot uses a **dedicated test user** to prevent session/cart/order conflicts. Resolve via `@td(AGENT_POOL_SLOT_N.email)` (and `.b2b_email`, `.b2b_org`, etc.) — the alias points at `test-data/users/agent-user-pool.csv` row where `slot=N`. Match on your assigned `{{BROWSER_SERVER}}`. **The password is never resolved and typed:** its column holds a `{{NAME}}` token (`{{AGENT_SLOT1_PASSWORD}}`); type the bare NAME inside it (`AGENT_SLOT1_PASSWORD`, or `AGENT_SLOT1_PASSWORD_<ENV>` on `.env.playwright.all`) and the lane fills the value ([`browser-rules.md`](browser-rules.md)) — typing the token itself is blocked by the hook or misses silently.
+When running in parallel, each browser slot uses a **dedicated test user** to prevent session/cart/order conflicts. Resolve via `@td(AGENT_POOL_SLOT_N.email)` (and `.b2b_email`, `.b2b_org`, etc.) — the alias points at `test-data/users/agent-user-pool.csv` row where `slot=N`. Match on your assigned `{{BROWSER_SERVER}}`. **The password is never resolved and typed:** its column holds a `{{NAME}}` token (`{{AGENT_SLOT1_PASSWORD}}`); type the NAME inside it with the run's env (`AGENT_SLOT1_PASSWORD_<ENV>`, or `MASTER_PASSWORD` on a master stand) and the lane fills the value ([`browser-rules.md`](browser-rules.md)) — typing the token itself is blocked by the hook or misses silently.
 
 | Browser Server | Personal User alias | B2B User alias |
 |---------------|---------------------|----------------|
@@ -125,7 +125,7 @@ When running in parallel, each browser slot uses a **dedicated test user** to pr
 
 The values are the rows of `test-data/users/agent-user-pool.csv` (a customer edits that file with their own); never copy them here.
 
-**Resolution order:** agent-user-pool.csv → `process.env` fallback (populated from `.env.${TEST_ENV}` + `.env.local`). If pool users are not seeded (`seeded=false`), fall back to `process.env` and log a warning.
+**Resolution order:** agent-user-pool.csv → `process.env` fallback (populated by the layered loader, credentials from `test-accounts.local.json`). If pool users are not seeded (`seeded=false`), fall back to `process.env` and log a warning.
 **Seeding:** `test-data/users/seed-agent-users.md` — run once to create personal users on the platform.
 
 ## Platform Constraints

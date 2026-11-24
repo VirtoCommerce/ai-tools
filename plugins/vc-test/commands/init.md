@@ -40,10 +40,16 @@ vc-init owns `project-profile.json`; this command only fills vc-test's own block
    --store <path> [--routing <json>] [--budget <json>]`. Exit 1 ⇒ show its message, ask again. Show its `warnings` verbatim.
 6. **Write.** `node "<vcInit>/skills/project-init/profile-set.mjs" --merge 'test=@<file from step 5>'`. Not
    `written` ⇒ STOP with its JSON.
+6a. **Personas.** `node <plugin>/lib/personas.mjs --show`. No file ⇒ ask once: *Keep this project's own personas
+   (archetypes, the segments your features split users by, which test account is which persona)?* Yes ⇒
+   `node <plugin>/lib/personas.mjs --init`, then ask for rows only if the operator has them now: write each row to
+   `.vc-fix/vc-test/persona-row.md` with the editor tool, then `--add --section <archetypes|segments|accounts>
+   --row-file .vc-fix/vc-test/persona-row.md` — never the row on the command line. The visual lane proposes more as tickets show them
+   (`skills/qa-design/personas.md` §0). Never ask for a password here.
 7. **Accounts.** For each entry in step 5's `gaps`: one line, `<env> has no <role> account — run <fix>`. Never
    ask for a login or a password here.
 8. **Check.** `node <plugin>/lib/capabilities.mjs --key INIT-0 --mcp <the MCP servers this session has>`; print
    each declared env's `stand.writable` and `reason` for the current env, and the knowledge store's path. Delete
-   `.vc-fix/vc-test/accounts.json` and `.vc-fix/vc-test/INIT-0/`.
+   `.vc-fix/vc-test/accounts.json`, `.vc-fix/vc-test/persona-row.md` and `.vc-fix/vc-test/INIT-0/`.
 
 Re-running is safe: the block is merged, not replaced, and an env no longer chosen is written back as read-only.

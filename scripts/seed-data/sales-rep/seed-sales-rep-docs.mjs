@@ -45,7 +45,7 @@ import {
   writeEnvAliasOverride, syncEnvAliases, uploadScopedFile, resetSecurityPassword,
   DRY_RUN, TEARDOWN, ONLY, verifyRemoved, idsParam,
 } from '../../lib/seed-common.mjs';
-import { resolvePassword } from '../../lib/user-provision.mjs';
+import { accountSet, isGeneratedPassword, resolvePassword } from '../../lib/user-provision.mjs';
 import {
   UPLOAD_SCOPE, SEED_PREFIX, DOCUMENTS, DOC_REPS_COLUMNS, DOC_REP_KEYS,
   buildFileBytes, buildCreateRequest, expectedDisplayName, isSeededDocument,
@@ -146,7 +146,12 @@ async function seedReps(orgs, roles) {
       // Self-heal credential drift the same way seed-sales-rep.mjs does: the module's create-only
       // account path never resets a password, so a rep created before its var was set would 400
       // invalid_grant for a headless runner using @td() + the registry password.
-      await resetSecurityPassword(api, row.email, password);
+      // Never with a GENERATED password (the store has no value for its var): the team may hold the rep's real one.
+      if (isGeneratedPassword(password)) log(`  ⚠ ${row.email}: password NOT reset — the store has no value for its password variable`);
+      else {
+        await resetSecurityPassword(api, row.email, password);
+        accountSet(row.email, password);
+      }
     } else {
       const roleId = roles[row.role_name];
       if (!roleId) throw new Error(`role "${row.role_name}" (${row.rep_key}) not found on this env`);
@@ -159,6 +164,7 @@ async function seedReps(orgs, roles) {
         roleId, isLocked: false, organizations: served,
       });
       log(`Rep created: ${row.rep_key} (${rep?.id}) role="${row.role_name}" serving ${served.length} org(s)`);
+      accountSet(row.email, password);
     }
     if (!DRY_RUN) {
       await confirmEmail(row.email);

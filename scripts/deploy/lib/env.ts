@@ -75,11 +75,11 @@ export function isLocalUrl(url: string): boolean {
 
 /**
  * An env's read-only service-account key, `PLATFORM_API_KEY_<ENV>` with the env's own name upper-cased: the
- * .env.local pin, then the env's own password file (unsuffixed), then the process. Never a generic key.
+ * .env.local pin, then the process. Never a generic key — and never the test-account store: a key is a token.
  */
-export function platformApiKey(env: string, local: Record<string, string>, ownPasswords: Record<string, string>): string {
+export function platformApiKey(env: string, local: Record<string, string>): string {
   const name = `PLATFORM_API_KEY_${env.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
-  return local[name] || ownPasswords.PLATFORM_API_KEY || process.env[name] || '';
+  return local[name] || process.env[name] || '';
 }
 
 /** What says where an env is deployed and probed, and as whom. */
@@ -95,7 +95,7 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
   const name = envFileName(env);
   const merged = ownEnv(name, { root: REPO_ROOT, ticket });
   const rootFile = resolve(REPO_ROOT, `.env.${name}`);
-  const own = existsSync(rootFile) ? { vars: readEnvFile(rootFile), passwords: readEnvFile(resolve(REPO_ROOT, `.env.playwright.${name}`)) } : merged;
+  const own = existsSync(rootFile) ? { vars: readEnvFile(rootFile), credentials: merged.credentials } : merged;
   const overridden = own === merged ? [] : DEPLOY_KEYS.filter((k) => merged.vars[k] !== undefined && merged.vars[k] !== own.vars[k]);
   if (overridden.length) console.warn(`[deploy] a QA_ENV_PATH file sets ${overridden.join(', ')} for ${name}, a project env: ignored — a deploy changes the stand the project's .env.${name} names. A ticket's own stand needs its own env name.`);
   const e = own.vars;
@@ -103,30 +103,16 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
   const repoSpec = e.DEPLOY_REPO || DEPLOY_REPO_DEFAULT;
   const [deployOwner, deployRepo] = repoSpec.includes('/') ? repoSpec.split('/') : [OWNER, repoSpec];
   const branch = e.DEPLOY_BRANCH || BRANCH_MAP[env] || env.replace(/_/g, '-');
-  // Per-env secret lookup, in config.js's own order: a `.env.local` pin in its promotion form FIRST
-  // (`ADMIN_PASSWORD_${TEST_ENV}` upper-cased), then the env's own password file. Without that file a
-  // machine that keeps env passwords only there fell through to a guessed password; without the promotion
-  // form a plain `vcptcore` stripped to "" in the suffix forms below (they only ever produce
-  // STABLE/REGRESSION) and fell through to the generic ADMIN_PASSWORD. Either way: wrong account →
-  // no admin token → --verify's live column reads "unavailable" instead of the version.
-  const envKey = env.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-  const suffix = env.replace(/^vcptcore[_-]?/, '').replace(/[^a-z0-9]/gi, '').toUpperCase();
-  // A master stand (PASSWORDS=master in its own files) signs every test account in with the master password
-  // (.env.playwright.master) — the loader's decision, so a global PASSWORDS never counts.
+  // The env's admin is the test-account store's (test-accounts.local.json, envs.<env> over defaults); a master stand
+  // (PASSWORDS=master in its own files) signs every test account in with the store's master password — the loader's
+  // decision, so a global PASSWORDS never counts. No guessed fallback: an empty password makes probeAdminToken skip
+  // the sign-in (the old 'Password1' was stale, and from a machine without secrets it locked the shared admin out).
   const master = usesMaster(layeredEnv(name, { root: REPO_ROOT, ticket })) ? readMaster({ root: REPO_ROOT }).value : null;
-  const password = passwordOverride
-    || master
-    || local[`ADMIN_PASSWORD_${envKey}`]
-    || own.passwords.ADMIN_PASSWORD
-    || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`] || local[`ADMIN_PASSWORD_${suffix}`]
-    // No guessed fallback: an empty password makes probeAdminToken skip the sign-in. The old 'Password1'
-    // was stale, and from a machine without secrets (CI) it locked the stand's shared admin out.
-    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
-  // A read-only service account's key, per env only (never a generic one: a key is bound to one stand).
-  // When present, the live readers use it instead of signing in as the stand's shared admin; an explicit
-  // --password still means "sign in with this", so it drops the key. Looked up where the password is: the
-  // .env.local pin, then the env's own password file.
-  const apiKey = passwordOverride ? '' : platformApiKey(env, local, own.passwords);
+  const password = passwordOverride || master || own.credentials.ADMIN_PASSWORD || '';
+  // A read-only service account's key, per env only (never a generic one: a key is bound to one stand). When present,
+  // the live readers use it instead of signing in as the stand's shared admin; an explicit --password still means
+  // "sign in with this", so it drops the key.
+  const apiKey = passwordOverride ? '' : platformApiKey(env, local);
   const backUrl = (e.BACK_URL || process.env.BACK_URL || '').replace(/\/$/, '');
   // Bound to the env's OWN BACK_URL only: an ambient process BACK_URL is another env's stand.
   const ownBackUrl = (e.BACK_URL || '').replace(/\/$/, '');
@@ -135,7 +121,7 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
     packagesPath: e.DEPLOY_PACKAGES_PATH || PACKAGES_PATH_DEFAULT,
     themePath: e.DEPLOY_THEME_PATH || THEME_PATH_DEFAULT,
     storybookPath: e.DEPLOY_STORYBOOK_PATH || STORYBOOK_PATH_DEFAULT,
-    backUrl, admin: e.ADMIN || process.env.ADMIN || 'admin', password,
+    backUrl, admin: own.credentials.ADMIN || e.ADMIN || 'admin', password,
     ...(apiKey && ownBackUrl ? { apiKey, apiKeyFor: ownBackUrl } : {}),
   };
 }

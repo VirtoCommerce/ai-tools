@@ -8,6 +8,396 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The `tsc` hook no longer runs after every Edit — `vc-fix` `0.19.2` — 2026-11-23
+
+### Removed
+
+- The `PostToolUse` `Edit` hook `npx tsc --noEmit --pretty 2>&1 | head -20`. A hook matcher names the tool, not
+  the file, so it ran synchronously after every Edit in every project the user opens, whatever the file type. In a
+  project with no local TypeScript, `npx` fetched the unrelated npm package `tsc` (a placeholder that prints "This
+  is not the tsc command you are looking for") and ran it. Where TypeScript is installed, it checked the root
+  `tsconfig.json`, which in vc-frontend lists no files, and never `.vue` files. The developer skills already run the
+  repository's own declared typecheck as an explicit gate. `HOOK_TSC_ERROR` in `/vc-self-check` stays: older installs still
+  produce it.
+
+## vc-secrets runs under Codex and Cursor without Claude Code — `vc-secrets` `0.2.0`, `vc-init` `0.8.4` — 2026-11-20
+
+### Fixed
+
+- **Cursor: the guard no longer refuses every tool call.** Cursor registers the plugin's `preToolUse` hook
+  fail-closed and reads an exit 0 with empty stdout as a failed hook. The 0.1.0 guard printed nothing when it
+  allowed a call, so with vc-secrets installed from Cursor's marketplace every shell command, file read and edit
+  was refused. `hooks/hooks-cursor.json` now passes
+  `--cursor`, and with it the guard writes `{"permission":"allow"}` or `{"permission":"deny", …}` with the reason
+  on stdout. Exit codes, and the output under Claude Code and Codex, are unchanged.
+- **Codex and Cursor no longer depend on Claude Code.** `install` put the shim in `~/.claude/plugins/data/`
+  whichever client ran it and printed Claude Code's `settings.json` entry; on a Cursor-only machine the shim then
+  answered `plugin vc-secrets@ai-tools is not installed`, since it did not know Cursor's plugin cache. `install`
+  now reads its client from its own location, installs into that client's data directory
+  (`~/.codex/plugins/data/…`, `~/.cursor/plugins/data/…`) and prints that client's instructions, so an uninstall in
+  Claude Code no longer removes the shim a Codex or Cursor entry names. A Cursor plugin in
+  `~/.cursor/plugins/local` gets no shim: its path carries no version, and `install` prints the launcher's own path.
+  A Codex or Cursor shim looks in its own client's cache first; `emit-config codex` names Codex's own shim and
+  warns while that file does not exist yet. For an entry that names `VC_SECRETS` (`claude-code`, `cursor`) the
+  verify step goes through the variable when it is set, and otherwise says the variable is missing and names the
+  client's own shim — for Cursor's entry from a `~/.cursor/plugins/local` copy, that copy's launcher.
+  Claude Code is unchanged: its shim still reads Claude Code's install registry first.
+- **Cursor's install directories are ordered by version.** Cursor names one after the marketplace's commit rather
+  than the plugin version, so two of them were ordered by chance; the shim now ranks them by the version in their
+  manifest, with modification time breaking a tie.
+- **vc-init: `/project-init` names the shim directory it reads back.** It ran vc-secrets' installer without
+  `--data-dir` and then looked for the shim in Claude Code's data directory. With vc-secrets 0.2.0 choosing the
+  directory by client, a vc-secrets found only in Codex's cache put the shim in Codex's, and a successful install
+  was reported as failed. `bridge/vc-secrets-path.mjs` now passes Claude Code's directory as `--data-dir`, which
+  vc-secrets 0.1.0 accepts too.
+
+### Changed
+
+- The shim's refusal of an install from another marketplace says when that marketplace is `vc-tools`, this one's
+  name before its 2026-09-30 rename. The README's Cursor setup documents the marketplace route, which works: Cursor
+  reads this repository's `.claude-plugin/marketplace.json`.
+- **Upgrading from 0.1.0** (README §Upgrading from 0.1.0): existing Cursor and Codex setups still name the 0.1.0
+  shim under `~/.claude/plugins/data/`, which does not search Cursor's cache, and `doctor` does not prompt. Under
+  Cursor, re-run `install` and change the `export VC_SECRETS` line; under Codex, re-run `install` and paste
+  `emit-config codex` again — the old entries keep working meanwhile.
+
+### Verified
+
+- In an isolated home: `install` from a Cursor cache copy, a Cursor `plugins/local` copy and a Codex cache copy each
+  put the shim (or, for `local`, named the launcher) in that client's own place and created no `~/.claude`; `doctor`
+  through each reached the launcher, and removing the cache copy made the same shim refuse. `cursor-agent`
+  2026.11.19 with 0.2.0 in its marketplace cache ran a shell command and a read and refused a declaration write
+  with the guard's reason; while the account's 0.1.0 install was in that cache it refused all three. The
+  vc-secrets suite passes.
+
+## The plugins move to the test-account store — `vc-init` `0.8.0`, `vc-fix` `0.19.0`, `vc-test` `0.19.0` — 2026-11-17
+
+### Changed
+
+- **`/project-init` (vc-init) keeps a client's test-account logins and passwords in `test-accounts.local.json` by
+  default.** `scaffold-secrets` scaffolds `envs.<env>.accounts` (ADMIN, USER), `scaffold-env` no longer writes logins
+  into `.env.<env>`, `write-env` and `--add-user` write logins and passwords to the store. vc-secrets stays an
+  optional variant per role (`--admin-passwords` / `--user-passwords vc-secrets`); `env-local` is an alias of
+  `store`. Tokens stay in vc-secrets; a person's own tracker login never goes in the store.
+- **Client lanes read the store in memory.** `gen-mcp` writes each Playwright lane as
+  `npx -p <pin> node ${VC_RUN} --playwright <pin> …` (no `--secrets` file); the bridge hands the lane every env's
+  passwords as `NAME_<ENV>` and the lane's env's as the bare `NAME` (both work), plus `MASTER_PASSWORD`; a
+  vc-secrets value still wins. `sync-browser-secrets` is a no-op unless `--legacy`.
+- **Migration for existing clients:** `/project-init --check` Step M runs `creds-to-store.mjs` first — it moves the
+  `.env.local` passwords and `.env.<env>` logins into the store, proves every env resolves each name as before,
+  backs up, cleans the files (restoring them if the second proof fails) and deletes `.env.playwright.local`.
+- **vc-fix / vc-test loaders** carry the store layer (their own copies of `test-accounts.mjs`), with the old
+  `.env.playwright.<env>` / `.env.playwright.master` read as a fallback below it, so an unmigrated client keeps
+  working. Secret scrubbers (vc-test ticket-context, the knowledge store, vc-init runner/HAR redaction) and the
+  self-check deny list (lock-step with `.claude/`) read the store's values.
+
+## Test-account credentials in one file — `test-accounts.local.json` — `vc-init` `0.7.1` — 2026-11-17
+
+### Changed
+
+- **Every test account's login and password, for every env, now lives in ONE gitignored file,
+  `test-accounts.local.json`** (`scripts/lib/test-accounts.mjs`; shape `templates/test-accounts.example.json`;
+  design `docs/superpowers/specs/2026-11-17-test-accounts-store-design.md`). Before, they were spread over the
+  tracked `.env.<env>` / `.env.defaults` (logins), `.env.local` (bare and `_<ENV>` passwords), `.env.playwright.<env>`,
+  `.env.playwright.master`, two generated `--secrets` files and a `'Password1!'` fallback in about 25 seeder places,
+  and no seeder wrote down the password it set — so every seed and every env switch ended with lines added to
+  `.env.local` by hand and a `secrets:sync`. The loader (`scripts/lib/env-layers.mjs`) layers the store over every
+  `.env` file and names a credential still left in one. Tokens and API keys stay out of it (vc-secrets).
+- **The Playwright lanes read the store in memory** (`scripts/lanes/playwright-lane.mjs`, through vc-init's
+  `startPlaywrightMcp`): no `--secrets` file, no `npm run secrets:sync[:all]` / `secrets:check[:all]` (removed). A
+  lane holds every non-production env's passwords as `NAME_<ENV>` plus `MASTER_PASSWORD`, so an env switch needs no
+  reconnect; a manifest (`.vc-fix/lanes/`, names + salted fingerprints) lets the secret-token hook, the pre-flight
+  (`secrets:lanes`) and `env:use` say when the store changed under a running lane.
+- **Seeders record what they set.** Each account a seeder creates, or sets the password of, goes into the store
+  with its login (`envs.<env>.accounts`, login and password side by side) via `accountSet`; a password variable the env has no value for gets a generated,
+  policy-compliant password, recorded with the account — never a shared literal. A generated value is never forced
+  onto an existing account.
+- **`npm run creds:migrate`** moves the old files into the store and proves, for every env and run ticket, that every
+  credential variable resolves exactly as before; only then does it back up and clean the old files and point
+  `.mcp.json`'s lanes at the launcher. **`npm run creds:check`** shows the store, the gaps per env, leftovers and stale
+  lanes — names only.
+- `vc-init` `0.7.1`: `bridge/playwright-mcp.mjs` exports `startPlaywrightMcp` (unchanged behaviour for the vc-secrets
+  lanes). The plugins' own loaders and `/project-init` move to the store in a follow-up.
+
+## The stray-screenshot sweep leaves git-tracked files alone — `vc-fix` `0.18.11` — 2026-11-17
+
+### Fixed
+
+- `hooks/sweep-stray-screenshots.mjs` (Stop / SubagentStop; the project mirror in `.claude/hooks/` changed the same
+  way) moved every loose `*.png` / `*.jpg` / `*.jpeg` / `*.har` in the project root, assuming the root holds no
+  images. The plugin runs the hook in every project the user opens, and in a vc-frontend checkout it moved the
+  committed README image `demo.jpg` into `reports/_stray-screenshots/`, leaving it deleted in `git status`. The hook
+  now skips every file `git ls-files` lists, and sweeps nothing when the root is not a git work tree or git fails.
+  It passes the names to git in batches of at most 8,000 characters: in one call, 1,500 loose files exceeded the
+  Windows command-line limit, git failed, and nothing was ever swept again.
+## `visual:snap` waits for a visible story root — `vc-frontend` `0.3.2` — 2026-11-17
+
+### Fixed
+
+- `visual:snap` (`plugins/vc-frontend/visual/snap.mjs`) waited for `#storybook-root > *`, the root's FIRST child, to
+  become visible. A story whose first child is an empty element (VcPopover's `#popover-host`) never got there, so
+  every date-picker story timed out as `unrendered` — 43 stories × 2 viewports on vc-frontend, on every
+  build. It now waits for the first VISIBLE child (`#storybook-root > *:visible`). A story that renders nothing at all
+  (VcPagination `one-page`, ReportingPanel `no-data`) still reports `unrendered`.
+
+---
+
+## Single strategy-driven `/qa-test` — `vc-test` `0.18.2`, `vc-fix` `0.18.10` — 2026-11-13
+
+Design: [`docs/superpowers/specs/2026-11-13-qa-test-single-design.md`](docs/superpowers/specs/2026-11-13-qa-test-single-design.md).
+
+### Removed
+
+- **BREAKING:** `/qa-test-fast` is gone, and `/qa-test` no longer has a FAST and a FULL path. One command,
+  `/qa-test <TICKET> [<env>] [--yes] [--dry-run]`, runs context → an approved `/vc-test:qa-test-strategy` → only the
+  artifacts the strategy marks `RUN` → close-out. **Migration:** call `/qa-test <TICKET>` where you called
+  `/qa-test-fast <TICKET>`. A feature name, `PR #N` or several keys now stop with one
+  line; `--iterate`, `--epic`, `--visual`, `--contract`, `--coverage`, `--axes` and `--release-regression` print one
+  line saying the flag is gone and the run continues without it (the strategy's artifact rows decide what runs).
+- `vc-test` is now required by `/qa-test` (≥ 0.17.1 at its Stage 0); the files only the two-path flow read are deleted
+  from `.claude/skills/qa-test/`.
+
+### Changed
+
+- `vc-test` `0.18.2`: text and comments name the single `/qa-test` (`/qa-test-fast`, "FAST/FULL" and the deleted
+  `.claude/skills/qa-test/*` files are no longer cited; the visual axis is decided by the strategy's `Visual lane`
+  row, not by a flag); `lib/route.mjs`'s `technical-change` `next` reads `/qa-test <KEY> (scoped regression), then
+  /qa-test-lifecycle <KEY> (case sync)`; `ticket-context` asks the repository's preflight for the `ticket` profile
+  (`ticket-fast` stays accepted there as an alias); the knowledge copies are back in step with their sources.
+- `vc-fix` `0.18.10`: `qa-report`, `qa-bug`, `qa-verify-fix`, `tracker-ops.md`, `run-env.md` and the agents README
+  name the single `/qa-test` (a re-test round amends only its own delta comment, never a published verdict).
+- `/qa-test` writes `candidate_cases` and `stale_cases` into the run's `summary.json`; `qa-suite-sync` (reached through
+  `/qa-test-lifecycle <TICKET>`) reads both as sync targets and gaps to author.
+
+## /vc-test:qa-goal decides the verdict by a person-confirmed fix priority — `vc-test` `0.18.1` — 2026-11-13
+
+### Changed
+
+- An in-scope finding now decides the qa-goal verdict by its **fix priority**, not by its severity alone, as
+  `qa-test-strategy`'s `verdict-rules.md` does: FAIL on an in-scope P0/P1 (fix now), PASS WITH NOTES on P2/P3 (fix later),
+  PASS with no in-scope finding. 0.18.0 read Critical/High as P0/P1, though `risk-prioritization-framework.md` §2 says a
+  Critical is not always P0.
+- The run proposes each in-scope finding's `fixPriority` and `fixPriorityReason` at triage (step 6) from that framework; a
+  person confirms or changes them in one question, recorded as `fixPriorityBy`. `goal.mjs check --before verdict` fails an
+  in-scope finding without all three. `finding add` refuses `fixPriorityBy`, and a `finding set` that changes the severity,
+  scope or title drops it, so the person is asked again. A judge FIX on a fix priority goes back to the person.
+- A finding confirmed P0/P1 is reproduced twice whatever its severity, and S3 proposes a bug for every in-scope finding,
+  with its fix priority.
+- A run started on 0.18.0 and resumed on 0.18.1 asks the fix-priority question before its verdict (`resume.md`).
+
+## /vc-test:qa-goal — goal-driven testing with an independent judge — `vc-test` `0.18.0` — 2026-11-13
+
+### Added
+
+- `/vc-test:qa-goal <KEY> [<env>]` (preview): for a ticket a fixed pipeline cannot test — no acceptance criteria, a change in
+  a component the ticket does not link, research before any test. A person agrees a goal and a checkable done-criterion (S1),
+  the run researches, derives the criteria with their sources plus a strategy (S2, one approval), tests with re-planning,
+  drafts the verdict from the journal, has `vc-test:goal-judge` re-derive it (two rounds at most), closes, and proposes each
+  outward write on its own (S3). Nothing goes out by itself and a status is never changed.
+- `lib/goal.mjs` (the journal `goal.json` and its only writer, with stage gates; scrubs every stored string and refuses a
+  token shape), `lib/oauth-code.mjs` (an authorization-code + PKCE sign-in through a Playwright lane in which the agent never
+  holds a secret), `agents/goal-judge.md`, and the skill `qa-goal` with its contract, research-loop, derived-criteria and
+  OAuth-recipe files.
+
+### Changed
+
+- `/vc-test:qa-ticket` prints a one-line hint, and continues, when the bundle has no ACs or names a component no PR touches.
+
+## Lane HAR files keep no sign-in password — `vc-init` `0.7.0` — 2026-11-13
+
+### Fixed
+
+- The Playwright lanes' `recordHar` (`content: "embed"`) wrote the sign-in request body with the typed password in plain
+  text: the Admin SPA's `POST /api/platform/security/login` (JSON `password`) and the storefront's `POST /connect/token`
+  (form `password=`). The lane masks the value in its responses, not on disk. `bridge/har-scrub.mjs` now masks every
+  password-named body field (JSON at any depth, form text and `params[]`, multipart) and every known password value
+  (6+ characters, in each spelling the bridge redactor knows and its form-body spelling) anywhere in the HAR. A record
+  with nothing to mask stays byte for byte; one with a masked field is written back as compact JSON. A HAR still
+  being written is left alone. Session tokens and cookies (`Authorization` headers, the `/connect/token` response)
+  stay in the HAR: it is still not a file to share.
+- A lane run through the bridge (`bridge/playwright-mcp.mjs`) scrubs its HAR directory in-process with the values it
+  holds: at start, after every HAR write (`browser_close`) and at exit.
+- A lane started straight from `.mcp.json` (`npx @playwright/mcp … --secrets <file>`) is covered by the new
+  `hooks/scrub-har.mjs` (`SessionStart`, and `PostToolUse` on `mcp__playwright-*__browser_close`), with values from the
+  project's `.env.playwright.*` and `.env.local`. Only a file with something to mask is rewritten, and not when it changed
+  since it was read (checked again before every rename retry). A `.har-scrub.json` stamp (size, mtime, a tag per value)
+  skips a file until it changes or a scrubber knows a value it was not scrubbed with. The tag is an HMAC keyed with
+  `~/.claude/plugins/data/vc-init-ai-tools/har-scrub.key`, never stored beside the HAR, so a stamp copied with a HAR
+  cannot be used to test a guessed password.
+
+## vc-test installs its own dependencies at session start — `vc-test` `0.17.1`, `vc-fix` `0.18.9`, `vc-init` `0.6.2` — 2026-11-13
+
+### Fixed
+
+- `vc-test` ships a `SessionStart` hook (`hooks/ensure-deps.mjs`, the same one `vc-fix` and `vc-init` carry) that runs
+  `npm install --omit=dev` in the plugin folder when a dependency from its `package.json` is missing. A marketplace
+  install or `/plugin update` creates a fresh cache folder without `node_modules`, so `/vc-test:ticket-context`
+  failed with `ERR_MODULE_NOT_FOUND: dotenv` until someone ran `npm install` there by hand. Fail-soft: a failed
+  install prints the manual command and never blocks the session.
+- `ensure-deps.mjs` in `vc-test`, `vc-fix` and `vc-init` no longer passes `--prefix <plugin root>` to npm: it already runs
+  there, and on Windows (`shell: true`) the unquoted path split at a space (a profile such as `C:\Users\John Smith`),
+  so the install failed and the plugin kept failing with `ERR_MODULE_NOT_FOUND`.
+
+## Every strategy risk names the account it is checked as — `vc-test` `0.17.0`, `vc-fix` `0.18.8` — 2026-11-13
+
+### Added
+
+- Floor **F13** (`floors.mjs`): the change checks access — a permission in the PR's settings entries, a role or permission
+  guard in the diff surface, or a change-map hotspot in zone `access`. Fired ⇒ a risk with `floor:F13` checked as
+  `deny:<permission> <KEY>`, the member without that permission.
+- Gate clause **15** (`check-strategy.mjs`), every strategy: the Approach cell is `Lane · agent · account`; the account is a
+  test-user KEY, `guest`, `deny:<permission> <KEY|P-n>` or `P-n` (several joined by `+`), and every `P-n` is a project risk.
+  A role-gated page opened as the wrong account shows its empty state, which reads as a PASS.
+
+### Changed
+
+- Scenario agents sign in as the account of the risk they cite (`briefs/scenario-run.md`); the visual lane takes the same
+  account (`/vc-test:qa-ticket`). A round ≥ 2 that carries a round-1 Approach row fails 15a until the account is added.
+- The checklist built from a strategy opens each item's Data cell with `as <account>` (`qa-checklist` `from-model.md`, here and in
+  `vc-fix`), and the runners act as it: `/qa-test-fast` checklist lanes instead of their pool user, vc-test's AC run on the API.
+
+## A project keeps its own personas, and accepts the ones a run proposes — `vc-test` `0.16.0` — 2026-11-13
+
+### Added
+
+- `lib/personas.mjs` keeps the project's own personas file (`<store>/personas.md` in its knowledge store:
+  archetypes, segments, persona → account per stand): `--show`, `--init`, `--add --section … --row-file <file>`
+  (`--replace` to change a row of the same name; a duplicate is refused otherwise). Every write goes through
+  `knowledge-store.mjs` — the project store only, scrubbed of the project's secret values, never the platform store.
+- `knowledge-store.mjs` has a `personas` kind; its committed router test checks a client's personas file stays in
+  its own store.
+- `/vc-test:init` step 6a offers to start the file. When the visual lane returns proposed personas, the dispatcher
+  lists them and adds the ones the operator accepts (`skills/qa-design/visual-axis.md` §3); headless, it adds none.
+- A row is passed in a file (`--row-file`), never on the command line: its text comes from a ticket, and a quote in
+  it would break or inject into a shell command. A cell may hold `\|`; a section is found by its heading's first
+  word (`## Accounts — a note`); a table header with no `|---|` gets one; a file-system error exits 1 with JSON.
+  The offer to add proposed personas is in `/vc-test:qa-ticket` human point 2 and `/vc-test:qa-design` Step 5.
+  A heading in the singular (`## Archetype`) is read; only a section's first table holds its rows; the row file
+  is deleted after use.
+
+## The visual lane works the same on a client fork as on vc-frontend — `vc-test` `0.15.0` — 2026-11-12
+
+### Changed
+
+- **`ui-ux-expert` is thin and general.** The agent body keeps only role, boot, hard rules, procedure and return
+  shape (an agent definition is paid on every dispatch; `wc -c` shows the size). The invariants cheat sheet, design-system notes, severity
+  table, escalation triggers, action/observation space and the `/qa-storybook` vs `/qa-accessibility` boundary move
+  verbatim to `skills/qa-design/lane-reference.md`.
+- **A FAIL goes back to the dispatcher.** The agent files a bug only when its brief says so; it used to say "file
+  bug" while reporting to its dispatcher, and `visual-axis.md` §3 routes findings through triage.
+- Removed the line that made every EU-reachable WCAG violation P0/P1; it contradicted the severity table, which
+  already grades A11y Critical P0 for legal risk.
+
+### Added
+
+- `skills/qa-design/project-facts.md`: project type (`platform` or `client`, from `project-profile.json`; no
+  profile ⇒ `client`) and one table of every value that differs per project — storefront repo and code host,
+  source layout, component names, Storybook, gated presets, tokens, measurement scales, the critical-UI matrix,
+  example test data, the `kb`, the tracker — with vc-frontend's value, the client source and the fallback. The
+  agent and the skill files cite it instead of naming vc-frontend's value.
+- **`vs. USER` — usability tested as a real user.** New `skills/qa-design/ux-task-walkthrough.md`: on a storefront
+  page or flow, the agent does 1–3 user tasks (from the brief, else the ACs, else the page's primary job) as the
+  persona they belong to, from the user's own entry point, using only what is on screen. It is judged by whether
+  the task gets done: a task that cannot be completed is a `FAIL` that triages like a `BL-UI` FAIL; friction
+  (missing feedback, unclear labels, lost input, unconfirmed deletes, extra steps, dead ends) is `ADVISORY` at its
+  real severity. Writes run to the end only on a stand declared writable and only where the run keeps a ledger
+  (every created entity recorded, so teardown removes it); elsewhere the committing step is `NOT RUN`. A FAST path
+  runs one task as its own actor; personas and pairs are FULL-path. `visual.axes.user` and `visual.ux_findings[]`
+  are declared in `.claude/templates/qa-test-summary.schema.json`. `visual-axis.md` schedules it for page
+  and flow surfaces and the brief carries the tasks. Think-aloud, five-second and first-click tests are marked as
+  human-session methods the agent recommends and never runs; a UX finding is no longer "must be filed" by the
+  agent.
+- **Persona tests, derived from the ticket.** New `skills/qa-design/personas.md`: a persona is an archetype (how
+  the person behaves — first-time guest, returning customer, B2B buyer, approver, restricted member, acting on
+  behalf, mobile, keyboard / screen reader, other locale) plus the segments the feature splits users by, read from
+  the ACs, the diff (role and permission checks, branches on tier / currency / org / locale) and the feature's
+  settings. Every persona names its source. Segments run as pairs that must diverge (VIP vs zero balance, with vs
+  without a permission, own vs another org); a pair that behaves the same is a `FAIL` when an AC states the
+  difference. The account is the stand key carrying the segment, checked live before the task. A contrast
+  archetype by the change's risk is the fallback when the ticket names no segment. A project keeps its own
+  archetypes, segment vocabulary and persona → account map in its knowledge store (`<store>/personas.md`,
+  `test.knowledgeStore`, never the public kb); they take precedence over the plugin's catalog, and a segment the
+  ticket shows that the file lacks comes back as a proposed persona for a person to add. Capped at three personas per
+  task, six runs in all, and the runs are compared: a restricted member reaching data it must not see is a
+  `FAIL` reported as access control; a dead end instead of a clear denial, or one persona needing far more steps,
+  is `ADVISORY`. A persona with no account on the stand is `NOT RUN`, never signed in as someone else.
+- Storybook story discovery starts from `{STORYBOOK_URL}/index.json`, which a fork's Storybook serves too, before
+  vc-frontend's title convention.
+
+### Fixed
+
+- **A client install no longer reads or writes the public `kb`.** The agent's kb steps run only on `platform` and
+  return `kb: not read (client install)` otherwise — the rule `lib/knowledge-store.mjs` and
+  `ticket-context/known-ground.md` already hold. On `platform`, the kb tools are loaded with `ToolSearch` before
+  the first call, and the write step cites the capture contract.
+- Source search for a component's usages, file and story was hard-wired to `VirtoCommerce/vc-frontend`; on a
+  client project it now searches the fork named in the profile (`repos.client[]`, `kind: "frontend"`), and on
+  Azure Repos greps a local checkout or says the step did not run.
+- "Gate a11y on Coffee + Red" was stated six times; it is one rule in `a11y-audit.md` §Theme scope — the brief's
+  presets, else Coffee + Red where the fork still ships them, else its default theme — and the report names the
+  presets it gated.
+- The measurement scales the plugin ships (`SPACING_GRID`, UI-kit sizes) are vc-frontend's: on a client fork a
+  finding that depends on one is WARN until checked against the fork's own config, instead of a phantom FAIL.
+- The off-matrix "consider adding to `critical-ui-scope.md`" suggestion is not made on a client project — that
+  file ships with the plugin.
+- `BL-CAT-001` is named as not shipped in `knowledge/bl-ui.md`; UI invariants cover every `BL-UI-*` / `BL-A11Y-*`;
+  `BL-UI-006` keeps its 24–43 px WARN band; the `SKIPPED` label matches `claude-design-verification.md` §1.
+
+## A storefront fix typechecks for real and follows the repo's own agent rules — `vc-fix` `0.18.7`, `vc-init` `0.6.1` — 2026-11-12
+
+### Fixed
+
+- `/qa-fix` Gate 3 typechecked a `vc-frontend` fix with `yarn typecheck || npx vue-tsc --noEmit`. vc-frontend has
+  no `typecheck` script, and its root `tsconfig.json` is `"files": []` plus project references, so the fallback
+  checked zero files and exited 0 — every storefront fix passed its typecheck without one. The default
+  (`REPO_PROFILES.frontend`, and vc-init's `kindToolchain` that seeds a client storefront's profile) is now
+  `yarn validate:types || npx vue-tsc --build --force`; `/vue-fix`, `fullstack-frontend`, the PR-body checklist and
+  the architecture notes follow. A client profile written before this keeps the old command until
+  `/project-init` re-derives it.
+- The notes said a new ESLint error fails vc-frontend CI. It does not: ESLint runs only pre-commit there, so the
+  local `lint` is the only place it shows.
+
+### Added
+
+- `skills/vue-fix/repo-own-rules.md`: `fullstack-frontend` reads the checkout's own `AGENTS.md`, `CLAUDE.md` and
+  the `.claude/rules/*.md` matching its files before the repro, and runs the checks they name. They are read in
+  the checkout, never copied here. Their edit-guard hook does not run in `.fix-workspace/`, so it is kept by hand,
+  and a fix that needs new public UI-kit API is a hand-off. `frontend-reviewer` checklist item 10 checks it.
+
+### Changed
+
+- **Tier A:** G2 always asked for a NEW test and G3 forbade touching any test file
+  (`git diff --name-only`), so a fix agent could not add a case to the subject's existing test file and
+  wrote a second, duplicate one beside it, with the repo's own setup copied in. It also committed a
+  test for markup / style / copy changes that vc-frontend's own rules say need none, and named files
+  `*.spec.ts` where that repo uses `*.test.ts`. New `quality-gates.md` §G2 placement (both copies): the
+  red→green proof stays mandatory, but the repro is a **new case in the subject's existing test file**
+  when it has one (added lines only, checked by `git diff --numstat`: 0 deleted lines), a new file only
+  when there is none and the change is logic, and an **uncommitted scratch test** with its result in the
+  PR body when the change has no logic and the repo's rules say it needs no test. Both developers, both
+  reviewers, `/vue-unit-test`, `/dotnet-unit-test`, `shared-instructions.md` rule 2, `when-to-write-a-test.md`
+  RULE 4 and the root `CLAUDE.md` exception follow.
+
+---
+
+## `run.sh` takes its knobs from a file, and `TRACE=1` finds a published platform — `vc-perf` `0.5.0` — 2026-11-12
+
+### Added
+
+- `run.sh --env-file <path>` and `--k6 <path>`. Since Claude Code 2.1.278, variables on the `run.sh` command
+  (`X=1 run.sh`, `export X; run.sh`) put it back in the sandbox, where k6 cannot reach the backend. The file is
+  parsed, never sourced; names `run.sh` does not use reach k6 only. Details: `loadtests/README.md`.
+
+### Fixed
+
+- `TRACE=1` silently skipped the capture on a platform started as `dotnet VirtoCommerce.Platform.Web.dll`.
+
+### Changed
+
+- Agent-facing recipes pass knobs through `--env-file`.
+
+---
+
 ## A host-governed project asks where the agent may create test data — `vc-init` `0.6.0`, `vc-fix` `0.18.6` — 2026-11-11
 
 ### Changed

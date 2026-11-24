@@ -56,13 +56,17 @@ import {
   customerRoleFor, isAuthorshipRow, AUTHORSHIP_MATRIX, ROLE_REP,
 } from './sales-rep-orders-specs.mjs';
 import { requiredProductSlots } from './sales-rep-stats-specs.mjs';
-import { hasStaleLockout, setLockoutVerified, __setApi } from '../../lib/user-provision.mjs';
+import { hasStaleLockout, setLockoutVerified, __setApi, passwordFor, passwordVarFor, isGeneratedPassword, accountSet } from '../../lib/user-provision.mjs';
 
 const OWNER_NAME = 'AGENT-TEST-SR-Owner-Acme';
 const OWNER_PHONE = '+1-206-555-0142';
-const REP_PASSWORD = process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD || 'Password1!';
+// The reps' password: SR_REP_PASSWORD, else TEST_USER_PASSWORD (the store's, for this env); with neither, one is
+// generated, and the store records it with the rep's login once a rep is created or reset with it (accountSet).
+const REP_PASSWORD = passwordFor('SR_REP_PASSWORD', 'TEST_USER_PASSWORD');
+const REP_PASSWORD_VAR = passwordVarFor('SR_REP_PASSWORD', 'TEST_USER_PASSWORD');
 // Restricted admin (Manager) users for the 092 admin-suite permission-negative cases.
-const ADMIN_USER_PASSWORD = process.env.SR_ADMIN_PASSWORD || REP_PASSWORD;
+const ADMIN_USER_PASSWORD = passwordFor('SR_ADMIN_PASSWORD', 'SR_REP_PASSWORD', 'TEST_USER_PASSWORD');
+const ADMIN_USER_PASSWORD_VAR = passwordVarFor('SR_ADMIN_PASSWORD', 'SR_REP_PASSWORD', 'TEST_USER_PASSWORD');
 const WRITEBACK_ONLY = process.argv.includes('--writeback-only');
 
 // ---- helpers ---------------------------------------------------------------
@@ -311,7 +315,12 @@ async function ensureRep(row, orgs, roleId) {
     // runner using @td() + the registry password 400s invalid_grant. Force-set the password
     // to the current REP_PASSWORD on every reseed (idempotent; scoped to these AGENT-TEST-SR
     // accounts). A newly-created rep already gets REP_PASSWORD at create, so only reuse needs it.
-    await resetSecurityPassword(api, row.email, REP_PASSWORD);
+    // Never with a GENERATED password (the store has neither var): the team may hold the rep's real one.
+    if (isGeneratedPassword(REP_PASSWORD)) log(`  ⚠ ${row.email}: password NOT reset — neither SR_REP_PASSWORD nor TEST_USER_PASSWORD has a value for this env`);
+    else {
+      await resetSecurityPassword(api, row.email, REP_PASSWORD);
+      accountSet(row.email, REP_PASSWORD, REP_PASSWORD_VAR);
+    }
   } else {
     const { orgKeys, pagingCount } = parseServedOrgs(row.served_orgs);
     const served = pagingCount
@@ -324,6 +333,7 @@ async function ensureRep(row, orgs, roleId) {
     };
     rep = await api('POST', '/api/sales-rep', body);
     log(`Rep created: ${row.rep_key} (${rep?.id}) serving ${served.length} org(s)`);
+    accountSet(row.email, REP_PASSWORD, REP_PASSWORD_VAR);
   }
   // Confirm the account email so the rep can sign in to the storefront UI (idempotent, all reps).
   await confirmRepEmail(row.email);
@@ -384,6 +394,7 @@ async function ensureAdminUser(row) {
   const res = await api('POST', '/api/platform/security/users/create', body, { expectStatus: [200, 201] });
   if (res && res.succeeded === false) throw new Error(`user create failed for ${row.email}: ${JSON.stringify(res.errors || res)}`);
   log(`Admin user created: ${row.user_key} (${row.email}) role=${row.role_name}`);
+  accountSet(row.email, ADMIN_USER_PASSWORD, ADMIN_USER_PASSWORD_VAR);
   const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(row.email)}`, null, { expectStatus: [200, 404] });
   return u?.id || '';
 }

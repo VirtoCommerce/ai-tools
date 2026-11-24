@@ -75,7 +75,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 | `/vc-self-check` | Self-diagnostics (Tier B): read this session's passive telemetry (`hooks/session-telemetry.mjs` → `.vc-fix/diagnostics/`) + transcript + the `knowledge/diagnostics/skill-expectations.md` oracle → per-skill verdict + severity + proposed fix → LOCAL `DIAG-*.md`. `deliver` sub-step contributes a scrubbed, consent-gated PR/issue to VirtoCommerce. Never modifies the install; model-invocable (no `disable-model-invocation`) so the end-of-turn tail-trigger can auto-run it silently; recursion blocked by span-drop + `selfCheckSeen` + per-signature dedup |
 | `/vc-feedback` | Attach an explicit 👍/👎 verdict (with optional note) to the current session's telemetry trace — the main detector of SILENT failures (a task done wrong with no error). Local + silent: recorded by the `UserPromptSubmit` hook; nothing is sent until the separate consent-gated `deliver` step |
 
-**Dropped from the full `vc-qa` crew:** `/qa-smoke`, `/qa-test`, `/qa-test-fast`, `/qa-regression`,
+**Dropped from the full `vc-qa` crew:** `/qa-smoke`, `/qa-test`, `/qa-regression`,
 `/qa-triage-results`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-domain-map`, `/qa-review-oracles`,
 `/qa-seed-data`, `/qa-design`, `/qa-exploratory`, `/qa-status`, `/qa-sitemap`, `/qa-teams-watch`,
 `/qa-onboarding`, `/qa-deploy-pr`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-bundle-check`, `/qa-perf-measure`,
@@ -177,4 +177,4 @@ returns thin results or for non-VC libraries. Full tool list and routing rules i
 - Claude Code with subagent/Task tool support
 - MCP servers configured in `.mcp.json` (Playwright chrome/firefox/edge, github)
 - User/IDE-level MCPs configured: Chrome DevTools, Azure, Atlassian, **VirtoOZ**
-- `.env.<env>` (URLs) + `.env.local` (test-user passwords only), written by `/project-init` (vc-init); GitHub / Azure DevOps / Jira tokens live in vc-secrets and reach a process only through the bridge `node "$VC_RUN" <tool> …`; validate with `/qa-env-check`
+- `.env.<env>` (URLs) + `test-accounts.local.json` (test-account logins + passwords; an unmigrated project's `.env.local` / vc-secrets still work), written by `/project-init` (vc-init); GitHub / Azure DevOps / Jira tokens live in vc-secrets and reach a process only through the bridge `node "$VC_RUN" <tool> …`; validate with `/qa-env-check`

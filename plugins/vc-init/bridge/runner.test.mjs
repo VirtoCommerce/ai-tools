@@ -276,3 +276,13 @@ test("plugin mode, outer: an unlisted env is refused before vc-secrets starts", 
   assert.equal(r.status, 64, r.stderr);
   assert.doesNotMatch(r.stdout, /vc-secrets started/);
 });
+
+test("the runner's output is redacted for the test-account store's passwords too, never its logins", async () => {
+  const { runnerFilePasswords } = await import("./run.mjs");
+  const { writeStore } = await import("../scripts/lib/test-accounts.mjs");
+  const root = mkdtempSync(join(tmpdir(), "runner-store-"));
+  writeStore(root, { shared: { DEFAULT_TEST_PASSWORD: "Shared-1aA!" }, accounts: {}, envs: { qa: { shared: {}, accounts: { USER: { login: "u@qa.test", password: "Qa-user-1aA!" } } } } });
+  const values = runnerFilePasswords(root);
+  assert.ok(values.includes("Shared-1aA!") && values.includes("Qa-user-1aA!"));
+  assert.ok(!values.includes("u@qa.test"));
+});

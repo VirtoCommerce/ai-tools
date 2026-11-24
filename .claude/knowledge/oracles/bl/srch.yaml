@@ -72,8 +72,8 @@ rules:
     violation_signal: New product not findable after 120s; deleted product still in search results; updated fields not reflected in search; ghost/phantom results.
     status: ACTIVE
     verified:
-      date: 2026-10-29
-      by: REG-2026-10-28-1915
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-SRCH-004
     title: Search respects store and catalog scope
     rule: Search results are scoped to the current store's virtual catalog. Products from other stores or unlinked physical catalogs must never appear in search results. The search API requires `storeId` context — omitting it is an API contract violation.
@@ -109,6 +109,9 @@ rules:
       ref: Search for `<script>alert(1)</script>` → no XSS, shows "No results." Search for `'; DROP TABLE--` → no error, shows "No results." Search for product with `&` in name → found correctly.
     violation_signal: 500 error on special characters; XSS executes; search syntax injection; product with special chars in name not findable.
     status: ACTIVE
+    verified:
+      date: 2026-11-19
+      by: REG-2026-11-19-1857
   - id: BL-SRCH-006
     title: A listing walked page by page returns each item exactly once
     priority: P1-data
@@ -129,6 +132,9 @@ rules:
       steps: Page through a listing longer than one page to its end; count the items and compare with the total shown; no product appears twice.
     violation_signal: A product appears on two pages; the last page is empty or missing; the total shown differs from the items the pages return; a middle page is short.
     status: ACTIVE
+    verified:
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-SRCH-007
     title: A sort reorders a listing by the price it shows, without changing which items it holds
     priority: P1-data

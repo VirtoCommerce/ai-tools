@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url';
 import { canonicalStand } from './canonical.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-/** A per-env profile; `.env.local`, `.env.defaults`, `.env.playwright.local` and backups are not stands. */
+/** A per-env profile; `.env.local`, `.env.defaults` and backups are not stands. */
 const PROFILE = /^\.env\.([a-z0-9_]+)$/i;
 const NOT_A_STAND = new Set(['local', 'defaults', 'backup']);
 

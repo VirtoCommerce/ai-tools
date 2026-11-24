@@ -39,6 +39,7 @@
 - **Docs:** vc-docs platform/user-guide/docs/catalog/add-new-catalog.md — changes to items in a physical catalog are automatically reflected in all associated virtual catalogs
 - **Source:** VP-8460 (Done) — a product read through a virtual-catalog store returned price 0 / stock 0 while the physical product had values; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-090 failed in REG-2026-11-18-1157
 
 ### BL-UI-001: Layout stability on initial render `[P2-ux]`
 - **Rule:** After first paint, visible content MUST NOT shift as late assets resolve (images, web fonts, async data, skeleton → content swap). Cumulative Layout Shift (CLS) — measured via `PerformanceObserver({ type: 'layout-shift' })` summing `entry.value` where `entry.hadRecentInput === false` — must be ≤ 0.1 on initial render. Image elements without intrinsic dimensions (`width`/`height` attrs or CSS `aspect-ratio`) are the most common offender.
@@ -123,7 +124,7 @@
 - **Source:** `client-app/ui-kit/composables/useFocusManagement.ts` — the focusable-elements selector and the Tab-cycle keydown handler that wraps focus at the first/last element when `trapFocus` is enabled; wired into `client-app/ui-kit/components/molecules/dialog/vc-dialog.vue`.
 - **Source:** VCST-5671 (Done) — overflow popover was not keyboard reachable and focus did not move into it; fixed
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] SR-CO-051 failed in REG-2026-10-06-1457
+- **Lifecycle:** SUSPECT — [bug] VCST-6929 — A11Y-KB-007 failed in REG-2026-11-18-1715 (pager Tab order does not follow visual order); also [case] SR-CO-051 failed in REG-2026-10-06-1457
 
 ### BL-A11Y-002: Accessible naming and label association `[P1-data]`
 - **Rule:** Every interactive control MUST expose a non-empty, contextual accessible name to assistive technology (WCAG 4.1.2), distinct from a generic element-type label. Every visible field label MUST be programmatically associated with its input via `<label for>`/`aria-labelledby`/`aria-label` (WCAG 1.3.1). Every informative image's `alt` describes its content/purpose; a purely decorative image carries `alt=""` (WCAG 1.1.1).

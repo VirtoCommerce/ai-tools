@@ -2,21 +2,21 @@
 "B2C-VAR-001","Product Variations - Size Selection","B2C Features > Variations","Critical","BL-B2B-001","ECL-7.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Product with size variations (XS/S/M/L/XL)","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to product with size variations (e.g., T-Shirt)
+Seeded size-run master (alias SIZE_RUN_MASTER, run `npm run seed:size-run`): one Size group with the sizes in @td(SIZE_RUN_MASTER.sizes)","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},product_url=@td(SIZE_RUN_MASTER.url),sizes=@td(SIZE_RUN_MASTER.sizes),size=@td(SIZE_RUN_MASTER.selectedSize),variation_sku=@td(SIZE_RUN_MASTER.selectedSku),variation_price=@td(SIZE_RUN_MASTER.selectedPrice)","1. [NAV] Navigate to {{FRONT_URL}}@td(SIZE_RUN_MASTER.url) (the seeded size-run master)
 2. [ASSERT] Verify size selector displays
-3. [ASSERT] Verify all sizes listed (XS, S, M, L, XL)
-4. [ACT] Click size 'M'
-5. [ASSERT] Verify size M is selected (highlighted)
+3. [ASSERT] Verify all sizes listed (@td(SIZE_RUN_MASTER.sizes))
+4. [ACT] Click size @td(SIZE_RUN_MASTER.selectedSize)
+5. [ASSERT] Verify the selected size is highlighted
 6. [ASSERT] Verify quantity stepper (+) is active and clickable
 7. [ACT] Click the Increase quantity (+) button to add to cart (B2B store: qty stepper IS add-to-cart)
 8. [NAV] Navigate to cart
-9. [ASSERT] Verify selected size shown in cart","[DOM] Size selector element is visible with ≥5 options (XS, S, M, L, XL)
-[STATE] Size 'M' is selected with visual highlight
+9. [ASSERT] Verify the selected size, variation SKU and price are shown in cart","[DOM] Size selector element is visible with ≥5 options (@td(SIZE_RUN_MASTER.sizes))
+[STATE] Size @td(SIZE_RUN_MASTER.selectedSize) is selected with visual highlight
 [STATE] Increase quantity (+) stepper is active and clickable (B2B store add-to-cart mechanism)
-[DOM] Cart line displays: Product Name - Size: M
-[DOM] Correct SKU for selected size variant shown
-[FORMAT] Price correct for selected size variant","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","Size selector does not display; incorrect size shown in cart; Quantity stepper not active after size selection; cart shows wrong SKU","remove item from cart","VCST-4547","Automated"
+[DOM] Cart line displays: Product Name - Size: @td(SIZE_RUN_MASTER.selectedSize)
+[DOM] Cart line SKU equals @td(SIZE_RUN_MASTER.selectedSku)
+[FORMAT] Price equals @td(SIZE_RUN_MASTER.selectedPrice) (the selected size's variation price, not the master's)","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Size selector does not display; incorrect size shown in cart; Quantity stepper not active after size selection; cart shows wrong SKU","remove item from cart",VCST-4547; Synced: VCST-6572 (2026-11-20),"Automated"
 "B2C-VAR-002","Product Variations - Color Selection","B2C Features > Variations","Critical","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product with color variations","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to product with colors (e.g., Blue, Red, Black, White)
@@ -257,7 +257,7 @@ Bundle product (build your own gift basket)","url={{FRONT_URL}},user={{USER_EMAI
 [CONSOLE] no uncaught JS errors","Bundle builder not displaying steps; minimum item rule not enforced; running total not updating; cart shows components separately instead of as bundle","remove item from cart","VCST-4547","Manual"
 "B2C-CONFIG-008","Product Configuration - Price Calculation Accuracy","B2C Features > Configurations","Critical","BL-B2B-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Configurable product with multiple price modifiers","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+Configurable product with multiple price modifiers","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},product_url=@td(CFG_LAPTOP.url)","1. [NAV] Navigate to {{FRONT_URL}}@td(CFG_LAPTOP.url) (configurable product with price modifiers)
 2. [CAPTURE] displayed base price → BASE
 3. [ACT] Select option with positive modifier
 4. [CAPTURE] displayed option 1 modifier → MOD1
@@ -277,7 +277,7 @@ Configurable product with multiple price modifiers","url={{FRONT_URL}},user={{US
 [DOM] Each selected option shows its price modifier value
 [MATH] Cart price matches configurator total
 [MATH] Checkout order total matches cart price (no discrepancies)","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","Rounding errors in price calculation; cart price differs from configured price; checkout uses different price than cart","remove item from cart","VCST-4547","Automated"
+[CONSOLE] no uncaught JS errors","Rounding errors in price calculation; cart price differs from configured price; checkout uses different price than cart","remove item from cart",VCST-4547; Synced: VCST-6572 (2026-11-20),"Automated"
 "B2C-CONFIG-009","Product Configuration - Save Configuration for Later","B2C Features > Configurations","Low","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Logged in user, configurable product","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
 2. [ACT] Select multiple options to configure product

@@ -28,10 +28,10 @@ For a teammate who works in this repo. Every step is detailed further down; this
    /plugin install serena@claude-plugins-official
    ```
    **Restart Claude Code.**
-4. **`/project-init`** (vc-init) — any env name (`qa`, `staging`, `client_eu`…; if `.env.<name>` already exists it offers to reuse it), Jira + GitHub, PAT, and where test-user passwords live (vc-secrets, recommended, or `.env.local`; asked separately for admins and storefront users). When it pauses, in a **separate terminal** in the repo folder run `node "<VC_SECRETS>" trust` and `node "<VC_SECRETS>" set <name>` for each token and password it lists (`github-pat`, `jira-token`, `admin-password-<env>`, …; the wizard prints the exact commands). Nothing secret goes into the chat. Reply `done`. This repo's own scripts (seeders, the module registry) read passwords from `.env.local`, not through the bridge — keep the admin password there if you run them. Full reference: [`plugins/vc-init/README.md`](../plugins/vc-init/README.md).
+4. **`/project-init`** (vc-init) — any env name (`qa`, `staging`, `client_eu`…; if `.env.<name>` already exists it offers to reuse it), Jira + GitHub, PAT, and where test-user passwords live (vc-secrets, recommended, or `.env.local`; asked separately for admins and storefront users). When it pauses, in a **separate terminal** in the repo folder run `node "<VC_SECRETS>" trust` and `node "<VC_SECRETS>" set <name>` for each token and password it lists (`github-pat`, `jira-token`, `admin-password-<env>`, …; the wizard prints the exact commands). Nothing secret goes into the chat. Reply `done`. This repo's own scripts (seeders, the module registry) and its browser lanes read every test account's login and password from `test-accounts.local.json` (gitignored; shape `templates/test-accounts.example.json`), not through the bridge — `npm run creds:migrate` moves what an older setup left elsewhere into it, `npm run creds:check` says what is missing. Full reference: [`plugins/vc-init/README.md`](../plugins/vc-init/README.md).
 5. **Restart Claude Code** (new `.mcp.json`, `.claude/settings.local.json` with `VC_RUN`/`VC_SECRETS`, the `kb` server). Later: `/project-init --add-env`, `--add-user`, `--check` (after a plugin upgrade).
 6. **Check:** `/project-init --check` — reconciles the profile, moves any plaintext token into vc-secrets, verifies every credential and prints the readiness table. Before work against a stand: `/preflight` (`npm run preflight`) — env health, deployed build, MCP availability.
-7. **Work:** `/qa-test VCST-XXXX`, `/qa-test-fast VCST-XXXX`, `/qa-bug`, `/qa-regression smoke`. Which tool for which job: [`.claude/ROUTING.md`](../.claude/ROUTING.md); how to invoke: [`using-commands-and-skills.md`](using-commands-and-skills.md).
+7. **Work:** `/qa-test VCST-XXXX` (one ticket key; its approved strategy decides the depth), `/qa-bug`, `/qa-regression smoke`. Which tool for which job: [`.claude/ROUTING.md`](../.claude/ROUTING.md); how to invoke: [`using-commands-and-skills.md`](using-commands-and-skills.md).
 
 > **Time:** 5–15 minutes per environment for setup. Days-to-weeks for customer-specific suite authoring (your customizations need your tests).
 >
@@ -64,7 +64,7 @@ You need each of these before you start. If any are missing, the install will fa
 | Two test accounts | One non-admin storefront user, one admin SPA user. | See [Test accounts](#test-accounts) below. |
 | Your customer's JIRA project key (e.g. `ACME`) | For bug filing. Default falls back to `VCST` if not set. | Atlassian → Projects → your project → Settings → Details. |
 | Serena plugin + `uv`/`uvx` | Shared semantic code-navigation for the whole team (enabled in tracked config; install per machine). | `uvx --version`; see [Serena setup](#serena--semantic-code-navigation-whole-team-one-time-per-machine). |
-| `vc-test` plugin | `/qa-test-fast` calls its `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` (enabled in tracked config; install per machine). | `/plugin install vc-test@ai-tools`, then restart Claude Code |
+| `vc-test` plugin | `/qa-test` calls its `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` (`/qa-test` stops without it; enabled in tracked config, install per machine). | `/plugin install vc-test@ai-tools`, then restart Claude Code |
 
 ## Install
 
@@ -210,14 +210,14 @@ For impersonation tests, additional accounts are required. See `templates/aliase
 
 ## Required MCP Servers
 
-**You normally do not write these by hand:** `/project-init` generates `.mcp.json` with the three desktop Playwright lanes (wired to the test-user passwords through `--secrets`) and the GitHub server. The block below shows the shape. The optional `playwright-mobile` lane (390×844) is not generated: copy the `playwright-chrome` entry, rename it and point it at `config/mcp-playwright-mobile.config.json`. Restart Claude Code after any change.
+**You normally do not write these by hand:** `/project-init` generates `.mcp.json` with the three desktop Playwright lanes and the GitHub server; in this repo `npm run creds:migrate` points each lane at `scripts/lanes/playwright-lane.mjs`, which hands it every env's test-account passwords from `test-accounts.local.json` in memory (no secrets file; reconnect the lane in `/mcp` after the store changes). The block below shows the shape. The optional `playwright-mobile` lane (390×844) is not generated: copy the `playwright-chrome` entry, rename it and point it at `config/mcp-playwright-mobile.config.json`. Restart Claude Code after any change.
 
 ```jsonc
 {
   "mcpServers": {
-    "playwright-chrome":  { "command": "npx", "args": ["@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-chrome.config.json"] },
-    "playwright-firefox": { "command": "npx", "args": ["@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-firefox.config.json"] },
-    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-edge.config.json"] },
+    "playwright-chrome":  { "command": "npx", "args": ["-y", "-p", "@playwright/mcp@0.0.83", "node", "scripts/lanes/playwright-lane.mjs", "playwright-chrome", "@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-chrome.config.json"] },
+    "playwright-firefox": { "command": "npx", "args": ["-y", "-p", "@playwright/mcp@0.0.83", "node", "scripts/lanes/playwright-lane.mjs", "playwright-firefox", "@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-firefox.config.json"] },
+    "playwright-edge":    { "command": "npx", "args": ["-y", "-p", "@playwright/mcp@0.0.83", "node", "scripts/lanes/playwright-lane.mjs", "playwright-edge", "@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-edge.config.json"] },
     "kb":                 { "command": "node", "args": ["scripts/kb/mcp.mjs"] }
   }
 }
@@ -294,14 +294,14 @@ queued and nothing is published, the `Stop` hook does nothing, and the `SessionS
 `kb` from `.mcp.json` rather than adding it back. `npm run kb -- ask` still reads, since reading a public
 repo sends nothing. Pushes go only to `VirtoCommerce/vc-knowledge`. A push to any other base is refused
 unless `KB_ALLOW_ANY_BASE=1` is set. A write reads the build of the stand it names (its `/api/platform/modules`,
-with the admin credentials of that stand from `.env.local`); `KB_BUILD=0` turns that off and the evidence
+with the admin credentials of that stand from `test-accounts.local.json`); `KB_BUILD=0` turns that off and the evidence
 is written without a build.
 
 **Reviewing before anything is published.** Set `KB_PUSH_CONFIRM=1` in the same place and nothing is
 published automatically. The hook, the sweep and the server's timer all hold the queue. Run
 `npm run kb -- push` in a terminal to see the exact commit, entry bodies included, and publish only on a
 `y`. The default path is still filtered before any push. A line is dropped if it contains a secret value
-from `.env.local` / `.env.playwright.local`, a token shape (PAT, JWT, Bearer), or a stand's **host** from
+from `.env.local` / `test-accounts.local.json`, a token shape (PAT, JWT, Bearer), or a stand's **host** from
 any root `.env*` file. Stands are named by their `deployment` label, never by host. `npm run kb -- stat`
 shows the backlog, the age of the oldest queued line, and the last push result. A failure stays listed
 until a push lands. The detached push's own output goes to `push.log` next to the queue.
@@ -318,7 +318,7 @@ Optional (each gates specific skills):
 - **postman** — enables `/qa-postman`, `/qa-api test`
 - **atlassian** — enables `/qa-bug` JIRA filing, `/qa-status`, `/qa-test-plan`
 - **context7** + **VirtoOZ connector** — product docs lookup (`.claude/knowledge/execution/doc-sources.md`)
-- **github** — enables `/qa-test PR #N`, `/ba-analyze`
+- **github** — enables `/ba-analyze` (`/qa-test` reads a ticket's PRs through `$VC_RUN`, not this server)
 - **figma-remote-mcp** — manual fallback only for `/qa-design`; the `vs. DESIGN` axis compares against a Claude Design project (`plugins/vc-test/skills/qa-design/claude-design-verification.md`)
 
 `npm run env:check` will warn if a required MCP server is missing.

@@ -1,0 +1,32 @@
+{
+  "//": "TEMPLATE — the SHAPE of test-accounts.local.json (gitignored, project root), not a list of names. Get the team's copy from its secret store, or start from this one; `npm run creds:check [-- <env>]` lists the names the suites, test-data and roles need that an env has no value for (never a value). `accounts`: login and password side by side — a named account (USER) is what suites call {{USER_EMAIL}} / {{USER_PASSWORD}} (or the names in its `vars`); one keyed by its login is a seeded fixture whose password { \"use\": NAME } is a shared one. `role`: user (storefront) or admin (back office), optional. `shared`: passwords many accounts use. The top level is every env; `envs.<env>` beats it (`<env>` = the env's name, as in its .env.<env> file — replace it, or the loader refuses the file) (an account field by field; \"\" unsets a shared one). `master`: the one password of every PASSWORDS=master stand. Tokens and API keys never go here (vc-secrets), nor a person's own tracker / code-host login (JIRA_*, GITHUB_*: .env.local). Seeders record every account they create. Design: docs/superpowers/specs/2026-11-17-test-accounts-store-design.md",
+  "version": 2,
+  "master": "",
+  "shared": {
+    "DEFAULT_TEST_PASSWORD": ""
+  },
+  "accounts": {},
+  "envs": {
+    "<env>": {
+      "shared": {},
+      "accounts": {
+        "ADMIN": {
+          "login": "",
+          "password": "",
+          "vars": {
+            "login": ["ADMIN_EMAIL", "ADMIN"]
+          }
+        },
+        "USER": {
+          "login": "",
+          "password": ""
+        },
+        "agent-test-example@test-agent.com": {
+          "password": {
+            "use": "DEFAULT_TEST_PASSWORD"
+          }
+        }
+      }
+    }
+  }
+}

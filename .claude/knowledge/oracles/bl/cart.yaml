@@ -26,10 +26,11 @@ rules:
       kind: manual
       ref: "PDP: for a product not yet in cart, enter a quantity above available stock → assert the inline range message, Increase disabled, and cart item count unchanged (no line committed). Cart page: for an existing line, enter a quantity above available stock into the line's quantity input and submit → assert the persisted quantity equals the entered value (not capped), line total = qty × unit price, cart subtotal reflects it, an inline validation message renders, and \"Place order\" stays disabled; reload the page → assert the same out-of-range quantity, total, and message persist."
     violation_signal: On either surface, the quantity is silently capped to available stock with no error/message; OR the out-of-range quantity is accepted with no validation signal and "Place order" becomes enabled; OR the PDP path lets an over-limit line commit; OR an order is placed for more units than in inventory.
-    status: ACTIVE
+    status: SUSPECT
     verified:
-      date: 2026-11-04
-      by: REG-2026-11-04-1022
+      date: 2026-11-17
+      by: REG-2026-11-17-1257
+    suspect_reason: "[case] CAT-084, CAT-083, CRB-GQL-021, CFG-GQL-009, CFG-GQL-011, CFG-GQL-015, CFG-GQL-016, CFG-GQL-018, CFG-GQL-030, CFG-GQL-031, CFG-GQL-035, CFG-GQL-036 failed in REG-2026-11-18-1157"
   - id: BL-CART-002
     title: Out-of-stock mid-session
     rule: If a product's stock reaches 0 after the user has added it to cart but before checkout completes, the system must prevent the order from being placed. The cart should show an error state for the affected item.
@@ -110,8 +111,8 @@ rules:
     violation_signal: Items from Org A visible in Org B's cart; switching back loses Org A's cart; xAPI returns same cart regardless of org context.
     status: ACTIVE
     verified:
-      date: 2026-11-10
-      by: REG-2026-11-10-1934-MCP
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-CART-006
     title: Pack size enforcement
     rule: When a product has a minimum order quantity (MOQ) or pack size (e.g., sold in packs of 6), the cart must enforce that quantity is a multiple of the pack size. The quantity stepper should increment by pack size, and manual entry of non-multiple quantities must be rejected or rounded up.
@@ -152,10 +153,11 @@ rules:
       kind: manual
       ref: Add Product A (qty 1) → go back to listing → add Product A again → cart shows 1 line with qty 2, not 2 lines with qty 1.
     violation_signal: Duplicate line items for the same SKU; quantity not incremented on re-add; line count increases on every add.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-29
       by: REG-2026-10-28-1915
+    suspect_reason: "[case] CRB-GQL-021 failed in REG-2026-11-18-1157"
   - id: BL-CART-008
     title: Cart persistence across sign-out / sign-in
     rule: "A registered user's cart is persisted server-side. If the user signs out and signs back in, the cart must be restored with the same items and quantities. If the user had items as a guest (anonymous cart), upon sign-in those items should merge into the registered user's existing cart (merge strategy: add quantities, no duplicates). A coupon applied before the merge (on either side) persists through the merge — it is not silently dropped — and its discount **re-prices against the post-merge subtotal** rather than staying frozen at the pre-merge discount amount, because a merge always runs a full cart recalculation before saving."
@@ -178,8 +180,8 @@ rules:
     violation_signal: Cart empty after sign-in; guest cart items lost on authentication; duplicate lines after merge; quantities not combined; a previously-applied coupon disappears after merge; OR a surviving coupon's discount stays frozen at its pre-merge value instead of re-evaluating against the merged subtotal.
     status: ACTIVE
     verified:
-      date: 2026-11-03
-      by: REG-2026-11-03-1717
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-CART-009
     title: Storefront cart enforces a single active coupon slot
     rule: "The storefront cart \"Discount & coupons\" section applies at most ONE coupon at a time across BOTH facets — the preset promotion cards (up to 4, authenticated + marketing-experience module only) and the single \"Custom code\" input. The applied-coupon slot is shared: exactly one card/input is ever in the \"applied\" state (button \"Remove coupon\"), never two simultaneously. Two transition paths exist: (a) clicking \"Apply\" on a DIFFERENT preset card auto-replaces the current coupon — `applyCoupon(new)` first awaits `removeCoupon(current)`, then `validateCoupon(new)`, then `addCoupon(new)`, in that order; (b) the custom-code input becomes read-only **only when its own bound value equals the currently-applied coupon's code** — i.e. when the applied coupon was entered through that input itself, or the applied coupon is not among the up-to-4 visible preset cards (the input then mirrors the code and locks). When the applied coupon IS one of the visible preset cards, the custom input is reset to empty and stays fully editable: a user can type and submit a different code through it without first clicking \"Remove coupon\" on the preset card, and the single-slot guarantee still holds because that submission goes through the same `applyCoupon` replacement logic. NOTE: this single-slot guarantee is enforced by the storefront UI only — the platform cart (`CartAggregate.AddCouponAsync`) appends coupons (case-insensitive dedupe) and does not auto-replace, so a non-UI/API caller can hold multiple coupons."
@@ -218,10 +220,11 @@ rules:
       kind: manual
       ref: Obtain cart with configurable lineItem, all sections selected; record `lineItem.listPrice` as `price_all_selected`. Call `changeCartConfigurationItemSelected` to deselect one section → assert `lineItem.listPrice < price_all_selected`. Assert `cart.subTotal.amount` decreases by the same delta and `cart.taxTotal.amount` recalculates proportionally. Call `changeCartItemSelected` (lineItem-level) on an unrelated simple lineItem → assert its own `listPrice` is unchanged (asymmetry verification).
     violation_signal: "`lineItem.listPrice` remains equal to `price_all_selected` after deselecting a placement; cart subtotal does not change; tax total does not update; pricing frozen at pre-toggle value."
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-29
       by: REG-2026-10-28-1915
+    suspect_reason: "[case] CFG-GQL-016, CFG-GQL-018, CFG-GQL-030, CFG-GQL-031, CFG-GQL-036 failed in REG-2026-11-18-1157"
   - id: BL-CART-011
     title: Unmatched section key in batch selection is a silent no-op
     rule: When `selectCartConfigurationItems` or `unSelectCartConfigurationItems` receives a `configurationSections[]` list where one or more keys do not match any `ConfigurationItem` on the target lineItem, those unmatched keys MUST be silently skipped. The mutation MUST still process all matched keys, MUST return HTTP 200, and MUST return `errors[]` as empty. Unmatched keys leave no trace in the response.
@@ -237,6 +240,9 @@ rules:
       ref: "Obtain a configurable lineItem with 2 known section keys (A and B). Call `selectCartConfigurationItems` with `configurationSections: [keyA, {sectionId: 'does-not-exist', type: 'Product'}]`. Assert HTTP 200 and `errors[]` is empty. Assert `configurationItems[keyA].selectedForCheckout = true` (matched item flipped). Assert no error entry or warning appears for the unmatched key."
     violation_signal: HTTP 4xx or `errors[]` non-empty due to unmatched section key; entire batch aborted and no items flipped.
     status: ACTIVE
+    verified:
+      date: 2026-11-18
+      by: REG-2026-11-18-1157
   - id: BL-CART-012
     title: Configuration-item selection mutations are scoped to one `lineItemId`; "all" never crosses lineItem boundaries
     rule: All five configuration-item selection mutations (`changeCartConfigurationItemSelected`, `selectCartConfigurationItems`, `unSelectCartConfigurationItems`, `selectAllCartConfigurationItems`, `unSelectAllCartConfigurationItems`) accept exactly one `lineItemId`. The "all" variants operate only on configuration items belonging to that specified lineItem. No mutation may flip `selectedForCheckout` on configuration items belonging to other lineItems in the same cart.
@@ -255,10 +261,11 @@ rules:
       kind: manual
       ref: Build a cart with two configurable lineItems (L1 and L2), each with at least one config item. Call `unSelectAllCartConfigurationItems` with `lineItemId = L1.id`. Assert all config items on L1 have `selectedForCheckout = false`. Assert all config items on L2 retain their original state and `L2.listPrice` is unchanged.
     violation_signal: Config items on L2 are toggled when only L1's `lineItemId` was specified; `listPrice` of L2 changes after a mutation scoped to L1.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-11-03
       by: REG-2026-11-03-1717
+    suspect_reason: "[case] CFG-GQL-047 failed in REG-2026-11-18-1157"
   - id: BL-CART-013
     title: No-change short-circuit on configuration-item selection mutations
     rule: When a configuration-item selection mutation is called but the resulting `selectedForCheckout` state for every affected configuration item is identical to the pre-mutation state, `UpdateConfiguredLineItemPrice` MUST NOT be executed. The cart aggregate detects the no-change condition before invoking the reprice path and short-circuits. Applies to idempotent re-sends, to `selectAll` when all already selected, and to `unSelectAll` when all already unselected.
@@ -273,7 +280,8 @@ rules:
       kind: manual
       ref: Obtain a cart with a configurable lineItem where all config items have `selectedForCheckout = true`. Call `selectAllCartConfigurationItems` for that lineItem. Assert cart totals are unchanged. Confirm `UpdateConfiguredLineItemPrice` was not triggered (via platform logs or unit test coverage). Repeat with `changeCartConfigurationItemSelected` sending the same value already set.
     violation_signal: Repricing executes on a no-change call; unnecessary `RecalculateAsync` invocation observable in platform logs; performance regression in batch UIs that resend full selection state on every interaction.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] CFG-GQL-015 failed in REG-2026-11-18-1157"
   - id: BL-CART-014
     title: Configuration-section identification — `(sectionId, type)` for Text/File; `option.productId` required for Variation
     rule: "When identifying a `ConfigurationItem` for selection mutations: for `Text` and `File` sections, `(sectionId, type)` alone is sufficient for unique lookup. For `Variation` sections, `option.productId` is mandatory because multiple variations of the same configurable section can coexist on a lineItem. Omitting `option` for a `Variation`-type section results in a no-op (item not found, per BL-CART-011). For `Product` sections, `option.productId` resolves the option but is not required for uniqueness when only one product placement per section is allowed."
@@ -290,7 +298,8 @@ rules:
       kind: manual
       ref: "For a Variation section: call `changeCartConfigurationItemSelected` with `{sectionId, type: 'Variation'}` and no `option` field → assert silent no-op (flag does not flip). Repeat with `{sectionId, type: 'Variation', option: {productId: <valid-id>}}` → assert flag flips. For a Text section: call with `{sectionId, type: 'Text'}` and no `option` → assert flag flips (lookup succeeds). For a File section: same as Text."
     violation_signal: Text/File section fails without `option` field (overly strict); Variation section succeeds with missing `option` (ambiguous lookup); wrong config item toggled.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] CFG-GQL-030, CFG-GQL-031, CFG-GQL-045 failed in REG-2026-11-18-1157"
   - id: BL-CART-015
     title: Configuration items survive a Saved-for-Later round trip
     rule: Moving a configurable lineItem to Saved for Later (`moveToSavedForLater`) and back into the cart (`moveFromSavedForLater`) MUST preserve its `configurationItems` (customText, selected option/productId, files, section) unchanged. The lineItem is re-created with a new `lineItemId` on each leg, but its configuration payload is not lost, truncated, or reset to defaults.

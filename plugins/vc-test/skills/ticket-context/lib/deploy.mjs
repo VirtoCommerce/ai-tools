@@ -116,7 +116,7 @@ export function checkDeployment({ root, key, prs, run = runNpmJson, env = null, 
     if (e.skip) { rows.push({ ref: p.ref, artifact, deployed: "UNKNOWN", deployed_reason: e.skip }); continue; }
     const id = `${e.module}@${e.version}`;
     if (!asked.has(id)) {
-      const pf = run(root, ["preflight", "--", "--for", "ticket-fast", "--ticket", key, "--expect", id, "--json"]);
+      const pf = run(root, ["preflight", "--", "--for", "ticket", "--ticket", key, "--expect", id, "--json"]);
       if (pf.error === "npm-cli-not-found") noteToolMissing();
       asked.set(id, deployedFromPreflight(pf.json, pf.error, artifact?.kind === "theme"));
     }

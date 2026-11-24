@@ -1,7 +1,7 @@
 // plugins/vc-test/lib/triage-collect.mjs — the ticket-mode collector of /qa-triage-results: ported from the
 // former ticket mode of scripts/lib/regression-triage.ts; this repository's regression half stays there.
 //
-// A /qa-test or /qa-test-fast run's checklist, exploratory and visual findings have no RUN_ID: they live as rows of the
+// A /qa-test run's checklist, exploratory and visual findings have no RUN_ID: they live as rows of the
 // ticket's testing-checklist.md (the run's single durable record — every lane's condition is a row with a verdict).
 // This reads that file, extracts every non-passing row (FAIL / BLOCKED / SKIPPED) with its screenshots and authored
 // row, fingerprints it and groups the issues into classifier batches. It contains NO classification judgment — that is
@@ -112,7 +112,7 @@ function harPathForBrowser(browser) {
 }
 
 // ---------------------------------------------------------------------------
-// Ticket mode — a /qa-test or /qa-test-fast run's testing-checklist.md
+// Ticket mode — a /qa-test run's testing-checklist.md
 // ---------------------------------------------------------------------------
 
 /**

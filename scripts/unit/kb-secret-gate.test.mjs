@@ -56,12 +56,12 @@ test('the default secret files are anchored at the REPO, not at process.cwd()', 
   // A `kb` invoked from anywhere else would otherwise load nothing and report a clean scan it
   // never performed — the worst possible failure for a gate.
   const files = secretFiles({});
-  // The two fixed names always lead; anything after them is a per-env secrets file found at the
-  // root, so the count depends on the checkout and is not asserted.
+  // The two fixed names always lead — .env.local (tokens) and the test-account store; anything after
+  // them is a per-env secrets file found at the root, so the count depends on the checkout and is not asserted.
   assert.ok(/[\\/]\.env\.local$/.test(files[0]), files[0]);
-  assert.ok(/[\\/]\.env\.playwright\.local$/.test(files[1]), files[1]);
+  assert.ok(/[\\/]test-accounts\.local\.json$/.test(files[1]), files[1]);
   for (const f of files) {
-    assert.ok(/[\\/]\.env\.(?:local|.+\.local|playwright\..+)$/.test(f), f);
+    assert.ok(/[\\/](?:\.env\.(?:local|.+\.local|playwright\..+)|test-accounts\.local\.json)$/.test(f), f);
     assert.ok(isAbsolute(f), `${f} must be absolute — a relative path would follow the caller's cwd`);
     // All under one root, and that root is the repo the module lives in, not wherever `kb` was run.
     assert.equal(dirname(f), resolve(import.meta.dirname, '..', '..'));

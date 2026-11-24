@@ -88,6 +88,13 @@ export const CANONICAL_PAGES = [
   // Reachable anonymously only while the store allows anonymous users (Stores.AllowAnonymousUsers).
   { alias: 'PB_LOGIN_SECTION', name: 'AGENT-TEST Login Section Page', permalink: '/agent-test-login-section', culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none', cases: 'VCST-6626 MFASF-014 static-page sign-in',
     ownedContent: true },
+  // VCST-6571 AC-7 (Site Builder): a page written the LEGACY way — through the grouped content endpoint,
+  // with page settings `header` and `hideBreadcrumbs: true` — so a case can re-save it in the Site
+  // Builder designer and see the header and the hidden breadcrumbs survive. The header text deliberately
+  // differs from the page name and from the title block, so "the H1 shows the settings header" is not
+  // satisfied by either of them. Store: STORE_ID (B2B-store on vcst).
+  { alias: 'SB_LEGACY_HEADER_PAGE', name: 'AGENT-TEST SB Legacy Header Page', permalink: '/agent-test-sb-legacy-header', culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none', cases: 'VCST-6571 AC-7 / suite 123',
+    ownedContent: true },
 ];
 
 const norm = (s) => String(s || '').trim().toLowerCase();

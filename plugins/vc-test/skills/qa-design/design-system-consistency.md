@@ -1,4 +1,4 @@
-# Design System Consistency — Coffee Theme
+# Design System Consistency
 
 > Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: `BL-UI-002` (spacing grid) and `BL-UI-005` (alignment) — [`bl-ui.md`](../../knowledge/bl-ui.md) (in this repository: `npm run bl:extract -- --id BL-UI-002,BL-UI-005`). Canonical helper: [`<plugin>/lib/design/measure-layout.mjs`](../../lib/design/measure-layout.mjs), each snippet printed by `node <plugin>/lib/design/snippet.mjs <name> …` (`<plugin>` is the vc-test plugin root, as [`SKILL.md`](SKILL.md) defines it; in this repository the TypeScript at `scripts/lib/measure-layout.ts` is canonical; the plugin file is generated from it). Canonical suite: none — `048b-layout-stability.csv` was removed 2026-07-25; these checks now run only through this skill.
 
@@ -6,7 +6,7 @@
 
 ## Core principle — read live tokens, never hardcode
 
-Coffee is a **multi-preset theme** (6 light + 3 dark variants). Exact color hex, typography stack, and shadow values rotate per preset and per store config. **Hardcoded values in this file would be wrong half the time.** Always read tokens from the live page.
+vc-frontend's Coffee is a **multi-preset theme** (6 light + 3 dark variants); a `client` fork ships its own theme, so nothing here names a value. Exact color hex, typography stack, and shadow values rotate per preset and per store config. **Hardcoded values in this file would be wrong half the time.** Always read tokens from the live page.
 
 ### Live-token extraction snippet
 
@@ -79,7 +79,7 @@ Audit at multiple viewports — some breakpoints introduce token overrides.
 
 ## Typography
 
-Coffee preset typography varies by store. Read at runtime:
+Preset typography varies by store. Read at runtime:
 
 ```js
 // Body text
@@ -95,7 +95,7 @@ getComputedStyle(document.body).lineHeight
 ```
 
 **Checks:**
-- Same `font-family` across all `<button>` elements (no Helvetica leaking into a Coffee-themed surface)
+- Same `font-family` across all `<button>` elements (no Helvetica leaking into a themed surface)
 - Heading scale forms a monotonic sequence (h1 ≥ h2 ≥ h3 ≥ …)
 - `font-weight` values are in `{400, 500, 600, 700}` (no `633` or `font-weight: bold` mixed with numeric)
 - Body `font-size` ≥ 14 px (mobile readability — also a WCAG concern)
@@ -113,7 +113,7 @@ Read from `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-full` and `--sh
 
 ## Icons
 
-Coffee uses a consistent icon library (likely from vc-frontend). Audit:
+The storefront should use one icon library throughout. Audit:
 
 - All icons render at one of `{16, 20, 24, 32, 40, 48}` px square (`rect.width === rect.height` and in the allowed set)
 - All icons inherit `color` from the parent (read `getComputedStyle(svg).color`) — no `fill: black` hardcoded
@@ -153,7 +153,7 @@ Example: VcButton — BL-UI-002 spacing off-grid (padding 13px)
 **Component:** [Component name + variant]
 **Location:** [Storybook URL or storefront route]
 **Invariant violated:** `BL-UI-NNN` (cite the id)
-**Active theme preset:** [Coffee variant name — read from `<html data-theme>` or `--theme-name`]
+**Active theme preset:** [active preset name — read from `<html data-theme>` or `--theme-name`]
 
 **Observed (computed):**
 - `padding-top: 13px` (off-grid — 13 px is on no Tailwind step; check against the derived `SPACING_GRID`, never a memorised list)

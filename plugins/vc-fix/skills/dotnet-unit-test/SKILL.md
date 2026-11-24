@@ -38,8 +38,11 @@ fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladde
    ```
    dotnet restore tests/VirtoCommerce.<Name>.Tests -p:NuGetAudit=false
    ```
-5. **Write a NEW test** (`[Fact]`/`[Theory]`, Moq for collaborators) in the test project asserting the
-   **expected** behavior. Name the class/method after the **subject + behavior only**
+5. **Write a NEW test case** (`[Fact]`/`[Theory]`, Moq for collaborators) asserting the **expected**
+   behavior. **Where it goes** (`quality-gates.md` §G2 placement): the type under fix already has a test
+   class → add the case **there** (a new `[Fact]`, or a new `[InlineData]` row on an existing `[Theory]`),
+   reusing its fixture and mocks and changing nothing already in the file; no such class → a new one in
+   the test project. Name the class/method after the **subject + behavior only**
    (`CouponDiscountTests.AppliesToPostTierAmount`) — **never the ticket key** in a class, method,
    file name or comment (`knowledge/agents/developers/shared-instructions.md` §Minimal diff, rule 3a);
    repo convention is `*Tests.cs` / `*UnitTests.cs`. See `xunit-patterns.md`.
@@ -63,8 +66,9 @@ fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladde
 | Old-style csproj, `packages.config`, net4.x | Legacy module (CyberSource-era) | BAIL-back — different toolchain, out of auto-fix scope |
 
 ## Hard rules
-- **Only ADD tests.** Never edit or delete an existing test to reproduce or to pass (Gate 3). An
-  existing test that breaks after the fix = contract conflict → STOP.
+- **Only ADD tests.** Never edit or delete an existing test to reproduce or to pass (Gate 3); a new
+  case in an existing test class is an ADD. An existing test that breaks after the fix = contract
+  conflict → STOP.
 - **No test harness?** If the module has no test project, BAIL-back (`FIX_STATUS: FAILED`, reason: no
   test harness) rather than scaffolding a risky one.
 - **Trivial-skip:** a one-line null-guard / typo / off-by-one with no behavioral branch may skip the

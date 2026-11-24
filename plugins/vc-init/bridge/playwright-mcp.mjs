@@ -6,15 +6,19 @@
  * dotenv FILE (`--secrets`, `PLAYWRIGHT_MCP_SECRETS_FILE`) or as `config.secrets` — so this runs the
  * pinned package's own CLI in this process and hands it `config.secrets` from memory.
  *
- * How it is started (option B, skills/project-init/lib/passwords.mjs): the vc-secrets server
- * `playwright-<lane>.<env>`, declared by write-secrets-decl.mjs, is
- *
- *   npx -y -p @playwright/mcp@<pin> node <vc-run shim> --playwright @playwright/mcp@<pin> --vc-env <env> <lane CLI args>
- *
- * with that env's vc-secrets passwords in its environment (`ADMIN_PASSWORD: secret:admin-password-<env>`, …).
- * The roles the operator keeps in .env.local instead (typically storefront users, §2d) are read from the
- * project's `.env.local` for `<env>` (`<NAME>_<ENV>`, else a bare `<NAME>`); a vc-secrets value wins.
- * Both end up only in this process's memory — no `.env.playwright.local` is generated.
+ * Where the passwords come from, lowest first (each later source wins a name it also has):
+ *   - the project's test-account store, `test-accounts.local.json` (scripts/lib/test-accounts.mjs) — the default
+ *     since vc-init 0.8.0: every non-production env's passwords as `NAME_<ENV>`, plus `MASTER_PASSWORD`, and — on a
+ *     project with ONE env — that env's as the bare `NAME` too. Started straight from `.mcp.json`:
+ *       npx -y -p @playwright/mcp@<pin> node ${VC_RUN} --playwright @playwright/mcp@<pin> <lane CLI args>
+ *   - a project that has not moved to the store yet: its `.env.local` passwords for the lane's env;
+ *   - option B (skills/project-init/lib/passwords.mjs): the vc-secrets server `playwright-<lane>.<env>`, declared by
+ *     write-secrets-decl.mjs, runs the same command with `--vc-env <env>` and that env's vc-secrets passwords in its
+ *     environment (`ADMIN_PASSWORD: secret:admin-password-<env>`, …).
+ * The lane's env is `--vc-env`, else TEST_ENV, .env.test-env, the project's only env, `vcst`. Everything ends up only in
+ * this process's memory — no `.env.playwright.local` is generated. An agent types NAME_<ENV>; the bare NAME works on
+ * a lane whose env cannot change (a `--vc-env` server, a one-env project). A production env (ENV_RISK=production) is
+ * never held.
  * npx installs the pinned package and puts its `.bin` on PATH; the shim hands over to this file; this
  * file finds the package through PATH, checks its version against the pin, takes every `*PASSWORD` out
  * of the environment (the browser it starts inherits none) and runs the CLI exactly as
@@ -27,14 +31,63 @@
  *   printed `<secret>ADMIN_PASSWORD</secret>` — no value in any response, no file anywhere.
  *
  * A `--secrets` argument and PLAYWRIGHT_MCP_SECRETS_FILE are refused / dropped: they would put a file
- * back. The IPv4-first DNS hint gen-mcp gives the other servers through NODE_OPTIONS (#220) is set here
+ * back. Playwright MCP masks a typed password in its responses, not in the HAR the lane's `recordHar`
+ * writes — the sign-in request's body holds the value — so this process, the one place that knows the
+ * values, keeps that HAR's directory scrubbed (bridge/har-scrub.mjs): at start, after every HAR write
+ * and at exit. The IPv4-first DNS hint gen-mcp gives the other servers through NODE_OPTIONS (#220) is set here
  * in-process, because vc-secrets refuses a NODE_OPTIONS key in a declaration.
  */
 import dns from "node:dns";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { delimiter, join } from "node:path";
-import { ENV_NAME_RE, envFilePasswords, isPasswordName } from "../skills/project-init/lib/passwords.mjs";
+import { ENV_NAME_RE, currentEnv, envFilePasswords, isPasswordName } from "../skills/project-init/lib/passwords.mjs";
+import { readStore, storeValues } from "../scripts/lib/test-accounts.mjs";
+import { configArg, configHarPath, watchHarDirs } from "./har-scrub.mjs";
+
+/** The envs a project names: every `.env.<env>` file in its root. Pure-ish (one directory read). */
+export function projectEnvs(root, { list = readdirSync } = {}) {
+  const NOT_AN_ENV = new Set(["local", "defaults", "backup", "master", "example", "template"]);
+  let names = [];
+  try { names = list(root); } catch { return []; }
+  return names.map((f) => /^\.env\.([a-z0-9_]+)$/.exec(f)?.[1]).filter((e) => e && !NOT_AN_ENV.has(e) && e !== "test");
+}
+
+/**
+ * Whether `env` is a production stand: ENV_RISK=production in its own `.env.<env>`, or ENV_RISK_<ENV>=production in
+ * `.env.local`. A lane never holds a production password (as the ai-tools repo's launcher, combinedEnvCandidates).
+ */
+export function isProductionEnv(root, env, { read = (p) => readFileSync(p, "utf8") } = {}) {
+  const says = (file, key) => {
+    try {
+      return new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=\\s*["']?production["']?\\s*(?:#.*)?$`, "im").test(read(join(root, file)));
+    } catch {
+      return false;
+    }
+  };
+  const pin = `ENV_RISK_${env.toUpperCase()}`;
+  return says(`.env.${env}`, "ENV_RISK") || says(`.env.${env}`, pin) || says(".env.local", pin);
+}
+
+/**
+ * The passwords a lane takes from the test-account store: every non-production env's (the store's own envs and the
+ * project's `.env.<env>` ones) as NAME_<ENV>, and MASTER_PASSWORD. `bare`: the lane's env's also as the bare NAME —
+ * only for a lane whose env cannot change under it (see runPlaywrightMcp). Passwords only — a login is no secret.
+ * Empty without a store. Throws the store's own error on a malformed file.
+ */
+export function storeLaneSecrets(root, env, { read = readStore, envs = projectEnvs, production = isProductionEnv, bare = true } = {}) {
+  const store = read(root);
+  if (!store.exists) return {};
+  const out = {};
+  const passwordsOf = (e) => Object.entries(storeValues(store, e).values).filter(([k, v]) => v && isPasswordName(k));
+  for (const e of new Set([...Object.keys(store.envs), ...envs(root)])) {
+    if (production(root, e)) continue;
+    for (const [k, v] of passwordsOf(e)) out[`${k}_${e.toUpperCase()}`] = v;
+  }
+  if (bare && env && !production(root, env)) for (const [k, v] of passwordsOf(env)) out[k] = v;
+  if (store.master) out.MASTER_PASSWORD = store.master;
+  return out;
+}
 
 const SPEC_RE = /^@playwright\/mcp@(\d+\.\d+\.\d+(?:-[\w.]+)?)$/;
 
@@ -128,17 +181,57 @@ export async function runPlaywrightMcp(argv) {
   }
   const { secrets: fromVcSecrets, dropped } = takePasswords(process.env);
   for (const k of dropped) delete process.env[k];
-  // The roles kept in .env.local (§2d), for this lane's env; what vc-secrets injected wins.
-  let fromFile = {};
-  if (env) {
-    try {
-      fromFile = envFilePasswords(readFileSync(join(process.cwd(), ".env.local"), "utf8"), env);
-    } catch {
-      /* no .env.local — every password of this env is in vc-secrets */
+  // The lane's env: --vc-env (a vc-secrets server's), else what the session resolves (a one-env project: that env).
+  const root = process.cwd();
+  const envs = projectEnvs(root);
+  const laneEnv = env || currentEnv(root, envs);
+  // Bare NAMEs only where the env cannot change under the lane: a --vc-env server, or a project with one env. Otherwise
+  // a session that switches env (env:use, a command's env argument) would type the start env's password on another
+  // stand — there, the agent types NAME_<ENV>.
+  const bare = !!env || envs.length <= 1;
+  let fromStore;
+  try {
+    fromStore = storeLaneSecrets(root, laneEnv, { bare });
+  } catch (e) {
+    // A vc-secrets lane takes every password from vc-secrets: a broken store must not keep it from starting.
+    if (!env) {
+      say(`cannot read the test-account store: ${e?.message || e}`);
+      return 78;
     }
+    say(`test-account store not read (${e?.message || e}) — this lane's passwords come from vc-secrets`);
+    fromStore = {};
   }
-  const secrets = { ...fromFile, ...fromVcSecrets };
-  if (!Object.keys(secrets).length) say("started without a password — the agent cannot log in on this lane (check the env's secrets: vc-secrets doctor)");
+  // A project that has not moved to the store keeps passwords in .env.local; the store beats it, vc-secrets beats both.
+  let fromFile = {};
+  try {
+    fromFile = envFilePasswords(readFileSync(join(root, ".env.local"), "utf8"), laneEnv);
+  } catch {
+    /* no .env.local */
+  }
+  const secrets = { ...fromFile, ...fromStore, ...fromVcSecrets };
+  if (!Object.keys(secrets).length) say("started without a password — the agent cannot log in on this lane: fill test-accounts.local.json (or, for vc-secrets lanes, vc-secrets doctor)");
+  return startPlaywrightMcp({ pkg, version, args, secrets, say });
+}
+
+/**
+ * Start the pinned package's own CLI in this process with `secrets` ({ NAME: value }) as `config.secrets`, keeping the
+ * lane's HAR scrubbed of their values. Shared by `runPlaywrightMcp` (vc-secrets) and a project's own launcher that
+ * reads its passwords elsewhere (ai-tools: scripts/lanes/playwright-lane.mjs, the test-account store). `pkg`: the
+ * package directory (`findPackage`); `args` must pass `refusal`. Resolves once the server is up.
+ * @returns {Promise<undefined>}
+ */
+export async function startPlaywrightMcp({ pkg, version, args, secrets, say: tell = say }) {
+  // The lane's HAR holds the sign-in request: take the values (and any password-named field) out of it.
+  const har = configHarPath(configArg(args) || "", process.cwd());
+  if (har) {
+    watchHarDirs([har], {
+      secrets: Object.values(secrets),
+      onResult: (file, r) => {
+        if (r.status === "scrubbed") tell(`masked ${r.masked} secret value(s) in ${file}`);
+        else if (r.status === "error") tell(`could not scrub ${file}: ${r.error}`);
+      },
+    });
+  }
   try {
     dns.setDefaultResultOrder("ipv4first");
   } catch {

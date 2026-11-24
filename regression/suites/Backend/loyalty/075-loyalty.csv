@@ -233,24 +233,24 @@ LOY-015,Add localized name for program,Loyalty > Localization,High,,,Admin user 
 [WAIT] program detail blade reopens","[FORM] 'es-ES' localized name reads 'Programa de Lealtad' {HYPOTHESIS}
 [FORM] 'pl-PL' localized name reads 'Program Lojalnosciowy' {HYPOTHESIS}","[CONSOLE] no JS errors during save
 [NETWORK] no 4xx/5xx on the save request",a localized name is empty after reopen; the two locales' values are swapped; save toast shows an error,Remove both added localized names and save,VCST-5100 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
-LOY-016,Verify store-configured language options available,Loyalty > Localization,High,,,"Admin user logged in; an AGENT-TEST- loyalty program is open for editing; store @td(STORE_PRIMARY.id) has at least the languages en-US, de-DE, fr-FR, es-ES, pl-PL, it-IT, pt-PT, ja-JP, zh-CN, ru-RU configured. GROUNDING: the pre-2026-09-17 version asserted a dropdown and set-EQUALITY with the store languages; both were refuted live.",store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+LOY-016,Verify store-configured language options available,Loyalty > Localization,High,,,Admin user logged in; an AGENT-TEST- loyalty program is open for editing; store @td(STORE_PRIMARY.id) has at least one language configured; the expected language set is DERIVED from the store's own 'Languages' list at run time (never assume a count or a set - the stand's store languages differ between environments and over time). GROUNDING: the pre-2026-09-17 version asserted a dropdown and set-EQUALITY with the store languages; both were refuted live.,store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open the AGENT-TEST- loyalty program
 [WAIT] program detail blade opens
 [ACT] click the 'Localized names' section to expand it
 [WAIT] the 'Localized names' section expands showing per-language text inputs
 [ACT] click 'Show more languages'
 [WAIT] the full language list renders
-[ACT] capture the language list rendered by the blade
+[ACT] capture the language codes rendered by the blade (set B)
 [NAV] {{BACK_URL}}/#!/workspace/store
 [WAIT] 'Stores' list blade is visible
 [ACT] click the store row for @td(STORE_PRIMARY.id)
 [WAIT] Store detail blade opens
-[ACT] capture the store's configured 'Languages' list","[FORM] 'Localized names' renders an inline list of per-language text inputs — NOT a dropdown selector {OBSERVED}
-[FORM] after 'Show more languages' the blade's list holds exactly 10 language rows {OBSERVED}
+[ACT] capture the store's configured 'Languages' codes (set S) - the expected set is S itself, read here, not a transcribed list","[FORM] 'Localized names' renders an inline list of per-language text inputs -- NOT a dropdown selector {OBSERVED}
+[FORM] after 'Show more languages' the blade renders one language row per language it offers (the count is captured, not asserted against a literal) {OBSERVED}
 [FORM] no language code appears twice in the list {OBSERVED}
-[FORM] the blade's language set is a strict SUBSET of the store's configured languages captured in the same run — the store configures strictly more than the blade offers {OBSERVED}
-[EVIDENCE] measured 2026-09-17: the blade offered 10 (es-ES pl-PL pt-PT ja-JP zh-CN de-DE it-IT en-US fr-FR ru-RU) while store @td(STORE_PRIMARY.id) configured 15 — sv-SE, no-NO, en-GB, el-GR and fi-FI were absent from the blade. Suspected defect: the blade reads a different language source than the store configuration {OBSERVED}","[API] GET {{BACK_URL}}/api/stores/@td(STORE_PRIMARY.id) returns the store's configured language list — compare cardinality against the blade's, derive both, transcribe neither
-[CONSOLE] no JS errors in the Admin SPA",The blade offers a language the store does NOT configure (superset — a different defect); a language code is duplicated; the list fails to expand on 'Show more languages',none — read-only case,VCST-5100 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
+[FORM] every language code the blade offers is one the store's configured 'Languages' list (captured in the same run) also contains - the blade never offers a language the store does not configure {OBSERVED}
+[EVIDENCE] record both cardinalities and the symmetric difference of the blade set (B) and the store set (S), both captured in this run. A store language ABSENT from the blade is reported as the VCST-5100 suspected defect (the blade reads a different language source than the store configuration), naming the missing codes - it is not asserted by a count. Measured 2026-09-17 on another stand: the blade offered 10 while the store configured 15; on the current B2B-store the store configures en-US, fr-FR and de-DE {OBSERVED}","[API] GET {{BACK_URL}}/api/stores/@td(STORE_PRIMARY.id) returns the store's configured language list — compare cardinality against the blade's, derive both, transcribe neither
+[CONSOLE] no JS errors in the Admin SPA","The blade offers a language the store does NOT configure (set B is not a subset of set S - a different defect); a language code is duplicated; the list fails to expand on 'Show more languages'; a store language is missing from the blade (report as the VCST-5100 finding, naming the codes)",none — read-only case,VCST-5100 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
 LOY-017,Save is blocked when Name is empty,Loyalty > Validation,Medium,,,"Admin user logged in; Loyalty module accessible; no program exists with an empty Name. NOTE (live 2026-09-17): Save is gated on Name + Store + >=1 condition + >=1 reward, so the other three MUST be supplied or a disabled Save cannot be attributed to Name.",store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] click 'Add' in the toolbar
 [WAIT] 'Add loyalty program' type-selector blade opens
@@ -326,12 +326,14 @@ LOY-020,Loyalty mode dropdown shows exactly the four allowed values,Loyalty > St
 [ACT] click the 'Loyalty mode' dropdown
 [WAIT] dropdown options render","[FORM] dropdown shows exactly 4 options: 'Mixed cart', 'Loyalty store', 'Coupon redemption', 'Payment method' (case-insensitive) {OBSERVED}
 [FORM] no option beyond those 4 values is present {OBSERVED}",[CONSOLE] no JS errors,dropdown fails to open; spinner visible >3s; an undocumented 5th option appears; one of the 4 documented options is missing,none — read-only observation,VCST-5100 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
-LOY-021,API GET returns configured loyalty settings for store,Loyalty > Store Settings,Critical,,,Admin Bearer token obtainable. Loyalty settings for store @td(STORE_PRIMARY.id) are configured: loyaltyEnabled=true; loyaltyMode='Mixed Cart'; loyaltyCurrency=@td(LOYALTY_SETTINGS.currency_code) (seed via the PUT in LOY-022's pattern if a prior GET shows different values).,store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH] obtain an admin Bearer token via POST {{BACK_URL}}/connect/token (grant_type=password; username={{ADMIN_EMAIL}}; password={{ADMIN_PASSWORD}})
-[HTTP] GET {{BACK_URL}}/api/loyalty-setting/store/@td(STORE_PRIMARY.id) with header Authorization: Bearer <token>","[STATUS] HTTP 200 {SPEC}
-[BODY] storeId == @td(STORE_PRIMARY.id) {SPEC}
-[BODY] loyaltyEnabled == true {SPEC}
-[BODY] loyaltyMode == 'Mixed Cart' {SPEC}
-[BODY] loyaltyCurrency == @td(LOYALTY_SETTINGS.currency_code) {SPEC}","[ADMIN] values match what LOY-019 sets in the Admin SPA
+LOY-021,API GET returns configured loyalty settings for store,Loyalty > Store Settings,Critical,,,Admin Bearer token obtainable. Loyalty settings for store @td(STORE_PRIMARY.id) are configured: loyaltyEnabled=true; loyaltyMode='Mixed Cart'; loyaltyCurrency=@td(LOYALTY_SETTINGS.currency_code) (seed via the PUT in LOY-022's pattern if a prior GET shows different values).,store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_settings]
+GET {{BACK_URL}}/api/loyalty-setting/store/@td(STORE_PRIMARY.id)
+[REST-EXEC get_settings]","[ERRORS label=get_settings] HTTP 200 {SPEC}
+[DATA label=get_settings] body.storeId = @td(STORE_PRIMARY.id) {SPEC}
+[DATA label=get_settings] body.loyaltyEnabled = true {SPEC}
+[DATA label=get_settings] body.loyaltyMode = Mixed Cart {SPEC}
+[DATA label=get_settings] body.loyaltyCurrency = @td(LOYALTY_SETTINGS.currency_code) {SPEC}","[ADMIN] values match what LOY-019 sets in the Admin SPA
 [CONSOLE] no JS errors",HTTP 4xx/5xx; storeId missing from the response; loyaltyEnabled field absent,none,VCST-5100 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
 LOY-022,API PUT updates loyalty settings — round-trip verification,Loyalty > Store Settings,Critical,,,Admin Bearer token obtainable; store @td(STORE_PRIMARY.id) exists.,store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH] obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
 [HTTP] PUT {{BACK_URL}}/api/loyalty-setting with body {storeId: @td(STORE_PRIMARY.id), loyaltyEnabled: true, loyaltyMode: 'Loyalty Store', loyaltyCurrency: @td(LOYALTY_SETTINGS.currency_code)}
@@ -344,16 +346,19 @@ LOY-023,API PUT without loyalty:access permission returns 403,Loyalty > Store Se
 [HTTP] PUT {{BACK_URL}}/api/loyalty-setting with body {storeId: @td(STORE_PRIMARY.id), loyaltyEnabled: false, loyaltyMode: 'Coupon Redemption', loyaltyCurrency: @td(LOYALTY_SETTINGS.currency_code)}","[STATUS] HTTP 403 Forbidden {SPEC}
 [BODY] response body is not HTTP 204 and carries no successful update confirmation {SPEC}","[API] a follow-up GET still returns the settings' original values — the PUT had no effect
 [NETWORK] no 500 error",HTTP 200/204 is returned (permission bypass); a 500 error is returned instead of 403; the follow-up GET shows the rejected PUT's values,none,VCST-5100 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
-LOY-024,API GET with unknown storeId returns null or empty,Loyalty > Store Settings,High,,,Admin Bearer token obtainable.,back_url={{BACK_URL}},"[AUTH] obtain an admin Bearer token
-[HTTP] GET {{BACK_URL}}/api/loyalty-setting/store/NON_EXISTENT_STORE_XYZ_99999","[STATUS] the response returns HTTP 200 {OBSERVED}
-[BODY] response body equals null or an empty object — never a 404 and never a 500 {OBSERVED}",[NETWORK] no 5xx error,HTTP 500 is returned; HTTP 404 is returned instead of a null/empty 200 body,none,VCST-5100 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
-LOY-025,Settings propagate to storefront xAPI store query,Loyalty > Store Settings,Critical,,,"Loyalty settings for store @td(STORE_PRIMARY.id) are: Enable=true, Mode='Mixed Cart', Currency=@td(LOYALTY_SETTINGS.currency_code) (seed via the PUT in LOY-022's pattern if not already so).",store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}}; culture={{CULTURE_NAME}},"[AUTH] obtain a Bearer token (storefront user or anonymous)
-[HTTP] POST {{BACK_URL}}/graphql with body {""query"": ""{ store(storeId: \""@td(STORE_PRIMARY.id)\"", cultureName: \""{{CULTURE_NAME}}\"") { settings { modules { moduleId settings { name value } } } } }""}","[STATUS] HTTP 200 {SPEC}
-[BODY] a module with moduleId == 'VirtoCommerce.Loyalty' is present {SPEC}
-[BODY] within that module, settings[name='Loyalty.Enable'].value == true {SPEC}
-[BODY] within that module, settings[name='Loyalty.Mode'].value == 'Mixed Cart' {SPEC}
-[BODY] within that module, settings[name='Loyalty.Currency'].value == @td(LOYALTY_SETTINGS.currency_code) {SPEC}","[API] errors[] array in the GraphQL response is empty — HTTP 200 alone does not guarantee xAPI success
-[NETWORK] no 4xx/5xx on /graphql",errors[] is non-empty; the 'VirtoCommerce.Loyalty' module is absent from the modules array; the currency value is empty,none,VCST-5100 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
+LOY-024,API GET with unknown storeId returns null or empty,Loyalty > Store Settings,High,,,Admin Bearer token obtainable.,back_url={{BACK_URL}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_unknown]
+GET {{BACK_URL}}/api/loyalty-setting/store/NON_EXISTENT_STORE_XYZ_99999
+[REST-EXEC get_unknown]","[ERRORS label=get_unknown] HTTP 200 {OBSERVED}
+[DATA label=get_unknown] body.storeId is null {OBSERVED} -- the body is null or an empty object, so no storeId resolves; a 404 or a 500 fails the HTTP 200 line above",[NETWORK] no 5xx error,HTTP 500 is returned; HTTP 404 is returned instead of a null/empty 200 body,none,VCST-5100 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
+LOY-025,Settings propagate to storefront xAPI store query,Loyalty > Store Settings,Critical,,,"Loyalty settings for store @td(STORE_PRIMARY.id) are: Enable=true, Mode='Mixed Cart', Currency=@td(LOYALTY_SETTINGS.currency_code) (seed via the PUT in LOY-022's pattern if not already so). Signed in as a storefront buyer ([AUTH role=ORG_USER]): B2B-store refuses token-less xAPI (anonymous access denied, KB-A48DF440), so the token-less variant the earlier version allowed cannot run there.",store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}}; culture={{CULTURE_NAME}},"[AUTH role=ORG_USER]
+[GQL-OP store_settings]
+  query { store(storeId: ""@td(STORE_PRIMARY.id)"", cultureName: ""{{CULTURE_NAME}}"") { settings { modules { moduleId settings { name value } } } } }
+[GQL-EXEC store_settings]","[ERRORS label=store_settings] errors[] empty {SPEC}
+[DATA label=store_settings] data.store.settings.modules[?moduleId=VirtoCommerce.Loyalty].moduleId = VirtoCommerce.Loyalty {SPEC}
+[DATA label=store_settings] data.store.settings.modules[?moduleId=VirtoCommerce.Loyalty].settings[?name=Loyalty.Enable].value matches /^true$/i {SPEC}
+[DATA label=store_settings] data.store.settings.modules[?moduleId=VirtoCommerce.Loyalty].settings[?name=Loyalty.Mode].value = Mixed Cart {SPEC}
+[DATA label=store_settings] data.store.settings.modules[?moduleId=VirtoCommerce.Loyalty].settings[?name=Loyalty.Currency].value = @td(LOYALTY_SETTINGS.currency_code) {SPEC}",[NETWORK] no 4xx/5xx on /graphql - the runner records the HTTP status and errors[] for the one operation,errors[] is non-empty; the 'VirtoCommerce.Loyalty' module is absent from the modules array; the currency value is empty,none,VCST-5100 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
 LOY-026,Per-Product Loyalty Factor — Set factor=2 via Product Points Loyalty program and verify persistence,Loyalty > Product Points Loyalty > Product factors,High,,,"[PRE:CLEAR_SESSION]
 Per LOY-026's verified flow (Loyalty 3.1003.0, confirmed 2026-05-29): Product factors live under a Product Points Loyalty program; the program's audience is a rule-tree condition ('User group is ...' / 'Any User Group'); one program per group, each with its own Product factors; matching = customer's group -> matching program -> that program's factor; no match -> default. Path: Loyalty > Add > 'Product Points Loyalty' > fill Name/Store (+ an audience condition) > Save > 'Product factors' widget appears at the bottom of the blade > open it > Add > 'Select Catalog items...' picker > check product > 'Add selected' > factor grid column 'Factor' (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors, model {loyaltyProgramId, productId, factor}; the group lives on the program's conditions, not on the factor row. Admin user logged in; at least one product exists in the catalog visible in the product picker.",back_url={{BACK_URL}}; store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [BLADE] 'Loyalty programs' list blade is visible
@@ -382,23 +387,31 @@ Per LOY-026's verified flow (Loyalty 3.1003.0, confirmed 2026-05-29): Product fa
 [TOAST] success notification after save {OBSERVED}
 [API] POST {{BACK_URL}}/api/loyalty-program-product-factors/search for this program returns the row with factor == 2 {SPEC}","[CONSOLE] no JS errors during the factor save
 [NETWORK] no 4xx/5xx on the factor save request",spinner visible >10s after save; toast shows an error; factor row absent after reopen; factor reverts to 1,"Delete the Product factors row, then delete the AGENT-TEST-Factor-Program program (DELETE /api/loyalty-programs?ids=... cascades the factor)",VCST-5023 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
-LOY-027,Per-Product Loyalty Factor — Set fractional factor=0.5 and verify it persists,Loyalty > Product Points Loyalty > Product factors,High,,,"A Product Points Loyalty program exists (e.g. AGENT-TEST-Factor-Program from LOY-026) with its 'Product factors' blade reachable and at least one product available in the catalog picker. Per LOY-026's verified flow (Loyalty 3.1003.0, confirmed 2026-05-29): Product factors live under a Product Points Loyalty program; the program's audience is a rule-tree condition ('User group is ...' / 'Any User Group'); one program per group, each with its own Product factors; matching = customer's group -> matching program -> that program's factor; no match -> default. Path: Loyalty > Add > 'Product Points Loyalty' > fill Name/Store (+ an audience condition) > Save > 'Product factors' widget appears at the bottom of the blade > open it > Add > 'Select Catalog items...' picker > check product > 'Add selected' > factor grid column 'Factor' (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors, model {loyaltyProgramId, productId, factor}; the group lives on the program's conditions, not on the factor row.",back_url={{BACK_URL}}; store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
-[ACT] open the AGENT-TEST-Factor-Program program
-[WAIT] program detail blade opens
-[ACT] click the 'Product factors' widget
-[WAIT] Product factors blade opens
-[ACT] click 'Add' in the Product factors blade toolbar
-[WAIT] 'Select Catalog items...' picker opens
-[ACT] tick a product row
-[ACT] click 'Add selected'
-[WAIT] the product row appears in the grid with Factor defaulting to 1
-[ACT] fill the Factor spinbutton: 0.5
+LOY-027,Per-Product Loyalty Factor — Set fractional factor=0.5 and verify it persists,Loyalty > Product Points Loyalty > Product factors,High,,,"This case creates its OWN Product Points Loyalty program (AGENT-TEST-Factor-Program-027) and deletes it in Cleanup; it depends on no other case's data. Admin user logged in; at least one product is available in the catalog picker. Verified flow (Loyalty 3.1003.0, confirmed 2026-05-29): Product factors live under a Product Points Loyalty program; the program's audience is a rule-tree condition ('User group is ...' / 'Any User Group'); one program per group, each with its own Product factors; matching = customer's group -> matching program -> that program's factor; no match -> default. Path: Loyalty > Add > 'Product Points Loyalty' > fill Name/Store (+ an audience condition) > Save > 'Product factors' widget appears at the bottom of the blade > open it > Add > 'Select Catalog items...' picker > check product > 'Add selected' > factor grid column 'Factor' (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors, model {loyaltyProgramId, productId, factor}; the group lives on the program's conditions, not on the factor row.",back_url={{BACK_URL}}; store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[BLADE] 'Loyalty programs' list blade is visible
+[ACT] click 'Add' in the toolbar
+[WAIT] 'Add loyalty program' type-selector blade opens
+[ACT] click the 'Product Points Loyalty' type
+[WAIT] new program detail blade opens showing the banner 'Save the program first to start managing product factors'
+[ACT] fill 'Name': 'AGENT-TEST-Factor-Program-027'
+[ACT] select 'Store': @td(STORE_PRIMARY.id) from the Store dropdown
 [SAVE] click 'Save'
+[WAIT] 'Product factors' widget (count 0) appears at the bottom of the blade
+[ACT] click the 'Product factors' widget
+[WAIT] 'Product factors' blade opens showing 'No data'
+[ACT] click 'Add' in the Product factors blade toolbar
+[WAIT] 'Select Catalog items...' product picker opens
+[ACT] navigate to a category
+[ACT] tick one product row
+[ACT] click 'Add selected'
+[WAIT] the product row appears in the Product factors grid with a 'New' badge and Factor defaulting to 1
+[ACT] fill the Factor spinbutton: 0.5
+[SAVE] click 'Save' in the Product factors blade
 [WAIT] blade shows a success notification
 [ACT] click 'Refresh' in the Product factors blade
 [WAIT] the grid reloads","[FORM] Factor cell shows 0.5 — not truncated to 0 and not rounded to 1 {OBSERVED}
 [API] POST {{BACK_URL}}/api/loyalty-program-product-factors/search for this program returns the row with factor == 0.5 {SPEC}","[CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on the save request",Factor truncated to 0 or rounded to 1; the save is rejected on the fractional input; the row is absent after reopen,Delete the Product factors row,VCST-5023 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
+[NETWORK] no 4xx/5xx on the save request",Factor truncated to 0 or rounded to 1; the save is rejected on the fractional input; the row is absent after reopen,Delete the AGENT-TEST-Factor-Program-027 program (DELETE /api/loyalty-programs?ids=... cascades its Product factors rows).,VCST-5023 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
 LOY-028,Per-Product Factor — No matching program/user-group falls back to default factor,Loyalty > Product Points Loyalty > Product factors,High,,,"A Product Points Loyalty program exists scoped to a specific user group condition (e.g. 'User group is VIP'); the product under test has no factor row in that program, and no other Product Points Loyalty program matches the test user's group. Per LOY-026's verified flow (Loyalty 3.1003.0, confirmed 2026-05-29): Product factors live under a Product Points Loyalty program; the program's audience is a rule-tree condition ('User group is ...' / 'Any User Group'); one program per group, each with its own Product factors; matching = customer's group -> matching program -> that program's factor; no match -> default. Path: Loyalty > Add > 'Product Points Loyalty' > fill Name/Store (+ an audience condition) > Save > 'Product factors' widget appears at the bottom of the blade > open it > Add > 'Select Catalog items...' picker > check product > 'Add selected' > factor grid column 'Factor' (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors, model {loyaltyProgramId, productId, factor}; the group lives on the program's conditions, not on the factor row.",back_url={{BACK_URL}}; store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open the user-group-scoped Product Points Loyalty program
 [WAIT] program detail blade opens
@@ -407,11 +420,29 @@ LOY-028,Per-Product Factor — No matching program/user-group falls back to defa
 [GRID] the Product factors grid row count is unchanged after the blade loads (no row auto-created) {HYPOTHESIS}
 [API] GET {{BACK_URL}}/api/loyalty-program-product-factors/search for this productId returns zero matching rows {SPEC}","[CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx on page load",a factor row is auto-created for the product on load without user action; a stray factor row for the product appears from an unrelated program,none,VCST-5023 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
-LOY-030,Per-Product Factor — Delete a factor row removes the override,Loyalty > Product Points Loyalty > Product factors,High,,,"A Product Points Loyalty program has a saved Product factors row (factor=2) for a test product — established per LOY-026's flow. Per LOY-026's verified flow (Loyalty 3.1003.0, confirmed 2026-05-29): Product factors live under a Product Points Loyalty program; the program's audience is a rule-tree condition ('User group is ...' / 'Any User Group'); one program per group, each with its own Product factors; matching = customer's group -> matching program -> that program's factor; no match -> default. Path: Loyalty > Add > 'Product Points Loyalty' > fill Name/Store (+ an audience condition) > Save > 'Product factors' widget appears at the bottom of the blade > open it > Add > 'Select Catalog items...' picker > check product > 'Add selected' > factor grid column 'Factor' (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors, model {loyaltyProgramId, productId, factor}; the group lives on the program's conditions, not on the factor row.",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty
-[ACT] open the Product Points Loyalty program from LOY-026
-[WAIT] program detail blade opens
+LOY-030,Per-Product Factor — Delete a factor row removes the override,Loyalty > Product Points Loyalty > Product factors,High,,,"This case creates its OWN Product Points Loyalty program (AGENT-TEST-Factor-Program-030) with one saved Product factors row (factor=2) as part of its Steps, and deletes the program in Cleanup; it depends on no other case's data. Admin user logged in; at least one product is available in the catalog picker. Verified flow (Loyalty 3.1003.0, confirmed 2026-05-29): Product factors live under a Product Points Loyalty program; the program's audience is a rule-tree condition ('User group is ...' / 'Any User Group'); one program per group, each with its own Product factors; matching = customer's group -> matching program -> that program's factor; no match -> default. Path: Loyalty > Add > 'Product Points Loyalty' > fill Name/Store (+ an audience condition) > Save > 'Product factors' widget appears at the bottom of the blade > open it > Add > 'Select Catalog items...' picker > check product > 'Add selected' > factor grid column 'Factor' (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors, model {loyaltyProgramId, productId, factor}; the group lives on the program's conditions, not on the factor row.",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[BLADE] 'Loyalty programs' list blade is visible
+[ACT] click 'Add' in the toolbar
+[WAIT] 'Add loyalty program' type-selector blade opens
+[ACT] click the 'Product Points Loyalty' type
+[WAIT] new program detail blade opens showing the banner 'Save the program first to start managing product factors'
+[ACT] fill 'Name': 'AGENT-TEST-Factor-Program-030'
+[ACT] select 'Store': @td(STORE_PRIMARY.id) from the Store dropdown
+[SAVE] click 'Save'
+[WAIT] 'Product factors' widget (count 0) appears at the bottom of the blade
 [ACT] click the 'Product factors' widget
-[WAIT] Product factors blade opens showing the saved factor row
+[WAIT] 'Product factors' blade opens showing 'No data'
+[ACT] click 'Add' in the Product factors blade toolbar
+[WAIT] 'Select Catalog items...' product picker opens
+[ACT] navigate to a category
+[ACT] tick one product row
+[ACT] click 'Add selected'
+[WAIT] the product row appears in the Product factors grid with a 'New' badge and Factor defaulting to 1
+[ACT] fill the Factor spinbutton: 2
+[SAVE] click 'Save' in the Product factors blade
+[WAIT] blade shows a success notification
+[ACT] click 'Refresh' in the Product factors blade
+[WAIT] the grid reloads showing the saved factor row (Factor = 2)
 [ACT] tick the saved row's selection checkbox
 [ACT] click 'Delete' in the Product factors blade toolbar
 [WAIT] the row is removed from the grid
@@ -420,4 +451,4 @@ LOY-030,Per-Product Factor — Delete a factor row removes the override,Loyalty 
 [ACT] click 'Refresh' in the Product factors blade
 [WAIT] the grid reloads","[GRID] the deleted factor row no longer appears in the Product factors grid {OBSERVED}
 [API] POST {{BACK_URL}}/api/loyalty-program-product-factors/search for this program no longer returns the deleted productId {SPEC}","[CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on the delete/save request",the row persists after delete+save; the save fails after the delete; the stale row reappears on reopen,Delete the AGENT-TEST-Factor-Program program if not already removed,VCST-5023 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft
+[NETWORK] no 4xx/5xx on the delete/save request",the row persists after delete+save; the save fails after the delete; the stale row reappears on reopen,Delete the AGENT-TEST-Factor-Program-030 program (DELETE /api/loyalty-programs?ids=... cascades any remaining Product factors rows).,VCST-5023 | Audited: 2026-09-17 (VCST-5959); Verified live: 2026-09-17 (platform 3.1071.0-pr-3108),Draft

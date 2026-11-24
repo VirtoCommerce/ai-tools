@@ -1024,7 +1024,7 @@
     "locale_alternate": "de-DE"
   },
   "MSN_DRAFT": {
-    "id": "a6164614-6ff0-4808-b454-1588cb5f27da",
+    "id": "fff1d8ed-414e-430b-9f95-1ee696004b9c",
     "banner_url": "https://vcptcore-regression.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_OPEN_ENDED": {
@@ -1121,35 +1121,35 @@
     "store_id": "B2B-store"
   },
   "LOYALTY_ZERO_USER": {
-    "memberId": "c3c63d6d-6dc7-4dc4-9975-07f948b0bff4",
-    "securityAccountId": "3ea2663f-b15f-4b6d-a0af-ec6ff4b0e53b",
-    "email": "AGENT-TEST-loyzero-20261109093711-a556@test-agent.com"
+    "memberId": "9bd41843-4905-4eb2-8ff6-48da8836baa5",
+    "securityAccountId": "bb820e9f-64fb-4ae0-92e9-aa0d7a28211d",
+    "email": "AGENT-TEST-loyzero-20261109153614-d77e@test-agent.com"
   },
   "MSN_E2E_RUN": {
-    "run_id": "20261016150733-bb26",
-    "seeded_at": "2026-10-16T15:07:33.874Z",
+    "run_id": "20261109153618-6c4c",
+    "seeded_at": "2026-11-09T15:36:18.609Z",
     "store_id": "B2B-store",
     "catalog_id": "d04ed9df-7f94-4707-9d57-462c04d291e8",
     "category_id": "c4eaf5ea-f034-475c-9363-c5d9b57d9e12"
   },
   "MSN_E2E_REWARD_USER": {
-    "email": "AGENT-TEST-loyzero-20261016150727-65c2@test-agent.com",
-    "user_id": "12c9bcc6-13d2-4974-8399-a8ec5fda72f8",
-    "member_id": "00ce40ef-cd8d-4aba-a54b-4693599c67f3",
+    "email": "AGENT-TEST-loyzero-20261109153614-d77e@test-agent.com",
+    "user_id": "bb820e9f-64fb-4ae0-92e9-aa0d7a28211d",
+    "member_id": "9bd41843-4905-4eb2-8ff6-48da8836baa5",
     "balance_at_seed": "0"
   },
   "MSN_E2E_ORDERVALUE": {
-    "id": "6601985d-4788-4f57-9454-1cadc3717a42",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-ORDERVALUE",
-    "run_id": "20261016150733-bb26",
+    "id": "1360d0f3-7057-4603-bb98-62a1f04a8e2a",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-ORDERVALUE",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "USD",
     "progress_status_at_seed": "InProgress",
     "progress_percent_at_seed": "0"
   },
   "MSN_E2E_ORDERCOUNT": {
-    "id": "aedd87cb-31da-44af-a67f-b686fdf1f75e",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-ORDERCOUNT",
-    "run_id": "20261016150733-bb26",
+    "id": "b9ae4e93-85ab-4f6e-9af3-1f1a9d3d659e",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-ORDERCOUNT",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "",
     "progress_status_at_seed": "InProgress",
     "progress_percent_at_seed": "0",
@@ -1161,31 +1161,31 @@
     "measured_shipping": "0",
     "measured_total": "18",
     "reading_values": "netMerchandise=15; grossMerchandise=15; orderTotal=18; totalPlusPoints=18",
-    "order1_co_missions": "AGENT-TEST-MSN-E2E-20261016150733-bb26-ORDERVALUE-008=508; AGENT-TEST-MSN-LOCALIZED=250; AGENT-TEST-MSN-ZEROREWARD=0; AGENT-TEST-MSN-ZEROTARGET=200; AGENT-TEST-MSN-PUBLISHED-PRIVATE=100",
-    "order1_expected_delta": "1058",
-    "co_completing_missions": "AGENT-TEST-MSN-E2E-20261016150733-bb26-ORDERVALUE-006=506; AGENT-TEST-MSN-ORDERCOUNT=300",
+    "order1_co_missions": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-ORDERVALUE-008=508; AGENT-TEST-MSN-VCST5957-202611090936-DONE-15=215; AGENT-TEST-MSN-LOCALIZED=250; AGENT-TEST-MSN-ZEROREWARD=0; AGENT-TEST-MSN-ZEROTARGET=200; AGENT-TEST-MSN-PUBLISHED-PRIVATE=100",
+    "order1_expected_delta": "1273",
+    "co_completing_missions": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-ORDERVALUE-006=506; AGENT-TEST-MSN-ORDERCOUNT=300",
     "reward_expected_total": "1307"
   },
   "MSN_E2E_PERSKU": {
-    "id": "0d242f5c-b9da-4849-a7e6-ed820f81036b",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-PERSKU",
-    "run_id": "20261016150733-bb26",
+    "id": "d6a51787-93d7-4a2d-bce9-931eff35dbbb",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-PERSKU",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "",
     "progress_status_at_seed": "InProgress",
     "progress_percent_at_seed": "0"
   },
   "MSN_E2E_PERSKU_PTS": {
-    "id": "b927c605-2cce-4953-8b3a-80fdce61194e",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-PERSKU-PTS",
-    "run_id": "20261016150733-bb26",
+    "id": "9946f2b7-a914-4a88-8fef-ab9e79bfe9f4",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-PERSKU-PTS",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "",
     "progress_status_at_seed": "InProgress",
     "progress_percent_at_seed": "0"
   },
   "MSN_E2E_TGT_CONTROL": {
-    "id": "e18b55cf-0f60-4ebd-98df-486ca0073dcf",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-TGT-CONTROL",
-    "run_id": "20261016150733-bb26",
+    "id": "1f135829-a1ad-416c-a9d4-137c58e8c568",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-TGT-CONTROL",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "USD",
     "goal_target": "7200",
     "progress_status_at_seed": "InProgress",
@@ -1193,9 +1193,9 @@
     "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=visible"
   },
   "MSN_E2E_TGT_GROUP": {
-    "id": "3d3fafeb-b545-43f0-b76d-de1389fd11d0",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-TGT-GROUP",
-    "run_id": "20261016150733-bb26",
+    "id": "8fbbdc4e-9aeb-4611-b65c-4812661bc0dc",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-TGT-GROUP",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "USD",
     "goal_target": "7200",
     "progress_status_at_seed": "InProgress",
@@ -1203,9 +1203,9 @@
     "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=absent"
   },
   "MSN_E2E_TGT_PRIVATE": {
-    "id": "f41ee014-9e43-4458-93df-a4f011e1eed4",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-TGT-PRIVATE",
-    "run_id": "20261016150733-bb26",
+    "id": "cf0a3292-c485-41d3-9afe-38b60e5e80c6",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-TGT-PRIVATE",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "USD",
     "goal_target": "7200",
     "progress_status_at_seed": "InProgress",
@@ -1213,9 +1213,9 @@
     "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=visible"
   },
   "MSN_E2E_ORDERVALUE_003": {
-    "id": "8f19a826-9aac-4cf9-88f4-3420424d3163",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-ORDERVALUE-003",
-    "run_id": "20261016150733-bb26",
+    "id": "2b77aaac-9c37-4f46-bc7e-cf25642ae6a3",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-ORDERVALUE-003",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "USD",
     "goal_target": "49.5",
     "progress_status_at_seed": "InProgress",
@@ -1236,9 +1236,9 @@
     "reward_expected_total": ""
   },
   "MSN_E2E_ORDERVALUE_005": {
-    "id": "aba367db-3028-4ab0-afcd-07400995fe34",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-ORDERVALUE-005",
-    "run_id": "20261016150733-bb26",
+    "id": "61a7fd46-f633-43cf-948c-9aa91c98d521",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-ORDERVALUE-005",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "USD",
     "goal_target": "42",
     "progress_status_at_seed": "InProgress",
@@ -1259,9 +1259,9 @@
     "reward_expected_total": ""
   },
   "MSN_E2E_ORDERVALUE_006": {
-    "id": "e4ee7447-ec68-4e4a-8f76-406717de319a",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-ORDERVALUE-006",
-    "run_id": "20261016150733-bb26",
+    "id": "e53ffa20-a18c-49c6-9cc9-ceb516618231",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-ORDERVALUE-006",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "USD",
     "goal_target": "36",
     "progress_status_at_seed": "InProgress",
@@ -1282,9 +1282,9 @@
     "reward_expected_total": ""
   },
   "MSN_E2E_ORDERVALUE_008": {
-    "id": "5a4c0fe7-706e-4d4d-a8fa-d5e09350bae3",
-    "name": "AGENT-TEST-MSN-E2E-20261016150733-bb26-ORDERVALUE-008",
-    "run_id": "20261016150733-bb26",
+    "id": "9b00148f-1603-423f-8e10-7f425e247c8b",
+    "name": "AGENT-TEST-MSN-E2E-20261109153618-6c4c-ORDERVALUE-008",
+    "run_id": "20261109153618-6c4c",
     "goal_currency": "USD",
     "goal_target": "12",
     "progress_status_at_seed": "InProgress",
@@ -1301,77 +1301,77 @@
     "separates_below": "0",
     "separates_above": "20",
     "separation_margin": "8",
-    "co_completing_missions": "AGENT-TEST-MSN-LOCALIZED=250; AGENT-TEST-MSN-ZEROREWARD=0; AGENT-TEST-MSN-ZEROTARGET=200; AGENT-TEST-MSN-PUBLISHED-PRIVATE=100",
-    "reward_expected_total": "1058"
+    "co_completing_missions": "AGENT-TEST-MSN-VCST5957-202611090936-DONE-15=215; AGENT-TEST-MSN-LOCALIZED=250; AGENT-TEST-MSN-ZEROREWARD=0; AGENT-TEST-MSN-ZEROTARGET=200; AGENT-TEST-MSN-PUBLISHED-PRIVATE=100",
+    "reward_expected_total": "1273"
   },
   "MSN_E2E_USER_001": {
-    "email": "AGENT-TEST-msne2e-20261016150815-4e2b@test-agent.com",
-    "user_id": "f7780006-c195-428e-8900-42dc3e169fa9",
-    "member_id": "f431bdf3-2680-4bbc-b0db-6311ae779506",
-    "handle": "AGENT-TEST-msne2e-20261016150815-4e2b",
+    "email": "AGENT-TEST-msne2e-20261109153631-98a5@test-agent.com",
+    "user_id": "c3d71914-2f6d-453c-9b82-acaa4fbf3066",
+    "member_id": "b61983f8-5cab-4fb7-8e80-cf74af737479",
+    "handle": "AGENT-TEST-msne2e-20261109153631-98a5",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_USER_PTSSPEND": {
-    "email": "AGENT-TEST-msne2e-20261016150820-8ca5@test-agent.com",
-    "user_id": "ea57e987-46d0-4e45-99eb-f802321aa560",
-    "member_id": "9f01cd35-3165-4193-9635-458326d5f7ad",
-    "handle": "AGENT-TEST-msne2e-20261016150820-8ca5",
-    "balance_at_seed": "31350",
+    "email": "AGENT-TEST-msne2e-20261109153634-6375@test-agent.com",
+    "user_id": "d360f2d7-bda3-4af2-8083-a5952eafacc6",
+    "member_id": "cd90ce14-07af-4780-9f94-3bd0d5bdf46d",
+    "handle": "AGENT-TEST-msne2e-20261109153634-6375",
+    "balance_at_seed": "31565",
     "groups_at_seed": "",
     "pts_line_cost": "1",
     "funding_program": "AGENT-TEST PP Single-SKU Laptop (pri 80, factor 500 × 60)",
-    "funding_order": "CO261016-00001",
+    "funding_order": "CO261109-00015",
     "funding_points_per_unit": "30000",
     "pts_progress_status_at_seed": "InProgress",
     "pts_is_started_at_seed": "false",
     "pts_current_quantity_at_seed": "0"
   },
   "MSN_E2E_USER_003": {
-    "email": "AGENT-TEST-msne2e-20261016150824-34d4@test-agent.com",
-    "user_id": "9eb2fbf1-2009-4d2b-aed3-a0ab385bfc16",
-    "member_id": "ea369f2c-397f-4211-82a1-84e9c46d72c3",
-    "handle": "AGENT-TEST-msne2e-20261016150824-34d4",
+    "email": "AGENT-TEST-msne2e-20261109153636-5e98@test-agent.com",
+    "user_id": "49bbe28f-71a0-48ef-a738-000f9d01154e",
+    "member_id": "a6e64a59-241e-4677-9482-a6c6c2bde992",
+    "handle": "AGENT-TEST-msne2e-20261109153636-5e98",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_USER_005": {
-    "email": "AGENT-TEST-msne2e-20261016150828-e9fe@test-agent.com",
-    "user_id": "70c615f5-e1d4-4db8-93c7-5cf061bbdb39",
-    "member_id": "f999e9e9-3224-4f7d-8a1f-7dd0e90ac2fb",
-    "handle": "AGENT-TEST-msne2e-20261016150828-e9fe",
+    "email": "AGENT-TEST-msne2e-20261109153639-972d@test-agent.com",
+    "user_id": "e22cea42-6dbd-442f-842f-b6891261a1ff",
+    "member_id": "8510546b-8423-49ab-bb80-69d476ff820c",
+    "handle": "AGENT-TEST-msne2e-20261109153639-972d",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_USER_006": {
-    "email": "AGENT-TEST-msne2e-20261016150831-6441@test-agent.com",
-    "user_id": "cdebfce5-a71c-40ab-a1d0-cff717b66d2f",
-    "member_id": "47b87f5c-0fa8-4fd9-9a39-42e01c467af0",
-    "handle": "AGENT-TEST-msne2e-20261016150831-6441",
+    "email": "AGENT-TEST-msne2e-20261109153641-77e4@test-agent.com",
+    "user_id": "f2580f3a-6a57-4667-b862-6620ed731df4",
+    "member_id": "814993d9-3cef-4c06-a31f-be20050cb581",
+    "handle": "AGENT-TEST-msne2e-20261109153641-77e4",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_USER_008": {
-    "email": "AGENT-TEST-msne2e-20261016150835-3492@test-agent.com",
-    "user_id": "a85e1f47-1a93-4e5f-925a-f3709cbffbfe",
-    "member_id": "cef29bf7-0001-4ea0-9c90-ef511d72498e",
-    "handle": "AGENT-TEST-msne2e-20261016150835-3492",
+    "email": "AGENT-TEST-msne2e-20261109153644-9bad@test-agent.com",
+    "user_id": "bf290326-6733-4766-8c4a-6d923c23a569",
+    "member_id": "78906625-9736-4c2a-ba35-853336a426ab",
+    "handle": "AGENT-TEST-msne2e-20261109153644-9bad",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_USER_TGTMEMBER": {
-    "email": "AGENT-TEST-msne2e-20261016150839-e5da@test-agent.com",
-    "user_id": "741318d0-6e01-4fdd-ad15-c12c74a1c8a3",
-    "member_id": "449c1f42-9854-4a72-a5cd-e38c0c190831",
-    "handle": "AGENT-TEST-msne2e-20261016150839-e5da",
+    "email": "AGENT-TEST-msne2e-20261109153646-b03a@test-agent.com",
+    "user_id": "1e99b349-fe17-4085-a290-f48c8a1230eb",
+    "member_id": "3e060d5e-998f-4368-b5e3-796eeee7b87f",
+    "handle": "AGENT-TEST-msne2e-20261109153646-b03a",
     "balance_at_seed": "0",
     "groups_at_seed": "VIP"
   },
   "MSN_E2E_USER_TGTOUTSIDER": {
-    "email": "AGENT-TEST-msne2e-20261016150844-7f2b@test-agent.com",
-    "user_id": "83c9e68e-7308-4bd7-970b-60c7695e478f",
-    "member_id": "307eeb40-2f0a-46bb-8ef1-366718fce888",
-    "handle": "AGENT-TEST-msne2e-20261016150844-7f2b",
+    "email": "AGENT-TEST-msne2e-20261109153649-863d@test-agent.com",
+    "user_id": "f3ac1485-9a98-4c43-97cb-81d65aa4dc50",
+    "member_id": "6c05e12c-69d4-4b1f-8b3f-e85c5a0fa64f",
+    "handle": "AGENT-TEST-msne2e-20261109153649-863d",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
@@ -1425,7 +1425,7 @@
     "id": "550d5646-4705-4100-94e2-c583c6362c0b"
   },
   "QUOTE_WITH_ADMIN_RESPONSE": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "b4e317dc-6085-490e-a433-c4b052b7f589",
     "number_slot1": "AGENT-TEST-QTE-ADMIN-RESPONSE",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1444,7 +1444,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_PROCESSING": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "07eeb370-3546-44c1-9553-750e794e6b4e",
     "number_slot1": "AGENT-TEST-QTE-PROCESSING",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1463,7 +1463,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_ON_HOLD": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "ce86d362-8785-49a2-b1c1-dbf40a30d347",
     "number_slot1": "AGENT-TEST-QTE-ON-HOLD",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1482,7 +1482,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_DECLINED": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "95af3f0e-29e0-419e-baa3-6061a169247b",
     "number_slot1": "AGENT-TEST-QTE-DECLINED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1501,7 +1501,7 @@
     "expiration_date_slot3": ""
   },
   "ACCEPTED_QUOTE": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "92d6f60e-46cc-430d-9aa6-72be9c889ee1",
     "number_slot1": "AGENT-TEST-QTE-ACCEPTED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1520,7 +1520,7 @@
     "expiration_date_slot3": ""
   },
   "EXPIRED_QUOTE": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "22d1ce8f-99e8-4cf3-8a6f-c3481aa2cc43",
     "number_slot1": "AGENT-TEST-QTE-EXPIRED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1539,7 +1539,7 @@
     "expiration_date_slot3": "2026-10-17T18:28:22.471Z"
   },
   "QUOTE_FUTURE_EXPIRY": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "e7561a46-6733-4f28-8a16-425d09ca1168",
     "number_slot1": "AGENT-TEST-QTE-FUTURE-EXPIRY",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1558,7 +1558,7 @@
     "expiration_date_slot3": "2026-11-19T18:30:28.471Z"
   },
   "QUOTE_TO_ACCEPT": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "6f8a8431-c03e-4c73-9d20-b04bf9e1ddd3",
     "number_slot1": "AGENT-TEST-QTE-TO-ACCEPT",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1567,7 +1567,7 @@
     "number": "AGENT-TEST-QTE-TO-ACCEPT",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "87a5b920-4129-4ff9-a5b2-68658a8c431c",
+    "id_slot2": "ddfe5c71-5182-47dc-b958-4ea128f84ef0",
     "number_slot2": "AGENT-TEST-QTE-TO-ACCEPT-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",
@@ -1577,7 +1577,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_DECLINE": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "1769fc7b-897f-4c55-9ae4-b48d1796b01f",
     "number_slot1": "AGENT-TEST-QTE-TO-DECLINE",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1586,7 +1586,7 @@
     "number": "AGENT-TEST-QTE-TO-DECLINE",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "0f424ea3-a9ba-4ed9-b216-b817f95e061b",
+    "id_slot2": "451ed025-3b0b-4ad4-9ad9-d1d9272f02ec",
     "number_slot2": "AGENT-TEST-QTE-TO-DECLINE-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",
@@ -1596,7 +1596,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "3f288e76-8f1c-4be1-8ec2-74c4033dda01",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1615,7 +1615,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT_REPRICED": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "775b639e-94a5-4047-af88-b719eef3b796",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-REPRICED",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1624,7 +1624,7 @@
     "number": "AGENT-TEST-QTE-TO-CONVERT-REPRICED",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "014e59a0-b2e8-4f1d-8e9e-4c94ccf636e8",
+    "id_slot2": "b2ecb476-2641-44d9-8ac7-9fe25adbe3ec",
     "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-REPRICED-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",
@@ -1634,7 +1634,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT_MULTILINE": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "60885dfc-da0b-4a56-a30a-72aad835e8c5",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1643,7 +1643,7 @@
     "number": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "5eb9ced2-6acb-448c-900a-05c391d4a128",
+    "id_slot2": "fcdae692-83f7-4e0f-93a5-d99bed7fc671",
     "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",
@@ -1653,7 +1653,7 @@
     "expiration_date_slot3": ""
   },
   "QUOTE_TO_CONVERT_STATUS": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "83648e89-89c7-440f-a870-c631c6701b7b",
     "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-STATUS",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1662,7 +1662,7 @@
     "number": "AGENT-TEST-QTE-TO-CONVERT-STATUS",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "8df0dd16-9293-4bca-a9b9-ad194547134e",
+    "id_slot2": "843ae793-da2d-46b8-9d8d-d84fe165ea82",
     "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-STATUS-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",
@@ -1672,7 +1672,7 @@
     "expiration_date_slot3": ""
   },
   "EXPIRED_QUOTE_TO_ACCEPT": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "1fa3b5d8-7c0a-442c-9681-74d123cc0c04",
     "number_slot1": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1691,7 +1691,7 @@
     "expiration_date_slot3": "2026-10-17T18:31:39.411Z"
   },
   "QUOTE_PROPOSAL_OOS": {
-    "seeded_at": "2026-11-05T13:38:44.112Z",
+    "seeded_at": "2026-11-09T12:53:42.642Z",
     "id_slot1": "c7dfb3a9-2e3a-4396-b930-332851a1a25a",
     "number_slot1": "AGENT-TEST-QTE-OOS",
     "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
@@ -1700,7 +1700,7 @@
     "number": "AGENT-TEST-QTE-OOS",
     "buyer_email": "test-john.mitchell-20260310@test-agent.com",
     "expiration_date": "",
-    "id_slot2": "7b0df73e-323b-46fa-971e-b36bf023788b",
+    "id_slot2": "d79ce405-e00a-470e-b754-90a2e2090906",
     "number_slot2": "AGENT-TEST-QTE-OOS-S2",
     "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
     "expiration_date_slot2": "",

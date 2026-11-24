@@ -9,7 +9,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { currentEnv } from "./paths.mjs";
-import { MIN_SECRET_LENGTH, SECRET_NAME, TOKEN_SHAPES, loadSecretValues, looksLikePath, secretValuesFrom } from "../skills/ticket-context/lib/scrub.mjs";
+import { MIN_SECRET_LENGTH, SECRET_NAME, STORE_FILE, TOKEN_SHAPES, loadSecretValues, looksLikePath, secretValuesFrom, storeAsEnvText } from "../skills/ticket-context/lib/scrub.mjs";
 import { envFolders, readEnvFile } from "../scripts/lib/env-layers.mjs";
 
 /** What the stores hold, in the formats §6 names. `<slug>` is the caller's; everything else is fixed here. */
@@ -20,6 +20,7 @@ export const KINDS = Object.freeze({
   "test-doc": "tests/<slug>.md",
   aliases: "test-data/aliases.json",
   observed: "observed/<slug>.json",
+  personas: "personas.md", // one file per store; the slug is not part of the path (as aliases)
 });
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
@@ -44,7 +45,8 @@ export function storeConfig(profile, { root }) {
 }
 
 /**
- * Every secret VALUE this project holds: `.env.local` and every `.env.playwright.*` file (per env, master, all) in
+ * Every secret VALUE this project holds: every password in the test-account store (`test-accounts.local.json` —
+ * passwords only, never a login), `.env.local` and every legacy `.env.playwright.*` file (per env, master, all) in
  * the root and in the env's QA_ENV_PATH folders, plus this process's secret-named variables (a password the
  * bridge handed over from vc-secrets lives only there) — except a variable whose value a non-secret layer
  * (`.env.defaults`, `.env.<env>`) declares: `ORDER_KEYWORD_TOKEN=Beacon` or `PASSWORDS=master` is a fact, and
@@ -62,8 +64,8 @@ export function knowledgeSecretValues(root, env = process.env) {
     let names = [];
     try { names = readdirSync(dir); } catch { continue; }
     for (const n of names) {
-      if (n !== ".env.local" && !/^\.env\.playwright\..+$/.test(n)) continue;
-      try { for (const v of secretValuesFrom(readFileSync(join(dir, n), "utf8"))) values.add(v); } catch { /* unreadable: skip */ }
+      if (n !== ".env.local" && n !== STORE_FILE && !/^\.env\.playwright\..+$/.test(n)) continue;
+      try { for (const v of secretValuesFrom(storeAsEnvText(n, readFileSync(join(dir, n), "utf8")))) values.add(v); } catch { /* unreadable: skip */ }
     }
   }
   for (const [name, v] of Object.entries(env)) {

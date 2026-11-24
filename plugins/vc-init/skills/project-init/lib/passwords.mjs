@@ -3,9 +3,11 @@
  *
  * Two ways a project keeps the passwords its agents log in with:
  *
- *   A (file)        `.env.local` holds `ADMIN_PASSWORD_<ENV>` …; sync-browser-secrets.mjs generates
- *                   `.env.playwright.local` from it, which gen-mcp passes to every Playwright lane as
- *                   `--secrets`. Two files at rest.
+ *   A (the store)   the default since vc-init 0.8.0: every test account's login and password, every env, in
+ *                   `test-accounts.local.json` (scripts/lib/test-accounts.mjs). The loader layers it; each
+ *                   Playwright lane runs bridge/playwright-mcp.mjs straight from `.mcp.json`, which hands the
+ *                   lane the store's passwords in memory — no generated `--secrets` file. A project that has
+ *                   not migrated still has `.env.local` passwords (`creds-to-store.mjs` moves them).
  *   B (vc-secrets)  no password in any file. Each one is a vc-secrets `local` secret, one per name per
  *                   environment, and reaches a process only through a declaration:
  *                     - server `playwright-<lane>.<env>` — the lane's Playwright MCP, run in-process by
@@ -22,19 +24,35 @@
  * declaration — so it asks for no new `vc-secrets trust`. Declaring an env (/project-init, --add-env) does.
  *
  * Per ROLE, not all or nothing: the operator picks where admin passwords live and where storefront-user
- * passwords live (/project-init §2d) — typically admins in vc-secrets, users in .env.local, which is easier
- * to edit when there are many. Only the vc-secrets role's names are declared; a lane run from vc-secrets
- * reads the remaining passwords of ITS env straight from .env.local (`envFilePasswords`), so mixed mode
- * needs no generated `.env.playwright.local` either.
+ * passwords live (/project-init §2d) — the store by default, vc-secrets if the operator chooses it. Only the
+ * vc-secrets role's names are declared; a lane run from vc-secrets reads the remaining passwords from the
+ * store (and a not-yet-migrated .env.local, `envFilePasswords`), so mixed mode needs no generated file either.
  *
  * The declaration file is the record of mode B: it is on exactly when a `vc-init-onboard.<env>` task is
  * declared, and that task's env names the passwords of that env kept in vc-secrets — which also says,
  * per role, where the next env or user goes (`vcSecretsRoles`). Nothing else stores the list.
  *
- * Node built-ins only: bridge/run.mjs and bridge/playwright-mcp.mjs import this.
+ * Node built-ins only (and vc-init's own copy of the store module): bridge/run.mjs and bridge/playwright-mcp.mjs import this.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { readStore } from "../../../scripts/lib/test-accounts.mjs";
+
+/**
+ * Every password VALUE the test-account store holds (test-accounts.local.json): the master, every shared one, every
+ * account's own — never a login. For redaction only; best effort: a store that cannot be read gives none.
+ */
+export function storePasswordValues(root, { read = readStore } = {}) {
+  let store;
+  try { store = read(root); } catch { return []; }
+  if (!store.exists) return [];
+  const out = new Set(store.master ? [store.master] : []);
+  for (const level of [store, ...Object.values(store.envs)]) {
+    for (const v of Object.values(level.shared ?? {})) if (v) out.add(v);
+    for (const a of Object.values(level.accounts ?? {})) if (typeof a?.password === "string" && a.password) out.add(a.password);
+  }
+  return [...out];
+}
 
 /** Passwords every environment has; others (`MULTI_ORG_USER_PASSWORD`, …) are added by name. */
 export const ALWAYS_PASSWORDS = Object.freeze(["ADMIN_PASSWORD", "USER_PASSWORD"]);

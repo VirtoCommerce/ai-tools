@@ -30,7 +30,8 @@ session id. No `TEST_ENV=` prefix is needed. `env:check` and the `[config]` line
 
 ## Where an env's files live
 
-An env is the same files wherever they live: `.env.<env>` and `.env.playwright.<env>`. Besides the project, they
+An env is the same file wherever it lives: `.env.<env>` (and, on a project that has not migrated, its legacy
+`.env.playwright.<env>`). Besides the project, they
 may sit in dedicated folders — `QA_ENV_PATH` in `.env.local`, `;`-separated, the first wins
 (`QA_ENV_PATH=P:\VC\_VIRTO\tickets\<ticket>\.work\self-qa;P:\VC\_VIRTO\qa-envs`), with `QA_OUTPUT_DIR`'s
 placeholders and nothing appended; `<ticket>` is the run's ticket (`run-folder.mjs use`'s argument, else
@@ -39,20 +40,24 @@ placeholders and nothing appended; `<ticket>` is the run's ticket (`run-folder.m
 A dedicated file beats the project's key by key, pins included: a ticket's folder holds its
 own stands and may override a shared env for that ticket's runs. The loader warns when that override changes the
 shared env's `BACK_URL`, `FRONT_URL` or `ENV_RISK`, and stops with an error when no file defines the session's
-bound env. `scripts/lib/env-layers.mjs` is the order, byte-identical with the ai-tools repo's.
+bound env. `scripts/lib/env-layers.mjs` is the order — the ai-tools repo's, plus the legacy password reads.
+
+**Test-account logins and passwords** live in ONE gitignored file in the project root,
+`test-accounts.local.json` (`scripts/lib/test-accounts.mjs`), which beats every `.env*` file. A project that has
+not migrated keeps them in `.env.local`, `.env.playwright.<env>` or vc-secrets, and those still work; vc-init's
+`/project-init --check` migrates them.
 
 **Master stands:** `PASSWORDS=master` in a stand's own env file (the project's `.env.<env>` for an env the project
 defines, else its `QA_ENV_PATH` file; nowhere else) means every test account on it signs in with ONE
-password, `MASTER_PASSWORD` in the project's `.env.playwright.master`; every test-account password variable
+password, the store's `master` (legacy: `MASTER_PASSWORD` in `.env.playwright.master`); every test-account password variable
 resolves to it — the platform admin's `ADMIN_PASSWORD` too, so the stand's admin must use it — and a lane types
 `MASTER_PASSWORD` in every password field. A production stand (`ENV_RISK=production`) is never a master stand.
 
 ## What every dispatch brief carries
 
 A browser lane has no shell, so the brief is the only way the env reaches it: the env, `FRONT_URL`,
-`BACK_URL` (the script prints them), and the password names in the form the lanes' `--secrets` file uses —
-`MASTER_PASSWORD` on a master stand (the script says so), else `NAME_<ENV>` on a combined every-env file, the
-bare `NAME` on a single-env one.
+`BACK_URL` (the script prints them), and the password names a lane types — `MASTER_PASSWORD` on a master stand
+(the script says so), else the bare `NAME` for the lane's env or `NAME_<ENV>` (both work).
 
 ## The run folder — where a ticket run writes
 
@@ -82,9 +87,8 @@ on two envs) never write the same file.
 - **Reading:** prior artifacts come from every run folder of the ticket that `use` listed (all envs, and the
   older `reports/tickets/<Sprint>/<ticket-key>/` layout); they are written only into this run's folder.
   Moving a run's bug report into `reports/bugs/open/` is the operator's call.
-- **Run inline by another command** for its own ticket (the ai-tools `/qa-test` on a fix-ready Bug): the
-  caller bound the folder, do not bind again. **For another ticket** (a per-bug verify in `/qa-test --iterate`):
-  `… dir --ticket <ticket-key>` resolves that ticket's folder. Never `use` there: it re-binds the whole session.
+- **Run inline by another command** for its own ticket: the caller bound the folder, do not bind again.
+  **For another ticket**: `… dir --ticket <ticket-key>` resolves that ticket's folder. Never `use` there: it re-binds the whole session.
 
 ## Limits
 

@@ -39,6 +39,7 @@ import {
   VIEW_PERMISSION, fullNameOf, emailOf, accountEmailOf, orgEmailOf, upperVariant, orgOrderNumber, toOrderSpec, shapeOrgOrder,
   expectedCanView, validateOrgReturnsFixtureSet, spareOrderKeys, orderKeysOf, spareField, ORG_STATUS, orgDescriptionOf, orgDrift,
 } from './org-returns-specs.mjs';
+import { accountSet } from '../../lib/user-provision.mjs';
 
 const FRESH = process.argv.includes('--fresh');
 const VERIFY_ONLY = process.argv.includes('--verify');
@@ -245,6 +246,7 @@ async function ensureUser(p, contactId, password) {
     u = await findUser(p.login);
     if (!u?.id) throw new Error(`created ${p.login} but cannot read it back`);
     log(`  ✓ create account ${p.login} (${u.id})${roles.length ? ` global roles [${roles.map((r) => r.id)}]` : ''}`);
+    accountSet(p.login, password, PASSWORD_VAR);
   }
   const haveRoles = (u.roles || []).map((r) => r.id).sort();
   const dirty = u.memberId !== contactId || u.isAdministrator || JSON.stringify(haveRoles) !== JSON.stringify(roles.map((r) => r.id).sort())
@@ -520,7 +522,7 @@ async function seedPersona(p, { password, orgs, orgIdByKey, ctx, ids = {} }) {
   // Credential: verify by signing in; reset only when the declared password does not work.
   if (!DRY_RUN) {
     const t = await tokenFor(p.login, password);
-    if (!t.ok && /invalid|password|credential/i.test(String(t.error))) { await resetSecurityPassword(api, p.login, password); log(`  ↻ password reconciled for ${p.login}`); }
+    if (!t.ok && /invalid|password|credential/i.test(String(t.error))) { await resetSecurityPassword(api, p.login, password); accountSet(p.login, password, PASSWORD_VAR); log(`  ↻ password reconciled for ${p.login}`); }
   }
   const rec = { userId, contactId };
   const home = p.memberships[p.memberships.length === 1 ? 0 : 1];

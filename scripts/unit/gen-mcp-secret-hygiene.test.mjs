@@ -145,12 +145,12 @@ test("#3: a tracked .mcp.json only WARNS — it holds ${VAR} refs, not a credent
 }));
 
 // ─── #4 — protect before creating, for EVERY generated file ───────────────────────
-test("#4: the ignore block is in place before `.env.local` exists, not only before `.mcp.json`", () => withTempDir((dir) => {
+test("#4: the ignore block is in place before the test-account store exists, not only before `.mcp.json`", () => withTempDir((dir) => {
   runScript(dir, "scaffold-secrets.mjs", ["--env", "acme", "--tracker", "jira", "--client-vcs", "github"]);
-  assert.ok(existsSync(join(dir, ".env.local")), "precondition: the secrets file was created");
+  assert.ok(existsSync(join(dir, "test-accounts.local.json")), "precondition: the secrets file was created");
   const gi = readFileSync(join(dir, ".gitignore"), "utf8");
-  for (const entry of [".env.local", ".env.*.local", ".mcp.json", ".claude/settings.local.json", "project-profile.json", ".vc-fix/"]) {
-    assert.match(gi, new RegExp(`^${entry.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "m"), `${entry} not ignored by the time .env.local exists`);
+  for (const entry of ["test-accounts.local.json", ".env.local", ".env.*.local", ".mcp.json", ".claude/settings.local.json", "project-profile.json", ".vc-fix/"]) {
+    assert.match(gi, new RegExp(`^${entry.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "m"), `${entry} not ignored by the time the store exists`);
   }
 }));
 

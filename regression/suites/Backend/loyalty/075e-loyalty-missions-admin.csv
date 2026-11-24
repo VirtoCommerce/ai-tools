@@ -127,13 +127,13 @@ MSNA-008,Save stays disabled with an empty Name — but only Name gives the user
 [DOM] the condition row's own template states its requirement (e.g. 'If any of the following criteria'); the goal row states its requirement ('Reach ___ orders per mission period'); the reward row states its requirement ('Get ___ fixed points'); the Name field states none of its own (no asterisk, no inline hint, no placeholder naming it required) {OBSERVED}","[API] server validator 'Mission name is required' (missions-specs.mjs, HTTP 400) backs the block — the finding here is presentation-only: WHY Save is disabled is legible for condition/goal/reward and illegible for Name.","'Save' is clickable with Name empty (the disable itself is broken, not just under-explained — do not force-click a disabled control to test this: re-open the blade and re-check the disabled state instead)",[ACT] close the details blade without saving,VCST-5319; loyalty-mission-details | Promoted: REG-2026-08-27-1846 (2026-08-27),Automated
 MSNA-009,OrderValueGoal's currency is displayed next to the amount and matches the store's currency,Admin > Loyalty Missions > Details > OrderValueGoal currency,Medium,PROPOSED-BL-LOY-016,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. @td(MSN_ORDERVALUE.id) is Published (read-only), goal value 250 in the store-default currency.",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+1. @td(MSN_ORDERVALUE.id) is Published (read-only), goal value = @td(MSN_ORDERVALUE.goal_target) in the store-default currency (the target is read from the fixture, never a literal).",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
 [NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click the row with Name = @td(MSN_ORDERVALUE.name)
-[WAIT] details blade opens (read-only, Published)","[FORM] the goal row reads 'Reach order total of 250.00 <currency> per mission period' where <currency> = @td(STORE_PRIMARY.currency) {OBSERVED}
-[DOM] the currency label is visible immediately after the amount, not on a separate unlabeled field {OBSERVED}",[API] MSN-004/MSN-005 (075d) confirm the underlying currencyCode contract from the REST layer,no currency label rendered next to the amount (a currency-agnostic-looking UI would contradict the C19 save-time-required contract); the amount reads 250.00 with no unit at all,none,"VCST-5319; loyalty-mission-details, C19 | Promoted: REG-2026-08-27-1846 (2026-08-27)",Automated
+[WAIT] details blade opens (read-only, Published)","[FORM] the goal row reads 'Reach order total of <amount> <currency> per mission period' where <amount> = @td(MSN_ORDERVALUE.goal_target) rendered with two decimals and <currency> = @td(STORE_PRIMARY.currency) {OBSERVED}
+[DOM] the currency label is visible immediately after the amount, not on a separate unlabeled field {OBSERVED}",[API] MSN-004/MSN-005 (075d) confirm the underlying currencyCode contract from the REST layer,no currency label rendered next to the amount (a currency-agnostic-looking UI would contradict the C19 save-time-required contract); the amount reads @td(MSN_ORDERVALUE.goal_target) with no unit at all,none,"VCST-5319; loyalty-mission-details, C19 | Promoted: REG-2026-08-27-1846 (2026-08-27)",Automated
 MSNA-010,Start date / End date pickers are present and editable on a Draft mission,Admin > Loyalty Missions > Details > Date window,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
 1. @td(MSN_DRAFT.id) is Draft (editable).",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
@@ -152,13 +152,19 @@ MSNA-011,The reward amount field accepts 0 (zero-reward mission),Admin > Loyalty
 [ACT] click the row with Name = @td(MSN_ZEROREWARD.name)
 [WAIT] details blade opens (read-only, Published)","[FORM] the reward row reads 'Get 0.00 fixed points' {OBSERVED}
 [DOM] the reward amount field is visible and shows 0.00, not a blank/placeholder state {OBSERVED}",[API] MSN-020 (075d) confirms zero reward grants nothing at accrual,the field is blank or shows a non-zero placeholder instead of 0.00 (zero is being coerced to null/empty rather than persisted); the reward row is missing entirely,none,"VCST-5319; loyalty-mission-details, C10 | Promoted: REG-2026-08-27-1846 (2026-08-27)",Automated
-MSNA-012,Editing a Published mission is blocked with the exact read-only banner message and no editable Save,Admin > Loyalty Missions > Details > Immutability,Critical,,,"[PRE:CLEAR_SESSION]
+MSNA-012,"Editing a Published mission is blocked: exact read-only banner, Save/Reset/Publish disabled, nothing persists",Admin > Loyalty Missions > Details > Immutability,Critical,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
 1. @td(MSN_ORDERVALUE.id) is Published.",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click the row with Name = @td(MSN_ORDERVALUE.name)
-[WAIT] details blade opens","[DOM] a banner reads exactly 'Only draft missions can be edited. Published or archived missions are read-only and cannot be changed.' {OBSERVED}
-[FORM] the Name field is present but not editable (attempting to type has no effect on its value) {OBSERVED}",[API] MSN-006 (075d) confirms the equivalent REST-level PUT rejection (HTTP 500),"no banner shown (regression — the read-only guard is only client-side today, confirmed live); Name field accepts new text and Save silently succeeds",none,VCST-5319; C20,Draft
+[WAIT] details blade opens
+[ACT] type a new value into the 'Name' input
+[WAIT] toolbar state settles
+[ACT] reload the blade (reopen the row for @td(MSN_ORDERVALUE.name))
+[WAIT] details blade opens again","[DOM] a banner reads exactly 'Only draft missions can be edited. Published or archived missions are read-only and cannot be changed.' {OBSERVED}
+[FORM] the toolbar commands 'Save', 'Reset' and 'Publish' are disabled while the mission is Published {OBSERVED}
+[FORM] after the reload the Name field reads @td(MSN_ORDERVALUE.name) - the typed text did not persist {OBSERVED}","[API] MSN-006 (075d) confirms the equivalent REST-level PUT rejection (HTTP 500)
+[EVIDENCE] optional Low UX note, not a verdict: the banner reads read-only while the fields look editable {OBSERVED}","no banner shown (the read-only guard is only client-side today, confirmed live); 'Save' is enabled for a Published mission; the typed Name survives the reload. The Name input accepting keystrokes is NOT a failure signal - the blade enforces read-only through disabled commands and the server (REST PUT rejection, MSN-006), not through a locked input",none,VCST-5319; C20,Draft
 MSNA-013,Publish transitions a Draft mission to Published; the Publish action is unavailable once Published,Admin > Loyalty Missions > Details > Lifecycle,High,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
 1. A scratch Draft mission exists (created inline in this case, not @td(MSN_DRAFT.id) — that fixture is reused by other suites and must not be left Published).",back_url={{BACK_URL}}; mission_name=AGENT-TEST-MSNA-PUBLISH,"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions

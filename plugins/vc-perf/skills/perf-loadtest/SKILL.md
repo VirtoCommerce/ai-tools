@@ -28,16 +28,27 @@ harness's own env knob — k6 has no direct file-read access to the profile). Pa
 backend process (projects that rename the host binary must set this, or the sidecar silently
 skips). Read the profile with vc-perf's read-only reader, never with bare `jq` — `--check` stops
 with "run /project-init" when the profile is missing instead of handing `run.sh` empty values (an
-unset key prints its default, or nothing — `run.sh` then applies its own `BASE_URL` default):
+unset key prints its default, or nothing — an empty `BASE_URL=` line counts as unset, and `run.sh`
+applies its own default).
+
+Write the knobs to an env file in one call, then run `run.sh` **bare** with `--env-file` in the
+next. Variables on the `run.sh` command itself (`X=… run.sh`, `export X; run.sh`) put it back in
+the Claude Code sandbox, where it cannot reach the backend — see the sandbox note in
+`loadtests/README.md`:
 
 ```bash
-node "$pluginRoot/scripts/profile-get.mjs" --check &&
-BASE_URL="$(node "$pluginRoot/scripts/profile-get.mjs" perf.backendUrl)" \
-  STORE_ID="$(node "$pluginRoot/scripts/profile-get.mjs" perf.storeId)" \
-  CURRENCY_CODE="$(node "$pluginRoot/scripts/profile-get.mjs" perf.currencyCode USD)" \
-  CULTURE_NAME="$(node "$pluginRoot/scripts/profile-get.mjs" perf.cultureName en-US)" \
-  PLATFORM_PROCESS="$(node "$pluginRoot/scripts/profile-get.mjs" perf.platformProcess VirtoCommerce.Platform.Web)" \
-  $pluginRoot/skills/perf-loadtest/loadtests/run.sh steady
+P="$pluginRoot/scripts/profile-get.mjs"
+node "$P" --check && mkdir -p "$PWD/.vc-perf" && {
+  echo "BASE_URL=$(node "$P" perf.backendUrl)"
+  echo "STORE_ID=$(node "$P" perf.storeId)"
+  echo "CURRENCY_CODE=$(node "$P" perf.currencyCode USD)"
+  echo "CULTURE_NAME=$(node "$P" perf.cultureName en-US)"
+  echo "PLATFORM_PROCESS=$(node "$P" perf.platformProcess VirtoCommerce.Platform.Web)"
+} > "$PWD/.vc-perf/run.env"
+```
+
+```bash
+$pluginRoot/skills/perf-loadtest/loadtests/run.sh steady --env-file <abs path to .vc-perf/run.env>
 ```
 
 Full knob list, prerequisites (k6 binary, credentials, `dotnet-counters`), the user-pool mechanism
@@ -48,9 +59,9 @@ for multi-user concurrency, and orchestration gotchas: `loadtests/README.md`.
 `run.sh` and the k6 scenarios read **env vars only** (k6 has no direct file-read access to the
 profile) — the `perf.loadtest` keys in `project-profile.json` are not piped in automatically:
 
-- `perf.loadtest.fixtures.productIds` — export `PRODUCT_IDS=<comma-separated ids>` yourself (e.g.
-  `PRODUCT_IDS="$(node "$pluginRoot/scripts/profile-get.mjs" --join , perf.loadtest.fixtures.productIds)"`)
-  before invoking `run.sh`; the scenarios read `__ENV.PRODUCT_IDS`, not the profile file.
+- `perf.loadtest.fixtures.productIds` — add `PRODUCT_IDS=<comma-separated ids>` to the env file
+  yourself (e.g. `echo "PRODUCT_IDS=$(node "$pluginRoot/scripts/profile-get.mjs" --join , perf.loadtest.fixtures.productIds)"`
+  inside the block above); the scenarios read `__ENV.PRODUCT_IDS`, not the profile file.
 - `perf.loadtest.seedEndpoint` — currently **reserved/unused**: no script or scenario in this
   harness reads it. Treat it as documentation of where a seed-users endpoint lives, not a wired
   knob, until a consumer is added.
@@ -71,10 +82,12 @@ and point the harness at it with `PAYLOAD_DIR`:
 
 ```bash
 # in your repo, e.g.  perf-payload/{scenarios/<name>.js, queries/*.graphql}
-PAYLOAD_DIR="$PWD/perf-payload" SCENARIO=<name> \
-  BASE_URL=... STORE_ID=... \
-  $pluginRoot/skills/perf-loadtest/loadtests/run.sh steady
+# env file:  PAYLOAD_DIR=<abs>/perf-payload  SCENARIO=<name>  BASE_URL=...  STORE_ID=...
+$pluginRoot/skills/perf-loadtest/loadtests/run.sh steady --env-file <abs path to env file>
 ```
+
+Knobs your own scenarios read go into the same file — `run.sh` hands every name it does not use
+itself to k6 as `__ENV`, so a payload needs no change to the plugin to grow a knob.
 
 `run.sh` assembles a temp run-dir combining the plugin's generic transport (`lib/auth.js`,
 `lib/gql.js`) + `config.js` with your `PAYLOAD_DIR/scenarios/` (and `queries/` if present), so you

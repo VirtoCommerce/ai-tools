@@ -5,15 +5,16 @@ The storefront ingress routes /api/otp to the platform (a 405 on Continue is the
 {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled and a non-expired password; admin credentials resolve","email={{USER_EMAIL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- SCREEN: Sign in - request a code ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
 --- SCREEN: Check your email ---
 [ASSERT] The step shows the masked address (not the full {{USER_EMAIL}}), six empty code cells, 'Resend code' and 'Use a different email'
 --- SCREEN: Notification journal (admin API) ---
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 --- SCREEN: Check your email ---
 [ACT] Type the 6 digits of code into 'Code'
@@ -33,12 +34,13 @@ The storefront ingress routes /api/otp to the platform (a 405 on Continue is the
 OTP-002,OTP sign-in — a wrong code shows an inline error and the code can be re-entered,Auth > OTP Sign-In > Storefront,High,BL-AUTH-003,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
 [ACT] Type wrongCode into 'Code' (auto-submits on the 6th digit)
@@ -93,12 +95,13 @@ OtpSignIn.Enabled is on for {{STORE_ID}}","email=@td(OTP_INPUTS.invalidEmails), 
 OTP-005,"OTP sign-in — pasted code with spaces or letters, and a 5-digit code, submit correctly or not at all",Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled (each submitted wrong code counts one failed attempt - the case ends with a successful sign-in that resets it)","email={{USER_EMAIL}}, code=@td(OTP_INPUTS.malformedCodes), admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 --- SCREEN: one pass per value of code ("" 123 456 "", ""12a456"", ""12345"", ""1234567"") ---
 [ACT] Paste the value into 'Code' (clipboard paste, not key-by-key typing)
@@ -117,12 +120,13 @@ The final successful sign-in resets the failed-attempt counter of {{USER_EMAIL}}
 OTP-006,OTP sign-in — Resend code and Use a different email clear the previous error,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} and {{USER2_EMAIL}} are contacts of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, email2={{USER2_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
 [ACT] Type wrongCode into 'Code'
@@ -169,13 +173,14 @@ OtpSignIn.Enabled is on for {{STORE_ID}}
 The homepage of {{STORE_ID}} carries a login section block (Page Builder login-form-section). B2B-store has none on vcptcore_qa1: if {{FRONT_URL}} shows no login section the case is BLOCKED, not FAIL","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/
 [ASSERT] The login section is visible on the homepage
 [ACT] In the login section fill 'Email': {{USER_EMAIL}}
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue' in the section
 [WAIT] the section changes step
 [ASSERT] Read the section title and the code cells
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code into the section code field
 [WAIT] the section is replaced by the signed-in state or the page redirects","[DOM] After Continue the section title switches to 'Check your email' and shows the masked address {SPEC}
@@ -186,12 +191,13 @@ The homepage of {{STORE_ID}} carries a login section block (Page Builder login-f
 OTP-009,/sign-in OTP verify step — browser Back after a completed submit / payment,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code into 'Code'
 [WAIT] the page leaves /sign-in (sign-in auto-submits on the 6th digit)
@@ -207,12 +213,13 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 OTP-010,/sign-in OTP verify step — refresh mid-flow / during a redirect,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the first 3 digits of code into 'Code'
 [ACT] Reload the page (F5)
@@ -229,12 +236,13 @@ OTP-011,/sign-in OTP verify step — two tabs on the same entity; sign-out or si
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- SCREEN: Tab A ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code into 'Code'
 [WAIT] the page leaves /sign-in (sign-in auto-submits on the 6th digit)
@@ -254,23 +262,25 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 OTP-012,/sign-in OTP verify step — session / token expires mid-flow,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [WAIT] 10 minutes without touching the page - past the code lifetime (observed ~6-9 min, fixed by the Identity Email token provider)
 [ACT] Type the 6 digits of code (now expired)
 [WAIT] the result of the submit is shown
 [ASSERT] Read the error area and the cells
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Resend code'
 [WAIT] the page settles (spinner gone, network idle)
-[CAPTURE] T0 = current UTC time
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the new code
 [WAIT] the page leaves /sign-in","[DOM] The expired code shows the same single inline error as a wrong code, ""That code didn't work."", with no blank screen {OBSERVED}
@@ -296,11 +306,13 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [WAIT] 10 seconds
 [ASSERT] Read the same three things
 [ACT] Remove the interception
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Intercept POST /connect/token to answer 500
 [ACT] Type the code
@@ -318,13 +330,15 @@ OTP-014,/sign-in OTP verify step — autofill / password manager / paste populat
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Set the value of 'Email' to {{USER_EMAIL}} from script, the way browser autofill does (no key presses)
 [ACT] Dispatch only a 'change' event on 'Email' (no 'input' event)
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the page settles (spinner gone, network idle)
 [ASSERT] Read whether a validation message says the email is empty and whether POST /api/otp/request was sent
 [WAIT] the 'Check your email' step is shown
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Dispatch a paste event carrying the full 6-digit code on the first cell of 'Code' (as a phone's 'offered above the keyboard' / password-manager code fill does)
 [WAIT] the page leaves /sign-in","[STATE] An autofilled email is accepted by Continue: no ""required"" message and the request carries the autofilled value {SPEC}
@@ -376,12 +390,13 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [ASSERT] Same layout check on whatever the form shows
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Paste a 32-character alphanumeric string into 'Code'
 [ACT] Paste a GUID into 'Code'
@@ -415,11 +430,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -443,11 +459,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -465,11 +482,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (2) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code2 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code2 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -510,11 +528,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -537,11 +556,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -581,11 +601,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -608,11 +629,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -653,11 +675,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -680,11 +703,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -725,11 +749,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -752,11 +777,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -797,11 +823,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -824,11 +851,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -870,11 +898,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -900,11 +929,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -946,11 +976,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -974,11 +1005,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1019,11 +1051,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1048,11 +1081,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1094,11 +1128,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1121,11 +1156,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1161,11 +1197,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1192,11 +1229,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (2) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code2 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code2 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1234,11 +1272,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1261,11 +1300,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1284,11 +1324,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (2) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code2 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code2 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1321,11 +1362,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (0) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': email
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1349,11 +1391,12 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 --- SCREEN: Sign in by code (1) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': typedEmail
-[CAPTURE] T0 = current UTC time, taken immediately before the click
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
 [ACT] Click 'Continue'
 [WAIT] the 'Check your email' step is shown
-[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
-[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
 [CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
 [ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
 [WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
@@ -1365,3 +1408,47 @@ Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallbac
 [DOM] The organization name in the header reads ""<orgBName>"" {SPEC} (VCST-6132 regression: last-used respected)","[API] the /connect/token otp_email response is 200; the request body carries organization_id
 [CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","KNOWN SUSPECT (3x-S1, 2026-10-20): a differently-cased email makes the build send no organization_id, so the buyer lands in the server-side current organization (Org A) instead of the last-used Org B - expected to FAIL until the stored key is read by the userName; do NOT flip the expectation. A refusal of the differently-cased email (the account must resolve); spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:STALE · Technique:EG · Known divergence 3x-S1 = unfiled Low draft F1 (summary.json bugs_not_filed) | Behavior:auth.org.resolve.last-used-resend | DataProfile:profile.auth.org-last-used-resend,Draft
+OTP-058,"OTP sign-in - the code that already signed you in is refused on the next sign-in, the new code works",Auth > OTP Sign-In > Storefront,High,BL-AUTH-026,ECL-4.3,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE: an accepted code invalidates every earlier code of an account, so a case that shares an account loses its code to its neighbour; random-data uniqueEmail, AGENT-TEST-6490 prefix): one Customer contact + account on {{STORE_ID}}, lockoutEnabled, emailConfirmed, password {{DEFAULT_TEST_PASSWORD}}. Shared personas (USER_EMAIL, OTP_LOCKOUT_USER_*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Build under test: VirtoCommerce.OTP with the single-use code fix (VCST-6490, vc-module-otp PR #4, from 3.1002.0-pr-4-83d4). On an OTP build without it the refusals do not hold: record BLOCKED for the build, never FAIL, and never re-base the case to the old behaviour.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. code2 is requested AFTER code1 signed the buyer in, so it is a different code even inside one 3-minute window; code2 equal to code1 = BLOCKED. A code lifetime is never asserted here.","email=<AGENT-TEST-6490 buyer created in-case>, password={{DEFAULT_TEST_PASSWORD}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- SCREEN: sign-in with code1 ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6490 prefix) email = uniqueEmail (also the userName). POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6490"",""fullName"":""Agent T6490"",""name"":""Agent T6490"",""emails"":[email],""status"":""Approved""} and capture contactId from the response; POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""memberId"":contactId,""storeId"":""{{STORE_ID}}"",""userType"":""Customer"",""emailConfirmed"":true,""lockoutEnabled"":true,""passwordExpired"":false,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and require emailConfirmed=true, lockoutEnabled=true and accessFailedCount=0 - otherwise BLOCKED: the fixture did not land
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code'
+[WAIT] the page leaves /sign-in (sign-in auto-submits on the 6th digit)
+[ASSERT] The buyer is signed in (header shows the account name)
+--- SCREEN: sign-out and the second sign-in ---
+[ACT] Click 'Account menu'
+[WAIT] the account menu is open with the 'Logout' button
+[ACT] Click 'Logout'
+[WAIT] the page settles (spinner gone, network idle)
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[CAPTURE] knownIds = the ids of the journal rows that call returned, taken immediately before the code is requested
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email whose id is NOT in knownIds appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code2 = the 6-digit value inside <strong>...</strong> in that message body; code2 equal to code1 = BLOCKED, never FAIL
+[ACT] Type the 6 digits of code1 into 'Code' - the code that already signed the buyer in
+[WAIT] the page settles (spinner gone, network idle)
+[ASSERT] Read the URL, the error area, the header and the POST /connect/token response
+[ACT] Type the 6 digits of code2 into 'Code'
+[WAIT] the page leaves /sign-in (sign-in auto-submits on the 6th digit)
+[ASSERT] Read the header","[DOM] The error area reads ""That code didn't work."" - the same message a wrong code shows - in one alert {OBSERVED} (vcst 2026-11-18, REG-2026-11-18-1414)
+[STATE] The page stays on /sign-in and the header is anonymous - a session is never created by the used code {OBSERVED} (vcst 2026-11-18, REG-2026-11-18-1414)
+[STATUS] POST /connect/token for code1 returns 400 with no access_token, and the one for code2 returns 200 {OBSERVED} (vcst 2026-11-18, REG-2026-11-18-1414)
+[STATE] code2 signs the buyer in {OBSERVED} (vcst 2026-11-18, REG-2026-11-18-1414)","[CONSOLE] no TypeError or JS error on the page under test (the one 400 from POST /connect/token is the asserted refusal)
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted","The used code signs the buyer in a second time (a stale inbox message is a working key); a refusal with a generic ""Something went wrong"" instead of the wrong-code error; the used code refused but code2 also refused; the second /connect/token request is a 5xx; the header shows the signed-in buyer after the used code","Sign out through the account menu so the next case starts anonymous
+DELETE {{BACK_URL}}/api/platform/security/users?names=email and DELETE {{BACK_URL}}/api/members?ids=contactId even if the case aborted midway; read back that GET /api/platform/security/users/{email} answers 404 or an empty body and GET /api/members/{contactId} an empty body",VCST-6490 · Archetype:REPLAY · Technique:FLOW · Purpose:FUNC · Catches:VCST-6490 | Behavior:auth.signin.otp.replay | Promoted: REG-2026-11-18-1510 (2026-11-18),Automated

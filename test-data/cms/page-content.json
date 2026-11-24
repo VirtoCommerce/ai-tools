@@ -123,5 +123,12 @@
       { "type": "title", "heading": "h1", "title": "AGENT-TEST Login Section Page", "subtitle": null },
       { "id": "login01", "type": "login" }
     ]
+  },
+  "SB_LEGACY_HEADER_PAGE": {
+    "settings": { "header": "AGENT-TEST SB page-settings header", "hideBreadcrumbs": true },
+    "content": [
+      { "type": "title", "heading": "h2", "title": "AGENT-TEST SB legacy page title block", "subtitle": null },
+      { "type": "text", "text": "Written through the legacy grouped content endpoint with page settings header and hideBreadcrumbs = true. A Site Builder re-save must keep both: the H1 reads the settings header (not the page name, not this title block) and the page shows no breadcrumbs." }
+    ]
   }
 }

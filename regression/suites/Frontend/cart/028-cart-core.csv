@@ -1,9 +1,11 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-CART-001,Add to Cart - From Product Page,Cart > Add,Critical,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-001,Add to Cart - From Product Page,Cart > Add,Critical,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
 [PRE:RESET_CART]
-User logged in, product available and in stock, on product detail page","url={{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+User logged in, product available and in stock, on product detail page
+Runs on a DISPOSABLE personal customer: [PRE:DISPOSABLE_CUSTOMER:personal] creates it for this case (npm run td:customer -- create) and Cleanup deletes it, so no shared account is signed in, locked or left with cart state. The executable spec gets the same account from the disposableCustomer fixture.","url={{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
 [ACT] click the matching product card for @td(BUYABLE_NO_MIN_QTY.sku) to open its PDP
 [WAIT] wait for the PDP to load
 [ASSERT] verify quantity spinbutton visible on PDP
@@ -13,7 +15,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABL
 [STATE] product appears in cart
 [STATE] verify cart badge count incremented","[API] updateCartQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors after add-to-cart click
-[NETWORK] no 4xx/5xx on cart API requests",cart badge stuck at 0; success notification never appears; '+' stepper button not visible or stays in loading state,Remove added item from cart,VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (PDP stepper — no toast wired); Docs: N/A — implementation-detail,Automated
+[NETWORK] no 4xx/5xx on cart API requests",cart badge stuck at 0; success notification never appears; '+' stepper button not visible or stays in loading state,Remove added item from cart; delete the disposable customer (npm run td:customer -- delete --email <email>),VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (PDP stepper — no toast wired); Docs: N/A — implementation-detail,Automated
 CART-002,Add to Cart - From Category List,Cart > Add,High,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in, category page with products visible, quick-add available on product cards","url={{FRONT_URL}}
@@ -72,23 +74,27 @@ password={{USER_PASSWORD}}","[ACT] click the 'Cart' link in the site header
 [NAV] URL is {{FRONT_URL}}/cart after clicking the header 'Cart' link {OBSERVED}
 [FORMAT] prices formatted to 2 decimal places {OBSERVED}","[CONSOLE] no JS errors on cart page load
 [NETWORK] no 4xx/5xx on cart data fetch",header 'Cart' link does not navigate to /cart; items missing from the cart page; images broken; prices show $0.00 or NaN,none,"VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/components (vc-line-item; header Cart link -> /cart, no mini-cart); Docs: N/A — implementation-detail: DOM class naming",Automated
-CART-006,Update Quantity - Increase,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-006,Update Quantity - Increase,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
 [PRE:RESET_CART]
-Product in cart with qty=1, user on cart page","url={{FRONT_URL}}/cart
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+Product in cart with qty=1, user on cart page
+Runs on a DISPOSABLE personal customer: [PRE:DISPOSABLE_CUSTOMER:personal] creates it for this case (npm run td:customer -- create) and Cleanup deletes it, so no shared account is signed in, locked or left with cart state. The executable spec gets the same account from the disposableCustomer fixture.","url={{FRONT_URL}}/cart
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD","[NAV] navigate to {{FRONT_URL}}/cart
 [ACT] click '+' (Increase quantity) button on line item
 [WAIT] wait for quantity to update and totals to recalculate","[DOM] line item quantity shows ""2""
 [MATH] line total = unit price × 2 (2 decimal places)
 [MATH] cart subtotal = sum of all updated line totals
 [STATE] verify quantity incremented to 2","[API] changeCartItemsQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",quantity does not increment; line total stays at unit price; subtotal not recalculated,Restore item quantity to 1 or remove item,VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeFullCartItemsQuantity (field changeCartItemsQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
-CART-007,Update Quantity - Decrease,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx",quantity does not increment; line total stays at unit price; subtotal not recalculated,Restore item quantity to 1 or remove item; delete the disposable customer (npm run td:customer -- delete --email <email>),VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeFullCartItemsQuantity (field changeCartItemsQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
+CART-007,Update Quantity - Decrease,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
 [PRE:RESET_CART]
-Product in cart with qty > 1 (e.g., qty=2), user on cart page","url={{FRONT_URL}}/cart
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+Product in cart with qty > 1 (e.g., qty=2), user on cart page
+Runs on a DISPOSABLE personal customer: [PRE:DISPOSABLE_CUSTOMER:personal] creates it for this case (npm run td:customer -- create) and Cleanup deletes it, so no shared account is signed in, locked or left with cart state. The executable spec gets the same account from the disposableCustomer fixture.","url={{FRONT_URL}}/cart
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD","[NAV] navigate to {{FRONT_URL}}/cart
 [ACT] click '-' (Decrease quantity) button on line item
 [WAIT] wait for quantity to update and totals to recalculate","[DOM] line item quantity shows ""1""
 [DOM] '-' (Decrease quantity) button is disabled at qty=1
@@ -97,7 +103,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] verify quantity decremented to 1
 [STATE] verify '-' (Decrease quantity) is disabled when qty=1","[API] changeCartItemsQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",quantity goes below 1; '-' button active at qty=1; totals not recalculated,Restore or remove item,VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeFullCartItemsQuantity (field changeCartItemsQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
+[NETWORK] no 4xx/5xx",quantity goes below 1; '-' button active at qty=1; totals not recalculated,Restore or remove item; delete the disposable customer (npm run td:customer -- delete --email <email>),VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeFullCartItemsQuantity (field changeCartItemsQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
 CART-008,Update Quantity - Direct Input,Cart > Update,Medium,BL-CART-002,"ECL-3.1, ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart, user on cart page","url={{FRONT_URL}}/cart
@@ -259,18 +265,20 @@ password={{USER_PASSWORD}}","[NAV] navigate to category listing page on {{FRONT_
 [STATE] count line items for this product SKU","[API] addItem/changeCartItemQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx",duplicate line items created for same SKU+same currency; PDP shows 0 instead of 1; total qty wrong; two line items in cart,Remove item from cart,"QS-PDP-006; Synced: VCST-5101 (2026-06-09); Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (server-side qty sync, same-currency coalescing); Docs: N/A — implementation-detail",Manual
-CART-034,Quantity Stepper - Cart Page Minimum is 1,Cart > Quantity Stepper,High,BL-CART-001,ECL-3.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-034,Quantity Stepper - Cart Page Minimum is 1,Cart > Quantity Stepper,High,BL-CART-001,ECL-3.1,"[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
 [PRE:RESET_CART]
-Product in cart with qty=1; on {{FRONT_URL}}/cart page","url={{FRONT_URL}}/cart
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+Product in cart with qty=1; on {{FRONT_URL}}/cart page
+Runs on a DISPOSABLE personal customer: [PRE:DISPOSABLE_CUSTOMER:personal] creates it for this case (npm run td:customer -- create) and Cleanup deletes it, so no shared account is signed in, locked or left with cart state. The executable spec gets the same account from the disposableCustomer fixture.","url={{FRONT_URL}}/cart
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD","[NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] verify spinbutton shows '1' for line item
 [ASSERT] observe 'Decrease quantity' button state
 [ACT] attempt to click '-' (Decrease quantity) button
 [WAIT] wait for quantity to update and totals to recalculate","[DOM] spinbutton shows '1'
 [DOM] 'Decrease quantity' button is disabled at qty=1 on cart page
 [STATE] quantity cannot go below 1 via stepper on cart page (use 'Remove from cart' to delete)","[CONSOLE] no JS errors on disabled button interaction
-[NETWORK] no API call fired when disabled button clicked",'-' button enabled at qty=1; clicking '-' removes item instead of blocking; qty goes to 0 on cart page,none,QS-BVA-003; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (allowZero=false on cart page — Decrease disabled at qty=1); Docs: N/A — implementation-detail,Manual
+[NETWORK] no API call fired when disabled button clicked",'-' button enabled at qty=1; clicking '-' removes item instead of blocking; qty goes to 0 on cart page,none; delete the disposable customer (npm run td:customer -- delete --email <email>),QS-BVA-003; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (allowZero=false on cart page — Decrease disabled at qty=1); Docs: N/A — implementation-detail,Manual
 CART-035,Quantity Stepper - Direct Input Updates Cart and Totals,Cart > Quantity Stepper,High,BL-CART-002,"ECL-3.1, ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart with qty=1; on cart page or PDP","url={{FRONT_URL}}/cart
@@ -1339,3 +1347,58 @@ typed_quantity=234","[NAV] navigate to a search listing for @td(BUYABLE_NO_MIN_Q
 [STATE] V_RELOAD equals V_BLUR: field and persisted quantity agree {SPEC} (VCST-6768 Expected)","[API] every cart quantity mutation response in QTY_SENT has errors[] empty
 [CONSOLE] no JS errors during the clear and the blur
 [NETWORK] no 4xx/5xx on /graphql during the window",field left blank after blur; field shows a number the user never entered; cart amounts change while the field is empty; a cart mutation with a quantity that is neither 234 nor 1; reload quantity differs from the field,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,"VCST-6768; Archetype:PARITY · Technique:EP · Purpose:FUNC · Catches:VCST-6768; PARITY: two edit paths (one-step clear, digit-by-digit clear in CART-130) must end in the same valid state; no BL-* states the empty-field rule (BL-CART-001 cited as the nearest rule for the cart-line quantity input); Source: VirtoCommerce/vc-frontend@dev client-app/ui-kit/components/organisms/quantity-stepper/vc-quantity-stepper.vue (watch(model) writes every non-empty value into lastNonEmptyValue; normalize() on blur restores it when the model is undefined) + client-app/shared/common/components/quantity-control.vue (watch(stepperQuantity) -> handleStepperChange emits update:cartItemQuantity per value); kb KB-9314E8DA (SUSPECTED DEFECT, proof the commit-before-blur reproduces on /cart, never an expected result); kb KB-98A231B6 (PDP and card stepper send UpdateShortCartItemQuantity, /cart line sends ChangeFullCartItemsQuantity); Docs: StorefrontUserGuide is silent on empty-field and partial-typing behaviour, so no {DOC} tag is possible; Synced: VCST-6768 verify round 1 (2026-11-10); Synced: VCST-6768 verify round 2 (2026-11-10)",Draft
+CART-133,Cart - Line-Items Footer Shows Exactly One of 'Remove all' / 'Remove selected' by Container Width (Either Side of 42rem),Cart > Line Items Footer,High,,ECL-7.4,"[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
+[PRE:RESET_CART]
+Runs on a DISPOSABLE personal customer (the store on vcptcore redirects a guest to /sign-in, so a guest cart is not available there): [PRE:DISPOSABLE_CUSTOMER:personal] creates it and Cleanup deletes it. The cart is created IN the case by adding two different products; nothing is read from a pre-seeded cart.","url={{FRONT_URL}}/cart
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD
+products=@td(PROD_HEADPHONES.sku), @td(PROD_LAPTOP.sku) (two DIFFERENT products, so the footer has more than one line to act on)
+breakpoint=read from the served @container rule of .vc-line-items (42rem x root font size), never typed","[NAV] {{FRONT_URL}}/search?q=@td(PROD_HEADPHONES.sku)
+[ACT] click 'Increase quantity' on the product card for @td(PROD_HEADPHONES.sku)
+[WAIT] the card quantity field shows 1
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LAPTOP.sku)
+[ACT] click 'Increase quantity' on the product card for @td(PROD_LAPTOP.sku)
+[WAIT] the card quantity field shows 1
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the 'Cart' page lists two line items and the footer button of the line-items block
+[ACT] read the @container width threshold of .vc-line-items from the served stylesheet (42rem x root font size = T px)
+[VIEWPORT] set the viewport so the measured .vc-line-items inline size is the largest value that is <= T (change the viewport width 1px at a time; record the viewport and the fractional size)
+[KEY] record .vc-line-items inline size, and display + visible text of .vc-line-items__button--mobile and .vc-line-items__button--desktop
+[VIEWPORT] set the viewport so the measured .vc-line-items inline size is the smallest value that is > T (record the viewport and the fractional size)
+[KEY] record the same four values
+[VIEWPORT] 1920x1080
+[KEY] record the same four values","[DOM] at inline size <= T the 'Remove all' button (.vc-line-items__button--mobile) is displayed and the 'Remove selected' button (.vc-line-items__button--desktop) computes display:none {SPEC}
+[DOM] at inline size > T the 'Remove selected' button is displayed and the 'Remove all' button computes display:none {SPEC}
+[DOM] at each of the three recorded widths exactly one of 'Remove all' / 'Remove selected' has display other than none (the other has display:none) {SPEC}
+[DOM] the .vc-line-items inline size in px at the first recorded width is <= T and at the second is > T, with the 'Remove all' button reading 'Remove all' and the 'Remove selected' button reading 'Remove selected' {OBSERVED} (vcptcore 2026-11-17: 671.2 px at viewport 732, 672.8 px at 733, T = 672)","[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx/5xx on /graphql",Both footer buttons shown at once (the parent's display:none lost to the kit root); no footer button at one width (both hidden); the desktop button shown at or below the threshold; the switch happens at a different width than the served @container rule,set the viewport so the .vc-line-items inline size is <= T and click 'Remove all' (confirm if asked) to empty the cart; reset viewport to 1920x1080; delete the disposable customer,"VCST-6493 AC-1 {SPEC} - PR VirtoCommerce/vc-frontend#2639 (VcButton root moved into :where()); kb KB-DEDFDBE4 (served rule, 671.2/672.8 px measured); Archetype:BOUNDARY Technique:BVA Catches:VCST-6493 | Promoted: REG-2026-11-17-1417 (2026-11-17)",Automated
+CART-134,"Cart - Print Media Hides Every Button on /cart, Including Both Line-Items Footer Buttons (Narrow and Wide Container)",Cart > Print,Medium,,,"[PRE:DISPOSABLE_CUSTOMER:personal]
+[PRE:SIGNIN_AS:DISPOSABLE_CUSTOMER]
+[PRE:RESET_CART]
+Runs on a DISPOSABLE personal customer (the store on vcptcore redirects a guest to /sign-in, so a guest cart is not available there): [PRE:DISPOSABLE_CUSTOMER:personal] creates it and Cleanup deletes it. The cart is created IN the case by adding two different products; nothing is read from a pre-seeded cart.","url={{FRONT_URL}}/cart
+user=DISPOSABLE_CUSTOMER (email printed by npm run td:customer -- create)
+password=type by NAME: DEFAULT_TEST_PASSWORD
+products=@td(PROD_HEADPHONES.sku), @td(PROD_LAPTOP.sku) (two DIFFERENT products, so the footer has more than one line to act on)
+breakpoint=read from the served @container rule of .vc-line-items (42rem x root font size), never typed","[NAV] {{FRONT_URL}}/search?q=@td(PROD_HEADPHONES.sku)
+[ACT] click 'Increase quantity' on the product card for @td(PROD_HEADPHONES.sku)
+[WAIT] the card quantity field shows 1
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LAPTOP.sku)
+[ACT] click 'Increase quantity' on the product card for @td(PROD_LAPTOP.sku)
+[WAIT] the card quantity field shows 1
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the 'Cart' page lists two line items and the footer button of the line-items block
+[VIEWPORT] 1920x1080
+[KEY] on screen, record the displayed .vc-button count and that 'Remove selected' is displayed
+[ACT] emulate print media
+[KEY] record display of every .vc-button on the page, and of .vc-line-items__button--desktop and --mobile
+[ACT] emulate screen media again
+[VIEWPORT] set the viewport so the measured .vc-line-items inline size is <= the 42rem container threshold
+[KEY] on screen, record the displayed .vc-button count and that 'Remove all' is displayed
+[ACT] emulate print media
+[KEY] record display of every .vc-button and of both footer buttons","[DOM] on screen at 1920 'Remove selected' is displayed and at least one other .vc-button is displayed (the precondition that makes the print check meaningful) {OBSERVED}
+[REL] under print media every .vc-button on /cart (including 'Remove selected') computes display:none {SPEC}
+[DOM] at the narrow container the 'Remove all' button is displayed on screen and display:none under print media {SPEC}
+[COUNT] the number of .vc-button elements with computed display other than 'none' under print is 0 at both widths, and it is lower than the on-screen count recorded at the same width (which was above 0) {SPEC}
+[COUNT] neither .vc-line-items__button--desktop nor .vc-line-items__button--mobile has computed display other than 'none' under print at either width {SPEC}","[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx/5xx on /graphql",A kit button stays visible in print because its parent's single-class display rule (inside the container query) wins over the print rule now at :where() specificity; print still shows 'Remove selected' or 'Remove all',emulate screen media; set the viewport so the .vc-line-items inline size is <= the 42rem container threshold and click 'Remove all' (confirm if asked) to empty the cart; reset viewport; delete the disposable customer,VCST-6493 AC-3 {SPEC} - PR VirtoCommerce/vc-frontend#2639 (print display:none for VcButton moved into :where()); kb KB-9F43C810 is vc-frontend-next and is NOT an oracle here; Archetype:RENDER Technique:EG Catches:VCST-6493 | Promoted: REG-2026-11-17-1417 (2026-11-17),Automated

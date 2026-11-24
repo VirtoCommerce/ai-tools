@@ -176,8 +176,8 @@ leaving the operator one plain action at most:
 | *Pull it for me* | types `/design-sync` — the one step the run cannot take for them: the tool may only be used in a session the operator started | the read-only pull of the screen's files (§Filling the local copy), then carries on |
 | *Continue without the design* | nothing | records the axis `SKIPPED`, reason `operator declined` |
 
-Where the run asks lives with each caller: `/qa-test` at `1b` (item 2c, [`visual-axis.md`](visual-axis.md)
-§1), `/qa-test-fast` at Stage 1's Join, `/qa-design` before its Step 3. **Headless (CI, `--yes`, a
+Where the run asks lives with each caller: `/qa-test` before the visual lane's dispatch ([`visual-axis.md`](visual-axis.md)
+§1–§2), `/qa-design` before its Step 3. **Headless (CI, `--yes`, a
 dispatched agent) never asks** — it records `SKIPPED` with the folder to fill, as before.
 
 ## 2. Extraction contract — what a spec is, and what it never is
@@ -235,7 +235,7 @@ Two consequences of the same fact, pointing the other way:
 
 Measured values come **from the browser, never from the spec**. Run at each width the spec's
 artboards were drawn at (the layout invariants keep the full sweep, `layout-defects.md`) and on
-the WCAG-gated presets (Coffee, Red) — a token diff is preset-dependent.
+the gated presets (`a11y-audit.md` §Theme scope) — a token diff is preset-dependent.
 
 1. `browser_evaluate(designTokenAuditSnippet(spec))` → `classifyDesignToken(result, { unresolved })`
 2. `browser_evaluate(iconParityAuditSnippet(spec, selector, { surface }))` →

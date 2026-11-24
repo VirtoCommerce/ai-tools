@@ -20,8 +20,8 @@
  },
  "cases": {
   "015|QUOTE-001": {
-   "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-002": {
    "status": "PASS",
@@ -32,56 +32,56 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "015|QUOTE-004": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-005": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-006": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-007": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-008": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-009": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "SKIPPED",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-010": {
    "status": "BLOCKED",
    "run": "REG-2026-11-06-1424-W7C"
   },
   "015|QUOTE-011": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-012": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-013": {
-   "status": "SKIPPED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-014": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-015": {
    "status": "SKIPPED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-016": {
-   "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-017": {
    "status": "PASS",
@@ -96,48 +96,48 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "015|QUOTE-020": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "SKIPPED",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-021": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "SKIPPED",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-022": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-023": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-024": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "SKIPPED",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-025": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-026": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-027": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-028": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-029": {
    "status": "BLOCKED",
    "run": "REG-2026-11-06-1424-W7C"
   },
   "015|QUOTE-030": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "015|QUOTE-031": {
    "status": "SKIPPED",
@@ -216,8 +216,8 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "039|PAY-SEC-006": {
-   "status": "SKIPPED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "040a|PAY-SKY-001": {
    "status": "BLOCKED",
@@ -376,20 +376,20 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "075|LOY-003": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-004": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-005": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-006": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-007": {
    "status": "BLOCKED",
@@ -400,44 +400,44 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "075|LOY-009": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-010": {
    "status": "BLOCKED",
    "run": "REG-2026-11-05-1645-W7"
   },
   "075|LOY-011": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-012": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-013": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-014": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-015": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-016": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-017": {
    "status": "PASS",
    "run": "REG-2026-11-05-1645-W7"
   },
   "075|LOY-018": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-019": {
    "status": "BLOCKED",
@@ -448,8 +448,8 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "075|LOY-021": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-022": {
    "status": "BLOCKED",
@@ -460,48 +460,48 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "075|LOY-024": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-025": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-026": {
    "status": "PASS",
    "run": "REG-2026-11-05-1645-W7"
   },
   "075|LOY-027": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-028": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075|LOY-030": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075b|MCO-GQL-001": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075b|MCO-GQL-003": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075b|MCO-GQL-004": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075b|MCO-GQL-008": {
    "status": "PASS",
    "run": "REG-2026-11-06-1424-W7C"
   },
   "075b|MCO-GQL-009": {
-   "status": "FAIL",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "BLOCKED",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075b|MCO-GQL-010": {
    "status": "SKIPPED",
@@ -509,11 +509,11 @@
   },
   "075b|MCO-ADM-001": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075b|MCO-GQL-005": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075b|MCO-GQL-006": {
    "status": "PASS",
@@ -525,7 +525,7 @@
   },
   "075b|MCO-GQL-011": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075b|MCO-GQL-012": {
    "status": "PASS",
@@ -533,7 +533,7 @@
   },
   "075b|MCO-GQL-013": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075c|LOY-029": {
    "status": "PASS",
@@ -544,12 +544,12 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "075c|LOY-032": {
-   "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075c|LOY-033": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075c|LOY-034": {
    "status": "PASS",
@@ -568,12 +568,12 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "075c|LOY-038": {
-   "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075c|LOY-039": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075d|MSN-001": {
    "status": "PASS",
@@ -620,8 +620,8 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "075d|MSN-012": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075d|MSN-013": {
    "status": "PASS",
@@ -744,8 +744,8 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "075e|MSNA-009": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075e|MSNA-010": {
    "status": "PASS",
@@ -756,8 +756,8 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "075e|MSNA-012": {
-   "status": "FAIL",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075e|MSNA-013": {
    "status": "PASS",
@@ -796,8 +796,8 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "075e|MSNA-022": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075e|MSNA-023": {
    "status": "FAIL",
@@ -813,23 +813,23 @@
   },
   "075f|LOYORG-003": {
    "status": "FAIL",
-   "run": "REG-2026-11-05-1645-W7"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-004": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-005": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-006": {
-   "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-007": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-008": {
    "status": "FAIL",
@@ -837,11 +837,11 @@
   },
   "075f|LOYORG-009": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-010": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-011": {
    "status": "PASS",
@@ -857,39 +857,39 @@
   },
   "075f|LOYORG-014": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-015": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-016": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-017": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-018": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-019": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-020": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-021": {
    "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "075f|LOYORG-022": {
-   "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083|LOYF-001": {
    "status": "BLOCKED",
@@ -1016,8 +1016,8 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083b|MCO-E2E-002": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083b|MCO-E2E-006": {
    "status": "PASS",
@@ -1080,20 +1080,20 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-014": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-015": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-016": {
    "status": "PASS",
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-017": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-019": {
    "status": "PASS",
@@ -1116,8 +1116,8 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "083c|MSNF-025": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-027": {
    "status": "PASS",
@@ -1132,48 +1132,48 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-030": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-031": {
    "status": "PASS",
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-032": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-033": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-034": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-035": {
    "status": "PASS",
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-036": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-037": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-038": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-039": {
    "status": "BLOCKED",
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-040": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-042": {
    "status": "PASS",
@@ -1196,24 +1196,24 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-047": {
-   "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-048": {
    "status": "PASS",
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-049": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-050": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-051": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-052": {
    "status": "PASS",
@@ -1232,8 +1232,8 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-056": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-057": {
    "status": "PASS",
@@ -1269,7 +1269,7 @@
   },
   "083c|MSNF-065": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-067": {
    "status": "BLOCKED",
@@ -1281,7 +1281,7 @@
   },
   "083c|MSNF-069": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-071": {
    "status": "BLOCKED",
@@ -1325,7 +1325,7 @@
   },
   "083c|MSNF-080": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-073": {
    "status": "PASS",
@@ -1333,7 +1333,7 @@
   },
   "083c|MSNF-075": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-081": {
    "status": "PASS",
@@ -1352,24 +1352,24 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-085": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-086": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083c|MSNF-087": {
    "status": "BLOCKED",
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-088": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-089": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-090": {
    "status": "BLOCKED",
@@ -1380,8 +1380,8 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-092": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-093": {
    "status": "FAIL",
@@ -1393,7 +1393,7 @@
   },
   "083c|MSNF-095": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-096": {
    "status": "BLOCKED",
@@ -1408,40 +1408,40 @@
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083c|MSNF-099": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-100": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-101": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083c|MSNF-102": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "083d|MSN-E2E-001": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083d|MSN-E2E-002": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083d|MSN-E2E-003": {
    "status": "UNKNOWN",
    "run": "REG-2026-11-06-1424-W7C"
   },
   "083d|MSN-E2E-004": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083d|MSN-E2E-005": {
-   "status": "FAIL",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "PASS",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "083d|MSN-E2E-006": {
    "status": "UNKNOWN",
@@ -1536,12 +1536,12 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "084|NEWS-012": {
-   "status": "SKIPPED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-013": {
-   "status": "SKIPPED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-014": {
    "status": "PASS",
@@ -1556,8 +1556,8 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "084|NEWS-017": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-018": {
    "status": "PASS",
@@ -1569,7 +1569,7 @@
   },
   "084|NEWS-020": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-021": {
    "status": "PASS",
@@ -1577,7 +1577,7 @@
   },
   "084|NEWS-022": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-023": {
    "status": "BLOCKED",
@@ -1588,12 +1588,12 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "084|NEWS-025": {
-   "status": "SKIPPED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-026": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-06-1424-W7C"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-027": {
    "status": "PASS",
@@ -1604,32 +1604,32 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "084|NEWS-029": {
-   "status": "SKIPPED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-030": {
-   "status": "FAIL",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "BLOCKED",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-031": {
    "status": "FAIL",
    "run": "REG-2026-11-05-1645-W7"
   },
   "084|NEWS-032": {
-   "status": "SKIPPED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-033": {
-   "status": "SKIPPED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "084|NEWS-034": {
    "status": "PASS",
    "run": "REG-2026-11-05-1645-W7"
   },
   "085|TASK-001": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-002": {
    "status": "PASS",
@@ -1637,7 +1637,7 @@
   },
   "085|TASK-003": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-004": {
    "status": "PASS",
@@ -1673,7 +1673,7 @@
   },
   "085|TASK-012": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-013": {
    "status": "PASS",
@@ -1688,44 +1688,44 @@
    "run": "REG-2026-11-05-1645-W7"
   },
   "085|TASK-016": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-1545-W7M"
   },
   "085|TASK-017": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-018": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-019": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-020": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-021": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-022": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-023": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-024": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "PASS",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-025": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-05-1645-W7"
+   "status": "FAIL",
+   "run": "REG-2026-11-09-0950-W7U"
   },
   "085|TASK-026": {
    "status": "PASS",

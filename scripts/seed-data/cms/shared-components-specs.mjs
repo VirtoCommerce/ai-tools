@@ -170,7 +170,6 @@ export const BUILDER_BASE_PERMISSIONS = Object.freeze([
 
 /** The shared secret var for all seven accounts (never a literal in committed data). */
 export const SC_USER_PASSWORD_VAR = 'PAGEBUILDER_SC_USER_PASSWORD';
-export const SC_USER_PASSWORD_FALLBACK = 'Password1!'; // localhost-safe default, mirrors user-provision.mjs
 
 /**
  * `omit` names the shared-components verbs the role must NOT hold; the permission set is DERIVED

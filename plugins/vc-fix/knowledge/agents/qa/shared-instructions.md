@@ -234,7 +234,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 
 ## Environment Variables (read via process.env)
 
-Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` → legacy `.env`. **Never edit a specific file by name; just use the variable.** Switch envs with `TEST_ENV=vcptcore` or `TEST_ENV=virtostart`. Secrets (passwords, tokens) live in `.env.local` (gitignored).
+Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` → the test-account store `test-accounts.local.json` → legacy `.env`. **Never edit a specific file by name; just use the variable.** Switch envs with `TEST_ENV=vcptcore` or `TEST_ENV=virtostart`. Test-account logins + passwords live in `test-accounts.local.json` (gitignored; a project that has not migrated keeps them in `.env.local` / vc-secrets, which still work — `/project-init --check` migrates them); tokens live in vc-secrets.
 
 | Resource | Variable |
 |----------|----------|
@@ -244,7 +244,7 @@ Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `
 | User creds (fallback) | `USER_EMAIL` / `USER_PASSWORD` |
 | User2 creds (fallback) | `USER2_EMAIL` / `USER2_PASSWORD` |
 
-**In a browser, type a `*_PASSWORD` by its NAME, never its value** (`browser_type(text="ADMIN_PASSWORD")`) — Playwright MCP substitutes it (from `.env.playwright.local`, or from vc-secrets when the project keeps its passwords there) and masks it ([`../../../.claude/rules/mcp-browsers.md`](../../../.claude/rules/mcp-browsers.md) §Browser login). Scripts that call an API (a token request) read the value from the env as before.
+**In a browser, type a `*_PASSWORD` by its NAME, never its value** (`browser_type(text="ADMIN_PASSWORD")`) — Playwright MCP substitutes it (the bare `NAME` for the lane's env or `NAME_<ENV>` — both work; `MASTER_PASSWORD` on a master stand) and masks it ([`../../../.claude/rules/mcp-browsers.md`](../../../.claude/rules/mcp-browsers.md) §Browser login). Scripts that call an API (a token request) read the value from the env as before.
 | Store | `STORE_ID` |
 | Payment (Skyflow) | `SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV` |
 

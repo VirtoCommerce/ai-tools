@@ -101,7 +101,9 @@ export interface SuiteFile { id: string; file: string }
 
 // SWITCH_ORG is not here: its alias names an ORGANISATION (`@td(<alias>.name)`, test-execution-preflight.md §SWITCH_ORG),
 // and checking it as an account reports a false "unknown persona" that skips the cases.
-const PERSONA = /\[PRE:(?:SIGNIN_AS|VERIFY_AUTH):([A-Z][A-Z0-9_]+)\]/g;
+// DISPOSABLE_CUSTOMER is not a persona either: it is the account `[PRE:DISPOSABLE_CUSTOMER:<kind>]` creates for the
+// case itself, so there is nothing seeded to check (test-execution-preflight.md §DISPOSABLE_CUSTOMER).
+const PERSONA = /\[PRE:(?:SIGNIN_AS|VERIFY_AUTH):(?!DISPOSABLE_CUSTOMER\])([A-Z][A-Z0-9_]+)\]/g;
 const TD_REF = /@td\(([A-Z][A-Z0-9_]+(?:\.\w+)+)\)/g;
 const VAR = /^\{\{([A-Z0-9_]+)\}\}$/;
 

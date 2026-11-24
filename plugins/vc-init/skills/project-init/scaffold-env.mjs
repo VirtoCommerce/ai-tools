@@ -14,8 +14,9 @@
  * a project onboarded with them in `.env.<env>` has them moved over (lib/project-env.mjs).
  *
  * Fields are topology-driven (flags below) and limited to what the plugin needs to
- * run (config.js core-required non-secrets + the tracker connection). ENV_RISK and
- * ADMIN are pre-filled with safe defaults; everything else is an empty placeholder.
+ * run (config.js core-required non-secrets + the tracker connection); everything is an
+ * empty placeholder. The test accounts' logins (ADMIN, USER_EMAIL) are NOT written here:
+ * they live in the test-account store beside their passwords (scaffold-secrets.mjs).
  *
  * IDEMPOTENT: appends only the keys not already present (a line matching `^KEY=`),
  * so a re-run never clobbers values the operator has filled.
@@ -88,9 +89,12 @@ export const CATALOG = [
     what: "Admin SPA / platform URL.", where: "e.g. https://platform.example.com" }],
   ["STORE_ID",         { include: () => true, optional: true,
     what: "Primary store identifier — leave EMPTY to detect it from FRONT_URL.", where: "fill it only if detection fails: Platform → Stores, e.g. B2B-store." }],
-  ["ADMIN",            { def: "admin", include: (o) => !o.hostGoverned,
+  // The built-in test accounts' logins are fields of the test-account store now (test-accounts.local.json,
+  // scaffold-secrets.mjs writes them), never a line here. Kept in the CATALOG, never emitted (`store: true`), so
+  // normalize-env still checks the line a not-yet-migrated .env.<env> carries (creds-to-store.mjs moves it).
+  ["ADMIN",            { def: "admin", store: true, include: () => false,
     what: "Admin login (identifier, NOT the password).", where: "usually 'admin'." }],
-  ["USER_EMAIL",       { include: (o) => !o.hostGoverned,
+  ["USER_EMAIL",       { store: true, include: () => false,
     what: "Storefront test-user email.", where: "an existing storefront TEST account." }],
   ["JIRA_BASE_URL",    { include: (o) => o.tracker === "jira", type: "url", scope: "project",
     // No warnOnPath: a self-hosted Jira Server can legitimately live at https://host/jira.

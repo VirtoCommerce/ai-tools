@@ -1,5 +1,5 @@
 {
-  "generatedIso": "2026-11-11T14:50:49.336Z",
+  "generatedIso": "2026-11-11T19:02:30.720Z",
   "env": "vcst",
   "frontUrl": "https://vcst-qa-storefront.govirto.com",
   "backUrl": "https://vcst-qa.govirto.com",
@@ -256,16 +256,16 @@
   ],
   "routes": {
     "available": true,
-    "base": "C:\\Users\\ElenaKutasina\\vc-mcp-testing-module\\.fix-workspace\\vc-frontend",
+    "base": "C:\\Users\\mutyk\\My Projects\\vc-frontend",
     "provenance": {
-      "head": "66004bd471cac22eb3452ef146daef6ab2a4eb30",
-      "headDate": "2026-10-09T23:45:25+03:00",
-      "branch": "claude/qa-autofix/VCST-6173",
-      "remoteHead": null,
-      "behindRemote": null,
+      "head": "0315ecbd8f233a640b4e47333b8cb5188b8a25ca",
+      "headDate": "2026-11-11T16:12:59+02:00",
+      "branch": "dev",
+      "remoteHead": "0315ecbd8f233a640b4e47333b8cb5188b8a25ca",
+      "behindRemote": false,
       "note": null
     },
-    "fileCount": 18,
+    "fileCount": 17,
     "parseErrors": 0,
     "paths": [
       {
@@ -415,6 +415,11 @@
       },
       {
         "path": "saved-for-later",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "security",
         "source": "router/routes/account.ts",
         "kind": "core"
       },

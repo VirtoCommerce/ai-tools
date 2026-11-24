@@ -2,7 +2,7 @@
 /**
  * seed-sales-rep-call.mjs — VCST-6256 "Call a customer" fixtures (vc-module-sales-rep PR #37).
  *
- * Provisions the dedicated rep SR_REP_CALL and the eleven AGENT-TEST-SR-Call-NN orgs it ALONE serves,
+ * Provisions the dedicated rep SR_REP_CALL and the twelve AGENT-TEST-SR-Call-NN orgs it ALONE serves,
  * each with the contacts / org phones / default-address phone its variant needs. The shape and the
  * expected phone list per org live in sales-rep-call-specs.mjs (single source of truth); this file
  * only resolves, creates, heals and verifies.
@@ -35,8 +35,12 @@ import {
   CALL_REP, CALL_ORGS, CALL_PREFIX, CALL_STORE, PAGE_SIZE,
   callShortfalls, expectedPhones, expectedPrimaryContact, expectedPhoneField, normalizePhone, defaultIsStatic,
 } from './sales-rep-call-specs.mjs';
+import { passwordFor, passwordVarFor, isGeneratedPassword, accountSet } from '../../lib/user-provision.mjs';
 
-const REP_PASSWORD = process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD || 'Password1!';
+// The reps' password: SR_REP_PASSWORD, else TEST_USER_PASSWORD (the store's, for this env); with neither, one is
+// generated, and the store records it with the rep's login once a rep is created or reset with it (accountSet).
+const REP_PASSWORD = passwordFor('SR_REP_PASSWORD', 'TEST_USER_PASSWORD');
+const REP_PASSWORD_VAR = passwordVarFor('SR_REP_PASSWORD', 'TEST_USER_PASSWORD');
 const VERIFY_ONLY = process.argv.includes('--verify-only');
 const NO_VERIFY = process.argv.includes('--no-verify');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -118,6 +122,7 @@ async function ensureRep(orgs) {
       roleId: role.id, isLocked: false, organizations: served,
     });
     log(`rep created: ${CALL_REP.aliasName} (${rep?.id}) serving ${served.length} org(s)`);
+    accountSet(CALL_REP.email, REP_PASSWORD, REP_PASSWORD_VAR);
     if (DRY_RUN) return rep;
     rep = await api('GET', `/api/sales-rep/${rep.id}`);
   } else {
@@ -134,7 +139,12 @@ async function ensureRep(orgs) {
       rep = await api('GET', `/api/sales-rep/${rep.id}`);
       log(`rep healed: +${missing.length} / -${foreign.length} served org(s)`);
     } else log(`rep exists: ${CALL_REP.aliasName} (${rep.id}) serving ${have.size} org(s)`);
-    await resetSecurityPassword(api, CALL_REP.email, REP_PASSWORD, { silent: true });
+    // Never with a GENERATED password (the store has neither var): the team may hold the rep's real one.
+    if (isGeneratedPassword(REP_PASSWORD)) log(`  ⚠ ${CALL_REP.email}: password NOT reset — neither SR_REP_PASSWORD nor TEST_USER_PASSWORD has a value for this env`);
+    else {
+      await resetSecurityPassword(api, CALL_REP.email, REP_PASSWORD, { silent: true });
+      accountSet(CALL_REP.email, REP_PASSWORD, REP_PASSWORD_VAR);
+    }
   }
   const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(CALL_REP.email)}`, null, { expectStatus: [200, 404] });
   if (u?.id && !u.emailConfirmed && !DRY_RUN) { u.emailConfirmed = true; await api('PUT', '/api/platform/security/users', u, { expectStatus: [200, 204] }); }
