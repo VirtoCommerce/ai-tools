@@ -856,7 +856,7 @@ printf '%s' '{"creds":{},"job":"ok","dpapi":{}}'
 test("readWcmBatch: dpapi files are read by node, sent as blobs, and come back as outcomes and presence", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-dpapi-"));
     tmpDirs.push(dir);
-    const env = { XDG_CONFIG_HOME: dir, VC_SECRETS_LOCAL_BACKEND: "wcm" };
+    const env = { XDG_CONFIG_HOME: dir, VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL };
     const present = "vc-secrets:user:oauth-a-refresh";
     const absent = "vc-secrets:user:oauth-a-access";
     const unreadable = "vc-secrets:user:oauth-b-refresh";
@@ -884,7 +884,7 @@ test("readWcmBatch: dpapi files are read by node, sent as blobs, and come back a
 test("readWcmBatch: a dpapi outcome of -1, the script's mark for a failure that is not DPAPI's, is not seeded", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-dpapi-"));
     tmpDirs.push(dir);
-    const env = { XDG_CONFIG_HOME: dir };
+    const env = { XDG_CONFIG_HOME: dir, VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL };
     const odd = "vc-secrets:user:oauth-a-refresh";
     const refused = "vc-secrets:user:oauth-a-access";
     for (const key of [odd, refused]) {
@@ -900,7 +900,7 @@ test("readWcmBatch: a dpapi outcome of -1, the script's mark for a failure that 
 test("readWcmBatch: with dpapi blobs attached, a call that fails as a whole seeds nothing", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-dpapi-"));
     tmpDirs.push(dir);
-    const env = { XDG_CONFIG_HOME: dir };
+    const env = { XDG_CONFIG_HOME: dir, VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL };
     const key = "vc-secrets:user:oauth-a-refresh";
     fs.mkdirSync(path.dirname(m.dpapiKeyToPath(key, env)), { recursive: true });
     fs.writeFileSync(m.dpapiKeyToPath(key, env), Buffer.from("CIPHER"));
