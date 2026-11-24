@@ -18,9 +18,15 @@
 import { execFileSync } from "child_process";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from "fs";
 import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 const LOG = process.env.SHADOW_LOG ?? "reports/regression/shadow-log.jsonl";
 const RUNS = "reports/regression";
+// tsx's CLI run by this Node, with no shell: on Windows a shell (`npx` is a .cmd) hands the selector's
+// arguments to cmd.exe unescaped, which eats the `^` of `--diff HEAD^..HEAD` and runs whatever follows
+// an `&` — the guarantee `select-suites.ts` keeps by calling git without one.
+const TSX_CLI = fileURLToPath(new URL("../../node_modules/tsx/dist/cli.mjs", import.meta.url));
+const SELECT = fileURLToPath(new URL("./select-suites.ts", import.meta.url));
 
 interface RecordRow { kind: "record"; label: string; ts: string; repo: string; selected: string[]; predictedMin: number; fullMin: number }
 interface CompareRow { kind: "compare"; label: string; run: string; ts: string; failed: string[]; missed: string[]; ranSuites: number; passedNotSelected: string[] }
@@ -43,7 +49,7 @@ function record(argv: string[]): number {
   const label = flag(argv, "--label");
   if (!label) return fail("--label is required (a PR or ticket key, to find the entry again)");
   const rest = argv.filter((_, i) => argv[i] !== "--label" && argv[i - 1] !== "--label");
-  const out = execFileSync("npx", ["tsx", "scripts/regression/select-suites.ts", ...rest, "--json"], { encoding: "utf-8", shell: process.platform === "win32" });
+  const out = execFileSync(process.execPath, [TSX_CLI, SELECT, ...rest, "--json"], { encoding: "utf-8" });
   const j = JSON.parse(out.slice(out.indexOf("{"))) as { repo: string; selected: { id: string }[]; predictedMakespanMinutes: number; fullMakespanMinutes: number };
   const row: RecordRow = { kind: "record", label, ts: new Date().toISOString(), repo: j.repo, selected: j.selected.map((s) => s.id), predictedMin: j.predictedMakespanMinutes, fullMin: j.fullMakespanMinutes };
   append(row);
