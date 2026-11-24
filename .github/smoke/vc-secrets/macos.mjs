@@ -176,6 +176,18 @@ function setUpTempKeychain() {
 // ---------------------------------------------------------------------------------------------------------------
 class Skip extends Error {}
 const results = [];
+// A SKIP does not change the exit code (a contention-dependent check may legitimately observe none) and
+// shows only in the step summary, so on a runner it is also annotated: the reason lands on the PR's checks
+// page, where a check that stopped proving anything is seen. Escaped as workflow commands require.
+function annotateSkip(title, reason) {
+    if (process.env.GITHUB_ACTIONS !== "true") {
+        return;
+    }
+    const data = (text) => String(text).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+    const property = (text) => data(text).replace(/:/g, "%3A").replace(/,/g, "%2C");
+    console.log(`::warning title=${property(`vc-secrets smoke skipped: ${title}`)}::${data(reason)}`);
+}
+
 async function check(id, title, fn) {
     let status = "PASS";
     let detail;
@@ -192,6 +204,9 @@ async function check(id, title, fn) {
     }
     results.push({ id, title, status, detail });
     console.log(`${status} ${id} ${title} -- ${detail}`);
+    if (status === "SKIP") {
+        annotateSkip(title, detail);
+    }
 }
 
 let keychainUsable = false;
