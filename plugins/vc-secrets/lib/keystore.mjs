@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { VcSecretsError } from "../vc-secrets-error.mjs";
 
@@ -32,9 +33,9 @@ function keyFor(name, decl, cfg) {
 }
 
 // The two variable segments back out again. One parse rather than one per reader: the same key is
-// taken apart for a secret's path, for its oversize-marker path and for the messages a developer
-// reads, and separate spellings of one grammar can disagree about a key neither of them validated
-// while each still looks right where it stands.
+// taken apart for a secret's path and for the messages a developer reads, and separate spellings of
+// one grammar can disagree about a key neither of them validated while each still looks right where
+// it stands.
 function keyParts(key) {
     const [, scope, name] = key.split(":");
 
@@ -54,6 +55,14 @@ const TIMEOUT_LOCAL_MS = 10_000;
 const TIMEOUT_AZ_MS = 20_000;
 
 const LOCAL_BACKENDS = ["wcm", "keychain", "gpg"];
+
+// Renaming or removing a dpapi file is the step another process can refuse: on Windows a reader holding the
+// file open, antivirus scanning it, or an indexer fails it with one of these codes for a moment. Waiting and
+// trying again is what resolves it; any other code is a real failure. renameWithRetry and removeFileWithRetry
+// share these numbers through retryTransient.
+const RENAME_ATTEMPTS = 5;
+
+const RENAME_RETRY_CODES = ["EPERM", "EBUSY", "EACCES"];
 
 // security(1) reads that command line into a fixed buffer and, past the limit, SPLITS rather than
 // refusing: the first half stores a TRUNCATED value and the tail runs as a second command whose name
@@ -93,6 +102,21 @@ function detectLocalBackend(platform = process.platform, env = process.env) {
     return "gpg";
 }
 
+// The one place a local backend becomes the OAuth pair's backend: Credential Manager platforms map to
+// the dpapi file store; keychain and gpg are unchanged. oauthBackend and OAUTH_BACKENDS both go
+// through it, so the answer and the set of possible answers cannot drift apart.
+const toOauthBackend = (backend) => (backend === "wcm" ? "dpapi" : backend);
+
+// The backend that holds the OAuth refresh/access pair. dpapi is deliberately not in LOCAL_BACKENDS, so
+// VC_SECRETS_LOCAL_BACKEND=dpapi stays invalid and a `set` secret can never land there.
+function oauthBackend(platform = process.platform, env = process.env) {
+    return toOauthBackend(detectLocalBackend(platform, env));
+}
+
+// The backends that can hold the OAuth pair, so "wcm" is not among them. Not LOCAL_BACKENDS, which
+// names where a `set` secret may go.
+const OAUTH_BACKENDS = LOCAL_BACKENDS.map(toOauthBackend);
+
 // Where both storage layouts live, current and legacy. cmdUnlock walks the two in one loop, so a
 // second spelling that drifts surfaces as "nothing to unlock" rather than as an error.
 function configBase(env) {
@@ -112,6 +136,37 @@ function keyToPath(key, env = process.env) {
     return path.join(secretsDir(env), scope, `${name}.gpg`);
 }
 
+// The root is not configBase: HOME is not one directory on Windows -- Git Bash, an IDE and Explorer can
+// each report a different one -- yet a file written by one of them has to be found by the others.
+// LOCALAPPDATA is per-user and the same in all of them (ADR D1). A client that strips it from the environment
+// must still land in the same directory, so the fallback is the folder Windows itself defaults LOCALAPPDATA to,
+// `<profile>\AppData\Local`, and not the profile: that would be a second home for the same files. Node reads and
+// writes these files; PowerShell only calls DPAPI on the bytes it is handed.
+function dpapiKeyToPath(key, env = process.env) {
+    assertKeyShape(key);
+    const { scope, name } = keyParts(key);
+    const root = env.XDG_CONFIG_HOME
+        ? path.join(env.XDG_CONFIG_HOME, KEY_PREFIX, "secrets")
+        : path.join(env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"), KEY_PREFIX, "secrets");
+
+    return path.join(root, scope, `${name}.dpapi`);
+}
+
+// The stored bytes of a dpapi entry. Only an absent path is "no entry" (undefined); a file that is there
+// and cannot be read is an error, because every caller reads undefined as "nothing is stored" and goes on
+// to a fresh sign-in that spends a single-use authorization code. The message carries the code, never bytes.
+function readDpapiFile(key, env = process.env) {
+    const file = dpapiKeyToPath(key, env);
+    try {
+        return fs.readFileSync(file);
+    } catch (e) {
+        if (isAbsentPathError(e)) {
+            return undefined;
+        }
+        throw new VcSecretsError(`could not read the stored entry "${nameFromKey(key)}": ${e.code ?? e.message}`);
+    }
+}
+
 // Only an absent path means "no entry", and existsSync could not say so: its false for a file that
 // cannot be stat'd was read by every caller as "nothing is stored". The bill is the same one
 // PS_CRED_READ's ERROR_NOT_FOUND rule prevents on Windows: an interactive sign-in that spends an
@@ -126,79 +181,6 @@ function gpgEntryPresent(key, env = process.env) {
 // new namespaced key, but nothing ever writes to this path again.
 function legacyKeyToPath(name, env = process.env) {
     return path.join(configBase(env), LEGACY_KEY_PREFIX, "secrets", `${name}.gpg`);
-}
-
-// Where a keystore write that CANNOT come right on its own is recorded.
-//
-// On Credential Manager an oversize value fails deterministically: the value is larger than the
-// backend's ceiling, so the identical write fails identically at every launch and every renewal,
-// forever. Without this, that failure prints one line to fd 2 and is gone; the next tick repeats it
-// and nothing accumulates. The system still works -- each launch pays a token exchange instead of
-// reading a stored token -- but Entra rotates the refresh token on every exchange, so it pays a
-// rotation too, and nothing says so.
-//
-// A FILE, not a keystore entry, because the keystore is the thing that failed. A sibling of the
-// secrets directory rather than a child, so nothing that walks the keystore mistakes it for an
-// entry; split per scope the same way keyToPath splits the keys -- the scheme, not the directory --
-// so two projects on one machine cannot collide on one entry name.
-//
-// And it is CURRENT STATE, not an event log: a successful write for the same key deletes it. Without
-// that half, doctor would keep reporting a condition the next successful write had already fixed --
-// a diagnostic that is wrong in the reassuring direction, which is worse than none.
-function oversizeMarkerPath(key, env = process.env) {
-    const { scope, name } = keyParts(key);
-
-    return path.join(path.dirname(secretsDir(env)), "state", scope, `${name}.oversize.json`);
-}
-
-// Not one byte of the value. `bytes` is measured from what the caller tried to write rather than
-// scraped out of the backend's stderr the way mapResolveError does it: the number is already in hand
-// at both call sites, and parsing a message for it would be a second, independent way to be wrong
-// about the same quantity.
-function recordOversizeMarker(key, { backend, bytes, limit, env = process.env, at = Date.now() }) {
-    const file = oversizeMarkerPath(key, env);
-    try {
-        fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
-        fs.writeFileSync(file, JSON.stringify({ key, backend, bytes, limit, at }), { mode: 0o600 });
-    } catch (e) {
-        // Both call sites stand inside a catch that has already decided this failure will not fail
-        // the operation -- cmdLogin says so in as many words, because failing there costs an
-        // interactive sign-in. A throw from here escapes that catch and rejects a login whose
-        // refresh token is already stored, sending the developer to sign in again and rotate away
-        // the token they just obtained. The state directory is exactly where that happens: a
-        // read-only profile, a file where the directory should be, or a full disk.
-        //
-        // clearOversizeMarker draws this line on the success path for the same reason.
-        fs.writeSync(2, `vc-secrets: the oversize marker for "${key}" could not be written`
-            + ` (${e.code ?? e.message}) -- "vc-secrets doctor" will not report the ceiling\n`);
-    }
-}
-
-function clearOversizeMarker(key, env = process.env) {
-    try {
-        fs.rmSync(oversizeMarkerPath(key, env));
-    } catch (e) {
-        // Absent is the ordinary case: every successful write on a machine that never overflowed
-        // clears nothing. Anything else is reported but not thrown -- this runs on the SUCCESS path
-        // of a login or a renewal, and failing either over a leftover diagnostic file would trade a
-        // working sign-in for a tidy report.
-        if (e.code !== "ENOENT") {
-            fs.writeSync(2, `vc-secrets: a stale oversize marker for "${key}" could not be removed`
-                + ` (${e.code ?? e.message}) -- "vc-secrets doctor" may report a problem that is fixed\n`);
-        }
-    }
-}
-
-function readOversizeMarker(key, env = process.env) {
-    try {
-        return JSON.parse(fs.readFileSync(oversizeMarkerPath(key, env), "utf8"));
-    } catch {
-        // Absent and unreadable collapse deliberately, unlike the keystore reads where that collapse
-        // is a defect: this decides whether doctor prints one advisory line, not whether a token
-        // exists. A marker that cannot be read is not a finding of its own -- inventing one would
-        // send a developer to diagnose the diagnostic.
-        return null;
-    }
 }
 
 // PowerShell 5.1 P/Invoke for Credential Manager (no built-in cmdlets exist).
@@ -241,6 +223,80 @@ $b=New-Object byte[] $n
 [Console]::Out.Write((($b | ForEach-Object { $_.ToString("x2") }) -join ''))
 `;
 
+// The DPAPI half of the OAuth store, as C# source for Add-Type. Three scripts compile it: the launch's batched
+// read (PS_CRED_READ_MANY, which follows) and the protect and unprotect scripts further down. It is declared
+// ahead of all three because a template literal cannot interpolate a const declared below it. It is
+// self-contained: no `using` line, which C# only allows ahead of every type in the unit, so the fragment may
+// sit after a host's own `using` lines and next to its own classes; every type is named in full. The class is
+// `Dpapi`, not a CredMan* name: Add-Type caches a type per PowerShell session by name, and a second definition
+// of one name is an error, not a replacement.
+//
+// Scope is the flags argument. It is CRYPTPROTECT_UI_FORBIDDEN (0x1) and nothing else: no prompt can block a
+// launch, and CRYPTPROTECT_LOCAL_MACHINE (0x4) is never passed, so only the signed-in account can decrypt
+// what it wrote. The entropy is what binds a blob to its key: a file renamed to another entry's name does not
+// decrypt there, it fails with a win32 code, rather than handing one entry's token to another's reader.
+//
+// A failure throws Win32Exception with the win32 code, which the scripts report as a code and never as text
+// that could carry a value. The plaintext copy and the decrypted output are zeroed before they are freed.
+const CS_DPAPI = `
+public static class Dpapi {
+  [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+  struct DATA_BLOB { public int cbData; public System.IntPtr pbData; }
+  [System.Runtime.InteropServices.DllImport("crypt32", SetLastError=true)]
+  static extern bool CryptProtectData(ref DATA_BLOB dataIn, System.IntPtr description, ref DATA_BLOB entropy,
+    System.IntPtr reserved, System.IntPtr prompt, int flags, out DATA_BLOB dataOut);
+  [System.Runtime.InteropServices.DllImport("crypt32", SetLastError=true)]
+  static extern bool CryptUnprotectData(ref DATA_BLOB dataIn, System.IntPtr description, ref DATA_BLOB entropy,
+    System.IntPtr reserved, System.IntPtr prompt, int flags, out DATA_BLOB dataOut);
+  [System.Runtime.InteropServices.DllImport("kernel32")]
+  static extern System.IntPtr LocalFree(System.IntPtr memory);
+  const int CRYPTPROTECT_UI_FORBIDDEN = 0x1;
+  static DATA_BLOB Wrap(byte[] data) {
+    DATA_BLOB blob = new DATA_BLOB();
+    blob.cbData = data.Length;
+    blob.pbData = System.Runtime.InteropServices.Marshal.AllocHGlobal(data.Length == 0 ? 1 : data.Length);
+    System.Runtime.InteropServices.Marshal.Copy(data, 0, blob.pbData, data.Length);
+    return blob;
+  }
+  static void Wipe(System.IntPtr memory, int size) {
+    System.Runtime.InteropServices.Marshal.Copy(new byte[size], 0, memory, size);
+  }
+  static void Release(DATA_BLOB blob) {
+    Wipe(blob.pbData, blob.cbData);
+    System.Runtime.InteropServices.Marshal.FreeHGlobal(blob.pbData);
+  }
+  static byte[] TakeOutput(DATA_BLOB output) {
+    byte[] result = new byte[output.cbData];
+    System.Runtime.InteropServices.Marshal.Copy(output.pbData, result, 0, output.cbData);
+    Wipe(output.pbData, output.cbData);
+    LocalFree(output.pbData);
+    return result;
+  }
+  public static byte[] Protect(byte[] data, byte[] entropy) {
+    DATA_BLOB input = Wrap(data);
+    DATA_BLOB salt = Wrap(entropy);
+    try {
+      DATA_BLOB output;
+      if (!CryptProtectData(ref input, System.IntPtr.Zero, ref salt, System.IntPtr.Zero, System.IntPtr.Zero, CRYPTPROTECT_UI_FORBIDDEN, out output)) {
+        throw new System.ComponentModel.Win32Exception(System.Runtime.InteropServices.Marshal.GetLastWin32Error());
+      }
+      return TakeOutput(output);
+    } finally { Release(input); Release(salt); }
+  }
+  public static byte[] Unprotect(byte[] blob, byte[] entropy) {
+    DATA_BLOB input = Wrap(blob);
+    DATA_BLOB salt = Wrap(entropy);
+    try {
+      DATA_BLOB output;
+      if (!CryptUnprotectData(ref input, System.IntPtr.Zero, ref salt, System.IntPtr.Zero, System.IntPtr.Zero, CRYPTPROTECT_UI_FORBIDDEN, out output)) {
+        throw new System.ComponentModel.Win32Exception(System.Runtime.InteropServices.Marshal.GetLastWin32Error());
+      }
+      return TakeOutput(output);
+    } finally { Release(input); Release(salt); }
+  }
+}
+`;
+
 // Everything a Windows launch needs from PowerShell, in ONE process: every Credential Manager name the
 // launch reads, and the job object that binds the launch's process tree to the launcher.
 //
@@ -275,9 +331,26 @@ $b=New-Object byte[] $n
 // costs nothing. Either failure is reported as its win32 code and the launch goes on unbound.
 //
 // The reads run before the bind, so a read that throws ends the script before any bind was attempted
-// and the caller's "could not bind" is true. The pid comes from VC_SECRETS_LAUNCHER_PID. The names are
-// parsed into a variable and enumerated with foreach, not wrapped in @(...): Windows PowerShell 5.1
-// emits a parsed array as ONE pipeline object, which @() would wrap into an array holding the array.
+// and the caller's "could not bind" is true -- for a call that carries no blobs. With blobs on stdin a call
+// that fails as a whole (a timeout in the decrypt phase, stdin that is not the JSON the script expects) may
+// fail AFTER the bind, and the output is printed only at the end, so the caller cannot tell: readWcmBatch
+// reports that as `mayHaveBound`, and the launch words it as unknown rather than as a bind that did not
+// happen.
+//
+// The DPAPI blobs of the OAuth pair ride in the same call, which is why the launch pays no second
+// powershell.exe start for them. When VC_SECRETS_DPAPI_ON_STDIN is "1" the script reads one JSON object from
+// stdin, {"<key>":"<base64 blob>"}, AFTER the reads and AFTER the bind, and adds
+// ,"dpapi":{"<key>":{"ok":"<hex of the plaintext>"}|{"err":<win32 code>}} to the output; each key is its own
+// blob's entropy, as in PS_DPAPI_UNPROTECT_MANY. Behind the bind on purpose: nothing about a blob can then
+// keep the launcher out of the job. For the same reason a failure to decrypt one blob -- any exception, not
+// only DPAPI's -- is that key's {"err":code} and never fails the call, which would report a bind that did
+// happen as one that did not. Code -1 marks a failure that is not DPAPI's, with no win32 code to name:
+// readWcmBatch does not seed it, and node decrypts that file singly, where such a failure is a thrown error
+// as it is for any single read.
+//
+// The pid comes from VC_SECRETS_LAUNCHER_PID. The names are parsed into a variable and enumerated with
+// foreach, not wrapped in @(...): Windows PowerShell 5.1 emits a parsed array as ONE pipeline object, which
+// @() would wrap into an array holding the array.
 const PS_CRED_READ_MANY = `
 $ErrorActionPreference='Stop'
 [Console]::OutputEncoding=[System.Text.Encoding]::UTF8
@@ -339,7 +412,7 @@ public static class CredManLaunch {
     } finally { CloseHandle(job); }
   }
 }
-'@
+${CS_DPAPI}'@
 $out=New-Object System.Text.StringBuilder
 [void]$out.Append('{"creds":{')
 $sep=''
@@ -358,7 +431,27 @@ foreach($k in $names){
   [void]$out.Append('{"ok":"'+(($b | ForEach-Object { $_.ToString("x2") }) -join '')+'"}')
 }
 $j=[CredManLaunch]::Bind([int]$env:VC_SECRETS_LAUNCHER_PID)
-[void]$out.Append('},"job":'+$(if($j -eq 0){'"ok"'}else{$j})+'}')
+[void]$out.Append('},"job":'+$(if($j -eq 0){'"ok"'}else{$j}))
+if($env:VC_SECRETS_DPAPI_ON_STDIN -eq '1'){
+  $blobs=ConvertFrom-Json ([Console]::In.ReadToEnd())
+  [void]$out.Append(',"dpapi":{')
+  $sep=''
+  foreach($p in $blobs.PSObject.Properties){
+    [void]$out.Append($sep+'"'+$p.Name+'":'); $sep=','
+    try {
+      $b=[Dpapi]::Unprotect([Convert]::FromBase64String($p.Value),[System.Text.Encoding]::UTF8.GetBytes($p.Name))
+      [void]$out.Append('{"ok":"'+(($b | ForEach-Object { $_.ToString("x2") }) -join '')+'"}')
+    } catch {
+      $ex=$_.Exception
+      if($ex.InnerException -is [System.ComponentModel.Win32Exception]){ $ex=$ex.InnerException }
+      $code=-1
+      if($ex -is [System.ComponentModel.Win32Exception]){ $code=$ex.NativeErrorCode }
+      [void]$out.Append('{"err":'+$code+'}')
+    }
+  }
+  [void]$out.Append('}')
+}
+[void]$out.Append('}')
 [Console]::Out.Write($out.ToString())
 `;
 
@@ -418,6 +511,65 @@ if(-not [CredManW]::CredWrite([ref]$c,0)){
   if($e -eq 1783){ [Console]::Error.Write("value too large for Credential Manager ($($bytes.Length) bytes; limit ${WCM_BLOB_LIMIT})"); exit 4 }
   [Console]::Error.Write("CredWrite failed win32err=$e"); exit 3
 }
+`;
+
+// Writes one value as a DPAPI blob. The key arrives in VC_SECRETS_NAME and its UTF-8 bytes are the entropy;
+// the value arrives on stdin, read whole and never trimmed (PS_CRED_WRITE says why), so it is in neither argv
+// nor the environment. Output is the blob as base64 with no line ending: node owns the file, this script
+// only turns bytes into bytes. A DPAPI failure is exit 1 naming the win32 code, never the value.
+const PS_DPAPI_PROTECT = `
+$ErrorActionPreference='Stop'
+[Console]::InputEncoding=[System.Text.Encoding]::UTF8
+$value=[Console]::In.ReadToEnd()
+Add-Type -TypeDefinition @'
+${CS_DPAPI}
+'@
+try {
+  $blob=[Dpapi]::Protect([System.Text.Encoding]::UTF8.GetBytes($value),[System.Text.Encoding]::UTF8.GetBytes("$env:VC_SECRETS_NAME"))
+} catch {
+  $ex=$_.Exception
+  if($ex.InnerException -is [System.ComponentModel.Win32Exception]){ $ex=$ex.InnerException }
+  if($ex -is [System.ComponentModel.Win32Exception]){ [Console]::Error.Write("CryptProtectData failed win32err="+$ex.NativeErrorCode); exit 1 }
+  throw
+}
+[Console]::Out.Write([Convert]::ToBase64String($blob))
+`;
+
+// Decrypts any number of blobs in one process, for the same reason PS_CRED_READ_MANY batches: the powershell.exe
+// start and the Add-Type compile are the cost, not the call. Input is one JSON object on stdin,
+// {"<key>":"<base64 blob>"}; each key is its blob's entropy. Output is one JSON object,
+// {"<key>":{"ok":"<hex of the plaintext>"}|{"err":<win32 code>}}, built by hand like PS_CRED_READ_MANY's: every
+// key has passed assertKeyShape ([a-z0-9:-]) and every value is hex or an integer, so nothing needs escaping.
+//
+// A blob DPAPI refuses -- another account's, another key's, damaged -- is that key's {"err":code} and the
+// others still decrypt: one unreadable entry must not take the whole launch's credentials with it. Anything
+// that is not a Win32Exception is a failure of the call, and exits non-zero without printing a value.
+const PS_DPAPI_UNPROTECT_MANY = `
+$ErrorActionPreference='Stop'
+[Console]::InputEncoding=[System.Text.Encoding]::UTF8
+[Console]::OutputEncoding=[System.Text.Encoding]::UTF8
+$in=[Console]::In.ReadToEnd()
+Add-Type -TypeDefinition @'
+${CS_DPAPI}
+'@
+$blobs=ConvertFrom-Json $in
+$out=New-Object System.Text.StringBuilder
+[void]$out.Append('{')
+$sep=''
+foreach($p in $blobs.PSObject.Properties){
+  [void]$out.Append($sep+'"'+$p.Name+'":'); $sep=','
+  try {
+    $b=[Dpapi]::Unprotect([Convert]::FromBase64String($p.Value),[System.Text.Encoding]::UTF8.GetBytes($p.Name))
+    [void]$out.Append('{"ok":"'+(($b | ForEach-Object { $_.ToString("x2") }) -join '')+'"}')
+  } catch {
+    $ex=$_.Exception
+    if($ex.InnerException -is [System.ComponentModel.Win32Exception]){ $ex=$ex.InnerException }
+    if($ex -isnot [System.ComponentModel.Win32Exception]){ throw }
+    [void]$out.Append('{"err":'+$ex.NativeErrorCode+'}')
+  }
+}
+[void]$out.Append('}')
+[Console]::Out.Write($out.ToString())
 `;
 
 function psEncode(script) {
@@ -502,21 +654,43 @@ function buildLocalRead(backend, key, env = process.env) {
 // The launch's one PowerShell call (PS_CRED_READ_MANY): the keys to read, possibly none, and the pid to
 // bind. Every key is shape-checked like any other builder's, and here it also keeps the hand-built
 // JSON the script prints free of anything that would need escaping.
-function buildCredReadMany(keys, pid, env = process.env) {
+//
+// `blobs`: key -> the bytes of a dpapi file, decrypted in the same call. Non-empty, the script is told to read
+// them from stdin (the caller passes blobsToJson(blobs) as runTool's stdinValue); empty, stdin is not touched.
+function buildCredReadMany(keys, pid, env = process.env, blobs = new Map()) {
     for (const key of keys) {
         assertKeyShape(key);
     }
-
-    return { cmd: psCommand(env), args: psArgs(PS_CRED_READ_MANY),
+    const spec = { cmd: psCommand(env), args: psArgs(PS_CRED_READ_MANY),
         extraEnv: { VC_SECRETS_NAMES: JSON.stringify(keys), VC_SECRETS_LAUNCHER_PID: String(pid) },
         timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: true };
+    if (blobs.size > 0) {
+        blobsToJson(blobs);   // shape-checks every key before PowerShell is spawned
+        spec.stdinData = VALUE_ON_STDIN;
+        spec.extraEnv.VC_SECRETS_DPAPI_ON_STDIN = "1";
+    }
+
+    return spec;
+}
+
+// {"<key>":"<base64>"}: what both scripts that decrypt blobs read from stdin. Keys are shape-checked here
+// because they become property names in a hand-built JSON output on the other side.
+function blobsToJson(blobs) {
+    const input = {};
+    for (const [key, blob] of blobs) {
+        assertKeyShape(key);
+        input[key] = blob.toString("base64");
+    }
+
+    return JSON.stringify(input);
 }
 
 // Runs it and returns the parsed object. A call that fails as a whole -- PowerShell missing, Add-Type
 // refused, a timeout, output that is not the object -- throws a VcSecretsError, and the message never
 // carries the output: on success that holds every value read, hex-encoded.
-async function credReadManyIo({ keys, pid, env = process.env, redactValues = [] }) {
-    const stdout = await runTool(buildCredReadMany(keys, pid, env), { redactValues });
+async function credReadManyIo({ keys, pid, env = process.env, redactValues = [], blobs = new Map() }) {
+    const stdout = await runTool(buildCredReadMany(keys, pid, env, blobs),
+        { redactValues, ...(blobs.size > 0 ? { stdinValue: blobsToJson(blobs) } : {}) });
     let result = null;
     try {
         result = JSON.parse(stdout);
@@ -539,7 +713,60 @@ function batchedReadError(cmd, code) {
     return Object.assign(new VcSecretsError(`${cmd} exited ${exit}: ${stderr}`), { toolExitCode: exit });
 }
 
-function buildLocalWrite(backend, key, env = process.env, { tmp = false, value = undefined } = {}) {
+// The DPAPI blob for one key, produced by PS_DPAPI_PROTECT. The value goes on stdin (the caller passes it as
+// runTool's stdinValue), the key in the environment: it is not secret and is the entropy.
+function buildDpapiProtect(key, env = process.env) {
+    assertKeyShape(key);
+
+    return { cmd: psCommand(env), args: psArgs(PS_DPAPI_PROTECT),
+        extraEnv: { VC_SECRETS_NAME: key }, stdinData: VALUE_ON_STDIN, timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: true };
+}
+
+// Decrypts every blob in one PowerShell call (PS_DPAPI_UNPROTECT_MANY). `blobs` is key -> the file's bytes;
+// the result is key -> { ok: <hex of the plaintext> } | { err: <win32 code> }, the same two outcomes
+// credReadManyIo reports per name. No blobs, no process. A call that fails as a whole -- PowerShell missing,
+// a timeout, output that is not the object or lacks a key it was asked for -- throws a VcSecretsError whose
+// message never carries the output: on success that holds every plaintext, hex-encoded.
+async function unprotectManyIo({ blobs, env = process.env, run = runTool }) {
+    if (blobs.size === 0) {
+        return new Map();
+    }
+    const input = blobsToJson(blobs);
+    const spec = { cmd: psCommand(env), args: psArgs(PS_DPAPI_UNPROTECT_MANY),
+        stdinData: VALUE_ON_STDIN, timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: true };
+    const stdout = await run(spec, { stdinValue: input });
+    let result = null;
+    try {
+        result = JSON.parse(stdout);
+    } catch { /* reported below, without the text */ }
+    const unreadable = new VcSecretsError(`${psCommand(env)} did not print the batched unprotect's result`);
+    if (result === null || typeof result !== "object" || Array.isArray(result)) {
+        throw unreadable;
+    }
+    const outcomes = new Map();
+    for (const key of blobs.keys()) {
+        const outcome = Object.hasOwn(result, key) ? result[key] : null;
+        if (outcome !== null && typeof outcome === "object" && typeof outcome.ok === "string") {
+            outcomes.set(key, { ok: outcome.ok });
+        } else if (outcome !== null && typeof outcome === "object" && Number.isInteger(outcome.err)) {
+            outcomes.set(key, { err: outcome.err });
+        } else {
+            throw unreadable;
+        }
+    }
+
+    return outcomes;
+}
+
+// The tmp file a write goes through before it is renamed over `finalPath`, named for this process: login
+// stores even when the token lock is busy, so two writers can overlap and must not share one tmp path.
+// The gpg write (buildLocalWrite targets it, writeLocalValue renames it) and the dpapi write both name
+// theirs here, so each pair computes the same name.
+function processTmpPath(finalPath) {
+    return `${finalPath}.${process.pid}.tmp`;
+}
+
+function buildLocalWrite(backend, key, env = process.env, { tmp = false, value = undefined, attended = false } = {}) {
     assertKeyShape(key);
     if (backend === "wcm") {
         return { cmd: psCommand(env), args: psArgs(PS_CRED_WRITE),
@@ -547,15 +774,17 @@ function buildLocalWrite(backend, key, env = process.env, { tmp = false, value =
     }
     if (backend === "keychain") {
         const account = keychainAccount(env);
-        // Three shapes, and the differences are load-bearing. `set`: `-w` with no value makes security
-        // prompt on the TTY, so the plaintext never passes through this process at all.
+        // The value is part of the command, so there is no build without one. The shape that left it to
+        // `security`'s own prompt is gone: that prompt cuts what is typed at 128 characters and still reports
+        // success. Falling through to the command shape instead would be worse -- runTool composes the command
+        // only when it is handed a value, so `security -i` would read an empty stdin, exit 0, and the write
+        // would be reported as stored.
         if (value === undefined) {
-            return { cmd: "security", args: ["add-generic-password", "-U", "-a", account, "-s", key, "-w"],
-                interactive: true, timeoutMs: null, captureStdout: false };
+            throw new VcSecretsError(`keychain write for "${key}" needs the value: the command security reads from stdin is built from it`);
         }
-        // `migrate`: there IS no value to type — the point is to copy one the user cannot read — and
-        // `security` takes no password on stdin. Its interactive mode takes the whole COMMAND there, which
-        // is what keeps the value out of argv and out of this machine's process list.
+        // `security` takes no password on stdin, but its interactive mode takes the whole COMMAND there, which
+        // is what keeps the value out of argv and out of this machine's process list. `set`, login, renewal
+        // and `migrate` all write this way.
         if (!/[\r\n]/.test(value)) {
             return { cmd: "security", args: ["-i"], stdinData: COMMAND_ON_STDIN,
                 stdinCommand: (v) => {
@@ -568,22 +797,27 @@ function buildLocalWrite(backend, key, env = process.env, { tmp = false, value =
 
                     return line;
                 },
-                timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: false };
+                // `attended` is `set`, a person at the terminal: a locked keychain can raise an unlock dialog from
+                // this very call, and a person who answers it in their own time would be cut off by a kill timer
+                // at 10 s. Login, renewal, migrate and the doctor probe run with nobody there and keep the timer.
+                timeoutMs: attended ? null : TIMEOUT_LOCAL_MS, captureStdout: false };
         }
 
         // A line ending cannot be quoted into that command — it ends it — so this one value takes the
         // older route and its exposure is reported rather than hidden. Refusing instead would strand the
-        // secret: migrate exists for values the user cannot retype.
+        // secret: migrate exists for values the user cannot retype. `set` refuses such a value before it
+        // gets here, since a typed one never carries a line ending.
         return { cmd: "security", args: ["add-generic-password", "-U", "-a", account, "-s", key, "-w", value],
             argvExposesValue: true, timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: false };
     }
     const recipientArgs = env.VC_SECRETS_GPG_RECIPIENT
         ? ["--recipient", env.VC_SECRETS_GPG_RECIPIENT, "--trust-model", "always"]
         : ["--default-recipient-self"];
-    // Write to a `.tmp` sibling first so a mid-write crash/kill can never leave
-    // a half-encrypted `<name>.gpg` in place of a previously-valid secret — cmdSet renames it in
+    // Write to a tmp sibling first so a mid-write crash/kill can never leave
+    // a half-encrypted `<name>.gpg` in place of a previously-valid secret — writeLocalValue renames it in
     // after gpg exits 0.
-    const target = `${keyToPath(key, env)}${tmp ? ".tmp" : ""}`;
+    const finalPath = keyToPath(key, env);
+    const target = tmp ? processTmpPath(finalPath) : finalPath;
 
     return { cmd: "gpg", args: ["--quiet", "--batch", "--yes", ...recipientArgs, "--encrypt", "-o", target],
         stdinData: VALUE_ON_STDIN, timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: false };
@@ -608,9 +842,41 @@ function buildLocalDelete(backend, key, env = process.env) {
 // One meaning of "already absent" for logout to check, assembled here because each backend
 // signals it differently: the PowerShell branch exits 3 by construction, security(1) answers 44,
 // and gpg entries are files whose absence is a path error (isAbsentPathError) rather than any exit
-// code at all -- the same test gpgEntryPresent applies, so logout and a presence check agree.
-function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run = runTool, rm = fs.rmSync } = {}) {
+// code at all -- the same test gpgEntryPresent applies, so logout and a presence check agree. A dpapi
+// entry is absent only when both its file and its legacy Credential Manager entry were. A dpapi file is
+// removed through removeFileWithRetry, so a momentary lock on it is waited out (`sleep` is that wait).
+function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run = runTool, rm = fs.rmSync, sleep = delay } = {}) {
+    // The wcm delete a dpapi entry also owes: the pair may still sit in Credential Manager from before the
+    // file store, and a logout that left it would let the next launch read the old token back.
+    const legacyDelete = backend === "dpapi" ? deleteEntryIo("wcm", env, { run }) : null;
+
     return async (key) => {
+        if (backend === "dpapi") {
+            // The legacy entry first. The file decides which store a launch reads, so it is the last thing to
+            // go: a Credential Manager delete that fails leaves the file in place and the logout retryable,
+            // where file-first would leave the legacy pair as the store the next launch falls back to.
+            let legacyAbsent = false;
+            try {
+                await legacyDelete(key);
+            } catch (e) {
+                if (e.toolExitCode !== 3) {
+                    throw e;
+                }
+                legacyAbsent = true;
+            }
+            const file = dpapiKeyToPath(key, env);
+            let fileRemoved;
+            try {
+                fileRemoved = await removeFileWithRetry(file, { rm, sleep });
+            } catch (e) {
+                throw new VcSecretsError(`could not remove "${key}": ${e.code ?? e.message}`);
+            }
+            if (!fileRemoved && legacyAbsent) {
+                throw Object.assign(new VcSecretsError(`no stored entry "${key}"`), { toolExitCode: 3 });
+            }
+
+            return;
+        }
         if (backend === "gpg") {
             assertKeyShape(key);
             try {
@@ -635,9 +901,84 @@ function deleteEntryIo(backend = detectLocalBackend(), env = process.env, { run 
     };
 }
 
-// Shared by cmdSet's non-interactive branch and cmdMigrate: runs a write `spec` built with a
-// value already in hand. gpg gets an atomic tmp-then-rename so a reader never observes a
-// partially-written or empty file; the other backends write in one shot.
+// Runs `op` (synchronous), waiting 50 * attempt ms after a refusal that is usually momentary (see
+// RENAME_RETRY_CODES). Any other code, and the refusal on the last attempt, is rethrown as it was.
+async function retryTransient(op, sleep) {
+    for (let attempt = 1; ; attempt += 1) {
+        try {
+            op();
+
+            return;
+        } catch (e) {
+            if (attempt >= RENAME_ATTEMPTS || !RENAME_RETRY_CODES.includes(e.code)) {
+                throw e;
+            }
+            await sleep(50 * attempt);
+        }
+    }
+}
+
+// Moves `from` over `to`, patiently (retryTransient). What to do with the refusal that outlasts it is the
+// caller's.
+async function renameWithRetry(from, to, { rename = fs.renameSync, sleep = delay } = {}) {
+    await retryTransient(() => rename(from, to), sleep);
+}
+
+// Removes `file` with the same patience as renameWithRetry: a lock another process holds for a moment is waited
+// out, rather than failing a logout or a migration over it. Resolves true when it removed the file and false
+// when the path was absent (isAbsentPathError, which a retry cannot change, so it is not waited on): what
+// absence means is the caller's. Any other code, and a refusal that outlasts the attempts, is rethrown as it
+// was. Not fs.rmSync's own maxRetries: it has no say over which codes it retries or how long it waits, and
+// sleeps synchronously.
+async function removeFileWithRetry(file, { rm = fs.rmSync, sleep = delay } = {}) {
+    try {
+        await retryTransient(() => rm(file), sleep);
+    } catch (e) {
+        if (isAbsentPathError(e)) {
+            return false;
+        }
+        throw e;
+    }
+
+    return true;
+}
+
+// The one shape PS_DPAPI_PROTECT prints: base64 and nothing else. Node's decoder skips every character outside
+// the alphabet instead of refusing it, so a warning PowerShell printed ahead of the ciphertext would be decoded
+// into a corrupt blob and stored after a write that looked successful.
+const BASE64_CIPHERTEXT_RE = /^[A-Za-z0-9+/]+={0,2}$/;
+
+// The dpapi write: PowerShell turns the value into a blob and node owns the file. The blob goes to a tmp
+// file named for this process and is renamed over the entry, so a reader never sees a partial file and two
+// processes writing at once do not share a tmp path. A failed write leaves the previous entry in place.
+async function writeDpapiValue(key, value, { env, run, rename, sleep }) {
+    const finalPath = dpapiKeyToPath(key, env);
+    const stdout = await run(buildDpapiProtect(key, env), { stdinValue: value, redactValues: [value] });
+    const printed = String(stdout ?? "").trim();
+    if (printed !== "" && !BASE64_CIPHERTEXT_RE.test(printed)) {
+        // The entry is named and the output is not: it is whatever PowerShell printed, and may sit beside a secret.
+        throw new VcSecretsError(`DPAPI printed something other than base64 ciphertext for "${nameFromKey(key)}"`);
+    }
+    const blob = Buffer.from(printed, "base64");
+    if (blob.length === 0) {
+        throw new VcSecretsError(`DPAPI returned no ciphertext for "${nameFromKey(key)}"`);
+    }
+    fs.mkdirSync(path.dirname(finalPath), { recursive: true, mode: 0o700 });
+    const tmpPath = processTmpPath(finalPath);
+    try {
+        fs.writeFileSync(tmpPath, blob, { mode: 0o600 });
+        await renameWithRetry(tmpPath, finalPath, { rename, sleep });
+    } catch (e) {
+        try {
+            fs.unlinkSync(tmpPath);
+        } catch { /* best-effort cleanup -- the original error is what matters */ }
+        throw e;
+    }
+}
+
+// Shared by writeSecretValue and cmdMigrate: runs a write `spec` built with a value already in hand.
+// gpg gets an atomic tmp-then-rename so a reader never observes a partially-written or empty file; the
+// other backends write in one shot.
 async function writeLocalValue(backend, key, spec, value, env = process.env, run = runTool) {
     if (backend !== "gpg") {
         try {
@@ -657,7 +998,7 @@ async function writeLocalValue(backend, key, spec, value, env = process.env, run
     }
     fs.mkdirSync(path.dirname(keyToPath(key, env)), { recursive: true, mode: 0o700 });
     const finalPath = keyToPath(key, env);
-    const tmpPath = `${finalPath}.tmp`;
+    const tmpPath = processTmpPath(finalPath);
     try {
         await run(spec, { stdinValue: value, redactValues: [value] });
         fs.chmodSync(tmpPath, 0o600);
@@ -672,18 +1013,13 @@ async function writeLocalValue(backend, key, spec, value, env = process.env, run
     }
 }
 
-// Callers must not build their own write spec for a value already in hand: for the keychain
-// backend, buildLocalWrite's `value === undefined` branch is the INTERACTIVE `security -w` one
-// cmdSet's own TTY prompt uses -- routing a renewal or a login through it does not fail, it hangs,
-// waiting for a typist that is never there. Passing `value` here is what selects buildLocalWrite's
-// non-interactive `security -i` branch instead, the same choice cmdMigrate makes at its own call
-// site for the same reason: the value is already in hand and there is nothing to prompt
-// for. This is the source's buildKeychainWrite/buildLocalWrite split, expressed here as the `value`
-// option rather than as two separate builders. The split only: the source's composeStdin also carried
-// a line-length refusal, restored in buildLocalWrite above, because this package's three-segment key
-// is longer than the source's two-segment one and eats most of the margin the source measured.
+// The write for a value already in hand, and the one `set`, login and renewal all go through. For the
+// keychain it composes the command `security -i` reads from stdin, the same choice cmdMigrate makes at its
+// own call site. The line-length refusal lives in buildLocalWrite (the source's composeStdin carried one
+// too), because this package's three-segment key is longer than the source's two-segment one and eats most
+// of the margin the source measured.
 async function writeSecretValue(key, value, { backend = detectLocalBackend(), env = process.env,
-    run = runTool } = {}) {
+    run = runTool, rename = fs.renameSync, sleep = delay, attended = false } = {}) {
     if (!value) {
         // The invariant belongs here rather than only in cmdSet: a renewal and a login can both be
         // handed an empty string by a response that parsed, and an empty entry is worse than a
@@ -691,7 +1027,12 @@ async function writeSecretValue(key, value, { backend = detectLocalBackend(), en
         // retype a secret this tool just erased.
         throw new VcSecretsError(`refusing to store an empty value for "${key}"`);
     }
-    const spec = buildLocalWrite(backend, key, env, { tmp: backend === "gpg", value });
+    if (backend === "dpapi") {
+        // Its own branch: writeLocalValue's non-gpg path would read a PowerShell failure as the
+        // Credential Manager's, and dpapi has no size ceiling to map.
+        return writeDpapiValue(key, value, { env, run, rename, sleep });
+    }
+    const spec = buildLocalWrite(backend, key, env, { tmp: backend === "gpg", value, attended });
     // Composed once here purely to validate. The runner composes it only AFTER spawning, so without
     // this call an oversize value leaves an orphaned `security -i` waiting on a stdin that never
     // arrives, until the runner's own timeout kills it -- and the refusal would hold only for
@@ -720,8 +1061,8 @@ function mapResolveError(backend, name, e) {
     // Every branch that rewrites the message returns a NEW error, and a new error carries no
     // toolExitCode -- so improving a message for a human silently stripped the classification the
     // code downstream needs. The two are not alternatives, and the loss is invisible: the caller
-    // still gets an error, just one that no longer answers "which failure was this". The oversize
-    // marker reads exit 4 off an error that has already passed through here. The fall-through at
+    // still gets an error, just one that no longer answers "which failure was this". doctor's
+    // write probe reads exit 4 off an error that has already passed through here. The fall-through at
     // the end returns the original untouched, so it needs no keep().
     const keep = (mapped) => Object.assign(mapped, { toolExitCode: e.toolExitCode });
     if (backend === "wcm" && e.toolExitCode === 3) {
@@ -792,7 +1133,14 @@ function makeSecretResolver(cfg, env = process.env) {
     // keyed by a secret's name: what an oauth entry's outcome means is decided where it is consumed
     // (oauthLaunchDeps), and a secret that happens to share a name with an entry must not receive it. A key
     // the script did not report is simply absent from the Map.
-    resolver.readWcmBatch = async (refs, { pid, run = credReadManyIo, extraKeys = [] }) => {
+    //
+    // `dpapiKeys`: the keys of dpapi files to decrypt in the same call. Node reads the files -- a missing one
+    // is `files.get(key) === false`, one that is there `true` and its bytes go to the script as a blob -- and
+    // `dpapiOutcomes` maps each decrypted key to the raw `{ ok }` / `{ err }`, interpreted, like `outcomes`,
+    // only where it is consumed. A file that is there and cannot be read is not swallowed into "absent": its
+    // key is left out of `files`, so the consumer reads it itself and reports why. After a call that failed as
+    // a whole nothing is seeded -- `files` included -- and every entry is read singly.
+    resolver.readWcmBatch = async (refs, { pid, run = credReadManyIo, extraKeys = [], dpapiKeys = [] }) => {
         const wanted = new Map();
         const localRefs = refs.filter(({ decl }) => decl.backend !== "keyvault");
         // The local backend is consulted only when a reference needs it, as the resolver above does: a
@@ -815,16 +1163,34 @@ function makeSecretResolver(cfg, env = process.env) {
                 wanted.set(name, keyFor(name, decl, cfg));
             }
         }
+        const files = new Map();
+        const blobs = new Map();
+        for (const key of dpapiKeys) {
+            let blob;
+            try {
+                blob = readDpapiFile(key, env);
+            } catch (e) {
+                if (!(e instanceof VcSecretsError)) {
+                    throw e;
+                }
+                continue;
+            }
+            files.set(key, blob !== undefined);
+            if (blob !== undefined) {
+                blobs.set(key, blob);
+            }
+        }
         let result;
         try {
             result = await run({ keys: [...new Set([...wanted.values(), ...extraKeys])], pid, env,
-                redactValues: resolvedValues });
+                redactValues: resolvedValues, blobs });
         } catch (e) {
             if (!(e instanceof VcSecretsError)) {
                 throw e;
             }
 
-            return { seeded: new Map(), job: e.message, outcomes: new Map() };
+            return { seeded: new Map(), job: e.message, outcomes: new Map(), dpapiOutcomes: new Map(), files: new Map(),
+                mayHaveBound: blobs.size > 0 };
         }
         const cmd = psCommand(env);
         const seeded = new Map();
@@ -851,9 +1217,20 @@ function makeSecretResolver(cfg, env = process.env) {
                 outcomes.set(key, outcome);
             }
         }
+        const dpapiOutcomes = new Map();
+        for (const key of blobs.keys()) {
+            const outcome = result.dpapi !== null && typeof result.dpapi === "object" && Object.hasOwn(result.dpapi, key)
+                ? result.dpapi[key] : null;
+            // -1 is the script's mark for a failure that is not DPAPI's. Not seeded: the key stays `files: true`
+            // with no outcome, so the consumer decrypts it singly, and there the failure is thrown, as it is for
+            // any single read. The batch must not be laxer than that read.
+            if (typeof outcome?.ok === "string" || (Number.isInteger(outcome?.err) && outcome.err !== -1)) {
+                dpapiOutcomes.set(key, outcome);
+            }
+        }
         const job = result.job === "ok" || Number.isInteger(result.job) ? result.job : "the bind reported no result";
 
-        return { seeded, job, outcomes };
+        return { seeded, job, outcomes, dpapiOutcomes, files, mayHaveBound: false };
     };
 
     return resolver;
@@ -1007,8 +1384,9 @@ async function cmdMigrate(cfg) {
 export {
     KEY_PREFIX, keystoreFilePresent, scopeKeyFor, keyFor, nameFromKey, TIMEOUT_LOCAL_MS, TIMEOUT_AZ_MS,
     LOCAL_BACKENDS, SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT, quoteForSecurityInteractive, detectLocalBackend,
-    secretsDir, keyToPath, gpgEntryPresent, legacyKeyToPath, oversizeMarkerPath, recordOversizeMarker,
-    clearOversizeMarker, readOversizeMarker, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE, PS_CRED_WRITE,
+    oauthBackend, OAUTH_BACKENDS, secretsDir, keyToPath, dpapiKeyToPath, readDpapiFile, renameWithRetry, removeFileWithRetry,
+    RENAME_ATTEMPTS, gpgEntryPresent, legacyKeyToPath, PS_CRED_READ, PS_CRED_READ_MANY, PS_CRED_DELETE,
+    PS_CRED_WRITE, CS_DPAPI, PS_DPAPI_PROTECT, PS_DPAPI_UNPROTECT_MANY, buildDpapiProtect, unprotectManyIo,
     psEncode, psCommand, decodeCredBlobHex, isAbsentEntry, buildLocalRead, buildCredReadMany, credReadManyIo,
     batchedReadError, buildLocalWrite, buildLocalDelete, deleteEntryIo, writeLocalValue, writeSecretValue,
     buildKeyvaultRead, mapResolveError, makeSecretResolver, readLegacyLocalValue, newKeyPresent, cmdMigrate,
