@@ -22,6 +22,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
   typed at 128 characters and `set` still reported success, so a longer token was stored cut and the service
   answered 401 later. `set` now reads the value itself, as it does on every other platform, and writes it through
   `security -i`, which keeps it out of the command line; a value too long for that command line is refused.
+- **macOS: two launchers that reach the token lock at the same moment no longer fail, and a live holder is no longer
+  taken over by the second.** The lock is a socket file there, and the kernel answered the slower of two simultaneous
+  binders with an error the lock code did not know, so a server could fail to start and `login` or `logout` could
+  fail. A socket that is bound but not yet listening also refuses connections like one a killed launcher left behind,
+  so a launcher could take the winner's live socket for a dead one, replace it, and exchange the refresh token
+  alongside it, which signs one session out. The lock now treats that error as "held", and reclaims a socket only
+  after it refused twice, a randomised moment apart; a holder that takes longer than that wait to get from bind to
+  listen can still be taken over. A socket a killed launcher really left behind is much less likely to be reclaimed by
+  two launchers at once, but it can still happen.
 
 ### Changed
 
