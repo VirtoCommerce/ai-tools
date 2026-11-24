@@ -9,7 +9,7 @@
 // What it adds to the unit suite, which puts a stub `gpg` on PATH: that the write the lib builds (encrypt to a
 // per-process `<name>.<pid>.tmp` sibling, chmod, rename) works with the real tool, that two processes writing one
 // entry do not collide, and that the absent / unreadable distinctions hold on a real file system. Values are
-// synthetic and never printed -- only lengths and booleans. Exit code = number of FAILs (2 = refused to run).
+// synthetic and never printed -- only lengths and booleans. Exit code = number of FAILs (64 = refused to run, which no FAIL count reaches).
 
 import { spawn, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
@@ -17,6 +17,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+// What the script exits with when it refuses to run. Distinct from any FAIL count (a FAIL count is the number of
+// checks that failed, and only a handful of checks exist), so a CI step can tell "did not run" from "ran and failed".
+const EXIT_REFUSED = 64;
 
 // Before anything is imported. Two conditions, kept the same as the other smokes': a machine that is thrown away
 // (CI), or a caller who said so.
@@ -30,7 +34,7 @@ import { fileURLToPath } from "node:url";
     }
     if (missing.length > 0) {
         console.error(`linux.mjs refuses to run: it needs ${missing.join(" and ")}`);
-        process.exit(2);
+        process.exit(EXIT_REFUSED);
     }
 }
 
@@ -51,7 +55,7 @@ const GNUPGHOME = path.join(TMP, "gnupg");
 if (path.join(GNUPGHOME, "S.gpg-agent.browser").length > 100) {
     fs.rmSync(TMP, { recursive: true, force: true });
     console.error(`linux.mjs refuses to run: ${GNUPGHOME} is too long for gpg-agent's unix sockets (limit about 100 bytes); point TMPDIR at a shorter directory`);
-    process.exit(2);
+    process.exit(EXIT_REFUSED);
 }
 const STORE = path.join(TMP, "store");   // XDG_CONFIG_HOME of the env the lib is handed
 const key = (name) => `vc-secrets:${SCOPE}:${name}`;

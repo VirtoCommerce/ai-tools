@@ -7,7 +7,7 @@
 // under a throwaway prefix. It imports the plugin from this checkout and changes nothing under it.
 // Isolation: every dpapi file lives under a fresh temp dir (LOCALAPPDATA of the `env` the lib is handed), and every
 // Credential Manager entry carries one random per-run scope, `vc-secrets:vcs-smoke-<hex>:<name>`. Values are
-// synthetic and are never printed -- only lengths and booleans. Exit code = number of FAILs (2 = refused to run).
+// synthetic and are never printed -- only lengths and booleans. Exit code = number of FAILs (64 = refused to run, which no FAIL count reaches).
 
 import { spawnSync } from "node:child_process";
 import crypto from "node:crypto";
@@ -16,6 +16,10 @@ import { createRequire, syncBuiltinESMExports } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+// What the script exits with when it refuses to run. Distinct from any FAIL count (a FAIL count is the number of
+// checks that failed, and only a handful of checks exist), so a CI step can tell "did not run" from "ran and failed".
+const EXIT_REFUSED = 64;
 
 // Before anything is imported or spawned. Two conditions, because the script does two things a unit test never
 // does: it needs the real Windows stores, and it writes into the caller's Credential Manager. CI is a machine
@@ -30,7 +34,7 @@ import { fileURLToPath } from "node:url";
     }
     if (missing.length > 0) {
         console.error(`windows.mjs refuses to run: it needs ${missing.join(" and ")}`);
-        process.exit(2);
+        process.exit(EXIT_REFUSED);
     }
 }
 
@@ -373,7 +377,7 @@ async function check(id, title, fn) {
 // ---------------------------------------------------------------------------------------------------------------
 // Checks
 // ---------------------------------------------------------------------------------------------------------------
-const VALUE_BYTES = 2907;   // the size observed in the field, over the 2560-byte Credential Manager ceiling
+const VALUE_BYTES = 2907;   // one byte more than the largest access entry observed (2906), over the 2560-byte Credential Manager ceiling
 
 async function roundTrip(env, name) {
     const k = key(name);
@@ -594,6 +598,7 @@ process.stdin.resume();
 let reads = 0;
 let absent = 0;
 const errors = {};
+let firstError = null;
 let announced = false;
 while (!stop) {
     for (let i = 0; i < 50; i += 1) {
@@ -606,6 +611,7 @@ while (!stop) {
         } catch (e) {
             const code = /: (\\w+)$/.exec(e.message)?.[1] ?? "?";
             errors[code] = (errors[code] ?? 0) + 1;
+            firstError ??= e.message;
         }
     }
     if (!announced && reads > 0) {
@@ -614,7 +620,7 @@ while (!stop) {
     }
     await new Promise((resolve) => setImmediate(resolve));
 }
-console.log(JSON.stringify({ reads, absent, errors }));
+console.log(JSON.stringify({ reads, absent, errors, firstError }));
 `;
 
 function startReader(k) {
@@ -866,6 +872,12 @@ async function main() {
         const refusals = attempts.flat().filter((a) => a !== "ok").length;
         const contended = attempts.filter((a) => a.length > 1).length;
         expect(report !== null && report.reads > 0, `the reader reported nothing usable: ${JSON.stringify(report)}`);
+        // What CHANGELOG.md and the design record claim: a reader sees the old version or the new one, never no file and
+        // never a refused read. Asserted whether or not a write met contention, since the reader ran either way. If either
+        // goes red, that is a finding about the lib (readDpapiFile would need the same retry the rename and the removal
+        // have), not a defect of this script.
+        expect(report.absent === 0, `the reader found the entry ABSENT ${report.absent} time(s) while it was being replaced (${report.reads} reads succeeded) -- a lib finding: a reader must see the old version or the new one`);
+        expect(Object.keys(report.errors).length === 0, `the reader's reads failed ${JSON.stringify(report.errors)} while the entry was being replaced; first: ${report.firstError} -- a lib finding: readDpapiFile would need the retry that renameWithRetry has`);
         expect(await dpapiRead(k) === values.at(-1), "the final file does not decrypt to the last value written");
         expect(tmpFilesIn(k).length === 0, "a tmp file was left behind");
         // Writes that never met a refusal prove nothing about a reader and the retry: that is a SKIP, never a PASS.
