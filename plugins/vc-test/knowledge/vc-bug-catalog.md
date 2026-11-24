@@ -288,6 +288,24 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Cross-ref:** Jira VCST-6669, VCST-6121 (vc-platform#3144), VCST-6338 (moved the code to vc-module-admin-angular-js) · fix: vc-module-admin-angular-js#2 (3.1094.0), vc-platform#3155 (400 instead of 500) · VC-API-010 (the server half) · VC-AUTH-006 (same passkey rollout)
 - **Archetype:** `SILENT`
 
+### VC-AUTH-008 — A per-store sign-in switch is enforced by the UI, not by the token grant
+- **Pattern:** Turning a sign-in method off for a store hides its button on a freshly loaded sign-in page, but the grant handler never reads the store: a page opened before the switch (or a direct token request) still gets a token. Sibling grants (OTP, external sign-in) already refuse server-side when their store switch is off, so the omission is per grant, not a design choice. Measured 3/3 on a stand with the Passkey grant, then the module unreleased; the Password grant is filed as the same shape.
+- **Detection probe:** For each sign-in method, switch it off for the store, then request a token for that store with that method's grant WITHOUT reloading the sign-in page (a stale tab or a direct request): expect a refusal and a *failed* sign-in-log row. A fresh page load is the control — it hides the button, which is exactly why UI-only enforcement looks fine.
+- **Cross-ref:** Jira VCST-6598 (passkey, In progress), VCST-6975 (password grant, Draft) · VC-AUTH-004 (same one-surface shape, for lockout) · VC-AUTH-006 · Jira sprint 26-23 harvest 2026-11-24
+- **Archetype:** `PARITY`
+
+### VC-AUTH-009 — A privilege-bearing field or permission set is writable by a caller who does not hold it
+- **Pattern:** A security-administration write is gated by one coarse "update" permission and binds the request body onto the entity, with no check that the CALLER holds what the request grants. A user with only that permission can therefore raise their own access — a privilege flag on their own account, extra permissions on their own role. The only guard is a hand-kept "restore the stored value" list that grew one reported field at a time, so every field not yet reported is open. Hiding the control in the admin UI is not a control. *Specifics (endpoints, permissions, further paths) stay in the Jira RCA: the defect is unfixed and this repository is public.*
+- **Detection probe:** As a user holding only the entity's update permission, read your own record, change each privilege-bearing field (administrator flag, roles, the permissions on your own role), write it back, and re-read through a different path **and after a token refresh**: expect 403 or the stored value kept, never the change. Repeat on create and on every sibling write that reaches the same entity.
+- **Cross-ref:** Jira VCST-6899 (High, To do; found in a review of the Admin Shell PR), VCST-6874 (the UI-only gate) · VC-API-008 (the same mass-assignment shape, data-loss side) · Jira sprint 26-23 harvest 2026-11-24
+- **Archetype:** `TAMPER`
+
+### VC-AUTH-010 — A permission-gated back-office endpoint does not refuse a storefront identity
+- **Pattern:** The "API access for customers" switch is asserted only in the default authorization policy, so it protects bare-authorize endpoints; endpoints gated by a *named permission* use a policy without that assertion. A storefront (customer) identity that carries the permission claim is therefore authorized on them. The platform also has no fallback policy: an endpoint with no authorize attribute is anonymous rather than refused. Reported from code reading by the reviewer — not reproduced live.
+- **Detection probe:** With the customer-access switch off, call a sample of permission-gated back-office endpoints (including controllers with no class-level authorize) using a customer-typed token that holds the permission: expect 401/403 on every one. List the endpoints with no authorize attribute and confirm each is intentionally public.
+- **Cross-ref:** Jira VCST-6977 (High, In progress) · VC-B2B-003 (the mirror direction: a back-office user cannot sign in to the storefront) · Jira sprint 26-23 harvest 2026-11-24
+- **Archetype:** `SCOPE`
+
 ---
 
 ## VC-CHECKOUT — Checkout & Payment
@@ -323,6 +341,18 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Pattern:** Admin `OrderStatusType` enum ≠ storefront labels. Seeding uses admin values; UI assertions use storefront labels.
 - **Detection probe:** When writing order-status tests, document both — admin value used to seed AND storefront label used in UI assertion
 - **Archetype:** `PARITY`
+
+### VC-ORDERS-002 — An order mutation accepts a value the server should own
+- **Pattern:** A storefront order mutation lets the buyer set a state or an amount the server should own: a status change with no value, workflow or permission validation (a buyer marks their own unpaid order Completed or Cancelled), and a payment whose sum is taken from the request while only the gateway is validated, so a tampered sum can reach authorize / initialize. Status transitions and payment sums are server state. The payment-amount mapping is reported on review evidence, not re-verified.
+- **Detection probe:** As the buyer, push the order through every status, including illegal jumps (unpaid → Completed); send a payment whose sum differs from the order total. Status must follow the workflow, the sum must be recomputed or rejected, and "paid" must derive from real payments only.
+- **Cross-ref:** Jira VCST-6977 · VC-ORDERS-001 · Jira sprint 26-23 harvest 2026-11-24
+- **Archetype:** `TAMPER`
+
+### VC-ORDERS-003 — Organization membership or anonymity alone grants read AND write on orders and carts
+- **Pattern:** Access to an order is "owner OR any active member of the organization OR (anonymous order) anyone" — no "manage organization orders" permission is consulted, so a junior buyer reads and mutates colleagues' orders and the organization's order list returns every member's orders (totals, items, addresses). Anonymous orders and carts are authorized by an `IsAnonymous` flag with no session binding, so whoever has the id can mutate them; for carts the exploitability depends on how the anonymous id is assigned — **UNVERIFIED**. The authenticated owner path is verified to be scoped.
+- **Detection probe:** Two buyers in one organization plus an anonymous order and cart made in another session: from buyer B read and change buyer A's order; from the second session read, mutate and delete the anonymous entities by id. Each must be refused unless a documented permission allows it.
+- **Cross-ref:** Jira VCST-6977 · VC-B2B-005 · VC-CART-008 · Jira sprint 26-23 harvest 2026-11-24
+- **Archetype:** `SCOPE`
 
 ---
 
@@ -439,6 +469,24 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Cross-ref:** Jira VCST-5623, VCST-5212, VCST-5218, VCST-4128, VCST-5011, VP-9128, VCST-5554, VCST-4885, VCST-5575, VCST-5759, VCST-4110, VCST-5849 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
 - **Archetype:** `FALLBACK`
 
+### VC-API-011 — A caller-supplied identity or scope id is honoured instead of the principal's
+- **Pattern:** A storefront xAPI query takes an identity argument (user, organization, store id) and uses it without checking it equals the caller's. The caller then reads another user's personalised data (customer-specific prices, discounts, personalization groups) or another store's catalog; on stores that allow anonymous users, an anonymous caller does too. The order and cart queries are the counter-example — they overwrite the input with the principal — so a sibling resolver is the oracle. Code-verified by the reviewer for the user-id case; not reproduced live.
+- **Detection probe:** For every query or mutation with an argument naming a user, organization or store, send another user's, organization's or store's id with your own token: the answer must be refused or identical to your own. Diff against a sibling resolver that overwrites the argument.
+- **Cross-ref:** Jira VCST-6977, VCST-6970 / VCST-6974 (Profile xAPI, same class) · VC-B2B-005 · Jira sprint 26-23 harvest 2026-11-24
+- **Archetype:** `SCOPE`
+
+### VC-API-012 — Authorization is opt-in per resolver, and an anonymous caller is a placeholder owner
+- **Pattern:** The xAPI core dispatches a request with no authentication or ownership step; authorize and user-state checks (locked, expired, deleted user) are helpers each module must remember to call, and a resolver that forgets is anonymous by default. The current-user id of an unauthenticated principal is the literal `Anonymous`, never null, so an ownership comparison passes for every anonymous caller against any record stored under that placeholder. Code-verified by the reviewer.
+- **Detection probe:** Call every query and mutation with no token and with a locked or deleted user's token: expect refusal. For each ownership check, test an anonymous caller against a record owned by the placeholder id. Review a new resolver for the missing authorize call.
+- **Cross-ref:** Jira VCST-6977 · VC-AUTH-004 · VC-API-011 · Jira sprint 26-23 harvest 2026-11-24
+- **Archetype:** `FALLBACK`
+
+### VC-API-013 — A read resolver skips the authorization or store filter its siblings apply
+- **Pattern:** Product and category queries check the store and the caller; sibling resolvers (fulfillment centers, brands, properties) do not, so an anonymous caller reads contact and address data or enumerates it across stores. The store check also looks only at the anonymous-allowed flag, not at whether the user may use the supplied store id. Reported by the audit on review evidence — not re-verified line by line.
+- **Detection probe:** List every query in the schema; call each anonymously and with another store's id; whatever the product query refuses, its siblings must refuse too.
+- **Cross-ref:** Jira VCST-6977 · VC-API-011 · Jira sprint 26-23 harvest 2026-11-24
+- **Archetype:** `EXPOSE`
+
 ---
 
 ## VC-LOY — Loyalty
@@ -546,6 +594,12 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Detection probe:** Upload at the size limit and one step past it, in Assets and Backup restore: expect success or an explicit size error.
 - **Cross-ref:** Jira VCST-5392, VCST-6045, VP-9223 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
 - **Archetype:** `BOUNDARY`
+
+### VC-PLATFORM-008 — A real-time broadcast goes to every connected client, not the permitted audience
+- **Pattern:** The push-notification manager sends each message to its creator **and** to every client subscribed to the system-events channel, so any authenticated user connected to the hub receives other users' notifications. The expected audience is only the clients entitled to read all messages. Open since 2026-09-11; flagged "needs hotfixes".
+- **Detection probe:** Connect two users with different permissions to the hub; trigger a notification as user A (an import, a background job). User B must receive nothing it could not read through the REST list; count the messages each client receives.
+- **Cross-ref:** Jira VCST-5950 (Medium, To do) · Jira sprint 26-23 harvest 2026-11-24
+- **Archetype:** `EXPOSE`
 
 ---
 
