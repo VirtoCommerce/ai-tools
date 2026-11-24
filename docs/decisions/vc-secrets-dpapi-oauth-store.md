@@ -91,19 +91,27 @@ file does not decrypt as that entry.
 The ciphertext is written to a per-process `<name>.dpapi.<pid>.tmp` sibling and renamed over the entry,
 as the gpg backend does — the pid because `login` stores even when the token lock is busy, so two
 writers can meet; the gpg backend's fixed `.tmp` name has the same exposure and gets the same suffix.
-Node's rename on Windows replaces an existing file, and node opens files for reading with share-delete
-access, so a concurrent reader in another launcher does not block it. A third party that opens the file
-without share-delete — an antivirus scan, the indexer — can make the rename fail transiently
-(`EPERM`/`EBUSY`/`EACCES`), so the rename is retried briefly before the write is reported as failed.
+Node's rename on Windows replaces an existing file — but not while any handle to it is open. A real
+Windows run (2026-11-23) refused the rename with `EPERM` while this process held the file open through
+`fs.openSync`, although node opens with share-delete: share-delete lets the name be marked for deletion,
+not replaced. An earlier version of this record said a concurrent node reader does not block the rename;
+that is wrong. What keeps a reader harmless is that `readDpapiFile` holds its handle only for one
+`fs.readFileSync`, so its overlap with a rename is a momentary refusal of the kind the retry exists for.
+A third party that opens the file without share-delete — an antivirus scan, the indexer — does the
+same for longer; the run measured `EPERM` for it too, ridden out under a 150 ms hold and reported after
+five attempts under a 3 s one. So the rename is retried briefly (`EPERM`/`EBUSY`/`EACCES`) before the
+write is reported as failed.
 Removing a file meets the same third party, so a removal is retried with the same policy — the stale
 access file cleared before a migration publishes its refresh file, and the file a logout or a cleared
 pair deletes. Unretried, one scan during a migration that holds a new refresh token signed the developer
 out, and one during a logout failed it. A file already absent is not retried: that is the removal's
-answer, not a refusal. `fs.rmSync`'s own `maxRetries` was not used for this: its documentation says the
+answer, not a refusal. The same run measured removal like rename: a 150 ms hold ridden out, a 3 s one
+reported as `could not remove` after five `EPERM`s. `fs.rmSync`'s own `maxRetries` was not used for this: its documentation says the
 option applies only with `recursive`, while Node 22 does retry a plain file under it, synchronously and
 with no seam a test can replace — one policy for rename and removal, in one loop, is what stays checkable.
-PowerShell receives ciphertext and returns plaintext on its standard streams: `[IO.File]::ReadAllBytes`
-opens without share-delete and would itself become the reader that blocks a neighbour's rename.
+PowerShell receives ciphertext and returns plaintext on its standard streams, so every access to the
+file — the read, the atomic write, the removal — stays in node, where one retry policy covers it and a
+read holds its handle no longer than the read itself.
 
 ### D5 — DPAPI is reached through the same P/Invoke pattern as `CredWrite`
 
