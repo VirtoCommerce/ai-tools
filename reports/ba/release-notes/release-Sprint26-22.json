@@ -1,0 +1,119 @@
+{
+  "sprint": "sprint26-22",
+  "jira_sprint": "Sprint 26-22",
+  "chosen": {
+    "notes": true,
+    "slides": true,
+    "film": true
+  },
+  "preflight": {
+    "tracker": "ok",
+    "ticket_documents": "ok (3 in window)",
+    "jira_attachments": "ok (connector downloadJiraIssueAttachment)",
+    "code_host": "ok (gh)",
+    "stand_walks": "ok (vcst lanes + accounts)",
+    "client_project": "no (platform)",
+    "style": "not set — neutral look"
+  },
+  "stories": [
+    {
+      "key": "VCST-6157",
+      "stand": "vcst",
+      "outcome": "approved",
+      "material": {
+        "slides": "jira",
+        "film": "walk"
+      }
+    },
+    {
+      "key": "VCST-6158",
+      "stand": "vcst",
+      "outcome": "approved",
+      "material": {
+        "slides": "jira",
+        "film": "walk"
+      }
+    },
+    {
+      "key": "VCST-6597",
+      "stand": "vcst",
+      "outcome": "approved",
+      "material": {
+        "slides": "jira",
+        "film": "walk"
+      }
+    },
+    {
+      "key": "VCST-6136",
+      "stand": "vcst",
+      "outcome": "approved",
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      }
+    },
+    {
+      "key": "VCST-6255",
+      "stand": "vcst",
+      "outcome": "approved",
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      }
+    },
+    {
+      "key": "VCST-6256",
+      "stand": "vcst",
+      "outcome": "approved",
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      }
+    },
+    {
+      "key": "VCST-6258",
+      "stand": "vcst",
+      "outcome": "approved",
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      }
+    },
+    {
+      "key": "VCST-6451",
+      "stand": "vcst",
+      "outcome": "approved",
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      }
+    },
+    {
+      "key": "VCST-6078",
+      "stand": "vcst",
+      "outcome": "approved",
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      }
+    },
+    {
+      "key": "VCST-6641",
+      "stand": "vcst",
+      "outcome": "approved",
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      }
+    }
+  ],
+  "slides": [],
+  "film": [],
+  "runs": [
+    {
+      "date": "2026-11-20",
+      "runner": "same",
+      "reached": "Approval"
+    }
+  ]
+}

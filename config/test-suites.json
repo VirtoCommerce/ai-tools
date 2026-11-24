@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-11-23",
-    "totalSuites": 185,
+    "totalSuites": 187,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -3548,7 +3548,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 75,
+      "testCount": 76,
       "estimatedMinutes": 84,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -4591,6 +4591,61 @@
     },
     {
       "id": "123",
+      "name": "Site Builder — Designer, Theme & Publishing",
+      "file": "regression/suites/Backend/site-builder/123-site-builder.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 49,
+      "estimatedMinutes": 120,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "cms",
+        "site-builder",
+        "designer",
+        "theme",
+        "publishing",
+        "admin",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.SiteBuilder"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-6571 (vc-module-site-builder#1). Site Builder suite family; Page Builder suites 059/060* stay for stands that still deploy VirtoCommerce.PageBuilderModule. Designer/preview cases need the flag-on storefront (preview protocol 2). Theme-touching cases need a shared-state window on B2B-store (publications are append-only). Cases with Catches: assert the CORRECT behaviour and FAIL until VCST-6571 F-1/F-2, VCST-6942 and the listed findings are fixed. Fixture gaps: GitHub App (SB-002/034/035/036), white-labeling org/store (SB-038..040), disposable store (SB-027).",
+      "clickDriven": true
+    },
+    {
+      "id": "123b",
+      "name": "Site Builder — Pages Management & Lifecycle",
+      "file": "regression/suites/Backend/site-builder/123b-site-builder-pages.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 47,
+      "estimatedMinutes": 90,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "cms",
+        "site-builder",
+        "pages",
+        "management",
+        "admin",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.SiteBuilder"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-6571. Ports of Page Builder suite 059 to Site Builder (/api/site-builder-pages, /apps/site-builder-shell). Pages are created by each case (AGENT-TEST- prefix). Toast/label/banner wording is {HYPOTHESIS} until observed on a Site Builder stand; designer/clone rows need the flag-on storefront.",
+      "clickDriven": true
+    },
+    {
+      "id": "123c",
       "exclusiveGroup": "store-setting:ProductComparison",
       "name": "Product Comparison - Admin store settings",
       "file": "regression/suites/Backend/catalog/123-product-compare-admin.csv",

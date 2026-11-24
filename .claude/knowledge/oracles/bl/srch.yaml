@@ -110,8 +110,8 @@ rules:
     violation_signal: 500 error on special characters; XSS executes; search syntax injection; product with special chars in name not findable.
     status: ACTIVE
     verified:
-      date: 2026-11-18
-      by: REG-2026-11-18-1157
+      date: 2026-11-19
+      by: REG-2026-11-19-1857
   - id: BL-SRCH-006
     title: A listing walked page by page returns each item exactly once
     priority: P1-data

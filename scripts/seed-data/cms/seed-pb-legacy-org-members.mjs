@@ -25,6 +25,10 @@ import {
 } from '../../lib/user-provision.mjs';
 import { writeEnvAliasOverride } from '../../lib/seed-common.mjs';
 import { MEMBERS, PAGES_STORE_ID, PASSWORD_TOKEN, MEMBER_ROLE_ID, validateSpecs, checkTargetsLive } from './pb-legacy-org-members-specs.mjs';
+import { routesFor, resolveBuilderRoutes } from './builder-routes.mjs';
+
+// Route family (Site Builder or Page Builder) — read from /api/platform/modules right after auth.
+let R = routesFor('page-builder');
 
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
@@ -93,7 +97,7 @@ async function seedOne(m, pages) {
 async function loadStorePages() {
   const out = [];
   for (let skip = 0; ; skip += 200) {
-    const r = await api('POST', '/api/page-builder-pages/search', { storeId: PAGES_STORE_ID, skip, take: 200 }, { expectStatus: [200] });
+    const r = await api('POST', `${R.pages}/search`, { storeId: PAGES_STORE_ID, skip, take: 200 }, { expectStatus: [200] });
     const batch = r?.results || [];
     out.push(...batch);
     if (batch.length < 200) break;
@@ -128,6 +132,8 @@ async function run() {
   if (specProblems.length) { console.error(`ABORT: spec invalid:\n   - ${specProblems.join('\n   - ')}`); process.exit(3); }
   console.log(`\n🌱 PB legacy org members (VCST-6442)${TEARDOWN ? ' [TEARDOWN]' : ''}${VERIFY ? ' [VERIFY]' : ''}${DRY_RUN ? ' [DRY RUN]' : ''}\n   Target: ${BACK_URL} | Store: ${STORE_ID}`);
   await authenticate();
+  R = await resolveBuilderRoutes(api);
+  console.log(`  builder: ${R.moduleId} (${R.pages})`);
 
   if (TEARDOWN) {
     for (const m of MEMBERS) await deleteUserByEmail(m.email);
