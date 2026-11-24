@@ -94,22 +94,19 @@ never enters it — it is a `stale_cases` entry for `/qa-test-lifecycle`. Captur
 and the wall clock for `summary.json.regression`. Every case stale ⇒ the lane is not dispatched, and
 `verdict.md` says why.
 
-**Mode — `--regression none|scoped|wide`, default `scoped`.** The staleness check (Stage 3) runs in every
-mode; the mode only decides how many of the non-stale cases the lane runs.
+**Scope — priority-ordered, no flag.** The staleness check (Stage 3) covers every case at risk; the lane
+runs only the **Critical, High and Medium** non-stale ones — never `Low` — at most **`REGRESSION_CASE_CAP` = 40**,
+taken in this order: `Priority` (Critical → High → Medium), then cases whose matched term is the ticket's own
+observable, then suite order. A ticket run should not pay for a sweep; `/qa-regression` is the sweep, and an
+operator who wants every case runs it directly.
 
-| Mode | The lane runs | Why it exists |
-|---|---|---|
-| `scoped` (default) | only **Critical, High and Medium** non-stale cases — never `Low` — at most **`REGRESSION_CASE_CAP` = 40** of them, taken in this order: `Priority` (Critical → High → Medium), then cases whose matched term is the ticket's own observable, then suite order | a developer's ticket run should not pay for a sweep; `/qa-regression` is the sweep |
-| `wide` | every non-stale case — the lane as before the modes existed | a risky change, or the operator's call |
-| `none` | nothing: `summary.json.regression` = `{ "skipped_reason": "--regression none" }` | the change has no existing coverage worth running |
-
-Cases `scoped` leaves out — every `Low` one, and any Critical/High/Medium one past the cap — are **deferred,
+Cases the scope leaves out — every `Low` one, and any Critical/High/Medium one past the cap — are **deferred,
 never dropped**: `summary.json.regression.deferred` lists each id with its suite and its reason (`low` or
 `cap`), and `verdict.md` prints one line — `N deferred (L low, C over cap 40) — /qa-regression <suites> --ids …`
 with the ready command. A deferred case was checked and is not stale; it did not run. The cap lives only in
 this paragraph — change it here.
 
-The lane also records its yield, so the mode can be judged later: `regression.attributable_failures` = the
+The lane also records its yield, so the scope can be judged later: `regression.attributable_failures` = the
 number of failures triage attributed to this ticket (`0` is a valid and useful value).
 
 **It runs AFTER the other lanes, never beside them.** `/qa-regression` fills all three browser slots and the
