@@ -575,7 +575,10 @@ async function removeOverHeldFile(k, holdMs, env = ENV) {
 
 const HOLD_SHORT_MS = 150;
 const HOLD_LONG_MS = 3000;
-const TRANSIENT = ["EPERM", "EBUSY", "EACCES"];   // keystore.mjs RENAME_RETRY_CODES (not exported)
+// The code Windows answered on 2026-11-23 for a rename or a delete over a file another handle holds. Pinned rather than
+// read from a list of the lib's retry codes: a copy of that list would follow the lib wherever it went, and the point
+// is to see what the real OS says.
+const REFUSAL = "EPERM";
 const CONCURRENT_WRITES = 20;
 
 // The reader of S5d, in a node process of its own so that its handles are a different process's: it calls the lib's
@@ -795,8 +798,8 @@ async function main() {
         expect(v1 !== v0, "the old and the new value are equal, so 'previous entry intact' could not be told from 'overwritten'");
         const r = await writeOverHeldFile(k, v1, HOLD_LONG_MS);
         expect(r.error !== null, `the write SUCCEEDED despite a ${HOLD_LONG_MS} ms lock; rename attempts: [${r.renames.join(", ")}]`);
-        expect(r.renames.length === RENAME_ATTEMPTS && TRANSIENT.includes(r.error.code),
-            `failed with ${r.error.code ?? r.error.message} after ${r.renames.length} attempt(s) [${r.renames.join(", ")}], expected ${RENAME_ATTEMPTS} transient refusals`);
+        expect(r.renames.length === RENAME_ATTEMPTS && r.renames.every((a) => a === REFUSAL) && r.error.code === REFUSAL,
+            `failed with ${r.error.code ?? r.error.message} after ${r.renames.length} attempt(s) [${r.renames.join(", ")}], expected ${RENAME_ATTEMPTS} attempts, every one ${REFUSAL}`);
         expect(await dpapiRead(k) === v0, "the previous entry was not left intact");
         expect(tmpFilesIn(k).length === 0, "a tmp file was left behind");
 
@@ -823,8 +826,8 @@ async function main() {
             fs.closeSync(fd);
         }
         expect(error !== null, `the write SUCCEEDED with a node read handle open; rename attempts: [${renames.join(", ")}]`);
-        expect(renames.length === RENAME_ATTEMPTS && TRANSIENT.includes(error.code),
-            `failed with ${error.code ?? error.message} after ${renames.length} attempt(s) [${renames.join(", ")}], expected ${RENAME_ATTEMPTS} transient refusals`);
+        expect(renames.length === RENAME_ATTEMPTS && renames.every((a) => a === REFUSAL) && error.code === REFUSAL,
+            `failed with ${error.code ?? error.message} after ${renames.length} attempt(s) [${renames.join(", ")}], expected ${RENAME_ATTEMPTS} attempts, every one ${REFUSAL}`);
         expect(await dpapiRead(k) === v0, "the previous entry was not left intact");
         expect(tmpFilesIn(k).length === 0, "a tmp file was left behind");
 
@@ -865,6 +868,10 @@ async function main() {
         expect(report !== null && report.reads > 0, `the reader reported nothing usable: ${JSON.stringify(report)}`);
         expect(await dpapiRead(k) === values.at(-1), "the final file does not decrypt to the last value written");
         expect(tmpFilesIn(k).length === 0, "a tmp file was left behind");
+        // Writes that never met a refusal prove nothing about a reader and the retry: that is a SKIP, never a PASS.
+        if (contended === 0) {
+            throw new Skip(`no contention observed: all ${CONCURRENT_WRITES} writes renamed on the first attempt while the reader made ${report.reads} reads, so the retry was never exercised`);
+        }
 
         return `all ${CONCURRENT_WRITES} writes succeeded; ${refusals} retried rename refusals over ${contended} contended writes; reader: ${report.reads} reads, ${report.absent} absent, read errors ${JSON.stringify(report.errors)}; the final file decrypts to the last value`;
     });
@@ -889,8 +896,8 @@ async function main() {
         const r = await removeOverHeldFile(k, HOLD_LONG_MS);
         expect(r.error !== null, `deleteEntryIo SUCCEEDED despite a ${HOLD_LONG_MS} ms lock; removal attempts: [${r.removals.join(", ")}]`);
         expect(/could not remove/.test(r.error.message), `unexpected error text: ${r.error.message}`);
-        expect(r.removals.length === RENAME_ATTEMPTS && TRANSIENT.includes(r.removals.at(-1)),
-            `after ${r.removals.length} attempt(s) [${r.removals.join(", ")}], expected ${RENAME_ATTEMPTS} transient refusals`);
+        expect(r.removals.length === RENAME_ATTEMPTS && r.removals.every((a) => a === REFUSAL),
+            `after ${r.removals.length} attempt(s) [${r.removals.join(", ")}], expected ${RENAME_ATTEMPTS} attempts, every one ${REFUSAL}`);
         expect(fs.existsSync(dpapiKeyToPath(k)), "the file is gone although the removal reported failure");
 
         return `rejected "${r.error.message}" after ${r.removals.length} attempts [${r.removals.join(", ")}], ${r.elapsedMs} ms after the lock; code ${r.removals.at(-1)}`;

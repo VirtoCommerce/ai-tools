@@ -57,7 +57,9 @@ jobs:
           # red on both legs. Note the repo README/CLAUDE.md still claim a Node 18 floor; that is
           # true for the plugin scripts but NOT for running the suite.
           node-version: '22'
-          cache: 'npm'
+          # An empty value turns caching off: the macOS leg never installs, so there is nothing for
+          # the post step to save and a missing cache path must not fail it.
+          cache: ${{ matrix.os != 'macos-latest' && 'npm' || '' }}
       # `npm ci` needs the lockfile to match package.json; fall back so a lockfile drift reports as
       # a test failure rather than masquerading as an install failure.
       - name: Install

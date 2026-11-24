@@ -160,15 +160,19 @@ fs.writeSync(1, "READY\\n");
 await new Promise((resolve) => process.stdin.once("data", resolve));
 let ok = 0;
 const failures = [];
+const spans = [];
+const now = () => performance.timeOrigin + performance.now();
 for (let i = 0; i < count; i += 1) {
+    const began = now();
     try {
         await writeSecretValue(key, id + "-" + String(i).padStart(2, "0") + "-" + synthetic(300, "l2"), { backend: "gpg", env });
         ok += 1;
     } catch (e) {
         failures.push(String(e.message).slice(0, 200));
     }
+    spans.push([began, now()]);
 }
-fs.writeSync(1, JSON.stringify({ ok, failures }) + "\\n");
+fs.writeSync(1, JSON.stringify({ ok, failures, spans }) + "\\n");
 process.exit(0);
 `;
 const writerValue = (id, i) => `${id}-${String(i).padStart(2, "0")}-${synthetic(300, "l2")}`;
@@ -285,8 +289,16 @@ async function main() {
         const final = await read(name);
         expect(written.has(final), `the final file decrypts to a value no writer wrote (${Buffer.byteLength(final)} bytes)`);
         expect(tmpSiblings(name).length === 0, `tmp files remain: ${tmpSiblings(name).join(", ")}`);
+        // Two writers that ran one after the other prove nothing about a shared tmp path, so a green result needs
+        // evidence that writes of different processes were in flight at the same moment: the number of pairs of
+        // writes, one from each process, whose time spans intersect. None is a SKIP, never a PASS.
+        const [first, second] = reports.map((r) => r.report.spans);
+        const overlapping = first.reduce((sum, a) => sum + second.filter((b) => a[0] < b[1] && b[0] < a[1]).length, 0);
+        if (overlapping === 0) {
+            throw new Skip(`no overlap observed: no write of one process was in flight during a write of the other (${WRITERS * WRITES_EACH} writes, none failed), so a collision on the tmp path could not have shown`);
+        }
 
-        return `${WRITERS * WRITES_EACH} writes from ${WRITERS} processes in ${elapsedMs} ms, none failed; the final file decrypts to one of the ${written.size} written values; no *.tmp sibling remains`;
+        return `${WRITERS * WRITES_EACH} writes from ${WRITERS} processes in ${elapsedMs} ms, none failed; ${overlapping} pairs of writes, one from each process, were in flight at the same time; the final file decrypts to one of the ${written.size} written values; no *.tmp sibling remains`;
     });
 
     // ---- L3 -------------------------------------------------------------------------------------------------
@@ -352,7 +364,8 @@ async function main() {
             throw new Skip("running as root, which reads a mode 000 file anyway");
         }
         const name = "l4-unreadable";
-        await write(name, synthetic(80, "l4"));
+        const value = synthetic(80, "l4");
+        await write(name, value);
         const file = entryFile(name);
         const dir = path.dirname(file);
         const outcomes = [];
@@ -386,7 +399,7 @@ async function main() {
             fs.chmodSync(dir, 0o700);
             fs.chmodSync(file, 0o600);
         }
-        expect(await read(name) !== "", "the entry did not read back once the modes were restored");
+        expect(await read(name) === value, "the entry did not read back as the value written once the modes were restored");
 
         return `${outcomes.join("; ")}; both read back normally once restored`;
     });

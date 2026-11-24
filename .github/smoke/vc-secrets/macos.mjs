@@ -143,7 +143,7 @@ async function keychainWrite(k, value) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Keychain availability. A hosted runner's login keychain is normally there and unlocked. When it is not, the run
+// Keychain availability. A hosted runner's login keychain is normally there and unlocked. When it is not, a CI run
 // gets a keychain of its own: created, unlocked, searched first and made the default, then taken out again.
 // ---------------------------------------------------------------------------------------------------------------
 const parseKeychains = (text) => [...String(text).matchAll(/"([^"]+)"/g)].map((m) => m[1]);
@@ -228,6 +228,11 @@ async function main() {
         }
         if (first !== null) {
             // The login keychain is locked or absent, or refuses this process: give the run one of its own, once.
+            // Only on a runner. Changing the default keychain and the search list is a change to a developer's
+            // session that a crashed run could leave behind, so a --local run reports the failure and stops.
+            if (process.env.GITHUB_ACTIONS !== "true") {
+                throw new Error(`the first write failed (${first.message}); no temporary keychain is made on --local, so the default keychain and the search list were left alone`);
+            }
             try {
                 setUpTempKeychain();
                 await attempt();
@@ -319,19 +324,22 @@ async function cleanup() {
         return;
     }
     cleaned = true;
-    // Through the lib first, as a user's logout would; an entry that is already absent is not an error here.
-    for (const k of createdKeys) {
-        try {
-            await deleteEntryIo("keychain", ENV)(k);
-        } catch { /* absent, or reported by the re-check below */ }
-    }
     // Searched without the account: an entry the lib wrote under another account would still be a leftover. Only
-    // exit 44 is "not there"; any other answer means the check could not tell.
+    // exit 44 is "not there"; any other answer means the check could not tell. Each delete removes the first match
+    // in the search list, so a copy of the key in a second keychain survives one pass: delete through the lib, as a
+    // user's logout would, and look again, a few times. An entry already absent is not an error here.
     const leftovers = [];
     for (const k of createdKeys) {
-        const r = sec(["find-generic-password", "-s", k]);
-        if (r.status !== 44) {
-            leftovers.push(`${path.basename(k)} (find exit ${r.status})`);
+        const find = () => sec(["find-generic-password", "-s", k]).status;
+        let status = find();
+        for (let tries = 0; status !== 44 && tries < 3; tries += 1) {
+            try {
+                await deleteEntryIo("keychain", ENV)(k);
+            } catch { /* absent, or reported by the look below */ }
+            status = find();
+        }
+        if (status !== 44) {
+            leftovers.push(`${path.basename(k)} (find exit ${status})`);
         }
     }
     let keychainNote = "no temporary keychain was needed";
@@ -342,18 +350,26 @@ async function cleanup() {
             const r = sec(["default-keychain", "-d", "user", "-s", tempKeychain.prevDefault]);
             notes.push(r.status === 0 ? "default keychain restored" : `default keychain NOT restored (exit ${r.status})`);
             keychainOk &&= r.status === 0;
-        } else {
-            notes.push("there was no default keychain to restore");
         }
-        if (tempKeychain.prevList.length > 0) {
-            const r = sec(["list-keychains", "-d", "user", "-s", ...tempKeychain.prevList]);
-            notes.push(r.status === 0 ? "search list restored" : `search list NOT restored (exit ${r.status})`);
-            keychainOk &&= r.status === 0;
-        }
+        // Restored as it was even when it was empty: `-s` with no keychain sets an empty list, which is the state
+        // before the run, where leaving the temporary keychain in it would not be.
+        const list = sec(["list-keychains", "-d", "user", "-s", ...tempKeychain.prevList]);
+        notes.push(list.status === 0 ? `search list restored (${tempKeychain.prevList.length} entries)` : `search list NOT restored (exit ${list.status})`);
+        keychainOk &&= list.status === 0;
         sec(["delete-keychain", tempKeychain.path]);
         const gone = !fs.existsSync(tempKeychain.path);
         notes.push(gone ? "temporary keychain deleted" : "temporary keychain NOT deleted");
         keychainOk &&= gone;
+        // security has no way to unset the default keychain, so when there was none the state to restore is "not the
+        // temporary one": say what it reads now rather than claim a restore.
+        const nowDefault = parseKeychains(sec(["default-keychain", "-d", "user"]).stdout)[0] ?? null;
+        const nowList = parseKeychains(sec(["list-keychains", "-d", "user"]).stdout);
+        const stillTemp = nowDefault === tempKeychain.path || nowList.includes(tempKeychain.path);
+        if (tempKeychain.prevDefault === null) {
+            notes.push(`there was no default keychain before the run; it reads ${nowDefault ?? "none"} now`);
+        }
+        notes.push(stillTemp ? "the temporary keychain is STILL the default or in the search list" : "the temporary keychain is in neither the default nor the search list");
+        keychainOk &&= !stillTemp;
         keychainNote = notes.join(", ");
     }
     let tmpRemoved = true;
@@ -398,11 +414,14 @@ function writeStepSummary(fails, passes, skips) {
     }
 }
 
-process.once("SIGINT", async () => {
-    console.error("\ninterrupted -- cleaning up");
-    await cleanup();
-    process.exit(130);
-});
+// A cancelled CI job sends SIGTERM and a closed terminal SIGHUP: both must put the keychain configuration back.
+for (const [signal, code] of [["SIGINT", 130], ["SIGTERM", 143], ["SIGHUP", 129]]) {
+    process.once(signal, async () => {
+        console.error(`\n${signal} -- cleaning up`);
+        await cleanup();
+        process.exit(code);
+    });
+}
 
 try {
     await main();
