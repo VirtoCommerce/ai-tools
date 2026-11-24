@@ -55,6 +55,8 @@ together with the `interactive` branch in `cmdSet` that ran it.
 
 The unit suite drives `cmdSet` on the keychain backend with an injected prompt and runner: a 190-character
 value reaches `security -i` stdin whole and appears nowhere in argv, an empty value and an oversized command
-are refused with nothing spawned. A run against a real Keychain — `set` a value over 128 characters, then
-`security find-generic-password -a "$USER" -s "<key>" -w | wc -c` equals its length + 1 — needs a Mac and is
-done by hand.
+are refused with nothing spawned. The write against a real Keychain runs in CI: the macOS leg of the
+`vc-secrets OS smoke` workflow (`.github/smoke/vc-secrets/macos.mjs`) writes values of 190 bytes and of the
+largest size one `security -i` line allows through the same path, reads each back whole with
+`security find-generic-password -w`, and checks that a value one byte over the limit is refused with nothing
+stored. What stays manual is the prompt itself: typing a long value into `vc-secrets set` on a real terminal.
