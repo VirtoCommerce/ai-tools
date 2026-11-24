@@ -752,6 +752,27 @@ test("oauthLaunchDeps: a reader that migrated at one read and finds a neighbour'
     assert.equal(stored.refreshToken, "r-neighbour", "the neighbour's token is still the one in the file");
 });
 
+test("oauthLaunchDeps: a refresh file found only by the second look is not paired with an access file the batch saw before the writer removed it", async () => {
+    // The batch reads the files in node and then spends one to three seconds in PowerShell and Credential
+    // Manager. In that window a migrating writer removes the orphan access file and publishes its refresh file.
+    // Both stores read as empty, the reader finds the new refresh file on its second look, and the batch still
+    // says the access file was there: served beside the new refresh token it would be another sign-in's access
+    // token, accepted as valid.
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.refresh, cache.serializeRefresh({ refreshToken: "r-new", ...DECL_IDENTITY }));
+    const seed = {
+        files: new Map([[LAUNCH_KEYS.refresh, false], [LAUNCH_KEYS.access, true]]),
+        dpapi: new Map([[LAUNCH_KEYS.access, { ok: credHex(accessBlob({ accessToken: "a-orphan" })) }]]),
+        wcm: new Map([[LAUNCH_KEYS.refresh, { err: 1168 }], [LAUNCH_KEYS.access, { err: 1168 }]]),
+    };
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env, seed,
+        run: fx.run() });
+
+    const result = await deps.readCache();
+    assert.doesNotMatch(JSON.stringify(result), /a-orphan/, "the orphan access token is nowhere in the answer");
+    assert.deepEqual(result, { state: "needs-refresh", refreshToken: "r-new" });
+});
+
 test("oauthLaunchDeps: a legacy refresh token that cannot be carried into the file is left where it is", async (t) => {
     // Not the dead-token case writeCache clears both stores for: no new token was issued, so the legacy one
     // is still live, and deleting it would sign the developer out over a write that merely failed.

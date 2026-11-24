@@ -366,7 +366,8 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
     // What the dpapi files hold, as the pair cacheStatus decides on. The refresh FILE alone picks the
     // store: with none, the pair is read from Credential Manager (an upgrade from before the file
     // store) and an access file left on its own is never looked at -- paired with a legacy refresh
-    // token it could serve another principal's access token.
+    // token it could serve another principal's access token. A refresh file that only the second look
+    // finds (below) takes its access half from disk too, and never from the batch.
     const readDpapiPair = async (parts) => {
         const toDecrypt = new Map();
         const outcomes = new Map();
@@ -405,11 +406,17 @@ function oauthLaunchDeps(entryName, decl, cfg, { env = process.env, backend: bac
             // once more, directly -- the seed's answer is the stale half of that race -- and a refresh file
             // that is there now is decrypted like any other. Only a file still absent sends the developer to
             // a sign-in (D6: nobody signed in before the upgrade is asked to).
+            //
+            // The access half is then read from disk as well, so the batch is dropped. Its access answer was
+            // taken in node before PowerShell started, and the writer removes an orphan access file BEFORE it
+            // publishes its refresh file: a batch that saw the orphan would hand it back beside the new refresh
+            // token, an access token the pair never issued.
             const published = readDpapiFile(keys.refresh, env);
             if (published === undefined) {
                 return { refresh: undefined };
             }
             toDecrypt.set(keys.refresh, published);
+            parts = null;
         }
         migrating = false;
         legacyRefreshToken = undefined;
