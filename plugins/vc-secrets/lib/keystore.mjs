@@ -797,9 +797,9 @@ function buildLocalWrite(backend, key, env = process.env, { tmp = false, value =
 
                     return line;
                 },
-                // `attended` is `set`, a person at the terminal: a locked keychain raises its unlock dialog from
-                // this very call and the person answers it in their own time, which a kill timer would cut at
-                // 10 s. Login, renewal, migrate and the doctor probe run with nobody there and keep the timer.
+                // `attended` is `set`, a person at the terminal: a locked keychain can raise an unlock dialog from
+                // this very call, and a person who answers it in their own time would be cut off by a kill timer
+                // at 10 s. Login, renewal, migrate and the doctor probe run with nobody there and keep the timer.
                 timeoutMs: attended ? null : TIMEOUT_LOCAL_MS, captureStdout: false };
         }
 
