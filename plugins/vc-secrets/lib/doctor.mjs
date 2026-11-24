@@ -569,6 +569,23 @@ function writeProbeValue(cfg, env = process.env, backend = "keychain", namespace
 // out.
 const WRITE_PROBED_BACKENDS = ["keychain", "wcm", "dpapi"];
 
+// The directories among `dir` and its ancestors that do not exist yet, deepest first: what a recursive mkdir of
+// `dir` would create. None when `dir` is there already.
+function missingDirectories(dir) {
+    const missing = [];
+    let current = dir;
+    while (!pathPresent(current, "the DPAPI directory")) {
+        missing.push(current);
+        const parent = path.dirname(current);
+        if (parent === current) {
+            break;
+        }
+        current = parent;
+    }
+
+    return missing;
+}
+
 // Windows was added because that is where the ceiling is: `doctor` was silent about whether a value
 // could be STORED on the one platform whose store refuses an oversize one. Two stores are probed there,
 // because two stores are written: Credential Manager takes a `set` secret, and the DPAPI files take the
@@ -595,14 +612,14 @@ async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = 
     }
     const key = writeProbeKey(cfg, namespaceTrusted);
     const removeEntry = remove ?? deleteEntryIo(backend, env, { run });
-    // The scope directory this probe is about to create, or null when one is already there. A dpapi write
-    // creates it and deleting the entry removes only the file, so on a machine with no entries yet the probe
-    // would leave an empty directory behind; one that existed before is not the probe's to remove.
-    let createdDir = null;
+    // The directories this probe is about to create, deepest first. A dpapi write creates the scope directory
+    // and, on a machine with no entries yet, the `secrets` and `vc-secrets` directories above it, and deleting
+    // the entry removes only the file, so the probe would leave empty directories behind; one that existed
+    // before is not the probe's to remove.
+    let createdDirs = [];
     try {
         if (backend === "dpapi") {
-            const dir = path.dirname(dpapiKeyToPath(key, env));
-            createdDir = pathPresent(dir, "the DPAPI scope directory") ? null : dir;
+            createdDirs = missingDirectories(path.dirname(dpapiKeyToPath(key, env)));
         }
         const value = writeProbeValue(cfg, env, backend, namespaceTrusted);
         await write(key, value, { backend, env, run });
@@ -638,11 +655,11 @@ async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = 
                 fs.writeSync(2, `vc-secrets: could not remove the write probe "${key}" (${e.message})\n`);
             }
         }
-        if (createdDir !== null) {
+        // Deepest first. rmdir, not rm -r: it refuses a directory with anything in it, so a file a real login
+        // put there in the meantime is never taken along with the probe's, and neither is any directory above it.
+        for (const dir of createdDirs) {
             try {
-                // rmdir, not rm -r: it refuses a directory with anything in it, so a file a real login put
-                // there in the meantime is never taken along with the probe's.
-                fs.rmdirSync(createdDir);
+                fs.rmdirSync(dir);
             } catch (e) {
                 if (e.code !== "ENOENT" && e.code !== "ENOTEMPTY") {
                     fs.writeSync(2, `vc-secrets: could not remove the write probe's directory (${e.code ?? e.message})\n`);

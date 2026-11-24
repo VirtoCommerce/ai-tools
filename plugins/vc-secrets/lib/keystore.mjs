@@ -138,14 +138,16 @@ function keyToPath(key, env = process.env) {
 
 // The root is not configBase: HOME is not one directory on Windows -- Git Bash, an IDE and Explorer can
 // each report a different one -- yet a file written by one of them has to be found by the others.
-// LOCALAPPDATA is per-user and the same in all of them (ADR D1). Node reads and writes these files;
-// PowerShell only calls DPAPI on the bytes it is handed.
+// LOCALAPPDATA is per-user and the same in all of them (ADR D1). A client that strips it from the environment
+// must still land in the same directory, so the fallback is the folder Windows itself defaults LOCALAPPDATA to,
+// `<profile>\AppData\Local`, and not the profile: that would be a second home for the same files. Node reads and
+// writes these files; PowerShell only calls DPAPI on the bytes it is handed.
 function dpapiKeyToPath(key, env = process.env) {
     assertKeyShape(key);
     const { scope, name } = keyParts(key);
     const root = env.XDG_CONFIG_HOME
         ? path.join(env.XDG_CONFIG_HOME, KEY_PREFIX, "secrets")
-        : path.join(env.LOCALAPPDATA || os.homedir(), KEY_PREFIX, "secrets");
+        : path.join(env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"), KEY_PREFIX, "secrets");
 
     return path.join(root, scope, `${name}.dpapi`);
 }

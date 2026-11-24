@@ -496,6 +496,48 @@ test("probeKeystoreWrite: a dpapi scope directory that was already there survive
     }
 });
 
+test("probeKeystoreWrite: a dpapi probe on a machine with no entries leaves the root exactly as it found it", async () => {
+    // The write creates `vc-secrets/secrets/<scope>` in one recursive mkdir, so removing only the scope directory
+    // left two empty ones behind on a machine that had never stored an entry.
+    const { dir, env } = dpapiProbeEnv();
+    const status = await m.probeKeystoreWrite({ backend: "dpapi", env, run: fakeDpapiRun() });
+
+    assert.equal(status, "ok");
+    assert.deepEqual(fs.readdirSync(dir), [], "no directory the probe created is left");
+});
+
+test("probeKeystoreWrite: a dpapi probe removes only the directories it created, never one that was there", async () => {
+    // Each level may predate the probe, and a directory that holds anything is not the probe's to take.
+    for (const existing of [["vc-secrets"], ["vc-secrets", "secrets"], ["vc-secrets", "secrets", "other-scope"]]) {
+        const { dir, env } = dpapiProbeEnv();
+        fs.mkdirSync(path.join(dir, ...existing), { recursive: true });
+        const status = await m.probeKeystoreWrite({ backend: "dpapi", env, run: fakeDpapiRun() });
+
+        assert.equal(status, "ok");
+        const remaining = fs.readdirSync(dir, { recursive: true }).map((p) => p.split(path.sep).join("/")).sort();
+        const expected = existing.map((_, i) => existing.slice(0, i + 1).join("/"));
+        assert.deepEqual(remaining, expected, `existing=${existing.join("/")}`);
+    }
+});
+
+test("probeKeystoreWrite: a file a login puts into a directory the probe created survives the cleanup, with its whole chain", async () => {
+    // The probe removes with rmdir, which refuses a directory that holds anything. A recursive remove would take a
+    // sign-in that landed there between the probe's write and its cleanup.
+    const { dir, env } = dpapiProbeEnv();
+    const scopeDir = path.dirname(m.dpapiKeyToPath(PROBE_USER, env));
+    const neighbour = path.join(scopeDir, "oauth-a-refresh.dpapi");
+    const status = await m.probeKeystoreWrite({ backend: "dpapi", env, run: fakeDpapiRun(),
+        write: async (key, value, opts) => {
+            await m.writeSecretValue(key, value, opts);
+            fs.writeFileSync(neighbour, "kept");
+        } });
+
+    assert.equal(status, "ok");
+    assert.equal(fs.readFileSync(neighbour, "utf8"), "kept", "the other process's file is still there");
+    assert.deepEqual(fs.readdirSync(scopeDir), ["oauth-a-refresh.dpapi"], "and the probe's own entry is gone");
+    assert.deepEqual(fs.readdirSync(dir), ["vc-secrets"], "the chain above it was not removed either");
+});
+
 test("probeKeystoreWrite: a dpapi write that left no file is reported as that, not as a value that differs", async () => {
     // "Differs" sends the reader after corruption. Here the write returned and nothing is at the path the
     // read looked in, which is a different problem with a different remedy.

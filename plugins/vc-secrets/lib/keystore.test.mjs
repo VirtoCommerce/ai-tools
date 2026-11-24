@@ -61,9 +61,11 @@ test("dpapiKeyToPath: LOCALAPPDATA is the root, XDG_CONFIG_HOME overrides it", (
     assert.equal(m.dpapiKeyToPath(key, { LOCALAPPDATA: "/L", XDG_CONFIG_HOME: "/X" }), path.join("/X", "vc-secrets", "secrets", "user", "oauth-ado-refresh.dpapi"));
 });
 
-test("dpapiKeyToPath: with neither LOCALAPPDATA nor XDG_CONFIG_HOME the root is the home directory", () => {
+test("dpapiKeyToPath: with neither LOCALAPPDATA nor XDG_CONFIG_HOME the root is Windows' own default for LOCALAPPDATA", () => {
+    // Not the profile itself: a client that strips LOCALAPPDATA must read the directory login wrote, which is
+    // where Windows points LOCALAPPDATA by default, `<profile>\AppData\Local`.
     assert.equal(m.dpapiKeyToPath("vc-secrets:user:oauth-ado-refresh", {}),
-        path.join(os.homedir(), "vc-secrets", "secrets", "user", "oauth-ado-refresh.dpapi"));
+        path.join(os.homedir(), "AppData", "Local", "vc-secrets", "secrets", "user", "oauth-ado-refresh.dpapi"));
 });
 
 test("dpapiKeyToPath: a malformed key is refused", () => {
