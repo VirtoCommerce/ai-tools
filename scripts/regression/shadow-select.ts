@@ -15,6 +15,7 @@
  * so there is no second way to describe a change. The log is append-only JSONL under
  * `reports/regression/` (gitignored by that folder's rule — local to one machine until un-ignored).
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { execFileSync } from "child_process";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from "fs";
 import { dirname, join } from "path";
