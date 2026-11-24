@@ -732,6 +732,26 @@ test("oauthLaunchDeps: a migration renewal without a new refresh token moves the
     assert.deepEqual(fx.ops.map((o) => o.op), ["write"], "migration is done: only the access entry is written now");
 });
 
+test("oauthLaunchDeps: a reader that migrated at one read and finds a neighbour's refresh file at the next does not write the legacy token over it", async () => {
+    // One launcher lives across many reads: it reads the legacy pair (migrating), a neighbour then publishes a
+    // refresh file with a NEW token, and the next read finds that file. If the first read's migration state
+    // survived, a renewal answered without a refresh_token (RFC 6749 section 6) would "carry" the legacy token
+    // into the file, replacing the live one with a token Entra rotated away: loud only at the next exchange.
+    const fx = dpapiStore();
+    const legacy = cache.serializeRefresh({ refreshToken: "r-legacy", ...DECL_IDENTITY });
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run({ [LAUNCH_KEYS.refresh]: legacy, [LAUNCH_KEYS.access]: expiredAccessBlob() }),
+        write: async (key, value) => { fx.putFile(key, value); } });
+
+    assert.deepEqual(await deps.readCache(), { state: "needs-refresh", refreshToken: "r-legacy" }, "read from the legacy pair");
+    fx.putFile(LAUNCH_KEYS.refresh, cache.serializeRefresh({ refreshToken: "r-neighbour", ...DECL_IDENTITY }));
+    assert.deepEqual(await deps.readCache(), { state: "needs-refresh", refreshToken: "r-neighbour" }, "read from the file");
+    await deps.writeCache({ ...FRESH, refreshToken: undefined });
+
+    const stored = cache.parseEntry(fs.readFileSync(m.dpapiKeyToPath(LAUNCH_KEYS.refresh, fx.env), "utf8"));
+    assert.equal(stored.refreshToken, "r-neighbour", "the neighbour's token is still the one in the file");
+});
+
 test("oauthLaunchDeps: a legacy refresh token that cannot be carried into the file is left where it is", async (t) => {
     // Not the dead-token case writeCache clears both stores for: no new token was issued, so the legacy one
     // is still live, and deleting it would sign the developer out over a write that merely failed.
