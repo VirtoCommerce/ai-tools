@@ -301,9 +301,10 @@ after(() => {
 //   the macOS Keychain                                               the literal `security`, found on PATH
 //   Azure Key Vault                                                  the literal `az`, found on PATH
 //
-// The stub exits 1, never 44: 44 is the Keychain's "not stored", and `az`'s own not-found codes read as an
-// absent secret the same way, so a miss would pass as an ordinary absence. A test that needs one of these
-// supplies its own (a stub earlier on PATH, a VC_SECRETS_POWERSHELL of its own, an env object of its own)
+// The stub exits 1, never 44: 44 is the Keychain's "not stored" (isAbsentEntry), so a miss that exited with it
+// would pass as an ordinary absence. 1 is safe for both stubs because no store maps it to absent: the Keychain's
+// only absent code is 44, and a Key Vault read has no absent case at all, so any non-zero exit is a failure. A
+// test that needs one of these supplies its own (a stub earlier on PATH, a VC_SECRETS_POWERSHELL of its own, an env object of its own)
 // and that wins; what this closes is the test that supplies nothing.
 //
 // An explicit env object handed to a function is not process.env: the base directories and the command
