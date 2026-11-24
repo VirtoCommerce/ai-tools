@@ -579,10 +579,13 @@ async function removeOverHeldFile(k, holdMs, env = ENV) {
 
 const HOLD_SHORT_MS = 150;
 const HOLD_LONG_MS = 3000;
-// The code Windows answered on 2026-11-23 for a rename or a delete over a file another handle holds. Pinned rather than
-// read from a list of the lib's retry codes: a copy of that list would follow the lib wherever it went, and the point
-// is to see what the real OS says.
+// The code Windows answered on 2026-11-23 for a rename over a file another handle holds: EPERM, on a developer machine
+// and on the CI runner alike. Pinned rather than read from a list of the lib's retry codes: a copy of that list would
+// follow the lib wherever it went, and the point is to see what the real OS says.
 const REFUSAL = "EPERM";
+// A delete over the same lock is answered differently by the two machines: EPERM on the developer machine, EBUSY on
+// the CI runner. The lib retries both, so a removal that never gets through must show one of the two on every attempt.
+const REMOVAL_REFUSALS = ["EPERM", "EBUSY"];
 const CONCURRENT_WRITES = 20;
 
 // The reader of S5d, in a node process of its own so that its handles are a different process's: it calls the lib's
@@ -908,8 +911,8 @@ async function main() {
         const r = await removeOverHeldFile(k, HOLD_LONG_MS);
         expect(r.error !== null, `deleteEntryIo SUCCEEDED despite a ${HOLD_LONG_MS} ms lock; removal attempts: [${r.removals.join(", ")}]`);
         expect(/could not remove/.test(r.error.message), `unexpected error text: ${r.error.message}`);
-        expect(r.removals.length === RENAME_ATTEMPTS && r.removals.every((a) => a === REFUSAL),
-            `after ${r.removals.length} attempt(s) [${r.removals.join(", ")}], expected ${RENAME_ATTEMPTS} attempts, every one ${REFUSAL}`);
+        expect(r.removals.length === RENAME_ATTEMPTS && r.removals.every((a) => REMOVAL_REFUSALS.includes(a)),
+            `after ${r.removals.length} attempt(s) [${r.removals.join(", ")}], expected ${RENAME_ATTEMPTS} attempts, every one ${REMOVAL_REFUSALS.join(" or ")}`);
         expect(fs.existsSync(dpapiKeyToPath(k)), "the file is gone although the removal reported failure");
 
         return `rejected "${r.error.message}" after ${r.removals.length} attempts [${r.removals.join(", ")}], ${r.elapsedMs} ms after the lock; code ${r.removals.at(-1)}`;

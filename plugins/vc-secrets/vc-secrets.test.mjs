@@ -1461,7 +1461,9 @@ test("install-shim: a destination whose bytes differ is called different, not ol
     const r = spawnSync(process.execPath, [script], { encoding: "utf8", env: { ...process.env, HOME: home } });
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /replaced a different copy/);
-    assert.doesNotMatch(r.stdout, /older/);
+    // The product's own wording for the other outcome ("an older copy"), not the bare word: the report names
+    // the temp directory, and a path such as /var/folders/... contains "older".
+    assert.doesNotMatch(r.stdout, /an older copy/);
 });
 
 test("install-shim: --data-dir decides the location, in both spellings", () => {
@@ -3237,7 +3239,10 @@ test("install-shim: from ~/.cursor/plugins/local it copies nothing and names the
     assert.equal(r.status, 0, r.stderr);
     assert.equal(fs.existsSync(path.join(home, ".cursor", "plugins", "data")), false, "no shim is copied");
     assert.equal(fs.existsSync(path.join(home, ".claude")), false);
-    const launcher = path.join(root, "vc-secrets.mjs");
+    // The launcher's own location, as node resolves it: the script names the file it runs from, and a temp
+    // root reached through a link (macOS's /var is /private/var) is spelled by its target there. HOME-derived
+    // paths keep the spelling HOME was given in; this one is the plugin copy's.
+    const launcher = fs.realpathSync(path.join(root, "vc-secrets.mjs"));
     assert.ok(r.stdout.includes(`export VC_SECRETS=${JSON.stringify(launcher)}`), r.stdout);
     assert.ok(r.stdout.includes(`node ${JSON.stringify(launcher)} doctor`), r.stdout);
 });
@@ -3355,7 +3360,8 @@ test("emit-config: a Cursor plugins/local copy verifies through its own launcher
     const r = spawnSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", env: { ...process.env, HOME: home } });
     assert.equal(r.status, 0, r.stderr);
     const { cursor, claude } = JSON.parse(r.stdout);
-    assert.ok(verifiesThrough(cursor, path.join(copy, "vc-secrets.mjs")), cursor.join("\n"));
+    // The copy's launcher as node resolves it (a temp root reached through a link is spelled by its target).
+    assert.ok(verifiesThrough(cursor, fs.realpathSync(path.join(copy, "vc-secrets.mjs"))), cursor.join("\n"));
     assert.ok(unsetNote(cursor), "the entry still needs the variable exported");
 
     // The same copy emitting Claude Code's entry: that entry's ${VC_SECRETS} points at Claude Code's shim, not at
