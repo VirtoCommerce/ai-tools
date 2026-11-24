@@ -7164,5 +7164,37 @@
     "pass_rate": 100,
     "duration_minutes": 277.39,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-24-1024",
+    "date": "2026-11-24",
+    "suiteId": "027",
+    "suiteName": "Customer Orgs & Invites",
+    "environment": "vcst",
+    "browser": "playwright-edge",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 1.07,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-24-1024",
+    "date": "2026-11-24",
+    "suiteId": "104",
+    "suiteName": "Auth OTP Sign-In",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 3,
+    "mode": "interactive"
   }
 ]
