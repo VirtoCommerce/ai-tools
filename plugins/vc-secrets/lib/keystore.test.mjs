@@ -780,7 +780,7 @@ test("unprotectManyIo: maps each key's outcome", async () => {
 
         return '{"vc-secrets:user:oauth-a-refresh":{"ok":"6869"},"vc-secrets:user:oauth-a-access":{"err":13}}';
     };
-    const result = await m.unprotectManyIo({ blobs, env: {}, run });
+    const result = await m.unprotectManyIo({ blobs, env: { VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL }, run });
     assert.deepEqual([...result], [[refresh, { ok: "6869" }], [access, { err: 13 }]]);
     assert.equal(calls.length, 1);
     assert.equal(calls[0].spec.stdinData, m.VALUE_ON_STDIN);
@@ -795,7 +795,7 @@ test("unprotectManyIo: output that is not the object is an error that does not e
     for (const out of ["secret-bytes", '"secret-bytes"', "[]", "null", '{"other":{"ok":"secret-bytes"}}',
         '{"vc-secrets:user:oauth-a-refresh":"secret-bytes"}']) {
         await assert.rejects(
-            () => m.unprotectManyIo({ blobs, env: {}, run: async () => out }),
+            () => m.unprotectManyIo({ blobs, env: { VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL }, run: async () => out }),
             (e) => e instanceof m.VcSecretsError && !e.message.includes("secret-bytes"),
             `output ${out}`);
     }
