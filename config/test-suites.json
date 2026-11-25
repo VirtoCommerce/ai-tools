@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-11-24",
-    "totalSuites": 187,
+    "generated": "2026-11-25",
+    "totalSuites": 188,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -4671,6 +4671,33 @@
       "customerApplicability": "reference",
       "clickDriven": true,
       "notes": "VCST-5918. Store settings group Product Comparison (Enable product comparison, Products per category, Allow guests to compare). CMP-ADM-001 Automated; CMP-ADM-002 stays Draft — it asserts the spec of Reset to default against the known platform behaviour (X23). Both cases change a shared store setting and restore it: run this suite alone, never beside 098 or 050q."
+    },
+    {
+      "id": "124",
+      "name": "Site Builder MCP Toolset",
+      "file": "regression/suites/Backend/page-builder/124-site-builder-mcp.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 16,
+      "estimatedMinutes": 60,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "site-builder",
+        "mcp",
+        "agent-approvals",
+        "oauth",
+        "pages",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.SiteBuilder",
+        "VirtoCommerce.MCP"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal",
+      "notes": "VCST-6842. Site Builder tools on the MCP module (/admin/mcp, vc-module-site-builder PR #2, MCP 3.1001.0). First tested 2026-11-25 on vcst_dev (PASS WITH NOTES, reports/tickets/Sprint26-20/VCST-6842/). All cases Draft until a run promotes them. Excluded from backend/full until then. SBMCP-009 is KNOWN RED while VCST-7019 is open (the approval diff shows only the status): hold it red, never soften it. No BL-* domain exists for Site Builder MCP; expectations are {SPEC} (VCST-6842 AC) or {DOC} (vc-module-mcp / Site Builder READMEs). ENV PREREQUISITES: platform settings MCP:PublicOrigin={{BACK_URL}} and Authorization:Resources:0={{BACK_URL}}/admin/mcp (without them every call is 401; vcst_dev got them in vc-deploy-dev#7154); a storefront theme with Site Builder on for SBMCP-007 (vc-frontend #2698); Background Jobs for SBMCP-013. NOT RUNNABLE ON THE MACHINE LANE: graphql-runner's [MCP-EXEC] is hardwired to {{FRONT_URL}}/ucp/mcp with a password-grant token; /admin/mcp refuses password-grant tokens (not issued to an MCP client) and needs protocol 2026-07-28 with MRTR. An agent runs this suite (qa-backend-expert; a browser lane for the OAuth sign-in and SBMCP-007/009/012). FIXTURES (SBMCP-001 creates them, SBMCP-016 Cleanup removes them; all AGENT-TEST- prefixed): role AUTHOR = builder:access, builder:read [StoreSelectedScope {{STORE_ID}}], builder:create, builder:update, builder:publish, builder:templates, builder:theme, builder:shared-components:read [StoreSelectedScope {{STORE_ID}}], builder:shared-components:create, builder:shared-components:update; role NOBUILDER = platform:setting:read; role APPROVER = mcp:approve, mcp:audit:read, builder:access, builder:read [StoreSelectedScope {{STORE_ID}}], builder:publish (an approver needs the tool's own permissions besides mcp:approve). One Manager user per role, random password, never logged. OAuth public client: permissions ept:authorization, ept:token, gt:authorization_code, gt:refresh_token, rst:code, scp:offline_access, rsrc:{{BACK_URL}}/admin/mcp; requirement ft:pkce; redirect http://localhost:<free port>/callback. CLIENT RECIPE: token = authorization code + PKCE (S256) with resource={{BACK_URL}}/admin/mcp, signed in once per account in a browser, consent 'Allow'; the code is read from the redirect URL (a local listener or the failed navigation). Every request: POST {{BACK_URL}}/admin/mcp, Accept: application/json, text/event-stream; headers Mcp-Method=<method> and Mcp-Name=<tool name> for tools/call; params._meta carries io.modelcontextprotocol/protocolVersion=2026-07-28, io.modelcontextprotocol/clientInfo, io.modelcontextprotocol/clientCapabilities={elicitation:{form:{}}}. Stateless: no initialize, use server/discover. Responses may be SSE. MRTR: a result with resultType=input_required carries inputRequests.confirmation (a form with a confirm boolean) and requestState; repeat the same tools/call with inputResponses={confirmation:{action:accept,content:{confirm:true|false}}} and the requestState. On an older protocol the server refuses, saying the client cannot ask the user. Argument names are exact (store_id, page_id, version_token, expected_versions, dryRun): an unknown argument is silently ignored, so a misspelt store_id reads every store the user can read and a case can pass for the wrong reason. Pages cannot be deleted over MCP (by design): the Cleanup deletes them as the admin in the Site Builder designer."
     }
   ],
   "selections": {
@@ -4857,7 +4884,8 @@
         "118",
         "119",
         "121",
-        "122"
+        "122",
+        "124"
       ]
     },
     "sprint": {
@@ -4918,7 +4946,8 @@
         "118",
         "119",
         "121",
-        "122"
+        "122",
+        "124"
       ]
     },
     "sales-rep": {
