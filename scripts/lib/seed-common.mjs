@@ -81,10 +81,14 @@ const { testEnv: _TEST_ENV, promoted, master: _MASTER } = loadEnv();
 // A bound persona set turns USER_EMAIL & co. into a wave's clones. Only a seeder that keeps a clone's fixtures apart
 // from its original's (numbers suffixed, aliases in aliases.<env>.<set>.json) may run under one; any other would
 // re-own or double the originals' fixtures (scripts/lib/persona-sets.mjs).
+// Only a SEEDER is refused — a `seed-*` entry script, or anything `npm run seed` / `seed:*` started. Every other script
+// that imports this module (td:customer, store:set, creds:verify, returns:check, td:reconcile…) is a helper a case
+// runs mid-wave on its own data, and must keep working under the wave's set.
 {
   const tag = fixtureTag();
   const script = String(process.argv[1] ?? '').split(/[\\/]/).pop();
-  if (tag && !SET_AWARE_SEEDERS.includes(script)) {
+  const seeder = /^seed-/.test(script) || /^seed(:|$)/.test(process.env.npm_lifecycle_event ?? '');
+  if (tag && seeder && !SET_AWARE_SEEDERS.includes(script)) {
     console.error(`${script}: refusing to run with persona set ${tag.slice(1)} bound — it is not set-aware. ` +
       `Run \`npm run persona:use -- --clear\` (or QA_PERSONA_SET=none) first; set-aware: ${SET_AWARE_SEEDERS.join(', ')}.`);
     process.exit(2);

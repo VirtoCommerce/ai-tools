@@ -18,7 +18,7 @@ import { accountVars, envView } from './test-accounts.mjs';
 
 export const SETS_FILE = 'test-data/personas/sets.json';
 /** Seeders that keep a clone's fixtures apart from the original's (fixtureTag + aliases.<env>.<set>.json). Every other
- *  seeder refuses to run while a set is bound (seed-common.mjs). */
+ *  seeder refuses to run while a set is bound (seed-common.mjs); a helper that is not a seeder runs as usual. */
 export const SET_AWARE_SEEDERS = ['seed-order-states.mjs', 'seed-return-orders.mjs'];
 const SESSION_DIR = ['.vc-fix', 'session-persona'];
 

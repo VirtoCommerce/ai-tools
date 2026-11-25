@@ -68,6 +68,10 @@ function orgAliasesById() {
   return out;
 }
 
+/** The organizations a set copies for an account: its contact's organizations and its memberships'. Seeding and
+ *  teardown both derive them here, so teardown finds every copy seeding made — aliased or not. */
+const orgIdsOf = (contact, memberships) => [...new Set([...(contact?.organizations ?? []), ...(memberships ?? []).map((m) => m.organizationId)])];
+
 function mergeSetAliases(set, updates) {
   if (dry || !Object.keys(updates).length) return;
   const p = setAliasFile(set);
@@ -100,12 +104,38 @@ async function cloneOrg(orgId, set) {
 await up.authenticate();
 
 if (args.includes('--teardown')) {
+  const accounts = defs.accounts.flatMap(originals);
+  // The names of the originals' organizations, read once: a set's copy of each is `<name>-<set>` (cloneOrg).
+  const origOrgNames = new Set();
+  for (const o of accounts) {
+    const orig = await up.findUserByEmail(o.login);
+    if (!orig?.id) continue;
+    const full = { ...orig, ...((await up.getUserById(orig.id)) ?? {}) };
+    const contact = full.memberId ? await up.findContactById(full.memberId) : null;
+    for (const id of orgIdsOf(contact, await up.searchMemberships(orig.id))) {
+      const org = await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] });
+      if (org?.name) origOrgNames.add(org.name);
+    }
+  }
   for (const set of sets) {
-    let users = 0, orders = 0, orgs = 0;
-    for (const o of defs.accounts.flatMap(originals)) {
+    let users = 0, orders = 0;
+    const isCopy = (name) => String(name ?? '').endsWith(`-${set}`);
+    const copies = new Map(); // id → name; only organizations named `<…>-<set>` are ever deleted
+    for (const name of origOrgNames) {
+      const copy = await up.findOrgByName(cloneOrgName(name, set));
+      if (copy?.id) copies.set(copy.id, cloneOrgName(name, set));
+    }
+    for (const o of accounts) {
       const login = cloneLogin(o.login, set);
       const u = await up.findUserByEmail(login);
       const c = u?.memberId ?? (await up.findContactByEmail(login))?.id;
+      // The clone's own organizations too, before it goes — a copy of an org its original has left since seeding.
+      const cc = c ? await up.findContactById(c) : null;
+      for (const id of orgIdsOf(cc, u?.id ? await up.searchMemberships(u.id) : [])) {
+        if (copies.has(id)) continue;
+        const org = await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] });
+        if (isCopy(org?.name)) copies.set(id, org.name);
+      }
       if (dry) { if (u?.id || c) users++; continue; }
       if (u?.id) await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(u.userName)}`, null, { expectStatus: [200, 204] });
       if (c) await api('DELETE', `/api/members?ids=${encodeURIComponent(c)}`, null, { expectStatus: [200, 204] });
@@ -128,15 +158,12 @@ if (args.includes('--teardown')) {
       if (ids.length) await api('DELETE', `/api/return?${ids.join('&')}`, null, { expectStatus: [200, 204] });
       await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
     }
-    for (const id of orgAliasesById().keys()) {
-      const o = await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] });
-      const copy = o?.name ? await up.findOrgByName(cloneOrgName(o.name, set)) : null;
-      if (!copy?.id) continue;
-      orgs++;
-      if (!dry) await api('DELETE', `/api/members?ids=${encodeURIComponent(copy.id)}`, null, { expectStatus: [200, 204] });
+    for (const [id, name] of copies) {
+      if (!isCopy(name)) continue;
+      if (!dry) await api('DELETE', `/api/members?ids=${encodeURIComponent(id)}`, null, { expectStatus: [200, 204] });
     }
     if (!dry && existsSync(setAliasFile(set))) rmSync(setAliasFile(set));
-    console.log(`teardown ${set}: ${users} clone(s), ${orders} fixture order(s), ${orgs} organization(s)${dry ? ' (dry run)' : ''}`);
+    console.log(`teardown ${set}: ${users} clone(s), ${orders} fixture order(s), ${copies.size} organization(s)${dry ? ' (dry run)' : ''}`);
   }
   process.exit(0);
 }
@@ -162,7 +189,7 @@ for (const o of defs.accounts.flatMap(originals)) {
     if (seen.has(login)) continue; // two names for one account share one clone
     seen.add(login);
     const orgMap = new Map();
-    for (const id of new Set([...(contact.organizations ?? []), ...memberships.map((m) => m.organizationId)])) {
+    for (const id of orgIdsOf(contact, memberships)) {
       const c = await cloneOrg(id, set);
       orgMap.set(id, c);
       if (c.created) console.log(`  ✓ organization ${c.name}`);

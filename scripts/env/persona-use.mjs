@@ -20,6 +20,17 @@ if (login) {
   const [name, field = 'email'] = String(args[1] ?? '').split('.');
   if (!name) { console.error('usage: npm run persona:login -- <ALIAS|STORE NAME>[.field]'); process.exit(1); }
   const { readStore, envView, accountVars } = await import('../lib/test-accounts.mjs');
+  const { existsSync, readFileSync } = await import('node:fs');
+  // An alias whose login lives in the env (`email_env`) is read from there first — as graphql-auth and the pre-flight
+  // do. The loader has already put the set's clone into that variable, so this follows the set too.
+  const aliasesPath = `${root}/test-data/aliases.json`;
+  const def = field === 'email' && existsSync(aliasesPath) ? JSON.parse(readFileSync(aliasesPath, 'utf8'))[name] : null;
+  if (def?.email_env) {
+    const v = process.env[def.email_env];
+    if (!v) { console.error(`${name}: its login variable ${def.email_env} has no value for ${testEnv} (npm run env:check)`); process.exit(1); }
+    console.log(v);
+    process.exit(0);
+  }
   const a = field === 'email' ? envView(readStore(root), testEnv).accounts[name] : null;
   let out = a ? process.env[accountVars(name, a).loginVars[0]] : null;
   if (!out) {
