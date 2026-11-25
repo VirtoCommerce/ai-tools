@@ -1,0 +1,41 @@
+:root {
+  --navy: #050A40;
+  --navy-600: #2B3AA8;
+  --white: #FFFFFF;
+  --orange: #FF7E13;
+  --apricot: #FFBE85;
+  --muted: rgba(255, 255, 255, 0.74);
+  --rule: rgba(255, 255, 255, 0.35);
+  --shadow-card: 0 18px 48px rgba(0, 0, 0, 0.35);
+}
+
+body { font-family: 'Circular Std', 'Inter', 'Nunito Sans', sans-serif; color: var(--white); }
+section { background: linear-gradient(135deg, #050A40 0%, #2B3AA8 100%); color: var(--white); padding: 128px; }
+
+/* Cover: the brand's dark hero panel (grad-navy-radial: light source lower right) */
+section.cover { background: radial-gradient(120% 90% at 90% 100%, #2B3AA8 0%, #12164F 45%, #050A40 80%); padding: 128px 144px 160px; }
+.cover .logo { width: 330px; height: 60px; }
+.cover .pg { position: absolute; right: 144px; top: 128px; font-family: 'Circular Std Bold', 'Circular Std', sans-serif; font-size: 28px; color: var(--orange); margin: 0; }
+.cover .eyebrow { margin: 150px 0 0 0; font-family: 'Circular Std Bold', 'Circular Std', sans-serif; font-size: 27px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--orange); }
+.cover .display { margin: 32px 0 0 0; font-weight: 400; font-size: 144px; line-height: 1.0; letter-spacing: -0.02em; }
+.cover .display-bold { margin: 0; font-family: 'Circular Std Bold', 'Circular Std', sans-serif; font-weight: 400; font-size: 144px; line-height: 1.0; letter-spacing: -0.02em; }
+.cover .foot { position: absolute; left: 144px; bottom: 64px; font-size: 26px; color: var(--muted); margin: 0; }
+
+/* Story slide: text column left, media 16:9 right (the VCST-5918 example slide, at 1920 px) */
+section.story { padding: 56px 128px 160px; }
+.head { display: flex; flex-direction: row; justify-content: space-between; }
+.head .run { font-size: 24px; margin: 0; }
+.head .pg { font-family: 'Circular Std Bold', 'Circular Std', sans-serif; font-size: 24px; color: var(--orange); margin: 0; }
+.rule { border-top: 2px solid var(--white); margin: 20px 0 44px 0; }
+.story .row { display: flex; flex-direction: row; align-items: flex-start; gap: 62px; }
+.story .left { width: 600px; display: flex; flex-direction: column; gap: 22px; }
+.story .eyebrow { font-family: 'Circular Std Bold', 'Circular Std', sans-serif; font-size: 24px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange); margin: 0; }
+.story .title { font-family: 'Circular Std Bold', 'Circular Std', sans-serif; font-weight: 400; font-size: 46px; line-height: 1.1; margin: 0; }
+.story .why { font-size: 26px; line-height: 1.35; color: var(--muted); margin: 0; }
+.story .changes { font-size: 26px; line-height: 1.35; margin: 0; padding-left: 8px; }
+.story .line { border-top: 1px solid var(--rule); margin: 4px 0; }
+.story .release { font-size: 24px; line-height: 1.35; color: var(--muted); margin: 0; }
+.story .st { font-family: 'Circular Std Bold', 'Circular Std', sans-serif; color: var(--white); }
+.story .st-next { font-family: 'Circular Std Bold', 'Circular Std', sans-serif; color: var(--orange); }
+.story .shot { width: 1000px; height: 563px; margin-top: 16px; border-radius: 10px; box-shadow: var(--shadow-card); overflow: hidden; background: var(--navy); }
+.story .shot img { width: 1000px; height: 563px; object-fit: contain; }
