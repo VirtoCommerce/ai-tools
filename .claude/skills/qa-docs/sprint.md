@@ -241,7 +241,7 @@ these differences:
   hold, the seconds win and scenes shorten toward 6 s, then the person is asked to cut a story;
 - the look comes from `style.designSystem` — installed if the Motion type takes a design system, else
   its tokens read at run time and passed to the shared kit; §Film step 2 does not apply here at all —
-  neither its look nor its "≤30 s" answer to the type's Length question: the length is `film.maxSeconds`;
+  neither its look nor its ticket film's "aim at ≤90 s" answer to the type's Length question: the length is `film.maxSeconds`;
 - nothing service in a frame or a caption (§Slides): the QA ribbon or tab of a stand, a third-party store logo and
   test names are filled into the frame before upload — the same masks as the slides, applied to every
   frame; a Jira crop is never a film frame.
