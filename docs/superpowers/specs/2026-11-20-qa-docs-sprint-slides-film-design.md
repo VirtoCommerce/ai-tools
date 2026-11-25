@@ -193,7 +193,7 @@ A Slides artifact, private, title `Sprint <S> — key stories`. 16:9.
    - bottom right, small: the versions, printed exactly as probed (prerelease suffix kept);
    - speaker notes: stand, capture date, QA state (`Tested`/`Done` verdict, or "observed on stand, QA
      not finished"), the ticket key, the film link if the ticket has one.
-4. **Not included** — grouped reasons (the release notes' list), keys only.
+4. ~~**Not included** — grouped reasons, keys only.~~ *Dropped 2026-11-25 at the owner's request (out of place in the deck): the stories not shown are named in the cover's speaker notes and in the release notes.*
 
 Export: the person uses the page's *Share › Export › PowerPoint* (not "slides as pictures"). The skill
 tells them so; it does not produce a `.pptx` itself.
