@@ -7,6 +7,7 @@
 //   npm run persona:login -- <ALIAS|STORE NAME>                     the login to type for it in this session
 //
 // Prints logins and set names only — never a password (scripts/lib/persona-sets.mjs).
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 const args = process.argv.slice(2);
 const login = args[0] === '--login';
 const { activePersonaSet, bindPersonaSet, clearPersonaSet, loadPersonaSets, SETS_FILE } = await import('../lib/persona-sets.mjs');

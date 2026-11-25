@@ -16,6 +16,7 @@
 // --fixtures: then each set's orders and returns (the set-aware seeders, persona-sets.mjs SET_AWARE_SEEDERS).
 // --teardown: removes a set's clones, their organizations, their fixture orders (AGENT-TEST-ORD-…-<set>) and the
 // set's alias file — the originals and every other set stay.
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 process.env.QA_PERSONA_SET = 'none'; // the originals, whatever this session is bound to
 const { loadPersonaSets, cloneLogin, SET_AWARE_SEEDERS } = await import('../../lib/persona-sets.mjs');
 const up = await import('../../lib/user-provision.mjs');
