@@ -1,0 +1,149 @@
+{
+ "release": "sprint-26-23",
+ "ticket": "VCST-6853",
+ "baseline": "sprint-26-22",
+ "sprint": {
+  "label": "Sprint26-23",
+  "startDate": "2026-11-16",
+  "endDate": "2026-11-30",
+  "plan": "docs/Sprint plans/sprint-26-23-test-plan.md"
+ },
+ "env": {
+  "testEnv": "vcst",
+  "platform": "3.1101.0",
+  "theme": "2.63.0-alpha.2681",
+  "note": "vc-deploy-dev#7158 (2026-11-25): Platform 3.1101.0, 57 modules to latest releases, theme = green dev alpha (vc-frontend dev @ 5d7c54b0) — not a release"
+ },
+ "waves": [
+  {
+   "id": "W0",
+   "title": "Smoke gate",
+   "suites": [
+    "042"
+   ],
+   "personaSet": "S1",
+   "note": "Runs first and alone; a red W0 stops every wave. Seed the persona clones before it (npm run seed:wave-personas -- --fixtures)"
+  },
+  {
+   "id": "W1",
+   "title": "Security & sign-in — session, RBAC, xAPI user and role mutations",
+   "suites": [
+    "031",
+    "032",
+    "033",
+    "044"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "personaSet": "S1",
+   "note": "The 7006/6974/6970 divergent pairs (refused AND allowed). OTP/MFA settings stay at defaults; the setting-flipping suites are in WX. VCST-7006 has no dev fix PR (only support/3.1009): GAP-01 decides whether 3.1028.0 already refuses it"
+  },
+  {
+   "id": "W2",
+   "title": "Subscriptions, cart, checkout & orders",
+   "suites": [
+    "124",
+    "028",
+    "011",
+    "014",
+    "120"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "personaSet": "S2",
+   "note": "Subscription storefront is NOT on vcst (vc-frontend feat/VCST-6507, PR #2602 open): 124 and the subscription rows of 002/011/028/014 report NOT_DEPLOYED until it merges and a green alpha is deployed (then --update). Cart, checkout, orders and the account dashboard (120) run as usual"
+  },
+  {
+   "id": "W3",
+   "title": "Catalog, search & BOPIS",
+   "suites": [
+    "001",
+    "002",
+    "003",
+    "004",
+    "005",
+    "036"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "personaSet": "S3",
+   "note": "Binder parity across product types (VCST-5640); compare (098) is in WX because it flips ProductComparison store settings"
+  },
+  {
+   "id": "W4",
+   "title": "Sales Rep hub",
+   "suites": [
+    "089",
+    "091",
+    "093",
+    "093b",
+    "116"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "No personaSet: the rep serves the original organizations. One owner: all suites share the sales-rep fixtures. 091/093/093b/116 have uncommitted local edits — land them before claiming"
+  },
+  {
+   "id": "W5",
+   "title": "Company, members & lists",
+   "suites": [
+    "006",
+    "007",
+    "008"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "note": "No personaSet: the organization domain runs on the originals. Org switcher (6237) and member role pairs (7006/6974)"
+  },
+  {
+   "id": "W6",
+   "title": "UI kit, Bridge soft look, a11y & i18n",
+   "suites": [
+    "045",
+    "046",
+    "048c",
+    "070",
+    "071"
+   ],
+   "dependsOn": [
+    "W0"
+   ],
+   "personaSet": "S4",
+   "note": "Whole-storefront sweep in classic and soft design; dark-mode contrast (6949)"
+  },
+  {
+   "id": "WX",
+   "title": "Exclusive window — OTP, MFA, compare and punchout settings + env-wide cases",
+   "suites": [
+    "098",
+    "104",
+    "107",
+    "109",
+    "111",
+    "114b"
+   ],
+   "dependsOn": [
+    "W1",
+    "W2",
+    "W3",
+    "W4",
+    "W5",
+    "W6"
+   ],
+   "exclusive": [
+    "098",
+    "104",
+    "107",
+    "109",
+    "111",
+    "114b"
+   ],
+   "note": "Whole suites: 104/114b (OtpSignIn.Enabled), 111 (MultiFactorAuthentication), 098 (ProductComparison), 107/109 (Punchout.Enabled). Plus the 28 [EXCLUSIVE] cases the domain waves skip (regression:plan --exclusive over 002,004,005,036,044,070,071,089,093,093b). One owner, alone, every setting restored in Cleanup; 114b needs playwright-chrome"
+  }
+ ]
+}

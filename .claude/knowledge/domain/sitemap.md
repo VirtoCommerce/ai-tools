@@ -5,14 +5,16 @@ applicability_rationale: "Full storefront URL map. Customer's sitemap differs by
 
 # Sitemap: FRONT_URL
 
-**Generated:** November 11, 2026 (rev 14 — §2 route map re-derived from an up-to-date `vc-frontend` checkout; rev 13 earlier the same day refreshed the deterministic axis; rest of the body carried from rev 5, July 20 2026)
+**Generated:** November 26, 2026 (rev 15 — deterministic axis + route axis from `vc-frontend` `dev` @ `5d7c54b0`; rev 14, November 11 2026: §2 route map re-derived from an up-to-date `vc-frontend` checkout; rev 13 earlier the same day refreshed the deterministic axis; rest of the body carried from rev 5, July 20 2026)
 **Base URL:** FRONT_URL (from `FRONT_URL` env var) — vcst-qa
 **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver.") *(was 2.49.0 in May)*
-**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1097.0**; 92 modules loaded) *(was 3.1090.0 / 89 at rev 12, 3.1078.0 / 87 at rev 11, 3.1073.0 at rev 10; rev 9, 2026-09-18: was `3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow`, a pre-release build pinned to VCST-5378 — the QA env is back on a stable-numbered line)*
-**Store total products:** 4,652 *(was 4,655 at rev 12, 4,615 at rev 11, 4,567 at rev 10, 4,550 at rev 9; treat product counts and slugs as drift candidates)* · nav categories 53 *(rev 13 added `seed-range-facet-fixtures`; 53 at rev 11 counted `seed-loyalty-fixtures` twice; Carriage Bolts re-parented back `destinations/` → `bolts/` at rev 12)* · `/products-with-options` subcategories 7 *(unchanged)*
+**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1101.0**; 92 modules loaded) *(was 3.1097.0 / 92 at rev 13–14, 3.1090.0 / 89 at rev 12, 3.1078.0 / 87 at rev 11, 3.1073.0 at rev 10; rev 9, 2026-09-18: was `3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow`, a pre-release build pinned to VCST-5378 — the QA env is back on a stable-numbered line)*
+**Store total products:** 4,658 *(was 4,652 at rev 13–14, 4,655 at rev 12, 4,615 at rev 11, 4,567 at rev 10, 4,550 at rev 9; treat product counts and slugs as drift candidates)* · nav categories 55 *(rev 15 added `seed-personalization-control-fixtures` + `seed-personalization-tagged-fixtures`; rev 13 added `seed-range-facet-fixtures`; 53 at rev 11 counted `seed-loyalty-fixtures` twice; Carriage Bolts re-parented back `destinations/` → `bolts/` at rev 12)* · `/products-with-options` subcategories 7 *(unchanged)*
 
 > **Note on the version fields:** the storefront footer "Ver." (`2.54.0-pr-2382`) is the **vc-frontend theme** version — earlier revs of this doc mislabeled it "Platform version". The actual VirtoCommerce **platform** runs on the `3.10xx` assembly line (resolved from `/api/platform/modules`).
 
+> **Route-map freshness (rev 15):** route axis read from `vc-frontend` `dev` @ `5d7c54b0` (2026-11-25), up to date with `origin/dev`. One change: `/compare` is no longer declared in `client-app/router/routes/main.ts` — VCST-5918 (vc-frontend #2635) moved product compare into the Product Comparison module, which delivers the page as a storefront plugin, so the route axis cannot see it any more (same blind spot as the Sales Rep hub). Theme footer "Ver." was **not** re-read this rev (`--no-browser`).
+>
 > **Route-map freshness (rev 14):** route axis read from `vc-frontend` `dev` @ `0315ecbd` (2026-11-11), **up to date with `origin/dev`** — the first fresh checkout since rev 8, so §2 was re-derived from source this rev, not carried. The Sales Rep hub is **no longer in `vc-frontend`** (VCST-6532 removed the built-in copy 2026-10-28; it ships as a Module Federation plugin from `vc-module-sales-rep` `StorefrontApp/`), so the route axis cannot see `/company/*` hub routes any more — §2 lists them from the plugin source. Revs 9–13 had refreshed only the deterministic axis from stale checkouts.
 
 ## Overview
@@ -67,7 +69,7 @@ The site supports **15 languages** with locale-specific URLs:
 | News | `/news` | News landing (linked from footer) |
 | Find a Branch | `/branch/vendor-fulfillment` | Branch locator |
 | Bulk Order | `/bulk-order` | Bulk order entry |
-| Compare | `/compare` | Product comparison page |
+| Compare | `/compare` | Product comparison page — since VCST-5918 (vc-frontend #2635) served by the Product Comparison module plugin, not the vc-frontend router *(rev 15)* |
 | Cart | `/cart` | Shopping cart / checkout page (combined — `/checkout` redirects here) |
 | Checkout Payment | `/checkout/payment` | Checkout payment step (non-CyberSource processors only) |
 | Soft-drinks (hero target) | `/soft-drinks` | Correct homepage hero first-slider target. *Live site still links to `/soda` → 404 (SMK-001 / BUG_042_001).* |
@@ -243,6 +245,8 @@ The May `SEED-20260518/19-*` fixtures are gone; the current seed family uses fri
 | Sports | `/seed-sports` | Active — 4 |
 | Test Fixtures | `/seed-test-fixtures` | Active — 9 |
 | Tools | `/seed-tools` | Active — 7 |
+| Personalization Control Fixtures | `/seed-personalization-control-fixtures` | In nav since rev 15 (xAPI nav tree; not counted on the grid) |
+| Personalization Tagged Fixtures | `/seed-personalization-tagged-fixtures` | In nav since rev 15 (xAPI nav tree; not counted on the grid) |
 | Configurable Parents | `/products-with-options/cfg-parents` | Active — 24 (moved under Products with options; see §5) |
 
 ---
@@ -526,7 +530,7 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 ## 13. Technical Information
 
 ### Platform
-- **Platform:** Virto Commerce (ASP.NET) — assembly line **3.10xx** (max module-required `platformVersion` 3.1097.0; 92 modules loaded — as of rev 13, 2026-11-11)
+- **Platform:** Virto Commerce (ASP.NET) — assembly line **3.10xx** (max module-required `platformVersion` 3.1101.0; 92 modules loaded — as of rev 15, 2026-11-26)
 - **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver."; a PR-preview theme build) *(was 2.49.0 in May)*
 - **Environment:** QA (vcst-qa)
 - **Storefront:** vc-frontend (Coffee theme)
@@ -587,6 +591,14 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 10. **Storefront is an SPA** — every path returns the 200 shell and renders 404s client-side, so HTTP status can't confirm a category/product exists; judge existence from the `/catalog` grid or live discovery
 
 ---
+
+## Changelog (vs. November 11, 2026 rev 14)
+
+- Platform line 3.1097.0 → **3.1101.0** (92 modules; vc-deploy-dev#7158).
+- Store total products 4,652 → 4,658.
+- Nav categories ADDED (2): `seed-personalization-control-fixtures`, `seed-personalization-tagged-fixtures` (§4).
+- Route REMOVED from the vc-frontend router (1): `/compare` (`router/routes/main.ts`) — moved into the Product Comparison module plugin by VCST-5918 (#2635); the page itself still exists (§1).
+- Not re-verified this rev: theme footer "Ver.", per-category grid counts.
 
 ## Changelog (vs. November 11, 2026 rev 13)
 
@@ -716,6 +728,6 @@ See git history of this file for prior revisions.
 
 ---
 
-**Last Updated:** November 11, 2026 (rev 14)
+**Last Updated:** November 26, 2026 (rev 15)
 **Tool Used:** Playwright (Chrome) MCP — live crawl (guest) + `/api/platform/modules` (authed) for platform version
 **Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Re-derived from source at rev 14:** §2 Account + Corporate routes (vc-frontend `router/routes/` + `modules/*/index.ts`) and the Sales Rep hub (`vc-module-sales-rep` `StorefrontApp/src/routes.ts`). **Carried forward from rev 4 (not re-verified):** §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.

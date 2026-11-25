@@ -1,0 +1,4945 @@
+{
+  "release": "sprint-26-23",
+  "env": "vcst",
+  "observedAt": "2026-11-25T22:46:06.532Z",
+  "fingerprint": "vc-theme-b2b-vue-2.63.0-alpha.2681|platform@3.1101.0|virtocommerce.adminangularjs@3.1098.0|virtocommerce.adminshell@3.1101.0|virtocommerce.applicationinsights@3.1008.0|virtocommerce.assets@3.1012.0|virtocommerce.authorizenetpayment@3.1005.0|virtocommerce.avalaratax@3.1007.0|virtocommerce.azuread@3.1003.0|virtocommerce.azureblobassets@3.1009.0|virtocommerce.azuresearch@3.1009.0|virtocommerce.backgroundjobs@3.1055.0|virtocommerce.backinstock@3.1006.0|virtocommerce.backuprestore@3.1009.0|virtocommerce.builderio@3.1006.0|virtocommerce.bulkactionsmodule@3.1006.0|virtocommerce.cart@3.1016.0|virtocommerce.catalog@3.1054.0|virtocommerce.catalogcsvimportmodule@3.1010.0|virtocommerce.catalogpersonalization@3.1010.0|virtocommerce.catalogpublishing@3.1010.0|virtocommerce.content@3.1009.0|virtocommerce.contentful@3.1001.0|virtocommerce.contracts@3.1010.0|virtocommerce.core@3.1014.0|virtocommerce.customer@3.1034.0|virtocommerce.customerexportimport@3.1005.0|virtocommerce.customerreviews@3.1012.0|virtocommerce.cybersourcepayment@3.1002.0|virtocommerce.datatrans@3.1002.0|virtocommerce.dynamicassociationsmodule@3.1005.0|virtocommerce.elasticappsearch@3.1003.0|virtocommerce.elasticsearch8@3.1013.0|virtocommerce.environmentscompare@3.1004.0|virtocommerce.eventbus@3.1011.0|virtocommerce.export@3.1007.0|virtocommerce.fileexperienceapi@3.1010.0|virtocommerce.filesystemassets@3.1006.0|virtocommerce.gdpr@3.1005.0|virtocommerce.googleecommerceanalytics@4.1006.0|virtocommerce.googlesso@3.1003.0|virtocommerce.imagetools@3.1010.0|virtocommerce.inventory@3.1012.0|virtocommerce.loyalty@3.1013.0|virtocommerce.lucenesearch@3.1006.0|virtocommerce.marketing@3.1011.0|virtocommerce.marketingexperienceapi@3.1006.0|virtocommerce.mcp@3.1004.0|virtocommerce.mfa@3.1007.0|virtocommerce.nativepaymentmethods@3.1005.0|virtocommerce.news@3.1008.0|virtocommerce.notifications@3.1021.0|virtocommerce.openidconnectmodule@3.1001.0|virtocommerce.opensearch@3.1005.0|virtocommerce.opentelemetry@3.1002.0|virtocommerce.ordermanagement@3.1006.0|virtocommerce.orders@3.1023.0|virtocommerce.otp@3.1003.0|virtocommerce.pages@3.1013.0|virtocommerce.passkeys@3.1002.0|virtocommerce.payment@3.1013.0|virtocommerce.priceexportimport@3.1004.0|virtocommerce.pricing@3.1011.0|virtocommerce.productsnapshot@3.1007.0|virtocommerce.profileexperienceapimodule@3.1028.0|virtocommerce.pushmessages@3.1010.0|virtocommerce.quote@3.1009.0|virtocommerce.return@3.1008.0|virtocommerce.salesrep@3.1029.0|virtocommerce.sanity@3.1004.0|virtocommerce.search@3.1016.0|virtocommerce.seo@3.1009.0|virtocommerce.shipping@3.1012.0|virtocommerce.shipstation@3.1001.0|virtocommerce.sitebuilder@3.1002.0|virtocommerce.sitemaps@3.1008.0|virtocommerce.skyflow@3.1007.0|virtocommerce.sqlqueries@3.1009.0|virtocommerce.store@3.1015.0|virtocommerce.subscription@3.1006.0|virtocommerce.systemoperations@3.1003.0|virtocommerce.taskmanagement@3.1009.0|virtocommerce.tax@3.1012.0|virtocommerce.ucp@3.1012.0|virtocommerce.webhooks@3.1007.0|virtocommerce.whitelabeling@3.1008.0|virtocommerce.xapi@3.1033.0|virtocommerce.xcart@3.1048.0|virtocommerce.xcatalog@3.1027.0|virtocommerce.xcms@3.1011.0|virtocommerce.xfrontend@3.1011.0|virtocommerce.xorder@3.1019.0|virtocommerce.xpickup@3.1010.0|virtocommerce.xrecommend@3.1004.0",
+  "notes": [],
+  "theme": {
+    "file": "vc-theme-b2b-vue-2.63.0-alpha.2681.zip",
+    "commit": "5d7c54b0858303a4644dd75b15b340a4e93422b6",
+    "note": null
+  },
+  "tickets": [
+    {
+      "key": "VCST-7006",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 163,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/163",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.profileexperienceapimodule 3.1028.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 122,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/122",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "NOT_DELIVERED"
+    },
+    {
+      "key": "VCST-6983",
+      "sources": [
+        "sprint",
+        "virtocommerce.assets 3.1011.0→3.1012.0",
+        "virtocommerce.avalaratax 3.1006.0→3.1007.0",
+        "virtocommerce.backinstock 3.1004.0→3.1006.0",
+        "virtocommerce.backuprestore 3.1008.0→3.1009.0",
+        "virtocommerce.bulkactionsmodule 3.1005.0→3.1006.0",
+        "virtocommerce.cart 3.1014.0→3.1016.0",
+        "virtocommerce.catalog 3.1052.0→3.1054.0",
+        "virtocommerce.catalogcsvimportmodule 3.1009.0→3.1010.0",
+        "virtocommerce.catalogpersonalization 3.1009.0→3.1010.0",
+        "virtocommerce.catalogpublishing 3.1009.0→3.1010.0",
+        "virtocommerce.content 3.1008.0→3.1009.0",
+        "virtocommerce.contracts 3.1007.0→3.1010.0",
+        "virtocommerce.core 3.1013.0→3.1014.0",
+        "virtocommerce.customer 3.1033.0→3.1034.0",
+        "virtocommerce.customerexportimport 3.1004.0→3.1005.0",
+        "virtocommerce.customerreviews 3.1010.0→3.1012.0",
+        "virtocommerce.dynamicassociationsmodule 3.1004.0→3.1005.0",
+        "virtocommerce.environmentscompare 3.1003.0→3.1004.0",
+        "virtocommerce.export 3.1006.0→3.1007.0",
+        "virtocommerce.gdpr 3.1004.0→3.1005.0",
+        "virtocommerce.imagetools 3.1009.0→3.1010.0",
+        "virtocommerce.inventory 3.1011.0→3.1012.0",
+        "virtocommerce.loyalty 3.1011.0→3.1013.0",
+        "virtocommerce.marketing 3.1010.0→3.1011.0",
+        "virtocommerce.mcp 3.1000.0→3.1004.0",
+        "virtocommerce.mfa 3.1002.0→3.1007.0",
+        "virtocommerce.nativepaymentmethods 3.1004.0→3.1005.0",
+        "virtocommerce.notifications 3.1018.0→3.1021.0",
+        "virtocommerce.ordermanagement 3.1003.0→3.1006.0",
+        "virtocommerce.orders 3.1020.0→3.1023.0",
+        "virtocommerce.pages 3.1012.0→3.1013.0",
+        "virtocommerce.passkeys 3.1000.0→3.1002.0",
+        "virtocommerce.payment 3.1011.0→3.1013.0",
+        "virtocommerce.priceexportimport 3.1003.0→3.1004.0",
+        "virtocommerce.pricing 3.1010.0→3.1011.0",
+        "virtocommerce.productsnapshot 3.1005.0→3.1007.0",
+        "virtocommerce.quote 3.1007.0→3.1009.0",
+        "virtocommerce.return 3.1006.0→3.1008.0",
+        "virtocommerce.search 3.1015.0→3.1016.0",
+        "virtocommerce.seo 3.1008.0→3.1009.0",
+        "virtocommerce.shipping 3.1010.0→3.1012.0",
+        "virtocommerce.sitemaps 3.1007.0→3.1008.0",
+        "virtocommerce.sqlqueries 3.1008.0→3.1009.0",
+        "virtocommerce.store 3.1013.0→3.1015.0",
+        "virtocommerce.tax 3.1009.0→3.1012.0",
+        "virtocommerce.webhooks 3.1006.0→3.1007.0",
+        "virtocommerce.whitelabeling 3.1006.0→3.1008.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-ai",
+          "number": 12,
+          "url": "https://github.com/VirtoCommerce/vc-module-ai/pull/12",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-mfa",
+          "number": 10,
+          "url": "https://github.com/VirtoCommerce/vc-module-mfa/pull/10",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.mfa 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-export",
+          "number": 117,
+          "url": "https://github.com/VirtoCommerce/vc-module-export/pull/117",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.export 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-audit-log",
+          "number": 33,
+          "url": "https://github.com/VirtoCommerce/vc-module-audit-log/pull/33",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-shopify-taxonomy",
+          "number": 4,
+          "url": "https://github.com/VirtoCommerce/vc-module-shopify-taxonomy/pull/4",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sitemaps",
+          "number": 97,
+          "url": "https://github.com/VirtoCommerce/vc-module-sitemaps/pull/97",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.sitemaps 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-order-management",
+          "number": 12,
+          "url": "https://github.com/VirtoCommerce/vc-module-order-management/pull/12",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.ordermanagement 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-seo",
+          "number": 28,
+          "url": "https://github.com/VirtoCommerce/vc-module-seo/pull/28",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.seo 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-gdpr",
+          "number": 30,
+          "url": "https://github.com/VirtoCommerce/vc-module-gdpr/pull/30",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.gdpr 3.1005.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-quote",
+          "number": 177,
+          "url": "https://github.com/VirtoCommerce/vc-module-quote/pull/177",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.quote 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-webhooks",
+          "number": 92,
+          "url": "https://github.com/VirtoCommerce/vc-module-webhooks/pull/92",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.webhooks 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-assets",
+          "number": 44,
+          "url": "https://github.com/VirtoCommerce/vc-module-assets/pull/44",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.assets 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sql-queries",
+          "number": 33,
+          "url": "https://github.com/VirtoCommerce/vc-module-sql-queries/pull/33",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.sqlqueries 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-loyalty",
+          "number": 23,
+          "url": "https://github.com/VirtoCommerce/vc-module-loyalty/pull/23",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.loyalty 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-avatax",
+          "number": 87,
+          "url": "https://github.com/VirtoCommerce/vc-module-avatax/pull/87",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.avalaratax 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-import",
+          "number": 47,
+          "url": "https://github.com/VirtoCommerce/vc-module-import/pull/47",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-dynamic-associations",
+          "number": 61,
+          "url": "https://github.com/VirtoCommerce/vc-module-dynamic-associations/pull/61",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.dynamicassociationsmodule 3.1005.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-bulk-actions",
+          "number": 51,
+          "url": "https://github.com/VirtoCommerce/vc-module-bulk-actions/pull/51",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.bulkactionsmodule 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-catalog-csv-export-import",
+          "number": 164,
+          "url": "https://github.com/VirtoCommerce/vc-module-catalog-csv-export-import/pull/164",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.catalogcsvimportmodule 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-payment",
+          "number": 85,
+          "url": "https://github.com/VirtoCommerce/vc-module-payment/pull/85",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.payment 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-customer-export-import",
+          "number": 113,
+          "url": "https://github.com/VirtoCommerce/vc-module-customer-export-import/pull/113",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.customerexportimport 3.1005.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-contract",
+          "number": 47,
+          "url": "https://github.com/VirtoCommerce/vc-module-contract/pull/47",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.contracts 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-cart",
+          "number": 202,
+          "url": "https://github.com/VirtoCommerce/vc-module-cart/pull/202",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.cart 3.1016.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-catalog-publishing",
+          "number": 88,
+          "url": "https://github.com/VirtoCommerce/vc-module-catalog-publishing/pull/88",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.catalogpublishing 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-search",
+          "number": 164,
+          "url": "https://github.com/VirtoCommerce/vc-module-search/pull/164",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.search 3.1016.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-white-labeling",
+          "number": 32,
+          "url": "https://github.com/VirtoCommerce/vc-module-white-labeling/pull/32",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.whitelabeling 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-ai",
+          "number": 13,
+          "url": "https://github.com/VirtoCommerce/vc-module-ai/pull/13",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-customer-review",
+          "number": 91,
+          "url": "https://github.com/VirtoCommerce/vc-module-customer-review/pull/91",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.customerreviews 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-product-snapshot",
+          "number": 8,
+          "url": "https://github.com/VirtoCommerce/vc-module-product-snapshot/pull/8",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.productsnapshot 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-backup-restore",
+          "number": 11,
+          "url": "https://github.com/VirtoCommerce/vc-module-backup-restore/pull/11",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.backuprestore 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-image-tools",
+          "number": 135,
+          "url": "https://github.com/VirtoCommerce/vc-module-image-tools/pull/135",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.imagetools 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-passkeys",
+          "number": 6,
+          "url": "https://github.com/VirtoCommerce/vc-module-passkeys/pull/6",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.passkeys 3.1002.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-catalog",
+          "number": 920,
+          "url": "https://github.com/VirtoCommerce/vc-module-catalog/pull/920",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.catalog 3.1054.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-environments-compare",
+          "number": 6,
+          "url": "https://github.com/VirtoCommerce/vc-module-environments-compare/pull/6",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.environmentscompare 3.1004.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-catalog-personalization",
+          "number": 97,
+          "url": "https://github.com/VirtoCommerce/vc-module-catalog-personalization/pull/97",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.catalogpersonalization 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-audit-log",
+          "number": 36,
+          "url": "https://github.com/VirtoCommerce/vc-module-audit-log/pull/36",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-audit-log",
+          "number": 34,
+          "url": "https://github.com/VirtoCommerce/vc-module-audit-log/pull/34",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-audit-log",
+          "number": 35,
+          "url": "https://github.com/VirtoCommerce/vc-module-audit-log/pull/35",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-tax",
+          "number": 66,
+          "url": "https://github.com/VirtoCommerce/vc-module-tax/pull/66",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.tax 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-native-payment-methods",
+          "number": 22,
+          "url": "https://github.com/VirtoCommerce/vc-module-native-payment-methods/pull/22",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-price-export-import",
+          "number": 100,
+          "url": "https://github.com/VirtoCommerce/vc-module-price-export-import/pull/100",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.priceexportimport 3.1004.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-back-in-stock",
+          "number": 16,
+          "url": "https://github.com/VirtoCommerce/vc-module-back-in-stock/pull/16",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.backinstock 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-content",
+          "number": 229,
+          "url": "https://github.com/VirtoCommerce/vc-module-content/pull/229",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.content 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-core",
+          "number": 273,
+          "url": "https://github.com/VirtoCommerce/vc-module-core/pull/273",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.core 3.1014.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-notification",
+          "number": 211,
+          "url": "https://github.com/VirtoCommerce/vc-module-notification/pull/211",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.notifications 3.1021.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-shipping",
+          "number": 77,
+          "url": "https://github.com/VirtoCommerce/vc-module-shipping/pull/77",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.shipping 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-catalog-quality",
+          "number": 3,
+          "url": "https://github.com/VirtoCommerce/vc-module-catalog-quality/pull/3",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-marketing",
+          "number": 291,
+          "url": "https://github.com/VirtoCommerce/vc-module-marketing/pull/291",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.marketing 3.1011.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-order",
+          "number": 513,
+          "url": "https://github.com/VirtoCommerce/vc-module-order/pull/513",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.orders 3.1023.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-pages",
+          "number": 26,
+          "url": "https://github.com/VirtoCommerce/vc-module-pages/pull/26",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.pages 3.1013.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6974",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 160,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/160",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.profileexperienceapimodule 3.1028.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 161,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/161",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.profileexperienceapimodule 3.1028.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 119,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/119",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 156,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/156",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.profileexperienceapimodule 3.1028.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 155,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/155",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.profileexperienceapimodule 3.1028.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 158,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/158",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.profileexperienceapimodule 3.1028.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 157,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/157",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.profileexperienceapimodule 3.1028.0"
+        }
+      ],
+      "verdict": "INCOMPLETE"
+    },
+    {
+      "key": "VCST-6970",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 161,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/161",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.profileexperienceapimodule 3.1028.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 118,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/118",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 153,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/153",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.profileexperienceapimodule 3.1028.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7142,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7142",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 154,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/154",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.profileexperienceapimodule 3.1028.0"
+        }
+      ],
+      "verdict": "INCOMPLETE"
+    },
+    {
+      "key": "VCST-6950",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 706,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/706",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2698,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2698",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/vc-test-automation-framework",
+          "number": 230,
+          "url": "https://github.com/VirtoCommerce/vc-test-automation-framework/pull/230",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7151,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7151",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7150,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7150",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-site-builder",
+          "number": 4,
+          "url": "https://github.com/VirtoCommerce/vc-module-site-builder/pull/4",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.sitebuilder 3.1002.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2689,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2689",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6949",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2688,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2688",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6946",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6941",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-punchout",
+          "number": 13,
+          "url": "https://github.com/VirtoCommerce/vc-module-punchout/pull/13",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6936",
+      "sources": [
+        "sprint",
+        "virtocommerce.adminshell 3.1095.0→3.1101.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-admin-shell",
+          "number": 21,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-shell/pull/21",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminshell 3.1101.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6935",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-admin-angular-js",
+          "number": 6,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-angular-js/pull/6",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminangularjs 3.1098.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-platform",
+          "number": 3171,
+          "url": "https://github.com/VirtoCommerce/vc-platform/pull/3171",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in platform 3.1101.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-platform",
+          "number": 3172,
+          "url": "https://github.com/VirtoCommerce/vc-platform/pull/3172",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in platform 3.1101.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 116,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/116",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "PARTIAL"
+    },
+    {
+      "key": "VCST-6928",
+      "sources": [
+        "sprint",
+        "platform 3.1097.0→3.1101.0",
+        "virtocommerce.adminangularjs 3.1096.0→3.1098.0",
+        "virtocommerce.adminshell 3.1095.0→3.1101.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-admin-shell",
+          "number": 18,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-shell/pull/18",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminshell 3.1101.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-admin-shell",
+          "number": 17,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-shell/pull/17",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminshell 3.1101.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-admin-angular-js",
+          "number": 5,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-angular-js/pull/5",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminangularjs 3.1098.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-platform",
+          "number": 3169,
+          "url": "https://github.com/VirtoCommerce/vc-platform/pull/3169",
+          "merged": true,
+          "state": "IN",
+          "note": "in platform 3.1101.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6923",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6913",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6912",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6910",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7153,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7153",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2700,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2700",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "NOT_DELIVERED"
+    },
+    {
+      "key": "VCST-6909",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2669,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2669",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2671,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2671",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2673,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2673",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "NOT_DELIVERED"
+    },
+    {
+      "key": "VCST-6903",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6901",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2675,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2675",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6900",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6888",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6886",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2693,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2693",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6885",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6880",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6879",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6878",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6877",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6876",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7109,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7109",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2666,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2666",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6867",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6862",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-product-subscription",
+          "number": 3,
+          "url": "https://github.com/VirtoCommerce/vc-module-product-subscription/pull/3",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6861",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2671,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2671",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "NOT_DELIVERED"
+    },
+    {
+      "key": "VCST-6859",
+      "sources": [
+        "sprint",
+        "virtocommerce.backinstock 3.1004.0→3.1006.0",
+        "virtocommerce.contracts 3.1007.0→3.1010.0",
+        "virtocommerce.customerreviews 3.1010.0→3.1012.0",
+        "virtocommerce.fileexperienceapi 3.1008.0→3.1010.0",
+        "virtocommerce.loyalty 3.1011.0→3.1013.0",
+        "virtocommerce.marketingexperienceapi 3.1004.0→3.1006.0",
+        "virtocommerce.mfa 3.1002.0→3.1007.0",
+        "virtocommerce.news 3.1006.0→3.1008.0",
+        "virtocommerce.ordermanagement 3.1003.0→3.1006.0",
+        "virtocommerce.passkeys 3.1000.0→3.1002.0",
+        "virtocommerce.productsnapshot 3.1005.0→3.1007.0",
+        "virtocommerce.profileexperienceapimodule 3.1024.0→3.1028.0",
+        "virtocommerce.pushmessages 3.1008.0→3.1010.0",
+        "virtocommerce.quote 3.1007.0→3.1009.0",
+        "virtocommerce.return 3.1006.0→3.1008.0",
+        "virtocommerce.salesrep 3.1023.0→3.1029.0",
+        "virtocommerce.skyflow 3.1005.0→3.1007.0",
+        "virtocommerce.taskmanagement 3.1007.0→3.1009.0",
+        "virtocommerce.ucp 3.1011.0→3.1012.0",
+        "virtocommerce.whitelabeling 3.1006.0→3.1008.0",
+        "virtocommerce.xapi 3.1031.0→3.1033.0",
+        "virtocommerce.xcart 3.1046.0→3.1048.0",
+        "virtocommerce.xcatalog 3.1024.0→3.1027.0",
+        "virtocommerce.xcms 3.1009.0→3.1011.0",
+        "virtocommerce.xfrontend 3.1010.0→3.1011.0",
+        "virtocommerce.xorder 3.1017.0→3.1019.0",
+        "virtocommerce.xpickup 3.1008.0→3.1010.0",
+        "virtocommerce.xrecommend 3.1003.0→3.1004.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-mfa",
+          "number": 8,
+          "url": "https://github.com/VirtoCommerce/vc-module-mfa/pull/8",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.mfa 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-news",
+          "number": 24,
+          "url": "https://github.com/VirtoCommerce/vc-module-news/pull/24",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.news 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-cms",
+          "number": 31,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-cms/pull/31",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xcms 3.1011.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-marketing-experience-api",
+          "number": 19,
+          "url": "https://github.com/VirtoCommerce/vc-module-marketing-experience-api/pull/19",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.marketingexperienceapi 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-pickup",
+          "number": 16,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-pickup/pull/16",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xpickup 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-order-management",
+          "number": 11,
+          "url": "https://github.com/VirtoCommerce/vc-module-order-management/pull/11",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.ordermanagement 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-push-messages",
+          "number": 34,
+          "url": "https://github.com/VirtoCommerce/vc-module-push-messages/pull/34",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.pushmessages 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-skyflow",
+          "number": 27,
+          "url": "https://github.com/VirtoCommerce/vc-module-skyflow/pull/27",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.skyflow 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-contract",
+          "number": 46,
+          "url": "https://github.com/VirtoCommerce/vc-module-contract/pull/46",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.contracts 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-file-experience-api",
+          "number": 27,
+          "url": "https://github.com/VirtoCommerce/vc-module-file-experience-api/pull/27",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.fileexperienceapi 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-task-management",
+          "number": 37,
+          "url": "https://github.com/VirtoCommerce/vc-module-task-management/pull/37",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.taskmanagement 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-ucp",
+          "number": 14,
+          "url": "https://github.com/VirtoCommerce/vc-module-ucp/pull/14",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.ucp 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-frontend",
+          "number": 16,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-frontend/pull/16",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xfrontend 3.1011.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-order-management",
+          "number": 10,
+          "url": "https://github.com/VirtoCommerce/vc-module-order-management/pull/10",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.ordermanagement 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-mfa",
+          "number": 7,
+          "url": "https://github.com/VirtoCommerce/vc-module-mfa/pull/7",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.mfa 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-loyalty",
+          "number": 22,
+          "url": "https://github.com/VirtoCommerce/vc-module-loyalty/pull/22",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.loyalty 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-quote",
+          "number": 176,
+          "url": "https://github.com/VirtoCommerce/vc-module-quote/pull/176",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.quote 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-recommend",
+          "number": 23,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-recommend/pull/23",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xrecommend 3.1004.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-marketing-experience-api",
+          "number": 18,
+          "url": "https://github.com/VirtoCommerce/vc-module-marketing-experience-api/pull/18",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.marketingexperienceapi 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-punchout",
+          "number": 11,
+          "url": "https://github.com/VirtoCommerce/vc-module-punchout/pull/11",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-back-in-stock",
+          "number": 15,
+          "url": "https://github.com/VirtoCommerce/vc-module-back-in-stock/pull/15",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.backinstock 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-news",
+          "number": 23,
+          "url": "https://github.com/VirtoCommerce/vc-module-news/pull/23",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.news 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-catalog",
+          "number": 117,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-catalog/pull/117",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xcatalog 3.1027.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-return",
+          "number": 33,
+          "url": "https://github.com/VirtoCommerce/vc-module-return/pull/33",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.return 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-order",
+          "number": 59,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-order/pull/59",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xorder 3.1019.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-cms",
+          "number": 30,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-cms/pull/30",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xcms 3.1011.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-api",
+          "number": 96,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-api/pull/96",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xapi 3.1033.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-pickup",
+          "number": 15,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-pickup/pull/15",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xpickup 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 51,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/51",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-push-messages",
+          "number": 33,
+          "url": "https://github.com/VirtoCommerce/vc-module-push-messages/pull/33",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.pushmessages 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 152,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/152",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.profileexperienceapimodule 3.1028.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-skyflow",
+          "number": 26,
+          "url": "https://github.com/VirtoCommerce/vc-module-skyflow/pull/26",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.skyflow 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-white-labeling",
+          "number": 31,
+          "url": "https://github.com/VirtoCommerce/vc-module-white-labeling/pull/31",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.whitelabeling 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-customer-review",
+          "number": 90,
+          "url": "https://github.com/VirtoCommerce/vc-module-customer-review/pull/90",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.customerreviews 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-product-snapshot",
+          "number": 7,
+          "url": "https://github.com/VirtoCommerce/vc-module-product-snapshot/pull/7",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.productsnapshot 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-cart",
+          "number": 156,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-cart/pull/156",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xcart 3.1048.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-passkeys",
+          "number": 4,
+          "url": "https://github.com/VirtoCommerce/vc-module-passkeys/pull/4",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.passkeys 3.1002.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-file-experience-api",
+          "number": 26,
+          "url": "https://github.com/VirtoCommerce/vc-module-file-experience-api/pull/26",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.fileexperienceapi 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-contract",
+          "number": 45,
+          "url": "https://github.com/VirtoCommerce/vc-module-contract/pull/45",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.contracts 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-task-management",
+          "number": 36,
+          "url": "https://github.com/VirtoCommerce/vc-module-task-management/pull/36",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.taskmanagement 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-catalog",
+          "number": 116,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-catalog/pull/116",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xcatalog 3.1027.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6856",
+      "sources": [
+        "sprint",
+        "platform 3.1097.0→3.1101.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2672,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2672",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 162,
+          "url": "https://github.com/VirtoCommerce/.github/pull/162",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-audit-log",
+          "number": 32,
+          "url": "https://github.com/VirtoCommerce/vc-module-audit-log/pull/32",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-test-automation-framework",
+          "number": 217,
+          "url": "https://github.com/VirtoCommerce/vc-test-automation-framework/pull/217",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 113,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/113",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-platform",
+          "number": 3167,
+          "url": "https://github.com/VirtoCommerce/vc-platform/pull/3167",
+          "merged": true,
+          "state": "IN",
+          "note": "in platform 3.1101.0"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 158,
+          "url": "https://github.com/VirtoCommerce/.github/pull/158",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6852",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6845",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6842",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 705,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/705",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7154,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7154",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7152,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7152",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7155,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7155",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-site-builder",
+          "number": 2,
+          "url": "https://github.com/VirtoCommerce/vc-module-site-builder/pull/2",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.sitebuilder 3.1002.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-site-builder",
+          "number": 9,
+          "url": "https://github.com/VirtoCommerce/vc-module-site-builder/pull/9",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.sitebuilder 3.1002.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6841",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7109,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7109",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend-next",
+          "number": 23,
+          "url": "https://github.com/VirtoCommerce/vc-frontend-next/pull/23",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6839",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 120,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/120",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-platform",
+          "number": 3163,
+          "url": "https://github.com/VirtoCommerce/vc-platform/pull/3163",
+          "merged": true,
+          "state": "IN",
+          "note": "in platform 3.1101.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 110,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/110",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6794",
+      "sources": [
+        "sprint",
+        "virtocommerce.salesrep 3.1023.0→3.1029.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7140,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7140",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 690,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/690",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7131,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7131",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 46,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/46",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6764",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-punchout",
+          "number": 12,
+          "url": "https://github.com/VirtoCommerce/vc-module-punchout/pull/12",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6755",
+      "sources": [
+        "sprint",
+        "virtocommerce.cart 3.1014.0→3.1016.0",
+        "virtocommerce.orders 3.1020.0→3.1023.0",
+        "virtocommerce.xcart 3.1046.0→3.1048.0",
+        "virtocommerce.xorder 3.1017.0→3.1019.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-punchout",
+          "number": 10,
+          "url": "https://github.com/VirtoCommerce/vc-module-punchout/pull/10",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-order",
+          "number": 511,
+          "url": "https://github.com/VirtoCommerce/vc-module-order/pull/511",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.orders 3.1023.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-order",
+          "number": 58,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-order/pull/58",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xorder 3.1019.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-cart",
+          "number": 201,
+          "url": "https://github.com/VirtoCommerce/vc-module-cart/pull/201",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.cart 3.1016.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-cart",
+          "number": 155,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-cart/pull/155",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xcart 3.1048.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6747",
+      "sources": [
+        "sprint",
+        "virtocommerce.applicationinsights 3.1007.0→3.1008.0",
+        "virtocommerce.xapi 3.1031.0→3.1033.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-app-insights",
+          "number": 20,
+          "url": "https://github.com/VirtoCommerce/vc-module-app-insights/pull/20",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.applicationinsights 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-api",
+          "number": 95,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-api/pull/95",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xapi 3.1033.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6744",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2656,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2656",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6736",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6688",
+      "sources": [
+        "sprint",
+        "virtocommerce.mfa 3.1002.0→3.1007.0",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-mfa",
+          "number": 6,
+          "url": "https://github.com/VirtoCommerce/vc-module-mfa/pull/6",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.mfa 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2648,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2648",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 653,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/653",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6679",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2680,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2680",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 597,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/597",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6670",
+      "sources": [
+        "sprint",
+        "virtocommerce.salesrep 3.1023.0→3.1029.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7147,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7147",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 698,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/698",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 40,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/40",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6667",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6644",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 645,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/645",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 641,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/641",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 639,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/639",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 632,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/632",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 628,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/628",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 651,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/651",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6643",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6639",
+      "sources": [
+        "sprint",
+        "platform 3.1097.0→3.1101.0",
+        "virtocommerce.adminshell 3.1095.0→3.1101.0",
+        "virtocommerce.mcp 3.1000.0→3.1004.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-admin-shell",
+          "number": 14,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-shell/pull/14",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminshell 3.1101.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-mcp",
+          "number": 4,
+          "url": "https://github.com/VirtoCommerce/vc-module-mcp/pull/4",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.mcp 3.1004.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-platform",
+          "number": 3165,
+          "url": "https://github.com/VirtoCommerce/vc-platform/pull/3165",
+          "merged": true,
+          "state": "IN",
+          "note": "in platform 3.1101.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6632",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7096,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7096",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-passkeys",
+          "number": 3,
+          "url": "https://github.com/VirtoCommerce/vc-module-passkeys/pull/3",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.passkeys 3.1002.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6572",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7128,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7128",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7133,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7133",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7135,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7135",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7129,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7129",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-test-automation-framework",
+          "number": 218,
+          "url": "https://github.com/VirtoCommerce/vc-test-automation-framework/pull/218",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2630,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2630",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2676,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2676",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2645,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2645",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6571",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 685,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/685",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 696,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/696",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7128,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7128",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-site-builder",
+          "number": 7,
+          "url": "https://github.com/VirtoCommerce/vc-module-site-builder/pull/7",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.sitebuilder 3.1002.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-site-builder",
+          "number": 1,
+          "url": "https://github.com/VirtoCommerce/vc-module-site-builder/pull/1",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.sitebuilder 3.1002.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 117,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/117",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-site-builder",
+          "number": 6,
+          "url": "https://github.com/VirtoCommerce/vc-module-site-builder/pull/6",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.sitebuilder 3.1002.0"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 152,
+          "url": "https://github.com/VirtoCommerce/.github/pull/152",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-site-builder",
+          "number": 3,
+          "url": "https://github.com/VirtoCommerce/vc-module-site-builder/pull/3",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.sitebuilder 3.1002.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-cms",
+          "number": 29,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-cms/pull/29",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-pagebuilder",
+          "number": 183,
+          "url": "https://github.com/VirtoCommerce/vc-module-pagebuilder/pull/183",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-test-automation-framework",
+          "number": 214,
+          "url": "https://github.com/VirtoCommerce/vc-test-automation-framework/pull/214",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7146,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7146",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7137,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7137",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "INCOMPLETE"
+    },
+    {
+      "key": "VCST-6570",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 112,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/112",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 655,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/655",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-pagebuilder",
+          "number": 182,
+          "url": "https://github.com/VirtoCommerce/vc-module-pagebuilder/pull/182",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-test-automation-framework",
+          "number": 215,
+          "url": "https://github.com/VirtoCommerce/vc-test-automation-framework/pull/215",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2626,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2626",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6498",
+      "sources": [
+        "sprint",
+        "virtocommerce.mfa 3.1002.0→3.1007.0",
+        "virtocommerce.profileexperienceapimodule 3.1024.0→3.1028.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-profile-experience-api",
+          "number": 154,
+          "url": "https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/154",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.profileexperienceapimodule 3.1028.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7144,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7144",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 693,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/693",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-mfa",
+          "number": 9,
+          "url": "https://github.com/VirtoCommerce/vc-module-mfa/pull/9",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.mfa 3.1007.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6493",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7107,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7107",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 676,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/676",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2639,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2639",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6490",
+      "sources": [
+        "sprint",
+        "virtocommerce.otp 3.1001.0→3.1003.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7119,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7119",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-otp",
+          "number": 4,
+          "url": "https://github.com/VirtoCommerce/vc-module-otp/pull/4",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.otp 3.1003.0"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 682,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/682",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6483",
+      "sources": [
+        "sprint",
+        "virtocommerce.orders 3.1020.0→3.1023.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-order",
+          "number": 512,
+          "url": "https://github.com/VirtoCommerce/vc-module-order/pull/512",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.orders 3.1023.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6476",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 29,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/29",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6385",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 508,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/508",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 489,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/489",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6324",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 111,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/111",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 6918,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6918",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-store",
+          "number": 186,
+          "url": "https://github.com/VirtoCommerce/vc-module-store/pull/186",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.store 3.1015.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6292",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7121,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7121",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2617,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2617",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6291",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2618,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2618",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6290",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2655,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2655",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6258",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7078,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7078",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2625,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2625",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2624,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2624",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6257",
+      "sources": [
+        "sprint",
+        "virtocommerce.salesrep 3.1023.0→3.1029.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 689,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/689",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 38,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/38",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7141,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7141",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 36,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/36",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.salesrep 3.1029.0"
+        }
+      ],
+      "verdict": "INCOMPLETE"
+    },
+    {
+      "key": "VCST-6256",
+      "sources": [
+        "sprint",
+        "virtocommerce.salesrep 3.1023.0→3.1029.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7090,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7090",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 37,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/37",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 613,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/613",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6255",
+      "sources": [
+        "sprint",
+        "platform 3.1097.0→3.1101.0",
+        "virtocommerce.salesrep 3.1023.0→3.1029.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 48,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/48",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2627,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2627",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 120,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/120",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-test-automation-framework",
+          "number": 213,
+          "url": "https://github.com/VirtoCommerce/vc-test-automation-framework/pull/213",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 108,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/108",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-platform",
+          "number": 3161,
+          "url": "https://github.com/VirtoCommerce/vc-platform/pull/3161",
+          "merged": true,
+          "state": "IN",
+          "note": "in platform 3.1101.0"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 154,
+          "url": "https://github.com/VirtoCommerce/.github/pull/154",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 153,
+          "url": "https://github.com/VirtoCommerce/.github/pull/153",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 38,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/38",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2659,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2659",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 602,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/602",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 36,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/36",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.salesrep 3.1029.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 50,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/50",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 49,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/49",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7030,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7030",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 671,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/671",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 28,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/28",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend-next",
+          "number": 16,
+          "url": "https://github.com/VirtoCommerce/vc-frontend-next/pull/16",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2624,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2624",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "INCOMPLETE"
+    },
+    {
+      "key": "VCST-6237",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 692,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/692",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-test-automation-framework",
+          "number": 216,
+          "url": "https://github.com/VirtoCommerce/vc-test-automation-framework/pull/216",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-test-automation-framework",
+          "number": 231,
+          "url": "https://github.com/VirtoCommerce/vc-test-automation-framework/pull/231",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2667,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2667",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6233",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2654,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2654",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6160",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 446,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/446",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6138",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6124",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 361,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/361",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 354,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/354",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 373,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/373",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 359,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/359",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 355,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/355",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 344,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/344",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 364,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/364",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 371,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/371",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 370,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/370",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 372,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/372",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 368,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/368",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-6117",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2677,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2677",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-5918",
+      "sources": [
+        "sprint",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-product-comparison",
+          "number": 1,
+          "url": "https://github.com/VirtoCommerce/vc-module-product-comparison/pull/1",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 688,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/688",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7127,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7127",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7132,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7132",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2684,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2684",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7113,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7113",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2635,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2635",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-5640",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7117,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7117",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-api",
+          "number": 79,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-api/pull/79",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xapi 3.1033.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-catalog",
+          "number": 107,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-catalog/pull/107",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xcatalog 3.1027.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-4464",
+      "sources": [
+        "sprint"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-platform",
+          "number": 3121,
+          "url": "https://github.com/VirtoCommerce/vc-platform/pull/3121",
+          "merged": true,
+          "state": "IN",
+          "note": "in platform 3.1101.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6874",
+      "sources": [
+        "virtocommerce.adminshell 3.1095.0→3.1101.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-admin-shell",
+          "number": 15,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-shell/pull/15",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminshell 3.1101.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6473",
+      "sources": [
+        "virtocommerce.adminshell 3.1095.0→3.1101.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-admin-shell",
+          "number": 12,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-shell/pull/12",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminshell 3.1101.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6551",
+      "sources": [
+        "virtocommerce.adminshell 3.1095.0→3.1101.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-admin-shell",
+          "number": 21,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-shell/pull/21",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminshell 3.1101.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6552",
+      "sources": [
+        "virtocommerce.adminshell 3.1095.0→3.1101.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-admin-shell",
+          "number": 21,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-shell/pull/21",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminshell 3.1101.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6809",
+      "sources": [
+        "virtocommerce.adminshell 3.1095.0→3.1101.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-admin-shell",
+          "number": 21,
+          "url": "https://github.com/VirtoCommerce/vc-module-admin-shell/pull/21",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.adminshell 3.1101.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6733",
+      "sources": [
+        "virtocommerce.assets 3.1011.0→3.1012.0",
+        "virtocommerce.avalaratax 3.1006.0→3.1007.0",
+        "virtocommerce.backinstock 3.1004.0→3.1006.0",
+        "virtocommerce.backuprestore 3.1008.0→3.1009.0",
+        "virtocommerce.bulkactionsmodule 3.1005.0→3.1006.0",
+        "virtocommerce.catalogcsvimportmodule 3.1009.0→3.1010.0",
+        "virtocommerce.catalogpersonalization 3.1009.0→3.1010.0",
+        "virtocommerce.catalogpublishing 3.1009.0→3.1010.0",
+        "virtocommerce.content 3.1008.0→3.1009.0",
+        "virtocommerce.contracts 3.1007.0→3.1010.0",
+        "virtocommerce.core 3.1013.0→3.1014.0",
+        "virtocommerce.customer 3.1033.0→3.1034.0",
+        "virtocommerce.customerreviews 3.1010.0→3.1012.0",
+        "virtocommerce.dynamicassociationsmodule 3.1004.0→3.1005.0",
+        "virtocommerce.export 3.1006.0→3.1007.0",
+        "virtocommerce.gdpr 3.1004.0→3.1005.0",
+        "virtocommerce.imagetools 3.1009.0→3.1010.0",
+        "virtocommerce.inventory 3.1011.0→3.1012.0",
+        "virtocommerce.marketing 3.1010.0→3.1011.0",
+        "virtocommerce.mfa 3.1002.0→3.1007.0",
+        "virtocommerce.notifications 3.1018.0→3.1021.0",
+        "virtocommerce.ordermanagement 3.1003.0→3.1006.0",
+        "virtocommerce.pages 3.1012.0→3.1013.0",
+        "virtocommerce.passkeys 3.1000.0→3.1002.0",
+        "virtocommerce.payment 3.1011.0→3.1013.0",
+        "virtocommerce.pricing 3.1010.0→3.1011.0",
+        "virtocommerce.pushmessages 3.1008.0→3.1010.0",
+        "virtocommerce.quote 3.1007.0→3.1009.0",
+        "virtocommerce.return 3.1006.0→3.1008.0",
+        "virtocommerce.seo 3.1008.0→3.1009.0",
+        "virtocommerce.shipping 3.1010.0→3.1012.0",
+        "virtocommerce.sitemaps 3.1007.0→3.1008.0",
+        "virtocommerce.store 3.1013.0→3.1015.0",
+        "virtocommerce.tax 3.1009.0→3.1012.0",
+        "virtocommerce.webhooks 3.1006.0→3.1007.0",
+        "virtocommerce.whitelabeling 3.1006.0→3.1008.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-power-bi-reports",
+          "number": 10,
+          "url": "https://github.com/VirtoCommerce/vc-module-power-bi-reports/pull/10",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-builder-io",
+          "number": 12,
+          "url": "https://github.com/VirtoCommerce/vc-module-builder-io/pull/12",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.builderio 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-export",
+          "number": 116,
+          "url": "https://github.com/VirtoCommerce/vc-module-export/pull/116",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.export 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-hotjar",
+          "number": 9,
+          "url": "https://github.com/VirtoCommerce/vc-module-hotjar/pull/9",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-mfa",
+          "number": 5,
+          "url": "https://github.com/VirtoCommerce/vc-module-mfa/pull/5",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.mfa 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-audit-log",
+          "number": 29,
+          "url": "https://github.com/VirtoCommerce/vc-module-audit-log/pull/29",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-pages",
+          "number": 25,
+          "url": "https://github.com/VirtoCommerce/vc-module-pages/pull/25",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.pages 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-one-shell-app",
+          "number": 4,
+          "url": "https://github.com/VirtoCommerce/vc-module-one-shell-app/pull/4",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-virto-oz-management",
+          "number": 6,
+          "url": "https://github.com/VirtoCommerce/vc-module-virto-oz-management/pull/6",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-quote",
+          "number": 175,
+          "url": "https://github.com/VirtoCommerce/vc-module-quote/pull/175",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.quote 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-google-ecommerce-analytics",
+          "number": 65,
+          "url": "https://github.com/VirtoCommerce/vc-module-google-ecommerce-analytics/pull/65",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.googleecommerceanalytics 4.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-store",
+          "number": 194,
+          "url": "https://github.com/VirtoCommerce/vc-module-store/pull/194",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.store 3.1015.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-gdpr",
+          "number": 29,
+          "url": "https://github.com/VirtoCommerce/vc-module-gdpr/pull/29",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.gdpr 3.1005.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-punchout",
+          "number": 8,
+          "url": "https://github.com/VirtoCommerce/vc-module-punchout/pull/8",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-bulk-actions",
+          "number": 50,
+          "url": "https://github.com/VirtoCommerce/vc-module-bulk-actions/pull/50",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.bulkactionsmodule 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-back-in-stock",
+          "number": 14,
+          "url": "https://github.com/VirtoCommerce/vc-module-back-in-stock/pull/14",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.backinstock 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-avatax",
+          "number": 86,
+          "url": "https://github.com/VirtoCommerce/vc-module-avatax/pull/86",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.avalaratax 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-catalog-csv-export-import",
+          "number": 162,
+          "url": "https://github.com/VirtoCommerce/vc-module-catalog-csv-export-import/pull/162",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.catalogcsvimportmodule 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-search",
+          "number": 163,
+          "url": "https://github.com/VirtoCommerce/vc-module-search/pull/163",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.search 3.1016.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-customer",
+          "number": 326,
+          "url": "https://github.com/VirtoCommerce/vc-module-customer/pull/326",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.customer 3.1034.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-passkeys",
+          "number": 2,
+          "url": "https://github.com/VirtoCommerce/vc-module-passkeys/pull/2",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.passkeys 3.1002.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-customer-review",
+          "number": 89,
+          "url": "https://github.com/VirtoCommerce/vc-module-customer-review/pull/89",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.customerreviews 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-task-management",
+          "number": 35,
+          "url": "https://github.com/VirtoCommerce/vc-module-task-management/pull/35",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.taskmanagement 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-backup-restore",
+          "number": 10,
+          "url": "https://github.com/VirtoCommerce/vc-module-backup-restore/pull/10",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.backuprestore 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-news",
+          "number": 22,
+          "url": "https://github.com/VirtoCommerce/vc-module-news/pull/22",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.news 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-push-messages",
+          "number": 32,
+          "url": "https://github.com/VirtoCommerce/vc-module-push-messages/pull/32",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.pushmessages 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-recommend",
+          "number": 22,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-recommend/pull/22",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xrecommend 3.1004.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-event-bus",
+          "number": 33,
+          "url": "https://github.com/VirtoCommerce/vc-module-event-bus/pull/33",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.eventbus 3.1011.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-subscription",
+          "number": 132,
+          "url": "https://github.com/VirtoCommerce/vc-module-subscription/pull/132",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in virtocommerce.subscription 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-background-jobs",
+          "number": 9,
+          "url": "https://github.com/VirtoCommerce/vc-module-background-jobs/pull/9",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.backgroundjobs 3.1055.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 104,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/104",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-order-management",
+          "number": 9,
+          "url": "https://github.com/VirtoCommerce/vc-module-order-management/pull/9",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.ordermanagement 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-assets",
+          "number": 43,
+          "url": "https://github.com/VirtoCommerce/vc-module-assets/pull/43",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.assets 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sitemaps",
+          "number": 96,
+          "url": "https://github.com/VirtoCommerce/vc-module-sitemaps/pull/96",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.sitemaps 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-seo",
+          "number": 27,
+          "url": "https://github.com/VirtoCommerce/vc-module-seo/pull/27",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.seo 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-shopify-taxonomy",
+          "number": 3,
+          "url": "https://github.com/VirtoCommerce/vc-module-shopify-taxonomy/pull/3",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-tax",
+          "number": 64,
+          "url": "https://github.com/VirtoCommerce/vc-module-tax/pull/64",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.tax 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-loyalty",
+          "number": 21,
+          "url": "https://github.com/VirtoCommerce/vc-module-loyalty/pull/21",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.loyalty 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 102,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/102",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-pricing",
+          "number": 243,
+          "url": "https://github.com/VirtoCommerce/vc-module-pricing/pull/243",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.pricing 3.1011.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-notification",
+          "number": 210,
+          "url": "https://github.com/VirtoCommerce/vc-module-notification/pull/210",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.notifications 3.1021.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-content",
+          "number": 228,
+          "url": "https://github.com/VirtoCommerce/vc-module-content/pull/228",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.content 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-webhooks",
+          "number": 91,
+          "url": "https://github.com/VirtoCommerce/vc-module-webhooks/pull/91",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.webhooks 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-inventory",
+          "number": 171,
+          "url": "https://github.com/VirtoCommerce/vc-module-inventory/pull/171",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.inventory 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-shipping",
+          "number": 75,
+          "url": "https://github.com/VirtoCommerce/vc-module-shipping/pull/75",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.shipping 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-dynamic-associations",
+          "number": 60,
+          "url": "https://github.com/VirtoCommerce/vc-module-dynamic-associations/pull/60",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.dynamicassociationsmodule 3.1005.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-payment",
+          "number": 82,
+          "url": "https://github.com/VirtoCommerce/vc-module-payment/pull/82",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.payment 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-order",
+          "number": 510,
+          "url": "https://github.com/VirtoCommerce/vc-module-order/pull/510",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.orders 3.1023.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-pagebuilder",
+          "number": 184,
+          "url": "https://github.com/VirtoCommerce/vc-module-pagebuilder/pull/184",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-return",
+          "number": 32,
+          "url": "https://github.com/VirtoCommerce/vc-module-return/pull/32",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.return 3.1008.0"
+        }
+      ],
+      "verdict": "MASS"
+    },
+    {
+      "key": "VCST-6918",
+      "sources": [
+        "virtocommerce.catalog 3.1052.0→3.1054.0",
+        "virtocommerce.mcp 3.1000.0→3.1004.0",
+        "virtocommerce.payment 3.1011.0→3.1013.0",
+        "virtocommerce.shipping 3.1010.0→3.1012.0",
+        "virtocommerce.store 3.1013.0→3.1015.0",
+        "virtocommerce.tax 3.1009.0→3.1012.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-store",
+          "number": 195,
+          "url": "https://github.com/VirtoCommerce/vc-module-store/pull/195",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.store 3.1015.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-tax",
+          "number": 65,
+          "url": "https://github.com/VirtoCommerce/vc-module-tax/pull/65",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.tax 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-shipping",
+          "number": 76,
+          "url": "https://github.com/VirtoCommerce/vc-module-shipping/pull/76",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.shipping 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-payment",
+          "number": 84,
+          "url": "https://github.com/VirtoCommerce/vc-module-payment/pull/84",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.payment 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-catalog",
+          "number": 919,
+          "url": "https://github.com/VirtoCommerce/vc-module-catalog/pull/919",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.catalog 3.1054.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-mcp",
+          "number": 5,
+          "url": "https://github.com/VirtoCommerce/vc-module-mcp/pull/5",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.mcp 3.1004.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6938",
+      "sources": [
+        "virtocommerce.elasticsearch8 3.1012.0→3.1013.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-elastic-search-8",
+          "number": 52,
+          "url": "https://github.com/VirtoCommerce/vc-module-elastic-search-8/pull/52",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.elasticsearch8 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-elastic-search-9",
+          "number": 18,
+          "url": "https://github.com/VirtoCommerce/vc-module-elastic-search-9/pull/18",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6827",
+      "sources": [
+        "virtocommerce.mcp 3.1000.0→3.1004.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-mcp",
+          "number": 3,
+          "url": "https://github.com/VirtoCommerce/vc-module-mcp/pull/3",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.mcp 3.1004.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6327",
+      "sources": [
+        "virtocommerce.notifications 3.1018.0→3.1021.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-subscription",
+          "number": 129,
+          "url": "https://github.com/VirtoCommerce/vc-module-subscription/pull/129",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-state-machine",
+          "number": 4,
+          "url": "https://github.com/VirtoCommerce/vc-module-state-machine/pull/4",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-pagebuilder",
+          "number": 174,
+          "url": "https://github.com/VirtoCommerce/vc-module-pagebuilder/pull/174",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-hotjar",
+          "number": 7,
+          "url": "https://github.com/VirtoCommerce/vc-module-hotjar/pull/7",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-algolia-search",
+          "number": 6,
+          "url": "https://github.com/VirtoCommerce/vc-module-algolia-search/pull/6",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-punchout",
+          "number": 3,
+          "url": "https://github.com/VirtoCommerce/vc-module-punchout/pull/3",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-export",
+          "number": 113,
+          "url": "https://github.com/VirtoCommerce/vc-module-export/pull/113",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.export 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 6978,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6978",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-task-management",
+          "number": 31,
+          "url": "https://github.com/VirtoCommerce/vc-module-task-management/pull/31",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.taskmanagement 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-gdpr",
+          "number": 28,
+          "url": "https://github.com/VirtoCommerce/vc-module-gdpr/pull/28",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.gdpr 3.1005.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-store",
+          "number": 187,
+          "url": "https://github.com/VirtoCommerce/vc-module-store/pull/187",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.store 3.1015.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-webhooks",
+          "number": 89,
+          "url": "https://github.com/VirtoCommerce/vc-module-webhooks/pull/89",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.webhooks 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-punchout",
+          "number": 7,
+          "url": "https://github.com/VirtoCommerce/vc-module-punchout/pull/7",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-bulk-actions",
+          "number": 47,
+          "url": "https://github.com/VirtoCommerce/vc-module-bulk-actions/pull/47",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.bulkactionsmodule 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-avatax",
+          "number": 85,
+          "url": "https://github.com/VirtoCommerce/vc-module-avatax/pull/85",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.avalaratax 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-order-management",
+          "number": 8,
+          "url": "https://github.com/VirtoCommerce/vc-module-order-management/pull/8",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.ordermanagement 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-order",
+          "number": 508,
+          "url": "https://github.com/VirtoCommerce/vc-module-order/pull/508",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.orders 3.1023.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-audit-log",
+          "number": 24,
+          "url": "https://github.com/VirtoCommerce/vc-module-audit-log/pull/24",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-tax",
+          "number": 62,
+          "url": "https://github.com/VirtoCommerce/vc-module-tax/pull/62",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.tax 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-return",
+          "number": 30,
+          "url": "https://github.com/VirtoCommerce/vc-module-return/pull/30",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.return 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-customer",
+          "number": 322,
+          "url": "https://github.com/VirtoCommerce/vc-module-customer/pull/322",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.customer 3.1034.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-contract",
+          "number": 42,
+          "url": "https://github.com/VirtoCommerce/vc-module-contract/pull/42",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.contracts 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-image-tools",
+          "number": 131,
+          "url": "https://github.com/VirtoCommerce/vc-module-image-tools/pull/131",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.imagetools 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-inventory",
+          "number": 169,
+          "url": "https://github.com/VirtoCommerce/vc-module-inventory/pull/169",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.inventory 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-dynamic-associations",
+          "number": 58,
+          "url": "https://github.com/VirtoCommerce/vc-module-dynamic-associations/pull/58",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.dynamicassociationsmodule 3.1005.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-payment",
+          "number": 78,
+          "url": "https://github.com/VirtoCommerce/vc-module-payment/pull/78",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.payment 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sitemaps",
+          "number": 95,
+          "url": "https://github.com/VirtoCommerce/vc-module-sitemaps/pull/95",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.sitemaps 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-shopify-taxonomy",
+          "number": 2,
+          "url": "https://github.com/VirtoCommerce/vc-module-shopify-taxonomy/pull/2",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-catalog-publishing",
+          "number": 83,
+          "url": "https://github.com/VirtoCommerce/vc-module-catalog-publishing/pull/83",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.catalogpublishing 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-white-labeling",
+          "number": 28,
+          "url": "https://github.com/VirtoCommerce/vc-module-white-labeling/pull/28",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.whitelabeling 3.1008.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-pricing",
+          "number": 240,
+          "url": "https://github.com/VirtoCommerce/vc-module-pricing/pull/240",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.pricing 3.1011.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 6996,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6996",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-cart",
+          "number": 198,
+          "url": "https://github.com/VirtoCommerce/vc-module-cart/pull/198",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.cart 3.1016.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-catalog-csv-export-import",
+          "number": 154,
+          "url": "https://github.com/VirtoCommerce/vc-module-catalog-csv-export-import/pull/154",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.catalogcsvimportmodule 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-product-snapshot",
+          "number": 4,
+          "url": "https://github.com/VirtoCommerce/vc-module-product-snapshot/pull/4",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.productsnapshot 3.1007.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-ai",
+          "number": 9,
+          "url": "https://github.com/VirtoCommerce/vc-module-ai/pull/9",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-background-jobs",
+          "number": 8,
+          "url": "https://github.com/VirtoCommerce/vc-module-background-jobs/pull/8",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.backgroundjobs 3.1055.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-power-bi-reports",
+          "number": 9,
+          "url": "https://github.com/VirtoCommerce/vc-module-power-bi-reports/pull/9",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-loyalty",
+          "number": 19,
+          "url": "https://github.com/VirtoCommerce/vc-module-loyalty/pull/19",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.loyalty 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-catalog-personalization",
+          "number": 94,
+          "url": "https://github.com/VirtoCommerce/vc-module-catalog-personalization/pull/94",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.catalogpersonalization 3.1010.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-environments-compare",
+          "number": 3,
+          "url": "https://github.com/VirtoCommerce/vc-module-environments-compare/pull/3",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.environmentscompare 3.1004.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-notification",
+          "number": 208,
+          "url": "https://github.com/VirtoCommerce/vc-module-notification/pull/208",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.notifications 3.1021.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-backup-restore",
+          "number": 9,
+          "url": "https://github.com/VirtoCommerce/vc-module-backup-restore/pull/9",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.backuprestore 3.1009.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-customer-review",
+          "number": 84,
+          "url": "https://github.com/VirtoCommerce/vc-module-customer-review/pull/84",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.customerreviews 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-marketing",
+          "number": 286,
+          "url": "https://github.com/VirtoCommerce/vc-module-marketing/pull/286",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.marketing 3.1011.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-pages",
+          "number": 22,
+          "url": "https://github.com/VirtoCommerce/vc-module-pages/pull/22",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.pages 3.1013.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-back-in-stock",
+          "number": 11,
+          "url": "https://github.com/VirtoCommerce/vc-module-back-in-stock/pull/11",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.backinstock 3.1006.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-assets",
+          "number": 41,
+          "url": "https://github.com/VirtoCommerce/vc-module-assets/pull/41",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.assets 3.1012.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-core",
+          "number": 268,
+          "url": "https://github.com/VirtoCommerce/vc-module-core/pull/268",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.core 3.1014.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6553",
+      "sources": [
+        "virtocommerce.orders 3.1020.0→3.1023.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-order",
+          "number": 512,
+          "url": "https://github.com/VirtoCommerce/vc-module-order/pull/512",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.orders 3.1023.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6554",
+      "sources": [
+        "virtocommerce.orders 3.1020.0→3.1023.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-order",
+          "number": 512,
+          "url": "https://github.com/VirtoCommerce/vc-module-order/pull/512",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.orders 3.1023.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6559",
+      "sources": [
+        "virtocommerce.orders 3.1020.0→3.1023.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-order",
+          "number": 512,
+          "url": "https://github.com/VirtoCommerce/vc-module-order/pull/512",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.orders 3.1023.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6547",
+      "sources": [
+        "virtocommerce.orders 3.1020.0→3.1023.0"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-order",
+          "number": 512,
+          "url": "https://github.com/VirtoCommerce/vc-module-order/pull/512",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.orders 3.1023.0"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6169",
+      "sources": [
+        "virtocommerce.otp 3.1001.0→3.1003.0",
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-otp",
+          "number": 5,
+          "url": "https://github.com/VirtoCommerce/vc-module-otp/pull/5",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.otp 3.1003.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7145,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7145",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend-next",
+          "number": 25,
+          "url": "https://github.com/VirtoCommerce/vc-frontend-next/pull/25",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2683,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2683",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-test-automation-framework",
+          "number": 228,
+          "url": "https://github.com/VirtoCommerce/vc-test-automation-framework/pull/228",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-otp",
+          "number": 2,
+          "url": "https://github.com/VirtoCommerce/vc-module-otp/pull/2",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-store",
+          "number": 189,
+          "url": "https://github.com/VirtoCommerce/vc-module-store/pull/189",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6078",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7077,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7077",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 700,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/700",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 630,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/630",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2653,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2653",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-sales-rep",
+          "number": 24,
+          "url": "https://github.com/VirtoCommerce/vc-module-sales-rep/pull/24",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.salesrep 3.1029.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2625,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2625",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7080,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7080",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-order",
+          "number": 507,
+          "url": "https://github.com/VirtoCommerce/vc-module-order/pull/507",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.orders 3.1023.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2552,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2552",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7055,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7055",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-module-x-frontend",
+          "number": 12,
+          "url": "https://github.com/VirtoCommerce/vc-module-x-frontend/pull/12",
+          "merged": true,
+          "state": "IN",
+          "note": "in virtocommerce.xfrontend 3.1011.0"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7082,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7082",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7087,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7087",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7091,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7091",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "INCOMPLETE"
+    },
+    {
+      "key": "VCST-6650",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2627,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2627",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2624,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2624",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2625,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2625",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6135",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2617,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2617",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2618,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2618",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6232",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 590,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/590",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 588,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/588",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/ai-tools",
+          "number": 589,
+          "url": "https://github.com/VirtoCommerce/ai-tools/pull/589",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2600,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2600",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2617,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2617",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2618,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2618",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6289",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2620,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2620",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2617,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2617",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2618,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2618",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6030",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend-next",
+          "number": 2,
+          "url": "https://github.com/VirtoCommerce/vc-frontend-next/pull/2",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 6587,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6587",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 6607,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6607",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 6603,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6603",
+          "merged": false,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2494,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2494",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend-next",
+          "number": 22,
+          "url": "https://github.com/VirtoCommerce/vc-frontend-next/pull/22",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2503,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2503",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2502,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2502",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "NOT_DELIVERED"
+    },
+    {
+      "key": "VCST-6517",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2603,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2603",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        }
+      ],
+      "verdict": "NO_CODE"
+    },
+    {
+      "key": "VCST-4041",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2675,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2675",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2009,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2009",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 4933,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/4933",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6129",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 164,
+          "url": "https://github.com/VirtoCommerce/.github/pull/164",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-platform",
+          "number": 3170,
+          "url": "https://github.com/VirtoCommerce/vc-platform/pull/3170",
+          "merged": true,
+          "state": "OUT",
+          "note": "not in platform 3.1101.0"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 163,
+          "url": "https://github.com/VirtoCommerce/.github/pull/163",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 151,
+          "url": "https://github.com/VirtoCommerce/.github/pull/151",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/mcp-onx",
+          "number": 7,
+          "url": "https://github.com/VirtoCommerce/mcp-onx/pull/7",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 155,
+          "url": "https://github.com/VirtoCommerce/.github/pull/155",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 165,
+          "url": "https://github.com/VirtoCommerce/.github/pull/165",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-test-automation-framework",
+          "number": 222,
+          "url": "https://github.com/VirtoCommerce/vc-test-automation-framework/pull/222",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 150,
+          "url": "https://github.com/VirtoCommerce/.github/pull/150",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-modules",
+          "number": 115,
+          "url": "https://github.com/VirtoCommerce/vc-modules/pull/115",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 166,
+          "url": "https://github.com/VirtoCommerce/.github/pull/166",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2682,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2682",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/.github",
+          "number": 126,
+          "url": "https://github.com/VirtoCommerce/.github/pull/126",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "PARTIAL"
+    },
+    {
+      "key": "VCST-6963",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-module-site-builder",
+          "number": 5,
+          "url": "https://github.com/VirtoCommerce/vc-module-site-builder/pull/5",
+          "merged": false,
+          "state": "NOT_MERGED",
+          "note": "not merged"
+        },
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2690,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2690",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        },
+        {
+          "repo": "VirtoCommerce/vc-deploy-dev",
+          "number": 7156,
+          "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/7156",
+          "merged": true,
+          "state": "NOT_ON_STAND",
+          "note": "repo not deployed on this stand"
+        }
+      ],
+      "verdict": "DELIVERED"
+    },
+    {
+      "key": "VCST-6958",
+      "sources": [
+        "theme 2.62.0.zip→2.63.0-alpha.2681.zip"
+      ],
+      "prs": [
+        {
+          "repo": "VirtoCommerce/vc-frontend",
+          "number": 2686,
+          "url": "https://github.com/VirtoCommerce/vc-frontend/pull/2686",
+          "merged": true,
+          "state": "IN",
+          "note": "in vc-theme-b2b-vue-2.63.0-alpha.2681.zip"
+        }
+      ],
+      "verdict": "DELIVERED"
+    }
+  ],
+  "checks": [
+    {
+      "id": "delivery:VCST-7006",
+      "status": "BLOCK",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-7006 (sprint Done) is NOT on the stand: vc-module-profile-experience-api#163",
+      "do": "deploy a build that contains it, or accept with --accept delivery:VCST-7006 (its cases then report NOT_DEPLOYED, never FAIL)"
+    },
+    {
+      "id": "delivery:VCST-6974",
+      "status": "WARN",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-6974 (sprint Done) is only partly in its repo's build: vc-module-profile-experience-api#160, vc-module-profile-experience-api#161, vc-module-profile-experience-api#156, vc-module-profile-experience-api#158, vc-module-profile-experience-api#157 not yet deployed",
+      "do": "name it to the W0 owner; the cases of the missing PRs report NOT_DEPLOYED, never FAIL"
+    },
+    {
+      "id": "delivery:VCST-6970",
+      "status": "WARN",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-6970 (sprint Done) is only partly in its repo's build: vc-module-profile-experience-api#161 not yet deployed",
+      "do": "name it to the W0 owner; the cases of the missing PRs report NOT_DEPLOYED, never FAIL"
+    },
+    {
+      "id": "delivery:VCST-6935",
+      "status": "BLOCK",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-6935 is PARTLY on the stand: vc-module-admin-angular-js#6 deployed, vc-platform#3171, vc-platform#3172 NOT — the deployed half expects the missing one",
+      "do": "STOP the waves and tell the release owner + delivery manager: deploy the missing build, or roll the deployed half back"
+    },
+    {
+      "id": "delivery:VCST-6910",
+      "status": "BLOCK",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-6910 (sprint Done) is NOT on the stand: vc-frontend#2700",
+      "do": "deploy a build that contains it, or accept with --accept delivery:VCST-6910 (its cases then report NOT_DEPLOYED, never FAIL)"
+    },
+    {
+      "id": "delivery:VCST-6909",
+      "status": "BLOCK",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-6909 (sprint Done) is NOT on the stand: vc-frontend#2669, vc-frontend#2671, vc-frontend#2673",
+      "do": "deploy a build that contains it, or accept with --accept delivery:VCST-6909 (its cases then report NOT_DEPLOYED, never FAIL)"
+    },
+    {
+      "id": "delivery:VCST-6861",
+      "status": "BLOCK",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-6861 (sprint Done) is NOT on the stand: vc-frontend#2671",
+      "do": "deploy a build that contains it, or accept with --accept delivery:VCST-6861 (its cases then report NOT_DEPLOYED, never FAIL)"
+    },
+    {
+      "id": "delivery:VCST-6571",
+      "status": "WARN",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-6571 (sprint Done) is only partly in its repo's build: vc-module-site-builder#3 not yet deployed",
+      "do": "name it to the W0 owner; the cases of the missing PRs report NOT_DEPLOYED, never FAIL"
+    },
+    {
+      "id": "delivery:VCST-6257",
+      "status": "WARN",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-6257 (sprint Done) is only partly in its repo's build: vc-module-sales-rep#36 not yet deployed",
+      "do": "name it to the W0 owner; the cases of the missing PRs report NOT_DEPLOYED, never FAIL"
+    },
+    {
+      "id": "delivery:VCST-6255",
+      "status": "WARN",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-6255 (sprint Done) is only partly in its repo's build: vc-module-sales-rep#36 not yet deployed",
+      "do": "name it to the W0 owner; the cases of the missing PRs report NOT_DEPLOYED, never FAIL"
+    },
+    {
+      "id": "delivery:VCST-6129",
+      "status": "BLOCK",
+      "who": "you",
+      "diagnose": [],
+      "found": "VCST-6129 is PARTLY on the stand: vc-frontend#2682 deployed, vc-platform#3170 NOT — the deployed half expects the missing one",
+      "do": "STOP the waves and tell the release owner + delivery manager: deploy the missing build, or roll the deployed half back"
+    }
+  ],
+  "verdict": "NOT READY"
+}
