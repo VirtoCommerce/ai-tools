@@ -28,10 +28,15 @@ For a teammate who works in this repo. Every step is detailed further down; this
    /plugin install serena@claude-plugins-official
    ```
    **Restart Claude Code.**
-4. **`/project-init`** (vc-init) — any env name (`qa`, `staging`, `client_eu`…; if `.env.<name>` already exists it offers to reuse it), Jira + GitHub, PAT, and where test-user passwords live (vc-secrets, recommended, or `.env.local`; asked separately for admins and storefront users). When it pauses, in a **separate terminal** in the repo folder run `node "<VC_SECRETS>" trust` and `node "<VC_SECRETS>" set <name>` for each token and password it lists (`github-pat`, `jira-token`, `admin-password-<env>`, …; the wizard prints the exact commands). Nothing secret goes into the chat. Reply `done`. This repo's own scripts (seeders, the module registry) and its browser lanes read every test account's login and password from `test-accounts.local.json` (gitignored; shape `templates/test-accounts.example.json`), not through the bridge — `npm run creds:migrate` moves what an older setup left elsewhere into it, `npm run creds:check` says what is missing. Full reference: [`plugins/vc-init/README.md`](../plugins/vc-init/README.md).
-5. **Restart Claude Code** (new `.mcp.json`, `.claude/settings.local.json` with `VC_RUN`/`VC_SECRETS`, the `kb` server). Later: `/project-init --add-env`, `--add-user`, `--check` (after a plugin upgrade).
-6. **Check:** `/project-init --check` — reconciles the profile, moves any plaintext token into vc-secrets, verifies every credential and prints the readiness table. Before work against a stand: `/preflight` (`npm run preflight`) — env health, deployed build, MCP availability.
-7. **Work:** `/qa-test VCST-XXXX` (one ticket key; its approved strategy decides the depth), `/qa-bug`, `/qa-regression smoke`. Which tool for which job: [`.claude/ROUTING.md`](../.claude/ROUTING.md); how to invoke: [`using-commands-and-skills.md`](using-commands-and-skills.md).
+4. **Test accounts — one file.** Every test account's login and password, for every env, lives in `test-accounts.local.json` at the repo root (gitignored; shape [`templates/test-accounts.example.json`](../templates/test-accounts.example.json)). The whole team works from the same copy: **get it from the team's secret store** and put it at the repo root before step 5. Coming from the old `.env.local` / `.env.playwright.*` passwords instead: `npm run creds:migrate` (dry run), then `npm run creds:migrate -- --apply`. Never paste a password into the chat, Teams or mail. Detail: [`.claude/knowledge/execution/test-accounts.md`](../.claude/knowledge/execution/test-accounts.md).
+5. **`/project-init`** (vc-init) — any env name (`qa`, `staging`, `client_eu`…; if `.env.<name>` already exists it offers to reuse it), Jira + GitHub, PAT, and where test-account passwords live (`test-accounts.local.json`, recommended, or vc-secrets; asked separately for admins and storefront users). When it pauses, in a **separate terminal** in the repo folder run `node "<VC_SECRETS>" trust` and `node "<VC_SECRETS>" set <name>` for each token it lists (`github-pat`, `jira-token`, …; the wizard prints the exact commands). Nothing secret goes into the chat. Reply `done`. Full reference: [`plugins/vc-init/README.md`](../plugins/vc-init/README.md).
+6. **Restart Claude Code** (new `.mcp.json`, `.claude/settings.local.json` with `VC_RUN`/`VC_SECRETS`, the `kb` server; the browser lanes read `test-accounts.local.json` when they start). Later: `/project-init --add-env`, `--add-user`, `--check` (after a plugin upgrade).
+7. **Check:**
+   - `npm run creds:check -- <env>` — which account names the env still lacks (a gap is a name to get from the team copy, never to make up);
+   - `npm run creds:verify -- <env>` — every account in the store still signs in on its stand;
+   - `/project-init --check` — the profile, every token, the readiness table;
+   - before work against a stand: `/preflight` (`npm run preflight`) — env health, deployed build, MCP availability.
+8. **Work:** `/qa-test VCST-XXXX` (one ticket key; its approved strategy decides the depth), `/qa-bug`, `/qa-regression smoke`. Which tool for which job: [`.claude/ROUTING.md`](../.claude/ROUTING.md); how to invoke: [`using-commands-and-skills.md`](using-commands-and-skills.md).
 
 > **Time:** 5–15 minutes per environment for setup. Days-to-weeks for customer-specific suite authoring (your customizations need your tests).
 >
@@ -100,14 +105,15 @@ Run `/project-init` in Claude Code. It's a **derive-driven** wizard — it asks 
 - the bug **tracker** — Jira or Azure Boards,
 - the code **host** — GitHub or Azure Repos,
 - an **auth** preference per axis (a PAT is recommended; otherwise browser / CLI login — never passwords). A PAT is never typed into the chat: `/project-init` prints `node "<VC_SECRETS>" set <name>` per token, you run it in a terminal and paste the token at a hidden prompt, and `vc-secrets trust` once to approve what the project declares,
-- where **test-user passwords** live, separately for admins and storefront users: vc-secrets (recommended — `admin-password-<env>`, `user-password-<env>`, stored with `set` like a token) or `.env.local`,
+- where **test-account passwords** live, separately for admins and storefront users: `test-accounts.local.json` (recommended — login beside password, one file for every env) or vc-secrets (`admin-password-<env>`, `user-password-<env>`, stored with `set` like a token),
 - the stand's URLs and logins, one value per question.
 
 Everything else — native-platform vs CLIENT project, your org, contribution mode, fork account — is **derived** from the token plus a live module/repo scan. It writes:
 
 - `project-profile.json` — the deployment profile that makes `/qa-fix` route each bug to the right repo (your custom code vs the native platform) and file to the right tracker,
 - `.env.<env>` — per-env config (committable in your own repo, no secrets),
-- `.env.local` — the tracker / code-host connection and the test-user passwords of roles not kept in vc-secrets (gitignored; no token),
+- `.env.local` — the tracker / code-host connection, the same for every env (gitignored; no token, no test-account password),
+- `test-accounts.local.json` — every test account's login and password, per env (`ADMIN`, `USER`, each `--add-user` user; gitignored),
 - `.env.test-env` — `TEST_ENV=<env>`, the env a command uses when given none,
 - `.claude/rules/vc-browser.md` — the rule that every browser action goes through a Playwright lane (meant to be committed),
 - `.claude/vc-secrets.local.json` — the vc-secrets declarations (which tokens this project uses; no value),
@@ -151,27 +157,15 @@ Every customer has multiple environments. The plugin treats env names as arbitra
 
 ## Configuration Buckets
 
-The plugin uses three env-file buckets:
-
 | Bucket | Lives in | Committable? | What it holds |
 |--------|----------|--------------|---------------|
 | Repo defaults | `.env.defaults` | ✅ Yes (in this repo) | Sandbox payment cards, Builder.io public URL. Same for every customer. Don't edit. |
 | Customer per-env | `.env.{env-name}` | ✅ Yes (in your fork) | `FRONT_URL`, `BACK_URL`, `STORE_ID`, `ENV_RISK`, `STOREFRONT_PROFILE`, `MODULES_ENABLED`, `JIRA_PROJECT_KEY`. One file per env. |
-| Customer secrets | `.env.local` | ❌ No (gitignored) | Passwords (and, in this repo's own checkout, CI/monitoring keys). Per-env via suffix promotion (`USER_PASSWORD_QA`, `USER_PASSWORD_STAGING`, etc.). The plugins' GitHub / Azure DevOps / Jira tokens are NOT here — they live in `vc-secrets` (VCST-6402). |
+| Machine-local settings | `.env.local` | ❌ No (gitignored) | The tracker / code-host connection, `QA_ENV_PATH`, and (in this repo) the API tokens its own scripts still read. No test-account password. |
+| Test accounts | `test-accounts.local.json` | ❌ No (gitignored) | Every test account's login and password for **every** env at once (`envs.<env>.accounts`), shared passwords, and `master` for `PASSWORDS=master` stands. Beats every `.env` file. Passed between teammates through the team's secret store. |
+| Tokens | vc-secrets | — (OS credential store / Azure Key Vault) | GitHub / Azure DevOps / Jira tokens of the plugins (VCST-6402). Never in the test-account store. |
 
-Per-env suffix promotion is the magic that lets you keep all your env credentials in one gitignored file:
-
-```bash
-# .env.local
-USER_PASSWORD_QA=secret-qa
-USER_PASSWORD_STAGING=secret-staging
-USER_PASSWORD_PROD=secret-prod
-
-# At runtime:
-TEST_ENV=qa /qa-smoke         # USER_PASSWORD → 'secret-qa'
-TEST_ENV=staging /qa-smoke    # USER_PASSWORD → 'secret-staging'
-TEST_ENV=prod /qa-smoke       # USER_PASSWORD → 'secret-prod'
-```
+Because the store holds every env, switching `TEST_ENV` (or a command's env argument) reseeds nothing, changes no password and reconnects no lane. A browser lane holds every env's passwords and an agent types the name with the env: `USER_PASSWORD_QA`, `ADMIN_PASSWORD_STAGING`. The commands that look after the store (`creds:check`, `creds:verify`, `creds:migrate`) print names and counts, never a value: [`.claude/knowledge/execution/test-accounts.md`](../.claude/knowledge/execution/test-accounts.md).
 
 ## Module Subsetting
 
@@ -199,14 +193,14 @@ The orchestrator skips Frontend suites whose `storefrontProfile[]` doesn't inclu
 
 ## Test Accounts
 
-The plugin tests with two account types per env:
+All of them live in `test-accounts.local.json`, under `envs.<env>.accounts`, each with its login beside its password. The two every env needs:
 
-1. **Storefront test user (`USER_EMAIL` / `USER_PASSWORD`)** — non-admin. Can browse the storefront, add to cart, check out. For B2B suites, this user should belong to at least one org.
-2. **Admin SPA user (`ADMIN` / `ADMIN_PASSWORD`)** — has back-office access. The customer's `aliases.json` should set `ADMIN_ROLE_TESTER.name` to the role this user has (so the BL-RBAC tests assert against the correct role).
+1. **Storefront test user (`USER`, read as `USER_EMAIL` / `USER_PASSWORD`)** — non-admin. Can browse the storefront, add to cart, check out. For B2B suites, this user should belong to at least one org.
+2. **Admin SPA user (`ADMIN`, read as `ADMIN` / `ADMIN_PASSWORD`)** — has back-office access; seeders sign in as it, so a shared stand needs it before the first seed. The customer's `aliases.json` should set `ADMIN_ROLE_TESTER.name` to the role this user has (so the BL-RBAC tests assert against the correct role).
 
-For B2B suites that require a user with **2+ orgs**, set `MULTI_ORG_USER_EMAIL` / `MULTI_ORG_USER_PASSWORD`. Leave empty if you don't run B2B suites.
+Other roles the suites call by name (`ORG_USER`, `MULTI_ORG_USER`, …) are keyed by that name the same way; `npm run creds:check -- <env>` lists the ones an env still lacks. Accounts a seeder creates are recorded in the store by the seeder — share the updated copy with the team. Add one by hand with `/project-init --add-user`, or as a new entry under `envs.<env>.accounts`. An account that already exists on a shared stand keeps its password: never reseed a shared stand to "fix" one without the team agreeing, since that changes it for everyone.
 
-For impersonation tests, additional accounts are required. See `templates/aliases.json.template` for the slots.
+For impersonation tests, additional accounts are required. See `templates/aliases.{env}.json.template` for the slots.
 
 ## Required MCP Servers
 
@@ -368,13 +362,15 @@ Default selections are conservative. Don't run `/qa-regression full` against pro
 
 ## Troubleshooting
 
-**`Invalid TEST_ENV="customer-staging-eu"`** → kebab-case env names break the suffix-promotion in `.env.local`. Use underscores: `customer_staging_eu`.
+**`Invalid TEST_ENV="customer-staging-eu"`** → an env name becomes a `_<ENV>` suffix on variable names (`USER_PASSWORD_CUSTOMER_STAGING_EU`), which a hyphen breaks. Use underscores: `customer_staging_eu`.
 
-**`Missing required environment variables: FRONT_URL, …`** → run `/project-init`. If you ran it but vars are still missing, check that `.env.local` has the per-env-suffixed entries (e.g. `USER_PASSWORD_QA`, not just `USER_PASSWORD`).
+**`Missing required environment variables: FRONT_URL, …`** → run `/project-init`; `npm run env:check` names the file each value came from.
+
+**A test account is missing or its password is wrong** → `npm run creds:check -- <env>` (names the gaps), then `npm run creds:verify -- <env>` (signs each account in). A gap is filled from the team copy of `test-accounts.local.json`, not made up. If `creds:check` says a lane is behind the store, reconnect the `playwright-*` servers in `/mcp` — never while browser suites are running.
 
 **`Browser "chromium" is not installed` / `Executable doesn't exist`** → run `npx playwright install chromium firefox`, and check that `.mcp.json` pins `@playwright/mcp` to the version in `package.json` (never `@latest`: each release wants its own browser build). Edge uses the system `msedge`.
 
-**A Playwright tool is missing, or a typed password name lands in the field as text** → restart Claude Code (MCP servers start with the session), then `/project-init --check`. Do not switch to another browser: only the Playwright lanes receive the passwords (`.claude/rules/vc-browser.md`).
+**A Playwright tool is missing, or a typed password name lands in the field as text** → restart Claude Code (MCP servers start with the session); check the name carries the env (`USER_PASSWORD_QA`) and that `creds:check` knows it; then `/project-init --check`. Do not switch to another browser: only the Playwright lanes receive the passwords (`.claude/rules/vc-browser.md`).
 
 **Suites skipped for "requires modules not in MODULES_ENABLED"** → expected if you don't have that module. To run them anyway, add the module to your `MODULES_ENABLED` list — but the suite will fail if the module isn't actually installed.
 
