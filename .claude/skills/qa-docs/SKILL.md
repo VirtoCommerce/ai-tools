@@ -1,10 +1,10 @@
 ---
 name: qa-docs
-description: "[QA Method] Use when a ticket in status Tested or Done needs its documentation: ONE document — What's new, How to set it up, How it works — built from the run's PASS rows and real stand screenshots, posted as ONE Jira comment, plus a ≤30 s Motion film a person exports and attaches. Called by /qa-test at its Stage 5 docs step; run by hand after /vc-test:qa-ticket. `release` mode aggregates the What's new sections of a sprint or version. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
-argument-hint: "<TICKET> [--video [<file.mp4>]] | release --sprint <SprintXX-XX> | release --version <X.Y.Z>"
+description: "[QA Method] Use when a ticket in status Tested or Done needs its documentation (one Jira comment and a Motion film a person exports and attaches), or when a sprint's or version's tickets need release notes, or its key stories a Slides deck and/or a film. Called by /qa-test at its Stage 5 docs step; run by hand after /vc-test:qa-ticket. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
+argument-hint: "<TICKET> [--video [<file.mp4>]] | release --sprint <SprintXX-XX> [--slides] [--film] | release --version <X.Y.Z> | <sprint> [--notes] [--slides] [--film]"
 ---
 
-# /qa-docs — the documentation of one tested ticket
+# /qa-docs — the documentation of a tested ticket, and of a sprint
 
 One ticket, one document, one comment. The document has three parts — **What's new**, **How to set it
 up**, **How it works** — and is written for everyone who reads the ticket; there are no audience
@@ -13,9 +13,12 @@ screenshots, GIFs and the film are [`media.md`](media.md); the release aggregate
 [`release.md`](release.md).
 
 **Runs in the main session and dispatches no subagent**: it needs a browser lane, the Artifact tool and
-the tracker in one place. It is an Observer and a Judge under
+the tracker in one place — except the sprint mode, which dispatches its capture walks to lane specialists
+([`sprint.md`](sprint.md)). It is an Observer and a Judge under
 [`authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5.2 — it walks the stand and
-states how the platform behaves — so it carries the `kb` read step (2) and write step (7).
+states how the platform behaves — so it carries the `kb` read step (2) and write step (7); and, in the
+sprint mode only, a Dispatcher, whose brief follows
+[`agent-dispatch.md`](../../templates/agent-dispatch.md) ([`sprint.md`](sprint.md) §Material).
 
 ## Invocations
 
@@ -23,7 +26,13 @@ states how the platform behaves — so it carries the `kb` read step (2) and wri
 |---|---|
 | `/qa-docs <TICKET>` | steps 1–8 below |
 | `/qa-docs <TICKET> --video [<file.mp4>]` | attach the exported film and amend the comment: [`media.md`](media.md) §Hand-off |
-| `/qa-docs release --sprint <S>` · `--version <V>` | the aggregate: [`release.md`](release.md) §Aggregate |
+| `/qa-docs release --sprint <S>` · `--version <V>` | the plain aggregate, no question and no stand: [`release.md`](release.md) §Aggregate |
+| `/qa-docs <sprint>` [`--notes`] [`--slides`] [`--film`] · `release --sprint <S> --slides` / `--film` | the sprint mode — release notes, slides and/or a film of the sprint's key stories: [`sprint.md`](sprint.md) |
+
+An argument that is not a ticket key and names a sprint (`sprint26-22`, `Sprint 26-22`, `26-22`) is the
+sprint mode; read [`sprint.md`](sprint.md) and follow it instead of the steps below. `release --sprint <S>`
+with no flag, or with `--notes` alone, is **not** the sprint mode: it keeps the plain aggregate, as it did
+before the sprint mode existed.
 
 `/qa-test` calls `/qa-docs <TICKET>` at its docs step, after the status hop, when the ticket ends in Tested or
 Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the ticket needs documentation.
@@ -85,7 +94,7 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
    `reports/ba/<Domain>/<ticket>-<slug>-guide.md`. An existing guide for the ticket is amended in place,
    never forked. Check the size cap (§Size cap) and the payload rules (§Payload hygiene) before step 6.
 
-5. **Make the film** — one Motion artifact, ≤30 s, from the same frames: [`media.md`](media.md) §Film.
+5. **Make the film** — one Motion artifact, aiming at ≤90 s (a soft ceiling: [`media.md`](media.md) §Film), from the same frames: [`media.md`](media.md) §Film.
    Its `{video_line}` is the before-export one.
 
 6. **Post — ask once.** Show the composed comment and the film link, and ask before posting: the comment
@@ -109,7 +118,7 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
    post for a ticket this checkout's ledger already holds (another machine's comment is step 1's to find). The helper verifies the rendered body (one `<img>` per attached image, none left literal,
    [`reports-policy.md`](../../knowledge/execution/reports-policy.md) §5.0) — read its check, not the status
    code. Keep the comment's id. **Azure Boards:** `tracker:comment` is Jira-only — stop and post through
-   `ado.mjs` (`upload-attachment`, then an HTML body with `<img src>`), [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §5c.
+   `plugins/vc-fix/skills/qa-fix-routing/ado.mjs` (`upload-attachment`, then an HTML body with `<img src>`), [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §5c.
 
 7. **Bank what the run established** — for each platform behaviour the document states: matched ⇒
    `mcp__kb__kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (CLI:

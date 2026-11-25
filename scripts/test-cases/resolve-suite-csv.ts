@@ -1,6 +1,6 @@
 /**
  * Resolves @td() tokens in a suite CSV and writes the resolved version.
- * Usage: npx tsx scripts/resolve-suite-csv.ts <input-csv> <output-csv>
+ * Usage: npx tsx scripts/test-cases/resolve-suite-csv.ts <input-csv> <output-csv>
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync } from 'fs';

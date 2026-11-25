@@ -88,8 +88,9 @@ The three lanes do **not** share slots.
 **Pre-dispatch, once per suite — resolve the CSV to disk, never into the prompt:**
 
 1. Read the suite CSV from the manifest's `file` path.
-2. Resolve every `@td(ALIAS.field)` token against `test-data/aliases.json` + the referenced data CSVs.
-3. Write the resolved CSV to `reports/regression/{RUN_ID}/suite-{ID}-resolved.csv`.
+2. Resolve every `@td(ALIAS.field)` token with the repo's script, never with ad-hoc code (a hand-rolled substitution broke the quoting of values that carry `"`, e.g. `OTP_INPUTS.*` in suite 104):
+   `npx tsx scripts/test-cases/resolve-suite-csv.ts <suite csv> reports/regression/{RUN_ID}/suite-{ID}-resolved.csv`
+3. That output file is the resolved CSV (`suite-{ID}-resolved.csv`) — written by the command above, not by you.
 3a. **`--cases <tier>` or `--ids <IDs>` only — narrow the resolved CSV to those cases, before lanes sees it.** Command and rules: `knowledge/agents/qa/regression-orchestrator-scoped-runs.md` §Step 3 item 3a. Pass the **scoped** file to step 4. **Write a NEW file — never `--out` back over the source.** **`--scope-out` is mandatory on a scoped run, not decorative.** **A legacy 11-column header (exit 2) is RUN WHOLE, and named in Step 6.** Build Step 6's Scope Exclusions from the `suite-{ID}-filter.json` sidecars, **not** from scrollback.
 4. **Split the suite's cases between the machine lane and the agent — one command:**
 
