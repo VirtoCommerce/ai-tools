@@ -17,6 +17,8 @@
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
 import { activePersonaSet, cloneLogin, type ActiveSet } from "./persona-sets.mjs";
+/** The columns that hold a sign-in login (a lane slot row holds two: its personal and its B2B account). */
+const LOGIN_COLUMNS = new Set(["email", "user_name", "personal_email", "b2b_email"]);
 
 /**
  * Why an `@td()` reference did not resolve on the current env (see `explainMiss`).
@@ -298,7 +300,7 @@ export class TestDataResolver {
     if (!this.persona || !value || !this.persona.defs.accounts.includes(aliasName)) return value;
     const def = this.aliases[aliasName] as { fields?: Record<string, string> } | undefined;
     const column = def?.fields?.[fieldName] ?? fieldName;
-    return column === "email" || column === "user_name" ? cloneLogin(value, this.persona.set) : value;
+    return LOGIN_COLUMNS.has(column) ? cloneLogin(value, this.persona.set) : value;
   }
 
   private resolveAlias(aliasName: string, fieldName: string): string {

@@ -16,10 +16,11 @@ const root = process.cwd();
 const val = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
 
 if (login) {
-  const name = args[1];
-  if (!name) { console.error('usage: npm run persona:login -- <ALIAS|STORE NAME>'); process.exit(1); }
+  // <NAME> or <ALIAS>.<field> — a lane slot row holds two logins: AGENT_POOL_SLOT_1 (personal), AGENT_POOL_SLOT_1.b2b_email.
+  const [name, field = 'email'] = String(args[1] ?? '').split('.');
+  if (!name) { console.error('usage: npm run persona:login -- <ALIAS|STORE NAME>[.field]'); process.exit(1); }
   const { readStore, envView, accountVars } = await import('../lib/test-accounts.mjs');
-  const a = envView(readStore(root), testEnv).accounts[name];
+  const a = field === 'email' ? envView(readStore(root), testEnv).accounts[name] : null;
   let out = a ? process.env[accountVars(name, a).loginVars[0]] : null;
   if (!out) {
     const { TestDataResolver } = await import('../lib/test-data-resolver.ts');
@@ -27,8 +28,8 @@ if (login) {
     const log = console.log; console.log = (...a) => console.error(...a); // the resolver's layering note must not reach stdout
     const r = new TestDataResolver(join(root, 'test-data'), testEnv);
     console.log = log;
-    out = r.resolve(`@td(${name}.email)`);
-    if (!out || out.startsWith('@td(')) { console.error(`${name}: no login (not a store account, not an alias with an email)`); process.exit(1); }
+    out = r.resolve(`@td(${name}.${field})`);
+    if (!out || out.startsWith('@td(')) { console.error(`${name}.${field}: no login (not a store account, not an alias with that field)`); process.exit(1); }
   }
   console.log(out);
   process.exit(0);

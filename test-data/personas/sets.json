@@ -1,5 +1,22 @@
 {
-  "//": "Per-wave persona sets (scripts/lib/persona-sets.mjs, release-folder.md §7.1). `accounts`: the shared accounts each set clones — store names (USER, ORG_USER: their *_EMAIL variables) and test-data aliases (their login fields). A clone's login derives from the original's (agent-test-wave-<set>-<local part>@test-agent.com); its organizations are cloned per set (<name>-<set>, same groups and addresses) and the org aliases naming them point at the copies inside the set. Listed: the accounts more than one wave uses outside the Sales Rep hub (W2) and the organization domain (W5), which run on the originals because they read or are the shared organizations. Create on a stand with `npm run seed:wave-personas -- --fixtures`; bind a session with `npm run persona:use -- <set>`.",
-  "accounts": ["USER", "ORG_USER", "USER_DEFAULT", "ORG_USER_DEFAULT", "TECHFLOW_ADMIN", "BUILDRIGHT_ADMIN"],
-  "sets": ["S1", "S2", "S3", "S4", "S5", "S6"]
+  "//": "Per-wave persona sets (scripts/lib/persona-sets.mjs, release-folder.md §7.1). `accounts`: the shared accounts each set clones — store names (USER, ORG_USER: their *_EMAIL variables) and test-data aliases (their login fields). A clone's login derives from the original's (agent-test-wave-<set>-<local part>@test-agent.com); its organizations are cloned per set (<name>-<set>, same groups and addresses) and the org aliases naming them point at the copies inside the set. Listed: the lane slot accounts (AGENT_POOL_SLOT_<n>, personal and B2B — two owners on one slot number then sign in as different accounts), and the accounts more than one wave uses outside the Sales Rep hub (W2) and the organization domain (W5), which run on the originals because they read or are the shared organizations. Create on a stand with `npm run seed:wave-personas -- --fixtures`; bind a session with `npm run persona:use -- <set>`.",
+  "accounts": [
+    "USER",
+    "ORG_USER",
+    "USER_DEFAULT",
+    "ORG_USER_DEFAULT",
+    "TECHFLOW_ADMIN",
+    "BUILDRIGHT_ADMIN",
+    "AGENT_POOL_SLOT_1",
+    "AGENT_POOL_SLOT_2",
+    "AGENT_POOL_SLOT_3"
+  ],
+  "sets": [
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6"
+  ]
 }

@@ -38,15 +38,22 @@ const cloneOrgName = (name, set) => `${name}-${set}`;
 const setAliasFile = (set) => join(up.ROOT, 'test-data', `aliases.${up.TEST_ENV}.${set}.json`);
 
 /** The original's login and password NAME, for a store name or an alias. */
-function original(name) {
+/** Every account behind a listed name: a store account, or an alias's login — two for a lane slot row (its personal
+ *  account and its B2B one, AGENT_POOL_SLOT_<n>.b2b_email). */
+function originals(name) {
   const a = envView(readStore(up.ROOT), up.TEST_ENV).accounts[name];
   if (a?.login) {
     const { passwordVar } = accountVars(name, a);
-    return { login: a.login, passwordName: typeof a.password === 'string' ? passwordVar : a.password?.use };
+    return [{ name, login: a.login, passwordName: typeof a.password === 'string' ? passwordVar : a.password?.use }];
   }
-  const login = resolver.resolve(`@td(${name}.email)`);
-  if (!login || login.startsWith('@td(')) throw new Error(`${name}: neither a store account nor an alias with an email`);
-  return { login, passwordName: up.passwordVarOfCell(resolver.resolve(`@td(${name}.password)`)) };
+  const out = [];
+  for (const [loginField, passwordField] of [['email', 'password'], ['b2b_email', 'b2b_password']]) {
+    const login = resolver.resolve(`@td(${name}.${loginField})`);
+    if (!login || login.startsWith('@td(')) continue;
+    out.push({ name: loginField === 'email' ? name : `${name}.${loginField}`, login, passwordName: up.passwordVarOfCell(resolver.resolve(`@td(${name}.${passwordField})`)) });
+  }
+  if (!out.length) throw new Error(`${name}: neither a store account nor an alias with a login`);
+  return out;
 }
 
 /** Org aliases (aliases.json, any alias with a platform_id field) by the platform id they resolve to. */
@@ -95,8 +102,8 @@ await up.authenticate();
 if (args.includes('--teardown')) {
   for (const set of sets) {
     let users = 0, orders = 0, orgs = 0;
-    for (const name of defs.accounts) {
-      const login = cloneLogin(original(name).login, set);
+    for (const o of defs.accounts.flatMap(originals)) {
+      const login = cloneLogin(o.login, set);
       const u = await up.findUserByEmail(login);
       const c = u?.memberId ?? (await up.findContactByEmail(login))?.id;
       if (dry) { if (u?.id || c) users++; continue; }
@@ -137,8 +144,8 @@ if (args.includes('--teardown')) {
 let created = 0, reused = 0;
 const seen = new Set();
 const orgAliases = orgAliasesById();
-for (const name of defs.accounts) {
-  const o = original(name);
+for (const o of defs.accounts.flatMap(originals)) {
+  const { name } = o;
   if (!o.passwordName) throw new Error(`${name}: no password name — a clone would need a password nobody declared`);
   const password = process.env[o.passwordName];
   if (!password) throw new Error(`${name}: ${o.passwordName} has no value for ${up.TEST_ENV} (npm run creds:check)`);

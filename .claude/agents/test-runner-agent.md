@@ -81,9 +81,8 @@ writers claiming one case, which the merge step refuses outright.
 ## Phase 1: Setup
 
 1. Read `{{SUITE_CSV_PATH}}` once. Parse test cases.
-2. Read `test-data/users/agent-user-pool.csv` and take the row whose **`slot`** equals `{{LANE_ID}}`
-   (fall back to matching `server_name` = `{{BROWSER_SERVER}}` when the caller passes no lane id).
-   Store that row's credentials.
+2. Slot = `agent-user-pool.csv` row with **`slot`** = `{{LANE_ID}}` (else `server_name` = `{{BROWSER_SERVER}}`).
+   Logins: `npm run -s persona:login -- AGENT_POOL_SLOT_<slot>` / `….b2b_email` (persona set applies).
 
    **Why `slot`:** `server_name` is advisory — two lanes on one browser (headless CI: all
    Chromium) would take the SAME account, and one account under two agents yields BLOCKED cascades

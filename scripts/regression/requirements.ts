@@ -32,6 +32,7 @@ import { join } from "node:path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { parse as parseYaml } from "yaml";
 import { TestDataResolver } from "../lib/test-data-resolver.ts";
+import { activePersonaSet, cloneLogin } from "../lib/persona-sets.mjs";
 import { type EnvCoords } from "../deploy/lib/env.ts";
 import { probeCoords } from "../lib/env-facts.ts";
 import { probeAdminToken, type AdminAuth } from "../deploy/lib/live.ts";
@@ -332,12 +333,15 @@ export async function laneAccountChecks(root: string, env: string, c: EnvCoords,
   if (!existsSync(p)) return [];
   const rows = parseCsv(readFileSync(p, "utf-8").replace(/^﻿/, ""), { columns: true, skip_empty_lines: true, relax_column_count: true }) as Record<string, string>[];
   const out: Check[] = [];
+  const lanePersona = activePersonaSet({ root });
   let usable = 0, checked = 0;
   const unsure: string[] = [];
   for (const r of rows.filter((x) => /^[0-9]+$/.test(x.slot) && Number(x.slot) <= slots)) {
     const bad: string[] = [];
-    for (const [kind, email] of [["personal", r.personal_email], ["b2b", r.b2b_email]] as const) {
-      if (!email) continue;
+    for (const [kind, orig] of [["personal", r.personal_email], ["b2b", r.b2b_email]] as const) {
+      if (!orig) continue;
+      // Under a wave's persona set the runner signs in as the slot's clone (persona-sets.mjs): check that one.
+      const email = lanePersona ? cloneLogin(orig, lanePersona.set) : orig;
       if (!token || !c.backUrl) return [{ id: "lanes:accounts", status: "UNKNOWN", found: "lane accounts not checked (no admin token)", who: "you", do: `fix the admin credentials for ${env}`, diagnose: [] }];
       const { user, status } = await lookupAccount(c, token, email);
       if (!user && status !== 200) return [{ id: "lanes:accounts", status: "UNKNOWN", found: `lane accounts not checked: lookup of ${email} failed (HTTP ${status})`, who: "me", do: `re-run the pre-flight; if it repeats, check the admin credentials for ${env}`, diagnose: [] }];

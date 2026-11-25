@@ -142,6 +142,10 @@ Read `test-data/users/agent-user-pool.csv`, match `server_name` = `{{BROWSER_SER
 
 **Why:** Sharing a user across parallel agents causes cart pollution, order history bleed, flaky auth.
 
+**Take a slot's logins from `npm run -s persona:login -- AGENT_POOL_SLOT_<n>` (and `….b2b_email`), never off the CSV.**
+Two owners running waves at the same time both have slots 1–3; under each wave's persona set the command returns that
+set's clone of the slot account, so the two never share one ([`../../skills/qa-run/release-folder.md`](../../skills/qa-run/release-folder.md) §7.1).
+
 **Fallback:** If pool CSV missing or `seeded: false`, use `.env` creds. Log: `"⚠ Agent user pool not available for {{BROWSER_SERVER}}, falling back to .env credentials"`.
 
 ## Common Failure Signals (monitor even when not listed)
