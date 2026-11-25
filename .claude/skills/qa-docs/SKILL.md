@@ -94,7 +94,7 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
    `reports/ba/<Domain>/<ticket>-<slug>-guide.md`. An existing guide for the ticket is amended in place,
    never forked. Check the size cap (§Size cap) and the payload rules (§Payload hygiene) before step 6.
 
-5. **Make the film** — one Motion artifact, ≤30 s, from the same frames: [`media.md`](media.md) §Film.
+5. **Make the film** — one Motion artifact, aiming at ≤90 s (a soft ceiling: [`media.md`](media.md) §Film), from the same frames: [`media.md`](media.md) §Film.
    Its `{video_line}` is the before-export one.
 
 6. **Post — ask once.** Show the composed comment and the film link, and ask before posting: the comment
