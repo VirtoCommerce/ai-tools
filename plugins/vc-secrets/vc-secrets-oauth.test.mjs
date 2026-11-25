@@ -743,6 +743,10 @@ test("two projects declaring the same entry name do not share one mutex", () => 
 // evidence. These drive the same decisions through the injection seam, so every branch —
 // including the two macOS-only ones nobody here can reach — is settled by an assertion.
 const inUse = () => Object.assign(new Error("bind: address already in use"), { code: "EADDRINUSE" });
+// What XNU's bind answers the slower of two simultaneous binders: it looks the path up and then creates it without
+// serialising the create, so the loser sees the winner's file appear and gets EEXIST, where Linux says EADDRINUSE.
+const exists = () => Object.assign(new Error("bind: file exists"), { code: "EEXIST" });
+const LOCK_PATH = "/tmp/vc-secrets-dev-proj-azure-mcp.lock";
 
 // A server is `close` AND `on("connection")`. A fake carrying only close() is a server that can
 // never have accepted anything -- so a release driven through it stays green whether or not the
@@ -798,6 +802,7 @@ test("acquireLock: on a path, a socket a killed holder left behind is reclaimed"
         bind: async () => { if (bound++ === 0) { throw inUse(); } return fakeServer(); },
         probe: async () => false,
         remove: (p) => removed.push(p),
+        sleep: async () => {},
     });
     assert.notEqual(got, cache.HELD_BY_OTHER);
     assert.deepEqual(removed, ["/tmp/vc-secrets-dev-proj-azure-mcp.lock"]);
@@ -812,8 +817,109 @@ test("acquireLock: losing the reclaim race waits, it does not kill the launch", 
         bind: async () => { throw inUse(); },
         probe: async () => false,
         remove: () => {},
+        sleep: async () => {},
     });
     assert.equal(got, cache.HELD_BY_OTHER);
+});
+
+test("acquireLock: EEXIST from the first bind is a neighbour that won, returned without probing or unlinking", async () => {
+    // On macOS the slower of two simultaneous binders gets EEXIST. Rethrown, it failed the server's start; probed,
+    // it reached the winner in the instant between its bind and its listen, where it refuses like a dead socket.
+    const calls = [];
+    const got = await cache.acquireLock(LOCK_PATH, {
+        bind: async () => { calls.push("bind"); throw exists(); },
+        probe: async () => { calls.push("probe"); return false; },
+        remove: () => calls.push("remove"),
+        sleep: async () => calls.push("sleep"),
+    });
+    assert.equal(got, cache.HELD_BY_OTHER);
+    assert.deepEqual(calls, ["bind"], "nothing but the one bind");
+});
+
+test("acquireLock: a probe that refuses once and then connects is a winner that had not started listening", async () => {
+    // Node binds and then listens, two system calls, and a socket in between refuses a connection as a dead one
+    // does. One refusal taken as death unlinked the winner's live socket and both processes held the lock.
+    const calls = [];
+    const waits = [];
+    const answers = [false, true];
+    const got = await cache.acquireLock(LOCK_PATH, {
+        bind: async () => { calls.push("bind"); throw inUse(); },
+        probe: async () => { calls.push("probe"); return answers.shift(); },
+        remove: () => calls.push("remove"),
+        sleep: async (ms) => { calls.push("sleep"); waits.push(ms); },
+        random: () => 0,
+    });
+    assert.equal(got, cache.HELD_BY_OTHER);
+    assert.deepEqual(calls, ["bind", "probe", "sleep", "probe"], "probe, wait, probe again, and never unlink");
+    assert.deepEqual(waits, [cache.STALE_RECHECK_MS], "the shortest wait, with no jitter drawn");
+});
+
+test("acquireLock: two launchers that found the same stale socket together wait different times", async () => {
+    // Equal waits would have both re-probe in step, each still refused, and both reclaim: the wait is the only
+    // thing that can separate them, so it is drawn at random between STALE_RECHECK_MS and twice that.
+    const waits = [];
+    for (const draw of [0, 0.75, 0.999]) {
+        await cache.acquireLock(LOCK_PATH, {
+            bind: async () => { throw inUse(); },
+            probe: async () => false,
+            remove: () => {},
+            sleep: async (ms) => { waits.push(ms); },
+            random: () => draw,
+        });
+    }
+    const wait = (draw) => cache.STALE_RECHECK_MS + draw * cache.STALE_RECHECK_MS;
+    assert.deepEqual(waits, [wait(0), wait(0.75), wait(0.999)]);
+    assert.equal(new Set(waits).size, 3, "three draws, three different waits");
+});
+
+test("acquireLock: without an injected random the recheck wait is drawn between STALE_RECHECK_MS and twice that", async () => {
+    // The default is what runs in production, and a constant default would give every launcher the same wait: the
+    // injected-random tests above cannot tell it from Math.random.
+    const waits = [];
+    for (let i = 0; i < 12; i += 1) {
+        let bound = 0;
+        await cache.acquireLock(LOCK_PATH, {
+            bind: async () => { if (bound++ === 0) { throw inUse(); } return fakeServer(); },
+            probe: async () => false,
+            remove: () => {},
+            sleep: async (ms) => { waits.push(ms); },
+        });
+    }
+    assert.equal(waits.length, 12);
+    assert.ok(waits.every((ms) => ms >= cache.STALE_RECHECK_MS && ms < 2 * cache.STALE_RECHECK_MS), waits.join(", "));
+    assert.ok(new Set(waits).size > 1, `every wait was ${waits[0]}`);
+});
+
+test("acquireLock: the recheck wait is long enough to outlast a bind-to-listen gap", () => {
+    // Zero would let every test above pass while a winner that has bound and not listened is taken for dead.
+    assert.ok(cache.STALE_RECHECK_MS >= 50, `STALE_RECHECK_MS is ${cache.STALE_RECHECK_MS}`);
+});
+
+test("acquireLock: a socket that refuses twice, a wait apart, is reclaimed", async () => {
+    const calls = [];
+    let bound = 0;
+    const got = await cache.acquireLock(LOCK_PATH, {
+        bind: async () => { calls.push("bind"); if (bound++ === 0) { throw inUse(); } return fakeServer(); },
+        probe: async () => { calls.push("probe"); return false; },
+        remove: (p) => calls.push(`remove ${p}`),
+        sleep: async (ms) => calls.push(`sleep ${ms}`),
+        random: () => 0.5,
+    });
+    assert.notEqual(got, cache.HELD_BY_OTHER);
+    assert.deepEqual(calls, ["bind", "probe", `sleep ${cache.STALE_RECHECK_MS + 0.5 * cache.STALE_RECHECK_MS}`, "probe", `remove ${LOCK_PATH}`, "bind"]);
+    await got.release();
+});
+
+test("acquireLock: EEXIST on the reclaim bind is a neighbour that reclaimed first, not a failure", async () => {
+    let bound = 0;
+    const got = await cache.acquireLock(LOCK_PATH, {
+        bind: async () => { throw bound++ === 0 ? inUse() : exists(); },
+        probe: async () => false,
+        remove: () => {},
+        sleep: async () => {},
+    });
+    assert.equal(got, cache.HELD_BY_OTHER);
+    assert.equal(bound, 2, "the reclaim bind was reached");
 });
 
 test("acquireLock: HELD_BY_OTHER cannot be mistaken for an absent lock", async () => {

@@ -6,6 +6,7 @@
 // still load it and finds nothing to run.) It sits outside lib/, so the declarations guard leaves it
 // writable like the tests.
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test, after } from "node:test";
@@ -284,6 +285,58 @@ after(() => {
         fs.rmSync(dir, { recursive: true, force: true });
     }
 });
+
+// The machine's own credential stores, made unreachable before any test in the file runs. A test file runs
+// in a process of its own, so every one of them loads this module (the "store guards" file pins that).
+//
+// Injecting a fake runner into each seam is per-test discipline, and a seam a test forgets to inject, or a
+// collaborator that production builds with the default runner behind the injected one, runs against the
+// developer's real store from a run that still reports green: the real store answers too. Each store is
+// reached by its own mechanism, so each gets its own guard:
+//
+//   Credential Manager, and the DPAPI decrypt of the sign-in files   PowerShell, named by VC_SECRETS_POWERSHELL
+//                                                                    (psCommand), else the real powershell.exe
+//   the DPAPI files, the gpg files and the trust file                a base directory: XDG_CONFIG_HOME, else
+//                                                                    LOCALAPPDATA (dpapi) or HOME (gpg)
+//   the macOS Keychain                                               the literal `security`, found on PATH
+//   Azure Key Vault                                                  the literal `az`, found on PATH
+//
+// The stub exits 1, never 44: 44 is the Keychain's "not stored" (isAbsentEntry), so a miss that exited with it
+// would pass as an ordinary absence. 1 is safe for both stubs because no store maps it to absent: the Keychain's
+// only absent code is 44, and a Key Vault read has no absent case at all, so any non-zero exit is a failure. A
+// test that needs one of these supplies its own (a stub earlier on PATH, a VC_SECRETS_POWERSHELL of its own, an env object of its own)
+// and that wins; what this closes is the test that supplies nothing.
+//
+// An explicit env object handed to a function is not process.env: the base directories and the command
+// name are read from the object, so the fixtures that build one carry UNREACHABLE_POWERSHELL themselves
+// (launcherEnv does, and strips every other VC_SECRETS_* key). PATH needs no such copy: the child's comes
+// from process.env.
+export const STORE_GUARD_MARK = "vc-secrets test guard";
+
+export const STORE_GUARD_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-store-guard-"));
+
+tmpDirs.push(STORE_GUARD_DIR);
+
+// A path nothing exists at: starting it fails with ENOENT, and the command name in the error is this path.
+export const UNREACHABLE_POWERSHELL = path.join(STORE_GUARD_DIR, "no-such-powershell");
+
+const GUARD_BIN_DIR = path.join(STORE_GUARD_DIR, "bin");
+
+fs.mkdirSync(GUARD_BIN_DIR, { recursive: true });
+
+for (const [tool, store] of [["security", "the macOS Keychain"], ["az", "Azure Key Vault"]]) {
+    const message = `${STORE_GUARD_MARK}: a test reached ${store} without a runner or a PATH stub of its own`;
+    if (process.platform === "win32") {
+        fs.writeFileSync(path.join(GUARD_BIN_DIR, `${tool}.cmd`), `@echo off\r\necho ${message} 1>&2\r\nexit /b 1\r\n`);
+    } else {
+        fs.writeFileSync(path.join(GUARD_BIN_DIR, tool), `#!/bin/sh\necho "${message}" >&2\nexit 1\n`, { mode: 0o755 });
+    }
+}
+
+process.env.VC_SECRETS_POWERSHELL = UNREACHABLE_POWERSHELL;
+process.env.XDG_CONFIG_HOME = STORE_GUARD_DIR;
+process.env.LOCALAPPDATA = STORE_GUARD_DIR;
+process.env.PATH = `${GUARD_BIN_DIR}${path.delimiter}${process.env.PATH ?? ""}`;
 
 // Measured on this machine: a bind that is refused does NOT throw from listen() — it emits
 // an 'error' event, and an unattached one aborts the whole process instead of failing one test.
