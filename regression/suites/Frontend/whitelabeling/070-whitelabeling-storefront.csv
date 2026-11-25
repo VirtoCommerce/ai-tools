@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"FWL-001","Enable thumbnail job for favicons","Backend Jobs","Medium","BL-WL-001",,"[PRE:CLEAR_SESSION]
+"FWL-001","Enable thumbnail job for favicons","Backend Jobs","Medium","BL-WL-001",,"[EXCLUSIVE:platform thumbnail job (ImageTools)] [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 White Labeling module installed; Admin access to backend","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin at {{BACK_URL}}
 [ACT] 2. Sign in with admin credentials
@@ -29,7 +29,7 @@ Store exists with White Labeling enabled but no custom settings; Organization ex
 [STATE] Default theme preset colors applied
 [DOM] No organization-specific branding visible","[CONSOLE] no uncaught JS errors
 [NETWORK] logo image loads with HTTP 200","Custom logo shown instead of default; Custom favicon shown; Theme overridden unexpectedly","none","C390295","Manual"
-"FWL-003","Store has whitelabeling settings but organization does not - store defaults shown","Store Settings","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"FWL-003","Store has whitelabeling settings but organization does not - store defaults shown","Store Settings","High","BL-WL-002",,"[EXCLUSIVE:the store's White Labeling (logo, favicon, theme preset)] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Store has White Labeling enabled with custom logo/favicon/theme; Organization has White Labeling enabled but no custom settings","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Upload store-level logo: store-logo.png
@@ -49,7 +49,7 @@ Store has White Labeling enabled with custom logo/favicon/theme; Organization ha
 [STATE] Coffee theme colors applied
 [DOM] No org-specific branding overrides present","[CONSOLE] no uncaught JS errors
 [NETWORK] logo image loads with HTTP 200","Org overrides shown when org has no branding; Default branding shown instead of store branding; Wrong theme applied","restore store to previous settings; restore org settings","C390296 VCST-1634","Manual"
-"FWL-009","Store-level White Labeling = OFF - organization branding disabled regardless of org settings","Store Settings","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"FWL-009","Store-level White Labeling = OFF - organization branding disabled regardless of org settings","Store Settings","High","BL-WL-002",,"[EXCLUSIVE:the store's White Labeling (logo, favicon, theme preset)] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Store @td(STORE_PRIMARY.id) has White Labeling setting; Organization Company1 has custom branding configured with Enabled = ON","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Set store-level White Labeling = OFF

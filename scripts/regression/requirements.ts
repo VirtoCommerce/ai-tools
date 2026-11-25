@@ -106,6 +106,8 @@ export interface SuiteFile { id: string; file: string }
 const PERSONA = /\[PRE:(?:SIGNIN_AS|VERIFY_AUTH):(?!DISPOSABLE_CUSTOMER\])([A-Z][A-Z0-9_]+)\]/g;
 const TD_REF = /@td\(([A-Z][A-Z0-9_]+(?:\.\w+)+)\)/g;
 const VAR = /^\{\{([A-Z0-9_]+)\}\}$/;
+/** `[EXCLUSIVE:<what it changes>]` in Preconditions: the case changes state every other session reads. */
+export const EXCLUSIVE = /\[EXCLUSIVE:([^\]]+)\]/g;
 
 /** The resolver logs its overlay layering to stdout; under `--json` that line would corrupt the JSON a caller parses. */
 function makeResolver(root: string, env: string): TestDataResolver {
@@ -125,6 +127,7 @@ export function collectCaseNeeds(root: string, suites: SuiteFile[]) {
   const personas = new Map<string, Set<string>>();
   const refs = new Map<string, Set<string>>();
   const generated = new Map<string, Set<string>>();
+  const exclusive = new Map<string, Set<string>>();
   const outputs = GENERATORS.flatMap((g) => g.outputs.map((rel) => ({ rel, base: rel.split("/").pop()! })));
   const add = (m: Map<string, Set<string>>, k: string, c: string) => (m.get(k) ?? m.set(k, new Set()).get(k)!).add(c);
   const unreadable: string[] = [];
@@ -142,12 +145,31 @@ export function collectCaseNeeds(root: string, suites: SuiteFile[]) {
       const key = `${s.id}/${id}`;
       for (const m of text.matchAll(PERSONA)) add(personas, m[1], key);
       for (const m of text.matchAll(TD_REF)) add(refs, m[1], key);
+      for (const m of (r.Preconditions ?? text).matchAll(EXCLUSIVE)) add(exclusive, m[1].trim(), key);
       // Steps only: a Preconditions list can name a fixture the case never uploads.
       const steps = r.Steps ?? text;
       for (const o of outputs) if (steps.includes(o.base)) add(generated, o.rel, key);
     }
   }
-  return { personas, refs, generated, unreadable };
+  return { personas, refs, generated, exclusive, unreadable };
+}
+
+/**
+ * `[EXCLUSIVE:…]` cases. In a parallel wave they are recorded BLOCKED and not run (the `skip` map): a store setting,
+ * a shared price or a pickup-location set changed there breaks every other wave reading it, and nothing in the case
+ * can tell. They run only in the release's exclusive wave, planned with `--exclusive` (release-folder.md §7.2).
+ */
+export function exclusiveChecks(exclusive: Map<string, Set<string>>, runIsExclusive: boolean): Check[] {
+  if (!exclusive.size) return [];
+  const all = [...exclusive.values()].flatMap((s) => [...s]);
+  if (runIsExclusive)
+    return [{ id: "exclusive", status: "OK", who: null, do: null, diagnose: [],
+      found: `${all.length} [EXCLUSIVE] case(s) run in this window — nobody else may be on the stand; restore what each changes in its Cleanup` }];
+  return [...exclusive].map(([what, cases]) => ({
+    id: `exclusive:${what}`, status: "WARN" as const, who: "me" as const, diagnose: [],
+    found: `changes what every wave reads (${what}) — ${bySuite(cases)}`,
+    do: "runs only in the release's exclusive wave (WX): regression:plan --exclusive", cases: [...cases],
+  }));
 }
 
 /** A case names a generated fixture that is not on disk: say which command writes it. Never writes it. */
@@ -516,7 +538,7 @@ async function adminAuth(c: EnvCoords): Promise<AdminAuth | null> {
 }
 
 /** All case-level checks for the selected suites. Read-only. */
-export async function requirementChecks(o: { root: string; env: string; suites: SuiteFile[] }): Promise<Check[]> {
+export async function requirementChecks(o: { root: string; env: string; suites: SuiteFile[]; exclusive?: boolean }): Promise<Check[]> {
   const reqFile = loadRequirements(o.root);
   const needs = collectCaseNeeds(o.root, o.suites);
   let c: EnvCoords | null = null, token: AdminAuth | null = null;
@@ -528,6 +550,7 @@ export async function requirementChecks(o: { root: string; env: string; suites: 
   const installed = c && reqFile.personas ? await installedModules(c, token) : null;
   checks.push(...fixtureChecks(o.root, o.env, needs.refs, { reqs: reqFile.personas, installed }));
   checks.push(...generatedFixtureChecks(o.root, needs.generated));
+  checks.push(...exclusiveChecks(needs.exclusive, o.exclusive === true));
   if (c) checks.push(...await laneAccountChecks(o.root, o.env, c, token));
   if (c) checks.push(...await personaChecks(o.root, o.env, c, token, needs.personas, { reqs: reqFile.personas, installed }));
   const declared = o.suites.flatMap((s) => (reqFile.suites[s.id] ?? []).map((r) => ({ suite: s.id, r })));

@@ -136,7 +136,7 @@ export function notDeployedMap(checks: Check[]): Record<string, Record<string, s
  * The rows' predicted BLOCKs, per suite and case. When several rows name one case, the most upstream cause gives
  * the reason: a setting (`req:`) explains why a fixture could not be seeded, a persona why its fixtures are absent.
  */
-const CAUSE_RANK = ["req:", "persona:", "secret:", "fixture:"];
+const CAUSE_RANK = ["exclusive:", "req:", "persona:", "secret:", "fixture:"];
 const rank = (id: string) => { const i = CAUSE_RANK.findIndex((p) => id.startsWith(p)); return i < 0 ? CAUSE_RANK.length : i; };
 export function skipMap(checks: Check[]): Record<string, Record<string, string>> {
   const out: Record<string, Record<string, string>> = {};
@@ -271,6 +271,8 @@ export async function runRegressionPreflight(o: {
   requirements?: boolean;
   /** false = `--run-blocked`: run the predicted-BLOCKED cases anyway (the `skip` map stays empty). Default true. */
   skipBlocked?: boolean;
+  /** The release's exclusive wave (WX): `[EXCLUSIVE:…]` cases run instead of being recorded BLOCKED. */
+  exclusive?: boolean;
 }): Promise<RegressionPreflight> {
   const now = o.now ?? new Date();
   const required = [...new Set(o.suites.flatMap((s) => (s.requiresModules ?? []).map((e) => resolveRequiredModule(e).pascal)))];
@@ -298,7 +300,7 @@ export async function runRegressionPreflight(o: {
     let files = new Map<string, string>();
     try { files = new Map(loadManifest().suites.map((s) => [s.id, s.file])); } catch { /* manifest problems are reported above */ }
     const run = o.suites.filter((s) => !gated.has(s.id) && files.has(s.id)).map((s) => ({ id: s.id, file: files.get(s.id)! }));
-    checks.push(...await requirementChecks({ root: o.root, env: facts.env, suites: run }));
+    checks.push(...await requirementChecks({ root: o.root, env: facts.env, suites: run, exclusive: o.exclusive === true }));
   }
   const absent = notDeployedMap(checks);
   const nAbsent = Object.values(absent).reduce((n, m) => n + Object.keys(m).length, 0);
@@ -313,8 +315,12 @@ export async function runRegressionPreflight(o: {
     ? { id: "skip", status: "WARN", found: `${nCases} case(s) in ${Object.keys(predicted).length} suite(s) are recorded BLOCKED without running — each with the reason of its row above`,
         who: "me", do: "fix those rows and re-run the pre-flight before the run; --run-blocked runs them anyway", diagnose: [] }
     : { id: "skip", status: "WARN", found: `--run-blocked: ${nCases} case(s) the rows above predict will BLOCK are run anyway`, who: null, do: null, diagnose: [] });
+  // --run-blocked never runs an [EXCLUSIVE] case in a parallel wave: only --exclusive lifts that skip.
+  const exclusiveOnly: Record<string, Record<string, string>> = {};
+  if (!skipBlocked) for (const [s, m] of Object.entries(predicted))
+    for (const [id, why] of Object.entries(m)) if (why.startsWith("pre-flight exclusive:")) (exclusiveOnly[s] ??= {})[id] = why;
   return {
-    skip: skipBlocked ? predicted : {}, ...(skipBlocked ? {} : { skipDisabled: true }), notDeployed: absent,
+    skip: skipBlocked ? predicted : exclusiveOnly, ...(skipBlocked ? {} : { skipDisabled: true }), notDeployed: absent,
     for: o.for, selection: o.selection, facts, mcp, gating, secrets, changedSince, baselineRunId: baseline?.runId ?? null,
     falseFailureRisk: falseFailureRisk(changedSince, gating), accepted: o.accept ?? [], checks, verdict: isBlocking(checks) ? "NOT READY" : "READY",
   };
