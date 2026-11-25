@@ -3960,5 +3960,33 @@
       }
     },
     "seededAt": "2026-11-16T13:06:53.054Z"
+  },
+  "SB_LEGACY_HEADER_PAGE": {
+    "_inline": true,
+    "group_id": "15657234-3bf1-48d0-94e4-badbb5b27bf6",
+    "permalink": "/agent-test-sb-legacy-header"
+  },
+  "SB_STORE_EDITOR": {
+    "role_id": "c1c55781-cd18-4098-9fab-fa4991e593c0",
+    "user_id": "54e0eb3d-2bd7-4e89-9442-01e5f653777f"
+  },
+  "SB_THEME_EDITOR_NOPUBLISH": {
+    "role_id": "ae355358-3405-477b-9ce5-2e604f3be308",
+    "user_id": "d7b60ebd-204a-403a-a98f-e13f13f4ae7b"
+  },
+  "SB_THEME_B2B": {
+    "publication_before": 26,
+    "publication_after": 27,
+    "publication_restored": null,
+    "catalog_hash": "96e0af86",
+    "found_absent_files": [
+      "templates/product.agent-test-sb.json"
+    ],
+    "rule_product_id": "5337d27f-b6bc-422c-bc6c-cec062d38f7c",
+    "rule_product_sku": "GC257373",
+    "rule_product_name": "Eddie Bauer Gift Cards - Email Delivery",
+    "control_product_id": "08c33cfc9f664426a52fac8882da2df0",
+    "control_product_sku": "566903892",
+    "control_product_name": "Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier"
   }
 }

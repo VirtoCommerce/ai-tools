@@ -5,8 +5,9 @@ import os from "node:os";
 import path from "node:path";
 import * as m from "../vc-secrets.mjs";
 import * as cache from "../vc-secrets-cache.mjs";
-import { tmpDirs, lockTest } from "../test-support.mjs";
-import { scopedPaths, OAUTH_DECL, credHex, d1Config, d1LiveRun, DECL_IDENTITY } from "../test-fixtures.mjs";
+import { pathPresent } from "./util.mjs";
+import { UNREACHABLE_POWERSHELL, tmpDirs, lockTest } from "../test-support.mjs";
+import { scopedPaths, OAUTH_DECL, credHex, d1Config, d1LiveRun, DECL_IDENTITY, denyFs } from "../test-fixtures.mjs";
 
 test("an oauth entry key is a full three-segment key the read builder accepts", () => {
     const keys = m.oauthEntryKeys("ado", { scope: "project" }, { projectId: "p1" });
@@ -350,10 +351,25 @@ test("oauthLaunchDeps.readCache: a corrupt stored entry is named, not silently t
     assert.deepEqual(await deps.readCache(), { state: "absent" });
     assert.equal(stderr.length, 1, `expected exactly one notice, got ${JSON.stringify(stderr)}`);
     assert.match(stderr[0], /not readable JSON/);
+    // The refresh entry is the one nothing re-creates on its own: the launch then stops and asks for the login
+    // verb, so the notice names it instead of promising a sign-in.
+    assert.equal(stderr[0], "vc-secrets: the stored entry for \"oauth-azure-mcp-refresh\" is not readable JSON "
+        + "-- treating it as absent; run \"vc-secrets login azure-mcp\" to sign in\n");
     // The reason parseEntry returns null instead of throwing: node embeds the first ten characters
     // of its input in a JSON SyntaxError, and that input is a keystore blob. A notice built from
     // the rethrown message would have carried a token prefix into the developer's terminal.
     assert.doesNotMatch(stderr[0], /ZZCORRUPTSENTINELZZ/, "no byte of the stored value may appear");
+});
+
+test("oauthLaunchDeps.readCache: a corrupt ACCESS entry beside a good refresh entry says the launch will exchange", async (t) => {
+    // Nothing is lost but the access token, and the launch makes the exchange itself, so there is no login to
+    // ask for. The wording is storeAccessEntry's.
+    const stderr = mockStderr(t);
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "keychain",
+        run: async (spec) => (spec.args.at(-2).endsWith("-refresh") ? refreshBlob() : "ZZCORRUPTSENTINELZZ{{{") });
+    assert.deepEqual(await deps.readCache(), { state: "needs-refresh", refreshToken: "r1" });
+    assert.deepEqual(stderr, ["vc-secrets: the stored entry for \"oauth-azure-mcp-access\" is not readable JSON "
+        + "-- treating it as absent; a launch will exchange one\n"]);
 });
 
 test("oauthLaunchDeps.writeCache: a renewal that issues no new refresh token leaves the stored one alone", async () => {
@@ -365,11 +381,9 @@ test("oauthLaunchDeps.writeCache: a renewal that issues no new refresh token lea
     // `write` here receives the full three-segment keystore key oauthEntryKeys produces, so the
     // value that must appear is LAUNCH_KEYS.access.
     const written = [];
-    // A throwaway XDG_CONFIG_HOME although this test asserts nothing about markers: writeCache
-    // clears the oversize marker on the success path this test drives, so without an env here the
-    // rmSync lands in the DEVELOPER'S OWN config directory. It survives only because the deletion
-    // of an absent file is swallowed, which is a property of clearOversizeMarker rather than of
-    // this fixture.
+    // A throwaway XDG_CONFIG_HOME although this test asserts nothing about the keystore: every store
+    // here goes through the injected `write`, but a seam left unstubbed would otherwise reach the
+    // DEVELOPER'S OWN config directory.
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-write-"));
     tmpDirs.push(dir);
     const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "keychain",
@@ -411,59 +425,6 @@ test("oauthLaunchDeps.writeCache: a failed refresh write clears both entries, so
     await assert.rejects(() => deps.writeCache({ accessToken: "a2", refreshToken: "r2",
         expiresAt: 9e15, obtainedAt: 1, lifetimeMs: 3600_000, uptimeAtIssue: 1 }));
     assert.deepEqual(removed, [LAUNCH_KEYS.access, LAUNCH_KEYS.refresh]);
-});
-
-test("oauthLaunchDeps.writeCache: an oversize access entry is recorded on the renewal path too", async () => {
-    // This is the path where an oversize entry actually HURTS. RENEWAL_TICK_MS fires every five
-    // minutes and the tick decides from the STORE, so an access entry that never lands means an
-    // exchange -- and, since Entra rotates on use, a refresh-token rotation -- every five minutes
-    // for as long as the session runs. Before the marker that was one line on fd 2 per tick and
-    // nothing that said the condition was permanent.
-    //
-    // Real file IO against a throwaway XDG_CONFIG_HOME rather than a double: the seam here is `env`,
-    // and driving the actual writer is what proves the path it computes is the one doctor reads.
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-marker-renew-"));
-    tmpDirs.push(dir);
-    const env = { XDG_CONFIG_HOME: dir, USER: "u" };
-    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "wcm", env,
-        write: async (key) => {
-            if (key.endsWith("-access")) {
-                throw Object.assign(new m.VcSecretsError("too large for Credential Manager"), { toolExitCode: 4 });
-            }
-        } });
-    await deps.writeCache({ accessToken: "a2", refreshToken: "r2", expiresAt: 9e15,
-        obtainedAt: 1, lifetimeMs: 3600_000, uptimeAtIssue: 1 });
-    const marker = m.readOversizeMarker(LAUNCH_KEYS.access, env);
-    assert.equal(marker.backend, "wcm");
-    assert.equal(marker.limit, m.WCM_BLOB_LIMIT);
-    assert.equal(marker.key, LAUNCH_KEYS.access);
-});
-
-test("oauthLaunchDeps.writeCache: a transient access failure leaves no marker, and a success clears one", async () => {
-    // The two halves that keep the marker honest, driven through the real writer in one test
-    // because they are the same claim from both sides: only a deterministic failure may record, and
-    // any success must erase. Recording unconditionally, or never clearing, both leave doctor
-    // reporting a permanent problem that is not there -- and both look identical from a green run.
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-marker-clear-"));
-    tmpDirs.push(dir);
-    const env = { XDG_CONFIG_HOME: dir, USER: "u" };
-    const fresh = { accessToken: "a2", refreshToken: "r2", expiresAt: 9e15,
-        obtainedAt: 1, lifetimeMs: 3600_000, uptimeAtIssue: 1 };
-
-    const transient = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "wcm", env,
-        write: async (key) => {
-            if (key.endsWith("-access")) { throw new m.VcSecretsError("the keystore was busy"); }
-        } });
-    await transient.writeCache(fresh);
-    assert.equal(m.readOversizeMarker(LAUNCH_KEYS.access, env), null,
-        "a failure that can succeed next time may not be recorded as permanent");
-
-    m.recordOversizeMarker(LAUNCH_KEYS.access, { backend: "wcm", bytes: 2588, limit: m.WCM_BLOB_LIMIT, env });
-    const ok = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "wcm", env,
-        write: async () => {} });
-    await ok.writeCache(fresh);
-    assert.equal(m.readOversizeMarker(LAUNCH_KEYS.access, env), null,
-        "a successful write must erase the marker, or doctor reports a problem that is fixed");
 });
 
 test("oauthLaunchDeps.writeCache: a delete that fails too does not displace the write error", async () => {
@@ -516,13 +477,10 @@ test("oauthLaunchDeps.writeCache: a failed ACCESS write is a warning, not a lost
 
         return Buffer.byteLength(str);
     });
-    // A throwaway XDG_CONFIG_HOME although this test asserts nothing about markers: the `write`
-    // double injected here throws a plain `Error`, which carries no toolExitCode, so as this
-    // fixture stands it never reaches the marker. It is the cost of being
-    // wrong that decides this: change that error to an exit 4, or widen the marker's condition, and
-    // without an env here the marker write lands in the DEVELOPER'S OWN config directory -- measured,
-    // by mutating exactly that condition, which left a real file under ~/.config/vc-secrets/state.
-    // The same omission on the delete seam once destroyed a live sign-in from a green run.
+    // A throwaway XDG_CONFIG_HOME although this test asserts nothing about the keystore: the `write`
+    // double injected here is the only store this path reaches, but a seam left unstubbed would
+    // otherwise land in the DEVELOPER'S OWN config directory. The same omission on the delete seam
+    // once destroyed a live sign-in from a green run.
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-warn-"));
     tmpDirs.push(dir);
     const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "keychain",
@@ -532,6 +490,571 @@ test("oauthLaunchDeps.writeCache: a failed ACCESS write is a warning, not a lost
         obtainedAt: 1, lifetimeMs: 3600_000, uptimeAtIssue: 1 });
     assert.equal(stderr.length, 1, `expected exactly one stderr warning, got ${stderr.length}`);
     assert.match(stderr[0], /the access entry could not be stored \(full\); the next launch will exchange one/);
+});
+
+// The dpapi store: the pair lives in <name>.dpapi files under a throwaway XDG_CONFIG_HOME, and the
+// PowerShell calls are one injected `run` that tells the two kinds apart. A file's bytes ARE its
+// plaintext here (the double's "ciphertext"), except a file starting UNDECRYPTABLE, which DPAPI refuses.
+// `ops` records every spawn in order, so a test can say what was NOT run as well as what was.
+function dpapiStore() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-dpapi-launch-"));
+    tmpDirs.push(dir);
+    const env = { XDG_CONFIG_HOME: dir, USER: "u", VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL };
+    const putFile = (key, text) => {
+        const file = m.dpapiKeyToPath(key, env);
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, Buffer.from(text, "utf8"));
+    };
+    const ops = [];
+    const run = (legacy = {}) => async (spec, opts) => {
+        if (opts?.stdinValue !== undefined && spec.extraEnv === undefined) {
+            const input = JSON.parse(opts.stdinValue);
+            ops.push({ op: "unprotect", keys: Object.keys(input) });
+            const out = {};
+            for (const [key, b64] of Object.entries(input)) {
+                const text = Buffer.from(b64, "base64").toString("utf8");
+                out[key] = text.startsWith("UNDECRYPTABLE") ? { err: 13 } : { ok: credHex(text) };
+            }
+
+            return JSON.stringify(out);
+        }
+        const key = spec.extraEnv.VC_SECRETS_NAME;
+        if (!spec.captureStdout) {
+            ops.push({ op: "wcm-delete", key });
+
+            return "";
+        }
+        ops.push({ op: "wcm-read", key });
+        if (!Object.hasOwn(legacy, key)) {
+            throw Object.assign(new m.VcSecretsError("not found"), { toolExitCode: 3 });
+        }
+
+        return credHex(legacy[key]);
+    };
+
+    return { dir, env, putFile, ops, run };
+}
+
+test("dpapiStore: a call made with the default runner cannot start the real PowerShell", async () => {
+    // The PowerShell name is read from the env object a function is handed, so the guard has to be in it.
+    const { env } = dpapiStore();
+    const failure = await m.unprotectManyIo({ blobs: new Map([["vc-secrets:user:oauth-a-refresh", Buffer.from("x")]]), env }).then(() => null, (e) => e);
+    assert.ok(failure?.message.includes(UNREACHABLE_POWERSHELL), `the start was ${failure?.message}, not the guard's path`);
+});
+
+// Issued in 1970 with a one-second life: past its margin however the clock reads.
+const expiredAccessBlob = () => accessBlob({ obtainedAt: 1, expiresAt: 1, lifetimeMs: 1000 });
+
+const FRESH = { accessToken: "a2", refreshToken: "r2", expiresAt: 9e15, obtainedAt: 1, lifetimeMs: 3600_000, uptimeAtIssue: 1 };
+
+// Only fd 2 is captured: writeFileSync, which a test uses to lay its files down, goes through writeSync too.
+const mockStderr = (t) => {
+    const stderr = [];
+    const real = fs.writeSync;
+    t.mock.method(fs, "writeSync", (fd, str, ...rest) => {
+        if (fd !== 2) {
+            return real(fd, str, ...rest);
+        }
+        stderr.push(str);
+
+        return Buffer.byteLength(str);
+    });
+
+    return stderr;
+};
+
+test("oauthLaunchDeps: dpapi reads the pair from files and decrypts both in one PowerShell call", async () => {
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.refresh, refreshBlob());
+    fx.putFile(LAUNCH_KEYS.access, accessBlob());
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env, run: fx.run() });
+
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a1" });
+    assert.deepEqual(fx.ops, [{ op: "unprotect", keys: [LAUNCH_KEYS.refresh, LAUNCH_KEYS.access] }],
+        "one spawn for both entries, and no Credential Manager read");
+
+    const expired = dpapiStore();
+    expired.putFile(LAUNCH_KEYS.refresh, refreshBlob());
+    expired.putFile(LAUNCH_KEYS.access, expiredAccessBlob());
+    const stale = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: expired.env, run: expired.run() });
+    assert.deepEqual(await stale.readCache(), { state: "needs-refresh", refreshToken: "r1" });
+});
+
+test("oauthLaunchDeps: dpapi with no refresh file reads the legacy Credential Manager pair", async () => {
+    const fx = dpapiStore();
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run({ [LAUNCH_KEYS.refresh]: refreshBlob(), [LAUNCH_KEYS.access]: accessBlob() }) });
+
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a1" });
+    assert.deepEqual(fx.ops, [{ op: "wcm-read", key: LAUNCH_KEYS.refresh }, { op: "wcm-read", key: LAUNCH_KEYS.access }]);
+});
+
+test("oauthLaunchDeps: dpapi with neither a file nor a legacy entry is absent", async () => {
+    const fx = dpapiStore();
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env, run: fx.run() });
+
+    assert.deepEqual(await deps.readCache(), { state: "absent" });
+    assert.deepEqual(fx.ops, [{ op: "wcm-read", key: LAUNCH_KEYS.refresh }], "no access read once the refresh entry is gone");
+});
+
+test("oauthLaunchDeps: an orphan access file without a refresh file is ignored", async () => {
+    // The refresh file alone decides the store. An access file left beside a Credential Manager refresh
+    // entry would pair the legacy refresh token with an access token of a possibly different principal.
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-orphan" }));
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run({ [LAUNCH_KEYS.refresh]: refreshBlob(), [LAUNCH_KEYS.access]: accessBlob({ accessToken: "a-legacy" }) }) });
+
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a-legacy" });
+    assert.ok(fx.ops.every((o) => o.op === "wcm-read"), `the orphan was decrypted: ${JSON.stringify(fx.ops)}`);
+});
+
+test("oauthLaunchDeps: an entry DPAPI cannot decrypt is absent, named once, and the legacy store is not consulted", async (t) => {
+    const stderr = mockStderr(t);
+    const legacy = { [LAUNCH_KEYS.refresh]: refreshBlob(), [LAUNCH_KEYS.access]: accessBlob() };
+
+    const refreshRefused = dpapiStore();
+    refreshRefused.putFile(LAUNCH_KEYS.refresh, "UNDECRYPTABLE-SENTINEL");
+    refreshRefused.putFile(LAUNCH_KEYS.access, accessBlob());
+    const a = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: refreshRefused.env,
+        run: refreshRefused.run(legacy) });
+    assert.deepEqual(await a.readCache(), { state: "absent" });
+    // Nothing signs in on its own: a launch with no refresh token stops and asks for the login verb, so the
+    // notice names it rather than promising an automatic sign-in.
+    assert.deepEqual(stderr, ["vc-secrets: the stored entry for \"oauth-azure-mcp-refresh\" could not be decrypted "
+        + "(win32 error 13) -- treating it as absent; run \"vc-secrets login azure-mcp\" to sign in\n"]);
+    assert.ok(refreshRefused.ops.every((o) => o.op === "unprotect"), "the file decides: no Credential Manager read");
+
+    stderr.length = 0;
+    const accessRefused = dpapiStore();
+    accessRefused.putFile(LAUNCH_KEYS.refresh, refreshBlob());
+    accessRefused.putFile(LAUNCH_KEYS.access, "UNDECRYPTABLE-SENTINEL");
+    const b = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: accessRefused.env,
+        run: accessRefused.run(legacy) });
+    assert.deepEqual(await b.readCache(), { state: "needs-refresh", refreshToken: "r1" });
+    // An undecryptable access file beside a good refresh file costs one exchange, which the launch makes
+    // itself, so this notice keeps the exchange wording and has no login to ask for.
+    assert.deepEqual(stderr, ["vc-secrets: the stored entry for \"oauth-azure-mcp-access\" could not be decrypted "
+        + "(win32 error 13) -- treating it as absent; a launch will exchange one\n"]);
+    assert.doesNotMatch(stderr[0], /SENTINEL/, "the notice names the entry, never its bytes");
+    assert.ok(accessRefused.ops.every((o) => o.op === "unprotect"));
+});
+
+test("oauthLaunchDeps: a dpapi entry that is not readable JSON names the login verb for the refresh entry only", async (t) => {
+    const stderr = mockStderr(t);
+    const refreshBad = dpapiStore();
+    refreshBad.putFile(LAUNCH_KEYS.refresh, "ZZCORRUPTSENTINELZZ{{{");
+    refreshBad.putFile(LAUNCH_KEYS.access, accessBlob());
+    const a = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: refreshBad.env, run: refreshBad.run() });
+    assert.deepEqual(await a.readCache(), { state: "absent" });
+    assert.deepEqual(stderr, ["vc-secrets: the stored entry for \"oauth-azure-mcp-refresh\" is not readable JSON "
+        + "-- treating it as absent; run \"vc-secrets login azure-mcp\" to sign in\n"]);
+
+    stderr.length = 0;
+    const accessBad = dpapiStore();
+    accessBad.putFile(LAUNCH_KEYS.refresh, refreshBlob());
+    accessBad.putFile(LAUNCH_KEYS.access, "ZZCORRUPTSENTINELZZ{{{");
+    const b = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: accessBad.env, run: accessBad.run() });
+    assert.deepEqual(await b.readCache(), { state: "needs-refresh", refreshToken: "r1" });
+    assert.deepEqual(stderr, ["vc-secrets: the stored entry for \"oauth-azure-mcp-access\" is not readable JSON "
+        + "-- treating it as absent; a launch will exchange one\n"]);
+    assert.doesNotMatch(stderr[0], /SENTINEL/, "the notice names the entry, never its bytes");
+});
+
+test("oauthLaunchDeps: after migrating, a successful refresh write deletes the legacy pair", async () => {
+    const fx = dpapiStore();
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run({ [LAUNCH_KEYS.refresh]: refreshBlob(), [LAUNCH_KEYS.access]: expiredAccessBlob() }),
+        write: async (key) => { fx.ops.push({ op: "write", key }); } });
+
+    assert.equal((await deps.readCache()).state, "needs-refresh");
+    fx.ops.length = 0;
+    await deps.writeCache(FRESH);
+    assert.deepEqual(fx.ops, [{ op: "write", key: LAUNCH_KEYS.refresh },
+        { op: "wcm-delete", key: LAUNCH_KEYS.access }, { op: "wcm-delete", key: LAUNCH_KEYS.refresh },
+        { op: "write", key: LAUNCH_KEYS.access }], "legacy goes only after the refresh file is in place");
+
+    fx.ops.length = 0;
+    await deps.writeCache(FRESH);
+    assert.deepEqual(fx.ops.map((o) => o.op), ["write", "write"], "migration is done once: the next renewal deletes nothing");
+});
+
+test("oauthLaunchDeps: a failed legacy delete after migrating does not fail the renewal", async (t) => {
+    const stderr = mockStderr(t);
+    const fx = dpapiStore();
+    const run = fx.run({ [LAUNCH_KEYS.refresh]: refreshBlob() });
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: async (spec, opts) => {
+            if (spec.captureStdout === false) {
+                throw new m.VcSecretsError("Credential Manager is busy");
+            }
+
+            return run(spec, opts);
+        },
+        write: async () => {} });
+    await deps.readCache();
+    await assert.doesNotReject(() => deps.writeCache(FRESH));
+    assert.equal(stderr.length, 2, "one line for each entry the delete failed on");
+});
+
+test("oauthLaunchDeps: a renewal that did not migrate deletes nothing in Credential Manager", async () => {
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.refresh, refreshBlob());
+    fx.putFile(LAUNCH_KEYS.access, expiredAccessBlob());
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run(), write: async (key) => { fx.ops.push({ op: "write", key }); } });
+
+    assert.equal((await deps.readCache()).state, "needs-refresh");
+    await deps.writeCache(FRESH);
+    assert.deepEqual(fx.ops.map((o) => o.op), ["unprotect", "write", "write"]);
+});
+
+test("oauthLaunchDeps: a migration renewal without a new refresh token moves the legacy refresh token into the file", async () => {
+    // RFC 6749 section 6 lets the refresh grant omit refresh_token. The legacy token is then still the live
+    // one, and the next read looks at the refresh FILE alone: an access file with no refresh file beside it
+    // is ignored, so every launch and every renewal tick would exchange again, for good.
+    const fx = dpapiStore();
+    const written = [];
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run({ [LAUNCH_KEYS.refresh]: refreshBlob(), [LAUNCH_KEYS.access]: expiredAccessBlob() }),
+        write: async (key, value) => { fx.ops.push({ op: "write", key }); written.push({ key, value }); } });
+
+    assert.equal((await deps.readCache()).state, "needs-refresh");
+    fx.ops.length = 0;
+    await deps.writeCache({ ...FRESH, refreshToken: undefined });
+    assert.deepEqual(fx.ops, [{ op: "write", key: LAUNCH_KEYS.refresh },
+        { op: "wcm-delete", key: LAUNCH_KEYS.access }, { op: "wcm-delete", key: LAUNCH_KEYS.refresh },
+        { op: "write", key: LAUNCH_KEYS.access }], "refresh file first, then the legacy pair goes, then the access entry");
+    assert.equal(cache.parseEntry(written[0].value).refreshToken, "r1", "the legacy token, not an undefined one");
+
+    fx.ops.length = 0;
+    await deps.writeCache({ ...FRESH, refreshToken: undefined });
+    assert.deepEqual(fx.ops.map((o) => o.op), ["write"], "migration is done: only the access entry is written now");
+});
+
+test("oauthLaunchDeps: a reader that migrated at one read and finds a neighbour's refresh file at the next does not write the legacy token over it", async () => {
+    // One launcher lives across many reads: it reads the legacy pair (migrating), a neighbour then publishes a
+    // refresh file with a NEW token, and the next read finds that file. If the first read's migration state
+    // survived, a renewal answered without a refresh_token (RFC 6749 section 6) would "carry" the legacy token
+    // into the file, replacing the live one with a token Entra rotated away: loud only at the next exchange.
+    const fx = dpapiStore();
+    const legacy = cache.serializeRefresh({ refreshToken: "r-legacy", ...DECL_IDENTITY });
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run({ [LAUNCH_KEYS.refresh]: legacy, [LAUNCH_KEYS.access]: expiredAccessBlob() }),
+        write: async (key, value) => { fx.putFile(key, value); } });
+
+    assert.deepEqual(await deps.readCache(), { state: "needs-refresh", refreshToken: "r-legacy" }, "read from the legacy pair");
+    fx.putFile(LAUNCH_KEYS.refresh, cache.serializeRefresh({ refreshToken: "r-neighbour", ...DECL_IDENTITY }));
+    assert.deepEqual(await deps.readCache(), { state: "needs-refresh", refreshToken: "r-neighbour" }, "read from the file");
+    await deps.writeCache({ ...FRESH, refreshToken: undefined });
+
+    const stored = cache.parseEntry(fs.readFileSync(m.dpapiKeyToPath(LAUNCH_KEYS.refresh, fx.env), "utf8"));
+    assert.equal(stored.refreshToken, "r-neighbour", "the neighbour's token is still the one in the file");
+});
+
+test("oauthLaunchDeps: a refresh file found only by the second look is not paired with an access file the batch saw before the writer removed it", async () => {
+    // The batch reads the files in node and then spends one to three seconds in PowerShell and Credential
+    // Manager. In that window a migrating writer removes the orphan access file and publishes its refresh file.
+    // Both stores read as empty, the reader finds the new refresh file on its second look, and the batch still
+    // says the access file was there: served beside the new refresh token it would be another sign-in's access
+    // token, accepted as valid.
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.refresh, cache.serializeRefresh({ refreshToken: "r-new", ...DECL_IDENTITY }));
+    const seed = {
+        files: new Map([[LAUNCH_KEYS.refresh, false], [LAUNCH_KEYS.access, true]]),
+        dpapi: new Map([[LAUNCH_KEYS.access, { ok: credHex(accessBlob({ accessToken: "a-orphan" })) }]]),
+        wcm: new Map([[LAUNCH_KEYS.refresh, { err: 1168 }], [LAUNCH_KEYS.access, { err: 1168 }]]),
+    };
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env, seed,
+        run: fx.run() });
+
+    const result = await deps.readCache();
+    assert.doesNotMatch(JSON.stringify(result), /a-orphan/, "the orphan access token is nowhere in the answer");
+    assert.deepEqual(result, { state: "needs-refresh", refreshToken: "r-new" });
+});
+
+test("oauthLaunchDeps: a legacy refresh token that cannot be carried into the file is left where it is", async (t) => {
+    // Not the dead-token case writeCache clears both stores for: no new token was issued, so the legacy one
+    // is still live, and deleting it would sign the developer out over a write that merely failed.
+    const stderr = mockStderr(t);
+    const fx = dpapiStore();
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run({ [LAUNCH_KEYS.refresh]: refreshBlob() }),
+        write: async (key) => { fx.ops.push({ op: "write", key }); throw new Error("rename failed: EPERM"); } });
+
+    await deps.readCache();
+    fx.ops.length = 0;
+    await assert.doesNotReject(() => deps.writeCache({ ...FRESH, refreshToken: undefined }));
+    assert.deepEqual(fx.ops, [{ op: "write", key: LAUNCH_KEYS.refresh }], "nothing deleted, no access entry beside no refresh file");
+    assert.equal(stderr.length, 1);
+    assert.match(stderr[0], /"oauth-azure-mcp-refresh"/);
+    assert.match(stderr[0], /EPERM/);
+});
+
+// A write seam that puts the file down, as the real one does, so a later read sees what was published.
+const publishingWrite = (fx) => async (key, value) => { fx.ops.push({ op: "write", key }); fx.putFile(key, value); };
+
+const MIGRATION_LEGACY = () => ({ [LAUNCH_KEYS.refresh]: refreshBlob(), [LAUNCH_KEYS.access]: expiredAccessBlob() });
+
+test("oauthLaunchDeps: a migration whose access write fails leaves no orphan access file beside the new refresh file", async (t) => {
+    // An access file with no refresh file is ignored by a read. Publishing the refresh file makes it the
+    // pair's access half, so one left over from another sign-in was served as valid beside the migrated token
+    // whenever the access write after it failed.
+    mockStderr(t);
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-orphan" }));
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run(MIGRATION_LEGACY()),
+        write: async (key, value) => {
+            if (key === LAUNCH_KEYS.access) {
+                throw new Error("disk full");
+            }
+            await publishingWrite(fx)(key, value);
+        } });
+
+    assert.equal((await deps.readCache()).state, "needs-refresh");
+    await deps.writeCache(FRESH);
+    assert.deepEqual(await deps.readCache(), { state: "needs-refresh", refreshToken: "r2" },
+        "the orphan is not the access half of the migrated pair");
+});
+
+test("oauthLaunchDeps: a reader between the refresh file and the legacy deletes does not get an orphan access token", async () => {
+    // The legacy deletes are PowerShell calls and take seconds, and another launch may read the store in that
+    // window. The orphan has to be gone before the refresh file is, not after the deletes.
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-orphan" }));
+    const base = fx.run(MIGRATION_LEGACY());
+    const seen = [];
+    const reader = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env, run: base,
+        write: publishingWrite(fx) });
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: async (spec, opts) => {
+            if (spec.captureStdout === false) {
+                seen.push(await reader.readCache());
+            }
+
+            return base(spec, opts);
+        },
+        write: publishingWrite(fx) });
+
+    await deps.readCache();
+    await deps.writeCache(FRESH);
+    assert.deepEqual(seen, [{ state: "needs-refresh", refreshToken: "r2" }, { state: "needs-refresh", refreshToken: "r2" }],
+        "a read at each legacy delete, none of them served the orphan");
+});
+
+test("oauthLaunchDeps: an orphan access file that cannot be removed stops a carried migration before the refresh file", async (t) => {
+    // Handled as a failed refresh write is: no new token was issued, so the legacy pair stays the live copy and
+    // nothing is cleared or thrown.
+    const stderr = mockStderr(t);
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-orphan" }));
+    denyFs(t, "rmSync", m.dpapiKeyToPath(LAUNCH_KEYS.access, fx.env));
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run(MIGRATION_LEGACY()), write: publishingWrite(fx), sleep: async () => {} });
+
+    assert.equal((await deps.readCache()).state, "needs-refresh");
+    fx.ops.length = 0;
+    await assert.doesNotReject(() => deps.writeCache({ ...FRESH, refreshToken: undefined }));
+    assert.deepEqual(fx.ops, [], "no refresh file written, nothing deleted from Credential Manager");
+    assert.equal(pathPresent(m.dpapiKeyToPath(LAUNCH_KEYS.refresh, fx.env), "the refresh file"), false);
+    assert.equal(stderr.length, 1);
+    assert.match(stderr[0], /"oauth-azure-mcp-refresh"/);
+    assert.match(stderr[0], /EACCES/);
+    assert.match(stderr[0], /stays in Credential Manager/);
+    assert.equal((await deps.readCache()).state, "needs-refresh", "the legacy pair is still the store");
+});
+
+test("oauthLaunchDeps: an orphan access file that cannot be removed fails a migration holding a new refresh token as a failed write", async (t) => {
+    mockStderr(t);
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-orphan" }));
+    denyFs(t, "rmSync", m.dpapiKeyToPath(LAUNCH_KEYS.access, fx.env));
+    const run = fx.run(MIGRATION_LEGACY());
+    // The dead-token branch removes the files through the default `remove`, which takes its own sleep.
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run, write: publishingWrite(fx), sleep: async () => {},
+        remove: m.deleteEntryIo("dpapi", fx.env, { run, sleep: async () => {} }) });
+
+    assert.equal((await deps.readCache()).state, "needs-refresh");
+    fx.ops.length = 0;
+    await assert.rejects(() => deps.writeCache(FRESH),
+        (e) => e instanceof m.VcSecretsError && /oauth-azure-mcp-refresh/.test(e.message)
+            && /vc-secrets login azure-mcp/.test(e.message));
+    assert.equal(fx.ops.some((o) => o.op === "write"), false, "the refresh file was never published");
+    assert.equal(pathPresent(m.dpapiKeyToPath(LAUNCH_KEYS.refresh, fx.env), "the refresh file"), false);
+    assert.deepEqual(fx.ops.filter((o) => o.op === "wcm-delete").map((o) => o.key),
+        [LAUNCH_KEYS.access, LAUNCH_KEYS.refresh], "the dead-token branch: the legacy pair is cleared too");
+});
+
+test("oauthLaunchDeps: a transient lock on the orphan access file is waited out and the migration completes", async (t) => {
+    // The removal runs with a NEW refresh token in hand, so a failure there took the dead-token branch: both stores
+    // cleared and the developer signed out, over a lock an antivirus scan or an indexer held for a moment.
+    mockStderr(t);
+    const fx = dpapiStore();
+    const orphan = m.dpapiKeyToPath(LAUNCH_KEYS.access, fx.env);
+    fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-orphan" }));
+    const real = fs.rmSync;
+    let busy = 1;
+    t.mock.method(fs, "rmSync", (p, ...rest) => {
+        if (String(p) === orphan && busy > 0) {
+            busy -= 1;
+            throw Object.assign(new Error(`EBUSY: resource busy or locked, rmSync '${p}'`), { code: "EBUSY" });
+        }
+
+        return real(p, ...rest);
+    });
+    const sleeps = [];
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: fx.run(MIGRATION_LEGACY()), sleep: async (ms) => { sleeps.push(ms); },
+        write: async (key, value) => {
+            if (key === LAUNCH_KEYS.refresh) {
+                assert.equal(pathPresent(orphan, "the orphan access file"), false,
+                    "the orphan is removed before the refresh file is published");
+            }
+            await publishingWrite(fx)(key, value);
+        } });
+
+    assert.equal((await deps.readCache()).state, "needs-refresh");
+    fx.ops.length = 0;
+    await assert.doesNotReject(() => deps.writeCache(FRESH));
+    assert.deepEqual(sleeps, [50], "one wait, then the removal went through");
+    assert.equal(fx.ops.find((o) => o.op === "write")?.key, LAUNCH_KEYS.refresh, "the refresh file was published");
+    assert.equal(pathPresent(m.dpapiKeyToPath(LAUNCH_KEYS.refresh, fx.env), "the refresh file"), true);
+    assert.deepEqual(await deps.readCache(), { state: "needs-refresh", refreshToken: "r2" },
+        "the migrated pair is read, not the orphan (which would read as a valid access token)");
+});
+
+test("oauthLaunchDeps: a legacy entry that cannot be removed after migrating is named once, with the remedy", async (t) => {
+    // Best effort, so the renewal succeeds; but the entry is never retried, and nothing else says it is there.
+    // Exit 3 is the ordinary "no such entry" and says nothing.
+    const stderr = mockStderr(t);
+    const fx = dpapiStore();
+    const base = fx.run(MIGRATION_LEGACY());
+    const failing = (code) => async (spec, opts) => {
+        if (spec.captureStdout === false && spec.extraEnv.VC_SECRETS_NAME === LAUNCH_KEYS.refresh) {
+            throw Object.assign(new m.VcSecretsError("Credential Manager is busy\nsecond line"), { toolExitCode: code });
+        }
+
+        return base(spec, opts);
+    };
+    const busy = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env,
+        run: failing(1), write: publishingWrite(fx) });
+    await busy.readCache();
+    await assert.doesNotReject(() => busy.writeCache(FRESH));
+    assert.equal(stderr.length, 1, `expected one line, got ${JSON.stringify(stderr)}`);
+    assert.match(stderr[0], /^vc-secrets: the previous Credential Manager entry "oauth-azure-mcp-refresh" could not be removed \(Credential Manager is busy\?second line\)/);
+    assert.match(stderr[0], /"vc-secrets logout azure-mcp" followed by a new sign-in/);
+    assert.equal(stderr[0].indexOf("\n"), stderr[0].length - 1, "one line, however many the error message held");
+
+    stderr.length = 0;
+    const absent = dpapiStore();
+    const baseAbsent = absent.run(MIGRATION_LEGACY());
+    const gone = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: absent.env,
+        run: async (spec, opts) => {
+            if (spec.captureStdout === false) {
+                throw Object.assign(new m.VcSecretsError("no such entry"), { toolExitCode: 3 });
+            }
+
+            return baseAbsent(spec, opts);
+        },
+        write: publishingWrite(absent) });
+    await gone.readCache();
+    await gone.writeCache(FRESH);
+    assert.deepEqual(stderr, [], "exit 3 means already absent");
+});
+
+test("oauthLaunchDeps: a dpapi write with no write seam uses the injected run for the protect call", async () => {
+    // `run` alone is enough to keep PowerShell out of a test: the default writer takes it, so a test that
+    // injects the one seam cannot start a real protect through the other.
+    const fx = dpapiStore();
+    const protects = [];
+    const run = async (spec) => {
+        if (Buffer.from(spec.args[spec.args.indexOf("-EncodedCommand") + 1], "base64").toString("utf16le") === m.PS_DPAPI_PROTECT) {
+            protects.push(spec.extraEnv.VC_SECRETS_NAME);
+
+            return Buffer.from("CIPHER").toString("base64");
+        }
+        throw new Error("only the protect script may run on a renewal that migrates nothing");
+    };
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env, run });
+
+    await deps.writeCache(FRESH);
+    assert.deepEqual(protects, [LAUNCH_KEYS.refresh, LAUNCH_KEYS.access]);
+    assert.equal(fs.readFileSync(m.dpapiKeyToPath(LAUNCH_KEYS.refresh, fx.env), "utf8"), "CIPHER");
+    assert.equal(fs.readFileSync(m.dpapiKeyToPath(LAUNCH_KEYS.access, fx.env), "utf8"), "CIPHER");
+});
+
+test("oauthLaunchDeps: a refresh token that cannot be stored clears the files and the legacy entries, then names the remedy", async () => {
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.refresh, refreshBlob());
+    fx.putFile(LAUNCH_KEYS.access, accessBlob());
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env, run: fx.run(),
+        write: async () => { throw new Error("rename failed: EPERM"); } });
+
+    await assert.rejects(() => deps.writeCache(FRESH),
+        (e) => e instanceof m.VcSecretsError && /oauth-azure-mcp-refresh/.test(e.message)
+            && /vc-secrets login azure-mcp/.test(e.message));
+    assert.equal(pathPresent(m.dpapiKeyToPath(LAUNCH_KEYS.refresh, fx.env), "the refresh file"), false);
+    assert.equal(pathPresent(m.dpapiKeyToPath(LAUNCH_KEYS.access, fx.env), "the access file"), false);
+    assert.deepEqual(fx.ops.filter((o) => o.op === "wcm-delete").map((o) => o.key),
+        [LAUNCH_KEYS.access, LAUNCH_KEYS.refresh], "the legacy entries go too, or the next launch would read them back");
+});
+
+test("oauthLaunchDeps: the seed answers the first dpapi readCache only", async () => {
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.refresh, refreshBlob());
+    fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-live" }));
+    const seed = { wcm: new Map(),
+        dpapi: new Map([[LAUNCH_KEYS.refresh, { ok: credHex(refreshBlob()) }],
+            [LAUNCH_KEYS.access, { ok: credHex(accessBlob({ accessToken: "a-seed" })) }]]),
+        files: new Map([[LAUNCH_KEYS.refresh, true], [LAUNCH_KEYS.access, true]]) };
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env, seed, run: fx.run() });
+
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a-seed" });
+    assert.deepEqual(fx.ops, [], "the first call was answered from the batch");
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a-live" });
+    assert.deepEqual(fx.ops.map((o) => o.op), ["unprotect"], "the second call read the files itself");
+});
+
+test("oauthLaunchDeps: a seed that found no refresh file answers from its Credential Manager outcomes", async () => {
+    const fx = dpapiStore();
+    // A file the seed did not see is not looked for: the seed is the first call's whole answer.
+    fx.putFile(LAUNCH_KEYS.refresh, refreshBlob());
+    const seed = { wcm: new Map([[LAUNCH_KEYS.refresh, { ok: credHex(refreshBlob()) }],
+        [LAUNCH_KEYS.access, { ok: credHex(accessBlob({ accessToken: "a-batch" })) }]]),
+    dpapi: new Map(), files: new Map([[LAUNCH_KEYS.refresh, false], [LAUNCH_KEYS.access, false]]) };
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env, seed, run: fx.run() });
+
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a-batch" });
+    assert.deepEqual(fx.ops, []);
+});
+
+test("oauthLaunchDeps: the seed is gone even when the first read throws", async () => {
+    // The seed is taken before anything can throw. One that survived a failed first read would answer the
+    // next one -- the re-read under the lock -- with bytes batched before the lock was asked for.
+    const fx = dpapiStore();
+    fx.putFile(LAUNCH_KEYS.refresh, refreshBlob());
+    fx.putFile(LAUNCH_KEYS.access, accessBlob({ accessToken: "a-live" }));
+    const seed = { wcm: new Map(),
+        dpapi: new Map([[LAUNCH_KEYS.refresh, { ok: credHex(refreshBlob()) }]]),
+        files: new Map([[LAUNCH_KEYS.refresh, true], [LAUNCH_KEYS.access, true]]) };
+    const real = fx.run();
+    let calls = 0;
+    const run = async (spec, opts) => {
+        calls += 1;
+        if (calls === 1) {
+            throw new m.VcSecretsError("powershell is gone");
+        }
+
+        return real(spec, opts);
+    };
+    const deps = m.oauthLaunchDeps("azure-mcp", LAUNCH_DECL, LAUNCH_CFG, { backend: "dpapi", env: fx.env, seed, run });
+
+    await assert.rejects(() => deps.readCache(), /powershell is gone/);
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a-live" },
+        "answered from the files, not from the seed the failed call had been handed");
+    assert.deepEqual(fx.ops, [{ op: "unprotect", keys: [LAUNCH_KEYS.refresh, LAUNCH_KEYS.access] }]);
 });
 
 // ---------------------------------------------------------------------------------------------

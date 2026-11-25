@@ -1,16 +1,17 @@
 // CLI layer: prompts, set/unlock/emit-config verbs, the entry point runCli; imports only from lower layers.
 
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import { VcSecretsError } from "../vc-secrets-error.mjs";
 import { clientNames, clientDescriptor, MIN_VERSION_UNKNOWN } from "../clients.mjs";
-import { defaultShimPath } from "../scripts/shim-path.mjs";
+import { clientOwning, defaultShimPath } from "../scripts/shim-path.mjs";
 
 import { forTerminal } from "./util.mjs";
 import { runTool } from "./spawn.mjs";
 import { CONFIG_NAME, loadConfig } from "./config.mjs";
 import { buildLocalWrite, cmdMigrate, detectLocalBackend, keyFor, keyToPath, keystoreFilePresent, legacyKeyToPath,
-    nameFromKey, writeLocalValue } from "./keystore.mjs";
+    nameFromKey, writeSecretValue } from "./keystore.mjs";
 import { cmdTrust, cmdUntrust, isNamespaceDecl, namespaceDeclarations, namespaceTrustProblem, readTrustState,
     requireNamespaceTrust, trustAssessment, trustNotes } from "./trust.mjs";
 import { oauthEntryKeys } from "./oauth-token.mjs";
@@ -69,7 +70,9 @@ function promptHidden(question) {
     });
 }
 
-async function cmdSet(name, cfg, { trustState = null } = {}) {
+// `prompt` and `run` are the seams for a test: the value is read here on every backend, so the one thing a
+// test must not reach -- the machine's own keystore tool -- is only ever called through `run`.
+async function cmdSet(name, cfg, { trustState = null, prompt = promptHidden, run = runTool } = {}) {
     const decl = cfg.secrets[name];
     if (!decl) {
         throw new VcSecretsError(`unknown secret "${name}" -- declare it in ${CONFIG_NAME} first`);
@@ -82,16 +85,22 @@ async function cmdSet(name, cfg, { trustState = null } = {}) {
     requireNamespaceTrust(cfg, "secret", name, trustState);
     const key = keyFor(name, decl, cfg);
     const backend = detectLocalBackend();
-    const spec = buildLocalWrite(backend, key, process.env, { tmp: backend === "gpg" });
-    if (spec.interactive) {
-        await runTool(spec);                 // macOS: security prompts on the TTY; no timer
-    } else {
-        const value = await promptHidden(`value for "${name}" (hidden): `);
-        if (!value) {
-            throw new VcSecretsError("empty value -- nothing stored");
-        }
-        await writeLocalValue(backend, key, spec, value, process.env);
+    // Read here, not left to the Keychain's own prompt: that one cuts what is typed at 128 characters and
+    // still reports success, so a long token was stored truncated and refused by the service later.
+    const value = await prompt(`value for "${name}" (hidden): `);
+    if (!value) {
+        throw new VcSecretsError("empty value -- nothing stored");
     }
+    // The keychain builder keeps an argv route for a value with a line ending, because `migrate` must be able
+    // to move one it cannot retype. The prompt cannot produce one, so reaching that route here means the
+    // value would be readable in every process listing for as long as the write runs: refuse it instead.
+    if (buildLocalWrite(backend, key, process.env, { tmp: backend === "gpg", value }).argvExposesValue) {
+        throw new VcSecretsError("value contains a line ending, which the keychain can take only as a command-line argument "
+            + "that other processes can read -- nothing stored");
+    }
+    // Attended: the person who just typed the value is at the terminal, so a Keychain unlock dialog, if one
+    // appears, is not cut off by the kill timer.
+    await writeSecretValue(key, value, { backend, run, attended: true });
     process.stderr.write(`vc-secrets: stored "${name}" (${decl.scope}) in ${backend}\n`);
 }
 
@@ -213,21 +222,32 @@ function tomlKey(name) {
     return TOML_BARE_KEY_RE.test(name) ? name : JSON.stringify(name);
 }
 
-function emitConfig(cfg, clientName) {
+// This launcher's own file: what a verify step names when no shim stands in front of it, which is only a
+// Cursor plugins/local copy -- its path is already stable, so install creates none.
+const LAUNCHER = fileURLToPath(new URL("../vc-secrets.mjs", import.meta.url));
+
+function emitConfig(cfg, clientName, env = process.env) {
     const client = clientDescriptor(clientName);
     const names = Object.keys(cfg.servers ?? {});
     const notes = [];
 
-    // A client that expands nothing in its own config needs a literal path, and the shim is it. No
-    // caveat rides along any more: the shim resolves the current install from whichever client's
-    // registry or plugin cache is present, so the emitted entry does not depend on any one client
-    // being installed. The alternative that stays disqualified is a path into the versioned plugin
-    // cache -- it keeps resolving after an update and silently runs an OLD launcher.
+    // A client that expands nothing in its own config needs a literal path, and the shim is it -- the
+    // client's OWN copy, in its own data directory, so the entry does not break when another client
+    // uninstalls the plugin. The shim resolves the current install per launch, its own client's first. The
+    // alternative that stays disqualified is a path into the versioned plugin cache -- it keeps resolving
+    // after an update and silently runs an OLD launcher.
+    const ownShim = defaultShimPath(env, clientName);
     let launcher = client.launcherRef;
     if (!launcher) {
-        launcher = defaultShimPath();
-        notes.push(`${client.displayName} expands no variables in its config, so this entry names the shim by path -- `
-            + "the shim resolves the current plugin install per launch, so an ordinary update needs no re-emit");
+        launcher = ownShim;
+        notes.push(`${client.displayName} expands no variables in its config, so this entry names ${client.displayName}'s own copy of the shim by path, `
+            + `which the install skill run under ${client.displayName} creates -- it resolves the current plugin install per launch, so an ordinary update needs no re-emit`);
+        // The path is baked in, so an entry pasted before the file exists fails at launch with a
+        // module-not-found naming a path the reader never chose. Said here, where the path is printed.
+        if (!fs.existsSync(ownShim)) {
+            notes.push(`${ownShim} does not exist yet, so every entry below fails at launch until it does -- install the plugin in ${client.displayName} `
+                + `and run its vc-secrets install skill there, which creates this file, then paste the entries`);
+        }
     }
 
     if (client.minVersion === MIN_VERSION_UNKNOWN) {
@@ -244,7 +264,25 @@ function emitConfig(cfg, clientName) {
     // A resolved path, never client.launcherRef: that token is expanded by the CLIENT inside its own
     // config file and is not a path in a shell. Measured -- `bash -c 'echo node "${env:VC_SECRETS}"'`
     // prints an empty word, so the instruction would silently become `node "" doctor`.
-    notes.push(`then verify with: node ${JSON.stringify(defaultShimPath())} doctor`);
+    // Where the entry names the variable, the variable is what a launch runs, so the check goes through it.
+    // Unset, the file install points the variable at for this client: its own shim, missing until install runs,
+    // so the check fails then -- or, for Cursor's entry when this launcher is a Cursor plugins/local copy, this
+    // launcher, which no shim stands in front of. Named for any other client it would pass the check while that
+    // client's entry expands to nothing. With the target present the check passes though the variable is still
+    // unset in this shell; the note is the signal for that state.
+    let verifyWith = launcher;
+    if (client.launcherRef) {
+        if (env.VC_SECRETS) {
+            verifyWith = env.VC_SECRETS;
+        } else {
+            const owner = clientOwning(LAUNCHER, env);
+            verifyWith = owner?.local && owner.client === clientName ? LAUNCHER : ownShim;
+            notes.push(`VC_SECRETS is not set here, and this entry expands it when ${client.displayName} starts a server -- `
+                + `if ${client.displayName} does not get it either, the entry runs nothing: the vc-secrets install skill run under `
+                + `${client.displayName} prints how to set it`);
+        }
+    }
+    notes.push(`then verify with: node ${JSON.stringify(verifyWith)} doctor`);
 
     if (client.format === "toml") {
         const lines = [];

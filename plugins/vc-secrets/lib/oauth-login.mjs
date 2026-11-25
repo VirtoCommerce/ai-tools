@@ -12,8 +12,7 @@ import { severingClose } from "../vc-secrets-teardown.mjs";  // the one teardown
 import { forTerminal } from "./util.mjs";
 import { commandOnPath, resolveSpawnCommand } from "./spawn.mjs";
 import { CONFIG_HINT_PATH, CONFIG_NAME, DOCTOR_REMEDY, USER_SCOPE, authorizationFor } from "./config.mjs";
-import { LOCAL_BACKENDS, clearOversizeMarker, deleteEntryIo, detectLocalBackend, recordOversizeMarker,
-    writeSecretValue } from "./keystore.mjs";
+import { OAUTH_BACKENDS, deleteEntryIo, oauthBackend, writeSecretValue } from "./keystore.mjs";
 import { requireNamespaceTrust } from "./trust.mjs";
 import { acquireTokenLock, clearEntryPair, oauthEntryKeys, storeAccessEntry, tokenLockFor } from "./oauth-token.mjs";
 
@@ -297,16 +296,16 @@ async function cmdLogin(serverName, cfg, {
     open = openBrowser,
     browser = buildBrowserCommand,
     exchange = oauth.exchange,
-    writeEntry = (name, value) => writeSecretValue(name, value),
+    writeEntry = null,
     removeEntry = null,
+    removeLegacyEntry = null,
     randomState = () => crypto.randomBytes(32).toString("base64url"),
     log = (line) => process.stderr.write(line),
-    backend = detectLocalBackend(),
+    backend = oauthBackend(process.platform),
     acquireLock = null,
     now = Date.now,
     sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
     waitMs = LOGIN_WAIT_MS,
-    oversize = null,
     trustState = null,
 } = {}) {
     const decl = (cfg.oauth ?? {})[serverName];
@@ -346,7 +345,7 @@ async function cmdLogin(serverName, cfg, {
         // the listener.
         requireNamespaceTrust(cfg, "oauth", serverName, trustState);
     }
-    if (!LOCAL_BACKENDS.includes(backend)) {
+    if (!OAUTH_BACKENDS.includes(backend)) {
         // Checked before anything is bound or opened. The alternative is to discover it at the
         // very end: the developer signs in, the exchange spends the authorization code, and only
         // then does the store fail — and a code is single-use, so that ordering turns a missing
@@ -360,10 +359,13 @@ async function cmdLogin(serverName, cfg, {
     // this function's own text keeps finding it as a seam.
     const acquire = acquireLock ?? tokenLockFor(serverName, decl, cfg);
     const removeStale = removeEntry ?? deleteEntryIo(backend);
-    // A seam for the same reason removeEntry is one: the default TOUCHES THE FILESYSTEM under the
-    // developer's own config directory, and a test that reaches either path without injecting it
-    // does that from a run that reports nothing but a pass.
-    const marker = oversize ?? { record: recordOversizeMarker, clear: clearOversizeMarker };
+    // Resolved here, like `acquire` and `removeStale`: the default needs `backend`, and a parameter default
+    // that read a sibling would depend on the order of this list. `writeEntry = null` above still stands in
+    // the seam's position for cmdLoginSeams' parse.
+    const write = writeEntry ?? ((name, value) => writeSecretValue(name, value, { backend }));
+    // Only a dpapi sign-in has a Credential Manager entry of an earlier version to clear: the same keys,
+    // another store. Not `removeStale`, which on dpapi deletes the new file as well.
+    const removeLegacy = backend === "dpapi" ? (removeLegacyEntry ?? deleteEntryIo("wcm")) : null;
     const { verifier, challenge } = oauth.createPkcePair();
     const state = randomState();
     const server = await listen(state, { entryName: serverName });
@@ -513,7 +515,7 @@ async function cmdLogin(serverName, cfg, {
                         throw e;
                     }
                 }
-                await writeEntry(names.refresh, cache.serializeRefresh({ refreshToken: parsed.refreshToken,
+                await write(names.refresh, cache.serializeRefresh({ refreshToken: parsed.refreshToken,
                     tenantId: decl.tenantId, clientId: decl.clientId, scopes: decl.scopes }));
             } catch (e) {
                 // Entra has already invalidated whatever refresh token was there, so a PREVIOUS
@@ -523,10 +525,29 @@ async function cmdLogin(serverName, cfg, {
                 await clearEntryPair(removeStale, [names.access, names.refresh]);
                 throw e;
             }
+            // The refresh file is the store now, and a launch reads it first, so a refresh token left in
+            // Credential Manager would sit there unread but live. The access entry went with the pre-delete
+            // above, which on dpapi clears both stores. After the write and outside its catch: the write is
+            // what the developer must see fail, so a failure here neither clears the pair nor fails the
+            // sign-in. Exit 3 is the usual answer, since only a machine that signed in before the file
+            // store has the entry, and says nothing. Any other failure leaves a refresh token in
+            // Credential Manager that nothing reads, which the developer is told, in the form of the
+            // access-entry note below, because nothing else will tell them.
+            if (removeLegacy) {
+                try {
+                    await removeLegacy(names.refresh);
+                } catch (e) {
+                    if (e.toolExitCode !== 3) {
+                        log(`vc-secrets: signed in, but the previous Credential Manager entry for "${serverName}"`
+                            + ` could not be removed (${forTerminal(e.message)}); it is no longer read, and`
+                            + ` "vc-secrets logout ${serverName}" followed by a new sign-in clears it\n`);
+                    }
+                }
+            }
             // "signed in, but": the sign-in itself succeeded and the refresh entry landed, so the
             // line must not read as a failed login.
             await storeAccessEntry(names.access, cache.serializeAccess(parsed), {
-                write: writeEntry, marker, log, backend, note: "signed in, but ",
+                write, log, note: "signed in, but ",
             });
         } finally {
             // Covers the stale-clearing path too: that branch deletes the very entries a waiting
@@ -550,7 +571,7 @@ async function cmdLogin(serverName, cfg, {
 // sign-in is not removing the person's own. The remedy is the trust a person gives the checkout, after
 // which the removal runs.
 async function cmdLogout(serverName, cfg, { deleteEntry = null,
-    backend = detectLocalBackend(),
+    backend = oauthBackend(process.platform),
     acquireLock = null, now = Date.now,
     sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
     log = (line) => process.stderr.write(line),

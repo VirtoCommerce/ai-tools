@@ -1,0 +1,716 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+SB-050,"Create a page — it appears in the Draft list with its name, permalink and language; the Draft counter grows by 1",Site Builder > Pages > Management,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup.","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, page_name=AGENT-TEST-SB050-<unique>, permalink=/agent-test-sb050-<unique>, language=en-US","[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft
+[CAPTURE] the Draft counter badge in the sidebar as D0 and the list row count as N0
+[ACT] click 'Add'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose 'Landing Page' in the 'Add page' type dialog
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the page name from Test_Data
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the permalink from Test_Data
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] select the language
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the save settles
+[CAPTURE] the Draft counter as D1 and the row of the new page as ROW","[REL] D1 equals D0 + 1 and the list row count equals N0 + 1 {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] ROW name, permalink and language equal the Test_Data values {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATE] the new page has Draft status and is not served at the storefront permalink {SPEC} (ticket description: publish is what puts a page live) {OBSERVED} (VCST-6571 checklist A21: create Draft, storefront 404, vcst, 2026-11-19)","[NETWORK] POST /api/site-builder-pages/create-group-page or /grouped returns 2xx
+[CONSOLE] no uncaught exception","page missing from the Draft list after save, counter unchanged, validation error on a valid name/permalink",Archive the page by its groupId (POST /api/site-builder-pages/grouped/archive).,VCST-6571 · ported from Page Builder CMS-001 (suite 059) · Technique:EP Archetype:LIFECYCLE,Draft
+SB-051,"Edit a page — changed name and permalink are saved, the blade reflects them and Modified updates",Site Builder > Pages > Management,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Draft page with a name and a permalink (created in Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a Draft page with name N1 and permalink P1
+[NAV] the Draft list
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] its Modified value from the Draft list row (the details blade shows no Modified field) as M0
+[ACT] change Name to N2
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] change Permalink to P2
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] save settles
+[CAPTURE] the blade fields and the Modified value of the Draft list row as F1 and M1
+[HTTP] GET /api/site-builder-pages/grouped/{groupId}
+[CAPTURE] name and permalink as API","[REL] F1 name and permalink equal N2 and P2, and API equals F1 {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] M1 is later than M0 {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] PUT /api/site-builder-pages/grouped returns 2xx,"old values after save, Modified unchanged",Archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-002 (suite 059) · Technique:EP Archetype:STALE,Draft
+SB-052,Preview a page — Preview opens the page preview for an existing page,Site Builder > Pages > Management,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Draft page with one text section (Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a Draft page with a text section TEXT_P
+[NAV] open the page
+[ACT] click 'Preview'
+[WAIT] the preview opens
+[CAPTURE] the previewed text as SHOWN","[REL] SHOWN contains TEXT_P {SPEC} (ticket description: live preview of the real storefront)
+verify whether Preview opens in a new tab or in the designer {HYPOTHESIS}",[CONSOLE] no uncaught exception in the preview,"Preview does nothing, empty preview",Close the preview; archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-003 (suite 059) · Technique:EP Archetype:CONFIG,Draft
+SB-053,Open a page in the designer — 'Edit in designer' opens the Vue designer on that page,Site Builder > Pages > Management,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a Draft page with a text section
+[NAV] open the page
+[ACT] click 'Edit in designer'
+[WAIT] the preview iframe finishes loading
+[CAPTURE] the designer page name and the section list as DESIGNER","[REL] the designer shows the page that was opened (name equals the blade name) and its section list equals the sections created in Setup {OBSERVED} (VCST-6571 checklist A14: every entry opens the Vue site-builder-shell designer, vcst, 2026-11-19)
+[STATE] the Angular Template Builder is not offered {SPEC} (AC-2: the Angular designer is removed) {OBSERVED} (KB-B45B0A24)",[CONSOLE] no uncaught exception,"blank designer, designer opens another page, preview never loads",Archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-004 (suite 059) · AC-2 · Technique:EP Archetype:CONFIG,Draft
+SB-054,Archive a Draft or Published page — the page is archived and a success toast confirms it,Site Builder > Pages > Status transitions,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a Draft page
+[SETUP] open it
+[ACT] click 'Archive'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] confirm
+[WAIT] the action settles
+[NAV] the Archived list
+[CAPTURE] whether the page is listed as ARCH","[REL] ARCH lists the page and the Draft list no longer does {SPEC} (VCST-6571 AC: lifecycle states Draft/Published/Archived are kept) {OBSERVED} (VCST-6571 checklist A21: archive, vcst, 2026-11-19)
+[TOAST] the toast reads 'Page archived successfully' after the confirmation dialog is confirmed {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] POST /api/site-builder-pages/grouped/archive returns 204,"page still in Draft after archive, no feedback",none (the page is archived; archived is the terminal state).,VCST-6571 · ported from Page Builder CMS-005 (suite 059) · Technique:ST Archetype:LIFECYCLE,Draft
+SB-055,"Publish a Draft page — it moves from Draft to Active, counters follow, and it is served at its permalink",Site Builder > Pages > Status transitions,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Draft page with a text section (Setup).","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, front_url={{FRONT_URL}}, permalink=/agent-test-sb055-<unique>","[SETUP] create a Draft page with a text section at the permalink
+[SETUP] open the Draft list
+[CAPTURE] Draft and Active counters as D0 and A0
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish'
+[WAIT] publish settles
+[CAPTURE] the Draft and Active counters as D1 and A1
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] HTTP status as LIVE","[REL] D1 equals D0 - 1 and A1 equals A0 + 1 {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATUS] LIVE is 200 and renders the section text {SPEC} (AC-4) {OBSERVED} (VCST-6571 checklist A1, vcst, 2026-11-19)
+[TOAST] the toast reads 'Page published successfully' {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] POST /api/site-builder-pages/grouped/publishing/{groupId} returns 2xx,"page stays in Draft, counters unchanged, 404 at the permalink",Unpublish and archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-006 (suite 059) · AC-4 · Technique:ST Archetype:LIFECYCLE,Draft
+SB-056,Publish → Archive transition — archiving a Published page removes it from the storefront and from Active,Site Builder > Pages > Status transitions,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Published page (Setup).","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, front_url={{FRONT_URL}}","[SETUP] create, save a section and publish a page
+[NAV] open the published page
+[ACT] click 'Archive'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] confirm
+[WAIT] the UI settles (no spinner, network idle)
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] HTTP status as AFTER
+[NAV] the Active list
+[CAPTURE] whether the page is listed as IN_ACTIVE","[DOM] AFTER renders the 404 'Page not found' view with no page text (the storefront is an SPA: HTTP 200 on every route, the verdict is on the rendered view) {OBSERVED} (publish is what puts a page live; archived pages are not served; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] IN_ACTIVE is false and the Archived list contains the page {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[TOAST] the toast reads 'Page archived successfully' {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] archive returns 204,"storefront still serves the archived page, unexpected 4xx/5xx or console error on the request under test",none (archived is terminal).,VCST-6571 · ported from Page Builder CMS-007 (suite 059) · Technique:ST Archetype:LIFECYCLE,Draft
+SB-057,Draft → Archive transition — an archived Draft page appears only in Archived,Site Builder > Pages > Status transitions,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Draft page (Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a Draft page
+[ACT] open it
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Archive'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] confirm
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the Draft, Active and Archived lists as LISTS","[REL] the page is in the Archived list and in neither Draft nor Active {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[TOAST] the toast reads 'Page archived successfully' {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] archive returns 204,"page still listed as Draft, unexpected 4xx/5xx or console error on the request under test",none (archived is terminal).,VCST-6571 · ported from Page Builder CMS-008 (suite 059) · Technique:ST Archetype:LIFECYCLE,Draft
+SB-058,Draft list — lists the pages that have a Draft version (a Published page with a pending draft included) and the Draft counter equals the rows,Site Builder > Pages > Lists,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes were checked live on vcst (REG-2026-11-19-2029) where tagged {OBSERVED}; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State created in Setup: two Draft pages (D1, D2), one clean Published page with no draft version (PUB) and one Published page with a pending draft (PUB_DRAFT).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create two Draft pages D1 and D2
+[SETUP] create and publish a page PUB and do not edit it afterwards
+[SETUP] create and publish a page PUB_DRAFT, then change one section and click 'Save' (a pending draft, no publish)
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft
+[WAIT] the list renders
+[CAPTURE] the Draft counter as COUNT and the row count over all pages of the list as ROWS
+[CAPTURE] the status badges of D1, D2, PUB and PUB_DRAFT as BADGES
+[CAPTURE] the column headers as COLS
+[HTTP] POST {{BACK_URL}}/api/site-builder-pages/list with {storeId, lifecycle: ""drafts"", take: 0}
+[CAPTURE] totalCount as TOTAL","[REL] ROWS equals TOTAL, and COUNT equals TOTAL while TOTAL is at most 99 (above 99 the sidebar badge reads '99+') {SPEC} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage) {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029: counter 38 = rows 38)
+[REL] D1, D2 and PUB_DRAFT are listed and PUB is not: the Draft list holds exactly the pages that have a Draft version {SPEC} (source: GroupedPageSearchService lifecycle Drafts = groups with any Draft page — identical in vc-module-pagebuilder and vc-module-site-builder@28d00e0) {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029: Published pages with 'Has draft with changes' are listed, clean Published setup page is not)
+[REL] BADGES of D1 and D2 show Draft, and BADGES of PUB_DRAFT shows Published with 'Has draft with changes' {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)
+[SHAPE] COLS equals Name, Type, Languages, Permalink, Modified, Modified by, Status in that order {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] POST /api/site-builder-pages/list returns 200,"a clean Published page listed under Draft, a Published page with a pending draft missing from Draft, counter and rows disagree while the total is at most 99, empty list while Draft pages exist",Unpublish/archive the pages created in Setup by groupId.,"VCST-6571 · ported from Page Builder CMS-017 (suite 059); the Page Builder row asserted that every listed row shows the Draft badge, which neither module ever implemented (case corrected 2026-11-19 after REG-2026-11-19-2029) · Technique:EP Archetype:PARITY",Draft
+SB-059,Active list — only Published pages inside their scheduled range are listed and the Active counter equals the rows,Site Builder > Pages > Lists,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: one Published page and one Draft page (Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-active,"[SETUP] create and publish one page
+[SETUP] create one Draft page
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-active
+[CAPTURE] the Active counter as COUNT, rows as ROWS and each row's badges as BADGES","[REL] COUNT equals ROWS {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] every row carries the Published badge and the Draft page is not listed {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] a Scheduled or Personalized badge may be present on a Published row but never replaces Published {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] POST /api/site-builder-pages/list returns 200 with lifecycle active,"an empty list while Published pages exist, a Draft page listed",Unpublish and archive the pages by groupId.,VCST-6571 · ported from Page Builder CMS-018 (suite 059) · Technique:EP Archetype:PARITY,Draft
+SB-060,Pending list — a Published page with a future start date is listed with the Scheduled badge and not in Active,Site Builder > Pages > Lists,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a page with a Start date 7 days ahead, published (Setup; dates are derived at run time).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-pending,"[SETUP] create a page, set Scheduling Start date = today + 7 days and End date = today + 60 days, save and publish
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-pending
+[CAPTURE] whether the page is listed, its badges, and the Pending counter vs rows as PEND
+[NAV] the Active list
+[CAPTURE] whether the page is listed as IN_ACTIVE","[REL] the page is in Pending with Published and Scheduled badges, and the Pending counter equals the rows {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] IN_ACTIVE is false {SPEC} (scheduling: a page is not live before its start date) {OBSERVED} (HAR list lifecycles drafts/pending/active/archived, VCST-6571 run)",[NETWORK] list returns 200 with lifecycle pending,"a future-dated page listed under Active, missing from Pending",Unpublish and archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-019 (suite 059) · Technique:BVA Archetype:BOUNDARY,Draft
+SB-061,Archived list — a page whose versions are all Archived is listed and the Archived counter equals the rows,Site Builder > Pages > Lists,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes were checked live on vcst (REG-2026-11-19-2029) where tagged {OBSERVED}; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: one archived page created in Setup. The sidebar badge is display-capped by the shell framework at '99+' (vc-shell formatBadgeCount: numbers above 99 display as '99+'; Site Builder passes the raw count), so the counter is compared with the total only up to 99.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-archived,"[SETUP] create a page and archive it
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-archived
+[WAIT] the list renders
+[CAPTURE] the Archived sidebar badge text as COUNT
+[CAPTURE] the list footer total as ROWS and the badges of the Setup page as BADGES
+[HTTP] POST {{BACK_URL}}/api/site-builder-pages/list with {storeId, lifecycle: ""archived"", take: 0}
+[CAPTURE] totalCount as TOTAL","[REL] ROWS equals TOTAL {SPEC} (VCST-6571 / module README: Site Builder keeps its page model and storage) {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029: footer 1–20 of 169, totalCount 169)
+[REL] when TOTAL is at most 99, COUNT equals TOTAL; when TOTAL is above 99, COUNT reads '99+' {SPEC} (vc-shell framework/core/utilities/formatBadgeCount.ts: numbers above 99 display as '99+') {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029: badge '99+' with 169 archived pages)
+[REL] the Setup page is listed first and BADGES contains Archived {SPEC} (VCST-6571 / module README: Site Builder keeps its page model and storage) {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] list returns 200 with lifecycle archived,"an archived page missing from the list, badge below 99 that differs from the total, badge reading anything but 99+ above 99",none (archived is terminal).,VCST-6571 · ported from Page Builder CMS-020 (suite 059); badge cap decided from vc-shell formatBadgeCount (case corrected 2026-11-19 after REG-2026-11-19-2029) · Technique:BVA Archetype:BOUNDARY,Draft
+SB-062,Counters follow a status change — publishing moves one page from Draft to Active,Site Builder > Pages > Lists,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Draft page (Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a Draft page
+[NAV] Draft list
+[CAPTURE] Draft and Active counters as D0 and A0
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish'
+[WAIT] the UI settles (no spinner, network idle)
+[NAV] back to the Draft list
+[CAPTURE] the Draft counter as D1
+[NAV] the Active list
+[CAPTURE] the Active counter as A1 and whether the page is listed with the Published badge as ROW","[REL] D1 equals D0 - 1 and A1 equals A0 + 1 {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] ROW shows the page with the Published badge {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] one publish request,"counters stale after a status change, the page remains in Draft",Unpublish and archive by groupId.,VCST-6571 · ported from Page Builder CMS-021 (suite 059) · Technique:ST Archetype:STALE,Draft
+SB-063,"Page blade — Basic information shows the page's name, permalink, language and SEO fields",Site Builder > Pages > Configuration,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a page with name, permalink, language and SEO title/description/keywords set (Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a page and save SEO title SEO_T, meta description SEO_D and meta keywords SEO_K in 'Search engine listing'
+[NAV] open the page
+[CAPTURE] the Basic information fields as FIELDS
+[HTTP] GET /api/site-builder-pages/grouped/{groupId} and GET /api/site-builder-pages/grouped/{groupId}/content?draft=true
+[CAPTURE] name, permalink, culture and settings.seoInfo (pageTitle, metaDescription, metaKeywords) as API","[REL] FIELDS name, permalink, language and the three SEO values equal API and equal the values set in Setup {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] SEO title and keywords live on the database page details blade, not in the designer Page settings {OBSERVED} (KB-DD874028, vcst, 2026-11-19)",[CONSOLE] no error when the blade opens,"a field empty or wrong after reload, unexpected 4xx/5xx or console error on the request under test",Archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-022 (suite 059) · Technique:EP Archetype:STALE,Draft
+SB-064,"Scheduling — start and end dates are set through the date picker, saved, and shown after reopening",Site Builder > Pages > Configuration,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Draft page (Setup). Dates are derived at run time (today + 1 and today + 30 days), never literals.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a Draft page
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft
+[ACT] open the page
+[WAIT] the blade settles
+[ACT] expand 'Scheduling'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click the Start date field
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click the day cell of today + 1 in the calendar popup
+[WAIT] the popup closes
+[ACT] click the End date field
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click the day cell of today + 30 in the calendar popup
+[WAIT] the popup closes
+[ACT] click 'Save'
+[WAIT] the save settles
+[ACT] close the blade
+[WAIT] the UI settles (no spinner, network idle)
+[NAV] reopen the page
+[CAPTURE] the Scheduling values as REOPEN
+[HTTP] GET /api/site-builder-pages/grouped/{groupId}
+[CAPTURE] startDate and endDate as API","[REL] REOPEN start and end equal the picked days and API equals REOPEN {SPEC} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage)
+[STATE] verify whether the grid shows the Scheduled badge after publish {HYPOTHESIS}
+[REL] End date is later than Start date and a reversed range is not accepted {SPEC} (test plan: scheduling) — verify the validation wording {HYPOTHESIS}",[NETWORK] PUT /api/site-builder-pages/grouped returns 2xx,"dates lost on reopen, the picker popup does not open or apply a day",Archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-023 (suite 059) · Technique:BVA Archetype:BOUNDARY,Draft
+SB-065,Personalization — switching Visibility off hides the page from the storefront and is saved,Site Builder > Pages > Configuration,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Published page with Visibility on (Setup).","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, front_url={{FRONT_URL}}","[SETUP] create, save a section and publish a page
+[NAV] {{FRONT_URL}}<permalink> as an anonymous visitor
+[CAPTURE] HTTP status as ON
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-active
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] expand 'Personalization & Access control'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] switch Visibility off
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the save settles
+[ACT] click 'Publish' if the page shows draft changes
+[WAIT] the publish settles
+[NAV] {{FRONT_URL}}<permalink> as an anonymous visitor
+[CAPTURE] HTTP status as OFF
+[NAV] the pages list
+[CAPTURE] the Personalized badge as BADGE","[DOM] ON: the anonymous storefront renders the page text; OFF: it renders the 404 'Page not found' view with no page text (the storefront is an SPA and answers HTTP 200 on every route, so the verdict is on the rendered view) {OBSERVED} (the page tooltip: with Visibility off the page is available only for registered users; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] a signed-in visitor sees the page while Visibility is off {OBSERVED} (SB locale VISIBILITY tooltip: available only for registered users; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] BADGE for the page reads 'Published, Personalized' in the Active list {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] the save returns 2xx,"page still public with Visibility off, toggle not saved",Switch Visibility on again; unpublish and archive by groupId.,VCST-6571 · ported from Page Builder CMS-024 (suite 059) · Technique:DT Archetype:SCOPE,Draft
+SB-066,Personalization — a user-group restriction is saved and the page is served only to that group,Site Builder > Pages > Configuration,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes were checked live on vcst (REG-2026-11-19-2029) where tagged {OBSERVED}; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Published page (Setup). The member and the outsider come from ONE alias, MSN_GROUP_AUDIENCE: group @td(MSN_GROUP_AUDIENCE.group), member @td(MSN_GROUP_AUDIENCE.member_email) (groups = member_groups) and outsider @td(MSN_GROUP_AUDIENCE.nonmember_email) (groups = nonmember_groups, which differ). Before the case verify with GET /api/members/{id} that the member's groups contain the group and the outsider's do not; if not, BLOCKED (data), never FAIL. Passwords typed by the NAMES LOYALTY_VIP_USER_PASSWORD and LOYALTY_WHOLESALE_USER_PASSWORD (the lane adds _VCST). The group must be offered by the 'User groups' dropdown (GET /api/site-builder-pages/user-groups), otherwise BLOCKED.","group=@td(MSN_GROUP_AUDIENCE.group), member=@td(MSN_GROUP_AUDIENCE.member_email), outsider=@td(MSN_GROUP_AUDIENCE.nonmember_email), front_url={{FRONT_URL}}","[SETUP] create, save a section and publish a page
+[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD)
+[HTTP] GET {{BACK_URL}}/api/members/<member id> and <outsider id>
+[CAPTURE] their groups as MEMBER_GROUPS and OUTSIDER_GROUPS
+[HTTP] GET {{BACK_URL}}/api/site-builder-pages/user-groups
+[CAPTURE] the offered groups as OFFERED
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-active
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] expand 'Personalization & Access control'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] select the group from Test_Data in the 'User groups' dropdown
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the save settles
+[NAV] {{FRONT_URL}}<permalink> signed in as the member from Test_Data
+[CAPTURE] the rendered view as MEMBER_VIEW
+[NAV] {{FRONT_URL}}<permalink> signed in as the outsider from Test_Data
+[CAPTURE] the rendered view as OUTSIDE_VIEW
+[NAV] {{FRONT_URL}}<permalink> as an anonymous visitor
+[CAPTURE] the rendered view as ANON_VIEW","[REL] MEMBER_GROUPS contains the group, OUTSIDER_GROUPS does not, and OFFERED contains the group {SPEC} (the fixture is in the state the case assumes)
+[DOM] MEMBER_VIEW renders the page text; OUTSIDE_VIEW and ANON_VIEW render the 404 'Page not found' view with no page text (the storefront is an SPA and answers HTTP 200 on every route, so the verdict is on the rendered view) {SPEC} (Personalization & Access control: limit page visibility to specific audiences) {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029: a user outside the group and the anonymous visitor got the 404 view; the saved restriction read back as userGroups; the member side was untested there for lack of a member)
+[REL] OUTSIDE_VIEW and ANON_VIEW contain no text of the page {SPEC}",[NETWORK] no 5xx,"a non-member sees the page, a member gets the 404 view, the group is not offered by the dropdown, the restriction is not saved",Unpublish and archive the page by groupId.,"VCST-6571 · ported from Page Builder CMS-025 (suite 059); data corrected 2026-11-19 after REG-2026-11-19-2029 (member and outsider now come from one alias, no group literal) · Technique:DT Archetype:SCOPE",Draft
+SB-067,Personalization — an organization restriction is saved and the page is served only to that organization,Site Builder > Pages > Configuration,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes were checked live on vcst (REG-2026-11-19-2029) where tagged {OBSERVED}; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Published page (Setup). Accounts come from aliases, never from the agent-user pool slot of the lane: member @td(TECHFLOW_ADMIN.email) of organization @td(ORG_TECHFLOW.name) (TechFlow, ORG-002) and other-organization buyer @td(OTHER_ORG_USER.email) (BuildRight, ORG-003). Before the case verify with GET /api/members/{id} that the member belongs to @td(ORG_TECHFLOW.name) and the other buyer to a different organization; if not, BLOCKED (data), never FAIL. Passwords typed by the NAMES ORG_USER_PASSWORD (member) and B2B_USER_PASSWORD (other buyer), the lane adds _VCST.","org=@td(ORG_TECHFLOW.name), member=@td(TECHFLOW_ADMIN.email), other=@td(OTHER_ORG_USER.email), front_url={{FRONT_URL}}","[SETUP] create, save a section and publish a page
+[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD)
+[HTTP] GET {{BACK_URL}}/api/members/<member id> and <other id>
+[CAPTURE] their organizations as MEMBER_ORG and OTHER_ORG
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-active
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] expand 'Personalization & Access control'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] select the organization from Test_Data in the 'Organization' dropdown (type part of the name to search)
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the save settles
+[NAV] {{FRONT_URL}}<permalink> signed in as the member from Test_Data
+[CAPTURE] the rendered view as MEMBER_VIEW
+[NAV] {{FRONT_URL}}<permalink> signed in as the other buyer from Test_Data
+[CAPTURE] the rendered view as OTHER_VIEW
+[NAV] {{FRONT_URL}}<permalink> as an anonymous visitor
+[CAPTURE] the rendered view as ANON_VIEW","[REL] MEMBER_ORG is the organization from Test_Data and OTHER_ORG is a different one {SPEC} (the fixture is in the state the case assumes)
+[DOM] MEMBER_VIEW renders the page text; OTHER_VIEW and ANON_VIEW render the 404 'Page not found' view with no page text (the storefront is an SPA and answers HTTP 200 on every route, so the verdict is on the rendered view) {SPEC} (Personalization & Access control: limit page visibility to specific audiences) {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029: TechFlow member sees the page, a member of another organization and an anonymous visitor get the 404 view)
+[REL] OTHER_VIEW and ANON_VIEW contain no text of the page {SPEC} {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 5xx,"another organization sees the page, the member gets the 404 view, the organization is not saved, unexpected 4xx/5xx or console error on the request under test",Unpublish and archive the page by groupId.,"VCST-6571 · ported from Page Builder CMS-026 (suite 059); data corrected 2026-11-19 after REG-2026-11-19-2029 (accounts from aliases, not the lane slot account) · Technique:DT Archetype:SCOPE",Draft
+SB-068,"Search — a partial term filters the list, case does not matter, special characters do not error",Site Builder > Pages > Search,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: three pages whose names share the word AGENT-TEST-SB068 (created in Setup) plus any existing pages.","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder, term=AGENT-TEST-SB068","[SETUP] create pages AGENT-TEST-SB068-alpha, -beta and an unrelated page
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder (All Pages)
+[CAPTURE] the total row count as N_ALL
+[ACT] fill 'Search...' with the lower-case term
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] press Enter
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the rows as LOWER
+[ACT] clear
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the term in upper case
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] press Enter
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] rows as UPPER
+[ACT] clear
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill '&'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] press Enter
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the result and console as SPECIAL
+[ACT] clear
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the row count as N_RESTORED","[REL] LOWER equals UPPER as a set and contains exactly the two AGENT-TEST-SB068 pages {OBSERVED} (VCST-4502: search narrows the list to the pages whose name contains the term, case-insensitive; vcst, 2026-11-19, REG-2026-11-19-2029)
+[COUNT] N_RESTORED equals N_ALL after clearing {OBSERVED} (VCST-4502; vcst, 2026-11-19, REG-2026-11-19-2029)
+[ERRORS] SPECIAL shows no error and no console exception {OBSERVED} (VCST-4502; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] list requests return 200,"no filtering, case-sensitive filtering, error on '&'",Archive the three pages created in Setup by groupId.,VCST-6571 · ported from Page Builder CMS-052 (suite 059) · Technique:EP Archetype:SILENT,Draft
+SB-069,Admin login — the Site Builder shell shows the signed-in user and the Site Builder branding,Site Builder > Shell,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Signed out of the back office; the shell reachable at the shell URL. Credentials by NAME only.","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id), user=the ADMIN test account","[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)
+[ACT] if the Login screen shows, fill 'Email' with the user name of the ADMIN test account
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] type the password by its NAME ADMIN_PASSWORD
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Sign in'
+[WAIT] the shell loads
+[CAPTURE] the user profile button text and the logo as PROFILE and LOGO","[REL] PROFILE contains the signed-in user name {OBSERVED} (the shell is a vc-shell app on the platform session; vcst, 2026-11-19, REG-2026-11-19-2029)
+[DOM] the Login screen heading reads 'Site Builder' with a logo image, and the sidebar logo renders after sign-in {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[CONSOLE] no uncaught exception on load,"profile shows another user, blank screen, login loop",none.,VCST-6571 · ported from Page Builder CMS-055 (suite 059) · Technique:EP Archetype:CONFIG,Draft
+SB-070,API — languages and user-groups endpoints answer 200 with data,Site Builder > API > Settings,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+B2B-store with en-US among its languages and at least one user group.",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[HTTP] GET {{BACK_URL}}/api/site-builder-pages/languages?storeId=@td(STORE_PRIMARY.id)
+[CAPTURE] status and body as LANGS
+[HTTP] GET {{BACK_URL}}/api/site-builder-pages/user-groups
+[CAPTURE] status and body as GROUPS
+[HTTP] GET .../languages WITHOUT Authorization
+[CAPTURE] status as ANON","[STATUS] LANGS and GROUPS are 200 and ANON is 401 {SPEC} (platform authorization; SiteBuilderPageSettingsController requires the setting:query permission) {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029: 200, 200, 401)
+[COUNT] LANGS has at least 1 entry and contains en-US; GROUPS has at least 1 entry {SPEC} (the store languages / user groups exist) {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029: 15 codes incl. en-US; user groups contract-contract2, Wholesaler, VIP)
+[REL] LANGS equals the Languages of the store (GET /api/stores/@td(STORE_PRIMARY.id), field languages) as the same ordered list, and GROUPS equals the allowed values of the Customer member-groups setting {SPEC} (source: GetAvailableLanguages returns store.Languages and GetUserGroups returns the MemberGroups allowed values — identical in vc-module-pagebuilder and vc-module-site-builder@28d00e0; the endpoint reports no default-language marker) {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029: bare array of 15 codes in the store order, first pl-PL)",[NETWORK] no 5xx,"404 for a route that Page Builder had under page-builder-pages, empty arrays when data exists, a list that differs from the store languages",none (read-only).,VCST-6571 · ported from Page Builder CMS-098 (suite 059); the added default-language assertion was a case defect — neither module reports a default (corrected 2026-11-19 after REG-2026-11-19-2029) · Technique:EP Archetype:CONFIG,Draft
+SB-071,API — archive a page and read its publish status; archive without a token is refused,Site Builder > API > Pages,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; the page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Published page created by the case.",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] create and publish a page
+[CAPTURE] groupId
+[HTTP] POST {{BACK_URL}}/api/site-builder-pages/grouped/archive with ids=[groupId]
+[CAPTURE] status as ARCH
+[HTTP] GET {{BACK_URL}}/api/site-builder-pages/grouped/publish-status/{groupId}
+[CAPTURE] body as STATUS
+[HTTP] POST .../grouped/archive WITHOUT Authorization
+[CAPTURE] status as ANON","[STATUS] ARCH is 204 and ANON is 401 {OBSERVED} (HAR POST grouped/archive, VCST-6571 run, vcst, 2026-11-19; platform authorization)
+[REL] STATUS.published is false after the archive {OBSERVED} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 5xx,"anonymous archive accepted, publish-status still published after archive",none (archived is terminal).,VCST-6571 · ported from Page Builder CMS-099 (suite 059) · Technique:EP Archetype:SCOPE,Draft
+SB-072,Migrated pages — pages authored before the switch carry scheduling and visibility data and open without errors,Site Builder > Migration,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+live-discover 3 to 5 pages authored under Page Builder (predating the module switch) on B2B-store; none ⇒ BLOCKED (fixture gap), never FAIL.",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[HTTP] POST {{BACK_URL}}/api/site-builder-pages/search with {storeId, take: 5}
+[CAPTURE] the result fields as RES
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder
+[ACT] open each discovered page
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] expand 'Scheduling'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] expand 'Personalization & Access control'
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the field values and console as OPEN","[REL] every RES row carries startDate, endDate and visibility keys and visibility is defined {SPEC} (README: Site Builder uses Page Builder's database as it is, existing pages stay after the switch)
+[ERRORS] OPEN shows Scheduling and Personalization fields with no error and no console exception {SPEC} (README: existing pages stay after the switch)",[CONSOLE] no error while opening migrated pages,"missing schedule fields, a page failing to open, console errors",none (read-only on discovered pages).,VCST-6571 · ported from Page Builder CMS-102 (suite 059) · Technique:EP Archetype:CONFIG,Draft
+SB-073,Save content — the toolbar downloads the page content as a JSON file,Site Builder > Pages > Content portability,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Draft page with two content sections; the signed-in user holds builder:update; the browser may download files.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a Draft page with two sections
+[NAV] the Draft list
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] whether the toolbar offers 'Save content' as BTN
+[ACT] click 'Save content'
+[WAIT] the file downloads
+[CAPTURE] the downloaded file name and JSON as FILE, and the content request as REQ","[REL] FILE parses as JSON and its section count and types equal the page's sections {SPEC} (README: pages stay compatible; content is the page JSON) {OBSERVED} (HAR GET grouped/{id}/content, VCST-6571 run)
+[STATUS] REQ is GET /api/site-builder-pages/grouped/{id}/content?draft=true with 200 and a JSON content type {SPEC} (README: Concurrent page editing)
+[DOM] verify whether BTN reads 'Save content' and the file is named {page-name}-content.json and a toast 'Content saved to file successfully' shows {HYPOTHESIS}","[NETWORK] no 4xx/5xx
+[CONSOLE] no uncaught exception","no download, empty file, 4xx on the content request",Delete the downloaded file; archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-111 (suite 059) · Technique:EP Archetype:SILENT,Draft
+SB-074,"Save content — the button is disabled on a new, unsaved page",Site Builder > Pages > Content portability,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[NAV] the Draft list
+[ACT] click 'Add'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose 'Landing Page' in the 'Add page' type dialog
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the toolbar 'Save content' button state as BTN
+[ACT] click 'Save content' if it is not disabled
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] network requests as REQ","[STATE] on the 'New page' blade the toolbar Save, Archive, Edit in designer, Save content and Clone are all disabled {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)
+[COUNT] REQ contains 0 requests and no file is downloaded {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] the Draft list row count after the click equals the count before it {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[CONSOLE] no TypeError on click,"Save content enabled on a new page, a download of empty content",Close the new-page blade without saving.,VCST-6571 · ported from Page Builder CMS-112 (suite 059) · Technique:EP Archetype:BOUNDARY,Draft
+SB-075,Load content — a valid JSON file creates a page from it with the same sections,Site Builder > Pages > Content portability,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. The page-content file used here is produced in Setup by GET /api/site-builder-pages/grouped/{id}/content?draft=true saved to a temporary file (no shared export). The signed-in user holds builder:update and builder:create.","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, page_name=AGENT-TEST-SB075-<unique>, permalink=/agent-test-sb075-<unique>","[SETUP] create a source page with two sections
+[SETUP] save its content to a temporary file
+[CAPTURE] the section types and order as SRC
+[NAV] the Draft list
+[CAPTURE] whether 'Load content' is offered as BTN
+[ACT] click 'Load content'
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the file chooser filter as FILTER
+[CAPTURE] choose the temporary file
+[WAIT] the new-page blade opens
+[ACT] fill the Name from Test_Data
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the Permalink from Test_Data
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] select the language
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Edit in designer'
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the section types and order as LOADED","[REL] LOADED equals SRC in count, types and order {SPEC} (README: pages stay compatible; content is the page JSON)
+[SHAPE] FILTER accepts .json files only {HYPOTHESIS} verify the chooser filter
+[REL] the created page appears in the Draft list with the Test_Data name and permalink {SPEC} (VCST-6571 / module README: Site Builder replaces Page Builder and keeps its page model, statuses and storage)
+[TOAST] verify whether 'Content loaded successfully' appears before the blade opens {HYPOTHESIS}",[NETWORK] POST /api/site-builder-pages/create-group-page (or /grouped) then POST .../content return 2xx,"page saved without content, sections missing or reordered, blade does not open",Archive the source page and the loaded page by groupId; delete the temporary file.,VCST-6571 · ported from Page Builder CMS-113 (suite 059) · Technique:EP Archetype:SILENT,Draft
+SB-076,Load content — the button is offered on the Draft list only,Site Builder > Pages > Content portability,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft
+[CAPTURE] whether 'Load content' is present as DRAFT_TAB
+[NAV] #/site-builder-active
+[CAPTURE] as ACTIVE_TAB
+[NAV] #/site-builder-pending
+[CAPTURE] as PENDING_TAB
+[NAV] #/site-builder-archived
+[CAPTURE] as ARCHIVED_TAB
+[NAV] #/site-builder (All Pages)
+[CAPTURE] as ALL_TAB","[REL] DRAFT_TAB offers 'Load content' (toolbar: Add, Refresh, Archive, Load content) and ACTIVE_TAB, PENDING_TAB, ARCHIVED_TAB and ALL_TAB do not (toolbar: Add, Refresh, Archive) {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)
+[COUNT] the number of tabs among the five that offer 'Load content' equals 1 {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[CONSOLE] no error on tab navigation,"the control appears on a non-Draft tab, missing on Draft",none.,VCST-6571 · ported from Page Builder CMS-114 (suite 059) · Technique:EP Archetype:PARITY,Draft
+SB-077,Load content — cancelling the file chooser changes nothing,Site Builder > Pages > Content portability,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[NAV] the Draft list
+[CAPTURE] the row count as N0
+[ACT] click 'Load content'
+[WAIT] the file chooser opens
+[ACT] cancel the chooser without choosing a file
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the row count as N1 and whether a new-page blade is open as BLADE","[REL] N1 equals N0 {OBSERVED} (no page is created without a file; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATE] BLADE is false {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[CONSOLE] no TypeError after the cancel,"an empty page created, a blade opened without a file",none.,VCST-6571 · ported from Page Builder CMS-115 (suite 059) · Technique:EG Archetype:SILENT,Draft
+SB-078,Clone a page — a copy with its content is created as a Draft named '(copy)',Site Builder > Pages > Content portability,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Draft page with two sections (Setup); the signed-in user holds builder:update and builder:create.","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, page_name=AGENT-TEST-SB078-<unique>, permalink=/agent-test-sb078-<unique>","[SETUP] create the source page with two sections
+[CAPTURE] its section types as SRC
+[NAV] open the source page in the Draft list
+[CAPTURE] whether 'Clone' is offered as BTN
+[ACT] click 'Clone'
+[WAIT] the clone operation finishes and the clone blade opens
+[CAPTURE] the clone's name and permalink as META and its status as ST
+[ACT] 'Edit in designer' on the clone
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the section types as CLONE_SRC
+[NAV] the Draft list
+[CAPTURE] whether both pages are listed as LIST","[REL] CLONE_SRC equals SRC {SPEC} (test plan 5: copy = new draft with the same content)
+[REL] META name differs from the source name and carries a copy suffix, permalink differs from the source permalink {SPEC} (test plan 5: copy has its own name) {HYPOTHESIS} verify the suffix wording '(copy)' / '-copy' (PB behaviour)
+[STATE] ST is Draft and LIST contains both pages {SPEC} (test plan 5)
+[TOAST] verify whether 'Page cloned successfully' appears {HYPOTHESIS}",[NETWORK] POST /api/site-builder-pages/grouped then POST .../content/{sourceGroupId} return 2xx,"clone without content, clone inherits Published status, clone not listed",Archive the source and the clone by groupId.,VCST-6571 · ported from Page Builder CMS-116 (suite 059) · Technique:EP Archetype:PARITY,Draft
+SB-079,"Clone a page — settings, language, visibility and user groups are carried over",Site Builder > Pages > Content portability,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a page with language en-US, Visibility off and a user group (@td(USER_GROUP_WHOLESALE.name)) set (Setup).","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, group=@td(USER_GROUP_WHOLESALE.name)","[SETUP] create a page
+[SETUP] set language, Visibility off and the user group
+[SETUP] save
+[CAPTURE] the source settings as SRC
+[ACT] open it
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Clone'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] wait for the clone blade
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] expand 'Personalization & Access control'
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the clone settings and storeId as CLONE","[REL] CLONE language, visibility, user group and store equal SRC {OBSERVED} (test plan 5: copy of a page keeps its settings; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] CLONE settings equal SRC settings field by field (no field reset to its default) {OBSERVED} (test plan 5; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] clone requests return 2xx,"defaults instead of the source settings, user groups dropped",Archive both pages by groupId.,VCST-6571 · ported from Page Builder CMS-117 (suite 059) · Technique:EP Archetype:PARITY,Draft
+SB-080,"Clone — the button is disabled on a new, unsaved page",Site Builder > Pages > Content portability,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[NAV] the Draft list
+[ACT] click 'Add'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose 'Landing Page' in the 'Add page' type dialog
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the 'Clone' button state as BTN
+[ACT] click 'Clone' if enabled
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the requests as REQ","[STATE] on the 'New page' blade 'Clone' is present and disabled {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)
+[COUNT] REQ contains 0 clone requests {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] the Draft list row count after the click equals the count before it {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[CONSOLE] no TypeError on click,"Clone enabled on a new page, a clone request for an undefined page",Close the new-page blade.,VCST-6571 · ported from Page Builder CMS-118 (suite 059) · Technique:EP Archetype:BOUNDARY,Draft
+SB-081,Clone of a clone — the name and permalink suffix pattern holds and content is the original's,Site Builder > Pages > Content portability,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a page and its clone (created in Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a page with two sections
+[SETUP] clone it
+[ACT] open the clone
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Clone'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] wait for the second clone blade
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the second clone's name and permalink as META2
+[ACT] 'Edit in designer' on the second clone
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the section types as SECTIONS2
+[CAPTURE] the original section types as SRC","[REL] META2 differs from both the original and the first clone, and no 409 is raised {SPEC} (test plan 5: own name) {HYPOTHESIS} verify the exact suffix pattern
+[REL] SECTIONS2 equals SRC {SPEC} (test plan 5)",[CONSOLE] no error on the second clone,"a naming collision, content not copied on the second clone",Archive the original and both clones by groupId.,VCST-6571 · ported from Page Builder CMS-119 (suite 059) · Technique:BVA Archetype:BOUNDARY,Draft
+SB-082,API — copy page content from a source page to a target page,Site Builder > API > Pages,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a source page with two sections and an empty target page (created in Setup).",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] create the source page with two sections and an empty target page
+[CAPTURE] both groupIds
+[HTTP] POST {{BACK_URL}}/api/site-builder-pages/grouped/{targetGroupId}/content/{sourceGroupId}
+[CAPTURE] status as COPY
+[HTTP] GET .../grouped/{targetGroupId}/content?draft=true
+[CAPTURE] the body as TARGET
+[HTTP] the same POST WITHOUT Authorization
+[CAPTURE] status as ANON
+[HTTP] POST with a non-existent sourceGroupId
+[CAPTURE] status as MISSING","[REL] TARGET section count and types equal the source's {OBSERVED} (README: Copy retains its newest Draft/Published source rule; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATUS] COPY is 2xx, ANON is 401 and MISSING is 404 {OBSERVED} (platform authorization; controller 404 for a missing group; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] a content POST made now with a stale or missing If-Match is refused (412/428), not applied {OBSERVED} (README: Concurrent page editing; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 5xx,"target empty after the copy, 500 for an invalid id, anonymous copy accepted",Archive both pages by groupId.,VCST-6571 · ported from Page Builder CMS-120 (suite 059) · Technique:EP Archetype:SILENT,Draft
+SB-083,Load content — an empty or malformed file is handled without a crash or corrupt data,Site Builder > Pages > Content portability,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. Test files created in Setup: empty.json (0 bytes), malformed.json (invalid JSON), text.json (plain text renamed to .json), array.json (a legacy top-level array).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft
+[ACT] click 'Load content'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose empty.json in the file chooser
+[WAIT] the UI settles
+[CAPTURE] the result as R_EMPTY
+[ACT] click 'Load content'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose malformed.json in the file chooser
+[WAIT] the UI settles
+[CAPTURE] the result as R_MALFORMED
+[ACT] click 'Load content'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose text.json in the file chooser
+[WAIT] the UI settles
+[CAPTURE] the result as R_TEXT
+[ACT] click 'Load content'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose array.json in the file chooser
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the Name with AGENT-TEST-SB083-<unique> values
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the Permalink with AGENT-TEST-SB083-<unique> values
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the save settles
+[CAPTURE] the saved content as R_ARRAY
+[CAPTURE] the console and the Draft list afterwards as AFTER","[REL] R_EMPTY, R_MALFORMED and R_TEXT each show a user-facing error or a clean rejection and create no page {SPEC} (README: create-group-page requires a JSON object with a content array; empty or invalid JSON fails client parsing or server validation)
+[REL] R_ARRAY is converted to the content object before submitting and saves with the array's sections {SPEC} (README: the Shell import converts legacy top-level arrays)
+[ERRORS] AFTER shows no unhandled exception and the UI stays responsive {SPEC}",[NETWORK] no 5xx for any chosen file,"an unhandled exception, a corrupt page persisted, a 500",Archive any page created by this case by groupId; delete the test files.,VCST-6571 · ported from Page Builder CMS-121 (suite 059) · Technique:EG Archetype:SILENT,Draft
+SB-084,Save and Load round trip — exported content imports with the same blocks in the same order,Site Builder > Pages > Content portability,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a source page with five different sections created in Setup (e.g. slider, category, title, products carousel, call-to-action).","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, page_name=AGENT-TEST-SB084-<unique>, permalink=/agent-test-sb084-<unique>","[SETUP] create the source page with five sections
+[NAV] open it in the designer
+[CAPTURE] the section count, types, order and one setting value per section as SRC
+[ACT] close the designer
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save content'
+[WAIT] the file downloads
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft
+[ACT] click 'Load content'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose the downloaded file
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the Name from Test_Data
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the Permalink from Test_Data
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the save settles
+[ACT] click 'Edit in designer'
+[WAIT] the designer loads
+[CAPTURE] the section count, types, order and the same setting values as LOADED","[REL] LOADED equals SRC in section count, types, order and setting values {SPEC} (README: pages stay compatible; content is the page JSON)
+[COUNT] LOADED has exactly 5 sections {SPEC}",[NETWORK] the export GET and the import POSTs return 2xx,"a section lost, reordered or changed",Archive both pages by groupId; delete the downloaded file.,VCST-6571 · ported from Page Builder CMS-122 (suite 059) · Technique:EP Archetype:SILENT,Draft
+SB-085,"Authorization — a user without builder:update cannot save content, load content or clone",Site Builder > Access,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. Restricted back-office user @td(RESTRICTED_CMS_ADMIN.userName) (builder:access + builder:read, no builder:update; password NAME RESTRICTED_CMS_ADMIN_PASSWORD) from the platform RBAC seeder (not a Page Builder route seeder).","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, restricted=@td(RESTRICTED_CMS_ADMIN.userName)","[SETUP] as admin create a Draft page with a section
+[AUTH] sign in to the back office as the restricted user
+[NAV] the Draft list
+[CAPTURE] the state of 'Load content' as LOAD
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the state of 'Save content' and 'Clone' as SAVE and CLONE
+[ACT] click any of them that is enabled
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] network requests and downloads as REQ","[STATE] LOAD, SAVE and CLONE are hidden or disabled {SPEC} (AC-8: write permissions gate the writes; module README Store access)
+[COUNT] REQ contains 0 write requests (no clone, no upload) and no content download {SPEC} (AC-8)
+[REL] the page content and the Draft list row count after the attempts equal those before them {SPEC} (AC-8)",[NETWORK] no 5xx,"a restricted user clones or uploads, content downloaded",Sign out the restricted user; archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-123 (suite 059) · AC-8 · Technique:DT Archetype:SCOPE,Draft
+SB-086,API — the copy endpoint answers 403 for a user without builder:update and succeeds for an administrator,Site Builder > Access,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. Restricted user @td(RESTRICTED_CMS_ADMIN.userName) (no builder:update); a source and an empty target page created in Setup.","store_id=@td(STORE_PRIMARY.id), restricted=@td(RESTRICTED_CMS_ADMIN.userName)","[SETUP] as admin create the source page with a section and an empty target page
+[AUTH] POST /connect/token as the restricted user (password NAME RESTRICTED_CMS_ADMIN_PASSWORD)
+[HTTP] POST {{BACK_URL}}/api/site-builder-pages/grouped/{targetGroupId}/content/{sourceGroupId}
+[CAPTURE] status and body as DENIED
+[AUTH] POST /connect/token as the ADMIN test account
+[HTTP] the same POST
+[CAPTURE] status as ALLOWED","[STATUS] DENIED is 403 and ALLOWED is 2xx {OBSERVED} (AC-8; Update permission on the copy route; vcst, 2026-11-19, REG-2026-11-19-2029)
+[BODY] DENIED carries no stack trace or internal detail {OBSERVED} (AC-8; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] the target page content after DENIED equals the content before it {OBSERVED} (AC-8; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 5xx,"a 2xx for the restricted user, 500 or 401 instead of 403",Archive both pages by groupId.,VCST-6571 · ported from Page Builder CMS-124 (suite 059) · AC-8 · Technique:DT Archetype:SCOPE,Draft
+SB-087,Clone a Published page — the clone is created as a Draft with the source's content,Site Builder > Pages > Content portability,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Published page with two sections (Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-active,"[SETUP] create a page with two sections and publish it
+[NAV] the Active list
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] its status as SRC_ST
+[ACT] click 'Clone'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] wait for the clone blade
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] its status as CLONE_ST
+[NAV] the Draft list
+[CAPTURE] whether the clone is listed as IN_DRAFT
+[CAPTURE] the Active list
+[CAPTURE] as IN_ACTIVE
+[ACT] 'Edit in designer' on the clone
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the section types as CLONE_SECTIONS","[STATE] SRC_ST is Published and CLONE_ST is Draft; IN_DRAFT is true and IN_ACTIVE is false for the clone {SPEC} (test plan 5: copy is a new draft)
+[REL] CLONE_SECTIONS equals the source page's section types {SPEC} (test plan 5)",[NETWORK] clone requests return 2xx,"a clone published at once, a clone without content","Unpublish and archive the source, archive the clone, by groupId.",VCST-6571 · ported from Page Builder CMS-125 (suite 059) · Technique:ST Archetype:LIFECYCLE,Draft
+SB-088,Clone permalink collision — a second clone of a page whose '-copy' permalink is taken is never silent or broken,Site Builder > Pages > Content portability,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: an original page and its first clone (Setup), so the '-copy' permalink is taken.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create the original page and clone it once
+[NAV] open the ORIGINAL page
+[ACT] click 'Clone' again
+[WAIT] the operation finishes
+[CAPTURE] the outcome (new page with another permalink, new page with the same permalink, or an error) as OUT and the pages listed as LIST","[REL] OUT is exactly one of: a clone with a distinct permalink, a clone with a duplicate permalink that the usage warning reports, or a clear error; the original and the first clone are unchanged {OBSERVED} (permalink usage: other pages using a permalink is allowed, publishing checks conflicts; locale PERMALINK_IN_USE; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATE] the UI stays responsive and no 5xx is returned {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 5xx,"an unhandled 500, a frozen UI, a clone that cannot be opened",Archive every page created by groupId.,VCST-6571 · ported from Page Builder CMS-126 (suite 059) · Technique:BVA Archetype:BOUNDARY,Draft
+SB-089,Save a page — a modified draft saves with one request and Save becomes disabled again,Site Builder > Pages > Feedback,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Draft page open in the details blade, unmodified (Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create a Draft page
+[SETUP] open it
+[CAPTURE] the Save button state as S0
+[ACT] change the page name
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the Save button state as S1
+[ACT] click 'Save'
+[WAIT] the save settles
+[CAPTURE] the Save button state as S2 and the save requests as REQ","[STATE] S0: Save is disabled on open; S1: Save is enabled, Publish is disabled and the alert 'Has unsaved changes' is shown; S2: Save is disabled again, the alert is gone and Publish is enabled {OBSERVED} (VCST-5515 behaviour carried by the shell; vcst, 2026-11-19, REG-2026-11-19-2029)
+[COUNT] REQ contains exactly 1 save request returning 2xx {OBSERVED} (AC-4: one save request per Save; vcst, 2026-11-19, REG-2026-11-19-2029)
+[TOAST] 'Page saved successfully' shows and is gone after about 5 seconds {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] one PUT /api/site-builder-pages/grouped,"two save requests, Save stays enabled, no feedback",Archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-127 (suite 059) · AC-4 · Technique:ST Archetype:SILENT,Draft
+SB-090,Unpublish a Published page — the page moves to Draft and the counters follow,Site Builder > Pages > Feedback,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a Published page (Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-active,"[SETUP] create and publish a page
+[NAV] the Active list
+[CAPTURE] Active and Draft counters as A0 and D0
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Unpublish'
+[WAIT] the action settles
+[CAPTURE] the status as ST and the counters as A1 and D1","[REL] A1 equals A0 - 1 and D1 equals D0 + 1 {SPEC} (VCST-6571 lifecycle) {OBSERVED} (VCST-6571 checklist A8; KB-C5B6CE87: unpublish in the designer has no confirmation, vcst, 2026-11-19)
+[STATE] ST is Draft and the toolbar swaps back to Publish {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)
+[TOAST] the toast reads 'Page unpublished successfully' {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] unpublish returns 2xx,"the page stays in Active, counters unchanged",Archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-128 (suite 059) · Technique:ST Archetype:LIFECYCLE,Draft
+SB-091,Rename and republish a Published page — the content survives every cycle (data-loss guard),Site Builder > Pages > Content portability,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. The page has two sections: a text section with value 'VCST-5417 guard' and an image section (Setup). Run on a build where Save/Publish are not blocked by the flag.","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, page_name=AGENT-TEST-SB091-<unique>, permalink=/agent-test-sb091-<unique>","[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] create the page with the two sections
+[SETUP] save
+[SETUP] publish
+[CAPTURE] groupId
+[HTTP] GET /api/site-builder-pages/grouped/{groupId}/content
+[CAPTURE] status and section count as C1
+[ACT] change the page name
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] change the page permalink
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] save
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] publish
+[WAIT] the UI settles (no spinner, network idle)
+[HTTP] GET content
+[CAPTURE] as C2
+[ACT] rename again
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] save
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] publish
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] GET content
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] as C3
+[HTTP] GET /api/site-builder-pages/grouped/{groupId}
+[CAPTURE] pages[] versions as VERS
+[NAV] the designer after a hard reload
+[CAPTURE] the section count as DESIGNER","[STATUS] C1, C2 and C3 are 200 with a non-empty body {OBSERVED} (VCST-5417: no data loss on rename + republish; vcst, 2026-11-19, REG-2026-11-19-2029)
+[COUNT] the section count is 2 in C1, C2, C3 and DESIGNER {OBSERVED} (VCST-5417; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATE] VERS holds exactly one Published inner version after each publish and superseded versions are Archived, never an empty Published version {OBSERVED} (VCST-5417; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 4xx/5xx,"content:[] after a rename + republish cycle, a Published version promoted with no content",Unpublish and archive the page by groupId; GET returns it as archived.,VCST-6571 · ported from Page Builder CMS-130 (suite 059) · VCST-5417 · Technique:ST Archetype:SILENT,Draft
+SB-092,Publish a page — no stale 'unsaved changes' state is left after a clean publish,Site Builder > Pages > Dirty state,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. Run on a lane where the Language field is usable.","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft, page_name=AGENT-TEST-SB092-<unique>, permalink=/agent-test-sb092-<unique>","[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[NAV] the Draft list
+[ACT] click 'Add'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the Name from Test_Data
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the Permalink from Test_Data
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save' (a Draft page)
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish'
+[WAIT] publish settles
+[WAIT] the blade reloads the published page
+[CAPTURE] whether an unsaved-changes banner is shown as BANNER, the status as ST, the Save button state as SAVE
+[HTTP] GET /api/site-builder-pages/grouped/{groupId}
+[CAPTURE] hasChanges as HC
+[HTTP] GET .../grouped/publish-status/{groupId}
+[CAPTURE] as PS","[STATE] right after the publish and after 4 seconds no unsaved-changes banner is shown, Save is disabled, and the status chip reads Published {OBSERVED} (VCST-5515; note: for a page created by API with a section the alert 'Has unsaved changes' flashed for under 4 seconds after Publish); vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] HC is false and PS reports published true with no pending changes, matching the UI {OBSERVED} (VCST-5515; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATE] ST is Published and the toolbar offers Unpublish {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] one publish request returns 2xx,"a banner after a clean publish while hasChanges is false, unexpected 4xx/5xx or console error on the request under test",Unpublish and archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-135 (suite 059) · VCST-5515 · Technique:ST Archetype:STALE,Draft
+SB-093,Unpublish a clean Published page — no stale 'unsaved changes' state appears,Site Builder > Pages > Dirty state,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a clean Published page with no pending draft (Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-active,"[SETUP] create, save and publish a page
+[SETUP] do not edit it afterwards
+[NAV] the Active list
+[NAV] open the page
+[CAPTURE] whether a banner shows at open as B0
+[ACT] click 'Unpublish'
+[WAIT] the blade reloads
+[CAPTURE] the banner as B1 and the status as ST
+[ACT] navigate away (open another page)
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] whether the navigation is blocked as BLOCK
+[HTTP] GET /api/site-builder-pages/grouped/{groupId}
+[CAPTURE] hasChanges as HC","[STATE] B0 and B1 are false (no unsaved-changes banner at open, none immediately or after 3 seconds after Unpublish) and BLOCK is false (another page opens with no confirmation) {OBSERVED} (VCST-5515 symmetry; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATE] ST is Draft and a toast reads 'Page unpublished successfully' {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] HC is true after an unpublish (an unpublished Draft with no Published counterpart legitimately exists) and is not the check here {OBSERVED} (VCST-5515: the surface is the absent banner; vcst, 2026-11-19, REG-2026-11-19-2029)",[CONSOLE] no error,"a banner or a navigation block after a clean unpublish, unexpected 4xx/5xx or console error on the request under test",Archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-136 (suite 059) · VCST-5515 · Technique:ST Archetype:STALE,Draft
+SB-094,A genuine unsaved edit still raises the unsaved-changes state (the fix did not over-suppress),Site Builder > Pages > Dirty state,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a clean page open in the details blade with no banner (Setup).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create and save a Draft page
+[SETUP] open it
+[CAPTURE] the banner and Save state as B0 and S0
+[ACT] change the page Name but do not save
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the banner, Save and Publish states as B1, S1 and P1
+[MANUAL] reload the tab while the edit is unsaved and record whether the browser leave-site guard fires (native dialog, not observable under automation)","[STATE] B1 is true (the alert 'Has unsaved changes', role alert), S1 Save is enabled and P1 Publish is disabled {OBSERVED} (VCST-5515; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATE] B0 is false and S0 is disabled {OBSERVED} (VCST-5515; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] the page name stored on the server after the unsaved edit equals the name before it {OBSERVED} (VCST-5515; vcst, 2026-11-19, REG-2026-11-19-2029)
+[NAV] the beforeunload guard on a dirty form is a manual check only {OBSERVED} (VCST-5515; vcst, 2026-11-19, REG-2026-11-19-2029)",[CONSOLE] no error,"no banner on a genuinely edited form, Save stays disabled",Revert the edit; do not save it; archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-137 (suite 059) · VCST-5515 · Technique:ST Archetype:SILENT,Draft
+SB-095,Reverting an unsaved edit clears the unsaved-changes state,Site Builder > Pages > Dirty state,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. State: a page open in the blade with a genuine unsaved Name edit and the banner shown (restated: edit the Name of a saved Draft page without saving).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft,"[SETUP] create and save a Draft page
+[SETUP] open it
+[SETUP] change the Name
+[CAPTURE] the banner as B1
+[ACT] revert the Name to its original value
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the banner and Save state as B2 and S2
+[ACT] navigate away
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] whether the navigation is blocked as BLOCK","[STATE] B1 is true; B2 is false and S2 Save is disabled once the value equals the baseline (the alert is gone within 3 seconds) {OBSERVED} (VCST-5515; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATE] BLOCK is false {OBSERVED} (VCST-5515; vcst, 2026-11-19, REG-2026-11-19-2029)",[CONSOLE] no error,"the banner stays after reverting (dirty flag stuck), unexpected 4xx/5xx or console error on the request under test",Archive the page by groupId.,VCST-6571 · ported from Page Builder CMS-138 (suite 059) · VCST-5515 · Technique:ST Archetype:STALE,Draft
+SB-096,All Pages search — a term narrows the list to exactly the pages whose name contains it and clearing restores the full list,Site Builder > Pages > Search,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store (@td(STORE_PRIMARY.id)); storefront URL reachable. Ported from Page Builder suite 059 — SB labels, toasts and hash routes come from the SB source locale and are {HYPOTHESIS} until seen live; every page is created by the case (AGENT-TEST- prefix) and archived by groupId in Cleanup. More than 3 pages exist in All Pages (create them in Setup if fewer). Breaking condition to catch: the term typed and Enter pressed leaves every page listed (a success-shaped no-op, VCST-4502).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder,"[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder (sign in if prompted, password by NAME ADMIN_PASSWORD)
+[WAIT] the list renders
+[CAPTURE] the total page count as N_ALL and every page name as NAMES_ALL
+[CAPTURE] a search word W derived from NAMES_ALL that appears in some but not all names
+[CAPTURE] EXPECTED = the names in NAMES_ALL that contain W, case-insensitive
+[ACT] click 'Search...'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill W
+[WAIT] the UI settles (no spinner, network idle)
+[KEY] press Enter
+[WAIT] the list settles
+[CAPTURE] the visible count as N_FILTERED and the names as NAMES_FILTERED
+[ACT] clear the field
+[WAIT] the list settles
+[CAPTURE] the visible count as N_RESTORED
+[ACT] fill a term that matches no page name
+[WAIT] the UI settles (no spinner, network idle)
+[KEY] press Enter
+[WAIT] the list settles
+[CAPTURE] the visible count as N_NONE","[COUNT] N_FILTERED is at least 1 and smaller than N_ALL {OBSERVED} (VCST-4502; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] NAMES_FILTERED equals EXPECTED as a set {OBSERVED} (VCST-4502; vcst, 2026-11-19, REG-2026-11-19-2029)
+[COUNT] N_RESTORED equals N_ALL {OBSERVED} (VCST-4502; vcst, 2026-11-19, REG-2026-11-19-2029)
+[COUNT] N_NONE equals 0 {OBSERVED} (VCST-4502; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] list requests return 200,"N_FILTERED equals N_ALL, a page without W listed, a page with W missing, list not restored",Clear the search field; archive the pages created in Setup by groupId.,VCST-6571 · ported from Page Builder CMS-186 (suite 059) · VCST-4502 · Technique:EP Archetype:SILENT,Draft

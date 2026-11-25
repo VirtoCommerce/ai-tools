@@ -1,45 +1,28 @@
 {
-  "runId": "REG-2026-11-18-1715",
-  "status": "completed",
-  "startedAt": "2026-11-18T17:15:41.922Z",
+  "runId": "REG-2026-11-20-0821",
+  "status": "stalled",
+  "startedAt": "2026-11-20T07:21:14.661Z",
   "env": "vcst",
-  "selection": "001,045,071 --ids CAT-007,CAT-056,A11Y-KB-006,A11Y-KB-007,FWL-069 --no-promote",
-  "ticket": "VCST-6292",
-  "note": "qa-suite-sync 5a scoped run (/qa-test-lifecycle VCST-6292)",
+  "selection": "123,123b --ids <74 SB targets> --no-promote",
+  "ticket": "VCST-6571",
+  "note": "qa-suite-sync step-7 re-run + flag-on cases (/qa-test-lifecycle VCST-6571)",
   "suites": {
-    "001": {
-      "status": "done",
-      "browser": "playwright-chrome",
+    "123": {
+      "status": "running",
       "lane": "browser",
-      "startedAt": "2026-11-18T17:16:41.313Z",
-      "cases": 2,
-      "pass": 2,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-18T17:27:06.382Z"
+      "cases": 32,
+      "browser": "playwright-firefox",
+      "startedAt": "2026-11-20T07:23:22Z"
     },
-    "045": {
-      "status": "done",
-      "browser": "playwright-chrome",
+    "123b": {
+      "status": "running",
       "lane": "browser",
-      "startedAt": "2026-11-18T17:16:41.313Z",
-      "cases": 2,
-      "pass": 1,
-      "fail": 1,
-      "blocked": 0,
-      "finishedAt": "2026-11-18T17:27:06.382Z"
-    },
-    "071": {
-      "status": "done",
+      "cases": 42,
       "browser": "playwright-chrome",
-      "lane": "browser",
-      "startedAt": "2026-11-18T17:16:41.313Z",
-      "cases": 1,
-      "pass": 1,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-18T17:27:06.382Z"
+      "startedAt": "2026-11-20T07:23:22Z"
     }
   },
-  "finishedAt": "2026-11-18T17:28:02.939Z"
+  "stalledAt": "2026-11-20T08:28:19.973Z",
+  "stalledReason": "no progress for 45 min (REG-2026-11-20-0821:in_progress:2:74:29)",
+  "finishedAt": "2026-11-20T08:28:19.973Z"
 }

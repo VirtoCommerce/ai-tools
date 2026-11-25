@@ -83,7 +83,8 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
    The documented mechanism comes from [`doc-sources.md`](../../knowledge/execution/doc-sources.md) —
    VirtoOZ through the connector, the module's README at the deployed tag — quoted with its URL.
 
-3. **Capture** on a Playwright lane: build check first, then one full-viewport frame per step of every
+3. **Capture** on a Playwright lane: build check first, then a demo data set made for the walk (never the
+   run's fixtures; deleted by id after the last frame), then one full-viewport frame per step of every
    `PASS` scenario — [`media.md`](media.md) §Capture. Build the scenario GIFs — §GIF.
 
 4. **Write the document** from [`template.md`](template.md) under [`rules.md`](rules.md), and save it as

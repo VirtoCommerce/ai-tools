@@ -8,6 +8,125 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The Windows sign-in is stored in a DPAPI file — `vc-secrets` `0.3.0` — 2026-11-23
+
+### Fixed
+
+- **Windows: an access token larger than Credential Manager's 2560-byte blob ceiling is cached again.** The
+  access token carries the user's group claims and grows with every group membership; on a machine with enough
+  of them the token alone outgrew the ceiling. The write of the access entry is best effort, so sign-in kept
+  working while no access token was ever cached, and every launch and every five-minute renewal tick exchanged
+  the refresh token, which rotates it each time. `login` and renewal now store the refresh and access entries
+  as DPAPI-protected files, which have no size ceiling.
+- **macOS: `vc-secrets set` stores a long API token whole.** The password prompt of `security` truncates what is
+  typed at 128 characters and `set` still reported success, so a longer token was stored cut and the service
+  answered 401 later. `set` now reads the value itself, as it does on every other platform, and writes it through
+  `security -i`, which keeps it out of the command line; a value too long for that command line is refused.
+- **macOS: two launchers that reach the token lock at the same moment no longer fail, and a live holder is no longer
+  taken over by the second.** The lock is a socket file there, and the kernel answered the slower of two simultaneous
+  binders with an error the lock code did not know, so a server could fail to start and `login` or `logout` could
+  fail. A socket that is bound but not yet listening also refuses connections like one a killed launcher left behind,
+  so a launcher could take the winner's live socket for a dead one, replace it, and exchange the refresh token
+  alongside it, which signs one session out. The lock now treats that error as "held", and reclaims a socket only
+  after it refused twice, a randomised moment apart; a holder that takes longer than that wait to get from bind to
+  listen can still be taken over. A socket a killed launcher really left behind is much less likely to be reclaimed by
+  two launchers at once, but it can still happen.
+
+### Changed
+
+- **Where a Windows sign-in lives.** One file per entry, `%LOCALAPPDATA%\vc-secrets\secrets\<scope>\<name>.dpapi`,
+  encrypted with `CryptProtectData` under the current user and bound to the entry's key. `%LOCALAPPDATA%` rather
+  than `HOME`, because Git Bash, an IDE and Explorer can disagree on `HOME` and an entry written under one
+  would read as "not signed in" under another; an explicit `XDG_CONFIG_HOME` still wins. Files are written to a
+  temporary sibling and renamed over the entry, so a launcher reading without the token lock sees the old
+  version or the new one. Secrets stored with `set` stay in Credential Manager, and macOS and Linux are
+  unchanged. README §Where an OAuth sign-in is stored on Windows;
+  [`docs/decisions/vc-secrets-dpapi-oauth-store.md`](docs/decisions/vc-secrets-dpapi-oauth-store.md) records the
+  decision and what was rejected.
+- **Existing sign-ins migrate on first read.** When no refresh file exists, the Credential Manager pair under the
+  same keys is read, as a pair, and moved into files at the next renewal or sign-in; the Credential Manager
+  entries are then deleted. Nobody has to sign in again. `logout`, and a renewal whose new refresh token cannot
+  be stored, remove the file and the Credential Manager entry of the same key, so a fallback cannot bring back a
+  token that was reported removed. A refresh file DPAPI cannot decrypt (an administrator's password reset, a
+  profile copied to another machine) reads as not signed in, with a notice naming the entry; an access file it
+  cannot decrypt beside a good refresh file costs one exchange. Sessions started before the upgrade keep running
+  the old code: once the first launch of the new version has migrated the sign-in, those sessions can no longer
+  renew it, so restart them.
+- **`doctor` probes each store a kind of entry uses.** On Windows it prints one line for Credential Manager
+  (`set` can store a value up to the ceiling) and one for the DPAPI files (a value well over the ceiling is
+  stored and read back), so the `OK` about login and renewal describes the store they use.
+- `VC_SECRETS_LOCAL_BACKEND=wcm` keeps `set` secrets in Credential Manager and stores the sign-in in the DPAPI
+  files; `dpapi` is not a valid value, so a `set` secret cannot land there.
+
+### Removed
+
+- The oversize marker and the `doctor` `WARN` that read it. Both existed to make the Credential Manager ceiling
+  visible while the sign-in still depended on it; with no sign-in written there, nothing produces either. A
+  marker file already on disk is left alone and no longer read. The exit-4 message for a `set` value over the
+  ceiling stays.
+
+## The `tsc` hook no longer runs after every Edit — `vc-fix` `0.19.2` — 2026-11-23
+
+### Removed
+
+- The `PostToolUse` `Edit` hook `npx tsc --noEmit --pretty 2>&1 | head -20`. A hook matcher names the tool, not
+  the file, so it ran synchronously after every Edit in every project the user opens, whatever the file type. In a
+  project with no local TypeScript, `npx` fetched the unrelated npm package `tsc` (a placeholder that prints "This
+  is not the tsc command you are looking for") and ran it. Where TypeScript is installed, it checked the root
+  `tsconfig.json`, which in vc-frontend lists no files, and never `.vue` files. The developer skills already run the
+  repository's own declared typecheck as an explicit gate. `HOOK_TSC_ERROR` in `/vc-self-check` stays: older installs still
+  produce it.
+
+## vc-secrets runs under Codex and Cursor without Claude Code — `vc-secrets` `0.2.0`, `vc-init` `0.8.4` — 2026-11-20
+
+### Fixed
+
+- **Cursor: the guard no longer refuses every tool call.** Cursor registers the plugin's `preToolUse` hook
+  fail-closed and reads an exit 0 with empty stdout as a failed hook. The 0.1.0 guard printed nothing when it
+  allowed a call, so with vc-secrets installed from Cursor's marketplace every shell command, file read and edit
+  was refused. `hooks/hooks-cursor.json` now passes
+  `--cursor`, and with it the guard writes `{"permission":"allow"}` or `{"permission":"deny", …}` with the reason
+  on stdout. Exit codes, and the output under Claude Code and Codex, are unchanged.
+- **Codex and Cursor no longer depend on Claude Code.** `install` put the shim in `~/.claude/plugins/data/`
+  whichever client ran it and printed Claude Code's `settings.json` entry; on a Cursor-only machine the shim then
+  answered `plugin vc-secrets@ai-tools is not installed`, since it did not know Cursor's plugin cache. `install`
+  now reads its client from its own location, installs into that client's data directory
+  (`~/.codex/plugins/data/…`, `~/.cursor/plugins/data/…`) and prints that client's instructions, so an uninstall in
+  Claude Code no longer removes the shim a Codex or Cursor entry names. A Cursor plugin in
+  `~/.cursor/plugins/local` gets no shim: its path carries no version, and `install` prints the launcher's own path.
+  A Codex or Cursor shim looks in its own client's cache first; `emit-config codex` names Codex's own shim and
+  warns while that file does not exist yet. For an entry that names `VC_SECRETS` (`claude-code`, `cursor`) the
+  verify step goes through the variable when it is set, and otherwise says the variable is missing and names the
+  client's own shim — for Cursor's entry from a `~/.cursor/plugins/local` copy, that copy's launcher.
+  Claude Code is unchanged: its shim still reads Claude Code's install registry first.
+- **Cursor's install directories are ordered by version.** Cursor names one after the marketplace's commit rather
+  than the plugin version, so two of them were ordered by chance; the shim now ranks them by the version in their
+  manifest, with modification time breaking a tie.
+- **vc-init: `/project-init` names the shim directory it reads back.** It ran vc-secrets' installer without
+  `--data-dir` and then looked for the shim in Claude Code's data directory. With vc-secrets 0.2.0 choosing the
+  directory by client, a vc-secrets found only in Codex's cache put the shim in Codex's, and a successful install
+  was reported as failed. `bridge/vc-secrets-path.mjs` now passes Claude Code's directory as `--data-dir`, which
+  vc-secrets 0.1.0 accepts too.
+
+### Changed
+
+- The shim's refusal of an install from another marketplace says when that marketplace is `vc-tools`, this one's
+  name before its 2026-09-30 rename. The README's Cursor setup documents the marketplace route, which works: Cursor
+  reads this repository's `.claude-plugin/marketplace.json`.
+- **Upgrading from 0.1.0** (README §Upgrading from 0.1.0): existing Cursor and Codex setups still name the 0.1.0
+  shim under `~/.claude/plugins/data/`, which does not search Cursor's cache, and `doctor` does not prompt. Under
+  Cursor, re-run `install` and change the `export VC_SECRETS` line; under Codex, re-run `install` and paste
+  `emit-config codex` again — the old entries keep working meanwhile.
+
+### Verified
+
+- In an isolated home: `install` from a Cursor cache copy, a Cursor `plugins/local` copy and a Codex cache copy each
+  put the shim (or, for `local`, named the launcher) in that client's own place and created no `~/.claude`; `doctor`
+  through each reached the launcher, and removing the cache copy made the same shim refuse. `cursor-agent`
+  2026.11.19 with 0.2.0 in its marketplace cache ran a shell command and a read and refused a declaration write
+  with the guard's reason; while the account's 0.1.0 install was in that cache it refused all three. The
+  vc-secrets suite passes.
+
 ## The plugins move to the test-account store — `vc-init` `0.8.0`, `vc-fix` `0.19.0`, `vc-test` `0.19.0` — 2026-11-17
 
 ### Changed

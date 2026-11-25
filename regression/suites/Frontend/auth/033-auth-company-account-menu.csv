@@ -337,3 +337,33 @@ Profile buyer @td(VCST6626_PROFILE_BUYER.email) (password key TEST_USER_PASSWORD
 [COUNT] TOASTS is 0 {SPEC} (AC-18)
 [COUNT] ADDR_AFTER equals ADDR_BEFORE: nothing was created {BL} (BL-PROFILE-001)","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql",modal closes and the rejection is lost; toast instead of a field message; the address is created anyway,Delete any address this case created; sign out,VCST-6626 · Archetype:SILENT · Technique:EP,Draft
+AUTH-083,"Mobile menu on /compare — a guest sees the main menu with Compare highlighted, not the account Purchasing submenu",Account > Menu & Profile > Mobile menu (Compare),Medium,,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend theme 2.63.0 with the Product Comparison module 3.1000.0 (VCST-5918); on the vc-frontend-next theme these cases do not apply (they are written for vc-frontend and never re-based to Next). Observed live on vcptcore 2026-11-19 {OBSERVED} after the fix of the menu opening into the account submenu for a guest. Viewport 390x844. Guest. Before the fix a guest on /compare opened straight into the signed-in-only 'Purchasing' submenu (Dashboard, Orders, Returns, Lists, Compare, Quote requests) because /compare sits under Purchasing for signed-in buyers (checklist X14).",url={{FRONT_URL}},"[SETUP] set the browser viewport to 390x844
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page has rendered
+[ACT] open the mobile header navigation from its hamburger entry
+[WAIT] the mobile menu is open
+[KEY] record the entries of the menu as MENU and the entries whose text carries the active style as LIT
+[KEY] record whether any of 'Dashboard', 'Orders', 'Returns', 'Lists', 'Quote requests' is listed as ACCOUNT_ENTRIES","[REL] MENU holds 'Home', 'Catalog', 'Bulk order', 'Cart', 'Contact us', 'Compare' and 'Sign in' — the main menu {OBSERVED} (vcptcore 2026-11-19, theme 2.63.0-pr-2635)
+[COUNT] LIT holds only 'Compare' {OBSERVED}
+[STATE] ACCOUNT_ENTRIES = none — the guest does not land in the account Purchasing submenu {OBSERVED} (the X14 defect, fixed in the tested build)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The menu opens into the Purchasing submenu for a guest, 'Compare' not lit, a second entry lit, signed-in-only pages listed for a guest",Restore the desktop viewport (1920x1080),VCST-5918 · Archetype:SCOPE · Technique:DT | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+AUTH-084,Mobile menu on /compare — a signed-in buyer sees the Purchasing submenu with Compare highlighted,Account > Menu & Profile > Mobile menu (Compare),Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test: vc-frontend theme 2.63.0 with the Product Comparison module 3.1000.0 (VCST-5918); on the vc-frontend-next theme these cases do not apply (they are written for vc-frontend and never re-based to Next). Observed live on vcptcore 2026-11-19 {OBSERVED} after the fix of the menu opening into the account submenu for a guest. Viewport 390x844. Signed-in buyer: /compare is an entry of My Account › Purchasing and the menu opens into that submenu.",url={{FRONT_URL}},"[SETUP] set the browser viewport to 390x844
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page has rendered
+[ACT] open the mobile header navigation from its hamburger entry
+[WAIT] the mobile menu is open
+[KEY] record the submenu title as TITLE, its entries as ENTRIES and the entries whose text carries the active style as LIT","[REL] TITLE is 'Purchasing' and ENTRIES holds 'Compare' {OBSERVED} (vcptcore 2026-11-19, theme 2.63.0-pr-2635; module README §Storefront plugin: the 'Compare' link under My Account › Purchasing)
+[COUNT] LIT holds only 'Compare' {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The signed-in buyer lands in the main menu instead of the submenu, 'Compare' missing from Purchasing, no entry lit",Restore the desktop viewport (1920x1080),VCST-5918 · Archetype:SCOPE · Technique:DT | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+AUTH-085,Mobile menu on a category page — a guest gets the Catalog submenu,Account > Menu & Profile > Mobile menu (Compare),Low,,,"[PRE:CLEAR_SESSION]
+Build under test: vc-frontend theme 2.63.0 with the Product Comparison module 3.1000.0 (VCST-5918); on the vc-frontend-next theme these cases do not apply (they are written for vc-frontend and never re-based to Next). Observed live on vcptcore 2026-11-19 {OBSERVED} after the fix of the menu opening into the account submenu for a guest. Viewport 390x844. Guest on a catalog category page (any category of the store, discovered live).","url={{FRONT_URL}}, category=live-discover(a store category with products, from the storefront catalog menu)","[SETUP] set the browser viewport to 390x844
+[NAV] the storefront page of the discovered category
+[WAIT] the product cards have rendered
+[ACT] open the mobile header navigation from its hamburger entry
+[WAIT] the mobile menu is open
+[KEY] record the submenu title as TITLE and its entries as ENTRIES","[REL] TITLE is 'Catalog' and ENTRIES lists the category's catalog tree {OBSERVED} (vcptcore 2026-11-19, theme 2.63.0-pr-2635)
+[STATE] 'Compare' is not the highlighted entry of the Catalog submenu {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A guest on a category page lands in the main menu or in the account submenu, the category's own entries missing from the submenu",Restore the desktop viewport (1920x1080),VCST-5918 · Archetype:SCOPE · Technique:DT | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated

@@ -94,6 +94,22 @@ never enters it — it is a `stale_cases` entry for `/qa-test-lifecycle`. Captur
 and the wall clock for `summary.json.regression`. Every case stale ⇒ the lane is not dispatched, and
 `verdict.md` says why.
 
+**Scope — priority-ordered, no flag.** The staleness check (Stage 3) covers every case at risk; the lane
+runs only the **Critical, High and Medium** non-stale ones — never `Low` — at most **`REGRESSION_CASE_CAP` = 40**,
+taken in this order: `Priority` (Critical → High → Medium), then cases whose matched term is the ticket's own
+observable, then suite order. A suite that grades `P0`–`P3` reads as Critical–Low (the `TIER_ALIASES`
+of `scripts/regression/filter-cases.ts`). A ticket run should not pay for a sweep; `/qa-regression` is the sweep, and an
+operator who wants every case runs it directly.
+
+Cases the scope leaves out — every `Low` one, and any Critical/High/Medium one past the cap — are **deferred,
+never dropped**: `summary.json.regression.c1.deferred` lists each id with its suite and its reason (`low` or
+`cap`), and `verdict.md` prints one line — `N deferred (L low, C over the cap) — /qa-regression <suites> --ids …`
+with the ready command. A deferred case was checked and is not stale; it did not run. The cap lives only in
+this paragraph — change it here.
+
+The lane also records its yield, so the scope can be judged later: `regression.c1.attributable_failures` = the
+number of failures triage attributed to this ticket (`0` is a valid and useful value).
+
 **It runs AFTER the other lanes, never beside them.** `/qa-regression` fills all three browser slots and the
 three seeded pool accounts (`qa-regression.md` Step 4, `{{LANE_ID}}`) and has no flag that leaves a slot or an
 account to someone else — beside the runners it would put a second agent on `playwright-chrome` /

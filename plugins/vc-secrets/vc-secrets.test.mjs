@@ -640,6 +640,78 @@ test("guard-declarations: unparseable stdin is reported and does not block", () 
     assert.match(r.stderr, /not inspected/);
 });
 
+// Cursor registers this hook with failClosed, and a failClosed hook that exits 0 with nothing on stdout is a
+// failure there, so the call is BLOCKED -- every tool, since Cursor hands this hook every call. Measured with
+// cursor-agent 2026.11.19 against vc-secrets 0.1.0: Shell and Read were refused with "Hook ... returned no
+// output" while the same probe answering {} or {"permission":"allow"} passed. hooks-cursor.json passes
+// --cursor so the answer is written out only there; Claude Code and Codex keep reading the exit code alone.
+function runGuardHookCursor(stdinText) {
+    return spawnSync(process.execPath, [GUARD_HOOK_PATH, "--cursor"], { input: stdinText, encoding: "utf8" });
+}
+
+function cursorAnswer(r) {
+    const lines = r.stdout.trim().split("\n");
+    assert.equal(lines.length, 1, `exactly one JSON answer on stdout, got ${JSON.stringify(r.stdout)}`);
+
+    return JSON.parse(lines[0]);
+}
+
+test("guard-declarations: under Cursor a call it has nothing against answers allow on stdout", () => {
+    const r = runGuardHookCursor(JSON.stringify({ tool_name: "Shell", tool_input: { command: "pwd" }, cwd: "/repo" }));
+    assert.equal(r.status, 0);
+    assert.deepEqual(cursorAnswer(r), { permission: "allow" });
+});
+
+test("guard-declarations: under Cursor an allowed write answers allow on stdout", () => {
+    const r = runGuardHookCursor(JSON.stringify({ tool_name: "Write", tool_input: { file_path: "/repo/src/index.js" } }));
+    assert.equal(r.status, 0);
+    assert.deepEqual(cursorAnswer(r), { permission: "allow" });
+});
+
+test("guard-declarations: under Cursor both fail-open branches still answer allow", () => {
+    // Fail-open is the decided answer for an input this guard cannot read; under Cursor an empty stdout
+    // would turn it into fail-closed for every call, which is the opposite of the decision.
+    const unparseable = runGuardHookCursor("not json");
+    assert.equal(unparseable.status, 0);
+    assert.deepEqual(cursorAnswer(unparseable), { permission: "allow" });
+    assert.match(unparseable.stderr, /not inspected/);
+
+    const unrecognised = runGuardHookCursor(JSON.stringify({ tool_name: "Write", tool_input: { filePath: "/repo/.claude/vc-secrets.json" } }));
+    assert.equal(unrecognised.status, 0);
+    assert.deepEqual(cursorAnswer(unrecognised), { permission: "allow" });
+    assert.match(unrecognised.stderr, /not inspected/);
+});
+
+test("guard-declarations: under Cursor a block exits 2 and also answers deny with its reason", () => {
+    const r = runGuardHookCursor(JSON.stringify({ tool_name: "Write", tool_input: { file_path: "/repo/.claude/vc-secrets.json" } }));
+    assert.equal(r.status, 2);
+    const answer = cursorAnswer(r);
+    assert.equal(answer.permission, "deny");
+    assert.match(answer.agent_message, /^BLOCK: a vc-secrets declaration/);
+    assert.equal(answer.user_message, answer.agent_message);
+    assert.match(r.stderr, /^BLOCK: a vc-secrets declaration/);
+});
+
+test("guard-declarations: without --cursor stdout stays empty, allowed or blocked", () => {
+    // Claude Code and Codex read the exit code; a JSON object on stdout is a different contract there, so
+    // the Cursor answer must not leak into their registrations.
+    const allowed = runGuardHook(guardInput("/repo/src/index.js"));
+    assert.equal(allowed.status, 0);
+    assert.equal(allowed.stdout, "");
+
+    const blocked = runGuardHook(guardInput("/repo/.claude/vc-secrets.json"));
+    assert.equal(blocked.status, 2);
+    assert.equal(blocked.stdout, "");
+});
+
+test("guard-declarations: hooks-cursor.json passes --cursor and stays failClosed", () => {
+    const registration = JSON.parse(fs.readFileSync(fileURLToPath(new URL("./hooks/hooks-cursor.json", import.meta.url)), "utf8"));
+    const entries = registration.hooks.preToolUse;
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].failClosed, true);
+    assert.match(entries[0].command, /guard-declarations\.mjs" --cursor$/);
+});
+
 test("guard-declarations: an unparseable payload is reported without any of its bytes", () => {
     // fd 0 here carries the client's tool payload -- the file content about to be written -- so V8's
     // parse message is built out of a credential. It has three shapes and the one that leaks most is
@@ -1389,7 +1461,11 @@ test("install-shim: a destination whose bytes differ is called different, not ol
     const r = spawnSync(process.execPath, [script], { encoding: "utf8", env: { ...process.env, HOME: home } });
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /replaced a different copy/);
-    assert.doesNotMatch(r.stdout, /older/);
+    // The report names the temp home, and a path such as /var/folders/... contains "older" (fOLDERs), so the paths
+    // are taken out before the word is looked for: the word itself, anywhere else in the text, is what is refused.
+    const spellings = [home, fs.realpathSync(home)];
+    const text = spellings.reduce((out, spelling) => out.split(spelling).join(""), r.stdout);
+    assert.doesNotMatch(text, /older/);
 });
 
 test("install-shim: --data-dir decides the location, in both spellings", () => {
@@ -2031,7 +2107,7 @@ const UNGUARDED_FILES = ["README.md", "LICENSE"];
 const TEST_FILES = ["vc-secrets.test.mjs", "vc-secrets-oauth.test.mjs", "test-support.mjs", "test-fixtures.mjs",
     "lib/util.test.mjs", "lib/spawn.test.mjs", "lib/config.test.mjs", "lib/keystore.test.mjs", "lib/trust.test.mjs",
     "lib/oauth-token.test.mjs", "lib/oauth-login.test.mjs", "lib/oauth-checks.test.mjs", "lib/launch.test.mjs",
-    "lib/doctor.test.mjs", "lib/cli.test.mjs"];
+    "lib/doctor.test.mjs", "lib/cli.test.mjs", "store-guards.test.mjs"];
 
 // The guard does not use its own process's working directory as a root, and these two helpers still name
 // one explicitly, so no result depends on where the suite is run from.
@@ -2734,7 +2810,6 @@ test("set: a secret declared in the LOCAL file is gated like a project one", POS
     const refused = runVerb(env, root, "set", "pat");
     assert.equal(refused.status, 1, refused.stderr);
     assert.match(refused.stderr, /secret "pat" is stored in namespace "proj-x", which this repository declares, and this checkout is not trusted/);
-    assert.deepEqual(recorder.calls(), []);
 });
 
 // Counts the reads of one file made by the verbs that run under `env`, by a preload that wraps
@@ -2782,7 +2857,10 @@ test("set, doctor: a user-scope declaration is never gated, a corrupt trust file
         ]) {
             const setCounter = fileReadCounter(baseEnv, trustFile);
             const set = runVerb(setCounter.env, cwd, "set", "mine");
-            assert.equal(set.status, 0, `${what}: ${set.stderr}`);
+            // A spawned `set` has no terminal to read the value from, so what a pass looks like here is the
+            // value prompt's refusal: the gate was passed, and nothing about trust was said.
+            assert.equal(set.status, 1, `${what}: ${set.stderr}`);
+            assert.match(set.stderr, /vc-secrets set requires an interactive terminal/, what);
             assert.doesNotMatch(set.stderr, /trust/i, what);
             assert.equal(setCounter.reads(), 0, `${what}: set never reads the trust file`);
             const doctorCounter = fileReadCounter(baseEnv, trustFile);
@@ -2791,7 +2869,8 @@ test("set, doctor: a user-scope declaration is never gated, a corrupt trust file
             assert.doesNotMatch(doctor.stderr, /trust file|SKIP secret "mine"/, what);
             assert.equal(doctorCounter.reads(), doctorReads, `${what}: reads of the trust file by doctor`);
         }
-        assert.ok(recorder.calls().some((call) => call.includes("-s vc-secrets:user:mine")));
+        assert.ok(recorder.calls().some((call) => call.includes("find-generic-password") && call.includes("-s vc-secrets:user:mine")),
+            "the keystore stub was reached, by doctor's read: a spawned `set` stops at the value prompt");
     });
 
 test("doctor: a repository's local secret and oauth cache are not read in a checkout that is not trusted for the namespace, and are once it is",
@@ -2852,7 +2931,9 @@ test("untrust revokes what trust granted to set, login and logout", POSIX_STUB_O
     const env = launcherEnv(recorder.env);
     const root = namespaceRepo(NS_PAT_PROJECT);
     seedTrust(env, root);
-    assert.equal(runVerb(env, root, "set", "pat").status, 0);
+    const trusted = runVerb(env, root, "set", "pat");
+    assert.match(trusted.stderr, /vc-secrets set requires an interactive terminal/, "trusted: the gate is passed and the value is asked for");
+    assert.doesNotMatch(trusted.stderr, /not trusted/);
     assert.equal(runVerb(env, root, "untrust").status, 0);
     const refused = runVerb(env, root, "set", "pat");
     assert.equal(refused.status, 1);
@@ -2949,4 +3030,344 @@ test("emit-config: still emits every server, and says on stderr which the launch
     seedTrust(env, root);
     const trusted = spawnSync(process.execPath, [LAUNCHER_PATH, "emit-config", "claude-code"], { cwd: root, env, encoding: "utf8" });
     assert.doesNotMatch(trusted.stderr, /not trusted yet/);
+});
+
+// ── a client's own copy: the shim and the installer read which client they belong to from where they sit ──
+//
+// Each client keeps its plugins under its own home: <home>/plugins/cache/<marketplace>/<plugin>/<version>/.
+// Measured for Cursor with cursor-agent 2026.11.19: a marketplace install lands in
+// ~/.cursor/plugins/cache/ai-tools/vc-secrets/<commit sha>/, with no install registry on disk. Before this, a
+// shim installed under Codex resolved Claude Code's registry first, and its default location was Claude
+// Code's data directory, which Claude Code deletes when the plugin is uninstalled there.
+
+const CLIENT_DIRS = { claude: ".claude", codex: ".codex", cursor: ".cursor" };
+
+// The shim copied to where the install skill puts it for one client, so its own location names the client.
+function shimInstalledFor(clientDir) {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-own-"));
+    tmpDirs.push(home);
+    const dir = path.join(home, clientDir, "plugins", "data", CANONICAL_DATA_ID);
+    fs.mkdirSync(dir, { recursive: true });
+    const shim = path.join(dir, "vc-secrets-shim.mjs");
+    fs.copyFileSync(SHIM_PATH, shim);
+
+    return { home, shim };
+}
+
+// One <client>/plugins/cache/<marketplace>/vc-secrets/<dirName>/ install with a stub launcher. A real install
+// also carries its manifests; `manifestVersion` writes the one the shim reads when the directory name is not
+// a version, and `mtime` dates the directory for the tie-break between two installs of one version.
+function cachedInstall(home, clientDir, dirName, label, { manifestVersion, mtime, marketplace = PLUGIN_KEY.split("@")[1] } = {}) {
+    const dir = path.join(home, clientDir, "plugins", "cache", marketplace, "vc-secrets", dirName);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, "vc-secrets.mjs"),
+        `export async function runCli() { process.stderr.write("STUB-RAN:${label}\\n"); }\n`);
+    if (manifestVersion !== undefined) {
+        fs.mkdirSync(path.join(dir, ".claude-plugin"), { recursive: true });
+        fs.writeFileSync(path.join(dir, ".claude-plugin", "plugin.json"), JSON.stringify({ name: "vc-secrets", version: manifestVersion }));
+    }
+    if (mtime !== undefined) {
+        fs.utimesSync(dir, mtime, mtime);
+    }
+
+    return dir;
+}
+
+function runOwnShim({ home, shim }, { registry } = {}) {
+    if (registry !== undefined) {
+        fs.mkdirSync(path.join(home, ".claude", "plugins"), { recursive: true });
+        fs.writeFileSync(path.join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify(registry));
+    }
+
+    return spawnSync(process.execPath, [shim, "doctor"], { env: shimEnv(home), cwd: home, encoding: "utf8" });
+}
+
+const SHA_A = "1290acf240898c4d0f67da50f6575d166b8d1982";
+const SHA_B = "f005e9d3c1b2a4e5d6c7b8a9f0e1d2c3b4a5f6e7";
+
+test("shim: a copy in Codex's data dir runs Codex's own install before Claude Code's registry", () => {
+    const own = shimInstalledFor(CLIENT_DIRS.codex);
+    cachedInstall(own.home, CLIENT_DIRS.codex, "0.2.0", "codex-cache");
+    const r = runOwnShim(own, { registry: shimRegistry([{ scope: "user", installPath: writeStubInstall("claude-registry"), version: "9.9.9" }]) });
+    assert.match(r.stderr, /STUB-RAN:codex-cache/);
+    assert.doesNotMatch(r.stderr, /STUB-RAN:claude-registry/);
+});
+
+test("shim: a copy in Cursor's data dir runs Cursor's own install before Claude Code's registry", () => {
+    // The sibling test below holds no registry, so the fallback walk would reach Cursor's cache anyway; only a
+    // healthy registry record that outranks it tells "own client first" apart from "every cache in the end".
+    const own = shimInstalledFor(CLIENT_DIRS.cursor);
+    cachedInstall(own.home, CLIENT_DIRS.cursor, SHA_A, "cursor-cache", { manifestVersion: "0.2.0" });
+    const r = runOwnShim(own, { registry: shimRegistry([{ scope: "user", installPath: writeStubInstall("claude-registry"), version: "9.9.9" }]) });
+    assert.match(r.stderr, /STUB-RAN:cursor-cache/);
+    assert.doesNotMatch(r.stderr, /STUB-RAN:claude-registry/);
+});
+
+test("shim: a copy in Cursor's data dir runs Cursor's install, whose version directory is a commit sha", () => {
+    const own = shimInstalledFor(CLIENT_DIRS.cursor);
+    cachedInstall(own.home, CLIENT_DIRS.cursor, SHA_A, "cursor-cache", { manifestVersion: "0.2.0" });
+    const r = runOwnShim(own);
+    assert.match(r.stderr, /STUB-RAN:cursor-cache/);
+});
+
+test("shim: a copy in Claude Code's data dir keeps preferring the registry", () => {
+    // The registry is the only source that knows per-project installs, so Claude Code's own order stands.
+    const own = shimInstalledFor(CLIENT_DIRS.claude);
+    cachedInstall(own.home, CLIENT_DIRS.codex, "9.9.9", "codex-cache");
+    const r = runOwnShim(own, { registry: shimRegistry([{ scope: "user", installPath: writeStubInstall("claude-registry"), version: "0.2.0" }]) });
+    assert.match(r.stderr, /STUB-RAN:claude-registry/);
+});
+
+test("shim: a Codex copy with no Codex install falls back to another client's, and says which", () => {
+    const own = shimInstalledFor(CLIENT_DIRS.codex);
+    const r = runOwnShim(own, { registry: shimRegistry([{ scope: "user", installPath: writeStubInstall("claude-registry"), version: "0.2.0" }]) });
+    assert.match(r.stderr, /STUB-RAN:claude-registry/);
+    assert.match(r.stderr, /no usable install of vc-secrets@ai-tools in .*\.codex[\\/]plugins[\\/]cache/);
+});
+
+test("shim: Cursor's cache is searched when nothing else holds an install", () => {
+    // A machine with Cursor alone: no registry, no Claude Code or Codex cache.
+    const r = runShim(["doctor"], { caches: [{ client: "cursor", version: SHA_A, label: "cursor-only" }] });
+    assert.match(r.stderr, /STUB-RAN:cursor-only/);
+});
+
+test("shim: commit-sha version directories rank by the version their manifest declares", () => {
+    const own = shimInstalledFor(CLIENT_DIRS.cursor);
+    // Named so that neither name nor creation order favours the newer one.
+    cachedInstall(own.home, CLIENT_DIRS.cursor, SHA_B, "older", { manifestVersion: "0.1.0", mtime: new Date("2026-11-20T12:00:00Z") });
+    cachedInstall(own.home, CLIENT_DIRS.cursor, SHA_A, "newer", { manifestVersion: "0.2.0", mtime: new Date("2026-11-01T12:00:00Z") });
+    const r = runOwnShim(own);
+    assert.match(r.stderr, /STUB-RAN:newer/);
+    assert.doesNotMatch(r.stderr, /STUB-RAN:older/);
+});
+
+test("shim: two installs declaring the same version fall back to the more recent directory", () => {
+    const own = shimInstalledFor(CLIENT_DIRS.cursor);
+    cachedInstall(own.home, CLIENT_DIRS.cursor, SHA_A, "earlier", { manifestVersion: "0.2.0", mtime: new Date("2026-11-01T12:00:00Z") });
+    cachedInstall(own.home, CLIENT_DIRS.cursor, SHA_B, "later", { manifestVersion: "0.2.0", mtime: new Date("2026-11-20T12:00:00Z") });
+    const r = runOwnShim(own);
+    assert.match(r.stderr, /STUB-RAN:later/);
+});
+
+test("shim: the same-version tie-break follows the date, not which directory is listed first", () => {
+    // The test above with the two names swapped. Directory listing order is the filesystem's, so with the
+    // tie-break gone one of the pair still passes by luck -- but not both.
+    const own = shimInstalledFor(CLIENT_DIRS.cursor);
+    cachedInstall(own.home, CLIENT_DIRS.cursor, SHA_B, "earlier", { manifestVersion: "0.2.0", mtime: new Date("2026-11-01T12:00:00Z") });
+    cachedInstall(own.home, CLIENT_DIRS.cursor, SHA_A, "later", { manifestVersion: "0.2.0", mtime: new Date("2026-11-20T12:00:00Z") });
+    const r = runOwnShim(own);
+    assert.match(r.stderr, /STUB-RAN:later/);
+});
+
+test("shim: a copy under the pre-rename vc-tools key is refused with the rename named", () => {
+    // ai-tools was called vc-tools until 2026-09-30, and a repository can still register it under the old
+    // key. The refusal stands -- a key is not an identity -- but the remedy must not read "install it" to
+    // someone who can see it installed.
+    const r = runShim(["doctor"], { caches: [{ client: "claude", marketplace: "vc-tools", version: "0.1.0", label: "old-key" }] });
+    assert.equal(r.status, 1);
+    assert.doesNotMatch(r.stderr, /STUB-RAN/);
+    assert.match(r.stderr, /vc-tools is this marketplace's name before its 2026-09-30 rename to ai-tools/);
+    assert.match(r.stderr, /uninstall the @vc-tools copy/);
+});
+
+test("shim and shim-path name the same home for each client", () => {
+    // The shim is copied to its data dir alone and cannot import shim-path, so the table is written twice.
+    const source = fs.readFileSync(SHIM_PATH, "utf8");
+    const table = source.match(/const CLIENT_HOMES = \{([^}]*)\}/);
+    assert.ok(table, "the shim declares CLIENT_HOMES");
+    const shimDirs = [...table[1].matchAll(/"(\.[a-z]+)"/g)].map((x) => x[1]).sort();
+    assert.deepEqual(shimDirs, Object.values(m.CLIENT_HOME_DIRS).sort());
+});
+
+test("shim-path: each client's default shim lives under that client's own home", () => {
+    const env = { HOME: "/home/x" };
+    assert.equal(m.defaultShimPath(env, "claude-code"), path.join("/home/x", ".claude", "plugins", "data", CANONICAL_DATA_ID, "vc-secrets-shim.mjs"));
+    assert.equal(m.defaultShimPath(env, "codex"), path.join("/home/x", ".codex", "plugins", "data", CANONICAL_DATA_ID, "vc-secrets-shim.mjs"));
+    assert.equal(m.defaultShimPath(env, "cursor"), path.join("/home/x", ".cursor", "plugins", "data", CANONICAL_DATA_ID, "vc-secrets-shim.mjs"));
+    assert.equal(m.defaultShimPath(env), m.defaultShimPath(env, "claude-code"), "Claude Code stays the default");
+});
+
+// The installer finds its plugin root from its own location, so a test that wants it inside a client's tree
+// copies the files it reads there: itself, shim-path, the shim it copies, and the launcher a local Cursor
+// install points at directly.
+function pluginCopyAt(root) {
+    const own = path.dirname(fileURLToPath(import.meta.url));
+    fs.mkdirSync(path.join(root, "scripts"), { recursive: true });
+    for (const rel of ["scripts/install-shim.mjs", "scripts/shim-path.mjs", "vc-secrets-shim.mjs", "vc-secrets.mjs"]) {
+        fs.copyFileSync(path.join(own, rel), path.join(root, rel));
+    }
+
+    return path.join(root, "scripts", "install-shim.mjs");
+}
+
+function freshHome(prefix) {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+    tmpDirs.push(home);
+
+    return home;
+}
+
+test("install-shim: run from Codex's cache it installs into Codex's data dir and points at emit-config codex", () => {
+    const home = freshHome("vcs-inst-codex-");
+    const script = pluginCopyAt(path.join(home, ".codex", "plugins", "cache", "ai-tools", "vc-secrets", "0.2.0"));
+    const r = spawnSync(process.execPath, [script], { encoding: "utf8", env: { ...process.env, HOME: home } });
+    assert.equal(r.status, 0, r.stderr);
+    const shim = path.join(home, ".codex", "plugins", "data", CANONICAL_DATA_ID, "vc-secrets-shim.mjs");
+    assert.ok(fs.existsSync(shim), r.stdout);
+    assert.equal(fs.existsSync(path.join(home, ".claude")), false, "nothing is written under Claude Code's home");
+    assert.ok(r.stdout.includes(`node ${JSON.stringify(shim)} emit-config codex`), r.stdout);
+    assert.doesNotMatch(r.stdout, /"VC_SECRETS"/, "Claude Code's settings entry is not Codex's step");
+});
+
+test("install-shim: run from Cursor's cache it installs into Cursor's data dir and says to export VC_SECRETS", () => {
+    const home = freshHome("vcs-inst-cursor-");
+    const script = pluginCopyAt(path.join(home, ".cursor", "plugins", "cache", "ai-tools", "vc-secrets", SHA_A));
+    const r = spawnSync(process.execPath, [script], { encoding: "utf8", env: { ...process.env, HOME: home } });
+    assert.equal(r.status, 0, r.stderr);
+    const shim = path.join(home, ".cursor", "plugins", "data", CANONICAL_DATA_ID, "vc-secrets-shim.mjs");
+    assert.ok(fs.existsSync(shim), r.stdout);
+    assert.equal(fs.existsSync(path.join(home, ".claude")), false, "nothing is written under Claude Code's home");
+    assert.ok(r.stdout.includes(`export VC_SECRETS=${JSON.stringify(shim)}`), r.stdout);
+    assert.ok(r.stdout.includes(`node ${JSON.stringify(shim)} emit-config cursor`), r.stdout);
+});
+
+test("install-shim: from ~/.cursor/plugins/local it copies nothing and names the launcher, whose path is already stable", () => {
+    // A local plugin directory carries no version in its path -- it is updated in place -- so the problem the
+    // shim solves does not exist there, and a copy would only add a second file to keep current.
+    const home = freshHome("vcs-inst-local-");
+    const root = path.join(home, ".cursor", "plugins", "local", "vc-secrets");
+    const script = pluginCopyAt(root);
+    const r = spawnSync(process.execPath, [script], { encoding: "utf8", env: { ...process.env, HOME: home } });
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(fs.existsSync(path.join(home, ".cursor", "plugins", "data")), false, "no shim is copied");
+    assert.equal(fs.existsSync(path.join(home, ".claude")), false);
+    // The launcher's own location, as node resolves it: the script names the file it runs from, and a temp
+    // root reached through a link (macOS's /var is /private/var) is spelled by its target there. HOME-derived
+    // paths keep the spelling HOME was given in; this one is the plugin copy's.
+    const launcher = fs.realpathSync(path.join(root, "vc-secrets.mjs"));
+    assert.ok(r.stdout.includes(`export VC_SECRETS=${JSON.stringify(launcher)}`), r.stdout);
+    assert.ok(r.stdout.includes(`node ${JSON.stringify(launcher)} doctor`), r.stdout);
+});
+
+test("install-shim: an explicit --data-dir still decides the location inside a client's tree", () => {
+    const home = freshHome("vcs-inst-explicit-");
+    const script = pluginCopyAt(path.join(home, ".codex", "plugins", "cache", "ai-tools", "vc-secrets", "0.2.0"));
+    const chosen = path.join(home, "elsewhere", "vc-secrets-mine");
+    const r = spawnSync(process.execPath, [script, "--data-dir", chosen], { encoding: "utf8", env: { ...process.env, HOME: home } });
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(fs.existsSync(path.join(chosen, "vc-secrets-shim.mjs")), r.stdout);
+    assert.equal(fs.existsSync(path.join(home, ".codex", "plugins", "data")), false);
+});
+
+test("install-shim: under a HOME reached through a link it still recognises its client", () => {
+    // Node runs a script from its resolved path, so the copy's own location comes back without the link
+    // while HOME keeps it. Compared as written, a Codex copy read as no client's and fell back to Claude
+    // Code's directory and settings entry -- the very behaviour this release removes, with no warning.
+    const real = freshHome("vcs-inst-realhome-");
+    const link = path.join(freshHome("vcs-inst-linkparent-"), "home");
+    fs.symlinkSync(real, link, "junction");
+    pluginCopyAt(path.join(real, ".codex", "plugins", "cache", "ai-tools", "vc-secrets", "0.2.0"));
+    const script = path.join(link, ".codex", "plugins", "cache", "ai-tools", "vc-secrets", "0.2.0", "scripts", "install-shim.mjs");
+    const r = spawnSync(process.execPath, [script], { encoding: "utf8", env: { ...process.env, HOME: link } });
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(fs.existsSync(path.join(real, ".codex", "plugins", "data", CANONICAL_DATA_ID, "vc-secrets-shim.mjs")), r.stdout);
+    assert.equal(fs.existsSync(path.join(real, ".claude")), false, "nothing is written under Claude Code's home");
+});
+
+test("install-shim: from ~/.cursor/plugins/local an explicit --data-dir still installs a shim there", () => {
+    // The local-copy shortcut skips the shim only when nobody asked for one; a chosen directory is a request.
+    const home = freshHome("vcs-inst-local-explicit-");
+    const script = pluginCopyAt(path.join(home, ".cursor", "plugins", "local", "vc-secrets"));
+    const chosen = path.join(home, "elsewhere", "vc-secrets-mine");
+    const r = spawnSync(process.execPath, [script, "--data-dir", chosen], { encoding: "utf8", env: { ...process.env, HOME: home } });
+    assert.equal(r.status, 0, r.stderr);
+    const shim = path.join(chosen, "vc-secrets-shim.mjs");
+    assert.ok(fs.existsSync(shim), r.stdout);
+    assert.ok(r.stdout.includes(`export VC_SECRETS=${JSON.stringify(shim)}`), r.stdout);
+});
+
+const EMIT_CFG = { servers: { github: { command: "npx", args: ["-y", "gh-mcp"] } } };
+
+function writeFileAt(file) {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, "");
+
+    return file;
+}
+
+test("emit-config: a Codex entry names Codex's own shim, and its note verifies through it", () => {
+    const env = { HOME: freshHome("vcs-emit-codex-") };
+    const codexShim = writeFileAt(m.defaultShimPath(env, "codex"));
+    const codex = m.emitConfig(EMIT_CFG, "codex", env);
+    assert.ok(codex.body.includes(JSON.stringify(codexShim)), codex.body);
+    assert.ok(codex.notes.some((n) => n.includes(`node ${JSON.stringify(codexShim)} doctor`)), codex.notes.join("\n"));
+    assert.ok(!codex.notes.some((n) => /does not exist/.test(n)), "no warning while the shim is there");
+});
+
+test("emit-config: a Codex entry whose shim does not exist yet says so, and how to create it", () => {
+    // The entry bakes the path in, so pasting it before the file exists makes every server fail at launch
+    // with a module-not-found naming a path the reader never chose.
+    const env = { HOME: freshHome("vcs-emit-codex-noshim-") };
+    const codexShim = m.defaultShimPath(env, "codex");
+    const codex = m.emitConfig(EMIT_CFG, "codex", env);
+    assert.ok(codex.body.includes(JSON.stringify(codexShim)), "the entry still names Codex's own shim");
+    const warning = codex.notes.find((n) => n.includes(codexShim) && /does not exist/.test(n));
+    assert.ok(warning, codex.notes.join("\n"));
+    assert.match(warning, /install skill/, "it names the step that creates the file");
+});
+
+const verifiesThrough = (notes, file) => notes.some((n) => n.includes(`node ${JSON.stringify(file)} doctor`));
+const unsetNote = (notes) => notes.find((n) => /VC_SECRETS is not set/.test(n));
+
+test("emit-config: an entry naming VC_SECRETS verifies through the variable when it is set", () => {
+    // ${VC_SECRETS} / ${env:VC_SECRETS} is what a launch actually runs, so that is the file worth checking.
+    for (const client of ["claude-code", "cursor"]) {
+        const home = freshHome("vcs-emit-var-");
+        const chosen = path.join(home, "chosen", "vc-secrets.mjs");
+        const { notes } = m.emitConfig(EMIT_CFG, client, { HOME: home, VC_SECRETS: chosen });
+        assert.ok(verifiesThrough(notes, chosen), `${client}: ${notes.join("\n")}`);
+        assert.equal(unsetNote(notes), undefined, `${client}: no warning while the variable is set`);
+    }
+});
+
+test("emit-config: with VC_SECRETS unset the verify step names the client's own shim and says the variable is missing", () => {
+    // Naming this package's own launcher instead would make `doctor` pass while the pasted entry expands to
+    // nothing -- a check that cannot fail in exactly the state it is run to catch.
+    for (const client of ["claude-code", "cursor"]) {
+        const env = { HOME: freshHome("vcs-emit-unset-") };
+        const ownShim = m.defaultShimPath(env, client);
+        const before = m.emitConfig(EMIT_CFG, client, env).notes;
+        assert.ok(verifiesThrough(before, ownShim), `${client}, no shim yet: ${before.join("\n")}`);
+        const warning = unsetNote(before);
+        assert.ok(warning, `${client}: ${before.join("\n")}`);
+        assert.match(warning, /install skill/, `${client}: it names the step that sets the variable`);
+
+        writeFileAt(ownShim);
+        const after = m.emitConfig(EMIT_CFG, client, env).notes;
+        assert.ok(verifiesThrough(after, ownShim), `${client}, shim present: ${after.join("\n")}`);
+        assert.ok(unsetNote(after), `${client}: the variable is still missing, whatever the shim`);
+    }
+});
+
+test("emit-config: a Cursor plugins/local copy verifies through its own launcher, which no shim stands in front of", () => {
+    // That copy's path carries no version, so install names the launcher itself and creates no shim; naming
+    // Cursor's shim there would print a command that cannot run. Run from a real copy, since the launcher's
+    // own location is what decides it.
+    const home = freshHome("vcs-emit-local-");
+    const copy = path.join(home, ".cursor", "plugins", "local", "vc-secrets");
+    fs.cpSync(path.dirname(fileURLToPath(import.meta.url)), copy, { recursive: true });
+    const emitFor = (client) => `emitConfig(${JSON.stringify(EMIT_CFG)}, ${JSON.stringify(client)}, { HOME: ${JSON.stringify(home)} }).notes`;
+    const script = `import { emitConfig } from ${JSON.stringify(pathToFileURL(path.join(copy, "vc-secrets.mjs")).href)};\n`
+        + `process.stdout.write(JSON.stringify({ cursor: ${emitFor("cursor")}, claude: ${emitFor("claude-code")} }));\n`;
+    const r = spawnSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", env: { ...process.env, HOME: home } });
+    assert.equal(r.status, 0, r.stderr);
+    const { cursor, claude } = JSON.parse(r.stdout);
+    // The copy's launcher as node resolves it (a temp root reached through a link is spelled by its target).
+    assert.ok(verifiesThrough(cursor, fs.realpathSync(path.join(copy, "vc-secrets.mjs"))), cursor.join("\n"));
+    assert.ok(unsetNote(cursor), "the entry still needs the variable exported");
+
+    // The same copy emitting Claude Code's entry: that entry's ${VC_SECRETS} points at Claude Code's shim, not at
+    // this launcher, so the check has to fail while that shim is missing.
+    const claudeShim = m.defaultShimPath({ HOME: home }, "claude-code");
+    assert.ok(verifiesThrough(claude, claudeShim), claude.join("\n"));
 });

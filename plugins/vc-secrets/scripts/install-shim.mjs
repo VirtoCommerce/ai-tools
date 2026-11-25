@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SHIM, defaultDataHome, defaultShimDir } from "./shim-path.mjs";
+import { SHIM, defaultDataHome, defaultShimDir, clientOwning } from "./shim-path.mjs";
 
 function fail(message) {
     // sync write: stderr is async on a POSIX pipe and on a Windows console, and process.exit drops pending writes
@@ -84,7 +84,14 @@ if (!fs.existsSync(source)) {
 // With no usable value the id is the baked `CANONICAL_DATA_ID`, derived by rule rather than searched
 // for: `<plugin>@<marketplace>` with non-alphanumerics dashed, both names from manifests this repo
 // ships. The rule is written down because the constant alone cannot say how to rebuild it.
-const dataHome = defaultDataHome();
+// The client is read from where this copy of the plugin sits -- <home>/plugins/cache/... of Claude Code,
+// Codex or Cursor -- by the same reasoning that derives pluginRoot from this file: nothing the environment
+// says can be trusted to name it. A copy in no client's tree (a checkout, the test suite) is Claude Code's,
+// as before. The client decides the default directory and what to paste: each client deletes only its own
+// data directory, so a shim under Claude Code's broke a Codex entry the day the plugin was uninstalled there.
+const owner = clientOwning(pluginRoot);
+const client = owner?.client ?? "claude-code";
+const dataHome = defaultDataHome(process.env, client);
 const declared = flag("--data-dir");
 if (declared !== null && declared !== "" && !path.isAbsolute(declared)) {
     fail(`--data-dir must be an absolute path, got ${JSON.stringify(declared)} -- a value still shaped like a placeholder means the command ran where Claude Code does not substitute it`);
@@ -100,50 +107,90 @@ if (target && !path.basename(target).toLowerCase().startsWith("vc-secrets")) {
     ignored = target;
     target = null;
 }
-if (!target) {
+// A plugin loaded from ~/.cursor/plugins/local is a directory updated in place, so its path carries no
+// version and the launcher's own path is already stable: the problem the shim exists for is absent there,
+// and a copy would be one more file to keep current. An explicit --data-dir still installs one.
+const direct = !target && owner?.local === true;
+if (!target && !direct) {
     let why = "";
     if (ignored) {
         why = ` (--data-dir named ${path.basename(ignored)})`;
     } else if (declared === "") {
         why = " (--data-dir arrived empty)";
     }
-    target = defaultShimDir();
+    target = defaultShimDir(process.env, client);
     how = `the documented default under ${dataHome}${why}`;
 }
 
-const destination = path.join(target, SHIM);
+let destination;
 let replaced = "installed";
-try {
-    fs.mkdirSync(target, { recursive: true });
-    if (fs.existsSync(destination)) {
-        // "a different copy", not "an older copy": a byte comparison settles that the two differ and
-        // nothing about which way, so a downgrade read as an upgrade. Inside the try because these
-        // reads fail exactly where the copy fails -- an unreadable destination belongs in "cannot
-        // write the shim", not in a crash from the line that composes the report about it.
-        replaced = fs.readFileSync(destination, "utf8") === fs.readFileSync(source, "utf8")
-            ? "already up to date"
-            : "replaced a different copy";
+if (direct) {
+    destination = path.join(pluginRoot, "vc-secrets.mjs");
+    if (!fs.existsSync(destination)) {
+        fail(`${destination} not found -- this is not a complete plugin install`);
     }
-    fs.copyFileSync(source, destination);
-} catch (e) {
-    fail(`cannot write ${destination}: ${e.message}`);
+} else {
+    destination = path.join(target, SHIM);
+    try {
+        fs.mkdirSync(target, { recursive: true });
+        if (fs.existsSync(destination)) {
+            // "a different copy", not "an older copy": a byte comparison settles that the two differ and
+            // nothing about which way, so a downgrade read as an upgrade. Inside the try because these
+            // reads fail exactly where the copy fails -- an unreadable destination belongs in "cannot
+            // write the shim", not in a crash from the line that composes the report about it.
+            replaced = fs.readFileSync(destination, "utf8") === fs.readFileSync(source, "utf8")
+                ? "already up to date"
+                : "replaced a different copy";
+        }
+        fs.copyFileSync(source, destination);
+    } catch (e) {
+        fail(`cannot write ${destination}: ${e.message}`);
+    }
 }
 
+const quoted = JSON.stringify(destination);
+const head = direct
+    ? `launcher: ${destination} (not copied -- a plugin in ${path.dirname(pluginRoot)} is updated in place and its path carries no version, so it needs no shim)`
+    : `shim: ${destination} (${replaced}; directory chosen via ${how})`;
+// What to paste differs per client, and printing Claude Code's settings entry under another client told the
+// developer to point Claude Code at the other client's shim.
+const paste = {
+    "claude-code": [
+        "Add this to ~/.claude/settings.json -- a wrapped MCP server reads it, and picks it up only after a",
+        "restart. Merge it into the existing \"env\" object if there is one; this file is not written for you.",
+        "",
+        `  {"env": {"VC_SECRETS": ${quoted}}}`,
+    ],
+    codex: [
+        "Codex expands no variables in its config, so its entries name this shim by path. Print them with",
+        "",
+        `  node ${quoted} emit-config codex`,
+        "",
+        "and paste them into ~/.codex/config.toml. Codex needs no settings.json entry and no shell variable.",
+    ],
+    cursor: [
+        "Cursor's entries name the launcher as ${env:VC_SECRETS} and read it from your environment, so export it",
+        "from your shell's own startup file -- this script does not write one:",
+        "",
+        `  export VC_SECRETS=${quoted}`,
+        "",
+        "then paste what this prints into ~/.cursor/mcp.json or <repo>/.cursor/mcp.json:",
+        "",
+        `  node ${quoted} emit-config cursor`,
+    ],
+}[client];
 const lines = [
-    `shim: ${destination} (${replaced}; directory chosen via ${how})`,
+    head,
     "",
-    "Add this to ~/.claude/settings.json -- a wrapped MCP server reads it, and picks it up only after a",
-    "restart. Merge it into the existing \"env\" object if there is one; this file is not written for you.",
-    "",
-    `  {"env": {"VC_SECRETS": ${JSON.stringify(destination)}}}`,
+    ...paste,
     "",
     "Run these directly when working with vc-secrets by hand -- no other setup needed:",
     "",
-    `  node ${JSON.stringify(destination)} set <name>`,
-    `  node ${JSON.stringify(destination)} login <name>`,
-    `  node ${JSON.stringify(destination)} unlock`,
-    `  node ${JSON.stringify(destination)} migrate`,
+    `  node ${quoted} set <name>`,
+    `  node ${quoted} login <name>`,
+    `  node ${quoted} unlock`,
+    `  node ${quoted} migrate`,
     "",
-    `Then verify:  node ${JSON.stringify(destination)} doctor`,
+    `Then verify:  node ${quoted} doctor`,
 ];
 fs.writeSync(1, lines.join("\n") + "\n");
