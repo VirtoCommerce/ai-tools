@@ -15,7 +15,7 @@ import { MASTER_NAME, usesMaster } from "../lib/env-layers.mjs";
 import { envSuffix } from "../lib/resolve-test-env.js";
 import { requirementChecks } from "./requirements.ts";
 import { loadManifest } from "../../ci/lib/suite-manifest.js";
-import { buildFingerprint, DELIVERY_FILE, storedDeliveryChecks } from "../preflight/delivery.ts";
+import { buildFingerprint, DELIVERY_FILE, standPlatform, storedDeliveryChecks } from "../preflight/delivery.ts";
 import { readFileSync } from "node:fs";
 
 export type BuildFor = "regression" | "smoke";
@@ -308,7 +308,8 @@ export async function runRegressionPreflight(o: {
     const file = join(o.root, "regression", "releases", o.release, DELIVERY_FILE);
     let stored = null;
     try { stored = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : null; } catch { stored = null; }
-    const fp = isUnknown(facts.declared) || isUnknown(facts.deployed) ? null : buildFingerprint(facts.declared.theme, facts.deployed.modules);
+    const fp = isUnknown(facts.declared) || isUnknown(facts.deployed) ? null
+      : buildFingerprint(facts.declared.theme, standPlatform(facts.declared.platform, isUnknown(facts.deployed.platform) ? null : facts.deployed.platform), facts.deployed.modules);
     checks.push(...storedDeliveryChecks(stored, fp, o.release, (o.accept ?? []).filter((a) => a.startsWith("delivery:"))));
   }
   const absent = notDeployedMap(checks);

@@ -13,6 +13,7 @@
 // GitHub, the blob store and vc-deploy-dev are only read.
 import type { Http } from "../deploy/lib/github.ts";
 import { listPinnedModules } from "../deploy/lib/manifest.ts";
+import { blobBase } from "../deploy/lib/pins.ts";
 import { matchRun, themePinKind, type PublishRun } from "../deploy/upgrade/theme.ts";
 import type { Check } from "./policy.ts";
 
@@ -21,7 +22,7 @@ const THEME_PKG = "vc-theme-b2b-vue";
 const KEY_RE = /\b([A-Z][A-Z0-9]+-\d+)\b/g;
 
 /** A build reference in one repo: a git ref (tag or sha) that the PR's merge commit must be an ancestor of. */
-export interface BuildRef { repo: string; ref: string | null; label: string; note?: string }
+export interface BuildRef { repo: string; ref: string | null; label: string; note?: string; /** a PR build: its PR number */ pr?: number }
 export type PrState = "IN" | "OUT" | "NOT_MERGED" | "NOT_ON_STAND" | "UNKNOWN";
 export interface PrDelivery { repo: string; number: number; url: string; state: PrState; note: string }
 export type Verdict = "DELIVERED" | "PARTIAL" | "INCOMPLETE" | "MASS" | "NOT_DELIVERED" | "NO_CODE" | "UNKNOWN";
@@ -70,16 +71,30 @@ export function ticketKeys(text: string, project: string | null = null): string[
   return [...out];
 }
 
+/** The commit a PR build's file name carries (`…-pr-2676-f03c-f03c41eb.zip` → f03c41eb), or null. */
+export function prBuildSha(file: string): string | null {
+  return /-pr-\d+-(?:.*-)?([0-9a-f]{4,40})(?:\.zip)?$/i.exec(file)?.[1] ?? null;
+}
+
 /** The commit a deployed theme zip was built from. Alpha blobs carry no sha: the blob's Last-Modified falls inside
- *  one CI run's "Publish to Blob" step (scripts/deploy/upgrade/theme.ts), so that run's head sha is the build. */
-export async function themeBuildRef(http: Http, themeFile: string, blobBase = "https://vc3prerelease.blob.core.windows.net/packages", workflow = "theme-ci.yml"): Promise<BuildRef> {
+ *  one CI run's "Publish to Blob" step (scripts/deploy/upgrade/theme.ts), so that run's head sha is the build.
+ *  `blobBase` is the manifest's AzureBlob source (scripts/deploy/lib/pins.ts `blobBase`). */
+export async function themeBuildRef(http: Http, themeFile: string, blobBase: string, workflow = "theme-ci.yml"): Promise<BuildRef> {
   const file = /\.zip$/i.test(themeFile) ? themeFile : `${themeFile}.zip`; // env-facts `declared.theme` drops the extension
-  const k = themePinKind(file.includes("/") ? file : `${blobBase}/${file}`, THEME_PKG);
   const label = file.split("/").pop() ?? file;
+  let k = themePinKind(file.includes("/") ? file : `${blobBase}/${file}`, THEME_PKG);
+  // env-facts keeps only the file name, so a GitHub-release pin (…/releases/download/2.62.0/vc-theme-b2b-vue-2.62.0.zip)
+  // arrives without the path themePinKind recognises it by. A bare `<pkg>-X.Y.Z.zip` is never a blob build (those
+  // carry -alpha.N or -pr-N), so it is that release.
+  const bare = new RegExp(`^${THEME_PKG}-(\\d+\\.\\d+\\.\\d+)\\.zip$`).exec(label);
+  if (k.kind === "unknown" && bare) k = { kind: "release", version: bare[1] };
   if (k.kind === "release") return { repo: FRONTEND_REPO, ref: k.version!, label };
   if (k.kind === "pr") {
+    // The build is the commit in the file name, not the PR's head now: a push after the deploy moves the head.
+    const sha = prBuildSha(label);
+    if (sha) return { repo: FRONTEND_REPO, ref: sha, label, pr: k.pr, note: `PR build of #${k.pr}` };
     const p = await http.gh(`/repos/${FRONTEND_REPO}/pulls/${k.pr}`);
-    return { repo: FRONTEND_REPO, ref: p?.head?.sha ?? null, label, note: `PR build of #${k.pr}` };
+    return { repo: FRONTEND_REPO, ref: p?.head?.sha ?? null, label, pr: k.pr, note: `PR build of #${k.pr}: no commit in the file name, the PR's head now is used — it may be newer than the build` };
   }
   if (k.kind !== "alpha") return { repo: FRONTEND_REPO, ref: null, label, note: `theme pin of kind ${k.kind}: build commit not derivable` };
   const blobUrl = `${blobBase}/${label}`;
@@ -133,10 +148,22 @@ export async function keysBetween(http: Http, repo: string, from: string, to: st
 
 export interface StandBuild { theme: BuildRef; modules: Map<string, BuildRef & { id: string; version: string }> }
 
-/** What the stand runs now: the theme build commit and, per module repo, the version's ref. */
-export async function standBuild(http: Http, themeFile: string | null, deployed: Record<string, { version: string; repo: string | null }>): Promise<StandBuild> {
-  const theme = themeFile ? await themeBuildRef(http, themeFile) : { repo: FRONTEND_REPO, ref: null, label: "unknown", note: "theme not declared" };
+export const PLATFORM_REPO = "VirtoCommerce/vc-platform";
+export const PLATFORM_ID = "platform";
+
+/** The platform version a delivery check compares against: the live one (the modules API has no platform entry),
+ *  or the manifest's image tag when it is a build of that same base — only the tag carries a PR build's commit. */
+export function standPlatform(declared: string | null, live: string | null): string | null {
+  if (!live) return null;
+  return declared && declared.split("-")[0] === live.split("-")[0] ? declared : live;
+}
+
+/** What the stand runs now: the theme build commit, the platform and, per module repo, the version's ref. A platform
+ *  whose version is unknown still has an entry, so its PRs come out UNKNOWN, never "not on this stand". */
+export async function standBuild(http: Http, themeFile: string | null, deployed: Record<string, { version: string; repo: string | null }>, platform: string | null, blobBase: string): Promise<StandBuild> {
+  const theme = themeFile ? await themeBuildRef(http, themeFile, blobBase) : { repo: FRONTEND_REPO, ref: null, label: "unknown", note: "theme not declared" };
   const modules = new Map<string, BuildRef & { id: string; version: string }>();
+  modules.set(PLATFORM_REPO.toLowerCase(), { repo: PLATFORM_REPO, id: PLATFORM_ID, version: platform ?? "unknown", ref: platform ? moduleRef(platform) : null, label: `platform ${platform ?? "unknown"}`, note: platform ? undefined : "platform version not read" });
   for (const [id, m] of Object.entries(deployed)) {
     if (!m.repo) continue;
     const repo = m.repo.includes("/") ? m.repo : `VirtoCommerce/${m.repo}`;
@@ -153,9 +180,11 @@ export async function deliveryOfTicket(http: Http, key: string, sources: string[
     if (!p.merged) { prs.push({ ...p, state: "NOT_MERGED", note: "not merged" }); continue; }
     const pr = await http.gh(`/repos/${p.repo}/pulls/${p.number}`);
     if (!pr?.merge_commit_sha || !target.ref) { prs.push({ ...p, state: "UNKNOWN", note: target.ref ? "no merge commit" : `build of ${target.label} unknown${target.note ? ` (${target.note})` : ""}` }); continue; }
-    // A PR build of this very PR is the PR itself.
-    if (/-pr-(\d+)-/.test(target.label) && Number(/-pr-(\d+)-/.exec(target.label)![1]) === p.number) { prs.push({ ...p, state: "IN", note: `PR build ${target.label}` }); continue; }
-    const state = await contains(http, p.repo, pr.merge_commit_sha, target.ref);
+    // A PR build of this very PR: a squash merge commit is never in it, so ask whether the build holds the PR's
+    // final head — a push after the deploy leaves the build behind it.
+    const sha = target.pr === p.number ? pr.head?.sha : pr.merge_commit_sha;
+    if (!sha) { prs.push({ ...p, state: "UNKNOWN", note: "no head commit" }); continue; }
+    const state = await contains(http, p.repo, sha, target.ref);
     prs.push({ ...p, state, note: `${state === "IN" ? "in" : "not in"} ${target.label}` });
   }
   return { key, sources, prs, verdict: ticketVerdict(prs) };
@@ -163,17 +192,21 @@ export async function deliveryOfTicket(http: Http, key: string, sources: string[
 
 /** The tickets the stand's components picked up since sprint start: module + platform + theme commits between the
  *  vc-deploy-dev manifest at `since` and the stand now. */
-export async function standChangeTickets(http: Http, o: { deployRepo: string; branch: string; packagesPath: string; themePath: string; since: string; build: StandBuild; project: string | null }): Promise<{ keys: Map<string, string[]>; notes: string[] }> {
+export async function standChangeTickets(http: Http, o: { deployRepo: string; branch: string; packagesPath: string; themePath: string; since: string; build: StandBuild; project: string | null; blobBase: string }): Promise<{ keys: Map<string, string[]>; notes: string[] }> {
   const keys = new Map<string, string[]>(), notes: string[] = [];
   const add = (k: string, src: string) => keys.set(k, [...(keys.get(k) ?? []), src]);
   const at = (await http.gh(`/repos/${o.deployRepo}/commits?sha=${encodeURIComponent(o.branch)}&until=${encodeURIComponent(o.since)}&per_page=1`))?.[0]?.sha;
   if (!at) { notes.push(`no ${o.deployRepo}@${o.branch} commit before ${o.since}`); return { keys, notes }; }
   const read = async (p: string) => { const f = await http.gh(`/repos/${o.deployRepo}/contents/${p}?ref=${at}`); return f?.content ? Buffer.from(f.content, "base64").toString("utf8") : null; };
   const pk = await read(o.packagesPath);
-  const before = new Map((pk ? listPinnedModules(JSON.parse(pk)) : []).map((m) => [m.id.toLowerCase(), m.version]));
+  const pkJson = pk ? JSON.parse(pk) : null;
+  const before = new Map((pkJson ? listPinnedModules(pkJson) : []).map((m) => [m.id.toLowerCase(), m.version]));
+  const platformBefore = pkJson?.PlatformImageTag ?? pkJson?.PlatformVersion;
+  if (platformBefore) before.set(PLATFORM_ID, String(platformBefore));
   for (const m of o.build.modules.values()) {
     const from = before.get(m.id.toLowerCase());
     if (!from || from === m.version) continue;
+    if (!m.ref) { notes.push(`${m.repo}: cannot compare ${from}…${m.version}${m.note ? ` (${m.note})` : ""}`); continue; }
     const ks = await keysBetween(http, m.repo, moduleRef(from), m.ref!, o.project);
     if (ks === null) { notes.push(`${m.repo}: cannot compare ${from}…${m.version}`); continue; }
     for (const k of ks) add(k, `${m.id} ${from}→${m.version}`);
@@ -181,7 +214,7 @@ export async function standChangeTickets(http: Http, o: { deployRepo: string; br
   const th = await read(o.themePath);
   const fromFile = th ? (JSON.parse(th).URL ?? JSON.parse(th).url ?? null) : null;
   if (fromFile && o.build.theme.ref && !fromFile.endsWith(o.build.theme.label)) {
-    const fromRef = await themeBuildRef(http, fromFile);
+    const fromRef = await themeBuildRef(http, fromFile, pkJson ? blobBase(pkJson) : o.blobBase);
     const ks = fromRef.ref ? await keysBetween(http, FRONTEND_REPO, fromRef.ref, o.build.theme.ref, o.project) : null;
     if (ks === null) notes.push(`theme: cannot compare ${fromRef.label}…${o.build.theme.label}${fromRef.note ? ` (${fromRef.note})` : ""}`);
     else for (const k of ks) add(k, `theme ${fromRef.label.replace(`${THEME_PKG}-`, "")}→${o.build.theme.label.replace(`${THEME_PKG}-`, "")}`);
@@ -199,9 +232,9 @@ export function deliveryChecks(rows: TicketDelivery[], accepted: string[] = [], 
   const prList = (t: TicketDelivery, s: PrState[]) => t.prs.filter((p) => s.includes(p.state)).map((p) => `${p.repo.replace("VirtoCommerce/", "")}#${p.number}`).join(", ");
   for (const t of rows) {
     const yes = acc.has(`delivery:${t.key}`);
-    if (t.verdict === "PARTIAL")
-      checks.push({ id: `delivery:${t.key}`, status: yes ? "WARN" : "BLOCK", who: "you", diagnose: [],
-        found: `${t.key} is PARTLY on the stand: ${prList(t, ["IN"])} deployed, ${prList(t, ["OUT"])} NOT — the deployed half expects the missing one${yes ? " (accepted)" : ""}`,
+    if (t.verdict === "PARTIAL") // never accepted: the deployed half calls code that is not there
+      checks.push({ id: `delivery:${t.key}`, status: "BLOCK", who: "you", diagnose: [],
+        found: `${t.key} is PARTLY on the stand: ${prList(t, ["IN"])} deployed, ${prList(t, ["OUT"])} NOT — the deployed half expects the missing one${yes ? " (--accept does not apply to a PARTIAL ticket)" : ""}`,
         do: "STOP the waves and tell the release owner + delivery manager: deploy the missing build, or roll the deployed half back" });
     else if (t.verdict === "NOT_DELIVERED" && t.sources.includes("sprint"))
       checks.push({ id: `delivery:${t.key}`, status: yes ? "WARN" : "BLOCK", who: "you", diagnose: [],
@@ -224,10 +257,10 @@ export function deliveryChecks(rows: TicketDelivery[], accepted: string[] = [], 
   return checks;
 }
 
-/** The build a delivery result was computed for: the theme pin and every module version. A changed stand means
- *  the stored result no longer describes it. */
-export function buildFingerprint(theme: string | null, modules: Record<string, { version: string }>): string {
-  return [String(theme ?? "").replace(/.zip$/i, ""), ...Object.entries(modules).map(([id, m]) => `${id.toLowerCase()}@${m.version}`).sort()].join("|");
+/** The build a delivery result was computed for: the theme pin, the platform and every module version. A changed
+ *  stand means the stored result no longer describes it. */
+export function buildFingerprint(theme: string | null, platform: string | null, modules: Record<string, { version: string }>): string {
+  return [String(theme ?? "").replace(/\.zip$/i, ""), `${PLATFORM_ID}@${platform ?? ""}`, ...Object.entries(modules).map(([id, m]) => `${id.toLowerCase()}@${m.version}`).sort()].join("|");
 }
 
 export const DELIVERY_FILE = "delivery.json";

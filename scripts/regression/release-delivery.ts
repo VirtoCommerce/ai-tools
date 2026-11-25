@@ -15,9 +15,10 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { getEnvFacts, isUnknown } from "../lib/env-facts.ts";
-import { makeHttp } from "../deploy/lib/github.ts";
+import { fetchFile, makeHttp } from "../deploy/lib/github.ts";
 import { resolveEnvCoords } from "../deploy/lib/env.ts";
-import { buildFingerprint, DELIVERY_FILE, deliveryChecks, deliveryOfTicket, standBuild, standChangeTickets, type TicketDelivery } from "../preflight/delivery.ts";
+import { blobBase } from "../deploy/lib/pins.ts";
+import { buildFingerprint, DELIVERY_FILE, deliveryChecks, deliveryOfTicket, standBuild, standChangeTickets, standPlatform, type TicketDelivery } from "../preflight/delivery.ts";
 
 const argv = process.argv.slice(2);
 const flag = (n: string) => { const i = argv.indexOf(`--${n}`); return i >= 0 ? argv[i + 1] : undefined; };
@@ -91,8 +92,11 @@ try {
       try { writeFileSync(cacheFile, JSON.stringify(cache)); } catch { /* a cache is optional */ }
       return body;
     } };
+  const c = resolveEnvCoords(env);
+  const base = blobBase((await fetchFile(c, c.packagesPath)).json); // the manifest's AzureBlob source, never a typed URL
+  const platform = standPlatform(facts.declared.platform, isUnknown(facts.deployed.platform) ? null : facts.deployed.platform);
   // --theme: "what if the stand ran this theme zip" — checks a candidate before it is deployed.
-  const build = await standBuild(http, flag("theme") ?? facts.declared.theme, facts.deployed.modules);
+  const build = await standBuild(http, flag("theme") ?? facts.declared.theme, facts.deployed.modules, platform, base);
   const notes: string[] = [];
   if (!isUnknown(facts.deployedTheme) && facts.declared.theme && !facts.declared.theme.includes(facts.deployedTheme))
     notes.push(`storefront serves ${facts.deployedTheme}, the manifest pins ${facts.declared.theme} — the deploy has not rolled over yet`);
@@ -102,8 +106,7 @@ try {
   const add = (k: string, s: string) => sources.set(k, [...(sources.get(k) ?? []), s]);
   if (rel.sprint?.label) for (const k of await sprintDoneTickets(rel.sprint.label)) add(k, "sprint");
   if (rel.sprint?.startDate) {
-    const c = resolveEnvCoords(env);
-    const ch = await standChangeTickets(http, { deployRepo: `${c.deployOwner}/${c.deployRepo}`, branch: c.branch, packagesPath: c.packagesPath, themePath: c.themePath, since: `${rel.sprint.startDate}T00:00:00Z`, build, project });
+    const ch = await standChangeTickets(http, { deployRepo: `${c.deployOwner}/${c.deployRepo}`, branch: c.branch, packagesPath: c.packagesPath, themePath: c.themePath, since: `${rel.sprint.startDate}T00:00:00Z`, build, project, blobBase: base });
     for (const [k, srcs] of ch.keys) for (const s of srcs) add(k, s);
     notes.push(...ch.notes);
   }
@@ -114,7 +117,7 @@ try {
   }
   const checks = deliveryChecks(rows, accepted, notes);
   const blocking = checks.some((c) => c.status === "BLOCK");
-  const fingerprint = flag("theme") ? null : buildFingerprint(facts.declared.theme, facts.deployed.modules);
+  const fingerprint = flag("theme") ? null : buildFingerprint(facts.declared.theme, platform, facts.deployed.modules);
   const out = { release, env, observedAt: facts.observedAt, fingerprint, notes, theme: { file: build.theme.label, commit: build.theme.ref, note: build.theme.note ?? null }, tickets: rows, checks, verdict: blocking ? "NOT READY" : "READY" };
   if (flag("out")) writeFileSync(flag("out")!, JSON.stringify(out, null, 2) + "\n");
   // --write: the release folder's copy, which every wave's pre-flight reads (regression:plan --preflight --release).
