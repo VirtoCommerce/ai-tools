@@ -4,7 +4,7 @@
 QA, a product owner, a developer — on any machine: §Preflight says what this machine can do before
 anything starts, so a run never fails half-way. Every knob comes from `config/qa-docs.json`; this file
 names keys, never their values. Validate the config before anything else —
-`node -e 'const A=require("ajv/dist/2020"),F=require("ajv-formats");const a=new A({allErrors:true,strict:false});F(a);const v=a.compile(require("./config/qa-docs.schema.json"));if(!v(require("./config/qa-docs.json"))){console.error(JSON.stringify(v.errors));process.exit(1)}'`
+`node -e 'const A=require("ajv/dist/2020");const a=new A({allErrors:true,strict:false});const v=a.compile(require("./config/qa-docs.schema.json"));if(!v(require("./config/qa-docs.json"))){console.error(JSON.stringify(v.errors));process.exit(1)}'`
 — and stop, naming the key, when it exits 1 (a misspelt key would otherwise be ignored without a word), when
 the config is missing, or when `slides.layout` is not a key of `slides.layouts`. The design and its reasons:
 `docs/superpowers/specs/2026-11-20-qa-docs-sprint-slides-film-design.md`.
@@ -34,7 +34,7 @@ before designing data, and stop a story at its first `blocked`.
    Atlassian connector's `discover` (an operation that lists a board's sprints), keep those whose name
    contains `<NN-NN>`'s digits, and ask which one; none ⇒ say what was tried and stop.
 
-The local folder name (`reports/tickets/Sprint26-22/`) is not the Jira name: never assume one from the other.
+The local folder name (`reports/tickets/<label>/`) is not the Jira name: never assume one from the other.
 
 ## Preflight
 
@@ -149,7 +149,8 @@ run's fixtures silently. An approach that changes **existing** shared records ne
 the person's yes in the plan first (measured: the order API ignores `createdDate`, so back-dated orders can
 only be re-attributed from orphaned ones). A walk stopped midway leaves state: inspect the stand read-only
 before the next walk and clean what it made. Once the slides and the film are built (a bad frame can be
-retaken until then) the parent deletes the set by its ids and restores what the ledger says was changed. A
+retaken until then) the parent tells the person what will be deleted and restored, asks once, then deletes the set by its ids
+and restores what the ledger says was changed. A
 story shown from `jira` material needs none.
 
 ## Material
@@ -200,8 +201,8 @@ not repeated under *Not included*), and a **Slides** / **Film** link line.
 ## Slides
 
 A Slides artifact, private, title `Sprint <NN-NN> — What’s new`, 16:9, filled as its type's instructions
-say, from the layout files in [`slide-layout/`](slide-layout/cover.html) (`cover.html`, `story.html`,
-`deck.css`: the VCST-5918 example slide in the brand's dark look, with the design system's running header and rule, at 1920 px; copy them, change only the text).
+say, from the layout files in [`slide-layout/`](slide-layout/cover.html) (`slide-layout/cover.html`,
+`slide-layout/story.html`, `slide-layout/deck.css`: the VCST-5918 example slide in the brand's dark look, with the design system's running header and rule, at 1920 px; copy them, change only the text: they hold one run's sample words, keep the structure and replace every word).
 Colors, fonts and the logo always come from `style.designSystem`, installed as the type says (or the
 neutral look §Ask settled), never from these files.
 
@@ -231,7 +232,7 @@ these differences:
 
 - a title card ("Sprint <NN-NN>", "What’s new"; no story count); one scene per story, 6–8 s, its key frames
   in a browser window with a camera push per frame, at most one caption chip per step; an end card. Copy
-  [`film-layout/`](film-layout/shared.js) (`shared.js`, `base.css`, `scene.js`): the helper `W.film` builds a
+  [`film-layout/`](film-layout/shared.js) (`film-layout/shared.js`, `film-layout/base.css`, `film-layout/scene.js`): the helper `W.film` builds a
   scene from a list of beats, and the design system's fonts and logo are uploaded as assets;
 - **total ≤ `film.maxSeconds`, stories ≤ `film.maxStories`** (§Approval picks them); when both cannot
   hold, the seconds win and scenes shorten toward 6 s, then the person is asked to cut a story;

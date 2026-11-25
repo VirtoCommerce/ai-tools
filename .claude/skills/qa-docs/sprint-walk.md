@@ -29,7 +29,7 @@ password name is rejected it returns `blocked` instead of re-binding. **The brie
 (task, scope, lane with its fallback, references, output) and carries its *Observed behaviour* line — except
 that the walker returns its `kb` lines instead of banking them (§Product context below). Because the
 walker cannot read this file or ask the person, the brief also names: the stand and its lane; the role and
-account; the scenarios, verbatim; the frames folder; whether the stand is writable; the coordinates (page
+account; the scenarios, verbatim; the frames folder; whether the stand is writable; that it never binds an env (`env:use`, `run:use`); the coordinates (page
 path, GraphQL operation) for `mcp__kb__kb_ask`; the files to read before the first frame — `media.md`
 §Capture steps 2–6 and the table above, `rules.md` §Payload hygiene (redact secrets, scrub client data,
 mask third-party marks); and the **can't-ask path**: when it cannot sign in, a dialog is missing from the
@@ -45,6 +45,7 @@ must not show: the stand's QA ribbon or tab, a third-party logo, test names, a p
 `shown`, `differs: <what was seen>` or `blocked: <reason>`; and per coordinate:
 `kb: {coordinate, entry id | none, matched | contradicted | new}` with each entry it opened.
 
-A scenario that **differs** on the stand is not shown: the story goes to *Not included — differs on the
+A scenario that **differs** on the stand is not shown (a slide that shows a step the stand does not do is a false
+record, however close the rest is): the story goes to *Not included — differs on the
 stand*, and the run says what differed. A **blocked** story goes to *Not included — walk blocked*, with its
 reason. Neither is a bug report; this mode files nothing.
